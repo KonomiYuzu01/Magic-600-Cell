@@ -1,5 +1,7 @@
 # C600 Studio 0.3 for Windows
 
+> **Legacy 0.3 packaging.** For the released 0.4 application, use the [0.4 release guide](../docs/RELEASE_0_4.md) and [source/build guide](../docs/DEVELOPMENT.md). This directory retains its original 0.3 scripts and package instructions.
+
 **Andrey Astrelin created Magic Puzzle Ultimate**, whose original puzzle engine,
 geometry conventions, and renderer underpin this application. See
 [Andrey's original project page](https://superliminal.com/andrey/mpu/) and the

@@ -1,5 +1,7 @@
 # Development performance observations
 
+> **Historical 0.3 measurements.** These results are not a benchmark of the 0.4 package. See the [0.4 release guide](RELEASE_0_4.md); performance optimization is planned for the next iteration.
+
 These measurements describe the final interaction and rendering implementation included in 0.3, not the frozen 0.2.4 download or its historical validation. They precede the subsequent version-banner and packaging updates. They establish substantial improvements and identify targets that remain unmet. They are short Windows samples, not a sustained performance certification of the packaged release.
 
 The measured 13-file native source set has combined SHA-256 `6188e585d4bf77e7b2bcd55f9e81e026df6e65309e709a2349eeba245bcbdcd0`, in the build script's source order. Its later native change centralizes the displayed version as 0.3; the rendering and interaction implementation is unchanged. The source inventory and portable package manifest record the release source hashes. Diagnostic copies, instrumentation, screenshots, session databases, and raw reports remain private.

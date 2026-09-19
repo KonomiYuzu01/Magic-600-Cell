@@ -1,36 +1,46 @@
-# Magic 600 Cell (formerly C600 Studio)
+# Magic 600 Cell 0.4
 
-**1.0 architecture (proposed):** [Integrated architecture, PDF and editable source](docs/architecture/1.0/README.md). Revision 1.0-A3 schedules the deferred B4-12 performance workstream without lowering its thresholds or claiming hardware causality. Documentation only.
+A Windows solving workbench for the full 600-cell puzzle, built around **[Magic Puzzle Ultimate by Andrey Astrelin](https://superliminal.com/andrey/mpu/)**. Primary credit for the original puzzle simulator and renderer belongs to Andrey. Earlier versions of this project were named C600 Studio.
 
-**0.4 update:** [Download Magic 600 Cell 0.4](https://github.com/KonomiYuzu01/C600-MPUlt/releases/tag/0.4) · [Release guide and provenance](docs/RELEASE_0_4.md).
+**[Download 0.4](https://github.com/KonomiYuzu01/Magic-600-Cell/releases/tag/0.4)** · [Usage](USAGE.md) · [Release guide](docs/RELEASE_0_4.md) · [Documentation index](docs/README.md)
 
-A Windows workbench for the full 600-cell puzzle, built around **[Magic Puzzle Ultimate by Andrey Astrelin](https://superliminal.com/andrey/mpu/)**. Primary credit for the original puzzle simulator and renderer belongs to Andrey.
+## Run 0.4
 
-It adds recoverable reset, exact piece filters, checkpoints, macros, buffer and insertion tools, and verified C600 / MPUlt v1 log exchange while preserving the full puzzle state.
+Download the Windows x64 portable ZIP, extract the complete folder, and open `Magic600Cell.exe`. Keep `Magic600Engine.exe` and `_internal` alongside it. No separate Python or compiler is needed. The native renderer requires .NET Framework 4.x and the supported [Managed DirectX runtime](DIRECTX.md).
 
-Version **0.4** adds the native solving workspace, explicit operations, macro composition, protection and recovery workflows, orientation and buffer tools, and physical keyboard input. Previous release downloads remain unchanged.
+The default G2 layout keeps the native puzzle visible. The alternate keyboard workspace is available with `Magic600Cell.exe --mode g1`. Personal data is stored separately under `%LOCALAPPDATA%\Magic600Cell\0.4`; older C600 Studio profiles are not automatically migrated. See [sessions and rollback](USAGE.md#sessions-and-rollback).
 
-The English-captioned demonstration covers the workspace, protection and recovery, macro editing and effect inspection, orientation tools, and physical keyboard input. Waiting and repeated navigation are omitted; the video is delivered separately from the GitHub release assets.
+## What 0.4 includes
 
-## Run
+- A native solving workspace with explicit Prepare / Macro / Cleanup operations.
+- Reusable macros, full-effect inspection, protected-orbit checks and checkpoint recovery.
+- Linked Current / Operation / After cycle views, orientation and buffer tools, and endgame families.
+- Physical keyboard input and configurable key sets, plus C600 / MPUlt v1 log exchange.
 
-Download [Magic 600 Cell 0.4](https://github.com/KonomiYuzu01/C600-MPUlt/releases/tag/0.4). Extract the Windows x64 portable ZIP and open `Magic600Cell.exe`. No separate Python or compiler is needed. Install [Microsoft Managed DirectX](DIRECTX.md) if prompted.
+All operations retain the full puzzle state: 35 moving orbits, 177,120 surface pieces, 259,800 labelled sticker slots and 1,200 positive generators. Display filters do not change the mechanical model. The user chooses and executes solving steps; the application does not automatically solve the puzzle.
 
-Performance optimization is scheduled for the next iteration.
+Performance optimization is scheduled for the next iteration. The [release record](docs/RELEASE_0_4.md) distinguishes verified checks from reused evidence and remaining limits. Historical performance measurements are not a 0.4 performance certification.
 
-See [Usage](USAGE.md) and [Building](docs/DEVELOPMENT.md). Acknowledgements to ivan216 for source references and Nan Ma for historical solving material. [Credits](CREDITS.md) · [MIT license](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md).
+## Repository guide
 
-The [structure explorer guide](docs/STRUCTURE_EXPLORER.md) explains canonical color IDs, cell-centered layers, vertex lookup, inspection gestures, filter previews, and the auxiliary views. [Limitations and development priorities](docs/LIMITATIONS_AND_ROADMAP.md) separates current behavior from proposed extensions; the [development log](docs/DEVELOPMENT_LOG.md) records implementation decisions and verification scope.
+| Location | Purpose |
+| --- | --- |
+| [USAGE.md](USAGE.md), [release guide](docs/RELEASE_0_4.md) | Start here for the released application. |
+| [work/experiments/magic600-04/](work/experiments/magic600-04/) | Released 0.4 workspace source and packaging inputs; the original path is retained for reproducibility. |
+| Root Python modules, [native/](native/), [assets/](assets/) | Shared backend, retained native integration and immutable full-model assets. |
+| [Build guide](docs/DEVELOPMENT.md) | Source layout, prerequisites and public-checkout limitations. |
+| [RELEASE.json](RELEASE.json), [SOURCE_MANIFEST.json](SOURCE_MANIFEST.json) | Version identity and source inventory; [release provenance](docs/RELEASE_0_4_PROVENANCE.json) binds the frozen package inputs. |
+| [Research](research/README.md) | Mathematical references, reports and audits, with their original version and evidence scope. |
+| [Documentation index](docs/README.md) | Current documentation, historical records and future proposals. |
 
-[Current development performance](docs/DEVELOPMENT_PERFORMANCE.md) records Intel HD 620 measurements, including adaptive 1080p motion and the remaining full-detail and instant-turn limits.
+Root launch scripts, `web/` and `packaging/` retain the earlier shared/0.3 paths; they are not the 0.4 portable-package entry point. The `work/experiments/magic600-04` name does not make the published 0.4 release a new experimental build.
 
-[0.3 validation](docs/RELEASE_0_3_VALIDATION.md) identifies the verified executable, focused Windows checks, and remaining qualification limits.
+## After 0.4
 
-[Research materials](research/README.md) include an expanded LaTeX report on the puzzle's mathematics and software architecture, the full 35-orbit algorithms paper, reproducible synthetic replays and arithmetic audits, and Full Detail Rotation hardware requirements.
+The next planned version is **0.41**, focused on optimizing 0.4, debugging and performance, alongside a dedicated local development workbench. This is a recorded plan, not a released feature set. The [1.0 architecture proposal](docs/architecture/1.0/README.md) remains future documentation and does not describe the shipped 0.4 renderer.
 
-[Puzzle theory](research/PUZZLE_THEORY.md) develops the geometry, topology and group actions in an English LaTeX supplement, with Rethlas proof review and concrete optimization directions.
+## Credits and license
 
-## License
+Magic 600 Cell is a derivative work of Magic Puzzle Ultimate, © 2010 Andrey Astrelin, distributed under the same terms as the original project. Acknowledgements to ivan216 for source references and Nan Ma for historical solving material.
 
-C600 Studio is a derivative work of Magic Puzzle Ultimate, © 2010 Andrey Astrelin. This project is distributed under the same terms as the original project.
-
+[Credits](CREDITS.md) · [MIT license](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md)

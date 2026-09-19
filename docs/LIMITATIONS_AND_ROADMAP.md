@@ -1,8 +1,18 @@
-# Limitations and development priorities
+# Magic 600 Cell 0.4 limitations and next work
+
+## Current release and planned 0.41
+
+The [0.4 release guide](RELEASE_0_4.md) records delivered behavior and verification scope. The native workspace retains the full mechanical model, explicit operation selection, full collateral inspection, protection and recoverable sessions. Finite endgame witnesses do not prove arbitrary protected-state reachability or a human full solve. Microsoft Managed DirectX remains an external prerequisite.
+
+Performance optimization is scheduled for the next iteration. **0.41** is planned to optimize the 0.4 program, address debugging and performance, and build a dedicated local development workbench. This is a recorded direction, not an implemented feature set or a new passing performance result. The [1.0 architecture](architecture/1.0/README.md) remains separate future documentation.
+
+## Historical shared-runtime / 0.3 assessment
+
+The assessment below retains its original interface, evidence and priorities. It is background for 0.4 development, not an exhaustive description of the released 0.4 workspace. Historical measurements apply only to their identified source/build.
 
 C600 Studio adds state management and solving tools around Andrey Astrelin's Magic Puzzle Ultimate. Its full-model journal, certified operations, inspection, and structure navigation provide more than additional keybindings. These are descriptions of project capabilities and proposed work, not claims of historical priority over other puzzle software. Upstream credit and runtime boundaries are documented in [runtime provenance](RUNTIME_PROVENANCE.md).
 
-## Current boundaries
+## Historical boundaries
 
 | Area | Current boundary | Practical consequence |
 | --- | --- | --- |

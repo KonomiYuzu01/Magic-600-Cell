@@ -1,5 +1,7 @@
 # Development decisions and evidence
 
+> **Historical shared-runtime / 0.3 log.** For released 0.4 behavior and evidence, start with the [0.4 release guide](RELEASE_0_4.md) and [documentation index](README.md). References to current work below retain their original historical meaning.
+
 This log describes the current development work. It is not a release announcement or a claim that older test results certify newer source.
 
 The published 0.2.4 release validation and its recorded source identity remain frozen. The structure, inspection, update-protocol, and auxiliary-view changes below form version 0.3. Its separate package validation must be read alongside these functional observations; the older download and its checksums do not certify this version.

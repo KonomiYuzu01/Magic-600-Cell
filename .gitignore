@@ -17,3 +17,15 @@ native/runtime/*.exe
 native/runtime/*.dll
 !licenses/**
 tests/v0*/
+
+# Local collaboration and private artifacts; never part of a public release.
+PROJECT_MEMORY.md
+team-project.json
+.codex/
+.env
+.env.*
+!.env.example
+*.jsonl
+*.jsonl.gz
+*.dmp
+*.etl

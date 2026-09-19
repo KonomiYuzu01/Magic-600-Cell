@@ -1,61 +1,54 @@
-# Build and verification
+# Magic 600 Cell 0.4 source and build guide
 
-The source checkout contains the complete generated runtime assets. It builds a 64-bit Python engine and launcher, and a 32-bit .NET Framework host. The native viewport uses the separately credited, pinned MPUlt runtime. Microsoft Managed DirectX is an external prerequisite; see [DIRECTX.md](../DIRECTX.md).
+For normal use, download the [0.4 portable package](https://github.com/KonomiYuzu01/Magic-600-Cell/releases/tag/0.4). A source build is separate from the accepted binary and requires its own verification.
 
-On a Windows development machine with 64-bit Python and .NET Framework 4.x compiler support:
+## Source layout
 
-```powershell
-py -3 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt -r packaging\requirements-build.txt
-.\.venv\Scripts\python.exe packaging\build_windows.py --output dist\build-03 --work work\build-03
-```
+The 0.4 workspace lives under `work/experiments/magic600-04/`. The original directory name is retained because imports, build receipts and manifests use it. Root Python modules, `native/` and `assets/` supply its shared backend, retained renderer and full mechanical model.
 
-Choose fresh output and work directories. The builder compiles the native host, runs its WinForms layout fixture, freezes the engine with PyInstaller and writes a portable folder/ZIP. Normal user startup does not require Python, a compiler or fixture windows. See [the packaging guide](../packaging/README.md) for the packaged layout.
+| Path | Purpose |
+| --- | --- |
+| `work/experiments/magic600-04/native_launch.py` | Native source build and G1/G2 development launch. |
+| `work/experiments/magic600-04/engine.py` | 0.4 engine entry point. |
+| `work/experiments/magic600-04/native/` | Native workspace controls. |
+| `work/experiments/magic600-04/packaging/assemble.py` | 0.4 portable package assembly. |
+| `work/experiments/magic600-04/packaging/requirements-build.txt` | Pinned packaging tools. |
+| `work/experiments/magic600-04/packaging/check_package.py` | Isolated package checks. |
+| Root `packaging/`, launch scripts and `web/` | Retained earlier paths, not the 0.4 packaging workflow. |
 
-To wrap a verified portable folder in an English per-user installer, install official Inno Setup 6.7.3 and run:
+[SOURCE_MANIFEST.json](../SOURCE_MANIFEST.json) inventories the public runtime source. [Release provenance](RELEASE_0_4_PROVENANCE.json) records the frozen package inputs. Do not rewrite those hashes to make later edits appear part of the accepted artifact.
 
-```powershell
-.\.venv\Scripts\python.exe packaging\build_installer.py --bundle dist\build-03\C600Studio-0.3-Windows-x64 --iscc "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" --output dist\installer-03
-```
+## Prerequisites and public-checkout limitation
 
-Adjust only the compiler location if Inno Setup is installed elsewhere. The installer does not bundle or silently install Microsoft Managed DirectX.
+Source builds require Windows, 64-bit CPython, NumPy, the .NET Framework 4.x compiler targeting x86, and the supported [Managed DirectX assemblies](../DIRECTX.md). The frozen package includes its Python runtime and compiled native host. Microsoft Managed DirectX remains external.
 
-Useful isolated regressions:
+**The current public checkout is not a self-contained native build kit.** `native_launch.py` includes `tests/run_postapproval.py` in its hashed harness inputs, but that file is absent from the published `work/experiments/magic600-04/tests/` directory. The checked-in source launch/build therefore cannot be presented as a verified clean-checkout recipe. This documentation-only update does not supply a replacement fixture or change the build code.
 
-```powershell
-.\.venv\Scripts\python.exe tests\test_core.py
-.\.venv\Scripts\python.exe tests\test_reference_maps.py
-.\.venv\Scripts\python.exe tests\test_crash.py
-.\.venv\Scripts\python.exe tests\test_engine_lifecycle.py
-.\.venv\Scripts\python.exe tests\test_frame_preferences.py
-.\.venv\Scripts\python.exe tests\test_packaged_engine_command.py
-.\.venv\Scripts\python.exe tests\test_portable_package.py dist\build-03\C600Studio-0.3-Windows-x64 work\portable-check-03
-```
-
-Actual native regression uses an explicit fresh data directory:
+The recorded development entry point is:
 
 ```powershell
-.\.venv\Scripts\python.exe native\bootstrap.py --renderer-test --data work\native-check-03
+python work/experiments/magic600-04/native_launch.py --mode g2 --session development
 ```
 
-It modifies only its test session. Actual DirectX validation must run on Windows with the supported runtime. Keep performance runs separate from other CPU/GPU work. Raw local test reports are developer artifacts, not files to commit automatically.
+It requires the complete matching build inputs, not just the published subset. `--build-only` selects compilation without starting the application. A matching native build receipt is required by `packaging/assemble.py`; use fresh output and work directories and the pinned toolchain. The public package-time [README](../work/experiments/magic600-04/packaging/README.md) retains its original candidate-stage wording, as explained in the [release guide](RELEASE_0_4.md).
 
-For the focused gesture, structure, auxiliary-view, filter, recovery, and workbench feature pass, enable its explicit opt-in flag before the native command:
+## Verification boundaries
+
+Shared backend regressions are separate from 0.4 native acceptance. With the source dependencies installed, their entry points include:
 
 ```powershell
-$env:C600_RENDER_FEATURE_TEST = '1'
-.\.venv\Scripts\python.exe native\bootstrap.py --renderer-test --data work\native-features-01
-Remove-Item Env:C600_RENDER_FEATURE_TEST
+python tests/test_core.py
+python tests/test_reference_maps.py
+python tests/test_crash.py
+python tests/test_engine_lifecycle.py
 ```
 
-The native bootstrap runs the host layout fixture before the requested renderer regression. Neither fixture runs during normal application startup. Use a fresh directory for each run and retain reports privately.
+Use fresh disposable data for all checks. Never test destructive operations against a personal profile. Actual Windows/DirectX behavior, keyboard input, long sessions and performance require matching native evidence; headless results cannot establish those claims. No application checks were rerun for this documentation organization.
 
-To run only the structure, auxiliary geometry, and window-lifecycle fixtures:
+The checked-in generated assets are sufficient for runtime use. Optional asset regeneration also needs retained external geometry/reference inputs; do not change the immutable model manifest as part of documentation or UI work.
 
-```powershell
-.\.venv\Scripts\python.exe tests\test_native_auxiliary_controls.py --output work\auxiliary-controls-01
-```
+## Publishing changes
 
-Choose a fresh output directory. This command validates the retained model, creates and closes a fresh solved SQLite session for production cell-status data, compiles the structure and auxiliary controls and fixtures with the .NET Framework compiler, then opens isolated WinForms test windows. It checks local structure navigation, preview guards, the real tetrahedral geometry with a generated test palette, and window lifecycle, and records a report, build log, and exact source hashes. It loads neither MPUlt nor an HTTP engine, and does not access a personal session. The native subprocess has a bounded timeout and is terminated if it hangs. These GDI/WinForms checks do not certify the actual native-host input path, mixed-monitor behavior, or a performance target. Run them separately from timed samples and retain their outputs privately.
+Stage only reviewed files. Keep conversation exports, local memory, credentials, personal sessions, logs, screenshots and raw machine diagnostics private. Root `.gitignore` excludes common local artifacts, but tracked files and archive contents still require review. Preserve Andrey Astrelin's credit and all third-party notices.
 
-`tests/reference_solve.json.gz` is a generated seed-600 full-state regression fixture, not a personal solve log. The optional asset rebuilder requires SciPy plus the retained reference/toolkit inputs; running the application does not require rebuilding those assets.
+Historical 0.3 build instructions remain available at [tag 0.3](https://github.com/KonomiYuzu01/Magic-600-Cell/blob/0.3/docs/DEVELOPMENT.md). They must not be relabelled as a 0.4 build.

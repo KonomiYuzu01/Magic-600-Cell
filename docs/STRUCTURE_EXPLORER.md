@@ -1,5 +1,7 @@
 # Colors, cell layers, and the structure explorer
 
+> **Shared-model and historical 0.3 interface reference.** Mathematical IDs and notation remain useful, but window names and controls below are not a complete 0.4 usage guide. Start with [Using 0.4](../USAGE.md).
+
 The **Structure** tab helps locate cells and build whole-piece filters in the full 600-cell model. Its **Colors**, **Layers**, and **Vertices** task tabs share one selected cell. The origin/search row and filter actions remain outside those tabs, so changing tasks does not lose the origin or require scrolling through unrelated tools.
 
 The graph is a schematic navigation tool. Searching, hovering, comparing, and changing the graph selection do not turn the puzzle or recenter the native viewport. Use **Center viewport** for an explicit camera change.

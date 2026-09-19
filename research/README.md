@@ -1,5 +1,7 @@
 # Full 600-cell research materials
 
+> **Research supporting 0.4.** Reports retain their original mathematical and engineering scope; the 0.3 technical report below is not a 0.4 acceptance report. See the [0.4 release guide](../docs/RELEASE_0_4.md) for current application status.
+
 **[Certified Control of the Full 600-Cell](Full_600cell_Technical_Report.pdf)** is the 34-page C600 Studio 0.3 technical report, typeset entirely in LaTeX with its [complete source](Full_600cell_Technical_Report.tex). It connects the retained design transcript and algorithm reference to the current workbench. The mathematical development preserves 31 numbered equations, two propositions with proofs, the complete 35-orbit census, and the independently checked counting bounds. The 0.3 engineering sections explain canonical C1-C600 navigation, exact dual-graph layers, identity-aware inspection, shared auxiliary geometry views, atomic native revision updates, and actual Windows performance observations. Historical validation, current measurements, finite mathematical checks, and their limitations remain separate. The [Puzzle theory supplement](PUZZLE_THEORY.md) and its proof-review artifacts are unchanged.
 
 | Material | Introduction |

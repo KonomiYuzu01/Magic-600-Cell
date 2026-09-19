@@ -1,12 +1,14 @@
-# Magic 600 Cell 0.4 — development progress
+# Magic 600 Cell 0.4 — archived development progress
+
+> **Historical snapshot (17 September 2026).** Version 0.4 was subsequently released on 19 September; see the [release guide](../../RELEASE_0_4.md) for the published package. Status, failures and remaining-work lists below describe this earlier snapshot only. The archived documents and their manifest remain unchanged.
 
 Published **2026-09-18** from the existing **2026-09-17 stopped handoff**. This publication updates documentation only. It does not resume development, run application tests, promote candidate code, or release a 0.4 binary. The published 0.3 package remains unchanged.
 
-## Current status
+## Status at the archived handoff
 
 **G1 Grip/Twist and G2 workbench samples were approved. Final 0.4 acceptance is not complete.** The experimental work now covers linked real geometry and cycle views, mathematical names, keyboard interaction, macros, protection, references, scoring, endgame and cross-orbit work. Component evidence does not establish full native usability or a human full solve.
 
-The current authoritative record is [Evidence closeout](snapshot/experiment/docs/reviews/evidence-closeout-20260917.md). Read it before older documents. [Handoff](snapshot/experiment/HANDOFF.md) and [development log](snapshot/experiment/DEVELOPMENT_LOG.md) preserve the history; historical Pending/Approved or next-step instructions refer to their original dates, not permission to resume now.
+The authoritative record for this archived handoff is [Evidence closeout](snapshot/experiment/docs/reviews/evidence-closeout-20260917.md). Read it before older documents. [Handoff](snapshot/experiment/HANDOFF.md) and [development log](snapshot/experiment/DEVELOPMENT_LOG.md) preserve the history; historical Pending/Approved or next-step instructions refer to their original dates, not permission to resume now.
 
 ## Recorded verification, with limits
 
@@ -22,7 +24,7 @@ The current authoritative record is [Evidence closeout](snapshot/experiment/docs
 
 Three fixes remain **unpromoted**: C1 post-primary cancellation reply, C2 missing-frame diagnosis, and C3 mathematical-name orbit-protection picker. Their candidate evidence must not be described as integrated product acceptance.
 
-## Remaining work — only after an explicit development restart
+## Remaining work recorded at the archived handoff
 
 1. Close the two identified test-copy assertion issues.
 2. Integrate reviewed C1/C2/C3 candidates and verify affected behavior.
