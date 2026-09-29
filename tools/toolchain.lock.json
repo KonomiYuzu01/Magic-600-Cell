@@ -1,0 +1,740 @@
+{
+  "schema": 1,
+  "description": "Allowlist for automatic development-time installation. Only entries with status 'verified' and installable true can be installed. Installing never runs from hooks or normal application startup.",
+  "profiles": {
+    "planning": "Now: notebooks, diagrams, documents, slides",
+    "native-performance": "0.4.1 screening and optimization",
+    "renderer-spike": "Stage 2.4 renderer experiments",
+    "media": "Stages 5 and 7",
+    "release": "Stage 8",
+    "optional": "Install only when needed"
+  },
+  "owner_required": [
+    "Visual Studio Build Tools",
+    "Windows SDK",
+    "Windows Performance Analyzer",
+    "Windows Sandbox",
+    "NVIDIA Nsight Graphics",
+    "DaVinci Resolve",
+    "Inno Setup"
+  ],
+  "tools": [
+    {
+      "id": "python",
+      "purpose": "Runs project scripts and hooks",
+      "profiles": [
+        "planning"
+      ],
+      "method": "external",
+      "status": "verified",
+      "installable": false,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "probe": [
+        "{python}",
+        "-c",
+        "import platform,struct,sys;print(platform.python_implementation(),sys.version.split()[0],struct.calcsize('P')*8)"
+      ],
+      "expect": "CPython 3\\.(1[1-9]|[2-9]\\d)\\.\\d+ 64",
+      "note": "64-bit CPython 3.11 or later, installed by the owner."
+    },
+    {
+      "id": "git",
+      "purpose": "Version control",
+      "profiles": [
+        "planning"
+      ],
+      "method": "external",
+      "status": "verified",
+      "installable": false,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "probe": [
+        "git",
+        "--version"
+      ],
+      "note": "Git for Windows also provides the bash and curl that hooks and marimo-pair use."
+    },
+    {
+      "id": "node",
+      "purpose": "Runs npm-based tools",
+      "profiles": [
+        "planning"
+      ],
+      "method": "external",
+      "status": "verified",
+      "installable": false,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "probe": [
+        "node",
+        "--version"
+      ],
+      "expect": "^v(2[2-9]|[3-9]\\d)\\.",
+      "note": "Node.js 22 or later, installed by the owner (v24.21.0 recorded on the owner machine)."
+    },
+    {
+      "id": "codex-cli",
+      "purpose": "Codex reviewer through tools/agents/codex_review.py",
+      "profiles": [
+        "planning"
+      ],
+      "method": "external",
+      "status": "verified",
+      "installable": false,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "probe": [
+        "codex",
+        "--version"
+      ],
+      "expect": "codex-cli 0\\.159\\.",
+      "version": "0.159.0",
+      "note": "Installed by the owner with `npm install -g @openai/codex@0.159.0`; login with `codex login`. Upgrades need owner approval because they can change model routing."
+    },
+    {
+      "id": "uv",
+      "purpose": "Installs pinned Python tools",
+      "profiles": [
+        "planning"
+      ],
+      "method": "pip-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "0.12.20",
+      "requirements": "tools/python/uv.txt",
+      "probe": [
+        "{python}",
+        "-m",
+        "uv",
+        "--version"
+      ],
+      "expect": "uv 0\\.12\\.20",
+      "license": "MIT OR Apache-2.0",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "uninstall": "python -m pip uninstall uv"
+    },
+    {
+      "id": "marimo",
+      "purpose": "Reactive notebooks for evidence and data work",
+      "profiles": [
+        "planning"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "0.25.0",
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/planning",
+      "requirements": "tools/python/planning.txt",
+      "probe": [
+        "{venv}/marimo",
+        "--version"
+      ],
+      "expect": "0\\.25\\.0",
+      "license": "Apache-2.0",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "uninstall": "delete tools/.venv/planning"
+    },
+    {
+      "id": "mermaid-cli",
+      "purpose": "Diagrams from .mmd sources (mmdc)",
+      "profiles": [
+        "planning"
+      ],
+      "method": "npm-ci",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "12.0.0",
+      "requires": [
+        "node"
+      ],
+      "prefix": "tools/node/mermaid-cli",
+      "probe": [
+        "{prefix}/node_modules/.bin/mmdc",
+        "--version"
+      ],
+      "expect": "12\\.0\\.0",
+      "license": "MIT",
+      "network_hosts": [
+        "registry.npmjs.org"
+      ],
+      "note": "Installed with --ignore-scripts, so Puppeteer downloads no browser; rendering uses a local Chromium-based browser through a puppeteer config (to be verified on first render).",
+      "uninstall": "delete tools/node/mermaid-cli/node_modules"
+    },
+    {
+      "id": "marp-cli",
+      "purpose": "Slides from Marp Markdown",
+      "profiles": [
+        "planning"
+      ],
+      "method": "npm-ci",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "4.5.1",
+      "requires": [
+        "node"
+      ],
+      "prefix": "tools/node/marp-cli",
+      "probe": [
+        "{prefix}/node_modules/.bin/marp",
+        "--version"
+      ],
+      "expect": "4\\.5\\.1",
+      "license": "MIT",
+      "network_hosts": [
+        "registry.npmjs.org"
+      ],
+      "uninstall": "delete tools/node/marp-cli/node_modules"
+    },
+    {
+      "id": "drawio",
+      "purpose": "Wireframes, card sorts and layout diagrams",
+      "profiles": [
+        "planning"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "JGraph.Draw",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "drawio",
+        "--version"
+      ],
+      "note": "Package ID verified; version and installer hash are recorded by `bootstrap.py pin drawio` on the owner machine."
+    },
+    {
+      "id": "typst",
+      "purpose": "PDF documents from .typ sources",
+      "profiles": [
+        "planning"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "Typst.Typst",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "typst",
+        "--version"
+      ],
+      "note": "Package ID verified; pin on the owner machine."
+    },
+    {
+      "id": "jq",
+      "purpose": "JSON tool required by the marimo-pair scripts",
+      "profiles": [
+        "planning"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "jqlang.jq",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "jq",
+        "--version"
+      ],
+      "note": "Package ID not yet verified."
+    },
+    {
+      "id": "py-spy",
+      "purpose": "Sampling profiler for the Python engine",
+      "profiles": [
+        "native-performance"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "0.4.2",
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/native-performance",
+      "requirements": "tools/python/native-performance.txt",
+      "probe": [
+        "{venv}/py-spy",
+        "--version"
+      ],
+      "expect": "0\\.4\\.2",
+      "license": "MIT",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    {
+      "id": "viztracer",
+      "purpose": "Tracing profiler for the Python engine",
+      "profiles": [
+        "native-performance"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "1.1.1",
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/native-performance",
+      "requirements": "tools/python/native-performance.txt",
+      "probe": [
+        "{venv}/viztracer",
+        "--version"
+      ],
+      "expect": "1\\.1\\.1",
+      "license": "Apache-2.0",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    {
+      "id": "presentmon",
+      "purpose": "Frame timing capture",
+      "profiles": [
+        "native-performance"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "Intel.PresentMon",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "PresentMon",
+        "--version"
+      ],
+      "note": "Package ID verified; pin on the owner machine."
+    },
+    {
+      "id": "perfview",
+      "purpose": "ETW trace analysis",
+      "profiles": [
+        "native-performance"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "Microsoft.PerfView",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "PerfView",
+        "/?"
+      ],
+      "note": "Package ID not yet verified."
+    },
+    {
+      "id": "aqtinstall",
+      "purpose": "Installs pinned Qt builds for the Qt RHI candidate",
+      "profiles": [
+        "renderer-spike"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "3.3.0",
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/renderer-spike",
+      "requirements": "tools/python/renderer-spike.txt",
+      "probe": [
+        "{venv}/aqt",
+        "version"
+      ],
+      "expect": "3\\.3\\.0",
+      "license": "MIT",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "note": "Qt itself is downloaded by aqt from download.qt.io; each Qt version is added as its own entry before use."
+    },
+    {
+      "id": "cmake",
+      "purpose": "Build system for native spikes",
+      "profiles": [
+        "renderer-spike"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "4.4.3",
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/renderer-spike",
+      "requirements": "tools/python/renderer-spike.txt",
+      "probe": [
+        "{venv}/cmake",
+        "--version"
+      ],
+      "expect": "4\\.4\\.3",
+      "license": "BSD-3-Clause",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    {
+      "id": "ninja",
+      "purpose": "Build executor for native spikes",
+      "profiles": [
+        "renderer-spike"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "1.13.2",
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/renderer-spike",
+      "requirements": "tools/python/renderer-spike.txt",
+      "probe": [
+        "{venv}/ninja",
+        "--version"
+      ],
+      "expect": "1\\.13\\.",
+      "license": "Apache-2.0",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    {
+      "id": "flip",
+      "purpose": "Perceptual image difference (FLIP) for render comparisons",
+      "profiles": [
+        "renderer-spike"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "1.7",
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/renderer-spike",
+      "requirements": "tools/python/renderer-spike.txt",
+      "probe": [
+        "{venv}/flip",
+        "--help"
+      ],
+      "license": "BSD-3-Clause",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    {
+      "id": "godot",
+      "purpose": "Godot 4.7.x .NET editor for the Godot RenderingDevice candidate",
+      "profiles": [
+        "renderer-spike"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "GodotEngine.GodotEngine.Mono",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "godot",
+        "--version"
+      ],
+      "note": "Package ID verified; pin 4.7.2 on the owner machine."
+    },
+    {
+      "id": "renderdoc",
+      "purpose": "GPU frame capture",
+      "profiles": [
+        "renderer-spike"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "BaldurKarlsson.RenderDoc",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "renderdoccmd",
+        "version"
+      ],
+      "note": "Package ID verified; pin on the owner machine."
+    },
+    {
+      "id": "pix",
+      "purpose": "D3D12 frame capture and timing",
+      "profiles": [
+        "renderer-spike"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "Microsoft.PIX",
+      "version": null,
+      "installer_sha256": null,
+      "probe": null,
+      "note": "Package ID not yet verified."
+    },
+    {
+      "id": "blender",
+      "purpose": "Look development, reference renders and 3D assets",
+      "profiles": [
+        "renderer-spike",
+        "media"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "BlenderFoundation.Blender",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "blender",
+        "--version"
+      ],
+      "note": "Package ID verified; pin on the owner machine."
+    },
+    {
+      "id": "ffmpeg",
+      "purpose": "Video and audio processing",
+      "profiles": [
+        "media"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "Gyan.FFmpeg",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "ffmpeg",
+        "-version"
+      ],
+      "note": "Package ID verified; pin on the owner machine."
+    },
+    {
+      "id": "audacity",
+      "purpose": "Sound editing",
+      "profiles": [
+        "media"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "Audacity.Audacity",
+      "version": null,
+      "installer_sha256": null,
+      "probe": null,
+      "note": "Package ID not yet verified."
+    },
+    {
+      "id": "obs",
+      "purpose": "Screen recording (optional)",
+      "profiles": [
+        "media"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "OBSProject.OBSStudio",
+      "version": null,
+      "installer_sha256": null,
+      "probe": null,
+      "note": "Package ID not yet verified."
+    },
+    {
+      "id": "syft",
+      "purpose": "SBOM generation",
+      "profiles": [
+        "release"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "Anchore.Syft",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "syft",
+        "version"
+      ],
+      "note": "Package ID not yet verified."
+    },
+    {
+      "id": "gitleaks",
+      "purpose": "Secret scanning before release",
+      "profiles": [
+        "release"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "Gitleaks.Gitleaks",
+      "version": null,
+      "installer_sha256": null,
+      "probe": [
+        "gitleaks",
+        "version"
+      ],
+      "note": "Package ID not yet verified."
+    },
+    {
+      "id": "qmd",
+      "purpose": "Local search over the wiki once it exceeds about 100 pages",
+      "profiles": [
+        "optional"
+      ],
+      "method": "npm-ci",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": null,
+      "prefix": "tools/node/qmd",
+      "probe": null,
+      "note": "Add a pinned lockfile and allowlist its embedding model before use."
+    },
+    {
+      "id": "obsidian",
+      "purpose": "Owner-side wiki viewer (docs/wiki as the vault)",
+      "profiles": [
+        "optional"
+      ],
+      "method": "winget",
+      "status": "unverified",
+      "installable": false,
+      "platforms": [
+        "windows"
+      ],
+      "winget_id": "Obsidian.Obsidian",
+      "version": null,
+      "installer_sha256": null,
+      "probe": null,
+      "note": "Package ID not yet verified."
+    }
+  ]
+}

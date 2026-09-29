@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "description": "Canonical skills live in .agents/skills. .claude/skills holds generated copies (python tools/skills/sync.py). Third-party skills are pinned to a commit and a content digest and change only through bootstrap.py install-skill.",
+  "skills": {
+    "codex-dialogue": {
+      "origin": "project",
+      "digest": "8ca99bca773d85861b6bc23184a118393577a6c195b0c0d836b338727e7ef9d0"
+    },
+    "investigate-first": {
+      "origin": "owner",
+      "digest": "6a949c9ea573bc037da3e9e651fba2c8c5c130acb7b606c7cebaa9f026e09b5f"
+    },
+    "lean-build": {
+      "origin": "owner",
+      "digest": "a1146e599b496682643d8d54977e1ef791c4f23697ea73bc943b6df7fd58b405"
+    },
+    "marimo-pair": {
+      "origin": "third-party",
+      "repo": "https://github.com/marimo-team/marimo-pair",
+      "commit": "2f1d7fffa50607dc9d8660cb931f4470707f8697",
+      "subdir": "skills/marimo-pair",
+      "extra_files": {
+        "LICENSE": "LICENSE"
+      },
+      "license": "Apache-2.0",
+      "digest": "5482817f0d6ebf70b5fb7b5e1769ed4b296dabc8020d9e64c80859b2067f23c4",
+      "audit": "Reviewed 2026-09-29: two Bash scripts that call only local marimo servers through curl and jq (a warning is printed for any non-local host); discover-servers.sh deletes stale registry files for processes that are gone. No install hooks or MCP configuration. Needs bash, curl and jq on PATH. First use must target an isolated synthetic kernel with one writer."
+    },
+    "migration": {
+      "origin": "owner",
+      "digest": "aed76d246a30ce8c81446a34612279dd1cb2e388fa3cc93acd62fb2740e9984a"
+    },
+    "safe-refactor": {
+      "origin": "owner",
+      "digest": "633acfa641692d0429ae4a4721fb1ef71835fc5c0b2714af12cd16de2ed2b038"
+    },
+    "surgical-patch": {
+      "origin": "owner",
+      "digest": "d9ad185dcedf6e28aeda7e3fe98199160b3b0c02a3390f64bf07918c70f51698"
+    },
+    "toolchain": {
+      "origin": "project",
+      "digest": "6eea798b146f034f985fc439d69991f20c2e2d39af5922770d00fc4853712c66"
+    },
+    "verify-and-stop": {
+      "origin": "owner",
+      "digest": "619c1b2468531a0929dd871b8a591d5c726dfaf850a7e78caca473cca7c4b327"
+    },
+    "wiki": {
+      "origin": "project",
+      "digest": "4595851ed198e6be2f15a16ded3e2a7c31eac9d1a1663b5ef54dab9c0529ac64"
+    }
+  }
+}

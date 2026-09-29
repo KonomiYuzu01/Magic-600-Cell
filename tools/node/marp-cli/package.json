@@ -1,0 +1,7 @@
+{
+  "name": "magic600-tool-marp-cli",
+  "private": true,
+  "dependencies": {
+    "@marp-team/marp-cli": "4.5.1"
+  }
+}

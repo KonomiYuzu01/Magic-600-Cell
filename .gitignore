@@ -29,3 +29,8 @@ team-project.json
 *.jsonl.gz
 *.dmp
 *.etl
+
+# Local tool installs and viewers
+tools/.venv/
+tools/node/*/node_modules/
+.obsidian/
