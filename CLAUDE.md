@@ -1,46 +1,54 @@
 # CLAUDE.md
 
-Guidance for Claude Code in this repository. It follows the same workflow as `AGENTS.md`; keep the two files in sync when either changes.
+Claude Code instructions for Magic 600 Cell. Shared rules and the team protocol are in `AGENTS.md`; the current briefing is in `docs/development-guide/AGENT_BRIEFING.md`. Both are imported below. This file adds what only Claude does.
 
-## Scope
+@AGENTS.md
+@docs/development-guide/AGENT_BRIEFING.md
 
-Work only on the full `600-cell-Full` profile. Keep all 259,800 labelled sticker slots and all 1,200 legal generators. Rendering filters, framework visibility and motion sampling must never change mechanical state or relabel pieces.
+## Owner requirements and where they live
 
-## Mechanics and model
+- Claude Opus is the main developer and calls Codex often: `AGENTS.md` "Team protocol" and "Calling Codex" below.
+- Every formal non-software output is made with local tools: `AGENTS.md` "Tools, skills and outputs".
+- Missing tools and skills are installed automatically from the reviewed allowlist: `AGENTS.md` "Tools, skills and outputs" and "Tools and skills" below.
+- The agent-team dialogue mode and the API-team mode are kept: `AGENTS.md` "Team protocol". API-team runs, including runs on OpenAI models, start only after the owner confirms provider, models and budget.
 
-- Treat `assets/manifest.json` as an immutable model boundary. Geometry, cuts, IDs, seeds and frame changes require a new model identity and migration.
-- Preserve finite legal witnesses and full collateral effects for every macro. Execute source-to-destination permutations in chronological order.
-- Recheck preview revisions, full-state hashes and protected-orbit constraints before commit.
+## Working loop
 
-## Persistence and process ownership
+1. Orient: read the SessionStart summary, `docs/wiki/index.md` and the recent wiki log. Restate the goal and the acceptance check.
+2. Plan: for a non-trivial task, run a Codex plan check.
+3. Implement in small steps. Run the checks that `AGENTS.md` lists for the changed area.
+4. Review: run a Codex review of the current candidate. Answer every finding.
+5. Record: link the wrapper-owned call record, record the finding dispositions and update the affected wiki pages. Do not duplicate usage or billing entries. Commit a critical change only after a valid review or an explicit owner exception.
 
-- Keep reset/import transactional and recoverable. Validate complete input before database writes; retain current preferences and the recovery checkpoint.
-- Use `EngineProcess` (`engine_process.py`) for owned local engine startup, authenticated health checks, graceful shutdown and parent-pipe recovery.
+Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the owner's workflow skills (`investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`) when a task matches them.
 
-## Verification
+## Calling Codex
 
-After mechanics or persistence changes, run:
+- Use the wrapper for every automated call. It passes the model (`gpt-6.1-sol` by default; `gpt-6-astra` only with `--gate`), the effort and the speed tier explicitly, uses a fixed read-only policy, accepts no arbitrary CLI passthrough, and rejects a run whose reported model, effort or sandbox differs from the request or whose speed tier was dropped.
+- Plan check: `python tools/agents/codex_review.py --kind plan --packet <file>`
+- Review: `python tools/agents/codex_review.py --kind review --packet <file>`
+- Implementation delegation (`--kind implement`, workspace-write in a separate worktree) stays disabled until worktree ownership and isolation tests pass.
+- Resume stays disabled in the wrapper until isolated tests show that it keeps the model, effort, sandbox and schema. Start a fresh read-only call instead. (Observed on 2026-09-29: a `resume` without `-m` ran on a different model.)
+- `/codex:review` and `/codex:adversarial-review` are owner-invoked only. The Codex plugin is optional. Direct CLI automation through the wrapper is the supported path, and the plugin's stop-time review gate stays off.
 
-```
-python tests/test_core.py
-python tests/test_reference_maps.py
-python tests/test_crash.py
-```
+## Hooks
 
-After process-ownership changes, also run the lifecycle tests:
+- SessionStart (`.claude/hooks/session_start.py`) injects a bounded local summary. It never calls models, installs tools, uses the network or reads personal data.
+- PreToolUse (`.claude/hooks/install_guard.py`) lets an exact `bootstrap.py install` or `install-skill` command, run from the project root, proceed without a prompt only when the installer, every script it runs and its lockfiles match the owner-approved revision; otherwise the command asks the owner. The hook never imports repository code.
+- Stop (`.claude/hooks/stop_gate.py`) is the bounded completion gate:
+  - It permits at most two automatic continuations per session.
+  - It never re-blocks when `stop_hook_active` is true.
+  - It excludes generated review records from its candidate identity.
+  - A review counts only when the result is schema-valid, covers the current source identity, and has its blocking findings resolved.
+  - A timeout, an error or an exhausted continuation budget permits an honest stop as `inconclusive`, never an automatic commit.
+  - The hook performs bounded local checks only. It never invokes models, installs tools, runs tests or mutates Git.
+- Before relying on hooks on a machine, verify that the resolved interpreter is the approved 64-bit CPython and that the installed Claude Code version supports the exec form. Each hook checks its runtime first and reports `inconclusive` on a mismatch, without installing anything.
 
-```
-python tests/test_engine_lifecycle.py
-```
+## Tools and skills
 
-- Compile and run `tests/native/NativeHostRegression.cs` before actual native regressions. Never run regression fixtures during normal user startup.
-- Use fresh isolated test data. Do not run destructive tests against a personal session.
-- Native builds need Windows, 64-bit CPython, NumPy, the .NET Framework 4.x x86 compiler and Managed DirectX. On Linux or in a cloud session, run only the headless Python checks and say which native checks were not run.
+- Install an allowlisted tool with `python tools/toolchain/bootstrap.py install <id>`, then run its probe. The owner approves each reviewed installer and lockfile revision once, by running `python tools/toolchain/bootstrap.py approve` in a terminal; never run or simulate that step yourself.
+- Install a pinned third-party skill with `python tools/toolchain/bootstrap.py install-skill <id>`. Edit project skills only in `.agents/skills/`, regenerate `.claude/skills/` with `python tools/skills/sync.py`, and check them with `python tools/skills/sync.py --check`.
 
-## Evidence and publishing
+## Knowledge wiki
 
-- Distinguish source/fixture, synthetic geometry, actual Windows/DirectX, and performance evidence. Publish only verified results for the matching source/build; headless results cannot establish Windows/DirectX, input, long-session or performance claims.
-- Preserve Andrey Astrelin's primary MPUlt credit and all upstream license notices. Do not redistribute Microsoft Managed DirectX DLLs in the public package.
-- Keep public UI and documentation in English. Never publish user databases, personal logs, credentials, private paths, screenshots or raw machine diagnostics. Stage only reviewed files.
-
-See `docs/DEVELOPMENT.md`, `docs/RUNTIME_PROVENANCE.md` and `DIRECTX.md` for build, provenance and dependency details.
+- Follow `docs/wiki/SCHEMA.md` for ingest, query and lint. Ingest only when the owner asks. File a query answer back only when it has lasting value and evidence.

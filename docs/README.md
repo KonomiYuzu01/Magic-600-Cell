@@ -14,6 +14,14 @@ The current release is **0.4**, published on 19 September 2026. Begin with the r
 | [Limitations and next work](LIMITATIONS_AND_ROADMAP.md) | Current limits and the planned 0.4.1 iteration. |
 | [Research index](../research/README.md) | Full-model mathematics and versioned engineering reports. |
 
+## Development
+
+| Document | Use |
+| --- | --- |
+| [Development guide](development-guide/HUMAN_GUIDE.md) | How the owner, Claude and Codex work on the project; setup, tools and stages. |
+| [Agent briefing](development-guide/AGENT_BRIEFING.md) | Current phase and decisions in force, loaded by agents at session start. |
+| [Engineering wiki](wiki/index.md) | Decisions, workflows, evidence and review summaries. |
+
 ## Historical records supporting 0.4
 
 | Record | Scope |
