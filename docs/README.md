@@ -11,7 +11,7 @@ The current release is **0.4**, published on 19 September 2026. Begin with the r
 | [Release provenance](RELEASE_0_4_PROVENANCE.json) | Frozen source, native build and archive hashes. |
 | [Build and source guide](DEVELOPMENT.md) | 0.4 source locations and public build limitations. |
 | [Dependencies](../DEPENDENCIES.md), [DirectX](../DIRECTX.md) | Required runtime components. |
-| [Limitations and next work](LIMITATIONS_AND_ROADMAP.md) | Current limits and the planned 0.41 iteration. |
+| [Limitations and next work](LIMITATIONS_AND_ROADMAP.md) | Current limits and the planned 0.4.1 iteration. |
 | [Research index](../research/README.md) | Full-model mathematics and versioned engineering reports. |
 
 ## Historical records supporting 0.4
@@ -30,7 +30,7 @@ The [0.3](https://github.com/KonomiYuzu01/Magic-600-Cell/releases/tag/0.3) and [
 
 ## Future work
 
-**0.41** is planned to optimize 0.4, address debugging and performance, and establish a dedicated local development workbench. No implementation is implied by this documentation update.
+**0.4.1** is planned to optimize 0.4, address debugging, performance and bug fixes, optimize the code, and establish a dedicated local development workbench. No implementation is implied by this documentation update.
 
 The [1.0 architecture](architecture/1.0/README.md) is a separate future proposal. Its PDFs and source package are not 0.4 runtime requirements or delivered 0.4 features.
 
