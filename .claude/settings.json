@@ -54,7 +54,10 @@
       "Bash(python tools/agents/codex_review.py --kind review --packet:*)",
       "Bash(python tools/skills/sync.py)",
       "Bash(python tools/skills/sync.py --check)",
-      "Bash(python tools/wiki/lint.py:*)"
+      "Bash(python tools/wiki/lint.py:*)",
+      "Bash(python3 tools/skills/sync.py --check)",
+      "Bash(python3 tools/wiki/lint.py)",
+      "mcp__github__pull_request_read"
     ],
     "ask": [
       "Bash(python tools/toolchain/bootstrap.py install:*)",
