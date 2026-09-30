@@ -3,15 +3,19 @@
   tools\\.venv\\workbench\\Scripts\\python.exe tools\\workbench\\app.py [--compact]
 
 Shows every local Claude Code session of this repository with its subagents and
-Codex calls, their plain-language briefs, a live view of any session or call,
-the progress board and an always-on-top compact view. It reads everything in
-place, writes only owner notes, opens tools in their own applications, calls no
-model and opens no network listener.
+Codex calls, their plain-language briefs, a live view of any session, call or run,
+what needs attention, the progress board and an always-on-top compact view. It
+reads everything in place and writes only owner notes, run records and cancel
+flags under the private data root. On the owner's click only, it starts a
+registered run, a review-wrapper call or a new Claude Code session; it calls no
+model itself and opens no network listener.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import sys
 import time
 from datetime import datetime
@@ -27,7 +31,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import launch  # noqa: E402
 import notes  # noqa: E402
 import paths  # noqa: E402
+import runs  # noqa: E402
 import sources  # noqa: E402
+import watch  # noqa: E402
 
 QML_DIR = Path(__file__).resolve().parent / "qml"
 BODY_PREVIEW = 600
@@ -124,9 +130,36 @@ class Launcher:
     def claude(self):
         launch.bring_claude_forward()
 
+    def start_run(self, main, checkout, run_id, expect):
+        return runs.start(main, checkout, run_id=run_id, expect=expect)
+
+    def start_codex(self, main, checkout, spec):
+        return runs.start(main, checkout, codex=spec)
+
+    def cancel_run(self, data, rid):
+        runs.cancel(data, rid)
+
+
+RUN_HISTORY = 50  # run records listed on the Runs board; flags and Stop buttons see every recent one
+RUN_TONE = {"starting": "running", "running": "running", "passed": "finished", "failed": "failed",
+            "timed_out": "failed", "interrupted": "failed", "cancelled": "unknown", "refused": "unknown"}
+
+
+def duration_text(seconds) -> str:
+    return sources.age_text(seconds) if isinstance(seconds, (int, float)) and not isinstance(seconds, bool) else ""
+
+
+def run_row(rec: dict) -> dict:
+    """A run record as a board row; the record's own fields stay as they are."""
+    exits = rec.get("exits") if isinstance(rec.get("exits"), list) else []
+    return {**rec, "tone": RUN_TONE.get(rec.get("status"), "unknown"), "startedText": clock(sources.ts(rec.get("started") or rec.get("created"))),
+            "durationText": duration_text(rec.get("duration_s")), "checkoutName": Path(str(rec.get("checkout") or "")).name,
+            "exitsText": " ".join("-" if e is None else str(e) for e in exits), "reasonText": str(rec.get("reason") or "")}
+
 
 class Workbench(QObject):
     boardsChanged = Signal()
+    checkoutsChanged = Signal()
     selectedChanged = Signal()
     notesChanged = Signal()
     messageChanged = Signal()
@@ -142,6 +175,11 @@ class Workbench(QObject):
         self._sessions: list = []
         self._session_rows: list = []
         self._calls: list = []
+        self._runs: list = []
+        self._all_runs: list = []
+        self._checkouts: list = []
+        self._registry: dict = {"entries": [], "problems": []}
+        self._flags: list = []
         self._progress: dict = {}
         self._compact: dict = {}
         self._selected: dict = {}
@@ -163,6 +201,10 @@ class Workbench(QObject):
     def refresh(self):
         now = time.time()
         roots = paths.checkouts(self.main)
+        listed = [{"name": p.name if p != self.main.resolve() else f"{p.name} (main)", "path": str(p)} for p in roots]
+        if listed != self._checkouts:  # only a real change resets the choosers' models
+            self._checkouts = listed
+            self.checkoutsChanged.emit()
         self._sessions = sources.discover_sessions(self.main, self.projects, now=now, cache=self._cache)
         calls = sources.codex_calls(roots, now=now, ledgers=self._ledgers)
         links = sources.link_calls(self._sessions, calls)
@@ -187,6 +229,19 @@ class Workbench(QObject):
                          "doing": summ.get("doing", ""), "why": summ.get("why", ""), "waitingFor": summ.get("waiting_for", ""),
                          "subagents": subs, "calls": by_sid.get(s.sid, []), "malformed": s.malformed, "capped": s.capped})
         self._session_rows = rows
+        records = runs.recent(self.data, now, limit=RUN_HISTORY, window=watch.WATCH_WINDOW)
+        self._all_runs = [run_row(r) for r in records]
+        self._runs = self._all_runs[:RUN_HISTORY]
+        reg = runs.load_registry(self.main)
+        live: dict = {}
+        for r in self._all_runs:
+            if r.get("kind") == "registry" and r.get("status") in ("starting", "running"):
+                live.setdefault(r.get("run"), []).append({"rid": r["rid"], "checkoutName": r["checkoutName"]})
+        self._registry = {"problems": list(reg.problems), "entries": [
+            {"id": e["id"], "title": e["title"], "display": [" ".join(step) for step in e["steps"]], "digest": runs.entry_digest(e),
+             "windowsRequired": e["windows_required"], "timeout": duration_text(e["timeout_s"]), "live": live.get(e["id"], [])}
+            for e in reg.entries]}
+        self._flags = [{**f, "age": duration_text(now - f["t"])} for f in watch.flags(self._sessions, calls, records, now)]
         doc = sources.progress(self.main) or {}
         step = sources.current_step(doc) or {}
         b = self._ledgers.budget()
@@ -199,7 +254,8 @@ class Workbench(QObject):
             "acceptance": step.get("acceptance") or "not defined", "blocker": step.get("blocker") or "none",
             "findings": len(sources.open_findings(roots)), "codex": sources.codex_login(), "api": api,
             "apiDetail": f"estimated ${b['estimated']:.2f}, reserved ${b['reserved']:.2f}, "
-                         f"{b['unknown_calls']} paid call(s) with unknown cost, {b['subscription_calls']} subscription call(s)"}
+                         f"{b['unknown_calls']} paid call(s) with unknown cost, {b['subscription_calls']} subscription call(s)",
+            "attention": len(self._flags), "attentionTop": [f["text"] for f in self._flags[:3]]}
         self.boardsChanged.emit()
         if self._selected.get("kind") == "session":
             self._refresh_selected_session()
@@ -207,6 +263,10 @@ class Workbench(QObject):
             call = next((c for c in self._calls if c["call_id"] == self._selected.get("id")), None)
             if call and (call["status"], call.get("verdict")) != (self._selected.get("status"), self._selected.get("verdict")):
                 self._show_call(call)  # the call finished (or failed) while it was selected
+        elif self._selected.get("kind") == "run":
+            row = next((r for r in self._all_runs if r["rid"] == self._selected.get("id")), None)
+            if row and (row.get("status"), row.get("exitsText")) != (self._selected.get("runStatus"), self._selected.get("exitsText")):
+                self._show_run(row, follow=False)  # keep following the log; update the header and files
 
     @Property("QVariantList", notify=boardsChanged)
     def sessions(self):
@@ -223,6 +283,27 @@ class Workbench(QObject):
     @Property("QVariantMap", notify=boardsChanged)
     def compact(self):
         return self._compact
+
+    @Property("QVariantList", notify=boardsChanged)
+    def runs(self):
+        return self._runs
+
+    @Property("QVariantMap", notify=boardsChanged)
+    def registry(self):
+        return self._registry
+
+    @Property("QVariantList", notify=boardsChanged)
+    def flags(self):
+        return self._flags
+
+    @Property("QVariantList", notify=checkoutsChanged)
+    def checkouts(self):
+        return self._checkouts
+
+    @Property("QVariantMap", constant=True)
+    def codexChoices(self):
+        return {"kinds": list(runs.CODEX_KINDS), "models": list(runs.CODEX_MODELS),
+                "efforts": list(runs.CODEX_EFFORTS), "speeds": list(runs.CODEX_SPEEDS)}
 
     # ------------------------------------------------------------ live view
 
@@ -257,6 +338,10 @@ class Workbench(QObject):
     def poll(self):
         rows = []
         for tail, source in self._tails:
+            if source == "runlog":
+                rows += [{"t": None, "time": "", "kind": "tool" if line.startswith(("$ ", "[exit ")) else "result",
+                          "who": "", "title": "", "body": line[:BODY_PREVIEW], "full": line[:FULL_MAX]} for line in tail.poll()]
+                continue
             rows += timeline_items(tail.poll(), source)
             if str(tail.path) not in self._watcher.files() and tail.path.is_file():
                 self._watcher.addPath(str(tail.path))
@@ -358,6 +443,117 @@ class Workbench(QObject):
         self._notes = []
         self.selectedChanged.emit()
         self.notesChanged.emit()
+
+    # ------------------------------------------------------------ runs and attention
+
+    @Slot(str)
+    def selectRun(self, rid: str):
+        row = next((r for r in self._all_runs if r["rid"] == rid), None)
+        if row is None:
+            return self._say("That run is no longer listed.")
+        self._show_run(row, follow=True)
+
+    def _show_run(self, row: dict, follow: bool):
+        rid = row["rid"]
+        d = self.data / "runs"
+        if follow:
+            if self._watcher.files():
+                self._watcher.removePaths(self._watcher.files())
+            self._tails = [(runs.LogTail(d / f"{rid}.log"), "runlog")]
+            self._timeline.reset()
+            self.poll()
+            self._poll.start()
+        files = [{"label": f"{name} (private, plain text)", "path": str(d / name), "marimo": False}
+                 for name in (f"{rid}.log", f"{rid}.json") if (d / name).is_file()]
+        checkout = Path(str(row.get("checkout") or ""))
+        for rel in row.get("outputs") if isinstance(row.get("outputs"), list) else []:
+            if isinstance(rel, str) and (checkout / rel).is_file():
+                files.append({"label": rel, "path": str(checkout / rel), "marimo": False})
+        self._files = files
+        live = row.get("status") == "running" and row.get("stale_heartbeat_s")
+        detail = f"{row['checkoutName']}; exits {row['exitsText'] or 'none'}; {row['durationText'] or 'not started'}"
+        if live:
+            detail += f"; no heartbeat for {duration_text(row['stale_heartbeat_s'])}"
+        if row["reasonText"]:
+            detail += f"; {row['reasonText']}"
+        self._selected = {"kind": "run", "id": rid, "title": f"{row.get('title') or row.get('run')} ({rid})",
+                          "status": row["tone"], "runStatus": row.get("status"), "exitsText": row["exitsText"],
+                          "detail": detail, "cancellable": row.get("status") in ("starting", "running")}
+        self._notes = []
+        self.selectedChanged.emit()
+        self.notesChanged.emit()
+
+    @Slot(str, str)
+    def selectFlag(self, target_kind: str, target_id: str):
+        {"session": self.selectSession, "call": self.selectCall, "run": self.selectRun}.get(
+            target_kind, lambda _i: self._say("Unknown item."))(target_id)
+
+    def _checkout(self, checkout: str) -> Path | None:
+        """The chosen checkout, only if it is one of this repository's; the plans check it again."""
+        want = os.path.normcase(str(Path(checkout).resolve())) if checkout else ""
+        return next((p for p in paths.checkouts(self.main) if os.path.normcase(str(p)) == want), None)
+
+    @Slot(str, result="QVariantList")
+    def packetsFor(self, checkout: str):
+        c = self._checkout(checkout)
+        return runs.packets(c) if c else []
+
+    @Slot(str, str, str)
+    def startRun(self, run_id: str, checkout: str, digest: str):
+        c = self._checkout(checkout)
+        if c is None:
+            return self._say("Not started: choose a checkout of this repository.")
+        try:
+            rid = self.launcher.start_run(self.main, c, run_id, digest)
+        except runs.RunRefused as exc:
+            return self._say(f"Not started: {exc}.")
+        except OSError as exc:
+            return self._say(f"Could not start the runner: {exc.strerror or exc}.")
+        self._say(f"Run {run_id} started in {c.name} ({rid}).")
+        self._follow_new_run(rid)
+
+    def _follow_new_run(self, rid: str):
+        self.refresh()
+        row = next((r for r in self._all_runs if r["rid"] == rid), None)
+        if row is not None:
+            self._show_run(row, follow=True)
+
+    @Slot(str)
+    def cancelRun(self, rid: str):
+        if not re.match(runs.RID_RE, rid or ""):
+            return self._say("Not a run id.")
+        try:
+            self.launcher.cancel_run(self.data, rid)
+        except OSError as exc:
+            return self._say(f"Could not ask the run to stop: {exc.strerror or exc}.")
+        self._say(f"Stop requested for run {rid}; the runner ends its process tree within a second.")
+
+    @Slot(str, str, str, str, str, str)
+    def startCodex(self, checkout: str, kind: str, packet: str, model: str, effort: str, speed: str):
+        c = self._checkout(checkout)
+        if c is None:
+            return self._say("Not started: choose a checkout of this repository.")
+        spec = {"kind": kind, "packet": packet, "model": model, "effort": effort, "speed": speed}
+        try:
+            rid = self.launcher.start_codex(self.main, c, spec)
+        except runs.RunRefused as exc:
+            return self._say(f"Not started: {exc}.")
+        except OSError as exc:
+            return self._say(f"Could not start the runner: {exc.strerror or exc}.")
+        rule = " No commits, tags or pushes in the repository until it ends." if kind == "implement" else ""
+        self._say(f"Codex {kind} call on {packet} started in {c.name} through the runner ({rid}).{rule}")
+        self._follow_new_run(rid)
+
+    @Slot(str, str, bool)
+    def startSession(self, checkout: str, packet: str, remote: bool):
+        try:
+            argv, cwd = launch.plan_session(self.main, checkout, packet, remote)
+            self.launcher.command(argv, cwd)
+        except launch.LaunchRefused as exc:
+            return self._say(f"Not started: {exc}.")
+        except OSError as exc:
+            return self._say(f"Could not start Claude Code: {exc.strerror or exc}.")
+        self._say(f"New Claude Code session started in {Path(cwd).name}: {argv[1]}")
 
     # ------------------------------------------------------------ owner notes
 
