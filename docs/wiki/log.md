@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] update | 0.4.1 screening fixes, batch 1
+Seven confirmed findings are fixed with regression tests: A-02, B-001, C-01, C-02 and the C-03 engine side by Claude; F-01 and B-002 by Codex pair implementation. Batch 1 got a plan check, one full Astra review in two shards (two majors, both fixed) and one scoped verification round. The C-03 native receipt, X-02 and A-03 remain; see [screening-findings](../progress/0.4.1/screening-findings.md).
+
 ## [2026-09-30] decision | 0.4.1 keeps the 0.4 data directory
 Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md). The version and the data directory are decoupled; the plan keeps the native cache name so user-owned MPUlt settings survive.
 
