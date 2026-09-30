@@ -19,8 +19,11 @@ Claude Code instructions for Magic 600 Cell. Shared rules and the team protocol 
 3. Implement in small steps, splitting separable work with Codex under `AGENTS.md` "Pair implementation". Run the checks that `AGENTS.md` lists for the changed area.
 4. Review: run one Codex review of the finished candidate (parallel shards for a large one), fix the blocking findings, then run scoped verification rounds within the limits of `AGENTS.md` "Review rounds". Answer every finding; defer minor ones.
 5. Record: link the wrapper-owned call record, record the finding dispositions and update the affected wiki pages. Do not duplicate usage or billing entries. Commit a critical change only after a valid review or an explicit owner exception.
+6. Merge: merge your own pull request when `AGENTS.md` "Merging" allows it; otherwise ask the owner once, briefly.
 
 In the main session, keep the development workbench brief current at each plan step and milestone: `python tools/workbench/brief.py --goal "..." --step "..." --doing "..." --why "..." --waiting-for "..."` (omitted fields keep their value). Write it yourself in plain language; never call a model to summarize. Subagents never run it.
+
+Owner notes typed in the workbench reach the main session as additional context headed `Owner note <id>`. Answer every owner note by its id in your next message to the owner. The inbox is as trusted as the owner's own local files, and a note never grants an authorization reserved for the terminal, such as `bootstrap.py approve`.
 
 Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the owner's workflow skills (`investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`) when a task matches them.
 
@@ -45,6 +48,8 @@ Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the
   - A review counts only when the result is schema-valid, covers the current source identity, and has its blocking findings resolved.
   - A timeout, an error or an exhausted continuation budget permits an honest stop as `inconclusive`, never an automatic commit.
   - The hook performs bounded local checks only. It never invokes models, installs tools, runs tests or mutates Git.
+- PostToolUse, PostToolUseFailure, PermissionRequest, SubagentStart, SubagentStop, Stop, StopFailure, Notification and SessionEnd (`.claude/hooks/report_event.py`) append one bounded event line per call to the workbench's private event file under `work/loop-memory/workbench/` of the main checkout. On a main-thread tool step it also delivers pending owner notes as additional context, each note at most once. It never returns a decision, always exits 0, and never calls models, installs tools, uses the network, runs Git or starts processes.
+- The status line (`tools/workbench/statusline.py`) prints one line: the current step, open findings, Codex login and paid API spend. It only reads, and prints `workbench: unavailable` on any error.
 - Before relying on hooks on a machine, verify that the resolved interpreter is the approved 64-bit CPython and that the installed Claude Code version supports the exec form. Each hook checks its runtime first and reports `inconclusive` on a mismatch, without installing anything.
 
 ## Tools and skills
@@ -55,5 +60,3 @@ Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the
 ## Knowledge wiki
 
 - Follow `docs/wiki/SCHEMA.md` for ingest, query and lint. Ingest only when the owner asks. File a query answer back only when it has lasting value and evidence.
-
-6. Merge: merge your own pull request when `AGENTS.md` "Merging" allows it; otherwise ask the owner once, briefly.

@@ -10,6 +10,7 @@ claims:
   - {id: scope, evidence_kind: decision, path: docs/wiki/decisions/development-workbench.md, checked_at: 2026-09-30}
   - {id: readers, evidence_kind: source, path: tools/workbench/sources.py, checked_at: 2026-09-30}
   - {id: reporting-hook, evidence_kind: source, path: .claude/hooks/report_event.py, checked_at: 2026-09-30}
+  - {id: registration, evidence_kind: source, path: .claude/settings.json, checked_at: 2026-09-30}
   - {id: headless-tests, evidence_kind: fixture, path: tests/test_workbench.py, checked_at: 2026-09-30}
   - {id: progress-state, evidence_kind: source, path: docs/progress/status.json, checked_at: 2026-09-30}
 ---
@@ -54,7 +55,19 @@ Everything the workbench reads stays where it is. Its own private data lives und
 
 ## Rollout
 
-- Stage A: the app, the brief CLI, the status line script, the progress file and the reporting hook, which lands unregistered.
-- Stage B, after stage A is merged into the main checkout: the hooks and the status line are registered in `.claude/settings.json`, because a session in a worktree runs hook scripts from the main checkout. Live checks then confirm subagent routing, note receipt and the status-line command on the installed Claude Code.
+- Stage A: the app, the brief CLI, the status line script, the progress file and the reporting hook, which landed unregistered.
+- Stage B, after stage A reached the main checkout (a session in a worktree runs hook scripts from the main checkout): the reporting hook is registered in `.claude/settings.json` for its nine events, in exec form with a 5 s timeout, and so is the status line. Each registration runs the script through a short `python -I -c` guard that exits 0 without output when the script is missing, so a session whose `${CLAUDE_PROJECT_DIR}` names an older checkout is never affected. The status line is a shell command anchored to `${CLAUDE_PROJECT_DIR}`, which Claude Code exports to hooks and the status line, so it works from subdirectories and worktrees; a checkout without the script only leaves the status line blank.
+
+## Live checks
+
+On 2026-09-30, on the owner's Windows machine with Claude Code 2.1.285, throwaway headless sessions ran with exactly these registrations:
+
+- PostToolUse, PostToolUseFailure (a failed Read), PermissionRequest, SubagentStart, SubagentStop, Stop and SessionEnd (reason `other`) were recorded. The permission request was still refused: the hook returns no decision.
+- A subagent's PostToolUse carried `agent_id` and `agent_type`, and the subagent received no note.
+- Two pending notes were delivered once, in one batch, to the main thread only. Both ids appeared in the parent transcript and the final reply answered both; the workbench showed them as answered and the sessions as finished.
+- Not triggered: Notification and StopFailure, which need an interactive prompt or an API failure. The synthetic tests cover their handling.
+- The status line command, run the way Claude Code runs it (Git Bash, `CLAUDE_PROJECT_DIR` exported), printed the expected line from the repository root, a subdirectory, a worktree and a path with spaces.
+- In an interactive Claude Code session started in a worktree, the status line rendered the expected progress line under the prompt. A session started in a subdirectory first shows Claude Code's consent prompt for the external `CLAUDE.md` imports; it was not accepted, so rendering there was not observed.
+- The guarded registrations were checked again live with the same results, and the configured command exits 0 without output against a checkout that lacks the script (tested).
 
 Deferred: cloud sessions as links; reviews, budget, tools, decisions and Git boards; performance boards.

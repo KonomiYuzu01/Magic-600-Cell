@@ -100,7 +100,7 @@ class RuleSyncTests(unittest.TestCase):
         for event, groups in settings["hooks"].items():
             for group in groups:
                 for hook in group["hooks"]:
-                    script = hook["args"][0].replace("${CLAUDE_PROJECT_DIR}/", "")
+                    script = hook["args"][-1].replace("${CLAUDE_PROJECT_DIR}/", "")  # the script is the last argument, also behind a guard
                     with self.subTest(event=event):
                         self.assertEqual(hook["command"], "python")
                         self.assertTrue((ROOT / script).is_file(), script)
