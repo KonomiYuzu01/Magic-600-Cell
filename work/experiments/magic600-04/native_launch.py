@@ -143,6 +143,7 @@ def build(directory):
     record = directory / 'build.json'
     old = json.loads(record.read_text(encoding='utf-8')) if record.exists() else {}
     reusable = (old.get('build_identity') == identity and host.is_file()
+        and old.get('checks', {}).get('after_build', {}).get('status') == 'unchanged'
         and old.get('executable_sha256') == hash_file(host)
         and host.with_suffix('.exe.config').is_file()
         and hash_file(host.with_suffix('.exe.config')) == hash_file(ROOT / 'native/NativeHost.exe.config'))
