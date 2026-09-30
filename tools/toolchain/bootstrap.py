@@ -163,7 +163,13 @@ def resolve_executable(entry: dict, name: str) -> str | None:
         root = safe_dest(entry["prefix"])
         base = root / name[len("{prefix}/"):]
     else:
-        return shutil.which(name)
+        found = shutil.which(name)
+        if found is None and PLATFORM == "windows":
+            # winget puts command-line tools here; a terminal opened before the install lacks it on PATH.
+            links = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "WinGet" / "Links"
+            if os.environ.get("LOCALAPPDATA") and links.is_dir():
+                found = shutil.which(name, path=str(links))
+        return found
     for suffix in ([".exe", ".cmd", ""] if PLATFORM == "windows" else [""]):
         candidate = base.with_name(base.name + suffix)
         if os.path.lexists(candidate):
@@ -197,6 +203,9 @@ def run_probe(entry: dict) -> tuple[bool, str]:
     except Refused as exc:
         return False, f"refused: {exc}"
     if exe is None:
+        if entry["method"] == "winget" and PLATFORM == "windows" and entry.get("version"):
+            # GUI applications such as draw.io add no command to PATH; winget's own record decides.
+            return winget_installed(entry)
         return False, "missing"
     try:
         r = subprocess.run([exe, *probe[1:]], capture_output=True, text=True, timeout=PROBE_TIMEOUT, env=probe_env())
@@ -379,6 +388,23 @@ def sync_removals(entry: dict, sync: list[str]) -> list[str]:
         raise Refused(f"{entry['id']}: uv dry run failed with exit {r.returncode}")
     plain = re.sub(r"\x1b\[[0-9;?]*[ -/]*[@-~]", "", r.stdout + r.stderr)  # never trust color settings
     return re.findall(r"^\s*-\s+(\S+)", plain, re.M)
+
+
+def winget_installed(entry: dict) -> tuple[bool, str]:
+    """Whether winget reports the pinned version of this package as installed."""
+    exe = shutil.which("winget")
+    if exe is None:
+        return False, "missing (winget unavailable)"
+    try:
+        r = subprocess.run([exe, "list", "--id", entry["winget_id"], "--exact", "--disable-interactivity",
+                            "--accept-source-agreements"], capture_output=True, text=True, timeout=120, env=probe_env())
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return False, f"winget list failed: {type(exc).__name__}"
+    if r.returncode != 0 or entry["winget_id"].lower() not in r.stdout.lower():
+        return False, "missing"
+    if not re.search(rf"(?<![\w.]){re.escape(entry['version'])}(?![\w.+-])", r.stdout):
+        return False, f"installed, but not version {entry['version']}"
+    return True, f"installed through winget: {entry['version']}"
 
 
 def install_entry(entry: dict) -> None:
