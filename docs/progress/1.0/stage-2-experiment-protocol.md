@@ -1,6 +1,6 @@
 # Stage 2 experiment protocol (draft)
 
-Status: **draft, not accepted**. It proposes how stage 2 (2.0 to 2.5) runs experiments so that trial and error stays cheap and every attempt leaves a usable result. It changes no rule, no ADR and no gate. The renderer selection gate stays as recorded in [renderer-candidates](../../wiki/decisions/renderer-candidates.md), and UX sign-off stays with the owner (`AGENTS.md` "Ask the owner").
+Status: **draft, not accepted**, except the owner decisions recorded in section 4.1. It proposes how stage 2 (2.0 to 2.5) runs experiments so that trial and error stays cheap and every attempt leaves a usable result. It changes no rule, no ADR and no gate. The renderer selection gate stays as recorded in [renderer-candidates](../../wiki/decisions/renderer-candidates.md), and UX sign-off stays with the owner (`AGENTS.md` "Ask the owner").
 
 ## 1. Principles
 
@@ -38,64 +38,96 @@ When 1.0 rebuilds a component that has a 0.4 counterpart, a differential oracle 
 
 This keeps AI-written code cheap to verify: a change either matches the reference or points at a step.
 
-## 4. UI vision track
+## 4. Design track
 
-Goal: turn the owner's idea of an artistic, high-quality, satisfying interface into a fixed design system before UI engineering starts. It runs in parallel with the renderer experiments and feeds stage 2.3 (the three hardest screens and design tokens) and stage 2.4 (the vertical slice).
+Goal: turn the owner's idea of an artistic, high-quality, satisfying application into a frozen design system before UI engineering starts. The owner is the art director and does the judging, tuning and sketching; agents build the instruments, produce variants and implement.
 
-Roles:
-- **Owner:** supplies references, picks between variants and signs off. Owner time per round should be under 30 minutes.
-- **Agents:** extract parameters, produce variants, build the slice and write the tokens.
+### 4.1 Starting point (owner decisions, 30 September 2026)
 
-### V0. Reference board (owner, about half a day)
+- **0.4 is not a UX baseline.** In practical use 0.4 is an unusable program. 1.0 designs its experience from scratch. From 0.4 it keeps only the mathematical contract, the protection rules, the model identity and the function inventory of stage 2.1. Its screens, layouts and interaction patterns are not carried forward or incrementally polished. 0.4 pain points are used only as anti-goal evidence.
+- **Chosen route:** four methods, driven through one instrument, the Look Lab:
+  - **M1. Mathematics-first aesthetic.** Visual structure comes from the 600-cell itself: symmetry-orbit colourings, Hopf fibrations, projections and camera paths along symmetry axes.
+  - **M2. Guiding metaphor.** One metaphor (for example an observatory instrument, a museum exhibit, a precision watch or Japanese stationery) and a one-page manifesto that every later decision is checked against.
+  - **M3. Anti-goals.** A list of what the application must never look or feel like, written before the positive direction.
+  - **M4. Preference search.** The owner rates generated variants quickly. A preference model moves the Look Lab parameters toward the owner's taste.
+- **Not chosen for now:** incremental evolution of 0.4, design from observed 0.4 usage, a commissioned human designer, and community polls. They can be reopened by the owner. A commissioned designer and any public poll need owner approval (cost and publishing).
 
-- Collect 20 to 40 references that feel right and 5 to 10 that feel wrong. Any field works: games, scientific visualization, tools, motion design, architecture, painting.
-- Write one sentence per reference that says what is right or wrong, for example "lots of empty space", "motion has weight", "colours are clean", "does not look like a web page".
-- **Privacy and licence:** the images stay private under `work/loop-memory/ui-vision/`. Third-party images are not committed or published. Only the sentences, with a neutral source description, may enter the repository.
+### 4.2 The Look Lab (instrument)
 
-### V1. Feel brief (agents draft, owner edits)
+A local Godot development tool that shows the real 600-cell geometry (synthetic, from the model; never a personal session) next to live parameter controls. It is a development tool, not the product. Its use is not evidence for the stage 2.4 renderer selection.
 
-Translate the sentences into adjustable parameters. Each parameter gets a proposed range, not a single value.
-
-| Area | Parameters |
+| Group | Live parameters |
 |---|---|
-| Hierarchy | Is the 4D object or the tool panel the main subject; how much screen the object gets |
-| Density | Controls per screen; panels hidden, on demand or always visible |
-| Motion | Turn animation duration, easing curve, inertia and settle, camera damping |
-| Colour and material | Dark or light base, saturation, sticker material (matte, gloss, glass), depth cues such as fog and depth of field |
-| Typography | Typeface family, weights, tabular figures for counters and timers |
-| Feedback | Hover and press states, error presentation, optional sound |
+| Structure | projection (stereographic, perspective, orthographic), fibration or orbit highlighting, cell and slice visibility |
+| Colour | sticker palette, saturation, background, accent colours, colour-vision-deficiency preview |
+| Material | matte, gloss or glass; sticker gaps; edge and outline treatment |
+| Light and depth | key and fill light, fog, depth of field, ambient occlusion |
+| Motion | turn duration, easing curve (editable), inertia, settle, camera damping and field of view |
+| Frame | panel density, typography sample, layout grid overlay |
 
-Output: `docs/progress/1.0/ui-feel-brief.md`, with each parameter linked to the reference sentences that support it.
+Functions:
+- Save and load **presets** as JSON (the raw material for design tokens). Presets are diffable and versioned in the repository; screenshots and clips stay under `work/`.
+- **Capture** a still or a clip of at most 10 seconds from any preset, straight into the workbench gallery.
+- **Swipe mode** for M4: show one generated variant at a time; the owner answers better or worse than the current best, about 1 second per decision.
+- **Compare mode:** two to four presets side by side, the same camera and the same scripted turn.
 
-### V2. A/B rounds (agents produce, owner picks; 1 to 2 days per round)
+Build acceptance: runs on the owner's machine; every parameter changes the view live; a preset round-trips byte for byte; capture and swipe mode work; no mechanical state is changed or relabelled.
 
-- Each round changes one or two parameters and shows 3 or 4 variants side by side. Everything else stays fixed.
-- Artifacts are static renders or clips of at most 10 seconds (Blender for look development, a Godot scene, or a still image). Nothing is wired to the engine yet.
-- The owner ranks the variants. A reason is optional.
-- Record each round on a `UV-<n>` card: parameters, variants, pick, and the narrowed range.
-- Stop a parameter when two rounds in a row pick the same region. Stop the track after about 5 rounds, or earlier if the owner calls it.
-- Variants use synthetic geometry from the model. They are never screenshots of a personal session.
+### 4.3 Work plan and goals
 
-### V3. Vertical slice (inside the stage 2.4 window)
+**Before stage 2 (during 0.4.1, zero development cost)**
+- The owner keeps a taste diary: one sentence per thing seen and liked or disliked, with a neutral source description. Images stay private.
+- The owner drafts the anti-goals list (M3).
 
-- Build one representative scene to full quality: open the app, see the object, drag to turn one layer, see the result. It uses the chosen motion, type, colour and lighting.
-- Build it on the leading renderer candidate, so taste and performance are checked together. The selection gate still applies: a look that cannot hold full detail at 30 fps on the target machine does not pass.
-- The owner reviews it on the target machine. Screenshots and clips are not a substitute.
-- Kill criteria: if the slice cannot reach the chosen look within the gate, return to V2 with the conflicting parameters and a measured cost for each.
+**2.0 Charter: design charter**
+- Anti-goals list finalized, at least 10 items, each with one sentence of reasoning.
+- Two or three candidate metaphors, each with a one-paragraph manifesto draft.
+- UX success criteria in plain words, for example "a first-time user can make a turn within 30 seconds" or "the solved moment feels earned".
+- Exit: the owner signs the charter.
 
-### V4. Design system freeze
+**2.1 and 2.2 Inventory and dispositions (design side)**
+- Every 0.4 function gets keep, redesign or delete, judged by its purpose, not by its 0.4 presentation.
+- The owner annotates 0.4 pain points (private screenshots). Each pain point becomes an anti-goal or a UX criterion.
+- The Look Lab is built in parallel (Codex-first). It needs only Godot and the model geometry.
 
-- Record the accepted values as design tokens (colour, spacing, type scale, motion durations and curves) and a component list.
-- Propose an ADR for the design system. The owner accepts it; accepting ADRs is an owner item.
-- Themes and subtitles are undecided (owner decisions 2026-09-29). Tokens must allow theme switching, and layouts must allow text in other languages and longer strings. Do not assume English-only subtitles.
-- After the freeze, UI engineering implements the tokens and components. It does not search for the feel again. A later change to the feel goes through a new `UV` round and an ADR update.
+**2.3 Design exploration (main owner phase)**
+- **G1. Structure catalogue (M1).** Agents implement at least six structure-derived visual modes in the Look Lab. The owner picks at least two to keep. Exit: the chosen modes are recorded as presets.
+- **G2. Metaphor decision (M2).** For each candidate metaphor, agents produce one hero still and one 10-second clip in the Look Lab, all using the same scene. The owner picks one and finalizes the manifesto. Exit: the manifesto is signed.
+- **G3. Preference search (M4).** Swipe sessions of about 20 minutes, at most five, over the parameters the metaphor leaves open. Stop when two consecutive sessions converge on the same parameter region, or when the owner calls it. Exit: one to three finalist presets.
+- **G4. Sticker palette.** Candidate palettes must pass measurable checks: minimum perceptual distance between adjacent cells (OKLab), a colour-vision-deficiency simulation, and legibility at full detail. The owner picks among the palettes that pass. Exit: palette preset frozen.
+- **G5. Key moments.** The owner tunes the motion of turn, undo, invalid action and solved in the Look Lab curve editor. Exit: a motion parameter table.
+- **G6. Hardest screens.** The command model, keyboard model and the three hardest screens are designed inside the chosen direction. The owner sketches; agents turn the sketches into draw.io wireframes. Exit: owner-approved wireframes.
 
-### Acceptance for the track
+**2.4 Vertical slice (inside the experiment window)**
+- One scene is built at full quality on the leading renderer candidate: open, see the object, turn one layer, see the result, with the finalist preset, palette and motion.
+- It must pass the renderer selection gate. A look that cannot hold full detail at 30 fps does not pass. In that case, return to G3 with the conflicting parameters and their measured cost.
+- **Living test:** the owner uses the slice for about 15 minutes a day for one week and writes one sentence a day. Exit: still satisfied after the week, with a correction list.
 
-- The feel brief exists, and each parameter traces to reference sentences.
-- Every `UV` round has a card with the owner's pick.
-- The vertical slice passes the renderer selection gate and has owner sign-off.
-- The design-system ADR has been proposed with tokens, components, and theme and language allowances.
+**2.5 Freeze**
+- A design-system ADR: tokens (colour, spacing, type scale, motion durations and curves), the palette, components, the manifesto and the anti-goals.
+- Tokens allow theme switching, and layouts allow other languages and longer strings (themes and subtitles are undecided).
+- The owner accepts the ADR. After the freeze, UI engineering implements the system and does not search for the feel again. A later change goes through the Look Lab and an ADR update.
+
+### 4.4 Owner time and tools
+
+| Phase | Owner time (estimate) | Owner does |
+|---|---|---|
+| Before stage 2 | a few minutes a day | taste diary, anti-goals draft |
+| 2.0 | half a day | charter sign-off |
+| 2.1–2.2 | one to two hours | pain-point annotation |
+| 2.3 | two to four hours a week | picks, swipe sessions, tuning, sketches |
+| 2.4 | 15 minutes a day for a week | living test |
+| 2.5 | one hour | ADR acceptance |
+
+Tools: Godot (Look Lab), Blender (hero stills where Godot is not enough), marimo (preference model and palette checks), draw.io (wireframes), Typst (type specimens). Adding a tool outside the allowlist (for example Krita for sketching) follows the normal allowlist process.
+
+### 4.5 Acceptance for the track
+
+- Signed charter with anti-goals, and a signed manifesto.
+- Look Lab build acceptance met.
+- Every design decision traces to a preset, a swipe session record or an owner pick.
+- The vertical slice passes the renderer selection gate and the living test.
+- The design-system ADR is proposed and accepted by the owner.
 
 ## 5. Out of scope
 
