@@ -13,7 +13,9 @@ This guide is for the owner and any person working on the project. Agents follow
 
 **What the agents do on their own**
 - Claude Opus plans, edits, runs checks and commits. It is the only agent that changes the main worktree.
-- Codex reviews every non-trivial plan and every candidate change, read-only, using GPT-6.1 Sol at `max` effort. Codex Astra is used only for three final rulings: the stage 2.4 day-7 go/no-go, the migration format freeze and the 1.0 architecture freeze.
+- Codex reviews every non-trivial plan and every candidate change, read-only, at `max` effort. GPT-6.1 Sol handles routine work. Codex Astra reviews critical, behaviour, contract and design changes, handles escalations and audits, and gives the three final rulings: the stage 2.4 day-7 go/no-go, the migration format freeze and the 1.0 architecture freeze.
+- Each candidate gets one full review and at most two short verification rounds; remaining blockers come to you as a decision. Quick checks run on the fast tier.
+- Once its safety tests pass, Codex also writes code alongside Claude in separate worktrees; Claude merges, and no one reviews their own code.
 - Fable, a Claude subagent, joins only when a problem resists repeated attempts.
 - Missing tools from the approved list are installed automatically once you have approved the installer (section 3).
 

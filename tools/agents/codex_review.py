@@ -3,6 +3,8 @@
   python tools/agents/codex_review.py --kind plan --packet <file>
   python tools/agents/codex_review.py --kind review --packet <file>
   python tools/agents/codex_review.py --kind review --packet <file> --effort ultra
+  python tools/agents/codex_review.py --kind review --packet <file> --model gpt-6-astra
+  python tools/agents/codex_review.py --kind review --packet <file> --speed fast
   python tools/agents/codex_review.py --kind review --packet <file> --model gpt-6-astra --effort ultra --gate day7-go-no-go
 
 The wrapper passes the model, effort and speed tier explicitly, always uses the
@@ -168,7 +170,7 @@ def main(argv=None) -> int:
     parser.add_argument("--packet", required=True, type=Path)
     parser.add_argument("--model", default=DEFAULT_MODEL, choices=MODELS)
     parser.add_argument("--effort", default="max", choices=EFFORTS)
-    parser.add_argument("--speed", choices=sorted(SPEEDS), default="standard", help="fast only when the owner asks for it; never for gate rulings")
+    parser.add_argument("--speed", choices=sorted(SPEEDS), default="standard", help="fast for scoped verification rounds, plan re-checks and other latency-sensitive calls; never for gate rulings")
     parser.add_argument("--gate", choices=GATES)
     parser.add_argument("--timeout", type=int, default=3600, help="seconds (60-7200)")
     args = parser.parse_args(argv)
@@ -182,8 +184,8 @@ def main(argv=None) -> int:
               "cost": {"status": "subscription", "usd": None}}
     called = False  # the ledger records model calls only, not requests refused before a call
     try:
-        if (args.model == "gpt-6-astra") != (args.gate is not None):
-            raise Refused("gpt-6-astra is used only with --gate, and every --gate uses gpt-6-astra")
+        if args.gate and args.model != "gpt-6-astra":
+            raise Refused("every --gate uses gpt-6-astra")
         if args.gate and args.effort != "ultra":
             raise Refused("gate rulings use --effort ultra")
         if args.speed == "fast" and args.gate:

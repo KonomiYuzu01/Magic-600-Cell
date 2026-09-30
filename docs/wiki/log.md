@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] decision | Review rounds, Astra, fast tier and pair implementation
+Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md); `AGENTS.md`, `CLAUDE.md`, the guides, the codex-dialogue skill and the review wrapper now match.
+
 ## [2026-09-30] decision | Development workbench scope
 Recorded the owner's definition of the 0.4.1 development workbench in [development-workbench](decisions/development-workbench.md): all sessions with summaries, a live view with access to every tool, a live link to Claude with owner notes, work boards and always-visible progress, local only.
 

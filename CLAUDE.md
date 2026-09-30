@@ -16,18 +16,18 @@ Claude Code instructions for Magic 600 Cell. Shared rules and the team protocol 
 
 1. Orient: read the SessionStart summary, `docs/wiki/index.md` and the recent wiki log. Restate the goal and the acceptance check.
 2. Plan: for a non-trivial task, run a Codex plan check.
-3. Implement in small steps. Run the checks that `AGENTS.md` lists for the changed area.
-4. Review: run a Codex review of the current candidate. Answer every finding.
+3. Implement in small steps, splitting separable work with Codex under `AGENTS.md` "Pair implementation" once that mode is enabled. Run the checks that `AGENTS.md` lists for the changed area.
+4. Review: run one Codex review of the finished candidate (parallel shards for a large one), fix the blocking findings, then run scoped verification rounds within the limits of `AGENTS.md` "Review rounds". Answer every finding; defer minor ones.
 5. Record: link the wrapper-owned call record, record the finding dispositions and update the affected wiki pages. Do not duplicate usage or billing entries. Commit a critical change only after a valid review or an explicit owner exception.
 
 Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the owner's workflow skills (`investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`) when a task matches them.
 
 ## Calling Codex
 
-- Use the wrapper for every automated call. It passes the model (`gpt-6.1-sol` by default; `gpt-6-astra` only with `--gate`), the effort and the speed tier explicitly, uses a fixed read-only policy, accepts no arbitrary CLI passthrough, and rejects a run whose reported model, effort or sandbox differs from the request or whose speed tier was dropped.
+- Use the wrapper for every automated call. It passes the model (`gpt-6.1-sol` by default; `gpt-6-astra` when `AGENTS.md` assigns Astra, and always with `--gate`), the effort and the speed tier explicitly, uses a fixed read-only policy, accepts no arbitrary CLI passthrough, and rejects a run whose reported model, effort or sandbox differs from the request or whose speed tier was dropped.
 - Plan check: `python tools/agents/codex_review.py --kind plan --packet <file>`
 - Review: `python tools/agents/codex_review.py --kind review --packet <file>`
-- Implementation delegation (`--kind implement`, workspace-write in a separate worktree) stays disabled until worktree ownership and isolation tests pass.
+- Implementation delegation (`--kind implement`, workspace-write in a separate worktree) stays disabled until worktree ownership and isolation tests pass. Building it is the next development-system task: the wrapper must create the worktree itself, restrict writes to the packet's allowed files, refuse commits, pushes and network writes, verify the reported model, effort and sandbox, and let the integrator reject any change outside the allowed files.
 - Resume stays disabled in the wrapper until isolated tests show that it keeps the model, effort, sandbox and schema. Start a fresh read-only call instead. (Observed on 2026-09-29: a `resume` without `-m` ran on a different model.)
 - `/codex:review` and `/codex:adversarial-review` are owner-invoked only. The Codex plugin is optional. Direct CLI automation through the wrapper is the supported path, and the plugin's stop-time review gate stays off.
 

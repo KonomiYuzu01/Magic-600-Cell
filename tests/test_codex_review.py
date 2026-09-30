@@ -141,8 +141,15 @@ class CodexReviewTests(unittest.TestCase):
         self.assertIn('service_tier="default"', seen[0])
         self.assertIn('service_tier="default"', seen[1])
 
+    def test_astra_runs_without_a_gate(self):
+        code, _ = self.run_wrapper("pass", "--model", "gpt-6-astra")
+        self.assertEqual(code, 0)
+        entry = self.last_ledger()
+        self.assertEqual(entry["requested"]["model"], "gpt-6-astra")
+        self.assertIsNone(entry["gate"])
+
     def test_policy_refusals_are_not_ledgered_as_model_calls(self):
-        code, _ = self.run_wrapper("pass", "--model", "gpt-6-astra", "--effort", "ultra")  # astra without a gate
+        code, _ = self.run_wrapper("pass", "--gate", "day7-go-no-go", "--effort", "ultra")  # gate without Astra
         self.assertEqual(code, 2)
         self.assertFalse(codex_review.LEDGER.exists())
         self.run_wrapper("pass")
@@ -170,7 +177,6 @@ class CodexReviewTests(unittest.TestCase):
 
     def test_policy_refusals(self):
         cases = [
-            ["--model", "gpt-6-astra", "--effort", "ultra"],             # Astra without a gate
             ["--gate", "day7-go-no-go", "--effort", "ultra"],            # gate without Astra
             ["--model", "gpt-6-astra", "--gate", "day7-go-no-go"],       # gate below ultra
             ["--model", "gpt-6-astra", "--effort", "ultra", "--gate", "day7-go-no-go", "--speed", "fast"],  # fast gate

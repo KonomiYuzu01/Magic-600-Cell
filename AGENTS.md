@@ -33,14 +33,14 @@ Shared rules for every agent and person working on Magic 600 Cell. Codex reads t
 
 Roles:
 - Claude Opus is the main-worktree integrator unless the owner explicitly assigns another integrator. Only the integrator edits the main worktree, merges results and commits. Delegated implementation is confined to packet-owned worktrees.
-- Codex is the independent reviewer. The default model is GPT-6.1 Sol (`gpt-6.1-sol`). Codex Astra (`gpt-6-astra`) gives the final ruling at three gates only: the stage 2.4 day-7 go/no-go, the migration format freeze and the 1.0 architecture freeze. Codex works read-only unless a packet assigns it a separate worktree, allowed files, an acceptance check and a stop condition, and it never commits to the main worktree.
+- Codex is the independent reviewer and, under "Pair implementation", a co-implementer. The default model is GPT-6.1 Sol (`gpt-6.1-sol`) for routine plan checks and reviews, scoped verification rounds and mechanical checks. Codex Astra (`gpt-6-astra`) is the senior reviewer: it gives the final ruling at three gates (the stage 2.4 day-7 go/no-go, the migration format freeze and the 1.0 architecture freeze), and it runs the plan check and the full review for critical-path changes, behaviour or contract changes and substantive design or ADR decisions, escalation diagnoses, joint attacks and milestone audits. Codex works read-only unless a packet assigns it a separate worktree, allowed files, an acceptance check and a stop condition, and it never commits to the main worktree.
 - Fable is the solver. It joins only on escalation or for a joint attack, for analysis and review unless a packet assigns it an isolated worktree.
 - The owner decides scope, taste, UX, releases and the items under "Ask the owner". Agreement between models never replaces an owner decision.
 
 Model calls:
 - Pass the model and the effort explicitly on every call. Do not rely on inherited defaults.
 - Codex calls default to `max`. Use `ultra` for joint attacks, escalation after repeated failure, coupled decision packages and the three Astra gates. If `ultra` is unavailable, say so and fall back to `max`. Use `high` only for mechanical checks that no script can do.
-- Codex calls use the standard speed tier. Use `fast` only when the owner asks for it for a specific call; gate rulings always use the standard tier.
+- Speed tier: use `fast` for scoped verification rounds, plan re-checks, mechanical checks and reviews of non-critical changes. Use the standard tier for full reviews and plan checks of critical-path changes, joint attacks and escalations. Gate rulings always use the standard tier.
 - Sol works in a proactive persistent mode. Every review packet states "review only; do not perform follow-up work", and review calls stay read-only.
 - ChatGPT Space and other hosted workspaces are never an authority; the repository is.
 
@@ -55,6 +55,21 @@ When review is required:
 - A non-trivial task gets a plan check before implementation and a review of the current candidate before commit. Both are mandatory for critical paths, behaviour or contract changes, and substantive design or ADR decisions. Pure spelling, formatting and mechanically provable generated-file syncs are exempt; record the reason.
 - An unchanged approved plan may reuse its plan check. The final review must cover the current candidate, not an earlier diff.
 - Critical paths are listed in `docs/development-guide/AGENT_BRIEFING.md`.
+
+Review rounds (keep reviews few and decisive):
+- Review a finished candidate once: after the implementation is complete and its checks pass, not after each step. Batch related changes into one candidate.
+- Only `blocker` and `major` findings block a commit. `minor` and `nit` findings never start another round: fix them in the same pass when the fix is trivial and local, otherwise record them as deferred.
+- After fixing blocking findings, run a scoped verification review of the current candidate: it checks only whether each blocking finding is fixed and whether the fix introduces a new `blocker` or `major`. Do not request another full review.
+- Each candidate gets at most one full review and two scoped verification rounds. If a blocking finding remains after that, stop iterating and give the owner a short decision: the remaining findings, the evidence and the options (an adjudicating experiment, escalation, or commit under an owner exception).
+- A plan check runs once per task. A changed plan gets a scoped re-check of the changes only.
+- Every packet states the acceptance check and what is out of scope, and the reviewer stays within it.
+- Spend spare subscription quota on parallelism, not on more serial rounds: split a large candidate into independent review shards run concurrently, and resolve the blocking findings of every shard before commit. Paid API calls still reserve budget first.
+
+Pair implementation (Claude and Codex write code together):
+- Enabled once the wrapper's `--kind implement` passes its worktree ownership and isolation tests. Until then Codex does not write code; building and testing that mode is the next development-system task.
+- The integrator splits a task with separable parts into disjoint packets. Each packet names its own worktree, allowed files, acceptance check and stop condition. Codex implements its packets in parallel while Claude implements the rest; the integrator merges and commits.
+- No one reviews their own code. Claude reviews Codex-authored changes, and a separate Codex call reviews Claude-authored ones. A Codex-authored critical-path change also gets a review from the other Codex model.
+- Codex never commits to the main worktree or pushes. The review rules above apply to the merged candidate.
 
 Escalation (an effective iteration is hypothesis, change, verification and judgement):
 - Same problem after three effective iterations: independent diagnosis by the other model.
