@@ -32,6 +32,8 @@ import paths  # noqa: E402
 import sources  # noqa: E402
 import notes  # noqa: E402
 import launch  # noqa: E402
+import runs  # noqa: E402
+import watch  # noqa: E402
 
 
 def load_module(name: str, path: Path):
@@ -1058,6 +1060,20 @@ class LaunchTests(unittest.TestCase):
             launch.plan_command("resume", fx.main, sid="../x", session_status="finished")
 
 
+class StageCContractTests(unittest.TestCase):
+    """The runner, the watch rules and the launch plans were written in parallel; their shared numbers agree."""
+
+    def test_watch_thresholds_follow_the_runner(self):
+        for kind in runs.CODEX_KINDS:
+            self.assertEqual(watch.CODEX_EXPECTED[kind], runs.codex_deadline(kind))
+        self.assertEqual(watch.WRAPPER_CAP_S, runs.codex_deadline("implement") + 600)
+        self.assertGreaterEqual(sources.CODEX_STALE_AFTER, runs.codex_deadline("implement"))
+
+    def test_packet_names_follow_one_rule(self):
+        pattern = lambda p: p if isinstance(p, str) else p.pattern  # noqa: E731
+        self.assertEqual(pattern(launch.PACKET_RE), pattern(runs.PACKET_RE))
+
+
 class ProgressStatusTests(unittest.TestCase):
     def test_public_status_file_is_valid_and_sanitized(self):
         import codex_review
@@ -1077,6 +1093,14 @@ class ProgressStatusTests(unittest.TestCase):
                 self.assertIsNone(s["acceptance_source"])
         self.assertIsNone(re.search(r"[぀-ヿ㐀-鿿가-힯]", text))
         self.assertIsNone(re.search(r"[A-Za-z]:[\\/]|/Users/|/home/|\\\\Users", text))
+
+
+def load_tests(loader, tests, pattern):
+    """The documented workbench check (`python tests/test_workbench.py`) also runs the runner and watch suites."""
+    sys.path.insert(0, str(ROOT / "tests"))
+    for name in ("test_workbench_runs", "test_workbench_watch"):
+        tests.addTests(loader.loadTestsFromModule(importlib.import_module(name)))
+    return tests
 
 
 if __name__ == "__main__":

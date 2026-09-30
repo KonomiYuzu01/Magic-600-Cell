@@ -29,11 +29,12 @@ LEDGER_MAX = 64 * 1024 * 1024       # per ledger file; beyond it the budget is r
 HISTORY_PER_REFRESH = 32 * 1024 * 1024
 RECENT_RECORDS = 1500
 SILENT_AFTER = 600          # seconds without output before an open tool call is flagged
-CODEX_STALE_AFTER = 7200    # the wrapper's maximum --timeout
+CODEX_STALE_AFTER = 10800   # the wrapper's maximum --timeout (7200) plus its acceptance limit (1800) plus setup and finalization (1800)
 LINK_WINDOW = 60            # seconds between a Bash command and a Codex call id
 QUESTION_TOOLS = ("AskUserQuestion", "ExitPlanMode")
 CALL_OUTPUT_RE = re.compile(r"\b(plan|review) (\d{8}T\d{6}Z-[0-9a-f]{8}):")
 ID_RE = re.compile(r"\d{8}T\d{6}Z-[0-9a-f]{8}")
+WRAPPER_RE = re.compile(r"(?:python3?|py|[A-Za-z0-9._/\\:-]*[\\/]python(?:\.exe)?)[ \t]+(?:\./)?tools[\\/]agents[\\/]codex_review\.py(?:[ \t]+[A-Za-z0-9._/\\:=-]+)*")
 
 
 class _Oversized:
@@ -280,9 +281,14 @@ def transcript_signals(records: list, start_seq: int = 0, agent: str | None = No
                 out.append(Signal(t, seq, "activity", who))
                 uses = [c for c in items if c.get("type") == "tool_use"]
                 for c in uses:
+                    inp = c.get("input")
+                    command = inp.get("command") if isinstance(inp, dict) else None
+                    wrapper = (c.get("name") == "Bash" and isinstance(inp, dict)
+                               and inp.get("run_in_background") is not True and isinstance(command, str)
+                               and WRAPPER_RE.fullmatch(command.strip()) is not None)
                     seq += 1
                     out.append(Signal(t, seq, "tool_use", who, {"id": str_or_none(c.get("id")), "name": str_or_none(c.get("name")),
-                                                                "key": digest(c.get("input"))}))
+                                                                "key": digest(inp), "wrapper": wrapper}))
                 msg = rec.get("message") if isinstance(rec.get("message"), dict) else {}
                 if rec.get("isApiErrorMessage"):
                     seq += 1
@@ -334,6 +340,10 @@ class Status:
     last_activity: float | None = None
     subagents: dict = field(default_factory=dict)
     waits: list = field(default_factory=list)
+    wait_since: float | None = None
+    failed_at: float | None = None
+    last_any: float | None = None
+    open_tools: list[dict] = field(default_factory=list)
 
 
 class Reducer:
@@ -348,6 +358,8 @@ class Reducer:
         self.open_tools: dict = {}
         self.subagents: dict = {}
         self.last = None
+        self.failed_at = None
+        self.last_any = None
 
     def _clear_waits(self, agent):
         for k in [k for k, w in self.waits.items() if w["agent"] == agent]:
@@ -356,18 +368,25 @@ class Reducer:
     def _sub(self, agent, t):
         return self.subagents.setdefault(agent, {"type": None, "status": "running", "since": t})
 
+    def _clear_tools(self, agent):
+        for k in [k for k, tool in self.open_tools.items() if tool["agent"] == agent]:
+            del self.open_tools[k]
+
     def feed(self, s: Signal) -> None:
+        self.last_any = s.t if self.last_any is None else max(self.last_any, s.t)
         if s.kind in ("activity", "tool_use", "tool_result", "post"):
             if s.agent is None:
                 if self.main in ("idle", "failed", "ended", "unknown"):
                     self.main = "running"
+                    self.failed_at = None
                 self.last = s.t
             else:
                 sub = self._sub(s.agent, s.t)
                 if sub["status"] not in ("finished",):
                     sub["status"] = "running"
         if s.kind == "tool_use":
-            self.open_tools[s.data.get("id")] = {"agent": s.agent, "name": s.data.get("name"), "key": s.data.get("key"), "t": s.t}
+            self.open_tools[s.data.get("id")] = {"agent": s.agent, "name": s.data.get("name"), "key": s.data.get("key"),
+                                               "t": s.t, "wrapper": s.data.get("wrapper") is True}
             if s.data.get("name") in QUESTION_TOOLS:
                 self.waits[("q", s.data.get("id"))] = {"agent": s.agent, "t": s.t, "label": f"question ({s.data.get('name')})"}
         elif s.kind == "tool_result":
@@ -387,23 +406,26 @@ class Reducer:
             if s.agent is None:
                 self.main, self.last = "idle", s.t
                 self._clear_waits(None)  # a turn cannot end while one of its dialogs is open
-                self.open_tools = {k: v for k, v in self.open_tools.items() if v["agent"] is not None}
             else:
                 self._sub(s.agent, s.t)["status"] = "finished"
                 self._clear_waits(s.agent)
+            self._clear_tools(s.agent)
         elif s.kind == "turn_fail":
             if s.agent is None:
                 self.main, self.last = "failed", s.t
+                self.failed_at = s.t
                 self._clear_waits(None)
             else:
                 self._sub(s.agent, s.t)["status"] = "failed"
                 self._clear_waits(s.agent)
+            self._clear_tools(s.agent)
         elif s.kind == "sub_start":
             sub = self._sub(s.agent, s.t)
             sub.update(type=s.data.get("type") or sub.get("type"), status="running")
         elif s.kind == "sub_stop":
             self._sub(s.agent, s.t)["status"] = "finished"
             self._clear_waits(s.agent)
+            self._clear_tools(s.agent)
         elif s.kind == "session_end":
             self.after_failure = self.main == "failed"
             self.main, self.reason, self.last = "ended", s.data.get("reason"), s.t
@@ -416,7 +438,11 @@ class Reducer:
     def snapshot(self, now: float | None = None) -> Status:
         now = time.time() if now is None else now
         st = Status(last_activity=self.last, subagents={k: dict(v) for k, v in self.subagents.items()},
-                    waits=[w["label"] for w in self.waits.values()])
+                    waits=[w["label"] for w in self.waits.values()],
+                    wait_since=min((w["t"] for w in self.waits.values()), default=None),
+                    failed_at=self.failed_at, last_any=self.last_any,
+                    open_tools=[{k: tool[k] for k in ("agent", "name", "t", "wrapper")}
+                                for tool in sorted(self.open_tools.values(), key=lambda tool: tool["t"])])
         if self.waits:
             st.status, st.detail = "waiting", ", ".join(sorted(set(st.waits)))
         elif self.main == "running":
@@ -823,9 +849,12 @@ def codex_calls(checkouts: list, now: float | None = None, ledgers: Ledgers | No
             rec = ledgers.codex.get(d.name)
             started = call_time(d.name)
             known = meta if isinstance(meta, dict) else rec or {}
+            acceptance = meta.get("acceptance") if isinstance(meta, dict) else None
+            exit_code = acceptance.get("exit_code") if isinstance(acceptance, dict) else None
             call = {"call_id": d.name, "checkout": str(c), "dir": str(d), "time": started,
                     "kind": str_or_none(known.get("kind")), "requested": known.get("requested") if isinstance(known.get("requested"), dict) else None,
-                    "verdict": None, "findings": None, "blocking": None, "problems": []}
+                    "verdict": None, "findings": None, "blocking": None, "problems": [],
+                    "acceptance_exit": exit_code if isinstance(exit_code, int) and not isinstance(exit_code, bool) else None}
             if meta is OVERSIZED:
                 call["status"], call["problems"] = "unknown", ["meta.json is larger than the read budget"]
             elif isinstance(meta, dict):
@@ -843,7 +872,7 @@ def codex_calls(checkouts: list, now: float | None = None, ledgers: Ledgers | No
                 call["status"] = "failed" if rec.get("outcome") in ("timeout", "error", "invalid") else "finished"
                 call["verdict"] = str_or_none(rec.get("outcome"))
             elif (d / "packet.md").is_file():
-                call["status"] = "running" if started is None or now - started < CODEX_STALE_AFTER else "failed"
+                call["status"] = "running" if started is None or now - started <= CODEX_STALE_AFTER else "failed"
                 if call["status"] == "failed":
                     call["problems"] = ["stale: no result and no ledger record"]
             else:

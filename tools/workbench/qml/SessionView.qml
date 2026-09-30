@@ -11,7 +11,7 @@ Pane {
     Label {
         anchors.centerIn: parent
         visible: !wb.selected.kind
-        text: "Select a session, subagent or Codex call to follow it."
+        text: "Select a session, subagent, Codex call or run to follow it."
         opacity: 0.6
     }
 
@@ -47,6 +47,9 @@ Pane {
                      ToolTip.visible: hovered; ToolTip.text: "Resumes only a session that has ended; otherwise brings Claude Code forward." }
             Button { visible: view.isSession; text: "Resume with Remote Control"; onClicked: wb.openInClaude(true) }
             Button { visible: view.isSession; text: "Git diff"; onClicked: wb.runTool("git-diff", "") }
+            Button { objectName: "stopRun"; visible: wb.selected.kind === "run" && !!wb.selected.cancellable; text: "Stop run"
+                     onClicked: wb.cancelRun(wb.selected.id)
+                     ToolTip.visible: hovered; ToolTip.text: "Ends the run's whole process tree." }
             Button { text: "Toolchain doctor"; onClicked: wb.runTool("doctor", "") }
             Repeater {
                 model: wb.files

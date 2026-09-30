@@ -28,6 +28,8 @@ ApplicationWindow {
             Label { text: "<b>" + (wb.compact.step || "") + "</b>  " + (wb.compact.stepStatus || ""); textFormat: Text.StyledText }
             Label { text: "Open findings: " + (wb.compact.findings ?? "?") }
             Label { text: "Codex: " + (wb.compact.codex || "unknown") }
+            Label { objectName: "attentionCount"; text: "Needs attention: " + wb.flags.length; font.bold: wb.flags.length > 0
+                    color: wb.flags.length > 0 ? root.statusColors.failed : palette.windowText }
             Label { text: "Paid API: " + (wb.compact.api || "unknown"); ToolTip.visible: apiHover.hovered; ToolTip.text: wb.compact.apiDetail || ""
                     HoverHandler { id: apiHover } }
             Item { Layout.fillWidth: true }
@@ -48,6 +50,8 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 TabButton { text: "Sessions (" + wb.sessions.length + ")" }
                 TabButton { text: "Codex calls (" + wb.calls.length + ")" }
+                TabButton { text: "Runs (" + wb.runs.length + ")" }
+                TabButton { text: "Launch" }
                 TabButton { text: "Progress" }
             }
 
@@ -62,6 +66,31 @@ ApplicationWindow {
                     model: wb.sessions
                     spacing: 2
                     ScrollBar.vertical: ScrollBar {}
+                    header: ColumnLayout {
+                        width: ListView.view.width
+                        spacing: 2
+                        visible: wb.flags.length > 0
+                        height: visible ? implicitHeight + 6 : 0
+                        Label { text: "Needs attention (" + wb.flags.length + ")"; font.bold: true; leftPadding: 8; topPadding: 6
+                                color: root.statusColors.failed }
+                        Repeater {
+                            model: wb.flags
+                            delegate: ItemDelegate {
+                                required property var modelData
+                                objectName: "flag-" + modelData.kind + "-" + modelData.target_id
+                                Layout.fillWidth: true
+                                onClicked: wb.selectFlag(modelData.target_kind, modelData.target_id)
+                                contentItem: RowLayout {
+                                    Rectangle { width: 8; height: 8; radius: 4
+                                                color: modelData.severity === 0 ? root.statusColors.waiting
+                                                       : modelData.severity === 1 ? root.statusColors.failed : root.statusColors.unknown }
+                                    Label { text: modelData.kind.replace("_", " "); font.bold: true }
+                                    Label { text: modelData.text; elide: Text.ElideRight; Layout.fillWidth: true; textFormat: Text.PlainText }
+                                    Label { text: modelData.age; opacity: 0.6 }
+                                }
+                            }
+                        }
+                    }
                     delegate: ItemDelegate {
                         id: sessionItem
                         required property var modelData
@@ -138,6 +167,10 @@ ApplicationWindow {
                     }
                 }
 
+                RunsView { statusColors: root.statusColors }
+
+                LaunchView {}
+
                 ListView {
                     clip: true
                     model: wb.progress.steps || []
@@ -168,7 +201,7 @@ ApplicationWindow {
 
     footer: Label {
         padding: 6
-        text: wb.message || "Reads local sessions in place; writes only owner notes; opens tools in their own applications."
+        text: wb.message || "Reads local sessions in place; writes only owner notes and run records; starts runs, Codex calls and sessions only on your click."
         elide: Text.ElideRight
         opacity: wb.message ? 1 : 0.6
     }

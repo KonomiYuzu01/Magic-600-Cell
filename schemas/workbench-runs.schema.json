@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Workbench run registry",
+  "description": "Fixed local run plans. The runtime validator also enforces unique IDs, the file size limit and checkout membership.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "runs"
+  ],
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "runs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "steps",
+          "cwd",
+          "inputs",
+          "outputs",
+          "timeout_s",
+          "windows_required"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 48,
+            "pattern": "^(?!codex-)[a-z0-9][a-z0-9-]{0,47}$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 32,
+              "items": {
+                "type": "string",
+                "maxLength": 512,
+                "pattern": "^[^\\u0000]*$"
+              },
+              "prefixItems": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:python|git|tools/\\.venv/[a-z0-9-]+/(?:Scripts/python\\.exe|bin/python))$"
+                }
+              ],
+              "allOf": [
+                {
+                  "if": {
+                    "prefixItems": [
+                      {
+                        "pattern": "^(?:python|tools/\\.venv/[a-z0-9-]+/(?:Scripts/python\\.exe|bin/python))$"
+                      }
+                    ]
+                  },
+                  "then": {
+                    "minItems": 2,
+                    "prefixItems": [
+                      {},
+                      {
+                        "type": "string",
+                        "allOf": [
+                          {
+                            "pattern": "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$))(?!.*(?:^|[/\\\\])[A-Za-z]:)(?!(?:\\.[/\\\\])*\\.[gG][iI][tT](?:[/\\\\]|$))(?!(?:\\.[/\\\\])*[wW][oO][rR][kK](?:[/\\\\]|$))[^\\u0000]+$"
+                          },
+                          {
+                            "pattern": "^(?!-).*\\.py$"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "prefixItems": [
+                      {
+                        "const": "git"
+                      }
+                    ]
+                  },
+                  "then": {
+                    "minItems": 2,
+                    "prefixItems": [
+                      {},
+                      {
+                        "enum": [
+                          "status",
+                          "diff",
+                          "log",
+                          "show"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "cwd": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$))(?!.*(?:^|[/\\\\])[A-Za-z]:)(?!(?:\\.[/\\\\])*\\.[gG][iI][tT](?:[/\\\\]|$))(?!(?:\\.[/\\\\])*[wW][oO][rR][kK](?:[/\\\\]|$))[^\\u0000]+$"
+          },
+          "inputs": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$))(?!.*(?:^|[/\\\\])[A-Za-z]:)(?!(?:\\.[/\\\\])*\\.[gG][iI][tT](?:[/\\\\]|$))[^\\u0000]+$"
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$))(?!.*(?:^|[/\\\\])[A-Za-z]:)(?!(?:\\.[/\\\\])*\\.[gG][iI][tT](?:[/\\\\]|$))[^\\u0000]+$"
+            }
+          },
+          "timeout_s": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 14400
+          },
+          "windows_required": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}
