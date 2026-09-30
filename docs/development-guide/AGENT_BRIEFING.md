@@ -77,6 +77,7 @@ In a Linux or cloud session, run only headless checks and list the Windows check
 - Astra (`--model gpt-6-astra`): plan checks and full reviews of critical-path, behaviour, contract and design/ADR changes; escalations, joint attacks, milestone audits. Sol: everything else.
 - Gate rulings: `--model gpt-6-astra --effort ultra --gate day7-go-no-go|migration-format-freeze|architecture-freeze`.
 - `--speed fast`: scoped verification rounds, plan re-checks, mechanical checks, non-critical reviews. Standard tier: critical full reviews and plan checks, joint attacks, escalations, gates.
+- Codex first: give every separable part to Codex; Claude plans, integrates and reviews. Full reviews run as at least two concurrent shards. Screening packets for 0.4.1 step 4: `docs/progress/0.4.1/packets/`.
 - Pair implementation: `python tools/agents/codex_review.py --kind implement --packet <file>` (packet with an `implement-contract` block), then review and apply `changes.patch`, then `--cleanup <call-id>`. No commits, tags or pushes in the repository while a call runs. On Windows the sandbox enforces the filesystem boundary but not a network firewall.
 - Escalate after three failed effective iterations (Codex diagnosis), then two more (Fable solver: the `fable-solver` subagent). Joint attack: same clean packet, sealed answers, an experiment decides.
 - API team: role cards in `templates/roles/`. It may run on OpenAI models; the owner confirms provider, models and budget before each run.

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] decision | Codex first and 0.4.1 screening packets
+Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md): separable work goes to Codex and full reviews run as at least two shards. Six read-only screening packets for 0.4.1 step 4 are in `docs/progress/0.4.1/packets/`.
+
 ## [2026-09-30] decision | Workbench watches continuously and launches work
 The owner extended the [workbench scope](decisions/development-workbench.md): continuous watch with stall and failure flags, and launching sessions, wrapper calls and registered experiment runs on the owner's click. Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md).
 
