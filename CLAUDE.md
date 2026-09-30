@@ -17,7 +17,7 @@ Claude Code instructions for Magic 600 Cell. Shared rules and the team protocol 
 1. Orient: read the SessionStart summary, `docs/wiki/index.md` and the recent wiki log. Restate the goal and the acceptance check.
 2. Plan: for a non-trivial task, run a Codex plan check.
 3. Implement in small steps. Run the checks that `AGENTS.md` lists for the changed area.
-4. Review: run a Codex review of the current candidate. Answer every finding.
+4. Review: run one Codex review of the finished candidate (parallel shards for a large one), fix the blocking findings, then run scoped verification rounds within the limits of `AGENTS.md` "Review rounds". Answer every finding; defer minor ones.
 5. Record: link the wrapper-owned call record, record the finding dispositions and update the affected wiki pages. Do not duplicate usage or billing entries. Commit a critical change only after a valid review or an explicit owner exception.
 
 Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the owner's workflow skills (`investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`) when a task matches them.

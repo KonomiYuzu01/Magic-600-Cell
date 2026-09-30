@@ -69,6 +69,7 @@ In a Linux or cloud session, run only headless checks and list the Windows check
 - Packet: `templates/problem-packet.md` (seven parts). Replies: `adopt`, `reject_with_evidence`, `needs_verification`, stored as `{"<finding id>": "<reply>"}` in `work/reviews/<call-id>/dispositions.json`.
 - Plan check: `python tools/agents/codex_review.py --kind plan --packet <file>`
 - Review: `python tools/agents/codex_review.py --kind review --packet <file>`
+- Review rounds: one full review of the finished candidate, then at most two scoped verification rounds (fixed blocking findings plus new `blocker`/`major` only). `minor` and `nit` are deferred. Remaining blockers after that go to the owner as a decision.
 - Escalation or joint attack: add `--effort ultra`.
 - Gate rulings: `--model gpt-6-astra --effort ultra --gate day7-go-no-go|migration-format-freeze|architecture-freeze`.
 - Codex calls run on the standard tier. Pass `--speed fast` only when the owner asks for it for a specific call; gate rulings never use `fast`.

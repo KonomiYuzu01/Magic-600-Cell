@@ -56,6 +56,15 @@ When review is required:
 - An unchanged approved plan may reuse its plan check. The final review must cover the current candidate, not an earlier diff.
 - Critical paths are listed in `docs/development-guide/AGENT_BRIEFING.md`.
 
+Review rounds (keep reviews few and decisive):
+- Review a finished candidate once: after the implementation is complete and its checks pass, not after each step. Batch related changes into one candidate.
+- Only `blocker` and `major` findings block a commit. `minor` and `nit` findings never start another round: fix them in the same pass when the fix is trivial and local, otherwise record them as deferred.
+- After fixing blocking findings, run a scoped verification review of the current candidate: it checks only whether each blocking finding is fixed and whether the fix introduces a new `blocker` or `major`. Do not request another full review.
+- Each candidate gets at most one full review and two scoped verification rounds. If a blocking finding remains after that, stop iterating and give the owner a short decision: the remaining findings, the evidence and the options (an adjudicating experiment, escalation, or commit under an owner exception).
+- A plan check runs once per task. A changed plan gets a scoped re-check of the changes only.
+- Every packet states the acceptance check and what is out of scope, and the reviewer stays within it.
+- Spend spare subscription quota on parallelism, not on more serial rounds: split a large candidate into independent review shards run concurrently, and resolve the blocking findings of every shard before commit. Paid API calls still reserve budget first.
+
 Escalation (an effective iteration is hypothesis, change, verification and judgement):
 - Same problem after three effective iterations: independent diagnosis by the other model.
 - The same fix idea twice, or a regression: escalate early.
