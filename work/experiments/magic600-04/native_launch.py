@@ -23,7 +23,7 @@ RETAINED = ('NativeHost.cs', 'NativeDockLayout.cs', 'NativeDiagnostics.cs',
     'NativeRenderSubset.cs', 'NativePickingVisibility.cs', 'NativeFullRenderer.cs',
     'NativeColorGraph.cs', 'NativeStructureExplorer.cs', 'NativeAuxiliaryViews.cs')
 EXPERIMENT_SOURCES = ('ExperimentCellView.cs', 'ExperimentInput.cs', 'ExperimentHub.cs',
-    'ExperimentBridge.cs', 'ExperimentShell.cs', 'ExperimentWorkspace.cs', 'ExperimentTools.cs',
+    'ExperimentBridge.cs', 'ExperimentShell.cs', 'ExperimentSendOutcome.cs', 'ExperimentWorkspace.cs', 'ExperimentTools.cs',
     'ExperimentKeyboard.cs', 'ExperimentPhase.cs', 'ExperimentFilter.cs', 'ExperimentWindows.cs', 'ExperimentWorkSheets.cs', 'ExperimentWindowPlacement.cs', 'ExperimentMacroLibrary.cs', 'ExperimentHelp.cs', 'ExperimentMacroRelations.cs', 'ExperimentSolveWindow.cs', 'ExperimentCycles.cs', 'ExperimentHubCycles.cs', 'ExperimentRecommendation.cs', 'ExperimentReferenceVariants.cs', 'ExperimentEndgame.cs', 'ExperimentResidualWorkflow.cs', 'ExperimentCandidates.cs', 'ExperimentSession.cs', 'ExperimentDisplay.cs')
 BACKEND_SOURCES = ('engine.py', 'adapter.py', 'draft_inspection.py', 'filter_projection.py',
     'grip_frames.py', 'keymap_catalog.py', 'mathematical_names.py', 'transported_frames.py', 'residuals.py', 'work_intents.py', 'current_recommendation.py', 'position_requirements.py', 'local_geometry.py', 'work_sheets.py', 'macro_library.py', 'macro_use.py', 'cycle_projection.py', 'reference_variants.py', 'endgame_library.py', 'endgame_invariants.py', 'orbit_invariants.py', 'workflow_continuity.py', 'candidate_analysis.py', 'session_workflow.py', 'evidence/orbit-invariants-20260916-generators.json')
