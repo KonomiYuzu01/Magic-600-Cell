@@ -323,6 +323,22 @@ class RefusalTests(unittest.TestCase):
         self.assertNotIn("inherited", seen)
         self.assertNotIn("NODE_OPTIONS", seen)
 
+    def test_winget_gui_tools_are_verified_through_winget_list(self):
+        entry = dict(bootstrap.entry_for(bootstrap.load_lock(), "drawio"), version="31.5.3")
+        saved = (bootstrap.PLATFORM, bootstrap.resolve_executable, bootstrap.shutil.which, bootstrap.subprocess.run)
+        bootstrap.PLATFORM = "windows"
+        bootstrap.resolve_executable = lambda e, n: None
+        bootstrap.shutil.which = lambda name, **k: "winget.exe" if name == "winget" else None
+        try:
+            for listing, ok in (("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3\n", True),
+                                ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.30\n", False),
+                                ("No installed package found matching input criteria.\n", False)):
+                bootstrap.subprocess.run = lambda *a, **k: subprocess.CompletedProcess(a, 0, listing, "")
+                with self.subTest(listing=listing):
+                    self.assertEqual(bootstrap.run_probe(entry)[0], ok)
+        finally:
+            bootstrap.PLATFORM, bootstrap.resolve_executable, bootstrap.shutil.which, bootstrap.subprocess.run = saved
+
     def test_pinned_versions_are_compared_exactly(self):
         lock = bootstrap.load_lock()
         saved = (bootstrap.resolve_executable, bootstrap.subprocess.run)

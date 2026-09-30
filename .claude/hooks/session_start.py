@@ -83,11 +83,34 @@ def missing_tools() -> str:
                 found = any(base.with_name(base.name + s).is_file() for s in suffixes)
             else:
                 found = shutil.which(name) is not None
+                if not found and e.get("method") == "winget":
+                    found = winget_tool_recorded(e)
             if not found:
                 missing.append(e["id"])
         return ", ".join(missing) if missing else "none"
     except Exception:
         return "unknown"
+
+
+def winget_tool_recorded(entry: dict) -> bool:
+    """A winget tool without a PATH command (such as draw.io) counts when its link exists or the
+    install ledger records a successful install of the pinned version. No subprocess is run."""
+    local = os.environ.get("LOCALAPPDATA")
+    probe = (entry.get("probe") or [""])[0]
+    if local and probe and any((Path(local) / "Microsoft" / "WinGet" / "Links" / (probe + s)).is_file() for s in (".exe", "")):
+        return True
+    try:
+        lines = (ROOT / "work" / "loop-memory" / "ledgers" / "installs.jsonl").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return False
+    for line in reversed(lines):
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(rec, dict) and rec.get("tool") == entry["id"]:
+            return rec.get("result") == "ok" and rec.get("version") == entry.get("version")
+    return False
 
 
 def codex_login() -> str:
