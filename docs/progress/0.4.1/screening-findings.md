@@ -84,7 +84,7 @@ Fix status, batch 1 (headless and source evidence only; the native host was comp
 | B-001 | Fixed. Request input stops waiting once the engine is stopping, including input that keeps trickling in. | `tests/test_engine_lifecycle.py` (stalled and trickling clients) |
 | C-01 | Fixed. The E1 fixture refuses while any position lock exists or when its preview conflicts with a protected orbit. | `tests/test_fixture_respects_locks.py` |
 | C-02 | Fixed. The orbit, the workspace and the caller's follow-up fields (Next activation, focus) are stored in one write. | `tests/test_orbit_switch_atomic.py` |
-| C-03 | Engine side fixed: a committed command whose snapshot fails reports success with a refresh request. The native host's durable receipt is a separate packet gated on the native regression. | `tests/test_native_reply_after_commit.py` |
+| C-03 | Fixed. The engine reports a committed command whose snapshot fails as a success with a refresh request. The experiment host (Codex) keeps a receipt for it through its own refresh failure, reports it as accepted and warns not to repeat it. | `tests/test_native_reply_after_commit.py`, `tests/test_experiment_send_outcome.py` (DirectX-free C# harness) |
 | F-01 | Fixed (Codex). The four protection commands join the forecast restriction list used by both guards. | `tests/test_forecast_guard.py` |
 | B-002 | Fixed (Codex). A build is reused only when its inputs were unchanged after compilation. | `tests/test_native_launch_reuse.py` |
 
