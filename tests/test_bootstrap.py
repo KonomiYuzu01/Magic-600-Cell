@@ -71,6 +71,25 @@ class LockfileTests(unittest.TestCase):
             finally:
                 bootstrap.LOCK_PATH = saved
 
+    def test_invalid_python_requests_are_rejected(self):
+        good = {"implementation": "cpython", "version": "3.14.7", "bits": 64}
+        cases = {"32-bit": dict(good, bits=32), "not exact": dict(good, version="3.14"), "other implementation": dict(good, implementation="pypy"),
+                 "extra key": dict(good, path="C:/Python314/python.exe"), "numeric version": dict(good, version=3.14)}
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "lock.json"
+            saved = bootstrap.LOCK_PATH
+            bootstrap.LOCK_PATH = path
+            try:
+                for name, request in [*cases.items(), ("wrong method", good)]:
+                    lock = json.loads(saved.read_text(encoding="utf-8"))
+                    entry = bootstrap.entry_for(lock, "uv" if name == "wrong method" else "engine-python")
+                    entry["python"] = request
+                    path.write_text(json.dumps(lock), encoding="utf-8")
+                    with self.subTest(case=name), self.assertRaises(SystemExit):
+                        bootstrap.load_lock()
+            finally:
+                bootstrap.LOCK_PATH = saved
+
 
 class RefusalTests(unittest.TestCase):
     def test_unknown_and_unverified_ids_are_refused(self):
@@ -305,6 +324,46 @@ class RefusalTests(unittest.TestCase):
             self.assertFalse([c for c in runs if "sync" in c])
         finally:
             bootstrap.subprocess.run, bootstrap.venv_contained, bootstrap._run = saved
+
+    def test_engine_environment_uses_only_the_exact_owner_installed_python(self):
+        lock = bootstrap.load_lock()
+        entry = bootstrap.entry_for(lock, "engine-python")
+        with tempfile.TemporaryDirectory() as td:
+            saved = (bootstrap._run, bootstrap.safe_dest, bootstrap.sync_removals, bootstrap.subprocess.run)
+            bootstrap.safe_dest = lambda rel: Path(td) / "engine"
+            bootstrap.sync_removals = lambda e, sync: []
+            try:
+                for facts, venv_fails, ok in (("cpython 3.14.7 64", False, True), ("cpython 3.14.6 64", False, False),
+                                              ("cpython 3.14.7 32", False, False), ("pypy 3.14.7 64", False, False),
+                                              ("", True, False)):
+                    runs = []
+
+                    def fake_run(cmd, cwd=ROOT, env=None, venv_fails=venv_fails):
+                        runs.append(cmd)
+                        if venv_fails and "venv" in cmd:
+                            raise bootstrap.Refused("command failed with exit 2")
+
+                    bootstrap._run = fake_run
+                    bootstrap.subprocess.run = lambda *a, facts=facts, **k: subprocess.CompletedProcess(a, 0, facts + "\n", "")
+                    with self.subTest(facts=facts, venv_fails=venv_fails):
+                        if ok:
+                            bootstrap.install_entry(entry)
+                        else:
+                            with self.assertRaises(bootstrap.Refused) as ctx:
+                                bootstrap.install_entry(entry)
+                            self.assertIn("CPython 3.14.7" if venv_fails else "replacing it needs owner approval", str(ctx.exception))
+                        venv = runs[0]
+                        self.assertEqual(venv[venv.index("--python") + 1], "cpython@3.14.7")
+                        self.assertNotIn(sys.executable, venv[1:], "the installer's own Python only runs uv")
+                        self.assertIn("--no-python-downloads", venv)
+                        self.assertIn("--no-managed-python", venv)
+                        self.assertEqual(any("sync" in c for c in runs), ok, "packages are synced only into the exact interpreter")
+                runs = []
+                bootstrap._run = lambda cmd, cwd=ROOT, env=None: runs.append(cmd)
+                bootstrap.install_entry(bootstrap.entry_for(lock, "marimo"))  # entries without a request keep the installer's Python
+                self.assertEqual(runs[0][runs[0].index("--python") + 1], sys.executable)
+            finally:
+                bootstrap._run, bootstrap.safe_dest, bootstrap.sync_removals, bootstrap.subprocess.run = saved
 
     def test_probes_drop_code_injection_variables(self):
         seen = {}
@@ -619,7 +678,7 @@ class ApprovalTests(unittest.TestCase):
         inputs = bootstrap.approval_inputs()
         for rel in ("tools/toolchain/bootstrap.py", "tools/toolchain.lock.json", "tools/skills.lock.json", "tools/skills/sync.py",
                     "tools/repo_digest.py", "tools/toolchain/approval_inputs.json", ".claude/hooks/install_guard.py",
-                    "tools/python/planning.txt", "tools/node/mermaid-cli/package-lock.json"):
+                    "tools/python/planning.txt", "tools/python/engine.txt", "tools/node/mermaid-cli/package-lock.json"):
             self.assertIn(rel, inputs)
 
     def test_guard_and_installer_compute_the_same_digest(self):

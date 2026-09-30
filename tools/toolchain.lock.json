@@ -395,6 +395,44 @@
       "note": "Package ID not yet verified."
     },
     {
+      "id": "engine-python",
+      "purpose": "Pinned interpreter and NumPy for the 0.4.1 engine, native build and harness",
+      "profiles": [
+        "native-performance"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "2.3.5",
+      "python": {
+        "implementation": "cpython",
+        "version": "3.14.7",
+        "bits": 64
+      },
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/engine",
+      "requirements": "tools/python/engine.txt",
+      "probe": [
+        "{venv}/python",
+        "-I",
+        "-c",
+        "import numpy,platform,struct;print('numpy',numpy.__version__,platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
+      ],
+      "expect": "^numpy 2\\.3\\.5 cpython 3\\.14\\.7 64$",
+      "license": "BSD-3-Clause (NumPy); PSF-2.0 (CPython, installed by the owner)",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "note": "Owner decision D2 (2026-09-30): the engine environment uses the owner-installed 64-bit CPython 3.14.7 found by uv without downloads or uv-managed interpreters. The installer refuses when that interpreter is absent or when the environment runs another one.",
+      "uninstall": "delete tools/.venv/engine"
+    },
+    {
       "id": "aqtinstall",
       "purpose": "Installs pinned Qt builds for the Qt RHI candidate",
       "profiles": [

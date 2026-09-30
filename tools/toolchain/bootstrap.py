@@ -122,8 +122,18 @@ def load_lock() -> dict:
             raise SystemExit(f"lockfile: {entry['id']} has unknown method {entry['method']}")
         if entry["id"] in ids or not ID_RE.match(entry["id"]):
             raise SystemExit(f"lockfile: bad or duplicate id {entry['id']}")
+        if "python" in entry and not valid_python_request(entry):
+            raise SystemExit(f"lockfile: {entry['id']} has an invalid python request")
         ids.add(entry["id"])
     return lock
+
+
+def valid_python_request(entry: dict) -> bool:
+    """A uv-venv-hashed entry may require an exact 64-bit CPython instead of the installer's own interpreter."""
+    req = entry["python"]
+    return (entry["method"] == "uv-venv-hashed" and isinstance(req, dict) and set(req) == {"implementation", "version", "bits"}
+            and req["implementation"] == "cpython" and req["bits"] == 64
+            and isinstance(req["version"], str) and re.fullmatch(r"\d+\.\d+\.\d+", req["version"]) is not None)
 
 
 def entry_for(lock: dict, tool_id: str) -> dict:
@@ -453,7 +463,14 @@ def install_entry(entry: dict) -> None:
         req = _require_file(entry["requirements"])
         venv = safe_dest(entry["venv"])
         if not (_bin_dir(venv)).is_dir():
-            _run([sys.executable, "-m", "uv", "venv", "--no-config", str(venv), "--python", sys.executable])
+            try:
+                _run([sys.executable, "-m", "uv", "venv", "--no-config", str(venv), *venv_python_args(entry)])
+            except Refused as exc:
+                req = entry.get("python")
+                if req is None:
+                    raise
+                raise Refused(f"{entry['id']}: {exc}; the owner installs 64-bit CPython {req['version']} first") from None
+        check_venv_python(entry)  # before any package is synced into the environment
         sync = [sys.executable, "-m", "uv", "pip", "sync", "--no-config", "--require-hashes", "--index-url", PYPI_INDEX,
                 "--python", str(venv), str(req)]
         removals = sync_removals(entry, sync)
@@ -488,6 +505,34 @@ def install_entry(entry: dict) -> None:
               "--accept-source-agreements", "--accept-package-agreements"])
     else:
         raise Refused(f"{entry['id']}: {method} tools are installed by the owner")
+
+
+PYTHON_FACTS = "import platform,struct;print(platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
+
+
+def venv_python_args(entry: dict) -> list[str]:
+    req = entry.get("python")
+    if req is None:
+        return ["--python", sys.executable]
+    # Only an interpreter the owner installed: never a download and never a uv-managed copy.
+    return ["--python", f"{req['implementation']}@{req['version']}", "--no-managed-python", "--no-python-downloads"]
+
+
+def check_venv_python(entry: dict) -> None:
+    """Refuse an environment whose interpreter differs from the entry's exact python request."""
+    req = entry.get("python")
+    if req is None:
+        return
+    python = _bin_dir(safe_dest(entry["venv"])) / ("python.exe" if PLATFORM == "windows" else "python")
+    want = f"{req['implementation']} {req['version']} {req['bits']}"
+    try:
+        r = subprocess.run([str(python), "-I", "-c", PYTHON_FACTS], capture_output=True, text=True,
+                           timeout=PROBE_TIMEOUT, env=probe_env())
+        got = r.stdout.strip() if r.returncode == 0 else f"a failing interpreter (exit {r.returncode})"
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        got = f"no usable interpreter ({type(exc).__name__})"
+    if got != want:
+        raise Refused(f"{entry['id']}: {entry['venv']} runs {got}, not {want}; replacing it needs owner approval")
 
 
 def ledger(record: dict) -> None:
