@@ -74,7 +74,8 @@ class LockfileTests(unittest.TestCase):
     def test_invalid_python_requests_are_rejected(self):
         good = {"implementation": "cpython", "version": "3.14.7", "bits": 64}
         cases = {"32-bit": dict(good, bits=32), "not exact": dict(good, version="3.14"), "other implementation": dict(good, implementation="pypy"),
-                 "extra key": dict(good, path="C:/Python314/python.exe"), "numeric version": dict(good, version=3.14)}
+                 "extra key": dict(good, path="C:/Python314/python.exe"), "numeric version": dict(good, version=3.14),
+                 "float bits": dict(good, bits=64.0), "boolean bits": dict(good, bits=True)}
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "lock.json"
             saved = bootstrap.LOCK_PATH
@@ -329,23 +330,40 @@ class RefusalTests(unittest.TestCase):
         lock = bootstrap.load_lock()
         entry = bootstrap.entry_for(lock, "engine-python")
         with tempfile.TemporaryDirectory() as td:
-            saved = (bootstrap._run, bootstrap.safe_dest, bootstrap.sync_removals, bootstrap.subprocess.run)
-            bootstrap.safe_dest = lambda rel: Path(td) / "engine"
+            venv_dir, system, managed = Path(td) / "engine", Path(td) / "system", Path(td) / "uv-python"
+            uv_bin = str(Path(td) / "uv.exe")
+            saved = (bootstrap._run, bootstrap.safe_dest, bootstrap.sync_removals, bootstrap.subprocess.run, bootstrap.uv_binary)
+            bootstrap.safe_dest = lambda rel: venv_dir
             bootstrap.sync_removals = lambda e, sync: []
+            bootstrap.uv_binary = lambda: uv_bin
             try:
-                for facts, venv_fails, ok in (("cpython 3.14.7 64", False, True), ("cpython 3.14.6 64", False, False),
-                                              ("cpython 3.14.7 32", False, False), ("pypy 3.14.7 64", False, False),
-                                              ("", True, False)):
+                for facts, venv_fails, home, ok in (
+                        ("cpython 3.14.7 64", False, system, True),
+                        ("cpython 3.14.6 64", False, system, False),
+                        ("cpython 3.14.7 32", False, system, False),
+                        ("pypy 3.14.7 64", False, system, False),
+                        ("", True, system, False),
+                        ("cpython 3.14.7 64", False, managed / "cpython-3.14-windows-x86_64-none", False),  # uv-managed copy
+                        ("cpython 3.14.7 64", False, None, False)):                                           # no pyvenv.cfg
                     runs = []
+                    venv_dir.mkdir(exist_ok=True)
+                    cfg = venv_dir / "pyvenv.cfg"
+                    cfg.unlink(missing_ok=True)
+                    if home is not None:
+                        cfg.write_text(f"home = {home}\nversion_info = 3.14.7\n", encoding="utf-8")
 
                     def fake_run(cmd, cwd=ROOT, env=None, venv_fails=venv_fails):
                         runs.append(cmd)
                         if venv_fails and "venv" in cmd:
                             raise bootstrap.Refused("command failed with exit 2")
 
+                    def fake_subprocess(cmd, *a, facts=facts, **k):
+                        out = str(managed) if cmd[1:3] == ["python", "dir"] else facts
+                        return subprocess.CompletedProcess(cmd, 0, out + "\n", "")
+
                     bootstrap._run = fake_run
-                    bootstrap.subprocess.run = lambda *a, facts=facts, **k: subprocess.CompletedProcess(a, 0, facts + "\n", "")
-                    with self.subTest(facts=facts, venv_fails=venv_fails):
+                    bootstrap.subprocess.run = fake_subprocess
+                    with self.subTest(facts=facts, venv_fails=venv_fails, home=home):
                         if ok:
                             bootstrap.install_entry(entry)
                         else:
@@ -353,17 +371,20 @@ class RefusalTests(unittest.TestCase):
                                 bootstrap.install_entry(entry)
                             self.assertIn("CPython 3.14.7" if venv_fails else "replacing it needs owner approval", str(ctx.exception))
                         venv = runs[0]
+                        self.assertEqual(venv[0], uv_bin, "the uv executable runs directly, never as `python -m uv`")
                         self.assertEqual(venv[venv.index("--python") + 1], "cpython@3.14.7")
-                        self.assertNotIn(sys.executable, venv[1:], "the installer's own Python only runs uv")
+                        self.assertNotIn(sys.executable, venv)
                         self.assertIn("--no-python-downloads", venv)
                         self.assertIn("--no-managed-python", venv)
                         self.assertEqual(any("sync" in c for c in runs), ok, "packages are synced only into the exact interpreter")
                 runs = []
                 bootstrap._run = lambda cmd, cwd=ROOT, env=None: runs.append(cmd)
                 bootstrap.install_entry(bootstrap.entry_for(lock, "marimo"))  # entries without a request keep the installer's Python
+                self.assertEqual(runs[0][:3], [sys.executable, "-m", "uv"])
                 self.assertEqual(runs[0][runs[0].index("--python") + 1], sys.executable)
             finally:
-                bootstrap._run, bootstrap.safe_dest, bootstrap.sync_removals, bootstrap.subprocess.run = saved
+                (bootstrap._run, bootstrap.safe_dest, bootstrap.sync_removals, bootstrap.subprocess.run,
+                 bootstrap.uv_binary) = saved
 
     def test_probes_drop_code_injection_variables(self):
         seen = {}

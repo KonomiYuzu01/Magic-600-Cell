@@ -132,7 +132,7 @@ def valid_python_request(entry: dict) -> bool:
     """A uv-venv-hashed entry may require an exact 64-bit CPython instead of the installer's own interpreter."""
     req = entry["python"]
     return (entry["method"] == "uv-venv-hashed" and isinstance(req, dict) and set(req) == {"implementation", "version", "bits"}
-            and req["implementation"] == "cpython" and req["bits"] == 64
+            and req["implementation"] == "cpython" and type(req["bits"]) is int and req["bits"] == 64
             and isinstance(req["version"], str) and re.fullmatch(r"\d+\.\d+\.\d+", req["version"]) is not None)
 
 
@@ -464,7 +464,7 @@ def install_entry(entry: dict) -> None:
         venv = safe_dest(entry["venv"])
         if not (_bin_dir(venv)).is_dir():
             try:
-                _run([sys.executable, "-m", "uv", "venv", "--no-config", str(venv), *venv_python_args(entry)])
+                _run([*uv_venv_launcher(entry), "venv", "--no-config", str(venv), *venv_python_args(entry)])
             except Refused as exc:
                 req = entry.get("python")
                 if req is None:
@@ -518,12 +518,51 @@ def venv_python_args(entry: dict) -> list[str]:
     return ["--python", f"{req['implementation']}@{req['version']}", "--no-managed-python", "--no-python-downloads"]
 
 
+def uv_binary() -> str:
+    """The uv executable of the approved uv package, found by the package itself."""
+    try:
+        r = subprocess.run([sys.executable, "-c", "import sys, uv; sys.stdout.write(uv.find_uv_bin())"],
+                           capture_output=True, text=True, timeout=PROBE_TIMEOUT, env=probe_env())
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise Refused(f"uv is not available ({type(exc).__name__})") from None
+    path = r.stdout.strip()
+    if r.returncode != 0 or not path or not Path(path).is_file():
+        raise Refused("uv is not available; install it first")
+    return path
+
+
+def uv_venv_launcher(entry: dict) -> list[str]:
+    # `python -m uv` tells uv to prefer the Python that launched it, even over --no-managed-python,
+    # so an exact request runs the uv executable directly (verified with uv 0.12.20).
+    return [sys.executable, "-m", "uv"] if entry.get("python") is None else [uv_binary()]
+
+
+def _within(path: Path, directory: Path) -> bool:
+    path, directory = Path(os.path.realpath(path)), Path(os.path.realpath(directory))
+    target = os.path.normcase(str(directory))
+    return any(os.path.normcase(str(p)) == target for p in (path, *path.parents))
+
+
 def check_venv_python(entry: dict) -> None:
     """Refuse an environment whose interpreter differs from the entry's exact python request."""
     req = entry.get("python")
     if req is None:
         return
-    python = _bin_dir(safe_dest(entry["venv"])) / ("python.exe" if PLATFORM == "windows" else "python")
+    venv = safe_dest(entry["venv"])
+    # The base interpreter must not be a uv-managed copy, whatever chose it.
+    home = next((line.split("=", 1)[1].strip() for line in (venv / "pyvenv.cfg").read_text(encoding="utf-8").splitlines()
+                 if line.split("=", 1)[0].strip().lower() == "home"), None) if (venv / "pyvenv.cfg").is_file() else None
+    managed = []
+    for env in (probe_env(), install_env()):  # the owner's UV_PYTHON_INSTALL_DIR, and uv's default location
+        r = subprocess.run([uv_binary(), "python", "dir", "--no-config"], capture_output=True, text=True,
+                           timeout=PROBE_TIMEOUT, env=env)
+        if r.returncode != 0 or not r.stdout.strip():
+            raise Refused(f"{entry['id']}: cannot locate uv-managed interpreters; installation blocked")
+        managed.append(Path(r.stdout.strip()))
+    if home is None or any(_within(Path(home), d) for d in managed):
+        raise Refused(f"{entry['id']}: {entry['venv']} is based on {home or 'an unknown interpreter'}, not an owner-installed "
+                      "Python; replacing it needs owner approval")
+    python = _bin_dir(venv) / ("python.exe" if PLATFORM == "windows" else "python")
     want = f"{req['implementation']} {req['version']} {req['bits']}"
     try:
         r = subprocess.run([str(python), "-I", "-c", PYTHON_FACTS], capture_output=True, text=True,
