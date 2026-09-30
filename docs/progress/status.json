@@ -4,7 +4,7 @@
   "current": "0.4.1-1",
   "paid_api_ceiling_usd": 100,
   "steps": [
-    {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null},
+    {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "in_progress", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null},
     {"id": "0.4.1-2", "track": "0.4.1", "title": "Baseline", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "0.4.1-3", "track": "0.4.1", "title": "Exporter and fixtures", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "0.4.1-4", "track": "0.4.1", "title": "Screening and fixes", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},

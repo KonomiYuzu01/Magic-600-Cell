@@ -17,6 +17,10 @@ native/runtime/*.exe
 native/runtime/*.dll
 !licenses/**
 tests/v0*/
+# Reports that the backend regressions write on every run.
+tests/core_report.json
+tests/reference_map_report.json
+tests/crash_report.json
 
 # Local collaboration and private artifacts; never part of a public release.
 PROJECT_MEMORY.md

@@ -11,11 +11,13 @@ claims:
   - {id: sealed-recipe, evidence_kind: source, path: native/bootstrap.py, sha256: 669a7b2bab659320878b18d0b1f7034812b151899bb1fb92b9c3380536f07c9e, checked_at: 2026-09-30}
   - {id: receipt-checks, evidence_kind: source, path: work/experiments/magic600-04/native_launch.py, sha256: f4757540a2f35fc990d9e4a315350a225780159d61e6cdeb5cbf46739b2251f4, checked_at: 2026-09-30}
   - {id: packaging-consumer, evidence_kind: source, path: work/experiments/magic600-04/packaging/assemble.py, sha256: 8502cf0eeb44f21a647f37ab35824b1c4890c66089fd6f8d69ab1b7acab6b44a, checked_at: 2026-09-30}
-  - {id: invariance-tests, evidence_kind: fixture, path: tests/test_build_identity.py, sha256: 19900f81fdf68fe2d68f81da67fb39ec8cf251ac84af9f592dac01c420c7637f, checked_at: 2026-09-30}
+  - {id: invariance-tests, evidence_kind: fixture, path: tests/test_build_identity.py, sha256: 8335638684798425b11563501fd2b7e0c62a5115df209cfead9816cf648e05fb, checked_at: 2026-09-30}
   - {id: byte-exact-checkout, evidence_kind: source, path: .gitattributes, sha256: 018ad2ea40527c9f02c1e384103567d79b00ab3c6b41c54ac67f79b5e2205ed1, checked_at: 2026-09-30}
   - {id: engine-environment, evidence_kind: source, path: tools/toolchain.lock.json, sha256: 1a181fd36116af5906edbf54f0d19f0683f7b37840d2192bafcd74437e4e1c6c, checked_at: 2026-09-30}
   - {id: continuity-0-4, evidence_kind: source, path: docs/RELEASE_0_4_CONTINUITY.json, sha256: f75c6411fc6cc7d1983836460f33f7324e6d89b4daec17b374a8e193b537b41b, checked_at: 2026-09-30}
   - {id: windows-startup-regression, evidence_kind: actual_windows_directx, checked_at: 2026-09-30}
+  - {id: windows-harness-endgame, evidence_kind: actual_windows_directx, checked_at: 2026-09-30}
+  - {id: clean-checkout-audit, evidence_kind: source, path: docs/progress/0.4.1/clean-checkout-audit.md, sha256: 0079ee2196adb693d2d6bfeae8a55cb2a6ac726f7e5ccfb89e95a1b839e704fc, checked_at: 2026-09-30}
 ---
 
 # Build identity v2
@@ -70,9 +72,22 @@ The receipt also records, outside the identity:
   - 93 of its 96 inputs are byte-identical in this repository;
   - the other 3 are listed 0.4.1 adaptations whose release bytes remain in Git history.
 
+## Acceptance of 0.4.1 step 1
+
+Step 1 is done when all of these hold on a fresh clone of the merged branch. The items come from the clean-checkout audit (`docs/progress/0.4.1/clean-checkout-audit.md`) and the approved step 1 plan.
+- `python tests/test_core.py`, `python tests/test_reference_maps.py`, `python tests/test_crash.py` and `python tests/test_engine_lifecycle.py` pass.
+- Every other script under `tests/` runs without a missing-directory error, or is a harness tool that `docs/DEVELOPMENT.md` lists with its arguments.
+- `git status --porcelain` is empty after those runs.
+- The native build finds every harness file that it hashes, `run_postapproval.py` included.
+- The build identity does not depend on the checkout path or the Git line-ending setting (`tests/test_build_identity.py`).
+- `python work/experiments/magic600-04/print_identity.py` prints the source identity, the build identity when the tools resolve, and the harness inventory, without compiling.
+
 ## Evidence on the owner's Windows 11 machine (30 September 2026)
 
 - A checkout under `* -text` held the committed bytes for all tracked files, and all model assets matched.
 - The product built with identity `56039c362c0fd361…`. The identity was unchanged after harness-only edits and line-ending repairs, and the build then reused the recorded executable.
 - The native harness compiled with its inputs bound (`run_postapproval.py --compile-only`).
-- The WinForms startup regression passed its 19 checks (`native/bootstrap.py --self-test-only`). This is actual Windows evidence of startup only. The DirectX rendering path, input, long sessions and performance were not exercised, and the full harness run is still pending.
+- The WinForms startup regression passed its 19 checks (`native/bootstrap.py --self-test-only`). This is actual Windows evidence of startup only.
+- The native harness then ran on the desktop with `--focus endgame`, on a synthetic legal fixture and a synthetic key route, not physical typing. The second run passed all 96 checks, with 4 skips and exit code 0. Its summary step then failed to decode `run.log`, which Windows writes in the console code page; `run_postapproval.py` now falls back to that code page.
+- The first of those runs stopped with an access violation inside Managed DirectX `Device.Reset` during a window resize. Step 1 changed no product C# source, so this is recorded as an observation of the retained 0.4 host, not as a step 1 regression.
+- Long sessions and performance were not exercised, and the full harness run without a focus is still pending.

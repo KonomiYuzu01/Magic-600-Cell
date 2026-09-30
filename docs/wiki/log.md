@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] decision | One overall review for the 0.4.1 code work
+The owner waived plan re-checks, per-step Codex reviews and scoped verification rounds for the current 0.4.1 code work. Each step runs its checks, and one overall Codex review covers the finished candidate before merge; recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md).
+
 ## [2026-09-30] review | Build identity v2 reviewed
 The step 1 candidate had one full Codex review in two parallel shards. All nine findings (eight major, one minor) were adopted. Receipts must now bind the complete inventory that the code declares, conflicting bindings are refused, build reuse is validated, and recorder, DirectX and continuity inputs are rechecked by hash. Each fix has a regression test that fails when the fix is reverted; see [build-identity-v2](concepts/build-identity-v2.md).
 

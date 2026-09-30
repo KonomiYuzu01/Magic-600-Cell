@@ -83,6 +83,12 @@ python tests/test_crash.py
 python tests/test_engine_lifecycle.py
 ```
 
+These write `tests/core_report.json`, `tests/reference_map_report.json` and `tests/crash_report.json`, which Git ignores. Some other scripts under `tests/` are harness tools, not standalone checks, and need an argument:
+
+- `python tests/test_http_boundary.py "<engine URL with its token>"` needs a running engine.
+- `python tests/test_native_auxiliary_controls.py --output <fresh directory>` opens test windows on the desktop.
+- `python tests/test_portable_package.py <bundle> <output>` needs a built package.
+
 Use fresh disposable data for all checks. Never test destructive operations against a personal profile. Actual Windows/DirectX behavior, keyboard input, long sessions and performance require matching native evidence; headless results cannot establish those claims. No application checks were rerun for this documentation organization.
 
 The checked-in generated assets are sufficient for runtime use. Optional asset regeneration also needs retained external geometry/reference inputs; do not change the immutable model manifest as part of documentation or UI work.
