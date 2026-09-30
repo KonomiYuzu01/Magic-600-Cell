@@ -51,7 +51,7 @@ A change here needs a Codex plan check and a valid Codex review of the current c
 | `templates/`, `schemas/` | Problem packet, API-team role cards, review and ledger schemas |
 | `work/loop-memory/`, `work/reviews/` | Private ledgers, raw material, review outputs (ignored by Git) |
 
-Native build: a clean checkout builds with the pinned engine environment (`tools/.venv/engine`, CPython 3.14.7 and NumPy 2.3.5); the recipe is in `docs/DEVELOPMENT.md`, and build identity v2 is described in `docs/wiki/concepts/build-identity-v2.md`.
+Native build: a clean checkout builds with the pinned engine environment (`tools/.venv/engine`, CPython 3.14.7 and NumPy 2.3.5); the recipe is in `docs/DEVELOPMENT.md`, and build identity v2 is described in `docs/wiki/concepts/build-identity-v2.md`. `work/experiments/magic600-04/print_identity.py` prints the identity without compiling.
 
 ## 5. Change type and required checks
 

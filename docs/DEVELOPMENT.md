@@ -52,6 +52,8 @@ Source builds require Windows, the .NET Framework 4.x compiler targeting x86, an
    - the compiler files and reference assemblies;
    - the interpreter and NumPy.
 
+   To see the identity without building, run `tools\.venv\engine\Scripts\python.exe work/experiments/magic600-04/print_identity.py`. It prints the source identity (product and compile recipe only), the build identity when the compiler and interpreter resolve, and the SHA-256 of every harness file. It never compiles or writes files; under an interpreter without NumPy the build identity is `null`.
+
    The checkout location, the Windows build and test-only files do not change it. The legacy compiler is not deterministic, so the executable itself is not bit-reproducible, and a build is reused only from a valid receipt for the same identity whose recorded executable hash still matches. Details: [build identity](wiki/concepts/build-identity-v2.md).
 4. Compile the native regression harness and bind its inputs, without starting the engine or a window:
 
@@ -86,8 +88,16 @@ python tests/test_engine_lifecycle.py
 These write `tests/core_report.json`, `tests/reference_map_report.json` and `tests/crash_report.json`, which Git ignores. Some other scripts under `tests/` are harness tools, not standalone checks, and need an argument:
 
 - `python tests/test_http_boundary.py "<engine URL with its token>"` needs a running engine.
+- `python tests/test_native_snapshot.py "<engine URL with its token>"` needs a running engine.
+- `python tests/browser_harness.py "<engine URL with its token>"` (or `C600_TEST_URL`) needs a running engine and a browser.
 - `python tests/test_native_auxiliary_controls.py --output <fresh directory>` opens test windows on the desktop.
 - `python tests/test_portable_package.py <bundle> <output>` needs a built package.
+- `python tests/reproduce_v021_readiness.py <old package directory>` reproduces a historical 0.2.1 fault and runs only on Linux or macOS.
+- `python tests/benchmark_core.py` is a benchmark, not a check, and runs only on Linux or macOS (it uses `resource`).
+- `python tests/test_browser_ui.py` needs Playwright and a browser.
+- `test_cell_views.py`, `test_color_inspection.py`, `test_inspection_focus.py`, `test_native_selection_http.py` and `test_native_snapshot_cache.py` need `--work-dir <fresh directory>` for their session and evidence.
+- `python tests/test_mpult_log.py --profile <native bridge profile JSON> --work-dir <fresh directory> [--original-log <MPUlt log>]` needs a retained native bridge profile.
+- `python tests/test_recovery_camera.py --work-dir <fresh directory> --native-profile <native bridge profile JSON> --original-log <MPUlt log>` needs a retained profile and log.
 
 Use fresh disposable data for all checks. Never test destructive operations against a personal profile. Actual Windows/DirectX behavior, keyboard input, long sessions and performance require matching native evidence; headless results cannot establish those claims. No application checks were rerun for this documentation organization.
 

@@ -87,6 +87,7 @@ Step 1 is done when all of these hold on a fresh clone of the merged branch. The
 - A checkout under `* -text` held the committed bytes for all tracked files, and all model assets matched.
 - The product built with identity `56039c362c0fd361…`. The identity was unchanged after harness-only edits and line-ending repairs, and the build then reused the recorded executable.
 - The native harness compiled with its inputs bound (`run_postapproval.py --compile-only`).
+- `print_identity.py` printed, without compiling, the build identity of a later `--build-only` receipt of the same tree (`ab12e78d8223dfa8…`) and exactly the 27 harness files, with their hashes, of a `--compile-only` receipt.
 - The WinForms startup regression passed its 19 checks (`native/bootstrap.py --self-test-only`). This is actual Windows evidence of startup only.
 - The native harness then ran on the desktop with `--focus endgame`, on a synthetic legal fixture and a synthetic key route, not physical typing. The second run passed all 96 checks, with 4 skips and exit code 0. Its summary step then failed to decode `run.log`, which Windows writes in the console code page; `run_postapproval.py` now falls back to that code page.
 - The first of those runs stopped with an access violation inside Managed DirectX `Device.Reset` during a window resize. Step 1 changed no product C# source, so this is recorded as an observation of the retained 0.4 host, not as a step 1 regression.
