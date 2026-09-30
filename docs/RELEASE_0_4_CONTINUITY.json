@@ -370,7 +370,8 @@
       "sha256": "5f80d145d24e54418b7b8da5e924fed0c774ed138686811aab7ddd2c402968be"
     },
     "work/experiments/magic600-04/tests/run_postapproval.py": {
-      "here": "same",
+      "adaptation": "0.4.1 step 1: identity v2 receipts, optional recorder",
+      "here": "adapted",
       "sha256": "4cd621c756bca232ba5e6f2f03d3847c2b75ae6ea7e7b5ec40cfdae522ff7abe"
     },
     "work/experiments/magic600-04/transported_frames.py": {
@@ -398,10 +399,10 @@
   "payload_rehashes_to_identity": true,
   "release": "0.4",
   "summary": {
-    "adapted": 2,
+    "adapted": 3,
     "different": 0,
     "missing": 0,
-    "same": 94,
+    "same": 93,
     "total": 96
   },
   "toolchain": {
