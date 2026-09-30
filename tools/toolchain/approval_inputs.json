@@ -1,0 +1,17 @@
+{
+  "description": "Files whose exact content the owner approves for automatic installation: every repository script the installer executes and every lockfile it reads. Read by bootstrap.py and by .claude/hooks/install_guard.py (which never imports repository code).",
+  "files": [
+    "tools/toolchain/approval_inputs.json",
+    "tools/toolchain/bootstrap.py",
+    "tools/repo_digest.py",
+    "tools/skills/sync.py",
+    "tools/toolchain.lock.json",
+    "tools/skills.lock.json",
+    ".claude/hooks/install_guard.py"
+  ],
+  "globs": [
+    "tools/python/*.txt",
+    "tools/node/*/package.json",
+    "tools/node/*/package-lock.json"
+  ]
+}

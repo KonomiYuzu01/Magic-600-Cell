@@ -1,5 +1,7 @@
 # Magic 600 Cell — 1.0 Architecture and Migration Contract
 
+> **Superseded in part (owner decision, 29 September 2026).** The 1.0 runtime and technology-stack choices, the deferral of B4-12 to 1.0 (B4-12 now closes in 0.4.1), English-only subtitles, and the rule that unspecified 1.0 behaviour inherits 0.4 contracts no longer apply. The mathematical and protection invariants below remain in force. See [the agent briefing](../../development-guide/AGENT_BRIEFING.md) and [the decision record](../../wiki/decisions/owner-decisions-2026-09-29.md).
+
 Revision: 2026-09-18 / 1.0-A3 (integrated architecture with deferred B4-12)
 Method: **Orbit First Block Building Solving** (unchanged)
 Status: **Proposed architecture for review.** No migration is started, no 0.4 product code is modified, no model asset or personal session is touched, and nothing here is a release commitment.

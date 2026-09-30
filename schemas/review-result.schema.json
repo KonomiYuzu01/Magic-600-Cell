@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex review result",
+  "description": "Output contract for tools/agents/codex_review.py. Strict: every property is required and no others are allowed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "summary", "findings"],
+  "properties": {
+    "verdict": {"type": "string", "enum": ["pass", "findings", "inconclusive"]},
+    "summary": {"type": "string"},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "severity", "title", "detail", "evidence", "counterexample", "suggested_experiment", "verification_status"],
+        "properties": {
+          "id": {"type": "string"},
+          "severity": {"type": "string", "enum": ["blocker", "major", "minor", "nit"]},
+          "title": {"type": "string"},
+          "detail": {"type": "string"},
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "line", "sha256"],
+              "properties": {
+                "path": {"type": "string"},
+                "line": {"type": ["integer", "null"]},
+                "sha256": {"type": ["string", "null"]}
+              }
+            }
+          },
+          "counterexample": {"type": ["string", "null"]},
+          "suggested_experiment": {"type": ["string", "null"]},
+          "verification_status": {"type": "string", "enum": ["verified", "unverified"]}
+        }
+      }
+    }
+  }
+}

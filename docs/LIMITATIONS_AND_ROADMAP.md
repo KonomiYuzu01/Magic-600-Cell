@@ -1,10 +1,10 @@
 # Magic 600 Cell 0.4 limitations and next work
 
-## Current release and planned 0.41
+## Current release and planned 0.4.1
 
 The [0.4 release guide](RELEASE_0_4.md) records delivered behavior and verification scope. The native workspace retains the full mechanical model, explicit operation selection, full collateral inspection, protection and recoverable sessions. Finite endgame witnesses do not prove arbitrary protected-state reachability or a human full solve. Microsoft Managed DirectX remains an external prerequisite.
 
-Performance optimization is scheduled for the next iteration. **0.41** is planned to optimize the 0.4 program, address debugging and performance, and build a dedicated local development workbench. This is a recorded direction, not an implemented feature set or a new passing performance result. The [1.0 architecture](architecture/1.0/README.md) remains separate future documentation.
+Performance optimization is scheduled for the next iteration. **0.4.1** is planned to optimize the 0.4 program, address debugging, performance and bug fixes, optimize the code, and build a dedicated local development workbench. This is a recorded direction, not an implemented feature set or a new passing performance result. The [1.0 architecture](architecture/1.0/README.md) remains separate future documentation.
 
 ## Historical shared-runtime / 0.3 assessment
 

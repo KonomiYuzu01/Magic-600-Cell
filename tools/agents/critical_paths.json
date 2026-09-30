@@ -1,0 +1,24 @@
+{
+  "description": "Changes to these paths need a valid Codex review of the current candidate before commit. Mirrored in docs/development-guide/AGENT_BRIEFING.md.",
+  "patterns": [
+    "core.py",
+    "session.py",
+    "session_lock.py",
+    "log_io.py",
+    "engine_process.py",
+    "server.py",
+    "work/experiments/magic600-04/adapter.py",
+    "assets/manifest.json",
+    "schemas/*",
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".claude/settings.json",
+    ".claude/hooks/*",
+    "tools/agents/*",
+    "tools/toolchain/*",
+    "tools/toolchain.lock.json",
+    "tools/skills.lock.json",
+    "tools/skills/*",
+    "tools/repo_digest.py"
+  ]
+}

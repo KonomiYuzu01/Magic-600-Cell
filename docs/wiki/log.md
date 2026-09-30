@@ -1,0 +1,12 @@
+# Wiki log
+
+Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
+
+## [2026-09-29] decision | Renderer candidates and selection gate
+Recorded the stage 2.4 candidates, the owner's full-detail stable 30 fps gate and the optional NVIDIA enhancements in [renderer-candidates](decisions/renderer-candidates.md). Vendor facts are unverified.
+
+## [2026-09-29] decision | Development system and 1.0 roadmap approved
+Recorded the owner decisions in [owner-decisions-2026-09-29](decisions/owner-decisions-2026-09-29.md) and the Codex review rounds in [codex-plan-review-2026-09-29](dialogues/codex-plan-review-2026-09-29.md).
+
+## [2026-09-29] update | Wiki created
+Created the schema, index, log and the [development-loop](workflows/development-loop.md) workflow page.
