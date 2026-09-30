@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] update | 0.4.1 screening findings
+The six screening shards reported 25 leads; falsifying experiments confirmed 13 findings (10 major, 3 minor, including two found during the experiments), rejected 2 and left 11 needing Windows fixtures or timing. The ranked, sanitized list is [screening-findings](../progress/0.4.1/screening-findings.md).
+
 ## [2026-09-30] update | Development workbench stage B: hooks and status line registered
 The [workbench](components/workbench.md) reporting hook and status line are now registered in `.claude/settings.json`, and `CLAUDE.md` asks Claude to answer every owner note by its id. Each registration exits silently when the script is missing. Live checks on the installed Claude Code confirmed the events, subagent routing and note delivery, and an interactive session showed the status line. Reviewed by one full Codex review and one scoped verification round.
 
