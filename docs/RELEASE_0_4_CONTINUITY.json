@@ -148,7 +148,8 @@
       "sha256": "28dbe384c25c27a52208cf137143deadbadb72fc77e99523a47aca76d1e97de9"
     },
     "native/bootstrap.py": {
-      "here": "same",
+      "adaptation": "0.4.1 step 1: sealed compile recipe (compile_recipe, compile_command)",
+      "here": "adapted",
       "sha256": "1b01ead24e16d3dfabef396e9f0ae68d12b4ece6f53cb7187c2d2cd051bd9747"
     },
     "native/directx_runtime.py": {
@@ -344,7 +345,8 @@
       "sha256": "350dea97633c412cdb5ad4590555e290dbf52c0792fb1a40c2ef456098d82f82"
     },
     "work/experiments/magic600-04/native_launch.py": {
-      "here": "same",
+      "adaptation": "0.4.1 step 1: build identity v2",
+      "here": "adapted",
       "sha256": "826c63d2b5f3bda0ee79893750321fedb940cdb6757923bc8575951dffdce93a"
     },
     "work/experiments/magic600-04/orbit_invariants.py": {
@@ -396,9 +398,10 @@
   "payload_rehashes_to_identity": true,
   "release": "0.4",
   "summary": {
+    "adapted": 2,
     "different": 0,
     "missing": 0,
-    "same": 96,
+    "same": 94,
     "total": 96
   },
   "toolchain": {

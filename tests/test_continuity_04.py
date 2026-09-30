@@ -58,7 +58,7 @@ class ContinuityTests(unittest.TestCase):
         record = continuity_04.check(receipt, root)
         self.assertTrue(record["payload_rehashes_to_identity"])
         self.assertTrue(record["matches_release_provenance"])
-        self.assertEqual(record["summary"], {"same": 4, "different": 0, "missing": 0, "total": 4})
+        self.assertEqual(record["summary"], {"same": 4, "adapted": 0, "different": 0, "missing": 0, "total": 4})
         self.assertIn("work/experiments/magic600-04/tests/run_postapproval.py", record["inputs"])
         self.assertEqual(set(record["toolchain"]["files_by_role"]), {"python", "numpy-init", "numpy-multiarray", "csc"})
         text = continuity_04.sanitized(record)
@@ -73,6 +73,19 @@ class ContinuityTests(unittest.TestCase):
         self.assertEqual(record["inputs"]["assets/seed.json"]["here"], "different")
         self.assertEqual(record["inputs"]["native/Host.cs"]["here"], "missing")
         self.assertEqual(record["summary"]["same"], 2)
+
+    def test_a_listed_adaptation_counts_only_while_its_release_bytes_are_in_history(self):
+        root, receipt = self.tree()
+        harness = "work/experiments/magic600-04/tests/run_postapproval.py"
+        self.assertIn(harness, continuity_04.ADAPTATIONS)
+        (root / harness).write_bytes(b"print(2)\n")
+        (root / "native/Host.cs").write_bytes(b"class Host { int x; }\r\n")  # not a listed adaptation
+        record = continuity_04.check(receipt, root, history=lambda r, p, d: True)
+        self.assertEqual(record["inputs"][harness]["here"], "adapted")
+        self.assertIn("adaptation", record["inputs"][harness])
+        self.assertEqual(record["inputs"]["native/Host.cs"]["here"], "different")
+        record = continuity_04.check(receipt, root, history=lambda r, p, d: False)
+        self.assertEqual(record["inputs"][harness]["here"], "different", "release bytes must stay recoverable")
 
     def test_an_edited_payload_no_longer_rehashes(self):
         root, receipt = self.tree()
@@ -100,7 +113,12 @@ class ContinuityTests(unittest.TestCase):
         self.assertTrue(record["payload_rehashes_to_identity"])
         for path, entry in record["inputs"].items():
             with self.subTest(path=path):
-                self.assertEqual(sha((ROOT / path).read_bytes()), entry["sha256"])
+                if entry["here"] == "adapted":
+                    self.assertIn(path, continuity_04.ADAPTATIONS)
+                    self.assertTrue(continuity_04.in_history(ROOT, path, entry["sha256"]))
+                else:
+                    self.assertEqual(entry["here"], "same")
+                    self.assertEqual(sha((ROOT / path).read_bytes()), entry["sha256"])
 
 
 if __name__ == "__main__":

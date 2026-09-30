@@ -18,6 +18,8 @@ from package_contract import BUNDLE_NAME, EXPERIMENT, VERSION, inspect_payload, 
 HERE = Path(__file__).resolve().parent
 E = HERE.parent
 ROOT = E.parents[2]
+sys.path.insert(0, str(E))
+import build_identity as identity_v2  # noqa: E402  (standard library only)
 
 
 def constants(path, names):
@@ -90,6 +92,15 @@ def checked_native(directory, native, contract):
         raise ValueError('Supply the non-regression Magic600Experiment.exe and its matching build.json')
     if build.get('checks', {}).get('after_build', {}).get('status') != 'unchanged':
         raise ValueError('Native build was not bound to unchanged inputs')
+    if identity_v2.receipt_version(build) == 2:
+        # The recorded after_build status is necessary but never sufficient: the identity must
+        # still rehash and every bound product file (runtime included) must match current bytes.
+        if not identity_v2.identity_intact(build):
+            raise ValueError('Native build receipt does not rehash to its build identity')
+        stale = [path for path, digest in identity_v2.product_files(build['identity']['product']).items()
+                 if not (ROOT / path).is_file() or sha(ROOT / path) != digest]
+        if stale:
+            raise ValueError('Native build predates current product inputs: ' + ', '.join(sorted(stale)[:5]))
     expected = {str(p): sha(ROOT / p) for p in native}
     if build.get('source') != expected:
         raise ValueError('Native host does not match all current retained and experimental C# sources')

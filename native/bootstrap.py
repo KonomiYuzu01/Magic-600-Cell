@@ -4,26 +4,93 @@ WinForms fixture windows run only in explicit developer test modes. The separate
 live bridge still verifies the actual MPUlt model at every connection.
 """
 from __future__ import annotations
-import argparse, hashlib, json, locale, os, pathlib, shutil, struct, subprocess, sys, time
+import argparse, hashlib, json, locale, os, pathlib, shutil, struct, subprocess, sys, tempfile, time
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 VERSION = '0.3'
 sys.path.insert(0, str(ROOT))
 from engine_process import EngineProcess, read_launch
 
 
+# The historical references: the five named here plus the .NET Framework 4.x default
+# csc.rsp set and the implicit mscorlib. Compilation seals them: /noconfig and /nostdlib+
+# stop csc from reading csc.rsp or adding mscorlib itself, and every system reference is
+# passed by full path from the compiler's own Framework directory.
+EXPLICIT_REFERENCES = ('System.dll', 'System.Core.dll', 'System.Drawing.dll',
+                       'System.Windows.Forms.dll', 'System.Web.Extensions.dll')
+CSC_RSP_REFERENCES = (
+    'Accessibility.dll', 'Microsoft.CSharp.dll', 'System.Configuration.dll', 'System.Configuration.Install.dll',
+    'System.Core.dll', 'System.Data.dll', 'System.Data.DataSetExtensions.dll', 'System.Data.Linq.dll',
+    'System.Data.OracleClient.dll', 'System.Deployment.dll', 'System.Design.dll', 'System.DirectoryServices.dll',
+    'System.dll', 'System.Drawing.Design.dll', 'System.Drawing.dll', 'System.EnterpriseServices.dll',
+    'System.Management.dll', 'System.Messaging.dll', 'System.Runtime.Remoting.dll',
+    'System.Runtime.Serialization.dll', 'System.Runtime.Serialization.Formatters.Soap.dll', 'System.Security.dll',
+    'System.ServiceModel.dll', 'System.ServiceModel.Web.dll', 'System.ServiceProcess.dll', 'System.Transactions.dll',
+    'System.Web.dll', 'System.Web.Extensions.Design.dll', 'System.Web.Extensions.dll', 'System.Web.Mobile.dll',
+    'System.Web.RegularExpressions.dll', 'System.Web.Services.dll', 'System.Windows.Forms.dll',
+    'System.Workflow.Activities.dll', 'System.Workflow.ComponentModel.dll', 'System.Workflow.Runtime.dll',
+    'System.Xml.dll', 'System.Xml.Linq.dll')
+COMPILER_FILES = ('csc.exe', 'csc.exe.config', 'alink.dll', '1033/cscui.dll', '1033/alinkui.dll',
+                  'default.win32manifest')
+
+
+def system_references():
+    names, seen = [], set()
+    for name in ('mscorlib.dll',) + EXPLICIT_REFERENCES + CSC_RSP_REFERENCES:
+        if name.lower() not in seen:
+            seen.add(name.lower())
+            names.append(name)
+    return names
+
+
+def compile_recipe(main_type):
+    """Everything that decides the compilation except file contents; the compiler is a role."""
+    return dict(compiler='csc', flags=['/nologo', '/noconfig', '/nostdlib+',
+        '/target:exe' if main_type.endswith('Regression') else '/target:winexe', '/platform:x86', '/debug+',
+        '/optimize+', '/utf8output', '/codepage:65001', '/win32manifest:default.win32manifest',
+        '/main:' + main_type], references=system_references(), config_copy='native/NativeHost.exe.config')
+
+
+def compile_command(csc, output, sources, main_type, extra_refs=()):
+    """The sealed csc invocation for compile_recipe(main_type); extra references keep their given paths."""
+    framework = pathlib.Path(csc).resolve().parent
+    if os.environ.get('LIB'):
+        raise RuntimeError('LIB is set; csc would search it for references. Unset LIB and build again.')
+    recipe = compile_recipe(main_type)
+    refs = []
+    for name in recipe['references']:
+        path = framework / name
+        if not path.is_file():
+            raise RuntimeError('Reference assembly missing from the compiler directory: ' + name)
+        refs.append(path)
+    extras = [pathlib.Path(p).resolve() for p in extra_refs]
+    taken = {p.name.lower() for p in refs}
+    for path in extras:
+        if not path.is_file() or path.is_symlink():
+            raise RuntimeError('Extra reference is not a regular file: ' + str(path))
+        if path.name.lower() in taken:
+            raise RuntimeError('Extra reference duplicates a system reference: ' + path.name)
+        taken.add(path.name.lower())
+    flags = [flag.replace('default.win32manifest', str(framework / 'default.win32manifest')) for flag in recipe['flags']]
+    return ([str(csc)] + flags + ['/out:' + str(output)] + ['/reference:' + str(p) for p in refs + extras]
+            + [str(p) for p in sources])
+
+
 def compile_program(csc, output, sources, main_type, log, extra_refs=()):
-    refs = ['System.dll', 'System.Core.dll', 'System.Drawing.dll',
-            'System.Windows.Forms.dll', 'System.Web.Extensions.dll']
-    refs.extend(str(p) for p in extra_refs)
-    command = [str(csc), '/nologo', '/target:exe' if main_type.endswith('Regression') else '/target:winexe',
-               '/platform:x86', '/debug+', '/optimize+', '/utf8output', '/codepage:65001', '/main:' + main_type,
-               '/out:' + str(output)] + ['/reference:' + r for r in refs] + [str(p) for p in sources]
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            encoding='utf-8', errors='replace')
+    command = compile_command(csc, output, sources, main_type, extra_refs)
+    work = pathlib.Path(tempfile.mkdtemp(prefix='magic600-csc-'))  # an empty directory: no same-name DLL to find
+    try:
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=work,
+                                encoding='utf-8', errors='replace')
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
     log.write_text(result.stdout, encoding='utf-8')
     if result.returncode:
         raise RuntimeError('C# compilation failed. Read ' + str(log) + '\n' + result.stdout)
-    shutil.copy2(ROOT / 'native/NativeHost.exe.config', output.with_suffix('.exe.config'))
+    shutil.copy2(ROOT / recipe_config(), output.with_suffix('.exe.config'))
+
+
+def recipe_config():
+    return compile_recipe('Program')['config_copy']
 
 
 def main():

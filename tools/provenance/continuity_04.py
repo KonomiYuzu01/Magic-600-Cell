@@ -6,7 +6,9 @@ rebuilding anything:
 
 - the stored v1 payload rehashes to the recorded build identity;
 - that identity and the executable hash equal docs/RELEASE_0_4_PROVENANCE.json;
-- every bound source, model and harness file has the same raw bytes here.
+- every bound source, model and harness file has the same raw bytes here, or
+  is a listed 0.4.1 adaptation whose release bytes are still in this
+  repository's Git history.
 
 It cannot recreate the build: the release toolchain (CPython 3.12.14, NumPy
 2.3.5, csc 4.8.9232.0 on Windows 10) differs from later machines, and the
@@ -23,12 +25,20 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PROVENANCE = "docs/RELEASE_0_4_PROVENANCE.json"
 V1_PAYLOAD = ("evidence_version", "sources", "model", "toolchain")
+# Release inputs that 0.4.1 deliberately changed. Their release bytes must remain in
+# Git history; their current bytes belong to the new build identity, not to 0.4.
+ADAPTATIONS = {
+    "native/bootstrap.py": "0.4.1 step 1: sealed compile recipe (compile_recipe, compile_command)",
+    "work/experiments/magic600-04/native_launch.py": "0.4.1 step 1: build identity v2",
+    "work/experiments/magic600-04/tests/run_postapproval.py": "0.4.1 step 1: identity v2 receipts, optional recorder",
+}
 TOOL_ROLES = (("python.exe", "python"), ("numpy/__init__.py", "numpy-init"),
               ("_multiarray_umath", "numpy-multiarray"), ("csc.exe", "csc"))
 
@@ -67,15 +77,35 @@ def tool_role(key: str) -> str:
     raise ValueError("unrecognised toolchain file in the receipt")
 
 
-def check(receipt: dict, root: Path = ROOT) -> dict:
+def in_history(root: Path, path: str, digest: str) -> bool:
+    """True if some committed version of path has exactly these bytes."""
+    log = subprocess.run(["git", "log", "--format=%H", "--", path], cwd=root, capture_output=True, text=True)
+    for commit in log.stdout.split():
+        blob = subprocess.run(["git", "show", f"{commit}:{path}"], cwd=root, capture_output=True)
+        if blob.returncode == 0 and hashlib.sha256(blob.stdout).hexdigest() == digest:
+            return True
+    return False
+
+
+def state(root: Path, path: str, digest: str, history) -> str:
+    file = root / path
+    if not file.is_file():
+        return "missing"
+    if sha256(file) == digest:
+        return "same"
+    return "adapted" if path in ADAPTATIONS and history(root, path, digest) else "different"
+
+
+def check(receipt: dict, root: Path = ROOT, history=in_history) -> dict:
     if receipt.get("evidence_version") != 1:
         raise ValueError("expected an evidence_version 1 receipt")
     provenance = json.loads((root / PROVENANCE).read_text(encoding="utf-8"))["native"]
     inputs = {}
     for path, digest in sorted(bound_inputs(receipt).items()):
         file = root / path
-        inputs[path] = {"sha256": digest,
-                        "here": "missing" if not file.is_file() else ("same" if sha256(file) == digest else "different")}
+        inputs[path] = {"sha256": digest, "here": state(root, path, digest, history)}
+        if inputs[path]["here"] == "adapted":
+            inputs[path]["adaptation"] = ADAPTATIONS[path]
     toolchain = receipt["toolchain"]
     record = {
         "release": "0.4",
@@ -86,7 +116,7 @@ def check(receipt: dict, root: Path = ROOT) -> dict:
                                        and receipt["executable_sha256"] == provenance["executable_sha256"]),
         "after_build_check": receipt.get("checks", {}).get("after_build", {}).get("status"),
         "inputs": inputs,
-        "summary": {state: sum(1 for i in inputs.values() if i["here"] == state) for state in ("same", "different", "missing")},
+        "summary": {kind: sum(1 for i in inputs.values() if i["here"] == kind) for kind in ("same", "adapted", "different", "missing")},
         "toolchain": {
             "python": toolchain["python"]["version"].split()[0],
             "bits": toolchain["python"]["bits"],
@@ -124,8 +154,10 @@ def main(argv=None) -> int:
     s = record["summary"]
     print(f"identity rehash: {record['payload_rehashes_to_identity']}; "
           f"matches release provenance: {record['matches_release_provenance']}; "
-          f"inputs: {s['same']} same, {s['different']} different, {s['missing']} missing of {s['total']}")
-    ok = record["payload_rehashes_to_identity"] and record["matches_release_provenance"] and s["same"] == s["total"]
+          f"inputs: {s['same']} same, {s['adapted']} adapted, {s['different']} different, {s['missing']} missing "
+          f"of {s['total']}")
+    ok = (record["payload_rehashes_to_identity"] and record["matches_release_provenance"]
+          and s["same"] + s["adapted"] == s["total"])
     return 0 if ok else 1
 
 
