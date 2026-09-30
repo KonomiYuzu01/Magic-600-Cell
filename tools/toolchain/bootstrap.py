@@ -402,7 +402,8 @@ def winget_installed(entry: dict) -> tuple[bool, str]:
         return False, f"winget list failed: {type(exc).__name__}"
     if r.returncode != 0 or entry["winget_id"].lower() not in r.stdout.lower():
         return False, "missing"
-    if not re.search(rf"(?<![\w.]){re.escape(entry['version'])}(?![\w.+-])", r.stdout):
+    # MSI packages often register the version with trailing ".0" parts (31.5.3 is listed as 31.5.3.0).
+    if not re.search(rf"(?<![\w.]){re.escape(entry['version'])}(?:\.0)*(?![\w.+-])", r.stdout):
         return False, f"installed, but not version {entry['version']}"
     return True, f"installed through winget: {entry['version']}"
 
