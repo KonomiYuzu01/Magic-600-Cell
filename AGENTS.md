@@ -114,3 +114,11 @@ Ask only when an action exceeds an existing recorded authorization; do not re-re
 A checksum or signature mismatch blocks the installation until it is investigated and verified again.
 
 See `docs/DEVELOPMENT.md`, `docs/RUNTIME_PROVENANCE.md` and `DIRECTX.md` for build, provenance and dependency details.
+
+Merging (the owner is not a merge button):
+- The integrator merges its own pull request, without asking, when all of these hold: the checks this file lists for the changed area pass on the final head and are listed in the PR body; the review rules above are met (a valid review of the current candidate with no open `blocker` or `major`, or a recorded exemption); the PR contains nothing under "Ask the owner"; and the branch merges cleanly into the current base.
+- Batch work: one pull request per finished task or milestone, not per commit or per fix. Follow-up fixes to an open pull request go to the same branch.
+- The owner is asked only for pull requests that contain an "Ask the owner" item, that need an owner exception to the review rule, or that the owner marked for their own sign-off. Ask once, in two or three lines, never for a routine merge.
+- After merging, the integrator reports what landed in a short summary. When a merged change touches an approval input (`tools/toolchain/approval_inputs.json`), the summary ends with `python tools/toolchain/bootstrap.py approve`. Batch approval-input changes so the owner approves once per milestone.
+- Never force-push or rewrite `main`, never merge a branch another session is still working on, and delete merged branches.
+- Questions to the owner follow the same rule: decide anything that has a conventional default or a recorded decision, record the choice, and ask only for items under "Ask the owner".
