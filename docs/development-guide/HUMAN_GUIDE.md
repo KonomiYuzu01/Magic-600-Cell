@@ -5,7 +5,7 @@ This guide is for the owner and any person working on the project. Agents follow
 ## 1. What this repository is now
 
 - **0.4** is the released version (19 September 2026). Its package and provenance are frozen.
-- **0.4.1** is the next release and the last one of the 0.4 line. It optimizes 0.4, fixes bugs, closes the B4-12 performance acceptance and adds a local development workbench. It also ships the exporter that moves your data to 1.0.
+- **0.4.1** is the next release and the last one of the 0.4 line. It optimizes 0.4, fixes bugs, closes the B4-12 performance acceptance and adds a local development workbench: a desktop monitor that lists every session, lets you watch any of them live, and keeps the project progress in view. It also ships the exporter that moves your data to 1.0.
 - **1.0** is a new program. It keeps the mathematics, the protection rules and the model identity, but not the 0.4 runtime. Direct3D 12 is the base of the new renderer; Godot and Blender are in scope. Its first phase, stage 2, inventories 0.4, tears it down and redesigns it, with a timed experiment window.
 - The decisions behind this are recorded in `docs/wiki/decisions/owner-decisions-2026-09-29.md`.
 

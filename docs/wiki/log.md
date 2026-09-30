@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] decision | Development workbench scope
+Recorded the owner's definition of the 0.4.1 development workbench in [development-workbench](decisions/development-workbench.md): all sessions, live view, work boards and always-visible progress, read-only and local only.
+
 ## [2026-09-29] decision | Renderer candidates and selection gate
 Recorded the stage 2.4 candidates, the owner's full-detail stable 30 fps gate and the optional NVIDIA enhancements in [renderer-candidates](decisions/renderer-candidates.md). Vendor facts are unverified.
 
