@@ -5,7 +5,7 @@
   "paid_api_ceiling_usd": 100,
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "in_progress", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null},
-    {"id": "0.4.1-2", "track": "0.4.1", "title": "Baseline", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
+    {"id": "0.4.1-2", "track": "0.4.1", "title": "Baseline", "status": "in_progress", "acceptance": "Every B4-12 metric has a baseline from the unchanged harness on the unmodified build: one smoke run, then three full series of 100 measured samples per metric. A baseline that uses the one-run allowance says so next to every number and is never presented as a formal 3 x 100 result.", "acceptance_source": "docs/wiki/decisions/b4-12-measurement-decisions.md", "blocker": null},
     {"id": "0.4.1-3", "track": "0.4.1", "title": "Exporter and fixtures", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "0.4.1-4", "track": "0.4.1", "title": "Screening and fixes", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "0.4.1-5", "track": "0.4.1", "title": "Freeze candidate", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},

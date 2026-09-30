@@ -51,6 +51,8 @@ tools/.venv/engine/Scripts/python.exe work/experiments/magic600-04/tests/run_b41
 python tools/perf/b412_summary.py <run directories> --out <summary.json>
 ```
 
+The runner uses the fixture builder, which can also be run on its own: `tools/perf/b412_fixture.py build --profile <profile> --output <directory>`, `copy --fixture <directory> --data <fresh directory>` and `verify --data <directory> --fixture <directory>`. For attribution only, `tools/perf/turn_probe.py --output <fresh directory>` times the engine side of the native turn route headlessly, from a fresh `basic` fixture. It never yields B4-12 results.
+
 `run` copies the fixture into a fresh data directory and calls `run_postapproval.py --focus b412`, which compiles the harness with its inputs bound in `build.json`, starts the owned engine on that data directory and runs the harness. For `m3` the runner starts PresentMon before the harness and stops it after the application exits. The runner then merges the harness record, the build receipt, the fixture and the exit status into `run.json`.
 
 Runner to harness, by environment variable: `MAGIC600_NATIVE_FOCUS=b412`, `MAGIC600_B412_SERIES` (the series), `MAGIC600_B412_EXPECTED_HASH` (the fixture's `state_hash`), and for `m3` `MAGIC600_B412_M3_READY` (a file the runner creates once PresentMon is capturing; the harness waits up to 60 s for it) and `MAGIC600_B412_M3_SECONDS` (rotation length, default 75). `series` runs every metric `--runs` times as separate cold runs, in a fixed order, adds one run for a metric whose run p95 values differ by more than 20 %, and then writes the summary. `--fixture history-400` selects an attribution fixture; its runs are labelled attribution.
