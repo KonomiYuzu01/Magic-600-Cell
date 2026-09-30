@@ -436,6 +436,18 @@ class Workbench(QObject):
         self.messageChanged.emit()
 
 
+def load_ui(engine: QQmlApplicationEngine, wb: Workbench, compact: bool = False) -> bool:
+    """Load the full window, or with `compact` only the always-on-top progress view as its own
+    top-level window (closing it quits). Returns False when QML failed to load."""
+    engine.rootContext().setContextProperty("wb", wb)
+    if compact:
+        engine.setInitialProperties({"standalone": True, "visible": True})
+        engine.load(QUrl.fromLocalFile(str(QML_DIR / "Compact.qml")))
+    else:
+        engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
+    return bool(engine.rootObjects())
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Magic 600 Cell development workbench")
     parser.add_argument("--compact", action="store_true", help="open only the always-on-top progress view")
@@ -449,10 +461,7 @@ def main(argv=None) -> int:
     app.setApplicationName("Magic 600 Cell workbench")
     wb = Workbench(main_dir)
     engine = QQmlApplicationEngine()
-    engine.rootContext().setContextProperty("wb", wb)
-    engine.setInitialProperties({"startCompact": args.compact})
-    engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
-    if not engine.rootObjects():
+    if not load_ui(engine, wb, args.compact):
         return 1
     return app.exec()
 

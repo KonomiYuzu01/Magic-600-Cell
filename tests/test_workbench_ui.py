@@ -77,9 +77,7 @@ class WorkbenchUiTests(unittest.TestCase):
         self.engine = QQmlApplicationEngine()
         self.warnings = []
         self.engine.warnings.connect(lambda ws: self.warnings.extend(w.toString() for w in ws))
-        self.engine.rootContext().setContextProperty("wb", self.wb)
-        self.engine.setInitialProperties({"startCompact": False})
-        self.engine.load(QUrl.fromLocalFile(str(wbapp.QML_DIR / "Main.qml")))
+        self.assertTrue(wbapp.load_ui(self.engine, self.wb, compact=False))  # the app's own startup path
         self.addCleanup(self.engine.deleteLater)
 
     def pump(self, n=5):
@@ -166,17 +164,31 @@ class WorkbenchUiTests(unittest.TestCase):
         self.assertIn("Summary", titles)
         self.assertIn("review.json (private, plain text)", [f["label"] for f in wb.files])
 
-    def test_compact_window_loads(self):
+    def test_compact_mode_shows_a_top_level_window(self):
+        # --compact once loaded a transient child of a hidden main window, so nothing ever appeared.
         engine = QQmlApplicationEngine()
         warnings = []
         engine.warnings.connect(lambda ws: warnings.extend(w.toString() for w in ws))
-        engine.rootContext().setContextProperty("wb", self.wb)
-        engine.setInitialProperties({"startCompact": True})
-        engine.load(QUrl.fromLocalFile(str(self.wbapp.QML_DIR / "Main.qml")))
+        self.assertTrue(self.wbapp.load_ui(engine, self.wb, compact=True))
         self.pump()
-        self.assertTrue(engine.rootObjects())
+        (win,) = engine.rootObjects()
+        self.assertEqual(win.title(), "Workbench progress")
+        self.assertTrue(win.isVisible())
+        self.assertIsNone(win.transientParent())
+        self.assertTrue(win.property("standalone"))
         self.assertEqual(warnings, [])
         engine.deleteLater()
+
+    def test_compact_view_from_the_main_window_is_top_level(self):
+        main = self.engine.rootObjects()[0]
+        compact = next(w for w in QGuiApplication.allWindows() if w.title() == "Workbench progress")
+        self.assertIsNone(compact.transientParent())  # stays visible when the main window is minimized
+        self.assertFalse(compact.property("standalone"))
+        compact.show()
+        main.showMinimized()
+        self.pump()
+        self.assertTrue(compact.isVisible())
+        compact.close()
 
 
 if __name__ == "__main__":

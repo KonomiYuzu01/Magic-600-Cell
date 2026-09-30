@@ -4,10 +4,9 @@ import QtQuick.Layouts
 
 ApplicationWindow {
     id: root
-    property bool startCompact: false
     width: 1360
     height: 860
-    visible: !startCompact
+    visible: true
     title: "Magic 600 Cell workbench"
 
     readonly property var statusColors: ({ running: "#2e7d32", waiting: "#b26a00", finished: "#546e7a",
@@ -17,8 +16,7 @@ ApplicationWindow {
 
     Compact {
         id: compactWindow
-        visible: root.startCompact
-        onClosing: if (root.startCompact) Qt.quit()
+        visible: false
     }
 
     header: ToolBar {
