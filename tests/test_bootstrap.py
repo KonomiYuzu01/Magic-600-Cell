@@ -330,16 +330,64 @@ class RefusalTests(unittest.TestCase):
         bootstrap.resolve_executable = lambda e, n: None
         bootstrap.shutil.which = lambda name, **k: "winget.exe" if name == "winget" else None
         try:
-            for listing, ok in (("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3\n", True),
-                                ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.0\n", True),
-                                ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.30\n", False),
-                                ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.1\n", False),
-                                ("No installed package found matching input criteria.\n", False)):
-                bootstrap.subprocess.run = lambda *a, **k: subprocess.CompletedProcess(a, 0, listing, "")
+            for code, listing, ok in ((0, "Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3\n", True),
+                                      (0, "Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.0\n", True),
+                                      (0, "Name     Id          Version\ndraw.io  JGraph.Draw 31.5.30\n", False),
+                                      (0, "Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.1\n", False),
+                                      # An available update is never the installed version.
+                                      (0, "Name Id Version Available Source\ndraw.io JGraph.Draw 31.5.2.0 31.5.3 winget\n", False),
+                                      (0x8A150014, "No installed package found matching input criteria.\n", False),
+                                      (1, "", False)):
+                bootstrap.subprocess.run = lambda *a, c=code, l=listing, **k: subprocess.CompletedProcess(a, c, l, "")
                 with self.subTest(listing=listing):
                     self.assertEqual(bootstrap.run_probe(entry)[0], ok)
         finally:
             bootstrap.PLATFORM, bootstrap.resolve_executable, bootstrap.shutil.which, bootstrap.subprocess.run = saved
+
+    def test_winget_package_at_another_version_is_not_replaced(self):
+        lock = bootstrap.load_lock()
+        state = {"installed": False}
+        saved = (bootstrap.PLATFORM, bootstrap.resolve_executable, bootstrap.shutil.which, bootstrap.subprocess.run,
+                 bootstrap.install_entry, bootstrap.ledger)
+        bootstrap.PLATFORM = "windows"
+        bootstrap.shutil.which = lambda name, **k: "winget.exe" if name == "winget" else None
+        bootstrap.ledger = lambda record: None
+        missing = (0x8A150014, "No installed package found matching input criteria.\n")
+        try:
+            # (tool, version its command reports or None when not on PATH, winget list exit and output, refusal)
+            for tool, reported, (code, listing), refusal in (
+                    ("drawio", None, (0, "draw.io  JGraph.Draw 31.5.2.0\n"), "owner approval"),
+                    ("drawio", None, (0, "Name Id Version Available Source\ndraw.io JGraph.Draw 31.5.2.0 31.5.3 winget\n"),
+                     "owner approval"),
+                    ("drawio", None, (1, ""), "failed with exit 1"),  # a failed listing is not proof of absence
+                    ("typst", "typst 0.14.2", (0, "Typst  Typst.Typst 0.14.2\n"), "owner approval"),
+                    ("jq", "jq-1.8.1", missing, "owner approval")):
+                installs = []
+                bootstrap.install_entry = lambda e: installs.append(e["id"])
+                bootstrap.resolve_executable = lambda e, n, r=reported: "tool" if r else None
+                bootstrap.subprocess.run = lambda cmd, *a, r=reported, c=code, l=listing, **k: (
+                    subprocess.CompletedProcess(cmd, c, l, "") if "list" in cmd else subprocess.CompletedProcess(cmd, 0, r, ""))
+                with self.subTest(tool=tool, listing=listing):
+                    with self.assertRaises(bootstrap.Refused) as ctx:
+                        bootstrap.install(lock, tool, set())
+                    self.assertIn(refusal, str(ctx.exception))
+                    self.assertEqual(installs, [])
+            # Control: a package that winget does not list and that is not on PATH is installed.
+            installs = []
+
+            def install_drawio(entry):
+                installs.append(entry["id"])
+                state["installed"] = True
+            bootstrap.install_entry = install_drawio
+            bootstrap.resolve_executable = lambda e, n: None
+            bootstrap.subprocess.run = lambda cmd, *a, **k: subprocess.CompletedProcess(
+                cmd, *((0, "draw.io  JGraph.Draw 31.5.3.0\n") if state["installed"] else missing), "")
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(bootstrap.install(lock, "drawio", set()), "installed")
+            self.assertEqual(installs, ["drawio"])
+        finally:
+            (bootstrap.PLATFORM, bootstrap.resolve_executable, bootstrap.shutil.which, bootstrap.subprocess.run,
+             bootstrap.install_entry, bootstrap.ledger) = saved
 
     def test_pinned_versions_are_compared_exactly(self):
         lock = bootstrap.load_lock()
@@ -351,7 +399,10 @@ class RefusalTests(unittest.TestCase):
                                      ("mermaid-cli", "12.0.01", False),
                                      ("marp-cli", "@marp-team/marp-cli v4.5.10 (w/ @marp-team/marp-core v4.5.1)", False),
                                      ("uv", "uv 0.12.20rc1", False), ("uv", "uv 0.12.20.dev1", False),
-                                     ("uv", "uv 0.12.20.post1", False), ("uv", "uv 0.12.20+local", False)):
+                                     ("uv", "uv 0.12.20.post1", False), ("uv", "uv 0.12.20+local", False),
+                                     ("typst", "typst 0.15.1 (9dfd3a08)", True), ("typst", "typst 0.14.2", False),
+                                     ("typst", "typst 0.15.10", False), ("jq", "jq-1.8.2", True),
+                                     ("jq", "jq-1.8.1", False), ("jq", "jq-1.8.2rc1", False)):
                 bootstrap.subprocess.run = lambda *a, **k: subprocess.CompletedProcess(a, 0, output, "")
                 with self.subTest(tool=tool, output=output):
                     self.assertEqual(bootstrap.run_probe(bootstrap.entry_for(lock, tool))[0], ok)

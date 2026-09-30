@@ -246,7 +246,7 @@
         "drawio",
         "--version"
       ],
-      "note": "Package ID verified; version and installer hash are recorded by `bootstrap.py pin drawio` on the owner machine."
+      "note": "Pinned on the owner machine with `bootstrap.py pin drawio` (2026-09-30). A GUI package adds no command to PATH, so winget's record confirms the version."
     },
     {
       "id": "typst",
@@ -267,7 +267,7 @@
         "typst",
         "--version"
       ],
-      "note": "Package ID verified; pin on the owner machine."
+      "note": "Pinned on the owner machine with `bootstrap.py pin typst` (2026-09-30). Needs the Microsoft Visual C++ 2015+ x64 runtime (vcruntime140.dll); installation skips winget dependencies, so without it the post-install probe fails and installation stops."
     },
     {
       "id": "jq",
@@ -288,7 +288,7 @@
         "jq",
         "--version"
       ],
-      "note": "Package ID not yet verified."
+      "note": "Pinned on the owner machine with `bootstrap.py pin jq` (2026-09-30)."
     },
     {
       "id": "py-spy",
