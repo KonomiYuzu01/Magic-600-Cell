@@ -27,8 +27,8 @@ The 0.4 package contract lives in `work/experiments/magic600-04/packaging/` (`pa
 | Windows file version resource | `assemble.py:191` (`filevers=(0,4,0,0)`, `FileVersion '0.4'`) | `(0,4,1,0)`, `'0.4.1'` |
 | Manifest `layout_version` | `package_contract.py:39`, `assemble.py:204` | keep `1` unless the layout changes |
 | Test fixture version | `test_package_contract.py:34` | follow `VERSION` |
-| Default data directory | `launcher.py:186` (`%LOCALAPPDATA%/Magic600Cell/0.4`) | **Owner decision, see below** |
-| Native host cache | `launcher.py:37,93,200` (`native-host-0.4`) | `native-host-0.4.1` (cache only; rebuilt safely) |
+| Default data directory | `launcher.py:186` (`%LOCALAPPDATA%/Magic600Cell/0.4`) | keep `0.4` (owner decision 2026-09-30); see [data-directory-plan](data-directory-plan.md) |
+| Native host cache | `launcher.py:35,93,200` (`native-host-0.4`) | keep `native-host-0.4`: it holds the user-owned `MPUlt_settings.txt` |
 | Release record | `RELEASE.json` | new version, hashes, `microsoft_directx_payload_included: false` |
 | Provenance | `docs/RELEASE_0_4_PROVENANCE.json` (keys: `version`, `source_files`, `native`, `model_id`, `launcher_sha256`, `package_manifest_sha256`, `zip_sha256`, `reused_evidence`, `raw_recordings`, `startup_defaults`) | new `docs/RELEASE_0_4_1_PROVENANCE.json` with the same keys; the 0.4 file stays frozen |
 | Release page | `docs/RELEASE_0_4.md` | new `docs/RELEASE_0_4_1.md` (skeleton in section 3) |
@@ -37,7 +37,7 @@ The 0.4 package contract lives in `work/experiments/magic600-04/packaging/` (`pa
 | Required licence files | `check_package.py:333-335` | unchanged list, verified in the built ZIP |
 | Assets | GitHub release: portable ZIP and `SHA256SUMS.txt` | same; 0.4 assets and tag unchanged |
 
-**Owner decision needed before the freeze (data directory).** The launcher derives the default data directory from the version. A plain bump to `0.4.1` would open an empty directory and existing 0.4 users would not see their sessions. Options: (a) keep the data directory at `0.4` for the whole 0.4 line (no migration; 0.4.1 is a bug-fix release of the same data format); (b) a new `0.4.1` directory with an explicit, transactional copy on first start; (c) a new directory and a documented manual step. Recommendation: (a), because 0.4.1 does not change the data format and the one-way migration belongs to `.c600migrate` for 1.0. Whatever is chosen, never modify or move the original 0.4 session directory.
+**Data directory (decided 2026-09-30).** 0.4.1 keeps the 0.4 data directory and native cache; change list and test points in [data-directory-plan](data-directory-plan.md). Never modify or move the original 0.4 session directory.
 
 Release evidence rules: publish only verified results for the matching source and build; separate source/fixture, synthetic, actual Windows/DirectX and performance evidence; headless runs cannot support Windows/DirectX, input, long-session or performance claims.
 
@@ -57,7 +57,7 @@ Download the Windows x64 portable ZIP, extract it into a fresh folder and run Ma
 <B4-12 result per target: met with the measured value, or not met with the measured value. State the machine, sample count and method (3 x 100 formal measurement).>
 
 ## Your data
-<Where 0.4.1 stores sessions and what happens to 0.4 sessions, per the owner's data-directory decision.>
+0.4.1 uses the same data folder as 0.4. Your sessions, macros, keybindings and MPUlt view settings carry over.
 
 ## Source and package binding
 The frozen source-file hashes, native inputs and ZIP hash are in [RELEASE_0_4_1_PROVENANCE.json](RELEASE_0_4_1_PROVENANCE.json).

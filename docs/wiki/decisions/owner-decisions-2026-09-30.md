@@ -13,6 +13,7 @@ claims:
   - {id: pair-implementation, evidence_kind: decision, checked_at: 2026-09-30}
   - {id: codex-first, evidence_kind: decision, checked_at: 2026-09-30}
   - {id: workbench-launch, evidence_kind: decision, checked_at: 2026-09-30}
+  - {id: data-directory-0-4-1, evidence_kind: decision, checked_at: 2026-09-30}
 ---
 
 # Owner decisions, 30 September 2026
@@ -26,3 +27,4 @@ The owner found long serial review loops inefficient and has subscription quota 
 - The owner authorized updating `AGENTS.md`, `CLAUDE.md` and the guides to match without a further question.
 - **Workbench watch and launch.** The development workbench watches the work continuously and launches sessions, wrapper calls and registered experiment runs on the owner's request, so the owner can inspect and start experiments at any time ([development-workbench](development-workbench.md)).
 - **Codex first.** Codex subscription quota is largely unused, so every separable part of a task goes to Codex through the implementation mode, every full review runs as at least two concurrent shards, and read-only sharded Codex screening of the 0.4 code prepares 0.4.1 step 4. Claude keeps planning, integration and review of Codex's changes.
+- **0.4.1 data directory.** 0.4.1 keeps the 0.4 data directory (`%LOCALAPPDATA%/Magic600Cell/0.4`) and its native cache, so 0.4 sessions and MPUlt view settings carry over without a copy. Change list: `docs/progress/0.4.1/data-directory-plan.md`.

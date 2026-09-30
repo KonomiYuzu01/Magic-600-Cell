@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] decision | 0.4.1 keeps the 0.4 data directory
+Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md). The version and the data directory are decoupled; the plan keeps the native cache name so user-owned MPUlt settings survive.
+
 ## [2026-09-30] update | 0.4.1 screening findings
 The six screening shards reported 25 leads; falsifying experiments confirmed 13 findings (10 major, 3 minor, including two found during the experiments), rejected 2 and left 11 needing Windows fixtures or timing. The ranked, sanitized list is [screening-findings](../progress/0.4.1/screening-findings.md).
 
