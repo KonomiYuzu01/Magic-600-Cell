@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "runs": [
+    {
+      "id": "checks-mechanics",
+      "title": "Mechanics and persistence checks",
+      "steps": [["python", "tests/test_core.py"], ["python", "tests/test_reference_maps.py"], ["python", "tests/test_crash.py"]],
+      "cwd": ".",
+      "inputs": ["tests/test_core.py", "tests/test_reference_maps.py", "tests/test_crash.py", "core.py", "session.py", "session_lock.py", "log_io.py", "assets/manifest.json"],
+      "outputs": [],
+      "timeout_s": 3600,
+      "windows_required": false
+    },
+    {
+      "id": "checks-process",
+      "title": "Process ownership checks",
+      "steps": [["python", "tests/test_core.py"], ["python", "tests/test_reference_maps.py"], ["python", "tests/test_crash.py"], ["python", "tests/test_engine_lifecycle.py"]],
+      "cwd": ".",
+      "inputs": ["tests/test_core.py", "tests/test_reference_maps.py", "tests/test_crash.py", "tests/test_engine_lifecycle.py", "core.py", "session.py", "session_lock.py", "log_io.py", "engine_process.py", "server.py", "assets/manifest.json"],
+      "outputs": [],
+      "timeout_s": 3600,
+      "windows_required": false
+    },
+    {
+      "id": "checks-agent-rules",
+      "title": "Agent rules, hooks, wrapper, installer and skills checks",
+      "steps": [["python", "tests/test_agent_rules_sync.py"], ["python", "tests/test_codex_review.py"], ["python", "tests/test_stop_gate.py"], ["python", "tests/test_bootstrap.py"], ["python", "tests/test_wiki_lint.py"], ["python", "tests/test_workbench.py"]],
+      "cwd": ".",
+      "inputs": ["tests/test_agent_rules_sync.py", "tests/test_codex_review.py", "tests/test_stop_gate.py", "tests/test_bootstrap.py", "tests/test_wiki_lint.py", "tests/test_workbench.py", "AGENTS.md", "CLAUDE.md", ".claude/hooks/*.py", "tools/agents/*.py", "tools/toolchain/*.py", "tools/skills/*.py", ".agents/skills/*/SKILL.md", "tools/workbench/*.py"],
+      "outputs": [],
+      "timeout_s": 1800,
+      "windows_required": false
+    },
+    {
+      "id": "checks-workbench",
+      "title": "Workbench checks",
+      "steps": [["python", "tests/test_workbench.py"], ["tools/.venv/workbench/Scripts/python.exe", "tests/test_workbench_ui.py"]],
+      "cwd": ".",
+      "inputs": ["tools/workbench/*.py", "tools/workbench/*.json", "tools/workbench/qml/*.qml", "schemas/workbench-runs.schema.json", "tests/test_workbench.py", "tests/test_workbench_runs.py", "tests/test_workbench_watch.py", "tests/test_workbench_ui.py"],
+      "outputs": [],
+      "timeout_s": 900,
+      "windows_required": true
+    },
+    {
+      "id": "checks-wiki",
+      "title": "Wiki checks",
+      "steps": [["python", "tools/wiki/lint.py"], ["python", "tests/test_wiki_lint.py"]],
+      "cwd": ".",
+      "inputs": ["tools/wiki/*.py", "tests/test_wiki_lint.py", "docs/wiki/**/*.md"],
+      "outputs": [],
+      "timeout_s": 300,
+      "windows_required": false
+    },
+    {
+      "id": "checks-skills",
+      "title": "Skills check",
+      "steps": [["python", "tools/skills/sync.py", "--check"]],
+      "cwd": ".",
+      "inputs": ["tools/skills/*.py", "tools/skills.lock.json", ".agents/skills/*/SKILL.md", ".claude/skills/*/SKILL.md"],
+      "outputs": [],
+      "timeout_s": 300,
+      "windows_required": false
+    },
+    {
+      "id": "doctor",
+      "title": "Toolchain doctor",
+      "steps": [["python", "tools/toolchain/bootstrap.py", "doctor"]],
+      "cwd": ".",
+      "inputs": ["tools/toolchain/*.py", "tools/toolchain.lock.json", "tools/toolchain/approval_inputs.json"],
+      "outputs": [],
+      "timeout_s": 600,
+      "windows_required": false
+    }
+  ]
+}

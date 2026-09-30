@@ -5,8 +5,8 @@ Run with the workbench environment (the test skips without PySide6):
   tools\\.venv\\workbench\\Scripts\\python.exe tests\\test_workbench_ui.py
 
 It loads every QML file, follows a synthetic session, sends a note and exercises the
-tool buttons against a recording launcher, so nothing is opened on the desktop and
-no real session is read.
+tool buttons, the run and launch controls and the attention list against a recording
+launcher, so nothing is opened or started on the desktop and no real session is read.
 """
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import json
 import os
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -23,14 +23,18 @@ sys.path.insert(0, str(ROOT / "tests"))
 sys.path.insert(0, str(ROOT / "tools" / "workbench"))
 
 try:
-    from PySide6.QtCore import QUrl
+    import shiboken6
+    from PySide6.QtCore import QMetaObject, QUrl
     from PySide6.QtGui import QGuiApplication
-    from PySide6.QtQml import QQmlApplicationEngine
+    from PySide6.QtQml import QQmlApplicationEngine, QQmlExpression
     from PySide6.QtQuickControls2 import QQuickStyle
 except ImportError:  # the workbench environment is not installed here
     QGuiApplication = None
 
 import test_workbench as tw  # noqa: E402  (fixtures)
+import runs  # noqa: E402
+
+FAKE_RID = "20260930T120000Z-0000abcd"
 
 
 class Recorder:
@@ -45,6 +49,35 @@ class Recorder:
 
     def claude(self):
         self.calls.append(("claude",))
+
+    def start_run(self, main, checkout, run_id, expect):
+        self.calls.append(("start_run", str(checkout), run_id, expect))
+        return FAKE_RID
+
+    def start_codex(self, main, checkout, spec):
+        self.calls.append(("start_codex", str(checkout), spec))
+        return FAKE_RID
+
+    def cancel_run(self, data, rid):
+        self.calls.append(("cancel_run", rid))
+
+
+def items(root):
+    """Every visual item under `root`, including Repeater delegates (findChild misses them) and inactive tabs.
+
+    Delegates replaced by a model reset can still be listed until Qt deletes them; skip them."""
+    stack, out = [root], []
+    while stack:
+        item = stack.pop()
+        if not shiboken6.isValid(item):
+            continue
+        out.append(item)
+        stack.extend(item.childItems())
+    return out
+
+
+def iso_now(delta=0.0) -> str:
+    return (datetime.now(timezone.utc) + timedelta(seconds=delta)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @unittest.skipIf(QGuiApplication is None, "PySide6 is not installed in this interpreter")
@@ -163,6 +196,215 @@ class WorkbenchUiTests(unittest.TestCase):
         titles = [wb.timeline.rows[i]["title"] for i in range(wb.timeline.rowCount())]
         self.assertIn("Summary", titles)
         self.assertIn("review.json (private, plain text)", [f["label"] for f in wb.files])
+
+    def record(self, rid: str, status: str, **extra):
+        doc = {"schema": 1, "rid": rid, "kind": "registry", "run": "demo", "title": "Demo checks",
+               "checkout": str(self.fx.main), "cwd": str(self.fx.main), "display": [["python", "tests/demo.py"]],
+               "steps": [["python", "tests/demo.py"]], "digest": None, "registry_sha256": None, "python": None,
+               "created": iso_now(-120), "started": iso_now(-119), "ended": None, "alive_at": iso_now(),
+               "status": status, "reason": None, "exits": [], "call_id": None,
+               "inputs": {"files": {}, "incomplete": False}, "outputs": [], "log_dropped": 0,
+               "lock": f"rid-{rid}.lock", "entry_lock": None, **extra}
+        (self.fx.data / "runs" / f"{rid}.json").write_text(json.dumps(doc), encoding="utf-8")
+
+    def click(self, name: str):
+        item = self.item(name)
+        if not QMetaObject.invokeMethod(item, "click"):
+            QMetaObject.invokeMethod(item, "clicked")
+        self.pump()
+
+    def item(self, name: str):
+        root = self.engine.rootObjects()[0].property("contentItem")  # contentItem() can return a stale wrapper
+        found = [i for i in items(root) if i.objectName() == name]
+        self.assertEqual(len(found), 1, name)
+        return found[0]
+
+    def hold(self, rid: str):
+        """Hold the run's liveness lock, as a live runner does."""
+        locks = self.fx.data / "runs" / "locks"
+        locks.mkdir(parents=True, exist_ok=True)
+        fd = os.open(locks / f"rid-{rid}.lock", os.O_RDWR | os.O_CREAT)
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            self.addCleanup(lambda: (os.lseek(fd, 0, 0), msvcrt.locking(fd, msvcrt.LK_UNLCK, 1), os.close(fd)))
+        else:
+            import fcntl
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.addCleanup(os.close, fd)
+
+    def choose(self, name: str, path: str):
+        """Pick a checkout the way the owner does: select it and activate it."""
+        box = self.item(name)
+        code = f"currentIndex = indexOfValue({json.dumps(path)}); activated(currentIndex)"
+        QQmlExpression(self.engine.contextForObject(box), box, code).evaluate()
+        self.pump()
+
+    def choose_packet(self, name: str):
+        box = self.item("packetBox")
+        code = f"currentIndex = find({json.dumps(name)}); activated(currentIndex)"
+        QQmlExpression(self.engine.contextForObject(box), box, code).evaluate()
+        self.pump()
+
+    def test_checkout_choice_survives_list_changes(self):
+        fx, wb, rec = self.fx, self.wb, self.recorder
+        registry = fx.main / "tools" / "workbench" / "runs.json"
+        registry.parent.mkdir(parents=True, exist_ok=True)
+        registry.write_text(json.dumps({"schema": 1, "runs": [
+            {"id": "demo", "title": "Demo checks", "steps": [["python", "tests/demo.py"]], "cwd": ".",
+             "inputs": [], "outputs": [], "timeout_s": 60, "windows_required": False}]}), encoding="utf-8")
+        for checkout, names in ((fx.main, ("p-main.md",)), (fx.wt, ("chosen.md", "newer.md"))):
+            (checkout / "work" / "reviews" / "packets").mkdir(parents=True, exist_ok=True)
+            for name in names:
+                (checkout / "work" / "reviews" / "packets" / name).write_text("# packet\n", encoding="utf-8")
+        chosen = fx.wt / "work" / "reviews" / "packets" / "chosen.md"
+        os.utime(chosen, (1, 1))  # listed after newer.md
+        wb.refresh()
+        self.pump()
+        wt = str(fx.wt.resolve())
+        self.choose("runCheckout", wt)
+        self.choose("launchCheckout", wt)
+        self.assertEqual(self.item("packetBox").property("currentText"), "newer.md")  # the newest, until the owner chooses
+        self.choose_packet("chosen.md")
+        # A new worktree sorts ahead of the chosen one; the choice is kept by path, never moved to main.
+        tree = fx.main.parent / "a new tree"
+        meta = fx.main / ".git" / "worktrees" / "a-new"
+        meta.mkdir(parents=True)
+        (meta / "gitdir").write_text(str(tree / ".git") + "\n", encoding="utf-8")
+        tree.mkdir()
+        (tree / ".git").write_text(f"gitdir: {meta}\n", encoding="utf-8")
+        wb.refresh()
+        self.pump(10)
+        self.assertIn(str(tree.resolve()), [c["path"] for c in wb.checkouts])
+        for name in ("runCheckout", "launchCheckout"):
+            box = self.item(name)
+            self.assertEqual((box.property("path"), box.property("currentValue"), box.property("present")), (wt, wt, True), name)
+        self.click("run-demo")
+        self.assertEqual(rec.calls[-1][:3], ("start_run", wt, "demo"))
+        # The packet choice survives too (the list reloads while the checkout model is replaced).
+        self.assertEqual(self.item("packetBox").property("currentText"), "chosen.md")
+        self.click("startCodex")
+        self.assertEqual(rec.calls[-1][:2], ("start_codex", wt))
+        self.assertEqual(rec.calls[-1][2]["packet"], "chosen.md")
+        self.click("startSession")
+        self.assertEqual(rec.calls[-1], ("command", ["claude", "Work on the problem packet work/reviews/packets/chosen.md. "
+                                                               "Read it first, then follow CLAUDE.md."]))
+        # The chosen packet goes away: nothing is selected in its place.
+        chosen.unlink()
+        self.click("reloadPackets")
+        self.assertEqual(self.item("packetBox").property("currentIndex"), -1)
+        for name in ("startSession", "startCodex"):
+            self.assertFalse(self.item(name).property("enabled"), name)
+        # The chosen worktree goes away: the choosers say so and nothing can start, rather than falling back to main.
+        (meta.parent / "wt1" / "gitdir").unlink()
+        wb.refresh()
+        self.pump(10)
+        for name in ("runCheckout", "launchCheckout"):
+            self.assertFalse(self.item(name).property("present"), name)
+        for name in ("run-demo", "startSession", "startCodex"):
+            self.assertFalse(self.item(name).property("enabled"), name)
+        self.assertEqual(self.item("packetBox").property("count"), 0)
+        self.assertEqual(self.warnings, [])
+
+    def test_malformed_and_older_runs_neither_break_nor_hide_attention(self):
+        fx, wb = self.fx, self.wb
+        (fx.data / "runs").mkdir(parents=True)
+        overdue = "20260930T000000Z-0000c0de"
+        self.record(overdue, "running", kind="codex", run="codex-review", title="Codex review",
+                    created=iso_now(-10800), started=iso_now(-10800))
+        self.hold(overdue)
+        self.record("20260930T000100Z-0000bad1", "running", run=[])  # once raised TypeError in refresh
+        for i in range(self.wbapp.RUN_HISTORY + 1):
+            self.record(f"20260930T01{i // 60:02d}{i % 60:02d}Z-{i:08x}", "passed", exits=[0], ended=iso_now(-30))
+        wb.refresh()
+        self.pump()
+        self.assertEqual(len(wb.runs), self.wbapp.RUN_HISTORY)
+        self.assertNotIn(overdue, [r["rid"] for r in wb.runs])
+        self.assertIn(("run_overdue", overdue), [(f["kind"], f["target_id"]) for f in wb.flags])
+        self.assertEqual(runs.recent.malformed, 1)
+        wb.selectFlag("run", overdue)  # the flag still opens the run beyond the listed history
+        self.assertEqual((wb.selected["kind"], wb.selected["id"]), ("run", overdue))
+        self.assertEqual(self.warnings, [])
+
+    def test_runs_launch_and_attention(self):
+        fx, wb, rec = self.fx, self.wb, self.recorder
+        (fx.main / "tests").mkdir(exist_ok=True)
+        (fx.main / "tests" / "demo.py").write_text("print('demo')\n", encoding="utf-8")
+        registry = fx.main / "tools" / "workbench" / "runs.json"
+        registry.parent.mkdir(parents=True, exist_ok=True)
+        registry.write_text(json.dumps({"schema": 1, "runs": [
+            {"id": "demo", "title": "Demo checks", "steps": [["python", "tests/demo.py"]], "cwd": ".",
+             "inputs": ["tests/demo.py"], "outputs": [], "timeout_s": 60, "windows_required": False}]}), encoding="utf-8")
+        packets = fx.main / "work" / "reviews" / "packets"
+        packets.mkdir(parents=True)
+        (packets / "p1.md").write_text("# packet\n", encoding="utf-8")
+        (fx.data / "runs" / "locks").mkdir(parents=True)
+        failed, live = "20260930T110000Z-000000f1", "20260930T110500Z-000000a1"
+        self.record(failed, "failed", exits=[1], ended=iso_now(-60))
+        (fx.data / "runs" / f"{failed}.log").write_text("$ python tests/demo.py\nboom\n[exit 1]\n", encoding="utf-8")
+        self.record(live, "running")
+        fd = os.open(fx.data / "runs" / "locks" / f"rid-{live}.lock", os.O_RDWR | os.O_CREAT)  # a live runner
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            self.addCleanup(lambda: (os.lseek(fd, 0, 0), msvcrt.locking(fd, msvcrt.LK_UNLCK, 1), os.close(fd)))
+        else:
+            import fcntl
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.addCleanup(os.close, fd)
+        wb.refresh()
+        self.pump()
+        # Boards: the registry, the records with derived liveness, and what needs attention.
+        self.assertEqual([e["id"] for e in wb.registry["entries"]], ["demo"])
+        self.assertEqual([x["rid"] for x in wb.registry["entries"][0]["live"]], [live])
+        self.assertEqual({r["rid"]: r["status"] for r in wb.runs}, {failed: "failed", live: "running"})
+        # The fixture's own session may also be flagged, depending on today's date; only runs are checked here.
+        self.assertIn(("run_failed", failed), [(f["kind"], f["target_id"]) for f in wb.flags])
+        self.assertNotIn(live, [f["target_id"] for f in wb.flags])
+        self.assertEqual(wb.compact["attention"], len(wb.flags))
+        # Run and Stop use the registry entry as shown; nothing else can be started from here.
+        self.click("run-demo")
+        self.assertEqual(rec.calls[-1], ("start_run", str(fx.main), "demo", runs.entry_digest(runs.load_registry(fx.main).entries[0])))
+        self.click("stop-" + live)
+        self.assertEqual(rec.calls[-1], ("cancel_run", live))
+        wb.startRun("demo", str(fx.outsider), "x")
+        self.assertIn("Not started", wb.message)
+        self.assertEqual(rec.calls[-1], ("cancel_run", live))
+        # The attention list selects the failed run and follows its log.
+        self.click(f"flag-run_failed-{failed}")
+        self.assertEqual((wb.selected["kind"], wb.selected["id"], wb.selected["status"]), ("run", failed, "failed"))
+        self.assertIn("boom", [wb.timeline.rows[i]["body"] for i in range(wb.timeline.rowCount())])
+        self.assertIn(f"{failed}.log (private, plain text)", [f["label"] for f in wb.files])
+        self.assertFalse(self.item("stopRun").isVisible())
+        wb.selectRun(live)
+        self.pump()
+        self.assertTrue(self.item("stopRun").isVisible())
+        self.click("stopRun")
+        self.assertEqual(rec.calls[-1], ("cancel_run", live))
+        # Launch: a new session on a packet, then a Codex call with allowed values.
+        self.click("reloadPackets")
+        self.assertEqual(self.item("packetBox").property("currentText"), "p1.md")
+        prompt = "Work on the problem packet work/reviews/packets/p1.md. Read it first, then follow CLAUDE.md."
+        self.click("startSession")
+        self.assertEqual(rec.calls[-1], ("command", ["claude", prompt]))
+        self.item("remoteBox").setProperty("checked", True)
+        self.click("startSession")
+        self.assertEqual(rec.calls[-1], ("command", ["claude", prompt, "--remote-control"]))
+        self.item("kindBox").setProperty("currentIndex", list(runs.CODEX_KINDS).index("implement"))
+        self.pump()
+        self.click("startCodex")
+        self.assertEqual(rec.calls[-1], ("start_codex", str(fx.main), {"kind": "implement", "packet": "p1.md", "model": "gpt-6.1-sol",
+                                                                       "effort": "max", "speed": "standard"}))
+        self.assertIn("No commits", wb.message)
+        # Read this engine's compact label inside QML: PySide can hand back a stale wrapper for a live item here.
+        root = self.engine.rootObjects()[0]
+        find = ("(function find(i) { if (i.objectName === 'compactAttention') return i.text;"
+                " for (var k = 0; k < i.children.length; ++k) { var r = find(i.children[k]); if (r !== undefined) return r; }"
+                " })(compactWindow.contentItem)")
+        text, undefined = QQmlExpression(self.engine.contextForObject(root), root, find).evaluate()
+        self.assertFalse(undefined)
+        self.assertEqual(text, f"Needs attention: {len(wb.flags)}")
+        self.assertEqual(self.warnings, [])
 
     def test_compact_mode_shows_a_top_level_window(self):
         # --compact once loaded a transient child of a hidden main window, so nothing ever appeared.

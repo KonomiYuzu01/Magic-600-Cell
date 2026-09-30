@@ -99,3 +99,18 @@ def inside(path: Path, roots) -> bool:
         if target == base or target.startswith(base.rstrip("\\/") + os.sep):
             return True
     return False
+
+
+def packet_file(checkout: Path, name: str) -> Path | None:
+    """The file `name` in checkout/work/reviews/packets, or None when it is missing or resolves anywhere else.
+
+    The directory is anchored to the resolved checkout, so a junction or link at work, reviews, packets
+    or the file itself never lets a packet from outside through. Callers check the name's pattern."""
+    try:
+        directory = Path(checkout).resolve() / "work" / "reviews" / "packets"
+        file = (directory / name).resolve()
+    except (TypeError, ValueError, OSError):
+        return None
+    if file.is_file() and os.path.normcase(str(file.parent)) == os.path.normcase(str(directory)):
+        return file
+    return None

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] update | Development workbench stage C: watch, runs and launches
+The [workbench](components/workbench.md) now flags owner waits, failures, stalls and overdue calls, runs the entries of a checked-in run registry with live logs and whole-tree Stop, and launches Codex calls and new Claude sessions on the owner's click. Codex wrote the runner and the flag rules; a live check on Windows confirmed failure reporting, Stop and runs that outlive the app. One full Astra review in two shards found six major problems (five distinct), all fixed with regression tests; an experiment confirmed that a descendant started through the WindowsApps `python` alias escaped Stop, and the fix. Two scoped rounds closed them and one new finding.
+
 ## [2026-09-30] update | C-03 host receipt and the first experiment-host harness
 The experiment host now keeps a receipt for a committed command when its own display refresh fails, and never reports it as rejected. The worker and finalization logic moved into `ExperimentSendOutcome.cs`, which `tests/test_experiment_send_outcome.py` compiles and exercises without DirectX. This is the first regression for the experiment host itself, because `NativeHostRegression.cs` builds only the retained root host.
 

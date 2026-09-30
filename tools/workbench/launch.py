@@ -13,6 +13,7 @@ decision. Policy:
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -27,6 +28,7 @@ except ImportError:
 PRIVATE_TEXT = {".md", ".txt", ".json", ".jsonl", ".log", ".csv"}
 PROJECT_DOCS = {".md", ".txt", ".json", ".csv", ".png", ".pdf", ".drawio", ".mmd", ".typ"}
 ACTIVE = {".html", ".htm", ".svg"}
+PACKET_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.md$")
 
 
 class LaunchRefused(Exception):
@@ -87,6 +89,23 @@ def plan_command(kind: str, main: Path, *, checkout=None, notebook=None, sid=Non
         argv = ["claude", "--resume", sid] + (["--remote-control"] if remote else [])
         return argv, str(cwd or main)
     raise LaunchRefused(f"unknown command {kind}")
+
+
+def plan_session(main: Path, checkout, packet: str, remote: bool = False) -> tuple[list[str], str]:
+    """A new Claude Code session with a named local packet, or LaunchRefused."""
+    try:
+        root = Path(checkout).resolve()
+        roots = paths.checkouts(main)
+    except (TypeError, ValueError, OSError):
+        raise LaunchRefused("not a checkout of this repository") from None
+    if not any(os.path.normcase(str(root)) == os.path.normcase(str(r.resolve())) for r in roots):
+        raise LaunchRefused("not a checkout of this repository")
+    if not isinstance(packet, str) or PACKET_RE.fullmatch(packet) is None:
+        raise LaunchRefused("invalid packet name")
+    if paths.packet_file(root, packet) is None:
+        raise LaunchRefused("packet is missing or outside the packets directory")
+    prompt = f"Work on the problem packet work/reviews/packets/{packet}. Read it first, then follow CLAUDE.md."
+    return ["claude", prompt] + (["--remote-control"] if remote else []), str(root)
 
 
 def resume_command_text(sid: str, remote: bool = False) -> str:
