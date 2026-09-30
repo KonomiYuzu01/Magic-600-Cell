@@ -6,11 +6,14 @@ import copy
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENT = ROOT / 'work/experiments/magic600-04'
@@ -119,6 +122,14 @@ class Fixture:
         now.update(overrides)
         return lambda recorded: now
 
+    def inventory(self):
+        """The fixture's product inventory, declared by code as native_launch.product_inventory does."""
+        return lambda: (bid.expected_product_paths(self.root, self.sources), bootstrap.compile_recipe('ExperimentProgram'))
+
+
+def check(f, receipt, phase, tools=None, **options):
+    return native_launch.check_evidence(receipt, phase, f.root, tools or f.tools(), f.inventory(), **options)
+
 
 class CompileRecipeTests(unittest.TestCase):
     def test_the_invocation_is_sealed_and_uses_only_the_compiler_directory(self):
@@ -155,6 +166,38 @@ class CompileRecipeTests(unittest.TestCase):
         (dx / 'System.dll').write_bytes(b'shadow')
         with self.assertRaises(RuntimeError):
             bootstrap.compile_command(f.csc, 'out.exe', ['a.cs'], 'X', [dx / 'System.dll'])
+
+    def test_extra_references_are_bound_by_role_and_rechecked_after_compiling(self):
+        f = Fixture(self)
+        dx = f.base / 'runtime'
+        dx.mkdir()
+        names = ('Microsoft.DirectX.dll', 'Microsoft.DirectX.Direct3D.dll', 'Microsoft.DirectX.Direct3DX.dll')
+        for name in names:
+            (dx / name).write_bytes(name.encode())
+        refs = [dx / n for n in names]
+        bindings = bootstrap.reference_bindings(refs)
+        self.assertEqual(set(bindings), {'extra:' + n.lower() for n in names})
+        for name in names:
+            with self.subTest(substituted=name):
+                saved = (dx / name).read_bytes()
+                (dx / name).write_bytes(b'substituted')
+                self.assertNotEqual(bootstrap.reference_bindings(refs), bindings)
+                (dx / name).write_bytes(saved)
+        out = f.base / 'out'
+        out.mkdir()
+
+        def compile_with(during):
+            def run(command, **kwargs):
+                during()
+                return types.SimpleNamespace(returncode=0, stdout='')
+            with mock.patch.object(bootstrap.subprocess, 'run', run):
+                return bootstrap.compile_program(f.csc, out / 'T.exe', [f.base / 'a.cs'], 'NativeRendererRegression',
+                                                 f.base / 'build.log', refs)
+
+        self.assertEqual(compile_with(lambda: None), bindings)
+        with self.assertRaises(RuntimeError):
+            compile_with(lambda: (dx / names[0]).write_bytes(b'swapped during compilation'))
+        self.assertNotIn('extra:', json.dumps(f.identity()), 'test references never enter the product identity')
 
     def test_ambient_and_missing_references_are_refused(self):
         f = Fixture(self)
@@ -268,10 +311,80 @@ class ReceiptTests(unittest.TestCase):
             with self.subTest(case=name), self.assertRaises(ValueError):
                 bid.receipt_version(value)
 
+    def test_genuine_v1_receipts_written_after_a_launch_stay_readable(self):
+        f = Fixture(self)
+        for extra in ({'run_outcome': {'exit_code': 0, 'final_acceptance': 'not-assessed'}},
+                      {'scope': {'mode': 'g2', 'focus': 'cycles'}, 'executable': 'e', 'run_outcome': {}}):
+            with self.subTest(fields=sorted(extra)):
+                receipt = dict(self.V1, **extra)
+                self.assertEqual(bid.receipt_version(receipt), 1)
+                self.assertTrue(check(f, receipt, 'after_run'))
+
+    def test_outer_sections_cannot_override_identity_bindings(self):
+        places = {
+            'harness': lambda r: r['harness'],
+            'artifacts': lambda r: r['artifacts'],
+            'runtime origins': lambda r: r.setdefault('runtime', {}).setdefault('origins', {}),
+            'runtime external origins': lambda r: r.setdefault('runtime', {}).setdefault('external_origins', {}),
+            'runtime immutable': lambda r: r.setdefault('runtime', {}).setdefault('immutable', {}),
+        }
+        for name, section in places.items():
+            for key in ('native/runtime/MPUlt.exe', 'native/./runtime/MPUlt.exe'):
+                with self.subTest(section=name, key=key):
+                    g = Fixture(self)
+                    r, _ = g.receipt()
+                    (g.root / 'native/runtime/MPUlt.exe').write_bytes(b'MZ swapped')
+                    section(r)[key] = sha(b'MZ swapped')
+                    self.assertTrue(bid.identity_intact(r))
+                    self.assertFalse(check(g, r, 'x'))
+
+    def test_a_receipt_missing_a_required_binding_is_refused_even_when_rehashed(self):
+        edits = {
+            'runtime file dropped': lambda i: i['product']['runtime'].pop('native/runtime/MPUlt.exe'),
+            'product source dropped': lambda i: i['product']['sources'].pop('engine.py'),
+            'model asset dropped': lambda i: i['product']['model']['assets'].pop('assets/seed.json'),
+            'undeclared source added': lambda i: i['product']['sources'].update({'native/Extra.cs': '0' * 64}),
+            'compiler role dropped': lambda i: i['compiler']['files'].pop('reference:system.xml.dll'),
+            'interpreter role dropped': lambda i: i['interpreter']['files'].pop('launcher'),
+            'numpy payload dropped': lambda i: i['interpreter']['numpy'].pop('payload'),
+            'recipe edited': lambda i: i['compile_recipe']['flags'].remove('/optimize+'),
+        }
+        for name, edit in edits.items():
+            with self.subTest(case=name):
+                g = Fixture(self)
+                r, _ = g.receipt()
+                edit(r['identity'])
+                r['build_identity'] = bid.digest(r['identity'])
+                self.assertFalse(check(g, r, 'x'))
+                self.assertTrue(any(c.startswith('inventory: ') for c in r['checks']['x']['changed']), name)
+
+    def test_a_private_tool_is_rechecked_without_being_recorded(self):
+        f = Fixture(self)
+        receipt, _ = f.receipt()
+        recorder = f.base / 'recording-tools' / 'ffmpeg.exe'
+        recorder.parent.mkdir()
+        recorder.write_bytes(b'recorder v7')
+        private = (('recorder', recorder, sha(b'recorder v7')),)
+        self.assertTrue(check(f, receipt, 'after_build', private=private))
+        recorder.write_bytes(b'recorder replaced')
+        self.assertFalse(check(f, receipt, 'before_start', private=private))
+        self.assertIn('recorder', receipt['checks']['before_start']['changed'])
+        recorder.unlink()
+        self.assertFalse(check(f, receipt, 'after_run', private=private))
+        self.assertIn('recorder', receipt['checks']['after_run']['missing'])
+        self.assertNotIn('recording-tools', json.dumps(receipt))
+
+    def test_the_harness_rechecks_its_recorder_at_every_phase(self):
+        source = (EXPERIMENT / 'tests/run_postapproval.py').read_text(encoding='utf-8')
+        calls = re.findall(r'check_evidence\(([^)]*)\)', source)
+        self.assertEqual(len(calls), 4)
+        for call in calls:
+            self.assertIn('private=private', call)
+
     def test_check_evidence_reports_every_changed_or_missing_input(self):
         f = Fixture(self)
         receipt, _ = f.receipt()
-        self.assertTrue(native_launch.check_evidence(receipt, 'after_build', f.root, f.tools()))
+        self.assertTrue(check(f, receipt, 'after_build'))
         self.assertGreater(receipt['checks']['after_build']['checked_files'], 50, 'tool roles are counted')
         cases = {
             'product file': lambda g, r: (g.root / 'native/runtime/MPUlt_settings.txt').write_bytes(b'user edit'),
@@ -284,19 +397,19 @@ class ReceiptTests(unittest.TestCase):
                 g = Fixture(self)
                 r, _ = g.receipt()
                 mutate(g, r)
-                self.assertFalse(native_launch.check_evidence(r, 'x', g.root, g.tools()))
+                self.assertFalse(check(g, r, 'x'))
                 self.assertEqual(r['checks']['x']['status'], 'changed')
         g = Fixture(self)
         r, _ = g.receipt()
         tools = g.tools()(None)
         del tools['compiler']['files']['reference:system.xml.dll']
-        self.assertFalse(native_launch.check_evidence(r, 'x', g.root, lambda _: tools))
+        self.assertFalse(check(g, r, 'x', lambda _: tools))
         self.assertIn('compiler:reference:system.xml.dll', r['checks']['x']['missing'])
-        self.assertFalse(native_launch.check_evidence(r, 'y', g.root, lambda _: {'compiler': None, 'interpreter': None}))
+        self.assertFalse(check(g, r, 'y', lambda _: {'compiler': None, 'interpreter': None}))
         self.assertEqual(sorted(r['checks']['y']['missing']), ['compiler', 'interpreter'])
         newer = copy.deepcopy(g.tools()(None))
         newer['interpreter']['version'] = '3.14.8'
-        self.assertFalse(native_launch.check_evidence(r, 'z', g.root, lambda _: newer))
+        self.assertFalse(check(g, r, 'z', lambda _: newer))
         self.assertIn('interpreter:version', r['checks']['z']['changed'])
 
     def test_launch_updates_keep_the_identity_intact(self):
@@ -313,11 +426,61 @@ class ReceiptTests(unittest.TestCase):
         for phase in ('before_engine', 'before_start', 'after_run'):
             if phase == 'after_run':
                 (runtime / 'MPUlt_settings.txt').write_bytes(b'owner preferences\r\n')  # settings may change
-            self.assertTrue(native_launch.check_evidence(receipt, phase, f.root, f.tools()), phase)
+            self.assertTrue(check(f, receipt, phase), phase)
             native_launch.write_evidence(path, receipt)
             receipt = json.loads(path.read_text(encoding='utf-8'))
             self.assertTrue(bid.identity_intact(receipt), phase)
         self.assertNotEqual(receipt['runtime']['mutable_after_run'], receipt['runtime']['mutable_initial'])
+
+
+class RuntimeAndReuseTests(unittest.TestCase):
+    def test_external_runtime_origins_are_bound_without_their_paths(self):
+        f = Fixture(self)
+        outside = f.base / 'Users' / 'someone' / 'AppData' / 'DirectX'
+        outside.mkdir(parents=True)
+        (outside / 'Microsoft.DirectX.dll').write_bytes(b'dx')
+        runtime = f.root / 'session/runtime'
+        with mock.patch.multiple(native_launch, ROOT=f.root, inspect=lambda source: {'missing': []},
+                                 find_directx=lambda preferred: {'Microsoft.DirectX.dll': outside / 'Microsoft.DirectX.dll'}):
+            result = native_launch.prepare_runtime(runtime)
+        text = json.dumps(result)
+        for fragment in ('..', 'someone', 'AppData', json.dumps(str(f.base))[1:-1]):
+            self.assertNotIn(fragment, text)
+        self.assertEqual(result['external_origins'], {'session/runtime/Microsoft.DirectX.dll': sha(b'dx')})
+        self.assertIn('native/runtime/MPUlt.exe', result['origins'])
+        receipt, _ = f.receipt()
+        receipt['runtime'] = result
+        self.assertTrue(check(f, receipt, 'before_engine'))
+        (runtime / 'Microsoft.DirectX.dll').write_bytes(b'another dx')
+        self.assertFalse(check(f, receipt, 'after_run'))
+        with self.assertRaises(ValueError):
+            native_launch.hash_files([outside / 'Microsoft.DirectX.dll'], f.root)
+
+    def test_only_a_valid_receipt_for_the_same_identity_is_reused(self):
+        f = Fixture(self)
+        receipt, _ = f.receipt()
+        record = f.base / 'build.json'
+        native_launch.write_evidence(record, receipt)
+        self.assertIsNotNone(native_launch.reusable_receipt(record, receipt['identity']))
+        other = f.identity(interpreter=f.interpreter('3.14.6'))
+        self.assertIsNone(native_launch.reusable_receipt(record, other), 'a different payload is never reused')
+        cases = {
+            'unsupported version': lambda r: r.update(evidence_version=999),
+            'corrupted identity, digest kept': lambda r: r['identity']['product']['sources'].update(
+                {'native/Host.cs': '0' * 64}),
+            'identity removed': lambda r: r.pop('identity'),
+            'v1 shape': lambda r: r.update(evidence_version=1),
+        }
+        for name, corrupt in cases.items():
+            with self.subTest(case=name):
+                r = copy.deepcopy(receipt)
+                corrupt(r)
+                native_launch.write_evidence(record, r)
+                self.assertIsNone(native_launch.reusable_receipt(record, receipt['identity']))
+        record.write_text('{not json', encoding='utf-8')
+        self.assertIsNone(native_launch.reusable_receipt(record, receipt['identity']))
+        record.unlink()
+        self.assertIsNone(native_launch.reusable_receipt(record, receipt['identity']))
 
 
 class PackagingTests(unittest.TestCase):
@@ -343,6 +506,10 @@ class PackagingTests(unittest.TestCase):
             'runtime input changed': lambda r: (self.f.root / 'native/runtime/MPUlt.exe').write_bytes(b'MZ new'),
             'model changed': lambda r: (self.f.root / 'assets/manifest.json').write_bytes(b'{"model_id": "m2"}'),
             'identity corrupted': lambda r: r.update(build_identity='0' * 64),
+            'binding dropped and rehashed': lambda r: (r['identity']['product']['runtime'].pop('native/runtime/MPUlt.exe'),
+                                                       r.update(build_identity=bid.digest(r['identity']))),
+            'tool role dropped and rehashed': lambda r: (r['identity']['compiler']['files'].pop('compiler:csc.exe'),
+                                                         r.update(build_identity=bid.digest(r['identity']))),
             'section missing': lambda r: r.pop('harness'),
             'version removed': lambda r: r.pop('evidence_version'),
             'executable changed': lambda r: self.host.write_bytes(b'MZ other'),

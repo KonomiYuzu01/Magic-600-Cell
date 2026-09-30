@@ -75,8 +75,16 @@ def compile_command(csc, output, sources, main_type, extra_refs=()):
             + [str(p) for p in sources])
 
 
+def reference_bindings(extra_refs):
+    """Role (lower-case file name) to sha256 for each extra reference; test builds only, never the product identity."""
+    return {'extra:' + pathlib.Path(p).name.lower(): hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+            for p in extra_refs}
+
+
 def compile_program(csc, output, sources, main_type, log, extra_refs=()):
+    """Compile; returns the extra references' role bindings, rechecked after compilation."""
     command = compile_command(csc, output, sources, main_type, extra_refs)
+    bindings = reference_bindings(extra_refs)
     work = pathlib.Path(tempfile.mkdtemp(prefix='magic600-csc-'))  # an empty directory: no same-name DLL to find
     try:
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=work,
@@ -87,6 +95,9 @@ def compile_program(csc, output, sources, main_type, log, extra_refs=()):
     if result.returncode:
         raise RuntimeError('C# compilation failed. Read ' + str(log) + '\n' + result.stdout)
     shutil.copy2(ROOT / recipe_config(), output.with_suffix('.exe.config'))
+    if reference_bindings(extra_refs) != bindings:
+        raise RuntimeError('An extra reference changed during compilation; ' + str(output) + ' is not bound')
+    return bindings
 
 
 def recipe_config():
@@ -174,9 +185,12 @@ def main():
     if test_mode:
         test_type = 'NativePerformanceRegression' if args.performance_test else 'NativeRendererRegression'
         host = build / (test_type + '.exe')
-        compile_program(csc, host, sources + [ROOT / 'tests/native' / (test_type + '.cs')] + ([] if args.performance_test else [ROOT / 'tests/native/NativePickingRegression.cs', ROOT / 'tests/native/NativeSessionLogRegression.cs', ROOT / 'tests/native/NativeFramePolicyRegression.cs', ROOT / 'tests/native/NativeFeatureRegression.cs', ROOT / 'tests/native/NativeAuxiliaryNativeRegression.cs']),
+        directx = [runtime / name for name in ('Microsoft.DirectX.dll', 'Microsoft.DirectX.Direct3D.dll', 'Microsoft.DirectX.Direct3DX.dll')]
+        references = compile_program(csc, host, sources + [ROOT / 'tests/native' / (test_type + '.cs')] + ([] if args.performance_test else [ROOT / 'tests/native/NativePickingRegression.cs', ROOT / 'tests/native/NativeSessionLogRegression.cs', ROOT / 'tests/native/NativeFramePolicyRegression.cs', ROOT / 'tests/native/NativeFeatureRegression.cs', ROOT / 'tests/native/NativeAuxiliaryNativeRegression.cs']),
                         test_type, diagnostics / ('performance-test-build.log' if args.performance_test else 'renderer-test-build.log'),
-                        [runtime / name for name in ('Microsoft.DirectX.dll', 'Microsoft.DirectX.Direct3D.dll', 'Microsoft.DirectX.Direct3DX.dll')])
+                        directx)
+        # A local test receipt: the DirectX assemblies are bound by role and hash only, never copied into the repository.
+        (diagnostics / (test_type + '-references.json')).write_text(json.dumps(references, indent=2), encoding='utf-8')
     with EngineProcess(ROOT, data, launch, build / 'engine.log',
                        timeout=args.startup_timeout, progress=lambda s: print(s, flush=True)) as engine:
         info = engine.info
@@ -186,6 +200,8 @@ def main():
         print('Logs: ' + str(diagnostics), flush=True)
         command = [str(host), str(exe), info['base'], info['token']]
         if test_mode:
+            if reference_bindings(directx) != references:
+                raise RuntimeError('A DirectX reference changed after compilation; the regression did not run')
             command.append(str(diagnostics))
             return subprocess.run(command, cwd=runtime, timeout=1800 if args.performance_test else 600).returncode
         return subprocess.call(command, cwd=runtime)

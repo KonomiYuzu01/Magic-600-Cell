@@ -46,6 +46,8 @@ def main():
     manifest['harness_recipe'] = compile_recipe('PostApprovalNativeRegression')
     if recorder is not None:
         manifest['recorder_sha256'] = hash_file(recorder)  # a local tool: its hash is recorded, never its path
+    # Rechecked at every phase below, so frames are never attributed to different recorder bytes.
+    private = (('recorder', recorder, manifest['recorder_sha256']),) if recorder is not None else ()
     manifest['scope'] = dict(mode=args.mode, focus=args.focus or 'full',
         latency_series=args.latency_series, compile_only=args.compile_only)
     record = out/'build.json'
@@ -55,7 +57,7 @@ def main():
     manifest.update(identity_v2.legacy_aliases(manifest['identity']['product'], ROOT, product, backend),
         artifacts=identity_v2.hash_inputs([exe, exe.with_suffix('.exe.config')], ROOT),
         executable_sha256=hash_file(exe))
-    unchanged = check_evidence(manifest, 'after_build')
+    unchanged = check_evidence(manifest, 'after_build', private=private)
     write_evidence(record, manifest)
     if not unchanged:
         raise RuntimeError('Sources changed during build; run not started')
@@ -90,11 +92,11 @@ def main():
     print('Evidence: '+str(out),flush=True)
     result = None
     try:
-        if not check_evidence(manifest, 'before_engine'):
+        if not check_evidence(manifest, 'before_engine', private=private):
             raise RuntimeError('Inputs changed before engine start; no native run started')
         write_evidence(record, manifest)
         with EngineProcess(ROOT,out/'session',out/'launch.json',out/'engine.log',engine_command=[sys.executable,'-B',str(HERE/'engine.py')],hidden_console=True,timeout=180) as engine:
-            if not check_evidence(manifest, 'before_start'):
+            if not check_evidence(manifest, 'before_start', private=private):
                 raise RuntimeError('Inputs changed during engine startup; no native run started')
             write_evidence(record, manifest)
             with (out/'run.log').open('w',encoding='utf-8') as log:
@@ -118,7 +120,7 @@ def main():
             if result.returncode:
                 print('\n'.join(lines[-24:]),flush=True)
     finally:
-        unchanged = check_evidence(manifest, 'after_run')
+        unchanged = check_evidence(manifest, 'after_run', private=private)
         manifest['run_outcome'] = dict(exit_code=None if result is None else result.returncode,
             returned=result is not None, immutable_inputs_unchanged=unchanged,
             final_acceptance='not-assessed')

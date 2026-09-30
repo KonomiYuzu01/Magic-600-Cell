@@ -63,7 +63,7 @@ def bound_inputs(receipt: dict) -> dict:
     for group in (receipt["sources"], receipt["model"]["manifest"], receipt["model"]["assets"]):
         for key, digest in group.items():
             path = posix(key)
-            if path.startswith("../") or ":" in path or path.startswith("/"):
+            if path.startswith("/") or ":" in path or any(part in ("", ".", "..") for part in path.split("/")):
                 raise ValueError(f"receipt input outside the repository: {path}")
             inputs[path] = digest
     return inputs
@@ -89,6 +89,9 @@ def in_history(root: Path, path: str, digest: str) -> bool:
 
 def state(root: Path, path: str, digest: str, history) -> str:
     file = root / path
+    # Checked before any read: a link or junction may not lead outside the repository.
+    if not file.resolve().is_relative_to(root.resolve()):
+        raise ValueError(f"receipt input resolves outside the repository: {path}")
     if not file.is_file():
         return "missing"
     if sha256(file) == digest:

@@ -52,7 +52,7 @@ Source builds require Windows, the .NET Framework 4.x compiler targeting x86, an
    - the compiler files and reference assemblies;
    - the interpreter and NumPy.
 
-   The checkout location, the Windows build and test-only files do not change it. The legacy compiler is not deterministic, so the executable itself is not bit-reproducible, and a build is reused only while its recorded executable hash matches. Details: [build identity](wiki/concepts/build-identity-v2.md).
+   The checkout location, the Windows build and test-only files do not change it. The legacy compiler is not deterministic, so the executable itself is not bit-reproducible, and a build is reused only from a valid receipt for the same identity whose recorded executable hash still matches. Details: [build identity](wiki/concepts/build-identity-v2.md).
 4. Compile the native regression harness and bind its inputs, without starting the engine or a window:
 
    ```powershell
@@ -68,7 +68,7 @@ Source builds require Windows, the .NET Framework 4.x compiler targeting x86, an
 
    Keep `--data` paths short: the legacy compiler fails with CS1619 when an output path is close to 260 characters.
 
-`python work/experiments/magic600-04/native_launch.py --mode g2 --session development` starts a development session. `packaging/assemble.py` requires a matching version 2 receipt, whose identity must rehash and whose product files must match the current bytes. The public package-time [README](../work/experiments/magic600-04/packaging/README.md) retains its original candidate-stage wording, as explained in the [release guide](RELEASE_0_4.md).
+`python work/experiments/magic600-04/native_launch.py --mode g2 --session development` starts a development session. `packaging/assemble.py` requires a matching version 2 receipt. Its identity must rehash and bind every input that the code declares, and its product files must match the current bytes. The public package-time [README](../work/experiments/magic600-04/packaging/README.md) retains its original candidate-stage wording, as explained in the [release guide](RELEASE_0_4.md).
 
 [RELEASE_0_4_CONTINUITY.json](RELEASE_0_4_CONTINUITY.json) maps the 0.4 release build receipt onto this tree (`tools/provenance/continuity_04.py`). The stored identity rehashes, and 93 of its 96 inputs are byte-identical here. The other 3 are listed 0.4.1 adaptations whose release bytes remain in Git history. The 0.4 build itself cannot be recreated on later machines, because its toolchain (CPython 3.12.14, csc 4.8.9232.0) differs.
 

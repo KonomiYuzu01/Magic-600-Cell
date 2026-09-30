@@ -20,6 +20,8 @@ E = HERE.parent
 ROOT = E.parents[2]
 sys.path.insert(0, str(E))
 import build_identity as identity_v2  # noqa: E402  (standard library only)
+sys.path.insert(0, str(ROOT))
+from native.bootstrap import compile_recipe  # noqa: E402
 
 
 def constants(path, names):
@@ -97,6 +99,13 @@ def checked_native(directory, native, contract):
         # still rehash and every bound product file (runtime included) must match current bytes.
         if not identity_v2.identity_intact(build):
             raise ValueError('Native build receipt does not rehash to its build identity')
+        # The digest proves only what the receipt declares: the inventory comes from this contract.
+        products = list(native) + [EXPERIMENT / name for name in contract['BACKEND_SOURCES']]
+        products += [Path(name) for name in contract['SHARED_BACKEND_SOURCES']] + [Path('native/NativeHost.exe.config')]
+        problems = identity_v2.inventory_problems(build['identity'],
+            identity_v2.expected_product_paths(ROOT, [ROOT / p for p in products]), compile_recipe('ExperimentProgram'))
+        if problems:
+            raise ValueError('Native build receipt does not bind the complete inputs: ' + '; '.join(problems[:5]))
         stale = [path for path, digest in identity_v2.product_files(build['identity']['product']).items()
                  if not (ROOT / path).is_file() or sha(ROOT / path) != digest]
         if stale:

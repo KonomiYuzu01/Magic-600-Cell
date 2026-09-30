@@ -38,13 +38,18 @@ from pathlib import Path
 EVIDENCE_VERSION = 2
 RUNTIME_FILES = ('native/runtime/MPUlt.exe', 'native/runtime/MPUlt_puzzles.txt',
                  'native/runtime/MPUlt_settings.txt', 'native/directx_runtime.py')
+# Every top-level key the 0.4 launcher and harness wrote, including after a launch (run_outcome)
+# and in harness receipts (scope, executable).
 V1_SECTIONS = {'evidence_version', 'sources', 'model', 'toolchain', 'checks', 'build_identity', 'artifacts',
-               'executable_sha256', 'source', 'backend_sources', 'backend_sha256', 'stage', 'approvals', 'runtime'}
+               'executable_sha256', 'source', 'backend_sources', 'backend_sha256', 'stage', 'approvals', 'runtime',
+               'run_outcome', 'scope', 'executable'}
 V2_REQUIRED = {'evidence_version', 'identity', 'build_identity', 'artifacts', 'executable_sha256', 'checks',
                'source', 'backend_sources', 'harness'}
 IDENTITY_KEYS = {'product', 'compile_recipe', 'compiler', 'interpreter'}
 # Written by the installer, not taken from the wheel: excluded from the NumPy payload.
 GENERATED_DIST_FILES = {'RECORD', 'INSTALLER', 'REQUESTED', 'direct_url.json', 'uv_cache.json'}
+COMPILER_FILES = ('csc.exe', 'csc.exe.config', 'alink.dll', '1033/cscui.dll', '1033/alinkui.dll',
+                  'default.win32manifest')
 
 
 def sha256_file(path) -> str:
@@ -106,8 +111,7 @@ def compiler_binding(csc, recipe, banner) -> dict:
     """Role hashes of the compiler files and of every reference assembly in the recipe."""
     framework = Path(csc).resolve().parent
     files = {}
-    for name in ('csc.exe', 'csc.exe.config', 'alink.dll', '1033/cscui.dll', '1033/alinkui.dll',
-                 'default.win32manifest'):
+    for name in COMPILER_FILES:
         path = framework / name
         files['compiler:' + name] = sha256_file(path) if path.is_file() else None
     for name in recipe['references']:
@@ -208,6 +212,68 @@ def receipt_version(receipt) -> int:
 
 def identity_intact(receipt) -> bool:
     return digest(receipt['identity']) == receipt.get('build_identity')
+
+
+def expected_product_paths(root, sources) -> dict:
+    """The product inventory that code, not a receipt, declares: the product sources given,
+    the model manifest and every asset it lists, and the retained runtime files."""
+    root = Path(root)
+    manifest = json.loads((root / 'assets/manifest.json').read_text(encoding='utf-8-sig'))
+    return dict(sources={relative(p, root) for p in sources}, manifest={'assets/manifest.json'},
+                assets={name.replace('\\', '/') for name in manifest['files']}, runtime=set(RUNTIME_FILES))
+
+
+def _is_sha256(value) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(c in '0123456789abcdef' for c in value)
+
+
+def inventory_problems(identity, expected, recipe) -> list:
+    """Why a v2 identity does not bind the complete expected inputs; empty when it does.
+
+    expected: expected_product_paths(); recipe: the recipe the current code compiles with.
+    A receipt that drops a file or a tool role, or declares extra ones, is refused even
+    when its identity rehashes, because the digest only proves what the receipt declares."""
+    problems = []
+    product = identity['product']
+    declared = dict(sources=product.get('sources'), manifest=product.get('model', {}).get('manifest'),
+                    assets=product.get('model', {}).get('assets'), runtime=product.get('runtime'))
+    for section, paths in expected.items():
+        files = declared[section]
+        if not isinstance(files, dict):
+            problems.append('product ' + section + ' missing')
+            continue
+        for path in sorted(paths - set(files)):
+            problems.append('product ' + section + ' lacks ' + path)
+        for path in sorted(set(files) - paths):
+            problems.append('product ' + section + ' has undeclared ' + path)
+        problems.extend('product ' + section + ' has no sha256 for ' + path
+                        for path, value in sorted(files.items()) if not _is_sha256(value))
+    if identity['compile_recipe'] != recipe:
+        problems.append('compile recipe differs from the current recipe')
+    roles = {'compiler:' + name for name in COMPILER_FILES}
+    roles |= {'reference:' + name.lower() for name in recipe['references']}
+    problems.extend(_role_problems('compiler', identity['compiler'], roles))
+    interpreter = identity['interpreter']
+    version = str(interpreter.get('version', ''))
+    major_minor = ''.join(version.split('.')[:2])
+    roles = {'base:python.exe', 'base:python3.dll', 'base:python' + major_minor + '.dll', 'launcher'}
+    problems.extend(_role_problems('interpreter', interpreter, roles))
+    numpy = interpreter.get('numpy')
+    if not (isinstance(numpy, dict) and numpy.get('version') and isinstance(numpy.get('payload'), dict)
+            and _is_sha256(numpy['payload'].get('digest')) and type(numpy['payload'].get('files')) is int
+            and numpy['payload']['files'] > 0):
+        problems.append('interpreter numpy binding incomplete')
+    return problems
+
+
+def _role_problems(section, binding, roles) -> list:
+    files = binding.get('files') if isinstance(binding, dict) else None
+    if not isinstance(files, dict):
+        return [section + ' files missing']
+    problems = [section + ' lacks role ' + role for role in sorted(roles - set(files))]
+    problems += [section + ' has undeclared role ' + role for role in sorted(set(files) - roles)]
+    problems += [section + ' has no sha256 for ' + role for role, value in sorted(files.items()) if not _is_sha256(value)]
+    return problems
 
 
 def legacy_aliases(product, root, retained_and_experiment, backend) -> dict:

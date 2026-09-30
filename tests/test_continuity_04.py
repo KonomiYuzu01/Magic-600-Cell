@@ -1,8 +1,12 @@
 """Tests for tools/provenance/continuity_04.py on synthetic receipts (headless; no build)."""
 from __future__ import annotations
 
+import collections
+import copy
 import hashlib
 import json
+import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -100,6 +104,33 @@ class ContinuityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             continuity_04.sanitized({"note": "C:/Users/someone/file"})
 
+    def test_nested_traversal_and_links_out_of_the_repository_are_refused(self):
+        root, receipt = self.tree()
+        for key in ("native\\..\\..\\outside.cs", "native/./Host.cs", "native//Host.cs", "native/../native/Host.cs",
+                    "C:\\outside.cs", "/outside.cs"):
+            with self.subTest(key=key):
+                bad = copy.deepcopy(receipt)
+                bad["sources"][key] = "f" * 64
+                with self.assertRaises(ValueError):
+                    continuity_04.check(bad, root)
+        outside = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, outside, True)
+        (outside / "secret.cs").write_bytes(b"secret\n")
+        link = root / "native" / "linked"
+        try:
+            if os.name == "nt":
+                import _winapi
+                _winapi.CreateJunction(str(outside), str(link))  # needs no privilege, unlike a symbolic link
+            else:
+                os.symlink(outside, link, target_is_directory=True)
+        except (OSError, AttributeError) as error:
+            self.skipTest("cannot create a directory link here: " + str(error))
+        self.addCleanup(os.rmdir if os.name == "nt" else os.unlink, link)
+        self.assertEqual((link / "secret.cs").read_bytes(), b"secret\n")
+        receipt["sources"]["native\\linked\\secret.cs"] = sha(b"secret\n")
+        with self.assertRaises(ValueError):
+            continuity_04.check(receipt, root)
+
     def test_only_v1_receipts_are_accepted(self):
         root, receipt = self.tree()
         receipt["evidence_version"] = 2
@@ -110,7 +141,23 @@ class ContinuityTests(unittest.TestCase):
         record = json.loads((ROOT / "docs/RELEASE_0_4_CONTINUITY.json").read_text(encoding="utf-8"))
         provenance = json.loads((ROOT / continuity_04.PROVENANCE).read_text(encoding="utf-8"))["native"]
         self.assertEqual(record["build_identity"], provenance["build_identity"])
+        self.assertEqual(record["executable_sha256"], provenance["executable_sha256"])
         self.assertTrue(record["payload_rehashes_to_identity"])
+        self.assertTrue(record["matches_release_provenance"])
+        # Complete, not just consistent: the summary counts every entry, and every input that
+        # frozen or immutable documents name (the release sources, the model) is present.
+        counts = collections.Counter(entry["here"] for entry in record["inputs"].values())
+        summary = record["summary"]
+        self.assertEqual(summary["total"], len(record["inputs"]))
+        self.assertEqual({k: summary[k] for k in ("same", "adapted", "different", "missing")},
+                         {k: counts.get(k, 0) for k in ("same", "adapted", "different", "missing")})
+        self.assertEqual(summary["same"] + summary["adapted"], summary["total"])
+        for key, digest in provenance["sources"].items():
+            with self.subTest(release_source=key):
+                self.assertEqual(record["inputs"][continuity_04.posix(key)]["sha256"], digest)
+        manifest = json.loads((ROOT / "assets/manifest.json").read_text(encoding="utf-8-sig"))
+        self.assertEqual({path for path in record["inputs"] if path.startswith("assets/")},
+                         {"assets/manifest.json"} | {continuity_04.posix(name) for name in manifest["files"]})
         for path, entry in record["inputs"].items():
             with self.subTest(path=path):
                 if entry["here"] == "adapted":

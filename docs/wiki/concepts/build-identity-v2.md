@@ -7,11 +7,11 @@ summary: How a native build of the retained 0.4 host is identified from 0.4.1 on
 related: [build-reproducibility-decisions, owner-decisions-2026-09-29]
 supersedes: []
 claims:
-  - {id: identity-payload, evidence_kind: source, path: work/experiments/magic600-04/build_identity.py, sha256: 3af33ded7d4f82a18b338ab91d66fdf256e8be744514a95107db9039cdfb1115, checked_at: 2026-09-30}
-  - {id: sealed-recipe, evidence_kind: source, path: native/bootstrap.py, sha256: e72cb94e70de2f39a1df04392f6594289b0efffb7c756850dc83ba568bc73266, checked_at: 2026-09-30}
-  - {id: receipt-checks, evidence_kind: source, path: work/experiments/magic600-04/native_launch.py, sha256: dab89208b63f8e37e1fd016ed3a88d61c39853a6b7df609d6b54fcfbbc182229, checked_at: 2026-09-30}
-  - {id: packaging-consumer, evidence_kind: source, path: work/experiments/magic600-04/packaging/assemble.py, sha256: 3833efb59482c285fbf273d256df24277da42830241b3b0c3296a1c09a14efde, checked_at: 2026-09-30}
-  - {id: invariance-tests, evidence_kind: fixture, path: tests/test_build_identity.py, sha256: 971463c4dbe8ca11bee655cfb485f715c54ef04c3d6fcdfa1ab9fd6c33c5c079, checked_at: 2026-09-30}
+  - {id: identity-payload, evidence_kind: source, path: work/experiments/magic600-04/build_identity.py, sha256: 080ac9f27e1bf2bcbbf48442ef589991a6dda2ba302351dce6f7b534f444d21f, checked_at: 2026-09-30}
+  - {id: sealed-recipe, evidence_kind: source, path: native/bootstrap.py, sha256: 669a7b2bab659320878b18d0b1f7034812b151899bb1fb92b9c3380536f07c9e, checked_at: 2026-09-30}
+  - {id: receipt-checks, evidence_kind: source, path: work/experiments/magic600-04/native_launch.py, sha256: f4757540a2f35fc990d9e4a315350a225780159d61e6cdeb5cbf46739b2251f4, checked_at: 2026-09-30}
+  - {id: packaging-consumer, evidence_kind: source, path: work/experiments/magic600-04/packaging/assemble.py, sha256: 8502cf0eeb44f21a647f37ab35824b1c4890c66089fd6f8d69ab1b7acab6b44a, checked_at: 2026-09-30}
+  - {id: invariance-tests, evidence_kind: fixture, path: tests/test_build_identity.py, sha256: 19900f81fdf68fe2d68f81da67fb39ec8cf251ac84af9f592dac01c420c7637f, checked_at: 2026-09-30}
   - {id: byte-exact-checkout, evidence_kind: source, path: .gitattributes, sha256: 018ad2ea40527c9f02c1e384103567d79b00ab3c6b41c54ac67f79b5e2205ed1, checked_at: 2026-09-30}
   - {id: engine-environment, evidence_kind: source, path: tools/toolchain.lock.json, sha256: 1a181fd36116af5906edbf54f0d19f0683f7b37840d2192bafcd74437e4e1c6c, checked_at: 2026-09-30}
   - {id: continuity-0-4, evidence_kind: source, path: docs/RELEASE_0_4_CONTINUITY.json, sha256: f75c6411fc6cc7d1983836460f33f7324e6d89b4daec17b374a8e193b537b41b, checked_at: 2026-09-30}
@@ -51,9 +51,14 @@ The receipt also records, outside the identity:
 
 - `check_evidence` refuses receipts whose `evidence_version` is missing or does not match their sections. For a v2 receipt, it:
   - rehashes the identity;
-  - rehashes every product, harness and artifact file;
-  - re-resolves the compiler and interpreter and compares them role by role, counting a missing role as missing.
-- `packaging/assemble.py` accepts a v2 receipt only if the identity rehashes and every product file matches current bytes. The stored `after_build` status alone is not enough.
+  - checks the identity against the inventory that the code declares, not the receipt. That inventory is every product source, the model manifest and each asset it lists, the retained runtime, the current recipe, every compiler and interpreter role, and the NumPy payload. A receipt that drops or adds a binding is refused even when it rehashes;
+  - rehashes every product, harness, artifact and runtime file. A path bound with two different hashes in different sections is a conflict, never an override;
+  - re-resolves the compiler and interpreter and compares them role by role, counting a missing role as missing;
+  - rechecks, at every phase, local tools that the harness uses, such as the recorder, by hash. Their paths are never written.
+- A build is reused only from a valid v2 receipt for exactly the same identity payload.
+- Runtime assemblies from outside the repository, such as a system DirectX installation, are bound by hash under the repository path of their copy. The origin path is never stored.
+- Test builds bind their extra references, the DirectX assemblies, by role and hash. They recheck them after compiling and before running, and keep them out of the product identity.
+- `packaging/assemble.py` accepts a v2 receipt only if the identity rehashes, binds the complete inventory, and every product file matches current bytes. The stored `after_build` status alone is not enough.
 - The engine environment is the allowlisted `engine-python` entry: the owner-installed CPython 3.14.7 with hash-pinned NumPy 2.3.5, never a downloaded or uv-managed interpreter.
 
 ## What it cannot promise

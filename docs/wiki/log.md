@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] review | Build identity v2 reviewed
+The step 1 candidate had one full Codex review in two parallel shards. All nine findings (eight major, one minor) were adopted. Receipts must now bind the complete inventory that the code declares, conflicting bindings are refused, build reuse is validated, and recorder, DirectX and continuity inputs are rechecked by hash. Each fix has a regression test that fails when the fix is reverted; see [build-identity-v2](concepts/build-identity-v2.md).
+
 ## [2026-09-30] update | Build identity v2 and the 0.4 native harness
 0.4.1 step 1 made clean checkouts byte-exact, published the 0.4 native harness with a sanitized continuity record, and replaced the build identity; see [build-identity-v2](concepts/build-identity-v2.md) and [build-reproducibility-decisions](decisions/build-reproducibility-decisions.md).
 
