@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] decision | B4-12 measurement decisions
+The owner chose a smoke run plus three full series per metric, everyday settings recorded exactly, PresentMon without PerfView or administrator ETW in step 2, and a read-only performance board. The harness method choices for M1 to M3 are recorded with them in [b4-12-measurement-decisions](decisions/b4-12-measurement-decisions.md). The fixture builder, the headless turn probe and the summary tool are in `tools/perf/`; the probe showed that every M1 pair re-solves orbits that 0.4 then protects, so the harness releases that protection after each pair, untimed.
+
 ## [2026-09-30] decision | One overall review for the 0.4.1 code work
 The owner waived plan re-checks, per-step Codex reviews and scoped verification rounds for the current 0.4.1 code work. Each step runs its checks, and one overall Codex review covers the finished candidate before merge; recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md).
 
