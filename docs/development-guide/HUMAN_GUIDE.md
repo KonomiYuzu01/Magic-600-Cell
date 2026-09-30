@@ -38,6 +38,10 @@ This guide is for the owner and any person working on the project. Agents follow
 **Stopping a loop**
 - Press Esc in Claude Code to interrupt. The project's Stop hook blocks a stop at most twice per session and then lets the agent stop honestly as "inconclusive".
 
+**Watching and joining the work**
+- The development workbench shows every session, what it is doing and why, a live view, the Codex calls and the progress board: `tools\.venv\workbench\Scripts\python.exe tools\workbench\app.py` (add `--compact` for a small always-on-top view). Install it once with `python tools/toolchain/bootstrap.py install pyside6`.
+- A note typed there reaches Claude at its next tool step, and Claude answers it; a note cannot replace a command that only you may run. Details: `docs/wiki/components/workbench.md`.
+
 ## 3. First-time setup on Windows
 
 Prerequisites you install yourself: 64-bit CPython 3.11 or later, Git for Windows, Node.js 22 or later, and the Codex CLI (`npm install -g @openai/codex@0.159.0`).

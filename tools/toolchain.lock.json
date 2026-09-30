@@ -4,6 +4,7 @@
   "profiles": {
     "planning": "Now: notebooks, diagrams, documents, slides",
     "native-performance": "0.4.1 screening and optimization",
+    "workbench": "0.4.1 development workbench (Qt Quick desktop app)",
     "renderer-spike": "Stage 2.4 renderer experiments",
     "media": "Stages 5 and 7",
     "release": "Stage 8",
@@ -351,6 +352,39 @@
         "pypi.org",
         "files.pythonhosted.org"
       ]
+    },
+    {
+      "id": "pyside6",
+      "purpose": "Qt Quick toolkit for the 0.4.1 development workbench",
+      "profiles": [
+        "workbench"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "6.11.2",
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/workbench",
+      "requirements": "tools/python/workbench.txt",
+      "probe": [
+        "{venv}/python",
+        "-c",
+        "import PySide6; print(PySide6.__version__)"
+      ],
+      "expect": "^6\\.11\\.2$",
+      "license": "LGPL-3.0-only",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "uninstall": "delete tools/.venv/workbench"
     },
     {
       "id": "presentmon",

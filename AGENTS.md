@@ -17,7 +17,8 @@ Shared rules for every agent and person working on Magic 600 Cell. Codex reads t
 ## Verification
 
 - After mechanics or persistence changes, run `python tests/test_core.py`, `python tests/test_reference_maps.py` and `python tests/test_crash.py`; after process-ownership changes, also run `python tests/test_engine_lifecycle.py`.
-- After changes to agent rules, hooks, the review wrapper, the installer or skills, run `python tests/test_agent_rules_sync.py`, `python tests/test_codex_review.py`, `python tests/test_stop_gate.py`, `python tests/test_bootstrap.py` and `python tests/test_wiki_lint.py`.
+- After changes to agent rules, hooks, the review wrapper, the installer or skills, run `python tests/test_agent_rules_sync.py`, `python tests/test_codex_review.py`, `python tests/test_stop_gate.py`, `python tests/test_bootstrap.py`, `python tests/test_wiki_lint.py` and `python tests/test_workbench.py`.
+- After changes to the development workbench (`tools/workbench/`), run `python tests/test_workbench.py` and, with the workbench environment, `tools/.venv/workbench/Scripts/python.exe tests/test_workbench_ui.py`.
 - Compile and run `tests/native/NativeHostRegression.cs` before actual native regressions. Never run regression fixtures during normal user startup.
 - Native builds of the retained 0.4/0.4.1 host need Windows, 64-bit CPython, NumPy, the .NET Framework 4.x x86 compiler and Managed DirectX. On Linux or in a cloud session, run only the headless Python checks and say which native checks were not run.
 - Use fresh isolated test data. Do not run destructive tests against a personal session.
