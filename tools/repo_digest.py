@@ -38,9 +38,11 @@ def tree_digest(directory: Path) -> str:
     for path in [directory, *directory.rglob("*")]:
         if _is_link(path):
             raise ValueError(f"{path.name}: links are not allowed in a digested tree")
-    for path in sorted(p for p in directory.rglob("*") if p.is_file()):
-        rel = path.relative_to(directory).as_posix()
-        h.update(f"{rel}\0{file_sha256(path)}\n".encode())
+    # Sort by the POSIX relative path string: Path ordering is case-insensitive on
+    # Windows, which would make the digest differ between platforms.
+    files = {p.relative_to(directory).as_posix(): p for p in directory.rglob("*") if p.is_file()}
+    for rel in sorted(files):
+        h.update(f"{rel}\0{file_sha256(files[rel])}\n".encode())
     return h.hexdigest()
 
 
