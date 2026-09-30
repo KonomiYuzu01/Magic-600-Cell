@@ -189,7 +189,7 @@ class CodexReviewTests(unittest.TestCase):
                 self.assertIn("refused", err)
 
     def test_rejects_unknown_arguments_and_models(self):
-        for extra in (["--sandbox", "workspace-write"], ["--model", "gpt-other"], ["--effort", "low"], ["--kind", "implement"]):
+        for extra in (["--sandbox", "workspace-write"], ["--model", "gpt-other"], ["--effort", "low"], ["--kind", "execute"]):
             with self.subTest(extra=extra), contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit):
                     codex_review.main(["--kind", "review", "--packet", str(self.packet), *extra])
@@ -214,6 +214,9 @@ class CodexReviewTests(unittest.TestCase):
         self.assertIn('forced_login_method="chatgpt"', cmd)
         self.assertIn('model_reasoning_effort="max"', cmd)
         self.assertEqual(cmd[cmd.index("--sandbox") + 1], "read-only")
+        self.assertIn("--ignore-user-config", cmd)  # no user MCP servers, plugins or sandbox settings
+        if os.name == "nt":
+            self.assertIn('windows.sandbox="unelevated"', cmd)  # otherwise every command is rejected
         self.assertNotIn("resume", cmd)
         self.assertIn("Review only.", seen["prompt"])
         self.assertIn("follow-up work", seen["prompt"])

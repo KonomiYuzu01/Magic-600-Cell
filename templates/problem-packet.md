@@ -30,8 +30,14 @@
 - Invariants that must hold (see AGENTS.md):
 - Files the reader may change (only with an assigned worktree):
 - Files that must not change:
+- Implementation packet (`--kind implement`) only: exactly one contract block. `allowed_files` are repository-relative globs (`*` also matches `/`); `acceptance_check` is an argv list run without a shell in the worktree; the run is refused without all three fields.
+
+```implement-contract
+{"allowed_files": ["path/to/file.py"], "acceptance_check": ["python", "tests/test_x.py"], "stop_condition": "the acceptance check passes"}
+```
 
 ## 7. Required return format
 - Plan check or review: JSON matching `schemas/review-result.schema.json`.
 - Solver: diagnosis, alternatives, experiment, fix outline, confidence.
+- Implementation: changes only in the assigned worktree; final message lists the changed files, the acceptance result and open points.
 - Review only; do not perform follow-up work.

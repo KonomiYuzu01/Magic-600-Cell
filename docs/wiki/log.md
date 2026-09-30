@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] update | Codex calls ignore the user config
+Plan, review and implementation calls now pass `--ignore-user-config` (and name the unelevated Windows sandbox backend), so user-configured MCP servers, plugins and sandbox settings never load during a wrapper call; sign-in must use the default file-backed store.
+
+## [2026-09-30] update | Codex pair implementation enabled
+The review wrapper gained `--kind implement` and `--cleanup`, with isolation tests in `tests/test_codex_implement.py` and one real smoke run; the [development loop](workflows/development-loop.md) and the rules now describe it. On Windows without administrator setup the Codex sandbox enforces the filesystem boundary but not a network firewall.
+
 ## [2026-09-30] decision | Review rounds, Astra, fast tier and pair implementation
 Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md); `AGENTS.md`, `CLAUDE.md`, the guides, the codex-dialogue skill and the review wrapper now match.
 
