@@ -2,7 +2,7 @@
 Write requests require an unpredictable launch token and same-origin validation.
 """
 from __future__ import annotations
-import argparse,base64,gzip,json,os,secrets,sys,threading,time,webbrowser,signal
+import argparse,base64,gzip,io,json,os,secrets,select,sys,threading,time,webbrowser,signal
 from concurrent.futures import ThreadPoolExecutor
 from collections import OrderedDict
 from http.server import ThreadingHTTPServer,BaseHTTPRequestHandler
@@ -11,6 +11,7 @@ from urllib.parse import urlparse,parse_qs
 import numpy as np
 from core import Model,canonical,digest
 from session import Session,NO_CAMERA
+from log_io import encode_export
 from enhanced import Workflow
 from native_bridge import verify_native
 from grips import grips
@@ -95,6 +96,23 @@ def watch_parent(stopping,request_shutdown):
  except (OSError,ValueError):pass
  if not stopping.is_set():request_shutdown()
 
+class StopAwareReader(io.RawIOBase):
+ """Request input that gives up once the engine is stopping.
+
+ Neither shutdown() nor close() wakes a thread blocked in a Windows socket read,
+ so an idle or stalled client could hold server_close() past the owner's grace.
+ Only waits for input end early; a request that is already executing finishes.
+ """
+ def __init__(self,sock,stopping,timeout):self.sock,self.stopping,self.timeout=sock,stopping,timeout
+ def readable(self):return True
+ def readinto(self,buffer):
+  deadline=time.monotonic()+self.timeout
+  while True:
+   # Checked before every read, so input that keeps trickling in cannot outlast shutdown.
+   if self.stopping.is_set():raise ConnectionAbortedError('Engine is stopping')
+   if select.select([self.sock],[],[],.2)[0]:return self.sock.recv_into(buffer)
+   if time.monotonic()>deadline:raise TimeoutError('timed out')
+
 def main():
  parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=6006);parser.add_argument('--data',type=Path);parser.add_argument('--no-browser',action='store_true');parser.add_argument('--launch-info',type=Path);args=parser.parse_args()
  if sys.maxsize<=2**32 or sys.version_info<(3,11):raise SystemExit('Use 64-bit Python 3.11 or newer')
@@ -136,6 +154,7 @@ def main():
   class Handler(BaseHTTPRequestHandler):
    def setup(self):
     super().setup();self.connection.settimeout(20)
+    self.rfile.close();self.rfile=io.BufferedReader(StopAwareReader(self.connection,stopping,20))
    def log_message(self,*_):pass
    def send(self,status,content,ctype='application/json',filename=None):
     self.send_response(status);self.send_header('Content-Type',ctype);self.send_header('Content-Length',str(len(content)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer')
@@ -198,7 +217,7 @@ def main():
       if path=='/api/labels':return self.send(200,session.st.labels.astype('<u4').tobytes(),'application/octet-stream')
       if path=='/api/styles':return self.send(200,session.render_styles().tobytes(),'application/octet-stream')
       if path=='/api/certificate':return self.send(200,canonical(session.certificate()).encode(),'application/json','macro_certificate.c600.json')
-      if path=='/api/export':return self.send(200,gzip.compress(canonical(session.export()).encode(),compresslevel=5),'application/gzip','session.c600.json.gz')
+      if path=='/api/export':return self.send(200,encode_export(session.export()),'application/gzip','session.c600.json.gz')
       if path=='/api/log/export':
        formats=parse_qs(u.query).get('format',['c600'])
        if len(formats)!=1 or formats[0] not in ('c600','mpult'):raise ValueError('Unsupported log format; choose c600 or mpult')
@@ -337,6 +356,8 @@ def main():
    # Finish outstanding request handlers before closing SQLite on Windows.
    daemon_threads=False
    block_on_close=True
+   def handle_error(self,request,client_address):
+    if not stopping.is_set():super().handle_error(request,client_address)
   startup('binding_loopback')
   server=EngineHTTPServer(('127.0.0.1',args.port),Handler)
   address=f'127.0.0.1:{server.server_address[1]}'

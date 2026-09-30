@@ -88,7 +88,8 @@
       "sha256": "3233ef4448ae1f0930002b18cf0908c4077f7ea749aa01c533207de3cb5a2507"
     },
     "log_io.py": {
-      "here": "same",
+      "adaptation": "0.4.1 screening fixes, batch 1 (A-02): export refuses a record that import would reject",
+      "here": "adapted",
       "sha256": "c06d3a10584bdcd4863f1697c5ef1a81a8769ea0c64fcd0b59661473bd9ed6a8"
     },
     "mpult_log.py": {
@@ -165,7 +166,8 @@
       "sha256": "f01b64de34698f3e6dff2d3587903f3afb759d2a25f3b483ae68f1b95b67709f"
     },
     "server.py": {
-      "here": "same",
+      "adaptation": "0.4.1 screening fixes, batch 1 (A-02, B-001): export budget, stop-aware request input",
+      "here": "adapted",
       "sha256": "3f3e48f5cf7888e02d01aaf7a4b4153c5ec2e496bf0b455a8ab1efea8286a8c4"
     },
     "session.py": {
@@ -177,7 +179,8 @@
       "sha256": "6797bea8e724cbf8dbee2e52b66c9e9fe21d40fc652a72e9bd2ba33d71f61ca8"
     },
     "work/experiments/magic600-04/adapter.py": {
-      "here": "same",
+      "adaptation": "0.4.1 screening fixes, batch 1 (C-01, C-02, C-03 engine side)",
+      "here": "adapted",
       "sha256": "d001fa4e6deea101f2a102551795d3758eedbe0060f74177145e9017695db050"
     },
     "work/experiments/magic600-04/candidate_analysis.py": {
@@ -317,7 +320,8 @@
       "sha256": "e3114ab736b42cd99caa786caae0209c996fb9e9c22a5a7978a2c622ebe07145"
     },
     "work/experiments/magic600-04/native/ExperimentShell.cs": {
-      "here": "same",
+      "adaptation": "0.4.1 screening fixes (F-01 command guard; C-03 host side, ExperimentSendOutcome)",
+      "here": "adapted",
       "sha256": "341d698b73eb0ac5f9ea323e20516b33918b110e4b8163ce4e89ede23a795e1a"
     },
     "work/experiments/magic600-04/native/ExperimentSolveWindow.cs": {
@@ -325,7 +329,8 @@
       "sha256": "c597991f92b8cc01f31c448a4c3d575b1234d90bc087c40c1b433aaccd8cbfd8"
     },
     "work/experiments/magic600-04/native/ExperimentTools.cs": {
-      "here": "same",
+      "adaptation": "0.4.1 screening fixes, batch 1 (F-01): forecast restriction list",
+      "here": "adapted",
       "sha256": "b4846ad2d59ce7a3fc626d60bdf53e83c46a634755c17b77388e606f8df77b8b"
     },
     "work/experiments/magic600-04/native/ExperimentWindowPlacement.cs": {
@@ -399,10 +404,10 @@
   "payload_rehashes_to_identity": true,
   "release": "0.4",
   "summary": {
-    "adapted": 3,
+    "adapted": 8,
     "different": 0,
     "missing": 0,
-    "same": 93,
+    "same": 88,
     "total": 96
   },
   "toolchain": {

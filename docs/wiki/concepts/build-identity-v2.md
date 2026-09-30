@@ -9,12 +9,12 @@ supersedes: []
 claims:
   - {id: identity-payload, evidence_kind: source, path: work/experiments/magic600-04/build_identity.py, sha256: 080ac9f27e1bf2bcbbf48442ef589991a6dda2ba302351dce6f7b534f444d21f, checked_at: 2026-09-30}
   - {id: sealed-recipe, evidence_kind: source, path: native/bootstrap.py, sha256: 669a7b2bab659320878b18d0b1f7034812b151899bb1fb92b9c3380536f07c9e, checked_at: 2026-09-30}
-  - {id: receipt-checks, evidence_kind: source, path: work/experiments/magic600-04/native_launch.py, sha256: f4757540a2f35fc990d9e4a315350a225780159d61e6cdeb5cbf46739b2251f4, checked_at: 2026-09-30}
+  - {id: receipt-checks, evidence_kind: source, path: work/experiments/magic600-04/native_launch.py, sha256: f640d4e895da2e1bf5b20cb70e73ab9edd8a9063b4c63f6f6988f7e3fd872452, checked_at: 2026-09-30}
   - {id: packaging-consumer, evidence_kind: source, path: work/experiments/magic600-04/packaging/assemble.py, sha256: 8502cf0eeb44f21a647f37ab35824b1c4890c66089fd6f8d69ab1b7acab6b44a, checked_at: 2026-09-30}
   - {id: invariance-tests, evidence_kind: fixture, path: tests/test_build_identity.py, sha256: 8335638684798425b11563501fd2b7e0c62a5115df209cfead9816cf648e05fb, checked_at: 2026-09-30}
   - {id: byte-exact-checkout, evidence_kind: source, path: .gitattributes, sha256: 018ad2ea40527c9f02c1e384103567d79b00ab3c6b41c54ac67f79b5e2205ed1, checked_at: 2026-09-30}
   - {id: engine-environment, evidence_kind: source, path: tools/toolchain.lock.json, sha256: 1a181fd36116af5906edbf54f0d19f0683f7b37840d2192bafcd74437e4e1c6c, checked_at: 2026-09-30}
-  - {id: continuity-0-4, evidence_kind: source, path: docs/RELEASE_0_4_CONTINUITY.json, sha256: f75c6411fc6cc7d1983836460f33f7324e6d89b4daec17b374a8e193b537b41b, checked_at: 2026-09-30}
+  - {id: continuity-0-4, evidence_kind: source, path: docs/RELEASE_0_4_CONTINUITY.json, sha256: a40c915dc56ff73c96d6ffb164a3264693f0e6faceddfeb96eaa7f4758d53759, checked_at: 2026-09-30}
   - {id: windows-startup-regression, evidence_kind: actual_windows_directx, checked_at: 2026-09-30}
   - {id: windows-harness-endgame, evidence_kind: actual_windows_directx, checked_at: 2026-09-30}
   - {id: clean-checkout-audit, evidence_kind: source, path: docs/progress/0.4.1/clean-checkout-audit.md, sha256: 0079ee2196adb693d2d6bfeae8a55cb2a6ac726f7e5ccfb89e95a1b839e704fc, checked_at: 2026-09-30}
@@ -69,8 +69,8 @@ The receipt also records, outside the identity:
 - The standard library is covered by the exact interpreter version and base binaries, not file by file.
 - The 0.4 build itself cannot be recreated on later machines. Its toolchain (CPython 3.12.14, csc 4.8.9232.0, Windows 10) differs. `tools/provenance/continuity_04.py` instead proves the following:
   - the stored 0.4 payload still rehashes to its identity;
-  - 93 of its 96 inputs are byte-identical in this repository;
-  - the other 3 are listed 0.4.1 adaptations whose release bytes remain in Git history.
+  - 88 of its 96 inputs are byte-identical in this repository;
+  - the other 8 are listed 0.4.1 adaptations (the step 1 build identity and the screening fixes) whose release bytes remain in Git history.
 
 ## Acceptance of 0.4.1 step 1
 

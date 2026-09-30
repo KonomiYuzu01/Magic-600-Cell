@@ -93,6 +93,29 @@ sys.exit(p.wait())
   assert normal.cleanup_result['graceful_request'] and not normal.cleanup_result['forced']
   assert normal.process.returncode==0 and not normal.launch_file.exists();unlocked(normal.data)
   ok('Graceful engine shutdown exits zero and releases SQLite/session handles before cleanup')
+  stalled=make_engine(tmp,'stalled-clients')
+  with stalled:
+   address=stalled.info['base'].split('//')[1];host,port=address.split(':');port=int(port)
+   idle=socket.create_connection((host,port))
+   headers=socket.create_connection((host,port));headers.sendall(b'POST /api/status HTTP/1.0\r\nContent-Length: 10\r\nX-')
+   body=socket.create_connection((host,port))
+   body.sendall(f'POST /api/prefs HTTP/1.0\r\nHost: {address}\r\nX-C600-Token: {stalled.info["token"]}\r\nContent-Type: application/json\r\nContent-Length: 100\r\n\r\n{{"a'.encode())
+   trickle_headers=socket.create_connection((host,port));trickle_headers.sendall(b'POST /api/status HTTP/1.0\r\nX-')
+   trickle_body=socket.create_connection((host,port))
+   trickle_body.sendall(f'POST /api/prefs HTTP/1.0\r\nHost: {address}\r\nX-C600-Token: {stalled.info["token"]}\r\nContent-Type: application/json\r\nContent-Length: 100000\r\n\r\n{{"a'.encode())
+   dripping=threading.Event();dripping.set()
+   def drip():
+    while dripping.is_set():
+     for client in (trickle_headers,trickle_body):
+      with contextlib.suppress(OSError):client.sendall(b'a')
+     time.sleep(.05)
+   dripper=threading.Thread(target=drip,daemon=True);dripper.start()
+   time.sleep(.5);started=time.monotonic()
+  elapsed=time.monotonic()-started;dripping.clear();dripper.join(5)
+  for client in (idle,headers,body,trickle_headers,trickle_body):client.close()
+  assert stalled.cleanup_result['graceful_request'] and not stalled.cleanup_result['forced'] and stalled.process.returncode==0,stalled.cleanup_result
+  assert elapsed<5,elapsed;unlocked(stalled.data)
+  ok('Idle, stalled and trickling connections cannot hold graceful shutdown past the owner grace',seconds=round(elapsed,2))
   forwarded=make_engine(tmp,'forwarded',forwarder=forward)
   with forwarded:
    health=local_request(forwarded.info,'/api/health')

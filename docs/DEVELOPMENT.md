@@ -70,7 +70,7 @@ Source builds require Windows, the .NET Framework 4.x compiler targeting x86, an
 
 `python work/experiments/magic600-04/native_launch.py --mode g2 --session development` starts a development session. `packaging/assemble.py` requires a matching version 2 receipt. Its identity must rehash and bind every input that the code declares, and its product files must match the current bytes. The public package-time [README](../work/experiments/magic600-04/packaging/README.md) retains its original candidate-stage wording, as explained in the [release guide](RELEASE_0_4.md).
 
-[RELEASE_0_4_CONTINUITY.json](RELEASE_0_4_CONTINUITY.json) maps the 0.4 release build receipt onto this tree (`tools/provenance/continuity_04.py`). The stored identity rehashes, and 93 of its 96 inputs are byte-identical here. The other 3 are listed 0.4.1 adaptations whose release bytes remain in Git history. The 0.4 build itself cannot be recreated on later machines, because its toolchain (CPython 3.12.14, csc 4.8.9232.0) differs.
+[RELEASE_0_4_CONTINUITY.json](RELEASE_0_4_CONTINUITY.json) maps the 0.4 release build receipt onto this tree (`tools/provenance/continuity_04.py`). The stored identity rehashes, and 88 of its 96 inputs are byte-identical here. The other 8 are listed 0.4.1 adaptations (the step 1 build identity and the screening fixes) whose release bytes remain in Git history. The 0.4 build itself cannot be recreated on later machines, because its toolchain (CPython 3.12.14, csc 4.8.9232.0) differs.
 
 ## Verification boundaries
 

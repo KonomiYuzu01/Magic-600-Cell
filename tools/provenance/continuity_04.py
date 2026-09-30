@@ -38,6 +38,11 @@ ADAPTATIONS = {
     "native/bootstrap.py": "0.4.1 step 1: sealed compile recipe (compile_recipe, compile_command)",
     "work/experiments/magic600-04/native_launch.py": "0.4.1 step 1: build identity v2",
     "work/experiments/magic600-04/tests/run_postapproval.py": "0.4.1 step 1: identity v2 receipts, optional recorder",
+    "log_io.py": "0.4.1 screening fixes, batch 1 (A-02): export refuses a record that import would reject",
+    "server.py": "0.4.1 screening fixes, batch 1 (A-02, B-001): export budget, stop-aware request input",
+    "work/experiments/magic600-04/adapter.py": "0.4.1 screening fixes, batch 1 (C-01, C-02, C-03 engine side)",
+    "work/experiments/magic600-04/native/ExperimentShell.cs": "0.4.1 screening fixes (F-01 command guard; C-03 host side, ExperimentSendOutcome)",
+    "work/experiments/magic600-04/native/ExperimentTools.cs": "0.4.1 screening fixes, batch 1 (F-01): forecast restriction list",
 }
 TOOL_ROLES = (("python.exe", "python"), ("numpy/__init__.py", "numpy-init"),
               ("_multiarray_umath", "numpy-multiarray"), ("csc.exe", "csc"))

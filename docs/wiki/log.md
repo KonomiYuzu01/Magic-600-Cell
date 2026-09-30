@@ -11,6 +11,12 @@ The step 1 candidate had one full Codex review in two parallel shards. All nine 
 ## [2026-09-30] update | Build identity v2 and the 0.4 native harness
 0.4.1 step 1 made clean checkouts byte-exact, published the 0.4 native harness with a sanitized continuity record, and replaced the build identity; see [build-identity-v2](concepts/build-identity-v2.md) and [build-reproducibility-decisions](decisions/build-reproducibility-decisions.md).
 
+## [2026-09-30] update | C-03 host receipt and the first experiment-host harness
+The experiment host now keeps a receipt for a committed command when its own display refresh fails, and never reports it as rejected. The worker and finalization logic moved into `ExperimentSendOutcome.cs`, which `tests/test_experiment_send_outcome.py` compiles and exercises without DirectX. This is the first regression for the experiment host itself, because `NativeHostRegression.cs` builds only the retained root host.
+
+## [2026-09-30] update | 0.4.1 screening fixes, batch 1
+Seven confirmed findings are fixed with regression tests: A-02, B-001, C-01, C-02 and the C-03 engine side by Claude; F-01 and B-002 by Codex pair implementation. Batch 1 got a plan check, one full Astra review in two shards (two majors, both fixed) and one scoped verification round. The C-03 native receipt, X-02 and A-03 remain; see [screening-findings](../progress/0.4.1/screening-findings.md).
+
 ## [2026-09-30] decision | 0.4.1 keeps the 0.4 data directory
 Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md). The version and the data directory are decoupled; the plan keeps the native cache name so user-owned MPUlt settings survive.
 

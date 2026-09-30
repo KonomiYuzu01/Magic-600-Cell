@@ -61,7 +61,30 @@ def decode_log(payload, format='c600'):
                           parse_constant=lambda value: (_ for _ in ()).throw(ValueError('Non-finite JSON number')))
     except (UnicodeError, json.JSONDecodeError, RecursionError) as exc: raise ValueError('Log must contain valid UTF-8 JSON') from exc
 
+TRANSACTION_CAP = 'Interactive import is capped at 10,000 transactions'
+PRIMITIVE_CAP = 'Interactive import exceeds 2,000,000 primitive moves'
+
+def check_import_budget(record):
+    """Refuse to write a C600 record that validate_record would reject for its size."""
+    events = record.get('events')
+    if not isinstance(events, list) or len(events) > MAX_TRANSACTIONS: raise ValueError(TRANSACTION_CAP)
+    total = 0
+    for ev in events:
+        total += _count(ev.get('primitive_count') if isinstance(ev, dict) else None, 'primitive count')
+        if total > MAX_PRIMITIVES: raise ValueError(PRIMITIVE_CAP)
+
+def _exportable(record):
+    try: check_import_budget(record)
+    except ValueError as exc:
+        raise ValueError(str(exc) + '; this history cannot be written as an importable C600 log. Make a session backup instead.') from exc
+
+def encode_export(record):
+    """Session export download: the same import budget as proof logs."""
+    _exportable(record)
+    return gzip.compress(canonical(record).encode(), compresslevel=5)
+
 def encode_log(record):
+    _exportable(record)
     raw = canonical(record).encode('utf-8')
     if len(raw) > MAX_JSON_BYTES: raise ValueError('Proof log exceeds the 24 MiB interactive size limit')
     packed = gzip.compress(raw, compresslevel=5, mtime=0)
@@ -94,7 +117,7 @@ def validate_record(model, record):
     if size > MAX_JSON_BYTES: raise ValueError('Expanded log exceeds 24 MiB')
     events = record.get('events')
     if not isinstance(events, list) or len(events) > MAX_TRANSACTIONS:
-        raise ValueError('Interactive import is capped at 10,000 transactions')
+        raise ValueError(TRANSACTION_CAP)
     _hash(record.get('final_state'), 'final-state')
     # Validate the whole structure and expansion budget before expensive replay.
     prepared = []; total = 0
@@ -105,7 +128,7 @@ def validate_record(model, record):
         try: recipe, length = model.normalize(ev.get('recipe'))
         except (KeyError, IndexError, TypeError) as exc: raise ValueError('Invalid legal recipe in log') from exc
         total += length
-        if total > MAX_PRIMITIVES: raise ValueError('Interactive import exceeds 2,000,000 primitive moves')
+        if total > MAX_PRIMITIVES: raise ValueError(PRIMITIVE_CAP)
         stars = sum(x['kind'] == 'star' for x in recipe)
         if _count(ev.get('primitive_count'), 'primitive count') != length or _count(ev.get('stars'), 'star count') != stars:
             raise ValueError('Log transaction count differs from its legal witness')

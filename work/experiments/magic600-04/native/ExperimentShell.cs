@@ -110,7 +110,7 @@ internal sealed partial class ExperimentShell : IDisposable, IMessageFilter {
  int SelectedPosition(){if(Selection==null)throw new InvalidOperationException("Inspect a fixed position first.");return Number(Selection["position"]);}
  void Say(string text,bool error=false){feedback.Text=text;feedback.AccessibleName="Status: "+text;feedback.ForeColor=error?Color.FromArgb(238,141,135):Ink;tips.SetToolTip(feedback,text);NativeDiagnostics.Write("Experiment status: "+text);}
  void Register(string id,string label,Action action){commands.Add(id,action);hints.Add(id,label);}
- void RunCommand(string id){try{if(closing)return;Action action;if(!commands.TryGetValue(id,out action))throw new InvalidOperationException("Unknown command: "+id);if(OperationInputBlocked&&!new[]{"cancel-analysis","macro-search","macro-close","solve-macros","solve-prepare","solve-protection","index","bank","keyboard","keyboard-extra","views-close","local","global","puzzle","operation-focus","help"}.Contains(id))throw new InvalidOperationException("Finish or stop the current check before changing the operation. No input was queued.");if(hub.SelectionIsForecast&&new[]{"assign-a","assign-b","assign-target","block-capture","block-protect","block-unprotect","block-remove","capture-piece"}.Contains(id))throw new InvalidOperationException("This is a forecast identity. Select an actual token or a fixed position before assigning, capturing or protecting its current state.");action();}catch(Exception e){Say(e.Message,true);NativeDiagnostics.Write("Command rejected: "+id,e);}}
+ void RunCommand(string id){try{if(closing)return;Action action;if(!commands.TryGetValue(id,out action))throw new InvalidOperationException("Unknown command: "+id);if(OperationInputBlocked&&!new[]{"cancel-analysis","macro-search","macro-close","solve-macros","solve-prepare","solve-protection","index","bank","keyboard","keyboard-extra","views-close","local","global","puzzle","operation-focus","help"}.Contains(id))throw new InvalidOperationException("Finish or stop the current check before changing the operation. No input was queued.");if(hub.SelectionIsForecast&&forecastRestrictedCommands.Contains(id))throw new InvalidOperationException("This is a forecast identity. Select an actual token or a fixed position before assigning, capturing or protecting its current state.");action();}catch(Exception e){Say(e.Message,true);NativeDiagnostics.Write("Command rejected: "+id,e);}}
  void RunKeyboardCommand(string id){if(id=="preview"||id=="commit"){var b=FocusedOwnedControl() as Button;string command;if(b==null||b.Parent!=operationStrip||!commandButtons.TryGetValue(b,out command)||!new[]{"review","preview","commit","cancel-preview"}.Contains(command)){Say("Focus Operation controls first"+KeyHint("operation-focus")+".",true);return;}}RunCommand(id);}
  Button Button(string label,string command,Button supplied=null){
   var b=supplied??new Button();UseRoundedButton(b);b.Text=label;b.Tag=label;b.AutoSize=true;b.AutoSizeMode=AutoSizeMode.GrowAndShrink;b.MinimumSize=new Size(0,29);b.Margin=new Padding(2);b.Padding=new Padding(5,1,5,1);b.FlatStyle=FlatStyle.Flat;b.BackColor=Paper;b.ForeColor=Ink;b.AccessibleName=hints.ContainsKey(command)?hints[command]:label;
@@ -246,17 +246,17 @@ internal sealed partial class ExperimentShell : IDisposable, IMessageFilter {
   if(timing!=null){timing.KeyHintCalls=sendTimingKeyHintCalls;timing.KeyHintTicks=sendTimingKeyHintTicks;}
   if(!connected||OperationInputBlocked||closing){hub.CancelPendingInteraction();if(!closing&&work!=null&&route=="experiment/native-command"&&Text(Value(body,"action"))=="macro-effect"&&Object.Equals(Value(body,"select"),true)){AdoptMacroSelection();Draw();}Say(stopFailure??(stopPending?"Waiting for stop acknowledgement; no operation was queued.":"Input was not accepted: the native bridge is not ready or an operation is busy."),true);CompleteSendTiming(timing);completion.SetResult(false);WriteSendTiming(timing,false,"rejected");return completion.Task;}
   string requestedAction=Text(Value(body,"action"));
+  bool isImport=requestedAction=="session-log-apply";
   string previousHead=Text(Value(work,"head"));
   NativeDiagnostics.Write("Experiment dispatch: "+route+" / "+requestedAction);
   if(route!="experiment/native-command"||requestedAction!="inspect"&&requestedAction!="inspect-position")hub.CancelPendingInteraction();
   if(timing!=null)timing.CancelDone=Stopwatch.GetTimestamp();long phaseSerial=PreparePhaseRequest(body);if(timing!=null)timing.PhaseDone=Stopwatch.GetTimestamp();
   busy=true;hub.SetInteractionEnabled(false);if(timing!=null)timing.HubDisabled=Stopwatch.GetTimestamp();macros.Enabled=false;workGoal.Enabled=false;bridge.SetBusy(true);body["native_since"]=snapshot.Revision;Say("Checking the explicit operation; committed state remains visible.");
-  Dictionary<string,object> reply=null,importReceipt=null;NativeSnapshot next=null;Exception fault=null;
+  Dictionary<string,object> reply=null,receipt=null;NativeSnapshot next=null;Exception fault=null;
   if(timing!=null)timing.Submitted=Stopwatch.GetTimestamp();
   Task.Factory.StartNew(delegate{
    if(timing!=null)timing.WorkerStart=Stopwatch.GetTimestamp();
-   try{reply=api.Post(route,body);if(timing!=null)timing.PostDone=Stopwatch.GetTimestamp();var primary=Map(Value(reply,"result"));if(requestedAction=="session-log-apply"&&Object.Equals(Value(primary,"import_applied"),true))importReceipt=primary;if(Object.Equals(Value(reply,"requires_refresh"),true)){if(timing!=null)timing.Refresh=true;var fresh=api.Get("experiment/native-snapshot");fresh["result"]=reply["result"];reply=fresh;next=ReadPair(reply,bridge.Profile,null);}else try{next=ReadPair(reply,bridge.Profile,snapshot);}catch(InvalidDataException){if(timing!=null)timing.Refresh=true;var fresh=api.Get("experiment/native-snapshot");next=ReadPair(fresh,bridge.Profile,null);fresh["result"]=reply["result"];reply=fresh;}}
-   catch(Exception e){fault=e;if(timing!=null)timing.Refresh=true;try{reply=api.Get("experiment/native-snapshot");next=ReadPair(reply,bridge.Profile,null);}catch(Exception refresh){NativeDiagnostics.Write("Native error recovery snapshot failed",refresh);}}
+   try{var outcome=ExperimentSendOutcome.Worker<NativeSnapshot>(delegate{var posted=api.Post(route,body);if(timing!=null)timing.PostDone=Stopwatch.GetTimestamp();return posted;},delegate{if(timing!=null)timing.Refresh=true;return api.Get("experiment/native-snapshot");},(fresh,useBase)=>ReadPair(fresh,bridge.Profile,useBase?snapshot:null),requestedAction,refresh=>NativeDiagnostics.Write("Native error recovery snapshot failed",refresh));reply=outcome.Reply;receipt=outcome.Receipt;next=outcome.Next;fault=outcome.Fault;}
    finally{if(timing!=null)timing.WorkerDone=Stopwatch.GetTimestamp();}
   }).ContinueWith(t=>{if(t.IsFaulted)fault=t.Exception.GetBaseException();if(timing!=null)timing.UiQueued=Stopwatch.GetTimestamp();OnUi(delegate{
    if(timing!=null)timing.UiStart=Stopwatch.GetTimestamp();
@@ -265,28 +265,29 @@ internal sealed partial class ExperimentShell : IDisposable, IMessageFilter {
     if(t.IsFaulted)fault=t.Exception.GetBaseException();
     if(fault!=null)hub.CancelPendingInteraction();
     if(next!=null){if(timing!=null)timing.ApplyStart=Stopwatch.GetTimestamp();bridge.Apply(next);if(timing!=null)timing.ApplyDone=Stopwatch.GetTimestamp();snapshot=next;work=Map(reply["work"]);AdoptMacroSelection();lastLocalCell=Map(Value(reply,"local_cell"));if(lastLocalCell!=null)local.UpdateCellState(lastLocalCell);var result=Map(Value(reply,"result"));string action=Text(Value(body,"action"));selectedApplicability=null;if(action=="macro-effect"&&fault==null&&result!=null&&Text(Value(body,"id"))==selectedMacro){selectedEffect=Map(Value(result,"effect"));selectedEffectKey=SelectedMacroEffectKey();selectedEffectScope="body";selectedApplicability=Map(Value(result,"applicability"));}else if(action=="review")selectedEffectScope="complete";bool? requestedPreview=action=="preview"&&fault==null?(bool?)true:action=="commit"||action=="cancel-preview"?(bool?)false:null;AdoptPhaseInspection(reply,phaseSerial);DrawTimed(requestedPreview,timing);}
-    if(fault!=null){Say(fault.Message,true);NativeDiagnostics.Write("Experimental operation rejected",fault);}
-    else if(Text(Value(Map(Value(reply,"result")),"warning")).Length>0){var outcome=Map(Value(reply,"result"));string warning=Text(Value(outcome,"warning"));bool committed=Object.Equals(Value(outcome,"committed"),true);Say((importReceipt!=null?"Log imported. ":committed?"Operation committed. ":"Workspace saved. ")+warning,true);NativeDiagnostics.Write("Successful write follow-up warning: "+warning);}
+    if(fault!=null)Say(fault.Message,true);
+    else if(Text(Value(Map(Value(reply,"result")),"warning")).Length>0){var outcome=Map(Value(reply,"result"));string warning=Text(Value(outcome,"warning"));bool committed=Object.Equals(Value(outcome,"committed"),true);Say((isImport&&receipt!=null?"Log imported. ":committed?"Operation committed. ":"Workspace saved. ")+warning,true);NativeDiagnostics.Write("Successful write follow-up warning: "+warning);}
     else if(requestedAction=="inspect-phase"&&mode=="g2"&&phaseInspection==null)Say("Draft inspection did not complete. "+Text(Value(reply,"phase_inspection_error")),true);
     else Say("Completed explicit "+Text(body["action"])+"."+(Text(Value(reply,"phase_inspection_error")).Length>0?" Draft inspection unavailable; actual state is retained.":""));
     if(next==null){connected=false;Say("Could not recover a complete native snapshot; input disabled. Relaunch this isolated session.",true);}
    }catch(Exception e){connected=false;Say(e.Message,true);NativeDiagnostics.Write("Experimental completion failed",e);}
    finally{
     if(timing!=null)timing.FinallyStart=Stopwatch.GetTimestamp();
-    bool accepted=importReceipt!=null;busy=false;
+    var finalized=ExperimentSendOutcome.Finalize(receipt,isImport,Map(Value(reply,"result")),fault,connected,requestedAction!="inspect-phase"||mode!="g2"||phaseInspection!=null);busy=false;
     try{
      try{
-      if((importReceipt!=null||fault==null&&connected&&(requestedAction!="inspect-phase"||mode!="g2"||phaseInspection!=null))&&requestedAction=="session-new")pendingDefaultViews=true;
+      if(finalized.Accepted&&requestedAction=="session-new")pendingDefaultViews=true;
       RefreshCommandAvailabilityTimed(timing);
      }finally{if(timing!=null)timing.AvailabilityDone=Stopwatch.GetTimestamp();try{EndKeyboardBatch();}finally{if(timing!=null)timing.KeyboardDone=Stopwatch.GetTimestamp();}}
     }catch(Exception e){connected=false;bridge.SetBusy(true);hub.SetInteractionEnabled(false);macros.Enabled=false;workGoal.Enabled=false;Say(e.Message,true);NativeDiagnostics.Write("Experimental keyboard finalization failed",e);}
     finally{
      try{
-      lastCommandResult=fault==null?Map(Value(reply,"result")):null;
-      if(importReceipt!=null){lastCommandResult=importReceipt;if(fault!=null||!connected){string warning="Log import was accepted. "+(fault==null?"Native display adoption failed.":fault.Message)+(connected?" Current state was refreshed.":" Input remains disabled; reopen this session to recover its native display. Do not repeat the import.");importReceipt["warning"]=Text(Value(importReceipt,"warning"))+" "+warning;Say(warning,true);}}
-      accepted=importReceipt!=null||fault==null&&connected&&(requestedAction!="inspect-phase"||mode!="g2"||phaseInspection!=null);
-      if(accepted&&previousHead!=Text(Value(work,"head"))&&(requestedAction=="commit"||requestedAction=="twist"||requestedAction=="native-word"||route=="experiment/native-input"))RequestSessionCompletion();
-     }finally{CompleteSendTiming(timing);completion.TrySetResult(accepted);WriteSendTiming(timing,accepted,"completed");}
+      finalized=ExperimentSendOutcome.Finalize(receipt,isImport,Map(Value(reply,"result")),fault,connected,requestedAction!="inspect-phase"||mode!="g2"||phaseInspection!=null);
+      lastCommandResult=finalized.LastResult;
+      if(finalized.ReceiptWarning!=null){receipt["warning"]=Text(Value(receipt,"warning"))+" "+finalized.ReceiptWarning;Say(finalized.ReceiptWarning,true);}
+      if(finalized.LogRejection)NativeDiagnostics.Write("Experimental operation rejected",fault);
+      if(finalized.Accepted&&previousHead!=Text(Value(work,"head"))&&(requestedAction=="commit"||requestedAction=="twist"||requestedAction=="native-word"||route=="experiment/native-input"))RequestSessionCompletion();
+     }finally{CompleteSendTiming(timing);completion.TrySetResult(finalized.Accepted);WriteSendTiming(timing,finalized.Accepted,"completed");}
     }
    }
   },()=>{CompleteSendTiming(timing);completion.TrySetCanceled();WriteSendTiming(timing,null,"ui-skipped");});});return completion.Task;
