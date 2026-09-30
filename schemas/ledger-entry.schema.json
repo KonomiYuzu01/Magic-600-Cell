@@ -24,7 +24,7 @@
     },
     "packet_sha256": {"type": "string"},
     "source_identity": {"type": ["string", "null"]},
-    "outcome": {"type": "string", "enum": ["pass", "findings", "inconclusive", "invalid", "timeout", "error"]},
+    "outcome": {"type": "string", "enum": ["pass", "findings", "inconclusive", "implemented", "acceptance_failed", "invalid", "timeout", "error"]},
     "cost": {
       "type": "object",
       "required": ["status", "usd"],

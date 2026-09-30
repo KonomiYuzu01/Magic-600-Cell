@@ -15,6 +15,7 @@ Use only `tools/agents/codex_review.py`. Never call `codex exec` directly for pr
    - Critical-path, behaviour, contract or design/ADR change, escalation, joint attack or milestone audit: add `--model gpt-6-astra`.
    - Gate ruling (stage 2.4 day-7 go/no-go, migration format freeze, 1.0 architecture freeze): add `--model gpt-6-astra --effort ultra --gate <gate>`.
    - Add `--speed fast` for scoped verification rounds, plan re-checks, mechanical checks and non-critical reviews. Critical full reviews, joint attacks, escalations and gates use the standard tier.
+   - Implementation by Codex (a separable packet with an `implement-contract` block): `python tools/agents/codex_review.py --kind implement --packet <file>`. Review `changes.patch` yourself, apply it with `git apply`, run the checks, get the other Codex model's review for critical paths, then `--cleanup <call-id>`.
 3. Read `work/reviews/<call-id>/review.json`. The wrapper has already rejected a run whose model, effort, sandbox or speed tier differs from the request.
 4. Answer every finding with `adopt`, `reject_with_evidence` or `needs_verification`, and write the answers to `work/reviews/<call-id>/dispositions.json`.
 5. Follow `AGENTS.md` "Review rounds": one full review of the finished candidate (parallel shards for a large one), then at most two scoped verification rounds. A verification packet lists the blocking finding IDs and the fix delta, and asks only whether each is fixed and whether the fix adds a new `blocker` or `major`. Defer `minor` and `nit` findings.

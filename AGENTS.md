@@ -66,10 +66,12 @@ Review rounds (keep reviews few and decisive):
 - Spend spare subscription quota on parallelism, not on more serial rounds: split a large candidate into independent review shards run concurrently, and resolve the blocking findings of every shard before commit. Paid API calls still reserve budget first.
 
 Pair implementation (Claude and Codex write code together):
-- Enabled once the wrapper's `--kind implement` passes its worktree ownership and isolation tests. Until then Codex does not write code; building and testing that mode is the next development-system task.
+- Enabled: Codex writes code only through the wrapper's `--kind implement`, which creates the packet's worktree and branch itself, runs Codex there in the workspace-write sandbox, rejects any change outside the allowed files and any commit, ref, Git config, hook or link change, and runs the acceptance check in the same sandbox. The wrapper never merges.
+- The Windows sandbox available without administrator rights enforces the filesystem boundary (so a push to a local repository fails) but not a network firewall. Git transports are off in the default configuration Codex and the acceptance check receive, but a process can override that, so pushes over the network and other network use are only instructed away. Firewall isolation needs the elevated backend, which is an owner decision.
+- While an implementation call runs, nobody commits, tags or pushes in the repository: any ref change invalidates the run.
 - The integrator splits a task with separable parts into disjoint packets. Each packet names its own worktree, allowed files, acceptance check and stop condition. Codex implements its packets in parallel while Claude implements the rest; the integrator merges and commits.
 - No one reviews their own code. Claude reviews Codex-authored changes, and a separate Codex call reviews Claude-authored ones. A Codex-authored critical-path change also gets a review from the other Codex model.
-- Codex never commits to the main worktree or pushes. The review rules above apply to the merged candidate.
+- Codex never commits to the main worktree or pushes. The integrator reviews `changes.patch`, applies it to the main worktree and removes the finished worktree with `--cleanup`. The review rules above apply to the merged candidate.
 
 Escalation (an effective iteration is hypothesis, change, verification and judgement):
 - Same problem after three effective iterations: independent diagnosis by the other model.
