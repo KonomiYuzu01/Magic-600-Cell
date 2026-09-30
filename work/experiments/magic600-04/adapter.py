@@ -207,6 +207,7 @@ class Workbench:
         self.native_profile = native_profile if native_profile is not None else lambda: None
         self.session_workflow = SessionWorkflow(session, workflow if workflow is not None else Workflow(session))
         self.epoch = secrets.token_hex(12)
+        self.save_warnings = []
         self.review = None
         self.execution = None
         self.sheet_confirmation = None
@@ -262,13 +263,11 @@ class Workbench:
                 tags=['retained star', suffix], note='E1 adjacent Home-block example.', version=1)
         return result
 
-    def save(self):
+    def persist_prefs(self, changes):
+        """Save preferences; a warning means they were stored but the reply failed."""
         previous_prefs = self.s.prefs
-        layout = dict(self.s.prefs.get('layout', {}))
-        previous = layout.get('magic600_experiment')
-        layout['magic600_experiment'] = clone(self.w)
         try:
-            self.s.save_prefs({'layout': layout})
+            self.s.save_prefs(changes)
         except Exception as error:
             # An acknowledgment can fail after SQLite has stored the new work.
             # Only an exact changed record proves that this save took effect.
@@ -276,9 +275,22 @@ class Workbench:
                 stored = json.loads(self.s._get('prefs') or '{}')
             except Exception:
                 stored = None
-            if stored != previous_prefs and stored == dict(previous_prefs, layout=layout):
+            if stored != previous_prefs and stored == dict(previous_prefs, **changes):
                 self.s.prefs = stored
                 return 'Workspace preferences were saved; reading their result failed: ' + str(error)
+            raise
+        return None
+
+    def workspace_layout(self, workspace):
+        layout = dict(self.s.prefs.get('layout', {}))
+        layout['magic600_experiment'] = clone(workspace)
+        return layout
+
+    def save(self):
+        previous = self.s.prefs.get('layout', {}).get('magic600_experiment')
+        try:
+            return self.persist_prefs({'layout': self.workspace_layout(self.w)})
+        except Exception:
             if previous is not None:
                 self.w = clone(previous)
                 workspace_defaults(self.w)
@@ -1339,6 +1351,7 @@ class Workbench:
                                        position_locks=self.position_locks()))
         action = body.get('action')
         committed_operation, command_warning = False, None
+        self.save_warnings = []
         edits_draft = action in ('draft', 'insert-macro', 'inverse-cleanup', 'review') or (
             action in ('twist', 'native-word') and body.get('destination') == 'draft')
         if edits_draft and self.operation_state() == 'executed':
@@ -1357,8 +1370,8 @@ class Workbench:
             if self.m.oid[identity] != self.m.oid[target] or self.m.oid[identity] < 0:
                 raise ValueError('Identity and target must share a moving orbit')
             o = int(self.m.oid[identity])
-            self.switch_orbit(o, restore=True)
-            self.w.update(current=identity, target=target, inspected=identity, inspected_position=None)
+            self.switch_orbit(o, restore=True,
+                              update=dict(current=identity, target=target, inspected=identity, inspected_position=None))
         elif action == 'next-pin':
             identity = self.resolve_object_input(body['identity'], 'Piece', 'Next identity')
             target = self.resolve_object_input(body.get('target', identity), 'Position', 'Next target')
@@ -1411,9 +1424,9 @@ class Workbench:
             if not self.w['next']:
                 raise ValueError('No Next piece is locked')
             nxt = self.w['next']
-            self.w['next'] = None
-            self.switch_orbit(int(self.m.oid[nxt['identity']]), restore=True)
-            self.w.update(current=nxt['identity'], target=nxt['target'], inspected=nxt['identity'], inspected_position=None)
+            self.switch_orbit(int(self.m.oid[nxt['identity']]), restore=True,
+                              update=dict(next=None, current=nxt['identity'], target=nxt['target'],
+                                          inspected=nxt['identity'], inspected_position=None))
         elif action == 'bank':
             bank = next((x for x in self.banks() if x['id'] == body['id']), None)
             if not bank:
@@ -1812,14 +1825,24 @@ class Workbench:
             recipe = [dict(kind='star', orbit=33, node=11, sign=1), dict(kind='star', orbit=33, node=0, sign=1)]
             if self.s.pending:
                 raise ValueError('Cancel the pending preview before loading a fixture')
+            # The fixture commits directly and then replaces the live block, so it
+            # may only run while no captured position requirement could be broken.
+            if self.position_locks():
+                raise ValueError('Release all position locks before loading E1')
             p = self.s.preview(recipe, 'E1 explicit legal synthetic fixture', 'synthetic-practice')
+            if p['conflicts']:
+                self.s.pending = None
+                raise ValueError('E1 would move a protected orbit. Remove that protection before loading E1')
             self.s.commit(p['token'])
-            self.w.update(orbit=33, current=35778, target=35778, inspected=35778, inspected_position=None,
+            workspace = clone(self.w)
+            workspace.update(orbit=33, current=35778, target=35778, inspected=35778, inspected_position=None,
                 next=dict(identity=26789, target=26789), roles=[2712,175618], bank='33-I',
                 draft={p: [] for p in PHASES}, draft_sources={p: [] for p in PHASES}, source='E1 legal synthetic practice; not a human solve', reference=[])
-            self.w['block'] = dict(name='Shared-face Home block', members=[dict(identity=x,position=x,labels=self.m.slots(x).tolist()) for x in [35778,26789]],protected=[])
-            self.s.save_prefs({'orbit': 33, 'rules': [{'expr':'active','style':'solid'}]})
-            self.w['filter'] = self.s.prefs['rules'][0]['expr']
+            workspace['block'] = dict(name='Shared-face Home block', members=[dict(identity=x,position=x,labels=self.m.slots(x).tolist()) for x in [35778,26789]],protected=[])
+            rules = [{'expr':'active','style':'solid'}]
+            workspace['filter'] = rules[0]['expr']
+            self.save_warnings.append(self.persist_prefs({'orbit': 33, 'rules': rules, 'layout': self.workspace_layout(workspace)}))
+            self.w = workspace
         elif action == 'grips':
             return self.cap_axes(body['cell'])
         else:
@@ -1829,7 +1852,7 @@ class Workbench:
             self.w.pop('completed_operation', None)
         workspace_saved = False
         try:
-            save_warning = self.save()
+            save_warning = '\n'.join(filter(None, self.save_warnings + [self.save()]))
             if save_warning:
                 workspace_saved = True
                 command_warning = command_warning + '\n' + save_warning if command_warning else save_warning
@@ -1864,12 +1887,17 @@ class Workbench:
             return result
         return None
 
-    def switch_orbit(self, o, restore=False):
+    def switch_orbit(self, o, restore=False, update=None):
         integer(o, 35, 'Orbit')
         if o == self.w['orbit']:
+            self.w.update(update or {})
             return
-        self.w = switch_context(self.m, self.w, o)
-        self.s.save_prefs({'orbit': o})
+        # Orbit, workspace and the caller's follow-up fields are stored in one write,
+        # so a failed save cannot split them or keep a half-finished switch.
+        workspace = switch_context(self.m, self.w, o)
+        workspace.update(update or {})
+        self.save_warnings.append(self.persist_prefs({'orbit': o, 'layout': self.workspace_layout(workspace)}))
+        self.w = workspace
 
     def applicability(self, facts):
         star = facts['star']; reasons = []
@@ -2081,6 +2109,7 @@ def install(handler, context):
                     try:
                         if is_native and context['native_profile'][0] is None:
                             raise ValueError('Native bridge has not passed')
+                        rev_before = context['session'].rev
                         result = timed('command', lambda: native_input(body) if path.endswith('/native-input') else service.command(body, response_snapshot=not is_native))
                         if not is_native:
                             return result
@@ -2117,12 +2146,16 @@ def install(handler, context):
                                 return timed('native_reply', native_reply, result, since, None, inspection_error,
                                                     cycle_projection, cycle_error, cycle_note, prediction=False)
                         except Exception as error:
-                            if not isinstance(result, dict) or result.get('import_applied') is not True:
+                            imported = isinstance(result, dict) and result.get('import_applied') is True
+                            if not imported and context['session'].rev == rev_before:
                                 raise
-                            # The journal import is already durable. Rendering a
-                            # paired reply cannot turn it into a failed import.
-                            result = dict(result, warning='; '.join(filter(None, [result.get('warning'),
-                                'Log imported; native display refresh failed: ' + str(error)])))
+                            # The journal change is already durable. Rendering a paired
+                            # reply cannot turn it into a failed import or operation.
+                            result = dict(result if isinstance(result, dict) else {})
+                            if not imported:
+                                result['committed'] = True
+                            result['warning'] = '; '.join(filter(None, [result.get('warning'),
+                                ('Log imported' if imported else 'Operation committed') + '; native display refresh failed: ' + str(error)]))
                             return dict(result=result, requires_refresh=True)
                     finally:
                         context['model'].cancel_event = None

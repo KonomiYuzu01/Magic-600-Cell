@@ -9,6 +9,7 @@ using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
 internal sealed partial class ExperimentShell {
+ static readonly string[] forecastRestrictedCommands=new[]{"assign-a","assign-b","assign-target","block-capture","block-capture-position","block-protect","block-protect-position","block-unprotect-exact","block-unprotect-position","block-unprotect","block-remove","capture-piece"};
  static readonly Color toolPaper=Paper,toolInk=Ink,toolAccent=Accent;
  // Paint-only corners: the existing rectangular hit target and native focus remain intact.
  static void RoundButtonEdges(Button button,Graphics graphics){
@@ -90,7 +91,7 @@ internal sealed partial class ExperimentShell {
   if(OperationExecuted&&new[]{"macro-insert","macro-replace","cleanup-inverse","review"}.Contains(id))return "These steps were executed. Choose New operation or Reuse steps first.";
   if(OperationExecuted&&new[]{"inspect-prepare","inspect-macro","inspect-cleanup","compare-preview"}.Contains(id))return "These steps were executed. Choose New operation or Reuse steps before inspecting a new result.";
   if((id=="operation-new"||id=="operation-reuse")&&Value(work,"pending")!=null)return "Commit or cancel the pending preview first.";
-  if(hub.SelectionIsForecast&&new[]{"assign-a","assign-b","assign-target","block-capture","block-capture-position","block-protect","block-protect-position","block-unprotect-exact","block-unprotect-position","block-unprotect","block-remove","capture-piece"}.Contains(id))return "Select an actual token or a fixed position first; this token is a forecast.";
+  if(hub.SelectionIsForecast&&forecastRestrictedCommands.Contains(id))return "Select an actual token or a fixed position first; this token is a forecast.";
   if((id=="next-activate"||id=="next-locate"||id=="next-clear")&&Value(work,"next")==null)return "Pin a Next identity first.";
   if((id=="macro-insert"||id=="macro-details"||id=="macro-compare"||id=="macro-inverse"||id=="reference-transform"||id=="macro-geometry")&&selectedMacro==null)return "Select an existing macro first.";
   if(new[]{"next-pin","block-add","block-capture","block-capture-position","block-protect","block-protect-position","block-unprotect-exact","block-unprotect-position","block-unprotect","block-remove","capture-piece","copy-selection"}.Contains(id)&&Selection==null)return "Inspect a piece or position first.";

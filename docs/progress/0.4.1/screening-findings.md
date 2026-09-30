@@ -76,4 +76,16 @@ None confirmed. The optimization leads are listed under "Needing verification".
 
 ## Next
 
+Fix status, batch 1 (headless and source evidence only; the native host was compiled but not run):
+
+| ID | Status | Regression |
+|---|---|---|
+| A-02 | Fixed. Save log and Export refuse a record that import would reject and suggest a session backup. | `tests/test_log_budget.py` |
+| B-001 | Fixed. Request input stops waiting once the engine is stopping, including input that keeps trickling in. | `tests/test_engine_lifecycle.py` (stalled and trickling clients) |
+| C-01 | Fixed. The E1 fixture refuses while any position lock exists or when its preview conflicts with a protected orbit. | `tests/test_fixture_respects_locks.py` |
+| C-02 | Fixed. The orbit, the workspace and the caller's follow-up fields (Next activation, focus) are stored in one write. | `tests/test_orbit_switch_atomic.py` |
+| C-03 | Engine side fixed: a committed command whose snapshot fails reports success with a refresh request. The native host's durable receipt is a separate packet gated on the native regression. | `tests/test_native_reply_after_commit.py` |
+| F-01 | Fixed (Codex). The four protection commands join the forecast restriction list used by both guards. | `tests/test_forecast_guard.py` |
+| B-002 | Fixed (Codex). A build is reused only when its inputs were unchanged after compilation. | `tests/test_native_launch_reuse.py` |
+
 X-01 and B-003 belong to the step-1 lane. Codex implementation worktrees inherit the same line-ending conversion, so fix packets with model-dependent acceptance checks wait until X-01 lands. Each other confirmed finding becomes a fix packet whose acceptance check is its experiment, turned into a regression test.
