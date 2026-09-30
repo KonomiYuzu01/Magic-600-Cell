@@ -53,10 +53,4 @@ Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the
 
 - Follow `docs/wiki/SCHEMA.md` for ingest, query and lint. Ingest only when the owner asks. File a query answer back only when it has lasting value and evidence.
 
-Merging (the owner is not a merge button):
-- The integrator merges its own pull request, without asking, when all of these hold: the checks this file lists for the changed area pass on the final head and are listed in the PR body; the review rules above are met (a valid review of the current candidate with no open `blocker` or `major`, or a recorded exemption); the PR contains nothing under "Ask the owner"; and the branch merges cleanly into the current base.
-- Batch work: one pull request per finished task or milestone, not per commit or per fix. Follow-up fixes to an open pull request go to the same branch.
-- The owner is asked only for pull requests that contain an "Ask the owner" item, that need an owner exception to the review rule, or that the owner marked for their own sign-off. Ask once, in two or three lines, never for a routine merge.
-- After merging, the integrator reports what landed in a short summary. When a merged change touches an approval input (`tools/toolchain/approval_inputs.json`), the summary ends with `python tools/toolchain/bootstrap.py approve`. Batch approval-input changes so the owner approves once per milestone.
-- Never force-push or rewrite `main`, never merge a branch another session is still working on, and delete merged branches.
-- Questions to the owner follow the same rule: decide anything that has a conventional default or a recorded decision, record the choice, and ask only for items under "Ask the owner".
+6. Merge: merge your own pull request when `AGENTS.md` "Merging" allows it; otherwise ask the owner once, briefly.
