@@ -54,6 +54,7 @@ Packets and replies:
 
 When review is required:
 - A non-trivial task gets a plan check before implementation and a review of the current candidate before commit. Both are mandatory for critical paths, behaviour or contract changes, and substantive design or ADR decisions. Pure spelling, formatting and mechanically provable generated-file syncs are exempt; record the reason.
+- Owner-dictated rule text is exempt from Codex review: when the owner states a rule change in `AGENTS.md`, `CLAUDE.md`, the briefing or the guides, the integrator writes it, records the owner decision in the wiki, runs the agent-rules checks and merges under "Merging". A change that widens an agent's own authority is still written by the owner. Code, hooks, the wrapper, the installer and lockfiles keep the normal review rules.
 - An unchanged approved plan may reuse its plan check. The final review must cover the current candidate, not an earlier diff.
 - Critical paths are listed in `docs/development-guide/AGENT_BRIEFING.md`.
 
