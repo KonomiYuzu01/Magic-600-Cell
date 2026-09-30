@@ -331,7 +331,9 @@ class RefusalTests(unittest.TestCase):
         bootstrap.shutil.which = lambda name, **k: "winget.exe" if name == "winget" else None
         try:
             for listing, ok in (("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3\n", True),
+                                ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.0\n", True),
                                 ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.30\n", False),
+                                ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.1\n", False),
                                 ("No installed package found matching input criteria.\n", False)):
                 bootstrap.subprocess.run = lambda *a, **k: subprocess.CompletedProcess(a, 0, listing, "")
                 with self.subTest(listing=listing):
