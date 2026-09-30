@@ -20,6 +20,8 @@ Claude Code instructions for Magic 600 Cell. Shared rules and the team protocol 
 4. Review: run one Codex review of the finished candidate (parallel shards for a large one), fix the blocking findings, then run scoped verification rounds within the limits of `AGENTS.md` "Review rounds". Answer every finding; defer minor ones.
 5. Record: link the wrapper-owned call record, record the finding dispositions and update the affected wiki pages. Do not duplicate usage or billing entries. Commit a critical change only after a valid review or an explicit owner exception.
 
+In the main session, keep the development workbench brief current at each plan step and milestone: `python tools/workbench/brief.py --goal "..." --step "..." --doing "..." --why "..." --waiting-for "..."` (omitted fields keep their value). Write it yourself in plain language; never call a model to summarize. Subagents never run it.
+
 Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the owner's workflow skills (`investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`) when a task matches them.
 
 ## Calling Codex

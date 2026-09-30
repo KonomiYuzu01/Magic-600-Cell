@@ -231,8 +231,8 @@ class RefusalTests(unittest.TestCase):
             venv = Path(td)
             (venv / "bin").mkdir()
             (venv / "lib" / "python3.11").mkdir(parents=True)
-            os.symlink("lib", venv / "lib64", target_is_directory=True)  # legitimate internal link
             try:
+                os.symlink("lib", venv / "lib64", target_is_directory=True)  # legitimate internal link
                 os.symlink(outside, venv / "lib" / "python3.11" / "site-packages", target_is_directory=True)
             except (OSError, NotImplementedError):
                 self.skipTest("symlinks not available")

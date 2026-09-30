@@ -33,6 +33,7 @@ A change here needs a Codex plan check and a valid Codex review of the current c
 - `assets/manifest.json`, model and protection logic, the migration schema, `schemas/*`
 - `AGENTS.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/hooks/*`
 - `tools/agents/*`, `tools/toolchain/*`, `tools/toolchain.lock.json`, `tools/skills.lock.json`, `tools/skills/*`, `tools/repo_digest.py`
+- `tools/workbench/statusline.py` (Claude Code runs it in every session)
 
 ## 4. Repository map
 
@@ -46,6 +47,7 @@ A change here needs a Codex plan check and a valid Codex review of the current c
 | `docs/development-guide/` | This briefing and the human guide |
 | `.agents/skills/` | Canonical skills; `.claude/skills/` holds generated copies |
 | `tools/` | Review wrapper, toolchain installer, skills sync, wiki lint |
+| `tools/workbench/` | 0.4.1 development workbench (Qt Quick app, brief CLI, status line); reporting hook in `.claude/hooks/report_event.py` |
 | `templates/`, `schemas/` | Problem packet, API-team role cards, review and ledger schemas |
 | `work/loop-memory/`, `work/reviews/` | Private ledgers, raw material, review outputs (ignored by Git) |
 
@@ -58,7 +60,8 @@ Known gap: `tests/run_postapproval.py` is hashed by `native_launch.py` but absen
 | Mechanics or persistence | `python tests/test_core.py`, `python tests/test_reference_maps.py`, `python tests/test_crash.py` |
 | Process ownership | the above plus `python tests/test_engine_lifecycle.py` |
 | Native host | compile and run `tests/native/NativeHostRegression.cs` (Windows only) |
-| Agent rules, hooks, wrapper, installer, skills | `python tests/test_agent_rules_sync.py`, `python tests/test_codex_review.py`, `python tests/test_stop_gate.py`, `python tests/test_bootstrap.py` |
+| Agent rules, hooks, wrapper, installer, skills | `python tests/test_agent_rules_sync.py`, `python tests/test_codex_review.py`, `python tests/test_stop_gate.py`, `python tests/test_bootstrap.py`, `python tests/test_workbench.py` |
+| Development workbench | `python tests/test_workbench.py`; with the workbench environment `tools/.venv/workbench/Scripts/python.exe tests/test_workbench_ui.py` |
 | Wiki | `python tools/wiki/lint.py` and `python tests/test_wiki_lint.py` |
 | Skills | `python tools/skills/sync.py --check` |
 
@@ -82,7 +85,7 @@ In a Linux or cloud session, run only headless checks and list the Windows check
 ## 7. Tools quick reference
 
 - `python tools/toolchain/bootstrap.py check | doctor | install <id> | install --profile <p> | install-skill <id>`
-- Profiles: `planning` (now), `native-performance` (0.4.1), `renderer-spike` (stage 2.4), `media`, `release`, `optional`.
+- Profiles: `planning` (now), `native-performance` (0.4.1), `workbench` (0.4.1 development workbench), `renderer-spike` (stage 2.4), `media`, `release`, `optional`.
 - winget entries are unverified until the owner runs `bootstrap.py pin <id>` on Windows; a pin changes the lockfile and returns installs to ask-first until the owner runs `bootstrap.py approve` again.
 - Local output tools: Mermaid CLI (`tools/node/mermaid-cli/node_modules/.bin/mmdc`), Marp CLI (`tools/node/marp-cli/node_modules/.bin/marp`), marimo (`tools/.venv/planning`), draw.io, Typst, Blender, FFmpeg.
 - Skills: `codex-dialogue`, `wiki`, `toolchain`, `marimo-pair`, and the owner's `investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`.

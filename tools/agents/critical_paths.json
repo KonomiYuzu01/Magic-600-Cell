@@ -19,6 +19,7 @@
     "tools/toolchain.lock.json",
     "tools/skills.lock.json",
     "tools/skills/*",
-    "tools/repo_digest.py"
+    "tools/repo_digest.py",
+    "tools/workbench/statusline.py"
   ]
 }

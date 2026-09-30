@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-09-30] review | Development workbench stage A reviewed
+The stage A candidate of the [workbench](components/workbench.md) had one full Codex review in two parallel shards (Astra on the critical files, Sol on the app) and two scoped verification rounds; every blocking finding was fixed with a regression test. The last open ordering edge case was settled by an adjudicating experiment with mutation checks and committed under an owner exception.
+
+## [2026-09-30] update | Development workbench phase 1, stage A
+Added the [workbench](components/workbench.md) component page: the Qt Quick app, the brief CLI, the status line script, the public progress file and the unregistered reporting hook. Hook and status-line registration follow in stage B.
+
 ## [2026-09-30] update | Codex calls ignore the user config
 Plan, review and implementation calls now pass `--ignore-user-config` (and name the unelevated Windows sandbox backend), so user-configured MCP servers, plugins and sandbox settings never load during a wrapper call; sign-in must use the default file-backed store.
 
