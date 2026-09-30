@@ -122,8 +122,18 @@ def load_lock() -> dict:
             raise SystemExit(f"lockfile: {entry['id']} has unknown method {entry['method']}")
         if entry["id"] in ids or not ID_RE.match(entry["id"]):
             raise SystemExit(f"lockfile: bad or duplicate id {entry['id']}")
+        if "python" in entry and not valid_python_request(entry):
+            raise SystemExit(f"lockfile: {entry['id']} has an invalid python request")
         ids.add(entry["id"])
     return lock
+
+
+def valid_python_request(entry: dict) -> bool:
+    """A uv-venv-hashed entry may require an exact 64-bit CPython instead of the installer's own interpreter."""
+    req = entry["python"]
+    return (entry["method"] == "uv-venv-hashed" and isinstance(req, dict) and set(req) == {"implementation", "version", "bits"}
+            and req["implementation"] == "cpython" and type(req["bits"]) is int and req["bits"] == 64
+            and isinstance(req["version"], str) and re.fullmatch(r"\d+\.\d+\.\d+", req["version"]) is not None)
 
 
 def entry_for(lock: dict, tool_id: str) -> dict:
@@ -229,8 +239,9 @@ def run_probe(entry: dict) -> tuple[bool, str]:
 
 
 # Methods whose probe prints the pinned version. uv-venv-hashed tools are compared exactly
-# through the environment's installed distributions instead (venv_conflicts).
-EXACT_VERSION_METHODS = {"pip-hashed", "npm-ci"}
+# through the environment's installed distributions instead (venv_conflicts); a winget GUI
+# tool without a command on PATH is compared through winget's record (winget_installed).
+EXACT_VERSION_METHODS = {"pip-hashed", "npm-ci", "winget"}
 
 
 def _norm(name: str) -> str:
@@ -390,21 +401,51 @@ def sync_removals(entry: dict, sync: list[str]) -> list[str]:
     return re.findall(r"^\s*-\s+(\S+)", plain, re.M)
 
 
-def winget_installed(entry: dict) -> tuple[bool, str]:
-    """Whether winget reports the pinned version of this package as installed."""
+# winget's APPINSTALLER_CLI_ERROR_NO_APPLICATIONS_FOUND (0x8A150014): the only exit that means "not installed".
+WINGET_NO_MATCH = {0x8A150014, 0x8A150014 - 2**32}
+
+
+def winget_listing(entry: dict) -> str | None:
+    """The installed version winget records for this package, or None when winget confirms it is not installed.
+
+    Any other outcome (winget missing, a failed or unreadable listing) is refused, so an unknown state
+    never leads to an install."""
     exe = shutil.which("winget")
     if exe is None:
-        return False, "missing (winget unavailable)"
+        raise Refused("winget is not available")
     try:
         r = subprocess.run([exe, "list", "--id", entry["winget_id"], "--exact", "--disable-interactivity",
                             "--accept-source-agreements"], capture_output=True, text=True, timeout=120, env=probe_env())
     except (OSError, subprocess.TimeoutExpired) as exc:
-        return False, f"winget list failed: {type(exc).__name__}"
-    if r.returncode != 0 or entry["winget_id"].lower() not in r.stdout.lower():
+        raise Refused(f"winget list failed: {type(exc).__name__}")
+    if r.returncode in WINGET_NO_MATCH:
+        return None
+    if r.returncode != 0:
+        raise Refused(f"winget list {entry['winget_id']} failed with exit {r.returncode}")
+    # Table columns: Name, Id, Version, [Available], Source. The installed version follows the Id;
+    # an Available column must never be read as the installed version.
+    versions = []
+    for line in r.stdout.splitlines():
+        tokens = [t.lower() for t in line.split()]
+        if entry["winget_id"].lower() in tokens:
+            i = tokens.index(entry["winget_id"].lower())
+            versions.append(line.split()[i + 1] if i + 1 < len(tokens) else "")
+    if len(versions) != 1 or not versions[0]:
+        raise Refused(f"winget list {entry['winget_id']}: installed version could not be read")
+    return versions[0]
+
+
+def winget_installed(entry: dict) -> tuple[bool, str]:
+    """Whether winget reports the pinned version of this package as installed."""
+    try:
+        installed = winget_listing(entry)
+    except Refused as exc:
+        return False, f"unknown ({exc})"
+    if installed is None:
         return False, "missing"
     # MSI packages often register the version with trailing ".0" parts (31.5.3 is listed as 31.5.3.0).
-    if not re.search(rf"(?<![\w.]){re.escape(entry['version'])}(?:\.0)*(?![\w.+-])", r.stdout):
-        return False, f"installed, but not version {entry['version']}"
+    if not re.fullmatch(rf"{re.escape(entry['version'])}(?:\.0)*", installed):
+        return False, f"installed, but version {installed} is not {entry['version']}"
     return True, f"installed through winget: {entry['version']}"
 
 
@@ -422,7 +463,14 @@ def install_entry(entry: dict) -> None:
         req = _require_file(entry["requirements"])
         venv = safe_dest(entry["venv"])
         if not (_bin_dir(venv)).is_dir():
-            _run([sys.executable, "-m", "uv", "venv", "--no-config", str(venv), "--python", sys.executable])
+            try:
+                _run([*uv_venv_launcher(entry), "venv", "--no-config", str(venv), *venv_python_args(entry)])
+            except Refused as exc:
+                req = entry.get("python")
+                if req is None:
+                    raise
+                raise Refused(f"{entry['id']}: {exc}; the owner installs 64-bit CPython {req['version']} first") from None
+        check_venv_python(entry)  # before any package is synced into the environment
         sync = [sys.executable, "-m", "uv", "pip", "sync", "--no-config", "--require-hashes", "--index-url", PYPI_INDEX,
                 "--python", str(venv), str(req)]
         removals = sync_removals(entry, sync)
@@ -459,6 +507,73 @@ def install_entry(entry: dict) -> None:
         raise Refused(f"{entry['id']}: {method} tools are installed by the owner")
 
 
+PYTHON_FACTS = "import platform,struct;print(platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
+
+
+def venv_python_args(entry: dict) -> list[str]:
+    req = entry.get("python")
+    if req is None:
+        return ["--python", sys.executable]
+    # Only an interpreter the owner installed: never a download and never a uv-managed copy.
+    return ["--python", f"{req['implementation']}@{req['version']}", "--no-managed-python", "--no-python-downloads"]
+
+
+def uv_binary() -> str:
+    """The uv executable of the approved uv package, found by the package itself."""
+    try:
+        r = subprocess.run([sys.executable, "-c", "import sys, uv; sys.stdout.write(uv.find_uv_bin())"],
+                           capture_output=True, text=True, timeout=PROBE_TIMEOUT, env=probe_env())
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise Refused(f"uv is not available ({type(exc).__name__})") from None
+    path = r.stdout.strip()
+    if r.returncode != 0 or not path or not Path(path).is_file():
+        raise Refused("uv is not available; install it first")
+    return path
+
+
+def uv_venv_launcher(entry: dict) -> list[str]:
+    # `python -m uv` tells uv to prefer the Python that launched it, even over --no-managed-python,
+    # so an exact request runs the uv executable directly (verified with uv 0.12.20).
+    return [sys.executable, "-m", "uv"] if entry.get("python") is None else [uv_binary()]
+
+
+def _within(path: Path, directory: Path) -> bool:
+    path, directory = Path(os.path.realpath(path)), Path(os.path.realpath(directory))
+    target = os.path.normcase(str(directory))
+    return any(os.path.normcase(str(p)) == target for p in (path, *path.parents))
+
+
+def check_venv_python(entry: dict) -> None:
+    """Refuse an environment whose interpreter differs from the entry's exact python request."""
+    req = entry.get("python")
+    if req is None:
+        return
+    venv = safe_dest(entry["venv"])
+    # The base interpreter must not be a uv-managed copy, whatever chose it.
+    home = next((line.split("=", 1)[1].strip() for line in (venv / "pyvenv.cfg").read_text(encoding="utf-8").splitlines()
+                 if line.split("=", 1)[0].strip().lower() == "home"), None) if (venv / "pyvenv.cfg").is_file() else None
+    managed = []
+    for env in (probe_env(), install_env()):  # the owner's UV_PYTHON_INSTALL_DIR, and uv's default location
+        r = subprocess.run([uv_binary(), "python", "dir", "--no-config"], capture_output=True, text=True,
+                           timeout=PROBE_TIMEOUT, env=env)
+        if r.returncode != 0 or not r.stdout.strip():
+            raise Refused(f"{entry['id']}: cannot locate uv-managed interpreters; installation blocked")
+        managed.append(Path(r.stdout.strip()))
+    if home is None or any(_within(Path(home), d) for d in managed):
+        raise Refused(f"{entry['id']}: {entry['venv']} is based on {home or 'an unknown interpreter'}, not an owner-installed "
+                      "Python; replacing it needs owner approval")
+    python = _bin_dir(venv) / ("python.exe" if PLATFORM == "windows" else "python")
+    want = f"{req['implementation']} {req['version']} {req['bits']}"
+    try:
+        r = subprocess.run([str(python), "-I", "-c", PYTHON_FACTS], capture_output=True, text=True,
+                           timeout=PROBE_TIMEOUT, env=probe_env())
+        got = r.stdout.strip() if r.returncode == 0 else f"a failing interpreter (exit {r.returncode})"
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        got = f"no usable interpreter ({type(exc).__name__})"
+    if got != want:
+        raise Refused(f"{entry['id']}: {entry['venv']} runs {got}, not {want}; replacing it needs owner approval")
+
+
 def ledger(record: dict) -> None:
     LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
     record = {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), **record}
@@ -488,8 +603,9 @@ def install(lock: dict, tool_id: str, done: set) -> str:
         done.add(tool_id)
         print(f"{tool_id}: already present ({detail})")
         return "present"
-    if present(entry):
+    if present(entry) or (entry["method"] == "winget" and winget_listing(entry) is not None):
         # Installed but at another version or broken: replacing an installed tool needs the owner.
+        # A GUI package such as draw.io adds no command to PATH, so winget's own record counts as present.
         raise Refused(f"{tool_id}: present but the probe failed ({detail}); replacing it needs owner approval")
     if entry["method"] == "uv-venv-hashed":
         # A sync pins, replaces and removes packages across the shared environment: refuse

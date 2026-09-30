@@ -71,6 +71,26 @@ class LockfileTests(unittest.TestCase):
             finally:
                 bootstrap.LOCK_PATH = saved
 
+    def test_invalid_python_requests_are_rejected(self):
+        good = {"implementation": "cpython", "version": "3.14.7", "bits": 64}
+        cases = {"32-bit": dict(good, bits=32), "not exact": dict(good, version="3.14"), "other implementation": dict(good, implementation="pypy"),
+                 "extra key": dict(good, path="C:/Python314/python.exe"), "numeric version": dict(good, version=3.14),
+                 "float bits": dict(good, bits=64.0), "boolean bits": dict(good, bits=True)}
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "lock.json"
+            saved = bootstrap.LOCK_PATH
+            bootstrap.LOCK_PATH = path
+            try:
+                for name, request in [*cases.items(), ("wrong method", good)]:
+                    lock = json.loads(saved.read_text(encoding="utf-8"))
+                    entry = bootstrap.entry_for(lock, "uv" if name == "wrong method" else "engine-python")
+                    entry["python"] = request
+                    path.write_text(json.dumps(lock), encoding="utf-8")
+                    with self.subTest(case=name), self.assertRaises(SystemExit):
+                        bootstrap.load_lock()
+            finally:
+                bootstrap.LOCK_PATH = saved
+
 
 class RefusalTests(unittest.TestCase):
     def test_unknown_and_unverified_ids_are_refused(self):
@@ -306,6 +326,66 @@ class RefusalTests(unittest.TestCase):
         finally:
             bootstrap.subprocess.run, bootstrap.venv_contained, bootstrap._run = saved
 
+    def test_engine_environment_uses_only_the_exact_owner_installed_python(self):
+        lock = bootstrap.load_lock()
+        entry = bootstrap.entry_for(lock, "engine-python")
+        with tempfile.TemporaryDirectory() as td:
+            venv_dir, system, managed = Path(td) / "engine", Path(td) / "system", Path(td) / "uv-python"
+            uv_bin = str(Path(td) / "uv.exe")
+            saved = (bootstrap._run, bootstrap.safe_dest, bootstrap.sync_removals, bootstrap.subprocess.run, bootstrap.uv_binary)
+            bootstrap.safe_dest = lambda rel: venv_dir
+            bootstrap.sync_removals = lambda e, sync: []
+            bootstrap.uv_binary = lambda: uv_bin
+            try:
+                for facts, venv_fails, home, ok in (
+                        ("cpython 3.14.7 64", False, system, True),
+                        ("cpython 3.14.6 64", False, system, False),
+                        ("cpython 3.14.7 32", False, system, False),
+                        ("pypy 3.14.7 64", False, system, False),
+                        ("", True, system, False),
+                        ("cpython 3.14.7 64", False, managed / "cpython-3.14-windows-x86_64-none", False),  # uv-managed copy
+                        ("cpython 3.14.7 64", False, None, False)):                                           # no pyvenv.cfg
+                    runs = []
+                    venv_dir.mkdir(exist_ok=True)
+                    cfg = venv_dir / "pyvenv.cfg"
+                    cfg.unlink(missing_ok=True)
+                    if home is not None:
+                        cfg.write_text(f"home = {home}\nversion_info = 3.14.7\n", encoding="utf-8")
+
+                    def fake_run(cmd, cwd=ROOT, env=None, venv_fails=venv_fails):
+                        runs.append(cmd)
+                        if venv_fails and "venv" in cmd:
+                            raise bootstrap.Refused("command failed with exit 2")
+
+                    def fake_subprocess(cmd, *a, facts=facts, **k):
+                        out = str(managed) if cmd[1:3] == ["python", "dir"] else facts
+                        return subprocess.CompletedProcess(cmd, 0, out + "\n", "")
+
+                    bootstrap._run = fake_run
+                    bootstrap.subprocess.run = fake_subprocess
+                    with self.subTest(facts=facts, venv_fails=venv_fails, home=home):
+                        if ok:
+                            bootstrap.install_entry(entry)
+                        else:
+                            with self.assertRaises(bootstrap.Refused) as ctx:
+                                bootstrap.install_entry(entry)
+                            self.assertIn("CPython 3.14.7" if venv_fails else "replacing it needs owner approval", str(ctx.exception))
+                        venv = runs[0]
+                        self.assertEqual(venv[0], uv_bin, "the uv executable runs directly, never as `python -m uv`")
+                        self.assertEqual(venv[venv.index("--python") + 1], "cpython@3.14.7")
+                        self.assertNotIn(sys.executable, venv)
+                        self.assertIn("--no-python-downloads", venv)
+                        self.assertIn("--no-managed-python", venv)
+                        self.assertEqual(any("sync" in c for c in runs), ok, "packages are synced only into the exact interpreter")
+                runs = []
+                bootstrap._run = lambda cmd, cwd=ROOT, env=None: runs.append(cmd)
+                bootstrap.install_entry(bootstrap.entry_for(lock, "marimo"))  # entries without a request keep the installer's Python
+                self.assertEqual(runs[0][:3], [sys.executable, "-m", "uv"])
+                self.assertEqual(runs[0][runs[0].index("--python") + 1], sys.executable)
+            finally:
+                (bootstrap._run, bootstrap.safe_dest, bootstrap.sync_removals, bootstrap.subprocess.run,
+                 bootstrap.uv_binary) = saved
+
     def test_probes_drop_code_injection_variables(self):
         seen = {}
         saved = (bootstrap.resolve_executable, bootstrap.subprocess.run, os.environ.get("NODE_OPTIONS"))
@@ -330,16 +410,64 @@ class RefusalTests(unittest.TestCase):
         bootstrap.resolve_executable = lambda e, n: None
         bootstrap.shutil.which = lambda name, **k: "winget.exe" if name == "winget" else None
         try:
-            for listing, ok in (("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3\n", True),
-                                ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.0\n", True),
-                                ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.30\n", False),
-                                ("Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.1\n", False),
-                                ("No installed package found matching input criteria.\n", False)):
-                bootstrap.subprocess.run = lambda *a, **k: subprocess.CompletedProcess(a, 0, listing, "")
+            for code, listing, ok in ((0, "Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3\n", True),
+                                      (0, "Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.0\n", True),
+                                      (0, "Name     Id          Version\ndraw.io  JGraph.Draw 31.5.30\n", False),
+                                      (0, "Name     Id          Version\ndraw.io  JGraph.Draw 31.5.3.1\n", False),
+                                      # An available update is never the installed version.
+                                      (0, "Name Id Version Available Source\ndraw.io JGraph.Draw 31.5.2.0 31.5.3 winget\n", False),
+                                      (0x8A150014, "No installed package found matching input criteria.\n", False),
+                                      (1, "", False)):
+                bootstrap.subprocess.run = lambda *a, c=code, l=listing, **k: subprocess.CompletedProcess(a, c, l, "")
                 with self.subTest(listing=listing):
                     self.assertEqual(bootstrap.run_probe(entry)[0], ok)
         finally:
             bootstrap.PLATFORM, bootstrap.resolve_executable, bootstrap.shutil.which, bootstrap.subprocess.run = saved
+
+    def test_winget_package_at_another_version_is_not_replaced(self):
+        lock = bootstrap.load_lock()
+        state = {"installed": False}
+        saved = (bootstrap.PLATFORM, bootstrap.resolve_executable, bootstrap.shutil.which, bootstrap.subprocess.run,
+                 bootstrap.install_entry, bootstrap.ledger)
+        bootstrap.PLATFORM = "windows"
+        bootstrap.shutil.which = lambda name, **k: "winget.exe" if name == "winget" else None
+        bootstrap.ledger = lambda record: None
+        missing = (0x8A150014, "No installed package found matching input criteria.\n")
+        try:
+            # (tool, version its command reports or None when not on PATH, winget list exit and output, refusal)
+            for tool, reported, (code, listing), refusal in (
+                    ("drawio", None, (0, "draw.io  JGraph.Draw 31.5.2.0\n"), "owner approval"),
+                    ("drawio", None, (0, "Name Id Version Available Source\ndraw.io JGraph.Draw 31.5.2.0 31.5.3 winget\n"),
+                     "owner approval"),
+                    ("drawio", None, (1, ""), "failed with exit 1"),  # a failed listing is not proof of absence
+                    ("typst", "typst 0.14.2", (0, "Typst  Typst.Typst 0.14.2\n"), "owner approval"),
+                    ("jq", "jq-1.8.1", missing, "owner approval")):
+                installs = []
+                bootstrap.install_entry = lambda e: installs.append(e["id"])
+                bootstrap.resolve_executable = lambda e, n, r=reported: "tool" if r else None
+                bootstrap.subprocess.run = lambda cmd, *a, r=reported, c=code, l=listing, **k: (
+                    subprocess.CompletedProcess(cmd, c, l, "") if "list" in cmd else subprocess.CompletedProcess(cmd, 0, r, ""))
+                with self.subTest(tool=tool, listing=listing):
+                    with self.assertRaises(bootstrap.Refused) as ctx:
+                        bootstrap.install(lock, tool, set())
+                    self.assertIn(refusal, str(ctx.exception))
+                    self.assertEqual(installs, [])
+            # Control: a package that winget does not list and that is not on PATH is installed.
+            installs = []
+
+            def install_drawio(entry):
+                installs.append(entry["id"])
+                state["installed"] = True
+            bootstrap.install_entry = install_drawio
+            bootstrap.resolve_executable = lambda e, n: None
+            bootstrap.subprocess.run = lambda cmd, *a, **k: subprocess.CompletedProcess(
+                cmd, *((0, "draw.io  JGraph.Draw 31.5.3.0\n") if state["installed"] else missing), "")
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(bootstrap.install(lock, "drawio", set()), "installed")
+            self.assertEqual(installs, ["drawio"])
+        finally:
+            (bootstrap.PLATFORM, bootstrap.resolve_executable, bootstrap.shutil.which, bootstrap.subprocess.run,
+             bootstrap.install_entry, bootstrap.ledger) = saved
 
     def test_pinned_versions_are_compared_exactly(self):
         lock = bootstrap.load_lock()
@@ -351,7 +479,10 @@ class RefusalTests(unittest.TestCase):
                                      ("mermaid-cli", "12.0.01", False),
                                      ("marp-cli", "@marp-team/marp-cli v4.5.10 (w/ @marp-team/marp-core v4.5.1)", False),
                                      ("uv", "uv 0.12.20rc1", False), ("uv", "uv 0.12.20.dev1", False),
-                                     ("uv", "uv 0.12.20.post1", False), ("uv", "uv 0.12.20+local", False)):
+                                     ("uv", "uv 0.12.20.post1", False), ("uv", "uv 0.12.20+local", False),
+                                     ("typst", "typst 0.15.1 (9dfd3a08)", True), ("typst", "typst 0.14.2", False),
+                                     ("typst", "typst 0.15.10", False), ("jq", "jq-1.8.2", True),
+                                     ("jq", "jq-1.8.1", False), ("jq", "jq-1.8.2rc1", False)):
                 bootstrap.subprocess.run = lambda *a, **k: subprocess.CompletedProcess(a, 0, output, "")
                 with self.subTest(tool=tool, output=output):
                     self.assertEqual(bootstrap.run_probe(bootstrap.entry_for(lock, tool))[0], ok)
@@ -568,7 +699,7 @@ class ApprovalTests(unittest.TestCase):
         inputs = bootstrap.approval_inputs()
         for rel in ("tools/toolchain/bootstrap.py", "tools/toolchain.lock.json", "tools/skills.lock.json", "tools/skills/sync.py",
                     "tools/repo_digest.py", "tools/toolchain/approval_inputs.json", ".claude/hooks/install_guard.py",
-                    "tools/python/planning.txt", "tools/node/mermaid-cli/package-lock.json"):
+                    "tools/python/planning.txt", "tools/python/engine.txt", "tools/node/mermaid-cli/package-lock.json"):
             self.assertIn(rel, inputs)
 
     def test_guard_and_installer_compute_the_same_digest(self):
