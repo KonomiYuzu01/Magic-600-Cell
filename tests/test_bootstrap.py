@@ -464,6 +464,20 @@ class RefusalTests(unittest.TestCase):
                 self.assertNotIn("from repo_digest import", text)
                 self.assertIn('_load_source("repo_digest"', text)
 
+    def test_tree_digest_order_is_platform_independent(self):
+        import hashlib
+        from repo_digest import file_sha256, tree_digest
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            # Path ordering differs from string ordering here (and is case-insensitive on Windows).
+            for rel in ("SKILL.md", "agents/openai.yaml", "a-b/x.md", "a/y.md", "Z.md"):
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text(rel + "\n")
+            h = hashlib.sha256()
+            for rel in sorted(["SKILL.md", "agents/openai.yaml", "a-b/x.md", "a/y.md", "Z.md"]):
+                h.update(f"{rel}\0{file_sha256(root / rel)}\n".encode())
+            self.assertEqual(tree_digest(root), h.hexdigest())
+
     def test_links_inside_digested_trees_are_refused(self):
         from repo_digest import tree_digest
         with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as outside:
