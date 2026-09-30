@@ -44,6 +44,8 @@ def load_module(name: str, path: Path):
 hook = load_module("report_event_under_test", HOOK)
 statusline = load_module("statusline_under_test", WB / "statusline.py")
 
+HOOK_ARG = "${CLAUDE_PROJECT_DIR}/.claude/hooks/report_event.py"
+HOOK_GUARD = "import os,runpy,sys;p=sys.argv[1];os.path.isfile(p) and runpy.run_path(p,run_name='__main__')"
 SID = "11111111-2222-3333-4444-555555555555"
 T0 = datetime(2026, 9, 30, 12, 0, 0, tzinfo=timezone.utc)
 
@@ -948,6 +950,55 @@ class HookTests(unittest.TestCase):
             with self.subTest(path=path.name):
                 self.assertFalse(names & {"subprocess", "socket", "urllib", "http", "ctypes", "importlib", "asyncio",
                                           "paths", "sources", "multiprocessing", "webbrowser"})
+
+    def registrations(self):
+        settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+        return settings, [(event, group, h) for event, groups in settings["hooks"].items() for group in groups
+                          for h in group["hooks"] if (h.get("args") or [None])[-1] == HOOK_ARG]
+
+    def test_settings_register_the_hook_and_status_line(self):
+        settings, found = self.registrations()
+        registered = set()
+        for event, group, h in found:
+            self.assertEqual((h["type"], h["command"], h["args"], h["timeout"]),
+                             ("command", "python", ["-I", "-c", HOOK_GUARD, HOOK_ARG], 5))
+            self.assertNotIn("matcher", group)  # every tool, every notification type
+            registered.add(event)
+        self.assertEqual(registered, hook.EVENTS)
+        # A status line runs as a shell string: anchor it to the project, never to the session's cwd.
+        self.assertEqual(settings["statusLine"], {
+            "type": "command", "command": 'python "${CLAUDE_PROJECT_DIR}/tools/workbench/statusline.py"',
+            "refreshInterval": 30})
+
+
+    def run_registered(self, project: Path, payload: dict):
+        _, found = self.registrations()
+        args = [a.replace("${CLAUDE_PROJECT_DIR}", str(project).replace("\\", "/")) for a in found[0][2]["args"]]
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+        return subprocess.run([sys.executable, *args], input=json.dumps(payload).encode("utf-8"),
+                              capture_output=True, cwd=str(project), env=env, timeout=30)
+
+    def test_registered_command_is_silent_without_the_script(self):
+        # A session can name a main checkout at a commit older than the hook: it must still exit 0 with no output.
+        with tempfile.TemporaryDirectory() as tmp:
+            old = Path(tmp) / "old main"
+            (old / ".git").mkdir(parents=True)
+            (old / ".claude" / "hooks").mkdir(parents=True)
+            payload = {"session_id": SID, "hook_event_name": "Stop", "cwd": str(old), "transcript_path": "unused"}
+            r = self.run_registered(old, payload)
+            self.assertEqual((r.returncode, r.stdout), (0, b""))
+            self.assertFalse((old / "work").exists())
+
+    def test_registered_command_runs_the_script(self):
+        fx = Fixture()
+        self.addCleanup(fx.cleanup)
+        fx.transcript(fx.main, SID, [user(0, cwd=str(fx.main))])
+        notes.append_note(fx.data, SID, "guarded note")
+        r = self.run_registered(fx.main, hook_payload(fx, "PostToolUse", tool_name="Bash", tool_input={"command": "ls"}))
+        self.assertEqual(r.returncode, 0)
+        self.assertIn(b"guarded note", r.stdout)  # delivered through the guard like a direct run
+        lines = (fx.data / "events" / f"{SID}.jsonl").read_text(encoding="utf-8").splitlines()
+        self.assertEqual(json.loads(lines[-1])["e"], "PostToolUse")
 
 
 class LaunchTests(unittest.TestCase):

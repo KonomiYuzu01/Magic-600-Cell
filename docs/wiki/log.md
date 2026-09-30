@@ -8,6 +8,18 @@ The step 1 candidate had one full Codex review in two parallel shards. All nine 
 ## [2026-09-30] update | Build identity v2 and the 0.4 native harness
 0.4.1 step 1 made clean checkouts byte-exact, published the 0.4 native harness with a sanitized continuity record, and replaced the build identity; see [build-identity-v2](concepts/build-identity-v2.md) and [build-reproducibility-decisions](decisions/build-reproducibility-decisions.md).
 
+## [2026-09-30] decision | 0.4.1 keeps the 0.4 data directory
+Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md). The version and the data directory are decoupled; the plan keeps the native cache name so user-owned MPUlt settings survive.
+
+## [2026-09-30] update | 0.4.1 screening findings
+The six screening shards reported 25 leads; falsifying experiments confirmed 13 findings (10 major, 3 minor, including two found during the experiments), rejected 2 and left 11 needing Windows fixtures or timing. The ranked, sanitized list is [screening-findings](../progress/0.4.1/screening-findings.md).
+
+## [2026-09-30] update | Development workbench stage B: hooks and status line registered
+The [workbench](components/workbench.md) reporting hook and status line are now registered in `.claude/settings.json`, and `CLAUDE.md` asks Claude to answer every owner note by its id. Each registration exits silently when the script is missing. Live checks on the installed Claude Code confirmed the events, subagent routing and note delivery, and an interactive session showed the status line. Reviewed by one full Codex review and one scoped verification round.
+
+## [2026-09-30] decision | Codex first and 0.4.1 screening packets
+Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md): separable work goes to Codex and full reviews run as at least two shards. Six read-only screening packets for 0.4.1 step 4 are in `docs/progress/0.4.1/packets/`.
+
 ## [2026-09-30] decision | Workbench watches continuously and launches work
 The owner extended the [workbench scope](decisions/development-workbench.md): continuous watch with stall and failure flags, and launching sessions, wrapper calls and registered experiment runs on the owner's click. Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md).
 
