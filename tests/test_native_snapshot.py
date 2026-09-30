@@ -68,4 +68,5 @@ checks.append('24 atomic snapshots stayed consistent during concurrent undo/redo
 call('checkout',dict(head=0))
 call('prefs',dict(rules=[dict(expr='active',style='solid')],pin_safety=True))
 report=dict(passed=True,scope='Live HTTP with synthetic full native geometry; no actual MPUlt runtime execution',checks=checks,matched_generators=1200,matched_stickers=m.n,seconds=time.perf_counter()-start)
+(ROOT/'tests/v022').mkdir(parents=True,exist_ok=True)
 (ROOT/'tests/v022/native_snapshot.json').write_text(json.dumps(report,indent=2),encoding='utf-8');print(json.dumps(report,indent=2),flush=True)

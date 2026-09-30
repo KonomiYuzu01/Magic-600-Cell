@@ -15,6 +15,15 @@ from native_launch import (ROOT, RETAINED, EXPERIMENT_SOURCES, BACKEND_SOURCES, 
     write_evidence, prepare_runtime, identity_v2)
 
 
+def run_log_lines(path):
+    """run.log holds the harness's console output, which Windows writes in the console code page, not UTF-8."""
+    data = path.read_bytes()
+    try:
+        return data.decode('utf-8').splitlines()
+    except UnicodeDecodeError:
+        return data.decode('oem' if os.name == 'nt' else 'latin-1', errors='replace').splitlines()
+
+
 def main():
     sys.stdout.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser()
@@ -115,7 +124,7 @@ def main():
                 capture_env['MAGIC600_CONTINUOUS_CASES'] = str(HERE/'tests/final_workflow_cases.json')
                 capture_env['MAGIC600_NATIVE_OUTPUT'] = str(out)
                 result=subprocess.run([str(exe),str(runtime/'MPUlt.exe'),engine.info['base'],engine.info['token'],str(out),args.mode],cwd=runtime,stdout=log,stderr=subprocess.STDOUT,timeout=1800 if args.focus in ('continuous', 'latency') else 900,env=capture_env)
-            lines=(out/'run.log').read_text(encoding='utf-8').splitlines()
+            lines=run_log_lines(out/'run.log')
             print(f'Exit: {result.returncode}; passed assertions: {sum(line.startswith("PASS ") for line in lines)}; full log: {out / "run.log"}',flush=True)
             if result.returncode:
                 print('\n'.join(lines[-24:]),flush=True)

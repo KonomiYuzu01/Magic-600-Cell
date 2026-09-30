@@ -13,5 +13,6 @@ with patch.object(r.shutil,'rmtree',side_effect=PermissionError('SQLite SHM stil
  checks.append('Persistent cleanup denial is recorded without throwing over the original failure')
 with patch.object(r.shutil,'rmtree',side_effect=FileNotFoundError):
  assert r.remove_scratch(Path('fixture-only'))['removed'];checks.append('Already-removed scratch directory is harmless')
+(ROOT/'tests/v022').mkdir(parents=True,exist_ok=True)
 (ROOT/'tests/v022/debug_cleanup.json').write_text(json.dumps(dict(passed=True,scope='Injected filesystem exceptions; real process/SQLite cleanup is tested separately',checks=checks),indent=2),encoding='utf-8')
 for c in checks:print('PASS',c)

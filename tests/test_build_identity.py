@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import copy
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -380,6 +381,18 @@ class ReceiptTests(unittest.TestCase):
         self.assertEqual(len(calls), 4)
         for call in calls:
             self.assertIn('private=private', call)
+
+    def test_the_harness_summary_reads_a_run_log_in_the_console_code_page(self):
+        spec = importlib.util.spec_from_file_location('run_postapproval', EXPERIMENT / 'tests/run_postapproval.py')
+        runner = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(runner)
+        with tempfile.TemporaryDirectory() as td:
+            log = Path(td) / 'run.log'
+            log.write_bytes('PASS 4 × 3 · ok\r\nFAIL x\r\n'.encode('cp850'))  # not valid UTF-8
+            lines = runner.run_log_lines(log)
+            self.assertEqual([line[:5] for line in lines], ['PASS ', 'FAIL '])
+            log.write_bytes('PASS ×\n'.encode('utf-8'))
+            self.assertEqual(runner.run_log_lines(log), ['PASS ×'])
 
     def test_check_evidence_reports_every_changed_or_missing_input(self):
         f = Fixture(self)
