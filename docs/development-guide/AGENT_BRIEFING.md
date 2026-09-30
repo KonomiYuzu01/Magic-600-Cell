@@ -71,8 +71,10 @@ In a Linux or cloud session, run only headless checks and list the Windows check
 - Review: `python tools/agents/codex_review.py --kind review --packet <file>`
 - Review rounds: one full review of the finished candidate, then at most two scoped verification rounds (fixed blocking findings plus new `blocker`/`major` only). `minor` and `nit` are deferred. Remaining blockers after that go to the owner as a decision.
 - Escalation or joint attack: add `--effort ultra`.
+- Astra (`--model gpt-6-astra`): plan checks and full reviews of critical-path, behaviour, contract and design/ADR changes; escalations, joint attacks, milestone audits. Sol: everything else.
 - Gate rulings: `--model gpt-6-astra --effort ultra --gate day7-go-no-go|migration-format-freeze|architecture-freeze`.
-- Codex calls run on the standard tier. Pass `--speed fast` only when the owner asks for it for a specific call; gate rulings never use `fast`.
+- `--speed fast`: scoped verification rounds, plan re-checks, mechanical checks, non-critical reviews. Standard tier: critical full reviews and plan checks, joint attacks, escalations, gates.
+- Pair implementation with Codex (`--kind implement`) is disabled until its isolation tests pass; building it is the next development-system task.
 - Escalate after three failed effective iterations (Codex diagnosis), then two more (Fable solver: the `fable-solver` subagent). Joint attack: same clean packet, sealed answers, an experiment decides.
 - API team: role cards in `templates/roles/`. It may run on OpenAI models; the owner confirms provider, models and budget before each run.
 - Claude subscription is Max 5x: send broad read-only searches and routine diff reading to subagents, keep Opus for planning and integration, and give heavy reviews to Codex. When usage runs low, record progress and stop; never switch models to keep writing code.
