@@ -18,6 +18,16 @@ The 0.4 workspace lives under `work/experiments/magic600-04/`. The original dire
 
 [SOURCE_MANIFEST.json](../SOURCE_MANIFEST.json) inventories the public runtime source. [Release provenance](RELEASE_0_4_PROVENANCE.json) records the frozen package inputs. Do not rewrite those hashes to make later edits appear part of the accepted artifact.
 
+## Exact checkout bytes
+
+Model assets and build inputs are verified by the SHA-256 of their raw bytes, so `.gitattributes` turns off line-ending conversion for every file. A checkout then holds the committed bytes whatever the `core.autocrlf` setting. A Windows working tree checked out before this rule may still hold CRLF copies of LF files, which fail the model asset check. Before committing anything in such a tree, run:
+
+```powershell
+python tools/checkout_bytes.py --fix
+```
+
+It rewrites, from the index, only LF text files whose bytes are exactly the CRLF conversion of their committed bytes, and refreshes files Git still lists as modified although their bytes match. It never stages or deletes anything: each original is moved into a backup directory under the Git directory, whose location it prints; delete that directory once the checkout looks right. It refuses while a merge is unresolved or while Git would still convert line endings, and reports every other difference (edits, binary files, links, executable-bit changes) without touching it. Without `--fix` it only reports. Never use `git add --renormalize` or stage a whole converted tree: that would commit the CRLF copies.
+
 ## Prerequisites and public-checkout limitation
 
 Source builds require Windows, 64-bit CPython, NumPy, the .NET Framework 4.x compiler targeting x86, and the supported [Managed DirectX assemblies](../DIRECTX.md). The frozen package includes its Python runtime and compiled native host. Microsoft Managed DirectX remains external.
