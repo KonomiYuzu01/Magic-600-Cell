@@ -37,6 +37,7 @@ In scope:
 - The mechanical engine re-implemented or wrapped behind a new boundary, proven equal to 0.4 by the differential oracle.
 - One-way migration of 0.4 user data (section 6).
 - The development workbench as the project monitor.
+- One GUI in which the layout that makes the kept functions easy to use and the chosen art style are designed together (protocol section 4), on six layers with frozen boundaries: engine (mathematics, proven by the oracle), session store (journal, checkpoints, migration), command layer (one command table: ID, permission, preview, undo, contexts; every button, key and menu calls it), view model, shell (layout, panels, motion) and renderer (Direct3D 12, reads labels and view state only). The command table is where function and layout meet.
 
 Out of scope for stage 2: shipping code, release packaging, NVIDIA-only features on the main path, public data uploads.
 

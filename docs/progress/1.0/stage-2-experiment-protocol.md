@@ -40,7 +40,7 @@ This keeps AI-written code cheap to verify: a change either matches the referenc
 
 ## 4. Design track
 
-Goal: turn the owner's idea of an artistic, high-quality, satisfying application into a frozen design system before UI engineering starts. The owner is the art director and does the judging, tuning and sketching; agents build the instruments, produce variants and implement.
+Goal: fuse a layout that makes every kept function easy to use with the chosen art style into one 1.0 GUI, and freeze it with the renderer features it needs before UI engineering starts. Function and look are designed together, not one after the other: the core flows and the command table say what the layout must do, and the Look Lab is where layout and style are combined and judged. The owner is the art director and does the judging, tuning and sketching; agents build the instruments, produce variants and implement. The engineering track (renderer and backend) runs in parallel; the two tracks meet through the handoffs in section 4.6, and the 2.4 experiment dates are the test of whether the combination works on a real renderer.
 
 ### 4.1 Starting point (owner decisions, 30 September 2026)
 
@@ -54,7 +54,7 @@ Goal: turn the owner's idea of an artistic, high-quality, satisfying application
 
 ### 4.2 The Look Lab (instrument)
 
-A local Godot development tool that shows the real 600-cell geometry (synthetic, from the model; never a personal session) next to live parameter controls. It is a development tool, not the product. Its use is not evidence for the stage 2.4 renderer selection.
+A local development tool in Godot 4.7 (.NET), the S-A2 candidate's framework, that shows the real 600-cell geometry (synthetic, from the model; never a personal session) next to live parameter controls and greybox layouts. It is the prototype of the 1.0 shell: if S-A2 is selected it grows into the product shell; if another candidate is selected, the framework-neutral outputs below are rebuilt there. Its use is not evidence for the stage 2.4 renderer selection; its cost readings are estimates until the engineering track measures them.
 
 | Group | Live parameters |
 |---|---|
@@ -64,14 +64,20 @@ A local Godot development tool that shows the real 600-cell geometry (synthetic,
 | Light and depth | key and fill light, fog, depth of field, ambient occlusion |
 | Motion | turn duration, easing curve (editable), inertia, settle, camera damping and field of view |
 | Frame | panel density, typography sample, layout grid overlay |
+| Layout | greybox structure (for example one central stage with contextual instruments, or a docked multi-panel workbench), viewport share, panel placement per context, overlay or docked panels |
 
 Functions:
 - Save and load **presets** as JSON (the raw material for design tokens). Presets are diffable and versioned in the repository; screenshots and clips stay under `work/`.
 - **Capture** a still or a clip of at most 10 seconds from any preset, straight into the workbench gallery.
 - **Swipe mode** for M4: show one generated variant at a time; the owner answers better or worse than the current best, about 1 second per decision.
 - **Compare mode:** two to four presets side by side, the same camera and the same scripted turn.
+- **Greybox mode:** a layout without style (grey panels, system font, real commands from the command table) so a layout is judged on use before it gets a look. A preset applied to a greybox gives the styled version of the same layout.
+- **Flow scripts:** each core flow (section 4.3) runs as a script on any layout and reports its steps, pointer travel and time. This is the measurable side of "easy to use"; taste stays with the owner.
+- **Cost meter:** every visual feature and preset shows its estimated frame-time cost at full detail, from the engineering track's cost table (handoff H-06), so a look is tuned against the 30 fps gate while it is chosen.
 
-Build acceptance: runs on the owner's machine; every parameter changes the view live; a preset round-trips byte for byte; capture and swipe mode work; no mechanical state is changed or relabelled.
+Framework-neutral outputs (they survive any renderer selection): design tokens (JSON presets), the layout specification (grid, regions, contexts, command placement), the motion table, the visual feature list and the core flow storyboards.
+
+Build acceptance: runs on the owner's machine; every parameter changes the view live; a preset round-trips byte for byte; capture, swipe, greybox mode and flow scripts work; no mechanical state is changed or relabelled.
 
 ### 4.3 Work plan and goals
 
@@ -86,25 +92,27 @@ Build acceptance: runs on the owner's machine; every parameter changes the view 
 - Exit: the owner signs the charter.
 
 **2.1 and 2.2 Inventory and dispositions (design side)**
-- Every 0.4 function gets keep, redesign or delete, judged by its purpose, not by its 0.4 presentation.
+- **Core flows.** The owner storyboards five to seven core flows, six to ten frames each, on paper or in draw.io: for example open a session and read its state; find a piece, plan a step, preview its full effect and commit; protect solved orbits, save a checkpoint and undo; use and manage macros; the solved moment.
+- Agents attach every inventory item to the flows it serves. An item no flow uses is a delete or automate candidate in 2.2.
+- Every 0.4 function gets keep, redesign, delete or automate, judged by its purpose, not by its 0.4 presentation.
 - The owner annotates 0.4 pain points (private screenshots). Each pain point becomes an anti-goal or a UX criterion.
 - The Look Lab is built in parallel (Codex-first). It needs only Godot and the model geometry.
 
 **2.3 Design exploration (main owner phase)**
-- **G1. Structure catalogue (M1).** Agents implement at least six structure-derived visual modes in the Look Lab. The owner picks at least two to keep. Exit: the chosen modes are recorded as presets.
-- **G2. Metaphor decision (M2).** For each candidate metaphor, agents produce one hero still and one 10-second clip in the Look Lab, all using the same scene. The owner picks one and finalizes the manifesto. Exit: the manifesto is signed.
-- **G3. Preference search (M4).** Swipe sessions of about 20 minutes, at most three, over the parameters the metaphor leaves open. Stop when two consecutive sessions converge on the same parameter region, or when the owner calls it. Exit: one to three finalist presets.
+- **G1. Structure catalogue (M1) and greybox layouts.** Agents implement at least six structure-derived visual modes and two or three greybox layout structures in the Look Lab. The flow scripts run on each layout. The owner picks at least two visual modes and one layout structure. Exit: the chosen modes as presets, the chosen layout as the first layout specification, and the first visual feature list (H-01) and layout specification (H-04) sent to the engineering track.
+- **G2. Metaphor decision (M2).** For each candidate metaphor, agents produce one hero still and one 10-second clip in the Look Lab, all using the same scene. The metaphor also sets the character of the layout (for example an observatory instrument suggests a central stage with surrounding gauges). The owner picks one and finalizes the manifesto. Exit: the manifesto is signed.
+- **G3. Preference search (M4).** Swipe sessions of about 20 minutes, at most three, over the parameters the metaphor leaves open. Stop when two consecutive sessions converge on the same parameter region, or when the owner calls it. Each candidate shows its cost-meter reading. Exit: one to three finalist presets, sent to the engineering track (H-02).
 - **G4. Sticker palette.** Candidate palettes must pass measurable checks: minimum perceptual distance between adjacent cells (OKLab), a colour-vision-deficiency simulation, and legibility at full detail. The owner picks among the palettes that pass. Exit: palette preset frozen.
-- **G5. Key moments.** The owner tunes the motion of turn, undo, invalid action and solved in the Look Lab curve editor. Exit: a motion parameter table.
-- **G6. Hardest screens.** The command model, keyboard model and the three hardest screens are designed inside the chosen direction. The owner sketches; agents turn the sketches into draw.io wireframes. Exit: owner-approved wireframes.
+- **G5. Key moments.** The owner tunes the motion of turn, undo, invalid action and solved in the Look Lab curve editor. Exit: a motion parameter table (H-03).
+- **G6. Styled layouts.** The finalist preset is applied to the chosen greybox layout. The three most important core flows are built to high fidelity in the Look Lab, with the keyboard model taken from the command table; the other flows stay at greybox plus tokens. The owner sketches corrections; agents apply them. Exit: owner-approved styled layouts for the three flows, and the final layout specification.
 
 **2.4 Vertical slice (inside the experiment window)**
-- One scene is built at full quality on the leading renderer candidate: open, see the object, turn one layer, see the result, with the finalist preset, palette and motion.
+- One complete core flow is built at full quality on the leading renderer candidate, inside the chosen layout, with the finalist preset, palette and motion. This is where the combination of function, layout, style and renderer is tested together.
 - It must pass the renderer selection gate. A look that cannot hold full detail at 30 fps does not pass. In that case, return to G3 with the conflicting parameters and their measured cost.
 - **Living test:** the owner uses the slice for about 15 minutes a day for five days and writes one sentence a day. Exit: still satisfied after the five days, with a correction list.
 
 **2.5 Freeze**
-- A design-system ADR: tokens (colour, spacing, type scale, motion durations and curves), the palette, components, the manifesto and the anti-goals.
+- A design-system ADR: tokens (colour, spacing, type scale, motion durations and curves), the palette, components, the layout specification, the core flows, the manifesto and the anti-goals. The command table and the renderer feature list are frozen with the architecture.
 - Tokens allow theme switching, and layouts allow other languages and longer strings (themes and subtitles are undecided).
 - The owner accepts the ADR. After the freeze, UI engineering implements the system and does not search for the feel again. A later change goes through the Look Lab and an ADR update.
 
@@ -114,8 +122,8 @@ Build acceptance: runs on the owner's machine; every parameter changes the view 
 |---|---|---|
 | Preparation | a few minutes a day | taste diary, anti-goals draft |
 | 2.0 | half a day | charter sign-off |
-| 2.1–2.2 | one to two hours | pain-point annotation |
-| 2.3 | about one hour a day on days 4 to 12 | picks, swipe sessions, tuning, sketches |
+| 2.1–2.2 | two to three hours | core flow storyboards, pain-point annotation |
+| 2.3 | about one hour a day on days 4 to 12 | layout and style picks, swipe sessions, tuning, sketches |
 | 2.4 | 15 minutes a day for five days | living test |
 | 2.5 | one hour | ADR acceptance |
 
@@ -126,22 +134,48 @@ Tools: Godot (Look Lab), Blender (hero stills where Godot is not enough), marimo
 - Signed charter with anti-goals, and a signed manifesto.
 - Look Lab build acceptance met.
 - Every design decision traces to a preset, a swipe session record or an owner pick.
+- Every kept function is reachable in the layout specification through the command table, and each core flow has a flow-script result.
+- Every handoff in section 4.6 is recorded as delivered, or as dropped with the owner's reason.
 - The vertical slice passes the renderer selection gate and the living test.
 - The design-system ADR is proposed and accepted by the owner.
 
+### 4.6 Cross-track record (design side)
+
+The design track and the engineering track run in parallel and meet through numbered handoffs. Each track keeps its own copy of this record with the same IDs: this one, and section 6 of [renderer-experiment-plan](renderer-experiment-plan.md). When a handoff happens, both copies are updated with the date and where the item lives. A late handoff is not waited for: the receiving track uses the last delivered version and records that.
+
+**Design track gives**
+
+| ID | Item | First version | Final | Used by the engineering track for | Status |
+|---|---|---|---|---|---|
+| H-01 | Visual feature list (effects the look needs: highlighting, sticker gaps, outlines, materials, fog, depth of field, transparency) | day 6 (G1) | day 10 (G3) | workload W5 and the renderer feature list | open |
+| H-02 | Finalist presets as JSON tokens | day 10 | day 12 | formal runs on days 10–13, the vertical slice | open |
+| H-03 | Motion table (turn, undo, invalid action, solved) | day 11 | day 12 | W3 turn duration and easing in the slice | open |
+| H-04 | Layout specification (viewport share, overlay or docked panels, contexts) | day 6 | day 12 | viewport size, UI-over-3D compositing, input routing in S-A2 and S-D | open |
+| H-05 | Pointing needs from the core flows (sticker, piece, cell, grip, orbit) | day 4 | day 8 | picking design and the `pick` probe | open |
+
+**Design track needs**
+
+| ID | Item | Needed by | From | Used for | Status |
+|---|---|---|---|---|---|
+| H-06 | Cost table: measured frame-time cost per visual feature at full detail | day 5 | S-B results | the Look Lab cost meter | open |
+| H-07 | Day-7 go/no-go result and the remaining candidates | day 9 | Astra ruling | Look Lab framework risk; where G6 is built | open |
+| H-08 | Command table and the layer boundaries | day 4 | 2.1 and 2.2 | greybox layouts, keyboard model, flow scripts | open |
+| H-09 | Renderer constraints (overlay layers, text in the 3D view, transparency and sorting limits) | day 8 | S-A2 and S-D | which features stay in H-01 | open |
+| H-10 | Selected renderer | day 14 | selection | vertical slice and the framework-neutral rebuild if not Godot | open |
+
 ## 5. Schedule: 20 days (owner decision, 1 October 2026)
 
-Preparation and all of stage 2 finish within 20 calendar days. Day 1 is 1 October 2026; day 20 is 20 October 2026. Tracks run in parallel; the owner's time goes to the design track and to the gate decisions.
+Preparation and all of stage 2 finish within 20 calendar days. Day 1 is 1 October 2026; day 20 is 20 October 2026. Tracks run in parallel; the owner's time goes to the design track and to the gate decisions. The experiment dates are also the compatibility test of the two tracks: each candidate renderer is tried with the design track's features, layout and presets as they are handed over (section 4.6).
 
 | Days | Engineering track | Design track (owner) | Exit |
 |---|---|---|---|
 | 1–2 | Merge the 0.4.1 step 1 and B4-12 harness branches. Choose the migration path. Codex starts the Look Lab build. | Taste diary and Taste Lab ratings start. Anti-goals draft, two or three candidate metaphors. | **2.0** charter signed (end of day 2), including the migration path. |
-| 2–4 | **2.1** two independent inventories as concurrent Codex shards; **2.2** dispositions. | Pain-point annotation. | Dispositions signed (day 4). |
-| 3–14 | **2.4** renderer window, 12 days: S-B bare Direct3D 12 probe on days 3–4, then S-A2 and S-D. Go/no-go on window day 7 (day 9), Astra ruling. Final selection on day 14. | — | Renderer selected, or the failure recorded. |
-| 4–12 | Look Lab ready by day 4; agents produce variants. | **2.3** G1 (days 4–6), G2 (days 6–8), G3 and G4 (days 8–10), G5 and G6 (days 10–12). | Manifesto, finalist preset, palette, motion table and wireframes approved. |
-| 13–15 | **2.4** vertical slice on the leading candidate; gate measurement. | Review of the slice. | Slice passes the selection gate. |
+| 2–4 | **2.1** two independent inventories as concurrent Codex shards; **2.2** dispositions; command table and layer boundaries (H-08). | Core flow storyboards; inventory attached to the flows; pain-point annotation; pointing needs (H-05). | Dispositions signed (day 4). |
+| 3–14 | **2.4** renderer window, 12 days: S-B bare Direct3D 12 probe on days 3–4 with the cost table (H-06), then S-A2 and S-D with the design's features, layout and presets as they arrive (H-01 to H-04). Go/no-go on window day 7 (day 9), Astra ruling. Final selection on day 14. | Uses H-06, H-07, H-09 and H-10 as they arrive. | Renderer selected, or the failure recorded. |
+| 4–12 | Look Lab ready by day 4 with greybox mode, flow scripts and the cost meter; agents produce layout and style variants. | **2.3** G1 (days 4–6), G2 (days 6–8), G3 and G4 (days 8–10), G5 and G6 (days 10–12). | Manifesto, layout specification, finalist preset, palette, motion table and styled layouts for three core flows approved. |
+| 13–15 | **2.4** vertical slice: one complete core flow in the chosen layout and style on the leading candidate; gate measurement. | Review of the slice. | Slice passes the selection gate. |
 | 15–19 | Correction fixes only. | Living test, five days. | Living test exit. |
-| 19–20 | **2.5** architecture freeze (Astra gate ruling), migration format freeze, design-system ADR. | ADR acceptance. | Stage 2 closed. |
+| 19–20 | **2.5** architecture freeze with the command table, layer interfaces and renderer feature list (Astra gate ruling), migration format freeze, design-system ADR. | ADR acceptance. | Stage 2 closed. |
 
 Rules for the limit:
 - A task that would push past its exit day is cut down or dropped, not extended. The owner decides which.
@@ -150,6 +184,6 @@ Rules for the limit:
 
 ## 6. Out of scope
 
-- Choosing the renderer. This track uses the stage 2.4 candidate and does not select it.
+- Choosing the renderer. The design track supplies features, layout and presets to the 2.4 experiments and uses the selected candidate; it does not select it.
 - Mechanics, model identity and protection rules. They are unchanged by any UI decision.
 - Publishing any reference image, personal session content or screenshot of the owner's machine.
