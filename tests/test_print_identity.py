@@ -153,9 +153,9 @@ class PrintIdentityCommandTests(OutputChecks):
 
     def test_harness_is_exactly_the_runner_inventory_with_sha256(self):
         expected = {identity_v2.relative(path, ROOT) for path in harness_files()}
-        self.assertEqual(len(expected), 27)
+        self.assertEqual(len(expected), 29)
         harness = self.data()['harness']
-        self.assertEqual(len(harness), 27)
+        self.assertEqual(len(harness), 29)
         self.assertEqual(set(harness), expected)
         self.assertNotIn('work/experiments/magic600-04/tests/test_startup_visibility.py', harness)
         for name, digest in harness.items():

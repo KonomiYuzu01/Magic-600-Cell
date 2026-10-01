@@ -129,20 +129,27 @@ class StdlibTests(FixtureTestCase):
 
     def test_default_directory_guard(self):
         default = self.local / 'C600Studio'
-        blocked = [default, default / 'child', default / 'child/../nested']
+        release = self.local / 'Magic600Cell'
+        blocked = [default, default / 'child', default / 'child/../nested',
+                   release, release / '0.4', release / '0.4/child']
         if os.name == 'nt':
             blocked.append(Path(str(default / 'nested').swapcase()))
+            blocked.append(Path(str(release / '0.4').swapcase()))
         for candidate in blocked:
             with self.subTest(candidate=candidate.name):
                 with self.assertRaises(ValueError):
                     fixture.guard_path(candidate)
-        for candidate in (self.base / 'outside', self.local / 'C600Studio-other', self.local):
+        for candidate in (self.base / 'outside', self.local / 'C600Studio-other',
+                          self.local / 'Magic600Cell-other', self.local):
             self.assertEqual(fixture.guard_path(candidate), candidate.resolve())
         with mock.patch.dict(os.environ), mock.patch.object(Path, 'home', return_value=self.base):
             os.environ.pop('LOCALAPPDATA', None)
             with self.assertRaises(ValueError):
                 fixture.guard_path(self.base / 'C600Studio/child')
+            with self.assertRaises(ValueError):
+                fixture.guard_path(self.base / 'Magic600Cell/0.4')
         self.assertFalse(default.exists())
+        self.assertFalse(release.exists())
 
     def test_valid_records(self):
         for profile in ('basic', 'history-3', 'history-2000'):
@@ -269,7 +276,8 @@ class StdlibTests(FixtureTestCase):
     def test_default_directory_refusals_cli(self):
         directory, _ = self.make_fixture()
         default = self.local / 'C600Studio'
-        for target in (default, default / 'child'):
+        release = self.local / 'Magic600Cell/0.4'
+        for target in (default, default / 'child', release, release / 'child'):
             calls = [
                 ('build', '--profile', 'basic', '--output', target),
                 ('copy', '--fixture', directory, '--data', target),
@@ -281,6 +289,7 @@ class StdlibTests(FixtureTestCase):
                 with self.subTest(command=call[0], path=target.name):
                     self.assert_refusal(self.cli(*call))
         self.assertFalse(default.exists())
+        self.assertFalse(release.parent.exists())
         self.assertFalse((self.base / 'data').exists())
 
     def test_unclean_templates_and_hash_mismatch(self):

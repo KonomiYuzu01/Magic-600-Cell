@@ -447,10 +447,15 @@ def load_engine():
     return numpy, Model, EngineProcess, make_fixture, canonical
 
 
-def prepare_data(output):
-    """Start from the B4-12 basic fixture, a non-Home state, as the native harness does."""
+def fixture_module():
     sys.path.insert(0, str(ROOT / 'tools/perf'))
     import b412_fixture
+    return b412_fixture
+
+
+def prepare_data(output):
+    """Start from the B4-12 basic fixture, a non-Home state, as the native harness does."""
+    b412_fixture = fixture_module()
     record = b412_fixture.build_fixture('basic', output / 'fixture')
     b412_fixture.copy_fixture(output / 'fixture', output / 'data')
     return dict(profile=record['profile'], word=record['word'], state_hash=record['state_hash'])
@@ -458,7 +463,7 @@ def prepare_data(output):
 
 def run_probe(output, primitives=(2, 3), warmup=5, pairs=15):
     plan = sample_plan(primitives, warmup, pairs)  # Before any mkdir, import or engine work.
-    output = Path(output).resolve()
+    output = fixture_module().guard_path(output)  # A default data directory is refused before mkdir.
     output.mkdir()  # Exclusive creation; an existing directory is a usage error.
     (output / 'probe-error.log').touch()
     report = dict(scope=SCOPE, sample_plan=plan, relations=RELATIONS, limits=LIMITS,

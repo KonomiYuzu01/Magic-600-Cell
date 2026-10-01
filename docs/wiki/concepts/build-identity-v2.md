@@ -7,11 +7,11 @@ summary: How a native build of the retained 0.4 host is identified from 0.4.1 on
 related: [build-reproducibility-decisions, owner-decisions-2026-09-29]
 supersedes: []
 claims:
-  - {id: identity-payload, evidence_kind: source, path: work/experiments/magic600-04/build_identity.py, sha256: 080ac9f27e1bf2bcbbf48442ef589991a6dda2ba302351dce6f7b534f444d21f, checked_at: 2026-09-30}
+  - {id: identity-payload, evidence_kind: source, path: work/experiments/magic600-04/build_identity.py, sha256: e1aca296cadbf0027f79c3ac4d7b1a0afa83ebf4e87540ad4bcc2ebadda7aeee, checked_at: 2026-10-01}
   - {id: sealed-recipe, evidence_kind: source, path: native/bootstrap.py, sha256: 669a7b2bab659320878b18d0b1f7034812b151899bb1fb92b9c3380536f07c9e, checked_at: 2026-09-30}
-  - {id: receipt-checks, evidence_kind: source, path: work/experiments/magic600-04/native_launch.py, sha256: f640d4e895da2e1bf5b20cb70e73ab9edd8a9063b4c63f6f6988f7e3fd872452, checked_at: 2026-09-30}
+  - {id: receipt-checks, evidence_kind: source, path: work/experiments/magic600-04/native_launch.py, sha256: 26ab3b85c388e8b34400e25cdaf018af8599b3f4fda77da076d0e730508c3343, checked_at: 2026-10-01}
   - {id: packaging-consumer, evidence_kind: source, path: work/experiments/magic600-04/packaging/assemble.py, sha256: 8502cf0eeb44f21a647f37ab35824b1c4890c66089fd6f8d69ab1b7acab6b44a, checked_at: 2026-09-30}
-  - {id: invariance-tests, evidence_kind: fixture, path: tests/test_build_identity.py, sha256: 8335638684798425b11563501fd2b7e0c62a5115df209cfead9816cf648e05fb, checked_at: 2026-09-30}
+  - {id: invariance-tests, evidence_kind: fixture, path: tests/test_build_identity.py, sha256: ac34dffa7f766cb3ebf5e45685062092d76c00371bdbca096b25b824ecc2647b, checked_at: 2026-10-01}
   - {id: byte-exact-checkout, evidence_kind: source, path: .gitattributes, sha256: 018ad2ea40527c9f02c1e384103567d79b00ab3c6b41c54ac67f79b5e2205ed1, checked_at: 2026-09-30}
   - {id: engine-environment, evidence_kind: source, path: tools/toolchain.lock.json, sha256: 1a181fd36116af5906edbf54f0d19f0683f7b37840d2192bafcd74437e4e1c6c, checked_at: 2026-09-30}
   - {id: continuity-0-4, evidence_kind: source, path: docs/RELEASE_0_4_CONTINUITY.json, sha256: a40c915dc56ff73c96d6ffb164a3264693f0e6faceddfeb96eaa7f4758d53759, checked_at: 2026-09-30}
@@ -41,10 +41,10 @@ The identity is the digest of one `identity` payload with four parts:
 - **product**: the C# and Python sources, the CLR configuration, the model manifest and assets, and the retained runtime. That runtime is `MPUlt.exe`, its puzzle definitions, its distributed default settings and the DirectX loader. Files are keyed by repository path.
 - **compile_recipe**: the flags and reference names of the sealed `csc` invocation. The invocation passes `/noconfig /nostdlib+`, and all 39 system references, `mscorlib` included, by full path from the compiler's own directory. It also passes the default Win32 manifest, runs in an empty directory and refuses `LIB`. The recipe is data, so harness text in the same scripts does not affect it.
 - **compiler**: the banner, plus the hashes of the compiler files and of every reference assembly, recorded by role.
-- **interpreter**: the implementation, exact version and bits, and the base binaries and environment launcher by role. For NumPy, it binds a digest of the wheel payload, verified file by file against the installed `RECORD`. It excludes installer-written files, bytecode and console-script wrappers, which embed their install path.
+- **interpreter**: the implementation, exact version and bits, and the base binaries and environment launcher by role. For NumPy, it binds a digest of the wheel payload, verified file by file against the installed `RECORD`. It excludes installer-written files, bytecode and console-script wrappers, which embed their install path. Capture is refused when the imported `numpy` is not the installed distribution's own `numpy/__init__.py`, so a shadow on the import path cannot inherit its identity.
 
 The receipt also records, outside the identity:
-- the harness files;
+- the harness files: the launcher, the identity helper, the bootstrap, runtime inspection and DirectX loader scripts, and for the native harness its checks, cases and runner. `check_evidence` compares this list with the one the code declares, so a receipt that drops or adds a harness file is refused;
 - the platform string;
 - the artifacts;
 - launch evidence such as the copied runtime and the user-editable settings.
@@ -87,7 +87,7 @@ Step 1 is done when all of these hold on a fresh clone of the merged branch. The
 - A checkout under `* -text` held the committed bytes for all tracked files, and all model assets matched.
 - The product built with identity `56039c362c0fd361…`. The identity was unchanged after harness-only edits and line-ending repairs, and the build then reused the recorded executable.
 - The native harness compiled with its inputs bound (`run_postapproval.py --compile-only`).
-- `print_identity.py` printed, without compiling, the build identity of a later `--build-only` receipt of the same tree (`ab12e78d8223dfa8…`) and exactly the 27 harness files, with their hashes, of a `--compile-only` receipt.
+- `print_identity.py` printed, without compiling, the build identity of a later `--build-only` receipt of the same tree (`ab12e78d8223dfa8…`) and exactly the 27 harness files, with their hashes, of a `--compile-only` receipt. The closing review of 1 October added `build_identity.py` and `native/directx_runtime.py` to the harness (29 files); that comparison was not repeated on Windows after the change.
 - The WinForms startup regression passed its 19 checks (`native/bootstrap.py --self-test-only`). This is actual Windows evidence of startup only.
 - The native harness then ran on the desktop with `--focus endgame`, on a synthetic legal fixture and a synthetic key route, not physical typing. The second run passed all 96 checks, with 4 skips and exit code 0. Its summary step then failed to decode `run.log`, which Windows writes in the console code page; `run_postapproval.py` now falls back to that code page.
 - The first of those runs stopped with an access violation inside Managed DirectX `Device.Reset` during a window resize. Step 1 changed no product C# source, so this is recorded as an observation of the retained 0.4 host, not as a step 1 regression.

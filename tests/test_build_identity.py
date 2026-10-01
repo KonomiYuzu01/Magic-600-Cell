@@ -129,6 +129,7 @@ class Fixture:
 
 
 def check(f, receipt, phase, tools=None, **options):
+    options.setdefault('harness_base', [f.root / 'tests/run_postapproval.py'])
     return native_launch.check_evidence(receipt, phase, f.root, tools or f.tools(), f.inventory(), **options)
 
 
@@ -381,6 +382,47 @@ class ReceiptTests(unittest.TestCase):
         self.assertEqual(len(calls), 4)
         for call in calls:
             self.assertIn('private=private', call)
+            self.assertIn('harness=harness', call)
+
+    def test_the_harness_inventory_is_declared_by_code_not_by_the_receipt(self):
+        extra = 'tests/Checks.cs'
+        cases = {
+            'harness entry dropped': lambda g, r: r['harness'].pop('tests/run_postapproval.py'),
+            'declared extra dropped and changed': lambda g, r: (r['harness'].pop(extra),
+                                                                (g.root / extra).write_bytes(b'changed')),
+            'undeclared entry added': lambda g, r: r['harness'].update({'tests/Other.cs': '0' * 64}),
+            'harness section not a mapping': lambda g, r: r.update(harness=[]),
+        }
+        for name, mutate in cases.items():
+            with self.subTest(case=name):
+                g = Fixture(self)
+                (g.root / extra).write_bytes(b'class Checks {}\n')
+                r, _ = g.receipt()
+                r['harness'].update(bid.hash_inputs([g.root / extra], g.root))
+                self.assertTrue(check(g, r, 'before', harness=[g.root / extra]))
+                mutate(g, r)
+                self.assertFalse(check(g, r, 'x', harness=[g.root / extra]))
+                self.assertTrue(any(c.startswith('inventory: harness') for c in r['checks']['x']['changed']), name)
+
+    def test_the_identity_helper_and_directx_loader_are_harness_files(self):
+        declared = {bid.relative(path, ROOT) for path in native_launch.HARNESS_SOURCES}
+        self.assertLessEqual({'work/experiments/magic600-04/build_identity.py', 'native/directx_runtime.py',
+                              'work/experiments/magic600-04/native_launch.py'}, declared)
+
+    def test_a_numpy_shadow_cannot_inherit_the_installed_identity(self):
+        import numpy
+        from importlib.metadata import distribution
+        installed = Path(distribution('numpy')._path).parent / 'numpy/__init__.py'
+        self.assertEqual(Path(numpy.__file__).resolve(), installed.resolve())
+        shadows = {
+            'other file': types.SimpleNamespace(__version__=numpy.__version__, __file__=str(ROOT / 'numpy.py')),
+            'no file': types.SimpleNamespace(__version__=numpy.__version__),
+            'other version': types.SimpleNamespace(__version__='0.0.1', __file__=numpy.__file__),
+        }
+        for name, shadow in shadows.items():
+            with self.subTest(case=name), mock.patch.dict(sys.modules, {'numpy': shadow}):
+                with self.assertRaisesRegex(ValueError, 'Imported NumPy'):
+                    bid.current_interpreter()
 
     def test_the_harness_summary_reads_a_run_log_in_the_console_code_page(self):
         spec = importlib.util.spec_from_file_location('run_postapproval', EXPERIMENT / 'tests/run_postapproval.py')

@@ -33,6 +33,6 @@ with sync_playwright() as p:
  ok('Explicit session timer and viewport-only toggle')
  # Build a representative scrambled work-cell screenshot through a legal preview.
  evaluate('async()=>{await window.c600.api("prefs",{rules:[{expr:"current(C000)",style:"solid"}],selected:null});await window.c600.previewRecipe([{kind:"word",moves:[2,4,6,8,10,12,14,16,18,20]}],"UI screenshot scramble");await window.c600.actions.commit();}')
- page.locator('#dockTabs [data-panel="solve"]').click();page.wait_for_timeout(1000);page.screenshot(path=str(ROOT/'docs'/'workbench_02.png'))
- (ROOT/'tests/v02').mkdir(parents=True,exist_ok=True)
+ (ROOT/'tests/v02').mkdir(parents=True,exist_ok=True)  # ignored output folder; a run leaves git status empty
+ page.locator('#dockTabs [data-panel="solve"]').click();page.wait_for_timeout(1000);page.screenshot(path=str(ROOT/'tests/v02'/'workbench_02.png'))
  report['state_after']=evaluate('window.c600.state.state_hash');report['passed']=not report['errors'];(ROOT/'tests/v02/ui_flows.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2),flush=True);b.close()

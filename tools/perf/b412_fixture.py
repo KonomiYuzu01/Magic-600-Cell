@@ -40,13 +40,18 @@ def parse_profile(profile: str) -> int:
     raise FixtureRefusal('invalid-profile')
 
 
+# Default data roots: C600 Studio profiles and the 0.4 release (%LOCALAPPDATA%/Magic600Cell/0.4).
+PROTECTED_ROOTS = ('C600Studio', 'Magic600Cell')
+
+
 def guard_path(path: Path) -> Path:
     path = Path(path).resolve()
-    default = (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'C600Studio').resolve()
+    local = Path(os.getenv('LOCALAPPDATA', str(Path.home())))
     candidate = Path(os.path.normcase(str(path)))
-    protected = Path(os.path.normcase(str(default)))
-    if candidate.is_relative_to(protected):
-        raise FixtureRefusal('default-data-directory')
+    for name in PROTECTED_ROOTS:
+        protected = Path(os.path.normcase(str((local / name).resolve())))
+        if candidate.is_relative_to(protected):
+            raise FixtureRefusal('default-data-directory')
     return path
 
 

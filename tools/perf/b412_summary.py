@@ -255,7 +255,7 @@ def sanitize(result):
     private = [os.environ.get(key, '') for key in ('USERNAME', 'USER', 'COMPUTERNAME', 'HOSTNAME')]
     private.append(socket.gethostname())
     private = [value.casefold() for value in private if len(value) >= 3]
-    paths = re.compile(r'[A-Za-z]:[\\/]|^\\\\|(?<!\w)/[A-Za-z]')
+    paths = re.compile(r'[A-Za-z]:[\\/]|\\\\|(?<!\w)/[A-Za-z]')  # UNC paths anywhere, not only at the start
     redactions = 0
 
     def clean(value):
@@ -289,6 +289,11 @@ def summarize(directories, columns=None):
                                               'p95 <= 100 ms' if series.startswith('m1-') else 'p95 < 50 ms'),
                                    'verdict': 'no-data', 'formal': False}
     result['series']['m3']['m3b_verdict'] = 'no-data'
+    # One run counts once: a repeated directory or run_id would inflate pooled and formal results.
+    resolved = [os.path.normcase(str(Path(directory).resolve())) for directory in directories]
+    if len(set(resolved)) != len(resolved):
+        raise ValueError('duplicate-run')
+    run_ids = set()
     for directory in directories:
         directory = Path(directory)
         try:
@@ -303,6 +308,9 @@ def summarize(directories, columns=None):
         except RunError as error:
             result['unreadable'].append({'directory': directory.name, 'reason': str(error)})
             continue
+        if run['run_id'] in run_ids:
+            raise ValueError('duplicate-run')
+        run_ids.add(run['run_id'])
         series, identity = run['series'], run['build']['build_identity']
         if series in builds and builds[series] != identity:
             raise ValueError('mixed-builds')

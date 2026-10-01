@@ -34,7 +34,8 @@ SHARED_BACKEND_SOURCES = ('grips.py', 'server.py', 'core.py', 'session.py',
     'log_io.py', 'mpult_log.py')
 # Harness files: bound in every receipt but outside the build identity, so editing
 # them never changes it. The recipe these scripts produce is bound separately.
-HARNESS_SOURCES = (HERE / 'native_launch.py', ROOT / 'native/bootstrap.py', ROOT / 'native/inspect_runtime.py')
+HARNESS_SOURCES = (HERE / 'native_launch.py', HERE / 'build_identity.py', ROOT / 'native/bootstrap.py',
+    ROOT / 'native/inspect_runtime.py', ROOT / 'native/directx_runtime.py')
 PRODUCT_CONFIG = ROOT / 'native/NativeHost.exe.config'
 COMPILER = Path(os.environ.get('WINDIR', r'C:\Windows')) / 'Microsoft.NET/Framework/v4.0.30319/csc.exe'
 
@@ -114,14 +115,17 @@ def _check_tools(identity, current, changed, missing):
     return len(identity['compiler']['files']) + len(identity['interpreter']['files'])
 
 
-def check_evidence(evidence, phase, root=ROOT, tools=current_tools, inventory=product_inventory, private=()):
+def check_evidence(evidence, phase, root=ROOT, tools=current_tools, inventory=product_inventory, private=(),
+                   harness=(), harness_base=None):
     """Hash only declared immutable inputs; record settings changes separately.
 
     A v2 receipt must also rehash to its build identity and bind the complete inventory this
     code declares, and its compiler and interpreter roles are re-resolved and compared; a
     missing role counts as missing. Bindings from different sections are never merged: two
-    different hashes for one path are a conflict. `private` holds (label, path, sha256)
-    for local tools whose path is checked but never written to the receipt."""
+    different hashes for one path are a conflict. The receipt's harness section must name
+    exactly `harness_base` (HARNESS_SOURCES) plus `harness`, the extra harness files the
+    caller declares. `private` holds (label, path, sha256) for local tools whose path is checked but never
+    written to the receipt."""
     version = identity_v2.receipt_version(evidence)
     runtime = evidence.get('runtime', {})
     changed, missing = [], []
@@ -136,7 +140,15 @@ def check_evidence(evidence, phase, root=ROOT, tools=current_tools, inventory=pr
         expected_paths, recipe = inventory()
         changed.extend('inventory: ' + problem for problem in
                        identity_v2.inventory_problems(evidence['identity'], expected_paths, recipe))
-        groups = [identity_v2.product_files(evidence['identity']['product']), evidence.get('harness', {})]
+        declared = evidence.get('harness')
+        base = HARNESS_SOURCES if harness_base is None else harness_base
+        expected_harness = {identity_v2.relative(path, root) for path in list(base) + list(harness)}
+        if not isinstance(declared, dict):
+            declared = {}
+            changed.append('inventory: harness missing')
+        changed.extend('inventory: harness missing ' + path for path in sorted(expected_harness - set(declared)))
+        changed.extend('inventory: harness extra ' + path for path in sorted(set(declared) - expected_harness))
+        groups = [identity_v2.product_files(evidence['identity']['product']), declared]
         tool_count = _check_tools(evidence['identity'], tools(evidence['identity']), changed, missing)
     groups += [evidence.get('artifacts', {}), runtime.get('origins', {}), runtime.get('external_origins', {}),
                runtime.get('immutable', {})]

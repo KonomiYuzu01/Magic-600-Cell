@@ -291,6 +291,20 @@ class ContractTests(unittest.TestCase):
             probe.main(['--output', str(self.parent / 'unbuilt'), '--pairs', '128', '--primitives', '2'])
         self.assertEqual(error.exception.code, 2)
 
+    def test_default_data_directories_are_refused_before_any_write(self):
+        local = self.parent / 'local'
+        for target in (local / 'C600Studio/probe-output', local / 'Magic600Cell/0.4/probe-output'):
+            target.parent.mkdir(parents=True)  # An existing profile, so only the guard can stop the write.
+            with self.subTest(target=target.parent.name):
+                with patch.dict(os.environ, {'LOCALAPPDATA': str(local)}), \
+                        patch.object(probe, 'load_engine') as load:
+                    with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                        probe.main(['--output', str(target), '--primitives', '2', '--warmup', '0',
+                                    '--pairs', '1'])
+                    self.assertEqual(error.exception.code, 2)
+                    load.assert_not_called()
+                self.assertEqual(list(target.parent.iterdir()), [])
+
     def test_existing_output_is_never_touched(self):
         sentinel = self.parent / 'sentinel.txt'
         sentinel.write_text('preserve', encoding='utf-8')

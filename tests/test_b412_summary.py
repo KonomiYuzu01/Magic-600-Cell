@@ -7,6 +7,7 @@ import io
 import json
 import math
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -208,6 +209,35 @@ class SummaryTests(unittest.TestCase):
         self.assertFalse(short['series']['m1-active']['formal'])
         two = self.summarize(self.latency(), self.latency())
         self.assertFalse(two['series']['m1-active']['formal'])
+
+    def test_repeated_runs_are_refused_not_pooled(self):
+        run = self.latency()
+        for directories in ((run, run, run), (run, Path(str(run) + '/.'), run.parent / '..' / run.parent.name / run.name)):
+            with self.subTest(count=len(directories)):
+                with self.assertRaisesRegex(ValueError, 'duplicate-run'):
+                    self.summarize(*directories)
+        copy = self.base / 'copied'
+        shutil.copytree(run, copy)
+        with self.assertRaisesRegex(ValueError, 'duplicate-run'):
+            self.summarize(run, copy, self.latency())
+        completed, out, _ = self.cli(run, copy, self.latency())
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn('duplicate-run', completed.stderr)
+        self.assertFalse(out.exists())
+        self.assertTrue(self.summarize(run, self.latency(), self.latency())['series']['m1-active']['formal'])
+
+    def test_embedded_unc_paths_are_redacted(self):
+        unc = r'\\archive-canary\private-share\run.csv'
+        directory = self.latency(status='invalid', invalid_reasons=['capture failed at ' + unc])
+        environment = {'cpu_name': 'cpu at ' + unc, 'power_mode': 'mode //forward-canary/share'}
+        self.write_json(directory / 'environment.json', environment)
+        result = self.summarize(directory)
+        markdown = summary.render_markdown(result)
+        for text in (json.dumps(result), str(result), markdown):
+            self.assertNotIn('archive-canary', text)
+            self.assertNotIn('forward-canary', text)
+        self.assertEqual(result['invalid_runs'][0]['reasons'], ['redacted'])
+        self.assertEqual(result['redactions'], 3)
 
     def test_invalid_and_attribution_runs_do_not_count(self):
         good = self.latency([10] * 100)

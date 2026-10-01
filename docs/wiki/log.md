@@ -8,6 +8,9 @@ Drafts for the owner and the plan checks are in `docs/progress/1.0/`: the 2.0 ch
 ## [2026-10-01] decision | No 0.4.1 release; stage 2 within 20 days
 Recorded in [owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md). The day-by-day plan is in `docs/progress/1.0/stage-2-experiment-protocol.md` section 5.
 
+## [2026-10-01] review | Step 1 closing review
+One overall Astra review of the step 1 candidate in two parallel shards found six major findings and one minor, all adopted with regression tests that fail when the fix is reverted. The fixture builder and the turn probe now also refuse the 0.4 data root `Magic600Cell` before any write. The summary refuses repeated runs and redacts embedded UNC paths. The receipt's harness list is checked against the code, and now includes `build_identity.py` and the DirectX loader. Identity capture refuses a NumPy import that is not the installed distribution ([build-identity-v2](concepts/build-identity-v2.md)).
+
 ## [2026-10-01] decision | No 0.4.1 release; the B4-12 harness is kept for stage 2.4
 The owner ended the 0.4 line without a 0.4.1 release, closed step 1 at its acceptance and stopped the B4-12 baseline, measurement and 0.4 performance fixes; the harness contract, fixture builder, turn probe and summary tool stay for the stage 2.4 renderer gate ([owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md)). The two items the decision does not settle are listed for the owner in [no-0-4-1-release-open-items](questions/no-0-4-1-release-open-items.md).
 

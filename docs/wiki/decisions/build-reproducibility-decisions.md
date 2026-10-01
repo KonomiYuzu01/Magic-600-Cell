@@ -11,7 +11,7 @@ claims:
   - {id: d2-engine-python, evidence_kind: decision, checked_at: 2026-09-30}
   - {id: d3-byte-exact, evidence_kind: decision, checked_at: 2026-09-30}
   - {id: d4-optional-recorder, evidence_kind: decision, checked_at: 2026-09-30}
-  - {id: harness-runner, evidence_kind: source, path: work/experiments/magic600-04/tests/run_postapproval.py, sha256: 0616a958e92b589ccdadad427083634a4f5b4f3fe606bdb59c7138ad6cf3ecd2, checked_at: 2026-09-30}
+  - {id: harness-runner, evidence_kind: source, path: work/experiments/magic600-04/tests/run_postapproval.py, sha256: 369eecc27d8907e0de5ba14e8ad50837af63f48956f425e3c6090eb8acbe3a89, checked_at: 2026-10-01}
   - {id: recorder-skip, evidence_kind: source, path: work/experiments/magic600-04/tests/PostApprovalNativeRegression.cs, sha256: 421f1d3cafc420fb7aaecc2a90ab451c647b112ad6cd325174f5cb4b45478904, checked_at: 2026-09-30}
   - {id: checkout-repair, evidence_kind: source, path: tools/checkout_bytes.py, sha256: 9b8917567713e9dd739aebf7b6ef3fe2c4d5bb980adde86c60d8005d1f3c892f, checked_at: 2026-09-30}
   - {id: continuity-tool, evidence_kind: source, path: tools/provenance/continuity_04.py, sha256: b7d78dc2ff163c6126526889ad61755e55fdb2f0e6a9f659cb2f420d51ca4005, checked_at: 2026-09-30}

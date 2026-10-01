@@ -182,6 +182,11 @@ def current_interpreter() -> dict:
     from importlib.metadata import distribution
     dist = distribution('numpy')
     dist_dir = Path(dist._path)  # the installed .dist-info directory
+    # Bind only the NumPy actually imported: a shadow earlier on sys.path must not
+    # inherit the identity of the untouched installed distribution.
+    imported = Path(getattr(numpy, '__file__', None) or '').resolve()
+    if imported != (dist_dir.parent / 'numpy/__init__.py').resolve() or numpy.__version__ != dist.version:
+        raise ValueError('Imported NumPy is not the installed distribution')
     payload = numpy_payload(dist_dir.parent, dist_dir.name)
     return interpreter_binding(sys.implementation.name, platform.python_version(), struct.calcsize('P') * 8,
                                sys.base_prefix, sys.executable, numpy.__version__, payload)
