@@ -315,7 +315,8 @@ def event_signals(events: list, start_seq: int = 0) -> list:
         if name in ("PostToolUse", "PostToolUseFailure"):
             out.append(Signal(t, seq, "post", agent, {"tool": str_or_none(ev.get("tool")), "key": str_or_none(ev.get("key"))}))
         elif name == "PermissionRequest":
-            out.append(Signal(t, seq, "perm", agent, {"tool": str_or_none(ev.get("tool")), "key": str_or_none(ev.get("key"))}))
+            out.append(Signal(t, seq, "perm", agent, {"tool": str_or_none(ev.get("tool")), "key": str_or_none(ev.get("key")),
+                                                    "summary": str_or_none(ev.get("summary"))}))
         elif name == "Notification" and "elicitation" in str(ev.get("ntype", "")):
             out.append(Signal(t, seq, "elicit", agent))
         elif name == "Stop":
@@ -344,6 +345,7 @@ class Status:
     failed_at: float | None = None
     last_any: float | None = None
     open_tools: list[dict] = field(default_factory=list)
+    wait_items: list = field(default_factory=list)
 
 
 class Reducer:
@@ -388,7 +390,8 @@ class Reducer:
             self.open_tools[s.data.get("id")] = {"agent": s.agent, "name": s.data.get("name"), "key": s.data.get("key"),
                                                "t": s.t, "wrapper": s.data.get("wrapper") is True}
             if s.data.get("name") in QUESTION_TOOLS:
-                self.waits[("q", s.data.get("id"))] = {"agent": s.agent, "t": s.t, "label": f"question ({s.data.get('name')})"}
+                self.waits[("q", s.data.get("id"))] = {"agent": s.agent, "t": s.t, "label": f"question ({s.data.get('name')})",
+                                                    "tool": s.data.get("name"), "summary": ""}
         elif s.kind == "tool_result":
             use = self.open_tools.pop(s.data.get("id"), None)
             self.waits.pop(("q", s.data.get("id")), None)
@@ -399,9 +402,10 @@ class Reducer:
             self.waits.pop(("elicit", s.agent), None)
         elif s.kind == "perm":
             self.waits[("perm", s.agent, s.data.get("tool"), s.data.get("key"))] = {
-                "agent": s.agent, "t": s.t, "label": f"permission ({s.data.get('tool')})"}
+                "agent": s.agent, "t": s.t, "label": f"permission ({s.data.get('tool')})",
+                "tool": s.data.get("tool"), "summary": s.data.get("summary") or ""}
         elif s.kind == "elicit":
-            self.waits[("elicit", s.agent)] = {"agent": s.agent, "t": s.t, "label": "input requested"}
+            self.waits[("elicit", s.agent)] = {"agent": s.agent, "t": s.t, "label": "input requested", "tool": None, "summary": ""}
         elif s.kind == "turn_end":
             if s.agent is None:
                 self.main, self.last = "idle", s.t
@@ -442,7 +446,10 @@ class Reducer:
                     wait_since=min((w["t"] for w in self.waits.values()), default=None),
                     failed_at=self.failed_at, last_any=self.last_any,
                     open_tools=[{k: tool[k] for k in ("agent", "name", "t", "wrapper")}
-                                for tool in sorted(self.open_tools.values(), key=lambda tool: tool["t"])])
+                                for tool in sorted(self.open_tools.values(), key=lambda tool: tool["t"])],
+                    wait_items=[{"key": ":".join(str(part) for part in
+                                                (key[:1] + key[2:] if key[0] == "perm" else key[:1] if key[0] == "elicit" else key)),
+                                 **wait} for key, wait in sorted(self.waits.items(), key=lambda pair: pair[1]["t"])])
         if self.waits:
             st.status, st.detail = "waiting", ", ".join(sorted(set(st.waits)))
         elif self.main == "running":

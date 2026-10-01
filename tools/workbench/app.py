@@ -5,8 +5,8 @@
 Shows every local Claude Code session of this repository with its subagents and
 Codex calls, their plain-language briefs, a live view of any session, call or run,
 what needs attention, the progress board and an always-on-top compact view. It
-reads everything in place and writes only owner notes, run records and cancel
-flags under the private data root. On the owner's click only, it starts a
+reads everything in place and writes only owner notes, run records, cancel
+flags and a Home count snapshot under the private data root. On the owner's click only, it starts a
 registered run, a review-wrapper call or a new Claude Code session; it calls no
 model itself and opens no network listener.
 """
@@ -14,20 +14,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import sys
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import (QAbstractListModel, QByteArray, QFileSystemWatcher, QModelIndex, QObject, Qt, QTimer,
                             QUrl, Property, Signal, Slot)
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QColor, QIcon, QImageReader, QPainter, QPixmap
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import checklist  # noqa: E402
+import home  # noqa: E402
 import launch  # noqa: E402
 import notes  # noqa: E402
 import paths  # noqa: E402
@@ -157,12 +162,49 @@ def run_row(rec: dict) -> dict:
             "exitsText": " ".join("-" if e is None else str(e) for e in exits), "reasonText": str(rec.get("reason") or "")}
 
 
+class Notifier(QObject):
+    openCard = Signal(str)
+
+    def __init__(self, tray=None, window=None):
+        super().__init__()
+        self.tray, self.window = tray, window
+        self._seen: set | None = None
+        self._first_new = ""
+        if tray is not None:
+            tray.messageClicked.connect(self._clicked)
+
+    def _clicked(self):
+        if self._first_new:
+            self.openCard.emit(self._first_new)
+
+    def update(self, cards):
+        ids = {c["id"] for c in cards}
+        if self._seen is None:
+            self._seen = ids
+            return
+        new = [c for c in cards if c["needsOwner"] and c["id"] not in self._seen]
+        self._seen.update(ids)
+        if not new:
+            return
+        self._first_new = new[0]["id"]
+        if self.tray is not None:
+            text = new[0]["title"] if len(new) == 1 else f"{len(new)} new items for you"
+            self.tray.showMessage("New for you", text, QSystemTrayIcon.MessageIcon.Information, 5000)
+        elif self.window is not None:
+            self.window.alert(0)
+
+
 class Workbench(QObject):
     boardsChanged = Signal()
     checkoutsChanged = Signal()
     selectedChanged = Signal()
     notesChanged = Signal()
     messageChanged = Signal()
+    focusCard = Signal(str)
+    inboxChanged = Signal()
+    galleryChanged = Signal()
+    gallerySessionsChanged = Signal()
+    homeProgressChanged = Signal()
 
     def __init__(self, main: Path, projects: Path | None = None, launcher=None, refresh_ms: int = 2000):
         super().__init__()
@@ -180,6 +222,20 @@ class Workbench(QObject):
         self._checkouts: list = []
         self._registry: dict = {"entries": [], "problems": []}
         self._flags: list = []
+        self._raw_flags: list = []
+        self._cards: list = []
+        self._inbox: list = []
+        self._answered: list = []
+        self._scanner = home.GalleryScanner()
+        self._gallery: list = []
+        self._gallery_sessions: list = []
+        self._gallery_actions: dict = {}
+        self._records: list = []
+        self._home: dict = {}
+        self._home_progress: dict = {}
+        self._snapshot_counts = None
+        self._snapshot_at = 0.0
+        self._snapshot_error_shown = False
         self._progress: dict = {}
         self._compact: dict = {}
         self._selected: dict = {}
@@ -230,6 +286,7 @@ class Workbench(QObject):
                          "subagents": subs, "calls": by_sid.get(s.sid, []), "malformed": s.malformed, "capped": s.capped})
         self._session_rows = rows
         records = runs.recent(self.data, now, limit=RUN_HISTORY, window=watch.WATCH_WINDOW)
+        self._records = records
         self._all_runs = [run_row(r) for r in records]
         self._runs = self._all_runs[:RUN_HISTORY]
         reg = runs.load_registry(self.main)
@@ -241,21 +298,39 @@ class Workbench(QObject):
             {"id": e["id"], "title": e["title"], "display": [" ".join(step) for step in e["steps"]], "digest": runs.entry_digest(e),
              "windowsRequired": e["windows_required"], "timeout": duration_text(e["timeout_s"]), "live": live.get(e["id"], [])}
             for e in reg.entries]}
-        self._flags = [{**f, "age": duration_text(now - f["t"])} for f in watch.flags(self._sessions, calls, records, now)]
+        self._raw_flags = watch.flags(self._sessions, calls, records, now)
+        self._flags = [{**f, "age": duration_text(now - f["t"])} for f in self._raw_flags]
+        cards, _ = home.inbox(self._sessions, calls, links, records, self._raw_flags, self.data, roots, now)
+        self._cards = cards
+        self._publish("_inbox", [c for c in cards if c["state"] in ("open", "queued")], self.inboxChanged)
+        self._publish("_answered", [c for c in cards if c["state"] in ("sent", "acknowledged")][:50], self.inboxChanged)
+        self._publish("_gallery_sessions", [{"sid": s.sid, "title": s.title or s.sid[:8]} for s in self._sessions],
+                      self.gallerySessionsChanged)
+        items = self._scan_gallery(roots, records, cards, now)
         doc = sources.progress(self.main) or {}
         step = sources.current_step(doc) or {}
+        self._publish("_home_progress", home.progress_view(doc, self._sessions), self.homeProgressChanged)
         b = self._ledgers.budget()
         self._progress = {"steps": doc.get("steps", []) if isinstance(doc.get("steps"), list) else [],
                           "current": str(doc.get("current", "")), "updated": str(doc.get("updated", ""))}
         api = ("incomplete: a ledger is over the read limit" if b["incomplete"]
                else f"${b['billed']:.2f} billed / ${doc.get('paid_api_ceiling_usd', '?')}")
+        percent = checklist.step_percent(step)
+        step_text = (f"Step {step['id']} {math.floor(percent)}%" if percent is not None
+                     else f"Step {step['id']} no checklist") if step else "step unknown"
+        counts = home.counts(cards, items)
+        self._home = {"forYou": counts["for_you"], "galleryNew": counts["gallery_new"],
+                      "machineBadge": home.machine_badge(self._raw_flags), "stepText": step_text,
+                      "apiText": api, "apiVisible": bool(b["incomplete"] or any(
+                          b[k] for k in ("billed", "estimated", "reserved", "unknown_calls")))}
         self._compact = {
             "step": f"{step.get('id', '?')} {step.get('title', 'step unknown')}", "stepStatus": str(step.get("status", "")).replace("_", " "),
             "acceptance": step.get("acceptance") or "not defined", "blocker": step.get("blocker") or "none",
             "findings": len(sources.open_findings(roots)), "codex": sources.codex_login(), "api": api,
             "apiDetail": f"estimated ${b['estimated']:.2f}, reserved ${b['reserved']:.2f}, "
                          f"{b['unknown_calls']} paid call(s) with unknown cost, {b['subscription_calls']} subscription call(s)",
-            "attention": len(self._flags), "attentionTop": [f["text"] for f in self._flags[:3]]}
+            **{k: self._home[k] for k in ("forYou", "galleryNew", "stepText", "apiVisible", "apiText")}}
+        self._write_snapshot(counts, now)
         self.boardsChanged.emit()
         if self._selected.get("kind") == "session":
             self._refresh_selected_session()
@@ -267,6 +342,94 @@ class Workbench(QObject):
             row = next((r for r in self._all_runs if r["rid"] == self._selected.get("id")), None)
             if row and (row.get("status"), row.get("exitsText")) != (self._selected.get("runStatus"), self._selected.get("exitsText")):
                 self._show_run(row, follow=False)  # keep following the log; update the header and files
+
+    def _publish(self, attr: str, value, signal) -> None:
+        """Set a Home model and notify only on a real change, so QML keeps reply drafts, filters and scroll positions."""
+        if getattr(self, attr) != value:
+            setattr(self, attr, value)
+            signal.emit()
+
+    def _scan_gallery(self, roots, records, cards, now, force=False):
+        ask_min = [{"session_id": c["sid"], "attachments": [{"path": a["path"]} for a in c["attachments"]]}
+                   for c in cards if c["kind"] == "ask"]
+        items = self._scanner.scan(self.main, roots, self._sessions, records, ask_min, now, force=force)
+        titles = {s.sid: s.title or s.sid[:8] for s in self._sessions}
+        actions = {}
+        rows = []
+        for item in items:
+            key = (item["path"], item["mtime"])
+            decoration = self._gallery_actions.get(key)
+            if decoration is None:
+                def open_how(path):
+                    try:
+                        kind = launch.plan_open(path, self.main, self.projects)[0]
+                        return kind if kind in ("default", "browser", "notepad") else ""
+                    except Exception:
+                        return ""
+
+                can_marimo = False
+                if item["type"] == "notebook":
+                    try:
+                        launch.plan_command("marimo", self.main, notebook=item["path"])
+                        can_marimo = True
+                    except Exception:
+                        pass
+                decoration = {"openHow": open_how(item["path"]),
+                              "sourceHow": open_how(item["source"]) if item["source"] != item["path"] else "",
+                              "canMarimo": can_marimo}
+            actions[key] = decoration
+            rows.append({**item, **decoration, "sessionTitles": [titles.get(sid, sid[:8]) for sid in item["sessions"]]})
+        self._gallery_actions = actions
+        self._publish("_gallery", rows, self.galleryChanged)
+        return items
+
+    def _write_snapshot(self, counts, now):
+        if counts == self._snapshot_counts and now - self._snapshot_at < 60:
+            return
+        temporary = None
+        try:
+            self.data.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=self.data, prefix="home-", suffix=".tmp",
+                                             delete=False) as f:
+                temporary = Path(f.name)
+                json.dump(home.snapshot(counts, now), f)
+                f.write("\n")
+            os.replace(temporary, self.data / home.SNAPSHOT_NAME)
+            self._snapshot_counts, self._snapshot_at = dict(counts), now
+        except OSError as exc:
+            if not self._snapshot_error_shown:
+                self._snapshot_error_shown = True
+                self._say(f"Could not save Home counts: {exc.strerror or exc}.")
+        finally:
+            if temporary is not None:
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+    @Property("QVariantList", notify=inboxChanged)
+    def inbox(self):
+        return self._inbox
+
+    @Property("QVariantList", notify=inboxChanged)
+    def answered(self):
+        return self._answered
+
+    @Property("QVariantList", notify=galleryChanged)
+    def gallery(self):
+        return self._gallery
+
+    @Property("QVariantList", notify=gallerySessionsChanged)
+    def gallerySessions(self):
+        return self._gallery_sessions
+
+    @Property("QVariantMap", notify=boardsChanged)
+    def home(self):
+        return self._home
+
+    @Property("QVariantMap", notify=homeProgressChanged)
+    def homeProgress(self):
+        return self._home_progress
 
     @Property("QVariantList", notify=boardsChanged)
     def sessions(self):
@@ -557,6 +720,116 @@ class Workbench(QObject):
 
     # ------------------------------------------------------------ owner notes
 
+    @Slot(str, str, result=bool)
+    def answerCard(self, cardId: str, body: str) -> bool:
+        card = next((c for c in self._inbox if c["id"] == cardId), None)
+        s = self._session(card["sid"]) if card else None
+        if card is None or not card["answerRef"] or s is None:
+            self._say("That card cannot be answered here.")
+            return False
+        if card["state"] != "open":
+            self._say("That card is already answered; the answer is queued.")
+            return False
+        try:
+            text = home.answer_text(card["answerRef"], body)
+            notes.append_note(self.data, s.sid, text)
+        except (ValueError, notes.NoteRejected, OSError) as exc:
+            self._say(f"Answer not queued: {exc}.")
+            return False
+        message = "Answer queued; Claude receives it at its next tool step."
+        if s.status.status != "running":
+            message += " The session is idle: open it in Claude Code and send any message."
+        self._say(message)
+        self.refresh()
+        return True
+
+    @Slot(str)
+    def openCardSession(self, cardId: str):
+        card = next((c for c in self._inbox + self._answered if c["id"] == cardId), None)
+        if card is None or self._session(card["sid"]) is None:
+            return self._say("That session is no longer listed.")
+        try:
+            self.selectSession(card["sid"])
+            self.openInClaude(False)
+        except (OSError, ValueError) as exc:
+            self._say(f"Could not open the session: {exc}.")
+
+    @Slot(str, str, str, str, result=bool)
+    def fileNote(self, path: str, action: str, text: str, sid: str) -> bool:
+        """A star, wrong-direction or comment note about a gallery file, sent to `sid`: one of the
+        sessions the gallery lists for that file, chosen by the owner in the preview."""
+        if action not in ("star", "wrong", "comment") or not isinstance(text, str):
+            self._say("Unknown file note action.")
+            return False
+        row = next((r for r in self._gallery if r["path"] == path), None)
+        if row is None or not row["sessions"]:
+            self._say("No session produced this file.")
+            return False
+        if sid not in row["sessions"] or self._session(sid) is None:
+            self._say("Choose one of the sessions listed for this file.")
+            return False
+        text = text.strip()
+        if action == "comment" and not text:
+            self._say("Write a comment first.")
+            return False
+        label = f"{row['checkout']}/{row['rel']}"
+        body = (f"star: {label}" if action == "star" else f"wrong direction: {label}" + (f": {text}" if text else "")
+                if action == "wrong" else f"comment on {label}: {text}")
+        try:
+            notes.append_note(self.data, sid, body)
+        except (notes.NoteRejected, OSError) as exc:
+            self._say(f"Note not sent: {exc}.")
+            return False
+        self._say("File note queued; Claude receives it at its next tool step.")
+        return True
+
+    @Slot(str, str, result=bool)
+    def sessionCommand(self, kind: str, text: str) -> bool:
+        if kind not in ("pause", "resume", "why", "priority") or not isinstance(text, str):
+            self._say("Unknown session command.")
+            return False
+        if self._selected.get("kind") != "session" or self._session(self._selected.get("id")) is None:
+            self._say("Select a session first.")
+            return False
+        if kind == "priority" and not text.strip():
+            self._say("Write a priority first.")
+            return False
+        body = f"[{kind}]" + (f" {text.strip()}" if kind == "priority" else "")
+        try:
+            if not self.sendNote(body):
+                return False
+        except OSError as exc:
+            self._say(f"Note not sent: {exc}.")
+            return False
+        if kind == "resume" and self._session(self._selected["id"]).status.status != "running":
+            message = "Send any message in Claude Code; the session reads [resume] at its first tool step."
+            try:
+                self.launcher.claude()
+            except OSError as exc:
+                message += f" Could not bring Claude Code forward: {exc}."
+            self._say(message)
+        return True
+
+    @Slot()
+    def rescanGallery(self):
+        now = time.time()
+        try:
+            items = self._scan_gallery(paths.checkouts(self.main), self._records, self._cards, now, force=True)
+        except (OSError, ValueError) as exc:
+            return self._say(f"Could not rescan the gallery: {exc}.")
+        counts = home.counts(self._cards, items)
+        for key, value in (("forYou", counts["for_you"]), ("galleryNew", counts["gallery_new"])):
+            self._home[key] = self._compact[key] = value
+        self._write_snapshot(counts, now)
+        self.boardsChanged.emit()
+        self._say("Gallery rescanned.")
+
+    @Slot(str)
+    def showCard(self, cardId: str):
+        if not any(c["id"] == cardId for c in self._inbox + self._answered):
+            return self._say("That card is no longer listed.")
+        self.focusCard.emit(cardId)
+
     @Slot(str, result=bool)
     def sendNote(self, text: str) -> bool:
         if self._selected.get("kind") != "session":
@@ -644,6 +917,25 @@ def load_ui(engine: QQmlApplicationEngine, wb: Workbench, compact: bool = False)
     return bool(engine.rootObjects())
 
 
+def open_card(engine: QQmlApplicationEngine, wb: Workbench, card_id: str) -> None:
+    """Bring the full window forward on a card. After --compact startup the full window is loaded
+    into the same engine on the first click, so a notification always opens the card it announced."""
+    def full():
+        return next((w for w in engine.rootObjects() if w.objectName() == "mainWindow"), None)
+
+    window = full()
+    if window is None:
+        engine.setInitialProperties({})   # the compact window's initial properties are not the full window's
+        engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
+        window = full()
+        if window is None:
+            return
+    window.show()
+    window.raise_()
+    window.requestActivate()
+    wb.showCard(card_id)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Magic 600 Cell development workbench")
     parser.add_argument("--compact", action="store_true", help="open only the always-on-top progress view")
@@ -653,12 +945,31 @@ def main(argv=None) -> int:
         print("workbench: not inside a checkout of this repository", file=sys.stderr)
         return 2
     QQuickStyle.setStyle("Fusion")
-    app = QGuiApplication(sys.argv[:1])
+    app = QApplication(sys.argv[:1])
     app.setApplicationName("Magic 600 Cell workbench")
+    QImageReader.setAllocationLimit(192)
     wb = Workbench(main_dir)
     engine = QQmlApplicationEngine()
     if not load_ui(engine, wb, args.compact):
         return 1
+    window = engine.rootObjects()[0]
+    tray = None
+    if QSystemTrayIcon.isSystemTrayAvailable():
+        pixmap = QPixmap(32, 32)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor("#3569a8"))
+        painter.drawEllipse(2, 2, 28, 28)
+        painter.end()
+        tray = QSystemTrayIcon(QIcon(pixmap), app)
+        tray.setToolTip("Magic 600 Cell workbench")
+        tray.show()
+    notifier = Notifier(tray, window)
+    notifier.update(wb.inbox)
+    wb.inboxChanged.connect(lambda: notifier.update(wb.inbox))
+    notifier.openCard.connect(lambda card_id: open_card(engine, wb, card_id))
     return app.exec()
 
 

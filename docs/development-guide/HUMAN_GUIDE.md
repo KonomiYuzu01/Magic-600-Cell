@@ -42,7 +42,7 @@ This guide is for the owner and any person working on the project. Agents follow
 **Watching and joining the work**
 - The development workbench shows every session, what it is doing and why, a live view, the Codex calls and the progress board: `tools\.venv\workbench\Scripts\python.exe tools\workbench\app.py` (add `--compact` for a small always-on-top view). Install it once with `python tools/toolchain/bootstrap.py install pyside6`.
 - A note typed there reaches Claude at its next tool step, and Claude answers it; a note cannot replace a command that only you may run. In a terminal session, the status line under the prompt shows the same progress line as the compact view. Details: `docs/wiki/components/workbench.md`.
-- "Needs attention" lists sessions waiting for you, failed turns, failed Codex calls and runs, and stalls. The Runs tab starts only the checks listed in `tools/workbench/runs.json`, and the Launch tab starts a new Claude session or a Codex call from a packet; nothing starts unless you click.
+- "For you" lists what needs you: questions and picks from sessions (answer with a button or a line of text), permission prompts, and failures that need a decision. "Gallery" shows the images the sessions produced; "Progress" shows evidence-backed progress. Sessions, Codex calls, Runs and Launch sit in "Machine details". The Runs tab starts only the checks listed in `tools/workbench/runs.json`, and the Launch tab starts a new Claude session or a Codex call from a packet; nothing starts unless you click.
 
 ## 3. First-time setup on Windows
 
