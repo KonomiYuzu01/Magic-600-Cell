@@ -393,19 +393,19 @@
         "native-performance"
       ],
       "method": "winget",
-      "status": "unverified",
+      "status": "verified",
       "installable": false,
       "platforms": [
         "windows"
       ],
       "winget_id": "Intel.PresentMon",
-      "version": null,
-      "installer_sha256": null,
+      "version": "2.6.0.0",
+      "installer_sha256": "0cb43d2622356c1e277a77f840887f9000cea4e2d4236c0850922fc204c6f820",
       "probe": [
         "PresentMon",
         "--version"
       ],
-      "note": "Package ID verified; pin on the owner machine."
+      "note": "winget offers only a machine-scope installer, which needs administrator rights, while bootstrap.py pins and installs user scope, so this entry is not installed automatically. installer_sha256 is the hash in the winget manifest for this version and scope. With no command on PATH, winget's record confirms the installed version. The owner installed it on 2026-10-01 with `winget install --id Intel.PresentMon --exact --version 2.6.0.0 --scope machine --architecture x64 --source winget`, which checks that hash."
     },
     {
       "id": "perfview",
@@ -618,19 +618,19 @@
         "renderer-spike"
       ],
       "method": "winget",
-      "status": "unverified",
+      "status": "verified",
       "installable": false,
       "platforms": [
         "windows"
       ],
       "winget_id": "BaldurKarlsson.RenderDoc",
-      "version": null,
-      "installer_sha256": null,
+      "version": "1.46.0",
+      "installer_sha256": "135dc762f9108b46e81839d816e51800010baa053a5ccdbe523b5d5dc906d383",
       "probe": [
         "renderdoccmd",
         "version"
       ],
-      "note": "Package ID verified; pin on the owner machine."
+      "note": "winget offers only a machine-scope installer, which needs administrator rights, while bootstrap.py pins and installs user scope, so this entry is not installed automatically. installer_sha256 is the hash in the winget manifest for this version and scope. With no command on PATH, winget's record confirms the installed version. The owner had installed it before; on 2026-10-01 `winget list` confirmed version 1.46.0. How it was installed is not recorded."
     },
     {
       "id": "pix",
@@ -639,16 +639,19 @@
         "renderer-spike"
       ],
       "method": "winget",
-      "status": "unverified",
+      "status": "verified",
       "installable": false,
       "platforms": [
         "windows"
       ],
       "winget_id": "Microsoft.PIX",
-      "version": null,
-      "installer_sha256": null,
-      "probe": null,
-      "note": "Package ID not yet verified."
+      "version": "2603.25",
+      "installer_sha256": "971e4f2f03404521110e159a24e5ce48a219578b364c8229e55228ccaffebf73",
+      "probe": [
+        "pixtool",
+        "--help"
+      ],
+      "note": "winget offers only a machine-scope installer, which needs administrator rights, while bootstrap.py pins and installs user scope, so this entry is not installed automatically. installer_sha256 is the hash in the winget manifest for this version and scope. With no command on PATH, winget's record confirms the installed version. The owner had installed it before; on 2026-10-01 `winget list` confirmed version 2603.25. How it was installed is not recorded."
     },
     {
       "id": "blender",

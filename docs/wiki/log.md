@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-01] update | Capture tools installed by the owner
+PresentMon 2.6.0.0, RenderDoc 1.46.0 and PIX 2603.25 publish only machine-scope winget installers, which need administrator rights, while `bootstrap.py` pins and installs user scope. The owner installed PresentMon with a pinned `winget install --scope machine` command, and RenderDoc and PIX were already installed at the same versions; the lockfile records each version and installer hash as verified but not installable, and `doctor` confirms them through winget's record.
+
 ## [2026-10-01] update | H-08 command table, first version
 `docs/progress/1.0/command-table.md` defines the six layer boundaries and a draft table of 86 commands built from the top-down inventory (11 change the puzzle state). The design track uses the command IDs for greybox layouts, the keyboard model and flow scripts; the table becomes final after the 2.2 dispositions and freezes at 2.5.
 
