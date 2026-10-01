@@ -1228,7 +1228,7 @@ class ProgressStatusTests(unittest.TestCase):
         self.assertEqual(checklist.validate(doc), [])
         self.assertEqual(text.replace("\r\n", "\n"), checklist.dump(doc))  # the canonical layout that progress.py writes
         ids = [s["id"] for s in doc["steps"]]
-        self.assertEqual(ids, [f"0.4.1-{i}" for i in range(1, 8)] + [f"2.{i}" for i in range(6)])
+        self.assertEqual(ids, ["0.4.1-1"] + [f"2.{i}" for i in range(6)])  # no 0.4.1 release: steps 2 to 7 cancelled
         self.assertIn(doc["current"], ids)
         self.assertRegex(doc["updated"], r"^\d{4}-\d{2}-\d{2}$")
         for s in doc["steps"]:
