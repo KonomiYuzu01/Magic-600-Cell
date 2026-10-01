@@ -1,0 +1,426 @@
+{
+  "after_build_check": "unchanged",
+  "build_identity": "d57ac78d2356a0cd66bf286ec65aa641a19b258785c780ee3adf0455e95ce6b1",
+  "executable_sha256": "465d4660e1694bfc27daaa80e634dee478600968b932166bc56a181e96169fd0",
+  "inputs": {
+    "assets/buffer_certificates.json": {
+      "here": "same",
+      "sha256": "253e4a47883a13a6fbc5badfd81a53ab83458badab32c1aa50eb1fcc9edf287c"
+    },
+    "assets/cell_frames.f32": {
+      "here": "same",
+      "sha256": "2dfceb37625b3f37985ea94193eca79c6e50e6ad00563eb4ba13a54dd7d3001f"
+    },
+    "assets/cell_normals.f32": {
+      "here": "same",
+      "sha256": "d012234cc8be0d44f17e16ff3b077e0e873c52a2267585561098b1f8d2f6cc2d"
+    },
+    "assets/census.json": {
+      "here": "same",
+      "sha256": "779aaae849d363856ef622080649c5c02130be44090944846f86aa2b25c4f3eb"
+    },
+    "assets/demo_scramble.json": {
+      "here": "same",
+      "sha256": "1e6a8478d5a219169a4dc022ea2ca5eb84fa663cfce8e7c38a4fca55d54ada4a"
+    },
+    "assets/execution_trees.json.gz": {
+      "here": "same",
+      "sha256": "a820837c948eeff41df6f064d817312dcb9206ba4e2a73d0ced5ccf136ea3d20"
+    },
+    "assets/lab_to_native.json": {
+      "here": "same",
+      "sha256": "112a5ef9c5215427339605589007b37c4b41f411250276556e0b1f7dd5cec1bd"
+    },
+    "assets/manifest.json": {
+      "here": "same",
+      "sha256": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc"
+    },
+    "assets/mesh.json": {
+      "here": "same",
+      "sha256": "357fb767272d8e08caa8220903d4f3fc687be47c771b96b170f2cff4ac6ddb03"
+    },
+    "assets/mesh_centers.f32": {
+      "here": "same",
+      "sha256": "91ac80a0be89c3ec2f78ff8ecb214e9949266c8bbdbabf30d18b441c3cbe1cbb"
+    },
+    "assets/mesh_sticker.u32": {
+      "here": "same",
+      "sha256": "34d15cf938814957a40c360822889bc7f4e4c9ac65388d63242af31b170e26c7"
+    },
+    "assets/mesh_vertices.f32": {
+      "here": "same",
+      "sha256": "696f82b56ba7562126a6fc158936cdfe837c594ba666b9b342815bde66a7f4df"
+    },
+    "assets/model.npz": {
+      "here": "same",
+      "sha256": "680de6710e8a05b12dd4ba2ea22c866e645af032a31faf985d869798521f8b13"
+    },
+    "assets/primitives.npz": {
+      "here": "same",
+      "sha256": "1fac185bef9fc6d26afd821238a56b8856024a4c3e5a9ae5c03f77bb1407d5a5"
+    },
+    "assets/puzzle_definition.txt": {
+      "here": "same",
+      "sha256": "4b391669ba1194f244ad68e1eb51587a88457d667d36212bd99dca2488723bb7"
+    },
+    "assets/seed_atlas.json": {
+      "here": "same",
+      "sha256": "de41b58067ac8c0bf5339c11e43b828aa4944b6b40e8b2e7e1287e625e898891"
+    },
+    "assets/slot_piece.u32": {
+      "here": "same",
+      "sha256": "eeb319424ad5a83b87626f6a83d75ad186a15b13faa521baf1d6f94439f8fd1b"
+    },
+    "core.py": {
+      "here": "same",
+      "sha256": "67839fc28bf4dd020b515330efcde43a2116474e9970a1d743de55c7deb2eea2"
+    },
+    "engine_process.py": {
+      "here": "same",
+      "sha256": "f1e7731d5c191afcf303324092b11129adf61139676b69d69a2c10901a0b1acd"
+    },
+    "enhanced.py": {
+      "here": "same",
+      "sha256": "8e0f3d96ba23baa91e935c83f8188669a3faad080fed44398408e24731e58f43"
+    },
+    "grips.py": {
+      "here": "same",
+      "sha256": "3233ef4448ae1f0930002b18cf0908c4077f7ea749aa01c533207de3cb5a2507"
+    },
+    "log_io.py": {
+      "adaptation": "0.4.1 screening fixes, batch 1 (A-02): export refuses a record that import would reject",
+      "here": "adapted",
+      "sha256": "c06d3a10584bdcd4863f1697c5ef1a81a8769ea0c64fcd0b59661473bd9ed6a8"
+    },
+    "mpult_log.py": {
+      "here": "same",
+      "sha256": "58ab02f4be44010d6a4a8b5adde9734e0c05b5770c4c8b8f312a75cbb97e7ada"
+    },
+    "native/NativeAuxiliaryViews.cs": {
+      "here": "same",
+      "sha256": "64af53ef5f39ed0d98b68fbd98a2d1e530acb06a0de4a1480c4503301f1d232a"
+    },
+    "native/NativeColorGraph.cs": {
+      "here": "same",
+      "sha256": "68f30dfaf72f72f24417742ebb8947df4a69e49969cddbafc6de346fa6400c3d"
+    },
+    "native/NativeDiagnostics.cs": {
+      "here": "same",
+      "sha256": "8a58f76b918632f749a5bf068ba7a0cc3df543ad870a4be35315a1f2e60fd469"
+    },
+    "native/NativeDockLayout.cs": {
+      "here": "same",
+      "sha256": "e284444b6e7dd7a5f2e97b661567bd3b928fb80ccdff096e4604c1582f4d549a"
+    },
+    "native/NativeFullRenderer.cs": {
+      "here": "same",
+      "sha256": "0dab30ff25008932a7f75244e34f8ee0592778febc7fafa9f04bd17a716a812e"
+    },
+    "native/NativeHost.cs": {
+      "here": "same",
+      "sha256": "0d076c52fa2caf49d6d306ef85c1d232a811c26949edec8907c9086512918539"
+    },
+    "native/NativeHost.exe.config": {
+      "here": "same",
+      "sha256": "cd0597af1cf76b8a0301f62d9d0e9591c5ec28048ad252e857413644840af312"
+    },
+    "native/NativePickingVisibility.cs": {
+      "here": "same",
+      "sha256": "d12f6f5052792e237b99d95e524d16214a968614066b6c725de7af37d90a88a9"
+    },
+    "native/NativeRenderSubset.cs": {
+      "here": "same",
+      "sha256": "012a9ed27e15cf9bdc62ed05e9920dc418920c9b6be7c4094d70b2afd8f77516"
+    },
+    "native/NativeRendererLifecycle.cs": {
+      "here": "same",
+      "sha256": "088d756bf40db3225687f4c3af036887ffca15e3f11d70614f5851defba780e8"
+    },
+    "native/NativeSnapshot.cs": {
+      "here": "same",
+      "sha256": "70a22fbe613bab6d677109ea6a6766fd2887c6794f68cfc1f746b0959aeeaa05"
+    },
+    "native/NativeStickerAccess.cs": {
+      "here": "same",
+      "sha256": "89f1036b6681a5b3de650afdf775df9c8920d03cb72a814fdcebea20b13ea34f"
+    },
+    "native/NativeStructureExplorer.cs": {
+      "here": "same",
+      "sha256": "28dbe384c25c27a52208cf137143deadbadb72fc77e99523a47aca76d1e97de9"
+    },
+    "native/bootstrap.py": {
+      "adaptation": "0.4.1 step 1: sealed compile recipe (compile_recipe, compile_command)",
+      "here": "adapted",
+      "sha256": "1b01ead24e16d3dfabef396e9f0ae68d12b4ece6f53cb7187c2d2cd051bd9747"
+    },
+    "native/directx_runtime.py": {
+      "here": "same",
+      "sha256": "aa92f338a40b6d4b6f45e471bc7f14d4aa6f01b9d68b6aab63b5e1f5622d740f"
+    },
+    "native/inspect_runtime.py": {
+      "here": "same",
+      "sha256": "2efb4d782766bfd22a79a5728a76383b058a0e1d91930a29656ff71577933497"
+    },
+    "native_bridge.py": {
+      "here": "same",
+      "sha256": "f01b64de34698f3e6dff2d3587903f3afb759d2a25f3b483ae68f1b95b67709f"
+    },
+    "server.py": {
+      "adaptation": "0.4.1 screening fixes, batch 1 (A-02, B-001): export budget, stop-aware request input",
+      "here": "adapted",
+      "sha256": "3f3e48f5cf7888e02d01aaf7a4b4153c5ec2e496bf0b455a8ab1efea8286a8c4"
+    },
+    "session.py": {
+      "here": "same",
+      "sha256": "bbac102569880c98a0454c9702e6dfdf3c6a6043a1b1c5d4f35b79cee638e3b7"
+    },
+    "session_lock.py": {
+      "here": "same",
+      "sha256": "6797bea8e724cbf8dbee2e52b66c9e9fe21d40fc652a72e9bd2ba33d71f61ca8"
+    },
+    "work/experiments/magic600-04/adapter.py": {
+      "adaptation": "0.4.1 screening fixes, batch 1 (C-01, C-02, C-03 engine side)",
+      "here": "adapted",
+      "sha256": "d001fa4e6deea101f2a102551795d3758eedbe0060f74177145e9017695db050"
+    },
+    "work/experiments/magic600-04/candidate_analysis.py": {
+      "here": "same",
+      "sha256": "0e8588a2ff3a0fe7015be3f72d76c7f32fa3c1dc61c819429219f7e93939eced"
+    },
+    "work/experiments/magic600-04/current_recommendation.py": {
+      "here": "same",
+      "sha256": "61253e98ddd2a7426ad404e65cdf006af3c199e9d59ab60ed6b7b5656a6aeb18"
+    },
+    "work/experiments/magic600-04/cycle_projection.py": {
+      "here": "same",
+      "sha256": "455015fa4d284b22a5132f051767047a04116488c0100a9eb0dcb43e2e711947"
+    },
+    "work/experiments/magic600-04/draft_inspection.py": {
+      "here": "same",
+      "sha256": "f85cdb22455223dc682e56a6a4db71e7a61b48a2714e1929e84613c3d26449a2"
+    },
+    "work/experiments/magic600-04/endgame_invariants.py": {
+      "here": "same",
+      "sha256": "b3dc9b2fbaaa10a87f7f6356dc163aa63eeeaa835978dddd85bfa57e5c4c0e08"
+    },
+    "work/experiments/magic600-04/endgame_library.py": {
+      "here": "same",
+      "sha256": "fe34a673041787bd80b4c3fbe54f48324bdc3fd3b31345ea02c0e2724bc69863"
+    },
+    "work/experiments/magic600-04/engine.py": {
+      "here": "same",
+      "sha256": "9f607dfb5f259979a6807c817ea099aad2f335b80f335cbb48515b8dce0204ec"
+    },
+    "work/experiments/magic600-04/evidence/orbit-invariants-20260916-generators.json": {
+      "here": "same",
+      "sha256": "a9bb5b73ff967ec9adb6bfa74b3a7c8ed4f8440a80bb7b0a22efc34b2187226c"
+    },
+    "work/experiments/magic600-04/filter_projection.py": {
+      "here": "same",
+      "sha256": "4df6b898ab6fae94259719e705d79ee78a5c522c843925811c520dfe5f2ef142"
+    },
+    "work/experiments/magic600-04/grip_frames.py": {
+      "here": "same",
+      "sha256": "065d3701b442352f2e6e59edd61f1e0795598dc63a8e5725a2fa23a1eae78686"
+    },
+    "work/experiments/magic600-04/keymap_catalog.py": {
+      "here": "same",
+      "sha256": "5d14236d2d03e89244a386e237fe50f2a988e031ea83089b20daa091bddd4734"
+    },
+    "work/experiments/magic600-04/local_geometry.py": {
+      "here": "same",
+      "sha256": "d865b542f17a46076822040565606b25955b4868a92e7fd0232df5c024ee44ea"
+    },
+    "work/experiments/magic600-04/macro_library.py": {
+      "here": "same",
+      "sha256": "35d41a74b0754ffa9581d17f95505dbd8d07beefad86353edef33a27e2e86d09"
+    },
+    "work/experiments/magic600-04/macro_use.py": {
+      "here": "same",
+      "sha256": "face75a4ccde0b71b5fdb5a4fe2d8d8a7d0787aded8bd068197dd966eda43de6"
+    },
+    "work/experiments/magic600-04/mathematical_names.py": {
+      "here": "same",
+      "sha256": "ece4690baf040e8ca919d89b875f3b8cff9481914883419f5c9d1cc0550703c9"
+    },
+    "work/experiments/magic600-04/native/ExperimentBridge.cs": {
+      "here": "same",
+      "sha256": "009ccc4a066aaa492892247eb2af76a26ae348478c2342c17c9fafe716be721d"
+    },
+    "work/experiments/magic600-04/native/ExperimentCandidates.cs": {
+      "here": "same",
+      "sha256": "7a2c2403564eb9fb2a783e0b78cc751bbc953e3b6728a89992cf7eb135775907"
+    },
+    "work/experiments/magic600-04/native/ExperimentCellView.cs": {
+      "here": "same",
+      "sha256": "ae3e4c21e0be311b3b308ac933113f48d81b0f413d85428d74874bcf9f7b47b5"
+    },
+    "work/experiments/magic600-04/native/ExperimentCycles.cs": {
+      "here": "same",
+      "sha256": "d07542d316dfbb4b88ebf634d4df74a17485395f4f7e9f4d87bcd2ab3abcbe6c"
+    },
+    "work/experiments/magic600-04/native/ExperimentDisplay.cs": {
+      "here": "same",
+      "sha256": "b0e07a402016fb7203e8632b1dd1cb4555373590c981fc32be2cd47c61b183a1"
+    },
+    "work/experiments/magic600-04/native/ExperimentEndgame.cs": {
+      "here": "same",
+      "sha256": "a9b6672a436a07817a036a120f30f1f9c864a6d119b0771ba04cb5626f31554b"
+    },
+    "work/experiments/magic600-04/native/ExperimentFilter.cs": {
+      "here": "same",
+      "sha256": "c9e1a610cf294de6785fbd72078eef1d123c1dfa7471c12c4fa4efee5526149c"
+    },
+    "work/experiments/magic600-04/native/ExperimentHelp.cs": {
+      "here": "same",
+      "sha256": "81f726e40ec908c4566dee42a4111c01fa528c96d15177934fe3ef7ef85a6a40"
+    },
+    "work/experiments/magic600-04/native/ExperimentHub.cs": {
+      "here": "same",
+      "sha256": "e321f06586eedd145563ee8b0302d5f0b2fdd1a582d298d9a0e26867a229ed32"
+    },
+    "work/experiments/magic600-04/native/ExperimentHubCycles.cs": {
+      "here": "same",
+      "sha256": "f905ee0ea0ffa1ed44027b118b37aebaefb5457ddcc7e481b51dee39fd545ca1"
+    },
+    "work/experiments/magic600-04/native/ExperimentInput.cs": {
+      "here": "same",
+      "sha256": "43925ae5134bd734a2962351a02a978fa367f720cfb808ff7695bd54b07fca2b"
+    },
+    "work/experiments/magic600-04/native/ExperimentKeyboard.cs": {
+      "here": "same",
+      "sha256": "a454b3e379f507079cbedc78cdfdae57a83e4ddcd7da70d4cc8aab3a0d3d3f20"
+    },
+    "work/experiments/magic600-04/native/ExperimentMacroLibrary.cs": {
+      "here": "same",
+      "sha256": "56613998104bf67bbb8d21a9cdebad7c394f9a47866a287d763b0a5dc7a8730c"
+    },
+    "work/experiments/magic600-04/native/ExperimentMacroRelations.cs": {
+      "here": "same",
+      "sha256": "1656eafb805eecf5e2059359c8fa2b47e0d7d2dbace4de25dddd2ae14eeb3d2a"
+    },
+    "work/experiments/magic600-04/native/ExperimentPhase.cs": {
+      "here": "same",
+      "sha256": "e62ddf49b275c39f912c3a3d6c9917221cf8c56c02d2d748c52d50587e087be6"
+    },
+    "work/experiments/magic600-04/native/ExperimentRecommendation.cs": {
+      "here": "same",
+      "sha256": "422d7181ec1173720b78268e902785cf9fc32370a0a894a04c5eabb65dfb7d99"
+    },
+    "work/experiments/magic600-04/native/ExperimentReferenceVariants.cs": {
+      "here": "same",
+      "sha256": "ad7ea3001e3162dca8c7908c31dfa348ed3601e09288d6d949e49b2cf60bb7a1"
+    },
+    "work/experiments/magic600-04/native/ExperimentResidualWorkflow.cs": {
+      "here": "same",
+      "sha256": "8b1f3ac5055e0288bbde28734c2615cbd95075a17fd382c7120e0d65fcb9fbed"
+    },
+    "work/experiments/magic600-04/native/ExperimentSession.cs": {
+      "here": "same",
+      "sha256": "e3114ab736b42cd99caa786caae0209c996fb9e9c22a5a7978a2c622ebe07145"
+    },
+    "work/experiments/magic600-04/native/ExperimentShell.cs": {
+      "adaptation": "0.4.1 screening fixes (F-01 command guard; C-03 host side, ExperimentSendOutcome)",
+      "here": "adapted",
+      "sha256": "341d698b73eb0ac5f9ea323e20516b33918b110e4b8163ce4e89ede23a795e1a"
+    },
+    "work/experiments/magic600-04/native/ExperimentSolveWindow.cs": {
+      "here": "same",
+      "sha256": "c597991f92b8cc01f31c448a4c3d575b1234d90bc087c40c1b433aaccd8cbfd8"
+    },
+    "work/experiments/magic600-04/native/ExperimentTools.cs": {
+      "adaptation": "0.4.1 screening fixes, batch 1 (F-01): forecast restriction list",
+      "here": "adapted",
+      "sha256": "b4846ad2d59ce7a3fc626d60bdf53e83c46a634755c17b77388e606f8df77b8b"
+    },
+    "work/experiments/magic600-04/native/ExperimentWindowPlacement.cs": {
+      "here": "same",
+      "sha256": "5037d6d4f4a35cc8f0f33300d216107701688f3800f1a195c60e3d3bb36201d0"
+    },
+    "work/experiments/magic600-04/native/ExperimentWindows.cs": {
+      "here": "same",
+      "sha256": "bc380db4e1f9fd2d2faaae27c73a0cfc456e2b23af21926be1bcb3a8611e1435"
+    },
+    "work/experiments/magic600-04/native/ExperimentWorkSheets.cs": {
+      "here": "same",
+      "sha256": "146f594168a9e43c63d4c09bf5352948f34beaaa028247d63ebd208700039cc4"
+    },
+    "work/experiments/magic600-04/native/ExperimentWorkspace.cs": {
+      "here": "same",
+      "sha256": "350dea97633c412cdb5ad4590555e290dbf52c0792fb1a40c2ef456098d82f82"
+    },
+    "work/experiments/magic600-04/native_launch.py": {
+      "adaptation": "0.4.1 step 1: build identity v2",
+      "here": "adapted",
+      "sha256": "826c63d2b5f3bda0ee79893750321fedb940cdb6757923bc8575951dffdce93a"
+    },
+    "work/experiments/magic600-04/orbit_invariants.py": {
+      "here": "same",
+      "sha256": "bb60bd549471cfc7a2cd64dcdfced312b89de096acc40df74decace047379b70"
+    },
+    "work/experiments/magic600-04/position_requirements.py": {
+      "here": "same",
+      "sha256": "eec91743d8fc438371d1eb2a5b6802da4aa8d6dd4198d4a1c7f5f7c325767a50"
+    },
+    "work/experiments/magic600-04/reference_variants.py": {
+      "here": "same",
+      "sha256": "48783882b7393d530af03cd0a56d053d5f3dec2f9a5666ccf9fa851a91fac5ae"
+    },
+    "work/experiments/magic600-04/residuals.py": {
+      "here": "same",
+      "sha256": "312a1feb90e2247267ffdf772cc8d2d21f2737fc16816c781d16acf248284b61"
+    },
+    "work/experiments/magic600-04/session_workflow.py": {
+      "here": "same",
+      "sha256": "5f80d145d24e54418b7b8da5e924fed0c774ed138686811aab7ddd2c402968be"
+    },
+    "work/experiments/magic600-04/tests/run_postapproval.py": {
+      "adaptation": "0.4.1 step 1: identity v2 receipts, optional recorder",
+      "here": "adapted",
+      "sha256": "4cd621c756bca232ba5e6f2f03d3847c2b75ae6ea7e7b5ec40cfdae522ff7abe"
+    },
+    "work/experiments/magic600-04/transported_frames.py": {
+      "here": "same",
+      "sha256": "692b26a67fcf39613294e5198722613ee5f90379d9b21f9620709e94148d3623"
+    },
+    "work/experiments/magic600-04/work_intents.py": {
+      "here": "same",
+      "sha256": "3da251823d0c801ddb06c9e4b0ff6989877acd1dd285cc2cd74d18e8e2b370f1"
+    },
+    "work/experiments/magic600-04/work_sheets.py": {
+      "here": "same",
+      "sha256": "128e913ad609937e3a7484f61353e27ce882c5d89e3082061a7fbf6f8c67d257"
+    },
+    "work/experiments/magic600-04/workflow_continuity.py": {
+      "here": "same",
+      "sha256": "f46ab058c5556dcc629d24ece95744e290fc79868995bcadbaab3892eee7edee"
+    }
+  },
+  "limitations": [
+    "The build is not recreated: the release toolchain differs from later machines and the compiler is not deterministic.",
+    "Toolchain hashes are recorded from the receipt, not checked against any local file."
+  ],
+  "matches_release_provenance": true,
+  "payload_rehashes_to_identity": true,
+  "release": "0.4",
+  "summary": {
+    "adapted": 8,
+    "different": 0,
+    "missing": 0,
+    "same": 88,
+    "total": 96
+  },
+  "toolchain": {
+    "bits": 64,
+    "compiler": "Microsoft (R) Visual C# Compiler version 4.8.9232.0",
+    "files_by_role": {
+      "csc": "bf26bfa321f45db027fdde1084d058e3f6f280d18da2bf1abb319dbc55bf453b",
+      "numpy-init": "a1792c20af1146952a6dfce4c0daeb197b2832b23d27434a97544544c497742d",
+      "numpy-multiarray": "ac23a0a31857cf2bd97bb2991d3d2169265038a5df0ae8a722dd86101cb9fb89",
+      "python": "766b4f956edf378917adc33c84e7d4c8b295a71e8aebcfdd2de7970f1f0ca0b6"
+    },
+    "numpy": "2.3.5",
+    "python": "3.12.14",
+    "target": "x86"
+  }
+}

@@ -98,7 +98,9 @@ class AssemblyBindingTests(unittest.TestCase):
         self.host.parent.mkdir()
         self.host.write_bytes(b'Fixture host, never executable')
         assemble.copy_file(self.root / self.config, self.host.with_suffix('.exe.config'))
-        self.receipt = dict(executable_sha256=sha(self.host),
+        # A structurally complete v1 receipt: consumers refuse receipts without a valid evidence_version.
+        self.receipt = dict(evidence_version=1, sources={}, model={}, toolchain={}, build_identity='fixture',
+            executable_sha256=sha(self.host),
             checks=dict(after_build=dict(status='unchanged')),
             source={str(p): sha(self.root / p) for p in self.native},
             backend_sources={str(p): sha(self.root / p) for p in self.app})

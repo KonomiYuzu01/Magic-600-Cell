@@ -57,5 +57,5 @@ def main():
   try:verify_native(m,d,Path(td));raise AssertionError('Duplicate axes accepted')
   except ValueError:pass
  report=dict(passed=True,scope='Synthetic shuffled face/sticker enumeration and proper cap rotations, not an actual native export',matched_stickers=259800,matched_generators=1200,invalid_cuts_rejected=True,duplicate_axis_ids_rejected=True,existing_profile_unchanged_on_failure=True,seconds=time.perf_counter()-start)
- (Path(__file__).parent/'v02'/'native_bridge_synthetic.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2),flush=True)
+ (Path(__file__).parent/'v02').mkdir(parents=True,exist_ok=True);(Path(__file__).parent/'v02'/'native_bridge_synthetic.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2),flush=True)
 if __name__=='__main__':main()

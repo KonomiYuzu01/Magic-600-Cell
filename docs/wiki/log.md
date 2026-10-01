@@ -17,6 +17,24 @@ Drafts for the owner and the plan checks are in `docs/progress/1.0/`: the 2.0 ch
 ## [2026-10-01] decision | No 0.4.1 release; stage 2 within 20 days
 Recorded in [owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md). The day-by-day plan is in `docs/progress/1.0/stage-2-experiment-protocol.md` section 5.
 
+## [2026-10-01] review | Step 1 closing review
+One overall Astra review of the step 1 candidate in two parallel shards found six major findings and one minor, all adopted with regression tests that fail when the fix is reverted. The fixture builder and the turn probe now also refuse the 0.4 data root `Magic600Cell` before any write. The summary refuses repeated runs and redacts embedded UNC paths. The receipt's harness list is checked against the code, and now includes `build_identity.py` and the DirectX loader. Identity capture refuses a NumPy import that is not the installed distribution ([build-identity-v2](concepts/build-identity-v2.md)).
+
+## [2026-10-01] decision | No 0.4.1 release; the B4-12 harness is kept for stage 2.4
+The owner ended the 0.4 line without a 0.4.1 release, closed step 1 at its acceptance and stopped the B4-12 baseline, measurement and 0.4 performance fixes; the harness contract, fixture builder, turn probe and summary tool stay for the stage 2.4 renderer gate ([owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md)). The two items the decision does not settle are listed for the owner in [no-0-4-1-release-open-items](questions/no-0-4-1-release-open-items.md).
+
+## [2026-09-30] decision | B4-12 measurement decisions
+The owner chose a smoke run plus three full series per metric, everyday settings recorded exactly, PresentMon without PerfView or administrator ETW in step 2, and a read-only performance board. The harness method choices for M1 to M3 are recorded with them in [b4-12-measurement-decisions](decisions/b4-12-measurement-decisions.md). The fixture builder, the headless turn probe and the summary tool are in `tools/perf/`; the probe showed that every M1 pair re-solves orbits that 0.4 then protects, so the harness releases that protection after each pair, untimed.
+
+## [2026-09-30] decision | One overall review for the 0.4.1 code work
+The owner waived plan re-checks, per-step Codex reviews and scoped verification rounds for the current 0.4.1 code work. Each step runs its checks, and one overall Codex review covers the finished candidate before merge; recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md).
+
+## [2026-09-30] review | Build identity v2 reviewed
+The step 1 candidate had one full Codex review in two parallel shards. All nine findings (eight major, one minor) were adopted. Receipts must now bind the complete inventory that the code declares, conflicting bindings are refused, build reuse is validated, and recorder, DirectX and continuity inputs are rechecked by hash. Each fix has a regression test that fails when the fix is reverted; see [build-identity-v2](concepts/build-identity-v2.md).
+
+## [2026-09-30] update | Build identity v2 and the 0.4 native harness
+0.4.1 step 1 made clean checkouts byte-exact, published the 0.4 native harness with a sanitized continuity record, and replaced the build identity; see [build-identity-v2](concepts/build-identity-v2.md) and [build-reproducibility-decisions](decisions/build-reproducibility-decisions.md).
+
 ## [2026-09-30] decision | 1.0 design route and 0.4 not a UX baseline
 Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md); stage 2 design goals are in `docs/progress/1.0/stage-2-experiment-protocol.md` section 4.
 

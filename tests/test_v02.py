@@ -42,4 +42,4 @@ cancel=threading.Event();cancel.set();m.cancel_event=cancel
 try:m.word_net([2]);raise AssertionError('Cancellation ignored')
 except InterruptedError:pass
 m.cancel_event=None;ok('Cancelled operation refuses publication')
-p=Path(__file__).parent/'v02'/'workflow_report.json';p.write_text(json.dumps(dict(passed=True,checks=checks,windows_runtime_tested=False),indent=2))
+p=Path(__file__).parent/'v02'/'workflow_report.json';p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(dict(passed=True,checks=checks,windows_runtime_tested=False),indent=2))

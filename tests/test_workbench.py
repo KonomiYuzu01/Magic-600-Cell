@@ -721,7 +721,7 @@ class CodexCallTests(unittest.TestCase):
         r = subprocess.run([sys.executable, str(WB / "statusline.py")], input=json.dumps({"workspace": {"current_dir": str(fx.wt)}}),
                            capture_output=True, encoding="utf-8", env=env, timeout=30)
         self.assertEqual(r.returncode, 0)
-        self.assertRegex(r.stdout.strip(), r"^Step 0\.4\.1-\d \d{1,3}% \u00b7 workbench closed$")
+        self.assertRegex(r.stdout.strip(), r"^Step \d[\w.-]* \d{1,3}% \u00b7 workbench closed$")
         # UTF-8 whatever the console encoding.
         r = subprocess.run([sys.executable, str(WB / "statusline.py")], input=json.dumps({"workspace": {"current_dir": str(fx.wt)}}).encode(),
                            capture_output=True, env={**env, "PYTHONIOENCODING": "ascii"}, timeout=30)
