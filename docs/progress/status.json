@@ -18,7 +18,7 @@
       {"id": "native-clean-build", "title": "Native build reproducible from a clean checkout on Windows", "weight": 3, "done": false, "evidence": null},
       {"id": "workbench-phase-1", "title": "Development workbench phase 1 delivered", "weight": 2, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20"}
      ]},
-    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "in_progress", "acceptance": "The owner signs the charter with the design charter (anti-goals, metaphors, UX criteria) and the migration path filled in, by day 2.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null,
      "items": [
       {"id": "charter", "title": "Charter", "weight": 1, "done": false, "evidence": null},
       {"id": "authority", "title": "Authority record", "weight": 1, "done": false, "evidence": null},
