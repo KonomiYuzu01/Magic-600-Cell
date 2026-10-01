@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-01] decision | Parallel progress tracks and fewer confirmations
+Recorded in [owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md): the project scripts `progress.py`, `brief.py`, `ask.py` and the test files run without a permission prompt, and full reviews outside critical paths may run as one shard. `progress.py` gained `track`, `step`, `item` and `current`, so parallel work gets its own track in `docs/progress/status.json`.
+
 ## [2026-10-01] update | Capture tools installed by the owner
 PresentMon 2.6.0.0, RenderDoc 1.46.0 and PIX 2603.25 publish only machine-scope winget installers, which need administrator rights, while `bootstrap.py` pins and installs user scope. The owner installed PresentMon with a pinned `winget install --scope machine` command, and RenderDoc and PIX were already installed at the same versions; the lockfile records each version and installer hash as verified but not installable, and `doctor` confirms them through winget's record.
 

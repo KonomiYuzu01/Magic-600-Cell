@@ -1228,11 +1228,13 @@ class ProgressStatusTests(unittest.TestCase):
         self.assertEqual(checklist.validate(doc), [])
         self.assertEqual(text.replace("\r\n", "\n"), checklist.dump(doc))  # the canonical layout that progress.py writes
         ids = [s["id"] for s in doc["steps"]]
-        self.assertEqual(ids, ["0.4.1-1"] + [f"2.{i}" for i in range(6)])  # no 0.4.1 release: steps 2 to 7 cancelled
+        fixed = ["0.4.1-1"] + [f"2.{i}" for i in range(6)]  # no 0.4.1 release: steps 2 to 7 cancelled
+        self.assertEqual([i for i in ids if i in fixed], fixed)  # progress.py may add steps on parallel tracks
         self.assertIn(doc["current"], ids)
         self.assertRegex(doc["updated"], r"^\d{4}-\d{2}-\d{2}$")
         for s in doc["steps"]:
-            self.assertEqual(s["track"], "0.4.1" if s["id"].startswith("0.4.1") else "stage-2")
+            if s["id"] in fixed:
+                self.assertEqual(s["track"], "0.4.1" if s["id"].startswith("0.4.1") else "stage-2")
             if s["acceptance"] is not None:
                 self.assertTrue((ROOT / s["acceptance_source"]).is_file(), s["id"])
             else:

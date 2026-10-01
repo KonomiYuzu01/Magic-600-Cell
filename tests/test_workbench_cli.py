@@ -507,6 +507,69 @@ class ProgressValidationTests(CliFixtureTests):
         for step, item in (("missing", "harness"), ("0.4.1-2", "missing"), ("0.4.1-1", "a")):
             self.rejected(path, "done", step, item, "--evidence", "tests/evidence.txt")
 
+    def test_parallel_tracks_steps_items_and_current(self):
+        path = self.status()
+        self.assertEqual(self.invoke("track", "design", "--title", "Design track").returncode, 0)
+        doc = json.loads(path.read_bytes())
+        self.assertEqual([t["id"] for t in doc["tracks"]], [t for t, _ in checklist.DEFAULT_TRACKS] + ["design"])
+        self.assertEqual(path.read_bytes().replace(b"\r\n", b"\n").decode("utf-8"), checklist.dump(doc))
+        self.assertIn(b"\r\n", path.read_bytes())
+        r = self.invoke("step", "d.1", "--track", "design", "--title", "Greybox layouts", "--item", "g1:2:Layout A: grid",
+                        "--item", "g2:1:Layout B", "--acceptance", "Every kept command is reachable.",
+                        "--acceptance-source", "tests/evidence.txt")
+        self.assertEqual((r.returncode, r.stdout), (0, "step d.1 added to design\n"), r.stderr)
+        step = json.loads(path.read_bytes())["steps"][-1]
+        self.assertEqual((step["status"], step["track"], step["items"][0]["title"], step["items"][0]["weight"]),
+                         ("not_started", "design", "Layout A: grid", 2))
+        for item in ("g1", "g2"):
+            self.assertEqual(self.invoke("done", "d.1", item, "--evidence", "tests/evidence.txt").returncode, 0)
+        self.assertEqual(self.invoke("status", "d.1", "done").returncode, 0)
+        self.assertEqual(self.invoke("item", "d.1", "g3", "--title", "Layout C", "--weight", "3").returncode, 0)
+        step = json.loads(path.read_bytes())["steps"][-1]
+        self.assertEqual((step["status"], step["items"][-1]["done"]), ("in_progress", False))
+        self.assertEqual(self.invoke("current", "d.1").returncode, 0)
+        doc = json.loads(path.read_bytes())
+        self.assertEqual(doc["current"], "d.1")
+        self.assertEqual(checklist.validate(doc), [])
+        view = home.progress_view(doc, [])
+        self.assertEqual([t["id"] for t in view["tracks"]], ["0.4.1", "stage-2", "design"])
+        self.assertEqual(view["tracks"][2]["current"]["id"], "d.1")
+
+    def test_adding_rejects_bad_input_without_writes(self):
+        path = self.status()
+        self.assertEqual(self.invoke("track", "design", "--title", "Design").returncode, 0)
+        for args in (("track", "design", "--title", "Again"), ("track", "Bad Id", "--title", "x"),
+                     ("track", "t2", "--title", "\u8bbe\u8ba1"), ("track", "t2", "--title", "  "),
+                     ("track", "t2", "--title", "see /home/user/x"), ("track", "t2", "--title", "a\nb"),
+                     ("step", "d.1", "--track", "missing", "--title", "x", "--item", "a:1:x"),
+                     ("step", "d.1", "--track", "design", "--title", "x"),
+                     ("step", "d.1", "--track", "design", "--title", "x", "--item", "a:0:x"),
+                     ("step", "d.1", "--track", "design", "--title", "x", "--item", "a:x"),
+                     ("step", "d.1", "--track", "design", "--title", "x", "--item", "A:1:x"),
+                     ("step", "d.1", "--track", "design", "--title", "x", "--item", "a:1:x", "--item", "a:1:y"),
+                     ("step", "d.1", "--track", "design", "--title", "x", "--item", "a:1:x", "--acceptance", "y"),
+                     ("step", "d.1", "--track", "design", "--title", "x", "--item", "a:1:x", "--acceptance", "y",
+                      "--acceptance-source", "tests/missing.txt"),
+                     ("step", "0.4.1-1", "--track", "design", "--title", "x", "--item", "a:1:x"),
+                     ("item", "missing", "a", "--title", "x"), ("item", "0.4.1-2", "harness", "--title", "x"),
+                     ("item", "0.4.1-2", "new", "--title", "x", "--weight", "0"),
+                     ("current", "missing")):
+            with self.subTest(args=args):
+                self.rejected(path, *args)
+
+    def test_validate_checks_the_track_list(self):
+        doc = sample_status()
+        self.assertEqual(checklist.tracks(doc), list(checklist.DEFAULT_TRACKS))
+        good = {**doc, "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}]}
+        self.assertEqual(checklist.validate(good), [])
+        for tracks, problem in (([], "tracks must be a non-empty list"), ("x", "tracks must be a non-empty list"),
+                                ([{"id": "0.4.1", "title": "a"}, {"id": "0.4.1", "title": "b"}], "duplicate track id"),
+                                ([{"id": "Bad", "title": "a"}], "track id 'Bad' is invalid"),
+                                ([{"id": "0.4.1", "title": ""}], "title must be"),
+                                ([{"id": "0.4.1", "title": "0.4.1"}], "unknown track")):
+            with self.subTest(tracks=tracks):
+                self.assertTrue(any(problem in p for p in checklist.validate({**doc, "tracks": tracks})))
+
     def test_pr_evidence_needs_no_subprocess(self):
         path = self.status()
         ref = "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20"

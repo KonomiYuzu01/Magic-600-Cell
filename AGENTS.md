@@ -65,7 +65,7 @@ Review rounds (keep reviews few and decisive):
 - Each candidate gets at most one full review and two scoped verification rounds. If a blocking finding remains after that, stop iterating and give the owner a short decision: the remaining findings, the evidence and the options (an adjudicating experiment, escalation, or commit under an owner exception).
 - A plan check runs once per task. A changed plan gets a scoped re-check of the changes only.
 - Every packet states the acceptance check and what is out of scope, and the reviewer stays within it.
-- Spend spare subscription quota on parallelism, not on more serial rounds: every full review runs as at least two independent shards run concurrently (split by files or by concern), and the blocking findings of every shard are resolved before commit. Paid API calls still reserve budget first.
+- Spend spare subscription quota on parallelism, not on more serial rounds: every full review of a critical-path change runs as at least two independent shards run concurrently (split by files or by concern), and the blocking findings of every shard are resolved before commit. Other full reviews may run as one shard. Paid API calls still reserve budget first.
 
 Pair implementation (Claude and Codex write code together):
 - Enabled: Codex writes code only through the wrapper's `--kind implement`, which creates the packet's worktree and branch itself, runs Codex there in the workspace-write sandbox, rejects any change outside the allowed files and any commit, ref, Git config, hook or link change, and runs the acceptance check in the same sandbox. The wrapper never merges.

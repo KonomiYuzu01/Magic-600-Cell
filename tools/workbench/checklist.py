@@ -6,6 +6,9 @@ counts as done only when `done` is true and its evidence has an accepted form.
 A track's percentage is the step-weighted mean of its step percentages. Nothing
 here estimates: no item, no percentage. Schema 1 documents have no checklist.
 
+Tracks are parallel lines of work. A document may list them in `tracks`
+([{id, title}], in display order); without that list the tracks are DEFAULT_TRACKS.
+
 Pure functions, standard library only. `tools/workbench/statusline.py` mirrors
 `step_percent` (it may not import repository code); tests compare both.
 """
@@ -18,7 +21,9 @@ ITEM_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
 SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
 PR_RE = re.compile(r"^https://github\.com/KonomiYuzu01/Magic-600-Cell/pull/[1-9][0-9]{0,5}$")
 PATH_RE = re.compile(r"^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$")
-TRACKS = ("0.4.1", "stage-2")
+TRACK_ID_RE = re.compile(r"^[a-z0-9][a-z0-9.-]{0,39}$")
+DEFAULT_TRACKS = (("0.4.1", "0.4.1"), ("stage-2", "Stage 2"))
+TITLE_MAX = 120
 WEIGHT_MAX = 1000   # item and step weights are integers from 1 to WEIGHT_MAX
 STATUSES = ("not_started", "in_progress", "blocked", "done")
 
@@ -37,6 +42,17 @@ def evidence_kind(ref) -> str | None:
         if ".." not in parts and "." not in parts and parts[0].lower() != "work":  # Windows paths ignore case
             return "path"
     return None
+
+
+def tracks(doc) -> list[tuple[str, str]]:
+    """(id, title) of the document's tracks in display order: its `tracks` list when present
+    (entries that are not {id: str, title: str} are skipped; validate reports them), else
+    DEFAULT_TRACKS."""
+    listed = doc.get("tracks") if isinstance(doc, dict) else None
+    if not isinstance(listed, list):
+        return list(DEFAULT_TRACKS)
+    return [(t["id"], t["title"]) for t in listed
+            if isinstance(t, dict) and isinstance(t.get("id"), str) and isinstance(t.get("title"), str)]
 
 
 def _positive(value) -> bool:
@@ -98,6 +114,25 @@ def validate(doc) -> list[str]:
     steps = doc.get("steps")
     if not isinstance(steps, list) or not steps:
         return ["no steps"]
+    known_tracks = set()
+    if "tracks" in doc:
+        listed = doc["tracks"]
+        if not isinstance(listed, list) or not listed:
+            problems.append("tracks must be a non-empty list")
+            listed = []
+        for t in listed:
+            tid = t.get("id") if isinstance(t, dict) else None
+            if not isinstance(tid, str) or not TRACK_ID_RE.fullmatch(tid):
+                problems.append(f"track id {tid!r} is invalid")
+                continue
+            if tid in known_tracks:
+                problems.append(f"{tid}: duplicate track id")
+            known_tracks.add(tid)
+            title = t.get("title")
+            if not isinstance(title, str) or not title.strip() or len(title) > TITLE_MAX:
+                problems.append(f"track {tid}: title must be 1 to {TITLE_MAX} characters")
+    else:
+        known_tracks = {tid for tid, _ in DEFAULT_TRACKS}
     seen_steps = set()
     for s in steps:
         if not isinstance(s, dict) or not isinstance(s.get("id"), str):
@@ -107,7 +142,7 @@ def validate(doc) -> list[str]:
         if sid in seen_steps:
             problems.append(f"{sid}: duplicate step id")
         seen_steps.add(sid)
-        if s.get("track") not in TRACKS:
+        if s.get("track") not in known_tracks:
             problems.append(f"{sid}: unknown track")
         if s.get("status") not in STATUSES:
             problems.append(f"{sid}: unknown status")

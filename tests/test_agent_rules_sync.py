@@ -108,6 +108,9 @@ class RuleSyncTests(unittest.TestCase):
         self.assertIn("Bash(python tools/toolchain/bootstrap.py approve)", perms["deny"])
         self.assertTrue(all("install" not in rule for rule in perms["allow"]))
         self.assertFalse(any(rule.startswith("Bash(git") for rule in perms["allow"]))
+        self.assertFalse(any("approve" in rule or "implement" in rule for rule in perms["allow"]))
+        for rule in ("Bash(python tools/workbench/progress.py:*)", "Bash(python tests/test_*.py)"):
+            self.assertIn(rule, perms["allow"])  # owner decision, 1 October 2026: project scripts run without a prompt
 
     def test_critical_paths_cover_their_own_enforcement(self):
         patterns = json.loads((ROOT / "tools" / "agents" / "critical_paths.json").read_text(encoding="utf-8"))["patterns"]

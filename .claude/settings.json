@@ -213,7 +213,11 @@
       "Bash(python tools/wiki/lint.py:*)",
       "Bash(python3 tools/skills/sync.py --check)",
       "Bash(python3 tools/wiki/lint.py)",
-      "mcp__github__pull_request_read"
+      "mcp__github__pull_request_read",
+      "Bash(python tools/workbench/progress.py:*)",
+      "Bash(python tools/workbench/brief.py:*)",
+      "Bash(python tools/workbench/ask.py:*)",
+      "Bash(python tests/test_*.py)"
     ],
     "ask": [
       "Bash(python tools/toolchain/bootstrap.py install:*)",
