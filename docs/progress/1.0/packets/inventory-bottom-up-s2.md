@@ -25,6 +25,7 @@ Then review `changes.patch`, apply it, and run `--cleanup <call-id>`.
 ## 6. Constraints and owned files
 - Write only `docs/progress/1.0/inventory/bottom-up-s2.json`. Change no other file.
 - Never open or reference a personal session or user data directory.
+- Do not read `docs/progress/1.0/inventory/top-down.json`, `top-down.md` or `build_top_down.py`, or the user documents they cite: this inventory comes from the code alone, so the merge can compare two independent lists.
 - JSON format: `{"shard": "s2", "functions": [...], "internal_only": [...], "unclear": [...]}`. Each function has `id` (`S2-<n>`), `name`, `entry_points` (list of command ID, key, button, menu or route strings), `reads`, `writes` (lists drawn from: state, protection, journal, checkpoints, workspace, preferences, files, none), `engine_call` (string or null) and `evidence` (list of `path:line`). `unclear` lists items that could not be classified, with evidence.
 
 ```implement-contract

@@ -1,0 +1,1633 @@
+{
+ "inventory": "top-down",
+ "method": "user and design documents only; no source code read",
+ "sources": [
+  "README.md",
+  "USAGE.md",
+  "docs/LIMITATIONS_AND_ROADMAP.md",
+  "docs/RELEASE_0_4.md",
+  "docs/STRUCTURE_EXPLORER.md",
+  "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md",
+  "docs/progress/0.4/snapshot/design/07_NAMING_AND_RECOMMENDATION.md",
+  "docs/progress/0.4/snapshot/design/08_INTEGRATION_AND_ENDGAME.md",
+  "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md",
+  "docs/progress/0.4/snapshot/experiment/docs/reviews/retained-display-controls-20260917.md",
+  "docs/progress/0.4/snapshot/experiment/evidence/functions-20260916/FRONTEND.md",
+  "docs/progress/0.4/snapshot/experiment/evidence/keymap-files-20260917/README.md",
+  "docs/progress/0.4/snapshot/experiment/evidence/session-log-native-20260917/README.md",
+  "docs/progress/0.4/snapshot/experiment/evidence/session-presentation-20260917/README.md",
+  "work/experiments/magic600-04/packaging/CHANGES.md"
+ ],
+ "functions": [
+  {
+   "id": "T-01",
+   "area": "launch",
+   "name": "Start the portable package in the G2 workspace",
+   "purpose": "Open the solving workbench with the puzzle visible",
+   "entry_points": [
+    "Magic600Cell.exe"
+   ],
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:7",
+    "README.md:9"
+   ]
+  },
+  {
+   "id": "T-02",
+   "area": "launch",
+   "name": "Start the alternate G1 keyboard workspace",
+   "purpose": "Physical-input workspace with the retained MPUlt viewport",
+   "entry_points": [
+    "Magic600Cell.exe --mode g1"
+   ],
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:7",
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:9"
+   ]
+  },
+  {
+   "id": "T-03",
+   "area": "launch",
+   "name": "Run against a chosen data folder",
+   "purpose": "Deliberate compatibility check on a copied session folder",
+   "entry_points": [
+    "Magic600Cell.exe --data <folder>"
+   ],
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:29"
+   ]
+  },
+  {
+   "id": "T-04",
+   "area": "data",
+   "name": "Separate versioned user profile",
+   "purpose": "Keep 0.4 data apart from older profiles; never import, rename or delete them silently",
+   "entry_points": [
+    "automatic at startup"
+   ],
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:27",
+    "README.md:11"
+   ]
+  },
+  {
+   "id": "T-05",
+   "area": "data",
+   "name": "Rollback to an earlier version",
+   "purpose": "Documented procedure: run the earlier application on its untouched profile",
+   "entry_points": [
+    "documented procedure"
+   ],
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:31"
+   ]
+  },
+  {
+   "id": "T-06",
+   "area": "process",
+   "name": "Owned engine lifecycle",
+   "purpose": "Closing the window stops the owned engine; relaunch resumes the session",
+   "entry_points": [
+    "close window",
+    "relaunch"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:14"
+   ]
+  },
+  {
+   "id": "T-07",
+   "area": "process",
+   "name": "Window management",
+   "purpose": "Minimized tools restore; the main window can return to the foreground",
+   "entry_points": [
+    "window controls"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "docs/RELEASE_0_4.md:5"
+   ]
+  },
+  {
+   "id": "T-08",
+   "area": "session",
+   "name": "New solve",
+   "purpose": "Start from a solved puzzle without automatic scramble; explicit scope confirmation",
+   "entry_points": [
+    "Session > New"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:21",
+    "docs/progress/0.4/snapshot/experiment/evidence/session-presentation-20260917/README.md:5",
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:24"
+   ]
+  },
+  {
+   "id": "T-09",
+   "area": "session",
+   "name": "Resume",
+   "purpose": "Continue a saved long solve",
+   "entry_points": [
+    "Session > Resume",
+    "relaunch"
+   ],
+   "reads": [
+    "state",
+    "journal"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:21",
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:25"
+   ]
+  },
+  {
+   "id": "T-10",
+   "area": "session",
+   "name": "Session timer",
+   "purpose": "Explicit start/stop timer; includes thinking time while running",
+   "entry_points": [
+    "Session timer controls"
+   ],
+   "reads": [
+    "journal"
+   ],
+   "writes": [
+    "journal"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:21",
+    "docs/LIMITATIONS_AND_ROADMAP.md:29"
+   ]
+  },
+  {
+   "id": "T-11",
+   "area": "session",
+   "name": "Staged seeded scramble",
+   "purpose": "Scramble that is staged into Prepare/Review/Preview/Execute and is reproducible",
+   "entry_points": [
+    "Session > Scramble"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:21",
+    "docs/progress/0.4/snapshot/experiment/evidence/session-presentation-20260917/README.md:5"
+   ]
+  },
+  {
+   "id": "T-12",
+   "area": "session",
+   "name": "Recoverable reset",
+   "purpose": "Reset the puzzle with a recovery point",
+   "entry_points": [
+    "Session > Reset"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "checkpoints"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:21",
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:27"
+   ]
+  },
+  {
+   "id": "T-13",
+   "area": "session",
+   "name": "Completion summary",
+   "purpose": "Summary only after a real journal commit that completes the solve; never on import, undo or restore",
+   "entry_points": [
+    "automatic after a completing commit"
+   ],
+   "reads": [
+    "journal",
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:21",
+    "docs/progress/0.4/snapshot/experiment/evidence/session-presentation-20260917/README.md:15"
+   ]
+  },
+  {
+   "id": "T-14",
+   "area": "session",
+   "name": "Undo and redo",
+   "purpose": "Step back and forward through committed moves and operations",
+   "entry_points": [
+    "Commands > Undo",
+    "Commands > Redo"
+   ],
+   "reads": [
+    "journal"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:31",
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:29"
+   ]
+  },
+  {
+   "id": "T-15",
+   "area": "session",
+   "name": "Checkpoints and recovery",
+   "purpose": "Save a checkpoint and return to it; recovery after failure",
+   "entry_points": [
+    "Save checkpoint",
+    "restore checkpoint"
+   ],
+   "reads": [
+    "checkpoints"
+   ],
+   "writes": [
+    "checkpoints",
+    "state"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:31",
+    "README.md:16"
+   ]
+  },
+  {
+   "id": "T-16",
+   "area": "session",
+   "name": "Progress reports",
+   "purpose": "Orbit progress and current-branch transaction totals",
+   "entry_points": [
+    "report view"
+   ],
+   "reads": [
+    "journal",
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "unclear-in-0.4",
+   "evidence": [
+    "docs/LIMITATIONS_AND_ROADMAP.md:29"
+   ]
+  },
+  {
+   "id": "T-17",
+   "area": "files",
+   "name": "Export C600 and MPUlt v1 logs",
+   "purpose": "Write the session as a C600 log or an MPUltimate v1 600-cell-Full log",
+   "entry_points": [
+    "Session > Export",
+    "Functions Ctrl+Alt+O/L"
+   ],
+   "reads": [
+    "journal",
+    "state"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:23",
+    "docs/progress/0.4/snapshot/experiment/evidence/keymap-files-20260917/README.md:11"
+   ]
+  },
+  {
+   "id": "T-18",
+   "area": "files",
+   "name": "Check and import C600 or MPUlt logs",
+   "purpose": "Verify model, turns, checksum and full colour state; keep preferences; leave a recovery checkpoint",
+   "entry_points": [
+    "Session > Check",
+    "Session > Import"
+   ],
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "checkpoints"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:23",
+    "docs/progress/0.4/snapshot/experiment/evidence/session-log-native-20260917/README.md:7"
+   ]
+  },
+  {
+   "id": "T-19",
+   "area": "files",
+   "name": "Keymap file export, check and apply",
+   "purpose": "Move key bindings between profiles; no puzzle state or commands",
+   "entry_points": [
+    "Functions Ctrl+Alt+E",
+    "Functions Ctrl+Alt+I"
+   ],
+   "reads": [
+    "preferences",
+    "files"
+   ],
+   "writes": [
+    "preferences",
+    "files"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:23",
+    "docs/progress/0.4/snapshot/experiment/evidence/keymap-files-20260917/README.md:5"
+   ]
+  },
+  {
+   "id": "T-20",
+   "area": "solve",
+   "name": "Solve window",
+   "purpose": "One place to choose a macro, prepare its steps, inspect the full result and protection, preview and execute",
+   "entry_points": [
+    "Solve"
+   ],
+   "reads": [
+    "state",
+    "protection",
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:9",
+    "work/experiments/magic600-04/packaging/CHANGES.md:4"
+   ]
+  },
+  {
+   "id": "T-21",
+   "area": "solve",
+   "name": "Three-phase operation: Prepare, Macro, Cleanup",
+   "purpose": "Build an operation from explicit preparation, a macro and cleanup",
+   "entry_points": [
+    "Ctrl+1",
+    "Ctrl+2",
+    "Ctrl+3"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "docs/RELEASE_0_4.md:3",
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:44"
+   ]
+  },
+  {
+   "id": "T-22",
+   "area": "solve",
+   "name": "Phase editor",
+   "purpose": "Type finite explicit turns into a phase",
+   "entry_points": [
+    "F4",
+    "lane double-click"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:26",
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:55"
+   ]
+  },
+  {
+   "id": "T-23",
+   "area": "solve",
+   "name": "Cleanup from inverse of Prepare",
+   "purpose": "Compute Cleanup as the inverse of the supplied Prepare; no search",
+   "entry_points": [
+    "Ctrl+Shift+I"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:46"
+   ]
+  },
+  {
+   "id": "T-24",
+   "area": "solve",
+   "name": "Check, preview, execute and cancel an operation",
+   "purpose": "Full-effect check, then preview, then explicit execute; cancel keeps the draft",
+   "entry_points": [
+    "Ctrl+R",
+    "Check",
+    "Preview (Ctrl+Enter)",
+    "Execute (Ctrl+Shift+Enter)",
+    "Cancel preview"
+   ],
+   "reads": [
+    "state",
+    "protection",
+    "workspace"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:27",
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:47"
+   ]
+  },
+  {
+   "id": "T-25",
+   "area": "solve",
+   "name": "Stop a running check",
+   "purpose": "Request cancellation of a long check",
+   "entry_points": [
+    "Stop check",
+    "Shift+Escape"
+   ],
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:48"
+   ]
+  },
+  {
+   "id": "T-26",
+   "area": "solve",
+   "name": "New operation and reuse steps",
+   "purpose": "Empty all three phases, or keep the exact recipe for a new target with a fresh check",
+   "entry_points": [
+    "Ctrl+N",
+    "Ctrl+Alt+R"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:30",
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:30"
+   ]
+  },
+  {
+   "id": "T-27",
+   "area": "solve",
+   "name": "Forecast comparison",
+   "purpose": "Compare Actual with After Prepare, After Macro and After Cleanup without executing",
+   "entry_points": [
+    "Actual / After Prepare / After Macro / After Cleanup"
+   ],
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:27"
+   ]
+  },
+  {
+   "id": "T-28",
+   "area": "solve",
+   "name": "Cycle views Current / Operation / After",
+   "purpose": "Show the actual residual, the selected operation and its predicted residual",
+   "entry_points": [
+    "cycle view mode"
+   ],
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:9",
+    "docs/progress/0.4/snapshot/design/08_INTEGRATION_AND_ENDGAME.md:22"
+   ]
+  },
+  {
+   "id": "T-29",
+   "area": "solve",
+   "name": "Effect scope Macro body / All steps",
+   "purpose": "Switch the displayed effect between the macro alone and the whole operation",
+   "entry_points": [
+    "Macro body / All steps"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:37"
+   ]
+  },
+  {
+   "id": "T-30",
+   "area": "solve",
+   "name": "Local and Global views",
+   "purpose": "Local: the piece and its cells; Global: the work and target regions in the whole 600-cell",
+   "entry_points": [
+    "Actual Local",
+    "Actual Global"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:37",
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:77"
+   ]
+  },
+  {
+   "id": "T-31",
+   "area": "solve",
+   "name": "Current and locked Next",
+   "purpose": "Keep the current target and a locked next target; activate Next explicitly",
+   "entry_points": [
+    "Activate Next (Ctrl+Alt+N)"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:9",
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:29"
+   ]
+  },
+  {
+   "id": "T-32",
+   "area": "solve",
+   "name": "Token and socket inspection and actions",
+   "purpose": "Inspect identities and fixed positions; open an object's explicit actions",
+   "entry_points": [
+    "click token/socket",
+    "Enter",
+    "arrow keys",
+    "Shift+F10"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:33"
+   ]
+  },
+  {
+   "id": "T-33",
+   "area": "solve",
+   "name": "Entry slots",
+   "purpose": "Read-only slot and label correspondence of the draft",
+   "entry_points": [
+    "Entry slots"
+   ],
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:35"
+   ]
+  },
+  {
+   "id": "T-34",
+   "area": "solve",
+   "name": "Buffer roles and buffer analyser",
+   "purpose": "Fixed buffer positions, their occupants, candidate frames, setup depth and primitive cost",
+   "entry_points": [
+    "buffer analyser",
+    "A/B role assignment"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "docs/STRUCTURE_EXPLORER.md:109",
+    "README.md:17"
+   ]
+  },
+  {
+   "id": "T-35",
+   "area": "solve",
+   "name": "Block requirements",
+   "purpose": "Record exact target positions as a block; add current state or Home",
+   "entry_points": [
+    "Add inspected current state as a block requirement",
+    "Add to Home block"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:53"
+   ]
+  },
+  {
+   "id": "T-36",
+   "area": "solve",
+   "name": "Work intents",
+   "purpose": "Declare place, orient, finish-buffer or finish-orbit goals; goal outcome separate from permission",
+   "entry_points": [
+    "intent picker"
+   ],
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:14",
+    "docs/progress/0.4/snapshot/design/08_INTEGRATION_AND_ENDGAME.md:30"
+   ]
+  },
+  {
+   "id": "T-37",
+   "area": "solve",
+   "name": "Residuals, stages and invariant diagnostics",
+   "purpose": "Show remaining position and orientation residuals per orbit and certified invariant checks",
+   "entry_points": [
+    "residual display"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:14",
+    "docs/progress/0.4/snapshot/design/08_INTEGRATION_AND_ENDGAME.md:44"
+   ]
+  },
+  {
+   "id": "T-38",
+   "area": "solve",
+   "name": "Findings panel",
+   "purpose": "Separate declared boundary, final preservation and intermediate motion",
+   "entry_points": [
+    "Findings (Shift+F12)"
+   ],
+   "reads": [
+    "state",
+    "protection",
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:27"
+   ]
+  },
+  {
+   "id": "T-39",
+   "area": "solve",
+   "name": "Conflict location on Prepare page",
+   "purpose": "Show a located conflict's identity and current position",
+   "entry_points": [
+    "Solve > Prepare"
+   ],
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:41"
+   ]
+  },
+  {
+   "id": "T-40",
+   "area": "solve",
+   "name": "Cross-orbit work",
+   "purpose": "Keep per-orbit drafts and selected macro revisions when switching work orbit",
+   "entry_points": [
+    "work-orbit switch"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:17",
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:39"
+   ]
+  },
+  {
+   "id": "T-41",
+   "area": "solve",
+   "name": "Recommendations and scores",
+   "purpose": "Rank existing macros by explained scores; never execute or grant permission",
+   "entry_points": [
+    "candidate list"
+   ],
+   "reads": [
+    "state",
+    "workspace",
+    "protection"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:12",
+    "docs/progress/0.4/snapshot/design/07_NAMING_AND_RECOMMENDATION.md:55"
+   ]
+  },
+  {
+   "id": "T-42",
+   "area": "solve",
+   "name": "Mathematical names and typed addresses",
+   "purpose": "Structure names for orbits and addresses for positions alongside canonical IDs",
+   "entry_points": [
+    "names in all views"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:6",
+    "docs/progress/0.4/snapshot/design/07_NAMING_AND_RECOMMENDATION.md:27"
+   ]
+  },
+  {
+   "id": "T-43",
+   "area": "macros",
+   "name": "Macro Base",
+   "purpose": "Search and select a stored macro; selection inspects, Add inserts",
+   "entry_points": [
+    "Macro Base (F3)",
+    "Add (Ctrl+M)"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:26",
+    "work/experiments/magic600-04/packaging/CHANGES.md:11"
+   ]
+  },
+  {
+   "id": "T-44",
+   "area": "macros",
+   "name": "Bank fixed macros",
+   "purpose": "Select the current bank's first or second fixed macro without appending",
+   "entry_points": [
+    "Ctrl+Alt+1",
+    "Ctrl+Alt+2"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:45"
+   ]
+  },
+  {
+   "id": "T-45",
+   "area": "macros",
+   "name": "Candidate comparison and saved worksheets",
+   "purpose": "Compare candidate macros; save and reload worksheets",
+   "entry_points": [
+    "worksheet save/load"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:12"
+   ]
+  },
+  {
+   "id": "T-46",
+   "area": "macros",
+   "name": "Endgame families",
+   "purpose": "Choose a family, auxiliary positions and finite parameters; inspect collateral; save as macro",
+   "entry_points": [
+    "Solve > Endgame"
+   ],
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:11"
+   ]
+  },
+  {
+   "id": "T-47",
+   "area": "macros",
+   "name": "Reference variants",
+   "purpose": "Reuse a macro under explicit source and destination ordered frames",
+   "entry_points": [
+    "reference variant editor"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:11"
+   ]
+  },
+  {
+   "id": "T-48",
+   "area": "protection",
+   "name": "Protection policies",
+   "purpose": "Net or strict protection; a change invalidates the preview",
+   "entry_points": [
+    "policy picker"
+   ],
+   "reads": [
+    "protection"
+   ],
+   "writes": [
+    "protection"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:13",
+    "docs/progress/0.4/snapshot/design/08_INTEGRATION_AND_ENDGAME.md:86"
+   ]
+  },
+  {
+   "id": "T-49",
+   "area": "protection",
+   "name": "Protected-orbit checks and automatic orbit protection",
+   "purpose": "Reject operations that break protected orbits; protect an orbit when it becomes solved",
+   "entry_points": [
+    "automatic on commit"
+   ],
+   "reads": [
+    "protection",
+    "state"
+   ],
+   "writes": [
+    "protection"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "README.md:16",
+    "docs/progress/0.4/snapshot/design/08_INTEGRATION_AND_ENDGAME.md:88"
+   ]
+  },
+  {
+   "id": "T-50",
+   "area": "protection",
+   "name": "Position protection",
+   "purpose": "Protect or release a position; persistent protection strip",
+   "entry_points": [
+    "object menu > Protect position",
+    "release"
+   ],
+   "reads": [
+    "protection"
+   ],
+   "writes": [
+    "protection"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:28",
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:39"
+   ]
+  },
+  {
+   "id": "T-51",
+   "area": "input",
+   "name": "Onscreen keyboard",
+   "purpose": "Shows the active set and its functions; operable, not decorative",
+   "entry_points": [
+    "Keyboard (F9)"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:19",
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:49"
+   ]
+  },
+  {
+   "id": "T-52",
+   "area": "input",
+   "name": "Grip and Twist",
+   "purpose": "Select a cap and frame, then a legal twist; inverse by click or Shift; hold or latch",
+   "entry_points": [
+    "Grip keys",
+    "Twist keys H1-H3/T1-T4",
+    "Click inverse",
+    "Shift"
+   ],
+   "reads": [
+    "preferences",
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:50",
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:56"
+   ]
+  },
+  {
+   "id": "T-53",
+   "area": "input",
+   "name": "Live or draft input destination",
+   "purpose": "Send input to the live puzzle or into the draft phase",
+   "entry_points": [
+    "keyboard input menu"
+   ],
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:49"
+   ]
+  },
+  {
+   "id": "T-54",
+   "area": "input",
+   "name": "Keymap banks",
+   "purpose": "Orbit-specific key sets, five banks per orbit; switching keeps orbit and draft",
+   "entry_points": [
+    "bank picker",
+    "type bank ID"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:57",
+    "work/experiments/magic600-04/packaging/CHANGES.md:8"
+   ]
+  },
+  {
+   "id": "T-55",
+   "area": "input",
+   "name": "Set grips",
+   "purpose": "Capture caps for an insertion bank explicitly",
+   "entry_points": [
+    "Set grips"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:51"
+   ]
+  },
+  {
+   "id": "T-56",
+   "area": "input",
+   "name": "Functions bank",
+   "purpose": "Utility actions on their own bank, separate from solving keys",
+   "entry_points": [
+    "Functions toggle"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "USAGE.md:19",
+    "docs/progress/0.4/snapshot/experiment/evidence/functions-20260916/FRONTEND.md:7"
+   ]
+  },
+  {
+   "id": "T-57",
+   "area": "input",
+   "name": "Key binding editor",
+   "purpose": "Change a key inline with scope and conflict display; apply or cancel",
+   "entry_points": [
+    "Change key",
+    "right-click action"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:52",
+    "USAGE.md:19"
+   ]
+  },
+  {
+   "id": "T-58",
+   "area": "input",
+   "name": "Command index",
+   "purpose": "Find any command by search; one registry for graph actions, picker and keyboard",
+   "entry_points": [
+    "Find command (F1)",
+    "All commands",
+    "Ctrl+F1"
+   ],
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:43"
+   ]
+  },
+  {
+   "id": "T-59",
+   "area": "input",
+   "name": "Physical keyboard input with text and IME isolation",
+   "purpose": "Keys never twist while typing; repeat and lost key-up handled",
+   "entry_points": [
+    "physical keys"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "docs/RELEASE_0_4.md:3",
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:65"
+   ]
+  },
+  {
+   "id": "T-60",
+   "area": "view",
+   "name": "Camera rotation and mouse twists",
+   "purpose": "3D/4D drag, Ctrl gestures, multi-click twists, exact picking",
+   "entry_points": [
+    "Shift+left drag",
+    "drag",
+    "multi-click"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/STRUCTURE_EXPLORER.md:105",
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:29"
+   ]
+  },
+  {
+   "id": "T-61",
+   "area": "view",
+   "name": "Piece inspection by click",
+   "purpose": "Shift+left: occupant and its home; Shift+right: required identity for a destination",
+   "entry_points": [
+    "Shift+left click",
+    "Shift+right click",
+    "Clear inspection"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.3-reference",
+   "evidence": [
+    "docs/STRUCTURE_EXPLORER.md:103"
+   ]
+  },
+  {
+   "id": "T-62",
+   "area": "view",
+   "name": "Piece filter",
+   "purpose": "Expression filter with presets, compose (replace/union/intersect/subtract), preview counts, explicit apply",
+   "entry_points": [
+    "Piece Filter (F5)",
+    "Apply filter",
+    "Cancel"
+   ],
+   "reads": [
+    "state",
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "0.4-dev-doc",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:63",
+    "docs/STRUCTURE_EXPLORER.md:57"
+   ]
+  },
+  {
+   "id": "T-63",
+   "area": "view",
+   "name": "Framework visibility",
+   "purpose": "Show or hide the 600-cell frame",
+   "entry_points": [
+    "display controls"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:26",
+    "docs/STRUCTURE_EXPLORER.md:95"
+   ]
+  },
+  {
+   "id": "T-64",
+   "area": "view",
+   "name": "Adaptive motion detail",
+   "purpose": "Lower detail while the camera moves; full detail returns at rest",
+   "entry_points": [
+    "display controls"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:26"
+   ]
+  },
+  {
+   "id": "T-65",
+   "area": "view",
+   "name": "Retained MPUlt display sliders and view reset",
+   "purpose": "Cell and sticker size, field of view, lighting; Reset view",
+   "entry_points": [
+    "display dialog",
+    "Reset view"
+   ],
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:27",
+    "docs/progress/0.4/snapshot/experiment/docs/reviews/retained-display-controls-20260917.md:26"
+   ]
+  },
+  {
+   "id": "T-66",
+   "area": "view",
+   "name": "Instant turn",
+   "purpose": "A twist appears only after its durable commit; no turn animation",
+   "entry_points": [
+    "automatic"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "release-doc",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/CHANGES.md:27",
+    "docs/STRUCTURE_EXPLORER.md:107"
+   ]
+  },
+  {
+   "id": "T-67",
+   "area": "structure",
+   "name": "Structure explorer",
+   "purpose": "Find a colour, explore 1- or 2-hop neighbours, compare cells, list vertices",
+   "entry_points": [
+    "Structure tab",
+    "Find color",
+    "Compare"
+   ],
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.3-reference",
+   "evidence": [
+    "docs/STRUCTURE_EXPLORER.md:5"
+   ]
+  },
+  {
+   "id": "T-68",
+   "area": "structure",
+   "name": "Cell layers",
+   "purpose": "Exact shared-face BFS shells L0 to L15 as filter predicates",
+   "entry_points": [
+    "Layers",
+    "Use current layer",
+    "Use home layer"
+   ],
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.3-reference",
+   "evidence": [
+    "docs/STRUCTURE_EXPLORER.md:43"
+   ]
+  },
+  {
+   "id": "T-69",
+   "area": "structure",
+   "name": "Auxiliary cell views",
+   "purpose": "Global overview and Focused neighbourhood windows with Follow/Pin and Center main",
+   "entry_points": [
+    "Cell views",
+    "View menu"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.3-reference",
+   "evidence": [
+    "docs/STRUCTURE_EXPLORER.md:29"
+   ]
+  },
+  {
+   "id": "T-70",
+   "area": "structure",
+   "name": "Center viewport",
+   "purpose": "Explicit camera move to a selected cell",
+   "entry_points": [
+    "Center viewport",
+    "Center main"
+   ],
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "status": "0.3-reference",
+   "evidence": [
+    "docs/STRUCTURE_EXPLORER.md:7"
+   ]
+  },
+  {
+   "id": "T-71",
+   "area": "structure",
+   "name": "Saved sets",
+   "purpose": "Frozen identity or position sets up to 10,000 members",
+   "entry_points": [
+    "saved set"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "0.3-reference",
+   "evidence": [
+    "docs/LIMITATIONS_AND_ROADMAP.md:28"
+   ]
+  },
+  {
+   "id": "T-72",
+   "area": "structure",
+   "name": "Browser client",
+   "purpose": "Older web client with its own control and preset set; not the 0.4 entry point",
+   "entry_points": [
+    "web/ launch scripts"
+   ],
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": null,
+   "status": "0.3-reference",
+   "evidence": [
+    "docs/LIMITATIONS_AND_ROADMAP.md:30",
+    "README.md:36"
+   ]
+  }
+ ],
+ "unclear": [
+  {
+   "item": "Whether the Structure tab, auxiliary cell views, cell layers and saved sets are reachable in the 0.4 G2 workspace",
+   "evidence": [
+    "docs/STRUCTURE_EXPLORER.md:3"
+   ]
+  },
+  {
+   "item": "G1 versus G2 feature parity; G1 ordered-frame capture was missing in the development sample",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:77"
+   ]
+  },
+  {
+   "item": "Scramble kinds (short, chosen length, full) and their definitions in 0.4",
+   "evidence": [
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:26"
+   ]
+  },
+  {
+   "item": "Whether Reset view and Reset workspace exist as separate 0.4 actions",
+   "evidence": [
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:27"
+   ]
+  },
+  {
+   "item": "Macro recording (the brief asks for record, input or select); release docs name only select and fixed-step editing",
+   "evidence": [
+    "docs/progress/0.4/snapshot/design/01_PRODUCT_BRIEF_ZH.md:99",
+    "work/experiments/magic600-04/packaging/CHANGES.md:11"
+   ]
+  },
+  {
+   "item": "Development fixtures reachable from All commands (for example fixture-e1) in the released package",
+   "evidence": [
+    "docs/progress/0.4/snapshot/experiment/NATIVE_REVIEW_GUIDE.md:24"
+   ]
+  },
+  {
+   "item": "Progress reports and branch totals as a 0.4 view",
+   "evidence": [
+    "docs/LIMITATIONS_AND_ROADMAP.md:29"
+   ]
+  }
+ ]
+}

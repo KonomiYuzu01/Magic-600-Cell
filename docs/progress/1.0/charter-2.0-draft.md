@@ -62,7 +62,7 @@ Chosen path: _owner choice_ (recommended: option B, a 1.0 importer reading a loc
 
 - 0.4 screening findings as 1.0 requirements: [requirements-from-screening](requirements-from-screening.md).
 - Renderer experiment plan and the S-B packet: [renderer-experiment-plan](renderer-experiment-plan.md).
-- Inventory packets for 2.1: five concurrent Codex shards `packets/inventory-bottom-up-s1.md` to `-s5.md` (from the code), and an independent top-down inventory by Claude from the user documents (`USAGE.md`, `docs/RELEASE_0_4.md`, `docs/STRUCTURE_EXPLORER.md`).
+- Inventory packets for 2.1: five concurrent Codex shards `packets/inventory-bottom-up-s1.md` to `-s5.md` (from the code), and an independent top-down inventory by Claude from the user and design documents ([inventory/top-down.md](inventory/top-down.md), 72 functions, 7 unclear items).
 - Correctness oracle: protocol section 3 and `docs/architecture/1.0/10_V1_ARCHITECTURE.md` V10 (`C600-COMPARE-FIXTURE-v1`).
 
 ## 8. Exit criteria per sub-stage

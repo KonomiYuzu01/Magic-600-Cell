@@ -6,7 +6,7 @@
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "in_progress", "acceptance": "The owner signs the charter with the design charter (anti-goals, metaphors, UX criteria) and the migration path filled in, by day 2.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null},
-    {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
+    {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "in_progress", "acceptance": "Two independent inventories merged into one list; each disagreement listed.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null},
     {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "2.4", "track": "stage-2", "title": "Experiments (12-day renderer window, days 3-14, day-7 go/no-go)", "status": "not_started", "acceptance": "A renderer is selected only if it renders all 259,800 sticker slots at full detail with the most complex animation at an average of at least 30 fps and a 99th-percentile frame time of at most 33.3 ms on the owner's machine.", "acceptance_source": "docs/wiki/decisions/renderer-candidates.md", "blocker": null},

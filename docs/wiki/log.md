@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-01] update | Stage 2.1 top-down inventory
+Claude listed 72 functions of 0.4 and 7 unclear items from the user and design documents only, without reading code, in `docs/progress/1.0/inventory/top-down.md`. The five bottom-up Codex shards must not read it; both lists are merged on stage day 3.
+
 ## [2026-10-01] update | Design and engineering tracks joined
 The design track now designs layout and style together: core flows and a command table set what the layout must do, and the Look Lab (in Godot, the S-A2 framework) adds greybox layouts, flow scripts and a cost meter. The two parallel tracks exchange ten numbered handoffs (H-01 to H-10), recorded in both `stage-2-experiment-protocol.md` section 4.6 and `renderer-experiment-plan.md` section 6; the 2.4 experiments test the combination (scene W5). The schedule is unchanged.
 
