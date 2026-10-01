@@ -2,6 +2,8 @@
 
 This is the contract for the harness that measures the B4-12 targets of the [measurement plan](measurement-plan.md). The step 2 baseline and the step 6 formal runs use the same harness, unchanged. It fixes what each metric times, how input is delivered, which fixture every run starts from, the files a run writes, and when a run is valid. It contains no measurement.
 
+**Status (1 October 2026).** The owner cancelled the 0.4.1 release and every 0.4 measurement ([owner-decisions-2026-10-01](../../wiki/decisions/owner-decisions-2026-10-01.md)). This contract, the fixture builder, the turn probe and the summary tool are kept because the stage 2.4 renderer gate will reuse them. The native harness (`B412Checks.cs`) and the runner (`run_b412.py`, `b412_environment.py`) were never built, so the `run_b412.py` commands in section 3 do not exist; the fixture builder, turn probe and summary commands do.
+
 ## 1. Metrics and series
 
 | Series | Metric | Operation | Start | End |

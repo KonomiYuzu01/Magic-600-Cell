@@ -19,6 +19,8 @@ claims:
 
 These decisions govern the 0.4.1 step 2 baseline and the step 6 formal measurement of the B4-12 targets (the [measurement plan](../../progress/0.4.1/measurement-plan.md)). The harness that implements them is specified in the [harness contract](../../progress/0.4.1/b4-12-harness.md).
 
+Not carried out: on 1 October 2026 the owner cancelled the 0.4.1 release and every 0.4 measurement ([owner-decisions-2026-10-01](owner-decisions-2026-10-01.md)). The method choices below remain a reference for the stage 2.4 harness that reuses the contract.
+
 ## Owner decisions
 
 - **D5: sample plan.** One smoke run, then three full series of 100 measured samples per metric on the unmodified build: the same shape as step 6, which also shows the spread between runs. The owner's B4-12 instructions allow a baseline of one run of 100 samples per metric; a baseline that uses this allowance says so next to every number, and it is never presented as a formal 3 x 100 result.

@@ -5,6 +5,7 @@ Start here. Each entry: link, one-line summary, status. Rules for pages and oper
 ## Decisions
 - [owner-decisions-2026-09-29](decisions/owner-decisions-2026-09-29.md) — 0.4.1, the 1.0 program, migration, stage 2 and the development system. `verified`
 - [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md) — Review rounds, wider Astra role, fast tier, pair implementation with Codex. `verified`
+- [owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md) — No 0.4.1 release; step 1 closes at its acceptance; no 0.4 measurement or performance fixes; the B4-12 harness is kept for stage 2.4. `verified`
 - [development-workbench](decisions/development-workbench.md) — Scope of the 0.4.1 local development workbench: sessions with summaries, live view with access to every tool, live link to Claude, owner notes, work boards, always-visible progress; local only. `verified`
 - [build-reproducibility-decisions](decisions/build-reproducibility-decisions.md) — 0.4.1 step 1: published harness and continuity record, CPython 3.14.7 with NumPy 2.3.5, byte-exact checkouts, optional desktop recorder. `verified`
 - [b4-12-measurement-decisions](decisions/b4-12-measurement-decisions.md) — 0.4.1 step 2: B4-12 sample plan, measurement conditions, tools, read-only performance board and harness method choices. `draft`
@@ -18,6 +19,9 @@ Start here. Each entry: link, one-line summary, status. Rules for pages and oper
 
 ## Workflows
 - [development-loop](workflows/development-loop.md) — Plan check, implementation, verification, Codex review and recording. `verified`
+
+## Questions
+- [no-0-4-1-release-open-items](questions/no-0-4-1-release-open-items.md) — Contradiction: the migration exporter, B4-12 closeout, engine-selection records, rule text and workbench boards still assume the cancelled 0.4.1 release. `draft`
 
 ## Dialogues
 - [codex-plan-review-2026-09-29](dialogues/codex-plan-review-2026-09-29.md) — Three Codex review rounds behind the approved plan. `verified`
