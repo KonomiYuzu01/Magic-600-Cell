@@ -1,0 +1,3 @@
+# Never convert line endings: model assets and build inputs are hashed as raw bytes.
+# A working tree from before this rule: python tools/checkout_bytes.py --fix
+* -text

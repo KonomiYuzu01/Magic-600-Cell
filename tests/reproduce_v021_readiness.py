@@ -37,5 +37,5 @@ try:
 except UnicodeDecodeError as e:
     report['checks'].append({'name':'Default CP936 source decode fails on native host UTF-8 bytes','passed':True,'byte_offset':e.start,'exception':str(e)})
 report['passed']=True
-out=Path(__file__).parent/'v022/old_fault_reproduction.json';out.write_text(json.dumps(report,indent=2),encoding='utf-8')
+out=Path(__file__).parent/'v022/old_fault_reproduction.json';out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(report,indent=2),encoding='utf-8')
 print(json.dumps(report,indent=2))

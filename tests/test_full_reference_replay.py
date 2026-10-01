@@ -22,4 +22,5 @@ for i,(o,n,sign) in enumerate(record['commands']):
 assert np.array_equal(a,m.ids)
 assert total==int(record['report']['expanded_primitive_count'])
 out=dict(passed=True,scope='All saved seed-600 operations replayed using Studio full-collateral star permutations; not native GUI replay',stars=len(record['commands']),scramble_moves=len(record['scramble']),primitive_solution_moves=total,all_labelled_stickers_solved=m.n,seconds=time.perf_counter()-start)
+(ROOT/'tests/v021').mkdir(parents=True,exist_ok=True)
 (ROOT/'tests/v021/full_reference_replay.json').write_text(json.dumps(out,indent=2));print(json.dumps(out,indent=2),flush=True)

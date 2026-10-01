@@ -3,7 +3,7 @@ id: owner-decisions-2026-09-30
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 30 September 2026 on review rounds, the wider Astra role, the fast tier, pair implementation with Codex, the 0.4.1 data directory and the 1.0 design route.
+summary: Owner decisions of 30 September 2026 on review rounds, the wider Astra role, the fast tier, pair implementation with Codex, the 0.4.1 data directory, the review exception for the 0.4.1 code work and the 1.0 design route.
 related: [owner-decisions-2026-09-29, development-loop]
 supersedes: []
 claims:
@@ -14,6 +14,7 @@ claims:
   - {id: codex-first, evidence_kind: decision, checked_at: 2026-09-30}
   - {id: workbench-launch, evidence_kind: decision, checked_at: 2026-09-30}
   - {id: data-directory-0-4-1, evidence_kind: decision, checked_at: 2026-09-30}
+  - {id: review-exception-0-4-1, evidence_kind: decision, checked_at: 2026-09-30}
   - {id: design-route-1-0, evidence_kind: decision, checked_at: 2026-09-30}
 ---
 
@@ -29,4 +30,5 @@ The owner found long serial review loops inefficient and has subscription quota 
 - **Workbench watch and launch.** The development workbench watches the work continuously and launches sessions, wrapper calls and registered experiment runs on the owner's request, so the owner can inspect and start experiments at any time ([development-workbench](development-workbench.md)).
 - **Codex first.** Codex subscription quota is largely unused, so every separable part of a task goes to Codex through the implementation mode, every full review runs as at least two concurrent shards, and read-only sharded Codex screening of the 0.4 code prepares 0.4.1 step 4. Claude keeps planning, integration and review of Codex's changes.
 - **0.4.1 data directory.** 0.4.1 keeps the 0.4 data directory (`%LOCALAPPDATA%/Magic600Cell/0.4`) and its native cache, so 0.4 sessions and MPUlt view settings carry over without a copy. Change list: `docs/progress/0.4.1/data-directory-plan.md`.
+- **Owner exception for the 0.4.1 code work.** Later the same day the owner waived, for the current 0.4.1 code work, the plan re-checks, the per-step Codex reviews and the scoped verification rounds. The work follows the approved plans (step 1 round 4 and its follow-up, step 3, the B4-12 turn probe) with Codex as co-implementer. It runs the checks for each changed area at every step and ends with one overall Codex review of the finished candidate before merge. The exception does not cover the items under "Ask the owner", the gate rulings or `bootstrap.py approve`.
 - **1.0 design route.** In practical use 0.4 is an unusable program, so it is not a UX baseline: 1.0 designs its experience from scratch and keeps from 0.4 only the mathematical contract, protection rules, model identity and function inventory. The design track uses four methods (mathematics-first aesthetic, a guiding metaphor, anti-goals, and preference search over generated variants) driven through a Look Lab development tool. Design work starts after 0.4.1 and the workbench are finished. Plan and stage goals: `docs/progress/1.0/stage-2-experiment-protocol.md` section 4.

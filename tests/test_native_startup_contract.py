@@ -33,7 +33,7 @@ assert 'Application.RemoveMessageFilter(this)' in host
 assert 'Interlocked.CompareExchange(ref heartbeatInFlight,1,0)' in host
 assert 'Invalid native keybindings; using defaults and preserving file' in host
 ok('Disconnected commands, callback disposal, heartbeat overlap and malformed key file are guarded in source')
-assert 'api.Get("native/snapshot")' in host
+assert 'api.Get("native/snapshot?protocol=2")' in host
 assert 'api.Bytes("native/colors")' not in host and 'api.Bytes("native/styles")' not in host
 assert 'NativeHostRegression.cs' in boot and 'winforms-self-test.json' in boot
 assert boot.index("if args.self_test_only:") < boot.index("exe = (args.runtime")

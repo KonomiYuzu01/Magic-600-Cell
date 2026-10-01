@@ -1,0 +1,172 @@
+"""Tests for tools/provenance/continuity_04.py on synthetic receipts (headless; no build)."""
+from __future__ import annotations
+
+import collections
+import copy
+import hashlib
+import json
+import os
+import shutil
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools" / "provenance"))
+import continuity_04  # noqa: E402
+
+
+def sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+class ContinuityTests(unittest.TestCase):
+    def tree(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        files = {"native/Host.cs": b"class Host {}\r\n", "assets/manifest.json": b"{}\n", "assets/seed.json": b"[1]\n",
+                 "work/experiments/magic600-04/tests/run_postapproval.py": b"print(1)\n"}
+        for name, data in files.items():
+            (root / name).parent.mkdir(parents=True, exist_ok=True)
+            (root / name).write_bytes(data)
+        receipt = {
+            "evidence_version": 1,
+            "sources": {"native\\Host.cs": sha(files["native/Host.cs"]),
+                        "work\\experiments\\magic600-04\\tests\\run_postapproval.py":
+                            sha(files["work/experiments/magic600-04/tests/run_postapproval.py"])},
+            "model": {"model_id": "m", "status": "hash-verified", "manifest": {"assets\\manifest.json": sha(b"{}\n")},
+                      "assets": {"assets\\seed.json": sha(b"[1]\n")}},
+            "toolchain": {"files": {"..\\private\\python\\python.exe": "a" * 64,
+                                    "..\\private\\python\\Lib\\site-packages\\numpy\\__init__.py": "b" * 64,
+                                    "..\\private\\numpy\\_core\\_multiarray_umath.cp312-win_amd64.pyd": "c" * 64,
+                                    "..\\..\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe": "d" * 64},
+                          "python": {"version": "3.12.14 (main) [MSC v.1944 64 bit (AMD64)]", "bits": 64,
+                                     "executable": "..\\private\\python\\python.exe"},
+                          "numpy": {"version": "2.3.5", "origin": "..\\private\\numpy\\__init__.py"},
+                          "compiler": {"banner": "Microsoft (R) Visual C# Compiler version 4.8.9232.0",
+                                       "path": "..\\..\\Windows\\csc.exe", "target": "x86"},
+                          "platform": "Windows-10-10.0.19045-SP0"},
+        }
+        receipt["build_identity"] = continuity_04.v1_identity(receipt)
+        receipt.update(executable_sha256="e" * 64, checks={"after_build": {"status": "unchanged"}},
+                       source={"native\\Host.cs": receipt["sources"]["native\\Host.cs"]})
+        (root / "docs").mkdir()
+        (root / continuity_04.PROVENANCE).write_text(json.dumps({"native": {
+            "build_identity": receipt["build_identity"], "executable_sha256": "e" * 64}}), encoding="utf-8")
+        return root, receipt
+
+    def test_matching_tree_is_continuous_and_the_record_is_sanitized(self):
+        root, receipt = self.tree()
+        record = continuity_04.check(receipt, root)
+        self.assertTrue(record["payload_rehashes_to_identity"])
+        self.assertTrue(record["matches_release_provenance"])
+        self.assertEqual(record["summary"], {"same": 4, "adapted": 0, "different": 0, "missing": 0, "total": 4})
+        self.assertIn("work/experiments/magic600-04/tests/run_postapproval.py", record["inputs"])
+        self.assertEqual(set(record["toolchain"]["files_by_role"]), {"python", "numpy-init", "numpy-multiarray", "csc"})
+        text = continuity_04.sanitized(record)
+        for fragment in ("private", "..", "\\", "19045", '"executable":', '"origin":', '"path":'):
+            self.assertNotIn(fragment, text)
+
+    def test_changed_and_missing_inputs_are_reported(self):
+        root, receipt = self.tree()
+        (root / "assets/seed.json").write_bytes(b"[1]\r\n")  # a line-ending conversion counts as a change
+        (root / "native/Host.cs").unlink()
+        record = continuity_04.check(receipt, root)
+        self.assertEqual(record["inputs"]["assets/seed.json"]["here"], "different")
+        self.assertEqual(record["inputs"]["native/Host.cs"]["here"], "missing")
+        self.assertEqual(record["summary"]["same"], 2)
+
+    def test_a_listed_adaptation_counts_only_while_its_release_bytes_are_in_history(self):
+        root, receipt = self.tree()
+        harness = "work/experiments/magic600-04/tests/run_postapproval.py"
+        self.assertIn(harness, continuity_04.ADAPTATIONS)
+        (root / harness).write_bytes(b"print(2)\n")
+        (root / "native/Host.cs").write_bytes(b"class Host { int x; }\r\n")  # not a listed adaptation
+        record = continuity_04.check(receipt, root, history=lambda r, p, d: True)
+        self.assertEqual(record["inputs"][harness]["here"], "adapted")
+        self.assertIn("adaptation", record["inputs"][harness])
+        self.assertEqual(record["inputs"]["native/Host.cs"]["here"], "different")
+        record = continuity_04.check(receipt, root, history=lambda r, p, d: False)
+        self.assertEqual(record["inputs"][harness]["here"], "different", "release bytes must stay recoverable")
+
+    def test_an_edited_payload_no_longer_rehashes(self):
+        root, receipt = self.tree()
+        receipt["toolchain"]["numpy"]["version"] = "2.3.4"
+        self.assertFalse(continuity_04.check(receipt, root)["payload_rehashes_to_identity"])
+
+    def test_inputs_outside_the_repository_and_private_records_are_refused(self):
+        root, receipt = self.tree()
+        receipt["sources"]["..\\secret.cs"] = "f" * 64
+        with self.assertRaises(ValueError):
+            continuity_04.check(receipt, root)
+        with self.assertRaises(ValueError):
+            continuity_04.sanitized({"note": "C:/Users/someone/file"})
+
+    def test_nested_traversal_and_links_out_of_the_repository_are_refused(self):
+        root, receipt = self.tree()
+        for key in ("native\\..\\..\\outside.cs", "native/./Host.cs", "native//Host.cs", "native/../native/Host.cs",
+                    "C:\\outside.cs", "/outside.cs"):
+            with self.subTest(key=key):
+                bad = copy.deepcopy(receipt)
+                bad["sources"][key] = "f" * 64
+                with self.assertRaises(ValueError):
+                    continuity_04.check(bad, root)
+        outside = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, outside, True)
+        (outside / "secret.cs").write_bytes(b"secret\n")
+        link = root / "native" / "linked"
+        try:
+            if os.name == "nt":
+                import _winapi
+                _winapi.CreateJunction(str(outside), str(link))  # needs no privilege, unlike a symbolic link
+            else:
+                os.symlink(outside, link, target_is_directory=True)
+        except (OSError, AttributeError) as error:
+            self.skipTest("cannot create a directory link here: " + str(error))
+        self.addCleanup(os.rmdir if os.name == "nt" else os.unlink, link)
+        self.assertEqual((link / "secret.cs").read_bytes(), b"secret\n")
+        receipt["sources"]["native\\linked\\secret.cs"] = sha(b"secret\n")
+        with self.assertRaises(ValueError):
+            continuity_04.check(receipt, root)
+
+    def test_only_v1_receipts_are_accepted(self):
+        root, receipt = self.tree()
+        receipt["evidence_version"] = 2
+        with self.assertRaises(ValueError):
+            continuity_04.check(receipt, root)
+
+    def test_published_record_matches_the_repository(self):
+        record = json.loads((ROOT / "docs/RELEASE_0_4_CONTINUITY.json").read_text(encoding="utf-8"))
+        provenance = json.loads((ROOT / continuity_04.PROVENANCE).read_text(encoding="utf-8"))["native"]
+        self.assertEqual(record["build_identity"], provenance["build_identity"])
+        self.assertEqual(record["executable_sha256"], provenance["executable_sha256"])
+        self.assertTrue(record["payload_rehashes_to_identity"])
+        self.assertTrue(record["matches_release_provenance"])
+        # Complete, not just consistent: the summary counts every entry, and every input that
+        # frozen or immutable documents name (the release sources, the model) is present.
+        counts = collections.Counter(entry["here"] for entry in record["inputs"].values())
+        summary = record["summary"]
+        self.assertEqual(summary["total"], len(record["inputs"]))
+        self.assertEqual({k: summary[k] for k in ("same", "adapted", "different", "missing")},
+                         {k: counts.get(k, 0) for k in ("same", "adapted", "different", "missing")})
+        self.assertEqual(summary["same"] + summary["adapted"], summary["total"])
+        for key, digest in provenance["sources"].items():
+            with self.subTest(release_source=key):
+                self.assertEqual(record["inputs"][continuity_04.posix(key)]["sha256"], digest)
+        manifest = json.loads((ROOT / "assets/manifest.json").read_text(encoding="utf-8-sig"))
+        self.assertEqual({path for path in record["inputs"] if path.startswith("assets/")},
+                         {"assets/manifest.json"} | {continuity_04.posix(name) for name in manifest["files"]})
+        for path, entry in record["inputs"].items():
+            with self.subTest(path=path):
+                if entry["here"] == "adapted":
+                    self.assertIn(path, continuity_04.ADAPTATIONS)
+                    self.assertTrue(continuity_04.in_history(ROOT, path, entry["sha256"]))
+                else:
+                    self.assertEqual(entry["here"], "same")
+                    self.assertEqual(sha((ROOT / path).read_bytes()), entry["sha256"])
+
+
+if __name__ == "__main__":
+    unittest.main()
