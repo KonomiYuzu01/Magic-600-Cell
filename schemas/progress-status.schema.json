@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Public progress state",
-  "description": "docs/progress/status.json: sanitized public progress of 0.4.1 (steps 1 to 7) and stage 2 (2.0 to 2.5), read by the development workbench and the Claude Code status line. Acceptance text only where a repository document records it, with that document as its source.",
+  "description": "docs/progress/status.json: sanitized public progress of 0.4.1 (steps 1 to 7) and stage 2 (2.0 to 2.5), read by the development workbench and the Claude Code status line. Acceptance text only where a repository document records it, with that document as its source. Schema 2 adds a checklist per step; its cross-field rules (unique ids, positive weights, evidence on done items) are in tools/workbench/checklist.py.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "updated", "current", "paid_api_ceiling_usd", "steps"],
   "properties": {
-    "schema": {"type": "integer", "enum": [1]},
+    "schema": {"type": "integer", "enum": [1, 2]},
     "updated": {"type": "string"},
     "current": {"type": "string"},
     "paid_api_ceiling_usd": {"type": "integer", "enum": [100, 150, 300]},
@@ -23,7 +23,23 @@
           "status": {"type": "string", "enum": ["not_started", "in_progress", "blocked", "done"]},
           "acceptance": {"type": ["string", "null"]},
           "acceptance_source": {"type": ["string", "null"]},
-          "blocker": {"type": ["string", "null"]}
+          "blocker": {"type": ["string", "null"]},
+          "weight": {"type": "integer", "minimum": 1, "maximum": 1000},
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "title", "weight", "done", "evidence"],
+              "properties": {
+                "id": {"type": "string"},
+                "title": {"type": "string"},
+                "weight": {"type": "integer", "minimum": 1, "maximum": 1000},
+                "done": {"type": "boolean"},
+                "evidence": {"type": ["string", "null"]}
+              }
+            }
+          }
         }
       }
     }

@@ -35,15 +35,22 @@ The environment comes from the `workbench` toolchain profile (`python tools/tool
 
 ## What it shows
 
+The window opens on three owner tabs: For you, Gallery and Progress. Everything else sits in the Machine details tab, collapsed by default.
+
+- **For you.** Cards, newest first, with a count: questions, decisions and image picks a main session asked with `tools/workbench/ask.py`, permission prompts (with an open-session button, never an approve button), failures that need a decision after their session stopped or stalled, and briefs whose `waiting_for` names the owner. An answer goes back as an owner note `answer to <ref>: <option or text>`; a card counts as answered when Claude's reply names that note, and then moves to a collapsed Answered list. A new card raises one desktop notification.
+- **Gallery.** Images and other visual outputs, newest first, filtered by type and session, from the files a session referenced, run outputs, ask attachments, `work/gallery/`, `work/loop-memory/ui-vision/` and `docs/**/figures/`. Raster images and SVG show in the app; PDFs and videos open externally; Mermaid, draw.io, Typst and Marp sources show their rendered sibling. Comment, star and "wrong direction" go to the producing session as notes.
+- **Machine details.** Sessions, Codex calls, Runs, Launch, budget and toolchain as before. Its badge counts only failures and stalls.
+
+Machine details:
+
 - **Sessions.** Every local Claude Code session whose working directory is inside the main checkout or a registered worktree, with its subagents and linked Codex calls. Status is running, waiting for the owner, finished, failed or unknown.
 - **Briefs.** Goal, current step, what Claude is doing and why, and what it waits for, written by Claude with `tools/workbench/brief.py` at each plan step and milestone. Without a brief, the latest task list in the transcript is shown and labelled.
 - **Live view.** The selected transcript and its event file, followed as they grow. Tool calls, command output and test runs appear inline; full text opens in the app.
 - **Codex calls.** Status, packet, findings and their answers. No live output: the review wrapper writes its result only when the call returns (its event stream is phase 2).
-- **Progress.** `docs/progress/status.json` (schema `schemas/progress-status.schema.json`): 0.4.1 steps 1 to 7 and stage 2.0 to 2.5. Acceptance text appears only where a repository document records it.
-- **Needs attention.** A list above the sessions, with its count in the window header and the first three items in the compact view; a click selects the item. See [What is flagged](#what-is-flagged).
+- **Progress.** `docs/progress/status.json` (schema `schemas/progress-status.schema.json`): 0.4.1 step 1 (steps 2 to 7 were cancelled on 1 October 2026) and stage 2.0 to 2.5. Acceptance text appears only where a repository document records it. Under schema 2 each step has a checklist; a step's percentage is its done weight over its total weight, counting only items with evidence (a commit, a pull request of this repository or a repository file), and a track's is the weighted mean of its steps. Sessions tick items with `tools/workbench/progress.py done`; nothing is estimated. A schema-1 file shows "no checklist".
 - **Runs.** The registered runs with their exact steps, a checkout chooser, Run and Stop, and the latest run records with status, exit codes and duration. A selected run's log is followed live.
 - **Launch.** A checkout and packet chooser, "New Claude session" and "Start Codex call". See [Runs and launches](#runs-and-launches).
-- **Compact view and status line.** Current step, open findings, Codex login, and cumulative paid API spend over the complete ledgers (billed, estimated and reserved kept apart, unknown shown as unknown, and "incomplete" instead of a total when a ledger is too large to read) against the current ceiling. The compact view also shows the attention count and the first three items.
+- **Compact view and status line.** The current step and its percentage, the For you count and the new gallery items, for example `Step 0.4.1-1 42% · for you 2 · gallery +3`. The status line reads the counts from the snapshot the running workbench writes (`home.json`) and says "workbench closed" without a fresh one. Cumulative paid API spend over the complete ledgers (billed, estimated and reserved kept apart, unknown shown as unknown, and "incomplete" instead of a total when a ledger is too large to read) is appended only when it is not zero or unknown.
 
 ## How status is decided
 
@@ -51,7 +58,7 @@ Each session's whole history (its transcript, its subagent transcripts and the h
 
 ## What is flagged
 
-Flags come from `tools/workbench/watch.py`, a pure function over the session, call and run boards. Anything whose newest time is more than 24 hours old is history and is not flagged, except an open owner wait and a Codex launch that is still running. Runs are judged on every record written in the last 24 hours (a running record is rewritten at each heartbeat), not only the 50 the Runs board lists, and a record whose fields have the wrong type is skipped and counted.
+Flags come from `tools/workbench/watch.py`, a pure function over the session, call and run boards, and feed the For you cards and the Machine details badge. Anything whose newest time is more than 24 hours old is history and is not flagged, except an open owner wait and a Codex launch that is still running. Runs are judged on every record written in the last 24 hours (a running record is rewritten at each heartbeat), not only the 50 the Runs board lists, and a record whose fields have the wrong type is skipped and counted.
 
 - **Waiting for you** (first): a permission prompt, a question or an input request, including a subagent's, however old, until its own resolution or the session's end. A session that ended its turn and waits for the next prompt is normal and not flagged.
 - **Failures**: a failed turn (kept after the session ends, cleared when the session runs again); a Codex call that was invalid, refused, timed out, stale or whose acceptance check failed; and a registered run or Codex launch that failed, timed out or was interrupted. A failed launch and the call it names give one flag, not two.
@@ -71,11 +78,11 @@ The note box appends to a private per-session inbox. The reporting hook claims p
 
 ## Opening tools
 
-Tools open in their own applications. Private files (transcripts, reviews, ledgers) open only as plain text in Notepad. Project documents open in their default application; HTML and SVG outputs open in the browser, only from project folders. Commands run in their own console: git diff, `bootstrap.py doctor`, marimo notebooks, and `claude --resume` only for a session whose client has ended it; otherwise the workbench brings Claude Code forward and shows the resume command.
+Tools open in their own applications. Private files (transcripts, reviews, ledgers, diagram and notebook sources) open as plain text in Notepad; inert private images and videos open in their default application and private PDFs in the browser. Private HTML and SVG never open outside the app. Project documents open in their default application; HTML and SVG outputs open in the browser, only from project folders. Commands run in their own console: git diff, `bootstrap.py doctor`, marimo notebooks, and `claude --resume` only for a session whose client has ended it; otherwise the workbench brings Claude Code forward and shows the resume command.
 
 ## Private data
 
-Everything the workbench reads stays where it is. Its own private data lives under `work/loop-memory/workbench/` of the main checkout (events, briefs, inbox, run records, logs, locks and stop requests), which Git ignores. Those are its only writes. Nothing is uploaded, and the app opens no network listener.
+Everything the workbench reads stays where it is. Its own private data lives under `work/loop-memory/workbench/` of the main checkout (events, briefs, inbox, asks, run records, logs, locks and stop requests), which Git ignores. The app's own writes are owner notes, launch records, logs, locks and stop requests, and `home.json`, a snapshot of its For you and gallery counts for the status line; asks are written by `ask.py` in a session. Nothing is uploaded, and the app opens no network listener.
 
 ## Rollout
 

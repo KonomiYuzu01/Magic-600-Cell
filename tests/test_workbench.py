@@ -11,6 +11,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import json
+import math
 import os
 import re
 import shutil
@@ -22,6 +23,7 @@ import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 WB = ROOT / "tools" / "workbench"
@@ -34,6 +36,8 @@ import notes  # noqa: E402
 import launch  # noqa: E402
 import runs  # noqa: E402
 import watch  # noqa: E402
+import checklist  # noqa: E402
+import home  # noqa: E402
 
 
 def load_module(name: str, path: Path):
@@ -80,6 +84,12 @@ def result(t, use_id, text="ok", error=False):
 
 def ev(t, name, **fields):
     return {"v": 1, "t": iso(t), "e": name, "sid": SID, **fields}
+
+
+def sample_status() -> dict:
+    """The synthetic schema-2 checklist shared with tests/test_workbench_home.py (imported late: that module imports this one)."""
+    from test_workbench_home import sample_status as make
+    return make()
 
 
 class Fixture:
@@ -507,7 +517,6 @@ class CodexCallTests(unittest.TestCase):
         self.assertEqual(calls["d"]["status"], "failed")
         self.assertEqual(calls["e"]["status"], "failed")
         self.assertEqual(sources.open_findings(paths.checkouts(fx.main)), ["20260930T120000Z-aaaaaaaa:F-2"])
-        self.assertEqual(statusline.open_findings(paths.checkouts(fx.main)), 1)
         # Links: by the printed call id after return, by time while running.
         fx.transcript(fx.main, SID, [user(0, cwd=str(fx.main)),
                                      assistant(1, uses=[("b", "Bash", {"command": "python tools/agents/codex_review.py --kind review"})]),
@@ -553,6 +562,41 @@ class CodexCallTests(unittest.TestCase):
             finally:
                 mod.LEDGER_MAX = saved
 
+    def test_unlisted_or_unread_ledgers_mark_the_status_line_total_incomplete(self):
+        fx = self.fx
+        paid = [{"call_id": "p", "channel": "paid-api", "cost": {"status": "billed", "usd": 2}}]
+        self.ledger(fx.main, paid)
+        roots = paths.checkouts(fx.main)
+        self.assertEqual((statusline.budget(roots)["billed"], statusline.budget(roots)["incomplete"]), (2.0, False))
+        real_open = Path.open
+
+        def unreadable(self, *args, **kwargs):
+            if self.suffix == ".jsonl":
+                raise PermissionError("denied")
+            return real_open(self, *args, **kwargs)
+
+        with patch.object(Path, "open", unreadable):
+            self.assertTrue(statusline.budget(roots)["incomplete"])
+            out = statusline.line(fx.main)
+        self.assertIn("API incomplete", out)
+        self.assertNotIn("$", out)
+        with patch.object(statusline.os, "scandir", side_effect=PermissionError("denied")):
+            self.assertTrue(statusline.budget(roots)["incomplete"])
+        d = fx.main / "work" / "loop-memory" / "ledgers"
+        with patch.object(statusline, "LEDGER_FILES_MAX", 2):
+            self.assertFalse(statusline.budget(roots)["incomplete"])
+            for i in range(2):
+                (d / f"extra{i}.txt").write_text("", encoding="utf-8")
+            self.assertTrue(statusline.budget(roots)["incomplete"])
+        for i in range(2):
+            (d / f"extra{i}.txt").unlink()
+        self.ledger(fx.wt, paid)
+        size = (d / "codex.jsonl").stat().st_size
+        with patch.object(statusline, "LEDGER_TOTAL_MAX", 2 * size):
+            self.assertFalse(statusline.budget(roots)["incomplete"])
+        with patch.object(statusline, "LEDGER_TOTAL_MAX", 2 * size - 1):
+            self.assertTrue(statusline.budget(roots)["incomplete"])
+
     def test_a_ledger_record_spanning_read_boundaries_is_still_counted(self):
         fx = self.fx
         saved = sources.Tail.MAX_READ
@@ -572,20 +616,31 @@ class CodexCallTests(unittest.TestCase):
         finally:
             sources.Tail.MAX_RECORD = saved_record
 
+    def progress_file(self, doc) -> Path:
+        prog = self.fx.main / "docs" / "progress"
+        prog.mkdir(parents=True, exist_ok=True)
+        (prog / "status.json").write_text(json.dumps(doc), encoding="utf-8")
+        return prog / "status.json"
+
+    def home_snapshot(self, now: float, for_you: int = 2, gallery_new: int = 3) -> None:
+        fx = self.fx
+        fx.data.mkdir(parents=True, exist_ok=True)
+        (fx.data / "home.json").write_text(json.dumps(home.snapshot({"for_you": for_you, "gallery_new": gallery_new}, now)),
+                                           encoding="utf-8")
+
     def test_status_line_is_one_bounded_line_whatever_the_progress_file_holds(self):
         fx = self.fx
-        prog = fx.main / "docs" / "progress"
-        prog.mkdir(parents=True)
-        doc = json.loads((ROOT / "docs" / "progress" / "status.json").read_text(encoding="utf-8"))
-        doc["steps"][0]["title"] = "evil\nsecond line\r\x1b[31m" + "t" * 5000
-        (prog / "status.json").write_text(json.dumps(doc), encoding="utf-8")
+        doc = sample_status()
+        doc["steps"][0]["id"] = doc["current"] = "evil\nsecond line\r\x1b[31m" + "t" * 5000
+        self.progress_file(doc)
         out = statusline.line(fx.main)
         self.assertNotIn("\n", out)
         self.assertNotIn("\x1b", out)
         self.assertLessEqual(len(out), statusline.LINE_MAX)
-        self.assertTrue(out.startswith("0.4.1-1 evil second line"))
+        self.assertTrue(out.startswith("Step evil second"))
+        doc = sample_status()
         doc["steps"][0]["title"] = "t" * (2 * 1024 * 1024)
-        (prog / "status.json").write_text(json.dumps(doc), encoding="utf-8")
+        self.progress_file(doc)
         self.assertTrue(statusline.line(fx.main).startswith("step unknown"))  # over the read limit: not parsed
         saved = statusline.LEDGER_MAX
         statusline.LEDGER_MAX = 10
@@ -594,6 +649,60 @@ class CodexCallTests(unittest.TestCase):
             self.assertIn("API incomplete", statusline.line(fx.main))
         finally:
             statusline.LEDGER_MAX = saved
+
+    def test_status_line_step_counts_and_paid_api(self):
+        fx, now = self.fx, 1_800_000_000.0
+        doc = sample_status()
+        doc["current"] = "0.4.1-1"
+        self.progress_file(doc)
+        self.assertEqual(statusline.line(fx.main, now=now), "Step 0.4.1-1 25% \u00b7 workbench closed")
+        self.home_snapshot(now - 30)
+        self.assertEqual(statusline.line(fx.main, now=now), "Step 0.4.1-1 25% \u00b7 for you 2 \u00b7 gallery +3")
+        self.assertIn("workbench closed", statusline.line(fx.main, now=now + statusline.HOME_FRESH + 31))  # stale snapshot
+        (fx.data / "home.json").write_text('{"schema": 1, "written": "x", "for_you": -1}', encoding="utf-8")
+        self.assertIn("workbench closed", statusline.line(fx.main, now=now))
+        # Paid API only when some amount is not zero or unknown.
+        self.ledger(fx.main, [{"call_id": "s", "channel": "subscription", "cost": {"status": "subscription", "usd": None}},
+                              {"call_id": "z", "channel": "paid-api", "cost": {"status": "billed", "usd": 0}}])
+        self.assertNotIn("API", statusline.line(fx.main, now=now))
+        self.ledger(fx.main, [{"call_id": "u", "channel": "paid-api", "cost": {"status": "unknown", "usd": None}}])
+        self.assertTrue(statusline.line(fx.main, now=now).endswith("API $0.00/$100 (1 unknown)"))
+        # A schema-1 file has no checklist.
+        doc["schema"] = 1
+        for s in doc["steps"]:
+            s.pop("items")
+        self.progress_file(doc)
+        self.assertTrue(statusline.line(fx.main, now=now).startswith("Step 0.4.1-1 no checklist"))
+
+    def test_status_line_mirrors_the_checklist_rules(self):
+        refs = ["0123abc", "0123ab", "0123ABC", "a" * 41, "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20",
+                "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/0", "https://github.com/other/repo/pull/1",
+                "tests/test_core.py", "./tests/x.txt", "tests/../x", "work/reviews/r.json", "/abs/x", "C:/x",
+                "docs\\x.md", "", None, 7, "x" * 201, "Work/x.txt", "WORK/x", "0123abc\n", "tests/x.txt\n"]
+        for ref in refs:
+            with self.subTest(ref=ref):
+                self.assertEqual(statusline.evidence_ok(ref), checklist.evidence_kind(ref) is not None)
+        doc = sample_status()
+        steps = [*doc["steps"], {"id": "x", "items": []}, {"id": "y"}, {"id": "z", "items": [{"weight": True}]},
+                 {"id": "w", "items": [{"id": "a", "weight": 2, "done": True, "evidence": "work/x"}]},
+                 {"id": "m", "items": [{"id": "a", "weight": 1000, "done": True, "evidence": "0123abc"},
+                                       {"id": "b", "weight": 1, "done": False}]},
+                 {"id": "o", "items": [{"id": "a", "weight": 1001, "done": True, "evidence": "0123abc"}]},
+                 {"id": "h", "items": [{"id": "a", "weight": 10 ** 400, "done": True, "evidence": "0123abc"}]}]
+        for s in steps:
+            with self.subTest(step=s["id"]):
+                self.assertEqual(statusline.step_percent(s), checklist.step_percent(s))
+        self.assertEqual(statusline.WEIGHT_MAX, checklist.WEIGHT_MAX)
+        self.assertIsNone(checklist.step_percent(steps[-1]))
+        self.assertIsNotNone(checklist.step_percent(steps[-3]))
+
+    def test_status_line_on_the_public_file_matches_the_checklist(self):
+        doc = json.loads((ROOT / "docs" / "progress" / "status.json").read_text(encoding="utf-8"))
+        cur = next(s for s in doc["steps"] if s["id"] == doc["current"])
+        self.progress_file(doc)
+        pct = checklist.step_percent(cur)
+        self.assertIsNotNone(pct)
+        self.assertTrue(statusline.line(self.fx.main).startswith(f"Step {doc['current']} {math.floor(pct)}%"))
 
     def test_oversized_documents_are_not_read(self):
         fx = self.fx
@@ -610,9 +719,14 @@ class CodexCallTests(unittest.TestCase):
         shutil.copy2(ROOT / "docs" / "progress" / "status.json", fx.main / "docs" / "progress" / "status.json")
         env = {**os.environ, "CODEX_HOME": str(fx.main / "no-codex")}
         r = subprocess.run([sys.executable, str(WB / "statusline.py")], input=json.dumps({"workspace": {"current_dir": str(fx.wt)}}),
-                           capture_output=True, text=True, env=env, timeout=30)
+                           capture_output=True, encoding="utf-8", env=env, timeout=30)
         self.assertEqual(r.returncode, 0)
-        self.assertRegex(r.stdout.strip(), r"^0\.4\.1-1 Reproducible identity and harness \(in progress\) \| findings 0 \| Codex not-ready \| API \$0\.00/\$100$")
+        self.assertRegex(r.stdout.strip(), r"^Step \d[\w.-]* \d{1,3}% \u00b7 workbench closed$")
+        # UTF-8 whatever the console encoding.
+        r = subprocess.run([sys.executable, str(WB / "statusline.py")], input=json.dumps({"workspace": {"current_dir": str(fx.wt)}}).encode(),
+                           capture_output=True, env={**env, "PYTHONIOENCODING": "ascii"}, timeout=30)
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("\u00b7", r.stdout.decode("utf-8"))
         r = subprocess.run([sys.executable, str(WB / "statusline.py")], input="{bad", capture_output=True, text=True, timeout=30)
         self.assertEqual(r.returncode, 0)
         self.assertTrue(r.stdout.strip())
@@ -1023,12 +1137,41 @@ class LaunchTests(unittest.TestCase):
         self.assertEqual(plan(self.file("docs/wiki/index.md"))[0], "default")
         self.assertEqual(plan(self.file("out/deck.html", fx.ext))[0], "browser")
         self.assertEqual(plan(self.file("out/d.svg"))[0], "browser")
-        for bad in (self.file("work/reviews/x/report.html"), self.file("tools/x.py"), self.file("run.bat"),
+        # Gallery outputs: inert media in private locations open in their default application, PDFs in the browser,
+        # diagram and notebook sources as text; active content (HTML, SVG) never leaves the workbench.
+        for rel in ("work/gallery/a.png", "work/loop-memory/ui-vision/b.JPG", "work/x/c.webp", "work/x/d.mp4", "work/x/e.webm"):
+            with self.subTest(rel=rel):
+                self.assertEqual(plan(self.file(rel))[0], "default")
+        self.assertEqual(plan(self.file("work/x/f.pdf", fx.wt))[0], "browser")
+        for rel in ("work/x/g.mmd", "work/x/h.drawio", "work/x/i.typ", "work/x/nb.py"):
+            with self.subTest(rel=rel):
+                self.assertEqual(plan(self.file(rel))[0], "notepad")
+        self.assertEqual(plan(self.file("docs/figures/j.jpg"))[0], "default")
+        self.assertEqual(plan(self.file("docs/figures/k.webm"))[0], "default")
+        for bad in (self.file("work/reviews/x/report.html"), self.file("work/gallery/v.svg"), self.file("work/x/y.htm"),
+                    self.file("work/x/z.exe"), self.file("tools/x.py"), self.file("run.bat"),
                     self.file("a.lnk"), self.file("x.ps1"), self.file("thing.exe"), self.file("s.js"),
                     self.file("elsewhere.md", Path(fx.tmp.name)), fx.main / "missing.md"):
             with self.subTest(bad=bad.name):
                 with self.assertRaises(launch.LaunchRefused):
                     plan(bad)
+
+    def test_a_link_is_judged_by_its_target(self):
+        fx = self.fx
+        plan = lambda p: launch.plan_open(p, fx.main, fx.projects)
+        targets = {"view.png": self.file("work/x/payload.exe"), "doc.pdf": self.file("work/x/page.html"),
+                   "away.png": self.file("away.png", Path(fx.tmp.name)), "fine.png": self.file("work/gallery/real.png")}
+        real = Path.resolve
+
+        def resolve(self, strict=False):
+            return real(targets[self.name], strict) if self.name in targets else real(self, strict)
+
+        links = {name: self.file(f"work/gallery/{name}") for name in targets}
+        with patch.object(Path, "resolve", resolve):
+            for name in ("view.png", "doc.pdf", "away.png"):
+                with self.subTest(link=name), self.assertRaises(launch.LaunchRefused):
+                    plan(links[name])
+            self.assertEqual(plan(links["fine.png"]), ("default", str(real(targets["fine.png"]))))
 
     def test_console_commands_never_pass_through_a_shell(self):
         tricky = str(Path(self.fx.tmp.name) / "repo&echo INJECTED %PATH%")
@@ -1081,6 +1224,9 @@ class ProgressStatusTests(unittest.TestCase):
         text = (ROOT / "docs" / "progress" / "status.json").read_text(encoding="utf-8")
         doc = json.loads(text)
         self.assertEqual(codex_review.validate_result(doc, schema), [])
+        self.assertEqual(doc["schema"], 2)
+        self.assertEqual(checklist.validate(doc), [])
+        self.assertEqual(text.replace("\r\n", "\n"), checklist.dump(doc))  # the canonical layout that progress.py writes
         ids = [s["id"] for s in doc["steps"]]
         self.assertEqual(ids, ["0.4.1-1"] + [f"2.{i}" for i in range(6)])  # no 0.4.1 release: steps 2 to 7 cancelled
         self.assertIn(doc["current"], ids)
@@ -1091,14 +1237,31 @@ class ProgressStatusTests(unittest.TestCase):
                 self.assertTrue((ROOT / s["acceptance_source"]).is_file(), s["id"])
             else:
                 self.assertIsNone(s["acceptance_source"])
-        self.assertIsNone(re.search(r"[぀-ヿ㐀-鿿가-힯]", text))
-        self.assertIsNone(re.search(r"[A-Za-z]:[\\/]|/Users/|/home/|\\\\Users", text))
+        self.assertIsNone(re.search(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]", text))
+        self.assertIsNone(re.search(r"(?<![A-Za-z])[A-Za-z]:[\\/]|/Users/|/home/|\\\\Users", text))  # a URL scheme is no drive
+
+    def test_every_done_item_has_existing_evidence(self):
+        doc = json.loads((ROOT / "docs" / "progress" / "status.json").read_text(encoding="utf-8"))
+        for s in doc["steps"]:
+            for it in s.get("items", []):
+                if not it["done"]:
+                    continue
+                with self.subTest(item=f"{s['id']}/{it['id']}"):
+                    kind = checklist.evidence_kind(it["evidence"])
+                    if kind == "path":
+                        self.assertTrue((ROOT / it["evidence"]).is_file())
+                    elif kind == "sha":
+                        r = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--verify", "--quiet", it["evidence"] + "^{commit}"],
+                                           capture_output=True, timeout=30)
+                        self.assertEqual(r.returncode, 0)
+                    else:
+                        self.assertEqual(kind, "pr")
 
 
 def load_tests(loader, tests, pattern):
-    """The documented workbench check (`python tests/test_workbench.py`) also runs the runner and watch suites."""
+    """The documented workbench check (`python tests/test_workbench.py`) also runs the runner, watch, home and CLI suites."""
     sys.path.insert(0, str(ROOT / "tests"))
-    for name in ("test_workbench_runs", "test_workbench_watch"):
+    for name in ("test_workbench_runs", "test_workbench_watch", "test_workbench_home", "test_workbench_cli"):
         tests.addTests(loader.loadTestsFromModule(importlib.import_module(name)))
     return tests
 

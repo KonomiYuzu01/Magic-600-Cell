@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-01] update | Design and engineering tracks joined
+The design track now designs layout and style together: core flows and a command table set what the layout must do, and the Look Lab (in Godot, the S-A2 framework) adds greybox layouts, flow scripts and a cost meter. The two parallel tracks exchange ten numbered handoffs (H-01 to H-10), recorded in both `stage-2-experiment-protocol.md` section 4.6 and `renderer-experiment-plan.md` section 6; the 2.4 experiments test the combination (scene W5). The schedule is unchanged.
+
 ## [2026-10-01] update | Stage 2.0 drafts
 Drafts for the owner and the plan checks are in `docs/progress/1.0/`: the 2.0 charter, the migration path options (recommended: a 1.0 importer that reads a locked copy of the 0.4 database), 1.0 requirements from the screening findings, the 2.4 renderer experiment plan with the S-B probe packet, and five 2.1 bottom-up inventory packets for Codex.
 

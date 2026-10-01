@@ -1,15 +1,66 @@
 {
-  "schema": 1,
+  "schema": 2,
   "updated": "2026-10-01",
   "current": "2.0",
   "paid_api_ceiling_usd": 100,
   "steps": [
-    {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "done", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null},
-    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "in_progress", "acceptance": "The owner signs the charter with the design charter (anti-goals, metaphors, UX criteria) and the migration path filled in, by day 2.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null},
-    {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.4", "track": "stage-2", "title": "Experiments (12-day renderer window, days 3-14, day-7 go/no-go)", "status": "not_started", "acceptance": "A renderer is selected only if it renders all 259,800 sticker slots at full detail with the most complex animation at an average of at least 30 fps and a 99th-percentile frame time of at most 33.3 ms on the owner's machine.", "acceptance_source": "docs/wiki/decisions/renderer-candidates.md", "blocker": null},
-    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": "Stage 2 closes by day 20 (20 October 2026).", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-01.md", "blocker": null}
+    {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "done", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null,
+     "items": [
+      {"id": "build-id", "title": "Build id recorded for the source identity", "weight": 3, "done": true, "evidence": "docs/wiki/concepts/build-identity-v2.md"},
+      {"id": "cc-1", "title": "CC-1 native/snapshot assertion matches the host", "weight": 1, "done": true, "evidence": "f2707af"},
+      {"id": "cc-2", "title": "CC-2 test_debug_cleanup creates its evidence directory", "weight": 1, "done": true, "evidence": "f2707af"},
+      {"id": "cc-3", "title": "CC-3 the other evidence-directory tests create theirs", "weight": 1, "done": true, "evidence": "f2707af"},
+      {"id": "cc-4", "title": "CC-4 harness tools documented with their arguments", "weight": 1, "done": true, "evidence": "12ad4b1"},
+      {"id": "cc-5", "title": "CC-5 NumPy tests run on Windows with the engine environment", "weight": 1, "done": true, "evidence": "docs/wiki/concepts/build-identity-v2.md"},
+      {"id": "cc-6", "title": "CC-6 browser UI test recorded as optional (Playwright)", "weight": 1, "done": true, "evidence": "350217d"},
+      {"id": "cc-7", "title": "CC-7 tests/run_postapproval.py restored or its hash reference removed", "weight": 1, "done": true, "evidence": "9c3c4e1"},
+      {"id": "cc-8", "title": "CC-8 test_codex_implement runs on the documented Python", "weight": 1, "done": true, "evidence": "docs/wiki/concepts/build-identity-v2.md"},
+      {"id": "native-clean-build", "title": "Native build reproducible from a clean checkout on Windows", "weight": 3, "done": true, "evidence": "docs/wiki/concepts/build-identity-v2.md"},
+      {"id": "workbench-phase-1", "title": "Development workbench phase 1 delivered", "weight": 2, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20"}
+     ]},
+    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "in_progress", "acceptance": "The owner signs the charter with the design charter (anti-goals, metaphors, UX criteria) and the migration path filled in, by day 2.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null,
+     "items": [
+      {"id": "charter", "title": "Charter", "weight": 1, "done": false, "evidence": null},
+      {"id": "authority", "title": "Authority record", "weight": 1, "done": false, "evidence": null},
+      {"id": "design-records", "title": "First design records", "weight": 1, "done": false, "evidence": null},
+      {"id": "migration-path", "title": "Migration path chosen", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "inventory-a", "title": "Inventory A (commands, physical input, API, windows, persistence)", "weight": 1, "done": false, "evidence": null},
+      {"id": "inventory-b", "title": "Inventory B, independent of A", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "dispositions", "title": "A disposition for every inventory item", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "command-model", "title": "Command model", "weight": 1, "done": false, "evidence": null},
+      {"id": "keyboard-model", "title": "Keyboard model", "weight": 1, "done": false, "evidence": null},
+      {"id": "state-charts", "title": "State charts", "weight": 1, "done": false, "evidence": null},
+      {"id": "hardest-screens", "title": "The three hardest screens", "weight": 1, "done": false, "evidence": null},
+      {"id": "design-tokens", "title": "Design tokens", "weight": 1, "done": false, "evidence": null},
+      {"id": "g1", "title": "G1 structure catalogue: visual modes kept as presets", "weight": 1, "done": false, "evidence": null},
+      {"id": "g2", "title": "G2 metaphor decision: manifesto signed", "weight": 1, "done": false, "evidence": null},
+      {"id": "g3", "title": "G3 preference search: finalist presets", "weight": 1, "done": false, "evidence": null},
+      {"id": "g4", "title": "G4 sticker palette frozen", "weight": 1, "done": false, "evidence": null},
+      {"id": "g5", "title": "G5 key moments: motion parameter table", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.4", "track": "stage-2", "title": "Experiments (12-day renderer window, days 3-14, day-7 go/no-go)", "status": "not_started", "acceptance": "A renderer is selected only if it renders all 259,800 sticker slots at full detail with the most complex animation at an average of at least 30 fps and a 99th-percentile frame time of at most 33.3 ms on the owner's machine.", "acceptance_source": "docs/wiki/decisions/renderer-candidates.md", "blocker": null,
+     "items": [
+      {"id": "d3d12-probe", "title": "Bare Direct3D 12 interop probe", "weight": 1, "done": false, "evidence": null},
+      {"id": "day-7", "title": "Day-7 go/no-go ruling", "weight": 1, "done": false, "evidence": null},
+      {"id": "experiments", "title": "12-day renderer window (days 3 to 14)", "weight": 1, "done": false, "evidence": null},
+      {"id": "renderer-gate", "title": "Renderer selection gate met (renderer-candidates.md)", "weight": 1, "done": false, "evidence": null},
+      {"id": "vertical-slice", "title": "Vertical slice passes the selection gate", "weight": 1, "done": false, "evidence": null},
+      {"id": "living-test", "title": "Living test, five days", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": "Stage 2 closes by day 20 (20 October 2026).", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-01.md", "blocker": null,
+     "items": [
+      {"id": "architecture-freeze", "title": "1.0 architecture frozen (architecture-freeze ruling)", "weight": 1, "done": false, "evidence": null},
+      {"id": "migration-format-freeze", "title": "Migration format frozen (migration-format-freeze ruling)", "weight": 1, "done": false, "evidence": null},
+      {"id": "design-system-adr", "title": "Design-system ADR accepted", "weight": 1, "done": false, "evidence": null}
+     ]}
   ]
 }

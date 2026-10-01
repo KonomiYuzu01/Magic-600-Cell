@@ -88,6 +88,15 @@ def data_root(main: Path) -> Path:
     return Path(main) / "work" / "loop-memory" / "workbench"
 
 
+def within(path: Path, root: Path) -> bool:
+    """True when `path`, or while it does not exist its deepest existing ancestor, resolves inside
+    `root`: creating the missing part of `path` cannot leave `root` through a link or junction."""
+    p = Path(path)
+    while not os.path.lexists(p) and p.parent != p:
+        p = p.parent
+    return inside(p, [root])
+
+
 def inside(path: Path, roots) -> bool:
     """True when `path` resolves inside one of `roots` (case-insensitive where the OS is)."""
     try:
