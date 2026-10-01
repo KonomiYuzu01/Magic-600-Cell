@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-01] update | Stage 2.0 drafts
+Drafts for the owner and the plan checks are in `docs/progress/1.0/`: the 2.0 charter, the migration path options (recommended: a 1.0 importer that reads a locked copy of the 0.4 database), 1.0 requirements from the screening findings, the 2.4 renderer experiment plan with the S-B probe packet, and five 2.1 bottom-up inventory packets for Codex.
+
 ## [2026-10-01] decision | No 0.4.1 release; stage 2 within 20 days
 Recorded in [owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md). The day-by-day plan is in `docs/progress/1.0/stage-2-experiment-protocol.md` section 5.
 

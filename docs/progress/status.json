@@ -5,7 +5,7 @@
   "paid_api_ceiling_usd": 100,
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
+    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "in_progress", "acceptance": "The owner signs the charter with the design charter (anti-goals, metaphors, UX criteria) and the migration path filled in, by day 2.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null},
     {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
