@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-01] update | H-08 command table, first version
+`docs/progress/1.0/command-table.md` defines the six layer boundaries and a draft table of 86 commands built from the top-down inventory (11 change the puzzle state). The design track uses the command IDs for greybox layouts, the keyboard model and flow scripts; the table becomes final after the 2.2 dispositions and freezes at 2.5.
+
 ## [2026-10-01] update | Stage 2.1 top-down inventory
 Claude listed 72 functions of 0.4 and 7 unclear items from the user and design documents only, without reading code, in `docs/progress/1.0/inventory/top-down.md`. The five bottom-up Codex shards must not read it; both lists are merged on stage day 3.
 

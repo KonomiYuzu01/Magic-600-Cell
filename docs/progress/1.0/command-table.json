@@ -1,0 +1,1745 @@
+{
+ "draft": "H-08",
+ "source_inventory": "inventory/top-down.json",
+ "vocabularies": {
+  "kind": [
+   "app",
+   "commit",
+   "file",
+   "query",
+   "view",
+   "workspace"
+  ],
+  "undo": [
+   "journal",
+   "none",
+   "workspace"
+  ],
+  "gates": [
+   "confirm",
+   "file_check",
+   "fresh_preview",
+   "model_match",
+   "not_busy",
+   "protection"
+  ],
+  "contexts": [
+   "any",
+   "editor",
+   "filter",
+   "keyboard",
+   "macro_base",
+   "operation",
+   "puzzle",
+   "solve"
+  ]
+ },
+ "commands": [
+  {
+   "id": "session.new",
+   "label": "New solve",
+   "kind": "commit",
+   "inventory": [
+    "T-08"
+   ],
+   "gates": [
+    "confirm",
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "session.resume",
+   "label": "Resume",
+   "kind": "app",
+   "inventory": [
+    "T-09"
+   ],
+   "gates": [
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "session.timer.start",
+   "label": "Start timer",
+   "kind": "commit",
+   "inventory": [
+    "T-10"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "session.timer.stop",
+   "label": "Stop timer",
+   "kind": "commit",
+   "inventory": [
+    "T-10"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "session.scramble",
+   "label": "Scramble (staged)",
+   "kind": "workspace",
+   "inventory": [
+    "T-11"
+   ],
+   "gates": [
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": "stages into the operation; the commit is operation.execute"
+  },
+  {
+   "id": "session.reset",
+   "label": "Reset puzzle (recoverable)",
+   "kind": "commit",
+   "inventory": [
+    "T-12"
+   ],
+   "gates": [
+    "confirm",
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "session.undo",
+   "label": "Undo",
+   "kind": "commit",
+   "inventory": [
+    "T-14"
+   ],
+   "gates": [
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Commands > Undo",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "session.redo",
+   "label": "Redo",
+   "kind": "commit",
+   "inventory": [
+    "T-14"
+   ],
+   "gates": [
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Commands > Redo",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "session.checkpoint.save",
+   "label": "Save checkpoint",
+   "kind": "commit",
+   "inventory": [
+    "T-15"
+   ],
+   "gates": [
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "session.checkpoint.restore",
+   "label": "Restore checkpoint",
+   "kind": "commit",
+   "inventory": [
+    "T-15"
+   ],
+   "gates": [
+    "confirm",
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "session.report",
+   "label": "Progress report",
+   "kind": "query",
+   "inventory": [
+    "T-16"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "file.log.export",
+   "label": "Export C600 or MPUlt log",
+   "kind": "file",
+   "inventory": [
+    "T-17"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": "Ctrl+Alt+O/L (Functions)",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "file.log.check",
+   "label": "Check a log file",
+   "kind": "query",
+   "inventory": [
+    "T-18"
+   ],
+   "gates": [
+    "model_match"
+   ],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "file.log.import",
+   "label": "Import a checked log",
+   "kind": "commit",
+   "inventory": [
+    "T-18"
+   ],
+   "gates": [
+    "file_check",
+    "confirm",
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": "keeps preferences; leaves a recovery checkpoint"
+  },
+  {
+   "id": "file.keymap.export",
+   "label": "Export keymap",
+   "kind": "file",
+   "inventory": [
+    "T-19"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+Alt+E (Functions)",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "file.keymap.check",
+   "label": "Check keymap file",
+   "kind": "query",
+   "inventory": [
+    "T-19"
+   ],
+   "gates": [
+    "model_match"
+   ],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "file.keymap.apply",
+   "label": "Apply keymap file",
+   "kind": "workspace",
+   "inventory": [
+    "T-19"
+   ],
+   "gates": [
+    "file_check",
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+Alt+I (Functions)",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "solve.open",
+   "label": "Open Solve",
+   "kind": "view",
+   "inventory": [
+    "T-20"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "operation.phase.select",
+   "label": "Select phase Prepare / Macro / Cleanup",
+   "kind": "view",
+   "inventory": [
+    "T-21"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+1/2/3",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "operation.phase.edit",
+   "label": "Edit phase turns",
+   "kind": "workspace",
+   "inventory": [
+    "T-22"
+   ],
+   "gates": [
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "F4",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "operation.cleanup.from_prepare",
+   "label": "Cleanup = inverse of Prepare",
+   "kind": "workspace",
+   "inventory": [
+    "T-23"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+Shift+I",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "operation.check",
+   "label": "Check full effect",
+   "kind": "query",
+   "inventory": [
+    "T-24"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "solve",
+    "operation"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "operation.preview",
+   "label": "Preview",
+   "kind": "query",
+   "inventory": [
+    "T-24"
+   ],
+   "gates": [
+    "protection"
+   ],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "operation"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": "Ctrl+Enter",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "operation.execute",
+   "label": "Execute",
+   "kind": "commit",
+   "inventory": [
+    "T-24"
+   ],
+   "gates": [
+    "fresh_preview",
+    "protection",
+    "not_busy"
+   ],
+   "preview": "required",
+   "undo": "journal",
+   "contexts": [
+    "operation"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+Shift+Enter",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "operation.preview.cancel",
+   "label": "Cancel preview",
+   "kind": "workspace",
+   "inventory": [
+    "T-24"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "operation"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "job.stop",
+   "label": "Stop running check",
+   "kind": "app",
+   "inventory": [
+    "T-25"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Shift+Escape",
+   "disposition": "pending-2.2",
+   "note": "a request; acceptance is not completion"
+  },
+  {
+   "id": "operation.new",
+   "label": "New operation",
+   "kind": "workspace",
+   "inventory": [
+    "T-26"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+N",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "operation.reuse",
+   "label": "Reuse steps",
+   "kind": "workspace",
+   "inventory": [
+    "T-26"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+Alt+R",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.forecast.select",
+   "label": "Show Actual / After Prepare / After Macro / After Cleanup",
+   "kind": "view",
+   "inventory": [
+    "T-27"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.cycle.mode",
+   "label": "Cycle view Current / Operation / After",
+   "kind": "view",
+   "inventory": [
+    "T-28"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.effect.scope",
+   "label": "Effect scope Macro body / All steps",
+   "kind": "view",
+   "inventory": [
+    "T-29"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.local",
+   "label": "Local view",
+   "kind": "view",
+   "inventory": [
+    "T-30"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.global",
+   "label": "Global view",
+   "kind": "view",
+   "inventory": [
+    "T-30"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "target.next.activate",
+   "label": "Activate Next",
+   "kind": "workspace",
+   "inventory": [
+    "T-31"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+Alt+N",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "target.next.set",
+   "label": "Set locked Next",
+   "kind": "workspace",
+   "inventory": [
+    "T-31"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "object.inspect",
+   "label": "Inspect identity or position",
+   "kind": "view",
+   "inventory": [
+    "T-32",
+    "T-61"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": true,
+   "job": false,
+   "key_0_4": "Enter; Shift+click",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "object.actions",
+   "label": "Object action menu",
+   "kind": "view",
+   "inventory": [
+    "T-32"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Shift+F10",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "object.inspect.clear",
+   "label": "Clear inspection",
+   "kind": "view",
+   "inventory": [
+    "T-61"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.entry_slots",
+   "label": "Entry slots",
+   "kind": "view",
+   "inventory": [
+    "T-33"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "buffer.assign",
+   "label": "Assign buffer role A/B",
+   "kind": "workspace",
+   "inventory": [
+    "T-34"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "buffer.analyse",
+   "label": "Buffer analyser",
+   "kind": "query",
+   "inventory": [
+    "T-34"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "block.add_current",
+   "label": "Add current state as block requirement",
+   "kind": "workspace",
+   "inventory": [
+    "T-35"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "block.add_home",
+   "label": "Add to Home block",
+   "kind": "workspace",
+   "inventory": [
+    "T-35"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "intent.set",
+   "label": "Set work intent",
+   "kind": "workspace",
+   "inventory": [
+    "T-36"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.residuals",
+   "label": "Residuals and invariant diagnostics",
+   "kind": "query",
+   "inventory": [
+    "T-37"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.findings",
+   "label": "Findings",
+   "kind": "view",
+   "inventory": [
+    "T-38",
+    "T-39"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Shift+F12",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "orbit.switch",
+   "label": "Switch work orbit",
+   "kind": "workspace",
+   "inventory": [
+    "T-40"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.recommendations",
+   "label": "Recommendations",
+   "kind": "query",
+   "inventory": [
+    "T-41"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": "ranking only; never grants permission or executes"
+  },
+  {
+   "id": "view.names",
+   "label": "Names and addresses",
+   "kind": "view",
+   "inventory": [
+    "T-42"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "macro.base.open",
+   "label": "Open Macro Base",
+   "kind": "view",
+   "inventory": [
+    "T-43"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "F3",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "macro.select",
+   "label": "Select macro (inspect)",
+   "kind": "view",
+   "inventory": [
+    "T-43",
+    "T-44"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "macro_base",
+    "solve"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+Alt+1/2",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "macro.add",
+   "label": "Add selected macro to Macro phase",
+   "kind": "workspace",
+   "inventory": [
+    "T-43"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "Ctrl+M",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "worksheet.save",
+   "label": "Save worksheet",
+   "kind": "workspace",
+   "inventory": [
+    "T-45"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "worksheet.load",
+   "label": "Load worksheet",
+   "kind": "workspace",
+   "inventory": [
+    "T-45"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "macro.compare",
+   "label": "Compare candidates",
+   "kind": "query",
+   "inventory": [
+    "T-45"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "endgame.configure",
+   "label": "Configure endgame family",
+   "kind": "workspace",
+   "inventory": [
+    "T-46"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "macro.save",
+   "label": "Save as macro",
+   "kind": "workspace",
+   "inventory": [
+    "T-46"
+   ],
+   "gates": [
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": "saving does not select, insert or execute"
+  },
+  {
+   "id": "macro.variant.create",
+   "label": "Create reference variant",
+   "kind": "workspace",
+   "inventory": [
+    "T-47"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "protection.policy.set",
+   "label": "Set protection policy (net or strict)",
+   "kind": "workspace",
+   "inventory": [
+    "T-48"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": "invalidates any open preview"
+  },
+  {
+   "id": "protection.position.protect",
+   "label": "Protect position",
+   "kind": "workspace",
+   "inventory": [
+    "T-50"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "protection.position.release",
+   "label": "Release position",
+   "kind": "workspace",
+   "inventory": [
+    "T-50"
+   ],
+   "gates": [
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "protection.orbit.unlock",
+   "label": "Unlock orbit",
+   "kind": "workspace",
+   "inventory": [
+    "T-49"
+   ],
+   "gates": [
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "keyboard.toggle",
+   "label": "Onscreen keyboard",
+   "kind": "view",
+   "inventory": [
+    "T-51"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "F9",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "grip.select",
+   "label": "Grip (cap and frame)",
+   "kind": "workspace",
+   "inventory": [
+    "T-52"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle",
+    "keyboard"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "twist.apply",
+   "label": "Twist",
+   "kind": "commit",
+   "inventory": [
+    "T-52",
+    "T-60"
+   ],
+   "gates": [
+    "protection",
+    "not_busy"
+   ],
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "puzzle",
+    "keyboard"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": "live destination commits; draft destination edits the phase"
+  },
+  {
+   "id": "twist.inverse.toggle",
+   "label": "Inverse for clicks",
+   "kind": "view",
+   "inventory": [
+    "T-52"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "keyboard"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "input.destination.set",
+   "label": "Input destination live or draft",
+   "kind": "workspace",
+   "inventory": [
+    "T-53"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "bank.select",
+   "label": "Select bank",
+   "kind": "workspace",
+   "inventory": [
+    "T-54"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "grip.capture",
+   "label": "Set grips",
+   "kind": "workspace",
+   "inventory": [
+    "T-55"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "bank.functions.toggle",
+   "label": "Functions bank",
+   "kind": "view",
+   "inventory": [
+    "T-56"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "keymap.edit",
+   "label": "Change key",
+   "kind": "workspace",
+   "inventory": [
+    "T-57"
+   ],
+   "gates": [
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "command.find",
+   "label": "Find command",
+   "kind": "view",
+   "inventory": [
+    "T-58"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "F1; Ctrl+F1 back",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "camera.rotate",
+   "label": "Rotate camera (3D/4D)",
+   "kind": "view",
+   "inventory": [
+    "T-60"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": true,
+   "job": false,
+   "key_0_4": "drag; Shift+left drag",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "filter.open",
+   "label": "Open piece filter",
+   "kind": "view",
+   "inventory": [
+    "T-62"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": "F5",
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "filter.preview",
+   "label": "Preview filter counts",
+   "kind": "query",
+   "inventory": [
+    "T-62"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "filter"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "filter.apply",
+   "label": "Apply filter",
+   "kind": "workspace",
+   "inventory": [
+    "T-62"
+   ],
+   "gates": [
+    "fresh_preview"
+   ],
+   "preview": "required",
+   "undo": "workspace",
+   "contexts": [
+    "filter"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "display.frame.toggle",
+   "label": "Show or hide 600-cell frame",
+   "kind": "view",
+   "inventory": [
+    "T-63"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "display.adaptive.toggle",
+   "label": "Adaptive motion detail",
+   "kind": "view",
+   "inventory": [
+    "T-64"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "display.adjust",
+   "label": "Size, field of view, lighting",
+   "kind": "view",
+   "inventory": [
+    "T-65"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": true,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.reset",
+   "label": "Reset view",
+   "kind": "view",
+   "inventory": [
+    "T-65"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "structure.find",
+   "label": "Find colour or cell",
+   "kind": "query",
+   "inventory": [
+    "T-67"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "structure.compare",
+   "label": "Compare cells",
+   "kind": "query",
+   "inventory": [
+    "T-67"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "structure.layer",
+   "label": "Prepare layer predicate",
+   "kind": "workspace",
+   "inventory": [
+    "T-68"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "filter"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "view.cell_views",
+   "label": "Auxiliary cell views",
+   "kind": "view",
+   "inventory": [
+    "T-69"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "camera.center",
+   "label": "Center main view on cell",
+   "kind": "view",
+   "inventory": [
+    "T-70"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  },
+  {
+   "id": "set.save",
+   "label": "Save frozen set",
+   "kind": "workspace",
+   "inventory": [
+    "T-71"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": "pending-2.2",
+   "note": null
+  }
+ ],
+ "not_commands": {
+  "T-01": "launch argument",
+  "T-02": "launch argument",
+  "T-03": "launch argument",
+  "T-04": "storage policy of the session store",
+  "T-05": "documented procedure",
+  "T-06": "process ownership",
+  "T-07": "shell window behaviour",
+  "T-13": "engine event after a completing commit; the shell shows it",
+  "T-59": "input routing rule (R-18), not a command",
+  "T-66": "renderer rule: show the committed state",
+  "T-72": "separate client; disposition in 2.2"
+ }
+}
