@@ -5,7 +5,8 @@ This guide is for the owner and any person working on the project. Agents follow
 ## 1. What this repository is now
 
 - **0.4** is the released version (19 September 2026). Its package and provenance are frozen.
-- **0.4.1** is the next release and the last one of the 0.4 line. It optimizes 0.4, fixes bugs, closes the B4-12 performance acceptance and adds a local development workbench: a desktop monitor that lists every session with a short explanation, lets you watch any of them live and jump to every tool they use, lets you send notes to a running Claude session, and keeps the project progress in view. It also ships the exporter that moves your data to 1.0.
+- **There is no 0.4.1 release** (your decision, 1 October 2026). The 0.4 line ends with 0.4. What 0.4.1 built stays: the local development workbench (a desktop monitor that lists every session with a short explanation, lets you watch any of them live and jump to every tool they use, lets you send notes to a running Claude session, and keeps the project progress in view), the reproducible build identity, the test harness and the screening findings, which become 1.0 requirements.
+- **Stage 2 runs within 20 days**, from 1 October to 20 October 2026, preparation included. The day-by-day plan is in `docs/progress/1.0/stage-2-experiment-protocol.md` section 5.
 - **1.0** is a new program. It keeps the mathematics, the protection rules and the model identity, but not the 0.4 runtime. Direct3D 12 is the base of the new renderer; Godot and Blender are in scope. Its first phase, stage 2, inventories 0.4, tears it down and redesigns it, with a timed experiment window.
 - The decisions behind this are recorded in `docs/wiki/decisions/owner-decisions-2026-09-29.md`.
 
@@ -98,12 +99,11 @@ When something keeps failing: after three real attempts Codex diagnoses independ
 
 | Stage | Goal and exit | Tools | Codex involvement |
 | --- | --- | --- | --- |
-| 0.4.1 | Reproducible build, baseline, exporter and fixtures, screening and fixes, frozen candidate, formal 3 x 100 measurement, release | `native-performance` profile: PresentMon, PerfView, py-spy, viztracer | Measurement plan, cache-invalidation plan, exporter diff, B4-12 closeout audit |
 | 2.0 | Charter, authority record, first design records | Markdown, Mermaid | Review of charter and records |
 | 2.1 | Two independent inventories (commands, physical input, API, windows, persistence) | marimo notebooks | Codex runs the bottom-up inventory |
 | 2.2 | A disposition for every item | draw.io card sort | Review of risky dispositions |
 | 2.3 | Command model, keyboard model, state charts, the three hardest screens, design tokens | Mermaid, draw.io, Blender for look development | Review of the hardest screens and input model |
-| 2.4 | 15 working days of experiments; bare Direct3D 12 interop probe first; day-7 go/no-go | `renderer-spike` profile: Godot 4.7 (.NET), Qt via aqtinstall, CMake, Ninja, RenderDoc, PIX, FLIP | Hypotheses before each experiment; Astra rules on day 7. Selection gate: full detail at a stable 30 fps on your RTX 4070 Laptop GPU (`docs/wiki/decisions/renderer-candidates.md`) |
+| 2.4 | 12 days of experiments (days 3 to 14); bare Direct3D 12 interop probe first; day-7 go/no-go | `renderer-spike` and `native-performance` (PresentMon) profiles: Godot 4.7 (.NET), Qt via aqtinstall, CMake, Ninja, RenderDoc, PIX, FLIP | Hypotheses before each experiment; Astra rules on day 7. Selection gate: full detail at a stable 30 fps on your RTX 4070 Laptop GPU (`docs/wiki/decisions/renderer-candidates.md`) |
 | 2.5 | Frozen 1.0 architecture | Typst for the frozen document | Astra rules on the architecture freeze |
 | Later stages | Build, media and release | `media` and `release` profiles | Review at each gate |
 
@@ -135,9 +135,9 @@ Chat replies, plain Markdown and code comments are exempt. Online generators, ha
 - The public repository never contains user databases, personal logs, credentials, private paths, screenshots or raw diagnostics.
 - Andrey Astrelin's MPUlt credit and all upstream licences are preserved. Microsoft Managed DirectX DLLs are never redistributed.
 
-## 10. Moving your data from 0.4.1 to 1.0
+## 10. Moving your data from 0.4 to 1.0
 
-0.4.1 will include an exporter that writes your sessions into a versioned `.c600migrate` package. It works on a copy taken under the session lock and never changes your original session folder. 1.0 checks the package and imports it. Undo history stops at the migration point. You will be able to keep 0.4.1 installed side by side until you are satisfied.
+With no 0.4.1 release, the way your sessions move to 1.0 is chosen in stage 2.0. The rules stay: it works on a copy taken under the session lock and never changes your original session folder, and 1.0 checks the data before importing it. You will be able to keep 0.4 installed side by side until you are satisfied.
 
 ## 11. Troubleshooting
 

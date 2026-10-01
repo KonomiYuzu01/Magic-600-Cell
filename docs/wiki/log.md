@@ -2,8 +2,14 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-01] update | Stage 2.0 drafts
+Drafts for the owner and the plan checks are in `docs/progress/1.0/`: the 2.0 charter, the migration path options (recommended: a 1.0 importer that reads a locked copy of the 0.4 database), 1.0 requirements from the screening findings, the 2.4 renderer experiment plan with the S-B probe packet, and five 2.1 bottom-up inventory packets for Codex.
+
+## [2026-10-01] decision | No 0.4.1 release; stage 2 within 20 days
+Recorded in [owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md). The day-by-day plan is in `docs/progress/1.0/stage-2-experiment-protocol.md` section 5.
+
 ## [2026-10-01] decision | No 0.4.1 release; the B4-12 harness is kept for stage 2.4
-The owner ended the 0.4 line without a 0.4.1 release, closed step 1 at its acceptance and stopped the B4-12 baseline, measurement and 0.4 performance fixes; the harness contract, fixture builder, turn probe and summary tool stay for the stage 2.4 renderer gate ([owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md)). Earlier decisions that assumed the release are listed for the owner in [no-0-4-1-release-open-items](questions/no-0-4-1-release-open-items.md).
+The owner ended the 0.4 line without a 0.4.1 release, closed step 1 at its acceptance and stopped the B4-12 baseline, measurement and 0.4 performance fixes; the harness contract, fixture builder, turn probe and summary tool stay for the stage 2.4 renderer gate ([owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md)). The two items the decision does not settle are listed for the owner in [no-0-4-1-release-open-items](questions/no-0-4-1-release-open-items.md).
 
 ## [2026-09-30] decision | B4-12 measurement decisions
 The owner chose a smoke run plus three full series per metric, everyday settings recorded exactly, PresentMon without PerfView or administrator ETW in step 2, and a read-only performance board. The harness method choices for M1 to M3 are recorded with them in [b4-12-measurement-decisions](decisions/b4-12-measurement-decisions.md). The fixture builder, the headless turn probe and the summary tool are in `tools/perf/`; the probe showed that every M1 pair re-solves orbits that 0.4 then protects, so the harness releases that protection after each pair, untimed.
@@ -16,6 +22,9 @@ The step 1 candidate had one full Codex review in two parallel shards. All nine 
 
 ## [2026-09-30] update | Build identity v2 and the 0.4 native harness
 0.4.1 step 1 made clean checkouts byte-exact, published the 0.4 native harness with a sanitized continuity record, and replaced the build identity; see [build-identity-v2](concepts/build-identity-v2.md) and [build-reproducibility-decisions](decisions/build-reproducibility-decisions.md).
+
+## [2026-09-30] decision | 1.0 design route and 0.4 not a UX baseline
+Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md); stage 2 design goals are in `docs/progress/1.0/stage-2-experiment-protocol.md` section 4.
 
 ## [2026-09-30] update | Development workbench stage C: watch, runs and launches
 The [workbench](components/workbench.md) now flags owner waits, failures, stalls and overdue calls, runs the entries of a checked-in run registry with live logs and whole-tree Stop, and launches Codex calls and new Claude sessions on the owner's click. Codex wrote the runner and the flag rules; a live check on Windows confirmed failure reporting, Stop and runs that outlive the app. One full Astra review in two shards found six major problems (five distinct), all fixed with regression tests; an experiment confirmed that a descendant started through the WindowsApps `python` alias escaped Stop, and the fix. Two scoped rounds closed them and one new finding.
