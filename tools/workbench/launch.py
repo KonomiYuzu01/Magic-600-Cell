@@ -2,8 +2,10 @@
 
 `plan_open` and `plan_command` decide (pure functions, tested headless); `run` carries out a
 decision. Policy:
-- Private locations (`work/` of every checkout, the Claude Code projects directory) open only
-  as plain text in Notepad, never through a default association or a browser.
+- Private locations (`work/` of every checkout, the Claude Code projects directory) open as
+  plain text in Notepad; inert raster images and videos (the Gallery) open in their default
+  application and PDFs in the browser. Private HTML and SVG (active content) are never opened
+  outside the workbench.
 - Project files open in their default application for inert document types; HTML and SVG
   (active content, such as Marp and Mermaid outputs) open in the browser, only from project
   locations. Scripts, executables and shortcuts are never opened.
@@ -25,8 +27,11 @@ try:
 except ImportError:
     import paths  # type: ignore[no-redef]
 
-PRIVATE_TEXT = {".md", ".txt", ".json", ".jsonl", ".log", ".csv"}
-PROJECT_DOCS = {".md", ".txt", ".json", ".csv", ".png", ".pdf", ".drawio", ".mmd", ".typ"}
+PRIVATE_TEXT = {".md", ".txt", ".json", ".jsonl", ".log", ".csv", ".mmd", ".drawio", ".typ", ".py"}
+PRIVATE_MEDIA = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".webm"}
+PRIVATE_BROWSER = {".pdf"}
+PROJECT_DOCS = {".md", ".txt", ".json", ".csv", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".webm", ".pdf",
+                ".drawio", ".mmd", ".typ"}
 ACTIVE = {".html", ".htm", ".svg"}
 PACKET_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.md$")
 
@@ -48,11 +53,16 @@ def plan_open(path, main: Path, projects: Path) -> tuple[str, object]:
     p = Path(path)
     if not p.is_file():
         raise LaunchRefused(f"not a file: {p.name}")
+    p = p.resolve()   # a link is judged by its target's type and location
     ext = p.suffix.lower()
     if paths.inside(p, private_roots(main, projects)):
         if ext in PRIVATE_TEXT:
             return "notepad", [notepad(), str(p.resolve())]
-        raise LaunchRefused("private files open only as plain text")
+        if ext in PRIVATE_MEDIA:
+            return "default", str(p.resolve())
+        if ext in PRIVATE_BROWSER:
+            return "browser", str(p.resolve())
+        raise LaunchRefused("private files open only as plain text, images, videos or PDFs")
     if not paths.inside(p, paths.checkouts(main)):
         raise LaunchRefused("outside the repository")
     if ext in PROJECT_DOCS:
