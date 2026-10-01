@@ -1,25 +1,49 @@
-"""Claude Code status line for Magic 600 Cell: current step, open findings, Codex login, paid API budget.
+"""Claude Code status line for Magic 600 Cell, for example `Step 0.4.1-1 12% · for you 2 · gallery +3`.
+
+- The step percentage comes from the checklist in docs/progress/status.json
+  (schema 2): done weight over total weight, counting only items with accepted
+  evidence. A schema-1 file shows `no checklist`.
+- `for you` (open inbox cards) and `gallery` (visual outputs of the last 24 hours)
+  come from the snapshot the running workbench writes to
+  work/loop-memory/workbench/home.json; without a fresh one the line says
+  `workbench closed`.
+- The paid API spend is appended only when some amount is not zero, a paid call
+  has an unknown cost, or a ledger could not be listed or read in full (then no
+  amount is shown).
 
 Claude Code runs this on every status-line refresh in every session, so it is a
 critical path: standard library only, no repository imports, bounded reads, no
-writes, no network, no subprocesses. It prints exactly one line of at most
+writes, no network, no subprocesses. It prints exactly one UTF-8 line of at most
 LINE_MAX characters; any error prints `workbench: unavailable`. Its figures match
-tools/workbench/sources.py (tests compare both on fixtures).
+tools/workbench/checklist.py and tools/workbench/sources.py (tests compare them
+on fixtures).
 """
 from __future__ import annotations
 
+import itertools
 import json
+import math
 import os
 import re
 import sys
+import time
+from datetime import datetime
 from pathlib import Path
 
 STDIN_MAX = 64 * 1024
 DOC_MAX = 2 * 1024 * 1024
 PROGRESS_MAX = 256 * 1024
 LEDGER_MAX = 64 * 1024 * 1024   # per ledger file; beyond it the total is reported incomplete
-REVIEWS_PER_CHECKOUT = 5
+LEDGER_TOTAL_MAX = 128 * 1024 * 1024   # over all ledger files of all checkouts
+LEDGER_FILES_MAX = 64   # directory entries per ledger directory
+WEIGHT_MAX = 1000   # mirrors checklist.WEIGHT_MAX
+HOME_MAX = 4 * 1024
+HOME_FRESH = 120     # seconds; the running workbench rewrites its snapshot at least every 60 s
 LINE_MAX = 200
+SEP = " \u00b7 "
+SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")  # evidence forms mirror tools/workbench/checklist.py
+PR_RE = re.compile(r"^https://github\.com/KonomiYuzu01/Magic-600-Cell/pull/[1-9][0-9]{0,5}$")
+PATH_RE = re.compile(r"^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$")
 
 
 def main_checkout(start: Path) -> Path | None:
@@ -80,34 +104,84 @@ def clean(text, limit: int) -> str:
     return " ".join(text.split())[:limit]
 
 
-def open_findings(roots: list) -> int:
-    count = 0
-    for c in roots:
-        for meta_path in sorted((c / "work" / "reviews").glob("*/meta.json"), reverse=True)[:REVIEWS_PER_CHECKOUT]:
-            meta = read_json(meta_path)
-            if not isinstance(meta, dict) or meta.get("verdict") != "findings":
-                continue
-            result = read_json(meta_path.parent / "review.json")
-            answered = read_json(meta_path.parent / "dispositions.json")
-            answered = answered if isinstance(answered, dict) else {}
-            if isinstance(result, dict) and isinstance(result.get("findings"), list):
-                count += sum(1 for f in result["findings"] if isinstance(f, dict) and f.get("id") not in answered)
-    return count
+def evidence_ok(ref) -> bool:
+    """Mirrors `checklist.evidence_kind(ref) is not None`."""
+    if not isinstance(ref, str) or not ref or len(ref) > 200:
+        return False
+    if SHA_RE.fullmatch(ref) or PR_RE.fullmatch(ref):
+        return True
+    if PATH_RE.fullmatch(ref):
+        parts = ref.split("/")
+        return ".." not in parts and "." not in parts and parts[0].lower() != "work"
+    return False
+
+
+def step_percent(step) -> float | None:
+    """Mirrors checklist.step_percent: done weight over total weight, None without a valid checklist."""
+    items = step.get("items") if isinstance(step, dict) else None
+    if not isinstance(items, list) or not items:
+        return None
+    total = done = 0
+    for item in items:
+        if not isinstance(item, dict):
+            return None
+        w = item.get("weight")
+        if not isinstance(w, int) or isinstance(w, bool) or not 0 < w <= WEIGHT_MAX:
+            return None
+        total += w
+        if item.get("done") is True and evidence_ok(item.get("evidence")):
+            done += w
+    return 100.0 * done / total
+
+
+def home_counts(main: Path, now: float) -> tuple[int, int] | None:
+    """(for you, gallery new) from a fresh workbench snapshot, else None."""
+    doc = read_json(main / "work" / "loop-memory" / "workbench" / "home.json", HOME_MAX)
+    if not isinstance(doc, dict) or doc.get("schema") != 1 or not isinstance(doc.get("written"), str):
+        return None
+    try:
+        written = datetime.fromisoformat(doc["written"]).timestamp()
+    except (ValueError, OverflowError, OSError):
+        return None
+    if not -60 <= now - written <= HOME_FRESH:
+        return None
+    counts = (doc.get("for_you"), doc.get("gallery_new"))
+    if not all(isinstance(n, int) and not isinstance(n, bool) and 0 <= n < 1_000_000 for n in counts):
+        return None
+    return counts
 
 
 def budget(roots: list) -> dict:
-    """Cumulative paid API amounts over the complete ledgers, read up to their size at open time."""
-    paid, unknown, incomplete = {}, set(), False
+    """Cumulative paid API amounts over the complete ledgers, read up to their size at open time.
+    A ledger that cannot be listed or read in full within the budgets marks the total incomplete."""
+    paid, unknown, incomplete, read = {}, set(), False, 0
     for c in roots:
-        for f in sorted((c / "work" / "loop-memory" / "ledgers").glob("*.jsonl")):
+        directory = c / "work" / "loop-memory" / "ledgers"
+        try:
+            with os.scandir(directory) as it:
+                names = [e.name for e in itertools.islice(it, LEDGER_FILES_MAX + 1)]
+        except FileNotFoundError:
+            continue
+        except OSError:
+            incomplete = True
+            continue
+        if len(names) > LEDGER_FILES_MAX:
+            incomplete = True
+            continue
+        for name in sorted(n for n in names if n.endswith(".jsonl")):
+            f = directory / name
             try:
                 size = f.stat().st_size
-                if size > LEDGER_MAX:
+                if size > LEDGER_MAX or read + size > LEDGER_TOTAL_MAX:
                     incomplete = True
                     continue
+                read += size
                 with f.open("rb") as fh:
                     data = fh.read(size)  # a line appended after stat() is left for the next refresh
+            except FileNotFoundError:
+                continue   # removed since the listing
             except OSError:
+                incomplete = True
                 continue
             for line in data.split(b"\n")[:-1]:
                 if b"paid-api" not in line:
@@ -128,16 +202,8 @@ def budget(roots: list) -> dict:
     return {**sums, "unknown_calls": len(unknown), "incomplete": incomplete}
 
 
-def codex_login() -> str:
-    try:
-        home = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
-        return "ready" if (home / "auth.json").is_file() else "not-ready"
-    except (OSError, RuntimeError):
-        return "unknown"
-
-
-def line(main: Path) -> str:
-    roots = checkouts(main)
+def line(main: Path, now: float | None = None) -> str:
+    now = time.time() if now is None else now
     doc = read_json(main / "docs" / "progress" / "status.json", PROGRESS_MAX)
     step, ceiling = "step unknown", "?"
     if isinstance(doc, dict):
@@ -146,18 +212,29 @@ def line(main: Path) -> str:
         steps = doc.get("steps") if isinstance(doc.get("steps"), list) else []
         cur = next((s for s in steps if isinstance(s, dict) and s.get("id") == doc.get("current")), None)
         if cur:
-            step = f"{clean(cur.get('id'), 12)} {clean(cur.get('title'), 60)} ({clean(str(cur.get('status', '')).replace('_', ' '), 16)})"
-    b = budget(roots)
+            pct = step_percent(cur) if doc.get("schema") == 2 else None
+            step = f"Step {clean(cur.get('id'), 12)} " + (f"{math.floor(pct)}%" if pct is not None else "no checklist")
+    parts = [step]
+    home = home_counts(main, now)
+    parts.append(f"for you {home[0]}{SEP}gallery +{home[1]}" if home else "workbench closed")
+    b = budget(checkouts(main))
     if b["incomplete"]:
-        api = "API incomplete (ledger over read limit)"
-    else:
+        parts.append("API incomplete (a ledger was not read in full)")
+    elif b["billed"] or b["estimated"] or b["reserved"] or b["unknown_calls"]:
         api = f"API ${b['billed']:.2f}/${ceiling}"
         extra = [f"est ${b['estimated']:.2f}" if b["estimated"] else "", f"res ${b['reserved']:.2f}" if b["reserved"] else "",
                  f"{b['unknown_calls']} unknown" if b["unknown_calls"] else ""]
         extra = [e for e in extra if e]
         if extra:
             api += " (" + ", ".join(extra) + ")"
-    return clean(f"{step} | findings {open_findings(roots)} | Codex {codex_login()} | {api}", LINE_MAX)
+        parts.append(api)
+    return clean(SEP.join(parts), LINE_MAX)
+
+
+def emit(text: str) -> None:
+    """One UTF-8 line, whatever the console code page."""
+    sys.stdout.buffer.write((text + "\n").encode("utf-8"))
+    sys.stdout.flush()
 
 
 def main() -> int:
@@ -172,9 +249,9 @@ def main() -> int:
             start = ws.get("current_dir") or event.get("cwd")
         main_dir = (main_checkout(Path(start)) if isinstance(start, str) and start else None) \
             or main_checkout(Path(__file__).resolve().parent)
-        print(line(main_dir) if main_dir else "workbench: unavailable")
+        emit(line(main_dir) if main_dir else "workbench: unavailable")
     except Exception:
-        print("workbench: unavailable")
+        emit("workbench: unavailable")
     return 0
 
 

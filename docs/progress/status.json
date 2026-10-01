@@ -1,21 +1,101 @@
 {
-  "schema": 1,
+  "schema": 2,
   "updated": "2026-09-30",
   "current": "0.4.1-1",
   "paid_api_ceiling_usd": 100,
   "steps": [
-    {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-2", "track": "0.4.1", "title": "Baseline", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-3", "track": "0.4.1", "title": "Exporter and fixtures", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-4", "track": "0.4.1", "title": "Screening and fixes", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-5", "track": "0.4.1", "title": "Freeze candidate", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-6", "track": "0.4.1", "title": "Formal measurement (3 x 100)", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-7", "track": "0.4.1", "title": "Release", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.4", "track": "stage-2", "title": "Experiments (15 working days, day-7 go/no-go)", "status": "not_started", "acceptance": "A renderer is selected only if it renders all 259,800 sticker slots at full detail with the most complex animation at an average of at least 30 fps and a 99th-percentile frame time of at most 33.3 ms on the owner's machine.", "acceptance_source": "docs/wiki/decisions/renderer-candidates.md", "blocker": null},
-    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null}
+    {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "build-id", "title": "Build id recorded for the source identity", "weight": 3, "done": false, "evidence": null},
+      {"id": "cc-1", "title": "CC-1 native/snapshot assertion matches the host", "weight": 1, "done": false, "evidence": null},
+      {"id": "cc-2", "title": "CC-2 test_debug_cleanup creates its evidence directory", "weight": 1, "done": false, "evidence": null},
+      {"id": "cc-3", "title": "CC-3 the other evidence-directory tests create theirs", "weight": 1, "done": false, "evidence": null},
+      {"id": "cc-4", "title": "CC-4 harness tools documented with their arguments", "weight": 1, "done": false, "evidence": null},
+      {"id": "cc-5", "title": "CC-5 NumPy tests run on Windows with the engine environment", "weight": 1, "done": false, "evidence": null},
+      {"id": "cc-6", "title": "CC-6 browser UI test recorded as optional (Playwright)", "weight": 1, "done": false, "evidence": null},
+      {"id": "cc-7", "title": "CC-7 tests/run_postapproval.py restored or its hash reference removed", "weight": 1, "done": false, "evidence": null},
+      {"id": "cc-8", "title": "CC-8 test_codex_implement runs on the documented Python", "weight": 1, "done": false, "evidence": null},
+      {"id": "native-clean-build", "title": "Native build reproducible from a clean checkout on Windows", "weight": 3, "done": false, "evidence": null},
+      {"id": "workbench-phase-1", "title": "Development workbench phase 1 delivered", "weight": 2, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20"}
+     ]},
+    {"id": "0.4.1-2", "track": "0.4.1", "title": "Baseline", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "harness", "title": "M1, M2 and M3 harness written and tested once", "weight": 3, "done": false, "evidence": null},
+      {"id": "baseline-runs", "title": "Baseline 3 x 100 on the 0.4 build", "weight": 3, "done": false, "evidence": null},
+      {"id": "baseline-published", "title": "Baseline summary published (measurement-plan.md)", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "0.4.1-3", "track": "0.4.1", "title": "Exporter and fixtures", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "plan-check", "title": "Exporter plan check passed (exporter-spec-draft.md)", "weight": 1, "done": false, "evidence": null},
+      {"id": "schema", "title": "Migration schema", "weight": 2, "done": false, "evidence": null},
+      {"id": "exporter", "title": "Exporter", "weight": 3, "done": false, "evidence": null},
+      {"id": "validator", "title": "Validator", "weight": 2, "done": false, "evidence": null},
+      {"id": "fixtures", "title": "Fixtures F1 to F9 pass", "weight": 3, "done": false, "evidence": null}
+     ]},
+    {"id": "0.4.1-4", "track": "0.4.1", "title": "Screening and fixes", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "packets-run", "title": "Screening packets run (docs/progress/0.4.1/packets/)", "weight": 1, "done": true, "evidence": "docs/progress/0.4.1/screening-findings.md"},
+      {"id": "triaged", "title": "Findings triaged: every lead answered and ranked", "weight": 1, "done": true, "evidence": "docs/progress/0.4.1/screening-findings.md"},
+      {"id": "batch-1", "title": "Batch 1 fixes merged (A-02, B-001, C-01, C-02, C-03, F-01, B-002)", "weight": 3, "done": true, "evidence": "972c7d2"},
+      {"id": "remaining-fixes", "title": "Remaining confirmed fixes merged", "weight": 3, "done": false, "evidence": null},
+      {"id": "verification", "title": "Leads needing verification resolved", "weight": 2, "done": false, "evidence": null}
+     ]},
+    {"id": "0.4.1-5", "track": "0.4.1", "title": "Freeze candidate", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "candidate", "title": "Freeze candidate built", "weight": 2, "done": false, "evidence": null},
+      {"id": "data-directory", "title": "data-directory-plan.md change list applied", "weight": 2, "done": false, "evidence": null},
+      {"id": "d1-d7", "title": "D1 to D7 passed", "weight": 3, "done": false, "evidence": null}
+     ]},
+    {"id": "0.4.1-6", "track": "0.4.1", "title": "Formal measurement (3 x 100)", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "formal-runs", "title": "Formal measurement 3 x 100 done", "weight": 3, "done": false, "evidence": null},
+      {"id": "b4-12", "title": "B4-12 closeout recorded", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "0.4.1-7", "track": "0.4.1", "title": "Release", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "package-contract", "title": "Package contract updated to 0.4.1", "weight": 1, "done": false, "evidence": null},
+      {"id": "release-notes", "title": "Release notes written", "weight": 1, "done": false, "evidence": null},
+      {"id": "credits", "title": "Credits and licences checked", "weight": 1, "done": false, "evidence": null},
+      {"id": "published", "title": "Release published", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "charter", "title": "Charter", "weight": 1, "done": false, "evidence": null},
+      {"id": "authority", "title": "Authority record", "weight": 1, "done": false, "evidence": null},
+      {"id": "design-records", "title": "First design records", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "inventory-a", "title": "Inventory A (commands, physical input, API, windows, persistence)", "weight": 1, "done": false, "evidence": null},
+      {"id": "inventory-b", "title": "Inventory B, independent of A", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "dispositions", "title": "A disposition for every inventory item", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "command-model", "title": "Command model", "weight": 1, "done": false, "evidence": null},
+      {"id": "keyboard-model", "title": "Keyboard model", "weight": 1, "done": false, "evidence": null},
+      {"id": "state-charts", "title": "State charts", "weight": 1, "done": false, "evidence": null},
+      {"id": "hardest-screens", "title": "The three hardest screens", "weight": 1, "done": false, "evidence": null},
+      {"id": "design-tokens", "title": "Design tokens", "weight": 1, "done": false, "evidence": null},
+      {"id": "v0", "title": "UI vision V0 reference board", "weight": 1, "done": false, "evidence": null},
+      {"id": "v1", "title": "UI vision V1 feel brief", "weight": 1, "done": false, "evidence": null},
+      {"id": "v2", "title": "UI vision V2 A/B rounds", "weight": 1, "done": false, "evidence": null},
+      {"id": "v4", "title": "UI vision V4 design system freeze", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.4", "track": "stage-2", "title": "Experiments (15 working days, day-7 go/no-go)", "status": "not_started", "acceptance": "A renderer is selected only if it renders all 259,800 sticker slots at full detail with the most complex animation at an average of at least 30 fps and a 99th-percentile frame time of at most 33.3 ms on the owner's machine.", "acceptance_source": "docs/wiki/decisions/renderer-candidates.md", "blocker": null,
+     "items": [
+      {"id": "d3d12-probe", "title": "Bare Direct3D 12 interop probe", "weight": 1, "done": false, "evidence": null},
+      {"id": "day-7", "title": "Day-7 go/no-go ruling", "weight": 1, "done": false, "evidence": null},
+      {"id": "experiments", "title": "15 working days of experiments", "weight": 1, "done": false, "evidence": null},
+      {"id": "renderer-gate", "title": "Renderer selection gate met (renderer-candidates.md)", "weight": 1, "done": false, "evidence": null},
+      {"id": "v3", "title": "UI vision V3 vertical slice", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "architecture-freeze", "title": "1.0 architecture frozen (architecture-freeze ruling)", "weight": 1, "done": false, "evidence": null}
+     ]}
   ]
 }

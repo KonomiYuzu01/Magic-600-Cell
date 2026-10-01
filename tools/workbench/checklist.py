@@ -19,6 +19,7 @@ SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
 PR_RE = re.compile(r"^https://github\.com/KonomiYuzu01/Magic-600-Cell/pull/[1-9][0-9]{0,5}$")
 PATH_RE = re.compile(r"^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$")
 TRACKS = ("0.4.1", "stage-2")
+WEIGHT_MAX = 1000   # item and step weights are integers from 1 to WEIGHT_MAX
 STATUSES = ("not_started", "in_progress", "blocked", "done")
 
 
@@ -39,7 +40,7 @@ def evidence_kind(ref) -> str | None:
 
 
 def _positive(value) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+    return isinstance(value, int) and not isinstance(value, bool) and 0 < value <= WEIGHT_MAX
 
 
 def counted(item) -> bool:
@@ -111,7 +112,7 @@ def validate(doc) -> list[str]:
         if s.get("status") not in STATUSES:
             problems.append(f"{sid}: unknown status")
         if "weight" in s and not _positive(s["weight"]):
-            problems.append(f"{sid}: step weight must be a positive integer")
+            problems.append(f"{sid}: step weight must be an integer from 1 to {WEIGHT_MAX}")
         items = s.get("items")
         if not isinstance(items, list) or not items:
             problems.append(f"{sid}: no checklist items")
@@ -130,7 +131,7 @@ def validate(doc) -> list[str]:
             if not isinstance(item.get("title"), str) or not item["title"].strip():
                 problems.append(f"{sid}/{iid}: no title")
             if not _positive(item.get("weight")):
-                problems.append(f"{sid}/{iid}: weight must be a positive integer")
+                problems.append(f"{sid}/{iid}: weight must be an integer from 1 to {WEIGHT_MAX}")
             if not isinstance(item.get("done"), bool):
                 problems.append(f"{sid}/{iid}: done must be true or false")
             if item.get("done") is True and evidence_kind(item.get("evidence")) is None:

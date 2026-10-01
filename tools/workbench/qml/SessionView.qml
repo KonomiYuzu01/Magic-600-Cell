@@ -6,6 +6,7 @@ Pane {
     id: view
     property color statusColor: "#6d6d6d"
     readonly property bool isSession: wb.selected.kind === "session"
+    property bool showPriority: false
     padding: 10
 
     Label {
@@ -47,6 +48,13 @@ Pane {
                      ToolTip.visible: hovered; ToolTip.text: "Resumes only a session that has ended; otherwise brings Claude Code forward." }
             Button { visible: view.isSession; text: "Resume with Remote Control"; onClicked: wb.openInClaude(true) }
             Button { visible: view.isSession; text: "Git diff"; onClicked: wb.runTool("git-diff", "") }
+            Button { objectName: "pauseSession"; visible: view.isSession; text: "Pause after this step"; onClicked: wb.sessionCommand("pause", "") }
+            Button { objectName: "resumeSession"; visible: view.isSession; text: "Resume"; onClicked: wb.sessionCommand("resume", "") }
+            Button { objectName: "whySession"; visible: view.isSession; text: "Why are you doing this?"; onClicked: wb.sessionCommand("why", "") }
+            Button { objectName: "prioritySession"; visible: view.isSession; text: "Priority…"; onClicked: view.showPriority = !view.showPriority }
+            TextField { id: priorityText; objectName: "priorityText"; visible: view.isSession && view.showPriority; placeholderText: "What comes first?" }
+            Button { objectName: "sendPriority"; visible: view.isSession && view.showPriority; text: "Send priority"; enabled: priorityText.text.trim().length > 0
+                     onClicked: if (wb.sessionCommand("priority", priorityText.text)) { priorityText.text = ""; view.showPriority = false } }
             Button { objectName: "stopRun"; visible: wb.selected.kind === "run" && !!wb.selected.cancellable; text: "Stop run"
                      onClicked: wb.cancelRun(wb.selected.id)
                      ToolTip.visible: hovered; ToolTip.text: "Ends the run's whole process tree." }

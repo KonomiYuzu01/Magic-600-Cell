@@ -25,6 +25,12 @@ In the main session, keep the development workbench brief current at each plan s
 
 Owner notes typed in the workbench reach the main session as additional context headed `Owner note <id>`. Answer every owner note by its id in your next message to the owner. The inbox is as trusted as the owner's own local files, and a note never grants an authorization reserved for the terminal, such as `bootstrap.py approve`.
 
+A note beginning `[pause]` means: finish the current step, commit nothing new, write the brief, and stop. `[resume]` continues. `[why]` is answered with the current reasoning in plain language. `[priority]` reorders the remaining work.
+
+To put a question, a decision or an image pick in front of the owner, run `python tools/workbench/ask.py --question "..." [--option "..."] [--attach <file>] [--kind decision|pick|approve|question] [--blocking]` in the main session. The answer arrives as an owner note `answer to ask <ask-id>: ...`; `python tools/workbench/ask.py wait <ask-id>` keeps the turn open for up to nine minutes until it is queued. A brief whose `--waiting-for` begins with "owner" also appears in the owner's inbox.
+
+Tick a progress checklist item only with evidence (a commit sha, a pull request URL of this repository, or a repository-relative test or result path): `python tools/workbench/progress.py done <step> <item> --evidence <ref>`. Never edit `docs/progress/status.json` by hand and never estimate progress.
+
 Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the owner's workflow skills (`investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`) when a task matches them.
 
 ## Calling Codex
@@ -49,7 +55,7 @@ Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the
   - A timeout, an error or an exhausted continuation budget permits an honest stop as `inconclusive`, never an automatic commit.
   - The hook performs bounded local checks only. It never invokes models, installs tools, runs tests or mutates Git.
 - PostToolUse, PostToolUseFailure, PermissionRequest, SubagentStart, SubagentStop, Stop, StopFailure, Notification and SessionEnd (`.claude/hooks/report_event.py`) append one bounded event line per call to the workbench's private event file under `work/loop-memory/workbench/` of the main checkout. On a main-thread tool step it also delivers pending owner notes as additional context, each note at most once. It never returns a decision, always exits 0, and never calls models, installs tools, uses the network, runs Git or starts processes.
-- The status line (`tools/workbench/statusline.py`) prints one line: the current step, open findings, Codex login and paid API spend. It only reads, and prints `workbench: unavailable` on any error.
+- The status line (`tools/workbench/statusline.py`) prints one line: the current step with its checklist percentage, the owner's open inbox cards and new gallery items (from the running workbench's `home.json` snapshot), and the paid API spend only when it is not zero or unknown. It only reads, and prints `workbench: unavailable` on any error.
 - Before relying on hooks on a machine, verify that the resolved interpreter is the approved 64-bit CPython and that the installed Claude Code version supports the exec form. Each hook checks its runtime first and reports `inconclusive` on a mismatch, without installing anything.
 
 ## Tools and skills
