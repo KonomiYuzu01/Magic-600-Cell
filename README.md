@@ -37,7 +37,7 @@ Root launch scripts, `web/` and `packaging/` retain the earlier shared/0.3 paths
 
 ## After 0.4
 
-The next planned version is **0.4.1**, focused on optimizing 0.4: performance, debugging, bug fixes and code optimization, alongside a dedicated local development workbench. This is a recorded plan, not a released feature set. The [1.0 architecture proposal](docs/architecture/1.0/README.md) remains future documentation and does not describe the shipped 0.4 renderer.
+0.4 is the last release of the 0.4 line; the planned 0.4.1 release was cancelled. Work now goes to 1.0. The [1.0 architecture proposal](docs/architecture/1.0/README.md) remains future documentation and does not describe the shipped 0.4 renderer.
 
 ## Credits and license
 

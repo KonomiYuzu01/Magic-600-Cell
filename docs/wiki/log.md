@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-01] decision | No 0.4.1 release; stage 2 within 20 days
+Recorded in [owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md). The day-by-day plan is in `docs/progress/1.0/stage-2-experiment-protocol.md` section 5.
+
 ## [2026-09-30] decision | 1.0 design route and 0.4 not a UX baseline
 Recorded in [owner-decisions-2026-09-30](decisions/owner-decisions-2026-09-30.md); stage 2 design goals are in `docs/progress/1.0/stage-2-experiment-protocol.md` section 4.
 

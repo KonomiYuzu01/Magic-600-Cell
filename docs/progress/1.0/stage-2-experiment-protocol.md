@@ -1,6 +1,6 @@
 # Stage 2 experiment protocol (draft)
 
-Status: **draft, not accepted**, except the owner decisions recorded in section 4.1. It proposes how stage 2 (2.0 to 2.5) runs experiments so that trial and error stays cheap and every attempt leaves a usable result. It changes no rule, no ADR and no gate. The renderer selection gate stays as recorded in [renderer-candidates](../../wiki/decisions/renderer-candidates.md), and UX sign-off stays with the owner (`AGENTS.md` "Ask the owner").
+Status: **draft, not accepted**, except the owner decisions recorded in section 4.1 and the 20-day limit in section 5. It proposes how stage 2 (2.0 to 2.5) runs experiments so that trial and error stays cheap and every attempt leaves a usable result. It changes no rule, no ADR and no gate. The renderer selection gate stays as recorded in [renderer-candidates](../../wiki/decisions/renderer-candidates.md), and UX sign-off stays with the owner (`AGENTS.md` "Ask the owner").
 
 ## 1. Principles
 
@@ -29,12 +29,12 @@ Every experiment in stage 2 uses this card. Keep it in the experiment ledger.
 
 ## 3. Correctness oracle for rebuilt components
 
-When 1.0 rebuilds a component that has a 0.4 counterpart, a differential oracle checks it. The 0.4.1 engine (`core.py` and the reference maps) is the reference.
+When 1.0 rebuilds a component that has a 0.4 counterpart, a differential oracle checks it. The 0.4 engine as it stands after 0.4.1 step 1 (`core.py` and the reference maps) is the reference.
 
-- Run the same scripted input (generators, macros, fixture sessions) through the 0.4.1 reference and the new component.
+- Run the same scripted input (generators, macros, fixture sessions) through the 0.4 reference and the new component.
 - Compare full labelled-state hashes after every step, not only at the end.
 - The first mismatching step is the bug report. A mismatch is never accepted as "close enough".
-- The 0.4.1 `.c600migrate` fixtures ([exporter-spec-draft](../0.4.1/exporter-spec-draft.md) section 5) are the shared inputs.
+- The shared inputs are fixture sessions built from synthetic data, using the fixture design of [exporter-spec-draft](../0.4.1/exporter-spec-draft.md) section 5. There is no 0.4.1 release (owner decision, 1 October 2026).
 
 This keeps AI-written code cheap to verify: a change either matches the reference or points at a step.
 
@@ -75,7 +75,7 @@ Build acceptance: runs on the owner's machine; every parameter changes the view 
 
 ### 4.3 Work plan and goals
 
-**Before stage 2 (during 0.4.1, zero development cost)**
+**Preparation (days 1 and 2)**
 - The owner keeps a taste diary: one sentence per thing seen and liked or disliked, with a neutral source description. Images stay private.
 - The owner drafts the anti-goals list (M3).
 
@@ -93,7 +93,7 @@ Build acceptance: runs on the owner's machine; every parameter changes the view 
 **2.3 Design exploration (main owner phase)**
 - **G1. Structure catalogue (M1).** Agents implement at least six structure-derived visual modes in the Look Lab. The owner picks at least two to keep. Exit: the chosen modes are recorded as presets.
 - **G2. Metaphor decision (M2).** For each candidate metaphor, agents produce one hero still and one 10-second clip in the Look Lab, all using the same scene. The owner picks one and finalizes the manifesto. Exit: the manifesto is signed.
-- **G3. Preference search (M4).** Swipe sessions of about 20 minutes, at most five, over the parameters the metaphor leaves open. Stop when two consecutive sessions converge on the same parameter region, or when the owner calls it. Exit: one to three finalist presets.
+- **G3. Preference search (M4).** Swipe sessions of about 20 minutes, at most three, over the parameters the metaphor leaves open. Stop when two consecutive sessions converge on the same parameter region, or when the owner calls it. Exit: one to three finalist presets.
 - **G4. Sticker palette.** Candidate palettes must pass measurable checks: minimum perceptual distance between adjacent cells (OKLab), a colour-vision-deficiency simulation, and legibility at full detail. The owner picks among the palettes that pass. Exit: palette preset frozen.
 - **G5. Key moments.** The owner tunes the motion of turn, undo, invalid action and solved in the Look Lab curve editor. Exit: a motion parameter table.
 - **G6. Hardest screens.** The command model, keyboard model and the three hardest screens are designed inside the chosen direction. The owner sketches; agents turn the sketches into draw.io wireframes. Exit: owner-approved wireframes.
@@ -101,7 +101,7 @@ Build acceptance: runs on the owner's machine; every parameter changes the view 
 **2.4 Vertical slice (inside the experiment window)**
 - One scene is built at full quality on the leading renderer candidate: open, see the object, turn one layer, see the result, with the finalist preset, palette and motion.
 - It must pass the renderer selection gate. A look that cannot hold full detail at 30 fps does not pass. In that case, return to G3 with the conflicting parameters and their measured cost.
-- **Living test:** the owner uses the slice for about 15 minutes a day for one week and writes one sentence a day. Exit: still satisfied after the week, with a correction list.
+- **Living test:** the owner uses the slice for about 15 minutes a day for five days and writes one sentence a day. Exit: still satisfied after the five days, with a correction list.
 
 **2.5 Freeze**
 - A design-system ADR: tokens (colour, spacing, type scale, motion durations and curves), the palette, components, the manifesto and the anti-goals.
@@ -112,11 +112,11 @@ Build acceptance: runs on the owner's machine; every parameter changes the view 
 
 | Phase | Owner time (estimate) | Owner does |
 |---|---|---|
-| Before stage 2 | a few minutes a day | taste diary, anti-goals draft |
+| Preparation | a few minutes a day | taste diary, anti-goals draft |
 | 2.0 | half a day | charter sign-off |
 | 2.1–2.2 | one to two hours | pain-point annotation |
-| 2.3 | two to four hours a week | picks, swipe sessions, tuning, sketches |
-| 2.4 | 15 minutes a day for a week | living test |
+| 2.3 | about one hour a day on days 4 to 12 | picks, swipe sessions, tuning, sketches |
+| 2.4 | 15 minutes a day for five days | living test |
 | 2.5 | one hour | ADR acceptance |
 
 Tools: Godot (Look Lab), Blender (hero stills where Godot is not enough), marimo (preference model and palette checks), draw.io (wireframes), Typst (type specimens). Adding a tool outside the allowlist (for example Krita for sketching) follows the normal allowlist process.
@@ -129,7 +129,26 @@ Tools: Godot (Look Lab), Blender (hero stills where Godot is not enough), marimo
 - The vertical slice passes the renderer selection gate and the living test.
 - The design-system ADR is proposed and accepted by the owner.
 
-## 5. Out of scope
+## 5. Schedule: 20 days (owner decision, 1 October 2026)
+
+Preparation and all of stage 2 finish within 20 calendar days. Day 1 is 1 October 2026; day 20 is 20 October 2026. Tracks run in parallel; the owner's time goes to the design track and to the gate decisions.
+
+| Days | Engineering track | Design track (owner) | Exit |
+|---|---|---|---|
+| 1–2 | Merge the 0.4.1 step 1 and B4-12 harness branches. Choose the migration path. Codex starts the Look Lab build. | Taste diary and Taste Lab ratings start. Anti-goals draft, two or three candidate metaphors. | **2.0** charter signed (end of day 2), including the migration path. |
+| 2–4 | **2.1** two independent inventories as concurrent Codex shards; **2.2** dispositions. | Pain-point annotation. | Dispositions signed (day 4). |
+| 3–14 | **2.4** renderer window, 12 days: S-B bare Direct3D 12 probe on days 3–4, then S-A2 and S-D. Go/no-go on window day 7 (day 9), Astra ruling. Final selection on day 14. | — | Renderer selected, or the failure recorded. |
+| 4–12 | Look Lab ready by day 4; agents produce variants. | **2.3** G1 (days 4–6), G2 (days 6–8), G3 and G4 (days 8–10), G5 and G6 (days 10–12). | Manifesto, finalist preset, palette, motion table and wireframes approved. |
+| 13–15 | **2.4** vertical slice on the leading candidate; gate measurement. | Review of the slice. | Slice passes the selection gate. |
+| 15–19 | Correction fixes only. | Living test, five days. | Living test exit. |
+| 19–20 | **2.5** architecture freeze (Astra gate ruling), migration format freeze, design-system ADR. | ADR acceptance. | Stage 2 closed. |
+
+Rules for the limit:
+- A task that would push past its exit day is cut down or dropped, not extended. The owner decides which.
+- If no renderer candidate passes the gate by day 14, the vertical slice uses the best candidate for the design checks only. Stage 2 still ends on day 20 with the failure recorded, and the owner decides the next step.
+- No 0.4 performance work and no 0.4.1 release work runs in these 20 days.
+
+## 6. Out of scope
 
 - Choosing the renderer. This track uses the stage 2.4 candidate and does not select it.
 - Mechanics, model identity and protection rules. They are unchanged by any UI decision.

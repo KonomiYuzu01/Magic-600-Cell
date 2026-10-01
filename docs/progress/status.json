@@ -1,21 +1,15 @@
 {
   "schema": 1,
-  "updated": "2026-09-30",
+  "updated": "2026-10-01",
   "current": "0.4.1-1",
   "paid_api_ceiling_usd": 100,
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-2", "track": "0.4.1", "title": "Baseline", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-3", "track": "0.4.1", "title": "Exporter and fixtures", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-4", "track": "0.4.1", "title": "Screening and fixes", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-5", "track": "0.4.1", "title": "Freeze candidate", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-6", "track": "0.4.1", "title": "Formal measurement (3 x 100)", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "0.4.1-7", "track": "0.4.1", "title": "Release", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
     {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null},
-    {"id": "2.4", "track": "stage-2", "title": "Experiments (15 working days, day-7 go/no-go)", "status": "not_started", "acceptance": "A renderer is selected only if it renders all 259,800 sticker slots at full detail with the most complex animation at an average of at least 30 fps and a 99th-percentile frame time of at most 33.3 ms on the owner's machine.", "acceptance_source": "docs/wiki/decisions/renderer-candidates.md", "blocker": null},
-    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null}
+    {"id": "2.4", "track": "stage-2", "title": "Experiments (12-day renderer window, days 3-14, day-7 go/no-go)", "status": "not_started", "acceptance": "A renderer is selected only if it renders all 259,800 sticker slots at full detail with the most complex animation at an average of at least 30 fps and a 99th-percentile frame time of at most 33.3 ms on the owner's machine.", "acceptance_source": "docs/wiki/decisions/renderer-candidates.md", "blocker": null},
+    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": "Stage 2 closes by day 20 (20 October 2026).", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-01.md", "blocker": null}
   ]
 }
