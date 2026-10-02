@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "updated": "2026-10-01",
+  "updated": "2026-10-02",
   "current": "2.0",
   "paid_api_ceiling_usd": 100,
   "steps": [
@@ -56,7 +56,7 @@
       {"id": "vertical-slice", "title": "Vertical slice passes the selection gate", "weight": 1, "done": false, "evidence": null},
       {"id": "living-test", "title": "Living test, five days", "weight": 1, "done": false, "evidence": null}
      ]},
-    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": "Stage 2 closes by day 20 (20 October 2026).", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-01.md", "blocker": null,
+    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": "Stage 2 closes with the 2.5 freeze gates; target: working day 20, counting only the owner's working days; exit days are targets and no gate is relaxed.", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-02.md", "blocker": null,
      "items": [
       {"id": "architecture-freeze", "title": "1.0 architecture frozen (architecture-freeze ruling)", "weight": 1, "done": false, "evidence": null},
       {"id": "migration-format-freeze", "title": "Migration format frozen (migration-format-freeze ruling)", "weight": 1, "done": false, "evidence": null},
