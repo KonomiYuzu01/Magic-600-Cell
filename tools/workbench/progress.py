@@ -55,10 +55,11 @@ STATUS_MAX = 256 * 1024
 ACCEPTANCE_MAX = 600
 # Local paths that must never reach the public status.json: a drive path (C:\ or C:/; a URL scheme
 # is no drive), a UNC path (\\server\share), a home-relative path (~/ or ~\), an environment
-# reference to the home directory, and any absolute POSIX path (a "/" that starts a word). Relative
+# reference to the home directory, and any absolute POSIX or network path (a "/" or "//" not inside a
+# word, including after a backtick or a colon; "://" of a URL excepted). Relative
 # repository references ("docs/x.md", "0.4/0.4.1") and URLs ("https://...") stay allowed.
-PRIVATE_RE = re.compile(r"(?<![A-Za-z])[A-Za-z]:[\\/]|\\\\[^\\\s]|~[\\/]|%USERPROFILE%|\$HOME\b|/Users/|/home/|\\\\Users"
-                        r"|(?:^|(?<=[\s(\[\"'=,;]))/(?=[^\s/])")
+PRIVATE_RE = re.compile(r"(?<![A-Za-z])[A-Za-z]:[\\/]|\\\\[^\\\s]|~[\\/]|%USERPROFILE%|\$\{?HOME\b|/Users/|/home/|\\\\Users"
+                        r"|(?<![A-Za-z0-9._~\-/])/(?=[^\s/])|(?<![:/])//(?=[^\s/])")
 LOCK_NAME = "magic600-progress.lock"
 LOCK_WAIT = 10.0
 _CJK_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]")

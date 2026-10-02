@@ -562,11 +562,12 @@ class ProgressValidationTests(CliFixtureTests):
         path = self.status()
         for title in ("Evidence at /root/private/result.txt", "see /tmp/x", "(/var/data)", "copy ~/notes",
                       "copy ~\\notes", "at \\\\server\\share\\r.txt", "$HOME/x", "%USERPROFILE%\\x",
-                      "C:\\Users\\x", "D:/data", "a /Users/b"):
+                      "C:\\Users\\x", "D:/data", "a /Users/b", "Evidence at `/root/r.txt`",
+                      "Evidence:/tmp/p.txt", "copy ${HOME}/p.txt", "at //server/share/p.txt"):
             with self.subTest(title=title):
                 self.rejected(path, "track", "t2", "--title", title)
         for title in ("Look Lab / Godot", "0.4/0.4.1 records", "docs/progress/1.0/x.md",
-                      "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20"):
+                      "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20", "and/or", "A/B"):
             with self.subTest(title=title):
                 self.assertIsNone(progress.PRIVATE_RE.search(title))
 
