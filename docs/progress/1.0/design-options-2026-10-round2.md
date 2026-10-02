@@ -1,6 +1,6 @@
 # Design options, round 2: open points in the owner's picks (October 2026)
 
-Status: **options for the owner to choose from, not decisions.** Companion to [design-options-2026-10](design-options-2026-10.md). After the owner rules on the points below, the picks of both rounds are recorded together in a dated owner-decision page and the charter draft.
+Status: **options; the owner decided on 2 October 2026** ([owner-decisions-2026-10-02-design](../../wiki/decisions/owner-decisions-2026-10-02-design.md)). The options below are kept as the record of what was considered. Companion to [design-options-2026-10](design-options-2026-10.md). After the owner rules on the points below, the picks of both rounds are recorded together in a dated owner-decision page and the charter draft.
 
 ## Picks already settled by the owner (2 October 2026)
 

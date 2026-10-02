@@ -1,6 +1,6 @@
 # Design options for ten open gaps (October 2026)
 
-Status: **options for the owner to choose from, not decisions.** Nothing here changes the charter, a rule, an ADR or a gate. After the owner picks (for example "1B 2A 3C …"), the choices are recorded in the wiki owner decisions and in the charter draft; until then every option, threshold and number below is an unverified proposal.
+Status: **options; the owner decided on 2 October 2026** ([owner-decisions-2026-10-02-design](../../wiki/decisions/owner-decisions-2026-10-02-design.md)). The options below are kept as the record of what was considered. Nothing here changes the charter, a rule, an ADR or a gate. After the owner picks (for example "1B 2A 3C …"), the choices are recorded in the wiki owner decisions and in the charter draft; until then every option, threshold and number below is an unverified proposal.
 
 Source: the owner's second round of feedback on the Taste Lab notes (2 October 2026), ten gaps in the owner's wording. Basis: [solving-workflow](solving-workflow.md), charter section 5 ([charter-2.0-draft](charter-2.0-draft.md); M6, D7, D8, A6 and anti-goals 1 to 13 are the main yardstick), [owner decisions of 2 October](../../wiki/decisions/owner-decisions-2026-10-02.md), the design track in [stage-2-experiment-protocol](stage-2-experiment-protocol.md) section 4, and the gate in [renderer-candidates](../../wiki/decisions/renderer-candidates.md).
 

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-02] decision | Ten 1.0 design decisions
+Recorded in [owner-decisions-2026-10-02-design](decisions/owner-decisions-2026-10-02-design.md) from two rounds of options ([round 1](../progress/1.0/design-options-2026-10.md), [round 2](../progress/1.0/design-options-2026-10-round2.md)); the charter draft section 5 and the briefing now carry them.
+
 ## [2026-10-02] decision | Taste Lab page, product thesis, human-solve boundary and themes
 Recorded in [owner-decisions-2026-10-02](decisions/owner-decisions-2026-10-02.md): Taste Lab is built now on a private Artifact page with a pairwise preference model; the 1.0 thesis, target users and human-solve boundary come from the owner's notes; several themes share one design language. The charter draft and a first [solving workflow](../progress/1.0/solving-workflow.md) page carry the details.
 
