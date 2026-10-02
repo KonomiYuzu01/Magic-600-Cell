@@ -7,7 +7,7 @@ Status: **revised after the plan check** (call 20261002T171939Z-9e60ff72, findin
 Give the owner a private page on which a model learns the owner's visual preferences for the 600-cell from a few dozen pairwise choices, and hands the result to the design track (G2 to G5) as starting points.
 
 Phase 1 is accepted when:
-1. the core and geometry tests pass headless (`python tests/test_tastelab.py`, which runs `node --test` on both test folders);
+1. the core and geometry tests pass headless (`python tests/test_tastelab.py`, which runs the node tests of both folders);
 2. the palette feasibility sweep (section 4.3) finds feasible looks under the hard checks and reports the rejection rate;
 3. the simulated-owner experiment (section 6) meets its pass criteria; if it does not, the result goes to the owner before the learner is offered as one;
 4. the canary (section 7.1) and the final page pass their Artifact checks, and one functional pass (record a comparison, read it back with `ArtifactData`) succeeds;
@@ -27,10 +27,10 @@ Phase 1 is accepted when:
 | Preference model | `tools/tastelab/core/gp.js` | Codex packet P1 | section 5 |
 | Next-pair choice | `tools/tastelab/core/acquire.js` | Codex packet P1 | section 5.4 |
 | Parameter space and checks | `tools/tastelab/core/space.js` | Codex packet P1 | section 4 |
-| Core tests | `tools/tastelab/core/tests/*.test.mjs` | Codex packet P1 | acceptance: `node --test tools/tastelab/core/tests/` |
+| Core tests | `tools/tastelab/core/tests/*.test.mjs` | Codex packet P1 | acceptance: `node --test "tools/tastelab/core/tests/*.test.mjs"` |
 | Geometry | `tools/tastelab/page/geometry.js` | Codex packet P2 | section 4.4 |
-| Geometry tests | `tools/tastelab/page/tests/*.test.mjs`, `tools/tastelab/page/tests/fixtures/600cell.json` | Codex packet P2 | acceptance: `node --test tools/tastelab/page/tests/` |
-| Test runner | `tests/test_tastelab.py` | Claude | runs both `node --test` folders; skips with a clear message when Node.js is missing |
+| Geometry tests | `tools/tastelab/page/tests/*.test.mjs`, `tools/tastelab/page/tests/fixtures/600cell.json` | Codex packet P2 | acceptance: `node --test "tools/tastelab/page/tests/*.test.mjs"` |
+| Test runner | `tests/test_tastelab.py` | Claude | runs `node --test` on the test files of both folders and checks the geometry fixture; skips with a clear message when Node.js is missing |
 | Preview | `tools/tastelab/page/preview.js` | Claude | WebGL 2: perspective projection from 4D, cells shrunk by the gap parameter, edges, gloss, glow, fog; one animated cap turn (section 4.4) with the chosen duration and easing |
 | Page | `tools/tastelab/page/index.html`, `app.js`, `worker.js` | Claude | two looks side by side, keys A, B, S (same), X (both bad), Z (undo), "what matters" panel, scene switch, export; model work in a Web Worker |
 | Sweep and experiment | `tools/tastelab/sim/sweep.mjs`, `tools/tastelab/sim/experiment.mjs` | Claude | section 4.3 and section 6 |
