@@ -67,6 +67,12 @@ Review rounds (keep reviews few and decisive):
 - Every packet states the acceptance check and what is out of scope, and the reviewer stays within it.
 - Spend spare subscription quota on parallelism, not on more serial rounds: every full review of a critical-path change runs as at least two independent shards run concurrently (split by files or by concern), and the blocking findings of every shard are resolved before commit. Other full reviews may run as one shard. Paid API calls still reserve budget first.
 
+Risk tiers (owner decision, 2 October 2026):
+- Critical paths (briefing section 3) keep every rule above.
+- Other code and tools: no plan check unless the change alters behaviour or a contract; one Sol review with `--speed fast` of the finished candidate; no verification round for findings below `major`.
+- Documentation, wiki and progress pages that record owner decisions or measured results: no Codex review; run the wiki and agent-rules checks.
+- Process budget: in each working week at least 70% of the commits are experiment code, measurements or product content, and at most 30% are governance or documentation. The integrator reports the split in the milestone summary. When governance exceeds 30%, new governance work stops until the split recovers, except fixes to a broken check, hook or wrapper.
+
 Pair implementation (Claude and Codex write code together):
 - Enabled: Codex writes code only through the wrapper's `--kind implement`, which creates the packet's worktree and branch itself, runs Codex there in the workspace-write sandbox, rejects any change outside the allowed files and any commit, ref, Git config, hook or link change, and runs the acceptance check in the same sandbox. The wrapper never merges.
 - The Windows sandbox available without administrator rights enforces the filesystem boundary (so a push to a local repository fails) but not a network firewall. Git transports are off in the default configuration Codex and the acceptance check receive, but a process can override that, so pushes over the network and other network use are only instructed away. Firewall isolation needs the elevated backend, which is an owner decision.
