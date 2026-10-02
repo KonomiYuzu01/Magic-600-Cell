@@ -75,7 +75,7 @@ Sizes are kept so that one full generation runs in minutes on the owner's machin
 ## 7. Reference generator
 
 - `tools/oracle/make_cases.py --out <dir>` builds the case files with the 0.4 reference. It imports `core` and `session` read-only and never modifies them.
-- Steps that need protection run through `session.Session` in a fresh temporary directory created by the generator and removed afterwards (`preview`, then `commit` or the refusal). The generator accepts no data-directory argument and refuses an output directory that contains a `session.sqlite3`.
+- Steps that need protection run through `session.Session` in a fresh temporary directory created by the generator and removed afterwards (`preview`, then `commit` or the refusal). The generator accepts no data-directory argument. Its output directory must be new or empty and not a link (a directory containing `session.sqlite3` is named in the refusal), and each case file is created exclusively, so no existing file or link is written through. Protected cases use `chain` mode only.
 - Output is deterministic: two runs with the same source produce byte-identical case files (fixed gzip mtime, sorted keys, no timestamps).
 - `tools/oracle/compare.py <case> <trace>` implements section 5.
 - `tools/oracle/replay_trace.py <case>` is a second, independent reference path for self-tests: it applies each primitive of `Model.expand` one by one with `Model.move` (no `Model.net`, no star cache) and writes a trace. It must equal the case on every step.
@@ -89,7 +89,8 @@ Sizes are kept so that one full generation runs in minutes on the owner's machin
 - the expansion digest test vector of section 2 is reproduced;
 - a deliberately streaming candidate (one that applies a valid prefix before rejecting the invalid part) fails O07;
 - a refused protected step leaves `state_hash` equal to the previous state;
-- the generator refuses an output directory that contains `session.sqlite3`.
+- the generator refuses an output directory that contains `session.sqlite3`, a non-empty directory (including one whose entry is a link to another file) and a linked directory, and leaves the link target unchanged;
+- a protected case in `independent` mode is refused.
 
 ## 9. Environment
 
