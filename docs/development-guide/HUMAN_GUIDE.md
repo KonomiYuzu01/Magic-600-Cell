@@ -6,7 +6,8 @@ This guide is for the owner and any person working on the project. Agents follow
 
 - **0.4** is the released version (19 September 2026). Its package and provenance are frozen.
 - **There is no 0.4.1 release** (your decision, 1 October 2026). The 0.4 line ends with 0.4. What 0.4.1 built stays: the local development workbench (a desktop monitor that lists every session with a short explanation, lets you watch any of them live and jump to every tool they use, lets you send notes to a running Claude session, and keeps the project progress in view), the reproducible build identity, the test harness and the screening findings, which become 1.0 requirements.
-- **Stage 2 runs within 20 days**, from 1 October to 20 October 2026, preparation included. The day-by-day plan is in `docs/progress/1.0/stage-2-experiment-protocol.md` section 5.
+- **Stage 2 is planned as about 20 working days**, preparation included, starting 1 October 2026. Only days you work on the project count, and exit days are targets you can move; the gates stay strict (your decision, 2 October 2026). The day-by-day plan is in `docs/progress/1.0/stage-2-experiment-protocol.md` section 5.
+- **macOS and Linux come later.** 1.0 ships on Windows first, but its architecture keeps a later port cheap: platform code behind narrow interfaces, one portable shader source and a small renderer backend interface (`docs/wiki/decisions/owner-decisions-2026-10-02.md`).
 - **1.0** is a new program. It keeps the mathematics, the protection rules and the model identity, but not the 0.4 runtime. Direct3D 12 is the base of the new renderer; Godot and Blender are in scope. Its first phase, stage 2, inventories 0.4, tears it down and redesigns it, with a timed experiment window.
 - The decisions behind this are recorded in `docs/wiki/decisions/owner-decisions-2026-09-29.md`.
 

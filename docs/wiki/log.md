@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-02] decision | Working-day schedule and future macOS and Linux versions
+Recorded in [owner-decisions-2026-10-02](decisions/owner-decisions-2026-10-02.md): stage 2 day numbers count the owner's working days and exit days are targets that the owner may move, with every gate unchanged; and the 1.0 architecture keeps later macOS and Linux versions cheap without changing the Direct3D 12 base or the stage 2 schedule.
+
 ## [2026-10-01] decision | Parallel progress tracks and fewer confirmations
 Recorded in [owner-decisions-2026-10-01](decisions/owner-decisions-2026-10-01.md): the project scripts `progress.py`, `brief.py`, `ask.py` and the test files run without a permission prompt, and full reviews outside critical paths may run as one shard. `progress.py` gained `track`, `step`, `item` and `current`, so parallel work gets its own track in `docs/progress/status.json`.
 

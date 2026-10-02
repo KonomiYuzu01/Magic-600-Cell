@@ -1,6 +1,6 @@
 # Stage 2 experiment protocol (draft)
 
-Status: **draft, not accepted**, except the owner decisions recorded in section 4.1 and the 20-day limit in section 5. It proposes how stage 2 (2.0 to 2.5) runs experiments so that trial and error stays cheap and every attempt leaves a usable result. It changes no rule, no ADR and no gate. The renderer selection gate stays as recorded in [renderer-candidates](../../wiki/decisions/renderer-candidates.md), and UX sign-off stays with the owner (`AGENTS.md` "Ask the owner").
+Status: **draft, not accepted**, except the owner decisions recorded in section 4.1 and the working-day schedule in section 5. It proposes how stage 2 (2.0 to 2.5) runs experiments so that trial and error stays cheap and every attempt leaves a usable result. It changes no rule, no ADR and no gate. The renderer selection gate stays as recorded in [renderer-candidates](../../wiki/decisions/renderer-candidates.md), and UX sign-off stays with the owner (`AGENTS.md` "Ask the owner").
 
 ## 1. Principles
 
@@ -163,9 +163,9 @@ The design track and the engineering track run in parallel and meet through numb
 | H-09 | Renderer constraints (overlay layers, text in the 3D view, transparency and sorting limits) | day 8 | S-A2 and S-D | which features stay in H-01 | open |
 | H-10 | Selected renderer | day 14 | selection | vertical slice and the framework-neutral rebuild if not Godot | open |
 
-## 5. Schedule: 20 days (owner decision, 1 October 2026)
+## 5. Schedule: about 20 working days (owner decisions, 1 and 2 October 2026)
 
-Preparation and all of stage 2 finish within 20 calendar days. Day 1 is 1 October 2026; day 20 is 20 October 2026. Tracks run in parallel; the owner's time goes to the design track and to the gate decisions. The experiment dates are also the compatibility test of the two tracks: each candidate renderer is tried with the design track's features, layout and presets as they are handed over (section 4.6).
+Preparation and all of stage 2 are planned as about 20 working days. Day numbers count the owner's working days, not calendar days: a day counts when the owner works on the project, and the owner can correct the count ([owner-decisions-2026-10-02](../../wiki/decisions/owner-decisions-2026-10-02.md)). Day 1 was 1 October 2026; 2 October was not a working day. Tracks run in parallel; the owner's time goes to the design track and to the gate decisions. The experiment dates are also the compatibility test of the two tracks: each candidate renderer is tried with the design track's features, layout and presets as they are handed over (section 4.6).
 
 | Days | Engineering track | Design track (owner) | Exit |
 |---|---|---|---|
@@ -177,10 +177,12 @@ Preparation and all of stage 2 finish within 20 calendar days. Day 1 is 1 Octobe
 | 15–19 | Correction fixes only. | Living test, five days. | Living test exit. |
 | 19–20 | **2.5** architecture freeze with the command table, layer interfaces and renderer feature list (Astra gate ruling), migration format freeze, design-system ADR. | ADR acceptance. | Stage 2 closed. |
 
-Rules for the limit:
-- A task that would push past its exit day is cut down or dropped, not extended. The owner decides which.
-- If no renderer candidate passes the gate by day 14, the vertical slice uses the best candidate for the design checks only. Stage 2 still ends on day 20 with the failure recorded, and the owner decides the next step.
-- No 0.4 performance work and no 0.4.1 release work runs in these 20 days.
+Rules for the schedule:
+- Exit days are targets. When a task is likely to miss its target day, the integrator says so once with a short re-plan (move the target, cut the task down or drop it), and the owner chooses. Nothing is cut or extended automatically.
+- Time never relaxes a gate: the selection gate, the Astra rulings, the oracle, the review rules and the owner sign-offs are unchanged.
+- Agent work that needs no owner input may run on any day; it does not advance the day count. Work that needs the owner, the owner's computer or a sign-off waits for a working day.
+- If no renderer candidate passes the gate by its target day (day 14), the vertical slice uses the best candidate for the design checks only, the failure is recorded, and the owner decides the next step.
+- No 0.4 performance work and no 0.4.1 release work runs in stage 2.
 
 ## 6. Out of scope
 

@@ -1,10 +1,10 @@
 # Stage 2.0 charter (draft for owner signature)
 
-Status: **draft, not signed**. Exit of stage 2.0 is the owner's signature at the end of day 2 (2 October 2026). Sections marked **Owner** are written or chosen by the owner; agents only collect inputs for them. Schedule and limits: [stage-2-experiment-protocol](stage-2-experiment-protocol.md) section 5.
+Status: **draft, not signed**. Exit of stage 2.0 is the owner's signature, targeted for working day 2 (the owner's next working day after 1 October 2026). Sections marked **Owner** are written or chosen by the owner; agents only collect inputs for them. Schedule and limits: [stage-2-experiment-protocol](stage-2-experiment-protocol.md) section 5.
 
 ## 1. Purpose
 
-Stage 2 removes the named uncertainties that block building 1.0, in this order: what 0.4 does (2.1), what 1.0 keeps (2.2), how 1.0 looks and works (2.3), which renderer can carry it (2.4), and the frozen architecture and design system (2.5). It ends on day 20 whatever the result, with every open item recorded.
+Stage 2 removes the named uncertainties that block building 1.0, in this order: what 0.4 does (2.1), what 1.0 keeps (2.2), how 1.0 looks and works (2.3), which renderer can carry it (2.4), and the frozen architecture and design system (2.5). It is planned as about 20 working days; exit days are targets the owner may move, and every open item is recorded at its end.
 
 ## 2. Binding inputs (not reopened in stage 2)
 
@@ -14,7 +14,8 @@ Stage 2 removes the named uncertainties that block building 1.0, in this order: 
 - Rendering never changes mechanical state or relabels pieces.
 - Renderer selection gate ([renderer-candidates](../../wiki/decisions/renderer-candidates.md)): full detail, average at least 30 fps and p99 frame time at most 33.3 ms on the RTX 4070 Laptop GPU, peak VRAM at most about 7 GB.
 - 0.4 is not a UX baseline; 1.0 designs its experience from scratch ([owner-decisions-2026-09-30](../../wiki/decisions/owner-decisions-2026-09-30.md)).
-- No 0.4.1 release; stage 2 within 20 days ([owner-decisions-2026-10-01](../../wiki/decisions/owner-decisions-2026-10-01.md)).
+- No 0.4.1 release ([owner-decisions-2026-10-01](../../wiki/decisions/owner-decisions-2026-10-01.md)); stage 2 planned as about 20 owner working days with target exit days ([owner-decisions-2026-10-02](../../wiki/decisions/owner-decisions-2026-10-02.md)).
+- Windows first; later macOS and Linux versions stay cheap: platform code behind narrow interfaces, one portable HLSL shader source, a small renderer backend interface ([owner-decisions-2026-10-02](../../wiki/decisions/owner-decisions-2026-10-02.md)).
 - Themes and subtitles are undecided; layouts and tokens must allow both.
 
 ## 3. Authority
@@ -27,7 +28,7 @@ Stage 2 removes the named uncertainties that block building 1.0, in this order: 
 | Correctness of rebuilt components | Differential oracle against the 0.4 engine (protocol section 3) | test output |
 | Everything else with a conventional default | Integrator (Claude), recorded | wiki or the stage document |
 
-Model agreement never decides taste or correctness. A task that would pass its exit day is cut or dropped by the owner, not extended.
+Model agreement never decides taste or correctness. A task likely to miss its target exit day is reported once with a re-plan, and the owner moves the target, cuts the task or drops it.
 
 ## 4. Scope of 1.0 (to confirm)
 
