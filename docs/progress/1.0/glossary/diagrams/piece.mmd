@@ -1,0 +1,6 @@
+flowchart LR
+  subgraph P[Piece]
+    s1[sticker] --- s2[sticker] --- s3[sticker]
+  end
+  P -->|occupies| Pos[one position]
+  Pos -->|its slots| Sl[slot set]
