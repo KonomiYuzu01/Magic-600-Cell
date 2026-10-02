@@ -142,6 +142,7 @@ class ProgressCliTests(CliFixtureTests):
 
 
 import io
+import threading
 import time
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timezone
@@ -556,6 +557,66 @@ class ProgressValidationTests(CliFixtureTests):
                      ("current", "missing")):
             with self.subTest(args=args):
                 self.rejected(path, *args)
+
+    def test_titles_reject_every_local_path_form(self):
+        path = self.status()
+        for title in ("Evidence at /root/private/result.txt", "see /tmp/x", "(/var/data)", "copy ~/notes",
+                      "copy ~\\notes", "at \\\\server\\share\\r.txt", "$HOME/x", "%USERPROFILE%\\x",
+                      "C:\\Users\\x", "D:/data", "a /Users/b"):
+            with self.subTest(title=title):
+                self.rejected(path, "track", "t2", "--title", title)
+        for title in ("Look Lab / Godot", "0.4/0.4.1 records", "docs/progress/1.0/x.md",
+                      "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20"):
+            with self.subTest(title=title):
+                self.assertIsNone(progress.PRIVATE_RE.search(title))
+
+    def test_concurrent_commands_keep_every_accepted_change(self):
+        path = self.status()
+        real_read = progress._read
+
+        def slow_read(root):
+            result = real_read(root)
+            time.sleep(0.2)  # widen the read-modify-replace window
+            return result
+
+        results = []
+        with patch.object(progress, "_read", slow_read):
+            threads = [threading.Thread(target=lambda t=t: results.append(
+                call_main(progress, ["track", t, "--title", t.title()], self.fx.wt).returncode)) for t in ("alpha", "beta")]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        self.assertEqual(results, [0, 0])
+        ids = [t["id"] for t in json.loads(path.read_bytes())["tracks"]]
+        self.assertIn("alpha", ids)
+        self.assertIn("beta", ids)
+        self.assertFalse((progress._git_dir(self.fx.wt) / progress.LOCK_NAME).exists())
+
+    def test_a_held_lock_refuses_and_is_left_alone(self):
+        path = self.status()
+        lock = progress._git_dir(self.fx.wt) / progress.LOCK_NAME
+        lock.write_text("1\n", encoding="utf-8")
+        with patch.object(progress, "LOCK_WAIT", 0.1):
+            r = self.rejected(path, "track", "design", "--title", "Design")
+        self.assertIn("run this one again", r.stderr)
+        self.assertTrue(lock.exists())
+        lock.unlink()
+        self.assertEqual(self.invoke("track", "design", "--title", "Design").returncode, 0)
+
+    def test_a_change_by_a_writer_that_bypasses_the_lock_is_never_overwritten(self):
+        path = self.status()
+        real = progress._with_tracks
+
+        def outside_writer(doc, listed):
+            path.write_bytes(path.read_bytes() + b"\n")
+            return real(doc, listed)
+
+        with patch.object(progress, "_with_tracks", outside_writer):
+            r = call_main(progress, ["track", "design", "--title", "Design"], self.fx.wt)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("changed during this command", r.stderr)
+        self.assertNotIn(b'"design"', path.read_bytes())
 
     def test_validate_checks_the_track_list(self):
         doc = sample_status()

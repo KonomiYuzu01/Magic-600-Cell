@@ -38,6 +38,7 @@ import runs  # noqa: E402
 import watch  # noqa: E402
 import checklist  # noqa: E402
 import home  # noqa: E402
+import progress  # noqa: E402
 
 
 def load_module(name: str, path: Path):
@@ -1240,7 +1241,7 @@ class ProgressStatusTests(unittest.TestCase):
             else:
                 self.assertIsNone(s["acceptance_source"])
         self.assertIsNone(re.search(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]", text))
-        self.assertIsNone(re.search(r"(?<![A-Za-z])[A-Za-z]:[\\/]|/Users/|/home/|\\\\Users", text))  # a URL scheme is no drive
+        self.assertIsNone(progress.PRIVATE_RE.search(text))  # the same filter progress.py applies to new text
 
     def test_every_done_item_has_existing_evidence(self):
         doc = json.loads((ROOT / "docs" / "progress" / "status.json").read_text(encoding="utf-8"))

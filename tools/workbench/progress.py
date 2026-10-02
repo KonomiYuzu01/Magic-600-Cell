@@ -33,6 +33,7 @@ Exit codes: 0 ok, 2 invalid input or an invalid file.
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 import re
@@ -40,6 +41,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -51,7 +53,14 @@ STATUS_MAX = 256 * 1024
 
 
 ACCEPTANCE_MAX = 600
-_PRIVATE_RE = re.compile(r"(?<![A-Za-z])[A-Za-z]:[\\/]|/Users/|/home/|\\\\Users")
+# Local paths that must never reach the public status.json: a drive path (C:\ or C:/; a URL scheme
+# is no drive), a UNC path (\\server\share), a home-relative path (~/ or ~\), an environment
+# reference to the home directory, and any absolute POSIX path (a "/" that starts a word). Relative
+# repository references ("docs/x.md", "0.4/0.4.1") and URLs ("https://...") stay allowed.
+PRIVATE_RE = re.compile(r"(?<![A-Za-z])[A-Za-z]:[\\/]|\\\\[^\\\s]|~[\\/]|%USERPROFILE%|\$HOME\b|/Users/|/home/|\\\\Users"
+                        r"|(?:^|(?<=[\s(\[\"'=,;]))/(?=[^\s/])")
+LOCK_NAME = "magic600-progress.lock"
+LOCK_WAIT = 10.0
 _CJK_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]")
 
 
@@ -158,6 +167,60 @@ def _step(doc: dict, step: str) -> dict:
     return found
 
 
+def _git_dir(root: Path) -> Path:
+    """The Git directory of checkout `root` (`.git`, or the directory a worktree's `.git` file names)."""
+    git = root / ".git"
+    if git.is_dir():
+        return git
+    try:
+        text = git.read_text(encoding="utf-8", errors="replace").strip()
+    except OSError as e:
+        raise ProgressRejected("cannot find the Git directory for the progress lock") from e
+    if not text.startswith("gitdir:"):
+        raise ProgressRejected("cannot find the Git directory for the progress lock")
+    gitdir = Path(text[len("gitdir:"):].strip())
+    return gitdir if gitdir.is_absolute() else root / gitdir
+
+
+@contextmanager
+def _locked(root: Path):
+    """Hold the checkout's progress lock for one whole read-modify-replace transaction, so that
+    concurrent commands never overwrite each other's accepted changes. The lock is a file created
+    exclusively in the Git directory (never in the working tree); a command that cannot take it
+    within LOCK_WAIT seconds is refused and changes nothing."""
+    lock = _git_dir(root) / LOCK_NAME
+    deadline = time.monotonic() + LOCK_WAIT
+    while True:
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            break
+        except FileExistsError:
+            if time.monotonic() >= deadline:
+                raise ProgressRejected(f"another progress command holds {LOCK_NAME}; run this one again "
+                                       "(delete the lock file only if no progress command is running)") from None
+            time.sleep(0.05)
+        except OSError as e:
+            raise ProgressRejected("cannot create the progress lock") from e
+    try:
+        os.write(fd, f"{os.getpid()}\n".encode("ascii"))
+        os.close(fd)
+        yield
+    finally:
+        try:
+            lock.unlink()
+        except OSError:
+            pass
+
+
+def _transaction(fn):
+    """Run a command that reads, changes and replaces status.json under the progress lock."""
+    @functools.wraps(fn)
+    def run(root: Path, *args, **kwargs):
+        with _locked(root):
+            return fn(root, *args, **kwargs)
+    return run
+
+
 def _write(root: Path, doc: dict, original: bytes) -> None:
     problems = _problems(root, doc)
     if problems:
@@ -169,6 +232,13 @@ def _write(root: Path, doc: dict, original: bytes) -> None:
     if len(raw) > STATUS_MAX:
         raise ProgressRejected(f"status.json would be larger than {STATUS_MAX} bytes")
     _confined(root)
+    try:
+        with (root / STATUS).open("rb") as f:
+            current = f.read(STATUS_MAX + 1)
+    except OSError as e:
+        raise ProgressRejected("cannot read status.json") from e
+    if current != original:  # changed by a writer that bypassed the lock: never overwrite its change
+        raise ProgressRejected("status.json changed during this command; run it again")
     target, tmp = root / STATUS, None
     try:
         with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".status-", suffix=".tmp", delete=False) as f:
@@ -187,7 +257,7 @@ def _text(value: str, what: str, limit: int) -> str:
         raise ProgressRejected(f"{what} must be 1 to {limit} characters")
     if any(ord(c) < 32 or ord(c) == 127 for c in value):
         raise ProgressRejected(f"{what} must be one line without control characters")
-    if _CJK_RE.search(value) or _PRIVATE_RE.search(value):
+    if _CJK_RE.search(value) or PRIVATE_RE.search(value):
         raise ProgressRejected(f"{what} must be public English text without local paths")
     return value
 
@@ -213,6 +283,7 @@ def parse_item(spec: str) -> dict:
     return _new_item(parts[0], parts[2], int(parts[1]))
 
 
+@_transaction
 def add_track(root: Path, track: str, title: str, today: str) -> None:
     """Append a track; a document without `tracks` first gets checklist.DEFAULT_TRACKS."""
     doc, raw = _checked(root)
@@ -235,6 +306,7 @@ def _with_tracks(doc: dict, listed: list) -> dict:
     return out
 
 
+@_transaction
 def add_step(root: Path, step: str, track: str, title: str, items: list[dict], today: str,
              acceptance: str | None = None, acceptance_source: str | None = None, weight: int | None = None) -> None:
     """Append a not_started step with `items` (parse_item results) to a known track."""
@@ -263,6 +335,7 @@ def add_step(root: Path, step: str, track: str, title: str, items: list[dict], t
     _write(root, doc, raw)
 
 
+@_transaction
 def add_item(root: Path, step: str, item: str, title: str, weight: int, today: str) -> None:
     """Append an open item to `step`; a done step goes back to in_progress."""
     doc, raw = _checked(root)
@@ -276,6 +349,7 @@ def add_item(root: Path, step: str, item: str, title: str, weight: int, today: s
     _write(root, doc, raw)
 
 
+@_transaction
 def set_current(root: Path, step: str, today: str) -> None:
     doc, raw = _checked(root)
     _step(doc, step)
@@ -286,6 +360,7 @@ def set_current(root: Path, step: str, today: str) -> None:
     _write(root, doc, raw)
 
 
+@_transaction
 def mark_done(root: Path, step: str, item: str, evidence: str, today: str) -> None:
     """Set the item done with `evidence`, a not_started step to in_progress, and `updated` to
     `today` (YYYY-MM-DD); write atomically in checklist.dump layout with the original line
@@ -308,6 +383,7 @@ def mark_done(root: Path, step: str, item: str, evidence: str, today: str) -> No
     _write(root, doc, raw)
 
 
+@_transaction
 def set_status(root: Path, step: str, status: str, today: str) -> None:
     """Set the step's status (checklist.STATUSES) and `updated`, with the same validation and
     write as mark_done. Raises ProgressRejected."""
