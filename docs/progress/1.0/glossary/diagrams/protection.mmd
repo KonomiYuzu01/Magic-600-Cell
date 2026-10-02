@@ -1,0 +1,4 @@
+flowchart LR
+  Op[operation] --> Ch{touches a protected object?}
+  Ch -->|no| Ok[may execute]
+  Ch -->|yes| Ref[refused and shown]

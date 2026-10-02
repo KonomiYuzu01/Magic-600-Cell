@@ -1,0 +1,6 @@
+flowchart LR
+  O[orbit] --> R1[pieces not at Home]
+  O --> R2[wrong buffer occupants]
+  O --> R3[wrong orientations]
+  O --> R4[unknown frames]
+  R1 & R2 & R3 & R4 --> Done{all empty?}
