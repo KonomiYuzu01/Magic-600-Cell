@@ -125,7 +125,7 @@ Owner input of 2 October 2026, translated from the owner's notes and clarificati
 
 Options and the recommendation are in [migration-options](migration-options.md). The charter records the choice; the migration format is frozen at the 2.5 gate.
 
-Chosen path: **option B**, a 1.0 importer reading a locked copy of the 0.4 database (owner, 2 October 2026). Design: [migration-exporter-proposal](migration-exporter-proposal.md). Prerequisites before the importer is built: the Astra plan check of path B with no open `blocker` or `major`, and the Windows probes P1 to P3 on synthetic sessions. If P1 finds no connection strategy that leaves the source unchanged, the owner decides between the conflicting invariants.
+Chosen path: **option B**, a 1.0 importer reading a locked copy of the 0.4 database (owner, 2 October 2026). Design: [migration-exporter-proposal](migration-exporter-proposal.md). The Astra plan check of path B passed after four adopted findings (2 October 2026). Remaining prerequisite before the importer is built: the Windows probes P1 to P3 on synthetic sessions, run on the owner's machine. If P1 finds no connection strategy that leaves the source unchanged, the owner decides between the conflicting invariants.
 
 ## 7. Inputs already available
 
