@@ -128,5 +128,84 @@ class InventoryCheckTests(unittest.TestCase):
                     self.assertTrue(ci.coverage())
 
 
+class GeneratedFilesTests(unittest.TestCase):
+    """census.json, screening-map.json and merged.json/md are current and reproducible."""
+
+    def load(self, name):
+        spec_ = importlib.util.spec_from_file_location(name, ROOT / "docs/progress/1.0/inventory" / f"{name}.py")
+        mod = importlib.util.module_from_spec(spec_)
+        spec_.loader.exec_module(mod)
+        return mod
+
+    def test_census_screening_map_and_merge_are_current(self):
+        for name in ("census", "screening_map", "merge_inventories"):
+            with self.subTest(name):
+                self.assertEqual(self.load(name).main(["--check"]), 0)
+
+    def test_sealed_files_pass_the_format_check(self):
+        folder = ROOT / "docs/progress/1.0/inventory"
+        for f in sorted(folder.glob("*-s[1-6].json")):
+            with self.subTest(f.name):
+                self.assertEqual(ci.check(f), [])
+
+    def test_merge_refuses_a_changed_sealed_file(self):
+        merge = self.load("merge_inventories")
+        seals = json.loads((merge.HERE / "sealed.json").read_text(encoding="utf-8"))
+        seals["files"]["bottom-up-s1.json"]["sha256"] = "0" * 64
+        with patch.object(merge, "load", side_effect=lambda n: seals if n == "sealed.json" else json.loads(
+                (merge.HERE / n).read_text(encoding="utf-8"))):
+            self.assertTrue(merge.sealed_errors())
+
+    def test_correspondence_ids_are_unique_and_within_one_shard(self):
+        corr = json.loads((ROOT / "docs/progress/1.0/inventory/correspondence.json").read_text(encoding="utf-8"))
+        ids = [i for p in corr["pairs"] for i in p["codex"] + p["claude"]]
+        self.assertEqual(len(ids), len(set(ids)))
+        for p in corr["pairs"]:
+            self.assertEqual(len({i.split(":")[1].split("-")[0] for i in p["codex"] + p["claude"]}), 1)
+            self.assertTrue(p["reason"].strip())
+
+    def test_symbol_ranges_follow_real_definitions(self):
+        sm = self.load("screening_map")
+        py = ["class A:", "    def f(self):", "        def g():", "            return 1", "        x = g()",
+              "        return x", "", "    def h(self):", "        pass"]
+        self.assertEqual(sm.enclosing(py, "a.py", 5)[0], "A.f")
+        self.assertEqual(sm.enclosing(py, "a.py", 4)[0], "A.f.g")
+        self.assertEqual(sm.locate(py, "a.py", "A.f.g"), (3, 4))
+        cs = ["class Shell{", " void One(){if(x){Run(\"}\");}}", "  int Two(){", "   return 2;", "  }",
+              " Shell(){Init(a,", "  b);}", "}"]
+        self.assertEqual(sm.enclosing(cs, "a.cs", 2), ("Shell.One", 2, 2))
+        self.assertEqual(sm.enclosing(cs, "a.cs", 4), ("Shell.Two", 3, 5))
+        self.assertEqual(sm.enclosing(cs, "a.cs", 7)[0], "Shell.Shell")
+
+    def test_reviewed_screening_attachments_cover_every_finding(self):
+        merge = self.load("merge_inventories")
+        doc = json.loads(merge.OUT_JSON.read_text(encoding="utf-8"))
+        self.assertEqual({s["id"] for s in doc["screening"]},
+                         {f["id"] for f in json.loads((merge.HERE / "screening-map.json").read_text(encoding="utf-8"))["findings"]})
+        for s in doc["screening"]:
+            self.assertTrue(s["reason"].strip(), s["id"])
+        by_id = {s["id"]: set(s["rows"]) for s in doc["screening"]}
+        self.assertLessEqual({"codex:S6-19", "codex:S6-22", "codex:S6-23", "codex:S6-24"}, by_id["F-01"])
+        self.assertFalse({"codex:S6-44", "codex:S6-46"} & by_id["F-01"])
+        self.assertFalse({"codex:S3-32", "claude:S3-282"} & by_id["C-01"])
+
+    def test_behaviour_only_change_shows_in_the_comparison(self):
+        merge = self.load("merge_inventories")
+        rows = merge.rows()
+        rid = next(i for p in json.loads((merge.HERE / "correspondence.json").read_text(encoding="utf-8"))["pairs"]
+                   for i in p["codex"])
+        before = merge.build()
+        rows[rid] = dict(rows[rid], behaviour="A completely different behaviour.")
+        with patch.object(merge, "rows", return_value=rows):
+            after = merge.build()
+        self.assertNotEqual(before["matched"], after["matched"])
+
+    def test_puzzle_command_is_not_reported_side_only(self):
+        doc = json.loads((ROOT / "docs/progress/1.0/inventory/merged.json").read_text(encoding="utf-8"))
+        group = next(m for m in doc["matched"] if "codex:S6-83" in m["codex"])
+        self.assertIn("claude:S6-41", group["claude"])
+        diff = group["differences"].get("entry_points", {})
+        self.assertNotIn("command puzzle", diff.get("codex_only", []) + diff.get("claude_only", []))
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
