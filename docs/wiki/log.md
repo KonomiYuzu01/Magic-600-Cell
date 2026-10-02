@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-02] decision | Migration path B
+Recorded in [owner-decisions-2026-10-02-migration](decisions/owner-decisions-2026-10-02-migration.md): a 1.0 importer reads a locked copy of the 0.4 database; the design is the [migration exporter proposal](../progress/1.0/migration-exporter-proposal.md) and charter section 6 records the choice.
+
 ## [2026-10-02] decision | Ten 1.0 design decisions
 Recorded in [owner-decisions-2026-10-02-design](decisions/owner-decisions-2026-10-02-design.md) from two rounds of options ([round 1](../progress/1.0/design-options-2026-10.md), [round 2](../progress/1.0/design-options-2026-10-round2.md)); the charter draft section 5 and the briefing now carry them.
 
