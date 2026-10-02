@@ -1,0 +1,1413 @@
+{
+ "shard": "s6",
+ "functions": [
+  {
+   "id": "S6-1",
+   "name": "Native host launch",
+   "behaviour": "Starts the experiment native host from four positional arguments (exe, root, token, mode); mode g2 opens the workspace hub, mode g1 the Grip review layout.",
+   "entry_points": [
+    "cli ExperimentProgram <exe> <root> <token> <mode>",
+    "window workspace (mode g2)",
+    "window grip review (mode g1)"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:599",
+    "work/experiments/magic600-04/native/ExperimentWorkspace.cs:24",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:124"
+   ],
+   "depends_on": [
+    "route POST native/handshake",
+    "route GET structure"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "workspace",
+    "preferences"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": "native/handshake"
+  },
+  {
+   "id": "S6-2",
+   "name": "Command palette",
+   "behaviour": "Opens a searchable index of all registered commands with their keys and runs the chosen one.",
+   "entry_points": [
+    "command index",
+    "key Workspace: F1",
+    "window Command index"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:478",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:51",
+    "work/experiments/magic600-04/native/ExperimentTools.cs:102"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "preferences"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-3",
+   "name": "Solve actions for selected object",
+   "behaviour": "Focuses the actions of the selected work object in the hub, or opens the command palette when no work object has focus.",
+   "entry_points": [
+    "command solve-actions",
+    "key Workspace: Control+F1"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:479",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:70"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-4",
+   "name": "Help",
+   "behaviour": "Opens a help dialog with 12 topics, a search box and an article pane, starting at the topic for the current work context.",
+   "entry_points": [
+    "command help",
+    "key Workspace: Shift+F1",
+    "button Workspace: Help",
+    "window Help",
+    "button Help: Close help",
+    "control Help: search box",
+    "control Help: topic list"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentHelp.cs:234",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:69",
+    "work/experiments/magic600-04/native/ExperimentWorkspace.cs:34",
+    "work/experiments/magic600-04/native/ExperimentHelp.cs:268"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-5",
+   "name": "Keyboard bank picker and switching",
+   "behaviour": "Chooses or cycles the active keyboard bank; the bank selects which command keys and Grip caps are active.",
+   "entry_points": [
+    "command bank",
+    "command bank-next",
+    "command bank-prev",
+    "command bank-previous",
+    "command bank-Workspace",
+    "command bank-Views",
+    "command bank-Filter",
+    "command bank-Session",
+    "command bank-Macro",
+    "command bank-Operation",
+    "command bank-Keyboard",
+    "command bank-Cycles",
+    "command bank-Functions",
+    "command functions-toggle",
+    "key Workspace: F2",
+    "key Workspace: Backslash",
+    "mouse Workspace: click bank label",
+    "window Bank picker"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:484",
+    "work/experiments/magic600-04/native/ExperimentWindows.cs:131",
+    "work/experiments/magic600-04/native/ExperimentWindows.cs:131",
+    "work/experiments/magic600-04/native/ExperimentCycles.cs:13",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:487",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:486",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:490",
+    "work/experiments/magic600-04/native/ExperimentWorkspace.cs:34"
+   ],
+   "depends_on": [
+    "route POST api action=bank"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "preferences"
+   ],
+   "writes": [
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "action=bank"
+  },
+  {
+   "id": "S6-6",
+   "name": "Working orbit selection",
+   "behaviour": "Chooses the working orbit from a list or the orbit combo box; Shift+F2 opens the list.",
+   "entry_points": [
+    "command orbit",
+    "key Workspace: Shift+F2",
+    "control Workspace: orbit combo"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:488",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:63",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:136"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=orbit"
+  },
+  {
+   "id": "S6-7",
+   "name": "Orbit bank shortcuts A/B/I/M/E",
+   "behaviour": "Switches to the A, B, I, M or E bank of the working orbit.",
+   "entry_points": [
+    "command bank-A",
+    "command bank-B",
+    "command bank-I",
+    "command bank-M",
+    "command bank-E",
+    "command bank-macro-1",
+    "command bank-macro-2",
+    "key Workspace: Alt+Digit1",
+    "key Workspace: Alt+Digit2",
+    "key Workspace: Alt+Digit3",
+    "key Workspace: Alt+Digit4",
+    "key Workspace: Alt+Digit5",
+    "key Workspace: Control+Alt+Digit1",
+    "key Workspace: Control+Alt+Digit2"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:489",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:541",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:72"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=bank"
+  },
+  {
+   "id": "S6-8",
+   "name": "Onscreen keyboard window",
+   "behaviour": "Shows or hides an onscreen keyboard whose keys can be clicked to run their command and right-clicked to change the binding; an extras toggle shows more shortcuts.",
+   "entry_points": [
+    "command keyboard",
+    "command keyboard-extra",
+    "key Workspace: F9",
+    "button Workspace: Keyboard",
+    "window keyboard",
+    "mouse keyboard: click key",
+    "mouse keyboard: right-click key",
+    "control keyboard: extras toggle"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:491",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:492",
+    "work/experiments/magic600-04/native/ExperimentKeyboard.cs:161"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "preferences"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-9",
+   "name": "Keymap export and import",
+   "behaviour": "Exports saved binding overrides to a versioned file; import inspects a file in a review dialog and explicitly replaces saved bindings.",
+   "entry_points": [
+    "command keymap-export",
+    "command keymap-import",
+    "window Keymap import review"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentKeyboard.cs:211",
+    "work/experiments/magic600-04/native/ExperimentKeyboard.cs:212"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=keymap-export",
+    "route POST experiment/native-command action=keymap-import-check",
+    "route POST experiment/native-command action=keymap-import"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences",
+    "files"
+   ],
+   "writes": [
+    "preferences",
+    "files"
+   ],
+   "engine_call": "action=keymap-import"
+  },
+  {
+   "id": "S6-10",
+   "name": "Key binding editor",
+   "behaviour": "Edits one command's key through a capture box, or edits the full binding record as JSON; context menus on command buttons offer Change key.",
+   "entry_points": [
+    "command key-edit",
+    "command key-edit-advanced",
+    "menu Workspace: command button > Change key...",
+    "window Binding editor"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:495",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:496",
+    "work/experiments/magic600-04/native/ExperimentTools.cs:137"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=settings"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "action=settings"
+  },
+  {
+   "id": "S6-11",
+   "name": "Grip key mode",
+   "behaviour": "Chooses whether Grip keys act while held or latch on press.",
+   "entry_points": [
+    "command grip-hold",
+    "command grip-latch"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:493",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:494"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "action=settings"
+  },
+  {
+   "id": "S6-12",
+   "name": "Grip and Twist keys",
+   "behaviour": "Grip keys (digits 1-9, 0, Q-P) select a Grip cap; Twist keys A S D F G H J turn H1-H3 and T1-T4, K L ; ' turn T1-T4 inverse, Shift inverts.",
+   "entry_points": [
+    "key Workspace: Digit1-Digit9",
+    "key Workspace: Digit0",
+    "key Workspace: KeyQ-KeyP",
+    "key Workspace: KeyA",
+    "key Workspace: KeyS",
+    "key Workspace: KeyD",
+    "key Workspace: KeyF",
+    "key Workspace: KeyG",
+    "key Workspace: KeyH",
+    "key Workspace: KeyJ",
+    "key Workspace: KeyK",
+    "key Workspace: KeyL",
+    "key Workspace: Semicolon",
+    "key Workspace: Quote",
+    "key Workspace: Shift"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:49",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:50",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:348",
+    "work/experiments/magic600-04/native/ExperimentInput.cs:228"
+   ],
+   "depends_on": [
+    "route POST experiment/native-input"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "experiment/native-input",
+   "notes": "Twist keys turn only after a live-input check; in draft mode they go to the draft"
+  },
+  {
+   "id": "S6-13",
+   "name": "Viewport mouse",
+   "behaviour": "Mouse-up on the puzzle viewport commits a captured turn or an inspection of the picked piece.",
+   "entry_points": [
+    "mouse puzzle viewport: drag-release turn",
+    "mouse puzzle viewport: click inspect"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentBridge.cs:138",
+    "work/experiments/magic600-04/native/ExperimentBridge.cs:138"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=turn",
+    "route POST experiment/native-command action=inspect"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "action=turn"
+  },
+  {
+   "id": "S6-14",
+   "name": "Workspace fullscreen and supporting windows",
+   "behaviour": "Toggles fullscreen workspace and hides supporting windows.",
+   "entry_points": [
+    "command workspace-fullscreen",
+    "command windows-hide"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentWindows.cs:130"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-15",
+   "name": "Local structure window",
+   "behaviour": "Opens the Local geometric view; includes centre choice, reset, zoom and pan commands.",
+   "entry_points": [
+    "command local",
+    "command global",
+    "command local-center",
+    "command local-center-current",
+    "command local-center-grip",
+    "command local-reset",
+    "command local-zoom-in",
+    "command local-zoom-out",
+    "command local-left",
+    "command local-right",
+    "command local-up",
+    "command local-down",
+    "command global-reset",
+    "command global-zoom-in",
+    "command global-zoom-out",
+    "command global-left",
+    "command global-right",
+    "command global-up",
+    "command global-down",
+    "command views",
+    "command views-close",
+    "key Workspace: F7",
+    "key Workspace: F8",
+    "window Local",
+    "window Global"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:570",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:568",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:569",
+    "work/experiments/magic600-04/native/ExperimentWindows.cs:132",
+    "work/experiments/magic600-04/native/ExperimentWindows.cs:135",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:51"
+   ],
+   "depends_on": [
+    "route POST experiment/window-layout"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-16",
+   "name": "Cell view mouse and keys",
+   "behaviour": "Local and Global views: drag rotates, click selects a cell, wheel zooms, hover tooltip, context menu centres main on the selected cell or resets camera.",
+   "entry_points": [
+    "mouse Local: drag",
+    "mouse Local: click",
+    "mouse Local: wheel",
+    "mouse Local: hover",
+    "menu Local: Center main on selected C",
+    "menu Local: Reset this camera",
+    "mouse Global: drag",
+    "mouse Global: click",
+    "mouse Global: wheel",
+    "mouse Global: hover",
+    "menu Global: Reset this camera",
+    "key Local: Home",
+    "key Local: Plus",
+    "key Local: Minus",
+    "key Local: arrows",
+    "key Global: Home",
+    "key Global: Plus",
+    "key Global: Minus",
+    "key Global: arrows"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentCellView.cs:397",
+    "work/experiments/magic600-04/native/ExperimentCellView.cs:166",
+    "work/experiments/magic600-04/native/ExperimentCellView.cs:187",
+    "work/experiments/magic600-04/native/ExperimentCellView.cs:187"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-17",
+   "name": "Grip frame",
+   "behaviour": "Chooses the selected Grip's ordered frame and captures the frame.",
+   "entry_points": [
+    "command grip-frame"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentWindows.cs:134",
+    "work/experiments/magic600-04/native/ExperimentWindows.cs:153"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=grip-frames",
+    "route POST experiment/native-command action=capture-frame"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=grip-frames"
+  },
+  {
+   "id": "S6-18",
+   "name": "Display controls",
+   "behaviour": "Opens a Display dialog with checkboxes and six sliders for projection, detail and framework; quick toggles for the framework and adaptive detail.",
+   "entry_points": [
+    "command display",
+    "command frame-toggle",
+    "command detail-toggle",
+    "window Display"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentDisplay.cs:8",
+    "work/experiments/magic600-04/native/ExperimentDisplay.cs:9",
+    "work/experiments/magic600-04/native/ExperimentDisplay.cs:10"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=display-settings"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "action=display-settings"
+  },
+  {
+   "id": "S6-19",
+   "name": "Piece Filter",
+   "behaviour": "Composes a piece filter from presets (Current I, At P, Working orbit, All pieces) and an operation (replace, union, intersect, subtract).",
+   "entry_points": [
+    "command filter",
+    "key Workspace: F5",
+    "window Piece Filter",
+    "button Piece Filter: Apply filter"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentFilter.cs:14",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:51",
+    "work/experiments/magic600-04/native/ExperimentFilter.cs:33"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=filter"
+  },
+  {
+   "id": "S6-20",
+   "name": "Phase inspection",
+   "behaviour": "Inspects pieces as committed or after Prepare, Macro or Cleanup.",
+   "entry_points": [
+    "command inspect-actual",
+    "command inspect-prepare",
+    "command inspect-macro",
+    "command inspect-cleanup",
+    "key Workspace: Control+Digit0",
+    "key Workspace: Control+Digit1",
+    "key Workspace: Control+Digit2",
+    "key Workspace: Control+Digit3",
+    "button Hub: Actual",
+    "button Hub: After Prepare",
+    "button Hub: After Macro",
+    "button Hub: After Cleanup"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentPhase.cs:18",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:64",
+    "work/experiments/magic600-04/native/ExperimentHub.cs:191"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=inspect-phase"
+  },
+  {
+   "id": "S6-21",
+   "name": "Active input phase and step editing",
+   "behaviour": "Chooses the active input phase and edits phase steps; step lanes click to select and double-click to edit.",
+   "entry_points": [
+    "command phase-prepare",
+    "command phase-macro",
+    "command phase-cleanup",
+    "command phase-input",
+    "command edit-prepare",
+    "command edit-macro",
+    "command edit-cleanup",
+    "command input-draft",
+    "command input-live",
+    "command prefix-on",
+    "command prefix-off",
+    "key Workspace: F4",
+    "mouse Workspace: click step lane",
+    "mouse Workspace: double-click step lane",
+    "menu Workspace: step lane > Edit steps",
+    "menu Workspace: step lane > Change phase key",
+    "window Edit steps",
+    "control Workspace: Strict prefix checkbox"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:480",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:546",
+    "work/experiments/magic600-04/native/ExperimentWorkspace.cs:52",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:481",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:483"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "journal"
+   ],
+   "engine_call": "action=draft"
+  },
+  {
+   "id": "S6-22",
+   "name": "Operation lifecycle",
+   "behaviour": "Starts, reuses, reviews, previews, commits or cancels an operation, with undo and redo.",
+   "entry_points": [
+    "command operation-new",
+    "command operation-reuse",
+    "command review",
+    "command review-details",
+    "command review-locate",
+    "command operation-focus",
+    "command operation-hide",
+    "command compare-preview",
+    "command preview",
+    "command commit",
+    "command cancel-preview",
+    "command cancel-analysis",
+    "command undo",
+    "command redo",
+    "key Workspace: Control+KeyN",
+    "key Workspace: Control+Alt+KeyR",
+    "key Workspace: F12",
+    "key Workspace: Shift+F12",
+    "key Workspace: F6",
+    "key Workspace: Control+KeyR",
+    "key Workspace: Shift+Escape",
+    "key Workspace: Control+KeyZ",
+    "key Workspace: Control+Shift+KeyZ",
+    "button Hub: review status",
+    "window Operation check results"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:475",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:547",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:557",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:559",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:68",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:416",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:558"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=review",
+    "route POST experiment/native-command action=commit",
+    "route POST experiment/native-command action=undo",
+    "route POST stop-job"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal",
+    "protection"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "checkpoints"
+   ],
+   "engine_call": "action=commit"
+  },
+  {
+   "id": "S6-23",
+   "name": "Review reasons and findings",
+   "behaviour": "Inspects the first three computed review reasons and opens a Findings dialog.",
+   "entry_points": [
+    "command review-reason-1",
+    "command review-reason-2",
+    "command review-reason-3",
+    "button Hub: review reason 1",
+    "button Hub: review reason 2",
+    "button Hub: review reason 3",
+    "window Findings"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentRecommendation.cs:49",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:549"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-24",
+   "name": "Current, A, B and Target focus",
+   "behaviour": "Makes the inspected piece Current or assigns it as A, B or Target; identity and role entry dialogs.",
+   "entry_points": [
+    "command set-current",
+    "command assign-a",
+    "command assign-b",
+    "command assign-target",
+    "command focus",
+    "command roles",
+    "command target-capture",
+    "command target-home",
+    "command solve-locate-a",
+    "command solve-locate-b",
+    "command solve-locate-target",
+    "key Workspace: Control+Shift+KeyC",
+    "key Workspace: Control+Shift+KeyA",
+    "key Workspace: Control+Shift+KeyB",
+    "key Workspace: Control+Shift+KeyT",
+    "menu Hub: object menu > Use as A",
+    "menu Hub: object menu > Use as B",
+    "menu Hub: object menu > Use as Target",
+    "menu Hub: object menu > Make Current"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:477",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:497",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:509",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:511",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:536"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state",
+    "workspace"
+   ],
+   "engine_call": "action=assign-a"
+  },
+  {
+   "id": "S6-25",
+   "name": "Next bookmark",
+   "behaviour": "Pins, clears, locates or activates the Next identity bookmark.",
+   "entry_points": [
+    "command next-menu",
+    "command next-pin",
+    "command next-clear",
+    "command next-locate",
+    "command next-activate",
+    "key Workspace: Control+Shift+KeyN",
+    "key Workspace: Control+Alt+KeyN",
+    "key Workspace: Control+Shift+KeyL",
+    "key Workspace: Control+Shift+Backspace",
+    "button Hub: Activate Next",
+    "menu Hub: object menu > Pin Next"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:499",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:500",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:51"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-26",
+   "name": "Block and position protection",
+   "behaviour": "Adds to the Home block and protects, unprotects or captures exact positions or labels.",
+   "entry_points": [
+    "command block-add",
+    "command block-remove",
+    "command block-capture",
+    "command block-capture-position",
+    "command block-protect-position",
+    "command block-unprotect-position",
+    "command block-unprotect-exact",
+    "command block-protect",
+    "command block-reference",
+    "command protection",
+    "key Workspace: Control+Shift+KeyP",
+    "key Workspace: Control+Shift+KeyH",
+    "menu Hub: object menu > Protect position",
+    "menu Hub: object menu > Add Home"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:501",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:507",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:513",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:508"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "protection",
+    "state"
+   ],
+   "writes": [
+    "protection"
+   ],
+   "engine_call": "action=block-protect"
+  },
+  {
+   "id": "S6-27",
+   "name": "Reference word",
+   "behaviour": "Edits the explicit reference word R and saves a macro variant with it.",
+   "entry_points": [
+    "command reference",
+    "command reference-transform"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:514",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:515"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=macro-variant"
+  },
+  {
+   "id": "S6-28",
+   "name": "Work goal selection",
+   "behaviour": "Chooses the work goal.",
+   "entry_points": [
+    "command goal-prepare",
+    "command goal-insert",
+    "command goal-place",
+    "command goal-orient",
+    "command goal-finish-buffer",
+    "command goal-block",
+    "command goal-endgame",
+    "control Workspace: work goal combo"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:510",
+    "work/experiments/magic600-04/native/ExperimentWorkspace.cs:55"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-29",
+   "name": "Solve window",
+   "behaviour": "Solve window with pages Macros, Prepare and Protection, role buttons, and an Orbit protection dialog.",
+   "entry_points": [
+    "command solve-macros",
+    "command solve-prepare",
+    "command solve-protection",
+    "window Solve",
+    "button Solve: Macros",
+    "button Solve: Prepare",
+    "button Solve: Protection",
+    "button Hub: Solve (header)",
+    "window Orbit protection"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentSolveWindow.cs:21",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:533",
+    "work/experiments/magic600-04/native/ExperimentWorkspace.cs:34"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=protect"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "protection",
+    "workspace"
+   ],
+   "writes": [
+    "protection",
+    "workspace"
+   ],
+   "engine_call": "action=protect",
+   "notes": "Solve content also holds a Turns-to field and a Work sheet button"
+  },
+  {
+   "id": "S6-30",
+   "name": "Macro catalogue",
+   "behaviour": "Opens the Macro Base catalogue with search, and returns to the workspace; macros are inserted or replaced into the active phase.",
+   "entry_points": [
+    "command macro-search",
+    "command macro-close",
+    "command macro-insert",
+    "command macro-replace",
+    "command macro-new",
+    "command macro-details",
+    "key Workspace: F3",
+    "key Workspace: Control+KeyM",
+    "mouse Macro list: Enter insert",
+    "mouse Macro list: Escape close",
+    "key Macro search: Down",
+    "key Macro search: Escape",
+    "window Macro details"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:539",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:542",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:545",
+    "work/experiments/magic600-04/native/ExperimentWorkspace.cs:44",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:51"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=insert-macro"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "journal"
+   ],
+   "engine_call": "action=insert-macro"
+  },
+  {
+   "id": "S6-31",
+   "name": "Macro library tools",
+   "behaviour": "Checks the library for use classification (limit 72), filters macros, edits name/notes/tags/pin, pins, exports and imports macro files.",
+   "entry_points": [
+    "command macro-check-library",
+    "command macro-filter",
+    "command macro-label",
+    "command macro-pin",
+    "command macro-export",
+    "command macro-import"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentMacroLibrary.cs:83",
+    "work/experiments/magic600-04/native/ExperimentMacroLibrary.cs:88"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=macro-check-library",
+    "route POST experiment/native-command action=macro-query",
+    "route POST experiment/native-command action=macro-note",
+    "route POST experiment/native-command action=macro-export",
+    "route POST experiment/native-command action=macro-import-check"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "files"
+   ],
+   "writes": [
+    "workspace",
+    "files"
+   ],
+   "engine_call": "action=macro-import"
+  },
+  {
+   "id": "S6-32",
+   "name": "Macro comparison and variants",
+   "behaviour": "Compares two chosen macros, saves inverse or reference variants, geometry variants, and compares up to twelve candidates.",
+   "entry_points": [
+    "command macro-compare",
+    "command macro-inverse",
+    "command macro-geometry",
+    "command macro-candidates",
+    "command cleanup-inverse",
+    "key Workspace: Control+Shift+KeyI",
+    "button Macro details: Save inverse...",
+    "button Macro details: Save with R...",
+    "window Geometry variant"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:516",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:518",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:519",
+    "work/experiments/magic600-04/native/ExperimentMacroRelations.cs:35",
+    "work/experiments/magic600-04/native/ExperimentCandidates.cs:59"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=macro-variant"
+  },
+  {
+   "id": "S6-33",
+   "name": "Endgame families",
+   "behaviour": "Explicit endgame families (placement-star, transfer, buffer-a, final-b): choose, check, save as macro, inspect.",
+   "entry_points": [
+    "command endgame-choices",
+    "command endgame-x",
+    "command endgame-y",
+    "command endgame-q",
+    "command endgame-r",
+    "command endgame-check",
+    "command endgame-save",
+    "command endgame-select-saved",
+    "command endgame-details"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:520",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:525",
+    "work/experiments/magic600-04/native/ExperimentEndgame.cs:97"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=endgame-compose"
+  },
+  {
+   "id": "S6-34",
+   "name": "Residual and journal inspection",
+   "behaviour": "Inspects residuals, the last committed step, and chooses a later unfinished orbit.",
+   "entry_points": [
+    "command residual-details",
+    "command journal-delta",
+    "command orbit-following"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:529",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:530",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:531"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=inspect-residual"
+  },
+  {
+   "id": "S6-35",
+   "name": "Effect display",
+   "behaviour": "Shows a macro's fixed action or the complete operation effect and cycles by scope.",
+   "entry_points": [
+    "command effect-body",
+    "command effect-complete",
+    "command cycles-macro",
+    "command cycles-steps",
+    "command cycles-complete",
+    "key Workspace: Control+Alt+Digit4",
+    "key Workspace: Control+Alt+Digit5",
+    "control Hub: effect scope picker"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:550",
+    "work/experiments/magic600-04/native/ExperimentCycles.cs:15",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:73"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-36",
+   "name": "Cycle inspection",
+   "behaviour": "Shows cycles for Current, Operation or After and pages through cycles and edges.",
+   "entry_points": [
+    "command cycles-current",
+    "command cycles-operation",
+    "command cycles-after",
+    "command cycles-refresh",
+    "command cycles-next",
+    "command cycles-previous",
+    "command cycles-more",
+    "command cycles-back",
+    "button Hub: Current",
+    "button Hub: Operation",
+    "button Hub: After",
+    "control Hub: cycle orbit picker",
+    "mouse Hub: click cycle edge",
+    "key Hub: Left",
+    "key Hub: Right",
+    "key Hub: Enter (cycle)"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentCycles.cs:14",
+    "work/experiments/magic600-04/native/ExperimentCycles.cs:19",
+    "work/experiments/magic600-04/native/ExperimentHubCycles.cs:69"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=inspect-phase"
+  },
+  {
+   "id": "S6-37",
+   "name": "Hub scene",
+   "behaviour": "Graphical work scene of sockets and identity tokens: click objects, arrow-key navigation, Shift+F10 or the dots menu for actions, entry-slot correspondence toggle, comparison overlay toggle.",
+   "entry_points": [
+    "window Hub",
+    "mouse Hub: click object",
+    "key Hub: arrows",
+    "key Hub: Shift+F10",
+    "menu Hub: object menu > Entry slots",
+    "button Hub: Show/Hide after overlay",
+    "button Hub: Entry slots",
+    "button Hub: Current trace link",
+    "button Hub: Next trace link"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentHub.cs:14",
+    "work/experiments/magic600-04/native/ExperimentHub.cs:56",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:79"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S6-38",
+   "name": "Operation strip and Macro lane",
+   "behaviour": "Operation strip buttons and the lane buttons of the workspace.",
+   "entry_points": [
+    "button Workspace: operation strip"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentWorkspace.cs:24"
+   ],
+   "depends_on": [],
+   "evidence_kind": "inferred",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "labels are built dynamically; not listed individually"
+  },
+  {
+   "id": "S6-39",
+   "name": "Session dialog",
+   "behaviour": "Opens Session with report, resume, new, scramble, reset puzzle, reset view, reset workspace, timer, last completion, log save/import/export.",
+   "entry_points": [
+    "command session",
+    "command session-report",
+    "command session-summary",
+    "command session-new",
+    "command session-resume",
+    "command scramble",
+    "command session-timer-start",
+    "command session-timer-pause",
+    "command session-save-log",
+    "command session-import-log",
+    "command session-export-log",
+    "command reset-workspace",
+    "command reset-view",
+    "command reset",
+    "window Session",
+    "button Session: Resume",
+    "button Session: New solve...",
+    "button Session: Scramble...",
+    "button Session: Reset puzzle...",
+    "button Session: Reset view",
+    "button Session: Reset workspace...",
+    "button Session: Start timer",
+    "button Session: Pause timer",
+    "button Session: Last completion",
+    "button Session: Refresh",
+    "button Session: Save log",
+    "button Session: Import...",
+    "button Session: Export...",
+    "button Session: Close"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentSession.cs:20",
+    "work/experiments/magic600-04/native/ExperimentSession.cs:145",
+    "work/experiments/magic600-04/native/ExperimentSession.cs:31",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:574"
+   ],
+   "depends_on": [
+    "route POST experiment/session-log action=session-log-inspect",
+    "route POST experiment/session-log action=session-log-apply",
+    "route POST experiment/session-log action=session-log-export"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal",
+    "files",
+    "checkpoints"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "checkpoints",
+    "files"
+   ],
+   "engine_call": "experiment/session-log"
+  },
+  {
+   "id": "S6-40",
+   "name": "Work sheets",
+   "behaviour": "Saves and reuses fixed work sheets; reuse needs a fresh review.",
+   "entry_points": [
+    "command worksheet",
+    "command worksheet-save",
+    "command worksheet-use",
+    "key Workspace: F10",
+    "window Work sheet review",
+    "button Work sheet review: Load fixed steps with these inputs",
+    "button Work sheet review: Refresh comparison",
+    "button Work sheet review: Cancel"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:563",
+    "work/experiments/magic600-04/native/ExperimentWorkSheets.cs:9",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:51"
+   ],
+   "depends_on": [
+    "route POST experiment/native-command action=template-inspect",
+    "route POST experiment/native-command action=template-use"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "action=template-use"
+  },
+  {
+   "id": "S6-41",
+   "name": "Checkpoints, capture and fixtures",
+   "behaviour": "Saves and restores checkpoints, captures Grip caps, copies addresses, loads the E1 fixture.",
+   "entry_points": [
+    "command checkpoint",
+    "command restore",
+    "command capture",
+    "command capture-piece",
+    "command copy-selection",
+    "command copy-selection-canonical",
+    "command fixture-e1",
+    "command puzzle"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:566",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:567",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:561",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:571",
+    "work/experiments/magic600-04/native/ExperimentShell.cs:573"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "checkpoints"
+   ],
+   "writes": [
+    "checkpoints",
+    "state"
+   ],
+   "engine_call": "action=checkpoint"
+  },
+  {
+   "id": "S6-42",
+   "name": "Grip review layout",
+   "behaviour": "The g1 layout with header buttons and the Grip mode combo.",
+   "entry_points": [
+    "window grip review (header buttons)",
+    "control grip review: Grip mode combo"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:124"
+   ],
+   "depends_on": [],
+   "evidence_kind": "inferred",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "header labels built in BuildGripReview; not listed individually"
+  }
+ ],
+ "internal_only": [
+  {
+   "name": "ExperimentSendOutcome Worker/Finalize",
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentSendOutcome.cs:5"
+   ],
+   "reason": "reached via every Send call"
+  },
+  {
+   "name": "ExperimentWindowPlacement",
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentWindowPlacement.cs:7"
+   ],
+   "reason": "reached via work windows and dialogs"
+  },
+  {
+   "name": "NativeCellGeometry/Status/Data parsers",
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentCellView.cs:108",
+    "work/experiments/magic600-04/native/ExperimentCellView.cs:77"
+   ],
+   "reason": "reached via Connect and view updates"
+  },
+  {
+   "name": "MAGIC600_SEND_TIMING toggle",
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentHub.cs:36"
+   ],
+   "reason": "environment toggle of Send timing"
+  }
+ ],
+ "unclear": [
+  {
+   "name": "Windows-only IME and scan-code handling",
+   "evidence": [
+    "work/experiments/magic600-04/native/ExperimentInput.cs:368"
+   ]
+  }
+ ]
+}

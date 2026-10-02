@@ -1,0 +1,5 @@
+flowchart LR
+  G[grip: cap c] --> T[twist key]
+  T -->|direction +| M1[generator m]
+  T -->|Shift: inverse| M2[generator -m]
+  M1 & M2 --> St[(new state)]

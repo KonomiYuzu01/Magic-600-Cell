@@ -1,0 +1,128 @@
+{
+ "command": "mmdc -q -p <puppeteer config> -c docs/progress/1.0/glossary/mermaid.json -i diagrams/<id>.mmd -o diagrams/<id>.svg",
+ "config_sha256": "bc47ac2bf75986def7f04424cf82cf68a31bdc06c38e21022feb749cc040a51a",
+ "diagrams": {
+  "block": {
+   "source_sha256": "5047900241712cade89949c1b5ca8f1a747b650c48cd7cdf20af36d01b1455d4",
+   "svg_sha256": "f777b947a5af281e850129bbbcbb3340ed60ad8fe56102061cc2b22c47d9aa10"
+  },
+  "buffer": {
+   "source_sha256": "d76e9f838e42c195120d4f00470e34ccf8af9723d11534796f488f48d8c0ff98",
+   "svg_sha256": "50cab3ebb851d14bd76a91969f199b505b08c702446d991133b6821f5139c89e"
+  },
+  "cap": {
+   "source_sha256": "e6fd9c37ace1710d8547e7c320b29f7601ba7c54bb1d8814668024ebd4649ae7",
+   "svg_sha256": "a002795d8097b4633c0d321bac1a2488c1731a31abe7eb26bea0c072b5910bf2"
+  },
+  "cell": {
+   "source_sha256": "42d638f7617fbc7075dd2cbcb4610b625dcf91b06a01eb8327e5918ba953c83e",
+   "svg_sha256": "7d1351137a20f5d1ca7c777cbca99fdea4956abe958bccae0cb1e2902b7fcf87"
+  },
+  "collateral": {
+   "source_sha256": "1d0f35b0469b62130a61698d4f1e09136be6dcb5c01c7fe75c0f43410c50c475",
+   "svg_sha256": "8ea3d32be981aa0dbd1a0a1c40e2e67024c1ffd69a4f8e0be4747240a6fa06b7"
+  },
+  "complete-effect": {
+   "source_sha256": "2fb86b495c78122141fafc07ba6d4af550e4e4290e693c1778834f1aa96d4c80",
+   "svg_sha256": "a12ae6a1734d0999a596f7c73d48f71f791aac74e0c133a2ee17c67c561845dc"
+  },
+  "frame": {
+   "source_sha256": "f66ca0374fb3d9691c4d7cde025f0933a49dcd18b2620b0a1fb1e0026cbf1997",
+   "svg_sha256": "dc91a7055102cd0cff3879d9b3189bef4f25e19c949c973d0a2c70bf0afff081"
+  },
+  "generator": {
+   "source_sha256": "c10c937802966473bf736d1a8b84121e3159dfc7ae84bcfdead182e1d0906fa5",
+   "svg_sha256": "ad21f04a8ce2c20a916a4901da5d65fa08fffe1c0ea2de1c04502a6cd4d96116"
+  },
+  "grip": {
+   "source_sha256": "97491d59c8470158422c94c3aea66a2ae3dde8503592a9deb4b02e5e2c7ebd9b",
+   "svg_sha256": "ffa1d83bbf7532c636699e7224efaeee23db48111f798e4a835664bbf375aac5"
+  },
+  "home": {
+   "source_sha256": "1197410500a922487371367dbc9ec80162e95786a849022b8c379b8bdb32bb4c",
+   "svg_sha256": "d5aea44f0e638b0e10faa6e845595abdbc454ded61161a0ec12b03bcc6e490ee"
+  },
+  "label": {
+   "source_sha256": "d4be94d6f91ff2726dd160d69994f1696c3cba7070ff19c501e3fb5143699386",
+   "svg_sha256": "1e8ba8143e5a597cc5c4cb481714b4e17aeefa401d9bcde66fe9b577efb9cf26"
+  },
+  "net-strict": {
+   "source_sha256": "98f8b140df3edcfa321d00a726da2d1f551e91f71c1d85bc4dcc8fca462a8e50",
+   "svg_sha256": "e32d45e39a38eb3d730916939c3af76578a408144ddbcdd51eb127f59d83883d"
+  },
+  "occupant": {
+   "source_sha256": "b44d295819f8d6d71e4fce30aa64601d9a0a39b62035214c70203631345f9921",
+   "svg_sha256": "62910f4c8bd3f3a482a439cd995a12b850bd22f98fd31e49b18aaf52b6d2e093"
+  },
+  "orbit": {
+   "source_sha256": "21acaa3ce7e18927b7374739a2a45e710680370bce08b892f7c5f334df71695d",
+   "svg_sha256": "3dd53c4682f151d54ca2e54a707ab4759b98102db6d0b08c2fc4206e9d407cf1"
+  },
+  "orientation": {
+   "source_sha256": "37bf7edb0a7e2138139bf51f6348b1700d4e29bbdb4f616e0ab5e1f4cf8afe81",
+   "svg_sha256": "f1a15b4597e2f460b23bf62571822c3a3e84156d991a115489dea8424f5f38c3"
+  },
+  "orientation-group": {
+   "source_sha256": "3c15697af4dee15e791b8b8651f24d6e2b311df47513088f777450e837996ead",
+   "svg_sha256": "148cd76b908c8dbb3711ff3932dba2382e8f39390d385353918fd95a681af143"
+  },
+  "orientation-transfer": {
+   "source_sha256": "73e896345a1c5d22fc9c3aa19135a02f20edeabc6539d9c80227717e85d6e942",
+   "svg_sha256": "b5f4b6f643f7d8ee1464606cdcdb1ea10467924143851a73c68d0da15a17acdd"
+  },
+  "piece": {
+   "source_sha256": "1620efeefc00f40c016954aaec4a7a1addf4476418fd89f2cbf277f90eff98ad",
+   "svg_sha256": "64fa9be5cf19b8fee265fdfc7000f24d33fa8f9f32c38f90cc1842bfeffc5895"
+  },
+  "protection": {
+   "source_sha256": "d84a1cf7e03c53792b624e2b686cc24d5482c723d6d90a5d9ac8fb59316c6394",
+   "svg_sha256": "5072b07e5d53437a6035507fdda1d1f6eb5a58ec3699360a0d1c676871f3c5b9"
+  },
+  "pure-controller": {
+   "source_sha256": "6ec1a01e755e7499a6b4b6121fbad6f4dcea135e725e59cf6132fb4aea0d4216",
+   "svg_sha256": "ba54e6156332aa7404d02b9181e9416f082d75bdcf47892ce712971f1ece41e7"
+  },
+  "relocation": {
+   "source_sha256": "60540b7c433cce582e5e10e3e1974f160e4ea40de0973537586cf2a7c7ccb3ef",
+   "svg_sha256": "7d76cb5df1c626f2eff33649e3a4d195899728f6485f1c8a4b372f4b0f4e3151"
+  },
+  "residual": {
+   "source_sha256": "ce0f7fda18def6f9c2818137ab033e265ddf5dbfcd5eb9d789ca8314496649db",
+   "svg_sha256": "8339f0d539d6c9546cadc4c9ff07df791541646d105f8b43648f043bf4f04cd3"
+  },
+  "seed": {
+   "source_sha256": "cafb90c2a90d85c309489fef9fb518b737ba265332c11969555988730b203c9c",
+   "svg_sha256": "093ee3c52bc81647dd692f6661dabe0a42d786b00ad3e33dc96697ef1c460e4d"
+  },
+  "setup": {
+   "source_sha256": "d73d64e3dcef9361630fc61917a355c0e8c1b1373a6b5365e85369591b2b4f11",
+   "svg_sha256": "0084153a34c21fae88ab9d4e42b3f39127748a6712b48caeba932d12bb9d5fe2"
+  },
+  "stage-order": {
+   "source_sha256": "4d6eb20ce5d8430355c2ece9aecc069c825c964d8172f6f9c66033086c166823",
+   "svg_sha256": "a1654238635e70615f5d6377c18872128e87f04a2a48db1c426c4bd3db84ae13"
+  },
+  "star": {
+   "source_sha256": "a8155eb0dfa99566101c001bd68894624d69df65bbc693cdbca9ab57b4cd802e",
+   "svg_sha256": "681a56fce3acd5a4ba3139494945183c2d69dde32a557fe3158b8ae02e5b3b5a"
+  },
+  "sticker-slot": {
+   "source_sha256": "2677af6869ae76d6debe9036db5f0551ae8f9685a3f7a4dc4d752f9c9730b376",
+   "svg_sha256": "0ab0be8271aa1244fa2a71ec6634a84aaa86248400bace4900255f205d4f097f"
+  },
+  "target": {
+   "source_sha256": "b7b693f8f0f6e1dd1656770a5b65502c40de644dad865856b0ea0f69c9554b92",
+   "svg_sha256": "7694d24f880bdc903f28b76c4f17d89f3ec4ceba0ecdf8efe3e5e2250acc3bd7"
+  },
+  "twist": {
+   "source_sha256": "1c1332a177c877791978d69d30ca387233ab527b8477a2c833fe32dc62c6f06a",
+   "svg_sha256": "be4da85fd263287253f4ba7a43c9bc88fcf7335b49cea234ef7fd9f29d0e4a94"
+  },
+  "work-sheet": {
+   "source_sha256": "5b4f16147fff00668ab1ce1999691636f46675295c941da54888698f3a99e76a",
+   "svg_sha256": "75538c8a85fe0e98a08e09982b9140d89dd1d8343be3c774c6e53adf7e8ab600"
+  }
+ },
+ "tool": "@mermaid-js/mermaid-cli",
+ "version": "12.0.0"
+}

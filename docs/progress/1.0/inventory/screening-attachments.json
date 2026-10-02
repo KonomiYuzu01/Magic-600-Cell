@@ -1,0 +1,597 @@
+{
+ "findings": {
+  "A-01": {
+   "claude": [
+    "claude:S1-54",
+    "claude:S1-56"
+   ],
+   "codex": [
+    "codex:S1-49",
+    "codex:S1-51"
+   ],
+   "reason": "Session.preview keeps the caller's recipe list, so an API caller that mutates it before /api/commit journals a witness that does not replay; only the direct preview and commit routes expose this, and no current UI caller mutates the list."
+  },
+  "A-02": {
+   "claude": [
+    "claude:S1-25",
+    "claude:S1-26",
+    "claude:S1-34",
+    "claude:S1-36",
+    "claude:S1-38",
+    "claude:S3-192",
+    "claude:S3-198",
+    "claude:S3-199",
+    "claude:S3-212",
+    "claude:S3-213",
+    "claude:S3-214",
+    "claude:S3-215",
+    "claude:S3-294",
+    "claude:S4-18",
+    "claude:S4-20",
+    "claude:S4-21",
+    "claude:S4-22",
+    "claude:S6-39"
+   ],
+   "codex": [
+    "codex:S1-63",
+    "codex:S1-64",
+    "codex:S1-65",
+    "codex:S1-67",
+    "codex:S1-69",
+    "codex:S2-44",
+    "codex:S2-45",
+    "codex:S2-46",
+    "codex:S2-47",
+    "codex:S3-116",
+    "codex:S3-117",
+    "codex:S3-118",
+    "codex:S3-119",
+    "codex:S4-50",
+    "codex:S4-51",
+    "codex:S4-52",
+    "codex:S4-53",
+    "codex:S6-177",
+    "codex:S6-178",
+    "codex:S6-179",
+    "codex:S6-180"
+   ],
+   "reason": "Saving or exporting a C600 proof log or session record (engine routes, experiment session-log actions and their native/browser controls) could write a record over the 2,000,000-primitive or 10,000-transaction import caps, which the C600 log import and session-record import then reject; the save/export rows produce the bad file and the import rows are where the user meets the rejection. MPUlt-only rows are excluded because the finding concerns the C600 format."
+  },
+  "A-03": {
+   "claude": [
+    "claude:S1-45",
+    "claude:S4-56",
+    "claude:S4-58"
+   ],
+   "codex": [
+    "codex:S1-54",
+    "codex:S1-56",
+    "codex:S1-57",
+    "codex:S4-55",
+    "codex:S4-56",
+    "codex:S4-57",
+    "codex:S4-61"
+   ],
+   "reason": "Recipe inverse, conjugate and commutator composition (POST /api/compose and the native workbench Macros buttons [A,B], A B A^-1, A^-1 and Inverse saved) raise KeyError for a star step without an explicit sign; concatenation does not invert and is excluded."
+  },
+  "A-04": {
+   "claude": [
+    "claude:S1-52",
+    "claude:S1-56",
+    "claude:S1-58",
+    "claude:S1-59",
+    "claude:S3-96",
+    "claude:S3-99",
+    "claude:S3-100",
+    "claude:S3-201",
+    "claude:S3-238",
+    "claude:S3-239",
+    "claude:S3-242",
+    "claude:S3-246",
+    "claude:S3-247",
+    "claude:S3-292",
+    "claude:S4-23",
+    "claude:S4-24",
+    "claude:S4-33",
+    "claude:S4-66",
+    "claude:S5-52",
+    "claude:S5-66",
+    "claude:S5-67",
+    "claude:S5-79",
+    "claude:S5-80",
+    "claude:S6-12",
+    "claude:S6-13",
+    "claude:S6-22"
+   ],
+   "codex": [
+    "codex:S1-15",
+    "codex:S1-16",
+    "codex:S1-48",
+    "codex:S1-51",
+    "codex:S3-39",
+    "codex:S3-48",
+    "codex:S3-53",
+    "codex:S3-54",
+    "codex:S4-33",
+    "codex:S4-71",
+    "codex:S4-119",
+    "codex:S4-120",
+    "codex:S5-10",
+    "codex:S5-35",
+    "codex:S5-76",
+    "codex:S5-77",
+    "codex:S6-48",
+    "codex:S6-51",
+    "codex:S6-52",
+    "codex:S6-69",
+    "codex:S6-105"
+   ],
+   "reason": "Rejected lead: it claimed unindexed journal (parent) lookups slow each turn; the turn functions it concerns are commit, undo/redo and live turns on every host (measurement showed 0.07 ms and attributed the growth to X-02)."
+  },
+  "B-001": {
+   "claude": [
+    "claude:S1-3",
+    "claude:S1-4",
+    "claude:S1-6",
+    "claude:S2-2",
+    "claude:S2-4",
+    "claude:S2-8",
+    "claude:S4-4",
+    "claude:S5-85"
+   ],
+   "codex": [
+    "codex:S1-3",
+    "codex:S2-57",
+    "codex:S2-58",
+    "codex:S2-61",
+    "codex:S4-3",
+    "codex:S5-82",
+    "codex:S6-185"
+   ],
+   "reason": "Engine shutdown (HTTP shutdown, Ctrl+C/signal, parent-pipe close, and the owned-engine stop performed when a launcher, the native workbench, the native experiment host or the browser 'Stop experiment' ends a session) waits on idle request sockets and handler threads past the owner's 12-second grace, so the engine is force-terminated instead of closing in order."
+  },
+  "B-002": {
+   "claude": [
+    "claude:S2-4",
+    "claude:S2-5"
+   ],
+   "codex": [
+    "codex:S2-58",
+    "codex:S2-59"
+   ],
+   "reason": "native_launch.build recorded the identity of a build rejected for inputs changing during compilation and reused that binary later; it affects the native experiment launch (build or reuse) and the --build-only path."
+  },
+  "B-003": {
+   "claude": [
+    "claude:S2-4",
+    "claude:S2-5"
+   ],
+   "codex": [
+    "codex:S2-58",
+    "codex:S2-59"
+   ],
+   "reason": "The declared harness input tests/run_postapproval.py is missing, so the native host build in native_launch (launch and --build-only) cannot run from a clean checkout."
+  },
+  "B-004": {
+   "claude": [
+    "claude:S1-36",
+    "claude:S1-37",
+    "claude:S1-38",
+    "claude:S1-39",
+    "claude:S1-45",
+    "claude:S1-47",
+    "claude:S1-48",
+    "claude:S1-54",
+    "claude:S1-55",
+    "claude:S1-69",
+    "claude:S1-71"
+   ],
+   "codex": [
+    "codex:S1-14",
+    "codex:S1-43",
+    "codex:S1-49",
+    "codex:S1-50",
+    "codex:S1-54",
+    "codex:S1-55",
+    "codex:S1-56",
+    "codex:S1-57",
+    "codex:S1-60",
+    "codex:S1-61",
+    "codex:S1-62",
+    "codex:S1-64",
+    "codex:S1-69",
+    "codex:S1-70"
+   ],
+   "reason": "server.py admits a background job by checking for running jobs without a lock, so two concurrent submissions to the job routes (preview, suggest, compose, scramble, demo, checkout, session and log import, native handshake) can both start; the experiment adapter's admission uses a lock and is not attached."
+  },
+  "B-005": {
+   "claude": [
+    "claude:S1-13",
+    "claude:S1-14",
+    "claude:S1-15",
+    "claude:S1-16",
+    "claude:S1-17",
+    "claude:S1-18",
+    "claude:S1-19",
+    "claude:S1-20",
+    "claude:S1-21",
+    "claude:S1-22",
+    "claude:S1-23",
+    "claude:S1-24",
+    "claude:S1-25",
+    "claude:S1-26",
+    "claude:S1-27",
+    "claude:S3-287",
+    "claude:S3-288"
+   ],
+   "codex": [
+    "codex:S1-10",
+    "codex:S1-12",
+    "codex:S1-13",
+    "codex:S1-21",
+    "codex:S1-39",
+    "codex:S1-40",
+    "codex:S1-41",
+    "codex:S1-42",
+    "codex:S1-44",
+    "codex:S1-45",
+    "codex:S1-46",
+    "codex:S1-47",
+    "codex:S1-53",
+    "codex:S1-63",
+    "codex:S1-65",
+    "codex:S1-66",
+    "codex:S3-2",
+    "codex:S3-3"
+   ],
+   "reason": "The engine and experiment GET routes that answer inside the session lock (status, history, stats, catalog, grips, cap, labels, styles, native map/colors/styles/snapshot, certificate, session export, log export, experiment snapshots) keep the lock while the response is written, so a slow reader can block other requests."
+  },
+  "C-01": {
+   "claude": [
+    "claude:S3-174",
+    "claude:S3-283",
+    "claude:S5-78",
+    "claude:S6-41"
+   ],
+   "codex": [
+    "codex:S3-124",
+    "codex:S5-75",
+    "codex:S6-119"
+   ],
+   "reason": "Loading the E1 practice fixture committed directly through the session, moving a piece under a captured exact position lock and discarding the lock; these rows are the fixture action and its browser and native controls."
+  },
+  "C-02": {
+   "claude": [
+    "claude:S3-12",
+    "claude:S3-13",
+    "claude:S3-14",
+    "claude:S3-20",
+    "claude:S3-120",
+    "claude:S3-222",
+    "claude:S3-229",
+    "claude:S3-231",
+    "claude:S5-8",
+    "claude:S5-9",
+    "claude:S5-20",
+    "claude:S5-21",
+    "claude:S5-25",
+    "claude:S6-6",
+    "claude:S6-24",
+    "claude:S6-25",
+    "claude:S6-34"
+   ],
+   "codex": [
+    "codex:S2-53",
+    "codex:S3-8",
+    "codex:S3-9",
+    "codex:S3-11",
+    "codex:S3-14",
+    "codex:S3-111",
+    "codex:S5-3",
+    "codex:S5-44",
+    "codex:S5-45",
+    "codex:S5-49",
+    "codex:S6-2",
+    "codex:S6-3",
+    "codex:S6-4",
+    "codex:S6-15",
+    "codex:S6-157"
+   ],
+   "reason": "Workbench.switch_orbit is reached by the orbit, focus (including set-current and structural example pieces) and next-activate actions and by following-orbit choice; a failure in the orbit or workspace save left workspace and session orbits different, so every control that changes the working orbit through these actions is attached."
+  },
+  "C-03": {
+   "claude": [
+    "claude:S3-96",
+    "claude:S3-99",
+    "claude:S3-100",
+    "claude:S3-171",
+    "claude:S3-172",
+    "claude:S3-174",
+    "claude:S3-186",
+    "claude:S3-201",
+    "claude:S3-218",
+    "claude:S3-238",
+    "claude:S3-239",
+    "claude:S3-242",
+    "claude:S3-246",
+    "claude:S3-247",
+    "claude:S3-248",
+    "claude:S3-250",
+    "claude:S3-283",
+    "claude:S3-291",
+    "claude:S3-292",
+    "claude:S6-12",
+    "claude:S6-13",
+    "claude:S6-22",
+    "claude:S6-39",
+    "claude:S6-41"
+   ],
+   "codex": [
+    "codex:S3-39",
+    "codex:S3-48",
+    "codex:S3-53",
+    "codex:S3-54",
+    "codex:S3-56",
+    "codex:S3-57",
+    "codex:S3-114",
+    "codex:S3-124",
+    "codex:S6-48",
+    "codex:S6-51",
+    "codex:S6-52",
+    "codex:S6-69",
+    "codex:S6-105",
+    "codex:S6-117",
+    "codex:S6-119",
+    "codex:S6-171",
+    "codex:S6-172"
+   ],
+   "reason": "In the native-command/native-input job wrapper, a command that already changed the journal (execute/commit, live turns, undo, redo, checkpoint restore, reset, new solve, E1 fixture) was reported as a failed job when the paired native snapshot failed afterwards; these rows are the native-host commands and adapter actions that change the session revision through that wrapper (the fix keys on a revision change)."
+  },
+  "C-04": {
+   "claude": [
+    "claude:S3-189",
+    "claude:S3-217",
+    "claude:S3-235",
+    "claude:S3-236",
+    "claude:S3-237",
+    "claude:S3-238",
+    "claude:S3-239",
+    "claude:S3-241",
+    "claude:S6-39"
+   ],
+   "codex": [
+    "codex:S2-43",
+    "codex:S3-39",
+    "codex:S3-43",
+    "codex:S3-44",
+    "codex:S3-45",
+    "codex:S3-47",
+    "codex:S3-122",
+    "codex:S6-175"
+   ],
+   "reason": "After a recorded scramble is staged, a rejected draft edit (draft, insert-macro, inverse-cleanup, or twist/native-word to draft) drops the scramble provenance before validation, so the following preview is journalled as manual work; attached are the scramble staging rows, the adapter draft-edit actions that trigger the loss and the preview action that classifies it."
+  },
+  "D-02": {
+   "claude": [
+    "claude:S3-45",
+    "claude:S3-46",
+    "claude:S3-47",
+    "claude:S6-15"
+   ],
+   "codex": [
+    "codex:S2-15",
+    "codex:S3-128",
+    "codex:S6-96",
+    "codex:S6-97",
+    "codex:S6-98"
+   ],
+   "reason": "Rejected lead about choosing the Local centre: the settings change to view.local_center returns a Local cell_state reply that re-evaluates the global filter; attached are the Local-centre controls and the local cell-state function."
+  },
+  "D-03": {
+   "claude": [
+    "claude:S3-146",
+    "claude:S3-147",
+    "claude:S3-148",
+    "claude:S3-149",
+    "claude:S3-152",
+    "claude:S3-203",
+    "claude:S6-36"
+   ],
+   "codex": [
+    "codex:S2-3",
+    "codex:S3-101",
+    "codex:S3-103",
+    "codex:S3-104",
+    "codex:S6-158",
+    "codex:S6-164",
+    "codex:S6-165"
+   ],
+   "reason": "Paging cycle inspection in After mode rebuilds the forecast before the inspection cache is consulted; attached are the cycle-inspection (After) and paging rows."
+  },
+  "E-01": {
+   "claude": [
+    "claude:S4-66",
+    "claude:S4-67"
+   ],
+   "codex": [
+    "codex:S4-71",
+    "codex:S4-72"
+   ],
+   "reason": "In the native workbench a non-Shift native viewport click (sticker twist clicks, Ctrl+click recenter) sets renderer.HoldUpdates before dispatch; device loss during that click can leave publication held. The native experiment host sets the same hold in ExperimentBridge but is outside the reporting shard and is not attached."
+  },
+  "E-02": {
+   "claude": [
+    "claude:S4-11",
+    "claude:S4-63",
+    "claude:S4-74",
+    "claude:S4-75"
+   ],
+   "codex": [
+    "codex:S4-17",
+    "codex:S4-70",
+    "codex:S4-93",
+    "codex:S4-102"
+   ],
+   "reason": "In the native workbench, every Center action (toolbar/menu Center, Pieces Center current/home, Structure Center viewport, auxiliary Center main) calls LoadGrips, a synchronous GET /api/grips on the UI thread whose failure is unhandled."
+  },
+  "E-03": {
+   "claude": [
+    "claude:S4-76"
+   ],
+   "codex": [
+    "codex:S4-101"
+   ],
+   "reason": "The native workbench auxiliary cell views set the hover tooltip only when the hovered cell changes, so its buffer/selection context and physical-position counts stay stale after the status changes."
+  },
+  "E-04": {
+   "claude": [
+    "claude:S4-89"
+   ],
+   "codex": [
+    "codex:S4-121"
+   ],
+   "reason": "The native workbench applies a metadata-only snapshot delta (no slot changes) with full-slot UI work; no single control owns this, so only the live state/status display rows that every snapshot refresh updates are attached."
+  },
+  "F-01": {
+   "claude": [
+    "claude:S6-26"
+   ],
+   "codex": [
+    "codex:S6-19",
+    "codex:S6-22",
+    "codex:S6-23",
+    "codex:S6-24"
+   ],
+   "reason": "With a forecast token selected, the native experiment Solve buttons Place only, Hold place, Free place and Free exact (commands block-capture-position, block-protect-position, block-unprotect-position, block-unprotect-exact) bypassed the forecast restriction on the direct-button path; only the rows for these four protection actions are attached, and keyboard command rows and engine-side block actions are not, because their guard was not the defective one."
+  },
+  "F-02": {
+   "claude": [
+    "claude:S6-30"
+   ],
+   "codex": [
+    "codex:S6-133",
+    "codex:S6-184"
+   ],
+   "reason": "In the native experiment host, Enter/Space on a focused owned button (PerformClick) and Enter in the Macro Base list have no key-repeat check, so holding them appends the selected macro repeatedly; attached are the append-macro function and the focused-control activation route."
+  },
+  "F-03": {
+   "claude": [
+    "claude:S6-30"
+   ],
+   "codex": [
+    "codex:S6-133",
+    "codex:S6-184"
+   ],
+   "reason": "The native experiment host's key pre-filter consumes Return for non-button targets before the G2 Macro Base list's KeyDown handler, so Enter in that list does not append the macro; attached are the append-macro row (whose entry points include the list Enter key) and the Enter-routing row."
+  },
+  "F-04": {
+   "claude": [
+    "claude:S6-8"
+   ],
+   "codex": [
+    "codex:S6-65"
+   ],
+   "reason": "The native experiment host's onscreen Keyboard window keeps refreshing its keys while hidden; attached are the rows that show and hide that window."
+  },
+  "F-05": {
+   "claude": [
+    "claude:S6-30"
+   ],
+   "codex": [
+    "codex:S6-120",
+    "codex:S6-122"
+   ],
+   "reason": "In the native experiment host's G2 Macro Base list, every owner-drawn macro row paint revalidates the candidate batch; attached are the Macro Base open/list rows that paint those rows."
+  },
+  "X-01": {
+   "claude": [
+    "claude:S1-1",
+    "claude:S1-2",
+    "claude:S2-1",
+    "claude:S2-2",
+    "claude:S2-4",
+    "claude:S2-13",
+    "claude:S3-118",
+    "claude:S3-202",
+    "claude:S4-90",
+    "claude:S6-34"
+   ],
+   "codex": [
+    "codex:S1-1",
+    "codex:S2-38",
+    "codex:S2-56",
+    "codex:S2-57",
+    "codex:S2-58",
+    "codex:S2-67",
+    "codex:S3-105",
+    "codex:S4-1",
+    "codex:S6-154"
+   ],
+   "reason": "In a CRLF checkout Model() refuses to load ('Asset hash mismatch'), so every engine start path (server, experiment engine and launchers, native workbench bootstrap, package assembly with its pinned invariant report) fails; the source-bound orbit invariant proof also reads as stale, which affects the invariant and residual inspections that consume it."
+  },
+  "X-02": {
+   "claude": [
+    "claude:S1-13",
+    "claude:S1-20",
+    "claude:S1-52",
+    "claude:S1-53",
+    "claude:S1-56",
+    "claude:S1-58",
+    "claude:S1-59",
+    "claude:S3-96",
+    "claude:S3-99",
+    "claude:S3-100",
+    "claude:S3-201",
+    "claude:S3-238",
+    "claude:S3-239",
+    "claude:S3-242",
+    "claude:S3-246",
+    "claude:S3-247",
+    "claude:S3-287",
+    "claude:S3-288",
+    "claude:S3-292",
+    "claude:S4-23",
+    "claude:S4-24",
+    "claude:S4-33",
+    "claude:S4-66",
+    "claude:S5-52",
+    "claude:S5-66",
+    "claude:S5-67",
+    "claude:S5-79",
+    "claude:S5-80",
+    "claude:S6-12",
+    "claude:S6-13",
+    "claude:S6-22"
+   ],
+   "codex": [
+    "codex:S1-10",
+    "codex:S1-15",
+    "codex:S1-16",
+    "codex:S1-47",
+    "codex:S1-48",
+    "codex:S1-51",
+    "codex:S3-2",
+    "codex:S3-3",
+    "codex:S3-39",
+    "codex:S3-48",
+    "codex:S3-53",
+    "codex:S3-54",
+    "codex:S4-33",
+    "codex:S4-71",
+    "codex:S4-119",
+    "codex:S4-120",
+    "codex:S5-10",
+    "codex:S5-35",
+    "codex:S5-76",
+    "codex:S5-77",
+    "codex:S6-48",
+    "codex:S6-51",
+    "codex:S6-52",
+    "codex:S6-69",
+    "codex:S6-105"
+   ],
+   "reason": "Session.status() is built for every commit, undo and redo and for every status read and native or experiment snapshot, and its checkpoint listing grows about 0.3 ms per checkpoint; attached are the commit, undo/redo and live-turn rows on every host plus the status and snapshot reads."
+  }
+ },
+ "format": "C600-SCREENING-ATTACHMENTS-draft"
+}

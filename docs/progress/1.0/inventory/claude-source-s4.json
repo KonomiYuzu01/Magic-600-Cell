@@ -1,0 +1,3174 @@
+{
+ "shard": "s4",
+ "functions": [
+  {
+   "id": "S4-1",
+   "name": "Start native host process",
+   "behaviour": "The host exe takes three positional arguments (MPUlt.exe path, engine base URL, engine token), loads the original MPUlt Form1 by reflection, wraps it in the native workbench and runs the window; with any other argument count it only shows a usage message box and exits with code 2.",
+   "entry_points": [
+    "cli NativeHost.exe: <MPUlt.exe path> <engine base URL> <engine token>",
+    "window C600 Studio (usage message box)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:697",
+    "native/NativeHost.cs:700",
+    "native/NativeHost.cs:702",
+    "native/NativeHost.cs:704",
+    "native/NativeHost.cs:705",
+    "native/NativeHost.cs:710"
+   ],
+   "depends_on": [
+    "cli native/bootstrap.py (no option)"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "Normally started only by native/bootstrap.py. A fourth argument is not read by Program.Main; the regression test classes have their own Main."
+  },
+  {
+   "id": "S4-2",
+   "name": "Native workbench main window",
+   "behaviour": "The reflected MPUlt form is rebuilt as one window titled 'Full 600-cell · C600 Native 0.3 / MPUlt': menu bar, toolbar, DirectX viewport on the left, tabbed tools panel on the right, status bar (message and 'n / 259,800 visible'). Minimum size 1000x650, default 1440x900; original MPUlt panels and menu are hidden; input stays disabled until the bridge passes.",
+   "entry_points": [
+    "window Main (C600 Native)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:103",
+    "native/NativeHost.cs:112",
+    "native/NativeHost.cs:153",
+    "native/NativeHost.cs:155",
+    "native/NativeHost.cs:156",
+    "native/NativeHost.cs:175",
+    "native/NativeHost.cs:222",
+    "native/NativeHost.cs:223",
+    "native/NativeHost.cs:224",
+    "native/NativeHost.cs:225",
+    "native/NativeHost.cs:226",
+    "native/NativeHost.cs:227",
+    "native/NativeHost.cs:228",
+    "native/NativeHost.cs:229",
+    "native/NativeHost.cs:230",
+    "native/NativeHost.cs:243"
+   ],
+   "depends_on": [
+    "route POST /api/native/handshake"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Windows-only test: tests/native/NativeHostRegression.cs (not run on Linux)."
+  },
+  {
+   "id": "S4-3",
+   "name": "Connect and verify native bridge",
+   "behaviour": "On first show (and via File > Reconnect native bridge when disconnected and idle) the host exports the live MPUlt geometry (259,800 stickers, faces, axes, generators, exe SHA-256), the engine verifies it against the full model, the host loads the lab/native mapping and structure data, then synchronizes state, camera, grips and enables input ('Ready · full model verified'). A simplified or non-full puzzle fails with a message.",
+   "entry_points": [
+    "menu Main window: File > Reconnect native bridge",
+    "window Main: Shown event (automatic connect)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:113",
+    "native/NativeHost.cs:161",
+    "native/NativeHost.cs:279",
+    "native/NativeHost.cs:280",
+    "native/NativeHost.cs:281",
+    "native/NativeHost.cs:282",
+    "native/NativeHost.cs:283",
+    "native/NativeHost.cs:285",
+    "native/NativeHost.cs:286",
+    "native/NativeHost.cs:287",
+    "native/NativeHost.cs:288",
+    "native/NativeHost.cs:289",
+    "native/NativeHost.cs:290",
+    "native/NativeHost.cs:291",
+    "native/NativeHost.cs:292"
+   ],
+   "depends_on": [
+    "route POST /api/native/handshake",
+    "route GET /api/native/map",
+    "route GET /api/structure",
+    "route GET /api/native/snapshot",
+    "route GET /api/grips"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "preferences"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": "POST /api/native/handshake; GET /api/native/map; GET /api/structure",
+   "notes": "Engine keeps the verified profile in memory (server.py native_profile); no persistent write is visible in this shard. Test: tests/native/NativeHostRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-4",
+   "name": "Close window with recovery prompt",
+   "behaviour": "Closing the window (X, Alt+F4, File > Close) stops the clock, runs the original MPUlt close handler and disposes renderer, picking, auxiliary views; if an operation is in progress a confirmation 'Close and recover the last committed state on restart?' (OK/Cancel) is shown and Cancel keeps the window open.",
+   "entry_points": [
+    "menu Main window: File > Close",
+    "window Main: close button",
+    "key Main window: Alt+F4",
+    "key Main window: F4 with Alt (system key message)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:115",
+    "native/NativeHost.cs:116",
+    "native/NativeHost.cs:117",
+    "native/NativeHost.cs:118",
+    "native/NativeHost.cs:121",
+    "native/NativeHost.cs:126",
+    "native/NativeHost.cs:158",
+    "native/NativeHost.cs:646"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "Alt+F4 is handled in the message filter even while a text box has focus."
+  },
+  {
+   "id": "S4-5",
+   "name": "Display and projection dialog",
+   "behaviour": "Opens a modal dialog 'Display and projection · MPUlt' (only when connected and idle) with an adaptive-motion checkbox and six sliders copied from MPUlt's hidden track bars, and a Done button (also Enter/Escape).",
+   "entry_points": [
+    "menu Main window: View > Display and projection…",
+    "button Main toolbar: Display…",
+    "window Display and projection · MPUlt",
+    "button Display and projection: Done"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:165",
+    "native/NativeHost.cs:179",
+    "native/NativeHost.cs:260",
+    "native/NativeHost.cs:261",
+    "native/NativeHost.cs:262",
+    "native/NativeHost.cs:263",
+    "native/NativeHost.cs:264",
+    "native/NativeHost.cs:265",
+    "native/NativeHost.cs:266",
+    "native/NativeHost.cs:267",
+    "native/NativeHost.cs:268",
+    "native/NativeHost.cs:269",
+    "native/NativeHost.cs:276"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Changes affect camera/display only (dialog caption says so)."
+  },
+  {
+   "id": "S4-6",
+   "name": "Display sliders (cell size, sticker size, field of view, light levels)",
+   "behaviour": "Six sliders set Cell size, Sticker size, Field of view (degrees), Diffuse light, Specular light and Ambient light by writing the value into the original MPUlt track bar; Cell and Sticker size also re-sync the sticker shrink factors. Caption shows percent or degrees; tooltip explains each.",
+   "entry_points": [
+    "control Display and projection: Cell size",
+    "control Display and projection: Sticker size",
+    "control Display and projection: Field of view",
+    "control Display and projection: Diffuse light",
+    "control Display and projection: Specular light",
+    "control Display and projection: Ambient light"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:266",
+    "native/NativeHost.cs:267",
+    "native/NativeHost.cs:268",
+    "native/NativeHost.cs:269",
+    "native/NativeHost.cs:270",
+    "native/NativeHost.cs:271",
+    "native/NativeHost.cs:272",
+    "native/NativeHost.cs:273",
+    "native/NativeHost.cs:274"
+   ],
+   "depends_on": [],
+   "evidence_kind": "inferred",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Inferred: the host only sets the hidden MPUlt TrackBar value (trk_faceShrink, trk_StickerSize, trk_ViewAngle, trk_LightDiff, trk_LightSpec, trk_LightAmb); the visual effect is produced by the retained MPUlt runtime binary. Values are not persisted by the host except face/sticker shrink and angle inside the camera saved with a checkpoint (CaptureCamera, line 492)."
+  },
+  {
+   "id": "S4-7",
+   "name": "Smooth camera motion toggle",
+   "behaviour": "Switches the renderer between sampling large views while the camera moves (full detail returns when still) and always drawing everything. Available as a checked View menu item and as a checkbox in the Display dialog; default on.",
+   "entry_points": [
+    "menu Main window: View > Smooth camera motion (full detail when still)",
+    "control Display and projection: Adaptive motion; full detail when still"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:167",
+    "native/NativeHost.cs:266",
+    "native/NativeRendererLifecycle.cs:34",
+    "native/NativeRendererLifecycle.cs:35",
+    "native/NativeRendererLifecycle.cs:36"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Drawing only; no mechanical state changes. Not persisted."
+  },
+  {
+   "id": "S4-8",
+   "name": "Instant turns indicator",
+   "behaviour": "A disabled, always-checked View menu item 'Instant turns after durable commit' showing that native turns are drawn instantly after the commit; it cannot be toggled.",
+   "entry_points": [
+    "menu Main window: View > Instant turns after durable commit"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:95",
+    "native/NativeHost.cs:109",
+    "native/NativeHost.cs:168"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "The host sets the original MPUlt turn rate (TRate) to 1 at startup and restores nothing; the menu item is display only."
+  },
+  {
+   "id": "S4-9",
+   "name": "Hide 600-cell frame",
+   "behaviour": "Hides or shows the cell framework (wireframe of the 600 cells) in the viewport; the checkbox on the Filters tab and the checked View menu item stay in sync. Saved as the preference view.native_hide_frame; default hidden.",
+   "entry_points": [
+    "menu Main window: View > Hide 600-cell frame",
+    "control Filters tab: Hide 600-cell frame (checkbox)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:85",
+    "native/NativeHost.cs:166",
+    "native/NativeHost.cs:182",
+    "native/NativeHost.cs:474",
+    "native/NativeHost.cs:475",
+    "native/NativeHost.cs:476",
+    "native/NativeHost.cs:477",
+    "native/NativeHost.cs:478",
+    "native/NativeHost.cs:479",
+    "native/NativeHost.cs:480",
+    "native/NativeHost.cs:481",
+    "native/NativeHost.cs:482",
+    "native/NativeRenderSubset.cs:53"
+   ],
+   "depends_on": [
+    "route POST /api/prefs"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/prefs (view.native_hide_frame)",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-10",
+   "name": "Reset view",
+   "behaviour": "Restores the camera, face/sticker shrink and field of view to the values captured when the bridge connected, reloads the grips of the focused cell and says 'View reset. Puzzle state, filter and journal are unchanged.'",
+   "entry_points": [
+    "menu Main window: View > Reset view",
+    "button Main toolbar: Reset view"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:165",
+    "native/NativeHost.cs:179",
+    "native/NativeHost.cs:493",
+    "native/NativeHost.cs:495",
+    "native/NativeHost.cs:496",
+    "native/NativeHost.cs:497",
+    "native/NativeHost.cs:498",
+    "native/NativeHost.cs:499",
+    "native/NativeHost.cs:502",
+    "native/NativeHost.cs:504"
+   ],
+   "depends_on": [
+    "route GET /api/grips"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Camera restore is in-process; the saved camera preference only changes on checkpoint or reset/import."
+  },
+  {
+   "id": "S4-11",
+   "name": "Center main camera on focused cell",
+   "behaviour": "Recenters the main 3D/4D camera on the pole of the lab cell shown in the 'Lab cell' box without changing puzzle state. The toolbar button also reloads the focused cell's grip buttons.",
+   "entry_points": [
+    "menu Main window: View > Center focused cell",
+    "button Main toolbar: Center",
+    "key Main window (user-bound action 'center', no default key)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:165",
+    "native/NativeHost.cs:179",
+    "native/NativeHost.cs:463",
+    "native/NativeHost.cs:464",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route GET /api/grips"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Menu item and key call Center() only; the toolbar button calls Center() then LoadGrips()."
+  },
+  {
+   "id": "S4-12",
+   "name": "Tools panel toggle",
+   "behaviour": "Shows or hides the docked tools panel (and its divider). The panel hides automatically when the window is too narrow (needs 360 px viewport + 320 px tools + 5 px divider). F8 works in every context, including inside text boxes and the compact Views drawer.",
+   "entry_points": [
+    "menu Main window: View > Tools panel  F8",
+    "button Main toolbar: Tools · F8",
+    "key Main window (default keymap): F8",
+    "key Views tab: F8"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:165",
+    "native/NativeHost.cs:179",
+    "native/NativeHost.cs:246",
+    "native/NativeHost.cs:636",
+    "native/NativeHost.cs:656",
+    "native/NativeHost.cs:660",
+    "native/NativeDockLayout.cs:44",
+    "native/NativeDockLayout.cs:45",
+    "native/NativeDockLayout.cs:46",
+    "native/NativeDockLayout.cs:52",
+    "native/NativeDockLayout.cs:53",
+    "native/NativeDockLayout.cs:54",
+    "native/NativeDockLayout.cs:56"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/test_native_startup_contract.py (dock sizing arithmetic)."
+  },
+  {
+   "id": "S4-13",
+   "name": "Resize tools panel by dragging the divider",
+   "behaviour": "Dragging the splitter between viewport and tools panel changes the tools width (minimum 320, viewport minimum 360); the chosen width is remembered while running.",
+   "entry_points": [
+    "mouse Main window: drag divider between viewport and tools panel"
+   ],
+   "evidence": [
+    "native/NativeDockLayout.cs:11",
+    "native/NativeDockLayout.cs:28",
+    "native/NativeDockLayout.cs:29",
+    "native/NativeDockLayout.cs:30",
+    "native/NativeDockLayout.cs:31",
+    "native/NativeDockLayout.cs:32",
+    "native/NativeDockLayout.cs:37",
+    "native/NativeDockLayout.cs:38",
+    "native/NativeDockLayout.cs:39",
+    "native/NativeDockLayout.cs:41"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/test_native_startup_contract.py; tests/native/NativeHostRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-14",
+   "name": "Tools panel tabs",
+   "behaviour": "Nine tabs in the tools panel: Filters, Solve, Buffers, Progress, Session, Macros, Pieces, Structure, Views. Other actions switch tabs programmatically (inspection results go to Pieces or Buffers; the Structure explorer's Insert expression goes to Filters).",
+   "entry_points": [
+    "control Tools panel: tab Filters",
+    "control Tools panel: tab Solve",
+    "control Tools panel: tab Buffers",
+    "control Tools panel: tab Progress",
+    "control Tools panel: tab Session",
+    "control Tools panel: tab Macros",
+    "control Tools panel: tab Pieces",
+    "control Tools panel: tab Structure",
+    "control Tools panel: tab Views"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:132",
+    "native/NativeHost.cs:180",
+    "native/NativeHost.cs:196",
+    "native/NativeHost.cs:202",
+    "native/NativeHost.cs:205",
+    "native/NativeHost.cs:206",
+    "native/NativeHost.cs:211",
+    "native/NativeHost.cs:214",
+    "native/NativeHost.cs:216",
+    "native/NativeHost.cs:174"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-15",
+   "name": "Help dialog",
+   "behaviour": "Shows a message box 'C600 Native' listing the mouse and keyboard controls (drag modes, Shift/Ctrl clicks, N, Enter, Escape, F8, F9, Ctrl+S, Ctrl+O, Ctrl+Z / Ctrl+Shift+Z, 1..7) and the 259,800 slots / 1,200 generators bridge rule.",
+   "entry_points": [
+    "menu Main window: Help > Controls and validation",
+    "window C600 Native (help message box)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:172",
+    "native/NativeHost.cs:173"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-16",
+   "name": "Save checkpoint",
+   "behaviour": "Stores the current camera in preferences and creates a named checkpoint 'Native yyyy-MM-dd HH-mm-ss-fff' of the current state. Triggered from File menu, toolbar, Session tab or F9.",
+   "entry_points": [
+    "menu Main window: File > Save checkpoint",
+    "button Main toolbar: Checkpoint",
+    "button Session tab: Checkpoint",
+    "key Main window (default keymap): F9"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:158",
+    "native/NativeHost.cs:177",
+    "native/NativeHost.cs:206",
+    "native/NativeHost.cs:509",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/prefs",
+    "route POST /api/checkpoint"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences",
+    "checkpoints"
+   ],
+   "engine_call": "POST /api/prefs (camera); POST /api/checkpoint",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (checkpoint restore, Windows only)."
+  },
+  {
+   "id": "S4-17",
+   "name": "Backup journal",
+   "behaviour": "Asks the engine to make a backup of the session journal and refreshes the display.",
+   "entry_points": [
+    "menu Main window: File > Backup journal",
+    "button Session tab: Backup"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:158",
+    "native/NativeHost.cs:206"
+   ],
+   "depends_on": [
+    "route POST /api/backup"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "journal"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": "POST /api/backup",
+   "notes": "Backup location and format are decided by the engine (server.py /api/backup), not in this shard."
+  },
+  {
+   "id": "S4-18",
+   "name": "Export proof session",
+   "behaviour": "Opens a Save dialog (default session.c600.json.gz) and writes the engine's verified C600 session export atomically to the chosen file; message 'Saved <file>'.",
+   "entry_points": [
+    "menu Main window: File > Export proof session…"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:158",
+    "native/NativeHost.cs:615",
+    "native/NativeHost.cs:616",
+    "native/NativeHost.cs:617"
+   ],
+   "depends_on": [
+    "route GET /api/export"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": "GET /api/export",
+   "notes": "Atomic temp-file write with overwrite prompt."
+  },
+  {
+   "id": "S4-19",
+   "name": "Export certificate",
+   "behaviour": "Opens a Save dialog (default macro.c600.json) and writes the engine's current macro certificate to the chosen file.",
+   "entry_points": [
+    "menu Main window: File > Export certificate…"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:158",
+    "native/NativeHost.cs:615",
+    "native/NativeHost.cs:616",
+    "native/NativeHost.cs:617"
+   ],
+   "depends_on": [
+    "route GET /api/certificate"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": "GET /api/certificate",
+   "notes": "The host passes path 'certificate' (the server route is /api/certificate)."
+  },
+  {
+   "id": "S4-20",
+   "name": "Save log",
+   "behaviour": "Writes the verified session log into the session's logs folder and reports its path ('Log saved: ...').",
+   "entry_points": [
+    "menu Main window: File > Save log  Ctrl+S",
+    "button Session tab: Save log",
+    "key Main window (default keymap): Ctrl+S"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:162",
+    "native/NativeHost.cs:207",
+    "native/NativeHost.cs:622",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/log/save"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "journal",
+    "state"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": "POST /api/log/save",
+   "notes": "Test: tests/native/NativeSessionLogRegression.cs (Windows only). Default key can be rebound."
+  },
+  {
+   "id": "S4-21",
+   "name": "Import log",
+   "behaviour": "Opens an Open dialog for .log/.gz/.json (2 bytes to 16 MiB), detects C600 (gzip or JSON) versus MPUlt v1 text, sends it with the current camera for engine verification and import; the previous state is saved as a checkpoint ('Verified log imported. Previous state saved as checkpoint: ...').",
+   "entry_points": [
+    "menu Main window: File > Import log…  Ctrl+O",
+    "button Session tab: Import log…",
+    "key Main window (default keymap): Ctrl+O"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:163",
+    "native/NativeHost.cs:207",
+    "native/NativeHost.cs:624",
+    "native/NativeHost.cs:625",
+    "native/NativeHost.cs:626",
+    "native/NativeHost.cs:627",
+    "native/NativeHost.cs:628",
+    "native/NativeHost.cs:629",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/log/import"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "files",
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "checkpoints",
+    "preferences"
+   ],
+   "engine_call": "POST /api/log/import",
+   "notes": "Test: tests/native/NativeSessionLogRegression.cs (Windows only). Write set inferred from the message text and server route; engine behaviour is another shard."
+  },
+  {
+   "id": "S4-22",
+   "name": "Export log",
+   "behaviour": "Opens a Save dialog with two filters (C600 verified session .c600.json.gz or MPUlt v1 .log, default session.c600.json.gz) and writes the engine's export in the chosen format.",
+   "entry_points": [
+    "menu Main window: File > Export log…",
+    "button Session tab: Export log…",
+    "key Main window (user-bound action 'exportLog', no default key)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:164",
+    "native/NativeHost.cs:207",
+    "native/NativeHost.cs:616",
+    "native/NativeHost.cs:617",
+    "native/NativeHost.cs:623",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route GET /api/log/export"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "journal",
+    "state"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": "GET /api/log/export?format=c600|mpult",
+   "notes": "Test: tests/native/NativeSessionLogRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-23",
+   "name": "Undo",
+   "behaviour": "Asks the engine to undo the last committed operation (exact undo) and redraws; shown on Edit menu, toolbar and Ctrl+Z.",
+   "entry_points": [
+    "menu Main window: Edit > Undo  Ctrl+Z",
+    "button Main toolbar: Undo",
+    "key Main window (default keymap): Ctrl+Z"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:159",
+    "native/NativeHost.cs:177",
+    "native/NativeHost.cs:466",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/undo"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "journal"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/undo",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only). Ctrl+Z inside a text box undoes text instead (see text-editor row)."
+  },
+  {
+   "id": "S4-24",
+   "name": "Redo",
+   "behaviour": "Asks the engine to redo the next operation; Edit menu, toolbar and Ctrl+Shift+Z.",
+   "entry_points": [
+    "menu Main window: Edit > Redo  Ctrl+Shift+Z",
+    "button Main toolbar: Redo",
+    "key Main window (default keymap): Ctrl+Shift+Z"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:159",
+    "native/NativeHost.cs:177",
+    "native/NativeHost.cs:466",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/redo"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "journal"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/redo",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-25",
+   "name": "Keybindings editor",
+   "behaviour": "Opens a modal 'Native keybindings' dialog containing the current key map as editable JSON (one binding per line) and a 'Save bindings' button; valid JSON replaces the key map immediately and is written to native_keys.json beside the host, invalid input shows 'Invalid bindings'. The file is also read at startup (invalid file: defaults used and file preserved).",
+   "entry_points": [
+    "menu Main window: Edit > Keybindings…",
+    "window Native keybindings",
+    "button Native keybindings: Save bindings",
+    "window Invalid bindings (message box)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:160",
+    "native/NativeHost.cs:630",
+    "native/NativeHost.cs:631",
+    "native/NativeHost.cs:632",
+    "native/NativeHost.cs:633",
+    "native/NativeHost.cs:634",
+    "native/NativeHost.cs:635"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "Rules: at most 100 bindings, no duplicate key, actions limited to the list in ValidAction (suggest, commit, cancel, undo, redo, checkpoint, toggleTools, center, buffers, protect, filter, reset, saveLog, importLog, exportLog, grip:0-6, inverseGrip:0-6). Disabled while busy. Bindings are inactive while a text editor has focus."
+  },
+  {
+   "id": "S4-26",
+   "name": "Default key bindings and key dispatch",
+   "behaviour": "Window-wide key map applied by a message filter when the host window is active and no editor/explorer/auxiliary control owns the key: N, Enter, Escape, Ctrl+Z, Ctrl+Shift+Z, F9, F8, B, Ctrl+S, Ctrl+O, Digit1..7 and Shift+Digit1..7; auto-repeat is ignored; Escape and F8 work even when busy, everything else needs a connected, idle host.",
+   "entry_points": [
+    "key Main window (default keymap): N",
+    "key Main window (default keymap): Enter",
+    "key Main window (default keymap): Escape",
+    "key Main window (default keymap): B"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:633",
+    "native/NativeHost.cs:636",
+    "native/NativeHost.cs:637",
+    "native/NativeHost.cs:643",
+    "native/NativeHost.cs:687"
+   ],
+   "depends_on": [
+    "command suggest",
+    "command commit",
+    "command cancel",
+    "command buffers"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "Dispatch row only: the actions are described in their own rows (N=Preview insertion, Enter=Apply preview, Escape=Cancel, B=Analyze). Other default keys are listed in the rows of the actions they trigger. User-bound actions without default key: center, protect, filter, reset, exportLog."
+  },
+  {
+   "id": "S4-27",
+   "name": "Focus filter editor action",
+   "behaviour": "User-bindable action 'filter' switches to the Filters tab and puts focus in the filter expression box.",
+   "entry_points": [
+    "key Main window (user-bound action 'filter', no default key)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-28",
+   "name": "Scramble 1,000 turns",
+   "behaviour": "Applies a 1,000-turn scramble through the engine as an undoable operation.",
+   "entry_points": [
+    "menu Main window: Puzzle > Scramble 1,000 turns (undoable)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:170",
+    "native/NativeHost.cs:467"
+   ],
+   "depends_on": [
+    "route POST /api/scramble"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/scramble (count 1000, apply true)"
+  },
+  {
+   "id": "S4-29",
+   "name": "Reset to solved",
+   "behaviour": "Resets the puzzle to solved after saving the current progress as a recovery checkpoint and keeping view settings; sends the current camera; message names the checkpoint. Menu, Session tab button and user-bindable 'reset' key.",
+   "entry_points": [
+    "menu Main window: Puzzle > Reset to solved (keep checkpoint)",
+    "button Session tab: Reset to solved",
+    "key Main window (user-bound action 'reset', no default key)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:171",
+    "native/NativeHost.cs:207",
+    "native/NativeHost.cs:468",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/reset"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "preferences"
+   ],
+   "writes": [
+    "state",
+    "checkpoints",
+    "journal",
+    "preferences"
+   ],
+   "engine_call": "POST /api/reset",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-30",
+   "name": "Active orbit selector",
+   "behaviour": "Toolbar drop-down 'Orbit' with O00..O34 (default O33); choosing one stores it as the active orbit and refreshes the visible/interactive pieces.",
+   "entry_points": [
+    "control Main toolbar: Orbit"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:178",
+    "native/NativeHost.cs:179"
+   ],
+   "depends_on": [
+    "route POST /api/prefs"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/prefs (orbit)"
+  },
+  {
+   "id": "S4-31",
+   "name": "Focused lab cell box",
+   "behaviour": "Toolbar number box 'Lab cell' (0..599). Changing it focuses canonical cell C(n+1): updates the auxiliary views and structure explorer immediately and sends the focus to the engine (cyan outline on the cell in the viewport) without moving the camera.",
+   "entry_points": [
+    "control Main toolbar: Lab cell"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:179",
+    "native/NativeHost.cs:238",
+    "native/NativeHost.cs:320",
+    "native/NativeHost.cs:321",
+    "native/NativeHost.cs:322",
+    "native/NativeHost.cs:323",
+    "native/NativeHost.cs:324",
+    "native/NativeHost.cs:325"
+   ],
+   "depends_on": [
+    "route POST /api/focus"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/focus",
+   "notes": "Test: tests/native/NativeAuxiliaryNativeRegression.cs (Windows only). Where the engine stores the focus is not visible in this shard."
+  },
+  {
+   "id": "S4-32",
+   "name": "Preview certified insertion",
+   "behaviour": "Asks the engine for a certified insertion preview for the active orbit (or the fixed destination P when automatic choice is off, taking the orbit of an inspected required piece if one matches); batch count from the Batch box; nothing is committed. The note is shown when the insertion is complete.",
+   "entry_points": [
+    "button Main toolbar: Preview insertion",
+    "button Solve tab: Preview",
+    "key Main window (default keymap): N"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:177",
+    "native/NativeHost.cs:179",
+    "native/NativeHost.cs:197",
+    "native/NativeHost.cs:471",
+    "native/NativeHost.cs:512",
+    "native/NativeHost.cs:513",
+    "native/NativeHost.cs:514",
+    "native/NativeHost.cs:515",
+    "native/NativeHost.cs:516",
+    "native/NativeHost.cs:517",
+    "native/NativeHost.cs:518",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/suggest"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": "POST /api/suggest",
+   "notes": "Preview becomes the pending operation (state.pending); durable only after Apply. Test: tests/native/NativeFeatureRegression.cs (Windows only). This is the assisted-insertion feature."
+  },
+  {
+   "id": "S4-33",
+   "name": "Apply preview",
+   "behaviour": "Commits the pending preview (by its token) as a durable operation.",
+   "entry_points": [
+    "button Main toolbar: Apply preview",
+    "button Solve tab: Apply",
+    "key Main window (default keymap): Enter"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:177",
+    "native/NativeHost.cs:179",
+    "native/NativeHost.cs:197",
+    "native/NativeHost.cs:469",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/commit"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/commit",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only). Does nothing without a pending preview."
+  },
+  {
+   "id": "S4-34",
+   "name": "Cancel preview or running job",
+   "behaviour": "If an operation is running it asks the engine to stop the job; otherwise cancels the pending preview.",
+   "entry_points": [
+    "button Solve tab: Cancel",
+    "key Main window (default keymap): Escape"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:197",
+    "native/NativeHost.cs:470",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/stop-job",
+    "route POST /api/cancel"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": "POST /api/stop-job (busy) or POST /api/cancel",
+   "notes": "Cancel button is not disabled while busy; Escape works while busy."
+  },
+  {
+   "id": "S4-35",
+   "name": "Insertion destination and batch settings",
+   "behaviour": "Solve tab inputs: 'Choose destination automatically' checkbox (default on), 'Destination P' number (0..177119) and 'Batch' number (1..50). They parameterize Preview insertion and Analyze; a Shift+right-click inspection or 'Use destination' turns automatic off.",
+   "entry_points": [
+    "control Solve tab: Choose destination automatically",
+    "control Solve tab: Destination P",
+    "control Solve tab: Batch"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:196",
+    "native/NativeHost.cs:197",
+    "native/NativeHost.cs:471",
+    "native/NativeHost.cs:520"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-36",
+   "name": "Focused-cell grip buttons",
+   "behaviour": "One button per axis of the focused cell (labels from the engine, up to 7); left-click previews that grip move, right-click previews the inverse. Keys 1..7 preview grip 1..7 and Shift+1..7 the inverse. Previews are certified word recipes, applied with Apply.",
+   "entry_points": [
+    "control Solve tab: grip buttons (left click)",
+    "mouse Solve tab: right-click a grip button",
+    "key Main window (default keymap): Digit1",
+    "key Main window (default keymap): Digit2",
+    "key Main window (default keymap): Digit3",
+    "key Main window (default keymap): Digit4",
+    "key Main window (default keymap): Digit5",
+    "key Main window (default keymap): Digit6",
+    "key Main window (default keymap): Digit7",
+    "key Main window (default keymap): Shift+Digit1",
+    "key Main window (default keymap): Shift+Digit2",
+    "key Main window (default keymap): Shift+Digit3",
+    "key Main window (default keymap): Shift+Digit4",
+    "key Main window (default keymap): Shift+Digit5",
+    "key Main window (default keymap): Shift+Digit6",
+    "key Main window (default keymap): Shift+Digit7"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:198",
+    "native/NativeHost.cs:464",
+    "native/NativeHost.cs:465",
+    "native/NativeHost.cs:631",
+    "native/NativeHost.cs:633",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route GET /api/grips",
+    "route POST /api/preview"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": "GET /api/grips?cell=; POST /api/preview (kind word)",
+   "notes": "Pending preview only. Grips reload when the focused cell changes."
+  },
+  {
+   "id": "S4-37",
+   "name": "Preview primitive word",
+   "behaviour": "Parses the Primitive word box (tokens like H0 T1 H0 T1', or signed integers; H/T cell 0..599 => 2c+1 / 2c+2, trailing ' = inverse) and previews it as a manual word; a bad token shows an 'Invalid word' message box.",
+   "entry_points": [
+    "button Solve tab: Preview word",
+    "control Solve tab: Primitive word (text box)",
+    "window Invalid word (message box)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:199",
+    "native/NativeHost.cs:549"
+   ],
+   "depends_on": [
+    "route POST /api/preview"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": "POST /api/preview (kind word, note 'Native manually entered word')",
+   "notes": "The host's PreviewWord accepts any integer; the engine range check is outside this shard."
+  },
+  {
+   "id": "S4-38",
+   "name": "Certificate display",
+   "behaviour": "Read-only box on the Solve tab showing the pending preview's note, primitive and star counts, complete support list and certificate id, or 'No operation preview...' text.",
+   "entry_points": [
+    "control Solve tab: certificate box (read-only)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:200",
+    "native/NativeHost.cs:443",
+    "native/NativeHost.cs:444"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-39",
+   "name": "Save preview macro",
+   "behaviour": "Saves the pending certified preview under the name in the text box (default 'My macro') into the macro library.",
+   "entry_points": [
+    "button Solve tab: Save preview macro",
+    "control Solve tab: macro name (text box)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:201"
+   ],
+   "depends_on": [
+    "route POST /api/save-macro"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/save-macro",
+   "notes": "Library storage inferred from state.prefs.macro_library read at line 563."
+  },
+  {
+   "id": "S4-40",
+   "name": "Filter presets",
+   "behaviour": "Quick preset drop-down (Active orbit, Unsolved orbit, Orientation only, Work cell, All pieces apply immediately; Selected color, Selected current cell, Adjacent colors, Selected center layer, Selected home layer only fill the expression and run a count preview) and a 'Use preset' button. Selecting a preset commits on choice.",
+   "entry_points": [
+    "control Filters tab: Quick preset",
+    "button Filters tab: Use preset"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:180",
+    "native/NativeHost.cs:181",
+    "native/NativeHost.cs:188",
+    "native/NativeHost.cs:485",
+    "native/NativeHost.cs:486",
+    "native/NativeHost.cs:487",
+    "native/NativeHost.cs:488",
+    "native/NativeHost.cs:489"
+   ],
+   "depends_on": [
+    "route POST /api/prefs",
+    "route POST /api/filter-preview"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "preferences",
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/prefs (rules) or POST /api/filter-preview",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (parameterized presets stay unapplied until reviewed; Windows only). Selected color/layer come from the Structure explorer."
+  },
+  {
+   "id": "S4-41",
+   "name": "Open Structure tab from Filters",
+   "behaviour": "Switches to the Structure tab (index 7).",
+   "entry_points": [
+    "button Filters tab: Structure…"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:188"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-42",
+   "name": "Filter expression editor",
+   "behaviour": "Multi-line box holding the active filter (plain expression or a JSON rule list starting with '['); an orange 'Edited expression — not applied' note shows unapplied edits; 'Visible pieces' summary shows visible / interactive counts.",
+   "entry_points": [
+    "control Filters tab: Filter expression (text box)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:184",
+    "native/NativeHost.cs:187",
+    "native/NativeHost.cs:472",
+    "native/NativeHost.cs:552",
+    "native/NativeHost.cs:556",
+    "native/NativeHost.cs:562",
+    "native/NativeHost.cs:566"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-43",
+   "name": "Preview filter counts",
+   "behaviour": "Sends the edited filter rules to the engine and shows how many pieces and stickers match, without applying; invalid expressions show 'Invalid filter: ...'.",
+   "entry_points": [
+    "button Filters tab: Preview counts"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:188",
+    "native/NativeHost.cs:368",
+    "native/NativeHost.cs:369",
+    "native/NativeHost.cs:370",
+    "native/NativeHost.cs:371",
+    "native/NativeHost.cs:372",
+    "native/NativeHost.cs:373"
+   ],
+   "depends_on": [
+    "route POST /api/filter-preview"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "preferences"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": "POST /api/filter-preview",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-44",
+   "name": "Apply filter",
+   "behaviour": "Applies the edited filter rules (and turns the pin-safety option off); visibility and interactivity change, puzzle state does not.",
+   "entry_points": [
+    "button Filters tab: Apply filter"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:188",
+    "native/NativeHost.cs:473"
+   ],
+   "depends_on": [
+    "route POST /api/prefs"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/prefs (rules, pin_safety false)"
+  },
+  {
+   "id": "S4-45",
+   "name": "Pin buffers, selection and preview outside the filter",
+   "behaviour": "Checkbox 'Show buffers/selection/preview outside filter' stores the pin_safety preference so those pieces stay shown (non-interactive) outside the filter.",
+   "entry_points": [
+    "control Filters tab: Show buffers/selection/preview outside filter (checkbox)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:184",
+    "native/NativeHost.cs:185"
+   ],
+   "depends_on": [
+    "route POST /api/prefs"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/prefs (pin_safety)"
+  },
+  {
+   "id": "S4-46",
+   "name": "Moving orbits checklist",
+   "behaviour": "Collapsible section with a checkable list O00..O34. 'Apply checked' builds an orbit-union filter ('O01 | O05', or 'nothing') and applies it; right-click on a row excludes that orbit from the current rules and applies at once; the checklist reflects the applied filter when it is a plain orbit list.",
+   "entry_points": [
+    "button Filters tab: + Moving orbits",
+    "button Filters tab: Apply checked",
+    "control Filters tab: orbit checklist",
+    "mouse Filters tab: right-click an orbit row"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:190",
+    "native/NativeHost.cs:191",
+    "native/NativeHost.cs:192",
+    "native/NativeHost.cs:484",
+    "native/NativeHost.cs:557",
+    "native/NativeHost.cs:558",
+    "native/NativeHost.cs:559",
+    "native/NativeHost.cs:560"
+   ],
+   "depends_on": [
+    "route POST /api/prefs"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/prefs (rules)",
+   "notes": "The first button is the section expander (text '+ Moving orbits' / '− Moving orbits')."
+  },
+  {
+   "id": "S4-47",
+   "name": "Protect orbit toggle",
+   "behaviour": "Toggles protection of the orbit selected in the toolbar: adds it to or removes it from the protected list preference, which the engine enforces on all operations.",
+   "entry_points": [
+    "button Filters tab: Protect orbit",
+    "key Main window (user-bound action 'protect', no default key)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:191",
+    "native/NativeHost.cs:491",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/prefs"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "protection",
+    "preferences"
+   ],
+   "writes": [
+    "protection",
+    "preferences"
+   ],
+   "engine_call": "POST /api/prefs (protected)",
+   "notes": "Protected-orbit enforcement is in the engine shard."
+  },
+  {
+   "id": "S4-48",
+   "name": "Filter help sections",
+   "behaviour": "Two collapsible help sections: 'Filter syntax and motion detail' (explains C1/color/cell/adjacent/layer/home_layer syntax and smooth motion) and the header toggle row of 'Frozen piece sets'.",
+   "entry_points": [
+    "button Filters tab: + Filter syntax and motion detail"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:152",
+    "native/NativeHost.cs:193"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-49",
+   "name": "Save frozen piece set",
+   "behaviour": "Collapsible section 'Frozen piece sets': name box (default my_set), expression box (default 'selected'), kind (identity or position) and 'Save set', which stores the current matches as a frozen set.",
+   "entry_points": [
+    "button Filters tab: + Frozen piece sets",
+    "control Filters tab: set name",
+    "control Filters tab: set expression",
+    "control Filters tab: set kind",
+    "button Filters tab: Save set"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:194",
+    "native/NativeHost.cs:195",
+    "native/NativeHost.cs:571"
+   ],
+   "depends_on": [
+    "route POST /api/save-set"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/save-set",
+   "notes": "Storage location not visible in this shard."
+  },
+  {
+   "id": "S4-50",
+   "name": "Analyze destination buffers",
+   "behaviour": "Analyzes the destination (fixed P, or the active orbit with automatic choice, or the inspected required piece's orbit): lists reachable frames and shows destination, buffers A and B, reference destination, setup depths, collateral and protected orbits in the read-only box; the frame drop-down chooses which frame's setup word is shown.",
+   "entry_points": [
+    "button Buffers tab: Analyze",
+    "key Main window (default keymap): B",
+    "control Buffers tab: frame selector",
+    "control Buffers tab: analysis text (read-only)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:203",
+    "native/NativeHost.cs:204",
+    "native/NativeHost.cs:520",
+    "native/NativeHost.cs:521",
+    "native/NativeHost.cs:527",
+    "native/NativeHost.cs:636"
+   ],
+   "depends_on": [
+    "route POST /api/buffers"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": "POST /api/buffers",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only). Display text warns when the state changed since the analysis."
+  },
+  {
+   "id": "S4-51",
+   "name": "Preview star from selected frame",
+   "behaviour": "'Star' and 'Inverse star' preview the selected frame as a star recipe (sign +1/-1) for the analyzed orbit; refuses if nothing was analyzed or the state changed.",
+   "entry_points": [
+    "button Buffers tab: Star",
+    "button Buffers tab: Inverse star"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:204",
+    "native/NativeHost.cs:543",
+    "native/NativeHost.cs:544",
+    "native/NativeHost.cs:545",
+    "native/NativeHost.cs:546",
+    "native/NativeHost.cs:547"
+   ],
+   "depends_on": [
+    "route POST /api/preview"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": "POST /api/preview (kind star)",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (stale frame refused after undo; Windows only)."
+  },
+  {
+   "id": "S4-52",
+   "name": "Orbit progress list",
+   "behaviour": "Progress tab list with columns Orbit, Solved (n / pieces), Position wrong, Orient wrong for each orbit; double-clicking a row selects that orbit as the active orbit.",
+   "entry_points": [
+    "control Progress tab: orbit list",
+    "mouse Progress tab: double-click an orbit row"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:205",
+    "native/NativeHost.cs:441",
+    "native/NativeHost.cs:178"
+   ],
+   "depends_on": [
+    "route POST /api/prefs"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/prefs (orbit) on double-click"
+  },
+  {
+   "id": "S4-53",
+   "name": "Restore checkpoint",
+   "behaviour": "Session tab drop-down of checkpoints (newest first) and 'Restore checkpoint': asks 'Restore <name>? Other journal branches remain.' (OK/Cancel), restores it, then re-applies the saved camera and reloads grips.",
+   "entry_points": [
+    "button Session tab: Restore checkpoint",
+    "control Session tab: checkpoint list",
+    "window Restore checkpoint (confirmation)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:206",
+    "native/NativeHost.cs:442",
+    "native/NativeHost.cs:510",
+    "native/NativeHost.cs:511"
+   ],
+   "depends_on": [
+    "route POST /api/restore"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "checkpoints"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/restore",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-54",
+   "name": "Journal history and checkout",
+   "behaviour": "'Refresh history' loads recent journal branches (ID, Parent, Operation); 'Checkout' moves the head to the selected row.",
+   "entry_points": [
+    "button Session tab: Refresh history",
+    "button Session tab: Checkout",
+    "control Session tab: journal branch list"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:208",
+    "native/NativeHost.cs:550",
+    "native/NativeHost.cs:551"
+   ],
+   "depends_on": [
+    "route GET /api/history",
+    "route POST /api/checkout"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "journal"
+   ],
+   "writes": [
+    "journal",
+    "state"
+   ],
+   "engine_call": "GET /api/history; POST /api/checkout"
+  },
+  {
+   "id": "S4-55",
+   "name": "Session timer and report",
+   "behaviour": "'Start timer' / 'Pause timer' post the timer action then fetch statistics; 'Refresh session report' only fetches them; the report box shows head, scramble and solution primitive counts, stars, transactions, assisted transactions and timer seconds and running/paused.",
+   "entry_points": [
+    "button Session tab: Start timer",
+    "button Session tab: Pause timer",
+    "button Session tab: Refresh session report",
+    "control Session tab: session report (read-only)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:209",
+    "native/NativeHost.cs:210",
+    "native/NativeHost.cs:564",
+    "native/NativeHost.cs:572",
+    "native/NativeHost.cs:573",
+    "native/NativeHost.cs:574"
+   ],
+   "depends_on": [
+    "route POST /api/timer",
+    "route GET /api/stats"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "journal",
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/timer (start|pause); GET /api/stats",
+   "notes": "Timer storage is engine-side (workflow.timer); recorded as workspace."
+  },
+  {
+   "id": "S4-56",
+   "name": "Compose macros from words",
+   "behaviour": "Macros tab with Word A and Word B boxes (defaults H0 and T1) and four buttons asking the engine to compose and preview: commutator [A,B], conjugate A B A^-1, inverse A^-1 (B ignored), concatenation A B. Word A may hold the certified preview (see next row).",
+   "entry_points": [
+    "button Macros tab: [A, B]",
+    "button Macros tab: A B A^-1",
+    "button Macros tab: A^-1",
+    "button Macros tab: A B",
+    "control Macros tab: Word A",
+    "control Macros tab: Word B"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:211",
+    "native/NativeHost.cs:212",
+    "native/NativeHost.cs:567",
+    "native/NativeHost.cs:568"
+   ],
+   "depends_on": [
+    "route POST /api/compose"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": "POST /api/compose",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only). Primitives are limited to +/-1..1200."
+  },
+  {
+   "id": "S4-57",
+   "name": "Use preview as macro A",
+   "behaviour": "Copies the pending certified preview's recipe into Word A (caption 'Certified preview: <note>'); says 'Preview a macro first.' when none.",
+   "entry_points": [
+    "button Macros tab: Preview to A"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:212",
+    "native/NativeHost.cs:569"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-58",
+   "name": "Saved macro library",
+   "behaviour": "List of saved certified macros; 'Preview saved' previews the selected macro, 'Inverse saved' composes its inverse.",
+   "entry_points": [
+    "control Macros tab: saved macros list",
+    "button Macros tab: Preview saved",
+    "button Macros tab: Inverse saved"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:213",
+    "native/NativeHost.cs:563",
+    "native/NativeHost.cs:570"
+   ],
+   "depends_on": [
+    "route POST /api/preview",
+    "route POST /api/compose"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "preferences",
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": "POST /api/preview (recipe, note=name) or POST /api/compose (operation inverse)"
+  },
+  {
+   "id": "S4-59",
+   "name": "Inspect piece position",
+   "behaviour": "Number box 'Inspect position P' (0..177119) and 'Inspect / select' select that position in the engine and show its occupying identity, orbit, home colors, current cells and solved/position/orientation flags in the Pieces box.",
+   "entry_points": [
+    "button Pieces tab: Inspect / select",
+    "control Pieces tab: Inspect position P",
+    "control Pieces tab: piece details (read-only)"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:214",
+    "native/NativeHost.cs:215",
+    "native/NativeHost.cs:576",
+    "native/NativeHost.cs:580",
+    "native/NativeHost.cs:609"
+   ],
+   "depends_on": [
+    "route POST /api/select"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/select",
+   "notes": "The engine stores the selected piece in preferences (server.py /api/select)."
+  },
+  {
+   "id": "S4-60",
+   "name": "Track identity",
+   "behaviour": "Selects the engine's tracking of the identity currently shown, so its current position is followed after moves.",
+   "entry_points": [
+    "button Pieces tab: Track identity"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:215",
+    "native/NativeHost.cs:610"
+   ],
+   "depends_on": [
+    "route POST /api/track-piece"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/track-piece",
+   "notes": "Storage inferred; handled in server.py."
+  },
+  {
+   "id": "S4-61",
+   "name": "Previous and next unsolved piece",
+   "behaviour": "Steps to the previous/next unsolved piece of the active orbit relative to the inspected position and selects it.",
+   "entry_points": [
+    "button Pieces tab: Previous unsolved",
+    "button Pieces tab: Next unsolved"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:215",
+    "native/NativeHost.cs:613"
+   ],
+   "depends_on": [
+    "route POST /api/next-piece",
+    "route POST /api/select"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/next-piece; POST /api/select"
+  },
+  {
+   "id": "S4-62",
+   "name": "Use destination and find required piece",
+   "behaviour": "'Use destination' copies the inspected position into the fixed insertion destination (automatic off); 'Find required piece' also asks the engine where the identity required at that position is now and selects it.",
+   "entry_points": [
+    "button Pieces tab: Use destination",
+    "button Pieces tab: Find required piece"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:215",
+    "native/NativeHost.cs:611",
+    "native/NativeHost.cs:612"
+   ],
+   "depends_on": [
+    "route POST /api/find-required",
+    "route POST /api/select"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/find-required; POST /api/select (find only)",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-63",
+   "name": "Center on inspected piece",
+   "behaviour": "'Center current' / 'Center home' focus and recenter the camera on the first current or home cell of the inspected piece and reload grips.",
+   "entry_points": [
+    "button Pieces tab: Center current",
+    "button Pieces tab: Center home"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:215",
+    "native/NativeHost.cs:614"
+   ],
+   "depends_on": [
+    "route GET /api/grips"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-64",
+   "name": "Clear inspection",
+   "behaviour": "Removes the inspection annotation (cyan/yellow highlights) and resets the Pieces text.",
+   "entry_points": [
+    "button Pieces tab: Clear inspection"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:215",
+    "native/NativeHost.cs:462"
+   ],
+   "depends_on": [
+    "route POST /api/inspection/clear"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": "POST /api/inspection/clear",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-65",
+   "name": "Piece inspection by Shift+click in the viewport",
+   "behaviour": "Shift+left click on a visible, interactive sticker highlights the home Cell Centers of the occupying identity (cyan) and shows them in the Pieces tab; Shift+right click finds the identity required at the clicked destination (yellow), fills the fixed destination, runs buffer analysis if available and switches to Buffers, otherwise explains why not. Hidden pieces cannot be picked; a drag past the click threshold rotates instead.",
+   "entry_points": [
+    "mouse Viewport: Shift+left click",
+    "mouse Viewport: Shift+right click"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:123",
+    "native/NativeHost.cs:457",
+    "native/NativeHost.cs:458",
+    "native/NativeHost.cs:459",
+    "native/NativeHost.cs:460",
+    "native/NativeHost.cs:603",
+    "native/NativeHost.cs:604",
+    "native/NativeHost.cs:605",
+    "native/NativeHost.cs:606",
+    "native/NativeHost.cs:607",
+    "native/NativePickingVisibility.cs:143",
+    "native/NativePickingVisibility.cs:144",
+    "native/NativePickingVisibility.cs:145",
+    "native/NativePickingVisibility.cs:146"
+   ],
+   "depends_on": [
+    "route POST /api/native/inspect"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state"
+   ],
+   "engine_call": "POST /api/native/inspect (gesture home-centers | required-piece)",
+   "notes": "Test: tests/native/NativePickingRegression.cs (Windows only). Click recognition (3 px threshold) is in NativePickingVisibility.IsClick."
+  },
+  {
+   "id": "S4-66",
+   "name": "Native twist by clicking a sticker",
+   "behaviour": "A plain left/right click on a visible, interactive sticker is passed to the original MPUlt mouse handler, which twists (including native multi-click corner grips); on mouse-up the host collects MPUlt's move records and sends them as one batch, which the engine verifies, journals and commits. Clicks on hidden/non-interactive pieces, during busy/sync/closing or without a hit are blocked.",
+   "entry_points": [
+    "mouse Viewport: left click on a sticker",
+    "mouse Viewport: right click on a sticker"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:123",
+    "native/NativeHost.cs:448",
+    "native/NativeHost.cs:449",
+    "native/NativeHost.cs:450",
+    "native/NativeHost.cs:451",
+    "native/NativeHost.cs:452",
+    "native/NativeHost.cs:453",
+    "native/NativeHost.cs:454",
+    "native/NativeHost.cs:455",
+    "native/NativePickingVisibility.cs:85",
+    "native/NativePickingVisibility.cs:121",
+    "native/NativePickingVisibility.cs:129",
+    "native/NativePickingVisibility.cs:130",
+    "native/NativePickingVisibility.cs:131",
+    "native/NativePickingVisibility.cs:133",
+    "native/NativePickingVisibility.cs:134",
+    "native/NativePickingVisibility.cs:135",
+    "native/NativePickingVisibility.cs:139",
+    "native/NativePickingVisibility.cs:150",
+    "native/NativePickingVisibility.cs:160"
+   ],
+   "depends_on": [
+    "route POST /api/native/turn"
+   ],
+   "evidence_kind": "inferred",
+   "reads": [
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/native/turn",
+   "notes": "Inferred: which twist a click produces, multi-click corner grips and Ctrl+click recentering are done by the retained MPUlt binary (ProcessClick/FindFace); the host only gates and then captures Puz.Seq. Source of the gate and capture is visible here."
+  },
+  {
+   "id": "S4-67",
+   "name": "Camera drags and wheel in the viewport",
+   "behaviour": "Left drag rotates in 3D; Shift+left drag rotates in 4D; right drag rolls horizontally and slides in 4D vertically; Ctrl+left/right drag changes radius / field of view; Ctrl+click recenters on a cell; arrow and Page keys and the wheel also move the camera. Camera drags never become twists; while moving, the renderer may sample large views when smooth motion is on.",
+   "entry_points": [
+    "mouse Viewport: left drag",
+    "mouse Viewport: Shift+left drag",
+    "mouse Viewport: right drag",
+    "mouse Viewport: Ctrl+left drag",
+    "mouse Viewport: Ctrl+right drag",
+    "mouse Viewport: Ctrl+click",
+    "mouse Viewport: wheel",
+    "key Viewport: Left/Right/Up/Down/PageUp/PageDown"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:172",
+    "native/NativeHost.cs:123",
+    "native/NativePickingVisibility.cs:121",
+    "native/NativePickingVisibility.cs:123",
+    "native/NativePickingVisibility.cs:124",
+    "native/NativePickingVisibility.cs:125",
+    "native/NativePickingVisibility.cs:126",
+    "native/NativePickingVisibility.cs:127",
+    "native/NativeRendererLifecycle.cs:162",
+    "native/NativeRendererLifecycle.cs:163",
+    "native/NativeRendererLifecycle.cs:164"
+   ],
+   "depends_on": [
+    "window Main"
+   ],
+   "evidence_kind": "inferred",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Inferred: gesture meanings come from the retained MPUlt camera code and from the help text at NativeHost.cs:172; the host source only shows that drags are kept apart from clicks (NativePickingVisibility) and that moves/wheel/arrow keys start motion sampling (NativeRendererLifecycle)."
+  },
+  {
+   "id": "S4-68",
+   "name": "Suppressed inherited MPUlt shortcuts and Alt mouse",
+   "behaviour": "Original MPUlt shortcuts are blocked so they cannot bypass the engine: any F1..F12 key, any Ctrl+key not bound in the key map, Alt+M, and mouse buttons pressed with Alt over the window. F10 (menu access) and Alt+F4 still work.",
+   "entry_points": [
+    "key Main window (no binding): F1-F12",
+    "key Main window (no binding): Ctrl+<unbound key>",
+    "key Main window: Alt+M",
+    "mouse Main window: any button with Alt held"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:639",
+    "native/NativeHost.cs:646",
+    "native/NativeHost.cs:647",
+    "native/NativeHost.cs:688",
+    "native/NativeHost.cs:689",
+    "native/NativeHost.cs:690",
+    "native/NativeHost.cs:691",
+    "native/NativeHost.cs:692",
+    "native/NativeHost.cs:693"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-69",
+   "name": "Text editor key policy",
+   "behaviour": "While a text box, number box or combo box has focus the key map is off: F1..F12 are swallowed; Ctrl+Z undoes the box's own text; Ctrl+A/C/V/X, arrows, Home/End, Back, Delete, Insert pass through; other Ctrl combinations are swallowed.",
+   "entry_points": [
+    "key Text editor controls: Ctrl+Z",
+    "key Text editor controls: F1-F12",
+    "key Text editor controls: Ctrl+A/C/V/X",
+    "key Text editor controls: other Ctrl combinations"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:676",
+    "native/NativeHost.cs:677",
+    "native/NativeHost.cs:678",
+    "native/NativeHost.cs:679",
+    "native/NativeHost.cs:680",
+    "native/NativeHost.cs:681",
+    "native/NativeHost.cs:682",
+    "native/NativeHost.cs:683",
+    "native/NativeHost.cs:684",
+    "native/NativeHost.cs:685",
+    "native/NativeHost.cs:686"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-70",
+   "name": "Open global cell overview",
+   "behaviour": "Opens the global 600-cell overview (true 4D projection of all cell centres as dots) as a window beside the main window, or as a page in the Views tab drawer when the window is narrow (client width < 1100 px at 100% scale or working-area height < 704).",
+   "entry_points": [
+    "menu Main window: View > Global cell overview",
+    "button Main toolbar: Cell views > Global overview · 600 cells",
+    "button Views tab: Open global"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:169",
+    "native/NativeHost.cs:237",
+    "native/NativeHost.cs:319",
+    "native/NativeAuxiliaryViews.cs:53",
+    "native/NativeAuxiliaryViews.cs:84",
+    "native/NativeAuxiliaryViews.cs:155",
+    "native/NativeAuxiliaryViews.cs:157",
+    "native/NativeAuxiliaryViews.cs:158",
+    "native/NativeAuxiliaryViews.cs:159",
+    "native/NativeAuxiliaryViews.cs:160",
+    "native/NativeAuxiliaryViews.cs:172"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeAuxiliaryViewsRegression.cs (Windows only). Opening with no focus queues the focus of the Lab cell value to the engine."
+  },
+  {
+   "id": "S4-71",
+   "name": "Open focused neighborhood",
+   "behaviour": "Opens the focused cell neighborhood view (the focused cell and its 1- or 2-hop shared-face neighbours drawn as tetrahedra) as a window or Views-tab page.",
+   "entry_points": [
+    "menu Main window: View > Focused cell neighborhood",
+    "button Main toolbar: Cell views > Focused neighborhood",
+    "button Views tab: Open local"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:169",
+    "native/NativeHost.cs:237",
+    "native/NativeHost.cs:319",
+    "native/NativeAuxiliaryViews.cs:54",
+    "native/NativeAuxiliaryViews.cs:84",
+    "native/NativeAuxiliaryViews.cs:156",
+    "native/NativeAuxiliaryViews.cs:157",
+    "native/NativeAuxiliaryViews.cs:158",
+    "native/NativeAuxiliaryViews.cs:159",
+    "native/NativeAuxiliaryViews.cs:160"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeAuxiliaryViewsRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-72",
+   "name": "Reset auxiliary window positions",
+   "behaviour": "Puts the two auxiliary windows back at the right edge of the work area (stacked, non-overlapping) and re-evaluates drawer versus window mode.",
+   "entry_points": [
+    "menu Main window: View > Reset auxiliary window positions",
+    "button Main toolbar: Cell views > Reset window positions"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:169",
+    "native/NativeHost.cs:237",
+    "native/NativeAuxiliaryViews.cs:216",
+    "native/NativeAuxiliaryViews.cs:217",
+    "native/NativeAuxiliaryViews.cs:218",
+    "native/NativeAuxiliaryViews.cs:220",
+    "native/NativeAuxiliaryViews.cs:221",
+    "native/NativeAuxiliaryViews.cs:222",
+    "native/NativeAuxiliaryViews.cs:223",
+    "native/NativeAuxiliaryViews.cs:224",
+    "native/NativeAuxiliaryViews.cs:225",
+    "native/NativeAuxiliaryViews.cs:226",
+    "native/NativeAuxiliaryViews.cs:227",
+    "native/NativeAuxiliaryViews.cs:228",
+    "native/NativeAuxiliaryViews.cs:229",
+    "native/NativeAuxiliaryViews.cs:230"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeAuxiliaryViewsRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-73",
+   "name": "Auxiliary windows",
+   "behaviour": "Two modeless windows 'Global overview — C600 Studio' and 'Focused neighborhood — C600 Studio' (420x360 min 350x340, no taskbar entry). Closing them with the X only hides them (their cameras and pinned origin are kept); they move to the Views tab drawer in compact mode and follow display/DPI changes.",
+   "entry_points": [
+    "window Global overview — C600 Studio",
+    "window Focused neighborhood — C600 Studio",
+    "control Views tab: Global overview (inner tab)",
+    "control Views tab: Focused neighborhood (inner tab)"
+   ],
+   "evidence": [
+    "native/NativeAuxiliaryViews.cs:45",
+    "native/NativeAuxiliaryViews.cs:48",
+    "native/NativeAuxiliaryViews.cs:50",
+    "native/NativeAuxiliaryViews.cs:55",
+    "native/NativeAuxiliaryViews.cs:56",
+    "native/NativeAuxiliaryViews.cs:59",
+    "native/NativeAuxiliaryViews.cs:76",
+    "native/NativeAuxiliaryViews.cs:77",
+    "native/NativeAuxiliaryViews.cs:78",
+    "native/NativeAuxiliaryViews.cs:79",
+    "native/NativeAuxiliaryViews.cs:165",
+    "native/NativeAuxiliaryViews.cs:166",
+    "native/NativeAuxiliaryViews.cs:195",
+    "native/NativeAuxiliaryViews.cs:196",
+    "native/NativeAuxiliaryViews.cs:197",
+    "native/NativeAuxiliaryViews.cs:198",
+    "native/NativeAuxiliaryViews.cs:199",
+    "native/NativeAuxiliaryViews.cs:200",
+    "native/NativeAuxiliaryViews.cs:201",
+    "native/NativeAuxiliaryViews.cs:202"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeAuxiliaryViewsRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-74",
+   "name": "Auxiliary view toolbar",
+   "behaviour": "Each auxiliary panel has buttons: 'Center main' (asks the main camera to recenter on the selected cell and reloads grips; disabled while busy), 'Reset camera' (resets that view's own camera), 'Close view' (hides that view); the neighborhood panel adds a 'Follow selection / Pin this origin' drop-down and a '1 hop / 2 hops' radius drop-down.",
+   "entry_points": [
+    "button Global overview: Center main",
+    "button Global overview: Reset camera",
+    "button Global overview: Close view",
+    "button Focused neighborhood: Center main",
+    "button Focused neighborhood: Reset camera",
+    "button Focused neighborhood: Close view",
+    "control Focused neighborhood: Follow selection / Pin this origin",
+    "control Focused neighborhood: 1 hop / 2 hops"
+   ],
+   "evidence": [
+    "native/NativeAuxiliaryViews.cs:88",
+    "native/NativeAuxiliaryViews.cs:96",
+    "native/NativeAuxiliaryViews.cs:97",
+    "native/NativeAuxiliaryViews.cs:99",
+    "native/NativeAuxiliaryViews.cs:100",
+    "native/NativeAuxiliaryViews.cs:101",
+    "native/NativeAuxiliaryViews.cs:102",
+    "native/NativeAuxiliaryViews.cs:105",
+    "native/NativeAuxiliaryViews.cs:106",
+    "native/NativeAuxiliaryViews.cs:107",
+    "native/NativeAuxiliaryViews.cs:108",
+    "native/NativeAuxiliaryViews.cs:147",
+    "native/NativeAuxiliaryViews.cs:163",
+    "native/NativeAuxiliaryViews.cs:164",
+    "native/NativeAuxiliaryViews.cs:214"
+   ],
+   "depends_on": [
+    "window Main"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeAuxiliaryViewsRegression.cs (Windows only). Center main: host SelectAuxiliaryColor(center=true) -> Center() and LoadGrips() (NativeHost.cs:313-318)."
+  },
+  {
+   "id": "S4-75",
+   "name": "Select cell in auxiliary or explorer view and center",
+   "behaviour": "Selecting a cell in an auxiliary view changes the 'Lab cell' box, the other views and the explorer and queues the focus to the engine; selecting with 'Center main' also recenters the main camera. The 'Center viewport' button in the Structure explorer does the same for its selected colour.",
+   "entry_points": [
+    "button Structure tab: Center viewport",
+    "window Views tab: selection event from Global overview or Focused neighborhood"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:217",
+    "native/NativeHost.cs:234",
+    "native/NativeHost.cs:235",
+    "native/NativeHost.cs:313",
+    "native/NativeHost.cs:314",
+    "native/NativeHost.cs:315",
+    "native/NativeHost.cs:316",
+    "native/NativeHost.cs:317",
+    "native/NativeHost.cs:318",
+    "native/NativeStructureExplorer.cs:62"
+   ],
+   "depends_on": [
+    "route POST /api/focus",
+    "route GET /api/grips"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "preferences"
+   ],
+   "writes": [
+    "preferences",
+    "workspace"
+   ],
+   "engine_call": "POST /api/focus; GET /api/grips (center)",
+   "notes": "Test: tests/native/NativeAuxiliaryNativeRegression.cs (Windows only). Selection alone does not move the main camera."
+  },
+  {
+   "id": "S4-76",
+   "name": "Cell view mouse actions",
+   "behaviour": "In either cell view (own GDI projection of the 600-cell): left drag rotates that view, wheel zooms (0.4x-4x), left click selects the nearest cell centre (global) or cell (local), hover highlights the cell in both views and shows a tooltip with counts, right-click opens a context menu with 'Center main on selected C' and 'Reset this camera'.",
+   "entry_points": [
+    "mouse Cell view: left drag",
+    "mouse Cell view: wheel",
+    "mouse Cell view: left click",
+    "mouse Cell view: hover",
+    "mouse Cell view: right click (context menu)",
+    "menu Cell view: Center main on selected C",
+    "menu Cell view: Reset this camera"
+   ],
+   "evidence": [
+    "native/NativeCellView.cs:153",
+    "native/NativeCellView.cs:235",
+    "native/NativeCellView.cs:236",
+    "native/NativeCellView.cs:237",
+    "native/NativeCellView.cs:238",
+    "native/NativeCellView.cs:239",
+    "native/NativeCellView.cs:240",
+    "native/NativeCellView.cs:241"
+   ],
+   "depends_on": [
+    "window Main"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeCellViewRegression.cs (Windows only). Hover never selects or queries the engine."
+  },
+  {
+   "id": "S4-77",
+   "name": "Cell view keyboard actions",
+   "behaviour": "When a cell view has focus: Home resets its camera, + / - zoom, arrow keys rotate, Enter requests 'Center main'; Tab, Escape and F8 pass to the host; other keys are consumed so the original MPUlt form does not see them.",
+   "entry_points": [
+    "key Cell view: Home",
+    "key Cell view: + / Add / OemPlus",
+    "key Cell view: - / Subtract / OemMinus",
+    "key Cell view: Left/Right/Up/Down",
+    "key Cell view: Enter",
+    "key Cell view: Tab/Escape/F8"
+   ],
+   "evidence": [
+    "native/NativeCellView.cs:242",
+    "native/NativeCellView.cs:243",
+    "native/NativeCellView.cs:246",
+    "native/NativeCellView.cs:247",
+    "native/NativeCellView.cs:248",
+    "native/NativeCellView.cs:249",
+    "native/NativeCellView.cs:250",
+    "native/NativeCellView.cs:251",
+    "native/NativeHost.cs:649",
+    "native/NativeHost.cs:650",
+    "native/NativeHost.cs:651",
+    "native/NativeHost.cs:652",
+    "native/NativeHost.cs:653"
+   ],
+   "depends_on": [
+    "window Main"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeCellViewRegression.cs (Windows only). Modifier keys disable view navigation."
+  },
+  {
+   "id": "S4-78",
+   "name": "Views drawer keyboard handling",
+   "behaviour": "Inside the Views tab, Tab moves normally, F8 toggles tools, Enter/Space presses the focused button, combo boxes respond to Up/Down/Left/Right/Home/End/F4/Space/Enter/Escape; all other keys are consumed so inherited MPUlt shortcuts and commit keys cannot fire.",
+   "entry_points": [
+    "key Views tab: Enter/Space on a button",
+    "key Views tab: Up/Down/Left/Right/Home/End/F4/Space/Enter/Escape on a combo box",
+    "key Views tab: Tab"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:656",
+    "native/NativeHost.cs:657",
+    "native/NativeHost.cs:658",
+    "native/NativeHost.cs:659",
+    "native/NativeHost.cs:660",
+    "native/NativeHost.cs:661",
+    "native/NativeHost.cs:662",
+    "native/NativeHost.cs:663",
+    "native/NativeHost.cs:664",
+    "native/NativeHost.cs:665",
+    "native/NativeHost.cs:666",
+    "native/NativeHost.cs:667",
+    "native/NativeHost.cs:668",
+    "native/NativeHost.cs:669",
+    "native/NativeHost.cs:670"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-79",
+   "name": "Cell view displays",
+   "behaviour": "The cell views draw per-cell status: filled marker colour, hollow ring for no active piece, dot for visible unsolved, diamond for buffer cell, square for picked piece, teal outline for selection, dashed for hover; a footer text gives solved/eligible/visible counts. Unavailable geometry shows an error text with 'Retry after reconnect'.",
+   "entry_points": [
+    "window Global overview — C600 Studio: status display",
+    "window Focused neighborhood — C600 Studio: status display"
+   ],
+   "evidence": [
+    "native/NativeCellView.cs:75",
+    "native/NativeCellView.cs:94",
+    "native/NativeCellView.cs:199",
+    "native/NativeCellView.cs:200",
+    "native/NativeCellView.cs:201",
+    "native/NativeCellView.cs:203",
+    "native/NativeCellView.cs:207",
+    "native/NativeCellView.cs:208",
+    "native/NativeCellView.cs:209",
+    "native/NativeCellView.cs:210",
+    "native/NativeCellView.cs:211",
+    "native/NativeCellView.cs:212",
+    "native/NativeCellView.cs:215",
+    "native/NativeCellView.cs:217",
+    "native/NativeCellView.cs:218",
+    "native/NativeCellView.cs:219",
+    "native/NativeAuxiliaryViews.cs:123",
+    "native/NativeAuxiliaryViews.cs:130",
+    "native/NativeAuxiliaryViews.cs:131",
+    "native/NativeAuxiliaryViews.cs:132",
+    "native/NativeAuxiliaryViews.cs:133"
+   ],
+   "depends_on": [
+    "window Main"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeCellViewRegression.cs (Windows only). Status comes from state.cell_status."
+  },
+  {
+   "id": "S4-80",
+   "name": "Find colour and compare",
+   "behaviour": "Structure tab top: 'Find color' (text C1..C600, Enter works) navigates the explorer to that colour; Compare box and 'Compare' button (or Enter) set a second colour and show how many shared-face steps separate the two and whether they share a face.",
+   "entry_points": [
+    "button Structure tab: Find color",
+    "control Structure tab: colour search (Enter)",
+    "button Colors page: Compare",
+    "control Colors page: compare search (Enter)"
+   ],
+   "evidence": [
+    "native/NativeStructureExplorer.cs:61",
+    "native/NativeStructureExplorer.cs:62",
+    "native/NativeStructureExplorer.cs:63",
+    "native/NativeStructureExplorer.cs:64",
+    "native/NativeStructureExplorer.cs:72",
+    "native/NativeStructureExplorer.cs:73",
+    "native/NativeStructureExplorer.cs:74",
+    "native/NativeStructureExplorer.cs:151",
+    "native/NativeStructureExplorer.cs:152",
+    "native/NativeStructureExplorer.cs:153",
+    "native/NativeStructureExplorer.cs:175"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeStructureExplorerRegression.cs (Windows only). Local navigation; no engine call."
+  },
+  {
+   "id": "S4-81",
+   "name": "Colour graph and neighbours",
+   "behaviour": "Colors page: graph radius (1 or 2 hops), schematic adjacency graph, four neighbour buttons (C-numbers of shared-face cells), 'Use color' / 'Use cell' / 'Use neighbors' (choose the predicate for the filter below). Clicking a graph node or Enter/Space on the focused node selects it; arrow keys move node focus.",
+   "entry_points": [
+    "control Colors page: Graph radius",
+    "mouse Colors page: click a graph node",
+    "mouse Colors page: hover a graph node",
+    "key Colors page: Left/Up/Right/Down in graph",
+    "key Colors page: Enter/Space in graph",
+    "button Colors page: neighbour C-buttons",
+    "button Colors page: Use color",
+    "button Colors page: Use cell",
+    "button Colors page: Use neighbors"
+   ],
+   "evidence": [
+    "native/NativeStructureExplorer.cs:66",
+    "native/NativeStructureExplorer.cs:67",
+    "native/NativeStructureExplorer.cs:68",
+    "native/NativeStructureExplorer.cs:69",
+    "native/NativeStructureExplorer.cs:70",
+    "native/NativeStructureExplorer.cs:71",
+    "native/NativeStructureExplorer.cs:86",
+    "native/NativeColorGraph.cs:20",
+    "native/NativeColorGraph.cs:27",
+    "native/NativeColorGraph.cs:48",
+    "native/NativeColorGraph.cs:65",
+    "native/NativeColorGraph.cs:67",
+    "native/NativeColorGraph.cs:70",
+    "native/NativeColorGraph.cs:71",
+    "native/NativeColorGraph.cs:72",
+    "native/NativeColorGraph.cs:73",
+    "native/NativeColorGraph.cs:74",
+    "native/NativeColorGraph.cs:75",
+    "native/NativeColorGraph.cs:79"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeStructureExplorerRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-82",
+   "name": "Cell-layer navigation",
+   "behaviour": "Layers page: choose layer L0..Lk (shared-face distance from the selected colour), see the number of cells in it, list them, and 'Go to listed color' (or double-click) selects one; 'Use current layer' and 'Use home layer' set the filter predicate.",
+   "entry_points": [
+    "control Layers page: layer selector",
+    "control Layers page: layer colour list",
+    "mouse Layers page: double-click a layer colour",
+    "button Layers page: Go to listed color",
+    "button Layers page: Use current layer",
+    "button Layers page: Use home layer"
+   ],
+   "evidence": [
+    "native/NativeStructureExplorer.cs:75",
+    "native/NativeStructureExplorer.cs:76",
+    "native/NativeStructureExplorer.cs:77",
+    "native/NativeStructureExplorer.cs:78",
+    "native/NativeStructureExplorer.cs:79",
+    "native/NativeStructureExplorer.cs:80",
+    "native/NativeStructureExplorer.cs:81",
+    "native/NativeStructureExplorer.cs:174",
+    "native/NativeStructureExplorer.cs:177",
+    "native/NativeStructureExplorer.cs:178",
+    "native/NativeStructureExplorer.cs:179",
+    "native/NativeStructureExplorer.cs:180"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeStructureExplorerRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-83",
+   "name": "Vertex navigation",
+   "behaviour": "Vertices page: the four vertices of the selected cell as buttons, a 'Vertex V' box (1..120) and the 20 colours incident at that vertex; 'Go to incident color' (or double-click) selects one.",
+   "entry_points": [
+    "button Vertices page: vertex V-buttons",
+    "control Vertices page: Vertex V",
+    "control Vertices page: incident colour list",
+    "mouse Vertices page: double-click an incident colour",
+    "button Vertices page: Go to incident color"
+   ],
+   "evidence": [
+    "native/NativeStructureExplorer.cs:83",
+    "native/NativeStructureExplorer.cs:87",
+    "native/NativeStructureExplorer.cs:90",
+    "native/NativeStructureExplorer.cs:91",
+    "native/NativeStructureExplorer.cs:92",
+    "native/NativeStructureExplorer.cs:93",
+    "native/NativeStructureExplorer.cs:94",
+    "native/NativeStructureExplorer.cs:169",
+    "native/NativeStructureExplorer.cs:170",
+    "native/NativeStructureExplorer.cs:171",
+    "native/NativeStructureExplorer.cs:174"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeStructureExplorerRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-84",
+   "name": "Structure filter predicate and composition",
+   "behaviour": "Generated read-only expression (color(C#), cell(C#), adjacent(C#), layer(C#,L#), home_layer(C#,L#)) from the chosen predicate; composition choice Replace / Intersect / Union with the current filter via 'Options'.",
+   "entry_points": [
+    "control Structure tab: Structure predicate",
+    "control Structure tab: Filter composition",
+    "button Structure tab: Options",
+    "control Structure tab: generated filter expression"
+   ],
+   "evidence": [
+    "native/NativeStructureExplorer.cs:95",
+    "native/NativeStructureExplorer.cs:98",
+    "native/NativeStructureExplorer.cs:99",
+    "native/NativeStructureExplorer.cs:100",
+    "native/NativeStructureExplorer.cs:101",
+    "native/NativeStructureExplorer.cs:102",
+    "native/NativeStructureExplorer.cs:105",
+    "native/NativeStructureExplorer.cs:182",
+    "native/NativeStructureExplorer.cs:183",
+    "native/NativeStructureExplorer.cs:184",
+    "native/NativeStructureExplorer.cs:185",
+    "native/NativeStructureExplorer.cs:186",
+    "native/NativeStructureExplorer.cs:187"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeStructureExplorerRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-85",
+   "name": "Preview structure filter",
+   "behaviour": "'Preview counts' asks the engine for the pieces/stickers a composed filter would match (existing rules combined by intersect or union) without applying; 'Review' shows or hides the complete composed rules.",
+   "entry_points": [
+    "button Structure tab: Preview counts",
+    "button Structure tab: Review"
+   ],
+   "evidence": [
+    "native/NativeStructureExplorer.cs:104",
+    "native/NativeStructureExplorer.cs:106",
+    "native/NativeStructureExplorer.cs:189",
+    "native/NativeStructureExplorer.cs:190",
+    "native/NativeStructureExplorer.cs:191",
+    "native/NativeStructureExplorer.cs:193",
+    "native/NativeStructureExplorer.cs:196",
+    "native/NativeHost.cs:219",
+    "native/NativeHost.cs:334",
+    "native/NativeHost.cs:347",
+    "native/NativeHost.cs:348",
+    "native/NativeHost.cs:349",
+    "native/NativeHost.cs:350",
+    "native/NativeHost.cs:351",
+    "native/NativeHost.cs:355",
+    "native/NativeHost.cs:359",
+    "native/NativeHost.cs:360"
+   ],
+   "depends_on": [
+    "route POST /api/filter-preview"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "preferences",
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": "POST /api/filter-preview",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only). A newer request or a changed state invalidates the preview."
+  },
+  {
+   "id": "S4-86",
+   "name": "Apply structure filter",
+   "behaviour": "'Apply filter' (enabled only after an accepted preview of the same state) applies the reviewed rules by context hash; stale previews are rejected with 'State or filter changed. Preview again.'",
+   "entry_points": [
+    "button Structure tab: Apply filter"
+   ],
+   "evidence": [
+    "native/NativeStructureExplorer.cs:104",
+    "native/NativeStructureExplorer.cs:107",
+    "native/NativeStructureExplorer.cs:198",
+    "native/NativeHost.cs:220",
+    "native/NativeHost.cs:362",
+    "native/NativeHost.cs:363",
+    "native/NativeHost.cs:364",
+    "native/NativeHost.cs:365",
+    "native/NativeHost.cs:366"
+   ],
+   "depends_on": [
+    "route POST /api/filter-apply"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "preferences",
+    "state"
+   ],
+   "writes": [
+    "preferences"
+   ],
+   "engine_call": "POST /api/filter-apply",
+   "notes": "Test: tests/native/NativeFeatureRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-87",
+   "name": "Insert structure expression into filter",
+   "behaviour": "'Insert expression' copies the generated expression into the Filters tab editor, switches to Filters and focuses it (nothing applied).",
+   "entry_points": [
+    "button Structure tab: Insert expression"
+   ],
+   "evidence": [
+    "native/NativeStructureExplorer.cs:104",
+    "native/NativeStructureExplorer.cs:107",
+    "native/NativeHost.cs:220"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-88",
+   "name": "Error and failure dialogs",
+   "behaviour": "Message boxes: 'C600 native start failed' (startup exception, also writes native_start_error.txt beside the host), 'C600 native UI error' (unhandled UI exception, then exit, unless it is a recoverable DirectX device loss), 'Native connection failed' (bridge connect failure; input stays disabled, File > Reconnect retries) and 'Native host error' (completion exception; disconnects).",
+   "entry_points": [
+    "window C600 native start failed",
+    "window C600 native UI error",
+    "window Native connection failed",
+    "window Native host error"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:408",
+    "native/NativeHost.cs:411",
+    "native/NativeHost.cs:709",
+    "native/NativeHost.cs:711",
+    "native/NativeRendererLifecycle.cs:165",
+    "native/NativeRendererLifecycle.cs:168",
+    "native/NativeRendererLifecycle.cs:169",
+    "native/NativeRendererLifecycle.cs:170",
+    "native/NativeRendererLifecycle.cs:174"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeDeviceRecoveryRegression.cs (Windows only). Device-lost recovery retries drawing after 250 ms without a dialog."
+  },
+  {
+   "id": "S4-89",
+   "name": "Display state indicators",
+   "behaviour": "Status bar shows the working/ready message (committed/total moving pieces solved, primitive turns, head) and 'n / 259,800 visible'; during an operation 'Working… previous committed state remains visible' and all state-changing controls are disabled.",
+   "entry_points": [
+    "window Main: status bar"
+   ],
+   "evidence": [
+    "native/NativeHost.cs:175",
+    "native/NativeHost.cs:391",
+    "native/NativeHost.cs:412",
+    "native/NativeHost.cs:445",
+    "native/NativeHost.cs:562"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-90",
+   "name": "Build and launch native host",
+   "behaviour": "Compiles the native host with the sealed .NET Framework 4.x csc recipe, checks the MPUlt reflection surface, copies the runtime and verified Managed DirectX DLLs into a per-hash runtime cache, starts the engine through EngineProcess and launches the host window against it. Requires Windows and 64-bit Python; --runtime selects MPUlt.exe, --data the session directory, --startup-timeout the engine readiness limit (1..3600 s, default 180).",
+   "entry_points": [
+    "cli native/bootstrap.py (no option)",
+    "cli native/bootstrap.py --runtime",
+    "cli native/bootstrap.py --data",
+    "cli native/bootstrap.py --startup-timeout"
+   ],
+   "evidence": [
+    "native/bootstrap.py:107",
+    "native/bootstrap.py:108",
+    "native/bootstrap.py:109",
+    "native/bootstrap.py:110",
+    "native/bootstrap.py:111",
+    "native/bootstrap.py:119",
+    "native/bootstrap.py:121",
+    "native/bootstrap.py:123",
+    "native/bootstrap.py:125",
+    "native/bootstrap.py:128",
+    "native/bootstrap.py:131",
+    "native/bootstrap.py:134",
+    "native/bootstrap.py:139",
+    "native/bootstrap.py:141",
+    "native/bootstrap.py:157",
+    "native/bootstrap.py:160",
+    "native/bootstrap.py:164",
+    "native/bootstrap.py:194",
+    "native/bootstrap.py:201",
+    "native/bootstrap.py:207"
+   ],
+   "depends_on": [
+    "cli engine_process.py"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/test_build_identity.py (compile recipe), tests/test_native_startup_contract.py. Non-Windows exits with 'The native host requires Windows'. Writes build-info.json and logs; copies native_keys.json from older builds."
+  },
+  {
+   "id": "S4-91",
+   "name": "Native host self-test",
+   "behaviour": "Compiles and runs the WinForms startup/layout regression only (no MPUlt, no database) and reports pass/fail.",
+   "entry_points": [
+    "cli native/bootstrap.py --self-test-only"
+   ],
+   "evidence": [
+    "native/bootstrap.py:112",
+    "native/bootstrap.py:142",
+    "native/bootstrap.py:143",
+    "native/bootstrap.py:145",
+    "native/bootstrap.py:147",
+    "native/bootstrap.py:148",
+    "native/bootstrap.py:152",
+    "native/bootstrap.py:154",
+    "native/bootstrap.py:155"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source+test",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeHostRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-92",
+   "name": "Native renderer regression mode",
+   "behaviour": "Runs the actual MPUlt/DirectX renderer and journal regressions against a fresh --data directory (refuses an existing session.sqlite3).",
+   "entry_points": [
+    "cli native/bootstrap.py --renderer-test"
+   ],
+   "evidence": [
+    "native/bootstrap.py:113",
+    "native/bootstrap.py:116",
+    "native/bootstrap.py:117",
+    "native/bootstrap.py:129",
+    "native/bootstrap.py:130",
+    "native/bootstrap.py:186",
+    "native/bootstrap.py:189",
+    "native/bootstrap.py:205",
+    "native/bootstrap.py:206"
+   ],
+   "depends_on": [
+    "cli engine_process.py"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "files",
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "Test: tests/native/NativeRendererRegression.cs (Windows only). Writes test moves in the fresh data directory."
+  },
+  {
+   "id": "S4-93",
+   "name": "Native performance regression mode",
+   "behaviour": "Measures native camera, UI responsiveness and scramble performance against a fresh --data directory with correctness gates (30-minute limit).",
+   "entry_points": [
+    "cli native/bootstrap.py --performance-test"
+   ],
+   "evidence": [
+    "native/bootstrap.py:114",
+    "native/bootstrap.py:116",
+    "native/bootstrap.py:117",
+    "native/bootstrap.py:129",
+    "native/bootstrap.py:130",
+    "native/bootstrap.py:186",
+    "native/bootstrap.py:189",
+    "native/bootstrap.py:205",
+    "native/bootstrap.py:206"
+   ],
+   "depends_on": [
+    "cli engine_process.py"
+   ],
+   "evidence_kind": "source+test",
+   "reads": [
+    "files",
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "tests/native/NativePerformanceRegression.cs (Windows only)."
+  },
+  {
+   "id": "S4-94",
+   "name": "Collect diagnostics bundle",
+   "behaviour": "Writes a zip of bounded, redacted tails of the native host logs and build info (and legacy test results) from the data directory, excluding puzzle databases, tokens and geometry profile; prints the path and count. --data picks the session directory, --out the zip path.",
+   "entry_points": [
+    "cli native/collect_diagnostics.py --data",
+    "cli native/collect_diagnostics.py --out",
+    "cli native/collect_diagnostics.py (no option)"
+   ],
+   "evidence": [
+    "native/collect_diagnostics.py:7",
+    "native/collect_diagnostics.py:11",
+    "native/collect_diagnostics.py:12",
+    "native/collect_diagnostics.py:13",
+    "native/collect_diagnostics.py:14",
+    "native/collect_diagnostics.py:15",
+    "native/collect_diagnostics.py:21",
+    "native/collect_diagnostics.py:26",
+    "native/collect_diagnostics.py:42",
+    "native/collect_diagnostics.py:45"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "Default output <data>/C600-native-diagnostics.zip; only host builds 0.2.1-0.2.3 are scanned (line 22)."
+  },
+  {
+   "id": "S4-95",
+   "name": "Inspect MPUlt reflection surface",
+   "behaviour": "Reads the .NET metadata of a supplied MPUlt assembly without loading it, prints a JSON report (SHA-256, required types checked, missing members) and exits 1 if members are missing; --report also writes the JSON to a file.",
+   "entry_points": [
+    "cli native/inspect_runtime.py <runtime>",
+    "cli native/inspect_runtime.py --report"
+   ],
+   "evidence": [
+    "native/inspect_runtime.py:6",
+    "native/inspect_runtime.py:21",
+    "native/inspect_runtime.py:55",
+    "native/inspect_runtime.py:57",
+    "native/inspect_runtime.py:58",
+    "native/inspect_runtime.py:59",
+    "native/inspect_runtime.py:60",
+    "native/inspect_runtime.py:61",
+    "native/inspect_runtime.py:62"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S4-96",
+   "name": "Patch ivan216/MPUlt renderer source",
+   "behaviour": "Applies four exact text edits to src/MeshObj.cs of a checked-out ivan216/MPUlt tree after verifying its git blob id, keeping a .cs.pre-c600 backup; refuses if the blob differs, an anchor is ambiguous, or a backup exists.",
+   "entry_points": [
+    "cli native/patch_ivan_renderer.py <checkout>"
+   ],
+   "evidence": [
+    "native/patch_ivan_renderer.py:7",
+    "native/patch_ivan_renderer.py:9",
+    "native/patch_ivan_renderer.py:10",
+    "native/patch_ivan_renderer.py:11",
+    "native/patch_ivan_renderer.py:13",
+    "native/patch_ivan_renderer.py:29",
+    "native/patch_ivan_renderer.py:31",
+    "native/patch_ivan_renderer.py:33",
+    "native/patch_ivan_renderer.py:34",
+    "native/patch_ivan_renderer.py:35"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "Optional developer tool; the host works without this patch (docstring)."
+  }
+ ],
+ "internal_only": [
+  {
+   "name": "LocalApi HTTP client (token header, job polling)",
+   "reason": "Used by every host action that talks to the engine; no user entry of its own.",
+   "evidence": [
+    "native/NativeHost.cs:31",
+    "native/NativeHost.cs:37",
+    "native/NativeHost.cs:45",
+    "native/NativeHost.cs:47"
+   ]
+  },
+  {
+   "name": "Reflect helper (reflection access to MPUlt fields and methods)",
+   "reason": "Reached from window Main construction and every action that reads or writes MPUlt objects.",
+   "evidence": [
+    "native/NativeHost.cs:21",
+    "native/NativeHost.cs:24",
+    "native/NativeHost.cs:26"
+   ]
+  },
+  {
+   "name": "Heartbeat clock timer",
+   "reason": "Every 5 s after a successful connect POSTs /api/timer action=heartbeat; started by Connect (window Main), no direct user action.",
+   "evidence": [
+    "native/NativeHost.cs:243",
+    "native/NativeHost.cs:284"
+   ]
+  },
+  {
+   "name": "Run worker and completion scheduler (busy gating, button disabling)",
+   "reason": "Reached from every state-changing entry point in rows S4-3..; serializes one operation at a time.",
+   "evidence": [
+    "native/NativeHost.cs:149",
+    "native/NativeHost.cs:388",
+    "native/NativeHost.cs:389",
+    "native/NativeHost.cs:391",
+    "native/NativeHost.cs:412"
+   ]
+  },
+  {
+   "name": "Snapshot fetch and apply (RefreshFromServer, FetchSnapshot, NativeSnapshot)",
+   "reason": "Reached after every engine operation to synchronize colours, styles, prefs, progress, checkpoints and certificate text.",
+   "evidence": [
+    "native/NativeHost.cs:417",
+    "native/NativeHost.cs:422",
+    "native/NativeHost.cs:427",
+    "native/NativeSnapshot.cs:1"
+   ]
+  },
+  {
+   "name": "NativeStickerAccess (reflection access to MPUlt sticker array)",
+   "reason": "Reached from RefreshFromServer and PrepareVisibility; no user entry.",
+   "evidence": [
+    "native/NativeStickerAccess.cs:1"
+   ]
+  },
+  {
+   "name": "NativeRenderSubset (visible-subset drawing, cell outline and frame policy)",
+   "reason": "Reached from the viewport renderer after each snapshot; framework and focus outline controlled by View > Hide 600-cell frame and the Lab cell box.",
+   "evidence": [
+    "native/NativeRenderSubset.cs:11",
+    "native/NativeRenderSubset.cs:40",
+    "native/NativeRenderSubset.cs:53",
+    "native/NativeRenderSubset.cs:127"
+   ]
+  },
+  {
+   "name": "NativeRendererLifecycle (frame scheduler, device loss recovery, picking preparation)",
+   "reason": "Reached from window Main and the viewport; motion sampling is toggled by the Smooth camera motion item.",
+   "evidence": [
+    "native/NativeRendererLifecycle.cs:11",
+    "native/NativeRendererLifecycle.cs:45",
+    "native/NativeRendererLifecycle.cs:157",
+    "native/NativeRendererLifecycle.cs:165",
+    "native/NativeRendererLifecycle.cs:186",
+    "native/NativeRendererLifecycle.cs:192"
+   ]
+  },
+  {
+   "name": "NativeFullRenderer (renderer upload-path acceleration for the known MPUlt binary)",
+   "reason": "Installed automatically by the window Main constructor for a binary with the pinned hashes; unknown binaries keep the original path.",
+   "evidence": [
+    "native/NativeFullRenderer.cs:16",
+    "native/NativeFullRenderer.cs:17",
+    "native/NativeFullRenderer.cs:18",
+    "native/NativeFullRenderer.cs:19",
+    "native/NativeFullRenderer.cs:32"
+   ]
+  },
+  {
+   "name": "NativePickingVisibility message gate (WndProc filter of viewport mouse input)",
+   "reason": "Reached from mouse clicks on the viewport; behaviour is described in rows for viewport clicks and Shift+click inspection.",
+   "evidence": [
+    "native/NativePickingVisibility.cs:10",
+    "native/NativePickingVisibility.cs:38",
+    "native/NativePickingVisibility.cs:105"
+   ]
+  },
+  {
+   "name": "NativeDiagnostics (diagnostics/native-debug.log writer, 4 MiB rotation)",
+   "reason": "Writes from every stage of the host; collected by native/collect_diagnostics.py.",
+   "evidence": [
+    "native/NativeDiagnostics.cs:5",
+    "native/NativeDiagnostics.cs:17",
+    "native/NativeDiagnostics.cs:21",
+    "native/NativeDiagnostics.cs:26"
+   ]
+  },
+  {
+   "name": "NativeCellGeometry, NativeCellStatus and NativeCellData parsers",
+   "reason": "Validate engine structure and cell_status data for the cell views; reached from Connect and RefreshFromServer.",
+   "evidence": [
+    "native/NativeCellView.cs:18",
+    "native/NativeCellView.cs:75",
+    "native/NativeCellView.cs:104"
+   ]
+  },
+  {
+   "name": "NativeDockLayout panel arithmetic (ToolsWidthFor, FitPanels)",
+   "reason": "Layout helper reached from window Main resize and the divider; user behaviour in the divider and Tools panel toggle rows.",
+   "evidence": [
+    "native/NativeDockLayout.cs:52",
+    "native/NativeDockLayout.cs:56"
+   ]
+  },
+  {
+   "name": "native/directx_runtime.py find_directx",
+   "reason": "Library called by native/bootstrap.py to locate hash-verified Managed DirectX DLLs; has no CLI.",
+   "evidence": [
+    "native/directx_runtime.py:25",
+    "native/directx_runtime.py:43",
+    "native/directx_runtime.py:46"
+   ]
+  },
+  {
+   "name": "native/bootstrap.py compile helpers (compile_recipe, compile_command, compile_program)",
+   "reason": "Reached from cli native/bootstrap.py; sealed compiler recipe.",
+   "evidence": [
+    "native/bootstrap.py:45",
+    "native/bootstrap.py:53",
+    "native/bootstrap.py:84"
+   ]
+  },
+  {
+   "name": "native/NativeHost.exe.config",
+   "reason": "Runtime configuration copied beside the compiled host by compile_program; not a code entry point.",
+   "evidence": [
+    "native/bootstrap.py:97",
+    "native/bootstrap.py:103"
+   ]
+  }
+ ],
+ "unclear": [
+  {
+   "name": "Which engine storage the focus, select and track routes use",
+   "evidence": [
+    "native/NativeHost.cs:324",
+    "native/NativeHost.cs:609",
+    "native/NativeHost.cs:610"
+   ],
+   "reason": "The host only posts /api/focus, /api/select and /api/track-piece; the storage of those results is engine-side (other shard)."
+  },
+  {
+   "name": "Where Ctrl+click native cell recenter and corner multi-click grips are implemented",
+   "evidence": [
+    "native/NativeHost.cs:172",
+    "native/NativeHost.cs:123"
+   ],
+   "reason": "Described only in the help text; implemented in the retained MPUlt binary, not in the shard files."
+  }
+ ]
+}

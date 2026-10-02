@@ -1,0 +1,706 @@
+{
+ "shard": "s2",
+ "functions": [
+  {
+   "id": "S2-1",
+   "name": "Start owned experiment engine (engine.py)",
+   "behaviour": "Starts the unchanged server main with the experiment adapter installed as the extra route layer; it is the engine command that the launchers start, not an interface of its own.",
+   "entry_points": [
+    "cli engine.py: (no options)"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/engine.py:12",
+    "work/experiments/magic600-04/engine.py:20",
+    "work/experiments/magic600-04/engine.py:25"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command",
+    "route GET /api/experiment/snapshot",
+    "command server.py main"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal",
+    "preferences"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "checkpoints",
+    "preferences",
+    "workspace"
+   ],
+   "engine_call": "server.main with adapter.install(Handler, locals())"
+  },
+  {
+   "id": "S2-2",
+   "name": "Launch isolated browser experiment (g1 or g2)",
+   "behaviour": "Starts an owned engine for the chosen experiment mode in a per-mode session folder, writes open.html and prints a ready line; the user then closes it with the Session menu \"Stop experiment\" or Ctrl+C.",
+   "entry_points": [
+    "cli launch.py --mode",
+    "cli launch.py --session"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/launch.py:17",
+    "work/experiments/magic600-04/launch.py:18",
+    "work/experiments/magic600-04/launch.py:21",
+    "work/experiments/magic600-04/launch.py:24",
+    "work/experiments/magic600-04/launch.py:29",
+    "work/experiments/magic600-04/launch.py:33"
+   ],
+   "depends_on": [
+    "cli engine.py: (no options)",
+    "EngineProcess in engine_process.py"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal",
+    "preferences"
+   ],
+   "writes": [
+    "files",
+    "state",
+    "journal",
+    "preferences"
+   ],
+   "engine_call": "EngineProcess start; web page url + mode"
+  },
+  {
+   "id": "S2-3",
+   "name": "Open browser automatically or not (launch.py)",
+   "behaviour": "By default the page is opened in the system browser; the option leaves the engine running and only writes the open.html redirect and prints the ready line.",
+   "entry_points": [
+    "cli launch.py --no-browser"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/launch.py:19",
+    "work/experiments/magic600-04/launch.py:28",
+    "work/experiments/magic600-04/launch.py:30"
+   ],
+   "depends_on": [
+    "cli launch.py --mode"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S2-4",
+   "name": "Build and launch retained native review sample",
+   "behaviour": "On Windows compiles (or reuses by receipt) the native experiment host, copies the retained MPUlt runtime, re-hashes all declared inputs before engine start, starts the owned engine and runs the native host for g1 or g2 until it exits; the receipt records the run outcome.",
+   "entry_points": [
+    "cli native_launch.py --mode",
+    "cli native_launch.py --session"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native_launch.py:261",
+    "work/experiments/magic600-04/native_launch.py:263",
+    "work/experiments/magic600-04/native_launch.py:264",
+    "work/experiments/magic600-04/native_launch.py:270",
+    "work/experiments/magic600-04/native_launch.py:287",
+    "work/experiments/magic600-04/native_launch.py:294",
+    "work/experiments/magic600-04/native_launch.py:229",
+    "work/experiments/magic600-04/native_launch.py:118",
+    "work/experiments/magic600-04/native_launch.py:188"
+   ],
+   "depends_on": [
+    "cli engine.py: (no options)",
+    "EngineProcess in engine_process.py",
+    "native host executable"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "files",
+    "state",
+    "journal",
+    "preferences"
+   ],
+   "writes": [
+    "files",
+    "state",
+    "journal",
+    "preferences"
+   ],
+   "engine_call": "EngineProcess start; native host subprocess"
+  },
+  {
+   "id": "S2-5",
+   "name": "Build native host only",
+   "behaviour": "Builds the native experiment host and prints its folder and executable path without starting the engine or the host.",
+   "entry_points": [
+    "cli native_launch.py --build-only"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/native_launch.py:265",
+    "work/experiments/magic600-04/native_launch.py:272",
+    "work/experiments/magic600-04/native_launch.py:229",
+    "work/experiments/magic600-04/native_launch.py:245"
+   ],
+   "depends_on": [
+    "cli native_launch.py --mode"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S2-6",
+   "name": "Print checkout and build identities",
+   "behaviour": "Prints one JSON report with the source identity, number of product files, harness input hashes and, when a compiler and interpreter resolve, the build identity; writes nothing and compiles nothing. Any argument prints usage and exits 2; invalid inputs print one generic line and exit 1.",
+   "entry_points": [
+    "cli print_identity.py: (no options)"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/print_identity.py:45",
+    "work/experiments/magic600-04/print_identity.py:27",
+    "work/experiments/magic600-04/print_identity.py:13",
+    "work/experiments/magic600-04/print_identity.py:49",
+    "work/experiments/magic600-04/print_identity.py:55"
+   ],
+   "depends_on": [
+    "native_launch.py identity helpers",
+    "build_identity.py"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S2-7",
+   "name": "Frozen private engine entry (Magic600Engine.exe)",
+   "behaviour": "Runs the packaged engine in the source layout after checking the launcher-supplied ownership environment and the bound module identities; started directly it exits with a message to open Magic600Cell.exe.",
+   "entry_points": [
+    "cli Magic600Engine.exe: (no options)"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/packaging/engine_entry.py:7",
+    "work/experiments/magic600-04/packaging/engine_entry.py:8",
+    "work/experiments/magic600-04/packaging/engine_entry.py:19",
+    "work/experiments/magic600-04/packaging/engine_entry.py:24"
+   ],
+   "depends_on": [
+    "cli engine.py: (no options)",
+    "cli launcher.py: (no options)"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal",
+    "preferences"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "checkpoints",
+    "preferences",
+    "workspace"
+   ],
+   "engine_call": "engine.main"
+  },
+  {
+   "id": "S2-8",
+   "name": "Start the packaged application (Magic600Cell.exe)",
+   "behaviour": "On 64-bit Windows verifies the package manifest, starts the frozen engine on the chosen data folder (default per-user 0.4 folder), prepares the local native cache and runs the native host for g1 or g2 until it closes.",
+   "entry_points": [
+    "cli launcher.py: (no options)",
+    "cli launcher.py --data",
+    "cli launcher.py --mode",
+    "cli launcher.py --startup-timeout"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/packaging/launcher.py:162",
+    "work/experiments/magic600-04/packaging/launcher.py:165",
+    "work/experiments/magic600-04/packaging/launcher.py:166",
+    "work/experiments/magic600-04/packaging/launcher.py:167",
+    "work/experiments/magic600-04/packaging/launcher.py:180",
+    "work/experiments/magic600-04/packaging/launcher.py:186",
+    "work/experiments/magic600-04/packaging/launcher.py:200",
+    "work/experiments/magic600-04/packaging/launcher.py:36"
+   ],
+   "depends_on": [
+    "cli Magic600Engine.exe: (no options)",
+    "EngineProcess in engine_process.py"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal",
+    "preferences",
+    "files"
+   ],
+   "writes": [
+    "files",
+    "state",
+    "journal",
+    "checkpoints",
+    "preferences",
+    "workspace"
+   ],
+   "engine_call": "EngineProcess start; native host subprocess"
+  },
+  {
+   "id": "S2-9",
+   "name": "Startup failure message box",
+   "behaviour": "A startup error is shown in a modal \"Magic 600 Cell could not start\" box on Windows (redacted text), or printed to stderr elsewhere; exit code 1.",
+   "entry_points": [
+    "window Magic 600 Cell could not start"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/packaging/launcher.py:211",
+    "work/experiments/magic600-04/packaging/launcher.py:214",
+    "work/experiments/magic600-04/packaging/launcher.py:218"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S2-10",
+   "name": "Verify package manifest (hidden option)",
+   "behaviour": "Verifies every packaged file against the manifest and writes a pass report JSON without starting an engine or the native host.",
+   "entry_points": [
+    "cli launcher.py --verify-package"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/packaging/launcher.py:168",
+    "work/experiments/magic600-04/packaging/launcher.py:181",
+    "work/experiments/magic600-04/packaging/launcher.py:182"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S2-11",
+   "name": "Frozen engine acceptance test (hidden option)",
+   "behaviour": "Starts the frozen engine on a fresh test folder, checks all 259,800 labels, the invariant proof, endgame options and an explicit Prepare preview, commit and undo, restarts it and compares the reopened labels, then writes a report JSON; the parent-eof mode exits the launcher hard right after starting the engine to test parent-pipe recovery.",
+   "entry_points": [
+    "cli launcher.py --engine-test",
+    "cli launcher.py --parent-eof"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/packaging/launcher.py:169",
+    "work/experiments/magic600-04/packaging/launcher.py:171",
+    "work/experiments/magic600-04/packaging/launcher.py:90",
+    "work/experiments/magic600-04/packaging/launcher.py:107",
+    "work/experiments/magic600-04/packaging/launcher.py:178"
+   ],
+   "depends_on": [
+    "route GET /api/health",
+    "route GET /api/labels",
+    "route GET /api/experiment/snapshot",
+    "route POST /api/experiment/command action=inspect-residual",
+    "route POST /api/experiment/command action=endgame-options",
+    "route POST /api/experiment/command action=goal",
+    "route POST /api/experiment/command action=draft",
+    "route POST /api/experiment/command action=review",
+    "route POST /api/experiment/command action=preview",
+    "route POST /api/experiment/command action=commit",
+    "route POST /api/experiment/command action=undo",
+    "route GET /api/job/<id>"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal",
+    "checkpoints",
+    "preferences"
+   ],
+   "writes": [
+    "files",
+    "state",
+    "journal"
+   ],
+   "engine_call": "frozen engine routes listed in depends_on"
+  },
+  {
+   "id": "S2-12",
+   "name": "Installed runtime check (hidden option)",
+   "behaviour": "On a fresh explicit data folder discovers the installed Managed DirectX assemblies, copies them and the retained runtime into the local cache and reports their hashes; no render is run.",
+   "entry_points": [
+    "cli launcher.py --runtime-check"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/packaging/launcher.py:170",
+    "work/experiments/magic600-04/packaging/launcher.py:191",
+    "work/experiments/magic600-04/packaging/launcher.py:194",
+    "work/experiments/magic600-04/packaging/launcher.py:36"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S2-13",
+   "name": "Assemble isolated 0.4 package candidate",
+   "behaviour": "Verifies the allowlisted sources, immutable model assets, pinned invariant report and the precompiled native host receipt, freezes the launcher and engine with the pinned PyInstaller, copies licences, writes the package manifest and optionally a zip; refuses existing output folders.",
+   "entry_points": [
+    "cli assemble.py --native-build",
+    "cli assemble.py --output",
+    "cli assemble.py --work",
+    "cli assemble.py --toolchain",
+    "cli assemble.py --no-zip"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/packaging/assemble.py:177",
+    "work/experiments/magic600-04/packaging/assemble.py:179",
+    "work/experiments/magic600-04/packaging/assemble.py:180",
+    "work/experiments/magic600-04/packaging/assemble.py:181",
+    "work/experiments/magic600-04/packaging/assemble.py:182",
+    "work/experiments/magic600-04/packaging/assemble.py:183",
+    "work/experiments/magic600-04/packaging/assemble.py:39",
+    "work/experiments/magic600-04/packaging/assemble.py:89",
+    "work/experiments/magic600-04/packaging/assemble.py:130",
+    "work/experiments/magic600-04/packaging/assemble.py:148",
+    "work/experiments/magic600-04/packaging/assemble.py:242"
+   ],
+   "depends_on": [
+    "native build receipt from cli native_launch.py --build-only"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "files"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S2-14",
+   "name": "Check the frozen package without a GUI",
+   "behaviour": "Runs the assembled package through manifest and payload checks, licence checks, the frozen verify, engine and parent-EOF tests, the runtime check, a generated legacy-shaped profile copy with Session, log import/export and keymap routes (MPUlt checks only with a native export), and a tamper test; writes summary.json.",
+   "entry_points": [
+    "cli check_package.py: bundle",
+    "cli check_package.py: output",
+    "cli check_package.py --native-export",
+    "cli check_package.py --native-export-sha256"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/packaging/check_package.py:297",
+    "work/experiments/magic600-04/packaging/check_package.py:299",
+    "work/experiments/magic600-04/packaging/check_package.py:300",
+    "work/experiments/magic600-04/packaging/check_package.py:301",
+    "work/experiments/magic600-04/packaging/check_package.py:302",
+    "work/experiments/magic600-04/packaging/check_package.py:304",
+    "work/experiments/magic600-04/packaging/check_package.py:242",
+    "work/experiments/magic600-04/packaging/check_package.py:137",
+    "work/experiments/magic600-04/packaging/check_package.py:341",
+    "work/experiments/magic600-04/packaging/check_package.py:395"
+   ],
+   "depends_on": [
+    "cli launcher.py --verify-package",
+    "cli launcher.py --engine-test",
+    "cli launcher.py --parent-eof",
+    "cli launcher.py --runtime-check",
+    "route POST /api/native/handshake",
+    "route POST /api/experiment/command action=session-timer",
+    "route POST /api/experiment/command action=session-report",
+    "route POST /api/experiment/command action=session-resume",
+    "route POST /api/experiment/command action=checkpoint",
+    "route POST /api/experiment/command action=session-new",
+    "route POST /api/experiment/command action=restore",
+    "route POST /api/experiment/command action=session-scramble",
+    "route POST /api/experiment/command action=operation-new",
+    "route POST /api/experiment/command action=keymap-export",
+    "route POST /api/experiment/command action=keymap-import-check",
+    "route POST /api/experiment/command action=keymap-import",
+    "route POST /api/experiment/command action=session-log-export",
+    "route POST /api/experiment/command action=session-save-log",
+    "route POST /api/experiment/command action=session-log-inspect",
+    "route POST /api/experiment/command action=session-log-apply",
+    "route POST /api/experiment/command action=native-word",
+    "route POST /api/experiment/session-log"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "files",
+    "state",
+    "journal",
+    "checkpoints",
+    "preferences"
+   ],
+   "writes": [
+    "files",
+    "state",
+    "journal",
+    "checkpoints",
+    "preferences"
+   ],
+   "engine_call": "frozen engine routes listed in depends_on"
+  },
+  {
+   "id": "S2-15",
+   "name": "Profile the paired-reply components (diagnostic)",
+   "behaviour": "Replays a fixed E1 fixture in an isolated session against a recorded native profile, times the command, phase, cycle, snapshot, cell, native and JSON parts for four cases, and writes profiles and report.json; refuses an existing output folder.",
+   "entry_points": [
+    "cli profile_reply.py --profile",
+    "cli profile_reply.py --output"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/packaging/profile_reply.py:29",
+    "work/experiments/magic600-04/packaging/profile_reply.py:31",
+    "work/experiments/magic600-04/packaging/profile_reply.py:32",
+    "work/experiments/magic600-04/packaging/profile_reply.py:34",
+    "work/experiments/magic600-04/packaging/profile_reply.py:91",
+    "work/experiments/magic600-04/packaging/profile_reply.py:134"
+   ],
+   "depends_on": [
+    "Workbench in adapter.py"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "files",
+    "state"
+   ],
+   "writes": [
+    "files",
+    "state",
+    "journal"
+   ],
+   "engine_call": "Workbench.command and snapshot on an isolated Session"
+  }
+ ],
+ "internal_only": [
+  {
+   "name": "build_identity.py (build identity v2 helpers)",
+   "evidence": [
+    "work/experiments/magic600-04/build_identity.py:55",
+    "work/experiments/magic600-04/build_identity.py:195",
+    "work/experiments/magic600-04/build_identity.py:235"
+   ],
+   "reason": "Library with no entry point; reached by cli native_launch.py --mode / --build-only, cli print_identity.py and cli assemble.py --native-build."
+  },
+  {
+   "name": "package_contract.py (package manifest, safe paths, payload inspection)",
+   "evidence": [
+    "work/experiments/magic600-04/packaging/package_contract.py:21",
+    "work/experiments/magic600-04/packaging/package_contract.py:31",
+    "work/experiments/magic600-04/packaging/package_contract.py:45"
+   ],
+   "reason": "Library with no entry point; reached by cli launcher.py (every mode), cli assemble.py and cli check_package.py."
+  },
+  {
+   "name": "current_recommendation.py (current-score recommendation of one reviewed complete operation)",
+   "evidence": [
+    "work/experiments/magic600-04/current_recommendation.py:133",
+    "work/experiments/magic600-04/current_recommendation.py:280"
+   ],
+   "reason": "No entry point of its own; reached by the review of the draft through route POST /api/experiment/command action=review and action=preview in adapter.py (score_current) and by candidate_analysis.py (sort_recommendations)."
+  },
+  {
+   "name": "candidate_analysis.py (compare up to 12 existing macro revisions)",
+   "evidence": [
+    "work/experiments/magic600-04/candidate_analysis.py:18"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=macro-candidates in adapter.py."
+  },
+  {
+   "name": "cycle_projection.py (cycle and ownership inspection, paged)",
+   "evidence": [
+    "work/experiments/magic600-04/cycle_projection.py:28",
+    "work/experiments/magic600-04/cycle_projection.py:46",
+    "work/experiments/magic600-04/cycle_projection.py:224"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=inspect-cycles (adapter.py inspect_cycles) and by the inspect_cycle display metadata of command replies (validate_cycle_display, inspect_cycle_display)."
+  },
+  {
+   "name": "draft_inspection.py (inspect an explicit draft boundary)",
+   "evidence": [
+    "work/experiments/magic600-04/draft_inspection.py:13"
+   ],
+   "reason": "No entry point of its own; reached by the inspect_phase part of the paired command replies in adapter.py (route POST /api/experiment/command with an inspect phase boundary)."
+  },
+  {
+   "name": "endgame_invariants.py (load the audited orbit-invariant report)",
+   "evidence": [
+    "work/experiments/magic600-04/endgame_invariants.py:19"
+   ],
+   "reason": "No entry point of its own; reached by the residual inspection and invariant status in adapter.py (action=inspect-residual, review) and by cli launcher.py --engine-test."
+  },
+  {
+   "name": "endgame_library.py (explicit retained endgame families)",
+   "evidence": [
+    "work/experiments/magic600-04/endgame_library.py:54",
+    "work/experiments/magic600-04/endgame_library.py:62",
+    "work/experiments/magic600-04/endgame_library.py:109",
+    "work/experiments/magic600-04/endgame_library.py:124"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=endgame-options, action=endgame-compose and action=endgame-save in adapter.py."
+  },
+  {
+   "name": "filter_projection.py (Piece Filter evaluation per state)",
+   "evidence": [
+    "work/experiments/magic600-04/filter_projection.py:9",
+    "work/experiments/magic600-04/filter_projection.py:23"
+   ],
+   "reason": "No entry point of its own; reached by the filter columns of snapshots and cycle and local-cell replies in adapter.py (action=filter, save-filter, snapshot)."
+  },
+  {
+   "name": "grip_frames.py (cap-local proper frames and framed twist resolution)",
+   "evidence": [
+    "work/experiments/magic600-04/grip_frames.py:80",
+    "work/experiments/magic600-04/grip_frames.py:88",
+    "work/experiments/magic600-04/grip_frames.py:114"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=grip-frames, action=capture-frame, action=grips and the framed action=twist in adapter.py."
+  },
+  {
+   "name": "local_geometry.py (cell geometry and local cell state)",
+   "evidence": [
+    "work/experiments/magic600-04/local_geometry.py:10",
+    "work/experiments/magic600-04/local_geometry.py:35"
+   ],
+   "reason": "No entry point of its own; reached by the local_cell and structure parts of snapshot replies in adapter.py (route GET /api/experiment/snapshot and command replies)."
+  },
+  {
+   "name": "macro_library.py (macro metadata, facets, export and import check)",
+   "evidence": [
+    "work/experiments/magic600-04/macro_library.py:50",
+    "work/experiments/magic600-04/macro_library.py:60",
+    "work/experiments/magic600-04/macro_library.py:244",
+    "work/experiments/magic600-04/macro_library.py:264"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=macro-note, macro-query, macro-export, macro-import-check, macro-import, save-macro and macro-check-library in adapter.py."
+  },
+  {
+   "name": "macro_use.py (effect classification, scoped stars, static use inference)",
+   "evidence": [
+    "work/experiments/magic600-04/macro_use.py:18",
+    "work/experiments/magic600-04/macro_use.py:85",
+    "work/experiments/magic600-04/macro_use.py:135",
+    "work/experiments/magic600-04/macro_use.py:197"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=macro-effect, macro-compare, macro-query, macro-select and review in adapter.py."
+  },
+  {
+   "name": "mathematical_names.py (incidence addresses and display names)",
+   "evidence": [
+    "work/experiments/magic600-04/mathematical_names.py:15",
+    "work/experiments/magic600-04/mathematical_names.py:202",
+    "work/experiments/magic600-04/mathematical_names.py:276"
+   ],
+   "reason": "No entry point of its own; reached by every piece, cell and orbit name shown by the adapter and by the identity and position text parsing of the inspect and focus actions (route POST /api/experiment/command action=inspect, action=inspect-position, action=focus, action=bank-name)."
+  },
+  {
+   "name": "orbit_invariants.py (necessary orbit invariants in the fixed chart)",
+   "evidence": [
+    "work/experiments/magic600-04/orbit_invariants.py:84",
+    "work/experiments/magic600-04/orbit_invariants.py:142",
+    "work/experiments/magic600-04/orbit_invariants.py:218"
+   ],
+   "reason": "No entry point of its own; reached through endgame_invariants.py by action=inspect-residual and the residual review in adapter.py."
+  },
+  {
+   "name": "position_requirements.py (captured position requirement predicates)",
+   "evidence": [
+    "work/experiments/magic600-04/position_requirements.py:5",
+    "work/experiments/magic600-04/position_requirements.py:11",
+    "work/experiments/magic600-04/position_requirements.py:28"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=target-capture, block-add, block-protect, protect and review in adapter.py."
+  },
+  {
+   "name": "reference_variants.py (proper-cell reference transport)",
+   "evidence": [
+    "work/experiments/magic600-04/reference_variants.py:19",
+    "work/experiments/magic600-04/reference_variants.py:160",
+    "work/experiments/magic600-04/reference_variants.py:206"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=reference, reference-frames, transform-macro, macro-variant and macro-geometry-review in adapter.py."
+  },
+  {
+   "name": "residuals.py (residual derivation, completion certificate, delta)",
+   "evidence": [
+    "work/experiments/magic600-04/residuals.py:123",
+    "work/experiments/magic600-04/residuals.py:226",
+    "work/experiments/magic600-04/residuals.py:265"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=inspect-residual, review and commit in adapter.py."
+  },
+  {
+   "name": "session_workflow.py (Session report, timer, scramble staging, log export and import)",
+   "evidence": [
+    "work/experiments/magic600-04/session_workflow.py:102",
+    "work/experiments/magic600-04/session_workflow.py:115",
+    "work/experiments/magic600-04/session_workflow.py:121",
+    "work/experiments/magic600-04/session_workflow.py:141",
+    "work/experiments/magic600-04/session_workflow.py:147",
+    "work/experiments/magic600-04/session_workflow.py:162",
+    "work/experiments/magic600-04/session_workflow.py:193",
+    "work/experiments/magic600-04/session_workflow.py:283"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=session-report, session-resume, session-timer, session-save-log, session-log-export, session-log-inspect, session-log-apply, session-completion-ack, session-scramble and by route POST /api/experiment/session-log."
+  },
+  {
+   "name": "transported_frames.py (fixed transported orientation chart)",
+   "evidence": [
+    "work/experiments/magic600-04/transported_frames.py:20",
+    "work/experiments/magic600-04/transported_frames.py:119",
+    "work/experiments/magic600-04/transported_frames.py:137"
+   ],
+   "reason": "No entry point of its own; reached by residual, cycle, endgame and effect classification actions in adapter.py (action=inspect-residual, inspect-cycles, endgame-options, macro-effect)."
+  },
+  {
+   "name": "work_intents.py (work goal normalization and evaluation)",
+   "evidence": [
+    "work/experiments/magic600-04/work_intents.py:18",
+    "work/experiments/magic600-04/work_intents.py:116"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=goal and the review of the draft in adapter.py (evaluate_goal), and by current_recommendation.py."
+  },
+  {
+   "name": "work_sheets.py (work sheet build and inspection)",
+   "evidence": [
+    "work/experiments/magic600-04/work_sheets.py:112",
+    "work/experiments/magic600-04/work_sheets.py:131"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=template-save, template-inspect and template-use in adapter.py."
+  },
+  {
+   "name": "workflow_continuity.py (orbit switch context and commit continuity plan)",
+   "evidence": [
+    "work/experiments/magic600-04/workflow_continuity.py:37",
+    "work/experiments/magic600-04/workflow_continuity.py:89",
+    "work/experiments/magic600-04/workflow_continuity.py:165"
+   ],
+   "reason": "No entry point of its own; reached by route POST /api/experiment/command action=orbit and action=commit (plan_commit_continuity) in adapter.py."
+  }
+ ],
+ "unclear": []
+}
