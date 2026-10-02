@@ -108,6 +108,18 @@ class RuleSyncTests(unittest.TestCase):
         self.assertIn("Bash(python tools/toolchain/bootstrap.py approve)", perms["deny"])
         self.assertTrue(all("install" not in rule for rule in perms["allow"]))
         self.assertFalse(any(rule.startswith("Bash(git") for rule in perms["allow"]))
+        tools = [rule for rule in perms["allow"] if not rule.startswith("Bash(python tests/")]  # test files: checked below
+        self.assertFalse(any("approve" in rule or "implement" in rule for rule in tools))
+        self.assertIn("Bash(python tools/workbench/progress.py:*)", perms["allow"])  # owner decision, 1 October 2026
+        # Test files run without a prompt only as exact commands without arguments: unittest treats extra
+        # arguments as names of callables to run, so a wildcard would allow arbitrary Python (PR #32 review B-01).
+        tests = [rule for rule in perms["allow"] if rule.startswith("Bash(python tests/")]
+        self.assertIn("Bash(python tests/test_core.py)", tests)
+        for rule in tests:
+            with self.subTest(rule=rule):
+                self.assertRegex(rule, r"^Bash\(python tests/test_[a-z0-9_]+\.py\)$")
+                self.assertTrue((ROOT / rule[len("Bash(python "):-1]).is_file())
+        self.assertFalse(any(rule.startswith("Bash(python tests") and ("*" in rule or ":" in rule) for rule in perms["allow"]))
 
     def test_critical_paths_cover_their_own_enforcement(self):
         patterns = json.loads((ROOT / "tools" / "agents" / "critical_paths.json").read_text(encoding="utf-8"))["patterns"]

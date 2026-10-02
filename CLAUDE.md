@@ -29,7 +29,7 @@ A note beginning `[pause]` means: finish the current step, commit nothing new, w
 
 To put a question, a decision or an image pick in front of the owner, run `python tools/workbench/ask.py --question "..." [--option "..."] [--attach <file>] [--kind decision|pick|approve|question] [--blocking]` in the main session. The answer arrives as an owner note `answer to ask <ask-id>: ...`; `python tools/workbench/ask.py wait <ask-id>` keeps the turn open for up to nine minutes until it is queued. A brief whose `--waiting-for` begins with "owner" also appears in the owner's inbox.
 
-Tick a progress checklist item only with evidence (a commit sha, a pull request URL of this repository, or a repository-relative test or result path): `python tools/workbench/progress.py done <step> <item> --evidence <ref>`. Never edit `docs/progress/status.json` by hand and never estimate progress.
+Tick a progress checklist item only with evidence (a commit sha, a pull request URL of this repository, or a repository-relative test or result path): `python tools/workbench/progress.py done <step> <item> --evidence <ref>`. Never edit `docs/progress/status.json` by hand and never estimate progress. Parallel work gets its own track: add tracks, steps and items with `progress.py track`, `step` and `item`, and set the status-line step with `progress.py current`.
 
 Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the owner's workflow skills (`investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`) when a task matches them.
 

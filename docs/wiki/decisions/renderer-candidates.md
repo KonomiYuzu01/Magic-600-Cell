@@ -26,7 +26,7 @@ All candidates render through Direct3D 12, the vendor-neutral main path. Renderi
 | S-A2 | Godot 4.7 (.NET) with a custom RenderingDevice renderer | Full candidate. |
 | S-D | Qt Quick with `QQuickRhiItem` on the QRhi Direct3D 12 backend | Full candidate. |
 
-The window was 15 working days; the owner decision of [1 October 2026](owner-decisions-2026-10-01.md) shortens it to 12 days (stage days 3 to 14) with the go/no-go on window day 7 (final ruling by Codex Astra). NVIDIA-specific work is at most an add-on experiment and is never on the day-7 critical path.
+The window was 15 working days; the owner decision of [1 October 2026](owner-decisions-2026-10-01.md) shortens it to 12 days (stage days 3 to 14) with the go/no-go on window day 7 (final ruling by Codex Astra). Since [2 October 2026](owner-decisions-2026-10-02.md) these are the owner's working days, and target days may move; the gate does not. NVIDIA-specific work is at most an add-on experiment and is never on the day-7 critical path.
 
 ## Selection gate: full detail at a stable 30 fps
 

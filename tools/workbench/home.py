@@ -652,7 +652,7 @@ def progress_view(doc: dict | None, sessions: list) -> dict:
                     "remaining": [{"id", "title", "weight"}]} or None}],
         "sessions": [{"sid", "title", "done", "total"}]}
     Percentages only from `checklist`; a schema-1 document gives noChecklist true and None
-    percentages. A track's current step is the document's `current` when it is in the track,
+    percentages. Tracks come from checklist.tracks, in its order. A track's current step is the document's `current` when it is in the track,
     else the first step of the track that is not done, else its last step. Never raises: a
     document that cannot be derived gives the schema-1 view."""
     try:
@@ -671,7 +671,7 @@ def _progress_view(doc, sessions) -> dict:
     steps = [s for s in steps if isinstance(s, dict)
              and all(isinstance(s.get(k), str) for k in ("id", "title", "status"))] if isinstance(steps, list) else []
     tracks = []
-    for tid, title in (("0.4.1", "0.4.1"), ("stage-2", "Stage 2")):
+    for tid, title in checklist.tracks(doc):
         source_steps = [s for s in steps if s.get("track") == tid]
         view_steps = []
         for s in source_steps:

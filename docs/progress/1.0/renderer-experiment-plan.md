@@ -1,6 +1,6 @@
 # Stage 2.4 renderer experiment plan
 
-Status: **revised after the Astra plan check of 1 October 2026** (call `20261001T020112Z-5200bbe5`; findings R1–R8 adopted). Two scoped re-checks followed: `20261001T021256Z-d5bfed6d` raised R5 again and a new R9, both adopted, and `20261001T021627Z-a255e883` passed. No `blocker` or `major` is open. The candidates and the selection gate are fixed in [renderer-candidates](../../wiki/decisions/renderer-candidates.md); this plan only says how to test them inside the 12-day window (stage days 3 to 14, 3 to 14 October 2026, owner decision of 1 October). Experiment cards follow [stage-2-experiment-protocol](stage-2-experiment-protocol.md) section 2.
+Status: **revised after the Astra plan check of 1 October 2026** (call `20261001T020112Z-5200bbe5`; findings R1–R8 adopted). Two scoped re-checks followed: `20261001T021256Z-d5bfed6d` raised R5 again and a new R9, both adopted, and `20261001T021627Z-a255e883` passed. No `blocker` or `major` is open. The candidates and the selection gate are fixed in [renderer-candidates](../../wiki/decisions/renderer-candidates.md); this plan only says how to test them inside the 12-day window (stage days 3 to 14, counted in owner working days; owner decisions of 1 and 2 October). Experiment cards follow [stage-2-experiment-protocol](stage-2-experiment-protocol.md) section 2.
 
 ## 1. Workload (same for every candidate)
 

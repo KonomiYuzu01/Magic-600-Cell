@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Public progress state",
-  "description": "docs/progress/status.json: sanitized public progress of 0.4.1 (steps 1 to 7) and stage 2 (2.0 to 2.5), read by the development workbench and the Claude Code status line. Acceptance text only where a repository document records it, with that document as its source. Schema 2 adds a checklist per step; its cross-field rules (unique ids, positive weights, evidence on done items) are in tools/workbench/checklist.py.",
+  "description": "docs/progress/status.json: sanitized public progress of 0.4.1 (steps 1 to 7) and stage 2 (2.0 to 2.5), read by the development workbench and the Claude Code status line. Acceptance text only where a repository document records it, with that document as its source. Schema 2 adds a checklist per step and an optional list of parallel tracks; its cross-field rules (unique ids, known tracks, positive weights, evidence on done items) are in tools/workbench/checklist.py.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "updated", "current", "paid_api_ceiling_usd", "steps"],
@@ -10,6 +10,19 @@
     "updated": {"type": "string"},
     "current": {"type": "string"},
     "paid_api_ceiling_usd": {"type": "integer", "enum": [100, 150, 300]},
+    "tracks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]{0,39}$"},
+          "title": {"type": "string", "minLength": 1, "maxLength": 120}
+        }
+      }
+    },
     "steps": {
       "type": "array",
       "items": {
@@ -18,7 +31,7 @@
         "required": ["id", "track", "title", "status", "acceptance", "acceptance_source", "blocker"],
         "properties": {
           "id": {"type": "string"},
-          "track": {"type": "string", "enum": ["0.4.1", "stage-2"]},
+          "track": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]{0,39}$"},
           "title": {"type": "string"},
           "status": {"type": "string", "enum": ["not_started", "in_progress", "blocked", "done"]},
           "acceptance": {"type": ["string", "null"]},
