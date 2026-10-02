@@ -1,0 +1,1886 @@
+{
+ "counts": {
+  "action": 75,
+  "cli": 35,
+  "command": 199,
+  "route": 66
+ },
+ "format": "C600-INVENTORY-CENSUS-draft",
+ "items": [
+  {
+   "id": "assign-a",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "assign-b",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "assign-target",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-A",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-B",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-Cycles",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-E",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-Filter",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-Functions",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-I",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-Keyboard",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-M",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-Macro",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-Operation",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-Session",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-Views",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-Workspace",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-macro-1",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-macro-2",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-next",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-prev",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "bank-previous",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-add",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-capture",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-capture-position",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-protect",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-protect-position",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-reference",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-remove",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-unprotect",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-unprotect-exact",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "block-unprotect-position",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cancel-analysis",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cancel-preview",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "capture",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "capture-piece",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "checkpoint",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cleanup-inverse",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "commit",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "compare-preview",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "copy-selection",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "copy-selection-canonical",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-after",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-back",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-complete",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-current",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-macro",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-more",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-next",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-operation",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-previous",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-refresh",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "cycles-steps",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "detail-toggle",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "display",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "edit-cleanup",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "edit-macro",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "edit-prepare",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "effect-body",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "effect-complete",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "endgame-check",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "endgame-choices",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "endgame-details",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "endgame-q",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "endgame-r",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "endgame-save",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "endgame-select-saved",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "endgame-x",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "endgame-y",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "filter",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "fixture-e1",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "focus",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "frame-toggle",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "functions-toggle",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "global",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "global-down",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "global-left",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "global-reset",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "global-right",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "global-up",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "global-zoom-in",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "global-zoom-out",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "goal-block",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "goal-endgame",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "goal-finish-buffer",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "goal-insert",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "goal-orient",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "goal-place",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "goal-prepare",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "grip-frame",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "grip-hold",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "grip-latch",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "help",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "index",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "input-draft",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "input-live",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "inspect-actual",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "inspect-cleanup",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "inspect-macro",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "inspect-prepare",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "journal-delta",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "key-edit",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "key-edit-advanced",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "keyboard",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "keyboard-extra",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "keymap-export",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "keymap-import",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-center",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-center-current",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-center-grip",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-down",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-left",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-reset",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-right",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-up",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-zoom-in",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "local-zoom-out",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-candidates",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-check-library",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-close",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-compare",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-details",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-export",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-filter",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-geometry",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-import",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-insert",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-inverse",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-label",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-new",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-pin",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-replace",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "macro-search",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "next-activate",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "next-clear",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "next-locate",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "next-menu",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "next-pin",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "operation-focus",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "operation-hide",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "operation-new",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "operation-reuse",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "orbit",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "orbit-following",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "phase-cleanup",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "phase-input",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "phase-macro",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "phase-prepare",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "prefix-off",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "prefix-on",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "preview",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "protection",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "puzzle",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "redo",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "reference",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "reference-transform",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "reset",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "reset-view",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "reset-workspace",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "residual-details",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "restore",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "review",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "review-details",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "review-locate",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "review-reason-1",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "review-reason-2",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "review-reason-3",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "roles",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "scramble",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session-export-log",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session-import-log",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session-new",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session-report",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session-resume",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session-save-log",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session-summary",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session-timer-pause",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "session-timer-start",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "set-current",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "solve-actions",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "solve-locate-a",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "solve-locate-b",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "solve-locate-target",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "solve-macros",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "solve-prepare",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "solve-protection",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "target-capture",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "target-home",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "undo",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "views",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "views-close",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "windows-hide",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "worksheet",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "worksheet-save",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "worksheet-use",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "workspace-fullscreen",
+   "kind": "command",
+   "where": "work/experiments/magic600-04/keymap_catalog.py"
+  },
+  {
+   "id": "/",
+   "kind": "route",
+   "where": "server.py:171"
+  },
+  {
+   "id": "/api/backup",
+   "kind": "route",
+   "where": "server.py:309"
+  },
+  {
+   "id": "/api/buffers",
+   "kind": "route",
+   "where": "server.py:310"
+  },
+  {
+   "id": "/api/cancel",
+   "kind": "route",
+   "where": "server.py:304"
+  },
+  {
+   "id": "/api/cap",
+   "kind": "route",
+   "where": "server.py:200"
+  },
+  {
+   "id": "/api/catalog",
+   "kind": "route",
+   "where": "server.py:198"
+  },
+  {
+   "id": "/api/certificate",
+   "kind": "route",
+   "where": "server.py:219"
+  },
+  {
+   "id": "/api/checkout",
+   "kind": "route",
+   "where": "server.py:264"
+  },
+  {
+   "id": "/api/checkpoint",
+   "kind": "route",
+   "where": "server.py:307"
+  },
+  {
+   "id": "/api/commit",
+   "kind": "route",
+   "where": "server.py:303"
+  },
+  {
+   "id": "/api/compose",
+   "kind": "route",
+   "where": "server.py:267"
+  },
+  {
+   "id": "/api/demo",
+   "kind": "route",
+   "where": "server.py:330"
+  },
+  {
+   "id": "/api/experiment/command",
+   "kind": "route",
+   "where": "work/experiments/magic600-04/adapter.py:2060"
+  },
+  {
+   "id": "/api/experiment/native-command",
+   "kind": "route",
+   "where": "work/experiments/magic600-04/adapter.py:2060"
+  },
+  {
+   "id": "/api/experiment/native-input",
+   "kind": "route",
+   "where": "work/experiments/magic600-04/adapter.py:2060"
+  },
+  {
+   "id": "/api/experiment/native-snapshot",
+   "kind": "route",
+   "where": "work/experiments/magic600-04/adapter.py:2032"
+  },
+  {
+   "id": "/api/experiment/session-log",
+   "kind": "route",
+   "where": "work/experiments/magic600-04/adapter.py:2068"
+  },
+  {
+   "id": "/api/experiment/snapshot",
+   "kind": "route",
+   "where": "work/experiments/magic600-04/adapter.py:2027"
+  },
+  {
+   "id": "/api/experiment/window-layout",
+   "kind": "route",
+   "where": "work/experiments/magic600-04/adapter.py:2076"
+  },
+  {
+   "id": "/api/export",
+   "kind": "route",
+   "where": "server.py:220"
+  },
+  {
+   "id": "/api/filter-apply",
+   "kind": "route",
+   "where": "server.py:257"
+  },
+  {
+   "id": "/api/filter-preview",
+   "kind": "route",
+   "where": "server.py:256"
+  },
+  {
+   "id": "/api/find-required",
+   "kind": "route",
+   "where": "server.py:316"
+  },
+  {
+   "id": "/api/focus",
+   "kind": "route",
+   "where": "server.py:253"
+  },
+  {
+   "id": "/api/grips",
+   "kind": "route",
+   "where": "server.py:199"
+  },
+  {
+   "id": "/api/health",
+   "kind": "route",
+   "where": "server.py:185"
+  },
+  {
+   "id": "/api/history",
+   "kind": "route",
+   "where": "server.py:196"
+  },
+  {
+   "id": "/api/import",
+   "kind": "route",
+   "where": "server.py:333"
+  },
+  {
+   "id": "/api/inspection/clear",
+   "kind": "route",
+   "where": "server.py:260"
+  },
+  {
+   "id": "/api/job/*",
+   "kind": "route",
+   "where": "server.py:188"
+  },
+  {
+   "id": "/api/labels",
+   "kind": "route",
+   "where": "server.py:217"
+  },
+  {
+   "id": "/api/log/export",
+   "kind": "route",
+   "where": "server.py:221"
+  },
+  {
+   "id": "/api/log/import",
+   "kind": "route",
+   "where": "server.py:263"
+  },
+  {
+   "id": "/api/log/save",
+   "kind": "route",
+   "where": "server.py:262"
+  },
+  {
+   "id": "/api/native/colors",
+   "kind": "route",
+   "where": "server.py:210"
+  },
+  {
+   "id": "/api/native/handshake",
+   "kind": "route",
+   "where": "server.py:235"
+  },
+  {
+   "id": "/api/native/inspect",
+   "kind": "route",
+   "where": "server.py:280"
+  },
+  {
+   "id": "/api/native/map",
+   "kind": "route",
+   "where": "server.py:201"
+  },
+  {
+   "id": "/api/native/select",
+   "kind": "route",
+   "where": "server.py:273"
+  },
+  {
+   "id": "/api/native/snapshot",
+   "kind": "route",
+   "where": "server.py:204"
+  },
+  {
+   "id": "/api/native/styles",
+   "kind": "route",
+   "where": "server.py:210"
+  },
+  {
+   "id": "/api/native/turn",
+   "kind": "route",
+   "where": "server.py:289"
+  },
+  {
+   "id": "/api/next-piece",
+   "kind": "route",
+   "where": "server.py:320"
+  },
+  {
+   "id": "/api/piece",
+   "kind": "route",
+   "where": "server.py:311"
+  },
+  {
+   "id": "/api/prefs",
+   "kind": "route",
+   "where": "server.py:252"
+  },
+  {
+   "id": "/api/preview",
+   "kind": "route",
+   "where": "server.py:301"
+  },
+  {
+   "id": "/api/redo",
+   "kind": "route",
+   "where": "server.py:306"
+  },
+  {
+   "id": "/api/reset",
+   "kind": "route",
+   "where": "server.py:261"
+  },
+  {
+   "id": "/api/restore",
+   "kind": "route",
+   "where": "server.py:308"
+  },
+  {
+   "id": "/api/save-macro",
+   "kind": "route",
+   "where": "server.py:268"
+  },
+  {
+   "id": "/api/save-set",
+   "kind": "route",
+   "where": "server.py:266"
+  },
+  {
+   "id": "/api/scramble",
+   "kind": "route",
+   "where": "server.py:269"
+  },
+  {
+   "id": "/api/select",
+   "kind": "route",
+   "where": "server.py:328"
+  },
+  {
+   "id": "/api/shutdown",
+   "kind": "route",
+   "where": "server.py:243"
+  },
+  {
+   "id": "/api/stats",
+   "kind": "route",
+   "where": "server.py:197"
+  },
+  {
+   "id": "/api/status",
+   "kind": "route",
+   "where": "server.py:195"
+  },
+  {
+   "id": "/api/stop-job",
+   "kind": "route",
+   "where": "server.py:247"
+  },
+  {
+   "id": "/api/structure",
+   "kind": "route",
+   "where": "server.py:187"
+  },
+  {
+   "id": "/api/styles",
+   "kind": "route",
+   "where": "server.py:218"
+  },
+  {
+   "id": "/api/suggest",
+   "kind": "route",
+   "where": "server.py:302"
+  },
+  {
+   "id": "/api/timer",
+   "kind": "route",
+   "where": "server.py:265"
+  },
+  {
+   "id": "/api/track-piece",
+   "kind": "route",
+   "where": "server.py:312"
+  },
+  {
+   "id": "/api/undo",
+   "kind": "route",
+   "where": "server.py:305"
+  },
+  {
+   "id": "/assets/*",
+   "kind": "route",
+   "where": "server.py:179"
+  },
+  {
+   "id": "/experiment/*",
+   "kind": "route",
+   "where": "work/experiments/magic600-04/adapter.py:2022"
+  },
+  {
+   "id": "/web/*",
+   "kind": "route",
+   "where": "server.py:175"
+  },
+  {
+   "id": "bank",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1430"
+  },
+  {
+   "id": "bank-name",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1818"
+  },
+  {
+   "id": "block-add",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1603"
+  },
+  {
+   "id": "block-protect",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1623"
+  },
+  {
+   "id": "block-reference",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1400"
+  },
+  {
+   "id": "block-remove",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1620"
+  },
+  {
+   "id": "cancel-preview",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1575"
+  },
+  {
+   "id": "capture",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1441"
+  },
+  {
+   "id": "capture-frame",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1451"
+  },
+  {
+   "id": "checkpoint",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1578"
+  },
+  {
+   "id": "commit",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1563"
+  },
+  {
+   "id": "draft",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1465"
+  },
+  {
+   "id": "endgame-compose",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1686"
+  },
+  {
+   "id": "endgame-options",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1677"
+  },
+  {
+   "id": "endgame-save",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1688"
+  },
+  {
+   "id": "filter",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1769"
+  },
+  {
+   "id": "fixture",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1820"
+  },
+  {
+   "id": "focus",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1367"
+  },
+  {
+   "id": "goal",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1385"
+  },
+  {
+   "id": "grip-frames",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1448"
+  },
+  {
+   "id": "grips",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1846"
+  },
+  {
+   "id": "insert-macro",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1467"
+  },
+  {
+   "id": "inspect",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1361"
+  },
+  {
+   "id": "inspect-position",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1364"
+  },
+  {
+   "id": "inverse-cleanup",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1481"
+  },
+  {
+   "id": "macro-candidates",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1731"
+  },
+  {
+   "id": "macro-check-library",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1729"
+  },
+  {
+   "id": "macro-compare",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1703"
+  },
+  {
+   "id": "macro-effect",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1693"
+  },
+  {
+   "id": "macro-export",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1714"
+  },
+  {
+   "id": "macro-geometry-review",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1672"
+  },
+  {
+   "id": "macro-import",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1718"
+  },
+  {
+   "id": "macro-import-check",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1716"
+  },
+  {
+   "id": "macro-note",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1711"
+  },
+  {
+   "id": "macro-query",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1727"
+  },
+  {
+   "id": "macro-select",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1690"
+  },
+  {
+   "id": "macro-variant",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1667"
+  },
+  {
+   "id": "native-word",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1485"
+  },
+  {
+   "id": "next-activate",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1423"
+  },
+  {
+   "id": "next-clear",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1383"
+  },
+  {
+   "id": "next-pin",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1375"
+  },
+  {
+   "id": "operation-new",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1572"
+  },
+  {
+   "id": "operation-reuse",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1359"
+  },
+  {
+   "id": "orbit",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1437"
+  },
+  {
+   "id": "prefix",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1599"
+  },
+  {
+   "id": "preview",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1537"
+  },
+  {
+   "id": "protect",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1596"
+  },
+  {
+   "id": "redo",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1582"
+  },
+  {
+   "id": "reference",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1649"
+  },
+  {
+   "id": "reference-frames",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1669"
+  },
+  {
+   "id": "restore",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1586"
+  },
+  {
+   "id": "review",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1535"
+  },
+  {
+   "id": "roles",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1638"
+  },
+  {
+   "id": "save-filter",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1796"
+  },
+  {
+   "id": "save-macro",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1705"
+  },
+  {
+   "id": "session-completion-ack",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1252"
+  },
+  {
+   "id": "session-log-apply",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1241"
+  },
+  {
+   "id": "session-log-export",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1235"
+  },
+  {
+   "id": "session-log-inspect",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1239"
+  },
+  {
+   "id": "session-new",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1268"
+  },
+  {
+   "id": "session-report",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1227"
+  },
+  {
+   "id": "session-reset",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1279"
+  },
+  {
+   "id": "session-resume",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1229"
+  },
+  {
+   "id": "session-save-log",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1233"
+  },
+  {
+   "id": "session-scramble",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1254"
+  },
+  {
+   "id": "session-timer",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1231"
+  },
+  {
+   "id": "settings",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1798"
+  },
+  {
+   "id": "target-capture",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1394"
+  },
+  {
+   "id": "target-home",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1387"
+  },
+  {
+   "id": "template-inspect",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1740"
+  },
+  {
+   "id": "template-save",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1735"
+  },
+  {
+   "id": "template-use",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1751"
+  },
+  {
+   "id": "transform-macro",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1656"
+  },
+  {
+   "id": "twist",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1356"
+  },
+  {
+   "id": "undo",
+   "kind": "action",
+   "where": "work/experiments/magic600-04/adapter.py:1582"
+  },
+  {
+   "id": "assemble.py --native-build",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/assemble.py:179"
+  },
+  {
+   "id": "assemble.py --no-zip",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/assemble.py:183"
+  },
+  {
+   "id": "assemble.py --output",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/assemble.py:180"
+  },
+  {
+   "id": "assemble.py --toolchain",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/assemble.py:182"
+  },
+  {
+   "id": "assemble.py --work",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/assemble.py:181"
+  },
+  {
+   "id": "bootstrap.py --data",
+   "kind": "cli",
+   "where": "native/bootstrap.py:110"
+  },
+  {
+   "id": "bootstrap.py --performance-test",
+   "kind": "cli",
+   "where": "native/bootstrap.py:114"
+  },
+  {
+   "id": "bootstrap.py --renderer-test",
+   "kind": "cli",
+   "where": "native/bootstrap.py:113"
+  },
+  {
+   "id": "bootstrap.py --runtime",
+   "kind": "cli",
+   "where": "native/bootstrap.py:109"
+  },
+  {
+   "id": "bootstrap.py --self-test-only",
+   "kind": "cli",
+   "where": "native/bootstrap.py:112"
+  },
+  {
+   "id": "bootstrap.py --startup-timeout",
+   "kind": "cli",
+   "where": "native/bootstrap.py:111"
+  },
+  {
+   "id": "check_package.py --native-export",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/check_package.py:301"
+  },
+  {
+   "id": "check_package.py --native-export-sha256",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/check_package.py:302"
+  },
+  {
+   "id": "collect_diagnostics.py --data",
+   "kind": "cli",
+   "where": "native/collect_diagnostics.py:12"
+  },
+  {
+   "id": "collect_diagnostics.py --out",
+   "kind": "cli",
+   "where": "native/collect_diagnostics.py:12"
+  },
+  {
+   "id": "inspect_runtime.py --report",
+   "kind": "cli",
+   "where": "native/inspect_runtime.py:60"
+  },
+  {
+   "id": "launch.py --mode",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/launch.py:17"
+  },
+  {
+   "id": "launch.py --no-browser",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/launch.py:19"
+  },
+  {
+   "id": "launch.py --session",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/launch.py:18"
+  },
+  {
+   "id": "launcher.py --data",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/launcher.py:165"
+  },
+  {
+   "id": "launcher.py --engine-test",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/launcher.py:169"
+  },
+  {
+   "id": "launcher.py --mode",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/launcher.py:166"
+  },
+  {
+   "id": "launcher.py --parent-eof",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/launcher.py:171"
+  },
+  {
+   "id": "launcher.py --runtime-check",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/launcher.py:170"
+  },
+  {
+   "id": "launcher.py --startup-timeout",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/launcher.py:167"
+  },
+  {
+   "id": "launcher.py --verify-package",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/launcher.py:168"
+  },
+  {
+   "id": "native_launch.py --build-only",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/native_launch.py:265"
+  },
+  {
+   "id": "native_launch.py --mode",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/native_launch.py:263"
+  },
+  {
+   "id": "native_launch.py --session",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/native_launch.py:264"
+  },
+  {
+   "id": "profile_reply.py --output",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/profile_reply.py:32"
+  },
+  {
+   "id": "profile_reply.py --profile",
+   "kind": "cli",
+   "where": "work/experiments/magic600-04/packaging/profile_reply.py:31"
+  },
+  {
+   "id": "server.py --data",
+   "kind": "cli",
+   "where": "server.py:117"
+  },
+  {
+   "id": "server.py --launch-info",
+   "kind": "cli",
+   "where": "server.py:117"
+  },
+  {
+   "id": "server.py --no-browser",
+   "kind": "cli",
+   "where": "server.py:117"
+  },
+  {
+   "id": "server.py --port",
+   "kind": "cli",
+   "where": "server.py:117"
+  }
+ ]
+}

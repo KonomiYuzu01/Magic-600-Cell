@@ -1,0 +1,7 @@
+flowchart LR
+  subgraph Blk[block]
+    m1[member] --- m2[member] --- m3[member]
+  end
+  Blk --> Req[required positions or relations]
+  Blk --> Ref[reference]
+  Blk --> Pol[preservation policy]

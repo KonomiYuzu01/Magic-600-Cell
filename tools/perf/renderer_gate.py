@@ -50,6 +50,7 @@ PHASE_TOL_MS = 50.0    # every entry of a turn must place the turn's start withi
 FPS_MIN = 30.0
 P99_MAX_MS = 33.3
 RUNS_MIN = 3
+VRAM_BUDGET_MB = 7168
 NAME = re.compile(r'[a-z0-9][a-z0-9-]{0,31}')
 # The CSV of PresentMon 2.6 with `--v1_metrics --qpc_time`, checked against a real capture on
 # 1 October 2026: QPC times are integers in `QPCTime`, and the interval columns start with `ms`.
@@ -58,7 +59,10 @@ CAPTURE_COLUMNS = {**PRESENTMON_COLUMNS, 'time': 'QPCTime', 'frame_interval': 'm
 METHOD = ('every frame of the declared swap chain in [trace start + 10 s, + 190 s), with no '
           'missing rows; fps = frames x 1000 / total frame time; nearest-rank p99; no outlier '
           'removal; met only if every run and the pooled frames meet fps >= 30 and '
-          'p99 <= 33.3 ms, with at least three valid runs of one build')
+          'p99 <= 33.3 ms, with at least three valid runs of one build; optional vram_peak_mb '
+          'must be positive and finite; vram_risk flags peaks above 7168 MB without changing '
+          'the verdict; this input contract previously ignored vram_peak_mb (including 0); '
+          'no committed run carried that key before this change')
 
 
 def validate_run(run):
@@ -83,6 +87,8 @@ def validate_run(run):
     if run['scene'] in LABEL_SCENES:
         check = run.get('label_check')
         require(isinstance(check, dict) and check.get('status') in ('pass', 'fail'), 'missing-label-check')
+    if 'vram_peak_mb' in run:
+        require(number(run['vram_peak_mb']) and run['vram_peak_mb'] > 0, 'bad-vram')
 
 
 def condition_reasons(environment):
@@ -260,14 +266,20 @@ def summarize(directories, columns=None):
         key = (run['candidate'], run['scene'])
         scene = scenes.setdefault(key, {'candidate': run['candidate'], 'scene': run['scene'],
                                                   'gate_scene': run['scene'] in GATE_SCENES,
-                                                  'runs': [], 'pooled': None, 'verdict': 'no-data'})
+                                                  'runs': [], 'pooled': None, 'verdict': 'no-data',
+                                                  'vram_peak_mb': None})
         if reasons:
             result['invalid_runs'].append({'run_id': run['run_id'], 'candidate': run['candidate'],
                                            'scene': run['scene'], 'reasons': sorted(set(reasons))})
             continue
+        vram_peak = run.get('vram_peak_mb')
         scene['runs'].append({'run_id': run['run_id'], 'build_identity': run['build']['build_identity'],
                               'swap_chain': run['presentmon']['swap_chain'], 'swap_chains_ignored': ignored,
+                              'vram_peak_mb': vram_peak,
+                              'vram_risk': vram_peak is not None and vram_peak > VRAM_BUDGET_MB,
                               **judge(values)})
+        if vram_peak is not None:
+            scene['vram_peak_mb'] = max(scene['vram_peak_mb'] or 0, vram_peak)
         frames.setdefault(key, []).extend(values)
         result['environment'].append({'run_id': run['run_id'], **environment})
     # A list, not a mapping keyed by candidate: the sanitizer redacts values, not keys.

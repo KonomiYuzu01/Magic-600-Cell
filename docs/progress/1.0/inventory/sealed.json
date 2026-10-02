@@ -1,0 +1,65 @@
+{
+ "files": {
+  "bottom-up-s1.json": {
+   "sealed_at": "applied unchanged from the Codex implementation patch",
+   "sealed_before_reading": "none needed: Codex ran without access to the Claude files",
+   "sha256": "785a3e43c691dc06a5968514875aa0ada1a79691cdd7dea88e572eca59a82c85"
+  },
+  "bottom-up-s2.json": {
+   "sealed_at": "applied unchanged from the Codex implementation patch",
+   "sealed_before_reading": "none needed: Codex ran without access to the Claude files",
+   "sha256": "cd805f5fa92a5ca58bc0efcb86c9ea9b23f06d27de0f7439ad6de0d0df8c7adc"
+  },
+  "bottom-up-s3.json": {
+   "sealed_at": "applied unchanged from the Codex implementation patch",
+   "sealed_before_reading": "none needed: Codex ran without access to the Claude files",
+   "sha256": "6796b71111b661c7c257010320cda3f0146ed84b2f0efdb7cb78ed7360996f21"
+  },
+  "bottom-up-s4.json": {
+   "sealed_at": "applied unchanged from the Codex implementation patch",
+   "sealed_before_reading": "none needed: Codex ran without access to the Claude files",
+   "sha256": "b065b296746fb92e36784b2cc66a15ae2d597a188173192e8150c72b3787fb1c"
+  },
+  "bottom-up-s5.json": {
+   "sealed_at": "applied unchanged from the Codex implementation patch",
+   "sealed_before_reading": "none needed: Codex ran without access to the Claude files",
+   "sha256": "f5beebe296f6db29b09b8f227f288d38aaf50853cf4b0ee47a4dfbf1d10271ed"
+  },
+  "bottom-up-s6.json": {
+   "sealed_at": "applied unchanged from the Codex implementation patch",
+   "sealed_before_reading": "none needed: Codex ran without access to the Claude files",
+   "sha256": "f2aae8daf5c8a2dcee7131801cc829f1581b6601a35ef6ebd319b31db9bf314d"
+  },
+  "claude-source-s1.json": {
+   "sealed_at": "2026-10-02T19:23:47.208539Z",
+   "sealed_before_reading": "any Codex inventory file",
+   "sha256": "1c6a49dae580e8decf8a9fd57ba7f7bf62604b3f51152df80a68d8866efe03b1"
+  },
+  "claude-source-s2.json": {
+   "sealed_at": "2026-10-02T19:23:03.855091Z",
+   "sealed_before_reading": "any Codex inventory file",
+   "sha256": "9061ff697f4744a5f122a8564ac780dab7684e70484bdeeb979b84bcb10253e2"
+  },
+  "claude-source-s3.json": {
+   "sealed_at": "2026-10-02T19:25:44.312346Z",
+   "sealed_before_reading": "any Codex inventory file",
+   "sha256": "9da4327f3a7aa8ac3036c14a406945ed7f60180f123333b7beb4c063ddb3e5ca"
+  },
+  "claude-source-s4.json": {
+   "sealed_at": "2026-10-02T19:26:48.651545Z",
+   "sealed_before_reading": "any Codex inventory file",
+   "sha256": "b22b8cd2e52b73cda95f6c8dab70e8c7f2088801b84b3d6f914733b1039a797d"
+  },
+  "claude-source-s5.json": {
+   "sealed_at": "2026-10-02T19:23:56.237845Z",
+   "sealed_before_reading": "any Codex inventory file",
+   "sha256": "d5a9aa2e57f0f1864ac8b4630cff80ea7a4154ec470e601c2445c2347cfe76fb"
+  },
+  "claude-source-s6.json": {
+   "sealed_at": "2026-10-02T19:24:09.663699Z",
+   "sealed_before_reading": "any Codex inventory file",
+   "sha256": "21f0ea947ef4d7db52ec3297faff26f0a71521f6c7ed69290c96e56b5884e73d"
+  }
+ },
+ "format": "C600-INVENTORY-SEALS-draft"
+}

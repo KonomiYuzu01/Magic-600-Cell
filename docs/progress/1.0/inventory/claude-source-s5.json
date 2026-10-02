@@ -1,0 +1,2383 @@
+{
+ "shard": "s5",
+ "functions": [
+  {
+   "id": "S5-1",
+   "name": "Open the workbench page",
+   "behaviour": "Loads the experiment page for one token and mode (g1 opens on the Keys tab with the keyboard strip shown; g2 hides the keyboard strip), fetches structure, snapshot and mesh assets, starts the renderer and shows a status message.",
+   "entry_points": [
+    "window Workbench"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:9",
+    "work/experiments/magic600-04/web/app.js:299",
+    "work/experiments/magic600-04/web/app.js:300",
+    "work/experiments/magic600-04/web/app.js:303",
+    "work/experiments/magic600-04/web/index.html:1",
+    "work/experiments/magic600-04/web/index.html:14"
+   ],
+   "depends_on": [
+    "route GET /",
+    "route GET /experiment/app.js",
+    "route GET /experiment/style.css",
+    "route GET /api/structure",
+    "route GET /api/experiment/snapshot",
+    "route GET /assets/mesh.json",
+    "route GET /web/renderer.js"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "URL query parameters token and mode (g1|g2) select the session token and layout; they are read at app.js:9. Mesh binary assets are fetched from /assets/ (app.js:149-150)."
+  },
+  {
+   "id": "S5-2",
+   "name": "Command index",
+   "behaviour": "Opens a searchable list of every command that is not form-only; clicking a row closes the list and runs that command.",
+   "entry_points": [
+    "command index",
+    "key Workbench (all banks): F1",
+    "button Workbench: Commands",
+    "control Command index: Search an action",
+    "button Command index: command row (one per listed command)"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/app.js:179",
+    "work/experiments/magic600-04/web/app.js:254",
+    "work/experiments/magic600-04/web/app.js:255",
+    "work/experiments/magic600-04/web/app.js:264",
+    "work/experiments/magic600-04/web/app.js:279",
+    "work/experiments/magic600-04/web/index.html:4"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "F1 also works while a text field has focus (keys.js:202-203 allows F1/F2 text navigation)."
+  },
+  {
+   "id": "S5-3",
+   "name": "Open keyboard-bank chooser",
+   "behaviour": "Opens a dialog listing banks with their orbit, buffers, captured caps and requirements, searchable by ID or purpose; ArrowUp/ArrowDown move the selection and a single search match selects itself.",
+   "entry_points": [
+    "command bank",
+    "key Workbench (all banks): F2",
+    "button Workbench: Bank",
+    "button Workbench: Bank-purpose label",
+    "button Keyboard strip: Bank-purpose label",
+    "button Keys tab: Choose bank by ID",
+    "control Keyboard banks dialog: Bank ID or purpose search",
+    "button Keyboard banks dialog: bank row",
+    "key Keyboard banks dialog: ArrowDown",
+    "key Keyboard banks dialog: ArrowUp"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:180",
+    "work/experiments/magic600-04/web/app.js:257",
+    "work/experiments/magic600-04/web/app.js:269",
+    "work/experiments/magic600-04/web/app.js:290",
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/index.html:4",
+    "work/experiments/magic600-04/web/index.html:11"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "The Orbit 33 button in the context bar is declared data-command=\"bank\" in index.html:5 but rebound to \"orbit\" after startup (app.js:300)."
+  },
+  {
+   "id": "S5-4",
+   "name": "Activate selected bank",
+   "behaviour": "Switches the workspace to the bank highlighted in the chooser, closes it and reports its purpose and requirements.",
+   "entry_points": [
+    "command bank-activate",
+    "button Keyboard banks dialog: Activate selected bank",
+    "key Keyboard banks dialog: Enter"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:181",
+    "work/experiments/magic600-04/web/app.js:180",
+    "work/experiments/magic600-04/web/app.js:292"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=bank"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=bank",
+   "notes": "Enter is handled only when focus is in the bank search field."
+  },
+  {
+   "id": "S5-5",
+   "name": "Previous bank",
+   "behaviour": "Returns to the previously active bank.",
+   "entry_points": [
+    "command bank-previous",
+    "button Keyboard banks dialog: Previous bank"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:182",
+    "work/experiments/magic600-04/web/app.js:180"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=bank"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=bank"
+  },
+  {
+   "id": "S5-6",
+   "name": "Rename current bank",
+   "behaviour": "Opens a name field for the current bank and saves a new display name.",
+   "entry_points": [
+    "command bank-rename",
+    "button Keyboard banks dialog: Rename current",
+    "command bank-save-name",
+    "button Rename current bank dialog: Save name"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:183",
+    "work/experiments/magic600-04/web/app.js:184"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=bank-name"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "POST /api/experiment/command action=bank-name"
+  },
+  {
+   "id": "S5-7",
+   "name": "Switch bank by suffix",
+   "behaviour": "Switches to the bank of the current orbit with suffix A, B, I, M or E.",
+   "entry_points": [
+    "command bank-A",
+    "command bank-B",
+    "command bank-I",
+    "command bank-M",
+    "command bank-E",
+    "key Workbench (all banks): Alt+Digit1",
+    "key Workbench (all banks): Alt+Digit2",
+    "key Workbench (all banks): Alt+Digit3",
+    "key Workbench (all banks): Alt+Digit4",
+    "key Workbench (all banks): Alt+Digit5"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/app.js:17",
+    "work/experiments/magic600-04/web/app.js:251"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=bank"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=bank",
+   "notes": "Bindings are the defaults; user key mappings (Edit keys) can replace them."
+  },
+  {
+   "id": "S5-8",
+   "name": "Choose orbit by structure",
+   "behaviour": "Opens a searchable list of orbits described by hosting cells, affecting caps and orientation, with a 4D diagram of the highlighted orbit.",
+   "entry_points": [
+    "command orbit",
+    "button Workbench: Orbit button",
+    "control Orbit dialog: Orbit structure search",
+    "button Orbit dialog: orbit row"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:172",
+    "work/experiments/magic600-04/web/app.js:256",
+    "work/experiments/magic600-04/web/app.js:268",
+    "work/experiments/magic600-04/web/app.js:300"
+   ],
+   "depends_on": [
+    "route GET /api/structure"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-9",
+   "name": "Use chosen orbit",
+   "behaviour": "Makes the highlighted orbit the active orbit and closes the dialog.",
+   "entry_points": [
+    "command orbit-activate",
+    "button Orbit dialog: Use this orbit"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:173",
+    "work/experiments/magic600-04/web/app.js:172"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=orbit"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "POST /api/experiment/command action=orbit"
+  },
+  {
+   "id": "S5-10",
+   "name": "Open or close Macro Base drawer",
+   "behaviour": "Shows or hides the macro library panel and focuses its search when opened.",
+   "entry_points": [
+    "command library-toggle",
+    "button Workbench: Macro Base (tab bar)",
+    "button Macro Base panel: ×"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:175",
+    "work/experiments/magic600-04/web/index.html:7",
+    "work/experiments/magic600-04/web/index.html:8"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-11",
+   "name": "Search macros (key)",
+   "behaviour": "Opens the Macro Base panel and focuses its search field.",
+   "entry_points": [
+    "command macro-search",
+    "key Workbench (all banks): F3"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/app.js:199"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "F3 is bound to macro-search; the Macro Base button label also shows F3 but dispatches library-toggle."
+  },
+  {
+   "id": "S5-12",
+   "name": "Filter the macro list",
+   "behaviour": "Filters the macro list by text (name, note, ID), by scope (active orbit or all) and by kind (all, star, personal, orientation).",
+   "entry_points": [
+    "control Macro Base panel: Search macros",
+    "control Macro Base panel: Macro orbit scope",
+    "control Macro Base panel: Macro classification"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:101",
+    "work/experiments/magic600-04/web/app.js:102",
+    "work/experiments/magic600-04/web/app.js:103",
+    "work/experiments/magic600-04/web/app.js:279",
+    "work/experiments/magic600-04/web/app.js:282",
+    "work/experiments/magic600-04/web/index.html:7"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-13",
+   "name": "Select a macro",
+   "behaviour": "Selecting a macro row loads its exact effect, shows it on the canvas and explains applicability.",
+   "entry_points": [
+    "mouse Macro Base panel: click macro row"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:267",
+    "work/experiments/magic600-04/web/app.js:103"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=macro-effect"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=macro-effect"
+  },
+  {
+   "id": "S5-14",
+   "name": "Drag a macro into a phase",
+   "behaviour": "Dragging a macro row onto 01 Prepare, 02 Macro or 03 Cleanup inserts it into that draft phase.",
+   "entry_points": [
+    "mouse Macro Base panel: drag macro row",
+    "mouse Operation desk: drop on phase button"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:295",
+    "work/experiments/magic600-04/web/app.js:296",
+    "work/experiments/magic600-04/web/app.js:252",
+    "work/experiments/magic600-04/web/app.js:103"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=insert-macro"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=insert-macro"
+  },
+  {
+   "id": "S5-15",
+   "name": "Insert selected macro into a phase",
+   "behaviour": "Adds the selected macro to the Prepare, Macro or Cleanup phase of the draft (Macro replaces; Prepare and Cleanup append).",
+   "entry_points": [
+    "command insert-prepare",
+    "command insert-macro",
+    "command insert-cleanup",
+    "button Macro detail: → Prepare",
+    "button Macro detail: Use as Macro",
+    "button Macro detail: → Cleanup"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:131",
+    "work/experiments/magic600-04/web/app.js:252"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=insert-macro"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=insert-macro"
+  },
+  {
+   "id": "S5-16",
+   "name": "Show exact operation effects",
+   "behaviour": "Opens a dialog with the selected or reviewed operation: category, slot count, support, cycles, fixed orientation and the first slot pairs.",
+   "entry_points": [
+    "command effect-details",
+    "button Macro detail: Exact effects"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:131",
+    "work/experiments/magic600-04/web/app.js:242"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-17",
+   "name": "Enter a concrete macro",
+   "behaviour": "Opens a form to name a macro and give its native JSON recipe and note, then validates and saves it as a personal macro.",
+   "entry_points": [
+    "command macro-new",
+    "button Macro Base panel: +",
+    "command macro-save",
+    "button Macro dialog: Validate and save"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:200",
+    "work/experiments/magic600-04/web/app.js:201",
+    "work/experiments/magic600-04/web/index.html:7"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=save-macro"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "POST /api/experiment/command action=save-macro"
+  },
+  {
+   "id": "S5-18",
+   "name": "Edit macro name and notes",
+   "behaviour": "Opens the selected macro name and note for editing and saves them.",
+   "entry_points": [
+    "command macro-notes",
+    "button Macro Base panel: Name / notes",
+    "command macro-save-notes",
+    "button Macro notes dialog: Save notes"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:202",
+    "work/experiments/magic600-04/web/app.js:203",
+    "work/experiments/magic600-04/web/index.html:7"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=macro-note"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "POST /api/experiment/command action=macro-note"
+  },
+  {
+   "id": "S5-19",
+   "name": "Compare two macros",
+   "behaviour": "Opens two macro selectors and reports full net equality, inverse relation and orbits where the effects are locally equal.",
+   "entry_points": [
+    "command macro-compare",
+    "button Macro Base panel: Compare",
+    "command macro-run-compare",
+    "button Compare dialog: Compare full model"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:204",
+    "work/experiments/magic600-04/web/app.js:205",
+    "work/experiments/magic600-04/web/index.html:7"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=macro-compare"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": "POST /api/experiment/command action=macro-compare"
+  },
+  {
+   "id": "S5-20",
+   "name": "Open Current piece dialog",
+   "behaviour": "Opens a dialog to set Current to an identity and a fixed destination position by typed ID.",
+   "entry_points": [
+    "command focus",
+    "button Workbench: Current piece button",
+    "button Workbench: Make Current",
+    "command focus-apply",
+    "button Current dialog: Make Current"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:185",
+    "work/experiments/magic600-04/web/app.js:186",
+    "work/experiments/magic600-04/web/index.html:5",
+    "work/experiments/magic600-04/web/index.html:8"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=focus"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=focus",
+   "notes": "Typed IDs are parsed by ids.js parseId (identity prefix I, position prefix P, bare decimals)."
+  },
+  {
+   "id": "S5-21",
+   "name": "Pick structural example pieces",
+   "behaviour": "On the Keys tab, sample buttons make a preset piece Current: a 1-cell, 2-cell/18-cap, the 5-cell example and a 20-cell piece.",
+   "entry_points": [
+    "button Keys tab: 1-cell · I35778",
+    "button Keys tab: 2-cell / 18 caps",
+    "button Keys tab: 5-cell example",
+    "button Keys tab: 20-cell · I17810"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:113",
+    "work/experiments/magic600-04/web/app.js:275"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=focus"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=focus"
+  },
+  {
+   "id": "S5-22",
+   "name": "Locate Next",
+   "behaviour": "Selects the locked Next piece for inspection and moves the puzzle camera to its first cell without changing Current or destination.",
+   "entry_points": [
+    "command next-locate",
+    "button Workbench: Next bookmark button",
+    "key Workbench (all banks): Ctrl+Shift+KeyL",
+    "button Locked Next dialog: Locate"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/app.js:16",
+    "work/experiments/magic600-04/web/app.js:191",
+    "work/experiments/magic600-04/web/app.js:177"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=inspect"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=inspect"
+  },
+  {
+   "id": "S5-23",
+   "name": "Pin Next",
+   "behaviour": "Locks the inspected identity as the Next bookmark; if one exists, asks for explicit replacement first.",
+   "entry_points": [
+    "command next-pin",
+    "button Workbench: Pin Next",
+    "key Workbench (all banks): Ctrl+Shift+KeyN",
+    "button Locked Next dialog: Replace with inspected identity",
+    "command next-replace",
+    "button Replace Next dialog: Replace Next explicitly"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/app.js:187",
+    "work/experiments/magic600-04/web/app.js:188",
+    "work/experiments/magic600-04/web/app.js:177"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=next-pin"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=next-pin"
+  },
+  {
+   "id": "S5-24",
+   "name": "Clear Next",
+   "behaviour": "Removes the Next bookmark.",
+   "entry_points": [
+    "command next-clear",
+    "key Workbench (all banks): Ctrl+Shift+Backspace",
+    "button Locked Next dialog: Clear bookmark"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/app.js:16",
+    "work/experiments/magic600-04/web/app.js:189",
+    "work/experiments/magic600-04/web/app.js:177"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=next-clear"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=next-clear"
+  },
+  {
+   "id": "S5-25",
+   "name": "Activate Next",
+   "behaviour": "Explicitly makes the locked Next piece the Current piece (draft edit recorded for draft undo).",
+   "entry_points": [
+    "command next-activate",
+    "button Workbench: Activate",
+    "key Workbench (all banks): Ctrl+Alt+KeyN",
+    "button Locked Next dialog: Activate explicitly"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/app.js:88",
+    "work/experiments/magic600-04/web/app.js:190",
+    "work/experiments/magic600-04/web/app.js:177",
+    "work/experiments/magic600-04/web/index.html:5"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=next-activate"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=next-activate",
+   "notes": "The Activate button is disabled when no Next is set (app.js:88)."
+  },
+  {
+   "id": "S5-26",
+   "name": "Manage locked Next menu",
+   "behaviour": "Opens a dialog showing the bookmark with Locate, Replace, Clear and Activate choices.",
+   "entry_points": [
+    "command next-menu",
+    "button Workbench: …"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:177",
+    "work/experiments/magic600-04/web/index.html:5"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-27",
+   "name": "Add piece to block",
+   "behaviour": "Adds the inspected identity as a requirement of the working block.",
+   "entry_points": [
+    "command block-add",
+    "button Workbench: Add to block"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:192",
+    "work/experiments/magic600-04/web/index.html:8"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=block-add"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=block-add"
+  },
+  {
+   "id": "S5-28",
+   "name": "Protect position",
+   "behaviour": "Preserves the exact labels at the inspected position at the complete-operation boundary.",
+   "entry_points": [
+    "command block-protect",
+    "button Workbench: Protect position"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:193",
+    "work/experiments/magic600-04/web/index.html:8"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=block-protect"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "protection"
+   ],
+   "engine_call": "POST /api/experiment/command action=block-protect"
+  },
+  {
+   "id": "S5-29",
+   "name": "Assign A / B buffer roles",
+   "behaviour": "Opens a form to set the two buffer positions A and B and saves them in the work context.",
+   "entry_points": [
+    "command roles",
+    "button Workbench: A / B roles",
+    "command roles-apply",
+    "button Roles dialog: Assign roles"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:194",
+    "work/experiments/magic600-04/web/app.js:195",
+    "work/experiments/magic600-04/web/index.html:8"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=roles"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=roles"
+  },
+  {
+   "id": "S5-30",
+   "name": "Set explicit reference word",
+   "behaviour": "Opens the reference-word editor; saving stores the word, and a second button transforms the selected macro to R⁻¹ Macro R and saves it.",
+   "entry_points": [
+    "command reference",
+    "button Workbench: Reference (context action)",
+    "command reference-save",
+    "button Reference dialog: Use this reference word",
+    "command reference-transform",
+    "button Reference dialog: Save selected macro under reference"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:196",
+    "work/experiments/magic600-04/web/app.js:197",
+    "work/experiments/magic600-04/web/app.js:198",
+    "work/experiments/magic600-04/web/index.html:8"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=reference",
+    "route POST /api/experiment/command action=transform-macro"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=reference"
+  },
+  {
+   "id": "S5-31",
+   "name": "Switch canvas tab",
+   "behaviour": "Switches the central canvas between Work, Reference and Keys; key F6 cycles them.",
+   "entry_points": [
+    "button Workbench: Work",
+    "button Workbench: Reference (tab)",
+    "button Workbench: Keys",
+    "command next-tab",
+    "key Workbench (all banks): F6"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/app.js:217",
+    "work/experiments/magic600-04/web/app.js:265",
+    "work/experiments/magic600-04/web/app.js:106",
+    "work/experiments/magic600-04/web/index.html:8"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-32",
+   "name": "Show Local view",
+   "behaviour": "Opens the linked views drawer with the Local piece structure diagram.",
+   "entry_points": [
+    "command local",
+    "key Workbench (all banks): F7",
+    "button Workbench: Local (view toggle)",
+    "button Local panel: Local"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:218",
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/index.html:8",
+    "work/experiments/magic600-04/web/index.html:9"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-33",
+   "name": "Show Global view",
+   "behaviour": "Opens the linked views drawer with the 4D Global diagram of two cell groups.",
+   "entry_points": [
+    "command global",
+    "key Workbench (all banks): F8",
+    "button Workbench: Global (view toggle)",
+    "button Local panel: Global"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:219",
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/index.html:8",
+    "work/experiments/magic600-04/web/index.html:9"
+   ],
+   "depends_on": [
+    "route GET /api/structure"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-34",
+   "name": "Show puzzle layout",
+   "behaviour": "Opens the linked views drawer in the puzzle layout and refits the viewport.",
+   "entry_points": [
+    "command puzzle-layout",
+    "key Workbench (all banks): F11",
+    "button Workbench: Puzzle"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:221",
+    "work/experiments/magic600-04/web/app.js:167",
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/index.html:8"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-35",
+   "name": "Close linked views",
+   "behaviour": "Closes the right drawer and returns focus.",
+   "entry_points": [
+    "command close-views",
+    "button Linked views: ×"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:176",
+    "work/experiments/magic600-04/web/index.html:9"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-36",
+   "name": "Dismiss panels with Escape",
+   "behaviour": "Escape (no dialog open) closes the linked views, puzzle layout and Macro Base drawer and focuses the canvas.",
+   "entry_points": [
+    "key Workbench (all banks): Escape"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:291"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "Escape inside an open dialog is handled by the native dialog and closes it."
+  },
+  {
+   "id": "S5-37",
+   "name": "Close dialog",
+   "behaviour": "The × button or Escape closes any open dialog; keyboard grips reset and focus returns to the previous control.",
+   "entry_points": [
+    "button Dialog: ×",
+    "key Dialog: Escape"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/index.html:13",
+    "work/experiments/magic600-04/web/app.js:165",
+    "work/experiments/magic600-04/web/app.js:166"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "Escape is native browser dialog behaviour; the close handler is app.js:166."
+  },
+  {
+   "id": "S5-38",
+   "name": "Open Piece Filter",
+   "behaviour": "Opens a dialog to type a filter expression, choose Replace/Intersect/Union/Subtract, use presets and select saved filters.",
+   "entry_points": [
+    "command filter",
+    "key Workbench (all banks): F5",
+    "button Workbench: Filter",
+    "button Local panel: Piece Filter",
+    "button Filter dialog: Active orbit preset",
+    "button Filter dialog: Unsolved active preset",
+    "button Filter dialog: All pieces preset",
+    "button Filter dialog: Orientation only preset",
+    "control Filter dialog: Saved filters",
+    "control Filter dialog: Filter expression",
+    "control Filter dialog: operation"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:235",
+    "work/experiments/magic600-04/web/app.js:277",
+    "work/experiments/magic600-04/web/app.js:283",
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/index.html:8",
+    "work/experiments/magic600-04/web/index.html:9"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-39",
+   "name": "Preview filter counts",
+   "behaviour": "Shows the counts and results of a filter expression without applying it.",
+   "entry_points": [
+    "command filter-preview",
+    "button Filter dialog: Preview counts"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:236"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=filter"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": "POST /api/experiment/command action=filter preview=true"
+  },
+  {
+   "id": "S5-40",
+   "name": "Apply filter",
+   "behaviour": "Applies the filter expression with the chosen operation; it changes display and picking only.",
+   "entry_points": [
+    "command filter-apply",
+    "button Filter dialog: Apply"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:237"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=filter"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "state"
+   ],
+   "writes": [
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "POST /api/experiment/command action=filter"
+  },
+  {
+   "id": "S5-41",
+   "name": "Save current filter",
+   "behaviour": "Saves the current filter under a name.",
+   "entry_points": [
+    "command filter-save",
+    "button Filter dialog: Save current"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:238"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=save-filter"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "POST /api/experiment/command action=save-filter"
+  },
+  {
+   "id": "S5-42",
+   "name": "View committed or draft result",
+   "behaviour": "Switches the canvas and puzzle between committed state and the proposed draft result (Draft result runs a review first).",
+   "entry_points": [
+    "command before",
+    "button Workbench: Committed",
+    "command after",
+    "button Workbench: Draft result"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:215",
+    "work/experiments/magic600-04/web/app.js:216",
+    "work/experiments/magic600-04/web/index.html:8"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=review"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=review"
+  },
+  {
+   "id": "S5-43",
+   "name": "Edit a draft phase",
+   "behaviour": "Opens a JSON recipe editor for Prepare, Macro or Cleanup and applies it to the draft only.",
+   "entry_points": [
+    "command phase-input",
+    "key Workbench (all banks): F4",
+    "button Operation desk: 01 PREPARE",
+    "button Operation desk: 02 MACRO",
+    "button Operation desk: 03 CLEANUP",
+    "button Keys tab: Inspect entered word",
+    "command phase-save",
+    "button Edit phase dialog: Apply draft edit"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/app.js:206",
+    "work/experiments/magic600-04/web/app.js:207",
+    "work/experiments/magic600-04/web/app.js:258",
+    "work/experiments/magic600-04/web/app.js:266",
+    "work/experiments/magic600-04/web/app.js:113"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=draft"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=draft"
+  },
+  {
+   "id": "S5-44",
+   "name": "Choose input destination and phase",
+   "behaviour": "Selects whether turns go to the Draft or the Live puzzle and which phase (Prepare, Macro, Cleanup) receives them; saves the choice.",
+   "entry_points": [
+    "control Operation desk: INPUT destination",
+    "control Operation desk: PHASE"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:285",
+    "work/experiments/magic600-04/web/index.html:12"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=settings"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "POST /api/experiment/command action=settings"
+  },
+  {
+   "id": "S5-45",
+   "name": "Undo draft edit",
+   "behaviour": "Restores the previous draft within this browser window (up to 30 edits).",
+   "entry_points": [
+    "command draft-undo",
+    "button Operation desk: Undo draft"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:168",
+    "work/experiments/magic600-04/web/app.js:208",
+    "work/experiments/magic600-04/web/index.html:12"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=draft"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=draft",
+   "notes": "The undo history is browser-local (draftUndo array)."
+  },
+  {
+   "id": "S5-46",
+   "name": "Cleanup equals Prepare inverse",
+   "behaviour": "Fills the Cleanup phase with the inverse of Prepare.",
+   "entry_points": [
+    "command cleanup-inverse",
+    "button Operation desk: Cleanup = Prepare⁻¹"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:209",
+    "work/experiments/magic600-04/web/index.html:12"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=inverse-cleanup"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=inverse-cleanup"
+  },
+  {
+   "id": "S5-47",
+   "name": "Open work sheets",
+   "behaviour": "Opens a dialog to save the current draft as a named work sheet or reuse a saved one.",
+   "entry_points": [
+    "command worksheet",
+    "key Workbench (all banks): F10",
+    "button Operation desk: Work sheets"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:239",
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/index.html:12"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-48",
+   "name": "Save work sheet",
+   "behaviour": "Stores the current fixed draft steps under a name.",
+   "entry_points": [
+    "command sheet-save",
+    "button Work sheets dialog: Save current"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:240"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=template-save"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "POST /api/experiment/command action=template-save"
+  },
+  {
+   "id": "S5-49",
+   "name": "Reuse work sheet",
+   "behaviour": "Loads the fixed steps of a saved work sheet into the draft.",
+   "entry_points": [
+    "command sheet-use",
+    "button Work sheets dialog: Reuse fixed steps"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:241"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=template-use"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=template-use"
+  },
+  {
+   "id": "S5-50",
+   "name": "Review complete operation",
+   "behaviour": "Reviews the whole draft (prepare, macro, cleanup) for protection and prefix conflicts and shows the result.",
+   "entry_points": [
+    "command review",
+    "key Workbench (all banks): F12",
+    "button Operation desk: Review complete"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:210",
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/index.html:12"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=review"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=review"
+  },
+  {
+   "id": "S5-51",
+   "name": "Preview operation",
+   "behaviour": "Creates a pending preview of the reviewed operation (button enabled only when the review is Ready).",
+   "entry_points": [
+    "command preview",
+    "button Operation desk: Preview"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:211",
+    "work/experiments/magic600-04/web/app.js:92",
+    "work/experiments/magic600-04/web/index.html:12"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=preview"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "state",
+    "protection"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=preview"
+  },
+  {
+   "id": "S5-52",
+   "name": "Commit preview",
+   "behaviour": "Commits the pending preview through the Session and refreshes the state.",
+   "entry_points": [
+    "command commit",
+    "button Operation desk: Commit preview"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:212",
+    "work/experiments/magic600-04/web/app.js:92",
+    "work/experiments/magic600-04/web/index.html:12"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=commit"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=commit"
+  },
+  {
+   "id": "S5-53",
+   "name": "Cancel preview",
+   "behaviour": "Discards the pending preview.",
+   "entry_points": [
+    "command cancel-preview",
+    "button Operation desk: Cancel preview"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:213",
+    "work/experiments/magic600-04/web/index.html:12"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=cancel-preview"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=cancel-preview"
+  },
+  {
+   "id": "S5-54",
+   "name": "Cancel analysis",
+   "behaviour": "Requests cancellation of the running analysis job; committed state is preserved. Visible only while an operation is busy.",
+   "entry_points": [
+    "command cancel-analysis",
+    "button Operation desk: Cancel analysis"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:214",
+    "work/experiments/magic600-04/web/app.js:62",
+    "work/experiments/magic600-04/web/index.html:12"
+   ],
+   "depends_on": [
+    "route POST /api/stop-job",
+    "route GET /api/job/<id>"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": "POST /api/stop-job"
+  },
+  {
+   "id": "S5-55",
+   "name": "Open protection dialog",
+   "behaviour": "Opens orbit locks and position-lock management with a prefix-preservation option and the current review conflicts; the protection summary button and conflict buttons open it.",
+   "entry_points": [
+    "command protection",
+    "button Workbench: Protection summary",
+    "button Macro detail: Conflict in orbit pieces"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:232",
+    "work/experiments/magic600-04/web/app.js:130",
+    "work/experiments/magic600-04/web/index.html:5"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "protection",
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-56",
+   "name": "Apply protection policy",
+   "behaviour": "Applies the checked orbit locks and strict prefix policy.",
+   "entry_points": [
+    "command protection-save",
+    "button Protection dialog: Apply policy"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:233"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=protect",
+    "route POST /api/experiment/command action=prefix"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "protection"
+   ],
+   "writes": [
+    "protection",
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=protect",
+   "notes": "Issues two commands in sequence (protect, then prefix)."
+  },
+  {
+   "id": "S5-57",
+   "name": "Clear position locks",
+   "behaviour": "Removes every position lock after an explicit click.",
+   "entry_points": [
+    "command protection-clear-positions",
+    "button Protection dialog: Clear position locks explicitly"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:234"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=block-protect"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "protection",
+    "workspace"
+   ],
+   "writes": [
+    "protection",
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=block-protect",
+   "notes": "Issues block-protect with enabled=false per locked position."
+  },
+  {
+   "id": "S5-58",
+   "name": "Inspect a conflicting position",
+   "behaviour": "Selecting a block conflict button inspects the protected position.",
+   "entry_points": [
+    "button Macro detail: Conflict at position"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:130",
+    "work/experiments/magic600-04/web/app.js:273"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=inspect-position"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=inspect-position"
+  },
+  {
+   "id": "S5-59",
+   "name": "Open capture dialog",
+   "behaviour": "Opens a form for the 20 Grip slots to map explicit canonical cells, with source helpers for hosting cells, affecting caps and Buffer A/B caps.",
+   "entry_points": [
+    "command capture",
+    "button Local panel: Capture grips",
+    "button Keyboard strip: Capture / edit",
+    "button Keys tab: Capture selected structure",
+    "button Capture dialog: Selected hosting cells",
+    "button Capture dialog: Selected affecting caps",
+    "button Capture dialog: Buffer A caps",
+    "button Capture dialog: Buffer B caps"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:226",
+    "work/experiments/magic600-04/web/app.js:259",
+    "work/experiments/magic600-04/web/app.js:276",
+    "work/experiments/magic600-04/web/index.html:9",
+    "work/experiments/magic600-04/web/index.html:11"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-60",
+   "name": "Apply grip capture",
+   "behaviour": "Saves the Grip-to-cap mapping for the current bank after checking there are no gaps.",
+   "entry_points": [
+    "command capture-apply",
+    "button Capture dialog: Apply explicit capture"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:227",
+    "work/experiments/magic600-04/web/app.js:259"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=capture"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=capture"
+  },
+  {
+   "id": "S5-61",
+   "name": "Edit key bindings",
+   "behaviour": "Opens JSON for command, twist and grip key mappings; shows defaults; saves (twenty grip codes required); exports as a JSON download.",
+   "entry_points": [
+    "command keys-edit",
+    "button Keyboard strip: Edit keys",
+    "command keys-defaults",
+    "button Key bindings dialog: Show editable defaults",
+    "command keys-save",
+    "button Key bindings dialog: Save mappings",
+    "command keys-export",
+    "button Key bindings dialog: Export"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:228",
+    "work/experiments/magic600-04/web/app.js:229",
+    "work/experiments/magic600-04/web/app.js:230",
+    "work/experiments/magic600-04/web/app.js:231",
+    "work/experiments/magic600-04/web/index.html:11"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=settings"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "preferences"
+   ],
+   "writes": [
+    "workspace",
+    "preferences",
+    "files"
+   ],
+   "engine_call": "POST /api/experiment/command action=settings",
+   "notes": "Export writes a browser download named magic600-keys.json; it is not an engine write."
+  },
+  {
+   "id": "S5-62",
+   "name": "Show or hide keyboard strip",
+   "behaviour": "Toggles the on-screen keyboard strip of Grip and Twist keys.",
+   "entry_points": [
+    "command keyboard",
+    "key Workbench (all banks): F9",
+    "button Keyboard strip: Keyboard"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:220",
+    "work/experiments/magic600-04/web/app.js:15",
+    "work/experiments/magic600-04/web/index.html:11"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-63",
+   "name": "Choose Hold or Latch grip",
+   "behaviour": "Selects whether a Grip is held while a key is down or latched by pressing again.",
+   "entry_points": [
+    "control Keyboard strip: Grip behavior"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:286",
+    "work/experiments/magic600-04/web/index.html:11",
+    "work/experiments/magic600-04/web/keys.js:239"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-64",
+   "name": "Select a Grip with a physical key",
+   "behaviour": "A Grip key chooses one fixed cap C1–C600 from the active bank mapping; in Hold mode it is active while held, in Latch mode a repeat toggles it. Several held grips cancel the choice.",
+   "entry_points": [
+    "key Workbench (bank-specific grip map): Digit1",
+    "key Workbench (bank-specific grip map): Digit2",
+    "key Workbench (bank-specific grip map): Digit3",
+    "key Workbench (bank-specific grip map): Digit4",
+    "key Workbench (bank-specific grip map): Digit5",
+    "key Workbench (bank-specific grip map): Digit6",
+    "key Workbench (bank-specific grip map): Digit7",
+    "key Workbench (bank-specific grip map): Digit8",
+    "key Workbench (bank-specific grip map): Digit9",
+    "key Workbench (bank-specific grip map): Digit0",
+    "key Workbench (bank-specific grip map): KeyQ",
+    "key Workbench (bank-specific grip map): KeyW",
+    "key Workbench (bank-specific grip map): KeyE",
+    "key Workbench (bank-specific grip map): KeyR",
+    "key Workbench (bank-specific grip map): KeyT",
+    "key Workbench (bank-specific grip map): KeyY",
+    "key Workbench (bank-specific grip map): KeyU",
+    "key Workbench (bank-specific grip map): KeyI",
+    "key Workbench (bank-specific grip map): KeyO",
+    "key Workbench (bank-specific grip map): KeyP"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:18",
+    "work/experiments/magic600-04/web/app.js:33",
+    "work/experiments/magic600-04/web/app.js:34",
+    "work/experiments/magic600-04/web/keys.js:224",
+    "work/experiments/magic600-04/web/keys.js:239",
+    "work/experiments/magic600-04/web/keys.js:117"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null,
+   "notes": "Default codes; each slot maps to the cap captured for that slot in the current bank. Shift+key is not a Grip. Unassigned slots are inert."
+  },
+  {
+   "id": "S5-65",
+   "name": "Select a Grip with the on-screen key",
+   "behaviour": "Clicking an on-screen grip key selects that cap as the pointer grip; clicking it again releases it.",
+   "entry_points": [
+    "button Keyboard strip: grip key (slot buttons)",
+    "mouse Keyboard strip: click grip key"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:122",
+    "work/experiments/magic600-04/web/app.js:270",
+    "work/experiments/magic600-04/web/keys.js:137"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-66",
+   "name": "Turn with a physical Twist key",
+   "behaviour": "With one Grip active, a Twist key appends the legal word for the H or T axis (Shift inverts) to the chosen destination and phase.",
+   "entry_points": [
+    "key Workbench (all banks): KeyA",
+    "key Workbench (all banks): KeyS",
+    "key Workbench (all banks): KeyD",
+    "key Workbench (all banks): KeyF",
+    "key Workbench (all banks): KeyG",
+    "key Workbench (all banks): KeyH",
+    "key Workbench (all banks): KeyJ"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:19",
+    "work/experiments/magic600-04/web/app.js:36",
+    "work/experiments/magic600-04/web/keys.js:157",
+    "work/experiments/magic600-04/web/keys.js:244",
+    "work/experiments/magic600-04/web/keys.js:246"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=twist"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "state"
+   ],
+   "writes": [
+    "workspace",
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/experiment/command action=twist",
+   "notes": "Default axes: KeyA=H1, KeyS=H2, KeyD=H3, KeyF=T1, KeyG=T2, KeyH=T3, KeyJ=T4. Destination Live commits the turn through the Session; Draft appends to the draft. Rejected while busy, in a dialog, in a text field, or with no single grip."
+  },
+  {
+   "id": "S5-67",
+   "name": "Turn with an on-screen Twist key",
+   "behaviour": "Clicking an on-screen twist button applies that axis to the active grip, inverted when the Inverse toggle or Shift is down.",
+   "entry_points": [
+    "button Keyboard strip: twist key (H1,H2,H3,T1..T4)",
+    "mouse Keyboard strip: click twist key"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:123",
+    "work/experiments/magic600-04/web/app.js:271",
+    "work/experiments/magic600-04/web/keys.js:157"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=twist"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace",
+    "state"
+   ],
+   "writes": [
+    "workspace",
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/experiment/command action=twist"
+  },
+  {
+   "id": "S5-68",
+   "name": "Toggle Inverse for on-screen twists",
+   "behaviour": "Latches inverse mode for on-screen Twist buttons.",
+   "entry_points": [
+    "command inverse-toggle",
+    "button Keyboard strip: Shift Inverse"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:123",
+    "work/experiments/magic600-04/web/app.js:225"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-69",
+   "name": "Reset the camera view",
+   "behaviour": "Resets only the puzzle camera and fit.",
+   "entry_points": [
+    "command camera-home",
+    "button Linked views: Reset view"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:222",
+    "work/experiments/magic600-04/web/index.html:9"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-70",
+   "name": "Locate Current in the puzzle",
+   "behaviour": "Moves the puzzle camera to the first cell of the Current piece.",
+   "entry_points": [
+    "command locate-current",
+    "button Linked views: Locate Current"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:223",
+    "work/experiments/magic600-04/web/index.html:9"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-71",
+   "name": "Locate inspected selection",
+   "behaviour": "Shows the puzzle and focuses the camera on the selected cell or inspected piece.",
+   "entry_points": [
+    "command locate-inspected",
+    "button Local panel: Locate selection"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:224",
+    "work/experiments/magic600-04/web/index.html:9"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-72",
+   "name": "Choose puzzle render mode",
+   "behaviour": "Chooses Adaptive, Full mesh or Point glyphs for the viewport and rebuilds it.",
+   "entry_points": [
+    "control Linked views: Puzzle render mode"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:284",
+    "work/experiments/magic600-04/web/index.html:9"
+   ],
+   "depends_on": [
+    "file work/experiments/magic600-04/web/renderer.js (/web/renderer.js)"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-73",
+   "name": "Pick a sticker in the puzzle",
+   "behaviour": "Clicking a sticker in the puzzle inspects its piece (only for the committed frame); Shift+click also opens the Current dialog.",
+   "entry_points": [
+    "mouse Puzzle viewport: click sticker",
+    "mouse Puzzle viewport: Shift+click sticker"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:151",
+    "work/experiments/magic600-04/web/app.js:152",
+    "work/experiments/magic600-04/web/app.js:155"
+   ],
+   "depends_on": [
+    "route GET /web/renderer.js",
+    "route POST /api/experiment/command action=inspect"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=inspect",
+   "notes": "Camera drag, zoom and any other pointer gestures are implemented in /web/renderer.js, which is not in this shard."
+  },
+  {
+   "id": "S5-74",
+   "name": "Inspect piece from a diagram token",
+   "behaviour": "Clicking or pressing Enter/Space on an identity token in the canvas or Local panel inspects that piece.",
+   "entry_points": [
+    "mouse Diagrams: click identity token",
+    "key Diagrams: Enter",
+    "key Diagrams: Space"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:272",
+    "work/experiments/magic600-04/web/app.js:293",
+    "work/experiments/magic600-04/web/graphics.js:10",
+    "work/experiments/magic600-04/web/graphics.js:30"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=inspect"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=inspect"
+  },
+  {
+   "id": "S5-75",
+   "name": "Inspect fixed position from a diagram",
+   "behaviour": "Clicking or pressing Enter/Space on a position socket inspects that fixed position.",
+   "entry_points": [
+    "mouse Diagrams: click position socket",
+    "key Diagrams: Enter (position)",
+    "key Diagrams: Space (position)"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:273",
+    "work/experiments/magic600-04/web/app.js:293",
+    "work/experiments/magic600-04/web/graphics.js:25",
+    "work/experiments/magic600-04/web/graphics.js:121"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=inspect-position"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=inspect-position"
+  },
+  {
+   "id": "S5-76",
+   "name": "Select a cell in a diagram",
+   "behaviour": "Clicking a cell marker or cell row in a Local, Global or Reference diagram selects it for inspection only; the camera and grip mapping stay unchanged.",
+   "entry_points": [
+    "mouse Diagrams: click cell marker",
+    "key Diagrams: Enter (cell)",
+    "key Diagrams: Space (cell)"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:274",
+    "work/experiments/magic600-04/web/app.js:293",
+    "work/experiments/magic600-04/web/graphics.js:220",
+    "work/experiments/magic600-04/web/graphics.js:266"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-77",
+   "name": "Open Session dialog",
+   "behaviour": "Opens the isolated session panel with undo, redo, checkpoint, restore, reset, export and stop controls and the source note.",
+   "entry_points": [
+    "command session",
+    "button Workbench: Session"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:243",
+    "work/experiments/magic600-04/web/index.html:4"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": null
+  },
+  {
+   "id": "S5-78",
+   "name": "Load E1 practice",
+   "behaviour": "Loads the synthetic E1 practice state through a legal explicit recipe and sets up its block.",
+   "entry_points": [
+    "command fixture-e1",
+    "button Session dialog: Load explicit E1 practice"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:244",
+    "work/experiments/magic600-04/web/app.js:243"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=fixture"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "workspace",
+    "preferences"
+   ],
+   "engine_call": "POST /api/experiment/command action=fixture"
+  },
+  {
+   "id": "S5-79",
+   "name": "Undo committed move",
+   "behaviour": "Undoes the last committed operation.",
+   "entry_points": [
+    "command undo",
+    "button Session dialog: Undo committed"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:245",
+    "work/experiments/magic600-04/web/app.js:243"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=undo"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/experiment/command action=undo"
+  },
+  {
+   "id": "S5-80",
+   "name": "Redo committed move",
+   "behaviour": "Redoes the last undone operation.",
+   "entry_points": [
+    "command redo",
+    "button Session dialog: Redo committed"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:245",
+    "work/experiments/magic600-04/web/app.js:243"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=redo"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state",
+    "journal"
+   ],
+   "writes": [
+    "state",
+    "journal"
+   ],
+   "engine_call": "POST /api/experiment/command action=redo"
+  },
+  {
+   "id": "S5-81",
+   "name": "Save checkpoint",
+   "behaviour": "Saves a named checkpoint of the current state and workspace.",
+   "entry_points": [
+    "command checkpoint",
+    "button Session dialog: Save checkpoint"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:246",
+    "work/experiments/magic600-04/web/app.js:243"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=checkpoint"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "checkpoints"
+   ],
+   "engine_call": "POST /api/experiment/command action=checkpoint"
+  },
+  {
+   "id": "S5-82",
+   "name": "Restore checkpoint",
+   "behaviour": "Restores the selected checkpoint and the work context saved with it.",
+   "entry_points": [
+    "command restore",
+    "button Session dialog: Restore checkpoint"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:247",
+    "work/experiments/magic600-04/web/app.js:243"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=restore"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "checkpoints"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "workspace"
+   ],
+   "engine_call": "POST /api/experiment/command action=restore"
+  },
+  {
+   "id": "S5-83",
+   "name": "Reset puzzle",
+   "behaviour": "Resets the isolated puzzle to solved, keeping the previous solve in a recovery checkpoint.",
+   "entry_points": [
+    "command reset-puzzle",
+    "button Session dialog: Reset puzzle with recovery point"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:248",
+    "work/experiments/magic600-04/web/app.js:243"
+   ],
+   "depends_on": [
+    "route POST /api/experiment/command action=reset"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "state",
+    "journal",
+    "checkpoints"
+   ],
+   "engine_call": "POST /api/experiment/command action=reset"
+  },
+  {
+   "id": "S5-84",
+   "name": "Export work definitions",
+   "behaviour": "Downloads the workspace (macros, templates, banks, keys, filters) as magic600-experimental-work.json.",
+   "entry_points": [
+    "command export-work",
+    "button Session dialog: Export work definitions"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:249",
+    "work/experiments/magic600-04/web/app.js:243",
+    "work/experiments/magic600-04/web/app.js:260"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "workspace"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "Browser download of state.workspace; no server write."
+  },
+  {
+   "id": "S5-85",
+   "name": "Stop the experiment engine",
+   "behaviour": "Shuts the isolated engine down after reading its launch ID; the page reports that the engine stopped.",
+   "entry_points": [
+    "command stop-experiment",
+    "button Session dialog: Stop experiment"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:171",
+    "work/experiments/magic600-04/web/app.js:243"
+   ],
+   "depends_on": [
+    "route GET /api/health",
+    "route POST /api/shutdown"
+   ],
+   "evidence_kind": "source",
+   "reads": [
+    "none"
+   ],
+   "writes": [
+    "none"
+   ],
+   "engine_call": "POST /api/shutdown"
+  },
+  {
+   "id": "S5-86",
+   "name": "Copy selection ID",
+   "behaviour": "Copies the inspected identity ID text to the clipboard.",
+   "entry_points": [
+    "command copy-selection"
+   ],
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:178",
+    "work/experiments/magic600-04/web/app.js:255"
+   ],
+   "depends_on": [],
+   "evidence_kind": "source",
+   "reads": [
+    "state"
+   ],
+   "writes": [
+    "files"
+   ],
+   "engine_call": null,
+   "notes": "Reachable only through the Command index; no default key or button. Writes the browser clipboard."
+  }
+ ],
+ "internal_only": [
+  {
+   "name": "ids.js ID formatting and parsing (formatIdentity, parseId, cellFromSlot, labCellIndex)",
+   "evidence": [
+    "work/experiments/magic600-04/web/ids.js:43",
+    "work/experiments/magic600-04/web/ids.js:68",
+    "work/experiments/magic600-04/web/ids.js:81"
+   ],
+   "reason": "Used by Current, Roles and Capture dialogs and diagrams (command focus-apply, roles-apply, capture-apply)."
+  },
+  {
+   "name": "graphics.js diagram builders (workspaceDiagram, localDiagram, globalDiagram)",
+   "evidence": [
+    "work/experiments/magic600-04/web/graphics.js:55",
+    "work/experiments/magic600-04/web/graphics.js:208",
+    "work/experiments/magic600-04/web/graphics.js:241"
+   ],
+   "reason": "Render the canvas, Local and Reference diagrams; reached through tab, local, global commands."
+  },
+  {
+   "name": "KeyboardRouter input-context guards (focus, blur, IME, hidden window, busy)",
+   "evidence": [
+    "work/experiments/magic600-04/web/keys.js:48",
+    "work/experiments/magic600-04/web/keys.js:87",
+    "work/experiments/magic600-04/web/keys.js:127",
+    "work/experiments/magic600-04/web/keys.js:183"
+   ],
+   "reason": "Reached through any keydown in the window; reset or reject keys, no own entry point."
+  },
+  {
+   "name": "Job polling for long engine operations",
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:54",
+    "work/experiments/magic600-04/web/app.js:56"
+   ],
+   "reason": "Reached from every command that returns a job; polls route GET /api/job/<id>."
+  },
+  {
+   "name": "Canvas focus scroll and overflow hint",
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:45",
+    "work/experiments/magic600-04/web/app.js:118",
+    "work/experiments/magic600-04/web/app.js:297"
+   ],
+   "reason": "Reached from focusing a diagram control or resizing the canvas."
+  },
+  {
+   "name": "Frontend error and busy handling",
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:46",
+    "work/experiments/magic600-04/web/app.js:60",
+    "work/experiments/magic600-04/web/app.js:298"
+   ],
+   "reason": "Reached from any command."
+  },
+  {
+   "name": "style.css layout and responsive rules",
+   "evidence": [
+    "work/experiments/magic600-04/web/style.css:1",
+    "work/experiments/magic600-04/web/style.css:26",
+    "work/experiments/magic600-04/web/style.css:28"
+   ],
+   "reason": "Presentation only; no user-triggered behaviour."
+  },
+  {
+   "name": "Renderer wiring (installRender, initializeRenderer)",
+   "evidence": [
+    "work/experiments/magic600-04/web/app.js:134",
+    "work/experiments/magic600-04/web/app.js:147"
+   ],
+   "reason": "Reached from start() and every snapshot with render data."
+  }
+ ],
+ "unclear": [
+  {
+   "name": "graphics.js blockDiagram and operationDiagram exports",
+   "evidence": [
+    "work/experiments/magic600-04/web/graphics.js:39",
+    "work/experiments/magic600-04/web/graphics.js:148"
+   ],
+   "reason": "Exported but not imported by app.js; no reachable entry point found."
+  },
+  {
+   "name": "globalDiagram angle parameter",
+   "evidence": [
+    "work/experiments/magic600-04/web/graphics.js:241"
+   ],
+   "reason": "No caller passes an angle; rotation is fixed at 0 and no control exists."
+  },
+  {
+   "name": "index.html Orbit button data-command=\"bank\" versus runtime \"orbit\"",
+   "evidence": [
+    "work/experiments/magic600-04/web/index.html:5",
+    "work/experiments/magic600-04/web/app.js:300"
+   ],
+   "reason": "The HTML default is replaced after startup; before startup dispatch ignores input."
+  }
+ ]
+}

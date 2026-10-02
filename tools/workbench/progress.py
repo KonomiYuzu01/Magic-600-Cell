@@ -6,6 +6,8 @@
   python tools/workbench/progress.py track <track> --title <text>
   python tools/workbench/progress.py step <step> --track <track> --title <text> --item <id>:<weight>:<title> [--item ...]
                                          [--acceptance <text> --acceptance-source <path>] [--weight <n>]
+  python tools/workbench/progress.py acceptance <step> --text <text> --source <path>
+  python tools/workbench/progress.py acceptance <step> --clear
   python tools/workbench/progress.py item <step> <item> --title <text> [--weight <n>]
   python tools/workbench/progress.py current <step>
 
@@ -24,7 +26,8 @@ a refused command leaves the file unchanged.
 Parallel work gets its own track. `track` adds one (the first `track` writes
 the default tracks into the file before it). `step` appends a not_started step
 with at least one item; acceptance text needs a repository document as its
-source. `item` appends an item; it moves a done step back to in_progress.
+source. `acceptance` replaces an existing step's text and source together, or
+clears both with `--clear`. `item` appends an item; it moves a done step back to in_progress.
 `current` names the step the status line shows. Titles and acceptance text are
 one line of public English text: no CJK characters and no local paths.
 
@@ -263,6 +266,12 @@ def _text(value: str, what: str, limit: int) -> str:
     return value
 
 
+def _acceptance_source(root: Path, source: str) -> str:
+    if checklist.evidence_kind(source) != "path" or evidence_problem(root, source):
+        raise ProgressRejected(f"acceptance source is not a repository file: {source}")
+    return source
+
+
 def _weight(value) -> int:
     if not checklist._positive(value):
         raise ProgressRejected(f"weight must be an integer from 1 to {checklist.WEIGHT_MAX}")
@@ -324,14 +333,33 @@ def add_step(root: Path, step: str, track: str, title: str, items: list[dict], t
         raise ProgressRejected("--acceptance and --acceptance-source go together")
     if acceptance is not None:
         acceptance = _text(acceptance, "acceptance", ACCEPTANCE_MAX)
-        if checklist.evidence_kind(acceptance_source) != "path" or evidence_problem(root, acceptance_source):
-            raise ProgressRejected(f"acceptance source is not a repository file: {acceptance_source}")
+        acceptance_source = _acceptance_source(root, acceptance_source)
     entry = {"id": step, "track": track, "title": _text(title, "step title", checklist.TITLE_MAX),
              "status": "not_started", "acceptance": acceptance, "acceptance_source": acceptance_source, "blocker": None}
     if weight is not None:
         entry["weight"] = _weight(weight)
     entry["items"] = items
     doc["steps"].append(entry)
+    doc["updated"] = today
+    _write(root, doc, raw)
+
+
+@_transaction
+def set_acceptance(root: Path, step: str, today: str, text: str | None = None,
+                   source: str | None = None, clear: bool = False) -> None:
+    """Replace or clear a step's acceptance text and source, without changing its checklist or status."""
+    doc, raw = _checked(root)
+    found = _step(doc, step)
+    if clear and (text is not None or source is not None):
+        raise ProgressRejected("--clear cannot be combined with --text or --source")
+    if not clear:
+        if text is None or source is None:
+            raise ProgressRejected("--text and --source go together; use --clear to clear acceptance")
+        text = _text(text, "acceptance", ACCEPTANCE_MAX)
+        source = _acceptance_source(root, source)
+    if found["acceptance"] == text and found["acceptance_source"] == source:
+        raise ProgressRejected(f"{step} already has this acceptance")
+    found.update(acceptance=text, acceptance_source=source)
     doc["updated"] = today
     _write(root, doc, raw)
 
@@ -421,6 +449,11 @@ def main(argv=None) -> int:
     step.add_argument("--acceptance")
     step.add_argument("--acceptance-source")
     step.add_argument("--weight", type=int)
+    acceptance = commands.add_parser("acceptance")
+    acceptance.add_argument("step")
+    acceptance.add_argument("--text")
+    acceptance.add_argument("--source")
+    acceptance.add_argument("--clear", action="store_true")
     item = commands.add_parser("item")
     item.add_argument("step")
     item.add_argument("item")
@@ -451,6 +484,9 @@ def main(argv=None) -> int:
             add_step(root, args.step, args.track, args.title, [parse_item(i) for i in args.item], today,
                      args.acceptance, args.acceptance_source, args.weight)
             print(f"step {args.step} added to {args.track}")
+        elif args.command == "acceptance":
+            set_acceptance(root, args.step, today, args.text, args.source, args.clear)
+            print(f"acceptance {args.step} {'cleared' if args.clear else 'set'}")
         elif args.command == "item":
             add_item(root, args.step, args.item, args.title, args.weight, today)
             print(f"item {args.step}/{args.item} added")

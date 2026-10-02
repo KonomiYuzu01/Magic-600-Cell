@@ -1,0 +1,2704 @@
+{
+  "shard": "s1",
+  "functions": [
+    {
+      "id": "S1-1",
+      "name": "Start or resume the local engine",
+      "behaviour": "Loads and verifies the full model, opens or creates the selected session directory, and recovers its saved journal head and preferences. Starts a loopback HTTP listener on the requested port, prints the launch URL and startup progress, optionally publishes launch metadata, and opens a browser unless disabled.",
+      "entry_points": [
+        "cli server.py (no options)",
+        "cli server.py --port",
+        "cli server.py --data",
+        "cli server.py --no-browser",
+        "cli server.py --launch-info"
+      ],
+      "evidence": [
+        "server.py:116",
+        "server.py:117",
+        "server.py:119",
+        "server.py:130",
+        "server.py:134",
+        "server.py:361",
+        "server.py:365",
+        "server.py:370",
+        "session.py:12",
+        "session.py:20",
+        "session.py:28",
+        "session.py:38",
+        "core.py:35",
+        "session_lock.py:5",
+        "tests/test_engine_lifecycle.py:62",
+        "tests/test_engine_lifecycle.py:87"
+      ],
+      "depends_on": [
+        "core.Model.__init__",
+        "session.Session.__init__",
+        "session.Session._recover",
+        "session_lock.SessionLock",
+        "enhanced.Workflow.__init__"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "files",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "protection"
+      ],
+      "writes": [
+        "files",
+        "state",
+        "journal",
+        "checkpoints",
+        "workspace"
+      ],
+      "engine_call": "server.main",
+      "notes": "Port 0 selects an available port. The session model must match; an existing session lock blocks a second engine. A new session starts at labelled identity with a Solved root checkpoint; reopening validates checkpoint and replay hashes. Test source: tests/test_engine_lifecycle.py (owned startup, authenticated readiness and duplicate-session rejection); tests/test_core.py (journal reopening). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-2",
+      "name": "Show engine command-line help",
+      "behaviour": "Displays argparse usage and the engine launch options, then exits before loading the model or opening a session.",
+      "entry_points": [
+        "cli server.py --help",
+        "cli server.py -h"
+      ],
+      "evidence": [
+        "server.py:117"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "none"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": null,
+      "notes": "The help options are supplied by the standard ArgumentParser defaults at this entry point."
+    },
+    {
+      "id": "S1-3",
+      "name": "Stop the local engine",
+      "behaviour": "An authenticated shutdown request with the matching launch ID, or Ctrl+C in the server console, stops the listener and requests analysis cancellation. Shutdown finishes request handlers, pauses and saves the timer, closes the session and its lock, and removes this launch metadata file.",
+      "entry_points": [
+        "route POST /api/shutdown",
+        "key server.py console: Ctrl+C"
+      ],
+      "evidence": [
+        "server.py:138",
+        "server.py:150",
+        "server.py:243",
+        "server.py:370",
+        "server.py:374",
+        "server.py:380",
+        "server.py:383",
+        "server.py:386",
+        "session.py:384",
+        "session_lock.py:14",
+        "tests/test_engine_lifecycle.py:67",
+        "tests/test_engine_lifecycle.py:93"
+      ],
+      "depends_on": [
+        "session.Session.close",
+        "enhanced.Workflow.timer",
+        "session_lock.SessionLock.close"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "workspace",
+        "journal",
+        "files"
+      ],
+      "writes": [
+        "workspace",
+        "journal",
+        "files"
+      ],
+      "engine_call": "POST /api/shutdown",
+      "notes": "SIGTERM and EOF on the owned parent pipe use the same shutdown path. The owning launcher may subsequently use the scoped fallback in engine_process.stop_owned_process; that helper declares no separate user command here. Test source: tests/test_engine_lifecycle.py (wrong-launch rejection and graceful resource release). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-4",
+      "name": "Open the browser interface",
+      "behaviour": "Returns the root browser HTML when the supplied launch token matches; an incorrect token is rejected.",
+      "entry_points": [
+        "route GET /"
+      ],
+      "evidence": [
+        "server.py:169",
+        "server.py:171",
+        "server.py:174"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": null,
+      "notes": "The HTML is read from web/index.html; the interface controls in that file are outside this shard."
+    },
+    {
+      "id": "S1-5",
+      "name": "Load browser scripts and styles",
+      "behaviour": "Serves the five explicitly allowed browser script and stylesheet files with their JavaScript or CSS content types.",
+      "entry_points": [
+        "route GET /web/app.js",
+        "route GET /web/renderer.js",
+        "route GET /web/worker.js",
+        "route GET /web/style.css",
+        "route GET /web/workbench.js"
+      ],
+      "evidence": [
+        "server.py:175",
+        "server.py:177",
+        "server.py:178"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": null,
+      "notes": "Other names and nested paths under /web/ are rejected. Serving these files is listed here because the HTTP entry points are defined in server.py."
+    },
+    {
+      "id": "S1-6",
+      "name": "Load browser model assets",
+      "behaviour": "Serves the explicitly allowed mesh, cell-frame, sticker-to-piece and cell-normal assets as JSON or binary data for the view.",
+      "entry_points": [
+        "route GET /assets/mesh.json",
+        "route GET /assets/mesh_vertices.f32",
+        "route GET /assets/mesh_sticker.u32",
+        "route GET /assets/mesh_centers.f32",
+        "route GET /assets/cell_frames.f32",
+        "route GET /assets/slot_piece.u32",
+        "route GET /assets/cell_normals.f32"
+      ],
+      "evidence": [
+        "server.py:179",
+        "server.py:181",
+        "server.py:183"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": null
+    },
+    {
+      "id": "S1-7",
+      "name": "Read authenticated engine health",
+      "behaviour": "Returns readiness, protocol, process and launch identity, model ID, and interpreter identity for this running engine.",
+      "entry_points": [
+        "route GET /api/health"
+      ],
+      "evidence": [
+        "server.py:184",
+        "server.py:185",
+        "server.py:186",
+        "engine_process.py:112",
+        "tests/test_engine_lifecycle.py:64"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source+test",
+      "reads": [
+        "none"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "GET /api/health",
+      "notes": "Test source: tests/test_engine_lifecycle.py (health identity and interpreter prefix). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-8",
+      "name": "Poll an analysis job",
+      "behaviour": "Returns whether a previously submitted analysis job is complete, followed by its result or error when finished. Unknown job IDs are rejected.",
+      "entry_points": [
+        "route GET /api/job/<id>"
+      ],
+      "evidence": [
+        "server.py:188",
+        "server.py:191",
+        "server.py:192",
+        "server.py:193",
+        "tests/test_log_workflow.py:116"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source+test",
+      "reads": [
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "GET /api/job/<id>",
+      "notes": "The worker routes return a job ID instead of an immediate result; one unfinished analysis job is allowed at a time. Workspace denotes transient pending previews, job state and timer state where those occur in this shard. Test source: tests/test_log_workflow.py (HTTP job polling for scramble and import). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-9",
+      "name": "Request analysis cancellation",
+      "behaviour": "Sets the cooperative cancellation event for the analysis worker and acknowledges that cancellation was requested. The worker observes cancellation at its next engine cancellation check.",
+      "entry_points": [
+        "route POST /api/stop-job"
+      ],
+      "evidence": [
+        "server.py:247",
+        "server.py:248",
+        "server.py:346",
+        "server.py:347",
+        "core.py:93"
+      ],
+      "depends_on": [
+        "core.Model.check_cancel"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "POST /api/stop-job"
+    },
+    {
+      "id": "S1-10",
+      "name": "Read full session status",
+      "behaviour": "Returns the current journal head, revision and full-state hash, exact solved progress per orbit, move and transaction totals, preferences, inspection and focus, checkpoint names, pending preview, and undo/redo availability.",
+      "entry_points": [
+        "route GET /api/status"
+      ],
+      "evidence": [
+        "server.py:195",
+        "session.py:324",
+        "session.py:326",
+        "core.py:270",
+        "tests/test_log_workflow.py:129"
+      ],
+      "depends_on": [
+        "core.PuzzleState.progress",
+        "session.Session.inspection_info",
+        "session.Session.focus_info"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Session.status",
+      "notes": "Progress distinguishes labelled solution, displaced positions, stationary orientation errors and color solution. The reply retains the literal version value 0.2.0 from this source. Test source: tests/test_log_workflow.py (status before and after reset/import and reopening). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-11",
+      "name": "Read canonical puzzle structure",
+      "behaviour": "Returns canonical color and vertex numbering, cell adjacency, vertex incidence and coarse four-dimensional cell geometry, including fixed center positions and the definitions of piece layers.",
+      "entry_points": [
+        "route GET /api/structure"
+      ],
+      "evidence": [
+        "server.py:132",
+        "server.py:187",
+        "core.py:246",
+        "core.py:250",
+        "core.py:251",
+        "core.py:252"
+      ],
+      "depends_on": [
+        "core.Model.structure"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Model.structure"
+    },
+    {
+      "id": "S1-12",
+      "name": "Read the orbit seed catalogue",
+      "behaviour": "Lists every atlas orbit with its rank, sticker and piece counts, orientation information, seed length and formula, and reference collateral orbits.",
+      "entry_points": [
+        "route GET /api/catalog"
+      ],
+      "evidence": [
+        "server.py:198",
+        "core.py:50"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "GET /api/catalog"
+    },
+    {
+      "id": "S1-13",
+      "name": "Browse journal history",
+      "behaviour": "Returns the most recent 100 journal events, including their parent branches, notes, assistance labels, primitive and star counts, post-state hashes and timestamps. A before cursor retrieves older events and the reply identifies the current head.",
+      "entry_points": [
+        "route GET /api/history"
+      ],
+      "evidence": [
+        "server.py:196",
+        "enhanced.py:20",
+        "enhanced.py:22",
+        "enhanced.py:23"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "journal"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Workflow.history",
+      "notes": "The HTTP route supplies only the before query parameter; the backing method also has an internal limit argument."
+    },
+    {
+      "id": "S1-14",
+      "name": "Check out a journal branch",
+      "behaviour": "Reconstructs a requested journal head from a checkpoint and chronological legal replay, validating every recorded hash before publishing it. Selects that head while retaining current preferences, clearing the pending preview and redo stack, and preserving other branches.",
+      "entry_points": [
+        "route POST /api/checkout"
+      ],
+      "evidence": [
+        "server.py:264",
+        "server.py:341",
+        "enhanced.py:24",
+        "enhanced.py:34",
+        "enhanced.py:36",
+        "enhanced.py:42",
+        "tests/test_log_workflow.py:61"
+      ],
+      "depends_on": [
+        "core.Model.net",
+        "core.PuzzleState",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "workspace"
+      ],
+      "engine_call": "Workflow.checkout",
+      "notes": "Test source: tests/test_log_workflow.py (checkout of a verified imported branch); tests/test_native_snapshot.py (checkout of the root). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-15",
+      "name": "Undo the current transaction",
+      "behaviour": "Applies the inverse of the complete current recipe and validates the recorded pre-state hash, then selects its parent journal head. Preserves the event as a redo choice and clears the pending preview.",
+      "entry_points": [
+        "route POST /api/undo"
+      ],
+      "evidence": [
+        "server.py:305",
+        "session.py:187",
+        "session.py:190",
+        "session.py:192",
+        "tests/test_core.py:56"
+      ],
+      "depends_on": [
+        "core.invrecipe",
+        "core.Model.net",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "workspace"
+      ],
+      "engine_call": "Session.undo",
+      "notes": "Test source: tests/test_core.py (undo/redo restores exact journal states). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-16",
+      "name": "Redo a journal transaction",
+      "behaviour": "Replays the remembered redo transaction or the sole child of the current head, checking its ancestry and full-state hashes. If no remembered choice exists and the branch is ambiguous, reports that a redo branch must be chosen in History.",
+      "entry_points": [
+        "route POST /api/redo"
+      ],
+      "evidence": [
+        "server.py:306",
+        "session.py:195",
+        "session.py:198",
+        "session.py:200",
+        "session.py:205",
+        "session.py:208",
+        "tests/test_core.py:56"
+      ],
+      "depends_on": [
+        "core.Model.net",
+        "S1-14",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "workspace"
+      ],
+      "engine_call": "Session.redo",
+      "notes": "Test source: tests/test_core.py (undo/redo); tests/test_mpult_log.py (imported redo tail). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-17",
+      "name": "Save a named checkpoint",
+      "behaviour": "Saves the current labelled state, hash, journal head and preferences under a supplied or timestamped name, returning the name and state identity. A repeated name replaces its snapshot, while Solved root cannot be overwritten with an unsolved journal head.",
+      "entry_points": [
+        "route POST /api/checkpoint"
+      ],
+      "evidence": [
+        "server.py:307",
+        "session.py:54",
+        "session.py:56",
+        "session.py:58",
+        "session.py:59",
+        "tests/test_core.py:55"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "protection"
+      ],
+      "writes": [
+        "checkpoints",
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "Session.checkpoint",
+      "notes": "Test source: tests/test_core.py (named checkpoint and subsequent recovery). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-18",
+      "name": "Restore a checkpoint",
+      "behaviour": "Validates a saved checkpoint and restores its complete labelled state, journal head and saved preferences. Clears pending preview and redo state and increases the session revision.",
+      "entry_points": [
+        "route POST /api/restore"
+      ],
+      "evidence": [
+        "server.py:308",
+        "session.py:61",
+        "session.py:64",
+        "session.py:66",
+        "session.py:67",
+        "tests/test_core.py:58",
+        "tests/test_piece_filters.py:122"
+      ],
+      "depends_on": [
+        "core.PuzzleState",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "preferences",
+        "protection",
+        "workspace"
+      ],
+      "engine_call": "Session.restore",
+      "notes": "Test source: tests/test_core.py (state restoration); tests/test_piece_filters.py (saved filter and context-pin restoration). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-19",
+      "name": "Reset to solved with a recovery checkpoint",
+      "behaviour": "Returns to the labelled solved root and clears pending preview and redo state without deleting the prior journal branch. Creates a Before reset checkpoint and retains current preferences and timer, optionally saving a validated current camera supplied with the request.",
+      "entry_points": [
+        "route POST /api/reset"
+      ],
+      "evidence": [
+        "server.py:261",
+        "session.py:78",
+        "session.py:80",
+        "session.py:103",
+        "session.py:104",
+        "session.py:108",
+        "log_io.py:19",
+        "tests/test_log_workflow.py:38"
+      ],
+      "depends_on": [
+        "core.PuzzleState",
+        "log_io.validate_camera",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "engine_call": "Session.reset",
+      "notes": "The preference_changes and workflow_meta keyword arguments support callers in other shards; this HTTP entry point forwards only camera. Test source: tests/test_log_workflow.py (recoverable reset, unchanged preferences/timer, write rollback and cancellation). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-20",
+      "name": "Back up the session database",
+      "behaviour": "Creates a timestamped SQLite database backup in the session directory and returns its path and byte count.",
+      "entry_points": [
+        "route POST /api/backup"
+      ],
+      "evidence": [
+        "server.py:309",
+        "session.py:381",
+        "session.py:382",
+        "session.py:383"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "journal",
+        "checkpoints",
+        "preferences",
+        "protection"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": "Session.backup"
+    },
+    {
+      "id": "S1-21",
+      "name": "Read session move and assistance statistics",
+      "behaviour": "Counts scramble and solution primitives, star operations, transactions and assisted transactions along the current branch, and includes the explicit session timer.",
+      "entry_points": [
+        "route GET /api/stats"
+      ],
+      "evidence": [
+        "server.py:197",
+        "enhanced.py:45",
+        "enhanced.py:47",
+        "enhanced.py:49",
+        "enhanced.py:53"
+      ],
+      "depends_on": [
+        "S1-22"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "journal",
+        "workspace"
+      ],
+      "writes": [
+        "journal"
+      ],
+      "engine_call": "Workflow.stats",
+      "notes": "The included timer may persist its elapsed value when at least five seconds have passed since the previous timer save."
+    },
+    {
+      "id": "S1-22",
+      "name": "Read or heartbeat the session timer",
+      "behaviour": "Returns elapsed seconds and whether the explicitly controlled session timer is running, including thinking time. Persists its current value when at least five seconds have passed since the previous save.",
+      "entry_points": [
+        "route POST /api/timer action=status (default)",
+        "route POST /api/timer action=heartbeat"
+      ],
+      "evidence": [
+        "server.py:265",
+        "enhanced.py:10",
+        "enhanced.py:14",
+        "enhanced.py:15",
+        "enhanced.py:16",
+        "enhanced.py:19"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace",
+        "journal"
+      ],
+      "writes": [
+        "workspace",
+        "journal"
+      ],
+      "engine_call": "Workflow.timer",
+      "notes": "status and heartbeat execute the same branch of the backing method; neither starts or pauses the timer."
+    },
+    {
+      "id": "S1-23",
+      "name": "Start the session timer",
+      "behaviour": "Starts elapsed-time accumulation if the timer is paused, persists the current total, and returns elapsed seconds and running status. Starting an already running timer is idempotent.",
+      "entry_points": [
+        "route POST /api/timer action=start"
+      ],
+      "evidence": [
+        "server.py:265",
+        "enhanced.py:12",
+        "enhanced.py:16",
+        "enhanced.py:19"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace",
+        "journal"
+      ],
+      "writes": [
+        "workspace",
+        "journal"
+      ],
+      "engine_call": "Workflow.timer"
+    },
+    {
+      "id": "S1-24",
+      "name": "Pause the session timer",
+      "behaviour": "Adds the current running interval to the total, pauses accumulation, persists the total, and returns elapsed seconds and running status. Pausing an already paused timer preserves its total.",
+      "entry_points": [
+        "route POST /api/timer action=pause"
+      ],
+      "evidence": [
+        "server.py:265",
+        "enhanced.py:13",
+        "enhanced.py:16",
+        "enhanced.py:19",
+        "tests/test_log_workflow.py:40"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source+test",
+      "reads": [
+        "workspace",
+        "journal"
+      ],
+      "writes": [
+        "workspace",
+        "journal"
+      ],
+      "engine_call": "Workflow.timer",
+      "notes": "Test source: tests/test_log_workflow.py (timer pause and preservation through reset). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-25",
+      "name": "Save preferences and orbit protection",
+      "behaviour": "Updates and durably saves the supplied allowed preferences, including active orbit, filter rules, optional extra context, selected physical identity and protected orbit list. Validates orbit and piece IDs, filter expressions, named sets, saved macro recipes, inspection and focus before publishing the new preferences, and returns session status.",
+      "entry_points": [
+        "route POST /api/prefs"
+      ],
+      "evidence": [
+        "server.py:252",
+        "session.py:110",
+        "session.py:115",
+        "session.py:119",
+        "session.py:123",
+        "session.py:127",
+        "session.py:131",
+        "session.py:135",
+        "session.py:141",
+        "session.py:148",
+        "session.py:165",
+        "tests/test_core.py:49",
+        "tests/test_piece_filters.py:126"
+      ],
+      "depends_on": [
+        "core.Filters.styles",
+        "core.Model.normalize",
+        "session.Session.validate_inspection",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "protection",
+        "journal"
+      ],
+      "engine_call": "Session.save_prefs",
+      "notes": "All accepted keys are orbit, rules, pin_safety, protected, selected, inspection, focus_color, camera, keybinds, presets, view, filter_sequence, sequence_index, layout, bookmarks, named_sets, macro_library, assistance_profile and input_profile. This endpoint stores the latter declarative payloads; it does not itself implement key dispatch, window layout, bookmark navigation or macro execution. protected affects preview conflict reporting and commit refusal; pin_safety adds buffer, preview-support and selection display context. Multiple preference fields can be updated together. Test source: tests/test_core.py (protection blocks commit); tests/test_piece_filters.py (filter/pin semantics, preference validation and durable write failure). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-26",
+      "name": "Set or clear physical-cell focus",
+      "behaviour": "Persists a canonical focus color C1..C600, or null to clear focus, and returns its physical cell and fixed center through session status.",
+      "entry_points": [
+        "route POST /api/focus"
+      ],
+      "evidence": [
+        "server.py:253",
+        "server.py:255",
+        "session.py:129",
+        "session.py:279",
+        "session.py:283"
+      ],
+      "depends_on": [
+        "S1-25",
+        "S1-10"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "Session.focus"
+    },
+    {
+      "id": "S1-27",
+      "name": "Select the occupant of a piece position",
+      "behaviour": "Returns the piece occupying an explicit lab position and saves its physical identity as the selected piece, so the selection follows that identity through subsequent moves. This explicit selection endpoint can select a piece hidden by the viewport filter.",
+      "entry_points": [
+        "route POST /api/select"
+      ],
+      "evidence": [
+        "server.py:328",
+        "server.py:329",
+        "core.py:279",
+        "core.py:434",
+        "tests/test_native_selection_http.py:51"
+      ],
+      "depends_on": [
+        "core.PuzzleState.piece",
+        "S1-25"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "PuzzleState.piece; Session.save_prefs",
+      "notes": "Test source: tests/test_native_selection_http.py (explicit hidden-piece selection); tests/test_piece_filters.py (selection follows identity). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-28",
+      "name": "Select a visible native sticker piece",
+      "behaviour": "Maps a native sticker through the verified bridge, returns its occupying piece and saves that physical identity as the selection. Rejects hits that are outside the interactive filter even if display context might show them.",
+      "entry_points": [
+        "route POST /api/native/select"
+      ],
+      "evidence": [
+        "server.py:273",
+        "server.py:275",
+        "server.py:277",
+        "server.py:278",
+        "server.py:279",
+        "tests/test_native_selection_http.py:33",
+        "tests/test_native_selection_http.py:45"
+      ],
+      "depends_on": [
+        "S1-43",
+        "session.Session.interactive_styles",
+        "core.PuzzleState.piece",
+        "S1-25"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "Session.interactive_styles; PuzzleState.piece; Session.save_prefs",
+      "notes": "Test source: tests/test_native_selection_http.py (synthetic native mapping and hidden-hit rejection; no GPU execution). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-29",
+      "name": "Inspect the home centers of a clicked native piece",
+      "behaviour": "For a visible native hit from the current state and bridge profile, identifies the occupying physical piece and returns its home colors, center positions and current location. Saves a cyan home-center annotation and focuses the clicked physical cell without changing the original selection or filter.",
+      "entry_points": [
+        "route POST /api/native/inspect gesture=home-centers"
+      ],
+      "evidence": [
+        "server.py:280",
+        "server.py:282",
+        "server.py:283",
+        "server.py:286",
+        "server.py:288",
+        "session.py:255",
+        "session.py:257",
+        "session.py:265",
+        "session.py:268",
+        "session.py:276",
+        "session.py:235"
+      ],
+      "depends_on": [
+        "S1-43",
+        "session.Session.interactive_styles",
+        "core.PuzzleState.piece",
+        "S1-25"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "Session.inspect"
+    },
+    {
+      "id": "S1-30",
+      "name": "Inspect the piece required at a clicked native destination",
+      "behaviour": "For a visible native hit from the current state and bridge profile, locates the physical identity required at that destination and adds a yellow annotation to its current piece. Returns buffer analysis when the destination is eligible, reports why it is unavailable for fixed centers or buffers, and saves the clicked physical-cell focus.",
+      "entry_points": [
+        "route POST /api/native/inspect gesture=required-piece"
+      ],
+      "evidence": [
+        "server.py:280",
+        "server.py:282",
+        "server.py:288",
+        "session.py:260",
+        "session.py:262",
+        "session.py:265",
+        "session.py:273",
+        "session.py:276",
+        "session.py:236"
+      ],
+      "depends_on": [
+        "S1-43",
+        "session.Session.interactive_styles",
+        "core.PuzzleState.piece",
+        "S1-36",
+        "S1-25"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "Session.inspect"
+    },
+    {
+      "id": "S1-31",
+      "name": "Clear the inspection annotation",
+      "behaviour": "Clears the saved inspection context and its special annotation, returning session status with the existing focus retained.",
+      "entry_points": [
+        "route POST /api/inspection/clear"
+      ],
+      "evidence": [
+        "server.py:260",
+        "session.py:278",
+        "session.py:232"
+      ],
+      "depends_on": [
+        "S1-25",
+        "S1-10"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "Session.clear_inspection"
+    },
+    {
+      "id": "S1-32",
+      "name": "Inspect the occupant of a lab position",
+      "behaviour": "Returns the position and occupant identity, orbit, home/current/cap cells, sticker slots and labels, and whether its position, full labelled solution and orientation are correct.",
+      "entry_points": [
+        "route POST /api/piece"
+      ],
+      "evidence": [
+        "server.py:311",
+        "core.py:279",
+        "core.py:281"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "PuzzleState.piece"
+    },
+    {
+      "id": "S1-33",
+      "name": "Locate a physical piece by identity",
+      "behaviour": "Finds the current position of a supplied physical piece identity and returns its complete piece information.",
+      "entry_points": [
+        "route POST /api/track-piece"
+      ],
+      "evidence": [
+        "server.py:312",
+        "server.py:314",
+        "server.py:315",
+        "core.py:262",
+        "core.py:279"
+      ],
+      "depends_on": [
+        "core.PuzzleState.piece"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "PuzzleState.piece"
+    },
+    {
+      "id": "S1-34",
+      "name": "Find the piece required at a destination",
+      "behaviour": "Treats the supplied destination as its required home identity, locates that identity in the current state, and returns the piece information at its current position.",
+      "entry_points": [
+        "route POST /api/find-required"
+      ],
+      "evidence": [
+        "server.py:316",
+        "server.py:318",
+        "server.py:319",
+        "core.py:262",
+        "core.py:279"
+      ],
+      "depends_on": [
+        "core.PuzzleState.piece"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "PuzzleState.piece"
+    },
+    {
+      "id": "S1-35",
+      "name": "Navigate unfinished positions in an orbit",
+      "behaviour": "Returns the next or previous fully unsolved position in the requested orbit relative to the supplied position, wrapping at either end. Reports completion if no unsolved positions remain.",
+      "entry_points": [
+        "route POST /api/next-piece direction=1",
+        "route POST /api/next-piece direction=-1"
+      ],
+      "evidence": [
+        "server.py:320",
+        "server.py:322",
+        "server.py:324",
+        "server.py:326",
+        "server.py:327"
+      ],
+      "depends_on": [
+        "core.PuzzleState.piece"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "PuzzleState.piece"
+    },
+    {
+      "id": "S1-36",
+      "name": "Analyse fixed buffers and target setup frames",
+      "behaviour": "Returns the fixed A/B buffer pieces, an explicit or automatically chosen nonbuffer target, its required occupant, guarding cap cells and reachable setup-frame candidates with paths and witness lengths. Includes tree coverage/depth, reference seed collateral and current protection information, with a full preview still needed to certify actual conflicts.",
+      "entry_points": [
+        "route POST /api/buffers"
+      ],
+      "evidence": [
+        "server.py:310",
+        "session.py:319",
+        "session.py:320",
+        "session.py:321",
+        "core.py:329",
+        "core.py:333",
+        "core.py:339",
+        "core.py:340"
+      ],
+      "depends_on": [
+        "core.Planner.buffer_info",
+        "core.PuzzleState.piece",
+        "core.Model.path"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Session.buffer_info",
+      "notes": "Without a target, displaced unfinished nonbuffer positions are preferred, then other unfinished positions, then the reference third position. Arbitrary buffer relocation is reported as unimplemented."
+    },
+    {
+      "id": "S1-37",
+      "name": "Preview a Boolean visibility filter",
+      "behaviour": "Evaluates a proposed expression or ordered style-rule list for the current active orbit without applying it. Returns matched and visible piece/sticker counts, additions and removals, orbit breakdowns and a context hash, excluding display pins and inspection annotations.",
+      "entry_points": [
+        "route POST /api/filter-preview"
+      ],
+      "evidence": [
+        "server.py:256",
+        "session.py:297",
+        "session.py:300",
+        "session.py:302",
+        "session.py:307",
+        "session.py:311",
+        "core.py:347",
+        "core.py:380",
+        "core.py:439"
+      ],
+      "depends_on": [
+        "core.Filters.parse",
+        "core.Filters.styles",
+        "session.Session.filter_context"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Session.filter_preview",
+      "notes": "The expression language supplies Boolean !/not, &/and, |/or and parentheses; O<n> and rank/stickers/orbit comparisons; set(name); cap/shell; canonical color/cell/adjacent/layer/home_layer predicates; legacy home/current/home_has/current_has; piece/position; all/everything, none/nothing, active, unsolved, solved, position_correct, position_wrong, orientation_wrong, color_wrong, selected, buffer, protected and preview/preview_support. Canonical color arguments use C1..C600 and layer IDs L<n>; legacy cell arguments are zero-based. First matching rule wins, with hide, ghost, solid and highlight styles."
+    },
+    {
+      "id": "S1-38",
+      "name": "Apply a previously previewed filter",
+      "behaviour": "Rejects a stale filter context, validates the proposed rules again, and durably applies them with extra display context disabled. Returns session status while retaining all mechanical labels.",
+      "entry_points": [
+        "route POST /api/filter-apply"
+      ],
+      "evidence": [
+        "server.py:257",
+        "server.py:258",
+        "server.py:259",
+        "session.py:315",
+        "session.py:316",
+        "session.py:317",
+        "session.py:318"
+      ],
+      "depends_on": [
+        "S1-37",
+        "S1-25",
+        "S1-10"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "Session.filter_apply"
+    },
+    {
+      "id": "S1-39",
+      "name": "List legal cap rotation grips",
+      "behaviour": "For a requested cell, returns all eleven nonidentity rotations grouped into seven visible axes with forward/inverse words, H/T labels, orders and rotation-plane data.",
+      "entry_points": [
+        "route GET /api/grips"
+      ],
+      "evidence": [
+        "server.py:199",
+        "grips.py:4",
+        "grips.py:9",
+        "grips.py:17",
+        "grips.py:21",
+        "grips.py:22",
+        "grips.py:28",
+        "grips.py:29"
+      ],
+      "depends_on": [
+        "grips.grips"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "grips",
+      "notes": "The cell query is zero-based and defaults to 0; each returned word is expressed in legal lab primitive IDs."
+    },
+    {
+      "id": "S1-40",
+      "name": "Read a cell cap membership mask",
+      "behaviour": "Returns one byte per lab sticker indicating whether its whole physical piece belongs to the requested cell cap.",
+      "entry_points": [
+        "route GET /api/cap"
+      ],
+      "evidence": [
+        "server.py:200",
+        "core.py:201",
+        "core.py:204"
+      ],
+      "depends_on": [
+        "core.Model.cap_mask"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Model.cap_mask",
+      "notes": "The cell query is zero-based and defaults to 0."
+    },
+    {
+      "id": "S1-41",
+      "name": "Read all mechanical sticker labels",
+      "behaviour": "Returns all current lab sticker labels as a little-endian unsigned 32-bit binary array, independent of visibility.",
+      "entry_points": [
+        "route GET /api/labels"
+      ],
+      "evidence": [
+        "server.py:217",
+        "tests/test_log_workflow.py:129",
+        "tests/test_log_workflow.py:132"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "GET /api/labels",
+      "notes": "Test source: tests/test_log_workflow.py (exact full label array through reset/restore/import and reopening). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-42",
+      "name": "Read lab render styles",
+      "behaviour": "Returns one style byte per lab sticker after ordered filtering, optional buffer/preview/selection context and inspection annotations. Style changes affect display rather than mechanical labels.",
+      "entry_points": [
+        "route GET /api/styles"
+      ],
+      "evidence": [
+        "server.py:218",
+        "session.py:228",
+        "session.py:232",
+        "session.py:235",
+        "core.py:439",
+        "core.py:447",
+        "tests/test_piece_filters.py:115"
+      ],
+      "depends_on": [
+        "session.Session.render_styles",
+        "core.Filters.styles"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Session.render_styles",
+      "notes": "Style codes are hide 0, ghost 1, solid 2, highlight 3, buffer/home-center context 4, preview context 5 and selected/required-piece context 6. The native interactive mask is evaluated without these extra display annotations and pins. Test source: tests/test_piece_filters.py (style priority, exact visibility and optional pins). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-43",
+      "name": "Verify and connect the native bridge",
+      "behaviour": "Submits the native geometry to bridge verification, installs the returned native profile for this engine and reports matched sticker/generator counts, profile hash and verification time.",
+      "entry_points": [
+        "route POST /api/native/handshake"
+      ],
+      "evidence": [
+        "server.py:16",
+        "server.py:235",
+        "server.py:270",
+        "server.py:271",
+        "server.py:272",
+        "server.py:341",
+        "tests/test_native_bridge.py:50",
+        "tests/test_native_bridge.py:51",
+        "tests/test_native_selection_http.py:39"
+      ],
+      "depends_on": [
+        "native_bridge.verify_native"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "workspace",
+        "files"
+      ],
+      "engine_call": "native_bridge.verify_native",
+      "notes": "native_bridge.verify_native is outside the shard source scope; the route and dependency are established here without inventing its internal checks. The test source confirms a persisted native_profile.json and a complete synthetic mapping; no actual native/GPU run was performed. Test source: tests/test_native_bridge.py (synthetic bridge and persisted profile); tests/test_native_selection_http.py (HTTP handshake). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-44",
+      "name": "Read the verified native mapping",
+      "behaviour": "After a successful handshake, returns native-to-lab sticker and face mappings with profile hash and matched sticker/generator counts.",
+      "entry_points": [
+        "route GET /api/native/map"
+      ],
+      "evidence": [
+        "server.py:201",
+        "server.py:202",
+        "server.py:203"
+      ],
+      "depends_on": [
+        "S1-43"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "GET /api/native/map"
+    },
+    {
+      "id": "S1-45",
+      "name": "Read native palette colors",
+      "behaviour": "After bridge verification, returns the current complete sticker colors in native sticker and face order as a little-endian signed 16-bit binary array.",
+      "entry_points": [
+        "route GET /api/native/colors"
+      ],
+      "evidence": [
+        "server.py:210",
+        "server.py:212",
+        "server.py:213",
+        "server.py:214",
+        "server.py:216"
+      ],
+      "depends_on": [
+        "S1-43"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "GET /api/native/colors"
+    },
+    {
+      "id": "S1-46",
+      "name": "Read native render styles",
+      "behaviour": "After bridge verification, returns the complete lab render-style array remapped to native sticker order.",
+      "entry_points": [
+        "route GET /api/native/styles"
+      ],
+      "evidence": [
+        "server.py:210",
+        "server.py:212",
+        "server.py:215",
+        "server.py:216"
+      ],
+      "depends_on": [
+        "S1-43",
+        "S1-42"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Session.render_styles"
+    },
+    {
+      "id": "S1-47",
+      "name": "Read an atomic native state snapshot",
+      "behaviour": "Returns session status together with native colors, display styles and the interactive mask under one session lock, including per-cell progress and eligibility summaries. Protocol 2 supplies state/view revision hashes and either complete arrays or a delta from a retained revision; protocol 1 supplies the complete arrays.",
+      "entry_points": [
+        "route GET /api/native/snapshot"
+      ],
+      "evidence": [
+        "server.py:24",
+        "server.py:36",
+        "server.py:38",
+        "server.py:39",
+        "server.py:43",
+        "server.py:47",
+        "server.py:51",
+        "server.py:204",
+        "server.py:209",
+        "server.py:335",
+        "server.py:339",
+        "session.py:284",
+        "tests/test_native_snapshot_cache.py:28",
+        "tests/test_native_snapshot_cache.py:35",
+        "tests/test_native_snapshot_cache.py:39"
+      ],
+      "depends_on": [
+        "S1-43",
+        "S1-10",
+        "S1-42",
+        "session.Session.interactive_styles",
+        "session.Session.cell_status"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "NativeSnapshotCache.read",
+      "notes": "The protocol query defaults to 1; protocol=2 accepts since=<revision>, falls back to a full snapshot for an unknown or dense base, and keeps up to four immutable delta bases. Successfully dispatched POST commands may also request a protocol-2 native_snapshot by including native_since; that reply option is shared by the existing command routes. Cell summaries include active solved/total, visible total/unsolved, eligible solved/total, buffer cells, selected cells and focus. Test source: tests/test_native_snapshot_cache.py (synthetic immutable maps, full/delta snapshots and protocol 1); tests/test_native_snapshot.py (atomic HTTP snapshots under concurrent state/filter changes). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-48",
+      "name": "Commit a native turn batch",
+      "behaviour": "Checks the native view pre-state and verified bridge, translates 1..10,000 supported native move tokens into a chronological lab word, and previews then commits that word as one journal transaction. Current orbit protection is enforced by commit; an identity-only translated batch returns status without a new transaction.",
+      "entry_points": [
+        "route POST /api/native/turn"
+      ],
+      "evidence": [
+        "server.py:289",
+        "server.py:291",
+        "server.py:293",
+        "server.py:294",
+        "server.py:295",
+        "server.py:298",
+        "server.py:299",
+        "server.py:300",
+        "tests/test_native_snapshot.py:45"
+      ],
+      "depends_on": [
+        "S1-43",
+        "S1-49",
+        "S1-51",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "engine_call": "Session.preview; Session.commit",
+      "notes": "The read test exercises stale native-turn rejection; successful token translation and the single-transaction path are established by the source. Test source: tests/test_native_snapshot.py (stale pre-state rejection). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-49",
+      "name": "Preview a legal word or witnessed star recipe",
+      "behaviour": "Computes the complete source-to-destination effect of a legal recipe without applying it and stores a pending preview token. Reports pre/post full-state hashes, primitive/star counts, complete moved support by orbit, protected-orbit conflicts, certificate identity and timing.",
+      "entry_points": [
+        "route POST /api/preview"
+      ],
+      "evidence": [
+        "server.py:301",
+        "server.py:341",
+        "session.py:151",
+        "session.py:153",
+        "session.py:155",
+        "session.py:159",
+        "core.py:165",
+        "core.py:182",
+        "tests/test_core.py:49",
+        "tests/test_core.py:55"
+      ],
+      "depends_on": [
+        "core.Model.net",
+        "core.Model.support"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "Session.preview",
+      "notes": "Recipes contain 1..256 word or star steps. Word moves are primitive IDs in ±1..±1200, with 1..100,000 moves per word; stars select orbit, transported frame node and sign. Total witness expansion is limited to 3,000,000 primitives per preview; no collateral is removed. A new preview replaces the earlier pending preview. Test source: tests/test_core.py (legal word/star previews and full certificate verification). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-50",
+      "name": "Generate assisted orbit insertion previews",
+      "behaviour": "Chooses legal position or orientation insertions for a requested orbit, using an optional explicit first target and a batch of up to 50 insertions. Returns the combined full-effect preview and explanatory plan, or reports the orbit complete and clears the pending preview if no insertion remains.",
+      "entry_points": [
+        "route POST /api/suggest"
+      ],
+      "evidence": [
+        "server.py:302",
+        "server.py:341",
+        "session.py:212",
+        "session.py:218",
+        "session.py:221",
+        "session.py:223",
+        "session.py:226",
+        "core.py:294",
+        "core.py:303",
+        "core.py:313",
+        "core.py:317",
+        "core.py:320"
+      ],
+      "depends_on": [
+        "core.Planner.next",
+        "core.Model.star_net",
+        "S1-49"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "Session.suggest",
+      "notes": "Without an explicit target, the planner selects the first eligible displaced or misoriented nonbuffer piece; later batch targets are also automatic. Position insertion precedes orientation transfer and buffer orientation/residual correction. This records existing 0.4 behavior without a disposition for 1.0."
+    },
+    {
+      "id": "S1-51",
+      "name": "Commit the current certified preview",
+      "behaviour": "Requires the current token, unchanged preview revision/head/full-state hash and no protected orbit in the complete support before recording and applying the pending recipe. Preserves journal branches, saves an automatic snapshot every fiftieth transaction, clears preview/redo state and returns updated status.",
+      "entry_points": [
+        "route POST /api/commit"
+      ],
+      "evidence": [
+        "server.py:303",
+        "session.py:161",
+        "session.py:163",
+        "session.py:164",
+        "session.py:165",
+        "session.py:178",
+        "session.py:180",
+        "session.py:183",
+        "session.py:185",
+        "tests/test_core.py:49",
+        "tests/test_core.py:54"
+      ],
+      "depends_on": [
+        "S1-49",
+        "core.PuzzleState",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "engine_call": "Session.commit",
+      "notes": "The HTTP entry point supplies only token. The preference_changes and event_context keyword arguments are supporting interfaces for callers in other shards. Test source: tests/test_core.py (protected refusal, committed full-state hashes and branch preservation). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-52",
+      "name": "Discard the pending macro preview",
+      "behaviour": "Clears the pending recipe and token and returns session status without applying its effect.",
+      "entry_points": [
+        "route POST /api/cancel"
+      ],
+      "evidence": [
+        "server.py:304"
+      ],
+      "depends_on": [
+        "S1-10"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "POST /api/cancel"
+    },
+    {
+      "id": "S1-53",
+      "name": "Download a complete macro certificate",
+      "behaviour": "Downloads the current preview certificate including explicit source/destination arrays and the expanded finite legal lab word. Rejects the request when no preview exists.",
+      "entry_points": [
+        "route GET /api/certificate"
+      ],
+      "evidence": [
+        "server.py:219",
+        "session.py:327",
+        "session.py:330",
+        "core.py:193",
+        "tests/test_core.py:55"
+      ],
+      "depends_on": [
+        "core.Model.expand",
+        "S1-49"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Session.certificate",
+      "notes": "The attachment is macro_certificate.c600.json and explicitly carries native_windows_equivalence=false. Test source: tests/test_core.py (independent certificate verification). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-54",
+      "name": "Preview the inverse of a recipe",
+      "behaviour": "Reverses a supplied recipe and inverts each word or star, then creates a full-effect pending preview labelled as manual composition.",
+      "entry_points": [
+        "route POST /api/compose operation=inverse"
+      ],
+      "evidence": [
+        "server.py:267",
+        "server.py:341",
+        "enhanced.py:64",
+        "enhanced.py:66",
+        "enhanced.py:73",
+        "core.py:20"
+      ],
+      "depends_on": [
+        "core.invrecipe",
+        "S1-49"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "Workflow.compose"
+    },
+    {
+      "id": "S1-55",
+      "name": "Preview concatenated recipes",
+      "behaviour": "Validates two recipes, joins them in A then B execution order, and creates a full-effect pending preview labelled as manual composition.",
+      "entry_points": [
+        "route POST /api/compose operation=concat"
+      ],
+      "evidence": [
+        "server.py:267",
+        "enhanced.py:65",
+        "enhanced.py:68",
+        "enhanced.py:71",
+        "enhanced.py:73"
+      ],
+      "depends_on": [
+        "core.Model.normalize",
+        "S1-49"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "Workflow.compose"
+    },
+    {
+      "id": "S1-56",
+      "name": "Preview a recipe commutator",
+      "behaviour": "Builds and previews A, B, inverse A, inverse B in chronological order, retaining the complete effect and protected-orbit conflicts.",
+      "entry_points": [
+        "route POST /api/compose operation=commutator"
+      ],
+      "evidence": [
+        "server.py:267",
+        "enhanced.py:69",
+        "enhanced.py:73"
+      ],
+      "depends_on": [
+        "core.Model.normalize",
+        "core.invrecipe",
+        "S1-49"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "Workflow.compose"
+    },
+    {
+      "id": "S1-57",
+      "name": "Preview a recipe conjugate",
+      "behaviour": "Builds and previews A, B, inverse A in chronological order, retaining the complete effect and protected-orbit conflicts.",
+      "entry_points": [
+        "route POST /api/compose operation=conjugate"
+      ],
+      "evidence": [
+        "server.py:267",
+        "enhanced.py:70",
+        "enhanced.py:73"
+      ],
+      "depends_on": [
+        "core.Model.normalize",
+        "core.invrecipe",
+        "S1-49"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "Workflow.compose"
+    },
+    {
+      "id": "S1-58",
+      "name": "Save the pending macro in the library",
+      "behaviour": "Saves the pending preview recipe under a nonempty name of up to 80 characters, together with its effect hash, primitive count, complete support and model ID. A repeated name replaces that library entry in durable preferences without committing the recipe.",
+      "entry_points": [
+        "route POST /api/save-macro"
+      ],
+      "evidence": [
+        "server.py:268",
+        "enhanced.py:97",
+        "enhanced.py:99",
+        "enhanced.py:101",
+        "enhanced.py:103",
+        "enhanced.py:104"
+      ],
+      "depends_on": [
+        "S1-49",
+        "S1-25"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "Workflow.save_macro"
+    },
+    {
+      "id": "S1-59",
+      "name": "Save a named piece or position set",
+      "behaviour": "Evaluates a filter expression and saves up to 10,000 members under a validated name. Identity sets follow the physical pieces currently matched; position sets retain the matched fixed destinations.",
+      "entry_points": [
+        "route POST /api/save-set kind=identity",
+        "route POST /api/save-set kind=position"
+      ],
+      "evidence": [
+        "server.py:266",
+        "enhanced.py:54",
+        "enhanced.py:56",
+        "enhanced.py:59",
+        "enhanced.py:60",
+        "enhanced.py:61",
+        "enhanced.py:63",
+        "tests/test_piece_filters.py:94",
+        "tests/test_piece_filters.py:104"
+      ],
+      "depends_on": [
+        "core.Filters.parse",
+        "S1-25"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "preferences",
+        "journal"
+      ],
+      "engine_call": "Workflow.save_set",
+      "notes": "Set expressions can use the actual pending preview support; repeating a name replaces its definition. Test source: tests/test_piece_filters.py (identity versus position behavior and preview-support sets). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-60",
+      "name": "Preview a seeded random scramble",
+      "behaviour": "Generates a reproducible word of 1..10,000 legal primitive moves, using a supplied integer seed or a newly generated seed, and returns a pending scramble preview with the seed and length in its note.",
+      "entry_points": [
+        "route POST /api/scramble apply=false (default)"
+      ],
+      "evidence": [
+        "server.py:269",
+        "server.py:341",
+        "enhanced.py:74",
+        "enhanced.py:75",
+        "enhanced.py:77",
+        "enhanced.py:79",
+        "enhanced.py:82",
+        "enhanced.py:85",
+        "enhanced.py:86"
+      ],
+      "depends_on": [
+        "S1-49"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "Workflow.scramble",
+      "notes": "The default count is 1,000. Failure restores the previous pending preview if the authoritative head and state hash did not change."
+    },
+    {
+      "id": "S1-61",
+      "name": "Generate and commit a seeded random scramble",
+      "behaviour": "Generates the seeded legal scramble, previews its complete effect and commits it under the session lock as a recorded-scramble transaction. Returns the committed status, enforcing orbit protection and avoiding a persistent scramble preview in the viewport.",
+      "entry_points": [
+        "route POST /api/scramble apply=true"
+      ],
+      "evidence": [
+        "server.py:269",
+        "server.py:341",
+        "enhanced.py:85",
+        "enhanced.py:87",
+        "enhanced.py:90",
+        "enhanced.py:91",
+        "enhanced.py:92",
+        "tests/test_log_workflow.py:39",
+        "tests/test_log_workflow.py:129"
+      ],
+      "depends_on": [
+        "S1-60",
+        "S1-51"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "engine_call": "Workflow.scramble",
+      "notes": "Test source: tests/test_log_workflow.py (direct and HTTP 1,000-move applied scrambles). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-62",
+      "name": "Preview the recorded demonstration scramble",
+      "behaviour": "At journal head 0, reads the recorded seed-600 1,000-move scramble and creates its pending full-effect preview. Other heads are rejected with instructions to preserve progress in a checkpoint and restore Solved root first.",
+      "entry_points": [
+        "route POST /api/demo"
+      ],
+      "evidence": [
+        "server.py:330",
+        "server.py:331",
+        "server.py:332",
+        "server.py:341"
+      ],
+      "depends_on": [
+        "S1-49"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences",
+        "journal",
+        "files"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "Session.preview"
+    },
+    {
+      "id": "S1-63",
+      "name": "Download the current session branch",
+      "behaviour": "Exports the current head ancestry in chronological order with its legal recipes, counts, notes, assistance, final full-state hash, model identity and current preferences as a gzip JSON attachment. Histories exceeding the interactive import transaction or primitive budget are refused with a backup alternative.",
+      "entry_points": [
+        "route GET /api/export"
+      ],
+      "evidence": [
+        "server.py:220",
+        "session.py:331",
+        "session.py:334",
+        "session.py:336",
+        "log_io.py:67",
+        "log_io.py:76",
+        "log_io.py:81",
+        "tests/test_core.py:57"
+      ],
+      "depends_on": [
+        "log_io.encode_export",
+        "S1-20"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "protection"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "Session.export",
+      "notes": "The attachment is session.c600.json.gz. Only the selected branch is exported; alternate branches and checkpoint blobs remain in a database backup. The backing Session.export object is independently exercised in tests; the HTTP encoder enforces its budget. Test source: tests/test_core.py (independently verified branch export); tests/test_log_budget.py (export encoding and import budgets). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-64",
+      "name": "Import a verified session record",
+      "behaviour": "Validates and replays a complete supplied C600 record before any persistent change, then imports it as a new journal branch and selects its final labelled state. Retains prior progress in a Before import checkpoint, ignores the record preferences, preserves current preferences and optionally records a validated current camera.",
+      "entry_points": [
+        "route POST /api/import"
+      ],
+      "evidence": [
+        "server.py:333",
+        "server.py:341",
+        "session.py:337",
+        "session.py:341",
+        "session.py:345",
+        "session.py:350",
+        "session.py:354",
+        "session.py:357",
+        "log_io.py:104",
+        "log_io.py:123",
+        "log_io.py:139",
+        "tests/test_core.py:61",
+        "tests/test_log_workflow.py:140"
+      ],
+      "depends_on": [
+        "log_io.validate_record",
+        "log_io.validate_camera",
+        "session.Session._import_plan",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "protection",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "engine_call": "Session.import_record",
+      "notes": "The model, labelled_identity root, complete pre/post/final hashes, legal recipes, witness counts, note sizes and size/expansion budgets must agree. Invalid input, cancellation and transactional write failures leave prior progress recoverable. Test source: tests/test_core.py (valid import and tamper rejection); tests/test_log_workflow.py (HTTP import, ignored file preferences, rollback and cancellation). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-65",
+      "name": "Download a C600 proof log",
+      "behaviour": "Downloads the selected chronological journal branch as a deterministically compressed C600 proof log containing legal recipes, state hashes, counts, notes and current preferences. Applies interactive transaction, primitive and file-size limits.",
+      "entry_points": [
+        "route GET /api/log/export format=c600 (default)"
+      ],
+      "evidence": [
+        "server.py:221",
+        "server.py:223",
+        "server.py:224",
+        "server.py:225",
+        "session.py:358",
+        "session.py:363",
+        "log_io.py:86",
+        "log_io.py:89",
+        "log_io.py:91",
+        "tests/test_log_workflow.py:130"
+      ],
+      "depends_on": [
+        "session.Session.export",
+        "log_io.encode_log",
+        "S1-22"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "protection",
+        "workspace"
+      ],
+      "writes": [
+        "journal"
+      ],
+      "engine_call": "Session.export_log",
+      "notes": "The attachment is session.c600.json.gz. Its preferences are descriptive and are not applied by the import path. Export reads the timer and may persist its current total through Workflow.timer. Test source: tests/test_log_workflow.py (HTTP log download equals the saved proof log); tests/test_log_budget.py (proof-log budgets). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-66",
+      "name": "Download an MPUlt v1 log",
+      "behaviour": "After a complete native bridge has passed, expands the selected branch witnesses into native move tokens and downloads an MPUltimate v1 600-cell-Full log. Includes all current native colors, the initial scramble boundary, explicit timer milliseconds and checksum, with at most 10,000 primitive moves.",
+      "entry_points": [
+        "route GET /api/log/export format=mpult"
+      ],
+      "evidence": [
+        "server.py:221",
+        "server.py:224",
+        "server.py:225",
+        "session.py:359",
+        "session.py:361",
+        "mpult_log.py:47",
+        "mpult_log.py:70",
+        "mpult_log.py:86",
+        "mpult_log.py:90",
+        "mpult_log.py:100",
+        "mpult_log.py:103",
+        "tests/test_mpult_log.py:68"
+      ],
+      "depends_on": [
+        "S1-43",
+        "session.Session.export",
+        "core.Model.expand",
+        "mpult_log.export_native",
+        "S1-22"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "protection",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "journal"
+      ],
+      "engine_call": "Session.export_log",
+      "notes": "The attachment is session.log with text/plain content. This codec path does not call the legacy native loader. Test source: tests/test_mpult_log.py (native word/star export and complete labelled round trip). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-67",
+      "name": "Save a C600 proof log in the session directory",
+      "behaviour": "Writes the current proof log to a uniquely named C600 file in the session logs subdirectory using a flushed, fsynced temporary file and atomic replacement. Returns its path, name, size, SHA-256, state hash and journal head.",
+      "entry_points": [
+        "route POST /api/log/save format=c600 (default)"
+      ],
+      "evidence": [
+        "server.py:262",
+        "session.py:372",
+        "session.py:373",
+        "session.py:375",
+        "session.py:377",
+        "session.py:378",
+        "session.py:380",
+        "tests/test_log_workflow.py:49",
+        "tests/test_log_workflow.py:130"
+      ],
+      "depends_on": [
+        "S1-65"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "protection",
+        "workspace"
+      ],
+      "writes": [
+        "files",
+        "journal"
+      ],
+      "engine_call": "Session.save_log",
+      "notes": "Test source: tests/test_log_workflow.py (unique atomic saves, digest and HTTP save/download equivalence). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-68",
+      "name": "Save an MPUlt v1 log in the session directory",
+      "behaviour": "Writes the native v1 log for the current branch to a uniquely named .log file in the session logs subdirectory using the same durable atomic save path. Returns the saved file identity, state hash and head, and requires the verified full native bridge and native export limits.",
+      "entry_points": [
+        "route POST /api/log/save format=mpult"
+      ],
+      "evidence": [
+        "server.py:262",
+        "session.py:372",
+        "session.py:374",
+        "session.py:377",
+        "session.py:380",
+        "tests/test_mpult_log.py:72"
+      ],
+      "depends_on": [
+        "S1-66"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "protection",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "files",
+        "journal"
+      ],
+      "engine_call": "Session.save_log",
+      "notes": "Test source: tests/test_mpult_log.py (saved native file equals the exported native payload). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-69",
+      "name": "Import a C600 proof-log file",
+      "behaviour": "Accepts base64 file content containing plain or gzip UTF-8 C600 JSON, performs bounded decoding and complete legal replay, then selects a newly imported branch. Creates a recovery checkpoint and preserves current preferences rather than the log preferences, with an optional validated current camera.",
+      "entry_points": [
+        "route POST /api/log/import format=c600 (default)"
+      ],
+      "evidence": [
+        "server.py:263",
+        "server.py:341",
+        "session.py:365",
+        "session.py:370",
+        "session.py:371",
+        "log_io.py:47",
+        "log_io.py:54",
+        "log_io.py:60",
+        "log_io.py:104",
+        "tests/test_log_workflow.py:58",
+        "tests/test_log_workflow.py:133"
+      ],
+      "depends_on": [
+        "log_io.decode_log",
+        "S1-64"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "files",
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "protection",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "engine_call": "Session.import_log",
+      "notes": "Upload is limited to 16 MiB, expanded JSON to 24 MiB, transactions to 10,000 and replay to 2,000,000 primitives. Duplicate JSON fields, malformed UTF-8, corrupt compression and non-finite JSON numbers are rejected. Test source: tests/test_log_workflow.py (plain decoding, proof import, recovery, malformed payloads and bounded decompression). Tests were read to confirm coverage; they were not executed for this inventory."
+    },
+    {
+      "id": "S1-70",
+      "name": "Import an MPUlt v1 log with its redo tail",
+      "behaviour": "After a verified full native bridge, validates an uploaded native v1 full-model log including description, colors, checksum, move/group markers and saved pointer, replaying both active history and redo tail. Imports a new branch at the saved pointer, retains the redo tail and prior progress checkpoint, preserves current preferences and returns native-log counters and timer metadata.",
+      "entry_points": [
+        "route POST /api/log/import format=mpult"
+      ],
+      "evidence": [
+        "server.py:263",
+        "server.py:341",
+        "session.py:366",
+        "session.py:369",
+        "session.py:343",
+        "session.py:351",
+        "session.py:352",
+        "mpult_log.py:105",
+        "mpult_log.py:118",
+        "mpult_log.py:153",
+        "mpult_log.py:167",
+        "mpult_log.py:168",
+        "mpult_log.py:178",
+        "mpult_log.py:180",
+        "tests/test_mpult_log.py:58",
+        "tests/test_mpult_log.py:68"
+      ],
+      "depends_on": [
+        "S1-43",
+        "mpult_log.import_native",
+        "log_io.validate_camera",
+        "session.Session._import_plan",
+        "S1-10"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "files",
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "protection",
+        "workspace"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "engine_call": "Session.import_log",
+      "notes": "Supports only MPUltimate v1 600-cell-Full with 259,800 colors, at most 20,000 sequence entries and 10,000 native moves. The imported timer is returned as metadata; it does not replace the current Workflow timer. No legacy loader or file preferences are applied. Test source: tests/test_mpult_log.py (saved pointer and redo tail, corruption refusal, recovery and native word/star round trip). Tests were read to confirm coverage; they were not executed for this inventory."
+    }
+  ],
+  "internal_only": [
+    {
+      "name": "core.canonical, digest and state_hash",
+      "evidence": [
+        "core.py:15",
+        "core.py:17",
+        "core.py:18"
+      ],
+      "reason": "Serialization and integrity helpers shared by the listed user operations; they declare no separate command or route."
+    },
+    {
+      "name": "core.invword, invrecipe, cp, ip and commp",
+      "evidence": [
+        "core.py:19",
+        "core.py:20",
+        "core.py:27",
+        "core.py:28",
+        "core.py:32"
+      ],
+      "reason": "Recipe inversion and small orientation-permutation algebra support undo, composition and assisted planning; they are not independent user entries."
+    },
+    {
+      "name": "core.Model asset loading, invariant validation and caches",
+      "evidence": [
+        "core.py:35",
+        "core.py:39",
+        "core.py:59",
+        "core.py:63",
+        "core.py:66",
+        "core.py:76",
+        "core.py:90"
+      ],
+      "reason": "Startup implementation verifies immutable model files and derives incidence/coarse geometry. No shard entry point changes model identity, cuts, seeds, IDs or frames."
+    },
+    {
+      "name": "core.Model.check_cancel",
+      "evidence": [
+        "core.py:93",
+        "server.py:347"
+      ],
+      "reason": "Cooperative interruption hook behind the explicit stop-job route and shutdown; no additional user entry point."
+    },
+    {
+      "name": "core.Model.slots, hosting and caps",
+      "evidence": [
+        "core.py:95",
+        "core.py:98",
+        "core.py:99"
+      ],
+      "reason": "Internal model lookups used to report complete physical pieces, home cells and guarding cap cells."
+    },
+    {
+      "name": "core.Model.move, word_net, mapped, path, certify_seed, star_net, normalize, net, expand and support",
+      "evidence": [
+        "core.py:100",
+        "core.py:107",
+        "core.py:114",
+        "core.py:119",
+        "core.py:124",
+        "core.py:145",
+        "core.py:165",
+        "core.py:182",
+        "core.py:193",
+        "core.py:199"
+      ],
+      "reason": "Finite legal mechanics and full witness/support calculations behind previews, imports and journal replay. Primitive IDs ±1..±1200 are recipe operands, not separately defined UI command IDs."
+    },
+    {
+      "name": "core.Model.shell_mask, cell_mask, cell_distances and layer_mask",
+      "evidence": [
+        "core.py:206",
+        "core.py:218",
+        "core.py:223",
+        "core.py:235"
+      ],
+      "reason": "Spatial predicate calculations and bounded caches behind the filter language. The independently exposed cap-mask and structure routes are in function rows."
+    },
+    {
+      "name": "core.PuzzleState construction, refresh, apply and progress",
+      "evidence": [
+        "core.py:256",
+        "core.py:258",
+        "core.py:269",
+        "core.py:270"
+      ],
+      "reason": "Label validation, derived occupancy/orientation/color information and progress calculation support the session operations; direct piece reports and status are inventoried at their routes."
+    },
+    {
+      "name": "core.Planner initialization, validate_orbit, validate_target, star and next.omap",
+      "evidence": [
+        "core.py:284",
+        "core.py:285",
+        "core.py:287",
+        "core.py:293",
+        "core.py:322"
+      ],
+      "reason": "Internal validation and transported-frame/orientation helpers behind assisted insertion and fixed-buffer analysis."
+    },
+    {
+      "name": "core.Filters initialization, parse, peek, pop, _or, _and, _unary, _atom and styles",
+      "evidence": [
+        "core.py:345",
+        "core.py:347",
+        "core.py:358",
+        "core.py:359",
+        "core.py:363",
+        "core.py:367",
+        "core.py:371",
+        "core.py:380",
+        "core.py:439"
+      ],
+      "reason": "Safe expression parsing and first-match style evaluation are exposed through preference, filter-preview/apply, style and saved-set routes. No Python script execution or additional standalone command is declared."
+    },
+    {
+      "name": "session.Session._get, _put, event and _recover",
+      "evidence": [
+        "session.py:34",
+        "session.py:36",
+        "session.py:37",
+        "session.py:38"
+      ],
+      "reason": "Private journal access and startup recovery replay; public history, checkout and startup already account for their user behavior."
+    },
+    {
+      "name": "session.Session._snapshot and _recovery_name",
+      "evidence": [
+        "session.py:54",
+        "session.py:70",
+        "session.py:183",
+        "session.py:346"
+      ],
+      "reason": "Checkpoint storage/naming helpers, including automatic snapshots every 50 committed transactions and Before reset/import recovery snapshots; no additional entry point."
+    },
+    {
+      "name": "session.Session._prefs_with_camera, _validated_prefs and validate_inspection",
+      "evidence": [
+        "session.py:72",
+        "session.py:115",
+        "session.py:238"
+      ],
+      "reason": "Shared validation before durable preference changes and reset/import camera preservation; separate controls are inventoried at their HTTP routes."
+    },
+    {
+      "name": "session.Session.filter_styles, interactive_styles, inspection_info, focus_info, cell_status and filter_context",
+      "evidence": [
+        "session.py:228",
+        "session.py:231",
+        "session.py:250",
+        "session.py:279",
+        "session.py:284",
+        "session.py:296"
+      ],
+      "reason": "Shared view/interaction masks, annotation metadata, per-cell snapshot summaries and stale-filter context checks. Display annotations do not themselves make hidden stickers interactive."
+    },
+    {
+      "name": "session.Session._import_plan",
+      "evidence": [
+        "session.py:341",
+        "session.py:345",
+        "session.py:351",
+        "session.py:354"
+      ],
+      "reason": "Transactional installation of a completely validated detached import plan, including active native pointer/redo metadata and recovery snapshots; all import routes are in function rows."
+    },
+    {
+      "name": "session.Session.close and session_lock.SessionLock construction/close",
+      "evidence": [
+        "session.py:384",
+        "session_lock.py:5",
+        "session_lock.py:9",
+        "session_lock.py:11",
+        "session_lock.py:14"
+      ],
+      "reason": "SQLite and kernel-lock ownership behind engine launch, duplicate-session refusal, graceful shutdown and release on hard process exit; session_lock.py defines no CLI or route."
+    },
+    {
+      "name": "enhanced.Workflow.__init__",
+      "evidence": [
+        "enhanced.py:8",
+        "enhanced.py:9"
+      ],
+      "reason": "Restores the durable timer total and initializes paused runtime timing; user timer/history/composition/scramble methods are inventoried through server.py."
+    },
+    {
+      "name": "log_io.validate_camera",
+      "evidence": [
+        "log_io.py:19",
+        "log_io.py:24",
+        "log_io.py:31",
+        "log_io.py:34"
+      ],
+      "reason": "Validates the explicit current native camera supplied to reset/import; it is not a camera-control entry point or an importer of log preferences."
+    },
+    {
+      "name": "log_io._object, decode_log, _hash, _count and validate_record",
+      "evidence": [
+        "log_io.py:40",
+        "log_io.py:47",
+        "log_io.py:94",
+        "log_io.py:97",
+        "log_io.py:104",
+        "log_io.py:139"
+      ],
+      "reason": "Bounded decoding, duplicate-field/count/hash validation and detached full-state legal replay support the inventoried imports without touching a live session during validation."
+    },
+    {
+      "name": "log_io.check_import_budget, _exportable, encode_export and encode_log",
+      "evidence": [
+        "log_io.py:67",
+        "log_io.py:76",
+        "log_io.py:81",
+        "log_io.py:86"
+      ],
+      "reason": "Importable-size enforcement and gzip encoding support session/proof-log downloads and saves; these module functions define no extra file command or route."
+    },
+    {
+      "name": "mpult_log.normalize_description and nested number, description, profile_data, native_colors, pack, checksum and serialize",
+      "evidence": [
+        "mpult_log.py:21",
+        "mpult_log.py:27",
+        "mpult_log.py:39",
+        "mpult_log.py:47",
+        "mpult_log.py:59",
+        "mpult_log.py:61",
+        "mpult_log.py:63",
+        "mpult_log.py:70"
+      ],
+      "reason": "Exact model description, native profile/color conversion and v1 wire/checksum helpers behind the listed native log import/export/save functions; macro and shuffle markers are log syntax, not UI command IDs."
+    },
+    {
+      "name": "engine_process.EngineProcess construction, start, close, __enter__ and __exit__",
+      "evidence": [
+        "engine_process.py:219",
+        "engine_process.py:243",
+        "engine_process.py:265",
+        "engine_process.py:270",
+        "engine_process.py:293",
+        "engine_process.py:303",
+        "engine_process.py:306"
+      ],
+      "reason": "Programmatic process owner used by launchers in other shards: starts an owned engine, authenticates readiness, logs startup/failure and closes it on exit. engine_process.py declares no CLI, key, button, menu, window or HTTP entry point; launcher controls belong to their declaring shards."
+    },
+    {
+      "name": "engine_process._NoRedirect, validate_launch, local_request and read_launch",
+      "evidence": [
+        "engine_process.py:45",
+        "engine_process.py:50",
+        "engine_process.py:75",
+        "engine_process.py:93",
+        "engine_process.py:112"
+      ],
+      "reason": "Loopback-only lifecycle transport, launch-secret/metadata validation and progress/readiness waiting support the owning launchers. The health and shutdown HTTP routes are listed once at server.py."
+    },
+    {
+      "name": "engine_process.python_child_command",
+      "evidence": [
+        "engine_process.py:143",
+        "engine_process.py:158",
+        "engine_process.py:162"
+      ],
+      "reason": "Platform-aware CPython/venv child command construction, not a command offered directly to the user."
+    },
+    {
+      "name": "engine_process.stop_owned_process",
+      "evidence": [
+        "engine_process.py:165",
+        "engine_process.py:171",
+        "engine_process.py:175",
+        "engine_process.py:182",
+        "engine_process.py:187",
+        "engine_process.py:196",
+        "engine_process.py:204"
+      ],
+      "reason": "Owned-process cleanup first requests authenticated shutdown and closes the parent pipe, then forces only the owned launcher/descendants after the grace period. No independent process-kill user entry point is declared."
+    },
+    {
+      "name": "engine_process.redact, tail_log and EngineProcess._write_result",
+      "evidence": [
+        "engine_process.py:27",
+        "engine_process.py:33",
+        "engine_process.py:280",
+        "engine_process.py:289"
+      ],
+      "reason": "Redacted error/progress diagnostics and private lifecycle result files for launchers; no diagnostic download command or route is declared in this module."
+    },
+    {
+      "name": "server.NativeSnapshotCache construction and immutable delta cache",
+      "evidence": [
+        "server.py:23",
+        "server.py:28",
+        "server.py:32",
+        "server.py:41",
+        "server.py:53"
+      ],
+      "reason": "Internal profile mapping and bounded four-revision array cache for the listed native snapshot endpoint; cache updates do not alter mechanical state."
+    },
+    {
+      "name": "server.atomic_json",
+      "evidence": [
+        "server.py:57",
+        "server.py:63",
+        "server.py:64"
+      ],
+      "reason": "Atomic publication/retry helper for complete launch/progress metadata, reached through the engine launch options rather than an extra user command."
+    },
+    {
+      "name": "server.watch_parent",
+      "evidence": [
+        "server.py:71",
+        "server.py:79",
+        "server.py:95",
+        "server.py:97",
+        "server.py:147"
+      ],
+      "reason": "Automatic shutdown on owned parent-pipe EOF; C600_WATCH_PARENT_STDIN is a launcher protocol environment variable rather than a user control."
+    },
+    {
+      "name": "server.StopAwareReader.__init__, readable and readinto",
+      "evidence": [
+        "server.py:99",
+        "server.py:106",
+        "server.py:107",
+        "server.py:108",
+        "server.py:112"
+      ],
+      "reason": "Bounded, stop-aware request input prevents stalled clients from holding shutdown open; it declares no route."
+    },
+    {
+      "name": "server.main.Handler setup, log_message, send, js, valid_host and authenticated",
+      "evidence": [
+        "server.py:155",
+        "server.py:158",
+        "server.py:159",
+        "server.py:164",
+        "server.py:165",
+        "server.py:166",
+        "server.py:231",
+        "server.py:232",
+        "server.py:235"
+      ],
+      "reason": "Shared HTTP response/security and request-shape handling. API routes require the launch token and matching loopback Host; POST additionally rejects foreign Origin and invalid JSON size/type. Unknown routes/commands are rejected rather than additional user functions."
+    },
+    {
+      "name": "server.main.Handler dispatch, work and cancelable_work",
+      "evidence": [
+        "server.py:249",
+        "server.py:335",
+        "server.py:337",
+        "server.py:339",
+        "server.py:341",
+        "server.py:347",
+        "server.py:351"
+      ],
+      "reason": "Shared session locking, optional native_since snapshot replies and single-worker job dispatch. The long-running route list consists only of already inventoried preview, suggest, import, log/import, demo, checkout, compose, scramble and native/handshake."
+    },
+    {
+      "name": "server.main startup, request_shutdown/stop_listener and EngineHTTPServer.handle_error",
+      "evidence": [
+        "server.py:122",
+        "server.py:125",
+        "server.py:138",
+        "server.py:141",
+        "server.py:359",
+        "server.py:374"
+      ],
+      "reason": "Startup-stage reporting, signal/listener coordination, quiet shutdown errors and final resource cleanup support the listed launch/stop entry points."
+    }
+  ],
+  "unclear": []
+}

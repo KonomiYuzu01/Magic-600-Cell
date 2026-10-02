@@ -558,6 +558,76 @@ class ProgressValidationTests(CliFixtureTests):
             with self.subTest(args=args):
                 self.rejected(path, *args)
 
+    def test_acceptance_set_change_source_and_clear_preserve_document(self):
+        path = self.status()
+        (self.fx.wt / "tests" / "acceptance.txt").write_text("Revised acceptance source.\n", encoding="utf-8")
+        step = "0.4.1-1"
+        initial = json.loads(path.read_bytes())["steps"][0]
+        self.assertIsNone(initial["acceptance"])
+        self.assertIsNone(initial["acceptance_source"])
+        changes = (("Every kept command is reachable.", "tests/evidence.txt"),
+                   ("Every kept command passes its checks.", "tests/evidence.txt"),
+                   ("Every kept command passes its checks.", "tests/acceptance.txt"),
+                   (None, None))
+        for day, (text, source) in enumerate(changes, 1):
+            with self.subTest(text=text, source=source):
+                expected = json.loads(path.read_bytes())
+                expected["steps"][0].update(acceptance=text, acceptance_source=source)
+                utc = time.gmtime(at(day * 24 * 60 * 60))
+                expected["updated"] = time.strftime("%Y-%m-%d", utc)
+                args = ("acceptance", step, "--clear") if text is None else (
+                    "acceptance", step, "--text", text, "--source", source)
+                with patch.object(progress.time, "gmtime", return_value=utc):
+                    r = self.invoke(*args)
+                action = "cleared" if text is None else "set"
+                self.assertEqual((r.returncode, r.stdout, r.stderr), (0, f"acceptance {step} {action}\n", ""))
+                raw = path.read_bytes()
+                doc = json.loads(raw)
+                self.assertEqual(doc, expected)
+                self.assertEqual(raw, checklist.dump(doc).replace("\n", "\r\n").encode("utf-8"))
+                self.assertEqual(checklist.validate(doc), [])
+                self.assertEqual(list(path.parent.iterdir()), [path])
+                if day == 3:
+                    self.rejected(path, *args)
+
+    def test_acceptance_rejects_bad_input_without_writes(self):
+        path = self.status()
+        private = self.fx.wt / "work" / "private.txt"
+        private.parent.mkdir(exist_ok=True)
+        private.write_text("private", encoding="utf-8")
+        step, source = "0.4.1-2", "tests/evidence.txt"
+        for args in (("missing", "--text", "x", "--source", source), ("missing", "--clear"),
+                     (step, "--text", "x"), (step, "--source", source),
+                     (step, "--clear", "--text", "x"), (step, "--clear", "--source", source),
+                     (step, "--clear", "--text", "x", "--source", source), (step,), (step, "--clear")):
+            with self.subTest(args=args):
+                self.rejected(path, "acceptance", *args)
+        for text in ("", "  ", "a\nb", "\u8bbe\u8ba1", "see /home/user/x", "x" * (progress.ACCEPTANCE_MAX + 1)):
+            with self.subTest(text=text):
+                self.rejected(path, "acceptance", step, "--text", text, "--source", source)
+        for ref in ("tests/missing.txt", "work/private.txt", "0123abc",
+                    "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20"):
+            with self.subTest(ref=ref):
+                self.rejected(path, "acceptance", step, "--text", "x", "--source", ref)
+        args = ("acceptance", step, "--text", "x", "--source", source)
+        r = self.invoke(*args)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.rejected(path, *args)
+        self.rejected(path, "acceptance", step, "--text", "  x  ", "--source", source)
+
+    def test_acceptance_held_lock_refuses_and_is_left_alone(self):
+        path = self.status()
+        lock = progress._git_dir(self.fx.wt) / progress.LOCK_NAME
+        lock.write_bytes(b"1\n")
+        args = ("acceptance", "0.4.1-2", "--text", "Every check passes.", "--source", "tests/evidence.txt")
+        with patch.object(progress, "LOCK_WAIT", 0.1):
+            r = self.rejected(path, *args)
+        self.assertIn("run this one again", r.stderr)
+        self.assertEqual(lock.read_bytes(), b"1\n")
+        lock.unlink()
+        r = self.invoke(*args)
+        self.assertEqual(r.returncode, 0, r.stderr)
+
     def test_titles_reject_every_local_path_form(self):
         path = self.status()
         for title in ("Evidence at /root/private/result.txt", "see /tmp/x", "(/var/data)", "copy ~/notes",

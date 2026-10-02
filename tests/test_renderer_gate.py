@@ -111,6 +111,55 @@ class GateTests(unittest.TestCase):
         # Every frame of the 180 s interval counts, not a fixed sample.
         self.assertGreater(scene['runs'][0]['n'], 7000)
 
+    def test_vram_absent_is_null_without_risk(self):
+        scene = self.scene(self.three())
+        self.assertIsNone(scene['vram_peak_mb'])
+        for run in scene['runs']:
+            self.assertIsNone(run['vram_peak_mb'])
+            self.assertFalse(run['vram_risk'])
+        self.assertEqual(scene['verdict'], 'met')
+
+    def test_vram_within_budget_has_no_risk(self):
+        for peak in (6000, 7168):
+            with self.subTest(peak=peak):
+                scene = self.scene(self.three(str(peak), edit=lambda run: run.update(vram_peak_mb=peak)))
+                self.assertEqual(scene['vram_peak_mb'], peak)
+                self.assertTrue(all(run['vram_peak_mb'] == peak and not run['vram_risk'] for run in scene['runs']))
+                self.assertEqual(scene['verdict'], 'met')
+
+    def test_vram_above_budget_is_a_risk_without_changing_verdict(self):
+        scene = self.scene(self.three(edit=lambda run: run.update(vram_peak_mb=7500)))
+        self.assertEqual(scene['vram_peak_mb'], 7500)
+        self.assertTrue(all(run['vram_peak_mb'] == 7500 and run['vram_risk'] for run in scene['runs']))
+        self.assertTrue(scene['pooled']['met'])
+        self.assertEqual(scene['verdict'], 'met')
+        slow = self.scene(self.three('slow', frame_ms=steady(50), edit=lambda run: run.update(vram_peak_mb=7500)))
+        self.assertEqual(slow['verdict'], 'not-met')
+
+    def test_bad_vram_makes_a_run_unreadable(self):
+        for index, peak in enumerate((0, -1, '6000', math.nan, math.inf, -math.inf, True, None)):
+            with self.subTest(peak=peak):
+                directory = self.run_dir(f'bad{index}', edit=lambda run: run.update(vram_peak_mb=peak))
+                result = gate.summarize([directory])
+                self.assertEqual(result['unreadable'], [{'reason': 'bad-vram'}])
+                self.assertEqual(result['scenes'], [])
+                self.assertEqual(result['invalid_runs'], [])
+
+    def test_scene_vram_peak_is_the_maximum_of_valid_reported_runs(self):
+        directories = [self.run_dir('absent'),
+                       self.run_dir('high', edit=lambda run: run.update(vram_peak_mb=7500.5)),
+                       self.run_dir('low', edit=lambda run: run.update(vram_peak_mb=6000)),
+                       self.run_dir('invalid', label='fail', edit=lambda run: run.update(vram_peak_mb=9000))]
+        result = gate.summarize(directories)
+        scene = self.scene(result)
+        self.assertEqual(scene['vram_peak_mb'], 7500.5)
+        self.assertEqual([run['vram_peak_mb'] for run in scene['runs']], [None, 7500.5, 6000])
+        self.assertEqual(scene['verdict'], 'met')
+        self.assertEqual(result['invalid_runs'][0]['run_id'], 'invalid')
+        no_valid_runs = self.scene(gate.summarize([directories[-1]]))
+        self.assertIsNone(no_valid_runs['vram_peak_mb'])
+        self.assertEqual(no_valid_runs['verdict'], 'no-data')
+
     def test_a_late_slowdown_fails(self):
         # The plan check counterexample: 100 fast frames after warmup, then 50 ms frames.
         warm = gate.WARMUP_S * FREQ

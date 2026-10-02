@@ -1,6 +1,6 @@
 # Stage 2.1 top-down inventory (from documents)
 
-Status: **draft for the 2.1 merge on stage day 3**. Written by Claude on 1 October 2026 from user and design documents only. No source code was read, so this list is independent of the five bottom-up Codex shards (`../packets/inventory-bottom-up-s1.md` to `-s5.md`), which read only the code. The shards must not read this file before they finish.
+Status: **draft for the 2.1 merge on stage day 3**. Written by Claude on 1 October 2026 from user and design documents only. No source code was read, so this list is independent of the two source-derived inventories (the Codex shards `../packets/inventory-bottom-up-s1.md` to `-s6.md` and the Claude inventory; method in [README](README.md)), which read only the code. It is kept as a third reference; the source-derived inventories must not read it before they are sealed.
 
 Data: [top-down.json](top-down.json), 72 functions and 7 unclear items. Each evidence anchor is resolved to a `path:line` by [build_top_down.py](build_top_down.py) (`python docs/progress/1.0/inventory/build_top_down.py`). The script fails if an anchor is missing.
 
@@ -57,9 +57,11 @@ These seven items should be settled from the code shards on day 3:
 
 The JSON lists the evidence for each item.
 
-## Merge procedure (stage day 3)
+## Merge procedure (superseded)
+
+Superseded on 2 October 2026: the 2.1 comparison is now between the two source-derived inventories (Codex and Claude), with recorded correspondences ([README](README.md)); `merged.json` in this directory is that comparison. This list may still be compared with it as a third reference, as a separate step that writes its own file. The original procedure is kept for the record:
 
 1. Pair each top-down row with bottom-up rows by entry point (key, menu, button or command ID), then by name.
 2. Put every row into one of three groups: **matched**, **documented only** (described in the documents but not found in the code), or **code only** (reachable in the code but undocumented).
 3. Every disagreement is an input to 2.2. Documented-only rows include promised functions that were never built. Code-only rows include hidden or developer functions, which are candidates for DELETE or AUTO and need the owner's signature.
-4. The merged list is `merged.json` in this directory. Each row cites both its document evidence and its code evidence.
+4. The merged list was to be `merged.json` in this directory, each row citing both its document evidence and its code evidence.
