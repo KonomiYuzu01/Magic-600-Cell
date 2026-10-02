@@ -29,6 +29,8 @@ The [exporter specification draft](../0.4.1/exporter-spec-draft.md) still descri
 
 Recommendation: **B**. It needs no further 0.4-line release, keeps every invariant and the validator, and the user does one step. The package format stays, and the 2.5 freeze applies. Only the producer moves from 0.4.1 to the 1.0 importer (`producer.name` records which). The fixtures F1 to F9 apply with the extensions in items 3 to 7 below. B depends on the source-preservation probe in item 3 passing.
 
+The importer pipeline, platform boundary, probes and extra fixtures for path B are detailed in the [exporter re-plan proposal](migration-exporter-proposal.md).
+
 ## Points for the plan check (any option that reads the session directory)
 
 1. **Lock without writing.** `SessionLock` (`session_lock.py:6`) opens `engine.lock` with `a+b` and writes one byte before locking. If 1.0 used the same code, it would create `engine.lock` when it is absent and update its modification time, which breaks "never modify the original session directory". The importer must lock an existing `engine.lock` without writing, and refuse (not create) when the file is missing and the directory looks like a live session. Byte-range locking of byte 0 (`msvcrt.locking` / `LockFileEx`) is compatible with the 0.4 engine as long as both lock the same range.
