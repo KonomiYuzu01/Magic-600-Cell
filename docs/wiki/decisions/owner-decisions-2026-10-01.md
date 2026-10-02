@@ -30,7 +30,7 @@ Two items that this record does not settle, the 1.0 engine selection input and t
 
 Later the same day the owner asked to add parallel progress lines at any time and to cut confirmations and other low-value overhead. The owner chose:
 
-- **Project scripts run without a prompt.** `.claude/settings.json` allows `tools/workbench/progress.py`, `brief.py`, `ask.py` and `python tests/test_*.py` (the wiki and skills checks were already allowed). Installs, pins, `bootstrap.py approve`, Git commands and the Codex implementation call still follow their existing rules. Default edit acceptance was not chosen.
+- **Project scripts run without a prompt.** `.claude/settings.json` allows `tools/workbench/progress.py`, `brief.py`, `ask.py` and each `python tests/test_<name>.py` as an exact command without arguments (the wiki and skills checks were already allowed). A wildcard was rejected in review: unittest treats extra arguments as callables to run, so it would have allowed arbitrary Python; a new test file needs its own entry. Installs, pins, `bootstrap.py approve`, Git commands and the Codex implementation call still follow their existing rules. Default edit acceptance was not chosen.
 - **Single-shard full reviews outside critical paths.** A full review of a change that touches no critical path may run as one shard; critical-path full reviews keep at least two concurrent shards (`AGENTS.md` "Review rounds").
 - Parallel tracks themselves are a tool change, not a rule change: `progress.py track`, `step`, `item` and `current` add tracks, steps and items with the same validation as `done`, and the workbench shows every track. Adding progress entries keeps the normal review rules for the files it touches.
 
