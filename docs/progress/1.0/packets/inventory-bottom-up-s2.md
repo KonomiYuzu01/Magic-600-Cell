@@ -1,23 +1,56 @@
-# Packet: stage 2.1 bottom-up inventory, shard S2 (workflow modules)
+# Packet: stage 2.1 source inventory, shard S2 (Experiment engine modules and packaging)
 
-Run from the local session; the five shards S1 to S5 run concurrently:
+The six shards S1 to S6 run concurrently:
 `python tools/agents/codex_review.py --kind implement --model gpt-6.1-sol --effort max --packet docs/progress/1.0/packets/inventory-bottom-up-s2.md`
-Then review `changes.patch`, apply it, and run `--cleanup <call-id>`.
+Then the integrator reviews `changes.patch`, applies it unchanged (format only; content is not edited) and runs `--cleanup <call-id>`.
 
 ## 1. Goal and acceptance
-- Goal: list every function of the 0.4 program in this shard (the Python modules under `work/experiments/magic600-04/` except `adapter.py` and `keymap_catalog.py`), found from the code alone, so stage 2.2 can give each one keep, redesign, delete or automate. A second, top-down inventory is written independently from the user documents; the two are merged and their differences listed.
-- Acceptance: `docs/progress/1.0/inventory/bottom-up-s2.json` holds one row per user-reachable function, and every command ID, key binding, button, menu item and HTTP route in this shard appears in exactly one row or in `internal_only`. The contract's acceptance check passes.
-- Non-goals: judging value, proposing 1.0 designs, changing any source file.
+- Goal: list every user-reachable function of the 0.4 program whose entry point is defined in this shard's files (the experiment engine's computed features (recommendations, cycles, endgame, macro library and use, work sheets and intents, residuals, frames, names, identity printing) and the packaged launcher and package tools), found from the source code alone, so that stage 2.2 can later judge each one. An independent inventory of the same source code, written separately by Claude, is compared with this one afterwards; their matches and differences are listed. A document-based list exists only as a third reference and is not part of this comparison.
+- Acceptance: `docs/progress/1.0/inventory/bottom-up-s2.json` holds one row per user-reachable function. Every command ID, key binding, button, menu item, window and HTTP route defined in this shard's files appears in exactly one row's `entry_points` or in `internal_only`. The contract's acceptance check passes.
+- Non-goals: judging value (no keep, redesign, delete or automate), proposing 1.0 designs, changing any source file.
 
 ## 2. Actual problem and reproduction
-- 1.0 does not inherit the 0.4 runtime or its UI (owner decisions of 30 September 2026), so it needs a complete list of what 0.4 does, judged by purpose. No complete list exists.
+- 1.0 does not inherit the 0.4 runtime or its UI (owner decisions of 29 and 30 September 2026), so it needs a complete list of what 0.4 does. No complete source-derived list exists.
 
 ## 3. Environment and versions
-- Base commit: current `main`. Evidence kind: source.
+- Base commit: the committed HEAD this worktree was created from. Evidence kind: source (and tests, where a test exercises the function).
 
 ## 4. Necessary source and evidence
-- Shard sources: `work/experiments/magic600-04/*.py`.
-- Other shards cover the rest; reference a function in another shard by its entry point instead of listing it again.
+- This shard owns exactly these files (`docs/progress/1.0/inventory/shards.json`; every file in the owner's source scope belongs to exactly one shard):
+  - `work/experiments/magic600-04/build_identity.py`
+  - `work/experiments/magic600-04/candidate_analysis.py`
+  - `work/experiments/magic600-04/current_recommendation.py`
+  - `work/experiments/magic600-04/cycle_projection.py`
+  - `work/experiments/magic600-04/draft_inspection.py`
+  - `work/experiments/magic600-04/endgame_invariants.py`
+  - `work/experiments/magic600-04/endgame_library.py`
+  - `work/experiments/magic600-04/engine.py`
+  - `work/experiments/magic600-04/filter_projection.py`
+  - `work/experiments/magic600-04/grip_frames.py`
+  - `work/experiments/magic600-04/launch.py`
+  - `work/experiments/magic600-04/local_geometry.py`
+  - `work/experiments/magic600-04/macro_library.py`
+  - `work/experiments/magic600-04/macro_use.py`
+  - `work/experiments/magic600-04/mathematical_names.py`
+  - `work/experiments/magic600-04/native_launch.py`
+  - `work/experiments/magic600-04/orbit_invariants.py`
+  - `work/experiments/magic600-04/packaging/assemble.py`
+  - `work/experiments/magic600-04/packaging/check_package.py`
+  - `work/experiments/magic600-04/packaging/engine_entry.py`
+  - `work/experiments/magic600-04/packaging/launcher.py`
+  - `work/experiments/magic600-04/packaging/package_contract.py`
+  - `work/experiments/magic600-04/packaging/profile_reply.py`
+  - `work/experiments/magic600-04/position_requirements.py`
+  - `work/experiments/magic600-04/print_identity.py`
+  - `work/experiments/magic600-04/reference_variants.py`
+  - `work/experiments/magic600-04/residuals.py`
+  - `work/experiments/magic600-04/session_workflow.py`
+  - `work/experiments/magic600-04/transported_frames.py`
+  - `work/experiments/magic600-04/work_intents.py`
+  - `work/experiments/magic600-04/work_sheets.py`
+  - `work/experiments/magic600-04/workflow_continuity.py`
+- A function whose entry point is in this shard but whose work is done in another shard's files is listed here, with that other entry point (a route, command ID or method) in `depends_on`. Do not list entry points defined in other shards' files.
+- Tests under `tests/` and `work/experiments/magic600-04/tests/` may be read to confirm behaviour.
 
 ## 5. Attempts so far
 - The 0.4.1 screening (`docs/progress/0.4.1/packets/`) read the same code for defects, not for an inventory.
@@ -25,12 +58,23 @@ Then review `changes.patch`, apply it, and run `--cleanup <call-id>`.
 ## 6. Constraints and owned files
 - Write only `docs/progress/1.0/inventory/bottom-up-s2.json`. Change no other file.
 - Never open or reference a personal session or user data directory.
-- Do not read `docs/progress/1.0/inventory/top-down.json`, `top-down.md` or `build_top_down.py`, or the user documents they cite: this inventory comes from the code alone, so the merge can compare two independent lists.
-- JSON format: `{"shard": "s2", "functions": [...], "internal_only": [...], "unclear": [...]}`. Each function has `id` (`S2-<n>`), `name`, `entry_points` (list of command ID, key, button, menu or route strings), `reads`, `writes` (lists drawn from: state, protection, journal, checkpoints, workspace, preferences, files, none), `engine_call` (string or null) and `evidence` (list of `path:line`). `unclear` lists items that could not be classified, with evidence.
+- Independence: do not read `docs/progress/1.0/inventory/top-down.json`, `top-down.md`, `build_top_down.py`, any `claude-*` or `bottom-up-*` file other than your own, the user documents they cite, or `docs/progress/0.4.1/screening-findings.md`. This inventory comes from the code alone.
+- JSON format (checked by `docs/progress/1.0/inventory/check_inventory.py`): `{"shard": "s2", "functions": [...], "internal_only": [...], "unclear": [...]}` and no other top-level keys. Each function row has exactly these fields, plus an optional non-empty `notes` string:
+  - `id`: `S2-<number>`, unique;
+  - `name`: a short name;
+  - `behaviour`: what the user sees or gets, in one or two sentences;
+  - `entry_points`: non-empty list of strings, each qualified by its context: `key <bank or window>: <key>`, `button <window>: <label>`, `menu <window>: <path>`, `command <id>`, `route <METHOD> <path>` (with the action field when one route serves several actions), `window <name>`, `cli <program> <option>`;
+  - `evidence`: non-empty list of repository-relative `path:line` (the line where the behaviour or the entry point is implemented);
+  - `depends_on`: list of other rows' ids, other shards' entry points or module-level functions it needs (may be empty);
+  - `evidence_kind`: `source` (read in code), `source+test` (also exercised by a test; `notes` names the test file path) or `inferred` (indirect; `notes` explains);
+  - `reads`, `writes`: non-empty lists drawn from state, protection, journal, checkpoints, workspace, preferences, files, none;
+  - `engine_call`: the engine method or route it reaches, or null.
+  `internal_only` and `unclear` items have exactly `name`, a non-empty `evidence` list in the same `path:line` form, and an optional `reason`.
+- Check your file with `python docs/progress/1.0/inventory/check_inventory.py docs/progress/1.0/inventory/bottom-up-s2.json` before you finish.
 
 ```implement-contract
-{"allowed_files": ["docs/progress/1.0/inventory/bottom-up-s2.json"], "acceptance_check": ["python", "-c", "import json;d=json.load(open('docs/progress/1.0/inventory/bottom-up-s2.json',encoding='utf-8'));assert d['shard']=='s2' and isinstance(d['functions'],list) and d['functions'] and all(set(f)>={'id','name','entry_points','reads','writes','engine_call','evidence'} for f in d['functions'])"], "stop_condition": "docs/progress/1.0/inventory/bottom-up-s2.json lists every user-reachable function of shard s2 and the acceptance check passes"}
+{"allowed_files": ["docs/progress/1.0/inventory/bottom-up-s2.json"], "acceptance_check": ["python", "docs/progress/1.0/inventory/check_inventory.py", "docs/progress/1.0/inventory/bottom-up-s2.json"], "stop_condition": "docs/progress/1.0/inventory/bottom-up-s2.json lists every user-reachable function whose entry point is defined in shard s2's files and the acceptance check passes"}
 ```
 
 ## 7. Required return format
-- The JSON file above; the final message lists the row count, the `unclear` count and open points.
+- The JSON file above; the final message lists the row count, the `internal_only` and `unclear` counts and open points.

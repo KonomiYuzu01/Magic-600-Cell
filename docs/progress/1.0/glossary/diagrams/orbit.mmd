@@ -1,0 +1,9 @@
+flowchart LR
+  subgraph O33[orbit O33]
+    a[piece] <--> b[piece] <--> c[piece]
+  end
+  subgraph O26[orbit O26]
+    d[piece] <--> e[piece]
+  end
+  O33 -. never exchange .- O26
+  F[600 fixed cell centres: never move, not numbered]

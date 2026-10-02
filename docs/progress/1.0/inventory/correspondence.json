@@ -1,0 +1,4540 @@
+{
+ "format": "C600-INVENTORY-CORRESPONDENCE-draft",
+ "pairs": [
+  {
+   "claude": [
+    "claude:S1-1",
+    "claude:S1-2"
+   ],
+   "codex": [
+    "codex:S1-1"
+   ],
+   "kind": "one-to-many",
+   "reason": "Both describe starting the engine from server.py; Claude split out session/journal opening via --data."
+  },
+  {
+   "claude": [
+    "claude:S1-3",
+    "claude:S1-6"
+   ],
+   "codex": [
+    "codex:S1-3"
+   ],
+   "kind": "one-to-many",
+   "reason": "Both cover stopping the engine via POST /api/shutdown and Ctrl+C/signal; Claude split the HTTP and signal routes."
+  },
+  {
+   "claude": [
+    "claude:S1-9"
+   ],
+   "codex": [
+    "codex:S1-4"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-4 and claude S1-9)."
+  },
+  {
+   "claude": [
+    "claude:S1-10"
+   ],
+   "codex": [
+    "codex:S1-5"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-5 and claude S1-10)."
+  },
+  {
+   "claude": [
+    "claude:S1-11"
+   ],
+   "codex": [
+    "codex:S1-6"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-6 and claude S1-11)."
+  },
+  {
+   "claude": [
+    "claude:S1-5"
+   ],
+   "codex": [
+    "codex:S1-7"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-7 and claude S1-5)."
+  },
+  {
+   "claude": [
+    "claude:S1-8"
+   ],
+   "codex": [
+    "codex:S1-8"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-8 and claude S1-8)."
+  },
+  {
+   "claude": [
+    "claude:S1-7"
+   ],
+   "codex": [
+    "codex:S1-9"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-9 and claude S1-7)."
+  },
+  {
+   "claude": [
+    "claude:S1-13"
+   ],
+   "codex": [
+    "codex:S1-10"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-10 and claude S1-13)."
+  },
+  {
+   "claude": [
+    "claude:S1-12"
+   ],
+   "codex": [
+    "codex:S1-11"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-11 and claude S1-12)."
+  },
+  {
+   "claude": [
+    "claude:S1-16"
+   ],
+   "codex": [
+    "codex:S1-12"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-12 and claude S1-16)."
+  },
+  {
+   "claude": [
+    "claude:S1-14"
+   ],
+   "codex": [
+    "codex:S1-13"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-13 and claude S1-14)."
+  },
+  {
+   "claude": [
+    "claude:S1-39"
+   ],
+   "codex": [
+    "codex:S1-14"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-14 and claude S1-39)."
+  },
+  {
+   "claude": [
+    "claude:S1-58"
+   ],
+   "codex": [
+    "codex:S1-15"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-15 and claude S1-58)."
+  },
+  {
+   "claude": [
+    "claude:S1-59"
+   ],
+   "codex": [
+    "codex:S1-16"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-16 and claude S1-59)."
+  },
+  {
+   "claude": [
+    "claude:S1-60"
+   ],
+   "codex": [
+    "codex:S1-17"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-17 and claude S1-60)."
+  },
+  {
+   "claude": [
+    "claude:S1-61"
+   ],
+   "codex": [
+    "codex:S1-18"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-18 and claude S1-61)."
+  },
+  {
+   "claude": [
+    "claude:S1-33"
+   ],
+   "codex": [
+    "codex:S1-19"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-19 and claude S1-33)."
+  },
+  {
+   "claude": [
+    "claude:S1-62"
+   ],
+   "codex": [
+    "codex:S1-20"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-20 and claude S1-62)."
+  },
+  {
+   "claude": [
+    "claude:S1-15"
+   ],
+   "codex": [
+    "codex:S1-21"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-21 and claude S1-15)."
+  },
+  {
+   "claude": [
+    "claude:S1-40"
+   ],
+   "codex": [
+    "codex:S1-23"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-23 and claude S1-40)."
+  },
+  {
+   "claude": [
+    "claude:S1-41"
+   ],
+   "codex": [
+    "codex:S1-24"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-24 and claude S1-41)."
+  },
+  {
+   "claude": [
+    "claude:S1-28"
+   ],
+   "codex": [
+    "codex:S1-25"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-25 and claude S1-28)."
+  },
+  {
+   "claude": [
+    "claude:S1-29"
+   ],
+   "codex": [
+    "codex:S1-26"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-26 and claude S1-29)."
+  },
+  {
+   "claude": [
+    "claude:S1-68"
+   ],
+   "codex": [
+    "codex:S1-27"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-27 and claude S1-68)."
+  },
+  {
+   "claude": [
+    "claude:S1-49"
+   ],
+   "codex": [
+    "codex:S1-28"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-28 and claude S1-49)."
+  },
+  {
+   "claude": [
+    "claude:S1-50"
+   ],
+   "codex": [
+    "codex:S1-29"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-29 and claude S1-50)."
+  },
+  {
+   "claude": [
+    "claude:S1-51"
+   ],
+   "codex": [
+    "codex:S1-30"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-30 and claude S1-51)."
+  },
+  {
+   "claude": [
+    "claude:S1-32"
+   ],
+   "codex": [
+    "codex:S1-31"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-31 and claude S1-32)."
+  },
+  {
+   "claude": [
+    "claude:S1-64"
+   ],
+   "codex": [
+    "codex:S1-32"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-32 and claude S1-64)."
+  },
+  {
+   "claude": [
+    "claude:S1-65"
+   ],
+   "codex": [
+    "codex:S1-33"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-33 and claude S1-65)."
+  },
+  {
+   "claude": [
+    "claude:S1-66"
+   ],
+   "codex": [
+    "codex:S1-34"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-34 and claude S1-66)."
+  },
+  {
+   "claude": [
+    "claude:S1-67"
+   ],
+   "codex": [
+    "codex:S1-35"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-35 and claude S1-67)."
+  },
+  {
+   "claude": [
+    "claude:S1-63"
+   ],
+   "codex": [
+    "codex:S1-36"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-36 and claude S1-63)."
+  },
+  {
+   "claude": [
+    "claude:S1-30"
+   ],
+   "codex": [
+    "codex:S1-37"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-37 and claude S1-30)."
+  },
+  {
+   "claude": [
+    "claude:S1-31"
+   ],
+   "codex": [
+    "codex:S1-38"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-38 and claude S1-31)."
+  },
+  {
+   "claude": [
+    "claude:S1-17"
+   ],
+   "codex": [
+    "codex:S1-39"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-39 and claude S1-17)."
+  },
+  {
+   "claude": [
+    "claude:S1-18"
+   ],
+   "codex": [
+    "codex:S1-40"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-40 and claude S1-18)."
+  },
+  {
+   "claude": [
+    "claude:S1-22"
+   ],
+   "codex": [
+    "codex:S1-41"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-41 and claude S1-22)."
+  },
+  {
+   "claude": [
+    "claude:S1-23"
+   ],
+   "codex": [
+    "codex:S1-42"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-42 and claude S1-23)."
+  },
+  {
+   "claude": [
+    "claude:S1-48"
+   ],
+   "codex": [
+    "codex:S1-43"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-43 and claude S1-48)."
+  },
+  {
+   "claude": [
+    "claude:S1-19"
+   ],
+   "codex": [
+    "codex:S1-44"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-44 and claude S1-19)."
+  },
+  {
+   "claude": [
+    "claude:S1-20"
+   ],
+   "codex": [
+    "codex:S1-47"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-47 and claude S1-20)."
+  },
+  {
+   "claude": [
+    "claude:S1-52"
+   ],
+   "codex": [
+    "codex:S1-48"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-48 and claude S1-52)."
+  },
+  {
+   "claude": [
+    "claude:S1-54"
+   ],
+   "codex": [
+    "codex:S1-49"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-49 and claude S1-54)."
+  },
+  {
+   "claude": [
+    "claude:S1-55"
+   ],
+   "codex": [
+    "codex:S1-50"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-50 and claude S1-55)."
+  },
+  {
+   "claude": [
+    "claude:S1-56"
+   ],
+   "codex": [
+    "codex:S1-51"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-51 and claude S1-56)."
+  },
+  {
+   "claude": [
+    "claude:S1-57"
+   ],
+   "codex": [
+    "codex:S1-52"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-52 and claude S1-57)."
+  },
+  {
+   "claude": [
+    "claude:S1-24"
+   ],
+   "codex": [
+    "codex:S1-53"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-53 and claude S1-24)."
+  },
+  {
+   "claude": [
+    "claude:S1-46"
+   ],
+   "codex": [
+    "codex:S1-58"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-58 and claude S1-46)."
+  },
+  {
+   "claude": [
+    "claude:S1-44"
+   ],
+   "codex": [
+    "codex:S1-59"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-59 and claude S1-44)."
+  },
+  {
+   "claude": [
+    "claude:S1-69"
+   ],
+   "codex": [
+    "codex:S1-62"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-62 and claude S1-69)."
+  },
+  {
+   "claude": [
+    "claude:S1-25"
+   ],
+   "codex": [
+    "codex:S1-63"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-63 and claude S1-25)."
+  },
+  {
+   "claude": [
+    "claude:S1-38"
+   ],
+   "codex": [
+    "codex:S1-64"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-64 and claude S1-38)."
+  },
+  {
+   "claude": [
+    "claude:S1-26"
+   ],
+   "codex": [
+    "codex:S1-65"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-65 and claude S1-26)."
+  },
+  {
+   "claude": [
+    "claude:S1-27"
+   ],
+   "codex": [
+    "codex:S1-66"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-66 and claude S1-27)."
+  },
+  {
+   "claude": [
+    "claude:S1-34"
+   ],
+   "codex": [
+    "codex:S1-67"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-67 and claude S1-34)."
+  },
+  {
+   "claude": [
+    "claude:S1-35"
+   ],
+   "codex": [
+    "codex:S1-68"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-68 and claude S1-35)."
+  },
+  {
+   "claude": [
+    "claude:S1-36"
+   ],
+   "codex": [
+    "codex:S1-69"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-69 and claude S1-36)."
+  },
+  {
+   "claude": [
+    "claude:S1-37"
+   ],
+   "codex": [
+    "codex:S1-70"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same route/entry point and behaviour (codex S1-70 and claude S1-37)."
+  },
+  {
+   "claude": [
+    "claude:S1-42",
+    "claude:S1-43"
+   ],
+   "codex": [
+    "codex:S1-22"
+   ],
+   "kind": "one-to-many",
+   "reason": "POST /api/timer status and heartbeat actions; Claude split them."
+  },
+  {
+   "claude": [
+    "claude:S1-21"
+   ],
+   "codex": [
+    "codex:S1-45",
+    "codex:S1-46"
+   ],
+   "kind": "many-to-one",
+   "reason": "GET /api/native/colors and /api/native/styles; Codex split them, Claude kept one row."
+  },
+  {
+   "claude": [
+    "claude:S1-45"
+   ],
+   "codex": [
+    "codex:S1-54",
+    "codex:S1-55",
+    "codex:S1-56",
+    "codex:S1-57"
+   ],
+   "kind": "many-to-one",
+   "reason": "POST /api/compose operations inverse/concat/commutator/conjugate; Claude kept one row."
+  },
+  {
+   "claude": [
+    "claude:S1-47"
+   ],
+   "codex": [
+    "codex:S1-60",
+    "codex:S1-61"
+   ],
+   "kind": "many-to-one",
+   "reason": "POST /api/scramble apply=false/true; Claude kept one row."
+  },
+  {
+   "claude": [
+    "claude:S2-1"
+   ],
+   "codex": [
+    "codex:S2-56"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe starting the engine service via engine.py (engine.py:12)."
+  },
+  {
+   "claude": [
+    "claude:S2-2",
+    "claude:S2-3"
+   ],
+   "codex": [
+    "codex:S2-57"
+   ],
+   "kind": "one-to-many",
+   "reason": "Codex keeps launch.py browser launch as one row; Claude split --no-browser into its own row (launch.py:17-33)."
+  },
+  {
+   "claude": [
+    "claude:S2-4"
+   ],
+   "codex": [
+    "codex:S2-58"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe native_launch.py --mode/--session launching the retained native sample (native_launch.py:261)."
+  },
+  {
+   "claude": [
+    "claude:S2-5"
+   ],
+   "codex": [
+    "codex:S2-59"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe native_launch.py --build-only building the native host without launching."
+  },
+  {
+   "claude": [
+    "claude:S2-6"
+   ],
+   "codex": [
+    "codex:S2-60"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe print_identity.py printing checkout and build identity."
+  },
+  {
+   "claude": [
+    "claude:S2-8"
+   ],
+   "codex": [
+    "codex:S2-61"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe Magic600Cell.exe normal startup with --data/--mode/--startup-timeout (launcher.py)."
+  },
+  {
+   "claude": [
+    "claude:S2-9"
+   ],
+   "codex": [
+    "codex:S2-62"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe the 'Magic 600 Cell could not start' failure window."
+  },
+  {
+   "claude": [
+    "claude:S2-10"
+   ],
+   "codex": [
+    "codex:S2-63"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe launcher --verify-package."
+  },
+  {
+   "claude": [
+    "claude:S2-11"
+   ],
+   "codex": [
+    "codex:S2-64",
+    "codex:S2-65"
+   ],
+   "kind": "many-to-one",
+   "reason": "Claude merged --engine-test and --parent-eof into one row; Codex has one row per option."
+  },
+  {
+   "claude": [
+    "claude:S2-12"
+   ],
+   "codex": [
+    "codex:S2-66"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe launcher --runtime-check."
+  },
+  {
+   "claude": [
+    "claude:S2-13"
+   ],
+   "codex": [
+    "codex:S2-67",
+    "codex:S2-68"
+   ],
+   "kind": "many-to-one",
+   "reason": "Claude folded assemble.py --no-zip into the assemble row; Codex split package assembly and ZIP suppression."
+  },
+  {
+   "claude": [
+    "claude:S2-14"
+   ],
+   "codex": [
+    "codex:S2-69"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe check_package.py bundle/output/--native-export diagnostics."
+  },
+  {
+   "claude": [
+    "claude:S2-15"
+   ],
+   "codex": [
+    "codex:S2-70"
+   ],
+   "kind": "one-to-one",
+   "reason": "Both describe profile_reply.py --profile/--output."
+  },
+  {
+   "claude": [
+    "claude:S3-285",
+    "claude:S3-286"
+   ],
+   "codex": [
+    "codex:S3-1"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same launcher-gated GET / experiment page and /experiment/<file> script/style assets."
+  },
+  {
+   "claude": [
+    "claude:S3-287"
+   ],
+   "codex": [
+    "codex:S3-2"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same GET /api/experiment/snapshot authenticated workspace snapshot."
+  },
+  {
+   "claude": [
+    "claude:S3-288"
+   ],
+   "codex": [
+    "codex:S3-3"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same GET /api/experiment/native-snapshot paired work, Local-cell and native snapshot."
+  },
+  {
+   "claude": [
+    "claude:S3-289"
+   ],
+   "codex": [
+    "codex:S3-4"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same GET /api/structure model structure and names read."
+  },
+  {
+   "claude": [
+    "claude:S3-293"
+   ],
+   "codex": [
+    "codex:S3-5"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same POST /api/experiment/window-layout detached window layout save."
+  },
+  {
+   "claude": [
+    "claude:S3-200"
+   ],
+   "codex": [
+    "codex:S3-36"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same physical-bank Grip keys (digit and letter keys selecting caps, Hold or Latch)."
+  },
+  {
+   "claude": [
+    "claude:S3-201",
+    "claude:S3-238",
+    "claude:S3-239"
+   ],
+   "codex": [
+    "codex:S3-39"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same explicit cap or native-word turn submission: Action twist and native-word and the physical twist keys after a Grip."
+  },
+  {
+   "claude": [
+    "claude:S3-106",
+    "claude:S3-107",
+    "claude:S3-108",
+    "claude:S3-109",
+    "claude:S3-110",
+    "claude:S3-111",
+    "claude:S3-112",
+    "claude:S3-225"
+   ],
+   "codex": [
+    "codex:S3-17"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same work-goal declaration: Action goal plus the seven goal-* commands that Claude lists separately."
+  },
+  {
+   "claude": [
+    "claude:S3-128",
+    "claude:S3-129",
+    "claude:S3-130",
+    "claude:S3-131",
+    "claude:S3-132",
+    "claude:S3-133",
+    "claude:S3-134",
+    "claude:S3-135",
+    "claude:S3-136",
+    "claude:S3-137",
+    "claude:S3-138",
+    "claude:S3-139",
+    "claude:S3-140",
+    "claude:S3-141",
+    "claude:S3-230"
+   ],
+   "codex": [
+    "codex:S3-28"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same named key-bank selection: Action bank plus the fourteen bank-<name> commands."
+  },
+  {
+   "claude": [
+    "claude:S3-24",
+    "claude:S3-25",
+    "claude:S3-26",
+    "claude:S3-253"
+   ],
+   "codex": [
+    "codex:S3-60",
+    "codex:S3-61",
+    "codex:S3-62"
+   ],
+   "kind": "many-to-many",
+   "reason": "Same block-add member capture (Home exact, relative exact, position-only); Claude's Action block-add row covers all three modes that Codex splits by mode, with commands block-add, block-capture and block-capture-position."
+  },
+  {
+   "claude": [
+    "claude:S3-28",
+    "claude:S3-29",
+    "claude:S3-30",
+    "claude:S3-31",
+    "claude:S3-32",
+    "claude:S3-255"
+   ],
+   "codex": [
+    "codex:S3-64",
+    "codex:S3-65",
+    "codex:S3-66",
+    "codex:S3-67",
+    "codex:S3-68"
+   ],
+   "kind": "many-to-many",
+   "reason": "Same block-protect/unprotect lock edits (exact, position-only, release all/exact/position); Claude's single Action block-protect row spans the five Codex rows that split it by mode and enabled flag."
+  },
+  {
+   "claude": [
+    "claude:S3-69",
+    "claude:S3-56",
+    "claude:S3-258",
+    "claude:S3-259"
+   ],
+   "codex": [
+    "codex:S3-86",
+    "codex:S3-87",
+    "codex:S3-90"
+   ],
+   "kind": "many-to-many",
+   "reason": "Same personal macro variant saving (inverse, reference-conjugated, geometry); Action macro-variant is shared by the three Codex rows, with macro-inverse, reference-transform and transform-macro."
+  },
+  {
+   "claude": [
+    "claude:S3-172",
+    "claude:S3-248",
+    "claude:S3-194",
+    "claude:S3-219"
+   ],
+   "codex": [
+    "codex:S3-57",
+    "codex:S3-123"
+   ],
+   "kind": "many-to-many",
+   "reason": "Same puzzle reset and workspace reset: Action reset, command reset and reset-workspace, and Action session-reset with scope puzzle or workspace, which Codex splits by scope."
+  },
+  {
+   "claude": [
+    "claude:S3-38",
+    "claude:S3-39",
+    "claude:S3-40",
+    "claude:S3-41",
+    "claude:S3-204"
+   ],
+   "codex": [
+    "codex:S3-100"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same phase-boundary inspection (Actual, after-Prepare, after-Macro, after-Cleanup): inspect-* commands and Action inspect-phase."
+  },
+  {
+   "claude": [
+    "claude:S3-57",
+    "claude:S3-58",
+    "claude:S3-142",
+    "claude:S3-143",
+    "claude:S3-144",
+    "claude:S3-150",
+    "claude:S3-151",
+    "claude:S3-152",
+    "claude:S3-203"
+   ],
+   "codex": [
+    "codex:S3-101"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same cycle/graph inspection of macro, steps, complete operation and Current/Operation/After modes: cycles-* commands, effect-body/complete and Action inspect-cycles."
+  },
+  {
+   "claude": [
+    "claude:S3-5",
+    "claude:S3-279"
+   ],
+   "codex": [
+    "codex:S3-125",
+    "codex:S3-126"
+   ],
+   "kind": "many-to-many",
+   "reason": "Same piece-filter compose (preview versus apply): command filter and Action filter, which Codex splits by the preview flag."
+  },
+  {
+   "claude": [
+    "claude:S3-85",
+    "claude:S3-265"
+   ],
+   "codex": [
+    "codex:S3-75"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same exact macro selection: Action macro-select and command endgame-select-saved (select saved endgame macro without inserting), both Codex-listed entry points of one row."
+  },
+  {
+   "claude": [
+    "claude:S3-114",
+    "claude:S3-277"
+   ],
+   "codex": [
+    "codex:S3-98"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same saved work-sheet inspection against current inputs: Action template-inspect and command worksheet. Claude describes the command more broadly (offer to save or reuse)."
+  },
+  {
+   "claude": [
+    "claude:S3-281"
+   ],
+   "codex": [
+    "codex:S3-129"
+   ],
+   "kind": "one-to-one",
+   "reason": "Action settings: Claude keeps one row for the whole settings action; this Codex row is the residual presentation-settings branch (view=<other fields>). The other settings branches are paired with their commands separately."
+  },
+  {
+   "claude": [
+    "claude:S3-220"
+   ],
+   "codex": [
+    "codex:S3-6"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Inspect a piece identity': shared entry points (Action inspect) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-221"
+   ],
+   "codex": [
+    "codex:S3-7"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Inspect a fixed position': shared entry points (Action inspect-position) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-13",
+    "claude:S3-222"
+   ],
+   "codex": [
+    "codex:S3-8"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Set Current and destination': shared entry points (command focus, Action focus) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-14"
+   ],
+   "codex": [
+    "codex:S3-9"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Use inspected identity as Current': shared entry points (command set-current) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-15"
+   ],
+   "codex": [
+    "codex:S3-10"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Assign the inspected destination': shared entry points (command assign-target) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-12",
+    "claude:S3-231"
+   ],
+   "codex": [
+    "codex:S3-11"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose the working orbit': shared entry points (command orbit, Action orbit) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-19",
+    "claude:S3-223"
+   ],
+   "codex": [
+    "codex:S3-12"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Pin or replace Next': shared entry points (command next-pin, Action next-pin) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-21",
+    "claude:S3-224"
+   ],
+   "codex": [
+    "codex:S3-13"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Clear Next': shared entry points (command next-clear, Action next-clear) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-20",
+    "claude:S3-229"
+   ],
+   "codex": [
+    "codex:S3-14"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Activate Next': shared entry points (command next-activate, Action next-activate) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-22"
+   ],
+   "codex": [
+    "codex:S3-15"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Locate Next': shared entry points (command next-locate) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-23"
+   ],
+   "codex": [
+    "codex:S3-16"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open Next actions': shared entry points (command next-menu) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-44",
+    "claude:S3-226"
+   ],
+   "codex": [
+    "codex:S3-18"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Declare an exact Home destination frame': shared entry points (command target-home, Action target-home) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-43",
+    "claude:S3-227"
+   ],
+   "codex": [
+    "codex:S3-19"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Capture the destination frame': shared entry points (command target-capture, Action target-capture) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-33",
+    "claude:S3-228"
+   ],
+   "codex": [
+    "codex:S3-20"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Transport block requirements by a reference word': shared entry points (command block-reference, Action block-reference) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-18",
+    "claude:S3-256"
+   ],
+   "codex": [
+    "codex:S3-21"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Assign buffer roles A and B': shared entry points (command roles, Action roles) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-16"
+   ],
+   "codex": [
+    "codex:S3-22"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Assign the inspected position to buffer A': shared entry points (command assign-a) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-17"
+   ],
+   "codex": [
+    "codex:S3-23"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Assign the inspected position to buffer B': shared entry points (command assign-b) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-74"
+   ],
+   "codex": [
+    "codex:S3-24"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Inspect buffer A': shared entry points (command solve-locate-a) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-75"
+   ],
+   "codex": [
+    "codex:S3-25"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Inspect buffer B': shared entry points (command solve-locate-b) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-76"
+   ],
+   "codex": [
+    "codex:S3-26"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Inspect the destination': shared entry points (command solve-locate-target) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-2"
+   ],
+   "codex": [
+    "codex:S3-27"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open the key-bank chooser': shared entry points (command bank) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-35",
+    "claude:S3-36"
+   ],
+   "codex": [
+    "codex:S3-29"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Cycle the active key bank': shared entry points (command bank-next, command bank-prev) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-7"
+   ],
+   "codex": [
+    "codex:S3-30"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Return to the previous key bank': shared entry points (command bank-previous) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-9"
+   ],
+   "codex": [
+    "codex:S3-31"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Toggle Functions and return': shared entry points (command functions-toggle) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-282"
+   ],
+   "codex": [
+    "codex:S3-32"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Rename the active key bank': shared entry points (Action bank-name) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-59",
+    "claude:S3-60"
+   ],
+   "codex": [
+    "codex:S3-33"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Select a fixed bank macro': shared entry points (command bank-macro-1, command bank-macro-2) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-123",
+    "claude:S3-232"
+   ],
+   "codex": [
+    "codex:S3-34"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Capture explicit Grip cells': shared entry points (command capture, Action capture) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-124"
+   ],
+   "codex": [
+    "codex:S3-35"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Capture the inspected piece’s caps': shared entry points (command capture-piece) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-127",
+    "claude:S3-233",
+    "claude:S3-234"
+   ],
+   "codex": [
+    "codex:S3-37"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Read and edit a Grip frame': shared entry points (command grip-frame, Action grip-frames, Action capture-frame) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-284"
+   ],
+   "codex": [
+    "codex:S3-38"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Read a cap’s legal axes': shared entry points (Action grips) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-88",
+    "claude:S3-89",
+    "claude:S3-90"
+   ],
+   "codex": [
+    "codex:S3-40"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose the operation input phase': shared entry points (command phase-prepare, command phase-macro, command phase-cleanup) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-104",
+    "claude:S3-105"
+   ],
+   "codex": [
+    "codex:S3-41"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose Draft or Live input': shared entry points (command input-draft, command input-live) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-125",
+    "claude:S3-126"
+   ],
+   "codex": [
+    "codex:S3-42"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose Hold or Latch Grip mode': shared entry points (command grip-hold, command grip-latch) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-61",
+    "claude:S3-62",
+    "claude:S3-63",
+    "claude:S3-64",
+    "claude:S3-235"
+   ],
+   "codex": [
+    "codex:S3-43"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Edit explicit phase steps': shared entry points (command phase-input, command edit-prepare, command edit-macro, command edit-cleanup, Action draft) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-52",
+    "claude:S3-53",
+    "claude:S3-236"
+   ],
+   "codex": [
+    "codex:S3-44"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Append or replace with a selected macro': shared entry points (command macro-insert, command macro-replace, Action insert-macro) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-91",
+    "claude:S3-237"
+   ],
+   "codex": [
+    "codex:S3-45"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Set inverse Prepare as Cleanup': shared entry points (command cleanup-inverse, Action inverse-cleanup) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-92",
+    "claude:S3-240"
+   ],
+   "codex": [
+    "codex:S3-46"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Review the complete operation': shared entry points (command review, Action review) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-95",
+    "claude:S3-241"
+   ],
+   "codex": [
+    "codex:S3-47"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Stage the reviewed operation preview': shared entry points (command preview, Action preview) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-96",
+    "claude:S3-242"
+   ],
+   "codex": [
+    "codex:S3-48"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Commit the staged complete operation': shared entry points (command commit, Action commit) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-97",
+    "claude:S3-245"
+   ],
+   "codex": [
+    "codex:S3-49"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Cancel the pending preview': shared entry points (command cancel-preview, Action cancel-preview) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-98"
+   ],
+   "codex": [
+    "codex:S3-50"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Stop running analysis': shared entry points (command cancel-analysis) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-101",
+    "claude:S3-243"
+   ],
+   "codex": [
+    "codex:S3-51"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Start a new operation': shared entry points (command operation-new, Action operation-new) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-102",
+    "claude:S3-244"
+   ],
+   "codex": [
+    "codex:S3-52"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Reuse retained operation steps': shared entry points (command operation-reuse, Action operation-reuse) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-99",
+    "claude:S3-246"
+   ],
+   "codex": [
+    "codex:S3-53"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Undo a journal operation': shared entry points (command undo, Action undo) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-100",
+    "claude:S3-247"
+   ],
+   "codex": [
+    "codex:S3-54"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Redo a journal operation': shared entry points (command redo, Action redo) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-170",
+    "claude:S3-249"
+   ],
+   "codex": [
+    "codex:S3-55"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Create a named checkpoint': shared entry points (command checkpoint, Action checkpoint) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-171",
+    "claude:S3-250"
+   ],
+   "codex": [
+    "codex:S3-56"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Restore a named checkpoint': shared entry points (command restore, Action restore) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-34",
+    "claude:S3-251"
+   ],
+   "codex": [
+    "codex:S3-58"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Set whole-orbit protection': shared entry points (command protection, Action protect) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-48",
+    "claude:S3-49",
+    "claude:S3-252"
+   ],
+   "codex": [
+    "codex:S3-59"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose per-turn or net-boundary protection': shared entry points (command prefix-on, command prefix-off, Action prefix) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-27",
+    "claude:S3-254"
+   ],
+   "codex": [
+    "codex:S3-63"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Remove a block member': shared entry points (command block-remove, Action block-remove) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-3"
+   ],
+   "codex": [
+    "codex:S3-69"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open Macro Base search': shared entry points (command macro-search) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-70",
+    "claude:S3-71",
+    "claude:S3-72"
+   ],
+   "codex": [
+    "codex:S3-70"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Open Solve pages': shared entry points (command solve-macros, command solve-prepare, command solve-protection) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-37"
+   ],
+   "codex": [
+    "codex:S3-71"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open solve actions': shared entry points (command solve-actions) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-4"
+   ],
+   "codex": [
+    "codex:S3-72"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Focus the operation controls': shared entry points (command operation-focus) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-54",
+    "claude:S3-103"
+   ],
+   "codex": [
+    "codex:S3-73"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Hide the Solve window': shared entry points (command macro-close, command operation-hide) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-51",
+    "claude:S3-266"
+   ],
+   "codex": [
+    "codex:S3-74"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Inspect a macro’s exact body and applicability': shared entry points (command macro-details, Action macro-effect) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-50",
+    "claude:S3-268"
+   ],
+   "codex": [
+    "codex:S3-76"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Save a personal macro': shared entry points (command macro-new, Action save-macro) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-66",
+    "claude:S3-67",
+    "claude:S3-269"
+   ],
+   "codex": [
+    "codex:S3-77"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Edit macro labels, notes, tags and pinning': shared entry points (command macro-label, command macro-pin, Action macro-note) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-65",
+    "claude:S3-273"
+   ],
+   "codex": [
+    "codex:S3-78"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Query and filter the macro catalogue': shared entry points (command macro-filter, Action macro-query) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-73",
+    "claude:S3-274"
+   ],
+   "codex": [
+    "codex:S3-79"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Check library effects': shared entry points (command macro-check-library, Action macro-check-library) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-87",
+    "claude:S3-275"
+   ],
+   "codex": [
+    "codex:S3-80"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Compare candidate macros for the current work': shared entry points (command macro-candidates, Action macro-candidates) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-68",
+    "claude:S3-267"
+   ],
+   "codex": [
+    "codex:S3-81"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Compare two complete macro actions': shared entry points (command macro-compare, Action macro-compare) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-183",
+    "claude:S3-270"
+   ],
+   "codex": [
+    "codex:S3-82"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Export selected macro records': shared entry points (command macro-export, Action macro-export) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-184",
+    "claude:S3-271"
+   ],
+   "codex": [
+    "codex:S3-83"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Inspect a macro import': shared entry points (command macro-import, Action macro-import-check) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-272"
+   ],
+   "codex": [
+    "codex:S3-84"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Apply a checked macro import': shared entry points (Action macro-import) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-55",
+    "claude:S3-257"
+   ],
+   "codex": [
+    "codex:S3-85"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose an explicit reference word': shared entry points (command reference, Action reference) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-260"
+   ],
+   "codex": [
+    "codex:S3-88"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'List geometric reference frames': shared entry points (Action reference-frames) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-77",
+    "claude:S3-261"
+   ],
+   "codex": [
+    "codex:S3-89"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Check a geometric macro reference': shared entry points (command macro-geometry, Action macro-geometry-review) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-78"
+   ],
+   "codex": [
+    "codex:S3-91"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open finite endgame choices': shared entry points (command endgame-choices) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-79",
+    "claude:S3-80",
+    "claude:S3-262"
+   ],
+   "codex": [
+    "codex:S3-92"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose endgame auxiliary positions and view their choices': shared entry points (command endgame-x, command endgame-y, Action endgame-options) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-81",
+    "claude:S3-82"
+   ],
+   "codex": [
+    "codex:S3-93"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose endgame orientation parameters': shared entry points (command endgame-q, command endgame-r) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-83",
+    "claude:S3-263"
+   ],
+   "codex": [
+    "codex:S3-94"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Check an explicitly composed endgame': shared entry points (command endgame-check, Action endgame-compose) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-84",
+    "claude:S3-264"
+   ],
+   "codex": [
+    "codex:S3-95"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Save the explicitly chosen endgame': shared entry points (command endgame-save, Action endgame-save) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-86"
+   ],
+   "codex": [
+    "codex:S3-96"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Inspect endgame details': shared entry points (command endgame-details) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-173",
+    "claude:S3-276"
+   ],
+   "codex": [
+    "codex:S3-97"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Save a named work sheet': shared entry points (command worksheet-save, Action template-save) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-113",
+    "claude:S3-278"
+   ],
+   "codex": [
+    "codex:S3-99"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Load confirmed fixed work-sheet steps': shared entry points (command worksheet-use, Action template-use) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-145"
+   ],
+   "codex": [
+    "codex:S3-102"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Refresh cycle inspection': shared entry points (command cycles-refresh) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-146",
+    "claude:S3-147"
+   ],
+   "codex": [
+    "codex:S3-103"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Select the next or previous cycle': shared entry points (command cycles-next, command cycles-previous) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-148",
+    "claude:S3-149"
+   ],
+   "codex": [
+    "codex:S3-104"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Page through cycle inspection': shared entry points (command cycles-more, command cycles-back) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-118",
+    "claude:S3-202"
+   ],
+   "codex": [
+    "codex:S3-105"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Inspect the current residual and predicted delta': shared entry points (command residual-details, Action inspect-residual) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-42"
+   ],
+   "codex": [
+    "codex:S3-106"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Compare actual and predicted views': shared entry points (command compare-preview) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-93"
+   ],
+   "codex": [
+    "codex:S3-107"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'View complete review details': shared entry points (command review-details) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-94"
+   ],
+   "codex": [
+    "codex:S3-108"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Locate review evidence': shared entry points (command review-locate) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-115",
+    "claude:S3-116",
+    "claude:S3-117"
+   ],
+   "codex": [
+    "codex:S3-109"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Inspect a measured review reason': shared entry points (command review-reason-1, command review-reason-2, command review-reason-3) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-119"
+   ],
+   "codex": [
+    "codex:S3-110"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Inspect the last committed step': shared entry points (command journal-delta) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-120"
+   ],
+   "codex": [
+    "codex:S3-111"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Follow the next orbit suggestion': shared entry points (command orbit-following) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-185",
+    "claude:S3-188",
+    "claude:S3-209"
+   ],
+   "codex": [
+    "codex:S3-112"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Read the authoritative session report': shared entry points (command session, command session-report, Action session-report) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-187",
+    "claude:S3-210"
+   ],
+   "codex": [
+    "codex:S3-113"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Resume the saved solve attempt': shared entry points (command session-resume, Action session-resume) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-186",
+    "claude:S3-218"
+   ],
+   "codex": [
+    "codex:S3-114"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Start a new solved attempt': shared entry points (command session-new, Action session-new) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-190",
+    "claude:S3-191",
+    "claude:S3-211"
+   ],
+   "codex": [
+    "codex:S3-115"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Start or pause the shared solve timer': shared entry points (command session-timer-start, command session-timer-pause, Action session-timer) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-192",
+    "claude:S3-212"
+   ],
+   "codex": [
+    "codex:S3-116"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Save the session log': shared entry points (command session-save-log, Action session-save-log) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-199",
+    "claude:S3-213"
+   ],
+   "codex": [
+    "codex:S3-117"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Export the session log': shared entry points (command session-export-log, Action session-log-export) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-198",
+    "claude:S3-214"
+   ],
+   "codex": [
+    "codex:S3-118"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Inspect a session log before importing': shared entry points (command session-import-log, Action session-log-inspect) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-215"
+   ],
+   "codex": [
+    "codex:S3-119"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Apply a confirmed session log import': shared entry points (Action session-log-apply) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-216"
+   ],
+   "codex": [
+    "codex:S3-120"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Acknowledge a completion receipt': shared entry points (Action session-completion-ack) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-195"
+   ],
+   "codex": [
+    "codex:S3-121"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Reopen the recorded solve summary': shared entry points (command session-summary) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-189",
+    "claude:S3-217"
+   ],
+   "codex": [
+    "codex:S3-122"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Stage an explicit recorded scramble': shared entry points (command scramble, Action session-scramble) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-174",
+    "claude:S3-283"
+   ],
+   "codex": [
+    "codex:S3-124"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Load the E1 legal practice fixture': shared entry points (command fixture-e1, Action fixture) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-280"
+   ],
+   "codex": [
+    "codex:S3-127"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Save the current filter by name': shared entry points (Action save-filter) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-45",
+    "claude:S3-46",
+    "claude:S3-47"
+   ],
+   "codex": [
+    "codex:S3-128"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose the Local center': shared entry points (command local-center, command local-center-current, command local-center-grip) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-121",
+    "claude:S3-122"
+   ],
+   "codex": [
+    "codex:S3-130"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Edit saved key bindings': shared entry points (command key-edit, command key-edit-advanced) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-197",
+    "claude:S3-206"
+   ],
+   "codex": [
+    "codex:S3-131"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Export saved key bindings': shared entry points (command keymap-export, Action keymap-export) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-196",
+    "claude:S3-207"
+   ],
+   "codex": [
+    "codex:S3-132"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Inspect a keymap file': shared entry points (command keymap-import, Action keymap-import-check) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-208"
+   ],
+   "codex": [
+    "codex:S3-133"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Apply an inspected keymap': shared entry points (Action keymap-import) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-1"
+   ],
+   "codex": [
+    "codex:S3-134"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open the workspace index': shared entry points (command index) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-10"
+   ],
+   "codex": [
+    "codex:S3-135"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open Local view': shared entry points (command local) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-11"
+   ],
+   "codex": [
+    "codex:S3-136"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open Global view': shared entry points (command global) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-167"
+   ],
+   "codex": [
+    "codex:S3-137"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open the Puzzle view': shared entry points (command puzzle) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-178"
+   ],
+   "codex": [
+    "codex:S3-138"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open view-management controls': shared entry points (command views) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-168"
+   ],
+   "codex": [
+    "codex:S3-139"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Hide work windows': shared entry points (command windows-hide) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-169"
+   ],
+   "codex": [
+    "codex:S3-140"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Close view windows': shared entry points (command views-close) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-179"
+   ],
+   "codex": [
+    "codex:S3-141"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Toggle workspace fullscreen': shared entry points (command workspace-fullscreen) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-6"
+   ],
+   "codex": [
+    "codex:S3-142"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open the Keyboard window': shared entry points (command keyboard) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-8"
+   ],
+   "codex": [
+    "codex:S3-143"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Show or hide extra keyboard keys': shared entry points (command keyboard-extra) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-153"
+   ],
+   "codex": [
+    "codex:S3-144"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Reset the Local view': shared entry points (command local-reset) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-156",
+    "claude:S3-157",
+    "claude:S3-158",
+    "claude:S3-159"
+   ],
+   "codex": [
+    "codex:S3-145"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Adjust the Local view direction': shared entry points (command local-left, command local-right, command local-up, command local-down) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-154",
+    "claude:S3-155"
+   ],
+   "codex": [
+    "codex:S3-146"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Zoom the Local view': shared entry points (command local-zoom-in, command local-zoom-out) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-160"
+   ],
+   "codex": [
+    "codex:S3-147"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Reset the Global view': shared entry points (command global-reset) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-163",
+    "claude:S3-164",
+    "claude:S3-165",
+    "claude:S3-166"
+   ],
+   "codex": [
+    "codex:S3-148"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Adjust the Global view direction': shared entry points (command global-left, command global-right, command global-up, command global-down) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-161",
+    "claude:S3-162"
+   ],
+   "codex": [
+    "codex:S3-149"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Zoom the Global view': shared entry points (command global-zoom-in, command global-zoom-out) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-175"
+   ],
+   "codex": [
+    "codex:S3-150"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Open Puzzle display controls': shared entry points (command display) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-176",
+    "claude:S3-177",
+    "claude:S3-205"
+   ],
+   "codex": [
+    "codex:S3-151"
+   ],
+   "kind": "one-to-many",
+   "reason": "Same function 'Choose framework visibility and adaptive motion detail': shared entry points (command frame-toggle, command detail-toggle, Action display-settings) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-193"
+   ],
+   "codex": [
+    "codex:S3-152"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Reset the native puzzle view': shared entry points (command reset-view) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-180"
+   ],
+   "codex": [
+    "codex:S3-153"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Search integrated Help': shared entry points (command help) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-181"
+   ],
+   "codex": [
+    "codex:S3-154"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Copy a mathematical selection name': shared entry points (command copy-selection) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S3-182"
+   ],
+   "codex": [
+    "codex:S3-155"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same function 'Copy a canonical selection ID': shared entry points (command copy-selection-canonical) with matching behaviour."
+  },
+  {
+   "claude": [
+    "claude:S4-1",
+    "claude:S4-2",
+    "claude:S4-90"
+   ],
+   "codex": [
+    "codex:S4-1"
+   ],
+   "kind": "one-to-many",
+   "reason": "Start the native workbench: bootstrap.py launch and NativeHost.exe argument entry plus the resulting main window."
+  },
+  {
+   "claude": [
+    "claude:S4-3"
+   ],
+   "codex": [
+    "codex:S4-2"
+   ],
+   "kind": "one-to-one",
+   "reason": "File > Reconnect native bridge, same menu entry and bridge connect behaviour."
+  },
+  {
+   "claude": [
+    "claude:S4-4"
+   ],
+   "codex": [
+    "codex:S4-3"
+   ],
+   "kind": "one-to-one",
+   "reason": "File > Close / Alt+F4 / title-bar close with the recovery prompt."
+  },
+  {
+   "claude": [
+    "claude:S4-12"
+   ],
+   "codex": [
+    "codex:S4-4"
+   ],
+   "kind": "one-to-one",
+   "reason": "View > Tools panel F8 toggle."
+  },
+  {
+   "claude": [
+    "claude:S4-13"
+   ],
+   "codex": [
+    "codex:S4-5"
+   ],
+   "kind": "one-to-one",
+   "reason": "Dragging the viewport/tools divider resizes the tools panel."
+  },
+  {
+   "claude": [
+    "claude:S4-15"
+   ],
+   "codex": [
+    "codex:S4-6"
+   ],
+   "kind": "one-to-one",
+   "reason": "Help > Controls and validation dialog."
+  },
+  {
+   "claude": [
+    "claude:S4-5"
+   ],
+   "codex": [
+    "codex:S4-7"
+   ],
+   "kind": "one-to-one",
+   "reason": "Display and projection dialog opened from View menu / toolbar Display."
+  },
+  {
+   "claude": [
+    "claude:S4-6"
+   ],
+   "codex": [
+    "codex:S4-9",
+    "codex:S4-10",
+    "codex:S4-11",
+    "codex:S4-12",
+    "codex:S4-13",
+    "codex:S4-14"
+   ],
+   "kind": "many-to-one",
+   "reason": "Six display sliders (cell, sticker, FOV, diffuse, specular, ambient) split by Codex, one row for Claude, same dialog sliders."
+  },
+  {
+   "claude": [
+    "claude:S4-7"
+   ],
+   "codex": [
+    "codex:S4-8"
+   ],
+   "kind": "one-to-one",
+   "reason": "Smooth camera motion / Adaptive motion toggle."
+  },
+  {
+   "claude": [
+    "claude:S4-10"
+   ],
+   "codex": [
+    "codex:S4-15"
+   ],
+   "kind": "one-to-one",
+   "reason": "View > Reset view and toolbar Reset view."
+  },
+  {
+   "claude": [
+    "claude:S4-31"
+   ],
+   "codex": [
+    "codex:S4-16"
+   ],
+   "kind": "one-to-one",
+   "reason": "Toolbar Lab cell selector (focus a canonical cell)."
+  },
+  {
+   "claude": [
+    "claude:S4-11"
+   ],
+   "codex": [
+    "codex:S4-17"
+   ],
+   "kind": "one-to-one",
+   "reason": "View > Center focused cell / toolbar Center."
+  },
+  {
+   "claude": [
+    "claude:S4-30",
+    "claude:S4-52"
+   ],
+   "codex": [
+    "codex:S4-18",
+    "codex:S4-19"
+   ],
+   "kind": "many-to-many",
+   "reason": "Active orbit selector and Progress tab orbit list with double-click orbit selection."
+  },
+  {
+   "claude": [
+    "claude:S4-27",
+    "claude:S4-42",
+    "claude:S4-44"
+   ],
+   "codex": [
+    "codex:S4-20"
+   ],
+   "kind": "one-to-many",
+   "reason": "Filter expression editing and Apply filter button plus the filter focus action."
+  },
+  {
+   "claude": [
+    "claude:S4-43"
+   ],
+   "codex": [
+    "codex:S4-21"
+   ],
+   "kind": "one-to-one",
+   "reason": "Filters: Preview counts button."
+  },
+  {
+   "claude": [
+    "claude:S4-40"
+   ],
+   "codex": [
+    "codex:S4-22"
+   ],
+   "kind": "one-to-one",
+   "reason": "Quick filter preset selector and Use preset."
+  },
+  {
+   "claude": [
+    "claude:S4-9"
+   ],
+   "codex": [
+    "codex:S4-23"
+   ],
+   "kind": "one-to-one",
+   "reason": "Hide 600-cell frame menu item and Filters checkbox."
+  },
+  {
+   "claude": [
+    "claude:S4-45"
+   ],
+   "codex": [
+    "codex:S4-24"
+   ],
+   "kind": "one-to-one",
+   "reason": "Show buffers/selection/preview outside filter checkbox."
+  },
+  {
+   "claude": [
+    "claude:S4-46"
+   ],
+   "codex": [
+    "codex:S4-25",
+    "codex:S4-26",
+    "codex:S4-27"
+   ],
+   "kind": "many-to-one",
+   "reason": "Moving orbits expander, Apply checked and right-click exclude are one orbit checklist for Claude."
+  },
+  {
+   "claude": [
+    "claude:S4-47"
+   ],
+   "codex": [
+    "codex:S4-28"
+   ],
+   "kind": "one-to-one",
+   "reason": "Protect orbit button."
+  },
+  {
+   "claude": [
+    "claude:S4-48"
+   ],
+   "codex": [
+    "codex:S4-29"
+   ],
+   "kind": "one-to-one",
+   "reason": "Filter syntax and motion detail expander."
+  },
+  {
+   "claude": [
+    "claude:S4-49"
+   ],
+   "codex": [
+    "codex:S4-30",
+    "codex:S4-31"
+   ],
+   "kind": "many-to-one",
+   "reason": "Frozen piece sets expander and Save set."
+  },
+  {
+   "claude": [
+    "claude:S4-32",
+    "claude:S4-35"
+   ],
+   "codex": [
+    "codex:S4-32"
+   ],
+   "kind": "one-to-many",
+   "reason": "Preview insertion with destination and batch selectors split differently."
+  },
+  {
+   "claude": [
+    "claude:S4-33"
+   ],
+   "codex": [
+    "codex:S4-33"
+   ],
+   "kind": "one-to-one",
+   "reason": "Apply preview button / Enter."
+  },
+  {
+   "claude": [
+    "claude:S4-34"
+   ],
+   "codex": [
+    "codex:S4-34"
+   ],
+   "kind": "one-to-one",
+   "reason": "Cancel preview or job button / Escape."
+  },
+  {
+   "claude": [
+    "claude:S4-36"
+   ],
+   "codex": [
+    "codex:S4-35"
+   ],
+   "kind": "one-to-one",
+   "reason": "Focused-cell grip buttons, left and right click, digit keys."
+  },
+  {
+   "claude": [
+    "claude:S4-37"
+   ],
+   "codex": [
+    "codex:S4-36"
+   ],
+   "kind": "one-to-one",
+   "reason": "Preview word button and Invalid word message."
+  },
+  {
+   "claude": [
+    "claude:S4-39"
+   ],
+   "codex": [
+    "codex:S4-37"
+   ],
+   "kind": "one-to-one",
+   "reason": "Save preview macro button."
+  },
+  {
+   "claude": [
+    "claude:S4-50"
+   ],
+   "codex": [
+    "codex:S4-38",
+    "codex:S4-39"
+   ],
+   "kind": "many-to-one",
+   "reason": "Buffers Analyze button and frame selector shown together as Buffers analysis."
+  },
+  {
+   "claude": [
+    "claude:S4-51"
+   ],
+   "codex": [
+    "codex:S4-40"
+   ],
+   "kind": "one-to-one",
+   "reason": "Buffers Star and Inverse star buttons."
+  },
+  {
+   "claude": [
+    "claude:S4-16"
+   ],
+   "codex": [
+    "codex:S4-41"
+   ],
+   "kind": "one-to-one",
+   "reason": "File > Save checkpoint, toolbar and Session Checkpoint button, F9."
+  },
+  {
+   "claude": [
+    "claude:S4-17"
+   ],
+   "codex": [
+    "codex:S4-42"
+   ],
+   "kind": "one-to-one",
+   "reason": "File > Backup journal and Session Backup button."
+  },
+  {
+   "claude": [
+    "claude:S4-53"
+   ],
+   "codex": [
+    "codex:S4-43"
+   ],
+   "kind": "one-to-one",
+   "reason": "Session Restore checkpoint with confirmation window."
+  },
+  {
+   "claude": [
+    "claude:S4-29"
+   ],
+   "codex": [
+    "codex:S4-44"
+   ],
+   "kind": "one-to-one",
+   "reason": "Reset to solved keeping checkpoint."
+  },
+  {
+   "claude": [
+    "claude:S4-54"
+   ],
+   "codex": [
+    "codex:S4-45",
+    "codex:S4-46"
+   ],
+   "kind": "many-to-one",
+   "reason": "Refresh history and Checkout of journal branches."
+  },
+  {
+   "claude": [
+    "claude:S4-55"
+   ],
+   "codex": [
+    "codex:S4-47",
+    "codex:S4-48",
+    "codex:S4-49"
+   ],
+   "kind": "many-to-one",
+   "reason": "Session timer start/pause and session report refresh."
+  },
+  {
+   "claude": [
+    "claude:S4-20"
+   ],
+   "codex": [
+    "codex:S4-50"
+   ],
+   "kind": "one-to-one",
+   "reason": "Save log, Ctrl+S."
+  },
+  {
+   "claude": [
+    "claude:S4-21"
+   ],
+   "codex": [
+    "codex:S4-51"
+   ],
+   "kind": "one-to-one",
+   "reason": "Import log, Ctrl+O."
+  },
+  {
+   "claude": [
+    "claude:S4-22"
+   ],
+   "codex": [
+    "codex:S4-52"
+   ],
+   "kind": "one-to-one",
+   "reason": "Export log menu and Session button."
+  },
+  {
+   "claude": [
+    "claude:S4-18"
+   ],
+   "codex": [
+    "codex:S4-53"
+   ],
+   "kind": "one-to-one",
+   "reason": "File > Export proof session."
+  },
+  {
+   "claude": [
+    "claude:S4-19"
+   ],
+   "codex": [
+    "codex:S4-54"
+   ],
+   "kind": "one-to-one",
+   "reason": "File > Export certificate."
+  },
+  {
+   "claude": [
+    "claude:S4-56"
+   ],
+   "codex": [
+    "codex:S4-55",
+    "codex:S4-56",
+    "codex:S4-57",
+    "codex:S4-58"
+   ],
+   "kind": "many-to-one",
+   "reason": "Macros tab word composition buttons [A,B], ABA^-1, A^-1, AB."
+  },
+  {
+   "claude": [
+    "claude:S4-57"
+   ],
+   "codex": [
+    "codex:S4-59"
+   ],
+   "kind": "one-to-one",
+   "reason": "Macros: Preview to A."
+  },
+  {
+   "claude": [
+    "claude:S4-58"
+   ],
+   "codex": [
+    "codex:S4-60",
+    "codex:S4-61"
+   ],
+   "kind": "many-to-one",
+   "reason": "Saved macros Preview saved and Inverse saved."
+  },
+  {
+   "claude": [
+    "claude:S4-65"
+   ],
+   "codex": [
+    "codex:S4-62",
+    "codex:S4-63"
+   ],
+   "kind": "many-to-one",
+   "reason": "Shift+left and Shift+right click inspection in viewport."
+  },
+  {
+   "claude": [
+    "claude:S4-64"
+   ],
+   "codex": [
+    "codex:S4-64"
+   ],
+   "kind": "one-to-one",
+   "reason": "Pieces: Clear inspection button."
+  },
+  {
+   "claude": [
+    "claude:S4-59"
+   ],
+   "codex": [
+    "codex:S4-65"
+   ],
+   "kind": "one-to-one",
+   "reason": "Pieces: Inspect position P / Inspect-select."
+  },
+  {
+   "claude": [
+    "claude:S4-60"
+   ],
+   "codex": [
+    "codex:S4-66"
+   ],
+   "kind": "one-to-one",
+   "reason": "Pieces: Track identity."
+  },
+  {
+   "claude": [
+    "claude:S4-61"
+   ],
+   "codex": [
+    "codex:S4-67"
+   ],
+   "kind": "one-to-one",
+   "reason": "Pieces: Previous/Next unsolved."
+  },
+  {
+   "claude": [
+    "claude:S4-62"
+   ],
+   "codex": [
+    "codex:S4-68",
+    "codex:S4-69"
+   ],
+   "kind": "many-to-one",
+   "reason": "Pieces: Use destination and Find required piece."
+  },
+  {
+   "claude": [
+    "claude:S4-63"
+   ],
+   "codex": [
+    "codex:S4-70"
+   ],
+   "kind": "one-to-one",
+   "reason": "Pieces: Center current/home."
+  },
+  {
+   "claude": [
+    "claude:S4-66"
+   ],
+   "codex": [
+    "codex:S4-71"
+   ],
+   "kind": "one-to-one",
+   "reason": "Viewport left/right click native grip twist."
+  },
+  {
+   "claude": [
+    "claude:S4-67"
+   ],
+   "codex": [
+    "codex:S4-72",
+    "codex:S4-73",
+    "codex:S4-74",
+    "codex:S4-75",
+    "codex:S4-76",
+    "codex:S4-77"
+   ],
+   "kind": "many-to-one",
+   "reason": "Viewport camera mouse drags, Ctrl+click recenter and wheel; Claude keeps them in one row."
+  },
+  {
+   "claude": [
+    "claude:S4-41"
+   ],
+   "codex": [
+    "codex:S4-78"
+   ],
+   "kind": "one-to-one",
+   "reason": "Filters: Structure... button opens the Structure explorer."
+  },
+  {
+   "claude": [
+    "claude:S4-80"
+   ],
+   "codex": [
+    "codex:S4-79",
+    "codex:S4-83"
+   ],
+   "kind": "many-to-one",
+   "reason": "Structure Find color and Compare color editors."
+  },
+  {
+   "claude": [
+    "claude:S4-81"
+   ],
+   "codex": [
+    "codex:S4-80",
+    "codex:S4-81",
+    "codex:S4-82"
+   ],
+   "kind": "many-to-one",
+   "reason": "Color adjacency graph: keyboard node choice, hover tooltip and radius selector."
+  },
+  {
+   "claude": [
+    "claude:S4-82"
+   ],
+   "codex": [
+    "codex:S4-84"
+   ],
+   "kind": "one-to-one",
+   "reason": "Structure Layers page navigation."
+  },
+  {
+   "claude": [
+    "claude:S4-83"
+   ],
+   "codex": [
+    "codex:S4-85"
+   ],
+   "kind": "one-to-one",
+   "reason": "Structure Vertices page navigation."
+  },
+  {
+   "claude": [
+    "claude:S4-84"
+   ],
+   "codex": [
+    "codex:S4-86",
+    "codex:S4-87",
+    "codex:S4-91"
+   ],
+   "kind": "many-to-one",
+   "reason": "Structure filter predicate, composition and Options."
+  },
+  {
+   "claude": [
+    "claude:S4-85"
+   ],
+   "codex": [
+    "codex:S4-88",
+    "codex:S4-92"
+   ],
+   "kind": "many-to-one",
+   "reason": "Structure Preview counts and Review."
+  },
+  {
+   "claude": [
+    "claude:S4-86"
+   ],
+   "codex": [
+    "codex:S4-89"
+   ],
+   "kind": "one-to-one",
+   "reason": "Structure Apply filter."
+  },
+  {
+   "claude": [
+    "claude:S4-87"
+   ],
+   "codex": [
+    "codex:S4-90"
+   ],
+   "kind": "one-to-one",
+   "reason": "Structure Insert expression."
+  },
+  {
+   "claude": [
+    "claude:S4-75"
+   ],
+   "codex": [
+    "codex:S4-93"
+   ],
+   "kind": "one-to-one",
+   "reason": "Structure Center viewport button (Claude row also folds in auxiliary selection)."
+  },
+  {
+   "claude": [
+    "claude:S4-70"
+   ],
+   "codex": [
+    "codex:S4-94"
+   ],
+   "kind": "one-to-one",
+   "reason": "Open global cell overview."
+  },
+  {
+   "claude": [
+    "claude:S4-71"
+   ],
+   "codex": [
+    "codex:S4-95"
+   ],
+   "kind": "one-to-one",
+   "reason": "Open focused cell neighborhood."
+  },
+  {
+   "claude": [
+    "claude:S4-72"
+   ],
+   "codex": [
+    "codex:S4-97"
+   ],
+   "kind": "one-to-one",
+   "reason": "Reset auxiliary window positions."
+  },
+  {
+   "claude": [
+    "claude:S4-74",
+    "claude:S4-76",
+    "claude:S4-77",
+    "claude:S4-79"
+   ],
+   "codex": [
+    "codex:S4-96",
+    "codex:S4-98",
+    "codex:S4-99",
+    "codex:S4-100",
+    "codex:S4-101",
+    "codex:S4-102",
+    "codex:S4-103",
+    "codex:S4-104"
+   ],
+   "kind": "many-to-many",
+   "reason": "Auxiliary cell-view interaction (toolbar buttons, mouse, keyboard, hover status, neighborhood mode/radius) split differently by each side."
+  },
+  {
+   "claude": [
+    "claude:S4-73"
+   ],
+   "codex": [
+    "codex:S4-105"
+   ],
+   "kind": "one-to-one",
+   "reason": "Auxiliary windows and compact Views drawer."
+  },
+  {
+   "claude": [
+    "claude:S4-78"
+   ],
+   "codex": [
+    "codex:S4-106"
+   ],
+   "kind": "one-to-one",
+   "reason": "Views drawer keyboard handling."
+  },
+  {
+   "claude": [
+    "claude:S4-95"
+   ],
+   "codex": [
+    "codex:S4-107"
+   ],
+   "kind": "one-to-one",
+   "reason": "native/inspect_runtime.py CLI."
+  },
+  {
+   "claude": [
+    "claude:S4-94"
+   ],
+   "codex": [
+    "codex:S4-108"
+   ],
+   "kind": "one-to-one",
+   "reason": "native/collect_diagnostics.py CLI."
+  },
+  {
+   "claude": [
+    "claude:S4-96"
+   ],
+   "codex": [
+    "codex:S4-109"
+   ],
+   "kind": "one-to-one",
+   "reason": "native/patch_ivan_renderer.py CLI."
+  },
+  {
+   "claude": [
+    "claude:S4-91"
+   ],
+   "codex": [
+    "codex:S4-110"
+   ],
+   "kind": "one-to-one",
+   "reason": "bootstrap.py --self-test-only."
+  },
+  {
+   "claude": [
+    "claude:S4-92"
+   ],
+   "codex": [
+    "codex:S4-111"
+   ],
+   "kind": "one-to-one",
+   "reason": "bootstrap.py --renderer-test."
+  },
+  {
+   "claude": [
+    "claude:S4-93"
+   ],
+   "codex": [
+    "codex:S4-112"
+   ],
+   "kind": "one-to-one",
+   "reason": "bootstrap.py --performance-test."
+  },
+  {
+   "claude": [
+    "claude:S4-88"
+   ],
+   "codex": [
+    "codex:S4-114"
+   ],
+   "kind": "one-to-one",
+   "reason": "Native startup/operation error dialogs."
+  },
+  {
+   "claude": [
+    "claude:S4-69"
+   ],
+   "codex": [
+    "codex:S4-115"
+   ],
+   "kind": "one-to-one",
+   "reason": "Text editor Ctrl+Z / key policy in editors."
+  },
+  {
+   "claude": [
+    "claude:S4-28"
+   ],
+   "codex": [
+    "codex:S4-117"
+   ],
+   "kind": "one-to-one",
+   "reason": "Puzzle > Scramble 1,000 turns."
+  },
+  {
+   "claude": [
+    "claude:S4-25"
+   ],
+   "codex": [
+    "codex:S4-118"
+   ],
+   "kind": "one-to-one",
+   "reason": "Edit > Keybindings editor and Save bindings."
+  },
+  {
+   "claude": [
+    "claude:S4-23"
+   ],
+   "codex": [
+    "codex:S4-119"
+   ],
+   "kind": "one-to-one",
+   "reason": "Undo menu, toolbar, Ctrl+Z."
+  },
+  {
+   "claude": [
+    "claude:S4-24"
+   ],
+   "codex": [
+    "codex:S4-120"
+   ],
+   "kind": "one-to-one",
+   "reason": "Redo menu, toolbar, Ctrl+Shift+Z."
+  },
+  {
+   "claude": [
+    "claude:S4-89"
+   ],
+   "codex": [
+    "codex:S4-121"
+   ],
+   "kind": "one-to-one",
+   "reason": "Status strip with live native status."
+  },
+  {
+   "claude": [
+    "claude:S5-1"
+   ],
+   "codex": [
+    "codex:S5-1"
+   ],
+   "kind": "one-to-one",
+   "reason": "Open the browser experiment page."
+  },
+  {
+   "claude": [
+    "claude:S5-2"
+   ],
+   "codex": [
+    "codex:S5-2"
+   ],
+   "kind": "one-to-one",
+   "reason": "command index (command index, F1)."
+  },
+  {
+   "claude": [
+    "claude:S5-8",
+    "claude:S5-9"
+   ],
+   "codex": [
+    "codex:S5-3"
+   ],
+   "kind": "one-to-many",
+   "reason": "orbit chooser (command orbit) and orbit-activate; Claude split open and use."
+  },
+  {
+   "claude": [
+    "claude:S5-3",
+    "claude:S5-4"
+   ],
+   "codex": [
+    "codex:S5-4"
+   ],
+   "kind": "one-to-many",
+   "reason": "bank chooser (command bank) and bank-activate; Claude split open and activate."
+  },
+  {
+   "claude": [
+    "claude:S5-5"
+   ],
+   "codex": [
+    "codex:S5-5"
+   ],
+   "kind": "one-to-one",
+   "reason": "command bank-previous."
+  },
+  {
+   "claude": [
+    "claude:S5-6"
+   ],
+   "codex": [
+    "codex:S5-6"
+   ],
+   "kind": "one-to-one",
+   "reason": "commands bank-rename and bank-save-name."
+  },
+  {
+   "claude": [
+    "claude:S5-7"
+   ],
+   "codex": [
+    "codex:S5-7"
+   ],
+   "kind": "one-to-one",
+   "reason": "commands bank-A/B/I/M/E (switch bank by suffix)."
+  },
+  {
+   "claude": [
+    "claude:S5-64",
+    "claude:S5-65"
+   ],
+   "codex": [
+    "codex:S5-8"
+   ],
+   "kind": "one-to-many",
+   "reason": "explicit Grip selection by physical key or on-screen key; Claude split by input device."
+  },
+  {
+   "claude": [
+    "claude:S5-63"
+   ],
+   "codex": [
+    "codex:S5-9"
+   ],
+   "kind": "one-to-one",
+   "reason": "Hold/Latch grip behaviour selector."
+  },
+  {
+   "claude": [
+    "claude:S5-66",
+    "claude:S5-67"
+   ],
+   "codex": [
+    "codex:S5-10"
+   ],
+   "kind": "one-to-many",
+   "reason": "Twist entry by physical and on-screen Twist keys; Claude split by device."
+  },
+  {
+   "claude": [
+    "claude:S5-68"
+   ],
+   "codex": [
+    "codex:S5-11"
+   ],
+   "kind": "one-to-one",
+   "reason": "command inverse-toggle."
+  },
+  {
+   "claude": [
+    "claude:S5-44"
+   ],
+   "codex": [
+    "codex:S5-12",
+    "codex:S5-13"
+   ],
+   "kind": "many-to-one",
+   "reason": "INPUT destination and PHASE selectors on the Operation desk; Codex split them."
+  },
+  {
+   "claude": [
+    "claude:S5-59",
+    "claude:S5-60"
+   ],
+   "codex": [
+    "codex:S5-14",
+    "codex:S5-15"
+   ],
+   "kind": "many-to-many",
+   "reason": "commands capture and capture-apply with source helpers for hosting/affecting/buffer caps."
+  },
+  {
+   "claude": [
+    "claude:S5-61"
+   ],
+   "codex": [
+    "codex:S5-16",
+    "codex:S5-17",
+    "codex:S5-18"
+   ],
+   "kind": "many-to-one",
+   "reason": "key-binding editor: keys-edit, keys-defaults, keys-save, keys-export in one Claude row."
+  },
+  {
+   "claude": [
+    "claude:S5-31"
+   ],
+   "codex": [
+    "codex:S5-19"
+   ],
+   "kind": "one-to-one",
+   "reason": "command next-tab (switch central workspace tab)."
+  },
+  {
+   "claude": [
+    "claude:S5-10",
+    "claude:S5-11",
+    "claude:S5-12"
+   ],
+   "codex": [
+    "codex:S5-20"
+   ],
+   "kind": "one-to-many",
+   "reason": "Macro Base toggle (library-toggle), macro-search and list filters."
+  },
+  {
+   "claude": [
+    "claude:S5-13"
+   ],
+   "codex": [
+    "codex:S5-21"
+   ],
+   "kind": "one-to-one",
+   "reason": "selecting a macro row loads its exact effect."
+  },
+  {
+   "claude": [
+    "claude:S5-17"
+   ],
+   "codex": [
+    "codex:S5-22"
+   ],
+   "kind": "one-to-one",
+   "reason": "commands macro-new and macro-save."
+  },
+  {
+   "claude": [
+    "claude:S5-18"
+   ],
+   "codex": [
+    "codex:S5-23"
+   ],
+   "kind": "one-to-one",
+   "reason": "commands macro-notes and macro-save-notes."
+  },
+  {
+   "claude": [
+    "claude:S5-19"
+   ],
+   "codex": [
+    "codex:S5-24"
+   ],
+   "kind": "one-to-one",
+   "reason": "commands macro-compare and macro-run-compare."
+  },
+  {
+   "claude": [
+    "claude:S5-30"
+   ],
+   "codex": [
+    "codex:S5-25"
+   ],
+   "kind": "one-to-one",
+   "reason": "commands reference and reference-save."
+  },
+  {
+   "claude": [
+    "claude:S5-43"
+   ],
+   "codex": [
+    "codex:S5-27"
+   ],
+   "kind": "one-to-one",
+   "reason": "command phase-input / phase recipe editing."
+  },
+  {
+   "claude": [
+    "claude:S5-14",
+    "claude:S5-15"
+   ],
+   "codex": [
+    "codex:S5-28",
+    "codex:S5-29",
+    "codex:S5-30"
+   ],
+   "kind": "many-to-many",
+   "reason": "insert-prepare/insert-macro/insert-cleanup and drag-drop of a macro into a phase."
+  },
+  {
+   "claude": [
+    "claude:S5-45"
+   ],
+   "codex": [
+    "codex:S5-31"
+   ],
+   "kind": "one-to-one",
+   "reason": "command draft-undo."
+  },
+  {
+   "claude": [
+    "claude:S5-46"
+   ],
+   "codex": [
+    "codex:S5-32"
+   ],
+   "kind": "one-to-one",
+   "reason": "command cleanup-inverse."
+  },
+  {
+   "claude": [
+    "claude:S5-50"
+   ],
+   "codex": [
+    "codex:S5-33"
+   ],
+   "kind": "one-to-one",
+   "reason": "command review."
+  },
+  {
+   "claude": [
+    "claude:S5-51"
+   ],
+   "codex": [
+    "codex:S5-34"
+   ],
+   "kind": "one-to-one",
+   "reason": "command preview."
+  },
+  {
+   "claude": [
+    "claude:S5-52"
+   ],
+   "codex": [
+    "codex:S5-35"
+   ],
+   "kind": "one-to-one",
+   "reason": "command commit."
+  },
+  {
+   "claude": [
+    "claude:S5-53"
+   ],
+   "codex": [
+    "codex:S5-36"
+   ],
+   "kind": "one-to-one",
+   "reason": "command cancel-preview."
+  },
+  {
+   "claude": [
+    "claude:S5-54"
+   ],
+   "codex": [
+    "codex:S5-37"
+   ],
+   "kind": "one-to-one",
+   "reason": "command cancel-analysis."
+  },
+  {
+   "claude": [
+    "claude:S5-42"
+   ],
+   "codex": [
+    "codex:S5-38",
+    "codex:S5-39"
+   ],
+   "kind": "many-to-one",
+   "reason": "commands before and after (committed vs draft result view)."
+  },
+  {
+   "claude": [
+    "claude:S5-16"
+   ],
+   "codex": [
+    "codex:S5-40"
+   ],
+   "kind": "one-to-one",
+   "reason": "command effect-details."
+  },
+  {
+   "claude": [
+    "claude:S5-74"
+   ],
+   "codex": [
+    "codex:S5-41"
+   ],
+   "kind": "one-to-one",
+   "reason": "inspect piece identity from diagram token."
+  },
+  {
+   "claude": [
+    "claude:S5-75",
+    "claude:S5-58"
+   ],
+   "codex": [
+    "codex:S5-42"
+   ],
+   "kind": "one-to-many",
+   "reason": "inspect fixed position / position conflict."
+  },
+  {
+   "claude": [
+    "claude:S5-76"
+   ],
+   "codex": [
+    "codex:S5-43"
+   ],
+   "kind": "one-to-one",
+   "reason": "select a cell in a diagram or Local structure."
+  },
+  {
+   "claude": [
+    "claude:S5-21"
+   ],
+   "codex": [
+    "codex:S5-44"
+   ],
+   "kind": "one-to-one",
+   "reason": "structural example pieces chosen as Current."
+  },
+  {
+   "claude": [
+    "claude:S5-20"
+   ],
+   "codex": [
+    "codex:S5-45"
+   ],
+   "kind": "one-to-one",
+   "reason": "command focus and focus-apply (choose Current)."
+  },
+  {
+   "claude": [
+    "claude:S5-26"
+   ],
+   "codex": [
+    "codex:S5-46"
+   ],
+   "kind": "one-to-one",
+   "reason": "command next-menu."
+  },
+  {
+   "claude": [
+    "claude:S5-23"
+   ],
+   "codex": [
+    "codex:S5-47"
+   ],
+   "kind": "one-to-one",
+   "reason": "command next-pin (Codex adds next-replace)."
+  },
+  {
+   "claude": [
+    "claude:S5-24"
+   ],
+   "codex": [
+    "codex:S5-48"
+   ],
+   "kind": "one-to-one",
+   "reason": "command next-clear."
+  },
+  {
+   "claude": [
+    "claude:S5-25"
+   ],
+   "codex": [
+    "codex:S5-49"
+   ],
+   "kind": "one-to-one",
+   "reason": "command next-activate."
+  },
+  {
+   "claude": [
+    "claude:S5-22"
+   ],
+   "codex": [
+    "codex:S5-50"
+   ],
+   "kind": "one-to-one",
+   "reason": "command next-locate."
+  },
+  {
+   "claude": [
+    "claude:S5-27"
+   ],
+   "codex": [
+    "codex:S5-51"
+   ],
+   "kind": "one-to-one",
+   "reason": "command block-add."
+  },
+  {
+   "claude": [
+    "claude:S5-28"
+   ],
+   "codex": [
+    "codex:S5-52"
+   ],
+   "kind": "one-to-one",
+   "reason": "command block-protect."
+  },
+  {
+   "claude": [
+    "claude:S5-29"
+   ],
+   "codex": [
+    "codex:S5-53"
+   ],
+   "kind": "one-to-one",
+   "reason": "commands roles and roles-apply."
+  },
+  {
+   "claude": [
+    "claude:S5-55",
+    "claude:S5-56"
+   ],
+   "codex": [
+    "codex:S5-54"
+   ],
+   "kind": "one-to-many",
+   "reason": "command protection and protection-save; Claude split open and apply."
+  },
+  {
+   "claude": [
+    "claude:S5-57"
+   ],
+   "codex": [
+    "codex:S5-55"
+   ],
+   "kind": "one-to-one",
+   "reason": "command protection-clear-positions."
+  },
+  {
+   "claude": [
+    "claude:S5-38",
+    "claude:S5-40"
+   ],
+   "codex": [
+    "codex:S5-56"
+   ],
+   "kind": "one-to-many",
+   "reason": "command filter (open) and filter-apply; Claude split open and apply."
+  },
+  {
+   "claude": [
+    "claude:S5-39"
+   ],
+   "codex": [
+    "codex:S5-57"
+   ],
+   "kind": "one-to-one",
+   "reason": "command filter-preview."
+  },
+  {
+   "claude": [
+    "claude:S5-41"
+   ],
+   "codex": [
+    "codex:S5-60"
+   ],
+   "kind": "one-to-one",
+   "reason": "command filter-save."
+  },
+  {
+   "claude": [
+    "claude:S5-47"
+   ],
+   "codex": [
+    "codex:S5-61"
+   ],
+   "kind": "one-to-one",
+   "reason": "command worksheet."
+  },
+  {
+   "claude": [
+    "claude:S5-48"
+   ],
+   "codex": [
+    "codex:S5-62"
+   ],
+   "kind": "one-to-one",
+   "reason": "command sheet-save."
+  },
+  {
+   "claude": [
+    "claude:S5-49"
+   ],
+   "codex": [
+    "codex:S5-63"
+   ],
+   "kind": "one-to-one",
+   "reason": "command sheet-use."
+  },
+  {
+   "claude": [
+    "claude:S5-32"
+   ],
+   "codex": [
+    "codex:S5-64"
+   ],
+   "kind": "one-to-one",
+   "reason": "command local."
+  },
+  {
+   "claude": [
+    "claude:S5-33"
+   ],
+   "codex": [
+    "codex:S5-65"
+   ],
+   "kind": "one-to-one",
+   "reason": "command global."
+  },
+  {
+   "claude": [
+    "claude:S5-34"
+   ],
+   "codex": [
+    "codex:S5-66"
+   ],
+   "kind": "one-to-one",
+   "reason": "command puzzle-layout."
+  },
+  {
+   "claude": [
+    "claude:S5-69"
+   ],
+   "codex": [
+    "codex:S5-67"
+   ],
+   "kind": "one-to-one",
+   "reason": "command camera-home."
+  },
+  {
+   "claude": [
+    "claude:S5-70"
+   ],
+   "codex": [
+    "codex:S5-68"
+   ],
+   "kind": "one-to-one",
+   "reason": "command locate-current."
+  },
+  {
+   "claude": [
+    "claude:S5-71"
+   ],
+   "codex": [
+    "codex:S5-69"
+   ],
+   "kind": "one-to-one",
+   "reason": "command locate-inspected."
+  },
+  {
+   "claude": [
+    "claude:S5-72"
+   ],
+   "codex": [
+    "codex:S5-70"
+   ],
+   "kind": "one-to-one",
+   "reason": "puzzle render mode selector."
+  },
+  {
+   "claude": [
+    "claude:S5-35",
+    "claude:S5-36"
+   ],
+   "codex": [
+    "codex:S5-71"
+   ],
+   "kind": "one-to-many",
+   "reason": "command close-views and Escape dismissal of linked panels."
+  },
+  {
+   "claude": [
+    "claude:S5-37"
+   ],
+   "codex": [
+    "codex:S5-72"
+   ],
+   "kind": "one-to-one",
+   "reason": "dialog close button."
+  },
+  {
+   "claude": [
+    "claude:S5-86"
+   ],
+   "codex": [
+    "codex:S5-73"
+   ],
+   "kind": "one-to-one",
+   "reason": "command copy-selection."
+  },
+  {
+   "claude": [
+    "claude:S5-77"
+   ],
+   "codex": [
+    "codex:S5-74"
+   ],
+   "kind": "one-to-one",
+   "reason": "command session (open session controls)."
+  },
+  {
+   "claude": [
+    "claude:S5-78"
+   ],
+   "codex": [
+    "codex:S5-75"
+   ],
+   "kind": "one-to-one",
+   "reason": "command fixture-e1."
+  },
+  {
+   "claude": [
+    "claude:S5-79"
+   ],
+   "codex": [
+    "codex:S5-76"
+   ],
+   "kind": "one-to-one",
+   "reason": "command undo."
+  },
+  {
+   "claude": [
+    "claude:S5-80"
+   ],
+   "codex": [
+    "codex:S5-77"
+   ],
+   "kind": "one-to-one",
+   "reason": "command redo."
+  },
+  {
+   "claude": [
+    "claude:S5-81"
+   ],
+   "codex": [
+    "codex:S5-78"
+   ],
+   "kind": "one-to-one",
+   "reason": "command checkpoint."
+  },
+  {
+   "claude": [
+    "claude:S5-82"
+   ],
+   "codex": [
+    "codex:S5-79"
+   ],
+   "kind": "one-to-one",
+   "reason": "command restore."
+  },
+  {
+   "claude": [
+    "claude:S5-83"
+   ],
+   "codex": [
+    "codex:S5-80"
+   ],
+   "kind": "one-to-one",
+   "reason": "command reset-puzzle."
+  },
+  {
+   "claude": [
+    "claude:S5-84"
+   ],
+   "codex": [
+    "codex:S5-81"
+   ],
+   "kind": "one-to-one",
+   "reason": "command export-work."
+  },
+  {
+   "claude": [
+    "claude:S5-85"
+   ],
+   "codex": [
+    "codex:S5-82"
+   ],
+   "kind": "one-to-one",
+   "reason": "command stop-experiment."
+  },
+  {
+   "claude": [
+    "claude:S5-62"
+   ],
+   "codex": [
+    "codex:S5-83"
+   ],
+   "kind": "one-to-one",
+   "reason": "command keyboard (F9, show or hide keyboard strip)."
+  },
+  {
+   "claude": [
+    "claude:S6-1"
+   ],
+   "codex": [
+    "codex:S6-1"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same launch entry point cli ExperimentProgram and G1/G2 windows (ExperimentShell.cs:599, ExperimentWorkspace.cs:24)."
+  },
+  {
+   "claude": [
+    "claude:S6-2"
+   ],
+   "codex": [
+    "codex:S6-72"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same command index / command palette (command index, F1)."
+  },
+  {
+   "claude": [
+    "claude:S6-3"
+   ],
+   "codex": [
+    "codex:S6-73"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same command solve-actions (Control+F1)."
+  },
+  {
+   "claude": [
+    "claude:S6-4"
+   ],
+   "codex": [
+    "codex:S6-118"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same command help dialog (Help, Shift+F1)."
+  },
+  {
+   "claude": [
+    "claude:S6-5",
+    "claude:S6-7"
+   ],
+   "codex": [
+    "codex:S6-60",
+    "codex:S6-61",
+    "codex:S6-62",
+    "codex:S6-63",
+    "codex:S6-64"
+   ],
+   "kind": "many-to-many",
+   "reason": "Both sides cover keyboard bank picking and switching (bank, bank-next/prev/previous, functions-toggle, bank-A..E and named banks); Claude splits orbit banks A/B/I/M/E into its own row while Codex splits picker, named set, toggle, previous and cycle."
+  },
+  {
+   "claude": [
+    "claude:S6-6"
+   ],
+   "codex": [
+    "codex:S6-2"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same command orbit: choose the working orbit."
+  },
+  {
+   "claude": [
+    "claude:S6-8"
+   ],
+   "codex": [
+    "codex:S6-65",
+    "codex:S6-66",
+    "codex:S6-70",
+    "codex:S6-71"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same onscreen keyboard window (command keyboard, keyboard-extra, click key to run, hover meaning)."
+  },
+  {
+   "claude": [
+    "claude:S6-9"
+   ],
+   "codex": [
+    "codex:S6-76",
+    "codex:S6-77",
+    "codex:S6-78"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same keymap export and import (command keymap-export, keymap-import, replace after inspection)."
+  },
+  {
+   "claude": [
+    "claude:S6-10"
+   ],
+   "codex": [
+    "codex:S6-74",
+    "codex:S6-75"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same key editor (command key-edit, key-edit-advanced)."
+  },
+  {
+   "claude": [
+    "claude:S6-11"
+   ],
+   "codex": [
+    "codex:S6-67"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same commands grip-hold and grip-latch."
+  },
+  {
+   "claude": [
+    "claude:S6-12"
+   ],
+   "codex": [
+    "codex:S6-68",
+    "codex:S6-69"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same Grip digit keys and Twist letter keys on the native default map."
+  },
+  {
+   "claude": [
+    "claude:S6-13"
+   ],
+   "codex": [
+    "codex:S6-105",
+    "codex:S6-106"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same puzzle viewport mouse-up routing for turn gesture and sticker inspection (ExperimentBridge.cs:138)."
+  },
+  {
+   "claude": [
+    "claude:S6-14"
+   ],
+   "codex": [
+    "codex:S6-87",
+    "codex:S6-88"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same commands workspace-fullscreen and windows-hide (ExperimentWindows.cs:130)."
+  },
+  {
+   "claude": [
+    "claude:S6-15"
+   ],
+   "codex": [
+    "codex:S6-82",
+    "codex:S6-84",
+    "codex:S6-85",
+    "codex:S6-86",
+    "codex:S6-90",
+    "codex:S6-91",
+    "codex:S6-92",
+    "codex:S6-96",
+    "codex:S6-97",
+    "codex:S6-98"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same linked views, Local/Global open, camera rotate/zoom/reset commands and Local centre commands; Claude keeps one row, Codex splits per action."
+  },
+  {
+   "claude": [
+    "claude:S6-16"
+   ],
+   "codex": [
+    "codex:S6-93",
+    "codex:S6-94",
+    "codex:S6-95"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same Local/Global cell canvas mouse behaviour: click select, hover tooltip, context menu centre main on cell."
+  },
+  {
+   "claude": [
+    "claude:S6-17"
+   ],
+   "codex": [
+    "codex:S6-81"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same command grip-frame."
+  },
+  {
+   "claude": [
+    "claude:S6-18"
+   ],
+   "codex": [
+    "codex:S6-99",
+    "codex:S6-100",
+    "codex:S6-101",
+    "codex:S6-102",
+    "codex:S6-103",
+    "codex:S6-104"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same Display dialog: commands display, frame-toggle, detail-toggle and its sliders."
+  },
+  {
+   "claude": [
+    "claude:S6-19"
+   ],
+   "codex": [
+    "codex:S6-107",
+    "codex:S6-108"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same Piece Filter (command filter, F5, presets)."
+  },
+  {
+   "claude": [
+    "claude:S6-20"
+   ],
+   "codex": [
+    "codex:S6-56"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same commands inspect-actual/prepare/macro/cleanup."
+  },
+  {
+   "claude": [
+    "claude:S6-21"
+   ],
+   "codex": [
+    "codex:S6-27",
+    "codex:S6-37",
+    "codex:S6-38",
+    "codex:S6-39",
+    "codex:S6-40",
+    "codex:S6-41"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same input phase selection, step editing, draft/live input and strict-prefix toggle (phase-*, edit-*, input-draft/live, prefix-on/off)."
+  },
+  {
+   "claude": [
+    "claude:S6-22"
+   ],
+   "codex": [
+    "codex:S6-35",
+    "codex:S6-36",
+    "codex:S6-43",
+    "codex:S6-46",
+    "codex:S6-47",
+    "codex:S6-48",
+    "codex:S6-49",
+    "codex:S6-50",
+    "codex:S6-51",
+    "codex:S6-52",
+    "codex:S6-53",
+    "codex:S6-57"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same operation lifecycle commands: operation-new/reuse, review, review-locate, preview, commit, cancel, undo, redo, operation-focus/hide, compare-preview."
+  },
+  {
+   "claude": [
+    "claude:S6-23"
+   ],
+   "codex": [
+    "codex:S6-44",
+    "codex:S6-45"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same review reasons and Findings dialog (review-reason-1..3, review-details)."
+  },
+  {
+   "claude": [
+    "claude:S6-24"
+   ],
+   "codex": [
+    "codex:S6-3",
+    "codex:S6-4",
+    "codex:S6-5",
+    "codex:S6-6",
+    "codex:S6-29",
+    "codex:S6-30",
+    "codex:S6-55"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same Current/A/B/Target role commands (set-current, focus, assign-a/b/target, roles, target-capture/home, solve-locate-*)."
+  },
+  {
+   "claude": [
+    "claude:S6-25"
+   ],
+   "codex": [
+    "codex:S6-12",
+    "codex:S6-13",
+    "codex:S6-14",
+    "codex:S6-15",
+    "codex:S6-16"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same Next bookmark commands next-menu/pin/clear/activate/locate."
+  },
+  {
+   "claude": [
+    "claude:S6-26"
+   ],
+   "codex": [
+    "codex:S6-17",
+    "codex:S6-18",
+    "codex:S6-19",
+    "codex:S6-20",
+    "codex:S6-21",
+    "codex:S6-22",
+    "codex:S6-23",
+    "codex:S6-24",
+    "codex:S6-25",
+    "codex:S6-26",
+    "codex:S6-31"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same block and position protection commands (block-*, protection, block-reference)."
+  },
+  {
+   "claude": [
+    "claude:S6-27"
+   ],
+   "codex": [
+    "codex:S6-32",
+    "codex:S6-139"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same reference word R: command reference and reference-transform (save with R)."
+  },
+  {
+   "claude": [
+    "claude:S6-28"
+   ],
+   "codex": [
+    "codex:S6-28"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same goal-* commands."
+  },
+  {
+   "claude": [
+    "claude:S6-29"
+   ],
+   "codex": [
+    "codex:S6-54"
+   ],
+   "kind": "one-to-one",
+   "reason": "Same commands solve-macros/prepare/protection."
+  },
+  {
+   "claude": [
+    "claude:S6-30"
+   ],
+   "codex": [
+    "codex:S6-120",
+    "codex:S6-121",
+    "codex:S6-122",
+    "codex:S6-123",
+    "codex:S6-133",
+    "codex:S6-134",
+    "codex:S6-135",
+    "codex:S6-136"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same Macro Base catalogue open/close/search/select/insert/replace/new/details (macro-search, macro-close, macro-insert, macro-replace, macro-new, macro-details; Codex row 123 command bank-macro-1/2 runs SelectBankMacro, ExperimentShell.cs:541, not a bank switch as Claude row 7 lists it)."
+  },
+  {
+   "claude": [
+    "claude:S6-31"
+   ],
+   "codex": [
+    "codex:S6-124",
+    "codex:S6-125",
+    "codex:S6-126",
+    "codex:S6-127",
+    "codex:S6-128",
+    "codex:S6-129",
+    "codex:S6-130",
+    "codex:S6-131",
+    "codex:S6-132"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same macro library tools: check library, filter, label, pin, export, import."
+  },
+  {
+   "claude": [
+    "claude:S6-32"
+   ],
+   "codex": [
+    "codex:S6-42",
+    "codex:S6-137",
+    "codex:S6-138",
+    "codex:S6-140",
+    "codex:S6-141",
+    "codex:S6-142",
+    "codex:S6-143",
+    "codex:S6-144",
+    "codex:S6-145"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same macro comparison and derived variants: macro-compare, macro-inverse, macro-geometry, macro-candidates, cleanup-inverse."
+  },
+  {
+   "claude": [
+    "claude:S6-33"
+   ],
+   "codex": [
+    "codex:S6-146",
+    "codex:S6-147",
+    "codex:S6-148",
+    "codex:S6-149",
+    "codex:S6-150",
+    "codex:S6-151",
+    "codex:S6-152",
+    "codex:S6-153"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same endgame family commands endgame-*."
+  },
+  {
+   "claude": [
+    "claude:S6-34"
+   ],
+   "codex": [
+    "codex:S6-154",
+    "codex:S6-155",
+    "codex:S6-156",
+    "codex:S6-157"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same commands residual-details, journal-delta, orbit-following."
+  },
+  {
+   "claude": [
+    "claude:S6-35"
+   ],
+   "codex": [
+    "codex:S6-58",
+    "codex:S6-59",
+    "codex:S6-159"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same effect and cycle-scope commands effect-body, effect-complete, cycles-macro/steps/complete."
+  },
+  {
+   "claude": [
+    "claude:S6-36"
+   ],
+   "codex": [
+    "codex:S6-158",
+    "codex:S6-160",
+    "codex:S6-161",
+    "codex:S6-162",
+    "codex:S6-163",
+    "codex:S6-164",
+    "codex:S6-165",
+    "codex:S6-166"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same cycle inspection: cycles-current/operation/after, refresh, paging, orbit picker, edge select."
+  },
+  {
+   "claude": [
+    "claude:S6-37"
+   ],
+   "codex": [
+    "codex:S6-7",
+    "codex:S6-8",
+    "codex:S6-9",
+    "codex:S6-10",
+    "codex:S6-11",
+    "codex:S6-167",
+    "codex:S6-168",
+    "codex:S6-183"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same Hub scene: click objects, arrow navigation, Shift+F10 menu, entry slots toggle."
+  },
+  {
+   "claude": [
+    "claude:S6-39"
+   ],
+   "codex": [
+    "codex:S6-169",
+    "codex:S6-170",
+    "codex:S6-171",
+    "codex:S6-172",
+    "codex:S6-173",
+    "codex:S6-174",
+    "codex:S6-175",
+    "codex:S6-176",
+    "codex:S6-177",
+    "codex:S6-178",
+    "codex:S6-179",
+    "codex:S6-180",
+    "codex:S6-181"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same Session dialog commands session-*, scramble, reset, reset-view, reset-workspace."
+  },
+  {
+   "claude": [
+    "claude:S6-40"
+   ],
+   "codex": [
+    "codex:S6-109",
+    "codex:S6-110",
+    "codex:S6-111",
+    "codex:S6-112",
+    "codex:S6-113",
+    "codex:S6-114",
+    "codex:S6-115"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same work sheets (worksheet, worksheet-save, worksheet-use, review comparison)."
+  },
+  {
+   "claude": [
+    "claude:S6-41"
+   ],
+   "codex": [
+    "codex:S6-33",
+    "codex:S6-34",
+    "codex:S6-79",
+    "codex:S6-80",
+    "codex:S6-83",
+    "codex:S6-116",
+    "codex:S6-117",
+    "codex:S6-119"
+   ],
+   "kind": "many-to-one",
+   "reason": "Same commands copy-selection(-canonical), capture(-piece), checkpoint, restore, fixture-e1 and puzzle; Claude's grab-bag row 41 also lists command puzzle (Codex row 83)."
+  }
+ ],
+ "recorded_by": "integrator (Claude), drafted per shard by Claude subagents and spot-checked"
+}
