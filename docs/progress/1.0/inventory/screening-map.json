@@ -1,0 +1,500 @@
+{
+ "base": "9768913",
+ "findings": [
+  {
+   "current": [
+    {
+     "end": 336,
+     "narrowed": false,
+     "path": "session.py",
+     "start": 331,
+     "symbol": "Session.export"
+    },
+    {
+     "end": 92,
+     "narrowed": false,
+     "path": "log_io.py",
+     "start": 86,
+     "symbol": "encode_log"
+    },
+    {
+     "end": 148,
+     "narrowed": false,
+     "path": "log_io.py",
+     "start": 104,
+     "symbol": "validate_record"
+    }
+   ],
+   "historical": [
+    "session.py:331",
+    "log_io.py:64",
+    "log_io.py:96"
+   ],
+   "id": "A-02",
+   "screening_shard": "core and persistence",
+   "severity": "major",
+   "status": "fixed",
+   "summary": "Save log writes a C600 proof log that the application's own import rejects. Preview allows 3,000,000 primitives per operation and has no transaction cap. Import caps a log at 2,000,000 primitives and 10,000 transactions.",
+   "unattached": []
+  },
+  {
+   "current": [
+    {
+     "end": 2163,
+     "narrowed": false,
+     "path": "work/experiments/magic600-04/adapter.py",
+     "start": 2104,
+     "symbol": "install.post.work"
+    }
+   ],
+   "historical": [
+    "work/experiments/magic600-04/adapter.py:2120"
+   ],
+   "id": "C-03",
+   "screening_shard": "adapter",
+   "severity": "major",
+   "status": "fixed",
+   "summary": "A committed native command is reported as a failed job when the paired snapshot fails afterwards. The journal has the event, but the user sees a failure and may retry.",
+   "unattached": []
+  },
+  {
+   "current": [
+    {
+     "end": 92,
+     "narrowed": false,
+     "path": "core.py",
+     "start": 35,
+     "symbol": "Model.__init__"
+    },
+    {
+     "end": 110,
+     "narrowed": false,
+     "path": "work/experiments/magic600-04/orbit_invariants.py",
+     "start": 97,
+     "symbol": "OrbitInvariants._binding"
+    }
+   ],
+   "historical": [
+    "assets/manifest.json",
+    "core.py:41",
+    "work/experiments/magic600-04/orbit_invariants.py:109"
+   ],
+   "id": "X-01",
+   "screening_shard": "integrator experiment",
+   "severity": "major",
+   "status": "open",
+   "summary": "A default Git for Windows clone (`core.autocrlf=true`, no `.gitattributes`) writes hashed text assets and proof sources with CRLF. The model refuses to load (\"Asset hash mismatch\"), and the bundled invariant proof reads as stale.",
+   "unattached": [
+    "assets/manifest.json: no line recorded"
+   ]
+  },
+  {
+   "current": [
+    {
+     "end": 157,
+     "narrowed": false,
+     "path": "server.py",
+     "start": 155,
+     "symbol": "main.Handler.setup"
+    },
+    {
+     "end": 390,
+     "narrowed": true,
+     "path": "server.py",
+     "start": 362,
+     "symbol": "main"
+    },
+    {
+     "end": 214,
+     "narrowed": false,
+     "path": "engine_process.py",
+     "start": 165,
+     "symbol": "stop_owned_process"
+    }
+   ],
+   "historical": [
+    "server.py:138",
+    "server.py:359",
+    "engine_process.py:166"
+   ],
+   "id": "B-001",
+   "screening_shard": "process and HTTP",
+   "severity": "major",
+   "status": "fixed",
+   "summary": "One idle connection holds engine shutdown past the owner's 12-second grace: request sockets wait 20 s and the server joins handler threads. The engine is force-terminated instead of closing in order.",
+   "unattached": []
+  },
+  {
+   "current": [
+    {
+     "end": 113,
+     "narrowed": false,
+     "path": "work/experiments/magic600-04/native/ExperimentShell.cs",
+     "start": 113,
+     "symbol": "ExperimentShell.RunCommand"
+    },
+    {
+     "end": 101,
+     "narrowed": false,
+     "path": "work/experiments/magic600-04/native/ExperimentTools.cs",
+     "start": 89,
+     "symbol": "ExperimentShell.ToolCommandUnavailable"
+    },
+    {
+     "end": 57,
+     "narrowed": false,
+     "path": "work/experiments/magic600-04/native/ExperimentSolveWindow.cs",
+     "start": 53,
+     "symbol": "ExperimentShell.BuildSolveProtection"
+    }
+   ],
+   "historical": [
+    "work/experiments/magic600-04/native/ExperimentShell.cs:113",
+    "work/experiments/magic600-04/native/ExperimentTools.cs:93",
+    "work/experiments/magic600-04/native/ExperimentSolveWindow.cs:56"
+   ],
+   "id": "F-01",
+   "screening_shard": "experiment UI",
+   "severity": "major",
+   "status": "fixed",
+   "summary": "With a forecast token selected, the Solve window buttons Place only, Hold place, Free exact and Free place still change position protection. The declared restriction lists these commands, but the direct-button guard omits them.",
+   "unattached": []
+  },
+  {
+   "current": [
+    {
+     "end": 1900,
+     "narrowed": false,
+     "path": "work/experiments/magic600-04/adapter.py",
+     "start": 1890,
+     "symbol": "Workbench.switch_orbit"
+    },
+    {
+     "end": 299,
+     "narrowed": false,
+     "path": "work/experiments/magic600-04/adapter.py",
+     "start": 289,
+     "symbol": "Workbench.save"
+    }
+   ],
+   "historical": [
+    "work/experiments/magic600-04/adapter.py:1871",
+    "work/experiments/magic600-04/adapter.py:282"
+   ],
+   "id": "C-02",
+   "screening_shard": "adapter",
+   "severity": "major",
+   "status": "fixed",
+   "summary": "A failed orbit change leaves the workspace orbit and the session orbit different. This happens whether the failure is in the orbit save or the workspace save.",
+   "unattached": []
+  },
+  {
+   "current": [
+    {
+     "end": 1842,
+     "narrowed": true,
+     "path": "work/experiments/magic600-04/adapter.py",
+     "start": 1812,
+     "symbol": "Workbench.command"
+    }
+   ],
+   "historical": [
+    "work/experiments/magic600-04/adapter.py:1815"
+   ],
+   "id": "C-01",
+   "screening_shard": "adapter",
+   "severity": "major",
+   "status": "fixed",
+   "summary": "The E1 practice fixture commits through the session directly. It moves a piece under a captured exact position lock and then discards the lock.",
+   "unattached": []
+  },
+  {
+   "current": [
+    {
+     "end": 258,
+     "narrowed": false,
+     "path": "work/experiments/magic600-04/native_launch.py",
+     "start": 229,
+     "symbol": "build"
+    }
+   ],
+   "historical": [
+    "work/experiments/magic600-04/native_launch.py:145"
+   ],
+   "id": "B-002",
+   "screening_shard": "process and HTTP",
+   "severity": "major",
+   "status": "fixed",
+   "summary": "A native build rejected because its inputs changed during compilation still records its identity and digest. After the source is restored, the next build reuses the rejected binary.",
+   "unattached": []
+  },
+  {
+   "current": [],
+   "historical": [
+    "work/experiments/magic600-04/native_launch.py:33"
+   ],
+   "id": "B-003",
+   "screening_shard": "process and HTTP",
+   "severity": "major",
+   "status": "open",
+   "summary": "The declared harness input `tests/run_postapproval.py` is missing, so a clean checkout cannot build the native host. This gap is already known (clean-checkout audit CC-7) and is scheduled for 0.4.1 step 1.",
+   "unattached": [
+    "work/experiments/magic600-04/native_launch.py:33: no enclosing definition (module level)"
+   ]
+  },
+  {
+   "current": [
+    {
+     "end": 181,
+     "narrowed": false,
+     "path": "core.py",
+     "start": 165,
+     "symbol": "Model.normalize"
+    },
+    {
+     "end": 160,
+     "narrowed": false,
+     "path": "session.py",
+     "start": 151,
+     "symbol": "Session.preview"
+    }
+   ],
+   "historical": [
+    "core.py:174",
+    "session.py:159"
+   ],
+   "id": "A-01",
+   "screening_shard": "core and persistence",
+   "severity": "minor",
+   "status": "open",
+   "summary": "A preview keeps the caller's move list. If the caller changes that list before commit, the journal stores a witness that does not replay to the committed state. No current caller does this.",
+   "unattached": []
+  },
+  {
+   "current": [
+    {
+     "end": 73,
+     "narrowed": false,
+     "path": "enhanced.py",
+     "start": 64,
+     "symbol": "Workflow.compose"
+    },
+    {
+     "end": 25,
+     "narrowed": false,
+     "path": "core.py",
+     "start": 20,
+     "symbol": "invrecipe"
+    }
+   ],
+   "historical": [
+    "enhanced.py:65",
+    "core.py:24"
+   ],
+   "id": "A-03",
+   "screening_shard": "core and persistence",
+   "severity": "minor",
+   "status": "open",
+   "summary": "Inverse, conjugate and commutator composition raise `KeyError` for a star step without an explicit sign, although validation accepts it with sign +1.",
+   "unattached": []
+  },
+  {
+   "current": [
+    {
+     "end": 1373,
+     "narrowed": true,
+     "path": "work/experiments/magic600-04/adapter.py",
+     "start": 1343,
+     "symbol": "Workbench.command"
+    }
+   ],
+   "historical": [
+    "work/experiments/magic600-04/adapter.py:1346"
+   ],
+   "id": "C-04",
+   "screening_shard": "adapter",
+   "severity": "minor",
+   "status": "open",
+   "summary": "Rejected draft input removes the recorded-scramble provenance, so the next preview is journalled as manual work.",
+   "unattached": []
+  },
+  {
+   "current": [
+    {
+     "end": 326,
+     "narrowed": false,
+     "path": "session.py",
+     "start": 324,
+     "symbol": "Session.status"
+    }
+   ],
+   "historical": [
+    "session.py:326"
+   ],
+   "id": "X-02",
+   "screening_shard": "integrator experiment",
+   "severity": "major",
+   "status": "open",
+   "summary": "`Session.status()`, returned by every commit, undo and redo, lists checkpoints by reading `created`, a column stored after each checkpoint's label blob. Its cost grows about 0.3 ms per checkpoint, and an automatic checkpoint is added every 50 turns.",
+   "unattached": []
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "A-04",
+   "screening_shard": "core and persistence",
+   "severity": null,
+   "status": "rejected",
+   "summary": "Unindexed journal lookups slow each turn",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "D-02",
+   "screening_shard": "workflow modules",
+   "severity": null,
+   "status": "rejected",
+   "summary": "Local-centre navigation repeats global filter evaluation",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "E-02",
+   "screening_shard": "native renderer",
+   "severity": "major",
+   "status": "needs verification",
+   "summary": "The Center action loads grips synchronously on the UI thread, and a failed lookup reaches the application-exit handler",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "B-005",
+   "screening_shard": "process and HTTP",
+   "severity": "minor",
+   "status": "needs verification",
+   "summary": "GET responses hold the session lock while writing",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "B-004",
+   "screening_shard": "process and HTTP",
+   "severity": "minor",
+   "status": "needs verification",
+   "summary": "Concurrent job submissions can bypass the one-job limit",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "E-01",
+   "screening_shard": "native renderer",
+   "severity": "major",
+   "status": "needs verification",
+   "summary": "Device loss during a native click can leave publication held",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "F-02",
+   "screening_shard": "experiment UI",
+   "severity": "major",
+   "status": "needs verification",
+   "summary": "Held Enter or Space can append a macro repeatedly",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "F-03",
+   "screening_shard": "experiment UI",
+   "severity": "minor",
+   "status": "needs verification",
+   "summary": "Enter is consumed before the macro list sees it",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "E-03",
+   "screening_shard": "native renderer",
+   "severity": "minor",
+   "status": "needs verification",
+   "summary": "Auxiliary tooltips keep stale counts",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "D-03",
+   "screening_shard": "workflow modules",
+   "severity": "minor",
+   "status": "needs verification",
+   "summary": "After-graph paging rebuilds forecasts before checking the cache",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "E-04",
+   "screening_shard": "native renderer",
+   "severity": "minor",
+   "status": "needs verification",
+   "summary": "Metadata-only snapshots still do full-slot UI work",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "F-04",
+   "screening_shard": "experiment UI",
+   "severity": "minor",
+   "status": "needs verification",
+   "summary": "A hidden keyboard window keeps its update work",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  },
+  {
+   "current": [],
+   "historical": [],
+   "id": "F-05",
+   "screening_shard": "experiment UI",
+   "severity": "minor",
+   "status": "needs verification",
+   "summary": "Every macro-row paint revalidates the candidate batch",
+   "unattached": [
+    "no source location recorded in the screening"
+   ]
+  }
+ ],
+ "format": "C600-SCREENING-MAP-draft",
+ "source": "docs/progress/0.4.1/screening-findings.md"
+}

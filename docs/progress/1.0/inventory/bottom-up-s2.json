@@ -1,0 +1,3326 @@
+{
+  "shard": "s2",
+  "functions": [
+    {
+      "id": "S2-1",
+      "name": "Compare explicitly chosen macro candidates",
+      "behaviour": "Analyses 1 to 12 distinct existing macro revisions with the current Prepare and Cleanup phases held fixed, returning complete effect, policy, goal and recommendation evidence for each. Returns a stable ranking without selecting a macro, changing the real draft or executing it.",
+      "entry_points": [
+        "method candidate_analysis.analyse_candidates"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/candidate_analysis.py:18",
+        "work/experiments/magic600-04/candidate_analysis.py:26",
+        "work/experiments/magic600-04/candidate_analysis.py:51",
+        "work/experiments/magic600-04/candidate_analysis.py:65",
+        "work/experiments/magic600-04/candidate_analysis.py:76",
+        "work/experiments/magic600-04/candidate_analysis.py:79"
+      ],
+      "depends_on": [
+        "adapter.Workbench.bound_macro",
+        "adapter.Workbench.review_context",
+        "adapter.Workbench.replace_phase",
+        "adapter.Workbench.review_draft",
+        "current_recommendation.sort_recommendations"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "adapter.Workbench.review_draft",
+      "notes": "S2 computed features are identified by their module-level callable or class method defined in this shard. Their enclosing UI commands and HTTP route registrations are outside this shard and are not listed as S2 entry points; cached candidate results must be prior local evidence."
+    },
+    {
+      "id": "S2-2",
+      "name": "Explain the current complete operation",
+      "behaviour": "Scores the explicitly entered complete operation against its bound before/after states, goal, block, residuals, exact damage, length and protection evidence. Returns Direct, PotentialPreparation, Blocked or NeedsVerification with contributions and up to three reasons, withholding a score when evidence or policy prevents one.",
+      "entry_points": [
+        "method current_recommendation.score_current"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/current_recommendation.py:133",
+        "work/experiments/magic600-04/current_recommendation.py:169",
+        "work/experiments/magic600-04/current_recommendation.py:172",
+        "work/experiments/magic600-04/current_recommendation.py:185",
+        "work/experiments/magic600-04/current_recommendation.py:243",
+        "work/experiments/magic600-04/current_recommendation.py:268"
+      ],
+      "depends_on": [
+        "work_intents.evaluate_goal",
+        "work_intents._frame_pair",
+        "macro_use.infer_use",
+        "macro_use.checked",
+        "macro_use._score"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "current_recommendation.score_current"
+    },
+    {
+      "id": "S2-3",
+      "name": "Inspect cycles and sticker correspondence",
+      "behaviour": "Shows paged piece cycles, stationary orientation changes and selected edge slot correspondence for a selected macro, Macro steps or the complete operation. Current and After modes instead show active-orbit Current-to-Home ownership and conditional residuals; replies distinguish actual and projected occupants, reference status and unavailable projections.",
+      "entry_points": [
+        "method cycle_projection.inspect_cycles",
+        "method cycle_projection.inspect_cycle_display"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:46",
+        "work/experiments/magic600-04/cycle_projection.py:131",
+        "work/experiments/magic600-04/cycle_projection.py:178",
+        "work/experiments/magic600-04/cycle_projection.py:224",
+        "work/experiments/magic600-04/cycle_projection.py:244",
+        "work/experiments/magic600-04/cycle_projection.py:284",
+        "work/experiments/magic600-04/cycle_projection.py:300",
+        "work/experiments/magic600-04/cycle_projection.py:333"
+      ],
+      "depends_on": [
+        "adapter.Workbench.guard",
+        "adapter.Workbench.review_context",
+        "adapter.Workbench.bound_macro",
+        "adapter.Workbench.effect",
+        "adapter.Workbench.effect_decomposition",
+        "adapter.Workbench.cached_residuals",
+        "adapter.Workbench.residual_bundle",
+        "adapter.Workbench.piece",
+        "filter_projection.PieceFilterProjection",
+        "transported_frames.TransportedFrames.frame"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "workspace",
+        "preferences"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "cycle_projection.inspect_cycles",
+      "notes": "One callable accepts mode=Operation, Current or After and scope=selected-macro, macro-steps or complete. inspect_cycle_display pairs the same inspection with an already-authorized action; paging is 32 items or edges per page."
+    },
+    {
+      "id": "S2-4",
+      "name": "Inspect explicit draft boundaries",
+      "behaviour": "Returns detached Actual, after-Prepare, after-Macro or after-Cleanup observations of Current, Next, target, buffers, block requirements and inspected pieces. A selected macro adds its complete support totals and retained-star entry frames; executed steps cannot be projected again as an unexecuted draft.",
+      "entry_points": [
+        "method draft_inspection.inspect_phase"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/draft_inspection.py:13",
+        "work/experiments/magic600-04/draft_inspection.py:26",
+        "work/experiments/magic600-04/draft_inspection.py:42",
+        "work/experiments/magic600-04/draft_inspection.py:65",
+        "work/experiments/magic600-04/draft_inspection.py:88",
+        "work/experiments/magic600-04/draft_inspection.py:127"
+      ],
+      "depends_on": [
+        "adapter.Workbench.effect",
+        "adapter.Workbench.piece",
+        "adapter.Workbench.guard",
+        "adapter.Workbench.review_context",
+        "filter_projection.PieceFilterProjection",
+        "position_requirements.prepare",
+        "position_requirements.holds",
+        "core.PuzzleState"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "workspace",
+        "preferences"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "draft_inspection.inspect_phase",
+      "notes": "The position object list is capped at 256 with explicit total/truncation metadata; complete macro support is still evaluated. Inspection supplies observations rather than execution permission."
+    },
+    {
+      "id": "S2-5",
+      "name": "Observe Piece Filter matches in inspected states",
+      "behaviour": "Applies the retained filter rules and captured filter context to each actual or projected state, reporting matched piece/sticker counts and per-piece filter_match. Invalid rules produce unavailable metadata and unknown matches.",
+      "entry_points": [
+        "method filter_projection.PieceFilterProjection.metadata",
+        "method filter_projection.PieceFilterProjection.record"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/filter_projection.py:11",
+        "work/experiments/magic600-04/filter_projection.py:23",
+        "work/experiments/magic600-04/filter_projection.py:29",
+        "work/experiments/magic600-04/filter_projection.py:33",
+        "work/experiments/magic600-04/filter_projection.py:44",
+        "work/experiments/magic600-04/filter_projection.py:47"
+      ],
+      "depends_on": [
+        "core.Filters.styles"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "preferences"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "filter_projection.PieceFilterProjection.evaluate",
+      "notes": "Projection results are detached observations; the helper retains only per-reply caches and does not alter filter preferences or mechanical state."
+    },
+    {
+      "id": "S2-6",
+      "name": "List explicit endgame orientation parameters",
+      "behaviour": "For a supplied orbit and nonbuffer position, returns its certified fixed slot frame, orientation group and every exact group element with the retained node that realizes it.",
+      "entry_points": [
+        "method endgame_library.EndgameLibrary.options"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:26",
+        "work/experiments/magic600-04/endgame_library.py:54",
+        "work/experiments/magic600-04/endgame_library.py:56"
+      ],
+      "depends_on": [
+        "transported_frames.TransportedFrames.ensure",
+        "transported_frames.TransportedFrames.frame",
+        "transported_frames.TransportedFrames.finite_group"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "endgame_library.EndgameLibrary.options"
+    },
+    {
+      "id": "S2-7",
+      "name": "Construct an explicit placement star",
+      "behaviour": "Constructs the placement-star recipe for the supplied orbit, auxiliary x and frame element q. Returns its verified A/B/x slot mapping, legal recipe, primitive cost and complete collateral support.",
+      "entry_points": [
+        "method endgame_library.EndgameLibrary.compose family=placement-star"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:62",
+        "work/experiments/magic600-04/endgame_library.py:77",
+        "work/experiments/magic600-04/endgame_library.py:94",
+        "work/experiments/magic600-04/endgame_library.py:101"
+      ],
+      "depends_on": [
+        "S2-6",
+        "core.Model.net",
+        "core.invrecipe",
+        "core.commp"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "endgame_library.EndgameLibrary.compose",
+      "notes": "All parameters are supplied explicitly; the construction returns detached evidence and does not save, stage or execute a macro or evaluate the current protection policy."
+    },
+    {
+      "id": "S2-8",
+      "name": "Construct an explicit orientation transfer",
+      "behaviour": "Constructs the two-star transfer recipe for the supplied orbit, auxiliary x and frame element q. Returns verified opposite orientation actions at x and buffer B, the legal recipe, cost and complete collateral support.",
+      "entry_points": [
+        "method endgame_library.EndgameLibrary.compose family=transfer"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:62",
+        "work/experiments/magic600-04/endgame_library.py:81",
+        "work/experiments/magic600-04/endgame_library.py:94",
+        "work/experiments/magic600-04/endgame_library.py:101"
+      ],
+      "depends_on": [
+        "S2-6",
+        "core.Model.net",
+        "core.invrecipe",
+        "core.commp"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "endgame_library.EndgameLibrary.compose",
+      "notes": "All parameters are supplied explicitly; the construction returns detached evidence and does not save, stage or execute a macro or evaluate the current protection policy."
+    },
+    {
+      "id": "S2-9",
+      "name": "Construct an explicit buffer-A endgame",
+      "behaviour": "Constructs the three-star buffer-a recipe for the supplied orbit, auxiliary x and frame element q. Returns verified opposite A/B orientation actions, the legal recipe, cost and complete collateral support.",
+      "entry_points": [
+        "method endgame_library.EndgameLibrary.compose family=buffer-a"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:62",
+        "work/experiments/magic600-04/endgame_library.py:84",
+        "work/experiments/magic600-04/endgame_library.py:94",
+        "work/experiments/magic600-04/endgame_library.py:101"
+      ],
+      "depends_on": [
+        "S2-6",
+        "core.Model.net",
+        "core.invrecipe",
+        "core.commp"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "endgame_library.EndgameLibrary.compose",
+      "notes": "All parameters are supplied explicitly; the construction returns detached evidence and does not save, stage or execute a macro or evaluate the current protection policy."
+    },
+    {
+      "id": "S2-10",
+      "name": "Construct an explicit final-buffer commutator",
+      "behaviour": "Constructs the final-b commutator for two supplied distinct nonbuffer auxiliaries and exact group elements q and r. Returns the verified buffer-B commutator action, legal recipe, cost and complete collateral support.",
+      "entry_points": [
+        "method endgame_library.EndgameLibrary.compose family=final-b"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:62",
+        "work/experiments/magic600-04/endgame_library.py:87",
+        "work/experiments/magic600-04/endgame_library.py:94",
+        "work/experiments/magic600-04/endgame_library.py:101"
+      ],
+      "depends_on": [
+        "S2-6",
+        "core.Model.net",
+        "core.invrecipe",
+        "core.commp"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "endgame_library.EndgameLibrary.compose",
+      "notes": "All parameters are supplied explicitly; the construction returns detached evidence and does not save, stage or execute a macro or evaluate the current protection policy."
+    },
+    {
+      "id": "S2-11",
+      "name": "List proper local Grip frames",
+      "behaviour": "Returns all twelve proper ordered vertex frames of the explicitly supplied C1..C600 cap, with a retained legal frame witness and H/T-anchored base corner order.",
+      "entry_points": [
+        "method grip_frames.frames"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/grip_frames.py:48",
+        "work/experiments/magic600-04/grip_frames.py:57",
+        "work/experiments/magic600-04/grip_frames.py:80"
+      ],
+      "depends_on": [
+        "grips.grips"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "grip_frames.frames"
+    },
+    {
+      "id": "S2-12",
+      "name": "Explain local Twist corner cycles",
+      "behaviour": "Returns the forward and inverse a/b/c/d corner cycles, permutations, fixed corners and order of each retained H/T axis, derived from its actual vertex action.",
+      "entry_points": [
+        "method grip_frames.notation"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/grip_frames.py:88",
+        "work/experiments/magic600-04/grip_frames.py:91",
+        "work/experiments/magic600-04/grip_frames.py:107"
+      ],
+      "depends_on": [
+        "grips.grips"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "grip_frames.notation"
+    },
+    {
+      "id": "S2-13",
+      "name": "Resolve a Twist in a chosen Grip frame",
+      "behaviour": "Validates the explicitly chosen cap, proper ordered frame, H1/H2/H3 or T1/T2/T3/T4 axis and inverse flag, then emits an exactly equal retained legal word. The reply includes the full-label equality proof and distinguishes the emitted witness from the conjugating witness for prefix checks.",
+      "entry_points": [
+        "method grip_frames.resolve"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/grip_frames.py:114",
+        "work/experiments/magic600-04/grip_frames.py:120",
+        "work/experiments/magic600-04/grip_frames.py:129",
+        "work/experiments/magic600-04/grip_frames.py:133",
+        "work/experiments/magic600-04/grip_frames.py:144",
+        "work/experiments/magic600-04/grip_frames.py:148"
+      ],
+      "depends_on": [
+        "S2-11",
+        "grips.grips",
+        "core.Model.word_net",
+        "core.invword"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "grip_frames.resolve"
+    },
+    {
+      "id": "S2-14",
+      "name": "Supply the retained local cut-cell mesh",
+      "behaviour": "Returns the original mesh vertices, region centers, cell transforms and triangle offsets as model-bound buffers for the local cell view, after checking all 433 base regions and 600 transforms.",
+      "entry_points": [
+        "method local_geometry.geometry"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/local_geometry.py:10",
+        "work/experiments/magic600-04/local_geometry.py:13",
+        "work/experiments/magic600-04/local_geometry.py:19",
+        "work/experiments/magic600-04/local_geometry.py:26"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "local_geometry.geometry"
+    },
+    {
+      "id": "S2-15",
+      "name": "Inspect a local cell in committed state",
+      "behaviour": "Returns all 433 slots of a chosen canonical cell with actual labels, physical pieces, color cells, affecting caps, filter matches and protected positions. Includes Current/Next bookmarks, the explicit proper local frame, state hash and revision.",
+      "entry_points": [
+        "method local_geometry.cell_state"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/local_geometry.py:35",
+        "work/experiments/magic600-04/local_geometry.py:37",
+        "work/experiments/magic600-04/local_geometry.py:46",
+        "work/experiments/magic600-04/local_geometry.py:51",
+        "work/experiments/magic600-04/local_geometry.py:56"
+      ],
+      "depends_on": [
+        "adapter.Workbench.frame_choices",
+        "adapter.Workbench.position_locks",
+        "S2-5"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "workspace",
+        "preferences",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "local_geometry.cell_state"
+    },
+    {
+      "id": "S2-16",
+      "name": "Edit macro descriptive metadata",
+      "behaviour": "Validates changes to a macro name, note, tags or pinned flag and returns an independent updated record while preserving its recipe and content identity.",
+      "entry_points": [
+        "method macro_library.edit_metadata"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:34",
+        "work/experiments/magic600-04/macro_library.py:50",
+        "work/experiments/magic600-04/macro_library.py:54"
+      ],
+      "depends_on": [
+        "macro_library._metadata"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "macro_library.edit_metadata",
+      "notes": "The enclosing library command persists the returned record; this function performs no library or Session write."
+    },
+    {
+      "id": "S2-17",
+      "name": "Filter the macro catalogue by exact facts and metadata",
+      "behaviour": "Combines explicit pinned, affected-orbit, effect-kind, tag, likely-use-orbit and Other conditions to decide which macro records appear. Effect facets use locally computed complete facts, including orbit-scoped stars, pure cycles, orientation and cross-orbit effects.",
+      "entry_points": [
+        "method macro_library.facets"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:60",
+        "work/experiments/magic600-04/macro_library.py:70",
+        "work/experiments/magic600-04/macro_library.py:92",
+        "work/experiments/magic600-04/macro_library.py:100",
+        "work/experiments/magic600-04/macro_library.py:111"
+      ],
+      "depends_on": [
+        "macro_use.infer_use"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "macro_library.facets"
+    },
+    {
+      "id": "S2-18",
+      "name": "Export selected library entries",
+      "behaviour": "Returns a model-bound schema-v1 JSON library document containing 1 to 256 explicitly selected distinct macros, with exact recipes, metadata and descriptive derivation. Enforces a 2,000,000-byte limit and omits locally computed effect and applicability facts.",
+      "entry_points": [
+        "method macro_library.export_selected"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:244",
+        "work/experiments/magic600-04/macro_library.py:246",
+        "work/experiments/magic600-04/macro_library.py:255",
+        "work/experiments/magic600-04/macro_library.py:259"
+      ],
+      "depends_on": [
+        "core.Model.normalize"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "macro_library.export_selected",
+      "notes": "Returns a document; the caller chooses and writes any file. Descriptive derivation, including geometric proof metadata, remains an imported claim rather than a locally verified certificate."
+    },
+    {
+      "id": "S2-19",
+      "name": "Inspect a macro-library import",
+      "behaviour": "Validates the entire model-bound library document and returns added, identical and conflicting entries with can_import. Identical entries retain local metadata, while differing revisions or normalized recipes are conflicts.",
+      "entry_points": [
+        "method macro_library.inspect_import"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:264",
+        "work/experiments/magic600-04/macro_library.py:273",
+        "work/experiments/magic600-04/macro_library.py:283",
+        "work/experiments/magic600-04/macro_library.py:294",
+        "work/experiments/magic600-04/macro_library.py:300"
+      ],
+      "depends_on": [
+        "core.Model.normalize",
+        "grip_frames.frames"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "macro_library.inspect_import",
+      "notes": "Inspection returns detached records and never imports them; the caller must reject conflicts and transact the accepted batch elsewhere."
+    },
+    {
+      "id": "S2-20",
+      "name": "Classify complete macro effects",
+      "behaviour": "Reports each affected orbit as PurePosition, PureOrientation, Mixed or Unknown, with exact support, orientation and position counts and piece-cycle lengths. A pure single-cycle label requires every edge to match the independent fixed chart.",
+      "entry_points": [
+        "method macro_use.classify_effect"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/macro_use.py:18",
+        "work/experiments/magic600-04/macro_use.py:20",
+        "work/experiments/magic600-04/macro_use.py:34",
+        "work/experiments/magic600-04/macro_use.py:49",
+        "work/experiments/magic600-04/macro_use.py:54"
+      ],
+      "depends_on": [
+        "transported_frames.TransportedFrames.decompose"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "macro_use.classify_effect"
+    },
+    {
+      "id": "S2-21",
+      "name": "Recognize retained-star relations within an operation",
+      "behaviour": "Reports the A/B/target positions and ordered target frame of explicitly named stars whose entire orbit-local action remains equal in the complete recipe. Each relation includes its retained-seed certificate.",
+      "entry_points": [
+        "method macro_use.scoped_stars"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/macro_use.py:85",
+        "work/experiments/magic600-04/macro_use.py:97",
+        "work/experiments/magic600-04/macro_use.py:103",
+        "work/experiments/magic600-04/macro_use.py:108"
+      ],
+      "depends_on": [
+        "core.Model.star_net",
+        "core.Model.certify_seed"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "macro_use.scoped_stars"
+    },
+    {
+      "id": "S2-22",
+      "name": "Explain likely macro use by orbit",
+      "behaviour": "Computes versioned static-use scores and contributions from complete checked effect class, orbit concentration, affected-piece count and primitive length. Reports up to three qualifying orbit memberships, excluded candidates with reasons, Other, or unavailable verification.",
+      "entry_points": [
+        "method macro_use.infer_use"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/macro_use.py:124",
+        "work/experiments/magic600-04/macro_use.py:135",
+        "work/experiments/magic600-04/macro_use.py:163",
+        "work/experiments/magic600-04/macro_use.py:173",
+        "work/experiments/magic600-04/macro_use.py:175",
+        "work/experiments/magic600-04/macro_use.py:180"
+      ],
+      "depends_on": [
+        "macro_use.checked",
+        "macro_use._score"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "macro_use.infer_use",
+      "notes": "Qualifying scores are at least 70 and within 10 of the best; intrinsic use does not certify current applicability or execution safety."
+    },
+    {
+      "id": "S2-23",
+      "name": "Explain macro body context for current work",
+      "behaviour": "Reports which complete body effects intersect protected or completed orbits and why each affected orbit relates to the current work. Highlights the only unfinished affected orbit when one exists without changing intrinsic use memberships.",
+      "entry_points": [
+        "method macro_use.use_context"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/macro_use.py:197",
+        "work/experiments/magic600-04/macro_use.py:204",
+        "work/experiments/magic600-04/macro_use.py:207",
+        "work/experiments/magic600-04/macro_use.py:209"
+      ],
+      "depends_on": [
+        "macro_use.checked"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace",
+        "protection"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "macro_use.use_context"
+    },
+    {
+      "id": "S2-24",
+      "name": "Resolve a copied sticker-slot address",
+      "behaviour": "Validates the complete typed mathematical address, naming version, model identity, exact cell pole, structure class and region word, then returns the canonical hosting-cell sticker slot.",
+      "entry_points": [
+        "method mathematical_names.MathematicalNames.parse_slot"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:179",
+        "work/experiments/magic600-04/mathematical_names.py:185",
+        "work/experiments/magic600-04/mathematical_names.py:195",
+        "work/experiments/magic600-04/mathematical_names.py:202"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "mathematical_names.MathematicalNames.parse_slot"
+    },
+    {
+      "id": "S2-25",
+      "name": "Resolve a copied fixed-position address",
+      "behaviour": "Validates the complete typed mathematical address, naming version, model identity, exact cell pole, structure class and region word, then returns the canonical fixed physical position independent of its occupant.",
+      "entry_points": [
+        "method mathematical_names.MathematicalNames.parse_address"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:179",
+        "work/experiments/magic600-04/mathematical_names.py:185",
+        "work/experiments/magic600-04/mathematical_names.py:195",
+        "work/experiments/magic600-04/mathematical_names.py:206"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "mathematical_names.MathematicalNames.parse_address"
+    },
+    {
+      "id": "S2-26",
+      "name": "Resolve a copied physical-piece address",
+      "behaviour": "Validates the complete typed mathematical address, naming version, model identity, exact cell pole, structure class and region word, then returns the canonical physical piece identified by its immutable Home.",
+      "entry_points": [
+        "method mathematical_names.MathematicalNames.parse_identity"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:179",
+        "work/experiments/magic600-04/mathematical_names.py:185",
+        "work/experiments/magic600-04/mathematical_names.py:195",
+        "work/experiments/magic600-04/mathematical_names.py:210"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "mathematical_names.MathematicalNames.parse_identity"
+    },
+    {
+      "id": "S2-27",
+      "name": "Name a cell by its golden-coordinate pole",
+      "behaviour": "Returns a canonical C1..C600 cell name and exact supported golden-coordinate pole in W/X/Y/Z order, with the source reconstruction tolerance disclosed.",
+      "entry_points": [
+        "method mathematical_names.MathematicalNames.cell"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:18",
+        "work/experiments/magic600-04/mathematical_names.py:25",
+        "work/experiments/magic600-04/mathematical_names.py:31",
+        "work/experiments/magic600-04/mathematical_names.py:231"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "mathematical_names.MathematicalNames.cell"
+    },
+    {
+      "id": "S2-28",
+      "name": "Name an orbit by retained incidence structure",
+      "behaviour": "Returns a unique orbit caption, short name, sticker/cap counts, orientation-group label, exact hosting/cap incidence and representative region portrait. Distinguishes structurally different orbits with the same coarse counts and includes fixed centers.",
+      "entry_points": [
+        "method mathematical_names.MathematicalNames.orbit"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:68",
+        "work/experiments/magic600-04/mathematical_names.py:92",
+        "work/experiments/magic600-04/mathematical_names.py:101",
+        "work/experiments/magic600-04/mathematical_names.py:111",
+        "work/experiments/magic600-04/mathematical_names.py:154",
+        "work/experiments/magic600-04/mathematical_names.py:236"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "mathematical_names.MathematicalNames.orbit"
+    },
+    {
+      "id": "S2-29",
+      "name": "Describe and copy a sticker-slot location",
+      "behaviour": "Returns the sticker slot name, cell pole, structure class, shortlex local region word and versioned Slot copy text. Includes retained frame corners and approximate barycentric centroid hints.",
+      "entry_points": [
+        "method mathematical_names.MathematicalNames.slot"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:254",
+        "work/experiments/magic600-04/mathematical_names.py:263",
+        "work/experiments/magic600-04/mathematical_names.py:270"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "mathematical_names.MathematicalNames.slot"
+    },
+    {
+      "id": "S2-30",
+      "name": "Describe and copy a fixed physical position",
+      "behaviour": "Returns a fixed position address anchored in a hosting cell, with all hosting cells, affecting caps and versioned Position copy text. The address is generated without using its current occupant.",
+      "entry_points": [
+        "method mathematical_names.MathematicalNames.address"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:276",
+        "work/experiments/magic600-04/mathematical_names.py:281",
+        "work/experiments/magic600-04/mathematical_names.py:285"
+      ],
+      "depends_on": [
+        "S2-29"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "mathematical_names.MathematicalNames.address"
+    },
+    {
+      "id": "S2-31",
+      "name": "Describe immutable piece Home and current location",
+      "behaviour": "Returns detached piece identity/Home names, current-location names, orbit category, symmetry and typed Piece copy text after checking that identity and position share an orbit. Geometric address words and centroid hints are distinguished from setup instructions and orientation evidence.",
+      "entry_points": [
+        "method mathematical_names.MathematicalNames.piece_record"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:294",
+        "work/experiments/magic600-04/mathematical_names.py:298",
+        "work/experiments/magic600-04/mathematical_names.py:303",
+        "work/experiments/magic600-04/mathematical_names.py:307"
+      ],
+      "depends_on": [
+        "S2-30",
+        "S2-28"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "mathematical_names.MathematicalNames.piece_record"
+    },
+    {
+      "id": "S2-32",
+      "name": "Inspect an explicit geometric reference pair",
+      "behaviour": "Checks that two explicitly supplied cell/corner frames determine one proper complete cell, sticker-slot and piece correspondence preserving legal orbits. Returns model, manifest and mapping hashes and a detached summary.",
+      "entry_points": [
+        "method reference_variants.ReferenceVariants.inspect"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:31",
+        "work/experiments/magic600-04/reference_variants.py:101",
+        "work/experiments/magic600-04/reference_variants.py:120",
+        "work/experiments/magic600-04/reference_variants.py:151",
+        "work/experiments/magic600-04/reference_variants.py:160"
+      ],
+      "depends_on": [
+        "S2-11"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "reference_variants.ReferenceVariants.inspect",
+      "notes": "The correspondence is a geometric relabelling for analysis, not a puzzle move; no mechanical labels are relabelled."
+    },
+    {
+      "id": "S2-33",
+      "name": "Inspect positions under a geometric reference",
+      "behaviour": "Maps at most 256 distinct explicitly supplied fixed positions through a verified frame pair, returning each source/destination position and all its slot correspondences.",
+      "entry_points": [
+        "method reference_variants.ReferenceVariants.map_positions"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:166",
+        "work/experiments/magic600-04/reference_variants.py:171",
+        "work/experiments/magic600-04/reference_variants.py:175"
+      ],
+      "depends_on": [
+        "S2-11",
+        "reference_variants.ReferenceVariants._mapping"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "reference_variants.ReferenceVariants.map_positions"
+    },
+    {
+      "id": "S2-34",
+      "name": "Compile a macro into an explicit geometric reference",
+      "behaviour": "Transforms an exact supplied macro revision between explicit proper cell frames into finite legal primitive words, verifying every transformed primitive and the complete effect over all labelled slots and collateral orbits. Returns the emitted recipe, costs, object correspondence and equality proof.",
+      "entry_points": [
+        "method reference_variants.ReferenceVariants.compile"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:181",
+        "work/experiments/magic600-04/reference_variants.py:206",
+        "work/experiments/magic600-04/reference_variants.py:217",
+        "work/experiments/magic600-04/reference_variants.py:224",
+        "work/experiments/magic600-04/reference_variants.py:226",
+        "work/experiments/magic600-04/reference_variants.py:232"
+      ],
+      "depends_on": [
+        "S2-11",
+        "core.Model.expand",
+        "core.Model.move",
+        "core.Model.net",
+        "core.invword"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "reference_variants.ReferenceVariants.compile",
+      "notes": "No variant is saved or executed here; protection must review the emitted witness. The limit is 3,000,000 emitted primitives in words of at most 100,000."
+    },
+    {
+      "id": "S2-35",
+      "name": "Derive exact orbit residuals",
+      "behaviour": "For Current or a bound conditional After state, returns displaced and incorrectly oriented pieces split between nonbuffers and A/B, Current-to-Home cycles, buffer occupants, frame status and necessary invariant evidence. Also reports unknown orientation dependencies, raw exact-label status and a suggested work-intent kind.",
+      "entry_points": [
+        "method residuals.derive_residual"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/residuals.py:123",
+        "work/experiments/magic600-04/residuals.py:134",
+        "work/experiments/magic600-04/residuals.py:157",
+        "work/experiments/magic600-04/residuals.py:166",
+        "work/experiments/magic600-04/residuals.py:189",
+        "work/experiments/magic600-04/residuals.py:206",
+        "work/experiments/magic600-04/residuals.py:210"
+      ],
+      "depends_on": [
+        "transported_frames.TransportedFrames.ensure",
+        "transported_frames.TransportedFrames.decompose",
+        "orbit_invariants.OrbitInvariants.evaluate",
+        "residuals.certify_completion"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "residuals.derive_residual",
+      "notes": "The suggestion identifies PlacePiece, OrientPiece, FinishBuffer, FinishOrbit or VerifyReference without choosing a target, macro or action. This module stores no residual result."
+    },
+    {
+      "id": "S2-36",
+      "name": "Certify completion of the current orbit",
+      "behaviour": "Returns Complete, Incomplete or Conditional with reasons for one orbit, requiring exact Home labels, a matching independent frame and a known or executed operation scope. A predicted After state cannot become a Current completion certificate.",
+      "entry_points": [
+        "method residuals.certify_completion"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/residuals.py:226",
+        "work/experiments/magic600-04/residuals.py:234",
+        "work/experiments/magic600-04/residuals.py:237",
+        "work/experiments/magic600-04/residuals.py:245",
+        "work/experiments/magic600-04/residuals.py:248",
+        "work/experiments/magic600-04/residuals.py:259"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "residuals.certify_completion"
+    },
+    {
+      "id": "S2-37",
+      "name": "Explain residual changes between two endpoints",
+      "behaviour": "Compares supplied journal or simulation endpoints, returning before/after residual counts, A/B occupant and label changes, changed physical positions and changes to captured or protected requirements. Its protection observations cover net endpoints.",
+      "entry_points": [
+        "method residuals.derive_delta"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/residuals.py:265",
+        "work/experiments/magic600-04/residuals.py:272",
+        "work/experiments/magic600-04/residuals.py:278",
+        "work/experiments/magic600-04/residuals.py:287",
+        "work/experiments/magic600-04/residuals.py:299",
+        "work/experiments/magic600-04/residuals.py:306"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "protection",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "residuals.derive_delta"
+    },
+    {
+      "id": "S2-38",
+      "name": "Inspect necessary orbit parity and orientation conditions",
+      "behaviour": "Evaluates a supplied exact decomposition against the matching all-generator certificate, returning Conflict, PassNecessary or Unavailable with position parity and orientation quotient. Certificate lookup reports unavailable or stale evidence without starting a new audit.",
+      "entry_points": [
+        "method orbit_invariants.OrbitInvariants.certificate",
+        "method orbit_invariants.OrbitInvariants.evaluate"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/orbit_invariants.py:203",
+        "work/experiments/magic600-04/orbit_invariants.py:208",
+        "work/experiments/magic600-04/orbit_invariants.py:218",
+        "work/experiments/magic600-04/orbit_invariants.py:224",
+        "work/experiments/magic600-04/orbit_invariants.py:246"
+      ],
+      "depends_on": [
+        "transported_frames.TransportedFrames.ensure",
+        "orbit_invariants.position_parity"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "orbit_invariants.OrbitInvariants.evaluate",
+      "notes": "These are per-orbit necessary conditions; they do not prove reachability, protection or completion."
+    },
+    {
+      "id": "S2-39",
+      "name": "Provide a certified fixed orbit orientation reference",
+      "behaviour": "Returns the model-bound immutable transported-frame certificate, exact ordered slots of a supplied fixed position, or exact finite orientation-group elements for a supplied orbit. The chart covers every orbit position and is checked against retained legal transports independently of the current Grip and puzzle state.",
+      "entry_points": [
+        "method transported_frames.TransportedFrames.ensure",
+        "method transported_frames.TransportedFrames.frame",
+        "method transported_frames.TransportedFrames.finite_group"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/transported_frames.py:28",
+        "work/experiments/magic600-04/transported_frames.py:37",
+        "work/experiments/magic600-04/transported_frames.py:95",
+        "work/experiments/magic600-04/transported_frames.py:108",
+        "work/experiments/magic600-04/transported_frames.py:119"
+      ],
+      "depends_on": [
+        "core.Model.certify_seed",
+        "core.Model.mapped"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "transported_frames.TransportedFrames.ensure",
+      "notes": "Only immutable model/frame caches are populated; failure or cancellation cannot publish a partially built orbit."
+    },
+    {
+      "id": "S2-40",
+      "name": "Read attempt, timer and journal statistics",
+      "behaviour": "Returns attempt identity, exact current hash/head, raw whole-model Home status, timer, statistics and recorded-source assistance. Includes current and acknowledged completion receipts when they still match the exact state and attempt.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.report"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:33",
+        "work/experiments/magic600-04/session_workflow.py:58",
+        "work/experiments/magic600-04/session_workflow.py:81",
+        "work/experiments/magic600-04/session_workflow.py:102"
+      ],
+      "depends_on": [
+        "enhanced.Workflow.stats",
+        "enhanced.Workflow.timer",
+        "session.Session.event"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "journal",
+        "preferences"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "session_workflow.SessionWorkflow.report"
+    },
+    {
+      "id": "S2-41",
+      "name": "Resume the existing attempt",
+      "behaviour": "Reads the existing attempt report without resetting or reloading shared state and without starting the timer.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.resume"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:111"
+      ],
+      "depends_on": [
+        "S2-40"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "journal",
+        "preferences"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "session_workflow.SessionWorkflow.resume"
+    },
+    {
+      "id": "S2-42",
+      "name": "Start or pause the attempt timer",
+      "behaviour": "Starts or pauses the explicit shared session timer and returns the updated attempt report. Attempt elapsed time subtracts the saved baseline and includes thinking time.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.timer"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:44",
+        "work/experiments/magic600-04/session_workflow.py:115",
+        "work/experiments/magic600-04/session_workflow.py:118"
+      ],
+      "depends_on": [
+        "enhanced.Workflow.timer",
+        "S2-40"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "journal",
+        "preferences"
+      ],
+      "writes": [
+        "preferences"
+      ],
+      "engine_call": "enhanced.Workflow.timer",
+      "notes": "The method accepts command=start or command=pause; persistent timer storage is delegated to the shared Workflow."
+    },
+    {
+      "id": "S2-43",
+      "name": "Prepare a recorded scramble",
+      "behaviour": "Returns a legal random scramble recipe of 1 to 10,000 primitives using the supplied integer seed or a generated 32-bit seed, together with its provenance and recipe hash. Restores any prior pending preview after generating the recipe.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.scramble_recipe"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:121",
+        "work/experiments/magic600-04/session_workflow.py:128",
+        "work/experiments/magic600-04/session_workflow.py:131",
+        "work/experiments/magic600-04/session_workflow.py:134",
+        "work/experiments/magic600-04/session_workflow.py:138"
+      ],
+      "depends_on": [
+        "enhanced.Workflow.scramble"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "enhanced.Workflow.scramble",
+      "notes": "The returned recipe is not executed here; application/staging belongs to the enclosing command."
+    },
+    {
+      "id": "S2-44",
+      "name": "Save a timed attempt log",
+      "behaviour": "Saves a c600 or MPUlt log through the existing Session, supplying this attempt's elapsed timer in milliseconds.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.save_log"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:141"
+      ],
+      "depends_on": [
+        "enhanced.Workflow.timer",
+        "session.Session.save_log"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "files"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": "session.Session.save_log"
+    },
+    {
+      "id": "S2-45",
+      "name": "Export attempt log bytes",
+      "behaviour": "Returns existing c600 or MPUlt wire bytes with this attempt's elapsed timer, allowing the caller to choose the destination file.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.export_log"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:147"
+      ],
+      "depends_on": [
+        "enhanced.Workflow.timer",
+        "session.Session.export_log"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "session.Session.export_log"
+    },
+    {
+      "id": "S2-46",
+      "name": "Inspect a log before importing it",
+      "behaviour": "Privately validates and replays the supplied c600 or MPUlt bytes, returning file/hash, transaction, redo, primitive-count and source-claim information. Retains an opaque confirmation bound to the exact current session, preferences, pending operation and native mapping.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.inspect_log"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:153",
+        "work/experiments/magic600-04/session_workflow.py:162",
+        "work/experiments/magic600-04/session_workflow.py:170",
+        "work/experiments/magic600-04/session_workflow.py:179",
+        "work/experiments/magic600-04/session_workflow.py:187",
+        "work/experiments/magic600-04/session_workflow.py:190"
+      ],
+      "depends_on": [
+        "log_io.decode_log",
+        "log_io.validate_record",
+        "mpult_log.import_native"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "workspace"
+      ],
+      "engine_call": "session_workflow.SessionWorkflow.inspect_log",
+      "notes": "Only an in-memory confirmation is retained; puzzle state and database are not changed, and imported preferences/provenance are not adopted as authority."
+    },
+    {
+      "id": "S2-47",
+      "name": "Apply a freshly confirmed log import",
+      "behaviour": "Imports only the identical bytes and format previously inspected at the still-current confirmation context, using Session's recovery transaction. Returns the applied import receipt and recovery checkpoint, including a warning if a durable successful import outlived its status refresh.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.apply_log"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:193",
+        "work/experiments/magic600-04/session_workflow.py:196",
+        "work/experiments/magic600-04/session_workflow.py:201",
+        "work/experiments/magic600-04/session_workflow.py:205",
+        "work/experiments/magic600-04/session_workflow.py:208",
+        "work/experiments/magic600-04/session_workflow.py:212",
+        "work/experiments/magic600-04/session_workflow.py:227"
+      ],
+      "depends_on": [
+        "S2-46",
+        "session.Session.import_log"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "state",
+        "journal",
+        "checkpoints",
+        "workspace"
+      ],
+      "engine_call": "session.Session.import_log",
+      "notes": "Current preferences are retained; the method clears its confirmation after applying/reconciling the exact durable import."
+    },
+    {
+      "id": "S2-48",
+      "name": "Build a whole-model completion summary",
+      "behaviour": "For an exact pending operation that changes an unfinished model into all 259,800 Home labels, returns an attempt-bound completion summary after verifying all 35 fixed orbit frames. Includes predicted final operation statistics, timer and recorded assistance for publication in the atomic commit receipt.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.completion_plan"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:234",
+        "work/experiments/magic600-04/session_workflow.py:244",
+        "work/experiments/magic600-04/session_workflow.py:250",
+        "work/experiments/magic600-04/session_workflow.py:255",
+        "work/experiments/magic600-04/session_workflow.py:265",
+        "work/experiments/magic600-04/session_workflow.py:272"
+      ],
+      "depends_on": [
+        "transported_frames.TransportedFrames.ensure",
+        "enhanced.Workflow.stats",
+        "session.Session.commit"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "journal",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "session_workflow.SessionWorkflow.completion_plan",
+      "notes": "Returns detached metadata; the existing Session commit publishes it. Reset, imported Home labels or missing frame evidence do not alone create this summary."
+    },
+    {
+      "id": "S2-49",
+      "name": "Acknowledge a current completion summary",
+      "behaviour": "Rejects stale or unavailable completion identities, records acknowledgement of the current matching receipt and returns the updated session report.",
+      "entry_points": [
+        "method session_workflow.SessionWorkflow.acknowledge"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:283",
+        "work/experiments/magic600-04/session_workflow.py:287"
+      ],
+      "depends_on": [
+        "S2-40",
+        "session.Session._put"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "journal",
+        "preferences"
+      ],
+      "writes": [
+        "preferences"
+      ],
+      "engine_call": "session_workflow.SessionWorkflow.acknowledge"
+    },
+    {
+      "id": "S2-50",
+      "name": "Capture a fixed work method",
+      "behaviour": "Builds a model-bound schema-v2 work sheet with exact Prepare/Macro/Cleanup steps, reference word, goal, orbit and source macro revisions. Captures comparison inputs including Current, destination, buffers, block, frame requirement and protection policy.",
+      "entry_points": [
+        "method work_sheets.build_sheet"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/work_sheets.py:5",
+        "work/experiments/magic600-04/work_sheets.py:112",
+        "work/experiments/magic600-04/work_sheets.py:118",
+        "work/experiments/magic600-04/work_sheets.py:120",
+        "work/experiments/magic600-04/work_sheets.py:127"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace",
+        "protection"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "work_sheets.build_sheet",
+      "notes": "Returns a detached sheet; saving it and binding or executing it belong to the enclosing workspace command."
+    },
+    {
+      "id": "S2-51",
+      "name": "Compare a saved work sheet with live inputs",
+      "behaviour": "Validates the work sheet and compares saved inputs to current bindings as same, missing, changed or unknown, and source macros as match, changed or missing. Legacy fixed recipes remain inspectable with missing provenance/policy disclosed.",
+      "entry_points": [
+        "method work_sheets.inspect_sheet"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/work_sheets.py:131",
+        "work/experiments/magic600-04/work_sheets.py:138",
+        "work/experiments/magic600-04/work_sheets.py:146",
+        "work/experiments/magic600-04/work_sheets.py:150",
+        "work/experiments/magic600-04/work_sheets.py:158",
+        "work/experiments/magic600-04/work_sheets.py:168"
+      ],
+      "depends_on": [],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace",
+        "protection"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "work_sheets.inspect_sheet",
+      "notes": "Fixed steps are retained rather than retargeted; legal recipe normalization and fresh full-state protection review remain in adapter.py (s3)."
+    },
+    {
+      "id": "S2-52",
+      "name": "Evaluate the explicitly chosen work goal",
+      "behaviour": "Compares before/after states against prepare, insert, place, orient, finish-buffer, block or endgame bindings, returning goal predicates and Met, Unmet, Unknown, MissingInput or NotApplicable. Position-only placement differs from exact labels, and orientation/endgame claims require the declared paired frame evidence.",
+      "entry_points": [
+        "method work_intents.evaluate_goal"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/work_intents.py:10",
+        "work/experiments/magic600-04/work_intents.py:116",
+        "work/experiments/magic600-04/work_intents.py:130",
+        "work/experiments/magic600-04/work_intents.py:145",
+        "work/experiments/magic600-04/work_intents.py:157",
+        "work/experiments/magic600-04/work_intents.py:182",
+        "work/experiments/magic600-04/work_intents.py:199",
+        "work/experiments/magic600-04/work_intents.py:213"
+      ],
+      "depends_on": [
+        "work_intents.normalize_goal",
+        "work_intents._frame_pair"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "workspace",
+        "protection"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "work_intents.evaluate_goal",
+      "notes": "Every After result is conditional; evaluation does not choose targets, change the goal or grant execution permission."
+    },
+    {
+      "id": "S2-53",
+      "name": "Recall per-orbit working context",
+      "behaviour": "Returns a workspace with the departing orbit's context saved and the destination orbit's existing context restored, or explicit defaults for a new orbit. Restores Current, destination, buffers, steps, macro sources, block, reference and local center while retaining global policy.",
+      "entry_points": [
+        "method workflow_continuity.switch_context"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/workflow_continuity.py:18",
+        "work/experiments/magic600-04/workflow_continuity.py:30",
+        "work/experiments/magic600-04/workflow_continuity.py:37",
+        "work/experiments/magic600-04/workflow_continuity.py:43",
+        "work/experiments/magic600-04/workflow_continuity.py:51",
+        "work/experiments/magic600-04/workflow_continuity.py:61"
+      ],
+      "depends_on": [
+        "workflow_continuity.capture_orbit_context"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "workflow_continuity.switch_context",
+      "notes": "This function returns a detached workspace; persistence is performed by the existing adapter transaction."
+    },
+    {
+      "id": "S2-54",
+      "name": "List remaining block work candidates",
+      "behaviour": "Returns unsatisfied explicit members of the active-orbit block in saved order; when an exact Home block is satisfied, finds unfinished positions sharing real hosting-cell incidence. Marks A/B buffer candidates separately from ordinary candidates.",
+      "entry_points": [
+        "method workflow_continuity.block_candidates"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/workflow_continuity.py:89",
+        "work/experiments/magic600-04/workflow_continuity.py:97",
+        "work/experiments/magic600-04/workflow_continuity.py:107",
+        "work/experiments/magic600-04/workflow_continuity.py:113",
+        "work/experiments/magic600-04/workflow_continuity.py:116",
+        "work/experiments/magic600-04/workflow_continuity.py:123"
+      ],
+      "depends_on": [
+        "core.Model.hosting"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "workspace",
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "workflow_continuity.block_candidates"
+    },
+    {
+      "id": "S2-55",
+      "name": "Plan continuation after a committed operation",
+      "behaviour": "For a successful work-sheet insertion or placement, proposes promotion of locked Next or the first ordinary block candidate; otherwise work stays in place. Plans eligible completed-orbit protection additions and later-orbit inspection suggestions from bound evidence for atomic storage with that operation.",
+      "entry_points": [
+        "method workflow_continuity.plan_commit_continuity"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/workflow_continuity.py:165",
+        "work/experiments/magic600-04/workflow_continuity.py:175",
+        "work/experiments/magic600-04/workflow_continuity.py:179",
+        "work/experiments/magic600-04/workflow_continuity.py:182",
+        "work/experiments/magic600-04/workflow_continuity.py:199",
+        "work/experiments/magic600-04/workflow_continuity.py:211",
+        "work/experiments/magic600-04/workflow_continuity.py:215"
+      ],
+      "depends_on": [
+        "S2-52",
+        "S2-53",
+        "S2-54",
+        "S2-36",
+        "session.Session.commit"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "state",
+        "workspace",
+        "protection"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": "workflow_continuity.plan_commit_continuity",
+      "notes": "Returns a detached plan; it does not commit, add protection or switch real work on its own. Live, undo, redo, restore, reset and new event sources do not use work-sheet insertion promotion."
+    },
+    {
+      "id": "S2-56",
+      "name": "Start the experiment engine service",
+      "behaviour": "Runs the existing server startup and owned Session/lifecycle machinery with the experimental adapter installed into its Handler. All server command-line parsing and HTTP route registrations are delegated to the original server and adapter.",
+      "entry_points": [
+        "cli work/experiments/magic600-04/engine.py (server arguments delegated)"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/engine.py:12",
+        "work/experiments/magic600-04/engine.py:15",
+        "work/experiments/magic600-04/engine.py:20",
+        "work/experiments/magic600-04/engine.py:24",
+        "work/experiments/magic600-04/engine.py:28"
+      ],
+      "depends_on": [
+        "server.main",
+        "adapter.install"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files",
+        "state",
+        "journal",
+        "preferences"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": "server.main"
+    },
+    {
+      "id": "S2-57",
+      "name": "Launch an owned browser experiment",
+      "behaviour": "Starts a named isolated G1 or G2 experiment session, writes a local open-page redirect and opens the browser unless --no-browser is supplied. Keeps the launcher alive until the engine stops and closes the owned process on exit.",
+      "entry_points": [
+        "cli work/experiments/magic600-04/launch.py --mode",
+        "cli work/experiments/magic600-04/launch.py --session",
+        "cli work/experiments/magic600-04/launch.py --no-browser"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/launch.py:15",
+        "work/experiments/magic600-04/launch.py:17",
+        "work/experiments/magic600-04/launch.py:21",
+        "work/experiments/magic600-04/launch.py:24",
+        "work/experiments/magic600-04/launch.py:27",
+        "work/experiments/magic600-04/launch.py:30",
+        "work/experiments/magic600-04/launch.py:33"
+      ],
+      "depends_on": [
+        "S2-56",
+        "engine_process.EngineProcess",
+        "webbrowser.open"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files",
+        "state",
+        "journal",
+        "preferences"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": "engine.main"
+    },
+    {
+      "id": "S2-58",
+      "name": "Launch the retained native experiment",
+      "behaviour": "On Windows, builds or reuses the identity-bound native host, prepares an isolated runtime for a named G1 or G2 session and starts the native program with an owned engine. Rechecks immutable evidence before engine/native startup and after exit and records the run outcome.",
+      "entry_points": [
+        "cli work/experiments/magic600-04/native_launch.py --mode",
+        "cli work/experiments/magic600-04/native_launch.py --session"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:261",
+        "work/experiments/magic600-04/native_launch.py:263",
+        "work/experiments/magic600-04/native_launch.py:269",
+        "work/experiments/magic600-04/native_launch.py:272",
+        "work/experiments/magic600-04/native_launch.py:277",
+        "work/experiments/magic600-04/native_launch.py:281",
+        "work/experiments/magic600-04/native_launch.py:284",
+        "work/experiments/magic600-04/native_launch.py:294",
+        "work/experiments/magic600-04/native_launch.py:296"
+      ],
+      "depends_on": [
+        "native_launch.build",
+        "native_launch.prepare_runtime",
+        "native_launch.check_evidence",
+        "S2-56",
+        "engine_process.EngineProcess"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files",
+        "state",
+        "journal",
+        "preferences"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": "engine.main"
+    },
+    {
+      "id": "S2-59",
+      "name": "Build or reuse an identity-bound native host",
+      "behaviour": "Compiles the retained and experimental C# host into its build-identity directory or reuses an exactly matching accepted executable and configuration. Writes a receipt binding product, model, runtime, compiler, interpreter and harness inputs and refuses changed inputs; --build-only prints the host path without opening a session.",
+      "entry_points": [
+        "method native_launch.build",
+        "cli work/experiments/magic600-04/native_launch.py --build-only"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:229",
+        "work/experiments/magic600-04/native_launch.py:237",
+        "work/experiments/magic600-04/native_launch.py:239",
+        "work/experiments/magic600-04/native_launch.py:245",
+        "work/experiments/magic600-04/native_launch.py:248",
+        "work/experiments/magic600-04/native_launch.py:254",
+        "work/experiments/magic600-04/native_launch.py:265",
+        "work/experiments/magic600-04/native_launch.py:274"
+      ],
+      "depends_on": [
+        "native.bootstrap.compile_program",
+        "native.bootstrap.compile_recipe",
+        "native_launch.capture_identity",
+        "native_launch.check_evidence",
+        "build_identity.product_binding"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": null,
+      "notes": "The CLI still requires a --mode value when --build-only is used. Exercised in tests/test_native_launch_reuse.py; this inventory records the test source, not a new execution result."
+    },
+    {
+      "id": "S2-60",
+      "name": "Print checkout and build identity",
+      "behaviour": "Prints source identity, product file count, exact harness hashes and the full build identity when compiler/interpreter bindings are available. Reports unavailable tool roles with a null build identity and rejects any arguments without compiling or writing files.",
+      "entry_points": [
+        "cli work/experiments/magic600-04/print_identity.py (no arguments)"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/print_identity.py:13",
+        "work/experiments/magic600-04/print_identity.py:27",
+        "work/experiments/magic600-04/print_identity.py:32",
+        "work/experiments/magic600-04/print_identity.py:37",
+        "work/experiments/magic600-04/print_identity.py:45",
+        "work/experiments/magic600-04/print_identity.py:55"
+      ],
+      "depends_on": [
+        "native_launch.current_tools",
+        "native_launch.product_sources",
+        "native_launch.native_sources",
+        "build_identity.product_binding",
+        "build_identity.identity_payload"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "none"
+      ],
+      "engine_call": null,
+      "notes": "Source identity excludes compiler/interpreter bindings and is not the build identity. Exercised in tests/test_print_identity.py; this inventory records the test source, not a new execution result."
+    },
+    {
+      "id": "S2-61",
+      "name": "Start the portable native workspace",
+      "behaviour": "Verifies the complete 0.4 package, opens the selected data folder with an owned frozen engine and launches the native G1/G2 workspace. Copies the packaged host/runtime and discovered installed Managed DirectX into the local cache while preserving user settings after their first initialization.",
+      "entry_points": [
+        "cli Magic600Cell.exe (normal startup)",
+        "cli Magic600Cell.exe --data",
+        "cli Magic600Cell.exe --mode",
+        "cli Magic600Cell.exe --startup-timeout"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:36",
+        "work/experiments/magic600-04/packaging/launcher.py:48",
+        "work/experiments/magic600-04/packaging/launcher.py:162",
+        "work/experiments/magic600-04/packaging/launcher.py:165",
+        "work/experiments/magic600-04/packaging/launcher.py:174",
+        "work/experiments/magic600-04/packaging/launcher.py:180",
+        "work/experiments/magic600-04/packaging/launcher.py:186",
+        "work/experiments/magic600-04/packaging/launcher.py:200",
+        "work/experiments/magic600-04/packaging/launcher.py:205"
+      ],
+      "depends_on": [
+        "packaging.package_contract.verify_package",
+        "packaging.launcher.prepare_native",
+        "native.directx_runtime.find_directx",
+        "engine_process.EngineProcess",
+        "packaging.engine_entry"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files",
+        "preferences",
+        "state",
+        "journal"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": "engine.main",
+      "notes": "Requires 64-bit Windows and a 1..3600-second startup timeout. Session data must be outside the application folder; runtime preparation does not compile or run regression fixtures."
+    },
+    {
+      "id": "S2-62",
+      "name": "Report a portable-launch failure",
+      "behaviour": "Shows a redacted startup error in a native message box when normal Windows launch fails. Diagnostic invocations instead write a failed JSON report, and a non-Windows invocation can print the error to stderr.",
+      "entry_points": [
+        "window Magic 600 Cell could not start"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:173",
+        "work/experiments/magic600-04/packaging/launcher.py:213",
+        "work/experiments/magic600-04/packaging/launcher.py:214",
+        "work/experiments/magic600-04/packaging/launcher.py:215",
+        "work/experiments/magic600-04/packaging/launcher.py:217"
+      ],
+      "depends_on": [
+        "engine_process.redact",
+        "packaging.package_contract.write_json"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "none"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": null,
+      "notes": "The files write applies only when a verification/report option selected a failure-report destination; ordinary message-box display performs no file write."
+    },
+    {
+      "id": "S2-63",
+      "name": "Verify portable package resources",
+      "behaviour": "Checks manifest version, every listed file size/hash and exact file-set closure, then writes a passed resource report or a redacted failure report. The hidden verification option returns before opening a session or native host.",
+      "entry_points": [
+        "cli Magic600Cell.exe --verify-package"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:168",
+        "work/experiments/magic600-04/packaging/launcher.py:180",
+        "work/experiments/magic600-04/packaging/launcher.py:181",
+        "work/experiments/magic600-04/packaging/launcher.py:182",
+        "work/experiments/magic600-04/packaging/launcher.py:215"
+      ],
+      "depends_on": [
+        "packaging.package_contract.verify_package",
+        "packaging.package_contract.write_json"
+      ],
+      "evidence_kind": "source+test",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": null,
+      "notes": "The test exercises the shared integrity contract with synthetic payloads, not the frozen launcher or Windows runtime. Exercised in work/experiments/magic600-04/packaging/test_package_contract.py; this inventory records the test source, not a new execution result."
+    },
+    {
+      "id": "S2-64",
+      "name": "Verify the frozen engine and exact transaction lifecycle",
+      "behaviour": "In a fresh explicit test data folder, checks all labels, experiment snapshots, pinned invariant proof and explicit A5 endgame parameters, then reviews/previews/commits/undoes one fixed operation. Checks graceful shutdown and byte-identical labels after reopen and writes a diagnostic report.",
+      "entry_points": [
+        "cli Magic600Cell.exe --engine-test"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:90",
+        "work/experiments/magic600-04/packaging/launcher.py:91",
+        "work/experiments/magic600-04/packaging/launcher.py:94",
+        "work/experiments/magic600-04/packaging/launcher.py:114",
+        "work/experiments/magic600-04/packaging/launcher.py:119",
+        "work/experiments/magic600-04/packaging/launcher.py:127",
+        "work/experiments/magic600-04/packaging/launcher.py:143",
+        "work/experiments/magic600-04/packaging/launcher.py:146",
+        "work/experiments/magic600-04/packaging/launcher.py:158",
+        "work/experiments/magic600-04/packaging/launcher.py:169",
+        "work/experiments/magic600-04/packaging/launcher.py:189"
+      ],
+      "depends_on": [
+        "engine_process.EngineProcess",
+        "route GET /api/health",
+        "route GET /api/labels",
+        "route GET /api/job/{job}",
+        "route GET /api/experiment/snapshot",
+        "route POST /api/experiment/command action=inspect-residual",
+        "route POST /api/experiment/command action=endgame-options",
+        "route POST /api/experiment/command action=goal",
+        "route POST /api/experiment/command action=draft",
+        "route POST /api/experiment/command action=review",
+        "route POST /api/experiment/command action=preview",
+        "route POST /api/experiment/command action=commit",
+        "route POST /api/experiment/command action=undo"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files",
+        "state",
+        "journal",
+        "preferences"
+      ],
+      "writes": [
+        "files",
+        "state",
+        "journal",
+        "workspace",
+        "preferences"
+      ],
+      "engine_call": "Magic600Engine.exe via engine_process.EngineProcess",
+      "notes": "A hidden explicit fixture invocation; no native host or startup fixture is run during ordinary launch."
+    },
+    {
+      "id": "S2-65",
+      "name": "Exercise launcher death and parent-pipe recovery",
+      "behaviour": "During isolated engine verification, writes the engine identity/health report and exits the launcher immediately so the owned engine must recover from parent EOF. The package checker later waits for engine termination and verifies that the session lock can be reopened.",
+      "entry_points": [
+        "cli Magic600Cell.exe --parent-eof"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:107",
+        "work/experiments/magic600-04/packaging/launcher.py:109",
+        "work/experiments/magic600-04/packaging/launcher.py:110",
+        "work/experiments/magic600-04/packaging/launcher.py:171",
+        "work/experiments/magic600-04/packaging/launcher.py:178"
+      ],
+      "depends_on": [
+        "S2-64",
+        "engine_process.EngineProcess",
+        "server.main"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files",
+        "state"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": "Magic600Engine.exe via engine_process.EngineProcess",
+      "notes": "Requires --engine-test and a fresh explicit --data folder."
+    },
+    {
+      "id": "S2-66",
+      "name": "Verify installed native runtime preparation",
+      "behaviour": "In a fresh explicit data folder, discovers installed Managed DirectX, copies the retained native cache and writes host/runtime/DirectX hashes. The hidden option returns without starting the native host or renderer.",
+      "entry_points": [
+        "cli Magic600Cell.exe --runtime-check"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:170",
+        "work/experiments/magic600-04/packaging/launcher.py:191",
+        "work/experiments/magic600-04/packaging/launcher.py:194",
+        "work/experiments/magic600-04/packaging/launcher.py:195"
+      ],
+      "depends_on": [
+        "packaging.launcher.prepare_native",
+        "native.directx_runtime.find_directx",
+        "packaging.package_contract.write_json"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": null
+    },
+    {
+      "id": "S2-67",
+      "name": "Assemble an isolated portable package",
+      "behaviour": "Builds the frozen launcher/engine bundle from a supplied current precompiled product host and an explicit source/model/proof allowlist, using the pinned PyInstaller toolchain. Includes attribution/licenses, checks clean payload and executable architectures, rechecks bound inputs and writes the package manifest and assembly report.",
+      "entry_points": [
+        "cli work/experiments/magic600-04/packaging/assemble.py --native-build",
+        "cli work/experiments/magic600-04/packaging/assemble.py --output",
+        "cli work/experiments/magic600-04/packaging/assemble.py --work",
+        "cli work/experiments/magic600-04/packaging/assemble.py --toolchain"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/assemble.py:39",
+        "work/experiments/magic600-04/packaging/assemble.py:89",
+        "work/experiments/magic600-04/packaging/assemble.py:130",
+        "work/experiments/magic600-04/packaging/assemble.py:148",
+        "work/experiments/magic600-04/packaging/assemble.py:177",
+        "work/experiments/magic600-04/packaging/assemble.py:179",
+        "work/experiments/magic600-04/packaging/assemble.py:185",
+        "work/experiments/magic600-04/packaging/assemble.py:192",
+        "work/experiments/magic600-04/packaging/assemble.py:196",
+        "work/experiments/magic600-04/packaging/assemble.py:215",
+        "work/experiments/magic600-04/packaging/assemble.py:220",
+        "work/experiments/magic600-04/packaging/assemble.py:238",
+        "work/experiments/magic600-04/packaging/assemble.py:251"
+      ],
+      "depends_on": [
+        "packaging.assemble.allowed_sources",
+        "packaging.assemble.checked_native",
+        "packaging.assemble.validate_assembly_inputs",
+        "packaging.assemble.copy_licenses",
+        "packaging.package_contract.inspect_payload",
+        "native.bootstrap.compile_recipe",
+        "build_identity.inventory_problems",
+        "PyInstaller.__main__.run"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": null,
+      "notes": "Requires fresh output/work directories and 64-bit Windows. No native compilation, GUI, fixture, installer or publication occurs here."
+    },
+    {
+      "id": "S2-68",
+      "name": "Create or suppress the portable ZIP archive",
+      "behaviour": "By default writes a ZIP containing the assembled bundle and records its SHA-256 in the assembly report; --no-zip suppresses this archive. An existing archive is preserved by refusing the write.",
+      "entry_points": [
+        "cli work/experiments/magic600-04/packaging/assemble.py --no-zip"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/assemble.py:183",
+        "work/experiments/magic600-04/packaging/assemble.py:242",
+        "work/experiments/magic600-04/packaging/assemble.py:244",
+        "work/experiments/magic600-04/packaging/assemble.py:246",
+        "work/experiments/magic600-04/packaging/assemble.py:250"
+      ],
+      "depends_on": [
+        "S2-67",
+        "zipfile.ZipFile"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files"
+      ],
+      "writes": [
+        "files"
+      ],
+      "engine_call": null,
+      "notes": "This is an output choice of the same assembler invocation, not a separate command."
+    },
+    {
+      "id": "S2-69",
+      "name": "Run portable package acceptance diagnostics",
+      "behaviour": "Runs integrity/license/architecture checks and actual frozen-engine, transaction, reopen, parent-EOF, runtime-copy and generated copied-profile/log/keymap scenarios, writing component reports and a summary. Requires a hash-bound actual native Geometry export for complete MPUlt file-route checks and restores its deliberately altered proof artifact after testing rejection.",
+      "entry_points": [
+        "cli work/experiments/magic600-04/packaging/check_package.py bundle",
+        "cli work/experiments/magic600-04/packaging/check_package.py output",
+        "cli work/experiments/magic600-04/packaging/check_package.py --native-export",
+        "cli work/experiments/magic600-04/packaging/check_package.py --native-export-sha256"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:137",
+        "work/experiments/magic600-04/packaging/check_package.py:242",
+        "work/experiments/magic600-04/packaging/check_package.py:297",
+        "work/experiments/magic600-04/packaging/check_package.py:299",
+        "work/experiments/magic600-04/packaging/check_package.py:304",
+        "work/experiments/magic600-04/packaging/check_package.py:328",
+        "work/experiments/magic600-04/packaging/check_package.py:341",
+        "work/experiments/magic600-04/packaging/check_package.py:346",
+        "work/experiments/magic600-04/packaging/check_package.py:359",
+        "work/experiments/magic600-04/packaging/check_package.py:381",
+        "work/experiments/magic600-04/packaging/check_package.py:385",
+        "work/experiments/magic600-04/packaging/check_package.py:395",
+        "work/experiments/magic600-04/packaging/check_package.py:409",
+        "work/experiments/magic600-04/packaging/check_package.py:415"
+      ],
+      "depends_on": [
+        "S2-63",
+        "S2-64",
+        "S2-65",
+        "S2-66",
+        "packaging.package_contract.verify_package",
+        "packaging.package_contract.inspect_payload",
+        "engine_process.EngineProcess",
+        "session_lock.SessionLock",
+        "route GET /api/labels",
+        "route GET /api/status",
+        "route GET /api/experiment/snapshot",
+        "route GET /api/job/{job}",
+        "route POST /api/native/handshake",
+        "route POST /api/shutdown",
+        "route POST /api/experiment/command",
+        "route POST /api/experiment/session-log"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files",
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "writes": [
+        "files",
+        "state",
+        "journal",
+        "checkpoints",
+        "preferences",
+        "workspace"
+      ],
+      "engine_call": "Magic600Engine.exe via engine_process.EngineProcess",
+      "notes": "Uses fresh generated closed fixture data and a byte-identical rollback copy, not personal profiles. Its source expressly excludes native-window, GPU, clean-machine and human-solving acceptance; final_acceptance remains false."
+    },
+    {
+      "id": "S2-70",
+      "name": "Profile paired-reply components in isolation",
+      "behaviour": "Validates a supplied recorded native mapping and profiles snapshot, bank-switch, inspection and Grip replies on a fresh fixed session. Writes five-sample timing/payload summaries, cProfile data, text profiles and captured reply JSON with before/after source hashes.",
+      "entry_points": [
+        "cli work/experiments/magic600-04/packaging/profile_reply.py --profile",
+        "cli work/experiments/magic600-04/packaging/profile_reply.py --output"
+      ],
+      "evidence": [
+        "work/experiments/magic600-04/packaging/profile_reply.py:29",
+        "work/experiments/magic600-04/packaging/profile_reply.py:31",
+        "work/experiments/magic600-04/packaging/profile_reply.py:34",
+        "work/experiments/magic600-04/packaging/profile_reply.py:38",
+        "work/experiments/magic600-04/packaging/profile_reply.py:47",
+        "work/experiments/magic600-04/packaging/profile_reply.py:61",
+        "work/experiments/magic600-04/packaging/profile_reply.py:91",
+        "work/experiments/magic600-04/packaging/profile_reply.py:99",
+        "work/experiments/magic600-04/packaging/profile_reply.py:107",
+        "work/experiments/magic600-04/packaging/profile_reply.py:118",
+        "work/experiments/magic600-04/packaging/profile_reply.py:126",
+        "work/experiments/magic600-04/packaging/profile_reply.py:134"
+      ],
+      "depends_on": [
+        "core.Model",
+        "session.Session",
+        "adapter.Workbench.command",
+        "adapter.Workbench.snapshot",
+        "server.NativeSnapshotCache.read",
+        "S2-3",
+        "S2-4",
+        "S2-15"
+      ],
+      "evidence_kind": "source",
+      "reads": [
+        "files",
+        "state",
+        "journal",
+        "workspace",
+        "preferences"
+      ],
+      "writes": [
+        "files",
+        "state",
+        "journal",
+        "workspace",
+        "preferences"
+      ],
+      "engine_call": "adapter.Workbench.command",
+      "notes": "The explicit E1 fixture and reviewed steps are confined to a fresh output session. Results diagnose in-process reply components; they are not GUI, HTTP, physical-input, rendering or GPU latency measurements."
+    }
+  ],
+  "internal_only": [
+    {
+      "name": "build_identity.sha256_file",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:55"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.canonical",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:63"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.digest",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:67"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.relative",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:71"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.hash_inputs",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:79"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.model_binding",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:83"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.product_binding",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:94"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.product_files",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:101"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.compiler_binding",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:110"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity._record_hash",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:126"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.numpy_payload",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:133"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.interpreter_binding",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:164"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.current_interpreter",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:179"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.identity_payload",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:195"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.receipt_version",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:199"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.identity_intact",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:218"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.expected_product_paths",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:222"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity._is_sha256",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:231"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.inventory_problems",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:235"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity._role_problems",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:274"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "build_identity.legacy_aliases",
+      "evidence": [
+        "work/experiments/magic600-04/build_identity.py:284"
+      ],
+      "reason": "Internal receipt/model/tool binding or validation primitive used by native building, packaging and identity printing; no CLI or application command is defined here."
+    },
+    {
+      "name": "current_recommendation._rational",
+      "evidence": [
+        "work/experiments/magic600-04/current_recommendation.py:26"
+      ],
+      "reason": "Internal evidence binding, scoring arithmetic or deterministic ordering used by current/candidate analysis; no independent command."
+    },
+    {
+      "name": "current_recommendation._clip",
+      "evidence": [
+        "work/experiments/magic600-04/current_recommendation.py:30"
+      ],
+      "reason": "Internal evidence binding, scoring arithmetic or deterministic ordering used by current/candidate analysis; no independent command."
+    },
+    {
+      "name": "current_recommendation._bound",
+      "evidence": [
+        "work/experiments/magic600-04/current_recommendation.py:34"
+      ],
+      "reason": "Internal evidence binding, scoring arithmetic or deterministic ordering used by current/candidate analysis; no independent command."
+    },
+    {
+      "name": "current_recommendation._orientation",
+      "evidence": [
+        "work/experiments/magic600-04/current_recommendation.py:84"
+      ],
+      "reason": "Internal evidence binding, scoring arithmetic or deterministic ordering used by current/candidate analysis; no independent command."
+    },
+    {
+      "name": "current_recommendation._match",
+      "evidence": [
+        "work/experiments/magic600-04/current_recommendation.py:97"
+      ],
+      "reason": "Internal evidence binding, scoring arithmetic or deterministic ordering used by current/candidate analysis; no independent command."
+    },
+    {
+      "name": "current_recommendation.sort_recommendations",
+      "evidence": [
+        "work/experiments/magic600-04/current_recommendation.py:280"
+      ],
+      "reason": "Internal evidence binding, scoring arithmetic or deterministic ordering used by current/candidate analysis; no independent command."
+    },
+    {
+      "name": "cycle_projection._integer",
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:16"
+      ],
+      "reason": "Internal display validation, paging, reference comparison or mode implementation used by cycle inspection; no independent user entry."
+    },
+    {
+      "name": "cycle_projection._recipe",
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:22"
+      ],
+      "reason": "Internal display validation, paging, reference comparison or mode implementation used by cycle inspection; no independent user entry."
+    },
+    {
+      "name": "cycle_projection.validate_cycle_display",
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:28"
+      ],
+      "reason": "Internal display validation, paging, reference comparison or mode implementation used by cycle inspection; no independent user entry."
+    },
+    {
+      "name": "cycle_projection._page",
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:68"
+      ],
+      "reason": "Internal display validation, paging, reference comparison or mode implementation used by cycle inspection; no independent user entry."
+    },
+    {
+      "name": "cycle_projection._reference",
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:78"
+      ],
+      "reason": "Internal display validation, paging, reference comparison or mode implementation used by cycle inspection; no independent user entry."
+    },
+    {
+      "name": "cycle_projection._selection",
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:94"
+      ],
+      "reason": "Internal display validation, paging, reference comparison or mode implementation used by cycle inspection; no independent user entry."
+    },
+    {
+      "name": "cycle_projection._refcontext",
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:106"
+      ],
+      "reason": "Internal display validation, paging, reference comparison or mode implementation used by cycle inspection; no independent user entry."
+    },
+    {
+      "name": "cycle_projection._residual_reference",
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:112"
+      ],
+      "reason": "Internal display validation, paging, reference comparison or mode implementation used by cycle inspection; no independent user entry."
+    },
+    {
+      "name": "cycle_projection._inspect_residual_cycles",
+      "evidence": [
+        "work/experiments/magic600-04/cycle_projection.py:131"
+      ],
+      "reason": "Internal display validation, paging, reference comparison or mode implementation used by cycle inspection; no independent user entry."
+    },
+    {
+      "name": "endgame_invariants.load_audited_invariants",
+      "evidence": [
+        "work/experiments/magic600-04/endgame_invariants.py:19"
+      ],
+      "reason": "Internal cancellable loader of the pinned all-generator proof; validates every dependency/certificate and publishes no user action or new generator audit."
+    },
+    {
+      "name": "endgame_library.EndgameLibrary.__init__",
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:21"
+      ],
+      "reason": "Internal parameter validation or offline catalogue implementation; no separate UI, HTTP or CLI entry is defined here."
+    },
+    {
+      "name": "endgame_library.EndgameLibrary._choices",
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:26"
+      ],
+      "reason": "Internal parameter validation or offline catalogue implementation; no separate UI, HTTP or CLI entry is defined here."
+    },
+    {
+      "name": "endgame_library.EndgameLibrary._element",
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:48"
+      ],
+      "reason": "Internal parameter validation or offline catalogue implementation; no separate UI, HTTP or CLI entry is defined here."
+    },
+    {
+      "name": "endgame_library.EndgameLibrary.commutator_table",
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:109"
+      ],
+      "reason": "Offline/manual final-buffer witness enumeration called by certify_catalogue; no current-residual matching or S2 user dispatch is defined."
+    },
+    {
+      "name": "endgame_library.EndgameLibrary.certify_catalogue",
+      "evidence": [
+        "work/experiments/magic600-04/endgame_library.py:124"
+      ],
+      "reason": "Explicit offline all-orbit mathematical catalogue audit; no S2 CLI/UI/HTTP registration. Its families are exposed separately through options/compose."
+    },
+    {
+      "name": "filter_projection.PieceFilterProjection.__init__",
+      "evidence": [
+        "work/experiments/magic600-04/filter_projection.py:11"
+      ],
+      "reason": "Internal captured filter context/evaluation and per-reply cache used by the detached filter observations."
+    },
+    {
+      "name": "filter_projection.PieceFilterProjection.evaluate",
+      "evidence": [
+        "work/experiments/magic600-04/filter_projection.py:23"
+      ],
+      "reason": "Internal captured filter context/evaluation and per-reply cache used by the detached filter observations."
+    },
+    {
+      "name": "grip_frames.rotation_table",
+      "evidence": [
+        "work/experiments/magic600-04/grip_frames.py:15"
+      ],
+      "reason": "Internal immutable rotation cache, canonical cap validation or exact vertex-action construction used by local Grip features."
+    },
+    {
+      "name": "grip_frames._cell",
+      "evidence": [
+        "work/experiments/magic600-04/grip_frames.py:24"
+      ],
+      "reason": "Internal immutable rotation cache, canonical cap validation or exact vertex-action construction used by local Grip features."
+    },
+    {
+      "name": "grip_frames._normal_word",
+      "evidence": [
+        "work/experiments/magic600-04/grip_frames.py:30"
+      ],
+      "reason": "Internal immutable rotation cache, canonical cap validation or exact vertex-action construction used by local Grip features."
+    },
+    {
+      "name": "grip_frames._vertex_map",
+      "evidence": [
+        "work/experiments/magic600-04/grip_frames.py:38"
+      ],
+      "reason": "Internal immutable rotation cache, canonical cap validation or exact vertex-action construction used by local Grip features."
+    },
+    {
+      "name": "grip_frames._table",
+      "evidence": [
+        "work/experiments/magic600-04/grip_frames.py:48"
+      ],
+      "reason": "Internal immutable rotation cache, canonical cap validation or exact vertex-action construction used by local Grip features."
+    },
+    {
+      "name": "macro_library._text",
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:18"
+      ],
+      "reason": "Internal metadata/exchange size, provenance and complete-record validator; imported claims do not supply authority."
+    },
+    {
+      "name": "macro_library._tags",
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:25"
+      ],
+      "reason": "Internal metadata/exchange size, provenance and complete-record validator; imported claims do not supply authority."
+    },
+    {
+      "name": "macro_library._metadata",
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:34"
+      ],
+      "reason": "Internal metadata/exchange size, provenance and complete-record validator; imported claims do not supply authority."
+    },
+    {
+      "name": "macro_library._size",
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:133"
+      ],
+      "reason": "Internal metadata/exchange size, provenance and complete-record validator; imported claims do not supply authority."
+    },
+    {
+      "name": "macro_library._derived",
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:142"
+      ],
+      "reason": "Internal metadata/exchange size, provenance and complete-record validator; imported claims do not supply authority."
+    },
+    {
+      "name": "macro_library._record",
+      "evidence": [
+        "work/experiments/magic600-04/macro_library.py:214"
+      ],
+      "reason": "Internal metadata/exchange size, provenance and complete-record validator; imported claims do not supply authority."
+    },
+    {
+      "name": "macro_use.retained_references",
+      "evidence": [
+        "work/experiments/magic600-04/macro_use.py:60"
+      ],
+      "reason": "Internal extraction of certified ordered frames from explicitly named retained stars; supports effect evidence and detects frame conflicts."
+    },
+    {
+      "name": "macro_use.checked",
+      "evidence": [
+        "work/experiments/magic600-04/macro_use.py:117"
+      ],
+      "reason": "Internal exact-fact validation, static-score arithmetic or retained explicit-star frame extraction; no standalone user command."
+    },
+    {
+      "name": "macro_use._score",
+      "evidence": [
+        "work/experiments/magic600-04/macro_use.py:124"
+      ],
+      "reason": "Internal exact-fact validation, static-score arithmetic or retained explicit-star frame extraction; no standalone user command."
+    },
+    {
+      "name": "mathematical_names.MathematicalNames.__init__",
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:16"
+      ],
+      "reason": "Internal immutable naming index, incidence classification, type validation or address formatting/parsing primitive."
+    },
+    {
+      "name": "mathematical_names.MathematicalNames._build_addresses",
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:123"
+      ],
+      "reason": "Internal immutable naming index, incidence classification, type validation or address formatting/parsing primitive."
+    },
+    {
+      "name": "mathematical_names.MathematicalNames._copy_address",
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:176"
+      ],
+      "reason": "Internal immutable naming index, incidence classification, type validation or address formatting/parsing primitive."
+    },
+    {
+      "name": "mathematical_names.MathematicalNames._parse_address",
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:179"
+      ],
+      "reason": "Internal immutable naming index, incidence classification, type validation or address formatting/parsing primitive."
+    },
+    {
+      "name": "mathematical_names.MathematicalNames._tuple",
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:215"
+      ],
+      "reason": "Internal immutable naming index, incidence classification, type validation or address formatting/parsing primitive."
+    },
+    {
+      "name": "mathematical_names.MathematicalNames._compact_pole",
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:219"
+      ],
+      "reason": "Internal immutable naming index, incidence classification, type validation or address formatting/parsing primitive."
+    },
+    {
+      "name": "mathematical_names.MathematicalNames._region_text",
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:223"
+      ],
+      "reason": "Internal immutable naming index, incidence classification, type validation or address formatting/parsing primitive."
+    },
+    {
+      "name": "mathematical_names.MathematicalNames._position",
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:226"
+      ],
+      "reason": "Internal immutable naming index, incidence classification, type validation or address formatting/parsing primitive."
+    },
+    {
+      "name": "mathematical_names.MathematicalNames.incidence_signature",
+      "evidence": [
+        "work/experiments/magic600-04/mathematical_names.py:241"
+      ],
+      "reason": "Internal immutable naming index, incidence classification, type validation or address formatting/parsing primitive."
+    },
+    {
+      "name": "native_launch.hash_file",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:43"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.hash_files",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:47"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.product_sources",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:52"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.native_sources",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:57"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.product_inventory",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:61"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.compiler_banner",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:67"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.current_tools",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:73"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.capture_identity",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:87"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch._check_tools",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:100"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.check_evidence",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:118"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.write_evidence",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:184"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.prepare_runtime",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:188"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "native_launch.reusable_receipt",
+      "evidence": [
+        "work/experiments/magic600-04/native_launch.py:218"
+      ],
+      "reason": "Internal source/tool/runtime inventory, receipt hashing/validation, copy preparation or evidence writer used by the launch/build CLI."
+    },
+    {
+      "name": "orbit_invariants.InvariantViolation.__init__",
+      "evidence": [
+        "work/experiments/magic600-04/orbit_invariants.py:24"
+      ],
+      "reason": "Internal finite-group quotient/parity calculation, failure representation, certificate binding or decomposition validation."
+    },
+    {
+      "name": "orbit_invariants.finite_quotient",
+      "evidence": [
+        "work/experiments/magic600-04/orbit_invariants.py:29"
+      ],
+      "reason": "Internal finite-group quotient/parity calculation, failure representation, certificate binding or decomposition validation."
+    },
+    {
+      "name": "orbit_invariants.position_parity",
+      "evidence": [
+        "work/experiments/magic600-04/orbit_invariants.py:70"
+      ],
+      "reason": "Internal finite-group quotient/parity calculation, failure representation, certificate binding or decomposition validation."
+    },
+    {
+      "name": "orbit_invariants.OrbitInvariants.__init__",
+      "evidence": [
+        "work/experiments/magic600-04/orbit_invariants.py:85"
+      ],
+      "reason": "Internal finite-group quotient/parity calculation, failure representation, certificate binding or decomposition validation."
+    },
+    {
+      "name": "orbit_invariants.OrbitInvariants._orbit",
+      "evidence": [
+        "work/experiments/magic600-04/orbit_invariants.py:93"
+      ],
+      "reason": "Internal finite-group quotient/parity calculation, failure representation, certificate binding or decomposition validation."
+    },
+    {
+      "name": "orbit_invariants.OrbitInvariants._binding",
+      "evidence": [
+        "work/experiments/magic600-04/orbit_invariants.py:97"
+      ],
+      "reason": "Internal finite-group quotient/parity calculation, failure representation, certificate binding or decomposition validation."
+    },
+    {
+      "name": "orbit_invariants.OrbitInvariants._validate",
+      "evidence": [
+        "work/experiments/magic600-04/orbit_invariants.py:112"
+      ],
+      "reason": "Internal finite-group quotient/parity calculation, failure representation, certificate binding or decomposition validation."
+    },
+    {
+      "name": "orbit_invariants.OrbitInvariants.verify_generators",
+      "evidence": [
+        "work/experiments/magic600-04/orbit_invariants.py:142"
+      ],
+      "reason": "Explicit expensive all-1,200-generator proof producer for offline audit evidence; runtime certificate lookup/evaluation never starts it and no S2 user CLI/route is defined."
+    },
+    {
+      "name": "packaging.assemble.constants",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/assemble.py:27"
+      ],
+      "reason": "Internal packaging input/source/receipt validator, copy or license collector used by the assembler CLI."
+    },
+    {
+      "name": "packaging.assemble.allowed_sources",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/assemble.py:39"
+      ],
+      "reason": "Internal packaging input/source/receipt validator, copy or license collector used by the assembler CLI."
+    },
+    {
+      "name": "packaging.assemble.check_local_imports",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/assemble.py:67"
+      ],
+      "reason": "Internal packaging input/source/receipt validator, copy or license collector used by the assembler CLI."
+    },
+    {
+      "name": "packaging.assemble.checked_native",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/assemble.py:89"
+      ],
+      "reason": "Internal packaging input/source/receipt validator, copy or license collector used by the assembler CLI."
+    },
+    {
+      "name": "packaging.assemble.copy_file",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/assemble.py:125"
+      ],
+      "reason": "Internal packaging input/source/receipt validator, copy or license collector used by the assembler CLI."
+    },
+    {
+      "name": "packaging.assemble.validate_assembly_inputs",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/assemble.py:130"
+      ],
+      "reason": "Internal packaging input/source/receipt validator, copy or license collector used by the assembler CLI."
+    },
+    {
+      "name": "packaging.assemble.copy_licenses",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/assemble.py:148"
+      ],
+      "reason": "Internal packaging input/source/receipt validator, copy or license collector used by the assembler CLI."
+    },
+    {
+      "name": "packaging.check_package.create_check_output",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:25"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.profile_hashes",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:33"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.copy_generated_profile",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:41"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.assert_original_unchanged",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:54"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.retained_profile_records",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:59"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.assert_retained_profile_records",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:75"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.finish_copy_report",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:84"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.load_native_export",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:92"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.api_request",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:103"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.api_command",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:115"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.require",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:132"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.exercise_session_files",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:137"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.frozen_engine",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:221"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.check_package.copied_profile_check",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:242"
+      ],
+      "reason": "Internal fixed package-check scenario, generated-data guard, bounded native-witness validator, HTTP client or report helper; it defines no application route."
+    },
+    {
+      "name": "packaging.launcher.copy_if_changed",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:27"
+      ],
+      "reason": "Internal package runtime-copy helper or authenticated bounded HTTP client used by launch/explicit verification; it defines no application route."
+    },
+    {
+      "name": "packaging.launcher.prepare_native",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:36"
+      ],
+      "reason": "Internal package runtime-copy helper or authenticated bounded HTTP client used by launch/explicit verification; it defines no application route."
+    },
+    {
+      "name": "packaging.launcher.request",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:58"
+      ],
+      "reason": "Internal package runtime-copy helper or authenticated bounded HTTP client used by launch/explicit verification; it defines no application route."
+    },
+    {
+      "name": "packaging.launcher.command",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:70"
+      ],
+      "reason": "Internal package runtime-copy helper or authenticated bounded HTTP client used by launch/explicit verification; it defines no application route."
+    },
+    {
+      "name": "packaging.launcher.engine_test",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/launcher.py:90"
+      ],
+      "reason": "Internal package runtime-copy helper or authenticated bounded HTTP client used by launch/explicit verification; it defines no application route."
+    },
+    {
+      "name": "packaging.package_contract.sha",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/package_contract.py:14"
+      ],
+      "reason": "Internal package integrity, path, clean-payload/PE-architecture, hashing or JSON-writing primitive shared by the CLIs."
+    },
+    {
+      "name": "packaging.package_contract.write_json",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/package_contract.py:19"
+      ],
+      "reason": "Internal package integrity, path, clean-payload/PE-architecture, hashing or JSON-writing primitive shared by the CLIs."
+    },
+    {
+      "name": "packaging.package_contract.safe_target",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/package_contract.py:25"
+      ],
+      "reason": "Internal package integrity, path, clean-payload/PE-architecture, hashing or JSON-writing primitive shared by the CLIs."
+    },
+    {
+      "name": "packaging.package_contract.verify_package",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/package_contract.py:36"
+      ],
+      "reason": "Internal package integrity, path, clean-payload/PE-architecture, hashing or JSON-writing primitive shared by the CLIs."
+    },
+    {
+      "name": "packaging.package_contract.inspect_payload",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/package_contract.py:59"
+      ],
+      "reason": "Internal package integrity, path, clean-payload/PE-architecture, hashing or JSON-writing primitive shared by the CLIs."
+    },
+    {
+      "name": "packaging.profile_reply.sha",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/profile_reply.py:25"
+      ],
+      "reason": "Internal hash helper for the explicit reply-profiler CLI."
+    },
+    {
+      "name": "position_requirements.mode",
+      "evidence": [
+        "work/experiments/magic600-04/position_requirements.py:5"
+      ],
+      "reason": "Internal exact-or-position captured predicate validation/evaluation shared by block, lock and inspection features."
+    },
+    {
+      "name": "position_requirements.prepare",
+      "evidence": [
+        "work/experiments/magic600-04/position_requirements.py:11"
+      ],
+      "reason": "Internal exact-or-position captured predicate validation/evaluation shared by block, lock and inspection features."
+    },
+    {
+      "name": "position_requirements.holds",
+      "evidence": [
+        "work/experiments/magic600-04/position_requirements.py:28"
+      ],
+      "reason": "Internal exact-or-position captured predicate validation/evaluation shared by block, lock and inspection features."
+    },
+    {
+      "name": "print_identity.harness_inputs",
+      "evidence": [
+        "work/experiments/magic600-04/print_identity.py:13"
+      ],
+      "reason": "Internal report/input collector for the no-argument identity printer."
+    },
+    {
+      "name": "print_identity.report",
+      "evidence": [
+        "work/experiments/magic600-04/print_identity.py:27"
+      ],
+      "reason": "Internal report/input collector for the no-argument identity printer."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants.__init__",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:20"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants._frame",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:31"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants._vertex_image",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:42"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants._cap_words",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:49"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants._base_regions",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:73"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants._mapping",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:101"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants._publish",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:144"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants._summary",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:151"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants._objects",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:166"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "reference_variants.ReferenceVariants._primitive",
+      "evidence": [
+        "work/experiments/magic600-04/reference_variants.py:181"
+      ],
+      "reason": "Internal proper-frame, exact incidence, object-selection or finite-word transformation/cache implementation."
+    },
+    {
+      "name": "residuals._integer",
+      "evidence": [
+        "work/experiments/magic600-04/residuals.py:19"
+      ],
+      "reason": "Internal residual input/context binding, position partition or work-kind suggestion implementation."
+    },
+    {
+      "name": "residuals._bindings",
+      "evidence": [
+        "work/experiments/magic600-04/residuals.py:25"
+      ],
+      "reason": "Internal residual input/context binding, position partition or work-kind suggestion implementation."
+    },
+    {
+      "name": "residuals._context",
+      "evidence": [
+        "work/experiments/magic600-04/residuals.py:66"
+      ],
+      "reason": "Internal residual input/context binding, position partition or work-kind suggestion implementation."
+    },
+    {
+      "name": "residuals._partition",
+      "evidence": [
+        "work/experiments/magic600-04/residuals.py:101"
+      ],
+      "reason": "Internal residual input/context binding, position partition or work-kind suggestion implementation."
+    },
+    {
+      "name": "residuals._suggest",
+      "evidence": [
+        "work/experiments/magic600-04/residuals.py:112"
+      ],
+      "reason": "Internal residual input/context binding, position partition or work-kind suggestion implementation."
+    },
+    {
+      "name": "session_workflow.SessionWorkflow.__init__",
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:27"
+      ],
+      "reason": "Internal attempt/timer/provenance/completion lookup, new-attempt metadata planner or import-context binder used by existing Session controls."
+    },
+    {
+      "name": "session_workflow.SessionWorkflow._attempt",
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:33"
+      ],
+      "reason": "Internal attempt/timer/provenance/completion lookup, new-attempt metadata planner or import-context binder used by existing Session controls."
+    },
+    {
+      "name": "session_workflow.SessionWorkflow._timer",
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:44"
+      ],
+      "reason": "Internal attempt/timer/provenance/completion lookup, new-attempt metadata planner or import-context binder used by existing Session controls."
+    },
+    {
+      "name": "session_workflow.SessionWorkflow.plan_new_attempt",
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:51"
+      ],
+      "reason": "Detached attempt metadata builder for the existing atomic Session.reset hook. The session-new dispatch and reset transaction are defined in other shards."
+    },
+    {
+      "name": "session_workflow.SessionWorkflow._source",
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:58"
+      ],
+      "reason": "Internal attempt/timer/provenance/completion lookup, new-attempt metadata planner or import-context binder used by existing Session controls."
+    },
+    {
+      "name": "session_workflow.SessionWorkflow._current_completion",
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:81"
+      ],
+      "reason": "Internal attempt/timer/provenance/completion lookup, new-attempt metadata planner or import-context binder used by existing Session controls."
+    },
+    {
+      "name": "session_workflow.SessionWorkflow._log_binding",
+      "evidence": [
+        "work/experiments/magic600-04/session_workflow.py:153"
+      ],
+      "reason": "Internal attempt/timer/provenance/completion lookup, new-attempt metadata planner or import-context binder used by existing Session controls."
+    },
+    {
+      "name": "transported_frames.FrameUnavailable",
+      "evidence": [
+        "work/experiments/magic600-04/transported_frames.py:16"
+      ],
+      "reason": "Internal chart initialization/build, sparse action validation or exact position/orientation decomposition; arrays support published analysis rather than UI indexes."
+    },
+    {
+      "name": "transported_frames.TransportedFrames.__init__",
+      "evidence": [
+        "work/experiments/magic600-04/transported_frames.py:21"
+      ],
+      "reason": "Internal chart initialization/build, sparse action validation or exact position/orientation decomposition; arrays support published analysis rather than UI indexes."
+    },
+    {
+      "name": "transported_frames.TransportedFrames._build",
+      "evidence": [
+        "work/experiments/magic600-04/transported_frames.py:37"
+      ],
+      "reason": "Internal chart initialization/build, sparse action validation or exact position/orientation decomposition; arrays support published analysis rather than UI indexes."
+    },
+    {
+      "name": "transported_frames.TransportedFrames._slots",
+      "evidence": [
+        "work/experiments/magic600-04/transported_frames.py:124"
+      ],
+      "reason": "Internal chart initialization/build, sparse action validation or exact position/orientation decomposition; arrays support published analysis rather than UI indexes."
+    },
+    {
+      "name": "transported_frames.TransportedFrames.decompose",
+      "evidence": [
+        "work/experiments/magic600-04/transported_frames.py:137"
+      ],
+      "reason": "Internal exact-array decomposition of a complete slot action into source-to-destination position mapping and orientation increments, consumed by effect/residual/invariant features."
+    },
+    {
+      "name": "work_intents.normalize_goal",
+      "evidence": [
+        "work/experiments/magic600-04/work_intents.py:18"
+      ],
+      "reason": "Internal supported-goal normalization, object/label validation and paired-frame predicate construction."
+    },
+    {
+      "name": "work_intents._integer",
+      "evidence": [
+        "work/experiments/magic600-04/work_intents.py:27"
+      ],
+      "reason": "Internal supported-goal normalization, object/label validation and paired-frame predicate construction."
+    },
+    {
+      "name": "work_intents._objects",
+      "evidence": [
+        "work/experiments/magic600-04/work_intents.py:33"
+      ],
+      "reason": "Internal supported-goal normalization, object/label validation and paired-frame predicate construction."
+    },
+    {
+      "name": "work_intents._labels",
+      "evidence": [
+        "work/experiments/magic600-04/work_intents.py:42"
+      ],
+      "reason": "Internal supported-goal normalization, object/label validation and paired-frame predicate construction."
+    },
+    {
+      "name": "work_intents._position",
+      "evidence": [
+        "work/experiments/magic600-04/work_intents.py:52"
+      ],
+      "reason": "Internal supported-goal normalization, object/label validation and paired-frame predicate construction."
+    },
+    {
+      "name": "work_intents._exact",
+      "evidence": [
+        "work/experiments/magic600-04/work_intents.py:57"
+      ],
+      "reason": "Internal supported-goal normalization, object/label validation and paired-frame predicate construction."
+    },
+    {
+      "name": "work_intents._frame_pair",
+      "evidence": [
+        "work/experiments/magic600-04/work_intents.py:65"
+      ],
+      "reason": "Internal supported-goal normalization, object/label validation and paired-frame predicate construction."
+    },
+    {
+      "name": "work_sheets._same",
+      "evidence": [
+        "work/experiments/magic600-04/work_sheets.py:14"
+      ],
+      "reason": "Internal type-sensitive equality, phase validation or legacy/schema-v2 sheet validation."
+    },
+    {
+      "name": "work_sheets._phases",
+      "evidence": [
+        "work/experiments/magic600-04/work_sheets.py:25"
+      ],
+      "reason": "Internal type-sensitive equality, phase validation or legacy/schema-v2 sheet validation."
+    },
+    {
+      "name": "work_sheets._validate",
+      "evidence": [
+        "work/experiments/magic600-04/work_sheets.py:33"
+      ],
+      "reason": "Internal type-sensitive equality, phase validation or legacy/schema-v2 sheet validation."
+    },
+    {
+      "name": "workflow_continuity._integer",
+      "evidence": [
+        "work/experiments/magic600-04/workflow_continuity.py:24"
+      ],
+      "reason": "Internal orbit-context capture, captured block predicate or conditional completion planner for the continuity operation."
+    },
+    {
+      "name": "workflow_continuity.capture_orbit_context",
+      "evidence": [
+        "work/experiments/magic600-04/workflow_continuity.py:30"
+      ],
+      "reason": "Internal orbit-context capture, captured block predicate or conditional completion planner for the continuity operation."
+    },
+    {
+      "name": "workflow_continuity._member",
+      "evidence": [
+        "work/experiments/magic600-04/workflow_continuity.py:69"
+      ],
+      "reason": "Internal orbit-context capture, captured block predicate or conditional completion planner for the continuity operation."
+    },
+    {
+      "name": "workflow_continuity._satisfied",
+      "evidence": [
+        "work/experiments/magic600-04/workflow_continuity.py:83"
+      ],
+      "reason": "Internal orbit-context capture, captured block predicate or conditional completion planner for the continuity operation."
+    },
+    {
+      "name": "workflow_continuity._completion_plans",
+      "evidence": [
+        "work/experiments/magic600-04/workflow_continuity.py:131"
+      ],
+      "reason": "Internal orbit-context capture, captured block predicate or conditional completion planner for the continuity operation."
+    },
+    {
+      "name": "cli Magic600Engine.exe / packaging.engine_entry",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/engine_entry.py:7",
+        "work/experiments/magic600-04/packaging/engine_entry.py:8",
+        "work/experiments/magic600-04/packaging/engine_entry.py:19",
+        "work/experiments/magic600-04/packaging/engine_entry.py:24"
+      ],
+      "reason": "Private frozen-engine entry requires the owned-parent environment and binds source-layout modules before delegating to engine.main; a direct invocation tells the user to open Magic600Cell.exe."
+    },
+    {
+      "name": "key commands (generated package fixture): F9 -> checkpoint",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:164",
+        "work/experiments/magic600-04/packaging/check_package.py:171"
+      ],
+      "reason": "Fixed keymap roundtrip fixture installed only in the generated package-check copy; not a default application binding."
+    },
+    {
+      "name": "key legacy native map (generated package fixture): F9 -> checkpoint",
+      "evidence": [
+        "work/experiments/magic600-04/packaging/check_package.py:253",
+        "work/experiments/magic600-04/packaging/check_package.py:260"
+      ],
+      "reason": "Legacy-shaped preference/key-file data written only to a closed generated fixture for copied-profile checks; not a user-interface binding registration."
+    }
+  ],
+  "unclear": []
+}
