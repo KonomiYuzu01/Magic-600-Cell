@@ -1,6 +1,6 @@
 # Taste Lab phase 1: plan
 
-Status: **revised after the plan check** (call 20261002T171939Z-9e60ff72, findings TL-P01 to TL-P09, all adopted); a scoped re-check follows. Owner decision of 2 October 2026 ([owner-decisions-2026-10-02](../../wiki/decisions/owner-decisions-2026-10-02.md)): Taste Lab is built now, its front end is a private Artifact page on claude.ai, and its model learns from few pairwise choices and draws new variants itself.
+Status: **revised after the plan check** (call 20261002T171939Z-9e60ff72, findings TL-P01 to TL-P09, all adopted) and its scoped re-check (call 20261002T174128Z-223bc76c, TL-P03, TL-P07 and TL-P09 tightened); the palette rule changed after the feasibility prototype (section 4.3). Owner decision of 2 October 2026 ([owner-decisions-2026-10-02](../../wiki/decisions/owner-decisions-2026-10-02.md)): Taste Lab is built now, its front end is a private Artifact page on claude.ai, and its model learns from few pairwise choices and draws new variants itself.
 
 ## 1. Goal and acceptance
 
@@ -45,6 +45,7 @@ P1 and P2 own disjoint files. Each packet carries its interfaces (exported funct
 | Palette | hue spread | 60 to 360 degrees | linear |
 | Palette | lightness (OKLab L) | 0.45 to 0.85 | linear |
 | Palette | lightness alternation | 0 to 0.2 | linear |
+| Palette | colour classes k | 4 to 8 | integer |
 | Palette | chroma (OKLab C) | 0.04 to 0.20 | linear |
 | Background | lightness, tint hue, tint strength | 0.05 to 0.95; 0 to 360; 0 to 0.05 | linear; circular; linear |
 | Geometry | sticker gap, edge weight, edge brightness | 0 to 0.3; 0 to 3 px; 0 to 1 | linear |
@@ -57,12 +58,14 @@ Solving, inspecting, celebrating. The model is one joint Gaussian process over (
 
 ### 4.2 Palette rule and hard checks
 
-- Cells are coloured by a structural rule: the 20 rings of 30 cells get 20 colour classes. Class i has hue = rotation + spread · i / 20, lightness = L ± alternation (alternating by i), chroma C. The real sticker palette is G4's job; the studio learns the palette character.
-- One function maps every OKLCh colour into sRGB by reducing chroma at constant L and hue. The renderer and the checks use the same mapped colour.
+- Cells are coloured by a structural rule: the 600 cells form 20 rings of 30 cells, and a proper colouring of the ring adjacency graph (rings that share a face get different classes) assigns each ring one of k colour classes. Class i has hue = rotation + spread · i / k, lightness = L ± alternation (alternating by i), chroma C. The real sticker palette is G4's job; the studio learns the palette character.
+- One function maps every OKLCh colour into sRGB by reducing chroma at constant L and hue. It returns a failure, not a colour, when no chroma at that L fits (in particular when the derived L is outside 0 to 1). A look with any failed class colour is invalid and is rejected before rendering and before any other check. The renderer and the checks use the same mapped colour.
 - Hard checks, on the mapped colours: touching classes (rings that share a face) differ by at least the ΔE threshold in OKLab under normal vision and each simulated deficiency (first value 0.08, to be set in G4); every class differs from the background by at least 0.20 in OKLab L; parameters within range.
 - A failing look is never shown. Thresholds are never relaxed automatically.
 
 ### 4.3 Feasibility sweep (before the model)
+
+A prototype (pure Python, 4,096 random points, Machado severity 1.0) showed that 20 distinct ring colours cannot meet the 0.08 threshold: no point passed, the best worst-view minimum ΔE was 0.015 with the hue-order assignment and 0.066 with a searched assignment, and deuteranopia was the limiting view in most points. The ring adjacency graph of a 7-regular ring cover (each ring touches 7 others) has chromatic number 4; with k = 4 to 8 classes the best worst-view minimum ΔE was 0.14 to 0.16. `tools/tastelab/sim/sweep.mjs` must reproduce this result before the model is built. Phase 1 therefore colours by graph colouring with k classes; the threshold is unchanged. The ring cover is the one in which every ring touches exactly 7 others.
 
 Evaluate 4,096 Sobol points of the palette and background parameters under the hard checks. Report the rejection rate and the feasible region, and keep the feasible set as a fallback pool. If no look is feasible, stop and give the owner the options (threshold, palette rule). If a round finds no feasible candidate, the page draws from the fallback pool and says so.
 
@@ -101,7 +104,7 @@ With d = f(A) − f(B) and a tie threshold ε > 0 (fitted), the three outcomes a
 
 ### 5.5 Limits
 
-- At most 400 latent looks in total (all scenes). Pruning removes only candidates that were never shown; every recorded comparison stays in the fit.
+- At most 400 latent looks in total (all scenes). Pruning first removes candidates that were never shown. When the shown looks alone reach 400, the fit uses the comparisons among the 400 most recently shown looks; older comparisons stay stored and exported but leave the fit, and the page says how many.
 - Work runs in a Web Worker. Target: the next pair is ready within 1 s at the maximum size. The benchmark in headless Chromium is indicative only, not a measurement on the owner's laptop.
 
 ### 5.6 Settled
@@ -133,7 +136,8 @@ Before the learner is connected, publish a minimal private canary page with code
 1. Scoped re-check of this revised plan (Astra, max, fast tier).
 2. Canary (section 7.1) and feasibility sweep (section 4.3).
 3. Commit this plan. Then run packets P1 and P2 through `--kind implement` in parallel, each with its interfaces, owned files including tests, acceptance command and stop condition. Nobody commits while they run. Claude writes the runner, preview, page, sweep and experiment.
-4. Claude reviews and applies Codex's patches; the simulated-owner experiment runs.
-5. One Astra review of the finished candidate (behaviour and design), then at most two scoped verification rounds. Commit only after it.
-6. Checks: `python tests/test_tastelab.py`, the experiment report, a browser check of the page with the pre-installed Chromium (rendering and keys), then publish and the functional pass.
-7. Owner: edit the parameter space, then start comparing.
+4. Claude reviews and applies Codex's patches.
+5. Checks on the integrated candidate: `python tests/test_tastelab.py`, the simulated-owner experiment, a browser check of the page with the pre-installed Chromium (rendering and keys).
+6. One Astra review of the candidate that passed step 5 (behaviour and design), then at most two scoped verification rounds; the checks run again on every changed candidate. Commit only when the checks pass and the review covers that candidate.
+7. Publish and the functional pass.
+8. Owner: edit the parameter space, then start comparing.
