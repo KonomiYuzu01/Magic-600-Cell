@@ -61,7 +61,7 @@ Recorded in the 0.4 product brief as the core loop:
 | Find piece and buffers | Where the target's piece is, A and B occupants, the cells involved, Home vs current structure | Looks; switches between following the piece and watching a fixed position | Piece-focused tracking, Local view |
 | Relate the two places | Where the piece and the target are on the whole polytope, shared cells, distance | Orients themself | Global view |
 | Choose or enter a macro | Macros of this orbit by use (star, pure cycle, orientation), with their effects | Picks, records or types a macro | Macro base, keyboard |
-| Prepare (setup) | Grip, cells, legal twist directions, the key for each | Enters grips and twists | Grip and Twist keys, onscreen keyboard |
+| Prepare (setup) | Proposed setups that keep the buffers fixed; grip, cells, legal twist directions, the key for each | Takes, edits or enters a setup | Setup search, Grip and Twist keys, onscreen keyboard |
 | Check | Star or other cycle, its direction, frame changes, orientation, collateral, protection | Reads; edits preparation | Complete-effect analysis, protection check |
 | Execute and review | Before and after residuals, protected damage, buffer change | Commits; undoes if needed | Preview, commit, undo, residual change |
 | Next | Next target, possibly another orbit with its saved context | Continues | Per-orbit context, locked Next |
@@ -82,7 +82,7 @@ The 0.4 brief names the costliest part as **buffer preparation and protection ch
 
 ## 7. Boundary
 
-The owner's human-solve boundary (charter section 5) applies to every row of section 4: tools may track, analyse, check, protect and reuse the solver's own macros and templates, and aid the view; the program never outputs a solving macro by itself and never solves automatically. Whether the program may search setups for the solver is open (charter section 5); the reference solver in `research/` uses certified setup tables, which is a research result, not a product feature.
+The owner's human-solve boundary (charter section 5) applies to every row of section 4: tools may track, analyse, check, protect and reuse the solver's own macros and templates, and aid the view; the program never chooses or outputs a solving macro by itself, never executes without the solver's action and never solves automatically. **Setup search is allowed** (owner, 2 October 2026): for a target the solver names, the program may propose setups that keep the buffers fixed, such as those of the certified guarded setup tables in the technical report; the solver chooses the macro, may edit the setup and executes. This removes most of the preparation work that section 5 names as the costliest step.
 
 ## 8. Open items
 
