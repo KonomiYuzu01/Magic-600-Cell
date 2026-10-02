@@ -1,6 +1,6 @@
 # 1.0 migration: exporter re-plan (design proposal)
 
-Status: **design proposal, not an ADR and not a format freeze.** It re-plans the exporter vehicle after the owner cancelled the 0.4.1 release (owner decision, 1 October 2026). The owner still chooses the migration path in charter section 6; this page details the recommended path B of [migration-options](migration-options.md) so that the choice can be made on a concrete design. The migration schema is a critical path (`AGENT_BRIEFING.md` section 3): nothing under `schemas/` and no code is written until the owner has chosen a path and a Codex Astra plan check of that path has no open `blocker` or `major`. The package format is frozen only at the stage 2.5 migration-format-freeze gate (Astra ruling); until then every format name on this page carries a `draft` marker.
+Status: **design proposal, not an ADR and not a format freeze.** It re-plans the exporter vehicle after the owner cancelled the 0.4.1 release (owner decision, 1 October 2026). The owner chose path B of [migration-options](migration-options.md) on 2 October 2026 (charter section 6); this page is its design. The migration schema is a critical path (`AGENT_BRIEFING.md` section 3): nothing under `schemas/` and no code is written until the owner has chosen a path and a Codex Astra plan check of that path has no open `blocker` or `major`. The package format is frozen only at the stage 2.5 migration-format-freeze gate (Astra ruling); until then every format name on this page carries a `draft` marker.
 
 Review record: Astra plan check `20261002T192706Z-cd51f338` (MEXP-01 to MEXP-04 adopted), scoped re-checks `20261002T193715Z-36968ebd` (MEXP-01 follow-up adopted) and `20261002T194011Z-2188132b` (MEXP-05 adopted: the pre-lock snapshot reads metadata only). The MEXP-05 fix was not re-checked: the round limit was reached and the owner approved committing this draft under an exception (2 October 2026). The next Astra plan check, after the owner's path choice, covers it.
 
@@ -102,7 +102,6 @@ The replay in stage 8 uses the 1.0 engine. It is trusted only for engine builds 
 
 ## 9. Open questions
 
-- Owner: the migration path (A, B or C of migration-options; B recommended). Charter section 6.
 - Owner or plan check: exporter Q2 (size limits), Q3 (the full undo tree as neutral data), Q4 (raw copy optional; migration-options item 4 makes it mandatory when a section is unknown or invalid), Q5 (where the importer code lives in the 1.0 layering).
 - Probe outcome: if P1 finds no strategy, the owner decides between the conflicting invariants.
 
