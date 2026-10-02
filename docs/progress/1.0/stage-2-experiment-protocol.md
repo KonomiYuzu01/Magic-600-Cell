@@ -88,7 +88,7 @@ Build acceptance: runs on the owner's machine; every parameter changes the view 
 **2.0 Charter: design charter**
 - Anti-goals list finalized, at least 10 items, each with one sentence of reasoning.
 - Two or three candidate metaphors, each with a one-paragraph manifesto draft.
-- UX success criteria in plain words, for example "a first-time user can make a turn within 30 seconds" or "the solved moment feels earned".
+- Quality bar kept, changed or dropped by the owner: signature moments and the engineering, mathematics, design and art bars ([charter-2.0-draft](charter-2.0-draft.md) section 5).
 - Exit: the owner signs the charter.
 
 **2.1 and 2.2 Inventory and dispositions (design side)**

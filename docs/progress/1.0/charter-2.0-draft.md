@@ -46,12 +46,48 @@ Out of scope for stage 2: shipping code, release packaging, NVIDIA-only features
 
 - **Anti-goals** (at least 10, one sentence of reasoning each): _owner draft_.
 - **Candidate metaphors** (two or three, one paragraph each): _owner draft_. Examples on the table: observatory instrument, museum exhibit, precision watch, Japanese stationery.
-- **UX success criteria** in plain words. Starting proposals for the owner to keep, change or drop:
-  1. A first-time user makes a legal turn within 30 seconds of opening.
-  2. Every turn shows its full collateral effect before commit, and the commit takes one action.
-  3. A turn at full detail responds within 100 ms (the B4-12 M1 interval) on the target machine.
-  4. No action loses work: undo is always available, and a crash returns to the last commit.
-  5. The solved moment feels earned (owner judgement during the living test).
+- **Quality bar** (proposal for the owner to keep, change or drop). Intent: 1.0 should read as the work of a senior software engineer, a mathematician, a front-end designer and an interaction artist working together. Every bar below can be checked by a measurement, a review against a written list, or an owner judgement in the living test. The bars apply to the vertical slice's scope on day 15 and to the whole product at release. They never relax a binding input in section 2. Numbers marked _proposal_ are set in 2.3 and frozen at 2.5.
+
+  **Signature moments.** Four to six moments get many times the polish of ordinary features; everything else must be clean and consistent, not extraordinary. For each one the owner names a benchmark work, and the living test compares the two side by side.
+  - S1 First launch: the user reaches a first legal turn within 30 seconds, and the structure is introduced from one cap and one orbit, not from all 259,800 stickers at once.
+  - S2 One cap turn: motion, easing and (if adopted) sound make the four-dimensional rotation read as a rotation; the new labels are adopted on the frame where the turn ends.
+  - S3 Structure view: any cap, orbit, frame group or Hopf fibre can be isolated and highlighted.
+  - S4 Preview and witness: before commit, a turn or macro shows its full collateral effect, its witness sequence, its effect on every orbit and on protection; the commit takes one action.
+  - S5 The solved moment, for one orbit and for the whole puzzle, feels earned.
+  - S6 The opening chapter of the theory book.
+
+  **Engineering.**
+  - E1 The renderer selection gate (section 2) holds in the shipped look (W5), not only in a bare scene.
+  - E2 A turn at full detail responds within 100 ms (the B4-12 M1 interval) on the target machine.
+  - E3 Camera input latency and startup-to-interactive time have budgets set from S-B and vertical-slice measurements (_proposal_: interactive within 3 seconds with an existing session).
+  - E4 No action loses work: undo is always available, a crash returns to the last commit, and requirements R-01 to R-19 each have a passing test.
+  - E5 Every action is reachable from the keyboard through the command table, including a command palette.
+  - E6 Every error message says what happened, why, and what the user can do.
+  - E7 Install, update and uninstall leave nothing outside the declared directories, and every build is traceable to its build identity.
+
+  **Mathematics.**
+  - M1 Every term in the UI comes from one glossary tied to `research/PUZZLE_THEORY.md`: one term per concept, checked by script.
+  - M2 Every visualization states its mathematical basis (projection, fibration, colouring rule) in the theory book; no geometry that misrepresents the structure.
+  - M3 Shown numbers are exact or state their precision; evidence status (verified, recorded, unknown, unchecked) is never merged with a score or a permission.
+  - M4 The theory book has definitions, proofs or cited proofs, a notation table, and figures rendered from the real geometry with local tools, reproducibly.
+  - M5 A mathematics review (Fable or Codex Astra; a human mathematician if the owner approves the cost) checks terminology and visualizations against the theory before the vertical slice and before release.
+
+  **Design.**
+  - D1 Design tokens cover colour, type scale, spacing grid, radius, elevation and motion; product code refers to token names only, checked by lint.
+  - D2 Every view has designed empty, loading, error, stale ("applied, display stale") and busy states.
+  - D3 A custom icon set drawn from the project's geometry, on one grid and one stroke weight.
+  - D4 The 600-cell palette is designed in OKLab and passes the adjacent-cell ΔE threshold and colour-vision-deficiency simulation set in G4.
+  - D5 Dense panel layouts keep a clear hierarchy at the target resolution and under high-DPI scaling.
+  - D6 Typography includes a face that sets mathematical notation correctly.
+
+  **Interaction and art.**
+  - A1 Every motion has a meaning recorded in the motion table (H-03); no motion is decoration only.
+  - A2 Turn interpolation follows the actual four-dimensional rotation; the owner picks the easing in Look Lab.
+  - A3 Materials, light and transparency serve the legibility of the structure; an effect that hides structure is dropped, whatever it costs to build.
+  - A4 Sound, if adopted, is designed together with the motion table and can be switched off.
+  - A5 The owner signs each signature moment in the living test against its benchmark.
+
+  **Review lenses.** Candidate reviews keep the engineering lens (Codex). Proposed additions: a mathematics lens (M1 to M5), a design lens (Look Lab or slice screenshots checked against D1 to D6) and an art lens (the owner as art director, A1 to A5). Role cards for the new lenses are a follow-up process change and are not part of signing this charter.
 
 ## 6. Migration path (decision needed by day 2)
 
