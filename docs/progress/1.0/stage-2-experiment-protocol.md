@@ -113,7 +113,7 @@ Build acceptance: runs on the owner's machine; every parameter changes the view 
 
 **2.5 Freeze**
 - A design-system ADR: tokens (colour, spacing, type scale, motion durations and curves), the palette, components, the layout specification, the core flows, the manifesto and the anti-goals. The command table and the renderer feature list are frozen with the architecture.
-- Tokens allow theme switching, and layouts allow other languages and longer strings (themes and subtitles are undecided).
+- Tokens carry several themes on one design language that users can tune (owner decision, 2 October 2026), and layouts allow other languages and longer strings (subtitles are undecided).
 - The owner accepts the ADR. After the freeze, UI engineering implements the system and does not search for the feel again. A later change goes through the Look Lab and an ADR update.
 
 ### 4.4 Owner time and tools

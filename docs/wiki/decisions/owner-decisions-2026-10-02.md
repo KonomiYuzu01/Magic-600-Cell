@@ -3,18 +3,21 @@ id: owner-decisions-2026-10-02
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 2 October 2026 - stage 2 days count the owner's working days with exit days as targets, and 1.0 keeps later macOS and Linux versions cheap.
+summary: Owner decisions of 2 October 2026 - working-day schedule, later macOS and Linux versions, Taste Lab on a private Artifact page with a learning model, the 1.0 product thesis, target users and human-solve boundary, and several themes on one design language.
 related: [owner-decisions-2026-10-01, owner-decisions-2026-09-29, renderer-candidates]
 supersedes: []
 claims:
   - {id: working-day-schedule, evidence_kind: decision, checked_at: 2026-10-02}
   - {id: future-macos-linux, evidence_kind: decision, checked_at: 2026-10-02}
   - {id: windows-first-line, evidence_kind: source, path: docs/architecture/1.0/10_V1_ARCHITECTURE.md, line: 748, checked_at: 2026-10-02}
+  - {id: taste-lab-artifact, evidence_kind: decision, checked_at: 2026-10-02}
+  - {id: product-thesis-and-boundary, evidence_kind: decision, checked_at: 2026-10-02}
+  - {id: themes-one-language, evidence_kind: decision, checked_at: 2026-10-02}
 ---
 
 # Owner decisions, 2 October 2026
 
-These decisions replace the calendar-day count and the no-extension rule of the [1 October](owner-decisions-2026-10-01.md) "Stage 2 within 20 days" decision, and add a 1.0 architecture constraint.
+These decisions replace the calendar-day count and the no-extension rule of the [1 October](owner-decisions-2026-10-01.md) "Stage 2 within 20 days" decision, add a 1.0 architecture constraint, settle the Taste Lab plan, state the 1.0 product thesis and human-solve boundary, and replace the "themes are undecided" line of [29 September](owner-decisions-2026-09-29.md).
 
 ## Stage 2 days are working days, and exit days are targets
 
@@ -37,3 +40,26 @@ The owner plans macOS and Linux versions after 1.0 and asked for the cheapest pa
 - **Headless checks stay portable.** The platform-independent layers and the differential oracle keep running headless on Linux and macOS, as the cloud sessions already do on Linux. Whether to add macOS runs to continuous integration is decided when CI is set up, since it may carry a cost.
 
 Out of scope for 1.0: building, testing or releasing a macOS or Linux version. This constraint takes no time from the stage 2 schedule and does not change the renderer selection gate; the stage 2.5 architecture freeze checks it. The 0.4 migration and the H6 clean start stay Windows-specific, because 0.4 ran only on Windows. Evidence rules are unchanged: a headless or Linux result is never Windows/DirectX, macOS or performance evidence.
+
+## Taste Lab: build now, on a private Artifact page, with a learning model
+
+The owner chose to build Taste Lab now (option (a) of the re-plan), with two changes to the 30 September design:
+
+- **The front end is a private Artifact page on claude.ai**, not a local window. Choosing it approves putting exactly this on claude.ai: the page code, thumbnails of openly licensed (class A) images with their source, licence and author, the embeddings of those images as numbers, and the owner's choices, ratings and notes in the page's private storage. Copyrighted (class B) images, anything from the owner's sessions, keys and benchmark works never go there; anything else needs a new approval. Only code is committed; data copies stay in `work/loop-memory/`.
+- **The model learns from few choices and draws new variants itself.** A parameter studio renders looks of the 600-cell in the browser, two at a time; the owner picks one, and a Gaussian-process preference model chooses the next pair (preferential Bayesian optimization). Hard checks (adjacent-cell colour difference, colour-vision simulation, parameter ranges) run before a look is shown. The image half keeps like and dislike ratings on class A images.
+- Phase 1 (the page) needs no install or download on the owner's computer. Phase 2, a local tool for class B images, is optional and needs the installation approval of the original design.
+- Results are starting points for the design track: G3 repeats the search in Look Lab at full detail with the cost table. The model assists; the owner decides.
+
+## 1.0 product thesis, target users and human-solve boundary
+
+From the owner's Taste Lab notes and clarifications; the full wording is in [charter section 5](../../progress/1.0/charter-2.0-draft.md), which the owner signs.
+
+- **Thesis.** A complete 600-cell solve is harder in practice than its mathematics suggests. 1.0 gives tools that compensate for the complexity while the result stays a human solve with appropriate tools. Once learned, it is as efficient as a keyboard-driven office application (reference: the Hyperspeedcube keybind workflow); learning it feels like progressing through a game with rewards for real progress. The tools are built backward from orbit-first block building, the only practical full-solve method ([solving-workflow](../../progress/1.0/solving-workflow.md)).
+- **Target users.** Core: people who seriously intend to solve the complete 600-cell, at present the owner and, as far as the owner knows, two or three others. Secondary: people who know hypercube puzzles and want to understand and explore the 600-cell.
+- **Human-solve boundary.** Allowed: tools outside the puzzle itself, such as entering and editing macros, macro analysis, templates and reuse of the solver's own macros, tracking, protection and view aids. A macro is entered by the solver and the tool outputs its analysis. Not allowed: the program outputting a solving macro by itself, or solving automatically. Open: whether a setup tool may search setups for the solver (the 0.4 contract forbade automatic setup search).
+- **Views.** The Global and Local views are redesigned from scratch.
+
+## Several themes on one design language
+
+1.0 offers several visual themes rather than one. They share one design language of high quality that is efficient in use and compatible with the engineering (renderer budget, picking, legibility), and users can tune their own experience within safe ranges. Every shipped theme must pass the palette checks and the renderer selection gate in its own look. Subtitles remain undecided.
+
