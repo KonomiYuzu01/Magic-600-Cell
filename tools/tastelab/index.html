@@ -1,0 +1,86 @@
+<title>Taste Lab</title>
+<style>
+/* Layout: a working bench. Two equal viewports on top, a slim control rail
+   below them, and a side column with what the model has learned. */
+:root {
+  --bg: #eef0f4;
+  --panel: #f8f9fb;
+  --fg: #161a22;
+  --muted: #586074;
+  --line: #d3d7e0;
+  --accent: #2f45c9;
+  --display: "Familjen Grotesk", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0e1016; --panel: #151821; --fg: #e4e7ef; --muted: #98a0b4; --line: #272b37; --accent: #8e9bff; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0e1016; --panel: #151821; --fg: #e4e7ef; --muted: #98a0b4; --line: #272b37; --accent: #8e9bff; color-scheme: dark; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--display); padding: 16px; box-sizing: border-box; }
+.shell { max-width: 1280px; margin: 0 auto; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 260px; }
+@media (max-width: 860px) { .shell { grid-template-columns: minmax(0, 1fr); } }
+header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 24px; }
+h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; }
+.scenes { display: flex; flex-wrap: wrap; gap: 6px; }
+.scenes button[aria-pressed="true"] kbd { color: inherit; border-color: currentColor; }
+.scenes button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 560px) { .pair { grid-template-columns: 1fr; } }
+figure { margin: 0; display: grid; gap: 6px; min-width: 0; }
+canvas { width: 100%; aspect-ratio: 1 / 1; max-width: 100%; display: block; border-radius: 4px; background: #000; }
+figcaption { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 0 5px; color: var(--fg); }
+.rail { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button { font: inherit; font-size: 14px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--fg); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+button:hover { border-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+body.busy .rail button, body.busy .scenes button { opacity: 0.55; pointer-events: none; }
+aside { display: grid; gap: 16px; align-content: start; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; min-width: 0; }
+aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+.stat { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; display: grid; gap: 4px; }
+#matters { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+#matters li { display: grid; grid-template-columns: 1fr 80px; gap: 8px; align-items: center; }
+.bar { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) var(--w), var(--line) var(--w)); }
+#status { color: var(--muted); font-size: 13px; min-height: 1.2em; margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;600&family=JetBrains+Mono&display=swap">
+<div class="shell">
+  <header>
+    <h1>Taste Lab</h1>
+    <div class="scenes" role="group" aria-label="Scene">
+      <button type="button" data-scene="solving" aria-pressed="true">Solving <kbd>1</kbd></button>
+      <button type="button" data-scene="inspecting" aria-pressed="false">Inspecting <kbd>2</kbd></button>
+      <button type="button" data-scene="celebrating" aria-pressed="false">Celebrating <kbd>3</kbd></button>
+    </div>
+  </header>
+  <main style="display:grid;gap:12px;min-width:0">
+    <div class="pair">
+      <figure><canvas id="viewA" aria-label="Look A"></canvas><figcaption><span>Look A</span><kbd>A</kbd></figcaption></figure>
+      <figure><canvas id="viewB" aria-label="Look B"></canvas><figcaption><span>Look B</span><kbd>B</kbd></figcaption></figure>
+    </div>
+    <div class="rail">
+      <button type="button" id="pickA">Prefer A <kbd>A</kbd></button>
+      <button type="button" id="pickB">Prefer B <kbd>B</kbd></button>
+      <button type="button" id="same">About the same <kbd>S</kbd></button>
+      <button type="button" id="bad">Both bad <kbd>X</kbd></button>
+      <button type="button" id="undo">Undo <kbd>Z</kbd></button>
+    </div>
+    <p id="status" role="status">Loading the model.</p>
+  </main>
+  <aside>
+    <section>
+      <h2>Progress</h2>
+      <div class="stat"><span><span id="count">0</span> answers</span><span id="kind">Exploring</span><span id="settled">Confidence 0%</span><span id="pruned" hidden></span></div>
+    </section>
+    <section>
+      <h2>What matters to you</h2>
+      <ul id="matters"><li>Appears after 10 answers.</li></ul>
+    </section>
+    <section>
+      <button type="button" id="export">Export answers as JSON</button>
+    </section>
+  </aside>
+</div>
+<script type="module" src="./page/app.js"></script>
