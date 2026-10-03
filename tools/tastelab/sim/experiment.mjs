@@ -200,7 +200,10 @@ function family(id, owner, scene, seed) {
   const sweep = map ? buildPool(tables[scene], pairsOf, { map }) : sweepOf(scene);
   const uStar = owner.utility(optimum, scene);
   const u = sweep.map((l) => owner.utility(l, scene));
-  if (u.some((x) => x > uStar)) throw new Error(`seed ${seed}: a look of the sweep beats the optimum`);
+  // The optimum's relevant values pass through the unit axis and back, which can move one
+  // by a unit in the last place; a sweep look that is the drawn target then beats u* by
+  // about 1e-32. Only a larger excess means that the optimum is wrong.
+  if (u.some((x) => x > uStar + 1e-12)) throw new Error(`seed ${seed}: a look of the sweep beats the optimum`);
   const mean = u.reduce((s, x) => s + x, 0) / u.length;
   const spread = Math.sqrt(u.reduce((s, x) => s + (x - mean) ** 2, 0) / u.length);
   const D = Math.max(1e-12, uStar - medianOf(u));
