@@ -1,0 +1,2187 @@
+{
+  "shard": "s4",
+  "rows": [
+    {
+      "unit": "U4-001",
+      "disposition": "redesign",
+      "purpose": "Open or resume a verified full-model session in the application's working environment.",
+      "reason": "F-SESSION needs a reliable entry and direct resume; charter sections 4 and 5 require a new runtime and one workspace rather than inheriting the retained host.",
+      "flows": [
+        "F-SESSION",
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U1-001",
+        "U2-014",
+        "U5-001",
+        "U6-001"
+      ],
+      "requirements": [
+        "X-01: Preserve canonical asset and proof-source bytes through default Windows checkouts and packaging, and verify their digests before enabling the model without changing its manifest identity.",
+        "Retain all 259,800 labelled slots and all 1,200 legal generators; presentation changes must never change mechanics or relabel pieces.",
+        "Resume saved work and preferences directly, and provide a clearly labelled fresh practice copy of the full model.",
+        "Replace MPUlt reflection, Managed DirectX preparation and the old compile cache with the selected 1.0 platform boundary; do not assume the 0.4 process split.",
+        "If a local engine process is owned, preserve authenticated health, graceful shutdown and parent-death recovery through EngineProcess."
+      ],
+      "notes": "Stage 2.2 proposal based on source inventories only; flows are provisional. This file makes no Windows/DirectX, input or performance claim, and delete/automate decisions require the owner's later signature."
+    },
+    {
+      "unit": "U4-002",
+      "disposition": "redesign",
+      "purpose": "Establish that the displayed geometry, labels and move mapping belong to the complete authoritative model before interaction.",
+      "reason": "F-PLATFORM supports safe F-SESSION and F-EXECUTE; charter sections 2 and 4 preserve model verification while replacing the MPUlt bridge.",
+      "flows": [
+        "F-PLATFORM",
+        "F-SESSION",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U1-056",
+        "U1-023"
+      ],
+      "requirements": [
+        "Retain all 259,800 labelled slots and all 1,200 legal generators; presentation changes must never change mechanics or relabel pieces.",
+        "Verify geometry, model identity and source-to-destination generator mappings before enabling interaction; reject partial or mismatched models.",
+        "Synchronize committed labels, view context and revisions before accepting input, and make reconnect failure recoverable.",
+        "Put platform-specific renderer connection behind a narrow interface without requiring the retained assembly or its reflection names."
+      ]
+    },
+    {
+      "unit": "U4-003",
+      "disposition": "redesign",
+      "purpose": "Leave a session safely and recover its last durable work after interruption.",
+      "reason": "F-SESSION and solving-workflow section 4.2 require interruption and resume to preserve state and history; charter section 4 replaces the old window lifecycle.",
+      "flows": [
+        "F-SESSION",
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U1-003",
+        "U5-077",
+        "U6-045"
+      ],
+      "requirements": [
+        "Retain the last durable commit, pending work context and preferences when closing during analysis; distinguish cancellation from an already accepted operation.",
+        "Dispose rendering and owned resources safely, and preserve graceful owned-engine shutdown and parent-pipe recovery.",
+        "B-001: Preserve the fixed bounded shutdown behaviour so idle or trickling clients cannot hold an owned engine beyond its recorded grace period."
+      ]
+    },
+    {
+      "unit": "U4-004",
+      "disposition": "redesign",
+      "purpose": "Reclaim working space by revealing or dismissing supporting tools without losing their context.",
+      "reason": "F-NAVIGATE needs efficient access to preparation tools; charter section 5 D5 and the owner's design decision section 6 require adaptable space with both principal views visible.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U3-007",
+        "U3-073",
+        "U6-016"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Retain drafts and tool context across visibility and window-size changes; do not silently hide a required view to fit a panel."
+      ]
+    },
+    {
+      "unit": "U4-005",
+      "disposition": "redesign",
+      "purpose": "Reach the presentation settings that make geometry and projection comfortable to inspect.",
+      "reason": "F-NAVIGATE and F-FIND need legible presentation; charter section 5 permits validated user tuning within the two theme families.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U3-140",
+        "U6-021"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Expose validated view settings through the shared command layer and preferences, with fixed interaction and status meanings across themes.",
+        "Keep display tuning separate from model geometry, piece identity and the solver's fixed Grip frame."
+      ]
+    },
+    {
+      "unit": "U4-006",
+      "disposition": "redesign",
+      "purpose": "Allocate useful space between geometric work and supporting tools as the workspace size changes.",
+      "reason": "F-NAVIGATE is served by readable, adaptable work areas; charter section 5 D5 and anti-goal 11 require layout to survive resizing and DPI changes.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-046",
+        "U6-042"
+      ],
+      "requirements": [
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Preserve the user's chosen allocation and tool context while maintaining legible geometry and reachable controls across resizing and DPI changes.",
+        "Provide a keyboard route for adjusting or restoring the working allocation without specifying 0.4 divider sizes."
+      ]
+    },
+    {
+      "unit": "U4-007",
+      "disposition": "split",
+      "purpose": "Tune geometric separation, camera projection and lighting for readable structure.",
+      "reason": "The correspondence joins three distinct presentation purposes; F-FIND and F-NAVIGATE retain them under charter section 5's tuning and legibility requirements.",
+      "same_purpose_as": [
+        "U3-140",
+        "U6-021"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "claude:S4-6",
+            "codex:S4-9",
+            "codex:S4-10"
+          ],
+          "disposition": "redesign",
+          "purpose": "Adjust visual cell and sticker separation to distinguish nearby structure.",
+          "reason": "F-FIND needs readable geometry; charter sections 2 and 5 A3 allow display tuning while preserving the mathematical model.",
+          "flows": [
+            "F-FIND",
+            "F-NAVIGATE"
+          ],
+          "requirements": [
+            "Retain all 259,800 labelled slots and all 1,200 legal generators; presentation changes must never change mechanics or relabel pieces.",
+            "Treat separation as a renderer parameter, not a change to cuts, slots or intrinsic geometry; picking must match the drawn interactive geometry.",
+            "Validate user tuning for legibility and the renderer gate in both theme families."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S4-6",
+            "codex:S4-11"
+          ],
+          "disposition": "redesign",
+          "purpose": "Adjust camera perspective to compare the relevant places comfortably.",
+          "reason": "F-RELATE and F-NAVIGATE need controllable projection; charter section 5 M2 requires its mathematical basis to be stated.",
+          "flows": [
+            "F-RELATE",
+            "F-NAVIGATE"
+          ],
+          "requirements": [
+            "Keep perspective a view-only parameter independent of Grip, target and model frames.",
+            "State the projection basis and units, validate its range, and keep the same interaction meaning across themes."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S4-6",
+            "codex:S4-12",
+            "codex:S4-13",
+            "codex:S4-14"
+          ],
+          "disposition": "redesign",
+          "purpose": "Tune surface shading and highlights to make the structure readable.",
+          "reason": "F-FIND relies on legibility; charter section 5 A3 and the owner's design decision section 3 retain comfortable tuning within validated themes.",
+          "flows": [
+            "F-FIND",
+            "F-NAVIGATE"
+          ],
+          "requirements": [
+            "Use lighting and materials that preserve visible structure, exact identity markers and accessibility alternatives.",
+            "Each theme family's most expensive approved scene must meet the full-detail renderer gate; lighting changes cannot alter picking or mechanics."
+          ]
+        }
+      ],
+      "notes": "claude:S4-6 is a coarse row covering all three purposes and is included in each corresponding part; the fine Codex rows identify each branch."
+    },
+    {
+      "unit": "U4-008",
+      "disposition": "redesign",
+      "purpose": "Learn the available actions, mathematical terms and safety guarantees in the current task.",
+      "reason": "F-LEARN and F-NAVIGATE need discoverable tools; charter section 5 D7, E5, M1 and M6 and the owner's design decision section 5 replace the old shortcut sheet.",
+      "flows": [
+        "F-LEARN",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U3-143",
+        "U6-006"
+      ],
+      "requirements": [
+        "Use reviewed English wording and glossary terms with diagrams from actual geometry, within the scope decision's UI-only theory-book boundary.",
+        "Keep every command available from the palette while hints follow soft disclosure; distinguish evidence, legality, permission and exact completion.",
+        "Describe current 1.0 commands and verified limitations rather than retaining MPUlt gestures or old validation claims."
+      ]
+    },
+    {
+      "unit": "U4-009",
+      "disposition": "redesign",
+      "purpose": "Keep camera movement responsive while making its detail policy explicit.",
+      "reason": "F-NAVIGATE needs responsive camera input; charter sections 2 and 5 E1 require full-detail renderer evidence, so the old sampled-motion implementation is not a 1.0 contract.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-RELATE"
+      ],
+      "same_purpose_as": [
+        "U3-141",
+        "U6-021"
+      ],
+      "requirements": [
+        "Retain all 259,800 labelled slots and all 1,200 legal generators; presentation changes must never change mechanics or relabel pieces.",
+        "Any optional motion-detail policy must be visibly distinct from mechanical state and must restore exact visible geometry before picking.",
+        "Sampling must not change interaction scope, exact counts, identities, protection or complete-operation analysis.",
+        "Meet the renderer selection gate at full detail with the most complex animation; sampled motion cannot be used as passing gate evidence."
+      ]
+    },
+    {
+      "unit": "U4-010",
+      "disposition": "redesign",
+      "purpose": "Understand when a displayed turn belongs to durable state.",
+      "reason": "F-EXECUTE needs reliable commit feedback; charter section 5 S2 and A2 replace the retained host's instant-turn indicator with meaningful four-dimensional turn motion.",
+      "flows": [
+        "F-EXECUTE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U6-048"
+      ],
+      "requirements": [
+        "Adopt new labels at the turn's animation endpoint only after durable commit, with interpolation following the actual four-dimensional rotation.",
+        "Distinguish pending preview, accepted operation and stale display; no rejected or uncertain operation may look successfully committed.",
+        "Do not retain an instant-only runtime promise as a user option."
+      ]
+    },
+    {
+      "unit": "U4-011",
+      "disposition": "redesign",
+      "purpose": "Reveal or hide the structural framework to support the current inspection.",
+      "reason": "F-FIND and F-RELATE need controllable references; solving-workflow section 4.3 and charter section 2 keep rendering separate from mechanics.",
+      "flows": [
+        "F-FIND",
+        "F-RELATE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U3-141",
+        "U6-021"
+      ],
+      "requirements": [
+        "Retain all 259,800 labelled slots and all 1,200 legal generators; presentation changes must never change mechanics or relabel pieces.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Store framework visibility as a view preference; retain target, buffer and protection/effect references even when ordinary framework detail is hidden."
+      ]
+    },
+    {
+      "unit": "U4-012",
+      "disposition": "redesign",
+      "purpose": "Recover a known camera and presentation configuration without changing the solve.",
+      "reason": "F-NAVIGATE needs recoverable orientation; solving-workflow section 4.3 separates camera actions from inspection, target and Grip assignment.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-RELATE"
+      ],
+      "same_purpose_as": [
+        "U3-142",
+        "U5-063",
+        "U6-017"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Reset only the declared camera and display parameters, preserving labels, journal, filters, drafts, target, buffers and protection.",
+        "Restoring a view must not silently change physical key meanings or the fixed Grip frame; any needed engine lookup runs asynchronously."
+      ]
+    },
+    {
+      "unit": "U4-013",
+      "disposition": "redesign",
+      "purpose": "Bring the focused canonical cell into geometric view.",
+      "reason": "F-FIND and F-RELATE require locating places; solving-workflow section 4.3 keeps centering distinct from selecting a target or Grip.",
+      "flows": [
+        "F-FIND",
+        "F-RELATE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U5-065",
+        "U6-018"
+      ],
+      "requirements": [
+        "E-02: Load grips and engine context asynchronously during centering; delayed or failed lookups must keep the UI responsive and report a recoverable error instead of exiting.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Center on the exact cell in the shared Global/Local context without changing mechanics, target, buffers or an assigned Grip frame."
+      ]
+    },
+    {
+      "unit": "U4-014",
+      "disposition": "redesign",
+      "purpose": "Find the preparation, inspection and recovery tools relevant to the current work.",
+      "reason": "F-NAVIGATE supports the core loop in solving-workflow section 4; charter section 5 rejects the undiscoverable 0.4 tool organization.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-COMPOSE",
+        "F-CHECK",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U3-049",
+        "U3-084",
+        "U6-029"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Organize surviving tools around the solver's current orbit, target, roles and revision; do not reproduce fixed tab indices or a second context.",
+        "Keep every surviving action reachable through the command palette and retain unfinished edits when focus changes."
+      ]
+    },
+    {
+      "unit": "U4-015",
+      "disposition": "redesign",
+      "purpose": "Save a named durable recovery point for the current work.",
+      "reason": "F-PROTECT and F-SESSION require checkpoints; solving-workflow section 4.2 and charter section 5 E4 require recoverable work across interruption.",
+      "flows": [
+        "F-PROTECT",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U1-020",
+        "U3-076",
+        "U5-073",
+        "U6-034"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Capture exact labels, model identity, journal location and the declared workspace/view context coherently and durably.",
+        "Name the checkpoint and report its actual save outcome; failure must leave existing checkpoints and current work intact.",
+        "Checkpoint metadata must remain lightweight to enumerate without reading label blobs."
+      ]
+    },
+    {
+      "unit": "U4-016",
+      "disposition": "redesign",
+      "purpose": "Choose a canonical cell as the shared focus for structural work.",
+      "reason": "F-FIND and F-RELATE need a consistent spatial context; solving-workflow section 4.3 distinguishes selection from camera motion and Grip assignment.",
+      "flows": [
+        "F-FIND",
+        "F-RELATE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U1-037",
+        "U5-054",
+        "U6-018"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Use exact canonical cell IDs and one revision across both views; focus selection alone must not turn, assign a Grip or move the camera.",
+        "Resolve zero-based source indices into the shared mathematical naming scheme without changing canonical IDs.",
+        "Queue or reject context changes coherently during a job, preventing an older focus response from replacing the latest selection."
+      ]
+    },
+    {
+      "unit": "U4-017",
+      "disposition": "redesign",
+      "purpose": "Make a recoverable local copy of the session journal.",
+      "reason": "F-SESSION needs durable backup and recovery; charter section 5 E4 preserves work while section 4 replaces the host-specific backup invocation.",
+      "flows": [
+        "F-SESSION",
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U1-026"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Create a coherent database backup through the session store, including committed WAL data, without modifying the source or exposing credentials.",
+        "Report completion and the recoverable artifact only after publication succeeds; preserve the source on failure.",
+        "Keep backup distinct from proof-log export, which may have format limits."
+      ]
+    },
+    {
+      "unit": "U4-018",
+      "disposition": "redesign",
+      "purpose": "Save a portable verified record of the selected session history and its legal evidence.",
+      "reason": "F-SESSION preserves verifiable work outside the live database; charter sections 2 and 4 require full legal witnesses and a session-store export boundary.",
+      "flows": [
+        "F-SESSION",
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U1-034"
+      ],
+      "requirements": [
+        "A-02: Validate export primitive and transaction budgets against the paired importer before writing; refuse an unimportable record and offer a session backup.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Export exact model identity, labelled state, chronological source-to-destination witnesses and the declared branch scope.",
+        "Publish atomically to the solver's chosen local destination, with a failed export leaving any prior file intact.",
+        "An export is not a certificate of a solve unless exact whole-model completion was verified."
+      ]
+    },
+    {
+      "unit": "U4-019",
+      "disposition": "split",
+      "purpose": "Choose the working orbit and understand its exact remaining work.",
+      "reason": "The correspondence joins orbit selection with residual reporting; F-TARGET and F-ENDGAME retain both under solving-workflow sections 2, 3.4 and 4.2.",
+      "same_purpose_as": [
+        "U3-022",
+        "U5-004",
+        "U6-003",
+        "U2-049",
+        "U3-107",
+        "U6-035"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "codex:S4-18",
+            "claude:S4-30",
+            "claude:S4-52"
+          ],
+          "disposition": "redesign",
+          "purpose": "Choose the orbit to work on while retaining each orbit's unfinished context.",
+          "reason": "F-TARGET and solving-workflow section 4.2 require explicit orbit choice, saved context and current global protection.",
+          "flows": [
+            "F-TARGET",
+            "F-NAVIGATE"
+          ],
+          "requirements": [
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Switch the active orbit and its saved workspace coherently; retain per-orbit drafts, buffers and Next without rolling protection back.",
+            "Invalidate execution permission and resolve identities against current state when changing or resuming an orbit; never advance automatically."
+          ]
+        },
+        {
+          "rows": [
+            "codex:S4-19",
+            "claude:S4-52"
+          ],
+          "disposition": "redesign",
+          "purpose": "See exact positional and orientation residuals and completion for each orbit.",
+          "reason": "F-TARGET and F-ENDGAME depend on residuals; solving-workflow section 3.4 distinguishes progress from exact completion.",
+          "flows": [
+            "F-TARGET",
+            "F-ENDGAME",
+            "F-CHECK"
+          ],
+          "requirements": [
+            "Report non-buffer placement, buffer occupants, orientation and unknown frames separately from exact solved status.",
+            "Compute completion from all required identities, slots, orientations and labels, never from colours, empty candidates or the display filter.",
+            "Provide certified collateral order as context rather than treating orbit IDs as the solve order."
+          ]
+        }
+      ],
+      "notes": "claude:S4-52 combines residual display and double-click orbit selection, so it contributes to both parts."
+    },
+    {
+      "unit": "U4-020",
+      "disposition": "redesign",
+      "purpose": "Export a selected macro's complete legal witness and effect certificate for later inspection or reuse.",
+      "reason": "F-CHECK and F-REUSE need verifiable macro evidence; charter section 2 and solving-workflow section 4.1 preserve complete effects and fresh review on reuse.",
+      "flows": [
+        "F-CHECK",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U1-032",
+        "U3-092",
+        "U6-031"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Include model identity, the exact macro revision, finite chronological witness, frames and full collateral effects, with explicit evidence status.",
+        "Publish locally and atomically; certificate export must not choose a new solving macro or flatten away collateral.",
+        "A saved certificate cannot authorize execution against a different state or protection context."
+      ]
+    },
+    {
+      "unit": "U4-021",
+      "disposition": "redesign",
+      "purpose": "Save the session's verified legal history as a local log.",
+      "reason": "F-SESSION and F-REUSE retain recorded work; solving-workflow section 4.2 and charter section 5 E4 require exact, recoverable persistence.",
+      "flows": [
+        "F-SESSION",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U1-048",
+        "U2-058",
+        "U3-115",
+        "U6-039"
+      ],
+      "requirements": [
+        "A-02: Validate export primitive and transaction budgets against the paired importer before writing; refuse an unimportable record and offer a session backup.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Preserve chronological legal witnesses, exact labels, model identity and provenance in the declared log format.",
+        "Keep log saving separate from the continuously durable journal and publish a new log only after its complete validation and write succeed."
+      ]
+    },
+    {
+      "unit": "U4-022",
+      "disposition": "redesign",
+      "purpose": "Edit and apply a whole-piece work filter without changing the puzzle.",
+      "reason": "F-NAVIGATE uses filters to manage attention; solving-workflow section 4.3 separates mechanical scope, interactive work and noninteractive reference display.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U3-009",
+        "U5-048",
+        "U6-022"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Keep unapplied filter edits distinct from active rules and preserve those edits through unrelated refreshes.",
+        "Evaluate filters as whole-piece predicates with separate visible and interactive scopes; filters must not remove mechanical labels or legal generators.",
+        "Protection conflicts and complete-operation effects must remain visible through filters, and reference-only buffers must remain noninteractive."
+      ]
+    },
+    {
+      "unit": "U4-023",
+      "disposition": "redesign",
+      "purpose": "Restore work from a verified legal log while retaining a recovery point for the current session.",
+      "reason": "F-SESSION needs safe import; charter sections 2 and 4 preserve model identity and transactional recovery, while the migration decision of 2 October keeps full-session migration on path B.",
+      "flows": [
+        "F-SESSION",
+        "F-MIGRATE"
+      ],
+      "same_purpose_as": [
+        "U1-052",
+        "U1-054",
+        "U1-055",
+        "U2-060",
+        "U2-061",
+        "U3-117",
+        "U3-118",
+        "U6-039"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Validate the complete bounded input, model identity, all legal witnesses and exact replay result before any database writes.",
+        "Import transactionally, retain current preferences and the recovery checkpoint, and leave current state unchanged after validation or publication failure.",
+        "A-02: Enforce documented paired log budgets and give a specific recovery option for an over-budget record.",
+        "Keep legacy-log reading behind an importer; full 0.4 session migration reads a locked database copy including WAL commits, without modifying the original or using immutable=1.",
+        "Require fresh confirmation of the inspected file digest and import scope; no retained-host launch is required for path B."
+      ]
+    },
+    {
+      "unit": "U4-024",
+      "disposition": "redesign",
+      "purpose": "Inspect the exact piece and sticker counts of an unapplied filter.",
+      "reason": "F-NAVIGATE and F-CHECK need a safe filter preview; solving-workflow section 4.3 keeps a display query separate from mechanical state.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-042",
+        "U3-009",
+        "U5-050",
+        "U6-022"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Evaluate draft predicates without applying them, using the same whole-piece semantics as actual application.",
+        "Return exact piece and slot counts with current state/filter context, reject obsolete replies, and show parsing or query failures as errors rather than zero matches.",
+        "Do not block the UI or discard unfinished filter edits while counting."
+      ]
+    },
+    {
+      "unit": "U4-025",
+      "disposition": "redesign",
+      "purpose": "Export recorded puzzle work to a chosen portable log file.",
+      "reason": "F-SESSION and F-REUSE need portable witnesses; charter sections 2 and 4 retain verified export rather than the 0.4 file-dialog and runtime-format choices.",
+      "flows": [
+        "F-SESSION",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U1-036",
+        "U1-038",
+        "U2-059",
+        "U3-116",
+        "U6-039"
+      ],
+      "requirements": [
+        "A-02: Validate export primitive and transaction budgets against the paired importer before writing; refuse an unimportable record and offer a session backup.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "State each output format's model, witness and replay guarantees; never imply that a lossy compatibility log is a full certificate.",
+        "Write the complete validated record atomically to a chosen local file and keep current session data intact.",
+        "The 1.0 format contract is settled at its freeze; the old MPUlt format choice does not imply retaining the MPUlt runtime or a reverse session-migration path."
+      ]
+    },
+    {
+      "unit": "U4-026",
+      "disposition": "redesign",
+      "purpose": "Prepare a useful work filter from the current orbit, piece or structural context.",
+      "reason": "F-NAVIGATE and F-FIND benefit from reusable filters; solving-workflow section 4.3 requires explicit work scope without changing mechanics.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U5-060",
+        "U6-022"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Resolve preset parameters from the shared current context and explain whether they follow identities, positions or a live query.",
+        "Keep staging and applying a preset explicit and consistent; parameterized structural presets require a fresh count review before application.",
+        "Do not use presets to hide protection conflicts or operation collateral, and do not silently retarget a saved work set."
+      ]
+    },
+    {
+      "unit": "U4-027",
+      "disposition": "redesign",
+      "purpose": "Undo a committed operation exactly while keeping its journal branch recoverable.",
+      "reason": "F-EXECUTE and F-SESSION require exact undo; solving-workflow section 4.2 and charter section 5 E4 preserve history through mistakes and interruption.",
+      "flows": [
+        "F-EXECUTE",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U1-017",
+        "U3-072",
+        "U5-071",
+        "U6-025"
+      ],
+      "requirements": [
+        "X-02: Keep checkpoint blob scans out of commit, undo and redo status refreshes; use lightweight metadata and check latency as automatic checkpoints accumulate.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Undo through the authoritative journal with exact labelled state and durable outcome; preserve alternate branches and invalidate pending execution permission.",
+        "Editor undo must remain separate from puzzle undo; a held committing key must not repeat.",
+        "Withdraw current achievements and pending celebrations on undo while preserving already unlocked explanations and user-saved macros."
+      ]
+    },
+    {
+      "unit": "U4-028",
+      "disposition": "redesign",
+      "purpose": "Redo an undone journal operation with exact state and a clear durable outcome.",
+      "reason": "F-EXECUTE and F-SESSION need reversible history; solving-workflow section 4.2 and charter section 5 E4 require state and history to stay consistent.",
+      "flows": [
+        "F-EXECUTE",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U1-018",
+        "U3-074",
+        "U5-072",
+        "U6-025"
+      ],
+      "requirements": [
+        "X-02: Keep checkpoint blob scans out of commit, undo and redo status refreshes; use lightweight metadata and check latency as automatic checkpoints accumulate.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Redo from the declared journal branch and current context, retain exact labelled state and invalidate stale previews.",
+        "Distinguish a completed redo from a failed display refresh and prevent a held key or a refresh retry from repeating the operation."
+      ]
+    },
+    {
+      "unit": "U4-029",
+      "disposition": "redesign",
+      "purpose": "Keep target, buffer and operation references visible outside the interactive work filter.",
+      "reason": "F-FIND and F-CHECK need hidden context for comparison; solving-workflow section 4.3 and the owner's design decision section 2 separate reference display from interaction.",
+      "flows": [
+        "F-FIND",
+        "F-CHECK",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U3-009",
+        "U6-022"
+      ],
+      "requirements": [
+        "Keep reference-only objects noninteractive unless the solver explicitly changes their interaction scope.",
+        "Protection conflicts and full operation effects must break through display filters regardless of optional context pinning.",
+        "Show fixed buffer positions and their changing occupants distinctly, using exact IDs and the shared encoding grammar."
+      ]
+    },
+    {
+      "unit": "U4-030",
+      "disposition": "redesign",
+      "purpose": "Customize and save reliable keyboard access to the solver's commands.",
+      "reason": "F-NAVIGATE is keyboard first; charter section 5 E5 and solving-workflow section 4.3 require every operation to remain reachable without silently changing key meanings.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U3-120",
+        "U5-018",
+        "U6-011"
+      ],
+      "requirements": [
+        "Bind validated context-aware command IDs rather than native host action strings; reject conflicting or unknown bindings before publication.",
+        "Persist bindings in the session/workspace boundary and retain an invalid previous file for recovery instead of overwriting it with defaults.",
+        "Camera, filters, moving pieces and theme changes must not silently remap physical keys; show the active mapping and support explicit switching.",
+        "Keep all 1,200 generators reachable and every program operation available in the command palette; keys use soft disclosure without withholding functions."
+      ]
+    },
+    {
+      "unit": "U4-031",
+      "disposition": "redesign",
+      "purpose": "Include or exclude whole orbits from the interactive work display.",
+      "reason": "F-NAVIGATE manages work scope; solving-workflow section 4.3 and charter section 2 require filters to leave the full mechanical model intact.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U3-009",
+        "U5-048",
+        "U6-022"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Compose explicit whole-piece orbit predicates with existing rules and preserve their declared styling semantics.",
+        "An empty work set must be reported as empty, never as completion; hidden orbits still participate in effects, protection and exact state.",
+        "Treat orbit visibility and protection as separate commands and facts, and keep required context references visible."
+      ]
+    },
+    {
+      "unit": "U4-032",
+      "disposition": "redesign",
+      "purpose": "Invoke the intended command from the keyboard according to the focused task and active context.",
+      "reason": "F-NAVIGATE and F-EXECUTE rely on keyboard-first input; charter section 4 and the command table require a single gated invocation path.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-COMPOSE",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U3-146",
+        "U3-147"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Never repeat a committing command from a held key; text editors and focused view controls own their normal navigation and edit keys.",
+        "Keep cancellation and necessary view access available during jobs without letting unrelated keys bypass busy or permission gates.",
+        "Replace the assisted-insertion shortcut with only surviving commands; explicit target, macro and execution choices remain the solver's actions.",
+        "Do not inherit the 0.4 key assignments; 1.0 mappings are set by the design track."
+      ]
+    },
+    {
+      "unit": "U4-033",
+      "disposition": "redesign",
+      "purpose": "Prepare a recorded legal scramble for deliberate practice or a new attempt.",
+      "reason": "F-LEARN and F-SESSION need a safe practice copy; the owner's design decision section 7 and solving-workflow section 4.2 require fresh full-model data and explicit action.",
+      "flows": [
+        "F-LEARN",
+        "F-SESSION",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U1-060",
+        "U2-057",
+        "U3-122",
+        "U6-039"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Retain all 259,800 labelled slots and all 1,200 legal generators; presentation changes must never change mechanics or relabel pieces.",
+        "Record the seed and complete chronological legal witness with scramble provenance and an undo/recovery route.",
+        "Use a clearly labelled practice session unless the solver explicitly chooses another scope; do not overwrite personal solving work.",
+        "Apply active protection and fresh review requirements before deliberate execution; scrambling must not become automatic solving or a bypass of command gates.",
+        "A fixed 1,000-turn length is not a 1.0 contract."
+      ]
+    },
+    {
+      "unit": "U4-034",
+      "disposition": "redesign",
+      "purpose": "Choose which orbit state a subsequent operation must preserve.",
+      "reason": "F-PROTECT and solving-workflow sections 2 and 3.3 preserve whole-orbit protection alongside finer locks.",
+      "flows": [
+        "F-PROTECT",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U3-045",
+        "U5-058",
+        "U6-020"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Keep protection independent of selection, visibility and exact completion; an unfinished protected orbit preserves its captured state.",
+        "Show every protected scope and check the complete operation at Net or Strict boundaries, including hidden labels and collateral.",
+        "Automatically protect only a transition from unfinished to exactly solved; new/reset sessions are not blanket locked and manual unlocks are not undone on unchanged state.",
+        "Invalidate execution permission after any state, workspace, protection, role, target or macro revision changes; recheck revisions, the full-state hash and protected objects before commit."
+      ]
+    },
+    {
+      "unit": "U4-035",
+      "disposition": "redesign",
+      "purpose": "Start from the exactly solved model while retaining a recovery point for displaced work.",
+      "reason": "F-SESSION and F-LEARN need recoverable reset; charter sections 2 and 5 E4 and the persistence rules require exact state and preserved preferences.",
+      "flows": [
+        "F-SESSION",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U1-024",
+        "U3-080",
+        "U5-075",
+        "U6-039"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Validate the reset scope before writes and publish solved labels plus a named recovery checkpoint transactionally.",
+        "Keep current preferences and the recovery checkpoint; distinguish resetting mechanics from resetting work presentation.",
+        "Invalidate pending execution permission and do not blanket-protect a new or reset session.",
+        "Failure must leave current work recoverable and must not be reported as a successful solve."
+      ]
+    },
+    {
+      "unit": "U4-036",
+      "disposition": "redesign",
+      "purpose": "Understand how work filters, references and motion detail affect inspection.",
+      "reason": "F-LEARN and F-NAVIGATE need a learnable scope grammar; solving-workflow section 4.3 and charter section 5 M1, M4 and M6 define the distinction.",
+      "flows": [
+        "F-LEARN",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U3-143",
+        "U6-006"
+      ],
+      "requirements": [
+        "Explain live queries, frozen identities and frozen positions with diagrams from actual geometry and reviewed glossary terms.",
+        "Distinguish full mechanics, interactive work and noninteractive references; show that camera detail and filters do not alter legal moves.",
+        "Define only the filter and projection facts the 1.0 UI uses, with short or cited proofs where correctness relies on them; replace legacy-only gesture guidance."
+      ]
+    },
+    {
+      "unit": "U4-037",
+      "disposition": "redesign",
+      "purpose": "Save a named fixed set of identities or positions for repeated work.",
+      "reason": "F-REUSE and F-NAVIGATE retain work sets; solving-workflow section 4.3 requires frozen identities to follow pieces and frozen positions to keep their locations.",
+      "flows": [
+        "F-REUSE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U1-057"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Capture exact matches and model identity in the session store, with an explicit identity-versus-position kind.",
+        "Keep a frozen set distinct from a live-query filter; show the current occupants of fixed positions and current locations of frozen identities.",
+        "Validate the full expression before publication and retain set membership across moves, view changes and resume without relabelling pieces."
+      ]
+    },
+    {
+      "unit": "U4-038",
+      "disposition": "split",
+      "purpose": "Name a destination for analysis while separating it from automatic insertion generation.",
+      "reason": "The correspondence combines permitted target entry with a program-generated solving macro; solving-workflow sections 4 and 7 retain the former and prohibit the latter.",
+      "same_purpose_as": [
+        "U1-063",
+        "U3-020",
+        "U5-023",
+        "U6-005"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "claude:S4-35"
+          ],
+          "disposition": "redesign",
+          "purpose": "Name the exact destination the solver intends to inspect or prepare.",
+          "reason": "F-TARGET and F-COMPOSE require the solver's named target; setup search is allowed by solving-workflow section 7.",
+          "flows": [
+            "F-TARGET",
+            "F-COMPOSE",
+            "F-FIND"
+          ],
+          "requirements": [
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Keep explicit target entry and binding distinct from inspection, Grip selection and camera motion.",
+            "Resolve the target's orbit and required identity in the shared context, invalidate any previous review, and permit guarded setup search only for that named target.",
+            "Remove automatic-destination and assisted batch settings from this surviving target-entry purpose."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S4-32",
+            "codex:S4-32",
+            "claude:S4-35"
+          ],
+          "disposition": "delete",
+          "purpose": "Have the program construct a certified solving insertion or batch for the current orbit.",
+          "reason": "The /api/suggest operation chooses or outputs a solving macro, even when given a fixed destination; charter section 5 and solving-workflow section 7 prohibit that purpose.",
+          "flows": [],
+          "requirements": []
+        }
+      ],
+      "notes": "native/NativeHost.cs:471 calls suggest with orbit, batch and target; naming a target does not turn this automatic macro generator into permitted setup search. claude:S4-35 covers both the surviving destination input and the removed automatic/batch settings; explained candidates and buffer analysis remain separate surviving purposes."
+    },
+    {
+      "unit": "U4-039",
+      "disposition": "redesign",
+      "purpose": "Explicitly commit the complete operation whose current preview the solver has reviewed.",
+      "reason": "F-EXECUTE follows F-CHECK in solving-workflow section 4; charter section 2 and the command table preserve fresh preview, full effect and protection checks.",
+      "flows": [
+        "F-EXECUTE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-064",
+        "U3-065",
+        "U5-044",
+        "U6-025"
+      ],
+      "requirements": [
+        "X-02: Keep checkpoint blob scans out of commit, undo and redo status refreshes; use lightweight metadata and check latency as automatic checkpoints accumulate.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Invalidate execution permission after any state, workspace, protection, role, target or macro revision changes; recheck revisions, the full-state hash and protected objects before commit.",
+        "Commit the complete chronological witness, including every collateral effect on all labels, once per explicit solver action.",
+        "Keep durable command acceptance separate from display refresh failure; preserve the receipt and never encourage a repeat of an accepted operation.",
+        "No held key, retry, candidate selection or macro analysis may trigger an additional execution."
+      ]
+    },
+    {
+      "unit": "U4-040",
+      "disposition": "redesign",
+      "purpose": "Discard an uncommitted preview or stop an analysis without losing committed work.",
+      "reason": "F-CHECK and F-COMPOSE require reversible preparation; solving-workflow section 4.1 separates drafts and live state and section 4.2 preserves work on interruption.",
+      "flows": [
+        "F-CHECK",
+        "F-COMPOSE",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U1-009",
+        "U1-065",
+        "U3-066",
+        "U3-068",
+        "U5-045",
+        "U5-047",
+        "U6-025"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Keep cancellation reachable while busy, and state whether it cancels analysis, discards a preview or is too late for a durable commit.",
+        "Retain the entered macro and phases when cancelling their review; invalidate execution permission without changing committed labels.",
+        "A completed command must retain its successful receipt even if cancellation or display refresh races with completion."
+      ]
+    },
+    {
+      "unit": "U4-041",
+      "disposition": "redesign",
+      "purpose": "Choose a legal rotation around a focused cap and inspect its complete effect before execution.",
+      "reason": "F-COMPOSE and F-CHECK retain explicit physical turns; solving-workflow sections 4 and 4.3 require separate Grip and Twist input and access to every generator.",
+      "flows": [
+        "F-COMPOSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-019",
+        "U1-062",
+        "U3-053",
+        "U5-011",
+        "U6-013"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Retain all 259,800 labelled slots and all 1,200 legal generators; presentation changes must never change mechanics or relabel pieces.",
+        "Separate explicit Grip/frame selection from Twist direction and draft-versus-live destination; a Grip selection alone must not change mechanical state.",
+        "Reach every legal cap, including non-hosting affecting caps; the old seven-button list is not the generator catalog.",
+        "Preview a complete legal witness and all collateral under current protection; do not let a camera or filter silently remap a fixed key."
+      ]
+    },
+    {
+      "unit": "U4-042",
+      "disposition": "redesign",
+      "purpose": "Enter a finite legal move word and review its exact complete effect.",
+      "reason": "F-MACRO, F-COMPOSE and F-CHECK are permitted by solving-workflow sections 4 and 7 because the solver supplies the operation.",
+      "flows": [
+        "F-MACRO",
+        "F-COMPOSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-062",
+        "U3-058",
+        "U5-019",
+        "U6-024"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Validate every primitive against the 1,200 legal generators, normalize explicit inverses, and preserve chronological source-to-destination execution.",
+        "Keep draft input and predicted state separate from committed state; rejected text must leave previous drafts and provenance intact.",
+        "Preview the full witness and collateral on all labelled slots, with current frame/protection evidence, then require explicit execution.",
+        "Use the shared notation and glossary with a keyboard route, without inheriting zero-based H/T captions as the 1.0 UX."
+      ]
+    },
+    {
+      "unit": "U4-043",
+      "disposition": "redesign",
+      "purpose": "Save the solver's reviewed operation as a named personal macro for reuse.",
+      "reason": "F-REUSE and F-MACRO retain the solver's own work; solving-workflow sections 4.1 and 7 permit saving macros but never reusing execution permission.",
+      "flows": [
+        "F-REUSE",
+        "F-MACRO"
+      ],
+      "same_purpose_as": [
+        "U1-059",
+        "U3-067",
+        "U6-030"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Store the exact finite recipe, witness, full effect, model identity, reference and macro revision coherently.",
+        "Preserve roles and provenance without selecting or generating a solving macro on the solver's behalf.",
+        "Every later target, reference or protection context requires a fresh complete review; a saved macro is not a saved permission."
+      ]
+    },
+    {
+      "unit": "U4-044",
+      "disposition": "redesign",
+      "purpose": "Inspect the pending operation's legal evidence and full effect before committing it.",
+      "reason": "F-CHECK is the preview-and-witness step of solving-workflow section 4 and charter section 5 S4; the evidence remains while its text-box presentation changes.",
+      "flows": [
+        "F-CHECK",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U3-062",
+        "U3-099",
+        "U5-017",
+        "U6-026",
+        "U6-036"
+      ],
+      "requirements": [
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Show the complete operation, its witness and all collateral including hidden/protected regions, rather than only a target three-cycle or macro body.",
+        "Keep certificate identity, evidence status, counts, goal progress and execution permission distinct; no preview must be a clear state.",
+        "Use the common graphic grammar and exact IDs, with details available for inspection and stale review clearly marked."
+      ]
+    },
+    {
+      "unit": "U4-045",
+      "disposition": "redesign",
+      "purpose": "Inspect fixed buffers and guarded setup frames for a destination the solver names.",
+      "reason": "F-COMPOSE and F-CHECK need buffer preparation; solving-workflow sections 3.1, 4 and 7 permit named-target setup search without choosing a solving macro.",
+      "flows": [
+        "F-COMPOSE",
+        "F-FIND",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-053"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Require an explicit named target and display its required identity, current occupant, fixed buffer positions and changing occupants separately.",
+        "Explain reachable reference frames, setup depths and legal setup witnesses; guarded setups must avoid both buffers.",
+        "Show seed collateral and all applicable protection, preserve unknown/unverified evidence states, and invalidate stale analysis after state or relevant workspace changes.",
+        "Do not select a solving macro or execute a setup automatically; the solver chooses the macro and may edit the proposed setup."
+      ]
+    },
+    {
+      "unit": "U4-046",
+      "disposition": "redesign",
+      "purpose": "Preview a star or inverse explicitly chosen by the solver in a selected reference frame.",
+      "reason": "F-MACRO, F-COMPOSE and F-CHECK retain explicit star use in solving-workflow sections 3.1 and 4; section 7 permits the solver's own macro/template choices.",
+      "flows": [
+        "F-MACRO",
+        "F-COMPOSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-062",
+        "U2-013",
+        "U6-033"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Require the solver to choose the macro/template, direction, target and frame; expand that explicit choice rather than select an insertion algorithm.",
+        "Retain the finite legal seed/setup/relocation witness and every collateral effect; never execute only the displayed target cycle.",
+        "Reject stale state, reference, role or macro bindings and show missing applicable certificates as gaps.",
+        "Keep this a preview until the solver explicitly executes after a fresh full protection review."
+      ],
+      "notes": "Unlike U4-038's suggest call, native/NativeHost.cs:540 previews a star recipe with the frame and sign explicitly selected by the solver. This disposition does not authorize a replacement automatic insertion generator."
+    },
+    {
+      "unit": "U4-047",
+      "disposition": "redesign",
+      "purpose": "Inspect structural relationships that help locate and isolate the current work.",
+      "reason": "F-RELATE, F-NAVIGATE and F-LEARN retain structural exploration; charter section 5 S3, M2 and D8 require it within the two linked views.",
+      "flows": [
+        "F-RELATE",
+        "F-NAVIGATE",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U3-008",
+        "U6-017"
+      ],
+      "requirements": [
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Use exact model topology for cell, layer and vertex relationships and retain the shared selection, target and revision.",
+        "Distinguish adjacency navigation from legal move sequences; exploration must not create solving macros or automatically apply a filter.",
+        "Keep the mathematical basis of every displayed structural relationship in the UI-scoped theory book."
+      ]
+    },
+    {
+      "unit": "U4-048",
+      "disposition": "redesign",
+      "purpose": "Return to a selected verified recovery checkpoint without losing other history branches.",
+      "reason": "F-SESSION and F-PROTECT need recoverable history; solving-workflow section 4.2 and charter section 5 E4 retain checkpoint restoration.",
+      "flows": [
+        "F-SESSION",
+        "F-PROTECT"
+      ],
+      "same_purpose_as": [
+        "U1-022",
+        "U3-078",
+        "U5-074",
+        "U6-034"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Confirm the exact checkpoint and restoration scope, validate its model and labelled state, and publish restoration transactionally.",
+        "Retain other journal branches and the recovery route; make any restoration of saved view settings explicit and do not silently roll current global protection back.",
+        "Resolve identities and working context against restored state, invalidate old execution permission, and refresh grips asynchronously.",
+        "Distinguish a durable restoration from a subsequent failed display refresh."
+      ]
+    },
+    {
+      "unit": "U4-049",
+      "disposition": "redesign",
+      "purpose": "Inspect recorded history and explicitly choose a previous journal branch to continue.",
+      "reason": "F-SESSION and F-EXECUTE require consistent branching history; solving-workflow section 4.2 preserves exact state and history after interruption or undo.",
+      "flows": [
+        "F-SESSION",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U1-014",
+        "U1-015"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Expose exact entry IDs, parents and operation provenance with coherent revisions; browsing alone must not change the journal head.",
+        "Checkout must be an explicit durable command that retains other branches and restores exact labelled state without losing recovery.",
+        "Invalidate execution permission and re-resolve current roles and targets; report protected-state or scope conflicts rather than silently changing protection."
+      ]
+    },
+    {
+      "unit": "U4-050",
+      "disposition": "split",
+      "purpose": "Control deliberate thinking-time intervals and maintain a current report of recorded work.",
+      "reason": "The correspondence combines manual timer control with manual report refresh; F-SESSION retains deliberate timing while charter section 5 and the owner's design decision section 5 allow local bookkeeping for reports.",
+      "same_purpose_as": [
+        "U1-016",
+        "U1-031",
+        "U1-033",
+        "U2-054",
+        "U2-056",
+        "U3-111",
+        "U3-114",
+        "U6-039"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "codex:S4-47",
+            "codex:S4-48",
+            "claude:S4-55"
+          ],
+          "disposition": "redesign",
+          "purpose": "Choose which intervals count as the solver's thinking time.",
+          "reason": "F-SESSION and the owner's design decision section 5 retain local effort measurement without confusing speed with correctness.",
+          "flows": [
+            "F-SESSION",
+            "F-LEARN"
+          ],
+          "requirements": [
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Keep explicit start/pause and recovery semantics for thinking-time measurement; disclose whether a timer is running and which intervals it includes.",
+            "Persist timing consistently through close/resume without inferring exact completion or execution permission from elapsed time.",
+            "Keep measurements local and report time separately from correctness and learning attainment."
+          ]
+        },
+        {
+          "rows": [
+            "codex:S4-49",
+            "claude:S4-55"
+          ],
+          "disposition": "automate",
+          "purpose": "Keep the session's recorded-work totals current without a manual refresh action.",
+          "reason": "F-SESSION and F-LEARN need a trustworthy report; charter section 4's revision-driven view model and the owner's design decision section 5 allow this local bookkeeping within the human-solve boundary.",
+          "flows": [
+            "F-SESSION",
+            "F-LEARN"
+          ],
+          "requirements": [
+            "Update report totals from authoritative journal receipts and current revisions, with clear stale/unavailable status and bounded refresh work.",
+            "Retain exact scramble/solution provenance, primitive/star counts, history scope and any recorded legacy assistance; never manufacture new assisted-solving transactions.",
+            "Keep elapsed time distinct from correctness, exact completion and learning attainment, and store metrics locally only.",
+            "Automatic reporting must not choose targets or macros, modify protection, execute operations or upload data."
+          ]
+        }
+      ],
+      "notes": "native/NativeHost.cs:572 and :574 show explicit Refresh session report and timer control as separate actions. Only manual report refresh becomes bookkeeping; deliberate timer start/pause remains a solver choice. The automate part is a proposal awaiting owner signature."
+    },
+    {
+      "unit": "U4-051",
+      "disposition": "redesign",
+      "purpose": "Compose the solver's finite macros by inverse, concatenation, conjugation or commutator and inspect the result.",
+      "reason": "F-COMPOSE and F-CHECK retain macro editing in solving-workflow sections 4 and 7; the program analyses the solver's explicit operands and chosen construction.",
+      "flows": [
+        "F-COMPOSE",
+        "F-CHECK",
+        "F-MACRO"
+      ],
+      "same_purpose_as": [
+        "U1-058",
+        "U3-061",
+        "U3-077",
+        "U5-038",
+        "U6-032"
+      ],
+      "requirements": [
+        "A-03: Normalize an omitted star sign to +1 before inverse, conjugate or commutator composition; accepted recipes must compose without missing-key failures.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Retain complete recipes and chronological source-to-destination witness order, including inverses and all collateral effects.",
+        "Support Prepare/Macro/Cleanup composition, with an explicit inverse of a selected segment or Prepare, without picking a solution.",
+        "Review the complete composed operation under current frames and protection; a macro body's permission is not the complete operation's permission.",
+        "Preserve previous operands and provenance when new input is invalid, and require explicit execution after preview."
+      ]
+    },
+    {
+      "unit": "U4-052",
+      "disposition": "redesign",
+      "purpose": "Reuse the current finite recipe as an operand for further explicit composition.",
+      "reason": "F-COMPOSE and F-REUSE retain the solver's work; solving-workflow section 4.1 requires phases, references and versions to survive reuse while reviews are renewed.",
+      "flows": [
+        "F-COMPOSE",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U3-071",
+        "U5-015",
+        "U6-025",
+        "U6-030"
+      ],
+      "requirements": [
+        "Carry the actual recipe, witness, reference and macro versions rather than treating a display caption as the recipe.",
+        "Reuse only on an explicit solver action, retaining full collateral and chronological order.",
+        "New composition or binding changes invalidate review and execution permission; absent or stale input must be reported without silently substituting another macro."
+      ]
+    },
+    {
+      "unit": "U4-053",
+      "disposition": "redesign",
+      "purpose": "Choose a saved personal macro or its inverse and review it in the current solving context.",
+      "reason": "F-MACRO, F-REUSE and F-CHECK are the explicit macro-choice steps of solving-workflow section 4; section 4.1 forbids reuse of an old review.",
+      "flows": [
+        "F-MACRO",
+        "F-REUSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-062",
+        "U3-059",
+        "U3-077",
+        "U5-014",
+        "U6-030",
+        "U6-032"
+      ],
+      "requirements": [
+        "A-03: Normalize an omitted star sign to +1 before inverse, conjugate or commutator composition; accepted recipes must compose without missing-key failures.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Use the selected exact macro revision and explicit inverse choice, preserving finite witnesses, references and complete effects.",
+        "Organize reusable macros by orbit and use without selecting the solving macro on behalf of the solver.",
+        "Resolve roles and target against current state, show mismatches or protection conflicts, and require a fresh complete review before execution."
+      ]
+    },
+    {
+      "unit": "U4-054",
+      "disposition": "redesign",
+      "purpose": "Inspect the occupant and exact correctness of a selected physical position.",
+      "reason": "F-FIND and F-TARGET require knowing what occupies a place; solving-workflow section 4.3 separates inspection from target and Grip assignment.",
+      "flows": [
+        "F-FIND",
+        "F-TARGET",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-039",
+        "U1-046",
+        "U3-014",
+        "U5-053",
+        "U6-008"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Show position, occupant identity, Home/current cells, orbit, frame/orientation evidence and exact correctness separately.",
+        "Resolve details against one current snapshot, including fixed structures, and mark unknown frames rather than infer orientation from colours.",
+        "Inspection alone must not execute, assign a target/Grip or move the camera; keep exact IDs available under the common encoding."
+      ]
+    },
+    {
+      "unit": "U4-055",
+      "disposition": "redesign",
+      "purpose": "Follow a chosen physical identity as its current position changes.",
+      "reason": "F-FIND retains piece-focused tracking; solving-workflow sections 4 and 4.3 distinguish moving identities from fixed positions.",
+      "flows": [
+        "F-FIND",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U1-047",
+        "U3-012",
+        "U5-052",
+        "U6-008"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Retain the immutable identity and re-resolve its current location after moves, undo, redo and resume.",
+        "Distinguish identity tracking from watching the occupant of a fixed position, keeping Home, target and buffers explicit.",
+        "Tracking must not silently alter the work filter, target, Grip mapping or mechanical state."
+      ]
+    },
+    {
+      "unit": "U4-056",
+      "disposition": "redesign",
+      "purpose": "Browse remaining unsolved positions of the active orbit before choosing the next target.",
+      "reason": "F-TARGET uses exact residuals and explained candidates; solving-workflow sections 3.3, 3.4 and 4.2 preserve explicit target choice.",
+      "flows": [
+        "F-TARGET",
+        "F-FIND",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U1-051"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Show why a position remains unfinished and navigate in the current orbit/context, respecting locked Next as a distinct choice.",
+        "Do not automatically bind or execute a solving macro when a residual is selected.",
+        "If positional candidates are exhausted while residuals remain, show the endgame or an evidence gap rather than completion or automatic unlock."
+      ]
+    },
+    {
+      "unit": "U4-057",
+      "disposition": "split",
+      "purpose": "Assign a destination and locate the identity required there.",
+      "reason": "The correspondence joins explicit target assignment with a lookup of the wanted piece; solving-workflow sections 4 and 4.3 keep those actions distinct.",
+      "same_purpose_as": [
+        "U1-049",
+        "U3-020",
+        "U5-023",
+        "U6-005"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "claude:S4-62",
+            "codex:S4-68"
+          ],
+          "disposition": "redesign",
+          "purpose": "Assign an inspected physical position as the solver's destination.",
+          "reason": "F-TARGET and F-COMPOSE require an explicit destination; solving-workflow section 4.3 distinguishes assignment from inspection.",
+          "flows": [
+            "F-TARGET",
+            "F-COMPOSE"
+          ],
+          "requirements": [
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Bind the exact destination and its orbit without choosing a solving macro or moving the camera.",
+            "Invalidate earlier reviews and retain Current, A and B as distinct roles; no automatic target mode is needed."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S4-62",
+            "codex:S4-69"
+          ],
+          "disposition": "redesign",
+          "purpose": "Find the current location of the identity wanted at the named destination.",
+          "reason": "F-FIND is the piece-location step in solving-workflow section 4 and is allowed tracking under section 7.",
+          "flows": [
+            "F-FIND",
+            "F-TARGET"
+          ],
+          "requirements": [
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Resolve required identity, current occupant and current location exactly from the authoritative state.",
+            "Keep lookup and target assignment explicit and separate; the result must not choose or execute a solving operation.",
+            "Retain the named destination while inspecting the wanted identity and show any unavailable frame evidence."
+          ]
+        }
+      ],
+      "notes": "claude:S4-62 covers two buttons and therefore appears in both parts; the two fine Codex rows distinguish assignment and lookup."
+    },
+    {
+      "unit": "U4-058",
+      "disposition": "split",
+      "purpose": "Inspect a clicked occupant's Home or find the identity wanted at a clicked destination.",
+      "reason": "The correspondence combines two different inspection queries; F-FIND retains both, while solving-workflow section 4.3 separates inspecting from role assignment and camera motion.",
+      "same_purpose_as": [
+        "U1-041",
+        "U1-043",
+        "U6-015"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "codex:S4-62",
+            "claude:S4-65"
+          ],
+          "disposition": "redesign",
+          "purpose": "Relate the clicked occupying identity to its Home structure.",
+          "reason": "F-FIND and F-RELATE require knowing where a piece belongs; this is a view aid allowed by solving-workflow section 7.",
+          "flows": [
+            "F-FIND",
+            "F-RELATE"
+          ],
+          "requirements": [
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Map only a verified visible interactive sticker to its physical identity and exact Home cells.",
+            "Draw Home references with role glyphs and exact IDs in the common grammar; colour class alone cannot identify a piece.",
+            "Separate clicks from camera drags and prevent inspection or hover from assigning a target, Grip or turn."
+          ]
+        },
+        {
+          "rows": [
+            "codex:S4-63",
+            "claude:S4-65"
+          ],
+          "disposition": "redesign",
+          "purpose": "Locate the identity required at a destination explicitly chosen from the geometry.",
+          "reason": "F-TARGET and F-FIND require naming a destination and locating its wanted piece; setup analysis for that named target is allowed by solving-workflow section 7.",
+          "flows": [
+            "F-TARGET",
+            "F-FIND",
+            "F-COMPOSE"
+          ],
+          "requirements": [
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Keep destination assignment explicit and distinguish the destination's occupant from its required identity and that identity's current location.",
+            "Only interactive geometry may assign a destination; reference-only objects and hover must not become turn or target input.",
+            "Offer buffer/setup analysis for the named target with fresh context, or explain missing evidence; never generate an insertion macro automatically."
+          ]
+        }
+      ],
+      "notes": "claude:S4-65 describes both Shift-click branches. The 1.0 command meanings are retained proposals; no 0.4 gesture or highlight colour is prescribed."
+    },
+    {
+      "unit": "U4-059",
+      "disposition": "redesign",
+      "purpose": "Locate an inspected identity's current or Home cells in the linked geometry.",
+      "reason": "F-FIND and F-RELATE need comparison of current and intended places; solving-workflow section 4.3 separates explicit camera motion from assigning solving roles.",
+      "flows": [
+        "F-FIND",
+        "F-RELATE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U5-064",
+        "U5-065",
+        "U6-018"
+      ],
+      "requirements": [
+        "E-02: Load grips and engine context asynchronously during centering; delayed or failed lookups must keep the UI responsive and report a recoverable error instead of exiting.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Use the inspected identity's exact current/Home cell data with a declared choice when it occupies multiple cells.",
+        "Keep the linked views on one context and revision; centering must not change target, buffers, Grip frame or physical key meanings."
+      ]
+    },
+    {
+      "unit": "U4-060",
+      "disposition": "redesign",
+      "purpose": "Clear temporary inspection annotations without changing the solve.",
+      "reason": "F-NAVIGATE and F-FIND need reversible inspection; solving-workflow section 4.3 distinguishes inspection from target, Grip and camera actions.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U1-045"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Remove only the declared inspection annotation, preserving mechanical state, target, tracked roles, buffers and protection.",
+        "Show an unambiguous no-inspection state and prevent stale replies from restoring a cleared annotation."
+      ]
+    },
+    {
+      "unit": "U4-061",
+      "disposition": "redesign",
+      "purpose": "Deliberately choose and execute legal physical turns from the interactive geometry.",
+      "reason": "F-COMPOSE and F-EXECUTE retain physical input in solving-workflow section 4.1; charter section 4 requires the command layer rather than an MPUlt scratch state to own execution.",
+      "flows": [
+        "F-COMPOSE",
+        "F-EXECUTE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-061",
+        "U3-053",
+        "U5-011",
+        "U6-013",
+        "U6-015"
+      ],
+      "requirements": [
+        "E-01: Device loss or an aborted click must never leave state publication held; release temporary holds on every failure path and recover the authoritative committed state without repeating a turn.",
+        "X-02: Keep checkpoint blob scans out of commit, undo and redo status refreshes; use lightweight metadata and check latency as automatic checkpoints accumulate.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Retain all 259,800 labelled slots and all 1,200 legal generators; presentation changes must never change mechanics or relabel pieces.",
+        "Invalidate execution permission after any state, workspace, protection, role, target or macro revision changes; recheck revisions, the full-state hash and protected objects before commit.",
+        "Separate verified picking, explicit Grip/frame choice and Twist; route the resolved legal turn through the command layer and authoritative journal.",
+        "Draft turns append to the selected phase without changing committed state; a live turn is its own complete protected operation and cannot borrow a future cleanup.",
+        "Block hidden and reference-only hits, held-key repeats, stale pre-state and ambiguous outcome retries; renderer code must not commit mechanics.",
+        "Prove publication recovery and one durable outcome with an actual Windows device-loss/input fixture for the selected 1.0 renderer."
+      ]
+    },
+    {
+      "unit": "U4-062",
+      "disposition": "redesign",
+      "purpose": "Orient, center and scale the geometric view to understand relevant places.",
+      "reason": "F-NAVIGATE and F-RELATE need controllable cameras; solving-workflow section 4.3 and charter section 5 M2 keep camera actions distinct from puzzle turns.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-RELATE",
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U3-135",
+        "U3-136",
+        "U3-138",
+        "U3-139",
+        "U6-017",
+        "U6-018",
+        "U6-021"
+      ],
+      "requirements": [
+        "E-01: Device loss or cancellation during centering or camera gestures must release any publication hold, recover drawing and leave the authoritative state and input gates usable.",
+        "Retain all 259,800 labelled slots and all 1,200 legal generators; presentation changes must never change mechanics or relabel pieces.",
+        "Retain deliberate three- and four-dimensional orientation, roll/slide, perspective and distance control through view-only commands, with the projection basis recorded.",
+        "Separate drag navigation from clicks and turns; camera changes must not assign a Grip, retarget work or silently remap keys.",
+        "Use exact interactive picking after camera/detail changes and verify device-loss recovery on the actual Windows renderer."
+      ],
+      "notes": "The inventories infer several inherited camera mappings from the help text and forwarding callbacks; they do not establish the supplied binary's entire gesture catalog. 1.0 gestures and renderer behaviour still require design and Windows evidence."
+    },
+    {
+      "unit": "U4-063",
+      "disposition": "redesign",
+      "purpose": "Prevent input paths from bypassing authoritative command and protection checks.",
+      "reason": "F-EXECUTE and F-NAVIGATE need one safe input path; charter section 4 and the command table prohibit a second route around command gates.",
+      "flows": [
+        "F-EXECUTE",
+        "F-NAVIGATE",
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U3-150"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Remove dependence on inherited MPUlt mutation callbacks; every state-changing gesture or shortcut must use current command availability and protection.",
+        "Use focus/context ownership for editor and view input rather than retaining a blanket legacy function-key blacklist.",
+        "Keep keyboard discovery and every surviving command reachable, including ordinary menu/palette access and safe close/cancel actions."
+      ]
+    },
+    {
+      "unit": "U4-064",
+      "disposition": "redesign",
+      "purpose": "Edit and undo local text without accidentally invoking puzzle operations.",
+      "reason": "F-COMPOSE and F-NAVIGATE need reliable editor ownership; solving-workflow section 4.1 separates draft work from committed state and the command table defines an editor context.",
+      "flows": [
+        "F-COMPOSE",
+        "F-NAVIGATE",
+        "F-MACRO"
+      ],
+      "same_purpose_as": [
+        "U5-036"
+      ],
+      "requirements": [
+        "Route text edit, selection, clipboard and text undo/redo to the focused editor; do not dispatch those keys as puzzle undo, redo or execution.",
+        "Keep editor history distinct from journal history and provide an explicit route back to command input.",
+        "Preserve unfinished text and drafts across unrelated refreshes, cancellation and focus changes; do not inherit the old Ctrl+Shift+Z-as-text-undo quirk."
+      ]
+    },
+    {
+      "unit": "U4-065",
+      "disposition": "redesign",
+      "purpose": "Locate the active piece, destination and buffers in the whole polytope.",
+      "reason": "F-RELATE is the Global question in solving-workflow section 4; charter section 5 D8 and the owner's design decision section 6 replace the auxiliary overview with a linked principal view.",
+      "flows": [
+        "F-RELATE",
+        "F-FIND",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U3-021",
+        "U5-039",
+        "U6-017"
+      ],
+      "requirements": [
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Use actual full-model geometry and exact canonical IDs with the projection basis recorded in the theory book.",
+        "Draw target, Current, fixed buffers and changing occupants using the shared encoding, with effects and protection conflicts visible beyond the focus filter.",
+        "Show exact status on the same revision as Local; cell counts may overlap and must not be presented as a disjoint puzzle-completion total."
+      ]
+    },
+    {
+      "unit": "U4-066",
+      "disposition": "redesign",
+      "purpose": "Compare the active piece and its intended local arrangement in a common reference.",
+      "reason": "F-FIND is the Local question in solving-workflow sections 4 and 6; charter section 5 D8 and the owner's design decision section 6 replace a cell-neighborhood window with the linked Local purpose.",
+      "flows": [
+        "F-FIND",
+        "F-RELATE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U3-019",
+        "U5-037",
+        "U6-017"
+      ],
+      "requirements": [
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Compare current and target frames with fixed anchors for target, piece and buffers; show unknown references as unknown.",
+        "Base local geometry and any neighborhood radius on exact full-model topology, never an alternate mechanical model.",
+        "Keep selection, origin and hover distinct, and preserve a pinned local reference across navigation without silently reassigning solving roles."
+      ]
+    },
+    {
+      "unit": "U4-067",
+      "disposition": "redesign",
+      "purpose": "Recover an accessible arrangement of the geometric workspace after layout or display changes.",
+      "reason": "F-NAVIGATE needs recoverable presentation; charter section 5 D5, anti-goal 11 and the owner's design decision section 6 require both views to remain usable across DPI and window changes.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U3-010",
+        "U6-042"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Restore accessible working regions after display, DPI or work-area changes without resetting cameras, local origin, drafts or solving context.",
+        "Keep a keyboard recovery route and avoid stranded off-screen controls; the retained host's stacked auxiliary-window positions are not a 1.0 layout contract."
+      ]
+    },
+    {
+      "unit": "U4-068",
+      "disposition": "redesign",
+      "purpose": "Keep linked geometric work accessible as the workspace size and display configuration change.",
+      "reason": "F-FIND and F-RELATE need readable linked views; charter section 5 D5 and D8 and the owner's design decision section 6 require a new responsive host with both views visible.",
+      "flows": [
+        "F-FIND",
+        "F-RELATE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U3-130",
+        "U5-043",
+        "U6-017",
+        "U6-042"
+      ],
+      "requirements": [
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Preserve camera, pinned origin, selection and revision through layout adaptation without maintaining a third puzzle viewport.",
+        "Prevent off-screen regions after DPI/display changes and avoid background redraw work for hidden optional inspection content.",
+        "Do not carry the old window-versus-tab thresholds or independent close behaviour into the 1.0 view contract."
+      ]
+    },
+    {
+      "unit": "U4-069",
+      "disposition": "split",
+      "purpose": "Navigate linked geometry, inspect cell context and control the local reference while retiring separate-view dismissal.",
+      "reason": "The correspondence joins navigation, status inspection, neighborhood context and closing a view; charter section 5 D8 and the owner's design decision section 6 retain the first three but require Global and Local to stay visible.",
+      "same_purpose_as": [
+        "U3-134",
+        "U3-135",
+        "U3-136",
+        "U3-137",
+        "U3-138",
+        "U3-139",
+        "U3-132",
+        "U5-043",
+        "U5-065",
+        "U6-017",
+        "U6-018"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "claude:S4-74",
+            "claude:S4-76",
+            "claude:S4-77",
+            "codex:S4-98",
+            "codex:S4-99",
+            "codex:S4-100",
+            "codex:S4-102"
+          ],
+          "disposition": "redesign",
+          "purpose": "Orient linked views and explicitly bring a selected cell into geometric focus.",
+          "reason": "F-NAVIGATE and F-RELATE need deliberate camera control; solving-workflow section 4.3 separates navigation, selection and camera centering from turns.",
+          "flows": [
+            "F-NAVIGATE",
+            "F-RELATE",
+            "F-FIND"
+          ],
+          "requirements": [
+            "E-02: Load grips and engine context asynchronously during centering; delayed or failed lookups must keep the UI responsive and report a recoverable error instead of exiting.",
+            "E-03: Refresh hover context and counts when state, buffers, selection or filter revisions change even if the hovered cell is unchanged.",
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+            "Keep camera reset/rotation/zoom view-only, distinguish drags from selection, and make centering an explicit action.",
+            "Retain fixed local references and solving roles while navigating; physical key meanings must not change silently."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S4-76",
+            "claude:S4-79",
+            "codex:S4-101"
+          ],
+          "disposition": "redesign",
+          "purpose": "Read a cell's exact work, buffer and selection context without changing the solve.",
+          "reason": "F-FIND and F-CHECK need reliable inspection; charter section 5 M3 and the owner's design decision section 2 separate class, identity, role and status.",
+          "flows": [
+            "F-FIND",
+            "F-CHECK",
+            "F-RELATE"
+          ],
+          "requirements": [
+            "E-03: Invalidate cell hover details on state, buffer, selection and filter changes, not only a new hover cell; prove that same-cell details show fresh counts and roles.",
+            "Hover only inspects and emits no target, Grip, camera or turn command; explicit cell selection remains separate.",
+            "Distinguish selected, hovered, origin, buffer and piece markers, and state that physical-position cell counts may overlap.",
+            "Show exact IDs and evidence states on the shared current revision; missing geometry must be an explicit unavailable state."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S4-74",
+            "codex:S4-103",
+            "codex:S4-104"
+          ],
+          "disposition": "redesign",
+          "purpose": "Choose whether local structural context follows selection or retains a fixed origin and neighborhood.",
+          "reason": "F-FIND and F-NAVIGATE need stable comparison context; solving-workflow section 4.3 and the owner's design decision section 6 preserve fixed references alongside linked selection.",
+          "flows": [
+            "F-FIND",
+            "F-NAVIGATE",
+            "F-RELATE"
+          ],
+          "requirements": [
+            "E-02: Load grips and engine context asynchronously during centering; delayed or failed lookups must keep the UI responsive and report a recoverable error instead of exiting.",
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+            "Separate local origin, selected cell and solving target; pin/follow and radius changes affect only presentation.",
+            "Build neighborhoods from exact shared-face adjacency and retain the pinned origin across unrelated selections and layout changes.",
+            "If centering is available in these shared controls, it must not implicitly assign a Grip or change a physical key mapping."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S4-74",
+            "codex:S4-96"
+          ],
+          "disposition": "delete",
+          "purpose": "Hide either standalone Global or Local auxiliary view while preserving it for reopening.",
+          "reason": "The retained host's separate-view dismissal serves a layout 1.0 does not inherit; the owner's design decision section 6 and charter section 5 D8 require Global and Local visible together.",
+          "flows": [],
+          "requirements": []
+        }
+      ],
+      "notes": "Coarse claude:S4-74 and :76 cover multiple toolbar or mouse actions and therefore appear in the relevant parts. Closing optional inspection content elsewhere can survive; this delete proposal is specifically the Close view action that hides one of the two required views (native/NativeAuxiliaryViews.cs:108), and awaits owner signature."
+    },
+    {
+      "unit": "U4-070",
+      "disposition": "redesign",
+      "purpose": "Select a structural cell and explicitly locate it in the linked geometry.",
+      "reason": "F-RELATE and F-FIND need shared geometric focus; solving-workflow section 4.3 keeps selecting a place separate from moving the camera.",
+      "flows": [
+        "F-RELATE",
+        "F-FIND",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U1-037",
+        "U5-054",
+        "U5-065",
+        "U6-018"
+      ],
+      "requirements": [
+        "E-02: Load grips and engine context asynchronously during centering; delayed or failed lookups must keep the UI responsive and report a recoverable error instead of exiting.",
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Resolve exact canonical IDs and synchronize selection across Global and Local using one revision.",
+        "Selection alone must not center, assign a Grip or turn; a separate explicit centering invocation preserves target, buffers and protection.",
+        "Outdated focus or lookup replies must not replace a newer selection or restore a stale review."
+      ]
+    },
+    {
+      "unit": "U4-071",
+      "disposition": "redesign",
+      "purpose": "Navigate and activate focused view controls through the keyboard.",
+      "reason": "F-NAVIGATE and charter section 5 E5 require keyboard reachability; the command table assigns focus contexts rather than letting view keys invoke unrelated puzzle commands.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-044"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Keep normal focus navigation, selector editing and deliberate button activation in the focused view context.",
+        "Do not let a view's Enter, Space or navigation key fall through to puzzle execution; any committing activation must suppress held-key repeat.",
+        "Retain access to cancellation and workspace tools without copying the compact drawer's legacy key blacklist."
+      ]
+    },
+    {
+      "unit": "U4-072",
+      "disposition": "split",
+      "purpose": "Find an exact structural origin and compare two cells by their shared-face relation.",
+      "reason": "The correspondence joins choosing an origin with measuring a relation; F-RELATE retains both while charter section 5 M2 and the owner's design decision section 2 require exact structure and identity.",
+      "same_purpose_as": [
+        "U1-012",
+        "U3-008",
+        "U6-018"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "codex:S4-79",
+            "claude:S4-80"
+          ],
+          "disposition": "redesign",
+          "purpose": "Choose an exact cell as the origin for structural navigation.",
+          "reason": "F-RELATE and F-NAVIGATE need a stable structural reference; solving-workflow section 4.3 separates navigation from camera motion and applying a filter.",
+          "flows": [
+            "F-RELATE",
+            "F-NAVIGATE"
+          ],
+          "requirements": [
+            "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+            "Resolve canonical cell IDs rather than identify cells by repeated class colours; retain one shared origin/context.",
+            "Navigating a graph or listed neighbor must not automatically center, apply a filter, assign a target/Grip or execute a turn."
+          ]
+        },
+        {
+          "rows": [
+            "codex:S4-83",
+            "claude:S4-80"
+          ],
+          "disposition": "redesign",
+          "purpose": "Compare two exact cells by shared-face adjacency and shortest adjacency distance.",
+          "reason": "F-RELATE answers how two places relate; solving-workflow section 4 explicitly treats adjacency routes as navigation rather than move sequences.",
+          "flows": [
+            "F-RELATE",
+            "F-LEARN"
+          ],
+          "requirements": [
+            "Compute exact shared-face distances from the full canonical topology, retaining the chosen origin and comparison cell.",
+            "State the adjacency metric and its mathematical basis in the UI-scoped theory book.",
+            "Do not present an adjacency route as a legal move witness or generated solving macro; class colour alone cannot identify either endpoint."
+          ]
+        }
+      ],
+      "notes": "claude:S4-80 contains both Find color and Compare; the fine rows identify the two purposes. Legacy C1..C600 identifiers remain exact cell references, while 1.0 class colour is not identity."
+    },
+    {
+      "unit": "U4-073",
+      "disposition": "redesign",
+      "purpose": "Explore local shared-face adjacency by inspecting and selecting exact cell nodes.",
+      "reason": "F-RELATE and F-LEARN retain structural exploration; charter section 5 S3 and M2 and the owner's design decision section 2 require a defined graphic grammar.",
+      "flows": [
+        "F-RELATE",
+        "F-LEARN",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U1-012",
+        "U3-008",
+        "U6-018"
+      ],
+      "requirements": [
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Distinguish a schematic adjacency graph from a geometric projection, and compute its one/two-hop scope from exact canonical topology.",
+        "Separate keyboard focus, hover and explicit node activation; hover only inspects and navigation must not apply a filter or center the camera implicitly.",
+        "Use exact cell IDs, role/status glyphs and class colours consistently; supply the mathematical meaning and keyboard route without prescribing legacy keys."
+      ]
+    },
+    {
+      "unit": "U4-074",
+      "disposition": "redesign",
+      "purpose": "Inspect exact cell shells around a chosen structural origin and use them to define work scope.",
+      "reason": "F-RELATE and F-NAVIGATE need geometric context and filters; solving-workflow section 4.3 and charter section 5 M2 retain exact structure without changing mechanics.",
+      "flows": [
+        "F-RELATE",
+        "F-NAVIGATE",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U1-012",
+        "U3-008"
+      ],
+      "requirements": [
+        "Define each layer by exact shared-face distance from its canonical origin and report exact counts and cell IDs.",
+        "Distinguish disjoint cell shells from potentially overlapping whole-piece selections, and distinguish current-position layers from Home-identity layers.",
+        "Navigating a listed cell and preparing a layer predicate must not implicitly apply a filter, move the camera or change solving roles.",
+        "Keep the layer meaning in the UI-scoped theory book and maintain the common context/revision."
+      ]
+    },
+    {
+      "unit": "U4-075",
+      "disposition": "redesign",
+      "purpose": "Inspect which canonical cells meet at a chosen vertex.",
+      "reason": "F-RELATE and F-LEARN retain structural understanding; charter section 5 S3 and M2 require exact incidence rather than a colour-only picture.",
+      "flows": [
+        "F-RELATE",
+        "F-LEARN",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U1-012",
+        "U3-008"
+      ],
+      "requirements": [
+        "Resolve vertex IDs and cell-vertex incidence from the immutable full model, including the four vertices of a cell and twenty incident cells at a vertex.",
+        "Retain the cell-layer origin while inspecting a vertex; explicit cell navigation must not move the camera or assign a solving target by itself.",
+        "Use exact IDs and reviewed term graphics with the incidence basis recorded in the theory book."
+      ]
+    },
+    {
+      "unit": "U4-076",
+      "disposition": "redesign",
+      "purpose": "Build a structural work predicate and choose how it combines with the existing filter.",
+      "reason": "F-NAVIGATE retains scope preparation; solving-workflow section 4.3 separates whole-piece work filters, frozen identities and current positions.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U3-009",
+        "U5-048",
+        "U6-022"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Keep colour-class, exact cell, adjacency, current layer and Home-layer semantics explicit, avoiding colour-as-identity ambiguity.",
+        "Support declared replace/intersect/union composition without losing the styles of existing rules.",
+        "Changing origin, predicate or composition invalidates counts and apply permission; preparation must not automatically alter the active filter or mechanics."
+      ]
+    },
+    {
+      "unit": "U4-077",
+      "disposition": "redesign",
+      "purpose": "Review the exact scope and complete rules of a proposed structural filter.",
+      "reason": "F-CHECK and F-NAVIGATE need current filter evidence; solving-workflow section 4.3 distinguishes attention scope from the full model.",
+      "flows": [
+        "F-CHECK",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U1-042",
+        "U3-009",
+        "U5-050",
+        "U6-022"
+      ],
+      "requirements": [
+        "Compute whole-piece/sticker matches and added/removed membership from the same complete composed rules that application will use.",
+        "Bind results to request identity, state revision/hash and the original filter; reject out-of-order or obsolete responses and invalidate apply permission after edits.",
+        "Make full rules and styling inspectable, keep draft and applied states distinct, and count asynchronously without changing mechanics."
+      ]
+    },
+    {
+      "unit": "U4-078",
+      "disposition": "redesign",
+      "purpose": "Apply a structural filter only when its reviewed scope is still current.",
+      "reason": "F-NAVIGATE uses a work filter safely; the command table and solving-workflow section 4.3 preserve explicit application and independent mechanical scope.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U1-044",
+        "U3-009",
+        "U5-048",
+        "U6-022"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Recheck the reviewed rules, original filter and state context/hash before publication; stale review requires a new preview.",
+        "Apply visibility and interaction preferences coherently without changing labels, protection or the 1,200 legal generators.",
+        "Retain noninteractive reference display and mandatory protection/operation-effect visibility outside the applied work filter."
+      ]
+    },
+    {
+      "unit": "U4-079",
+      "disposition": "redesign",
+      "purpose": "Use a structural predicate as editable input for a work filter.",
+      "reason": "F-COMPOSE and F-NAVIGATE retain explicit preparation; solving-workflow section 4.3 keeps draft scope edits separate from applied scope.",
+      "flows": [
+        "F-COMPOSE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U5-060",
+        "U6-022"
+      ],
+      "requirements": [
+        "Transfer the exact generated expression into draft filter input on an explicit action without applying it.",
+        "Preserve unapplied text and the current origin/context, and invalidate any count review tied to the previous expression.",
+        "Use the shared filter grammar and expose a keyboard route; transferring a predicate must not assign a target or generate a solving macro."
+      ]
+    },
+    {
+      "unit": "U4-080",
+      "disposition": "redesign",
+      "purpose": "Understand a startup, connection or operation failure and the safe next action.",
+      "reason": "F-SESSION and F-PLATFORM need recoverable failures; charter section 5 E6 and the command table require typed errors and separate commit-versus-refresh outcomes.",
+      "flows": [
+        "F-SESSION",
+        "F-PLATFORM",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U2-016",
+        "U6-047"
+      ],
+      "requirements": [
+        "State what happened, why and how to continue, distinguishing input, protection, stale, cancelled, unavailable, consistency and unknown-outcome failures.",
+        "An accepted operation with a failed refresh must retain its durable receipt and say the display is stale rather than invite a repeat.",
+        "Recover device loss or connection failure without automatically executing work; fatal handling must preserve recovery and pending drafts where possible.",
+        "Keep local diagnostics bounded and redacted; do not expose credentials, private paths or raw personal diagnostics in public outputs."
+      ]
+    },
+    {
+      "unit": "U4-081",
+      "disposition": "redesign",
+      "purpose": "Read reliable connection, job, committed-state and work-scope status while solving.",
+      "reason": "F-SESSION, F-CHECK and F-EXECUTE need trustworthy feedback; charter section 5 D2 and M3 and the owner's design decision section 6 embed status in the linked views.",
+      "flows": [
+        "F-SESSION",
+        "F-CHECK",
+        "F-EXECUTE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U1-011",
+        "U1-025",
+        "U3-004",
+        "U3-006",
+        "U6-048"
+      ],
+      "requirements": [
+        "E-04: Apply metadata-only snapshots to changed view-model dependencies without scanning or updating all 259,800 slots when labels/styles are unchanged; measure metadata and full-state refresh separately on Windows.",
+        "Global and Local must remain visible together, sharing one context and revision; opening an inspection must not create a third view.",
+        "Keep connection, busy, current journal head, pending review, display-stale status and exact visible/interactive counts distinct.",
+        "Retain the previous committed geometry during analysis, keep unapplied filter edits visible, and report exact completion only from full-model checks.",
+        "Key updates by relevant revisions, and never conflate evidence, scores, progress or permission."
+      ]
+    },
+    {
+      "unit": "U4-082",
+      "disposition": "delete",
+      "purpose": "Run the retained WinForms host's startup and layout regression mode.",
+      "reason": "This explicit mode validates 0.4 WinForms infrastructure that charter section 4 and section 5 anti-goal 1 exclude from the 1.0 runtime; no 1.0 user flow requires that mode.",
+      "flows": [],
+      "same_purpose_as": [],
+      "requirements": [],
+      "notes": "Proposal to omit the legacy mode from 1.0, not to erase archived source fixtures or verified evidence. 1.0 still needs its own isolated startup/layout checks; normal application startup must never run regression fixtures."
+    },
+    {
+      "unit": "U4-083",
+      "disposition": "delete",
+      "purpose": "Run actual MPUlt and Managed DirectX renderer/journal regressions through the retained host.",
+      "reason": "The mode exercises the runtime and bridge that charter section 4 replaces, so it serves only retained 0.4 infrastructure rather than a 1.0 flow.",
+      "flows": [],
+      "same_purpose_as": [],
+      "requirements": [],
+      "notes": "Keep reusable fixture knowledge and matching-build evidence as source records. This proposal does not remove the 1.0 differential oracle, full-model correctness checks or actual Windows testing of the selected renderer, and claims no execution of the old mode."
+    },
+    {
+      "unit": "U4-084",
+      "disposition": "delete",
+      "purpose": "Measure camera, UI and scramble performance of the retained MPUlt/Managed DirectX host.",
+      "reason": "Charter sections 2 and 4 require evidence for the selected new renderer, and the briefing ends 0.4 performance work; this legacy benchmark mode cannot establish a 1.0 performance claim.",
+      "flows": [],
+      "same_purpose_as": [],
+      "requirements": [],
+      "notes": "Reusable measurement methods and captured matching-build evidence remain inputs; this proposal omits the old benchmark command from 1.0. The new full-detail renderer gate and interaction measurements remain mandatory, with no native performance result claimed here."
+    },
+    {
+      "unit": "U4-085",
+      "disposition": "redesign",
+      "purpose": "Collect a bounded local diagnostic record to help investigate a failure.",
+      "reason": "F-PLATFORM and F-SESSION need traceable, recoverable failures; charter section 5 E6 and E7 and AGENTS.md's evidence boundary preserve diagnostics while replacing legacy directory scanning.",
+      "flows": [
+        "F-PLATFORM",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Collect only explicitly enumerated redacted diagnostic fields from the current build, with input/build identity and clear evidence status; old version-directory names must not determine coverage.",
+        "Bound collection work and artifact size, exclude databases, user puzzle data, tokens, credentials, geometry profiles and private paths, and preserve raw diagnostics locally.",
+        "Publish the requested local artifact atomically and make collection failure recoverable.",
+        "Collection never uploads or publishes data; external sharing requires its own owner authorization and review."
+      ]
+    },
+    {
+      "unit": "U4-086",
+      "disposition": "delete",
+      "purpose": "Check the reflection-member surface of a supplied MPUlt PE/CLI assembly.",
+      "reason": "The required assembly types and members serve only the retained MPUlt host, which charter section 4 and section 5 anti-goal 1 exclude from 1.0.",
+      "flows": [],
+      "same_purpose_as": [],
+      "requirements": [],
+      "notes": "Metadata inspection is not mathematical model verification, geometry certification or actual Windows/DirectX evidence. The surviving model/renderer identity purpose is recorded separately in U4-002."
+    },
+    {
+      "unit": "U4-087",
+      "disposition": "delete",
+      "purpose": "Apply a pinned text patch to an upstream MPUlt renderer checkout.",
+      "reason": "This optional source patch exists only for the retained renderer that charter section 4 replaces; no 1.0 solving or platform flow needs that purpose.",
+      "flows": [],
+      "same_purpose_as": [],
+      "requirements": [],
+      "notes": "This is a feature-disposition proposal, not an instruction to edit or remove upstream source. Preserve Andrey Astrelin's primary MPUlt credit and upstream notices in retained source and evidence."
+    },
+    {
+      "unit": "U4-088",
+      "disposition": "redesign",
+      "purpose": "Read local launch and diagnostic usage before invoking a tool.",
+      "reason": "F-PLATFORM needs usable entry and diagnostics, and F-LEARN needs accurate guidance; charter section 5 E6 and E7 retain the purpose while the 0.4 command-line surfaces change.",
+      "flows": [
+        "F-PLATFORM",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U1-002"
+      ],
+      "requirements": [
+        "Describe only supported 1.0 launch, session and local diagnostic operations with declared scope and prerequisites; remove help for legacy-only commands when their deletion is signed.",
+        "Help must be available before opening a database, starting an engine or modifying files, and must not trigger the operation it explains.",
+        "Keep wording reviewed and English, and distinguish source/fixture guidance from actual Windows or performance evidence."
+      ],
+      "notes": "All inventory entry points share the purpose of read-only usage guidance. The obsolete inspector/patcher flags are not a separate retained runtime contract, so this single-purpose unit is not split."
+    },
+    {
+      "unit": "U4-089",
+      "disposition": "redesign",
+      "purpose": "Discover and reach the available commands from the current work context.",
+      "reason": "F-NAVIGATE and F-LEARN need discoverability; charter section 4's single command table and section 5 E5 replace the old native menu organization.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U3-001",
+        "U5-002",
+        "U6-002"
+      ],
+      "requirements": [
+        "Use one command ID and the same permission, busy and context gates for every key, pointer and menu invocation.",
+        "Expose every surviving command through the palette and a keyboard route, with engine-derived availability and an explanation when unavailable.",
+        "Use reviewed short labels and shared glossary terms, preserving command meanings across themes and soft key disclosure.",
+        "Do not copy the 0.4 menu groups or introduce a second invocation path around preview, protection or busy gates."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+ "format": "C600-DISPOSITION-FLOWS-draft",
+ "status": "provisional: derived from solving-workflow.md and charter section 5 until the owner's core-flow storyboards replace or confirm it",
+ "flows": [
+  {"id": "F-SESSION", "title": "Open, resume, save and leave a session", "source": "solving-workflow.md 4.2 (Interruption); charter 5 core flows (open a session and read its state)"},
+  {"id": "F-TARGET", "title": "Choose the target: residuals, locked Next, explained candidates", "source": "solving-workflow.md 3.3, 3.4 (residuals), 4 (Choose target)"},
+  {"id": "F-FIND", "title": "Find the piece and the buffers; Local view", "source": "solving-workflow.md 4 (Find piece and buffers), 6 (Local)"},
+  {"id": "F-RELATE", "title": "Relate two places on the whole polytope; Global view", "source": "solving-workflow.md 4 (Relate the two places), 6 (Global)"},
+  {"id": "F-MACRO", "title": "Choose, enter or record a macro; macro base by orbit and use", "source": "solving-workflow.md 4 (Choose or enter a macro), 6"},
+  {"id": "F-COMPOSE", "title": "Bind roles, compose Prepare / Macro / Cleanup, setup search, draft and live turns", "source": "solving-workflow.md 4 (Bind roles, Prepare), 4.1, 7 (setup search)"},
+  {"id": "F-CHECK", "title": "Check and preview the complete effect and protection (Net or Strict)", "source": "solving-workflow.md 2 (Boundaries), 4 (Check), 4.1"},
+  {"id": "F-EXECUTE", "title": "Execute explicitly, review the result, undo and redo", "source": "solving-workflow.md 4 (Execute and review)"},
+  {"id": "F-REUSE", "title": "Save and reuse work sheets and macros with a fresh review", "source": "solving-workflow.md 4 (Save and reuse), 4.1 (Reuse never reuses a review)"},
+  {"id": "F-PROTECT", "title": "Protect orbits, positions, identities and blocks; checkpoints", "source": "solving-workflow.md 2, 3.3; charter 5 core flows (protect solved orbits, save a checkpoint and undo)"},
+  {"id": "F-ENDGAME", "title": "Orientation, buffers A and B, residual correction, exact completion", "source": "solving-workflow.md 3.4"},
+  {"id": "F-NAVIGATE", "title": "Keyboard, filters, work sets, camera and view control", "source": "solving-workflow.md 4.3"},
+  {"id": "F-LEARN", "title": "Learn the skill: practice copy, fixtures, competence checks, theory notes, rewards", "source": "charter 5 (learning and reward); owner design decisions 2 October 2026"},
+  {"id": "F-MIGRATE", "title": "Bring 0.4 work into 1.0 (one-way import of a locked database copy)", "source": "owner-decisions-2026-10-02-migration.md (path B)"},
+  {"id": "F-PLATFORM", "title": "Platform the flows rely on: engine process, journal, model identity, build, packaging, diagnostics", "source": "charter 4 (six layers); AGENTS.md (persistence and process ownership)"}
+ ]
+}

@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import os
+import posixpath
 import stat
 import subprocess
 import sys
@@ -75,15 +76,25 @@ def modified(root: Path) -> set:
     return {e[3:].decode("utf-8") for e in out.split(b"\0") if e[1:2] == b"M"}
 
 
+def _inside(root: Path, path: str) -> str:
+    """Where root/path is when nothing below the checkout root is a link.
+
+    `root` is the physical root that `main` resolved once, before any check: an 8.3 short
+    name (C:\\Users\\RUNNER~1) or a link above the checkout is not taken for a link inside
+    it, and an alias retargeted during the run cannot move the checks to another tree.
+    """
+    return os.path.normcase(os.path.join(str(root), *[part for part in path.split("/") if part]))
+
+
 def plain_file(root: Path, path: str) -> bool:
-    """A regular file whose path passes through no symlink or junction."""
+    """A regular file whose path below the checkout root passes through no symlink or junction."""
     p = root / path
     try:
         if not stat.S_ISREG(os.lstat(p).st_mode):
             return False
     except OSError:
         return False
-    return os.path.normcase(os.path.realpath(p)) == os.path.normcase(os.path.abspath(p))
+    return os.path.normcase(os.path.realpath(p)) == _inside(root, path)
 
 
 def converted(raw: bytes, blob: bytes) -> bool:
@@ -158,7 +169,7 @@ def restore(root: Path, backups: Path, path: str, expected: bytes, blob: bytes, 
     except OSError as exc:
         return f"could not move it to the backup directory ({type(exc).__name__})"
     try:
-        if os.path.normcase(os.path.realpath(target.parent)) != os.path.normcase(os.path.abspath(target.parent)):
+        if os.path.normcase(os.path.realpath(target.parent)) != _inside(root, posixpath.dirname(path)):
             reason = "its directory changed while the repair ran"
         elif kept.read_bytes() != expected or _executable(kept) != executable:
             reason = "changed while the repair ran"
@@ -194,6 +205,8 @@ def main(argv=None, root: Path = ROOT) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--fix", action="store_true", help="restore files that differ from their blob only by line-ending conversion")
     args = parser.parse_args(argv)
+    # Resolve the root once; every check and operation below uses this physical path.
+    root = Path(os.path.realpath(root))
     entries, unmerged = index_entries(root)
     if unmerged:
         for path in unmerged:
