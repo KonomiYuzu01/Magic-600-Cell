@@ -79,10 +79,11 @@ def modified(root: Path) -> set:
 def _inside(root: Path, path: str) -> str:
     """Where root/path is when nothing below the checkout root is a link.
 
-    The root itself is resolved first, so a root reached through an 8.3 short name
-    (C:\\Users\\RUNNER~1) or a link above the checkout is not taken for a link inside it.
+    `root` is the physical root that `main` resolved once, before any check: an 8.3 short
+    name (C:\\Users\\RUNNER~1) or a link above the checkout is not taken for a link inside
+    it, and an alias retargeted during the run cannot move the checks to another tree.
     """
-    return os.path.normcase(os.path.join(os.path.realpath(root), *[part for part in path.split("/") if part]))
+    return os.path.normcase(os.path.join(str(root), *[part for part in path.split("/") if part]))
 
 
 def plain_file(root: Path, path: str) -> bool:
@@ -204,6 +205,8 @@ def main(argv=None, root: Path = ROOT) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--fix", action="store_true", help="restore files that differ from their blob only by line-ending conversion")
     args = parser.parse_args(argv)
+    # Resolve the root once; every check and operation below uses this physical path.
+    root = Path(os.path.realpath(root))
     entries, unmerged = index_entries(root)
     if unmerged:
         for path in unmerged:
