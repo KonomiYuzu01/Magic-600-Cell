@@ -1,15 +1,18 @@
-"""Runs the Taste Lab JavaScript tests (core and geometry) and checks the geometry fixture."""
+"""Runs the Taste Lab JavaScript tests (core, geometry, references), checks the geometry fixture and the references server."""
 from __future__ import annotations
 
+import http.client
+import importlib.util
 import shutil
 import subprocess
 import sys
+import threading
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 NODE = shutil.which("node")
-SUITES = ("tools/tastelab/core/tests", "tools/tastelab/page/tests")
+SUITES = ("tools/tastelab/core/tests", "tools/tastelab/page/tests", "tools/tastelab/refs/tests")
 
 
 @unittest.skipIf(NODE is None, "Node.js is not installed; the Taste Lab JavaScript tests were not run")
@@ -27,12 +30,76 @@ class TasteLabTests(unittest.TestCase):
     def test_geometry(self):
         self.run_suite(SUITES[1])
 
+    def test_references(self):
+        self.run_suite(SUITES[2])
+
 
 class GeometryFixtureTests(unittest.TestCase):
     def test_fixture_matches_its_builder(self):
         result = subprocess.run([sys.executable, "tools/tastelab/sim/geometry_fixture.py", "--check"],
                                 cwd=ROOT, capture_output=True, text=True, timeout=600)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+def load_serve():
+    spec = importlib.util.spec_from_file_location("tastelab_refs_serve", ROOT / "tools/tastelab/refs/serve.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class ReferencesServerTests(unittest.TestCase):
+    """The local references page server: 127.0.0.1 only, the page's own files, nothing received."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.serve = load_serve()
+        cls.server = cls.serve.make_server(0)
+        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=10)
+
+    def request(self, method: str, path: str):
+        conn = http.client.HTTPConnection("127.0.0.1", self.server.server_address[1], timeout=10)
+        try:
+            conn.request(method, path)
+            response = conn.getresponse()
+            return response.status, {k.lower(): v for k, v in response.getheaders()}, response.read()
+        finally:
+            conn.close()
+
+    def test_listens_on_loopback_only(self):
+        self.assertEqual(self.server.server_address[0], "127.0.0.1")
+
+    def test_page_and_modules(self):
+        status, headers, body = self.request("GET", "/refs/index.html")
+        self.assertEqual(status, 200)
+        self.assertTrue(headers["content-type"].startswith("text/html"))
+        self.assertIn("connect-src 'none'", headers["content-security-policy"])
+        self.assertIn(b"Taste Lab references", body)
+        for path in ("/refs/app.js", "/core/color.js", "/core/space.js"):
+            status, headers, _ = self.request("GET", path)
+            self.assertEqual(status, 200, path)
+            self.assertTrue(headers["content-type"].startswith("text/javascript"), path)
+
+    def test_root_redirects_to_the_page(self):
+        status, headers, _ = self.request("GET", "/")
+        self.assertEqual(status, 302)
+        self.assertEqual(headers["location"], "/refs/")
+
+    def test_lists_no_directory_and_stays_inside(self):
+        self.assertEqual(self.request("GET", "/core/")[0], 404)
+        for path in ("/../../AGENTS.md", "/%2e%2e/%2e%2e/AGENTS.md", "/refs/..%2f..%2f..%2fAGENTS.md"):
+            self.assertEqual(self.request("GET", path)[0], 404, path)
+
+    def test_receives_nothing(self):
+        for method in ("POST", "PUT", "DELETE"):
+            self.assertEqual(self.request(method, "/refs/index.html")[0], 501, method)
 
 
 if __name__ == "__main__":
