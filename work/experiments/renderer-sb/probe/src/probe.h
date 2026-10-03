@@ -35,9 +35,10 @@ struct Assets {
     std::vector<uint32_t> samples() const;
 };
 struct Options {
-    std::string scene="w3", runId, inject;
-    fs::path out="sb-run";
+    std::string scene="w3", runId, inject, feature="none";
+    fs::path out="sb-run", snapshot;
     double duration=192, preroll=4, turnMs=190;
+    uint64_t turnFrames=157,cycleFrames=3140;
     bool vsync=false, warp=false, debug=false, geometry=false, selftest=false;
     unsigned msaa=1;
     // run_scene.ps1 replaces the overlays placeholder with the operator's post-run confirmation.
@@ -47,9 +48,21 @@ Options options(int argc,char** argv);
 struct Turn { uint64_t index; double phase,theta; };
 int64_t turnTicks(double ms, int64_t frequency);
 Turn turnAt(int64_t now,int64_t start,int64_t duration,double angle);
+struct FrameState { uint64_t camera; Turn turn; };
+FrameState frameState(uint64_t k,uint64_t turnFrames,uint64_t cycleFrames,double angle);
+bool featureImplemented(const std::string& name);
+Json effectCheck(std::span<const uint8_t> off,std::span<const uint8_t> on);
+struct SortKey { float depth; uint32_t id; };
+Json sortCheck(std::span<const SortKey> keys,uint32_t count);
+struct EdgeMasks {
+    std::vector<uint32_t> triangles,perSticker;
+    uint32_t featureEdges=0,diagonals=0,openEdges=0,multipleEdges=0,degenerate=0,duplicates=0,nearZero=0;
+};
+EdgeMasks edgeMasks(const Assets& assets);
 struct Trace {
     uint64_t frame=0; int64_t qpc=0; uint64_t revision=0;
     bool animated=false; uint64_t turn=0; double phase=0;
+    uint64_t camera=0;
     Json json() const;
 };
 struct Upload { uint64_t frame,revision,resource; };

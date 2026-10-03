@@ -1,10 +1,9 @@
-"""Build outside the repository and run the CPU-only probe acceptance check."""
+"""Build in a disposable probe directory and run the CPU-only acceptance check."""
 from pathlib import Path
 import os
 import shutil
 import subprocess
 import sys
-import tempfile
 
 
 def run(command, repository, timeout, *, shell=False, env=None):
@@ -43,8 +42,10 @@ def ninja_commands(build, ninja):
 def main():
     source = Path(__file__).resolve().parent
     repository = source.parents[3]
-    build = Path(tempfile.gettempdir()) / f"m600-sb-probe-{os.getpid()}"
-    # Plain mkdir is deliberate: the Windows sandbox temp ACL rejects mkdtemp.
+    # Application Control can refuse unsigned executables in system temp. Keep
+    # this packet's build under its owned source directory, with fresh test data.
+    build = source / f"build-check-{os.getpid()}"
+    # Plain mkdir retains the packet directory's inherited sandbox permissions.
     build.mkdir()
     try:
         environment = os.environ.copy()
@@ -69,7 +70,7 @@ def main():
         return 1
     finally:
         # This exact directory was created above; no repository path is removed.
-        if build.resolve().parent == Path(tempfile.gettempdir()).resolve():
+        if build.resolve().parent == source:
             shutil.rmtree(build)
 
 

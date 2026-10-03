@@ -34,7 +34,8 @@ fs::path repoRoot(){return fs::path(M600_REPO_ROOT);}
 std::string buildIdentity(){
     // Hash the exact executable and every compiled shader, in this fixed order.
     std::vector<uint8_t> all;
-    for(const char* name:{"sb_probe.exe","draw_vs.dxil","draw_ps.dxil","count_vs.dxil","geometry_cs.dxil"}){
+    for(const char* name:{"sb_probe.exe","draw_vs.dxil","draw_ps.dxil","count_vs.dxil","geometry_cs.dxil","fog_ps.dxil","outline_vs.dxil","outline_ps.dxil",
+        "transparency_vs.dxil","transparency_ps.dxil","sort_keys_cs.dxil","sort_cs.dxil","sort_prefix_cs.dxil","sort_blocks_cs.dxil","sort_indices_cs.dxil","post_vs.dxil","dof_ps.dxil","ao_ps.dxil","ao_blur_ps.dxil","ao_composite_ps.dxil"}){
         auto b=bytes(exeDir()/name);all.insert(all.end(),b.begin(),b.end());
     }
     return sha256(all);
@@ -89,27 +90,57 @@ std::vector<uint32_t> Assets::samples() const {
 }
 Options options(int argc,char** argv){
     Options opt;
+    bool featureSeen=false,turnFramesSeen=false,cycleFramesSeen=false;
     for(int i=1;i<argc;++i){std::string arg=argv[i];auto next=[&](){require(i+1<argc,"missing value for "+arg);return std::string(argv[++i]);};
         auto num=[&](){std::string s=next();size_t n=0;double v=std::stod(s,&n);require(n==s.size()&&std::isfinite(v),"invalid numeric option");return v;};
+        auto frames=[&](){auto s=next();require(!s.empty()&&std::all_of(s.begin(),s.end(),[](char c){return c>='0'&&c<='9';}),"frame count must be a positive integer");size_t n=0;auto v=std::stoull(s,&n);require(n==s.size(),"invalid frame count");return uint64_t(v);};
         if(arg=="--scene")opt.scene=next();else if(arg=="--out")opt.out=fs::u8path(next());else if(arg=="--run-id")opt.runId=next();
         else if(arg=="--duration")opt.duration=num();else if(arg=="--preroll")opt.preroll=num();else if(arg=="--turn-ms")opt.turnMs=num();
         else if(arg=="--vsync")opt.vsync=true;else if(arg=="--warp")opt.warp=true;else if(arg=="--debug-layer")opt.debug=true;
         else if(arg=="--geometry-check")opt.geometry=true;else if(arg=="--selftest")opt.selftest=true;
         else if(arg=="--msaa"){auto n=num();require(n==1||n==4,"--msaa must be 1 or 4");opt.msaa=unsigned(n);}
         else if(arg=="--inject")opt.inject=next();
+        else if(arg=="--snapshot")opt.snapshot=fs::u8path(next());
+        else if(arg=="--turn-frames"){opt.turnFrames=frames();turnFramesSeen=true;}
+        else if(arg=="--cycle-frames"){opt.cycleFrames=frames();cycleFramesSeen=true;}
         else if(arg=="--declare"){auto d=next();auto eq=d.find('=');require(eq!=std::string::npos&&eq>0,"--declare expects key=value");auto v=d.substr(eq+1);opt.declared[d.substr(0,eq)]=v=="true"?Json(true):v=="false"?Json(false):Json(v);}
-        else if(arg=="--feature"){auto feature=next();require(feature=="none","--feature hook: H-06 features are not implemented; use none");}
+        else if(arg=="--feature"){auto name=next();require(name=="none"||name=="no-gaps"||name=="outlines"||name=="transparency"||name=="fog"||name=="dof"||name=="ao"||name=="msaa4","unknown feature: "+name);require(!featureSeen||name==opt.feature,"only one feature may run at once");opt.feature=name;featureSeen=true;}
         else throw std::runtime_error("unknown option: "+arg);
     }
-    require(opt.scene=="w1"||opt.scene=="w2"||opt.scene=="w3"||opt.scene=="w4","--scene must be w1, w2, w3 or w4");
+    require(opt.scene=="w1"||opt.scene=="w2"||opt.scene=="w3"||opt.scene=="w4"||opt.scene=="w3f","--scene must be w1, w2, w3, w4 or w3f");
+    require(opt.scene=="w3f"||!(turnFramesSeen||cycleFramesSeen),"--turn-frames and --cycle-frames require w3f");
+    // run.json stores both counts as JSON numbers (doubles); n <= 2^53 and n >= 2T keep both exact.
+    require(opt.turnFrames>=2&&opt.turnFrames<=UINT64_MAX/2&&opt.cycleFrames>0&&opt.cycleFrames<=(uint64_t(1)<<53)&&opt.cycleFrames%(2*opt.turnFrames)==0,"cycle-frames must be a positive multiple of 2T, at most 2^53, with T >= 2");
+    if(opt.msaa==4){require(opt.feature=="none"||opt.feature=="msaa4","--msaa 4 cannot be combined with another feature");opt.feature="msaa4";}
+    if(opt.feature=="msaa4")opt.msaa=4;
+    require(opt.feature=="none"||(!opt.geometry&&opt.inject.empty()),"features cannot be combined with --geometry-check or --inject");
     require(opt.duration>0&&opt.preroll>=0&&opt.turnMs>0&&opt.turnMs<=10000,"invalid duration, preroll or turn-ms");
     require(opt.inject.empty()||opt.inject=="corrupt-label"||opt.inject=="swap-same-colour"||opt.inject=="delay-adoption"||opt.inject=="stale-binding","unknown injected fault");
     require(opt.inject.empty()||opt.scene=="w3"||opt.scene=="w4","label injection requires W3 or W4");
+    require(featureImplemented(opt.feature),"feature "+opt.feature+" is not implemented");
     return opt;
 }
 int64_t turnTicks(double ms,int64_t frequency){auto ticks=int64_t(std::llround(ms*double(frequency)/1000));require(ticks>0,"turn-ms is below QPC resolution");return ticks;}
 Turn turnAt(int64_t now,int64_t start,int64_t duration,double angle){require(now>=start&&duration>0,"bad turn clock");int64_t dt=now-start;uint64_t t=uint64_t(dt/duration);double p=double(dt%duration)/double(duration);return {t,p,(t%2?-1:1)*angle*p*p*(3-2*p)};}
-Json Trace::json() const {return Json::Object{{"frame",frame},{"qpc",qpc},{"revision",revision},{"turn",animated?Json(turn):Json()},{"phase",animated?Json(phase):Json()}};}
+bool featureImplemented(const std::string& name){return name=="none"||name=="no-gaps"||name=="fog"||name=="msaa4"||name=="outlines"||name=="transparency"||name=="dof"||name=="ao";}
+FrameState frameState(uint64_t k,uint64_t t,uint64_t n,double angle){
+    require(t>=2&&t<=UINT64_MAX/2&&n>0&&n%(2*t)==0,"invalid frame sequence");
+    uint64_t index=k/t;double p=double(k%t)/double(t);
+    return {k%n+1,{index,p,(index%2?-1:1)*angle*p*p*(3-2*p)}};
+}
+Json effectCheck(std::span<const uint8_t> off,std::span<const uint8_t> on){
+    require(!off.empty()&&off.size()==on.size()&&off.size()%4==0,"invalid effect images");
+    uint64_t changed=0,pixels=off.size()/4;
+    for(size_t i=0;i<off.size();i+=4){bool diff=false;for(size_t c=0;c<4;++c)diff|=std::abs(int(off[i+c])-int(on[i+c]))>2;if(diff)++changed;}
+    return Json::Object{{"changed_pixels",changed},{"pixels",pixels},{"status",double(changed)>double(pixels)*0.001?"pass":"fail"}};
+}
+Json sortCheck(std::span<const SortKey> keys,uint32_t count){
+    bool permutation=keys.size()==count,ordered=keys.size()==count;std::vector<bool> seen(count);
+    for(size_t i=0;i<keys.size();++i){auto key=keys[i];if(key.id>=count)permutation=false;else if(seen[key.id])permutation=false;else seen[key.id]=true;
+        if(!std::isfinite(key.depth)||(i&&keys[i-1].depth<key.depth))ordered=false;}
+    return Json::Object{{"status",permutation&&ordered?"pass":"fail"},{"permutation",permutation},{"back_to_front",ordered},{"stickers",count}};
+}
+Json Trace::json() const {return Json::Object{{"frame",frame},{"qpc",qpc},{"revision",revision},{"turn",animated?Json(turn):Json()},{"phase",animated?Json(phase):Json()},{"camera",camera}};}
 void injectLabels(std::vector<uint32_t>& labels,const std::string& fault){
     if(fault=="corrupt-label")labels[0]^=1;
     if(fault=="swap-same-colour"){
@@ -146,17 +177,60 @@ Json checkLabels(const Assets& a,const LabelRecords& records,const std::function
         {"oracle_sha256",Json::Object{{"even",a.oracleHash[0]},{"odd",a.oracleHash[1]}}}};
 }
 Json runJson(const Options& opt,int64_t frequency,int64_t start,int64_t stop,const std::string& build,const Json& environment,const Json& labels,double vram){
-    Json run=Json::Object{{"format","magic600-renderer-run-v1"},{"run_id",opt.runId},{"candidate","s-b"},{"scene",opt.scene},
+    bool rotating=opt.scene=="w2"||opt.scene=="w3"||opt.scene=="w3f";
+    Json run=Json::Object{{"format","magic600-renderer-run-v1"},{"run_id",opt.runId},{"candidate","s-b"},{"scene",opt.scene},{"feature",opt.feature},
         {"qpc_frequency",frequency},{"markers",Json::Object{{"trace_start_qpc",start},{"trace_stop_qpc",stop}}},
         {"presentmon",Json::Object{{"process_id",GetCurrentProcessId()},{"swap_chain","FILL-FROM-CSV"}}},
-        {"build",Json::Object{{"build_identity",build}}},{"environment",environment},{"turn_ms",opt.turnMs}};
-    if(opt.scene=="w3"||opt.scene=="w4")run["label_check"]=labels;
+        {"build",Json::Object{{"build_identity",build}}},{"environment",environment},{"turn_ms",opt.turnMs},
+        {"camera",Json::Object{{"plane",rotating?Json(Json::Array{0,3}):Json()},{"step_rad",rotating?0.002:0},{"per",rotating?"frame":"none"}}},
+        {"window",Json::Object{{"display_required",true}}}};
+    if(opt.scene=="w3"||opt.scene=="w4"||opt.scene=="w3f")run["label_check"]=labels;
+    if(opt.scene=="w3f"){run["turn_frames"]=opt.turnFrames;run["cycle_frames"]=opt.cycleFrames;}
     run["vram_peak_mb"]=vram;
     if(!opt.inject.empty())run["injected_fault"]=opt.inject;
     return run;
 }
 void selftest(const Assets& a){
+    auto edges=edgeMasks(a);
+    std::cout<<"selftest: edge counts: features="<<edges.featureEdges<<", diagonals="<<edges.diagonals<<", open="<<edges.openEdges<<", multiple="<<edges.multipleEdges<<", degenerate="<<edges.degenerate<<", duplicates="<<edges.duplicates<<'\n';
+    require(edges.featureEdges==3277&&edges.diagonals==5546&&edges.openEdges==819&&edges.multipleEdges==31&&edges.degenerate==3948&&edges.duplicates==761&&edges.nearZero==562,"real-asset feature edges and diagonals");
+    require(edges.triangles.size()==Vertices/3&&edges.perSticker.size()==Stickers&&std::all_of(edges.perSticker.begin(),edges.perSticker.end(),[](uint32_t n){return n>=1&&n<=32;}),"every sticker has feature edges");
+    auto parse=[](std::initializer_list<const char*> args){std::vector<std::string> s{"sb_probe"};for(auto arg:args)s.emplace_back(arg);std::vector<char*> av;for(auto& arg:s)av.push_back(arg.data());return options(int(av.size()),av.data());};
+    for(const char* name:{"none","no-gaps","fog","msaa4","outlines","transparency","dof","ao"})
+        for(const char* scene:{"w1","w2","w3","w4","w3f"})require(parse({"--scene",scene,"--feature",name}).feature==name,"feature accepted in every scene");
+    parse({"--scene","w3f"});
+    auto refuses=[&](std::initializer_list<const char*> args){bool refused=false;try{parse(args);}catch(const std::exception&){refused=true;}require(refused,"invalid options accepted");};
+    require(parse({"--msaa","4"}).feature=="msaa4"&&parse({"--feature","msaa4"}).msaa==4,"MSAA synonym");
+    parse({"--msaa","4","--feature","none"});parse({"--msaa","4","--feature","msaa4"});
+    refuses({"--feature","fog","--feature","no-gaps"});refuses({"--feature","bogus"});
+    for(const char* name:{"no-gaps","outlines","transparency","fog","dof","ao","msaa4"}){
+        refuses({"--feature",name,"--geometry-check"});refuses({"--feature",name,"--inject","corrupt-label"});
+        if(std::string(name)!="msaa4"){refuses({"--feature",name,"--msaa","4"});refuses({"--msaa","4","--feature",name});}
+        for(const char* other:{"no-gaps","outlines","transparency","fog","dof","ao","msaa4"})if(std::string(name)!=other)refuses({"--feature",name,"--feature",other});
+    }
+    for(const char* scene:{"w1","w2","w3","w4"}){refuses({"--scene",scene,"--turn-frames","157"});refuses({"--scene",scene,"--cycle-frames","3140"});}
+    for(const char* value:{"0","1","-2","2.5","18446744073709551615"})refuses({"--scene","w3f","--turn-frames",value});
+    for(const char* value:{"0","1","3139","-3140","3140.5"})refuses({"--scene","w3f","--cycle-frames",value});
+    refuses({"--scene","w3f","--inject","corrupt-label"});
+    parse({"--scene","w3f","--turn-frames","2","--cycle-frames","4"});
+    refuses({"--scene","w3f","--turn-frames","9007199254740993","--cycle-frames","18014398509481986"});
+    refuses({"--scene","w3f","--turn-frames","2","--cycle-frames","9007199254740996"});
+    for(uint64_t k=0;k<6280;++k){auto s=frameState(k,157,3140,a.angle);
+        require(s.camera==k%3140+1&&s.turn.index==k/157&&std::abs(s.turn.phase-double(k%157)/157)<1e-12,"w3f sequence across two cycles");
+        require(s.turn.phase==0?s.turn.theta==0:(s.turn.index%2?s.turn.theta<0:s.turn.theta>0),"w3f direction");
+    }
+    require(frameState(3139,157,3140,a.angle).camera==3140&&frameState(3140,157,3140,a.angle).camera==1&&frameState(3140,157,3140,a.angle).turn.index==20,"w3f cycle reset and turn continuity");
+    auto half=frameState(1,2,4,1);require(half.camera==2&&half.turn.index==0&&half.turn.phase==0.5&&half.turn.theta==0.5,"w3f half turn");
+    require(frameState(3,2,4,1).turn.theta==-0.5,"w3f inverse half turn");
+    std::vector<uint8_t> off(4000),on=off;on[0]=2;require(effectCheck(off,on).at("status").string()=="fail","effect threshold is strictly above 2/255");
+    on[0]=3;require(effectCheck(off,on).at("status").string()=="fail","effect requires more than 0.1 percent");on[4]=3;
+    require(effectCheck(off,on).at("changed_pixels").integer()==2&&effectCheck(off,on).at("status").string()=="pass","effect comparison");
+    std::vector<SortKey> keys{{8,2},{6,0},{6,1}};require(sortCheck(keys,3).at("status").string()=="pass","sorted permutation fixture");
+    keys[2].id=0;require(sortCheck(keys,3).at("status").string()=="fail","sort duplicate id");keys[2]={9,1};require(sortCheck(keys,3).at("status").string()=="fail","sort ascending pair");
+    keys[2]={6,3};require(sortCheck(keys,3).at("status").string()=="fail","sort out-of-range id");keys.pop_back();require(sortCheck(keys,3).at("status").string()=="fail","sort missing id");
+    keys={{8,2},{6,0},{NAN,1}};require(sortCheck(keys,3).at("status").string()=="fail","sort nonfinite depth");
     require(sha256(std::span<const uint8_t>())=="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","SHA-256 empty fixture");
+    require(buildIdentity().size()==64,"executable and all compiled shaders form the build identity");
     constexpr int64_t freq=10000000,start=123456000000;
     auto d=turnTicks(190,freq);
     for(uint64_t t=0;t<30;++t){
@@ -187,16 +261,29 @@ void selftest(const Assets& a){
     auto run=Json::parse(runJson(opt,freq,start,start+200*freq,std::string(64,'a'),environment,label,1).dump());
     require(run.at("format").string()=="magic600-renderer-run-v1"&&run.at("candidate").string()=="s-b"&&run.at("qpc_frequency").integer()==freq&&run.at("markers").at("trace_stop_qpc").integer()==start+200*freq,"run JSON shape");
     require(run.at("presentmon").at("process_id").integer()>0&&run.at("build").at("build_identity").string().size()==64&&run.at("label_check").at("status").string()=="pass","run metadata shape");
+    require(run.at("feature").string()=="none"&&run.at("camera").at("plane").array()[1].integer()==3&&run.at("camera").at("step_rad").number()==0.002&&run.at("camera").at("per").string()=="frame"&&std::get<bool>(run.at("window").at("display_required").value),"feature/camera/display run shape");
+    opt.scene="w3f";opt.feature="fog";auto cost=runJson(opt,freq,start,start+200*freq,std::string(64,'a'),environment,label,1);
+    require(cost.at("scene").string()=="w3f"&&cost.at("feature").string()=="fog"&&cost.at("turn_frames").integer()==157&&cost.at("cycle_frames").integer()==3140&&cost.at("camera").at("per").string()=="frame","w3f run shape");
+    auto largest=Json::parse(runJson(parse({"--scene","w3f","--turn-frames","4503599627370496","--cycle-frames","9007199254740992"}),freq,start,start+200*freq,"fixture",environment,label,1).dump());
+    require(largest.at("turn_frames").number()==4503599627370496.0&&largest.at("cycle_frames").number()==9007199254740992.0,"largest accepted frame counts are exact in run.json");
+    for(const char* scene:{"w1","w2","w3","w4","w3f"}){
+        opt.scene=scene;auto record=Json::parse(runJson(opt,freq,start,start+200*freq,"fixture",environment,label,1).dump());const auto& camera=record.at("camera");
+        bool rotating=opt.scene=="w2"||opt.scene=="w3"||opt.scene=="w3f";
+        require(camera.at("per").string()==(rotating?"frame":"none")&&camera.at("step_rad").number()==(rotating?0.002:0),"camera metadata in every scene");
+        require(rotating?(camera.at("plane").array()[0].integer()==0&&camera.at("plane").array()[1].integer()==3):camera.at("plane").null(),"camera plane in every scene");
+    }
+    auto staticTrace=Trace{}.json();require(staticTrace.at("camera").integer()==0&&staticTrace.at("turn").null()&&staticTrace.at("phase").null(),"stationary trace shape");
     std::ostringstream trace;
-    for(uint64_t frame=0;frame<20000;++frame){auto qpc=start+int64_t(frame)*100000;auto t=turnAt(qpc,start,d,a.angle);trace<<Trace{frame,qpc,t.index,true,t.index,t.phase}.json().dump()<<'\n';}
+    for(uint64_t frame=0;frame<20000;++frame){auto qpc=start+int64_t(frame)*100000;auto t=turnAt(qpc,start,d,a.angle);trace<<Trace{frame,qpc,t.index,true,t.index,t.phase,frame+1}.json().dump()<<'\n';}
     std::istringstream lines(trace.str());std::string line;uint64_t frame=0;int64_t last=start-1;uint64_t previousTurn=0;
     while(std::getline(lines,line)){auto e=Json::parse(line);auto q=e.at("qpc").integer(),rev=e.at("revision").integer(),turn=e.at("turn").integer();double phase=e.at("phase").number();
         require(e.at("frame").integer()==int64_t(frame++)&&q>last&&rev==turn&&phase>=0&&phase<1,"trace JSON shape");
+        require(e.at("camera").integer()==int64_t(frame),"trace camera shape");
         require(uint64_t(turn)==previousTurn||uint64_t(turn)==previousTurn+1,"trace turn gap");
         require(std::abs(double(q)-phase*double(d)-double(start+turn*d))<1,"trace phase off QPC clock");last=q;previousTurn=uint64_t(turn);
     }
     require(frame==20000&&last>=start+190*freq,"synthetic trace too short");
-    std::cout<<"selftest: assets and oracle digests: ok\nselftest: clean labels and four injected faults: ok\nselftest: turn arithmetic and synthetic 200 s run/trace shape: ok\nselftest: ok\n";
+    std::cout<<"selftest: assets and oracle digests: ok\nselftest: executable and 19 shaders in build identity: ok\nselftest: clean labels and four injected faults: ok\nselftest: turn arithmetic and synthetic 200 s run/trace shape: ok\nselftest: feature options, w3f, camera/display metadata, effect/sort helpers: ok\nselftest: ok\n";
 }
 }
 

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <limits>
 #include <optional>
+#include <wincodec.h>
 
 namespace sb {
 using Microsoft::WRL::ComPtr;
@@ -18,6 +19,22 @@ static void hr(HRESULT result,const char* action){
     if(FAILED(result)){std::ostringstream s;s<<action<<" failed (0x"<<std::hex<<uint32_t(result)<<')';throw std::runtime_error(s.str());}
 }
 static int64_t qpc(){LARGE_INTEGER t{};require(QueryPerformanceCounter(&t)!=0,"QPC unavailable");return t.QuadPart;}
+struct DisplayRequest {
+    DisplayRequest(){require(SetThreadExecutionState(ES_CONTINUOUS|ES_SYSTEM_REQUIRED|ES_DISPLAY_REQUIRED)!=0,"cannot keep the display on");}
+    ~DisplayRequest(){SetThreadExecutionState(ES_CONTINUOUS);}
+};
+static void png(const fs::path& path,UINT width,UINT height,std::span<const uint8_t> rgba){
+    hr(CoInitializeEx(nullptr,COINIT_MULTITHREADED),"snapshot COM initialization");
+    struct Uninitialize { ~Uninitialize(){CoUninitialize();} } uninitialize;
+    ComPtr<IWICImagingFactory> factory;hr(CoCreateInstance(CLSID_WICImagingFactory,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(&factory)),"WIC factory");
+    ComPtr<IWICStream> stream;hr(factory->CreateStream(&stream),"WIC stream");hr(stream->InitializeFromFilename(path.c_str(),GENERIC_WRITE),"snapshot file");
+    ComPtr<IWICBitmapEncoder> encoder;hr(factory->CreateEncoder(GUID_ContainerFormatPng,nullptr,&encoder),"PNG encoder");hr(encoder->Initialize(stream.Get(),WICBitmapEncoderNoCache),"PNG initialization");
+    ComPtr<IWICBitmapFrameEncode> frame;hr(encoder->CreateNewFrame(&frame,nullptr),"PNG frame");hr(frame->Initialize(nullptr),"PNG frame initialization");hr(frame->SetSize(width,height),"PNG size");
+    // The PNG encoder takes 32bppBGRA but not 32bppRGBA, so swap red and blue in a copy.
+    std::vector<uint8_t> bgra(rgba.begin(),rgba.end());for(size_t i=0;i+3<bgra.size();i+=4)std::swap(bgra[i],bgra[i+2]);
+    WICPixelFormatGUID format=GUID_WICPixelFormat32bppBGRA;hr(frame->SetPixelFormat(&format),"PNG format");require(format==GUID_WICPixelFormat32bppBGRA,"WIC did not accept BGRA");
+    require(bgra.size()<=UINT_MAX,"snapshot exceeds WIC size limit");hr(frame->WritePixels(height,width*4,UINT(bgra.size()),bgra.data()),"PNG pixels");hr(frame->Commit(),"PNG frame commit");hr(encoder->Commit(),"PNG commit");
+}
 static std::string utf8(const wchar_t* text){int n=WideCharToMultiByte(CP_UTF8,0,text,-1,nullptr,0,nullptr,nullptr);require(n>0,"UTF-8 conversion failed");std::string out(size_t(n),'\0');WideCharToMultiByte(CP_UTF8,0,text,-1,out.data(),n,nullptr,nullptr);out.pop_back();return out;}
 static LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM w,LPARAM l){
     if(message==WM_DESTROY){PostQuitMessage(0);return 0;}
@@ -56,6 +73,19 @@ public:
     ComPtr<ID3D12Fence> fence;
     ComPtr<ID3D12RootSignature> root;
     ComPtr<ID3D12PipelineState> drawPso,countPso,computePso;
+    ComPtr<ID3D12RootSignature> featureRoot;
+    ComPtr<ID3D12PipelineState> featurePso;
+    Buffer edgeData;
+    Buffer sortKeys,sortPrefix,sortBlocks,sortIndices,stickerOffsets;
+    std::array<ComPtr<ID3D12PipelineState>,5> sortPso;
+    Json sortResult;
+    ComPtr<ID3D12RootSignature> postRoot;
+    ComPtr<ID3D12PipelineState> postPso;
+    ComPtr<ID3D12PipelineState> postBlurPso,postCompositePso;
+    ComPtr<ID3D12DescriptorHeap> postHeap;
+    ComPtr<ID3D12Resource> postColour;
+    std::array<ComPtr<ID3D12Resource>,2> postAux;
+    UINT postStep=0;
     ComPtr<IDXGISwapChain3> swap;
     ComPtr<ID3D12DescriptorHeap> rtvHeap,dsvHeap;
     std::array<ComPtr<ID3D12Resource>,3> targets;
@@ -65,6 +95,7 @@ public:
     std::array<Buffer,3> labels;
     std::array<uint64_t,3> labelRevision{};
     Buffer readback;
+    std::vector<Buffer> extraReadbacks; // W3f has no clock-derived upper bound on turn count.
     HANDLE event=nullptr;
     HWND hwnd=nullptr;
     uint64_t nextFence=1,readbackSlots=0;
@@ -116,8 +147,27 @@ public:
         submit(false);idle(); // The static upload resources can now be released.
         makeTargets();
         drawPso=graphics("draw_vs.dxil");
+        if(opt.feature=="fog"){
+            // Separate signature and PSO; neither exists in a baseline run.
+            makeFeatureRoot();featurePso=graphics("draw_vs.dxil","fog_ps.dxil",featureRoot.Get());
+        }
+        if(opt.feature=="outlines"){
+            auto edges=edgeMasks(a);begin(0);std::vector<Buffer> upload;edgeData=staticBuffer(edges.triangles.data(),edges.triangles.size()*4,upload);submit(false);idle();
+            makeFeatureRoot();featurePso=graphics("outline_vs.dxil","outline_ps.dxil",featureRoot.Get());
+        }
+        if(opt.feature=="transparency"){
+            makeFeatureRoot();featurePso=graphics("transparency_vs.dxil","transparency_ps.dxil",featureRoot.Get(),1,true);
+            const char* shaders[]={"sort_keys_cs.dxil","sort_cs.dxil","sort_prefix_cs.dxil","sort_blocks_cs.dxil","sort_indices_cs.dxil"};
+            for(size_t i=0;i<sortPso.size();++i){auto code=bytes(exeDir()/shaders[i]);D3D12_COMPUTE_PIPELINE_STATE_DESC p{};p.pRootSignature=featureRoot.Get();p.CS={code.data(),code.size()};hr(device->CreateComputePipelineState(&p,IID_PPV_ARGS(&sortPso[i])),"sort pipeline");}
+            sortKeys=buffer(262144*8,D3D12_HEAP_TYPE_DEFAULT,D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+            sortPrefix=buffer(262144*4,D3D12_HEAP_TYPE_DEFAULT,D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+            sortBlocks=buffer(1024*4,D3D12_HEAP_TYPE_DEFAULT,D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+            sortIndices=buffer(uint64_t(Vertices)*Cells*4,D3D12_HEAP_TYPE_DEFAULT,D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+            begin(0);std::vector<Buffer> upload;stickerOffsets=staticBuffer(a.offsets.data(),a.offsets.size()*4,upload);submit(false);idle();
+        }
+        if(opt.feature=="dof"||opt.feature=="ao")makePost();
         if(opt.geometry){countPso=graphics("count_vs.dxil");auto code=bytes(exeDir()/"geometry_cs.dxil");D3D12_COMPUTE_PIPELINE_STATE_DESC p{};p.pRootSignature=root.Get();p.CS={code.data(),code.size()};hr(device->CreateComputePipelineState(&p,IID_PPV_ARGS(&computePso)),"compute pipeline");}
-        else if(opt.scene=="w3"||opt.scene=="w4"){
+        else if(opt.scene=="w3"||opt.scene=="w4"||opt.scene=="w3f"){
             double slots=std::ceil(opt.duration*1000/opt.turnMs)+2;
             require(slots<double(std::numeric_limits<uint64_t>::max()/LabelBytes),"label readback size overflow");readbackSlots=uint64_t(slots);
             try{readback=buffer(readbackSlots*LabelBytes,D3D12_HEAP_TYPE_READBACK,D3D12_RESOURCE_STATE_COPY_DEST);}
@@ -174,6 +224,17 @@ public:
         if(FAILED(result)&&error)throw std::runtime_error(std::string(static_cast<const char*>(error->GetBufferPointer()),error->GetBufferSize()));hr(result,"serialize root signature");
         hr(device->CreateRootSignature(0,blob->GetBufferPointer(),blob->GetBufferSize(),IID_PPV_ARGS(&root)),"CreateRootSignature");
     }
+    void makeFeatureRoot(){
+        D3D12_ROOT_PARAMETER params[14]{};params[0].ParameterType=D3D12_ROOT_PARAMETER_TYPE_CBV;params[0].Descriptor.ShaderRegister=0;
+        for(UINT i=1;i<=7;++i){params[i].ParameterType=D3D12_ROOT_PARAMETER_TYPE_SRV;params[i].Descriptor.ShaderRegister=i-1;}
+        for(UINT i=8;i<=9;++i){params[i].ParameterType=D3D12_ROOT_PARAMETER_TYPE_UAV;params[i].Descriptor.ShaderRegister=i-8;}
+        params[10].ParameterType=D3D12_ROOT_PARAMETER_TYPE_SRV;params[10].Descriptor.ShaderRegister=7;
+        params[11].ParameterType=D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;params[11].Constants.ShaderRegister=1;params[11].Constants.Num32BitValues=2;
+        for(UINT i=12;i<14;++i){params[i].ParameterType=D3D12_ROOT_PARAMETER_TYPE_UAV;params[i].Descriptor.ShaderRegister=i-10;}
+        D3D12_ROOT_SIGNATURE_DESC d{};d.NumParameters=opt.feature=="transparency"?14:opt.feature=="outlines"?11:10;d.pParameters=params;d.Flags=D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+        ComPtr<ID3DBlob> blob,error;hr(D3D12SerializeRootSignature(&d,D3D_ROOT_SIGNATURE_VERSION_1,&blob,&error),"feature root serialization");
+        hr(device->CreateRootSignature(0,blob->GetBufferPointer(),blob->GetBufferSize(),IID_PPV_ARGS(&featureRoot)),"feature root signature");
+    }
     ComPtr<ID3D12Resource> texture(DXGI_FORMAT format,D3D12_RESOURCE_FLAGS flags,D3D12_RESOURCE_STATES state,unsigned samples,const D3D12_CLEAR_VALUE* clear){
         D3D12_HEAP_PROPERTIES heap{};heap.Type=D3D12_HEAP_TYPE_DEFAULT;heap.CreationNodeMask=heap.VisibleNodeMask=1;
         D3D12_RESOURCE_DESC d{};d.Dimension=D3D12_RESOURCE_DIMENSION_TEXTURE2D;d.Width=width;d.Height=height;d.DepthOrArraySize=1;d.MipLevels=1;d.Format=format;d.SampleDesc.Count=samples;d.Flags=flags;
@@ -194,41 +255,102 @@ public:
             DXGI_SWAP_CHAIN_DESC1 s{};s.Width=width;s.Height=height;s.Format=DXGI_FORMAT_R8G8B8A8_UNORM;s.SampleDesc.Count=1;s.BufferUsage=DXGI_USAGE_RENDER_TARGET_OUTPUT;s.BufferCount=3;s.SwapEffect=DXGI_SWAP_EFFECT_FLIP_DISCARD;s.Flags=tearing?DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING:0;
             ComPtr<IDXGISwapChain1> base;hr(factory->CreateSwapChainForHwnd(queue.Get(),hwnd,&s,nullptr,nullptr,&base),"CreateSwapChainForHwnd");hr(base.As(&swap),"IDXGISwapChain3");hr(factory->MakeWindowAssociation(hwnd,DXGI_MWA_NO_ALT_ENTER),"MakeWindowAssociation");for(UINT i=0;i<3;++i)hr(swap->GetBuffer(i,IID_PPV_ARGS(&targets[i])),"swap-chain buffer");
         }else targets[0]=texture(DXGI_FORMAT_R8G8B8A8_UNORM,D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET,1,nullptr);
-        D3D12_DESCRIPTOR_HEAP_DESC rh{};rh.Type=D3D12_DESCRIPTOR_HEAP_TYPE_RTV;rh.NumDescriptors=4;hr(device->CreateDescriptorHeap(&rh,IID_PPV_ARGS(&rtvHeap)),"RTV heap");rtvStep=device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        D3D12_DESCRIPTOR_HEAP_DESC rh{};rh.Type=D3D12_DESCRIPTOR_HEAP_TYPE_RTV;rh.NumDescriptors=opt.feature=="ao"?6:4;hr(device->CreateDescriptorHeap(&rh,IID_PPV_ARGS(&rtvHeap)),"RTV heap");rtvStep=device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         for(UINT i=0;i<(opt.geometry?1u:3u);++i)device->CreateRenderTargetView(targets[i].Get(),nullptr,rtv(i));
         D3D12_DESCRIPTOR_HEAP_DESC dh{};dh.Type=D3D12_DESCRIPTOR_HEAP_TYPE_DSV;dh.NumDescriptors=1;hr(device->CreateDescriptorHeap(&dh,IID_PPV_ARGS(&dsvHeap)),"DSV heap");D3D12_CLEAR_VALUE dc{};dc.Format=DXGI_FORMAT_D32_FLOAT;dc.DepthStencil.Depth=1;
-        depth=texture(DXGI_FORMAT_D32_FLOAT,D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL,D3D12_RESOURCE_STATE_DEPTH_WRITE,opt.msaa,&dc);device->CreateDepthStencilView(depth.Get(),nullptr,dsvHeap->GetCPUDescriptorHandleForHeapStart());
+        bool readable=opt.feature=="dof"||opt.feature=="ao";
+        depth=texture(readable?DXGI_FORMAT_R32_TYPELESS:DXGI_FORMAT_D32_FLOAT,D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL,D3D12_RESOURCE_STATE_DEPTH_WRITE,opt.msaa,&dc);
+        D3D12_DEPTH_STENCIL_VIEW_DESC view{};view.Format=DXGI_FORMAT_D32_FLOAT;view.ViewDimension=D3D12_DSV_DIMENSION_TEXTURE2D;
+        device->CreateDepthStencilView(depth.Get(),readable?&view:nullptr,dsvHeap->GetCPUDescriptorHandleForHeapStart());
         if(opt.msaa==4){D3D12_CLEAR_VALUE cc{};cc.Format=DXGI_FORMAT_R8G8B8A8_UNORM;cc.Color[0]=0.13f;cc.Color[1]=0.145f;cc.Color[2]=0.16f;cc.Color[3]=1;msaaTarget=texture(cc.Format,D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET,4,&cc);device->CreateRenderTargetView(msaaTarget.Get(),nullptr,rtv(3));}
     }
-    D3D12_CPU_DESCRIPTOR_HANDLE rtv(UINT i){auto h=rtvHeap->GetCPUDescriptorHandleForHeapStart();h.ptr+=SIZE_T(i)*rtvStep;return h;}
-    ComPtr<ID3D12PipelineState> graphics(const char* shader){
-        auto vs=bytes(exeDir()/shader),ps=bytes(exeDir()/"draw_ps.dxil");D3D12_GRAPHICS_PIPELINE_STATE_DESC d{};d.pRootSignature=root.Get();d.VS={vs.data(),vs.size()};d.PS={ps.data(),ps.size()};
-        auto& blend=d.BlendState.RenderTarget[0];blend.SrcBlend=D3D12_BLEND_ONE;blend.DestBlend=D3D12_BLEND_ZERO;blend.BlendOp=D3D12_BLEND_OP_ADD;blend.SrcBlendAlpha=D3D12_BLEND_ONE;blend.DestBlendAlpha=D3D12_BLEND_ZERO;blend.BlendOpAlpha=D3D12_BLEND_OP_ADD;blend.LogicOp=D3D12_LOGIC_OP_NOOP;blend.RenderTargetWriteMask=D3D12_COLOR_WRITE_ENABLE_ALL;
-        d.SampleMask=UINT_MAX;d.RasterizerState.FillMode=D3D12_FILL_MODE_SOLID;d.RasterizerState.CullMode=D3D12_CULL_MODE_NONE;d.RasterizerState.DepthClipEnable=TRUE;d.RasterizerState.MultisampleEnable=opt.msaa==4;
-        d.DepthStencilState.DepthEnable=TRUE;d.DepthStencilState.DepthWriteMask=D3D12_DEPTH_WRITE_MASK_ALL;d.DepthStencilState.DepthFunc=D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    ComPtr<ID3D12PipelineState> postPipeline(const char* pixel,DXGI_FORMAT format){
+        auto vs=bytes(exeDir()/"post_vs.dxil"),ps=bytes(exeDir()/pixel);D3D12_GRAPHICS_PIPELINE_STATE_DESC d{};d.pRootSignature=postRoot.Get();d.VS={vs.data(),vs.size()};d.PS={ps.data(),ps.size()};
+        auto& blend=d.BlendState.RenderTarget[0];blend.SrcBlend=blend.SrcBlendAlpha=D3D12_BLEND_ONE;blend.DestBlend=blend.DestBlendAlpha=D3D12_BLEND_ZERO;blend.BlendOp=blend.BlendOpAlpha=D3D12_BLEND_OP_ADD;blend.LogicOp=D3D12_LOGIC_OP_NOOP;blend.RenderTargetWriteMask=D3D12_COLOR_WRITE_ENABLE_ALL;
+        d.SampleMask=UINT_MAX;d.RasterizerState.FillMode=D3D12_FILL_MODE_SOLID;d.RasterizerState.CullMode=D3D12_CULL_MODE_NONE;d.RasterizerState.DepthClipEnable=TRUE;
+        d.DepthStencilState.DepthEnable=FALSE;d.DepthStencilState.DepthFunc=D3D12_COMPARISON_FUNC_ALWAYS;
         d.DepthStencilState.StencilReadMask=D3D12_DEFAULT_STENCIL_READ_MASK;d.DepthStencilState.StencilWriteMask=D3D12_DEFAULT_STENCIL_WRITE_MASK;
         D3D12_DEPTH_STENCILOP_DESC stencil{};stencil.StencilFailOp=stencil.StencilDepthFailOp=stencil.StencilPassOp=D3D12_STENCIL_OP_KEEP;stencil.StencilFunc=D3D12_COMPARISON_FUNC_ALWAYS;d.DepthStencilState.FrontFace=d.DepthStencilState.BackFace=stencil;
-        d.PrimitiveTopologyType=D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;d.NumRenderTargets=1;d.RTVFormats[0]=DXGI_FORMAT_R8G8B8A8_UNORM;d.DSVFormat=DXGI_FORMAT_D32_FLOAT;d.SampleDesc.Count=opt.msaa;
+        d.PrimitiveTopologyType=D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;d.NumRenderTargets=1;d.RTVFormats[0]=format;d.SampleDesc.Count=1;
+        ComPtr<ID3D12PipelineState> p;hr(device->CreateGraphicsPipelineState(&d,IID_PPV_ARGS(&p)),"post-process pipeline");return p;
+    }
+    void makePost(){
+        makeFeatureRoot();featurePso=graphics("draw_vs.dxil","draw_ps.dxil",featureRoot.Get());
+        D3D12_DESCRIPTOR_RANGE range{};range.RangeType=D3D12_DESCRIPTOR_RANGE_TYPE_SRV;range.NumDescriptors=3;
+        D3D12_ROOT_PARAMETER p[2]{};p[0].ParameterType=D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;p[0].Constants.Num32BitValues=8;p[0].ShaderVisibility=D3D12_SHADER_VISIBILITY_PIXEL;
+        p[1].ParameterType=D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;p[1].DescriptorTable.NumDescriptorRanges=1;p[1].DescriptorTable.pDescriptorRanges=&range;p[1].ShaderVisibility=D3D12_SHADER_VISIBILITY_PIXEL;
+        D3D12_ROOT_SIGNATURE_DESC d{};d.NumParameters=2;d.pParameters=p;d.Flags=D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;ComPtr<ID3DBlob> blob,error;
+        hr(D3D12SerializeRootSignature(&d,D3D_ROOT_SIGNATURE_VERSION_1,&blob,&error),"post root serialization");hr(device->CreateRootSignature(0,blob->GetBufferPointer(),blob->GetBufferSize(),IID_PPV_ARGS(&postRoot)),"post root signature");
+        D3D12_CLEAR_VALUE clear{};clear.Format=DXGI_FORMAT_R8G8B8A8_UNORM;clear.Color[0]=0.13f;clear.Color[1]=0.145f;clear.Color[2]=0.16f;clear.Color[3]=1;
+        postColour=texture(clear.Format,D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,1,&clear);device->CreateRenderTargetView(postColour.Get(),nullptr,rtv(3));
+        bool ao=opt.feature=="ao";
+        if(ao)for(UINT i=0;i<2;++i){D3D12_CLEAR_VALUE aux{};aux.Format=DXGI_FORMAT_R16_FLOAT;aux.Color[0]=1;postAux[i]=texture(aux.Format,D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,1,&aux);device->CreateRenderTargetView(postAux[i].Get(),nullptr,rtv(4+i));}
+        D3D12_DESCRIPTOR_HEAP_DESC heap{};heap.Type=D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;heap.NumDescriptors=ao?6:3;heap.Flags=D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;hr(device->CreateDescriptorHeap(&heap,IID_PPV_ARGS(&postHeap)),"post SRV heap");postStep=device->GetDescriptorHandleIncrementSize(heap.Type);
+        D3D12_SHADER_RESOURCE_VIEW_DESC srv{};srv.Shader4ComponentMapping=D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;srv.ViewDimension=D3D12_SRV_DIMENSION_TEXTURE2D;srv.Texture2D.MipLevels=1;srv.Format=clear.Format;
+        auto handle=postHeap->GetCPUDescriptorHandleForHeapStart();
+        for(UINT table=0;table<(ao?2u:1u);++table){
+            srv.Format=clear.Format;device->CreateShaderResourceView(postColour.Get(),&srv,handle);handle.ptr+=postStep;srv.Format=DXGI_FORMAT_R32_FLOAT;device->CreateShaderResourceView(depth.Get(),&srv,handle);handle.ptr+=postStep;
+            srv.Format=ao?DXGI_FORMAT_R16_FLOAT:clear.Format;device->CreateShaderResourceView(ao?postAux[table].Get():postColour.Get(),&srv,handle);handle.ptr+=postStep;
+        }
+        if(ao){postPso=postPipeline("ao_ps.dxil",DXGI_FORMAT_R16_FLOAT);postBlurPso=postPipeline("ao_blur_ps.dxil",DXGI_FORMAT_R16_FLOAT);postCompositePso=postPipeline("ao_composite_ps.dxil",clear.Format);}
+        else postPso=postPipeline("dof_ps.dxil",clear.Format);
+    }
+    void postPass(ID3D12PipelineState* pipeline,D3D12_CPU_DESCRIPTOR_HANDLE target,UINT table,const Constants& c,float dx=0,float dy=0){
+        list->SetPipelineState(pipeline);list->SetGraphicsRootSignature(postRoot.Get());ID3D12DescriptorHeap* heaps[]={postHeap.Get()};list->SetDescriptorHeaps(1,heaps);
+        const float values[8]={float(width),float(height),c.aspect,c.zoom,5,8*float(height)/1600,dx,dy};list->SetGraphicsRoot32BitConstants(0,8,values,0);
+        auto input=postHeap->GetGPUDescriptorHandleForHeapStart();input.ptr+=uint64_t(table)*3*postStep;list->SetGraphicsRootDescriptorTable(1,input);list->OMSetRenderTargets(1,&target,FALSE,nullptr);list->DrawInstanced(3,1,0,0);
+    }
+    void drawPost(const Constants& c,unsigned labelIndex){
+        UINT back=swap->GetCurrentBackBufferIndex();transition(postColour.Get(),D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,D3D12_RESOURCE_STATE_RENDER_TARGET);
+        list->SetPipelineState(featurePso.Get());bind(c,labelIndex,false,featureRoot.Get());
+        D3D12_VIEWPORT viewport{0,0,float(width),float(height),0,1};D3D12_RECT rect{0,0,LONG(width),LONG(height)};list->RSSetViewports(1,&viewport);list->RSSetScissorRects(1,&rect);
+        auto target=rtv(3),dsv=dsvHeap->GetCPUDescriptorHandleForHeapStart();list->OMSetRenderTargets(1,&target,FALSE,&dsv);
+        const float colour[4]={0.13f,0.145f,0.16f,1};list->ClearRenderTargetView(target,colour,0,nullptr);list->ClearDepthStencilView(dsv,D3D12_CLEAR_FLAG_DEPTH,1,0,0,nullptr);list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);list->DrawInstanced(Vertices,Cells,0,0);
+        transition(postColour.Get(),D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);transition(depth.Get(),D3D12_RESOURCE_STATE_DEPTH_WRITE,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        if(opt.feature=="ao"){
+            transition(postAux[0].Get(),D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,D3D12_RESOURCE_STATE_RENDER_TARGET);postPass(postPso.Get(),rtv(4),1,c);transition(postAux[0].Get(),D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            transition(postAux[1].Get(),D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,D3D12_RESOURCE_STATE_RENDER_TARGET);postPass(postBlurPso.Get(),rtv(5),0,c,1,0);transition(postAux[1].Get(),D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            transition(postAux[0].Get(),D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,D3D12_RESOURCE_STATE_RENDER_TARGET);postPass(postBlurPso.Get(),rtv(4),1,c,0,1);transition(postAux[0].Get(),D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+        transition(targets[back].Get(),D3D12_RESOURCE_STATE_PRESENT,D3D12_RESOURCE_STATE_RENDER_TARGET);postPass(opt.feature=="ao"?postCompositePso.Get():postPso.Get(),rtv(back),0,c);
+        transition(targets[back].Get(),D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_PRESENT);transition(depth.Get(),D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    }
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv(UINT i){auto h=rtvHeap->GetCPUDescriptorHandleForHeapStart();h.ptr+=SIZE_T(i)*rtvStep;return h;}
+    ComPtr<ID3D12PipelineState> graphics(const char* shader,const char* pixel="draw_ps.dxil",ID3D12RootSignature* signature=nullptr,unsigned samples=0,bool transparent=false){
+        if(!samples)samples=opt.msaa;
+        auto vs=bytes(exeDir()/shader),ps=bytes(exeDir()/pixel);D3D12_GRAPHICS_PIPELINE_STATE_DESC d{};d.pRootSignature=signature?signature:root.Get();d.VS={vs.data(),vs.size()};d.PS={ps.data(),ps.size()};
+        auto& blend=d.BlendState.RenderTarget[0];blend.SrcBlend=D3D12_BLEND_ONE;blend.DestBlend=D3D12_BLEND_ZERO;blend.BlendOp=D3D12_BLEND_OP_ADD;blend.SrcBlendAlpha=D3D12_BLEND_ONE;blend.DestBlendAlpha=D3D12_BLEND_ZERO;blend.BlendOpAlpha=D3D12_BLEND_OP_ADD;blend.LogicOp=D3D12_LOGIC_OP_NOOP;blend.RenderTargetWriteMask=D3D12_COLOR_WRITE_ENABLE_ALL;
+        if(transparent){blend.BlendEnable=TRUE;blend.SrcBlend=D3D12_BLEND_SRC_ALPHA;blend.DestBlend=D3D12_BLEND_INV_SRC_ALPHA;blend.DestBlendAlpha=D3D12_BLEND_INV_SRC_ALPHA;}
+        d.SampleMask=UINT_MAX;d.RasterizerState.FillMode=D3D12_FILL_MODE_SOLID;d.RasterizerState.CullMode=D3D12_CULL_MODE_NONE;d.RasterizerState.DepthClipEnable=TRUE;d.RasterizerState.MultisampleEnable=samples==4;
+        d.DepthStencilState.DepthEnable=TRUE;d.DepthStencilState.DepthWriteMask=D3D12_DEPTH_WRITE_MASK_ALL;d.DepthStencilState.DepthFunc=D3D12_COMPARISON_FUNC_LESS_EQUAL;
+        if(transparent)d.DepthStencilState.DepthWriteMask=D3D12_DEPTH_WRITE_MASK_ZERO;
+        d.DepthStencilState.StencilReadMask=D3D12_DEFAULT_STENCIL_READ_MASK;d.DepthStencilState.StencilWriteMask=D3D12_DEFAULT_STENCIL_WRITE_MASK;
+        D3D12_DEPTH_STENCILOP_DESC stencil{};stencil.StencilFailOp=stencil.StencilDepthFailOp=stencil.StencilPassOp=D3D12_STENCIL_OP_KEEP;stencil.StencilFunc=D3D12_COMPARISON_FUNC_ALWAYS;d.DepthStencilState.FrontFace=d.DepthStencilState.BackFace=stencil;
+        d.PrimitiveTopologyType=D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;d.NumRenderTargets=1;d.RTVFormats[0]=DXGI_FORMAT_R8G8B8A8_UNORM;d.DSVFormat=DXGI_FORMAT_D32_FLOAT;d.SampleDesc.Count=samples;
         ComPtr<ID3D12PipelineState> p;hr(device->CreateGraphicsPipelineState(&d,IID_PPV_ARGS(&p)),"graphics pipeline");return p;
     }
-    void bind(const Constants& c,unsigned labelIndex,bool compute){
+    void bind(const Constants& c,unsigned labelIndex,bool compute,ID3D12RootSignature* signature=nullptr){
         std::memcpy(active->cbData,&c,sizeof(c));
-        if(compute)list->SetComputeRootSignature(root.Get());else list->SetGraphicsRootSignature(root.Get());
+        if(!signature)signature=root.Get();
+        if(compute)list->SetComputeRootSignature(signature);else list->SetGraphicsRootSignature(signature);
         auto cb=active->cb.resource->GetGPUVirtualAddress();if(compute)list->SetComputeRootConstantBufferView(0,cb);else list->SetGraphicsRootConstantBufferView(0,cb);
         for(UINT i=0;i<7;++i){auto address=(i<5?geometry[i]:i==5?labels[labelIndex]:geometry[5]).resource->GetGPUVirtualAddress();if(compute)list->SetComputeRootShaderResourceView(i+1,address);else list->SetGraphicsRootShaderResourceView(i+1,address);}
+        if(signature==featureRoot.Get()&&edgeData.resource)list->SetGraphicsRootShaderResourceView(10,edgeData.resource->GetGPUVirtualAddress());
     }
     void uploadLabels(unsigned index,const std::vector<uint32_t>& values){
         std::memcpy(active->uploadData,values.data(),size_t(LabelBytes));transition(labels[index],D3D12_RESOURCE_STATE_COPY_DEST);list->CopyBufferRegion(labels[index].resource.Get(),0,active->upload.resource.Get(),0,LabelBytes);transition(labels[index],D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
-    void draw(const Constants& c,unsigned labelIndex,ID3D12PipelineState* pipeline,Buffer* counter=nullptr){
+    void draw(const Constants& c,unsigned labelIndex,ID3D12PipelineState* pipeline,Buffer* counter=nullptr,ID3D12RootSignature* signature=nullptr){
         UINT back=opt.geometry?0:swap->GetCurrentBackBufferIndex();
         if(!opt.geometry)transition(targets[back].Get(),D3D12_RESOURCE_STATE_PRESENT,opt.msaa==4?D3D12_RESOURCE_STATE_RESOLVE_DEST:D3D12_RESOURCE_STATE_RENDER_TARGET);
-        list->SetPipelineState(pipeline);bind(c,labelIndex,false);
+        list->SetPipelineState(pipeline);bind(c,labelIndex,false,signature);
         if(counter)list->SetGraphicsRootUnorderedAccessView(8,counter->resource->GetGPUVirtualAddress());
         D3D12_VIEWPORT viewport{0,0,float(width),float(height),0,1};D3D12_RECT rect{0,0,LONG(width),LONG(height)};list->RSSetViewports(1,&viewport);list->RSSetScissorRects(1,&rect);
         auto target=rtv(opt.msaa==4?3:back);auto dsv=dsvHeap->GetCPUDescriptorHandleForHeapStart();list->OMSetRenderTargets(1,&target,FALSE,&dsv);
         const float colour[4]={0.13f,0.145f,0.16f,1};list->ClearRenderTargetView(target,colour,0,nullptr);list->ClearDepthStencilView(dsv,D3D12_CLEAR_FLAG_DEPTH,1,0,0,nullptr);list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        list->DrawInstanced(Vertices,Cells,0,0);
+        if(signature&&opt.feature=="transparency"){
+            D3D12_INDEX_BUFFER_VIEW indices{sortIndices.resource->GetGPUVirtualAddress(),UINT(sortIndices.size),DXGI_FORMAT_R32_UINT};list->IASetIndexBuffer(&indices);list->DrawIndexedInstanced(Vertices*Cells,1,0,0,0);
+        }else list->DrawInstanced(Vertices,Cells,0,0);
         if(opt.msaa==4){
             transition(msaaTarget.Get(),D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
             if(opt.geometry)transition(targets[0].Get(),D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RESOLVE_DEST);
@@ -237,9 +359,80 @@ public:
         }
         if(!opt.geometry)transition(targets[back].Get(),opt.msaa==4?D3D12_RESOURCE_STATE_RESOLVE_DEST:D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_PRESENT);
     }
+    void uavBarrier(Buffer& buffer){D3D12_RESOURCE_BARRIER b{};b.Type=D3D12_RESOURCE_BARRIER_TYPE_UAV;b.UAV.pResource=buffer.resource.Get();list->ResourceBarrier(1,&b);}
+    void sort(const Constants& c,unsigned labelIndex){
+        bind(c,labelIndex,true,featureRoot.Get());
+        list->SetComputeRootShaderResourceView(10,stickerOffsets.resource->GetGPUVirtualAddress());
+        list->SetComputeRootUnorderedAccessView(8,sortKeys.resource->GetGPUVirtualAddress());list->SetComputeRootUnorderedAccessView(9,sortIndices.resource->GetGPUVirtualAddress());
+        list->SetComputeRootUnorderedAccessView(12,sortPrefix.resource->GetGPUVirtualAddress());list->SetComputeRootUnorderedAccessView(13,sortBlocks.resource->GetGPUVirtualAddress());
+        transition(sortIndices,D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        // Order the previous frame's UAV reads before this frame overwrites them.
+        uavBarrier(sortKeys);uavBarrier(sortPrefix);uavBarrier(sortBlocks);
+        list->SetPipelineState(sortPso[0].Get());list->Dispatch(1024,1,1);uavBarrier(sortKeys);
+        list->SetPipelineState(sortPso[1].Get());
+        for(UINT k=2;k<=262144;k*=2)for(UINT j=k/2;j;j/=2){UINT params[2]={k,j};list->SetComputeRoot32BitConstants(11,2,params,0);list->Dispatch(512,1,1);uavBarrier(sortKeys);}
+        list->SetPipelineState(sortPso[2].Get());list->Dispatch(1024,1,1);uavBarrier(sortPrefix);uavBarrier(sortBlocks);
+        list->SetPipelineState(sortPso[3].Get());list->Dispatch(1,1,1);uavBarrier(sortBlocks);
+        list->SetPipelineState(sortPso[4].Get());list->Dispatch(Stickers,Cells,1);transition(sortIndices,D3D12_RESOURCE_STATE_INDEX_BUFFER);
+    }
+    void drawFeature(Constants c,unsigned labelIndex){
+        if(opt.feature=="dof"||opt.feature=="ao"){drawPost(c,labelIndex);return;}
+        if(opt.feature=="no-gaps")c.ss=1;
+        if(opt.feature=="transparency")sort(c,labelIndex);
+        draw(c,labelIndex,featurePso?featurePso.Get():drawPso.Get(),nullptr,featurePso?featureRoot.Get():nullptr);
+    }
+    Json checkEffect(const Assets& a){
+        auto c=constants(a,identity(),float(width)/float(height),0);
+        ComPtr<ID3D12Resource> oneDepth;ComPtr<ID3D12DescriptorHeap> oneDsv;ComPtr<ID3D12PipelineState> onePso;
+        if(opt.msaa==4){
+            onePso=graphics("draw_vs.dxil","draw_ps.dxil",nullptr,1);
+            D3D12_CLEAR_VALUE clear{};clear.Format=DXGI_FORMAT_D32_FLOAT;clear.DepthStencil.Depth=1;
+            oneDepth=texture(clear.Format,D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL,D3D12_RESOURCE_STATE_DEPTH_WRITE,1,&clear);
+            D3D12_DESCRIPTOR_HEAP_DESC d{};d.Type=D3D12_DESCRIPTOR_HEAP_TYPE_DSV;d.NumDescriptors=1;hr(device->CreateDescriptorHeap(&d,IID_PPV_ARGS(&oneDsv)),"effect-check DSV heap");device->CreateDepthStencilView(oneDepth.Get(),nullptr,oneDsv->GetCPUDescriptorHandleForHeapStart());
+        }
+        UINT back=swap->GetCurrentBackBufferIndex();auto desc=targets[back]->GetDesc();D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};uint64_t size=0;
+        device->GetCopyableFootprints(&desc,0,1,0,&footprint,nullptr,nullptr,&size);
+        auto read=buffer(size,D3D12_HEAP_TYPE_READBACK,D3D12_RESOURCE_STATE_COPY_DEST);
+        Buffer sortRead;if(opt.feature=="transparency")sortRead=buffer(uint64_t(Slots)*sizeof(SortKey),D3D12_HEAP_TYPE_READBACK,D3D12_RESOURCE_STATE_COPY_DEST);
+        auto capture=[&](bool enabled){
+            begin(0);
+            if(!enabled&&opt.msaa==4){
+                transition(targets[back].Get(),D3D12_RESOURCE_STATE_PRESENT,D3D12_RESOURCE_STATE_RENDER_TARGET);
+                list->SetPipelineState(onePso.Get());bind(c,0,false);
+                D3D12_VIEWPORT v{0,0,float(width),float(height),0,1};D3D12_RECT r{0,0,LONG(width),LONG(height)};list->RSSetViewports(1,&v);list->RSSetScissorRects(1,&r);
+                auto colour=rtv(back),ds=oneDsv->GetCPUDescriptorHandleForHeapStart();list->OMSetRenderTargets(1,&colour,FALSE,&ds);
+                const float clear[4]={0.13f,0.145f,0.16f,1};list->ClearRenderTargetView(colour,clear,0,nullptr);list->ClearDepthStencilView(ds,D3D12_CLEAR_FLAG_DEPTH,1,0,0,nullptr);list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);list->DrawInstanced(Vertices,Cells,0,0);
+                transition(targets[back].Get(),D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_PRESENT);
+            }else if(enabled)drawFeature(c,0);else draw(c,0,drawPso.Get());
+            if(enabled&&sortRead.resource){transition(sortKeys,D3D12_RESOURCE_STATE_COPY_SOURCE);list->CopyBufferRegion(sortRead.resource.Get(),0,sortKeys.resource.Get(),0,sortRead.size);transition(sortKeys,D3D12_RESOURCE_STATE_UNORDERED_ACCESS);}
+            transition(targets[back].Get(),D3D12_RESOURCE_STATE_PRESENT,D3D12_RESOURCE_STATE_COPY_SOURCE);
+            D3D12_TEXTURE_COPY_LOCATION dst{};dst.pResource=read.resource.Get();dst.Type=D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;dst.PlacedFootprint=footprint;
+            D3D12_TEXTURE_COPY_LOCATION src{};src.pResource=targets[back].Get();src.Type=D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;list->CopyTextureRegion(&dst,0,0,0,&src,nullptr);
+            transition(targets[back].Get(),D3D12_RESOURCE_STATE_COPY_SOURCE,D3D12_RESOURCE_STATE_PRESENT);submit(false);idle();
+            void* mapped=nullptr;D3D12_RANGE range{0,SIZE_T(size)};hr(read.resource->Map(0,&range,&mapped),"effect image readback");
+            std::vector<uint8_t> rgba(size_t(width)*height*4);for(UINT y=0;y<height;++y)std::memcpy(rgba.data()+size_t(y)*width*4,static_cast<uint8_t*>(mapped)+footprint.Offset+size_t(y)*footprint.Footprint.RowPitch,size_t(width)*4);
+            D3D12_RANGE none{0,0};read.resource->Unmap(0,&none);return rgba;
+        };
+        auto off=capture(false),on=capture(true);auto result=effectCheck(off,on);
+        if(sortRead.resource){
+            void* data=nullptr;D3D12_RANGE range{0,SIZE_T(sortRead.size)};hr(sortRead.resource->Map(0,&range,&data),"sorted key readback");sortResult=sortCheck(std::span(static_cast<const SortKey*>(data),size_t(Slots)),Slots);D3D12_RANGE none{0,0};sortRead.resource->Unmap(0,&none);
+            std::cout<<"sort check: "<<sortResult.at("status").string()<<", permutation="<<sortResult.at("permutation").dump()<<", back_to_front="<<sortResult.at("back_to_front").dump()<<'\n';
+        }
+        std::cout<<"feature effect: "<<result.at("status").string()<<", changed pixels="<<result.at("changed_pixels").integer()<<'\n';
+        if(!opt.snapshot.empty()){
+            // A failed check must still end with exit 4: a snapshot error then only adds a message.
+            bool failed=result.at("status").string()!="pass"||(!sortResult.null()&&sortResult.at("status").string()!="pass");
+            try{fs::create_directories(opt.snapshot);require(!fs::exists(opt.snapshot/"feature-off.png")&&!fs::exists(opt.snapshot/"feature-on.png"),"snapshot files already exist");png(opt.snapshot/"feature-off.png",width,height,off);png(opt.snapshot/"feature-on.png",width,height,on);}
+            catch(const std::exception& e){if(!failed)throw;std::cerr<<"sb_probe: snapshot not written: "<<e.what()<<'\n';}
+        }
+        return result;
+    }
     void copyLabels(unsigned actuallyBound,uint64_t slot){
-        require(slot<readbackSlots,"preserved label readback capacity exceeded");auto& bound=labels[actuallyBound];transition(bound,D3D12_RESOURCE_STATE_COPY_SOURCE);
-        list->CopyBufferRegion(readback.resource.Get(),slot*LabelBytes,bound.resource.Get(),0,LabelBytes);transition(bound,D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        uint64_t chunk=slot/readbackSlots;
+        require(chunk==0||opt.scene=="w3f","preserved label readback capacity exceeded");
+        while(chunk>extraReadbacks.size())extraReadbacks.push_back(buffer(readback.size,D3D12_HEAP_TYPE_READBACK,D3D12_RESOURCE_STATE_COPY_DEST));
+        auto& target=chunk?extraReadbacks[size_t(chunk-1)]:readback;auto& bound=labels[actuallyBound];transition(bound,D3D12_RESOURCE_STATE_COPY_SOURCE);
+        list->CopyBufferRegion(target.resource.Get(),slot%readbackSlots*LabelBytes,bound.resource.Get(),0,LabelBytes);transition(bound,D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
     void sampleMemory(){DXGI_QUERY_VIDEO_MEMORY_INFO info{};hr(memoryAdapter->QueryVideoMemoryInfo(0,DXGI_MEMORY_SEGMENT_GROUP_LOCAL,&info),"QueryVideoMemoryInfo");vramPeak=std::max(vramPeak,double(info.CurrentUsage)/1048576);}
     static VOID WINAPI onPowerMode(EFFECTIVE_POWER_MODE mode,VOID* context){static_cast<Gpu*>(context)->powerMode.store(int(mode));}
@@ -338,12 +531,19 @@ static void selfTiming(const std::vector<Trace>& trace,int64_t frequency,int64_t
 }
 int runGpu(const Assets& a,const Options& opt){
     if(opt.geometry)return geometryCheck(a,opt);
+    DisplayRequest displayRequest;
     fs::create_directories(opt.out);require(!fs::exists(opt.out/"run.json")&&!fs::exists(opt.out/"trace.jsonl"),"output directory already contains a run; choose a fresh --out");
     std::string build=buildIdentity();std::vector<uint32_t> dummySample{0};Gpu gpu(a,opt,dummySample);
-    bool labelScene=opt.scene=="w3"||opt.scene=="w4";auto labels=a.oracle[0];uint64_t authoritative=0;
+    Json effect;
+    if(opt.feature!="none"){
+        effect=gpu.checkEffect(a);
+        if(!gpu.sortResult.null()&&gpu.sortResult.at("status").string()!="pass"){std::cerr<<"sort check failed: sticker ids are not a permutation or keys are not back to front; trace not started\n";return 4;}
+        if(effect.at("status").string()!="pass"){std::cerr<<"feature effect failed: no visible change above the 0.1% threshold; trace not started\n";return 4;}
+    }
+    bool labelScene=opt.scene=="w3"||opt.scene=="w4"||opt.scene=="w3f";auto labels=a.oracle[0];uint64_t authoritative=0;
     unsigned expected=0,bound=0;bool injectionApplied=false;std::optional<unsigned> pending;
     LabelRecords records;std::vector<Trace> trace;trace.reserve(size_t(opt.duration*200));
-    Matrix q=identity();int64_t duration=turnTicks(opt.turnMs,gpu.frequency),start=0,stop=0,renderStart=qpc(),nextSample=0;uint64_t serial=0;
+    Matrix q=identity();int64_t duration=turnTicks(opt.turnMs,gpu.frequency),start=0,stop=0,renderStart=qpc(),nextSample=0;uint64_t serial=0,camera=0;
     bool running=true;MSG message{};
     while(running){
         while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){if(message.message==WM_QUIT)running=false;TranslateMessage(&message);DispatchMessageW(&message);}
@@ -354,7 +554,8 @@ int runGpu(const Assets& a,const Options& opt){
         int64_t now=qpc();if(!start&&double(now-renderStart)/double(gpu.frequency)>=opt.preroll){start=now;gpu.foregroundAtStart=GetForegroundWindow()==gpu.hwnd;}
         bool timed=start!=0;if(timed&&double(now-start)/double(gpu.frequency)>=opt.duration){stop=now;break;}
         if(timed&&now>=nextSample){gpu.sampleConditions();nextSample=now+gpu.frequency/10;}
-        uint64_t frameIndex=uint64_t(trace.size());Turn turn{0,0,0};if(timed)turn=turnAt(now,start,duration,a.angle);
+        uint64_t frameIndex=uint64_t(trace.size());Turn turn{0,0,0};FrameState state{};
+        if(timed){if(opt.scene=="w3f"){state=frameState(frameIndex,opt.turnFrames,opt.cycleFrames,a.angle);turn=state.turn;}else turn=turnAt(now,start,duration,a.angle);}
         bool copy=false;
         if(labelScene&&timed){
             if(turn.index>authoritative){
@@ -370,25 +571,30 @@ int runGpu(const Assets& a,const Options& opt){
             }else if(pending){bound=*pending;pending.reset();copy=true;}
             records.uses.push_back({frameIndex,turn.index,gpu.labelRevision[bound],uint64_t(bound+1),uint64_t(expected+1)});
         }
-        if(opt.scene=="w2"||opt.scene=="w3")rotate(q,0,3,0.002);
-        float theta=opt.scene=="w3"&&timed?float(turn.theta):0;
-        gpu.draw(constants(a,q,float(gpu.width)/float(gpu.height),theta),bound,gpu.drawPso.Get());
+        if(opt.scene=="w2"||opt.scene=="w3"){rotate(q,0,3,0.002);++camera;}
+        if(opt.scene=="w3f"&&timed){camera=state.camera;if(camera==1)q=identity();rotate(q,0,3,0.002);}
+        float theta=(opt.scene=="w3"||opt.scene=="w3f")&&timed?float(turn.theta):0;
+        auto c=constants(a,q,float(gpu.width)/float(gpu.height),theta);
+        if(opt.feature=="none")gpu.draw(c,bound,gpu.drawPso.Get());else gpu.drawFeature(c,bound);
         if(copy){auto slot=uint64_t(records.copies.size());gpu.copyLabels(bound,slot);records.copies.push_back({frameIndex,gpu.labelRevision[bound],uint64_t(bound+1),uint64_t(expected+1),slot});}
-        if(timed)trace.push_back({frameIndex,now,labelScene?gpu.labelRevision[bound]:0,opt.scene=="w3",turn.index,turn.phase});
+        if(timed)trace.push_back({frameIndex,now,labelScene?gpu.labelRevision[bound]:0,opt.scene=="w3"||opt.scene=="w3f",turn.index,turn.phase,camera});
         gpu.sampleMemory();gpu.submit(true);++serial;
     }
     if(!start)start=qpc();if(!stop)stop=qpc();gpu.idle();
     Json check;
     if(labelScene){
-        void* mapped=nullptr;D3D12_RANGE range{0,SIZE_T(records.copies.size()*LabelBytes)};hr(gpu.readback.resource->Map(0,&range,&mapped),"map preserved label readbacks after trace");
-        check=checkLabels(a,records,[&](const Copy& c){return std::span(static_cast<const uint32_t*>(mapped)+c.slot*Slots,size_t(Slots));});D3D12_RANGE none{0,0};gpu.readback.resource->Unmap(0,&none);
+        std::vector<const uint32_t*> mapped;std::vector<Buffer*> buffers{&gpu.readback};for(auto& b:gpu.extraReadbacks)buffers.push_back(&b);
+        for(auto b:buffers){void* p=nullptr;D3D12_RANGE range{0,SIZE_T(b->size)};hr(b->resource->Map(0,&range,&p),"map preserved label readbacks after trace");mapped.push_back(static_cast<const uint32_t*>(p));}
+        check=checkLabels(a,records,[&](const Copy& c){return std::span(mapped[size_t(c.slot/gpu.readbackSlots)]+c.slot%gpu.readbackSlots*Slots,size_t(Slots));});D3D12_RANGE none{0,0};for(auto b:buffers)b->resource->Unmap(0,&none);
         if(!opt.inject.empty()&&!injectionApplied){check["status"]="fail";check["injection_not_reached"]=true;}
         std::cout<<"label check: "<<check.at("status").string()<<", copies="<<records.copies.size()<<'\n';
     }
     Options written=opt;if(written.runId.empty())written.runId="sb-"+opt.scene+'-'+std::to_string(GetCurrentProcessId())+'-'+std::to_string(start);
     Json run=runJson(written,gpu.frequency,start,stop,build,gpu.environment(),check,gpu.vramPeak);run["frames"]=uint64_t(trace.size());
+    if(opt.feature!="none")run["feature_effect"]=effect;
+    if(!gpu.sortResult.null())run["sort_check"]=gpu.sortResult;
     bool visible=gpu.samplesNotVisible==0,foreground=gpu.samplesNotForeground==0;
-    run["window"]=Json::Object{{"topmost",true},{"foreground_at_trace_start",gpu.foregroundAtStart},{"sample_period_ms",100},{"samples",gpu.conditionSamples},
+    run["window"]=Json::Object{{"topmost",true},{"display_required",true},{"foreground_at_trace_start",gpu.foregroundAtStart},{"sample_period_ms",100},{"samples",gpu.conditionSamples},
         {"samples_not_visible",gpu.samplesNotVisible},{"samples_covered",gpu.samplesCovered},{"samples_not_foreground",gpu.samplesNotForeground},{"visible_throughout",visible},{"foreground_throughout",foreground},{"presents",gpu.presents}};run["injection_applied"]=injectionApplied;
     writeText(opt.out/"run.json",run.dump()+'\n');std::ostringstream lines;for(const auto& entry:trace)lines<<entry.json().dump()<<'\n';writeText(opt.out/"trace.jsonl",lines.str());
     selfTiming(trace,gpu.frequency,start,stop);

@@ -1,5 +1,6 @@
 param(
-    [Parameter(Mandatory=$true)][ValidateSet('w1','w2','w3','w4')][string]$Scene,
+    [Parameter(Mandatory=$true)][ValidateSet('w1','w2','w3','w4','w3f')][string]$Scene,
+    [ValidateSet('none','no-gaps','outlines','transparency','fog','dof','ao','msaa4')][string]$Feature = 'none',
     [ValidateRange(1,100)][int]$Runs = 3,
     [ValidateSet('corrupt-label','swap-same-colour','delay-adoption','stale-binding')][string]$Inject,
     [string[]]$Declare = @(),
@@ -18,6 +19,7 @@ $presentMon = Join-Path $env:ProgramFiles 'Intel/PresentMon/PresentMonConsoleApp
 if (-not (Test-Path -LiteralPath $probe)) { throw 'Build the probe in probe/build with build.cmd first.' }
 if (-not (Test-Path -LiteralPath $presentMon)) { throw 'PresentMon 2.6.0.0 was not found at the pinned location.' }
 if ($Inject -and $Scene -notin @('w3','w4')) { throw 'Fault injection requires W3 or W4.' }
+if ($Inject -and $Feature -ne 'none') { throw 'A feature cannot be combined with fault injection.' }
 if (-not $Inject -and -not $Overlays) { throw "State the overlay configuration with -Overlays, for example -Overlays 'none running'." }
 if (@($Declare | Where-Object { $_ -like 'overlays=*' }).Count) { throw 'Give the overlay configuration with -Overlays, not -Declare.' }
 function Native-Arguments([string[]]$Values) {
@@ -84,15 +86,16 @@ try {
     Assert-NoSession
     $stamp = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
     $base = Join-Path $repository 'work/loop-memory/perf/renderer/sb'
-    $summaryDirectory = Join-Path $base "$stamp-$Scene-summary"
+    $sceneFeature = if ($Feature -eq 'none') { $Scene } else { "$Scene-$Feature" }
+    $summaryDirectory = Join-Path $base "$stamp-$sceneFeature-summary"
     New-Item -ItemType Directory -Path $summaryDirectory | Out-Null
     $runDirectories = @()
     for ($i = 1; $i -le $Runs; $i++) {
-        $runId = "$stamp-$Scene-$i"
+        $runId = "$stamp-$sceneFeature-$i"
         if ($i -gt 1) { Assert-NoSession }
         $directory = Join-Path $base $runId
         New-Item -ItemType Directory -Path $directory | Out-Null
-        $arguments = @('--scene', $Scene, '--duration', (Number-Argument $Duration), '--preroll', (Number-Argument $Preroll), '--out', $directory, '--run-id', $runId)
+        $arguments = @('--scene', $Scene, '--feature', $Feature, '--duration', (Number-Argument $Duration), '--preroll', (Number-Argument $Preroll), '--out', $directory, '--run-id', $runId)
         if ($Inject) { $arguments += @('--inject', $Inject) }
         foreach ($condition in $Declare) { $arguments += @('--declare', $condition) }
         # No -WindowStyle: Windows applies it to the probe's first window, and a hidden
@@ -114,6 +117,7 @@ try {
             # means the window was hidden, minimised, cloaked, covered or not in the foreground
             # in some sample of the trace.
             if ($process.ExitCode -eq 3) { throw 'The probe window was not visible in the foreground throughout the trace; no gate evidence.' }
+            if ($process.ExitCode -eq 4) { throw 'The feature effect or sort check failed before the trace; no gate evidence.' }
             if ($process.ExitCode -ne 0 -and $process.ExitCode -ne 2) { throw "Probe exited $($process.ExitCode)." }
             # PresentMon 2.6 handles a target's exit only when a later present arrives, so after the
             # probe's last present --terminate_on_proc_exit never fires (it was still running 60 s
