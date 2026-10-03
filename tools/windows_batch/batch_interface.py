@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import dataclasses
 import hashlib
+import importlib.util
+import sys
 from pathlib import Path
 from typing import Mapping, Optional, Protocol, Sequence
 
@@ -117,9 +119,33 @@ class Step(Protocol):
         is an ERROR result, not an exception; KeyboardInterrupt propagates."""
 
 
+SANITIZER = "_windows_batch_sanitize"  # module name of tools/migration_probes/sanitize.py
+
+
+def sanitizer():
+    """The migration probes' sanitiser, loaded by path once and shared through sys.modules."""
+    module = sys.modules.get(SANITIZER)
+    if module is None:
+        spec = importlib.util.spec_from_file_location(
+            SANITIZER, Path(__file__).resolve().parents[1] / "migration_probes/sanitize.py")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[SANITIZER] = module
+        try:
+            spec.loader.exec_module(module)
+        except BaseException:
+            sys.modules.pop(SANITIZER, None)
+            raise
+    return module
+
+
 def clip(text: object, limit: int = REASON_LIMIT) -> str:
-    """One line of at most `limit` characters: the minimal error text kept in a result."""
-    line = " ".join(str(text).split())
+    """One line of at most `limit` characters: the minimal error text kept in a result.
+
+    Paths, account names and SIDs are replaced before the cut: a cut through a private name
+    would leave a fragment that the publication's sanitiser no longer recognises."""
+    # No temporary-directory root: looking it up can write a probe file, and --list writes nothing.
+    roots = {"<repo>": Path(__file__).resolve().parents[2], "<home>": Path.home()}
+    line = " ".join(sanitizer().sanitize(str(text), roots).split())
     return line if len(line) <= limit else line[: limit - 3] + "..."
 
 

@@ -58,6 +58,8 @@ CHECKS: list[list[str]] = [
     ["tests/test_renderer_tools.py"],
     ["tests/test_migration_probes.py"],
     ["tests/test_migration_p2.py"],
+    ["tests/test_windows_batch.py"],
+    ["tests/test_windows_batch_steps.py"],
     ["tests/test_inventory_check.py"],
     ["tests/test_forecast_guard.py"],
     ["tests/test_agent_rules_sync.py"],
