@@ -37,12 +37,15 @@ for ($i = 1; $i -le $Runs; $i++) {
     # No -WindowStyle: Windows applies it to the probe's first window, and a hidden
     # window's presents are not representative. -NoNewWindow keeps the console here.
     $process = Start-Process -FilePath $probe -ArgumentList (Native-Arguments $arguments) -WorkingDirectory $repository -PassThru -NoNewWindow
+    # Cache the handle now; otherwise Windows PowerShell can report ExitCode as empty after exit.
+    $null = $process.Handle
     $csv = Join-Path $directory 'presentmon.csv'
     # Capture until the probe exits, so a slow startup cannot cut the end of the gate interval.
     $captureArguments = @('--v1_metrics','--qpc_time','--process_id',"$($process.Id)",'--output_file',$csv,'--terminate_on_proc_exit')
     $capture = $null
     try {
         $capture = Start-Process -FilePath $presentMon -ArgumentList (Native-Arguments $captureArguments) -PassThru -WindowStyle Hidden
+        $null = $capture.Handle
         $process.WaitForExit()
         $capture.WaitForExit()
         if ($capture.ExitCode -ne 0) { throw "PresentMon exited $($capture.ExitCode); no gate evidence." }
