@@ -1,6 +1,6 @@
 # Stage 2.2 dispositions: method
 
-Status: **method and draft for the owner.** The exit of 2.2 is that every inventory item has keep, redesign, delete or automate with a reason. The owner signs every `delete` and `automate` row (charter sections 3 and 8). Rows here are proposals until then, and the result is in [dispositions.md](dispositions.md).
+Status: **signed by the owner on 3 October 2026** ([owner-decisions-2026-10-03](../../../wiki/decisions/owner-decisions-2026-10-03.md) sections 4 and 5). The exit of 2.2 is that every inventory item has keep, redesign, delete or automate with a reason, and the owner signs every `delete` and `automate` decision (charter sections 3 and 8). The result is in [dispositions.md](dispositions.md).
 
 ## Input
 

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-03] decision | Stage 2.2 dispositions signed
+The owner signed all 12 `delete` and 6 `automate` decisions of the [stage 2.2 dispositions](../progress/1.0/dispositions/dispositions.md); recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md) section 5.
+
 ## [2026-10-03] decision | A selected construction is the solver's own macro
 Recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md) section 4; the stage 2.2 draft dispositions of the endgame family constructors are `redesign`.
 
