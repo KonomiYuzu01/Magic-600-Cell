@@ -298,40 +298,59 @@ test("carried hyperparameters serve until the search started at reset ends, whic
   assert.throws(() => createLearner(geometry, opts).reset(space, records, { hyper: { ...carried, rho: 1 } }), RangeError);
 });
 
-test("a search replaced before it ends hands its replacement the same start with or without carried values", () => {
+test("a tenth answer during a search queues the next one, the same with or without carried values", () => {
   const records = Array.from({ length: 4 }, (_, i) => record(2 * i, 2 * i + 1, i % 2 ? "B" : "A"));
   const scenes = ["solving", "inspecting", "celebrating"];
   const answers = Array.from({ length: 10 }, (_, i) => record(20 + 2 * i, 21 + 2 * i, i % 3 ? "A" : "B", scenes[i % 3]));
   const carried = carriedHyper();
   const run = (hyper, steps) => {
-    const learner = createLearner(geometry, { ...options, cap: 40, hyperEvals: 12, deferHyper: true });
+    const ends = [];
+    const learner = createLearner(geometry, { ...options, cap: 40, hyperEvals: 12, deferHyper: true, onSearch: (h) => ends.push(structuredClone(h)) });
     learner.reset(space, records, { hyper });
     for (let i = 0; i < steps; i++) learner.idle();
-    // The tenth answer starts a new search, which takes over from the pending one.
+    // The tenth answer queues the next search; the running one goes on.
+    const running = learner.state.search;
     for (const r of answers) learner.answer(r);
+    assert.equal(learner.state.search, running, "the running search goes on");
+    assert.equal(learner.state.queued, true);
     const pair = learner.propose("solving");
-    assert.equal(pair.searched, false, "the replacement has not ended");
-    const { model, base } = learner.state;
-    const replaced = { pair, holdsStart: model.hyper === base, hyper: structuredClone(model.hyper), start: structuredClone(base) };
+    assert.equal(pair.searched, false, "the search after the reset has not ended");
+    const held = { pair, hyper: structuredClone(learner.state.model.hyper) };
     while (learner.idle());
+    assert.equal(ends.length, 2, "the queued search ran after the running one");
     assert.equal(learner.propose("solving").searched, true);
-    return { learner, replaced };
+    return { learner, held, ends };
   };
   for (const steps of [0, 1, 5]) {
     const cold = run(null, steps), warm = run(carried, steps);
-    // Both replacements start at the same point. Without carried values the model holds
-    // that point, as before; carried values stay in force until a search ends.
-    assert.deepEqual(warm.replaced.start, cold.replaced.start, `${steps} steps: the same start`);
-    assert.equal(cold.replaced.holdsStart, true);
-    assert.deepEqual(warm.replaced.hyper, carried, `${steps} steps: the carried values in force`);
-    assert.deepEqual([warm.replaced.pair.fitted, warm.replaced.pair.searched], [true, false]);
-    assert.deepEqual(warm.replaced.pair.relevance.map((r) => r.value), Array.from(carried.lengths, (l) => 1 / l));
-    assert.deepEqual(warm.learner.state.model.hyper, cold.learner.state.model.hyper, `${steps} steps before the answers`);
+    // Carried values stay in force until a search ends; both searches end as without them.
+    assert.deepEqual(warm.held.hyper, carried, `${steps} steps: the carried values in force`);
+    assert.deepEqual([warm.held.pair.fitted, warm.held.pair.searched], [true, false]);
+    assert.deepEqual(warm.held.pair.relevance.map((r) => r.value), Array.from(carried.lengths, (l) => 1 / l));
+    assert.deepEqual(warm.ends, cold.ends, `${steps} steps before the answers`);
+    assert.deepEqual(warm.learner.state.model.hyper, cold.learner.state.model.hyper);
     sameMeans(cold.learner, warm.learner);
   }
 });
 
-test("nothing is settled before the search started at the last reset has ended", () => {
+test("every search ends however fast the answers come, because the next one waits for it", () => {
+  const records = Array.from({ length: 4 }, (_, i) => record(2 * i, 2 * i + 1, i % 2 ? "B" : "A"));
+  const ends = [];
+  const learner = createLearner(geometry, { ...options, cap: 40, hyperEvals: 12, deferHyper: true, onSearch: () => ends.push(learner.state.answers) });
+  learner.reset(space, records);
+  // One evaluation per answer: ten answers bring fewer than the thirteen steps that a
+  // search of twelve evaluations takes, yet each search ends, and the one queued
+  // meanwhile starts at once.
+  for (let i = 0; i < 40; i++) {
+    learner.answer(record(20 + (i % 10), 30 + (i % 10), i % 3 ? "A" : "B"));
+    learner.idle();
+  }
+  assert.deepEqual(ends, [4 + 13, 4 + 26, 4 + 39]);
+  assert.equal(learner.state.queued, true, "the fortieth answer queued the next search");
+  assert.equal(learner.propose("solving").searched, true);
+});
+
+test("nothing is settled before a search has ended since the load", () => {
   const always = () => ({ settled: true, regret: 0.01 });
   const other = [{ scene: "solving", session: "s1", best: feasible[0] }];
   const make = (records, deferHyper) => {
@@ -360,7 +379,7 @@ test("nothing is settled before the search started at the last reset has ended",
   assert.deepEqual(flags(fresh.propose("solving")), [true, true, true, true]);
 });
 
-test("a rebuild at the cap keeps the hyperparameters until its search ends as a fresh reset's", () => {
+test("a rebuild at the cap keeps the hyperparameters and searched, and its search ends as a fresh reset's", () => {
   // As in the cap test: record 6 hits the cap and 7-9 reuse shown looks.
   const records = [record(0, 1), record(2, 3, "B"), record(4, 5), record(6, 7, "same"), record(8, 9),
     record(10, 11, "B"), record(12, 13), record(12, 10), record(11, 13, "B"), record(10, 13, "same")];
@@ -375,8 +394,9 @@ test("a rebuild at the cap keeps the hyperparameters until its search ends as a 
   assert.equal(live.answer(records[6]).rebuilt, true);
   assert.deepEqual(live.state.model.hyper, kept);
   for (const r of records.slice(7)) assert.equal(live.answer(r).rebuilt, false);
+  // A search had ended since the load, so the rebuild keeps searched.
   const pair = live.propose("solving");
-  assert.deepEqual([pair.fitted, pair.searched], [true, false]);
+  assert.deepEqual([pair.fitted, pair.searched], [true, true]);
   while (live.idle());
   const fresh = createLearner(geometry, opts);
   fresh.reset(space, records.slice(0, 7));
@@ -386,7 +406,7 @@ test("a rebuild at the cap keeps the hyperparameters until its search ends as a 
   assert.equal(live.propose("solving").searched, true);
 });
 
-test("a rebuild at the cap before any search has ended carries nothing", () => {
+test("a rebuild at the cap before any search has ended carries no values as fitted", () => {
   // As in the cap test: record 6 hits the cap; the search after the reset has not run.
   const records = [record(0, 1), record(2, 3, "B"), record(4, 5), record(6, 7, "same"), record(8, 9), record(10, 11, "B"), record(12, 13)];
   const live = createLearner(geometry, { ...options, hyperEvals: 30, deferHyper: true });
@@ -401,21 +421,54 @@ test("a rebuild at the cap before any search has ended carries nothing", () => {
   assert.deepEqual([live.propose("solving").fitted, live.propose("solving").searched], [true, true]);
 });
 
-test("a rebuild at the cap while carried values are in force carries them, not a replaced search's point", () => {
-  // Five records show ten looks; ten answers among them replace the search after one
+test("a rebuild at the cap keeps a running search, one queued search and the carried values in force", () => {
+  // Five records show ten looks; ten answers among them queue a search after one
   // evaluation, and two more records with new looks reach the cap of twelve.
   const records = Array.from({ length: 5 }, (_, i) => record(2 * i, 2 * i + 1, i % 2 ? "B" : "A"));
   const carried = carriedHyper();
-  const live = createLearner(geometry, { ...options, hyperEvals: 30, deferHyper: true });
+  let ends = 0;
+  const live = createLearner(geometry, { ...options, hyperEvals: 30, deferHyper: true, onSearch: () => ends++ });
   live.reset(space, records, { hyper: carried });
   live.idle();
+  const running = live.state.search;
   for (let i = 0; i < 10; i++) assert.equal(live.answer(record(i, (i + 3) % 10, i % 3 ? "A" : "B")).rebuilt, false);
-  assert.deepEqual(live.state.model.hyper, carried);
+  assert.deepEqual([live.state.queued, live.state.model.hyper], [true, carried]);
   assert.equal(live.answer(record(10, 11)).rebuilt, false);
   assert.equal(live.answer(record(12, 13)).rebuilt, true);
-  assert.deepEqual(live.state.model.hyper, carried);
+  assert.deepEqual([live.state.search === running, live.state.queued, live.state.model.hyper], [true, true, carried]);
   const pair = live.propose("solving");
   assert.deepEqual([pair.fitted, pair.searched], [true, false]);
+  // The carried search ends first; the queued one then starts from its result.
+  while (live.idle());
+  assert.equal(ends, 2);
+  assert.equal(live.propose("solving").searched, true);
+});
+
+test("at the cap every answer rebuilds, yet every search ends and searched holds through the rebuilds", () => {
+  // Six records show twelve looks, the cap; every later answer shows two looks no longer
+  // in the model, so each one rebuilds. One evaluation follows each answer.
+  const records = Array.from({ length: 6 }, (_, i) => record(2 * i, 2 * i + 1, i % 2 ? "B" : "A"));
+  const run = (hyper) => {
+    const ends = [], searched = [];
+    const learner = createLearner(geometry, {
+      ...options, hyperEvals: 12, deferHyper: true, onSearch: (h) => ends.push([learner.state.answers, structuredClone(h)]),
+    });
+    learner.reset(space, records, { hyper });
+    for (let j = 0; j < 30; j++) {
+      assert.equal(learner.answer(record((12 + 2 * j) % 64, (13 + 2 * j) % 64, j % 3 ? "A" : "B")).rebuilt, true);
+      // What the pair after this answer reports.
+      searched.push(learner.state.searched);
+      learner.idle();
+    }
+    return { learner, ends, searched };
+  };
+  const cold = run(null), warm = run(carriedHyper());
+  // A search takes thirteen steps: the first ends after the 13th answer, the next after the 26th.
+  assert.deepEqual(cold.ends.map(([answers]) => answers), [6 + 13, 6 + 26]);
+  assert.deepEqual(cold.searched, Array.from({ length: 30 }, (_, j) => j >= 13));
+  assert.deepEqual([cold.learner.state.queued, cold.learner.propose("solving").searched], [true, true]);
+  assert.deepEqual(warm.ends, cold.ends);
+  assert.deepEqual(warm.searched, cold.searched);
 });
 
 test("stored hyperparameters are used only when complete and stored for this family and parameter table", () => {

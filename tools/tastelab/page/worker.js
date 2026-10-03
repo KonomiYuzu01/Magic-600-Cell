@@ -42,13 +42,13 @@ function propose(family, scene) {
 }
 
 // The export's starting points, under each family's hyperparameters in force
-// (plan section 9). Only a family without fitted ones finishes its pending search
-// first (plan section 7).
+// (plan section 9). Only a family without fitted ones first runs its search to
+// its end, not a search queued after it (plan section 7).
 function presets(settled) {
   const out = [];
   for (const f of familiesOf(ctx.space)) {
     const learner = learnerFor(f.id);
-    if (!learner.state.fitted) while (learner.idle());
+    while (!learner.state.fitted && learner.idle());
     const { fitted, searched } = learner.state;
     for (const scene of SCENES) {
       const look = learner.best(scene);

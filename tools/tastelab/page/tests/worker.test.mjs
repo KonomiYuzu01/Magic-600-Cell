@@ -161,11 +161,11 @@ test("the export uses the hyperparameters in force and settles nothing before a 
   assert.equal(at(send({ type: "presets", id: "p9", settled: by("f1", 1) }), "f1").settled, false, "one session does not settle");
 });
 
-test("a search replaced before it ends leaves the stored values in force for pairs and the export", async () => {
+test("a tenth answer during the search after a load leaves the stored values in force for pairs and the export", async () => {
   const stored = storedDocs("s7", 17);
   let pair = send({ type: "init", space, records: exportRecords(), settled: [], models: stored, session: "s8", scene: "solving", family: "f1", seed: 17 });
   assert.deepEqual([pair.fitted, pair.searched], [true, false]);
-  // One idle evaluation, then ten answers: the tenth starts the next search before this one ends.
+  // One idle evaluation, then ten answers: the tenth queues the next search while this one runs.
   await tick();
   for (let i = 0; i < 10; i++) {
     pair = send({ type: "answer", record: record(i, i + 2, "f1", i % 3 ? "B" : "A"), scene: "solving", family: "f1" });
@@ -175,4 +175,18 @@ test("a search replaced before it ends leaves the stored values in force for pai
   const msg = send({ type: "presets", id: "p10", settled: [] });
   assert.deepEqual(flags(msg), [true, false, true, false]);
   assert.deepEqual(at(msg, "f1").look, pair.best, "the export's best look is the page's");
+});
+
+test("a search queued during a search runs after it in idle time; the export waits only for the first", async () => {
+  send({ type: "init", space, records: exportRecords(), settled: [], session: "s9", scene: "solving", family: "f1", seed: 19 });
+  await tick();
+  for (let i = 0; i < 10; i++) send({ type: "answer", record: record(i, i + 2, "f1", i % 3 ? "B" : "A"), scene: "solving", family: "f1" });
+  models.length = 0;
+  // The export runs the search of a family with nothing fitted to its end, not the one queued after it.
+  const msg = send({ type: "presets", id: "p11", settled: [] });
+  assert.deepEqual(flags(msg), [true, true, true, true]);
+  assert.deepEqual(models.map((m) => m.family).sort(), ["f1", "f2"]);
+  // The idle loop then runs the queued search to its end, which posts its document too.
+  for (let i = 0; i < 2000 && models.length < 3; i++) await tick();
+  assert.deepEqual(models.map((m) => [m.family, m.doc.answers]), [["f1", 22], ["f2", 2], ["f1", 22]]);
 });

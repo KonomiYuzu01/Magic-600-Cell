@@ -112,9 +112,10 @@ export function createLearner(geometry, {
   }
 
   // `hyper`, the result of an earlier search (a stored one, or the model's before a
-  // rebuild at the cap), serves pairs until a search started here ends; the
-  // searches start as they would without it (plan section 9).
-  function reset(space, records, { seed = 1, session = null, settledRecords = [], family = null, hyper = null } = {}) {
+  // rebuild at the cap), serves pairs until a search ends; the searches start as
+  // they would without it. A rebuild at the cap also passes its running `search`,
+  // which goes on with the data it started on, and `searched` (plan section 9).
+  function reset(space, records, { seed = 1, session = null, settledRecords = [], family = null, hyper = null, search = null, searched = false } = {}) {
     const sp = space || defaultSpace();
     const families = familiesOf(sp);
     const fam = family === null ? families[0].id : family;
@@ -129,13 +130,14 @@ export function createLearner(geometry, {
       session,
       settledRecords,
       model,
-      // Every search starts from `base`: the result of the last search here, else
-      // the starting values. Searches therefore never depend on carried values.
+      // Every search starts from `base`: the result of the last search that ended
+      // here, else the starting values. Searches therefore never depend on carried values.
       base,
       // True once a search has ended here, or when values were carried in.
       fitted: Boolean(hyper),
-      // True once a search started here has ended; the settled rule waits for it.
-      searched: !hyperEvals,
+      // True once a search has ended since the load or the undo; a rebuild at the cap
+      // keeps it. The settled rule waits for it.
+      searched: searched || !hyperEvals,
       allRecords: records.slice(),
       answers: 0,
       used: 0,
@@ -145,7 +147,12 @@ export function createLearner(geometry, {
       rejected: [],
       rng: createRng(seed >>> 0),
       answersSinceHyper: 0,
-      search: null,
+      // A search carried over a rebuild goes on with the data it started on; its
+      // result is fitted to this model when it ends.
+      search,
+      carried: Boolean(search),
+      // True when the next search waits for the running one (plan section 9).
+      queued: false,
       bestHistory: SCENES.map(() => []),
       // Per scene: the previous round's candidate with the highest posterior mean, shown or not.
       predicted: SCENES.map(() => null),
@@ -178,44 +185,44 @@ export function createLearner(geometry, {
     }
   }
 
-  // Starts the hyperparameter search of plan section 5.3. A search still
-  // running hands over its best point so far, so its work is not lost.
+  // Starts the hyperparameter search of plan section 5.3 from `base`. While a
+  // search is running, the next one is queued instead, so every search ends.
   function refitHyper() {
     if (!hyperEvals) return;
-    if (state.search) handOver(false);
-    state.search = createHyperSearch(state.model, { maxEvals: hyperEvals, ampGrid, betaGrid, refine: REFINE, start: state.base });
+    if (state.search) state.queued = true;
+    else state.search = createHyperSearch(state.model, { maxEvals: hyperEvals, ampGrid, betaGrid, refine: REFINE, start: state.base });
     if (!deferHyper) while (idle());
   }
 
-  // Applies the best point of the pending search, which has `ended` or is being
-  // replaced. While carried values are in force (no search has ended here), a
-  // replaced search only moves `base`, where the next search starts, and the model
-  // keeps them. Once a search ends, the model holds what it would hold without
-  // carried values: the best point found, else `base`.
-  function handOver(ended) {
+  // Applies the result of the search that has ended: the model then holds what it
+  // would hold without carried values, the best point found, else `base`. A search
+  // carried over a rebuild ran on the data before it, so the model is refitted.
+  // A queued search starts from there.
+  function handOver() {
     const search = state.search, found = search.found;
     state.search = null;
-    if (!ended && state.fitted && !state.searched) {
-      if (found) state.base = search.best;
-      return;
-    }
-    search.adopt();
-    if (found) state.base = state.model.hyper;
-    if (!ended) return;
+    if (!state.carried) search.adopt();
+    if (found) state.base = state.carried ? search.best : state.model.hyper;
+    state.carried = false;
     if (state.model.hyper !== state.base) {
       state.model.hyper = state.base;
       fit(state.model);
     }
     state.searched = state.fitted = true;
     if (found && onSearch) onSearch(state.model.hyper);
+    if (state.queued) {
+      state.queued = false;
+      refitHyper();
+    }
   }
 
-  // Runs one evaluation of the pending search; true while work remains.
+  // Runs one evaluation of the running search; true while work remains, including
+  // a queued search that has just started.
   function idle() {
     if (!state || !state.search) return false;
     if (state.search.step()) return true;
-    handOver(true);
-    return false;
+    handOver();
+    return Boolean(state.search);
   }
 
   function lookId(look, scene) {
@@ -253,10 +260,11 @@ export function createLearner(geometry, {
     let rebuilt = false;
     if (!ingest(record, parsed)) {
       // The cap is reached during a session: rebuild from every stored record. Fitted
-      // hyperparameters serve until the rebuild's search ends.
-      const { bestHistory, predicted, session, settledRecords, family, fitted } = state;
+      // hyperparameters serve until a search ends; a running search goes on, and the
+      // rebuild's own search waits for it (plan section 9).
+      const { bestHistory, predicted, session, settledRecords, family, fitted, search, searched } = state;
       reset(state.space, state.allRecords, {
-        seed: state.rng.int(2 ** 31), session, settledRecords, family, hyper: fitted ? state.model.hyper : null,
+        seed: state.rng.int(2 ** 31), session, settledRecords, family, hyper: fitted ? state.model.hyper : null, search, searched,
       });
       state.bestHistory = bestHistory;
       state.predicted = predicted;
@@ -346,7 +354,7 @@ export function createLearner(geometry, {
     // to the predicted range, is at most tau; the best after each of the last
     // answers in this scene lies in the current best's region; and another session
     // settled in the same region. Each test needs fitted length scales, so nothing
-    // is settled before a search started at the last reset has ended.
+    // is settled before a search has ended since the load or the undo.
     const bestIndex = bestValue ? looks.findIndex((l) => lookKey(l) === lookKey(bestValue)) : -1;
     const st = state.comparisons && bestIndex >= 0
       ? settledTest(state.model, points, state.rng, {
