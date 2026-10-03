@@ -166,6 +166,8 @@ SA2_API int32_t sa2_release_texture(sa2_context* ctx, uint64_t resource, uint32_
  * texture Godot created, from get_driver_resource(DRIVER_RESOURCE_TEXTURE,
  * rid, 0)): the context adds a reference while the slot is registered. The
  * resource must be a 2D texture of the given size with ALLOW_RENDER_TARGET.
+ * A resource already registered in another slot is refused with
+ * SA2_E_WRONG_STATE, because fence history is kept per slot.
  */
 SA2_API int32_t sa2_register_slot(sa2_context* ctx, uint32_t slot, uint64_t resource, uint32_t width, uint32_t height, int32_t godot_owned);
 

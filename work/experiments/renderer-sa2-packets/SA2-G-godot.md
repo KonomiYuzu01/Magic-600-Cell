@@ -96,7 +96,7 @@ Therefore, for the import and export routes, the handover state the producer lea
 - `work/experiments/renderer-sa2/code_layout.json`: the code image, the decode rule and test vectors.
 - `docs/progress/1.0/packets/renderer/E-2.4-02-sa2-godot.md` (level 1) and `docs/progress/1.0/renderer-experiment-plan.md`, section 3.
 - `docs/progress/1.0/requirements-from-screening.md`, requirements R-04 (bounded, ordered shutdown), R-14 (no unbounded waits on the UI thread) and R-17 (device loss: recover or report).
-- `work/experiments/renderer-sb/handoff/README.md` and `RESULT.md`: the S-B fence protocol and drain rule this test carries into Godot.
+- `work/experiments/renderer-sb/handoff/README.md` and `work/experiments/renderer-sb/RESULT.md` (its handoff section): the S-B fence protocol and drain rule this test carries into Godot.
 
 ## 5. Attempts so far
 | # | Hypothesis | Change | Verification | Result |
