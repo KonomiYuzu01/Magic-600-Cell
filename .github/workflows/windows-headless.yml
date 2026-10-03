@@ -43,9 +43,6 @@ jobs:
           python -c "import numpy,platform,struct;print('numpy',numpy.__version__,platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
 
       - name: Run the headless checks
-        # The default temp path holds an 8.3 short name (RUNNER~1), which the link checks
-        # read as a link; use the runner's own long temp path, as on a normal machine.
-        env:
-          TEMP: ${{ runner.temp }}
-          TMP: ${{ runner.temp }}
+        # The default temp path keeps its 8.3 short name (RUNNER~1) on purpose: the tests
+        # must pass under it.
         run: python tools/ci/run_headless.py
