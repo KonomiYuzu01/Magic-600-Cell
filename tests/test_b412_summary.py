@@ -669,6 +669,14 @@ class SummaryTests(unittest.TestCase):
                 self.write_json(directory / 'environment.json', environment)
                 self.unreadable(directory, 'bad-field')
 
+    def test_optional_renderer_controls_are_published(self):
+        directory = self.latency()
+        environment = {'msaa': 4, 'vsync': False, 'tearing': True, 'warp': False,
+                       'declared': {'upscaling': False}}
+        self.write_json(directory / 'environment.json', environment)
+        self.assertEqual(self.summarize(directory)['environment'], [{'run_id': directory.name, **environment}])
+        self.assertEqual(summary.public_environment({}), {})
+
     def test_markdown_table_order_extra_runs_rounding_and_notes(self):
         runs = [self.latency([12.34567] * 100) for _ in range(4)]
         runs += [self.latency([25.5555] * 100, series='m2-local'), self.m3(),
