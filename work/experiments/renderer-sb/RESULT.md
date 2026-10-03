@@ -8,11 +8,11 @@ This is the experiment card ([protocol section 2](../../../docs/progress/1.0/sta
 | Question | Does a bare Direct3D 12 renderer draw all 259,800 sticker slots at full detail with the most complex turn animation within the selection gate? |
 | Decision it feeds | The day-7 go/no-go (E-2.4-04), the start of the S-A2 and S-D geometry ports, and the selection (E-2.4-05). |
 | Hypothesis | No pass or fail was predicted before the runs; the packet expected a number for each scene and a working drawing method. |
-| Method | The probe in this directory, the capture script `probe/run_scene.ps1`, PresentMon 2.6.0.0 and `tools/perf/renderer_gate.py` (below). |
+| Method | The probe in this directory, the capture script `probe/run_scene.ps1`, PresentMon 2.6.0.0 and `tools/perf/renderer_gate.py` (below). The handoff test `handoff/` for item 4. |
 | Time box | 1.5 days |
 | Kill criteria | Two drawing methods both below 50 % of the gate. |
 | Evidence class | Actual Windows/DirectX and performance, valid only for build identity `2b5bf5e6…` under the conditions below. |
-| Result | W3 meets the gate: three valid runs; pooled average 778.37 fps, pooled p99 1.546 ms, peak VRAM 81.7 MB. The label check caught each of the four injected faults on the GPU. |
+| Result | W3 meets the gate: three valid runs; pooled average 778.37 fps, pooled p99 1.546 ms, peak VRAM 81.7 MB. The fenced resource handoff works on the same device, to a second device in a child process and to a D3D11 consumer, with every frame verified. The label check caught each of the four injected faults on the GPU. |
 | Decision | Open. The day-7 go/no-go is an Astra gate ruling, and it also needs the S-A2 and S-D results. |
 
 ## Build and tools
@@ -95,6 +95,37 @@ Each fault from plan section 2 was injected once, in turn 20 of a 10 s W3 run of
 - The gate's refusal of a failed label check in a complete capture is shown only by its self-test on fixtures.
 - Summary: [results/neg-20261003T060641Z-summary.json](results/neg-20261003T060641Z-summary.json).
 
+## D3D12 resource handoff (3 October 2026)
+
+The handoff test is [handoff/](handoff/README.md) (packet [SB-C](../renderer-sb-packets/SB-C-handoff.md)). It has no window, model data or shaders. For frame `n`:
+- a compute queue clears a private texture to a pattern that encodes `n` and copies it into one of three shared RGBA8 1024 × 1024 textures, then signals `ready = n`;
+- the consumer waits for `ready = n`, copies the texture to a readback resource, and the CPU checks every texel against `n`;
+- the consumer then signals `free = n`, and the producer reuses the slot only after `free` reaches `n - 3`.
+
+| Mode | Consumer | Result on the RTX 4070 Laptop GPU, debug layer on |
+|---|---|---|
+| `same-device` | direct queue of the producer's device | pass, 1,000 of 1,000 frames verified |
+| `second-device` | a child process with its own D3D12 device on the same adapter; one shared heap and two shared fences, opened from NT handles | pass, 1,000 of 1,000 |
+| `d3d11-consumer` | a D3D11 device on the same adapter; three shared committed textures and the two fences | pass, 1,000 of 1,000 |
+| `resize` | as `same-device`; at every 100th frame both queues drain and the ring is rebuilt at 640 × 480, 1280 × 720 or 1024 × 1024 | pass, 1,000 of 1,000, 9 rebuilds |
+
+- With the debug layer, every mode ended with no unexpected live object and no debug error. The child process reported its own check.
+- The same build also passed every mode without the debug layer, and on WARP with it.
+- A second `D3D12CreateDevice` call on the same adapter in one process returned the same device pointer, both in the parent process and in the child.
+- D3D11 can open a shared D3D12 texture only if the texture allows render-target use. Without that flag, `OpenSharedResource1` returned `E_INVALIDARG`. The shared-heap path keeps non-render-target textures.
+- A drain may fail to confirm that the GPU has finished (review finding SB-C-001). The failing drain then ends its process at once with exit code 3, before anything is released. Windows reclaims the GPU objects only after the GPU stops using them.
+- Recording that failure is best-effort. An error while recording it, such as an allocation failure, cannot unwind and release objects either. An adjudicating experiment on the owner's GPU showed the difference:
+  - copies of the reviewed source and of the fix were instrumented the same way: the first failure message in the abort path threw `std::bad_alloc`, and a trace showed when a queue's destructor ran;
+  - in the reviewed source, the consumer queue was released before the process ended; with a drain that failed only once, both queues were released in ordinary teardown and the run exited 1;
+  - with the fix, every case exited 3 and no queue destructor ran.
+- Injected failures of the producer's drains, and separately of the consumer's drains, ended every mode this way:
+  - the failure is in the JSON;
+  - no process was left behind;
+  - for the consumer in the child process, the child exits 3 and the parent records its failure.
+- The abort report is written on a separate thread with a 10 s limit (review finding SB-C-002). With its standard output going to a pipe that nobody read, an aborted 10,000-frame run still exited 3, 53 s after it started. The same run with a reader received the complete report and exited after 33 s. The machine was busier than in earlier runs, so these times are information only.
+- Timings, from submission to the CPU's check of a frame, are information only. They include ring pacing and process effects, and they are not GPU time or frame time.
+- Build: `sb_handoff.exe` SHA-256 `f8d252bb…`, MSVC 19.51.36260, Windows SDK 10.0.26100.0, Ninja. Source digests, counts, teardown checks per run and the experiment: [results/handoff-20261003T063841Z-summary.json](results/handoff-20261003T063841Z-summary.json). Adapter LUIDs and per-frame timings stay private.
+
 ## Acceptance items (packet section 1)
 
 | # | Item | Status |
@@ -102,8 +133,8 @@ Each fault from plan section 2 was injected once, in turn 20 of a 10 s W3 run of
 | 1 | Geometry check against `reference_geometry.py` | Done. It passed on the owner's GPU with this build: three cameras, three poses, 9,066 samples each, largest absolute error 1.4e-6 in the checked projected coordinates, and 30,480 vertices drawn for each of the 600 cells. |
 | 2 | W1–W4 on the owner's machine | W3 done; W1, W2 and W4 not run yet. |
 | 3 | Three cold W3 runs judged by `renderer_gate.py`, exact label check on every run | Done: `met`. Each of the four injected faults (plan section 2) failed the label check on the owner's GPU with this build (section above). Those runs had no PresentMon capture, so the gate's refusal of a failed label check in a complete capture is shown only by its self-test on fixtures. |
-| 4 | D3D12 resource handoff with fences, on the same device and to a second device | Not done (SB-C, next). |
-| 5 | Feature cost table (H-06) | Not measured yet; due stage day 5. |
+| 4 | D3D12 resource handoff with fences, on the same device and to a second device | Done on the owner's GPU: same device, second device in a child process, D3D11 consumer and resize all pass with every frame verified (section above). |
+| 5 | Feature cost table (H-06) | Not measured yet; due stage day 5. The probe features with the `w3f` cost scene (`f554af5`) and the cost-table tool (`1c95357`) are committed. |
 
 ## Not claimed
 
@@ -111,3 +142,4 @@ Each fault from plan section 2 was injected once, in turn 20 of a 10 s W3 run of
 - W5 (W3 with the design track's look, H-01 to H-04) is not measured. The selection uses W5 when it exists.
 - The probe is not a product renderer. Long sessions, input and V-Sync-on behaviour are not measured.
 - The window checks are safeguards, not proof of continuous full-area visibility; the owner's attendance covers the rest.
+- The handoff result is not a Godot or Qt result. Each framework still needs its own smoke test with its import or native-handle API, display, resize and teardown.
