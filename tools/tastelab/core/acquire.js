@@ -1,31 +1,41 @@
-import {predict, predictMean, observations, outcomeProbabilities, createJointSampler} from './gp.js';
+import {predict, observations, outcomeProbabilities, logPhi, createJointSampler} from './gp.js';
 
 const distance = (a, b) => Math.sqrt(a.reduce((sum, x, i) => sum + (x - b[i]) ** 2, 0));
 const entropy = probabilities => Object.values(probabilities).reduce((sum, p) => sum - (p > 0 ? p * Math.log(p) : 0), 0);
-const argmax = (values, exclude = -1) => {
+const argmax = values => {
   let best = -1;
-  for (let i = 0; i < values.length; i++) if (i !== exclude && (best < 0 || values[i] > values[best])) best = i;
+  for (let i = 0; i < values.length; i++) if (best < 0 || values[i] > values[best]) best = i;
   return best;
 };
 const sceneNumber = scene => typeof scene === 'string' ? ['solving', 'inspecting', 'celebrating'].indexOf(scene) : scene;
 
-function information(mean, variance, eps, rng, samples) {
+// Equal-weight normal quantiles, computed once for deterministic quadrature.
+const quantiles = Array.from({length: 16}, (_, k) => {
+  const probability = (k + 0.5) / 16;
+  let low = -8, high = 8;
+  for (let i = 0; i < 60; i++) {
+    const middle = (low + high) / 2;
+    if (Math.exp(logPhi(middle)) < probability) low = middle;
+    else high = middle;
+  }
+  return (low + high) / 2;
+});
+export function mutualInfo(meanDiff, variance, eps) {
   if (variance <= 1e-14) return 0;
   const average = {A: 0, B: 0, same: 0};
   let conditionalEntropy = 0;
-  const sd = Math.sqrt(Math.max(0, variance));
-  for (let i = 0; i < samples; i++) {
-    const probabilities = outcomeProbabilities(mean + sd * rng.normal(), eps);
-    for (const key of Object.keys(average)) average[key] += probabilities[key] / samples;
-    conditionalEntropy += entropy(probabilities) / samples;
+  const sd = Math.sqrt(variance);
+  for (const z of quantiles) {
+    const probabilities = outcomeProbabilities(meanDiff + sd * z, eps);
+    for (const key of Object.keys(average)) average[key] += probabilities[key] / quantiles.length;
+    conditionalEntropy += entropy(probabilities) / quantiles.length;
   }
   return Math.max(0, entropy(average) - conditionalEntropy);
 }
-export function expectedInfo(model, pointA, pointB, rng, samples = 64) {
-  if (!Number.isInteger(samples) || samples < 1) throw new RangeError('samples');
+export function expectedInfo(model, pointA, pointB) {
   const {mean, cov} = predict(model, [pointA, pointB]);
-  return information(mean[0] - mean[1], cov[0] + cov[3] - 2 * cov[1],
-    model._posterior?.hyper.eps ?? model.hyper.eps, rng, samples);
+  return mutualInfo(mean[0] - mean[1], cov[0] + cov[3] - 2 * cov[1],
+    model._posterior?.hyper.eps ?? model.hyper.eps);
 }
 
 // `prediction` may carry predict(model, candidates) when the caller already has it,
@@ -37,10 +47,12 @@ const checkedPrediction = (prediction, count) => {
   return prediction;
 };
 export function nextPair(model, candidates, rng, {
-  infoRate = 0.2, repeatRate = 0.05, rejected = [], rejectRadius = 0.1, prediction: given = null,
+  anchorRate = 0.5, freePairs = 3000, rejected = [], rejectRadius = 0.1, prediction: given = null,
 } = {}) {
-  if (![infoRate, repeatRate, rejectRadius].every(x => Number.isFinite(x) && x >= 0) ||
-      infoRate + repeatRate > 1) throw new RangeError('acquisition options');
+  if (!Number.isFinite(anchorRate) || anchorRate < 0 || anchorRate > 1 ||
+      !Number.isInteger(freePairs) || freePairs < 0 || !Number.isFinite(rejectRadius) || rejectRadius < 0) {
+    throw new RangeError('acquisition options');
+  }
   const rejectedFeatures = rejected.map(look => {
     const features = typeof look === 'number' ? model.looks[look]?.features : look?.features ?? look;
     if (!features || features.length !== model.dim || Array.from(features).some(x => !Number.isFinite(x))) {
@@ -52,73 +64,56 @@ export function nextPair(model, candidates, rng, {
   // Validate every point, including excluded ones, without modifying the model.
   const prediction = given ? checkedPrediction(given, candidates.length) : predict(model, candidates);
   const eligible = candidates.map((_, i) => i).filter(i => !excluded(candidates[i]));
-  const scenes = new Set(eligible.map(i => sceneNumber(candidates[i].scene)));
-  const roll = rng.next();
-  const repeats = observations(model).filter(o =>
-    model.looks[o.a].scene === model.looks[o.b].scene &&
-    scenes.has(model.looks[o.a].scene) &&
-    !excluded(model.looks[o.a]) && !excluded(model.looks[o.b]));
-  if (roll < repeatRate && repeats.length) {
-    const {a, b} = repeats[rng.int(repeats.length)];
-    return {a, b, kind: 'repeat', lookA: a, lookB: b};
-  }
   if (eligible.length < 2) throw new RangeError('at least two non-rejected candidates required');
   // A round compares looks in one scene. If multiple scenes are supplied,
   // choose the scene with the strongest available posterior-mean incumbent.
   const viable = eligible.filter(i => eligible.some(j => j !== i &&
     sceneNumber(candidates[j].scene) === sceneNumber(candidates[i].scene)));
   if (!viable.length) throw new RangeError('two candidates in the same scene required');
-  let anchor = viable.reduce((best, i) => prediction.mean[i] > prediction.mean[best] ? i : best, viable[0]);
+  const anchor = viable.reduce((best, i) => prediction.mean[i] > prediction.mean[best] ? i : best, viable[0]);
   const scene = sceneNumber(candidates[anchor].scene);
   const pool = eligible.filter(i => sceneNumber(candidates[i].scene) === scene);
-  // Prefer the best previously shown look when it is in the round's pool.
-  // The caller includes its incumbent to guarantee that it can be returned as
-  // a candidate index; otherwise the pool's highest mean is the incumbent.
-  const shown = model.looks.filter(p => p.scene === scene && !excluded(p));
-  if (shown.length) {
-    const means = predictMean(model, shown);
-    const best = shown[argmax(means)];
-    const index = pool.find(i => distance(candidates[i].features, best.features) < 1e-12);
-    if (index !== undefined) anchor = index;
-  }
-  const localAnchor = pool.indexOf(anchor);
-  const mean = Float64Array.from(pool, i => prediction.mean[i]);
-  const cov = new Float64Array(pool.length ** 2);
-  for (let i = 0; i < pool.length; i++) {
-    for (let j = 0; j < pool.length; j++) cov[i * pool.length + j] = prediction.cov[pool[i] * candidates.length + pool[j]];
-  }
   const eps = model._posterior?.hyper.eps ?? model.hyper.eps;
-  if (roll >= repeatRate && roll < repeatRate + infoRate) {
-    let best = -1;
-    let bestInfo = -Infinity;
-    for (let i = 0; i < pool.length; i++) {
-      if (i === localAnchor) continue;
-      const variance = cov[localAnchor * pool.length + localAnchor] + cov[i * pool.length + i] -
-        2 * cov[localAnchor * pool.length + i];
-      const info = information(mean[localAnchor] - mean[i], variance, eps, rng, 64);
-      if (info > bestInfo) { bestInfo = info; best = i; }
-    }
-    return {a: anchor, b: pool[best], kind: 'info'};
+  const {mean, cov} = prediction, count = candidates.length;
+  const information = (a, b) => mutualInfo(mean[a] - mean[b],
+    cov[a * count + a] + cov[b * count + b] - 2 * cov[a * count + b], eps);
+  let partner = -1, bestInfo = -Infinity;
+  for (const i of pool) {
+    if (i === anchor) continue;
+    const info = information(anchor, i);
+    if (info > bestInfo) { bestInfo = info; partner = i; }
   }
-  const draw = createJointSampler({mean, cov})(rng);
-  return {a: anchor, b: pool[argmax(draw, localAnchor)], kind: 'thompson'};
+  let pair = {a: anchor, b: partner, kind: 'mi'};
+  if (rng.next() < anchorRate) return pair;
+  for (let t = 0; t < freePairs; t++) {
+    const i = rng.int(pool.length);
+    let j = rng.int(pool.length - 1);
+    j += j >= i;
+    const a = pool[i], b = pool[j], info = information(a, b);
+    if (info > bestInfo) { bestInfo = info; pair = {a, b, kind: 'free'}; }
+  }
+  return pair;
 }
 
 // `best` is the index of the reported best look among the candidates; by default
 // the candidate with the highest posterior mean.
-export function settled(model, candidates, rng, {draws = 200, prob = 0.9, prediction: given = null, best: bestIndex = null} = {}) {
-  if (!Number.isInteger(draws) || draws < 1 || !Number.isFinite(prob) || prob < 0 || prob > 1 || !candidates.length) {
+export function settled(model, candidates, rng, {draws = 200, tau = 0.05, prediction: given = null, best: bestIndex = null, reference} = {}) {
+  if (!Number.isInteger(draws) || draws < 1 || !Number.isFinite(tau) || tau < 0 ||
+      !Number.isFinite(reference) || !candidates.length) {
     throw new RangeError('settled options or candidates');
   }
   const prediction = given ? checkedPrediction(given, candidates.length) : predict(model, candidates);
   const best = bestIndex ?? argmax(prediction.mean);
   if (!Number.isInteger(best) || best < 0 || best >= candidates.length) throw new RangeError('best');
-  const sample = createJointSampler(prediction);
-  let wins = 0;
+  // Fix the normalization before sampling (TL-P11).
+  const range = prediction.mean[argmax(prediction.mean)] - reference;
+  if (range <= 0) return {settled: false, regret: 1};
+  const sample = typeof prediction.draw === 'function' ? rng => prediction.draw(rng) : createJointSampler(prediction);
+  let loss = 0;
   for (let i = 0; i < draws; i++) {
     const utilities = sample(rng);
-    if (utilities.every((value, j) => j === best || utilities[best] > value)) wins++;
+    loss += utilities[argmax(utilities)] - utilities[best];
   }
-  const probability = wins / draws;
-  return {settled: observations(model).length > 0 && probability >= prob, prob: probability};
+  const regret = Math.min(1, loss / draws / range);
+  return {settled: observations(model).length > 0 && regret <= tau, regret};
 }

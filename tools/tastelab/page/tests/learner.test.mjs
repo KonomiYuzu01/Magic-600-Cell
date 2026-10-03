@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildGeometry } from "../geometry.js";
 import { createLearner, recordFamily } from "../learner.js";
-import { defaultSpace, sobol, fromUnit, encode, featureSlices, withinScene } from "../../core/space.js";
+import { buildPool, classPairsFor } from "../candidates.js";
+import { defaultSpace, sobol, fromUnit, encode, featureSlices, withinScene, sceneSpace } from "../../core/space.js";
 import { predict } from "../../core/gp.js";
 
 // Evidence: synthetic looks and answers; no stored session data.
@@ -12,6 +13,10 @@ const points = sobol(64, space.params.length, 1).map((u) => fromUnit(space, u));
 const options = { cap: 12, candidates: 48, hyperEvals: 0, poolDraws: 1024 };
 const record = (a, b, answer = "A", scene = "solving") => ({ lookA: points[a], lookB: points[b], scene, answer, t: "", session: "s0" });
 const key = (look) => JSON.stringify(look);
+// Looks that pass the solving scene's hard checks, as every shown look does. Only such a best
+// look joins a round's candidates, where the regret test can assess it.
+const feasible = buildPool(sceneSpace(space, "solving"), classPairsFor(geometry), { draws: 2048 });
+const shown = (a, b, answer = "A") => ({ ...record(0, 1, answer), lookA: feasible[a], lookB: feasible[b] });
 
 // Posterior mean per shown look, keyed by look, and the observations as look-key pairs.
 function snapshot(learner) {
@@ -67,46 +72,47 @@ test("records that do not fit the parameter table are skipped and counted", () =
   assert.throws(() => learner.propose("party"));
 });
 
-test("relevance reads each parameter's features through the encoding slices", () => {
+test("relevance is the inverse of each parameter's length scale, one per kernel group", () => {
   const learner = createLearner(geometry, options);
   learner.reset(space, [record(0, 1)]);
+  const slices = featureSlices(space);
   const L = learner.state.model.hyper.lengths;
-  L[0] = 0.1; L[1] = 2;
-  const glow = featureSlices(space).find((s) => s.id === "glow");
-  L[glow.start] = 0.25;
+  assert.equal(L.length, slices.length);
+  const group = (id) => slices.findIndex((s) => s.id === id);
+  L[group("hueRotation")] = 0.1;
+  L[group("glow")] = 0.25;
   const rel = Object.fromEntries(learner.propose("solving").relevance.map((r) => [r.id, r.value]));
   assert.equal(rel.hueRotation, 10);
   assert.equal(rel.glow, 4);
-  assert.equal(rel.gap, 2);
+  assert.equal(rel.gap, 1);
 });
 
-test("settled needs the joint-draw test, a stable best in this scene and another session in the same region", () => {
-  const always = () => ({ settled: true, prob: 0.95 });
+test("settled needs the regret test, a stable best in this scene and another session in the same region", () => {
+  const always = () => ({ settled: true, regret: 0.01 });
   const make = (settledRecords, session = "s2") => {
-    const learner = createLearner(geometry, { ...options, cap: 40, settledTest: always });
-    learner.reset(space, [record(0, 1), record(0, 2)], { session, settledRecords });
+    const learner = createLearner(geometry, { ...options, cap: 40, settledTest: always, stableAnswers: 15 });
+    learner.reset(space, [shown(0, 1), shown(0, 2)], { session, settledRecords });
     return learner;
   };
   // Look 0 wins every answer, so it stays the best; one answer in another scene does not count.
+  const others = Math.min(20, feasible.length - 1);
   const run = (learner, answers) => {
     for (let i = 0; i < answers; i++) {
-      learner.answer(record(0, 3 + (i % 20)));
+      learner.answer(shown(0, 1 + (i % others)));
       if (i === 5) learner.answer(record(30, 31, "A", "celebrating"));
     }
     return learner.propose("solving");
   };
-  const near = { scene: "solving", session: "s1", best: { ...points[0], glow: points[0].glow + 0.01 } };
-  const far = { scene: "solving", session: "s1", best: points[40] };
-  const scaled = (a, b) => {
-    const fa = encode(space, a), fb = encode(space, b);
-    return fa.reduce((s, x, i) => s + ((x - fb[i]) / 0.5) ** 2, 0);
-  };
-  assert.ok(scaled(points[0], points[40]) > 1, "the far look must lie outside one length scale");
+  const probe = make([]);
+  const near = { scene: "solving", session: "s1", best: { ...feasible[0], glow: feasible[0].glow + 0.01 } };
+  assert.ok(probe.sameRegion(feasible[0], near.best), "the near look must lie within one length scale");
+  const far = { scene: "solving", session: "s1", best: points.find((p) => !probe.sameRegion(feasible[0], p)) };
+  assert.ok(far.best, "some look must lie outside one length scale");
   const early = run(make([near]), 14);
   assert.equal(early.sessionSettled, false);
   assert.equal(early.settled, false);
   const confirmed = run(make([near]), 15);
-  assert.deepEqual(confirmed.best, points[0]);
+  assert.deepEqual(confirmed.best, feasible[0]);
   assert.equal(confirmed.sessionSettled, true);
   assert.equal(confirmed.settled, true);
   assert.equal(run(make([far]), 15).settled, false);
@@ -115,21 +121,48 @@ test("settled needs the joint-draw test, a stable best in this scene and another
   assert.equal(run(make([]), 15).settled, false);
 });
 
-test("the joint-draw test concerns the reported best look and reuses the round's posterior", () => {
+test("a stable best may move within its region but not leave it during the last answers", () => {
+  const always = () => ({ settled: true, regret: 0.01 });
+  const learner = createLearner(geometry, { ...options, cap: 40, settledTest: always, stableAnswers: 4 });
+  learner.reset(space, [shown(0, 1), shown(0, 2)], { session: "s2" });
+  const best = learner.best("solving");
+  const near = { ...best, glow: best.glow + 0.01 };
+  const far = points.find((p) => !learner.sameRegion(best, p));
+  assert.ok(learner.sameRegion(best, near) && far);
+  const history = learner.state.bestHistory[0];
+  history.push(near, best, near, best);
+  assert.equal(learner.propose("solving").stable, true, "different looks in one region");
+  history.push(best, far, best, best);
+  assert.equal(learner.propose("solving").stable, false, "a best outside the region among the last answers");
+  history.push(best, best);
+  assert.equal(learner.propose("solving").stable, true);
+  history.push(null, best, best, best);
+  assert.equal(learner.propose("solving").stable, false, "an answer without a best");
+});
+
+test("the regret test concerns the reported best look and reuses the round's posterior", () => {
   const seen = [];
-  const spy = (model, pts, rng, opts) => { seen.push({ pts, opts }); return { settled: false, prob: 0.5 }; };
-  const learner = createLearner(geometry, { ...options, cap: 40, settledTest: spy });
+  const spy = (model, pts, rng, opts) => { seen.push({ pts, opts }); return { settled: false, regret: 0.5 }; };
+  const learner = createLearner(geometry, { ...options, cap: 40, settledTest: spy, tau: 0.07 });
   learner.reset(space, []);
-  assert.equal(learner.propose("solving").settledProb, 0);
+  assert.equal(learner.propose("solving").settledRegret, 1);
   assert.equal(seen.length, 0, "no test before the first comparison");
-  learner.reset(space, [record(0, 1), record(0, 2), record(0, 3)]);
+  learner.reset(space, [shown(0, 1), shown(0, 2), shown(0, 3)]);
   const msg = learner.propose("solving");
   assert.equal(seen.length, 1);
   const { pts, opts } = seen[0];
   assert.deepEqual(Array.from(pts[opts.best].features), Array.from(encode(space, msg.best)));
   assert.equal(opts.prediction.mean.length, pts.length);
   assert.equal(opts.prediction.cov.length, pts.length ** 2);
-  assert.equal(msg.settledProb, 0.5);
+  assert.equal(opts.tau, 0.07);
+  // The reference is the median posterior mean over a fixed pool sample, so it does not
+  // depend on the round's candidates.
+  assert.ok(Number.isFinite(opts.reference));
+  learner.propose("solving");
+  assert.equal(seen.length, 2);
+  assert.deepEqual(Array.from(seen[1].pts[seen[1].opts.best].features), Array.from(encode(space, msg.best)));
+  assert.equal(seen[1].opts.reference, opts.reference);
+  assert.equal(msg.settledRegret, 0.5);
 });
 
 test("the deferred hyperparameter search proposes first and ends with the synchronous result", () => {

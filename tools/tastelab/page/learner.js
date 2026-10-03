@@ -11,6 +11,15 @@ import { buildPool, roundCandidates, classPairsFor } from "./candidates.js";
 const ANSWERS = ["A", "B", "same", "bad"];
 const lookKey = (look) => JSON.stringify(look);
 const identity = (l) => l;
+const AMP_GRID = [0, 0.1, 0.3, 1, 3], BETA_GRID = [0, 0.1, 0.3, 1];
+// Refinement steps of the length search between grid values (plan section 5.3).
+const REFINE = [Math.sqrt(1.5), 1.5 ** 0.25];
+const median = (values) => {
+  const s = Array.from(values).sort((x, y) => x - y), n = s.length;
+  return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+};
+// One kernel group per parameter: both features of a circular parameter share a length (plan section 5.3).
+const groupsOf = (space) => featureSlices(space).map(({ start, count }) => ({ start, count, circular: count === 2 }));
 
 // Feasible pools by geometry and `map`, then by scene table and size: the
 // learners of all families share them, and scenes without limits share one pool.
@@ -22,13 +31,16 @@ export function recordFamily(space, record) {
   return familiesOf(space)[0].id;
 }
 
-// `settledTest` replaces the joint-draw test of plan section 5.6 in unit tests only.
+// `settledTest` replaces the regret test of plan section 5.6 in unit tests only.
 // `map` fixes parameters of every candidate (the experiment's low-dimensional setting).
 // With `deferHyper`, the hyperparameter search runs in idle() steps instead of
 // inside reset() and answer(), so that the worker can propose the next pair first.
+// `ampGrid` and `betaGrid` are the values the search tries for the weights of the
+// kernel's smooth part and of its interactions (plan section 5.3).
 export function createLearner(geometry, {
-  cap = 400, candidates = 512, stableAnswers = 15, hyperEvals = 60, poolDraws = 16384, settledTest = settled,
-  map = identity, deferHyper = false,
+  cap = 400, candidates = 512, stableAnswers = 10, tau = 0.05, hyperEvals = 600, poolDraws = 16384,
+  settledTest = settled, map = identity, deferHyper = false, ampGrid = AMP_GRID, betaGrid = BETA_GRID,
+  anchorRate = 0.5, freePairs = 3000, axis = 4, multi = 24, referenceLooks = 1024,
 } = {}) {
   const pairsOf = classPairsFor(geometry);
   let state = null;
@@ -79,7 +91,7 @@ export function createLearner(geometry, {
       familyIds: new Set(families.map((f) => f.id)),
       session,
       settledRecords,
-      model: createModel({ dim: featureDim(sp), scenes: SCENES.length }),
+      model: createModel({ dim: featureDim(sp), scenes: SCENES.length, groups: groupsOf(sp) }),
       allRecords: records.slice(),
       answers: 0,
       used: 0,
@@ -91,6 +103,9 @@ export function createLearner(geometry, {
       answersSinceHyper: 0,
       search: null,
       bestHistory: SCENES.map(() => []),
+      // Per scene: the previous round's candidate with the highest posterior mean, shown or not.
+      predicted: SCENES.map(() => null),
+      reference: new Map(),
       pruned: 0,
       skipped: 0,
     };
@@ -124,7 +139,7 @@ export function createLearner(geometry, {
   function refitHyper() {
     if (!hyperEvals) return;
     if (state.search) state.search.adopt();
-    state.search = createHyperSearch(state.model, { maxEvals: hyperEvals });
+    state.search = createHyperSearch(state.model, { maxEvals: hyperEvals, ampGrid, betaGrid, refine: REFINE });
     if (!deferHyper) while (idle());
   }
 
@@ -172,9 +187,10 @@ export function createLearner(geometry, {
     let rebuilt = false;
     if (!ingest(record, parsed)) {
       // The cap is reached during a session: rebuild from every stored record.
-      const { bestHistory, session, settledRecords, family } = state;
+      const { bestHistory, predicted, session, settledRecords, family } = state;
       reset(state.space, state.allRecords, { seed: state.rng.int(2 ** 31), session, settledRecords, family });
       state.bestHistory = bestHistory;
+      state.predicted = predicted;
       rebuilt = true;
     } else if (record.answer !== "bad") {
       fit(state.model);
@@ -185,7 +201,7 @@ export function createLearner(geometry, {
     }
     // Stability counts answers per scene, not proposals or scene changes.
     const best = bestLook(parsed.scene);
-    state.bestHistory[parsed.scene].push(best === null ? null : lookKey(state.looks[best].look));
+    state.bestHistory[parsed.scene].push(best === null ? null : state.looks[best].look);
     return { rebuilt };
   }
 
@@ -201,25 +217,34 @@ export function createLearner(geometry, {
     return idx[best];
   }
 
-  // Two looks are in the same region when their kernel correlation under the
-  // fitted length scales is at least exp(-1/2), that is, a scaled distance of at most 1.
+  // Two looks are in the same region when their scaled distance under the fitted
+  // length scales, the square root of the sum of ((x_i - x'_i) / l_i)^2 over the
+  // encoded features, is at most 1 (plan section 9).
   function sameRegion(a, b) {
     let fa, fb;
     try { fa = encode(state.space, a); fb = encode(state.space, b); } catch { return false; }
     const L = state.model.hyper.lengths;
     let d = 0;
-    for (let i = 0; i < L.length; i++) d += ((fa[i] - fb[i]) / L[i]) ** 2;
+    featureSlices(state.space).forEach(({ start, count }, g) => {
+      for (let f = start; f < start + count; f++) d += ((fa[f] - fb[f]) / L[g]) ** 2;
+    });
     return d <= 1;
   }
 
   function relevance() {
-    // Inverse length scale per parameter; a circular parameter uses its shorter feature length.
+    // Inverse length scale per parameter (one length per parameter, plan section 5.3).
     const L = state.model.hyper.lengths;
-    return featureSlices(state.space).map(({ id, start, count }) => {
-      let shortest = Infinity;
-      for (let f = start; f < start + count; f++) shortest = Math.min(shortest, L[f]);
-      return { id, value: 1 / shortest };
-    });
+    return featureSlices(state.space).map(({ id }, g) => ({ id, value: 1 / L[g] }));
+  }
+
+  // The median posterior mean over a fixed sample of the scene's feasible pool:
+  // the reference of the predicted range in the settled test (plan section 5.6).
+  function referenceMean(scene, table) {
+    if (!state.reference.has(scene)) {
+      const sample = feasiblePool(table).slice(0, referenceLooks);
+      state.reference.set(scene, sample.map((l) => ({ features: encode(state.space, l), scene })));
+    }
+    return median(predictMean(state.model, state.reference.get(scene)));
   }
 
   function propose(sceneName) {
@@ -228,37 +253,38 @@ export function createLearner(geometry, {
     const best = bestLook(scene);
     const bestValue = best === null ? null : state.looks[best].look;
     // Candidates come from the scene's table (plan section 4.1); encoding uses the full table.
+    // They centre on the predicted optimum and include the best shown look (plan section 5.4).
     const table = sceneSpace(state.space, sceneName);
-    const looks = roundCandidates(table, feasiblePool(table), pairsOf, state.rng, { best: bestValue, n: candidates, map });
+    const centre = state.predicted[scene] ?? bestValue;
+    const looks = roundCandidates(table, feasiblePool(table), pairsOf, state.rng, {
+      best: centre, n: candidates, map, include: bestValue ? [bestValue] : [], axis, multi,
+    });
     if (looks.length < 2) return { type: "nopair", reason: "No look in this region passes the colour checks." };
     const points = looks.map((l) => ({ features: encode(state.space, l), scene }));
     // One joint posterior over the round's candidates serves the next pair and the settled test.
     const prediction = predict(state.model, points);
-    const options = { rejected: state.rejected, rejectRadius: 0.1, prediction };
-    let pick = nextPair(state.model, points, state.rng, options);
-    // A repeat shows a stored pair again; one outside the scene's limits (stored
-    // before the limits changed) gives way to a new pair.
-    if (pick.kind === "repeat" && ![pick.lookA, pick.lookB].every((i) => withinScene(state.space, state.looks[i].look, sceneName))) {
-      pick = nextPair(state.model, points, state.rng, { ...options, repeatRate: 0 });
+    if (state.comparisons) {
+      let top = 0;
+      for (let i = 1; i < looks.length; i++) if (prediction.mean[i] > prediction.mean[top]) top = i;
+      state.predicted[scene] = looks[top];
     }
-    let A, B;
-    if (pick.kind === "repeat") {
-      A = state.looks[pick.lookA].look;
-      B = state.looks[pick.lookB].look;
-    } else {
-      A = looks[pick.a];
-      B = looks[pick.b];
-    }
+    const pick = nextPair(state.model, points, state.rng, {
+      anchorRate, freePairs, rejected: state.rejected, rejectRadius: 0.1, prediction,
+    });
+    let A = looks[pick.a], B = looks[pick.b];
     if (state.rng.next() < 0.5) [A, B] = [B, A];
-    // Settled (plan section 5.6): the reported best beats every candidate of the
-    // round in the joint draws (roundCandidates puts it first), it is unchanged for
-    // the last answers in this scene, and another session settled in the same region.
+    // Settled (plan section 5.6): the expected regret of the reported best, relative
+    // to the predicted range, is at most tau; the best after each of the last
+    // answers in this scene lies in the current best's region; and another session
+    // settled in the same region.
     const bestIndex = bestValue ? looks.findIndex((l) => lookKey(l) === lookKey(bestValue)) : -1;
     const st = state.comparisons && bestIndex >= 0
-      ? settledTest(state.model, points, state.rng, { draws: 200, prob: 0.9, prediction, best: bestIndex })
-      : { settled: false, prob: 0 };
+      ? settledTest(state.model, points, state.rng, {
+        draws: 200, tau, prediction, best: bestIndex, reference: referenceMean(scene, table),
+      })
+      : { settled: false, regret: 1 };
     const recent = state.bestHistory[scene].slice(-stableAnswers);
-    const stable = recent.length === stableAnswers && recent.every((k) => k !== null && k === recent[0]);
+    const stable = Boolean(bestValue) && recent.length === stableAnswers && recent.every((l) => l !== null && sameRegion(l, bestValue));
     const sessionSettled = Boolean(st.settled && stable && bestValue);
     const confirmed = sessionSettled && state.settledRecords.some((r) =>
       r && r.scene === sceneName && recordFamily(state.space, r) === state.family &&
@@ -271,7 +297,8 @@ export function createLearner(geometry, {
       lookB: B,
       kind: pick.kind,
       best: bestValue,
-      settledProb: st.prob,
+      settledRegret: st.regret,
+      stable,
       sessionSettled,
       settled: confirmed,
       relevance: relevance(),

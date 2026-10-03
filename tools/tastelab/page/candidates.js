@@ -42,7 +42,7 @@ export function buildPool(space, pairsOf, { draws = 16384, map = (l) => l } = {}
   return pool;
 }
 
-export function roundCandidates(space, pool, pairsOf, rng, { best = null, n = 512, local = 256, tries = 1024, sigma = 0.08, map = (l) => l } = {}) {
+export function roundCandidates(space, pool, pairsOf, rng, { best = null, n = 512, local = 256, tries = 1024, sigma = 0.08, map = (l) => l, include = [], axis = 0, multi = 0 } = {}) {
   const out = [];
   const keys = new Set();
   const push = (look) => {
@@ -50,7 +50,9 @@ export function roundCandidates(space, pool, pairsOf, rng, { best = null, n = 51
     if (!keys.has(k)) { keys.add(k); out.push(look); }
   };
   if (best) {
-    push(best);
+    // The centre joins the round only if it passes the hard checks of this table: a look shown
+    // before the table changed may fail them. The moves still start from it.
+    if (hardCheck(best, pairsOf(best.classes).pairs, undefined, space).ok) push(best);
     const base = toUnit(space, best);
     for (let t = 0; t < tries && out.length < local + 1; t++) {
       const u = base.map((x, i) => {
@@ -70,6 +72,27 @@ export function roundCandidates(space, pool, pairsOf, rng, { best = null, n = 51
   for (const i of order) {
     if (out.length >= n) break;
     push(pool[i]);
+  }
+  for (const look of include) {
+    if (hardCheck(look, pairsOf(look.classes).pairs, undefined, space).ok) push(look);
+  }
+  if (best) {
+    const base = toUnit(space, best);
+    for (let i = 0; i < space.params.length; i++) {
+      for (let t = 0; t < axis; t++) {
+        const u = base.slice();
+        u[i] = rng.next() * 0.999999;
+        const look = canonical(space, map(fromUnit(space, u)));
+        if (hardCheck(look, pairsOf(look.classes).pairs, undefined, space).ok) push(look);
+      }
+    }
+    for (let t = 0; t < multi; t++) {
+      const u = base.slice();
+      const m = 2 + rng.int(2);
+      for (let i = 0; i < m; i++) u[rng.int(space.params.length)] = rng.next() * 0.999999;
+      const look = canonical(space, map(fromUnit(space, u)));
+      if (hardCheck(look, pairsOf(look.classes).pairs, undefined, space).ok) push(look);
+    }
   }
   return out;
 }

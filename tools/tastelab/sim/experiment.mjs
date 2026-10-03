@@ -8,17 +8,26 @@
 // With --families 2 the synthetic owner has two theme families whose regions of regret
 // at most 0.10 are disjoint; their answers are interleaved, and each family's learner
 // reads its own. --budget counts the comparisons per family.
+// --taus and --stables replay the settled rule for a grid of values in the same runs.
+// --dump appends each finished run to a file as one JSON line; a later call with the same
+// file, options and code reuses the runs already there, so an interrupted experiment resumes.
 // Usage: node tools/tastelab/sim/experiment.mjs [--seeds 50] [--budget 180] [--setting low|full]
 //        [--noise 1,2,4] [--first 0] [--candidates 512] [--sessions budget/30] [--families 1|2]
-//        [--owner quad|cross|bump] [--tau 0.05] [--stable 15] [--jobs 1]
-import { Worker, isMainThread, parentPort, workerData } from "node:worker_threads";
+//        [--owner quad|cross|bump] [--tau 0.05] [--stable 10] [--taus 0.02,0.05,0.1]
+//        [--stables 10,15,20] [--jobs 1] [--dump runs.jsonl]
+import { fork } from "node:child_process";
+import { createHash } from "node:crypto";
+import { appendFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createRng } from "../core/rng.js";
 import { buildPool, classPairsFor } from "../page/candidates.js";
 import { defaultSpace, canonical, hardCheck, featureSlices, familiesOf, sceneSpace, SCENES } from "../core/space.js";
 import { buildGeometry } from "../page/geometry.js";
 import { createLearner } from "../page/learner.js";
 
-const argv = isMainThread ? process.argv.slice(2) : workerData.argv;
+// With --jobs, child processes started by runAll run the tasks; they get "--child" first.
+const CHILD = process.argv[2] === "--child";
+const argv = process.argv.slice(CHILD ? 3 : 2);
 const arg = (name, dflt) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : dflt);
 const SEEDS = Number(arg("--seeds", 50));
 const FIRST = Number(arg("--first", 0));
@@ -29,13 +38,45 @@ const NCAND = Number(arg("--candidates", 512));
 const SESSIONS = Number(arg("--sessions", BUDGET / 30));
 const FAMILIES = Number(arg("--families", 1));
 const JOBS = Number(arg("--jobs", 1));
+const DUMP = arg("--dump", null);
+// The options a run's result depends on: all but the choice of runs (--seeds, --first,
+// --noise), the thread count and the dump file.
+const RUN_OPTIONS = (() => {
+  const skip = new Set(["--seeds", "--first", "--noise", "--jobs", "--dump"]);
+  const kept = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (skip.has(argv[i])) i++;
+    else kept.push(argv[i]);
+  }
+  return kept.join(" ");
+})();
+// The code a run's result depends on: this harness and the modules of core/ and page/.
+const CODE = (() => {
+  const root = new URL("../", import.meta.url);
+  const names = ["sim/experiment.mjs"];
+  for (const dir of ["core", "page"]) {
+    for (const name of readdirSync(new URL(`${dir}/`, root)).filter((n) => n.endsWith(".js")).sort()) names.push(`${dir}/${name}`);
+  }
+  const hash = createHash("sha256");
+  for (const name of names) hash.update(`${name}\0`).update(readFileSync(new URL(name, root))).update("\0");
+  return hash.digest("hex").slice(0, 16);
+})();
 // Checkpoints of plan section 6: criteria 1, 2 and 4 (and the two-family criterion) at
 // CHECK comparisons per family, criterion 3 at RANK_AT. Random pairs stop at CHECK.
 const CHECK = 90, RANK_AT = 160;
 const RANDOM_BUDGET = Math.min(BUDGET, CHECK);
 // Settled rule values under calibration (plan section 5.6).
 const TAU = Number(arg("--tau", 0.05));
-const STABLE = Number(arg("--stable", 15));
+const STABLE = Number(arg("--stable", 10));
+// Calibration grid: the learner's pairs and best looks depend on neither value (the settled
+// test draws the same random numbers for every tau), so one run replays the settled rule for
+// every grid value. The replay of the learner's own values is checked against its flags.
+const list = (name) => (argv.includes(name) ? arg(name).split(",").map(Number) : null);
+const TAUS = list("--taus"), STABLES = list("--stables");
+const GRID = TAUS || STABLES ? (TAUS || [TAU]).flatMap((tau) => (STABLES || [STABLE]).map((stable) => ({ tau, stable }))) : [];
+if ([{ tau: TAU, stable: STABLE }, ...GRID].some((g) => !(g.tau >= 0 && g.tau < 1) || !Number.isInteger(g.stable) || g.stable < 1)) {
+  throw new RangeError("tau values must lie in [0, 1) and stable counts must be positive integers");
+}
 // The utility's shape: "quad" (plan section 6) is additive and quadratic. The robustness
 // checks break one assumption each: "cross" adds an interaction of chroma and cell gap,
 // "bump" makes every term a bounded bump instead of a parabola.
@@ -201,7 +242,7 @@ function fixture(seed, scene) {
   throw new Error(`seed ${seed}: no two families with disjoint regions`);
 }
 
-// Learners per worker thread and family; the low setting needs new ones per seed,
+// Learners per process and family; the low setting needs new ones per seed,
 // since its candidates depend on the owner's optimum.
 const cached = [];
 function learnerFor(seed, k, map) {
@@ -219,12 +260,15 @@ function runOne(seed, snr, method) {
   const records = [], settledRecords = [];
   // regrets: after every answer; ranks: whether the relevance ranking is correct, after every tenth.
   const per = fams.map(() => ({ regrets: [], ranks: [], sessions: [], settledAt: null, falseSettled: false, falseSettledAt: null }));
+  // Replays of the settled rule per family: the learner's own values first, then the grid.
+  const replays = fams.map(() => [{ tau: TAU, stable: STABLE }, ...GRID].map((g) => ({ ...g, records: [], sessions: [], settledAt: null, falseSettledAt: null })));
   const budget = method === "random" ? RANDOM_BUDGET : BUDGET;
   for (let s = 0; s < SESSIONS && per[0].regrets.length < budget; s++) {
     const session = `s${s + 1}`;
     fams.forEach((f, k) => learners[k].reset(fullSpace, records, { seed: runSeed + s + 7919 * k, session, settledRecords: settledRecords.slice(), family: f.id }));
     const diag = fams.map(() => ({ sessionSettledAt: null, sessionSettledWrong: false }));
     const stored = fams.map(() => new Map());
+    for (const r of replays.flat()) { r.stored = new Map(); r.diag = { sessionSettledAt: null, sessionSettledWrong: false }; }
     // What the page does with a proposal: store a session's settled best per family and
     // scene (app.js recordSettled) and declare "settled" when another session confirms it.
     const observe = (k, p) => {
@@ -243,6 +287,27 @@ function runOne(seed, snr, method) {
           per[k].falseSettledAt = per[k].regrets.length;
         }
       }
+      // The replays apply the tests of the learner's propose() with their own values.
+      const history = learners[k].state.bestHistory[SCENES.indexOf(p.scene)];
+      replays[k].forEach((r, i) => {
+        const recent = history.slice(-r.stable);
+        const stable = Boolean(p.best) && recent.length === r.stable && recent.every((x) => x !== null && learners[k].sameRegion(x, p.best));
+        const sessionSettled = Boolean(stable && p.best && p.settledRegret <= r.tau);
+        const confirmed = sessionSettled && r.records.some((x) => x.scene === p.scene && x.session !== session && learners[k].sameRegion(x.best, p.best));
+        if (i === 0 && (stable !== p.stable || sessionSettled !== p.sessionSettled || confirmed !== p.settled)) {
+          throw new Error(`seed ${seed}: the replay of the settled rule disagrees with the learner`);
+        }
+        const n = per[k].regrets.length;
+        if (sessionSettled) {
+          r.stored.set(p.scene, p.best);
+          if (r.diag.sessionSettledAt === null) r.diag.sessionSettledAt = n;
+          if (f.regret(p.best) > 0.2) r.diag.sessionSettledWrong = true;
+        }
+        if (confirmed) {
+          if (r.settledAt === null) r.settledAt = n;
+          if (f.regret(p.best) > 0.2 && r.falseSettledAt === null) r.falseSettledAt = n;
+        }
+      });
     };
     for (let q = 0; q < BUDGET / SESSIONS && per[0].regrets.length < budget; q++) {
       fams.forEach((f, k) => {
@@ -271,6 +336,10 @@ function runOne(seed, snr, method) {
     fams.forEach((f, k) => {
       for (const [sc, best] of stored[k]) settledRecords.push({ family: f.id, scene: sc, session, best });
       per[k].sessions.push(diag[k]);
+      for (const r of replays[k]) {
+        for (const [sc, best] of r.stored) r.records.push({ scene: sc, session, best });
+        r.sessions.push(r.diag);
+      }
     });
   }
   return {
@@ -279,15 +348,16 @@ function runOne(seed, snr, method) {
       ...per[k],
       // The best look shown so far, by true utility: separates the choice of pairs from the final pick.
       shown: Math.min(...learners[k].state.looks.map((l) => f.regret(l.look))),
+      grid: replays[k].slice(1).map(({ tau, stable, settledAt, falseSettledAt, sessions }) => ({ tau, stable, settledAt, falseSettledAt, sessions })),
     })),
   };
 }
 
 function rankRelevant(model) {
-  // True when every relevant parameter has a shorter length scale than every irrelevant one.
+  // True when every relevant parameter has a shorter length scale than every irrelevant one;
+  // the model keeps one length per parameter (plan section 5.3).
   const L = model.hyper.lengths;
-  const per = {};
-  for (const { id, start, count } of featureSlices(fullSpace)) per[id] = Math.min(...L.slice(start, start + count));
+  const per = Object.fromEntries(featureSlices(fullSpace).map(({ id }, g) => [id, L[g]]));
   const rel = RELEVANT.map((id) => per[id]);
   const irr = fullSpace.params.map((p) => p.id).filter((id) => !RELEVANT.includes(id)).map((id) => per[id]);
   return Math.max(...rel) < Math.min(...irr);
@@ -321,24 +391,52 @@ function medianOf(a) {
   return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
 }
 
-// Runs the tasks on `JOBS` worker threads; every result depends only on its task.
+// Runs the tasks in `JOBS` child processes; every result depends only on its task, the run
+// options and the code, so runs found in the dump file under the same ones are reused.
+// Processes, not worker threads: on Windows the worker threads of one process mostly waited
+// on each other, and 28 of them kept about two cores busy.
 async function runAll(tasks) {
-  if (JOBS <= 1) return tasks.map((t) => runOne(t.seed, t.snr, t.method));
   const results = new Array(tasks.length);
+  const taskKey = (t) => `${t.seed}|${t.snr}|${t.method}`;
+  if (DUMP && existsSync(DUMP)) {
+    const saved = new Map();
+    for (const line of readFileSync(DUMP, "utf8").split("\n")) {
+      if (!line.trim()) continue;
+      let entry;
+      try { entry = JSON.parse(line); } catch { continue; }
+      if (entry.options === RUN_OPTIONS && entry.code === CODE) saved.set(taskKey(entry), entry.result);
+    }
+    tasks.forEach((t, i) => { if (saved.has(taskKey(t))) results[i] = saved.get(taskKey(t)); });
+  }
+  const keep = (i, result) => {
+    results[i] = result;
+    if (DUMP) appendFileSync(DUMP, JSON.stringify({ options: RUN_OPTIONS, code: CODE, ...tasks[i], result }) + "\n");
+  };
+  const todo = tasks.map((_, i) => i).filter((i) => results[i] === undefined);
+  if (JOBS <= 1) {
+    for (const i of todo) keep(i, runOne(tasks[i].seed, tasks[i].snr, tasks[i].method));
+    return results;
+  }
   let next = 0;
-  await Promise.all(Array.from({ length: Math.min(JOBS, tasks.length) }, () => new Promise((resolve, reject) => {
-    const worker = new Worker(new URL(import.meta.url), { workerData: { argv } });
+  await Promise.all(Array.from({ length: Math.min(JOBS, todo.length) }, () => new Promise((resolve, reject) => {
+    const child = fork(fileURLToPath(import.meta.url), ["--child", ...argv], {
+      serialization: "advanced", stdio: ["ignore", "ignore", "inherit", "ipc"],
+    });
+    let busy = false;
     const send = () => {
-      if (next >= tasks.length) { worker.terminate().then(resolve); return; }
-      const i = next++;
-      worker.postMessage({ i, ...tasks[i] });
+      if (next >= todo.length) { child.disconnect(); resolve(); return; }
+      const i = todo[next++];
+      busy = true;
+      child.send({ i, ...tasks[i] });
     };
-    worker.on("message", (m) => {
+    child.on("message", (m) => {
+      busy = false;
       if (m.error) { reject(new Error(m.error)); return; }
-      results[m.i] = m.result;
+      keep(m.i, m.result);
       send();
     });
-    worker.on("error", reject);
+    child.on("error", reject);
+    child.on("exit", (code) => { if (busy) reject(new Error(`a child process exited with code ${code} during a run`)); });
     send();
   })));
   return results;
@@ -386,6 +484,22 @@ function summary(res) {
       reached: share(res.model.map((r) => r.sessions[s].sessionSettledAt !== null)),
       wrong: share(res.model.map((r) => r.sessions[s].sessionSettledWrong)),
     })),
+    // The settled rule's calibration grid (plan section 5.6), from the replays.
+    settledGrid: GRID.map((g, i) => {
+      const runs = res.model.map((r) => r.grid[i]);
+      const at = (q, key) => share(runs.map((r) => r[key] !== null && r[key] <= q));
+      return {
+        ...g,
+        falseSettled: at(check, "falseSettledAt"),
+        settled: at(check, "settledAt"),
+        final: { falseSettled: at(BUDGET, "falseSettledAt"), settled: at(BUDGET, "settledAt") },
+        sessionSettled: runs[0].sessions.map((_, s) => ({
+          session: s + 1,
+          reached: share(runs.map((r) => r.sessions[s].sessionSettledAt !== null)),
+          wrong: share(runs.map((r) => r.sessions[s].sessionSettledWrong)),
+        })),
+      };
+    }),
     curve: tens(BUDGET).map((q) => ({
       q,
       model: medianOf(regretAt(res.model, q)),
@@ -404,8 +518,8 @@ async function main() {
   const tasks = NOISE.flatMap((snr) => Array.from({ length: SEEDS }, (_, k) => ["model", "random"].map((method) => ({ seed: FIRST + k, snr, method }))).flat());
   const results = await runAll(tasks);
   const out = {
-    setting: SETTING, owner: OWNER, budget: BUDGET, randomBudget: RANDOM_BUDGET, sessions: SESSIONS, families: FAMILIES,
-    checkpoints: { criteria: CHECK, ranking: RANK_AT }, settledRule: { tau: TAU, stable: STABLE },
+    code: CODE, setting: SETTING, owner: OWNER, budget: BUDGET, randomBudget: RANDOM_BUDGET, sessions: SESSIONS, families: FAMILIES,
+    checkpoints: { criteria: CHECK, ranking: RANK_AT }, settledRule: { tau: TAU, stable: STABLE, grid: GRID },
     seeds: [FIRST, FIRST + SEEDS - 1], candidates: NCAND, pool: pool.length, eps: EPS, levels: {},
   };
   for (const snr of NOISE) {
@@ -428,7 +542,7 @@ async function main() {
       curve: tens(BUDGET).map((q) => ({ q, model: medianOf(larger("model", q)), random: q <= RANDOM_BUDGET ? medianOf(larger("random", q)) : null })),
       perFamily: FAMILY_IDS.map((id, k) => {
         const s = summary({ model: family("model", k), random: family("random", k) });
-        return { id, medianRegret: s.medianRegret, relevantRankedFirst: s.relevantRankedFirst, settled: s.settled, falseSettled: s.falseSettled, bestShown: s.bestShown };
+        return { id, medianRegret: s.medianRegret, relevantRankedFirst: s.relevantRankedFirst, settled: s.settled, falseSettled: s.falseSettled, bestShown: s.bestShown, settledGrid: s.settledGrid };
       }),
       perSeed: { seeds: of("model").map((r) => r.seed), model: max.model, random: max.random },
     };
@@ -436,14 +550,17 @@ async function main() {
   console.log(JSON.stringify(out, null, 2));
 }
 
-if (isMainThread) {
-  main().then(() => process.exit(0), (err) => { console.error(err); process.exit(1); });
-} else {
-  parentPort.on("message", (task) => {
+if (CHILD) {
+  process.on("message", (task) => {
+    let reply;
     try {
-      parentPort.postMessage({ i: task.i, result: runOne(task.seed, task.snr, task.method) });
+      reply = { i: task.i, result: runOne(task.seed, task.snr, task.method) };
     } catch (err) {
-      parentPort.postMessage({ i: task.i, error: String((err && err.stack) || err) });
+      reply = { i: task.i, error: String((err && err.stack) || err) };
     }
+    process.send(reply);
   });
+  process.on("disconnect", () => process.exit(0));
+} else {
+  main().then(() => process.exit(0), (err) => { console.error(err); process.exit(1); });
 }

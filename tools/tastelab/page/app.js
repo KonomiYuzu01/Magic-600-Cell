@@ -44,10 +44,11 @@ function showPair(msg) {
   });
   $("count").textContent = String(msg.counts.answers);
   $("countFamily").textContent = familiesOf(state.space).length > 1 ? `for ${familyName(msg.family)}` : "";
-  $("kind").textContent = msg.kind === "info" ? "Testing a question" : msg.kind === "repeat" ? "Checking consistency" : "Exploring";
+  $("kind").textContent = msg.kind === "mi" ? "Testing the current favourite" : "Exploring";
+  // The settled test's expected regret, relative to the predicted range (plan section 5.6).
   $("settled").textContent = msg.settled ? "Settled for this scene"
     : msg.sessionSettled ? "Settled in this session; confirm in another session"
-      : `Confidence ${Math.round(100 * msg.settledProb)}%`;
+      : `Not settled: expected room for improvement ${Math.round(100 * msg.settledRegret)}%`;
   const notes = [];
   if (msg.counts.pruned) notes.push(`${msg.counts.pruned} older answers are outside the model's 400-look window.`);
   if (msg.counts.skipped) notes.push(`${msg.counts.skipped} answers do not fit the current parameter table and are not used.`);
@@ -60,6 +61,8 @@ function showPair(msg) {
 }
 
 // Relevance of the shown family's model; `answers` counts that family's answers.
+// The ranking is provisional until 160 answers (plan section 6).
+const RANKING_AT = 160;
 function renderRelevance(rel, answers) {
   const list = $("matters");
   list.replaceChildren();
@@ -68,6 +71,12 @@ function renderRelevance(rel, answers) {
     li.textContent = `Appears after 10 answers (${answers} so far).`;
     list.append(li);
     return;
+  }
+  if (answers < RANKING_AT) {
+    const li = document.createElement("li");
+    li.className = "note";
+    li.textContent = `Provisional until ${RANKING_AT} answers (${answers} so far).`;
+    list.append(li);
   }
   const max = Math.max(...rel.map((r) => r.value), 1e-9);
   for (const r of [...rel].sort((a, b) => b.value - a.value).slice(0, 8)) {
