@@ -4,8 +4,9 @@ import { defaultSpace, sobol, fromUnit, SCENES } from "../../core/space.js";
 
 // Evidence: synthetic looks and answers; no stored session data. The worker
 // module runs with a stand-in for the Web Worker global.
-const out = [];
-globalThis.self = { postMessage: (m) => out.push(m) };
+// Replies to each message, and the documents that finished searches post.
+const out = [], models = [];
+globalThis.self = { postMessage: (m) => (m.type === "model" ? models : out).push(m) };
 await import("../worker.js");
 const send = (data) => {
   out.length = 0;
@@ -13,6 +14,7 @@ const send = (data) => {
   assert.equal(out.length, 1);
   return out[0];
 };
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const space = defaultSpace();
 const points = sobol(16, space.params.length, 1).map((u) => fromUnit(space, u));
@@ -63,16 +65,50 @@ test("a pair says whether its family's hyperparameter search has finished since 
   records.push(record(13, 14, "f2"), record(14, 15, "f2", "B"));
   let msg = send({ type: "init", space, records, settled: [], session: "s3", scene: "solving", family: "f1", seed: 11 });
   assert.equal(msg.type, "pair");
-  assert.equal(msg.fitted, false, "the search after a load has not run yet");
+  assert.deepEqual([msg.fitted, msg.searched], [false, false], "the search after a load has not run yet");
+  models.length = 0;
   // The search runs one evaluation per task between messages.
   for (let i = 0; i < 20000 && !msg.fitted; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await tick();
     if (i % 200 === 199) msg = send({ type: "next", scene: "solving", family: "f1" });
   }
-  assert.equal(msg.fitted, true);
+  assert.deepEqual([msg.fitted, msg.searched], [true, true]);
+  // The finished search posts its hyperparameters for the page to store.
+  assert.deepEqual(models.map((m) => [m.family, m.doc.answers]), [["f1", 12]]);
   // Another family's learner is built on first use and searches on its own.
   assert.equal(send({ type: "next", scene: "solving", family: "f2" }).fitted, false);
   send({ type: "presets", id: "p3", settled: [] });
   assert.equal(send({ type: "next", scene: "solving", family: "f2" }).fitted, true, "presets finish every family's search");
+  assert.deepEqual(models.map((m) => m.family), ["f1", "f2"]);
   assert.equal(send({ type: "next", scene: "solving", family: "f1" }).fitted, true);
+});
+
+test("stored hyperparameters serve the first pair after a load or an undo until the new search ends", async () => {
+  // The documents of the searches above, as the store returns them.
+  const stored = Object.fromEntries(models.map((m) => [m.family, JSON.parse(JSON.stringify(m.doc))]));
+  assert.ok(stored.f1 && stored.f2);
+  const records = Array.from({ length: 12 }, (_, i) => record(i, i + 1, "f1", i % 3 ? "A" : "B"));
+  const init = (extra) => send({ type: "init", space, records, settled: [], models: stored, session: "s4", scene: "solving", family: "f1", seed: 11, ...extra });
+  let msg = init({});
+  assert.deepEqual([msg.fitted, msg.searched], [true, false]);
+  assert.deepEqual(msg.relevance.map((r) => r.value), stored.f1.hyper.lengths.map((l) => 1 / l));
+  // An undo re-initializes the worker while the search is pending: the new learner
+  // starts from the stored values, and only its own search posts a document.
+  await tick();
+  msg = init({ records: records.slice(0, 11), seed: 12 });
+  assert.deepEqual([msg.fitted, msg.searched], [true, false]);
+  models.length = 0;
+  for (let i = 0; i < 20000 && !models.length; i++) await tick();
+  assert.equal(models.length, 1);
+  const doc = models[0].doc;
+  assert.equal(models[0].family, "f1");
+  assert.deepEqual([doc.version, doc.family, doc.answers, typeof doc.t], [1, "f1", 11, "string"]);
+  msg = send({ type: "next", scene: "solving", family: "f1" });
+  assert.deepEqual([msg.fitted, msg.searched], [true, true]);
+  // A document stored for another family or another parameter table is ignored.
+  msg = init({ models: { f1: stored.f2, f2: stored.f1 } });
+  assert.deepEqual([msg.fitted, msg.searched], [false, false]);
+  const linear = space.params.findIndex((p) => p.kind === "linear");
+  const wider = { ...space, params: space.params.map((p, i) => (i === linear ? { ...p, max: p.max + 1 } : p)) };
+  assert.equal(init({ space: wider }).fitted, false);
 });

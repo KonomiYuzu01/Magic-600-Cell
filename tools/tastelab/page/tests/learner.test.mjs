@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildGeometry } from "../geometry.js";
-import { createLearner, recordFamily } from "../learner.js";
+import { createLearner, recordFamily, storedHyper, hyperDoc } from "../learner.js";
 import { buildPool, classPairsFor } from "../candidates.js";
 import { defaultSpace, sobol, fromUnit, encode, featureSlices, withinScene, sceneSpace } from "../../core/space.js";
 import { predict } from "../../core/gp.js";
@@ -252,4 +252,170 @@ test("in a scene with limits the candidates and the reported best stay within th
     assert.equal(msg.type, "pair");
     for (const look of [msg.lookA, msg.lookB]) assert.ok(withinScene(space, look, "celebrating"), key(look));
   }
+});
+
+// Hyperparameters that differ from the starting values and from every search result
+// below, as a stored document or the model before a rebuild supplies them.
+const carriedHyper = () => ({
+  lengths: Float64Array.from(featureSlices(space), (_, g) => 0.3 + 0.1 * (g % 5)), rho: 0.9, eps: 0.5, amp: 0.3, beta: 0.1,
+});
+const sameMeans = (a, b) => {
+  const x = snapshot(a), y = snapshot(b);
+  assert.deepEqual(y.obs, x.obs);
+  for (const [k, m] of x.means) assert.ok(Math.abs(y.means.get(k) - m) < 1e-10, k);
+};
+
+test("carried hyperparameters serve until the search started at reset ends, which ends as without them", () => {
+  const records = Array.from({ length: 10 }, (_, i) => record(2 * i, 2 * i + 1, i % 3 ? "A" : "B"));
+  const opts = { ...options, cap: 40, hyperEvals: 8 };
+  const results = [];
+  const plain = createLearner(geometry, { ...opts, onSearch: (h) => results.push(h) });
+  plain.reset(space, records);
+  assert.equal(results.length, 1, "the synchronous search ends inside reset");
+  assert.deepEqual(results[0], plain.state.model.hyper);
+  const carried = carriedHyper();
+  const sync = createLearner(geometry, opts);
+  sync.reset(space, records, { hyper: carried });
+  assert.deepEqual(sync.state.model.hyper, plain.state.model.hyper);
+  sameMeans(plain, sync);
+  const found = [];
+  const deferred = createLearner(geometry, { ...opts, deferHyper: true, onSearch: (h) => found.push(h) });
+  deferred.reset(space, records, { hyper: carried });
+  assert.deepEqual(deferred.state.model.hyper, carried);
+  const first = deferred.propose("solving");
+  assert.deepEqual([first.fitted, first.searched], [true, false]);
+  assert.deepEqual(first.relevance.map((r) => r.value), Array.from(carried.lengths, (l) => 1 / l));
+  while (deferred.idle());
+  assert.equal(found.length, 1);
+  assert.deepEqual(deferred.state.model.hyper, plain.state.model.hyper);
+  sameMeans(plain, deferred);
+  assert.equal(deferred.propose("solving").searched, true);
+  // Without carried values, a pair is not fitted before the search ends.
+  const cold = createLearner(geometry, { ...opts, deferHyper: true });
+  cold.reset(space, records);
+  const pair = cold.propose("solving");
+  assert.deepEqual([pair.fitted, pair.searched], [false, false]);
+  assert.throws(() => createLearner(geometry, opts).reset(space, records, { hyper: { ...carried, rho: 1 } }), RangeError);
+});
+
+test("a search replaced before it ends hands its replacement the same start with or without carried values", () => {
+  const records = Array.from({ length: 4 }, (_, i) => record(2 * i, 2 * i + 1, i % 2 ? "B" : "A"));
+  const scenes = ["solving", "inspecting", "celebrating"];
+  const answers = Array.from({ length: 10 }, (_, i) => record(20 + 2 * i, 21 + 2 * i, i % 3 ? "A" : "B", scenes[i % 3]));
+  const run = (hyper, steps) => {
+    const learner = createLearner(geometry, { ...options, cap: 40, hyperEvals: 12, deferHyper: true });
+    learner.reset(space, records, { hyper });
+    for (let i = 0; i < steps; i++) learner.idle();
+    // The tenth answer starts a new search, which takes over from the pending one.
+    for (const r of answers) learner.answer(r);
+    assert.equal(learner.propose("solving").searched, false, "the replacement has not ended");
+    while (learner.idle());
+    assert.equal(learner.propose("solving").searched, true);
+    return learner;
+  };
+  for (const steps of [0, 1, 5]) {
+    const cold = run(null, steps), warm = run(carriedHyper(), steps);
+    assert.deepEqual(warm.state.model.hyper, cold.state.model.hyper, `${steps} steps before the answers`);
+    sameMeans(cold, warm);
+  }
+});
+
+test("nothing is settled before the search started at the last reset has ended", () => {
+  const always = () => ({ settled: true, regret: 0.01 });
+  const other = [{ scene: "solving", session: "s1", best: feasible[0] }];
+  const make = (records, deferHyper) => {
+    const learner = createLearner(geometry, { ...options, cap: 40, settledTest: always, stableAnswers: 3, hyperEvals: 4, deferHyper });
+    learner.reset(space, records, { session: "s2", settledRecords: other });
+    return learner;
+  };
+  const flags = (msg) => [msg.stable, msg.searched, msg.sessionSettled, msg.settled];
+  // Look 0 wins every answer, so it stays the best.
+  const loaded = [shown(0, 4), shown(0, 5)];
+  const sync = make(loaded, false);
+  for (let i = 1; i <= 3; i++) sync.answer(shown(0, i));
+  assert.deepEqual(flags(sync.propose("solving")), [true, true, true, true]);
+  const deferred = make(loaded, true);
+  for (let i = 1; i <= 3; i++) deferred.answer(shown(0, i));
+  const before = deferred.propose("solving");
+  assert.deepEqual(flags(before), [true, false, false, false]);
+  assert.equal(before.settledRegret, 0.01, "the regret is still reported");
+  while (deferred.idle());
+  assert.deepEqual(flags(deferred.propose("solving")), [true, true, true, true]);
+  // A view without stored comparisons runs its first search after ten answers.
+  const fresh = make([], true);
+  for (let i = 1; i <= 10; i++) fresh.answer(shown(0, i));
+  assert.deepEqual(flags(fresh.propose("solving")), [true, false, false, false]);
+  while (fresh.idle());
+  assert.deepEqual(flags(fresh.propose("solving")), [true, true, true, true]);
+});
+
+test("a rebuild at the cap keeps the hyperparameters until its search ends as a fresh reset's", () => {
+  // As in the cap test: record 6 hits the cap and 7-9 reuse shown looks.
+  const records = [record(0, 1), record(2, 3, "B"), record(4, 5), record(6, 7, "same"), record(8, 9),
+    record(10, 11, "B"), record(12, 13), record(12, 10), record(11, 13, "B"), record(10, 13, "same")];
+  const opts = { ...options, hyperEvals: 30 };
+  const live = createLearner(geometry, { ...opts, deferHyper: true });
+  live.reset(space, records.slice(0, 5));
+  while (live.idle());
+  assert.equal(live.answer(records[5]).rebuilt, false);
+  const kept = live.state.model.hyper;
+  const starting = { lengths: new Float64Array(featureSlices(space).length).fill(1), rho: 0.5, eps: 0.2, amp: 0, beta: 0 };
+  assert.notDeepEqual(kept, starting, "the search has moved away from the starting values");
+  assert.equal(live.answer(records[6]).rebuilt, true);
+  assert.deepEqual(live.state.model.hyper, kept);
+  for (const r of records.slice(7)) assert.equal(live.answer(r).rebuilt, false);
+  const pair = live.propose("solving");
+  assert.deepEqual([pair.fitted, pair.searched], [true, false]);
+  while (live.idle());
+  const fresh = createLearner(geometry, opts);
+  fresh.reset(space, records.slice(0, 7));
+  for (const r of records.slice(7)) fresh.answer(r);
+  assert.deepEqual(live.state.model.hyper, fresh.state.model.hyper);
+  sameMeans(fresh, live);
+  assert.equal(live.propose("solving").searched, true);
+});
+
+test("a rebuild at the cap before any search has ended carries nothing", () => {
+  // As in the cap test: record 6 hits the cap; the search after the reset has not run.
+  const records = [record(0, 1), record(2, 3, "B"), record(4, 5), record(6, 7, "same"), record(8, 9), record(10, 11, "B"), record(12, 13)];
+  const live = createLearner(geometry, { ...options, hyperEvals: 30, deferHyper: true });
+  live.reset(space, records.slice(0, 5));
+  assert.equal(live.answer(records[5]).rebuilt, false);
+  assert.equal(live.answer(records[6]).rebuilt, true);
+  const starting = { lengths: new Float64Array(featureSlices(space).length).fill(1), rho: 0.5, eps: 0.2, amp: 0, beta: 0 };
+  assert.deepEqual(live.state.model.hyper, starting);
+  const pair = live.propose("solving");
+  assert.deepEqual([pair.fitted, pair.searched], [false, false], "the starting values are not presented as fitted");
+  while (live.idle());
+  assert.deepEqual([live.propose("solving").fitted, live.propose("solving").searched], [true, true]);
+});
+
+test("stored hyperparameters are used only when complete and stored for this family and parameter table", () => {
+  const learner = createLearner(geometry, { ...options, cap: 40, hyperEvals: 8 });
+  learner.reset(space, Array.from({ length: 10 }, (_, i) => record(2 * i, 2 * i + 1, i % 3 ? "A" : "B")));
+  const hyper = learner.state.model.hyper;
+  // Documents pass through JSON, as the store keeps them.
+  const doc = JSON.parse(JSON.stringify(hyperDoc(space, "f1", hyper, 10)));
+  assert.deepEqual(doc.hyper.lengths, Array.from(hyper.lengths));
+  assert.deepEqual(storedHyper(space, doc, "f1"), hyper);
+  assert.equal(storedHyper(space, doc, "f2"), null, "another family's document");
+  const linear = space.params.findIndex((p) => p.kind === "linear");
+  const table = (change) => ({ ...space, params: space.params.map((p, i) => (i === linear ? { ...p, ...change } : p)) });
+  assert.deepEqual(storedHyper(table({}), doc, "f1"), hyper, "an unchanged table");
+  const p = space.params[linear];
+  for (const change of [{ max: p.max + (p.max - p.min) }, { min: p.min - 1 }, { id: "renamed" }, { kind: "integer" }]) {
+    assert.equal(storedHyper(table(change), doc, "f1"), null, JSON.stringify(change));
+  }
+  const swapped = { ...space, params: [space.params[1], space.params[0], ...space.params.slice(2)] };
+  assert.equal(storedHyper(swapped, doc, "f1"), null, "another order");
+  const h = doc.hyper;
+  const malformed = [
+    null, [], "doc", { ...doc, version: 2 }, { ...doc, family: undefined }, { ...doc, params: doc.params.slice(1) },
+    { ...doc, params: undefined }, { ...doc, hyper: undefined }, { ...doc, hyper: {} }, { ...doc, hyper: [] },
+    { ...doc, hyper: { ...h, lengths: h.lengths.slice(1) } }, { ...doc, hyper: { ...h, lengths: { ...h.lengths } } },
+    { ...doc, hyper: { ...h, lengths: h.lengths.map(() => 0.01) } }, { ...doc, hyper: { ...h, rho: 1 } },
+    { ...doc, hyper: { ...h, eps: "0.2" } },
+    ...["lengths", "rho", "eps", "amp", "beta"].flatMap((k) => [{ ...doc, hyper: { ...h, [k]: undefined } }, { ...doc, hyper: { ...h, [k]: null } }]),
+  ];
+  for (const bad of malformed) assert.equal(storedHyper(space, bad, "f1"), null, JSON.stringify(bad));
 });
