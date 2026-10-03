@@ -2,7 +2,6 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
-claude/cowork-chat-memories-0j732y
 ## [2026-10-03] decision | Taste Lab acceptance ruling
 Recorded in [owner-decisions-2026-10-03-taste-lab](decisions/owner-decisions-2026-10-03-taste-lab.md): on the acceptance seeds the full setting with one family and the bump owner passed every criterion, while two families, the low setting and the cross owner's ranking missed; the owner accepted the learner with these as recorded limitations and moved the two-family checkpoint to 150 comparisons per family, with one confirmation run on fresh seeds whose rule was fixed before the run; it passed (0.045 at 150 comparisons per family).
 
@@ -17,7 +16,6 @@ The owner signed all 12 `delete` and 6 `automate` decisions of the [stage 2.2 di
 
 ## [2026-10-03] decision | A selected construction is the solver's own macro
 Recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md) section 4; the stage 2.2 draft dispositions of the endgame family constructors are `redesign`.
-main
 
 ## [2026-10-03] decision | Testers, charter signature and Windows CI
 Recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md): the owner alone takes G1 to G6, the stage 2.0 [charter](../progress/1.0/charter-2.0-draft.md) is signed as written (closing stage 2.0), and a Windows CI job runs the headless checks without counting as Windows/DirectX evidence.
