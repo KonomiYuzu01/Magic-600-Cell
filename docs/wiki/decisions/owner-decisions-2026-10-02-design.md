@@ -4,7 +4,7 @@ type: decision
 status: verified
 visibility: public
 summary: Owner design decisions of 2 October 2026 on ten design gaps - small content rewards, one encoding grammar with defined and proved mathematical language, two theme families with scene looks, annotated references, competence checks with local metrics, two linked views, one entry, role priority, text budgets and sound audition.
-related: [owner-decisions-2026-10-02, renderer-candidates]
+related: [owner-decisions-2026-10-02, renderer-candidates, owner-decisions-2026-10-02-scope]
 supersedes: []
 claims:
   - {id: rewards-small, evidence_kind: decision, checked_at: 2026-10-02}
@@ -42,6 +42,7 @@ These decisions add to the charter draft section 5 ([charter-2.0-draft](../../pr
 - Focus: inside the focus set every channel is drawn; outside it only class colour. Protection conflicts and complete-operation effects always break through.
 - Most exact language sits in a compact relationship strip inside Global and Local (destination, current occupant, wanted piece, buffers, frame, residual), linked to the geometric markers it names.
 - The owner's conditions: the strip and the encoding must be **intuitive** (read at a glance, picture first), and the **mathematical grammar itself gets definitions and proofs**: every term, symbol and relation the strip or the encoding uses is defined in the theory book, with proofs or cited proofs of the facts it relies on (for example why a proper colouring needs only a few classes, why a buffer position differs from its occupant). This extends M4 to the UI's own grammar.
+- Amended the same day ([owner-decisions-2026-10-02-scope](owner-decisions-2026-10-02-scope.md)): in 1.0 the theory book covers only what the UI shows, with proofs only for facts its correctness relies on.
 
 ## 3. Themes (3B with 3C: R3a)
 
@@ -87,6 +88,7 @@ These decisions add to the charter draft section 5 ([charter-2.0-draft](../../pr
 
 - The motion table (H-03) gets optional sound semantics. In G5 the owner compares short clips, silent against sounded. Whether sound is adopted is a separate owner decision after that audition.
 - If adopted, one minimal cue set shared by all themes (for example "solved" and "invalid action") goes into the vertical slice, each cue with a visual equivalent and a mute; the full set follows after the slice. Sound never drives mechanics and never signals success for a rejected or stale result.
+- Amended the same day ([owner-decisions-2026-10-02-scope](owner-decisions-2026-10-02-scope.md)): the audition is one short comparison against a two-cue set; if adopted, 1.0 has at most two cues and the full set moves to 1.x.
 
 ## Follow-up
 
