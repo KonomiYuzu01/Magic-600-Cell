@@ -26,6 +26,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # tests check evidence commits and file history
 
       - name: Set up the pinned CPython
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -42,4 +43,9 @@ jobs:
           python -c "import numpy,platform,struct;print('numpy',numpy.__version__,platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
 
       - name: Run the headless checks
+        # The default temp path holds an 8.3 short name (RUNNER~1), which the link checks
+        # read as a link; use the runner's own long temp path, as on a normal machine.
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
         run: python tools/ci/run_headless.py
