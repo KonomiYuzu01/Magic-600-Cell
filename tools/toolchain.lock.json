@@ -597,14 +597,14 @@
         "renderer-spike"
       ],
       "method": "winget",
-      "status": "unverified",
-      "installable": false,
+      "status": "verified",
+      "installable": true,
       "platforms": [
         "windows"
       ],
       "winget_id": "GodotEngine.GodotEngine.Mono",
-      "version": null,
-      "installer_sha256": null,
+      "version": "4.7.2",
+      "installer_sha256": "a2a48473a7414c5f19fab690518caebb738c09ef9601f6bd2388676a7f53b3c0",
       "probe": [
         "godot",
         "--version"

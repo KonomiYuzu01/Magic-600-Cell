@@ -13,7 +13,7 @@ claims:
   - {id: packaging-consumer, evidence_kind: source, path: work/experiments/magic600-04/packaging/assemble.py, sha256: 8502cf0eeb44f21a647f37ab35824b1c4890c66089fd6f8d69ab1b7acab6b44a, checked_at: 2026-09-30}
   - {id: invariance-tests, evidence_kind: fixture, path: tests/test_build_identity.py, sha256: ac34dffa7f766cb3ebf5e45685062092d76c00371bdbca096b25b824ecc2647b, checked_at: 2026-10-01}
   - {id: byte-exact-checkout, evidence_kind: source, path: .gitattributes, sha256: 018ad2ea40527c9f02c1e384103567d79b00ab3c6b41c54ac67f79b5e2205ed1, checked_at: 2026-09-30}
-  - {id: engine-environment, evidence_kind: source, path: tools/toolchain.lock.json, sha256: 254c870e18548344483789bdd8a6a8c641d8627c16580cc9fa003d5e8415481c, checked_at: 2026-10-01}
+  - {id: engine-environment, evidence_kind: source, path: tools/toolchain.lock.json, sha256: d3626d8773f0c28294d4011122b8d5d414b71afd85ce858475fcebe339c400c5, checked_at: 2026-10-03}
   - {id: continuity-0-4, evidence_kind: source, path: docs/RELEASE_0_4_CONTINUITY.json, sha256: a40c915dc56ff73c96d6ffb164a3264693f0e6faceddfeb96eaa7f4758d53759, checked_at: 2026-09-30}
   - {id: windows-startup-regression, evidence_kind: actual_windows_directx, checked_at: 2026-09-30}
   - {id: windows-harness-endgame, evidence_kind: actual_windows_directx, checked_at: 2026-09-30}
