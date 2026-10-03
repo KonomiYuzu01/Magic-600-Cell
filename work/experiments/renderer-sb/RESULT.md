@@ -12,7 +12,7 @@ This is the experiment card ([protocol section 2](../../../docs/progress/1.0/sta
 | Time box | 1.5 days |
 | Kill criteria | Two drawing methods both below 50 % of the gate. |
 | Evidence class | Actual Windows/DirectX and performance, valid only for build identity `2b5bf5e6…` under the conditions below. |
-| Result | W3 meets the gate: three valid runs; pooled average 778.37 fps, pooled p99 1.546 ms, peak VRAM 81.7 MB. |
+| Result | W3 meets the gate: three valid runs; pooled average 778.37 fps, pooled p99 1.546 ms, peak VRAM 81.7 MB. The label check caught each of the four injected faults on the GPU. |
 | Decision | Open. The day-7 go/no-go is an Astra gate ruling, and it also needs the S-A2 and S-D results. |
 
 ## Build and tools
@@ -74,13 +74,34 @@ Scene W3:
   - The capture script now stops the session by name and runs one invocation at a time (`c6f7730`).
   - The last open review finding on that fix was settled by an [adjudicating experiment](../renderer-sb-packets/review-2-stop-adjudication.md).
 
+## Injected label faults (3 October 2026)
+
+Each fault from plan section 2 was injected once, in turn 20 of a 10 s W3 run of build `2b5bf5e6…`:
+- the probe ran directly, without PresentMon, because no elevated terminal was available;
+- each run was a new process on the owner's GPU, on mains power, with the window visible throughout.
+
+| Fault | Exit | Label check | Mismatches | Late adoptions | Binding mismatches | Missing copies |
+|---|---|---|---|---|---|---|
+| `corrupt-label` | 2 | fail | 1 | 0 | 0 | 0 |
+| `swap-same-colour` | 2 | fail | 2 | 0 | 0 | 0 |
+| `delay-adoption` | 2 | fail | 1 | 2 | 1 | 0 |
+| `stale-binding` | 2 | fail | 2 | 2 | 2 | 1 |
+
+- Every fault failed the check in the expected way:
+  - the two label faults with integer mismatches;
+  - the two adoption faults with late or binding/copy violations.
+- Each run had 52 revisions. `stale-binding` also recorded 53 copies.
+- `renderer_gate.py` refused the four runs as unreadable, because they have no PresentMon capture. These are label-check runs, not gate captures.
+- The gate's refusal of a failed label check in a complete capture is shown only by its self-test on fixtures.
+- Summary: [results/neg-20261003T060641Z-summary.json](results/neg-20261003T060641Z-summary.json).
+
 ## Acceptance items (packet section 1)
 
 | # | Item | Status |
 |---|---|---|
 | 1 | Geometry check against `reference_geometry.py` | Done. It passed on the owner's GPU with this build: three cameras, three poses, 9,066 samples each, largest absolute error 1.4e-6 in the checked projected coordinates, and 30,480 vertices drawn for each of the 600 cells. |
 | 2 | W1–W4 on the owner's machine | W3 done; W1, W2 and W4 not run yet. |
-| 3 | Three cold W3 runs judged by `renderer_gate.py`, exact label check on every run | Done: `met`. The four injected-fault runs that must be refused (plan section 2) have not run on the GPU yet. The self-test covers the same faults on in-memory fixtures only. |
+| 3 | Three cold W3 runs judged by `renderer_gate.py`, exact label check on every run | Done: `met`. Each of the four injected faults (plan section 2) failed the label check on the owner's GPU with this build (section above). Those runs had no PresentMon capture, so the gate's refusal of a failed label check in a complete capture is shown only by its self-test on fixtures. |
 | 4 | D3D12 resource handoff with fences, on the same device and to a second device | Not done (SB-C, next). |
 | 5 | Feature cost table (H-06) | Not measured yet; due stage day 5. |
 

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-03] update | S-B label check catches injected faults
+Updated [s-b-probe-results](evidence/s-b-probe-results.md). Each of the four faults from the renderer plan, injected into a W3 run of the bare Direct3D 12 probe on the owner's GPU, failed its label check; the runs had no PresentMon capture, so they are label-check runs, not gate captures.
+
 ## [2026-10-03] update | Godot 4.7.2 pinned
 The owner pinned `godot` (Godot .NET 4.7.2, user-scope portable zip) and approved the lockfile revision; the installer hash matches `winget show`. The [build-identity-v2](concepts/build-identity-v2.md) lockfile claim is refreshed, since the engine entries are unchanged, and the [renderer readiness](../progress/1.0/packets/renderer/E-2.4-00-readiness.md) table records the pin and the installed .NET SDK 10.0.401.
 
