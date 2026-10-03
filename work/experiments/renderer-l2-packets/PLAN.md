@@ -64,7 +64,8 @@ Sequencing:
 
 | Stage day | Steps |
 |---|---|
-| 4 | Sol plan check of this plan. Write and commit L2-H, then dispatch L2-N. Run the H-06 preliminary series while the owner is away (section 5). |
+| 3 (night) | Astra plan check of this plan (`plan-check-1.md`): the route sets how both candidates are judged and adds a contract, so it is a design decision. The H-06 preliminary series runs once that check ends and the owner is away (section 5). |
+| 4 | Answer the plan check. Write and commit L2-H, then dispatch L2-N. |
 | 5 | Integrate L2-N and run the GPU self-test. Dispatch L2-G and L2-Q in parallel. |
 | 6 to 8 | Integrate. Level-2 runs, then the owner-attended W3 runs per candidate, then the H-09 lists and the result cards. |
 | 9 (window day 7) | Packet E-2.4-04: the day-7 go/no-go, an Astra gate ruling. |
@@ -74,7 +75,7 @@ Day numbers count the owner's working days. The owner may move them.
 ## 5. Machine rules
 
 - Level-2 and GPU self-test runs without PresentMon may run unattended on an idle machine on mains power. They are labelled preliminary. W3 gate runs are owner-only.
-- **H-06 preliminary cost series** (27 runs, about 90 minutes): moved to stage day 4 on the owner's instruction.
+- **H-06 preliminary cost series** (27 runs, about 90 minutes): started on the night of stage day 3 on the owner's go. With no port running tonight, nothing competes for the machine.
   - Start it from PowerShell in the `claude/renderer-sb` checkout: `powershell -NoProfile -ExecutionPolicy Bypass -File work\loop-memory\perf\renderer\sb-h06-helpers\start_h06_watch.ps1`. The folder is private and ignored by Git.
   - It runs only after 5 minutes without owner input, and only while no build, Codex call, Godot, Blender or FFmpeg process runs.
   - It pauses when the owner returns. Esc closes a run's full-screen window.
