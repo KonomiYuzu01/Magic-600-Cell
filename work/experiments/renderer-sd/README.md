@@ -6,9 +6,10 @@ SA2 producer ABI 1 and immutable `../renderer-sa2/code_layout.json`. It loads th
 DLL by absolute path and binds all 19 functions declared by the header. It uses
 C++ items, dynamic Qt linking and no QML, shaders, geometry, session or database.
 
-**Evidence here is source/static and Python fixtures only.** No Qt installation,
-C++ compilation, GPU execution, deployment or performance measurement was done
-in the implementation sandbox. All runtime confirmations below are pending.
+Codex wrote the harness in a sandbox without Qt or a GPU; statements below
+marked source-verified come from Qt 6.10.3's source. The owner-machine results
+for the build named there, including the runtime checks listed below, are in
+[RESULT.md](RESULT.md). No performance was measured.
 
 ## Owner-machine commands
 
@@ -139,8 +140,9 @@ clears use the optimized clear values Qt declares for its render targets (zero
 color, depth 1, stencil 0), so they add no clear-value warning (ID 820). Without
 these clears the debug layer reports error 1422 (render target read before
 initialization). Export textures are warmed with three copy-only steps,
-one per slot, after every ring creation. Their actual Qt-created initial layout
-is recorded; the steady producer state is `COPY_SOURCE`. Export pointers are
+one per slot, after every ring creation. Qt creates them in `COMMON` (source);
+the result records that state without reading it back from Qt. The steady
+producer state is `COPY_SOURCE`. Export pointers are
 checked each step. Every imported slot starts in the producer-before state.
 Q10 declares the handover: producer-before `COPY_SOURCE`, producer-after
 `RENDER_TARGET`, and `setNativeLayout(RENDER_TARGET)` after each production.

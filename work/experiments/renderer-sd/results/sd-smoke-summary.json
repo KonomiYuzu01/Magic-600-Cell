@@ -1,0 +1,1492 @@
+{
+  "format": "magic600-sd-smoke-summary-v1",
+  "evidence_kind": "owner-runtime",
+  "source": {
+    "head": "aaf01b3ee53b952f5a04980e6a81e260d41ceeb9",
+    "sha256": "24d32d95291a3f755194426692e10d48f6e0483c13066f20af17c4bd18926e70",
+    "matches_head": true
+  },
+  "dll_sha256": "1743d93cb071ce28ef5dbea5cdcd872558ef6d56d7430075d30c426b0f8c4ba9",
+  "executable_sha256": "686faa1f4f553fed2ee6e2c76a0c85bedd0ef04d5a02c567463f90299eff33ae",
+  "qt_version": "6.10.3",
+  "adapter_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "driver_version": "32.0.16.1692",
+  "enhanced_barriers": true,
+  "deployment": {
+    "total_bytes": 40766408,
+    "file_count": 33
+  },
+  "runs": [
+    {
+      "row": {
+        "id": "Q0",
+        "expected": "pass",
+        "timeout_s": 300
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {},
+      "frames": {},
+      "verify": {},
+      "debug": {
+        "ids": []
+      },
+      "teardown": {
+        "phase": null,
+        "refcount_after": []
+      },
+      "stderr": {
+        "total": 0,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q0b",
+        "expected": "pass",
+        "timeout_s": 300
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": false,
+      "identity": {},
+      "frames": {},
+      "verify": {},
+      "debug": {
+        "ids": []
+      },
+      "teardown": {
+        "phase": null,
+        "refcount_after": []
+      },
+      "stderr": {
+        "total": 0,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q1",
+        "device": "qt",
+        "route": "rhi-upload",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pass",
+        "frames": 1200,
+        "resize_every": 200,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1206,
+        "run": 1200,
+        "warmup": 0,
+        "transition": 6,
+        "eligible": 1200,
+        "skipped_warmup": 0,
+        "skipped_transition": 6
+      },
+      "verify": {
+        "native_requested": 0,
+        "native_completed": 0,
+        "native_mismatched_texels": 0,
+        "texture_requested": 24,
+        "texture_completed": 24,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 0,
+        "info": 2616,
+        "message": 0,
+        "mismatching_clear_value": 0,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 0,
+        "ids": []
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 0,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": []
+      },
+      "stderr": {
+        "total": 20,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q2",
+        "device": "qt",
+        "route": "import-copy",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pass",
+        "frames": 1200,
+        "resize_every": 200,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1207,
+        "run": 1200,
+        "warmup": 0,
+        "transition": 7,
+        "eligible": 1200,
+        "skipped_warmup": 0,
+        "skipped_transition": 7
+      },
+      "verify": {
+        "native_requested": 24,
+        "native_completed": 24,
+        "native_mismatched_texels": 0,
+        "texture_requested": 24,
+        "texture_completed": 24,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 6876,
+        "info": 2784,
+        "message": 0,
+        "mismatching_clear_value": 6876,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 20,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q3",
+        "device": "qt",
+        "route": "import-copy",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pass",
+        "frames": 1200,
+        "resize_every": 200,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1208,
+        "run": 1200,
+        "warmup": 0,
+        "transition": 8,
+        "eligible": 1200,
+        "skipped_warmup": 0,
+        "skipped_transition": 8
+      },
+      "verify": {
+        "native_requested": 24,
+        "native_completed": 24,
+        "native_mismatched_texels": 0,
+        "texture_requested": 24,
+        "texture_completed": 24,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 6875,
+        "info": 7384,
+        "message": 0,
+        "mismatching_clear_value": 6875,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 20,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q4",
+        "device": "qt",
+        "route": "export-copy",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pass",
+        "frames": 1200,
+        "resize_every": 200,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1224,
+        "run": 1200,
+        "warmup": 18,
+        "transition": 6,
+        "eligible": 1200,
+        "skipped_warmup": 18,
+        "skipped_transition": 6
+      },
+      "verify": {
+        "native_requested": 24,
+        "native_completed": 24,
+        "native_mismatched_texels": 0,
+        "texture_requested": 24,
+        "texture_completed": 24,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 6882,
+        "info": 2741,
+        "message": 0,
+        "mismatching_clear_value": 6882,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": []
+      },
+      "stderr": {
+        "total": 20,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q5",
+        "device": "qt",
+        "route": "import-direct",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pass",
+        "frames": 1200,
+        "resize_every": 200,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1207,
+        "run": 1200,
+        "warmup": 0,
+        "transition": 7,
+        "eligible": 1200,
+        "skipped_warmup": 0,
+        "skipped_transition": 7
+      },
+      "verify": {
+        "native_requested": 24,
+        "native_completed": 24,
+        "native_mismatched_texels": 0,
+        "texture_requested": 0,
+        "texture_completed": 0,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 6875,
+        "info": 2701,
+        "message": 0,
+        "mismatching_clear_value": 6875,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 20,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q6",
+        "device": "from-rhi",
+        "route": "import-copy",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pass",
+        "frames": 1200,
+        "resize_every": 200,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "queue_matches": true,
+        "rhi_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1208,
+        "run": 1200,
+        "warmup": 0,
+        "transition": 8,
+        "eligible": 1200,
+        "skipped_warmup": 0,
+        "skipped_transition": 8
+      },
+      "verify": {
+        "native_requested": 24,
+        "native_completed": 24,
+        "native_mismatched_texels": 0,
+        "texture_requested": 24,
+        "texture_completed": 24,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 6875,
+        "info": 2784,
+        "message": 0,
+        "mismatching_clear_value": 6875,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "device_refcount_after": 0,
+        "queue_refcount_after": 0,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 10,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 1,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q7",
+        "device": "from-rhi",
+        "route": "import-copy",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pass",
+        "frames": 1200,
+        "resize_every": 200,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "queue_matches": true,
+        "rhi_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1207,
+        "run": 1200,
+        "warmup": 0,
+        "transition": 7,
+        "eligible": 1200,
+        "skipped_warmup": 0,
+        "skipped_transition": 7
+      },
+      "verify": {
+        "native_requested": 24,
+        "native_completed": 24,
+        "native_mismatched_texels": 0,
+        "texture_requested": 24,
+        "texture_completed": 24,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 6875,
+        "info": 7410,
+        "message": 0,
+        "mismatching_clear_value": 6875,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "device_refcount_after": 0,
+        "queue_refcount_after": 0,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 10,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 1,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q8",
+        "device": "from-rhi",
+        "route": "import-direct",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "basic",
+        "expected": "pass",
+        "frames": 1200,
+        "resize_every": 200,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "queue_matches": true,
+        "rhi_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1206,
+        "run": 1200,
+        "warmup": 0,
+        "transition": 6,
+        "eligible": 1200,
+        "skipped_warmup": 0,
+        "skipped_transition": 6
+      },
+      "verify": {
+        "native_requested": 24,
+        "native_completed": 24,
+        "native_mismatched_texels": 0,
+        "texture_requested": 0,
+        "texture_completed": 0,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 6876,
+        "info": 2724,
+        "message": 0,
+        "mismatching_clear_value": 6876,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "device_refcount_after": 0,
+        "queue_refcount_after": 0,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 7,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 1,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q9",
+        "device": "from-device",
+        "route": "import-copy",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pass",
+        "frames": 1200,
+        "resize_every": 200,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "qt_queue_device_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1207,
+        "run": 1200,
+        "warmup": 0,
+        "transition": 7,
+        "eligible": 1200,
+        "skipped_warmup": 0,
+        "skipped_transition": 7
+      },
+      "verify": {
+        "native_requested": 24,
+        "native_completed": 24,
+        "native_mismatched_texels": 0,
+        "texture_requested": 24,
+        "texture_completed": 24,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 6875,
+        "info": 2784,
+        "message": 0,
+        "mismatching_clear_value": 6875,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "device_refcount_after": 0,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 18,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 1,
+        "Using existing native D3D12 device": 1
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q10",
+        "device": "qt",
+        "route": "import-copy",
+        "queue": "same",
+        "handover": "declared",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "recorded",
+        "frames": 300,
+        "resize_every": 0,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "recorded",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 300,
+        "steps": 301,
+        "run": 300,
+        "warmup": 0,
+        "transition": 1,
+        "eligible": 300,
+        "skipped_warmup": 0,
+        "skipped_transition": 1
+      },
+      "verify": {
+        "native_requested": 6,
+        "native_completed": 6,
+        "native_mismatched_texels": 0,
+        "texture_requested": 6,
+        "texture_completed": 6,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 300,
+        "composite_completed": 300,
+        "composite_verified": 300,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 1763,
+        "info": 710,
+        "message": 0,
+        "mismatching_clear_value": 1763,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 3,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 20,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q11",
+        "device": "from-rhi",
+        "route": "import-copy",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pass",
+        "frames": 3000,
+        "resize_every": 500,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": false,
+        "inject_drain": false
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "queue_matches": true,
+        "rhi_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 3000,
+        "steps": 3008,
+        "run": 3000,
+        "warmup": 0,
+        "transition": 8,
+        "eligible": 3000,
+        "skipped_warmup": 0,
+        "skipped_transition": 8
+      },
+      "verify": {
+        "native_requested": 60,
+        "native_completed": 60,
+        "native_mismatched_texels": 0,
+        "texture_requested": 60,
+        "texture_completed": 60,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 3000,
+        "composite_completed": 3000,
+        "composite_verified": 3000,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 0,
+        "info": 0,
+        "message": 0,
+        "mismatching_clear_value": 0,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 0,
+        "ids": []
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "device_refcount_after": 0,
+        "queue_refcount_after": 0,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 9,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 1,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q12",
+        "device": "qt",
+        "route": "import-copy",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_loop": "threaded",
+        "expected": "recorded",
+        "frames": 1200,
+        "resize_every": 0,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "recorded",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 1200,
+        "steps": 1201,
+        "run": 1200,
+        "warmup": 0,
+        "transition": 1,
+        "eligible": 1200,
+        "skipped_warmup": 0,
+        "skipped_transition": 1
+      },
+      "verify": {
+        "native_requested": 24,
+        "native_completed": 24,
+        "native_mismatched_texels": 0,
+        "texture_requested": 24,
+        "texture_completed": 24,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 1200,
+        "composite_completed": 1200,
+        "composite_verified": 1200,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 6951,
+        "info": 7330,
+        "message": 0,
+        "mismatching_clear_value": 6951,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 0,
+        "slots_unregistered": 3,
+        "drain_confirmed": true,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 20,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q13",
+        "device": "from-rhi",
+        "route": "import-copy",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "pending",
+        "frames": 120,
+        "resize_every": 0,
+        "device_loss_at": 0,
+        "timeout_s": 300,
+        "debug_layer": true,
+        "inject_drain": true
+      },
+      "status": "recorded",
+      "judgement": "as-expected",
+      "reasons": [],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "queue_matches": true,
+        "rhi_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 120,
+        "steps": 121,
+        "run": 120,
+        "warmup": 0,
+        "transition": 1,
+        "eligible": 120,
+        "skipped_warmup": 0,
+        "skipped_transition": 1
+      },
+      "verify": {
+        "native_requested": 2,
+        "native_completed": 2,
+        "native_mismatched_texels": 0,
+        "texture_requested": 2,
+        "texture_completed": 2,
+        "texture_mismatched_texels": 0,
+        "composite_requested": 120,
+        "composite_completed": 120,
+        "composite_verified": 120,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 0,
+        "info": 0,
+        "message": 0,
+        "mismatching_clear_value": 0,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 0,
+        "ids": []
+      },
+      "teardown": {
+        "slots_unregistered": 0,
+        "drain_confirmed": false,
+        "detached": false,
+        "phase": "pending",
+        "refcount_after": []
+      },
+      "stderr": {
+        "total": 11,
+        "Failed to": 0,
+        "Device loss detected": 0,
+        "Graphics device lost": 0,
+        "cannot import device": 0,
+        "Using imported device": 1,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 3,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q14",
+        "device": "qt",
+        "route": "import-copy",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "bounded-loss",
+        "frames": 400,
+        "resize_every": 0,
+        "device_loss_at": 200,
+        "timeout_s": 120,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "recorded",
+      "judgement": "as-expected",
+      "reasons": [
+        "device-removed",
+        "loss-invalidated",
+        "loss-new-rhi",
+        "loss-reason-observed",
+        "loss-reinitialized",
+        "loss-render-resumed",
+        "loss-requested",
+        "sa2-call-failed",
+        "teardown-incomplete",
+        "unverified-frames",
+        "verify-mismatch"
+      ],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 400,
+        "steps": 785,
+        "run": 200,
+        "warmup": 0,
+        "transition": 1,
+        "eligible": 199,
+        "skipped_warmup": 0,
+        "skipped_transition": 1
+      },
+      "verify": {
+        "native_requested": 4,
+        "native_completed": 4,
+        "native_mismatched_texels": 0,
+        "texture_requested": 4,
+        "texture_completed": 4,
+        "texture_mismatched_texels": 914944,
+        "composite_requested": 199,
+        "composite_completed": 199,
+        "composite_verified": 199,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 1177,
+        "info": 1220,
+        "message": 1,
+        "mismatching_clear_value": 1177,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 5,
+        "slots_unregistered": 3,
+        "drain_confirmed": false,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 36,
+        "Failed to": 0,
+        "Device loss detected": 1,
+        "Graphics device lost": 1,
+        "cannot import device": 0,
+        "Using imported device": 0,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    },
+    {
+      "row": {
+        "id": "Q15",
+        "device": "from-rhi",
+        "route": "import-copy",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_loop": "threaded",
+        "expected": "bounded-loss",
+        "frames": 400,
+        "resize_every": 0,
+        "device_loss_at": 200,
+        "timeout_s": 120,
+        "debug_layer": true,
+        "inject_drain": false
+      },
+      "status": "recorded",
+      "judgement": "as-expected",
+      "reasons": [
+        "device-removed",
+        "loss-invalidated",
+        "loss-reason-observed",
+        "loss-reinitialized",
+        "loss-requested",
+        "sa2-call-failed",
+        "teardown-incomplete",
+        "unverified-frames",
+        "verify-mismatch"
+      ],
+      "result_exists": true,
+      "identity": {
+        "device_matches": true,
+        "queue_matches": true,
+        "rhi_matches": true,
+        "fallback_detected": false
+      },
+      "frames": {
+        "requested": 400,
+        "steps": 201,
+        "run": 200,
+        "warmup": 0,
+        "transition": 1,
+        "eligible": 199,
+        "skipped_warmup": 0,
+        "skipped_transition": 1
+      },
+      "verify": {
+        "native_requested": 4,
+        "native_completed": 4,
+        "native_mismatched_texels": 0,
+        "texture_requested": 4,
+        "texture_completed": 4,
+        "texture_mismatched_texels": 914944,
+        "composite_requested": 199,
+        "composite_completed": 199,
+        "composite_verified": 199,
+        "composite_mismatches": 0
+      },
+      "debug": {
+        "corruption": 0,
+        "error": 0,
+        "warning": 1177,
+        "info": 1208,
+        "message": 1,
+        "mismatching_clear_value": 1177,
+        "mentioning_sa2": 0,
+        "distinct_id_count": 1,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "drain_result": 5,
+        "slots_unregistered": 3,
+        "device_refcount_after": 0,
+        "queue_refcount_after": 0,
+        "drain_confirmed": false,
+        "detached": true,
+        "phase": "complete",
+        "refcount_after": [
+          0,
+          0,
+          0
+        ]
+      },
+      "stderr": {
+        "total": 7325,
+        "Failed to": 1828,
+        "Device loss detected": 1,
+        "Graphics device lost": 1829,
+        "cannot import device": 0,
+        "Using imported device": 1,
+        "Using existing native D3D12 device": 0
+      },
+      "exit_code": 0,
+      "timeout": false
+    }
+  ]
+}

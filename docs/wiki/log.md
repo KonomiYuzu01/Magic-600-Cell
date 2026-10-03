@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-03] update | Qt interop smoke test passes
+Updated [interop-smoke-results](evidence/interop-smoke-results.md). On the owner's GPU, Qt 6.10.3 showed a texture written by our own Direct3D 12 code on Qt's own device and queue, on a QRhi created with our device and queue (`fromRhi`) and with our device only (`fromDeviceAndContext`), on both queues and through resizes and teardown, with 0 validation errors; imported textures need no RENDER_TARGET handover. The page answers PR #43 section 7 for Qt 6.10.3 as smoke-test results; Qt 6.12 is untested.
+
 ## [2026-10-03] update | Godot interop smoke test passes
 Created [interop-smoke-results](evidence/interop-smoke-results.md). On the owner's GPU, Godot 4.7.2 showed a texture written by our own Direct3D 12 code on its device and queue, on both queues and through resizes and teardown, with 0 validation errors; an imported texture needs the layout Godot's tracker holds, not RENDER_TARGET. The page answers PR #43 section 7 for Godot as smoke-test results; Qt waits for the owner's approval of its installer entry.
 
