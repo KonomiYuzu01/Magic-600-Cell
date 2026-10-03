@@ -26,6 +26,7 @@ Start here. Each entry: link, one-line summary, status. Rules for pages and oper
 
 ## Evidence
 - [s-b-probe-results](evidence/s-b-probe-results.md) — The bare Direct3D 12 probe meets the selection gate in the W3 scene (778 fps average, 1.55 ms p99, three attended runs) on the owner's RTX 4070 Laptop GPU; its label check catches injected faults; its fenced resource handoff works on the same device, to a second device and to D3D11; PresentMon 2.6 capture lessons. `verified`
+- [interop-smoke-results](evidence/interop-smoke-results.md) — Level-1 interop smoke tests: Godot 4.7.2 (.NET, editor build) shows a texture written by our own Direct3D 12 code on Godot's device and queue, through resizes and teardown, with 0 validation errors on the owner's GPU; imported textures need the layout Godot's tracker holds, not RENDER_TARGET; PR #43 section 7 answers for Godot. Qt not run yet. `verified`
 
 ## Questions
 - [no-0-4-1-release-open-items](questions/no-0-4-1-release-open-items.md) — Contradiction: the 1.0 engine selection input and the workbench performance boards still assume the cancelled 0.4.1 work. `draft`

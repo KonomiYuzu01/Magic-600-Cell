@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-03] update | Godot interop smoke test passes
+Created [interop-smoke-results](evidence/interop-smoke-results.md). On the owner's GPU, Godot 4.7.2 showed a texture written by our own Direct3D 12 code on its device and queue, on both queues and through resizes and teardown, with 0 validation errors; an imported texture needs the layout Godot's tracker holds, not RENDER_TARGET. The page answers PR #43 section 7 for Godot as smoke-test results; Qt waits for the owner's approval of its installer entry.
+
 ## [2026-10-03] update | S-B resource handoff works
 Updated [s-b-probe-results](evidence/s-b-probe-results.md). The S-B handoff test verified every frame on the owner's GPU, with the debug layer, on the same device, to a second device in a child process, to a D3D11 consumer and across ring rebuilds; an unconfirmed drain ends the process without releasing GPU objects. The owner allowed the commit under an exception after the review-round limit and started the framework smoke tests: Godot now, Qt after its lockfile entry.
 
