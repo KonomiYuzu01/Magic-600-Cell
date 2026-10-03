@@ -1,0 +1,25 @@
+config_version=5
+
+[application]
+config/name="SA2 Smoke"
+run/main_scene="res://Main.tscn"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/resizable=true
+window/vsync/vsync_mode=0
+
+[dotnet]
+project/assembly_name="SA2Smoke"
+
+[rendering]
+rendering_device/driver.windows="d3d12"
+rendering_device/fallback_to_vulkan=false
+rendering_device/fallback_to_opengl3=false
+renderer/rendering_method="forward_plus"
+shader_compiler/shader_cache/enabled=false
+rendering_device/pipeline_cache/enable=false
+
+[debug]
+file_logging/enable_file_logging.pc=false
