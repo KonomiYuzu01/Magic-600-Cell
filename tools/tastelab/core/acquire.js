@@ -1,4 +1,4 @@
-import {predict, observations, outcomeProbabilities, createJointSampler} from './gp.js';
+import {predict, predictMean, observations, outcomeProbabilities, createJointSampler} from './gp.js';
 
 const distance = (a, b) => Math.sqrt(a.reduce((sum, x, i) => sum + (x - b[i]) ** 2, 0));
 const entropy = probabilities => Object.values(probabilities).reduce((sum, p) => sum - (p > 0 ? p * Math.log(p) : 0), 0);
@@ -28,8 +28,16 @@ export function expectedInfo(model, pointA, pointB, rng, samples = 64) {
     model._posterior?.hyper.eps ?? model.hyper.eps, rng, samples);
 }
 
+// `prediction` may carry predict(model, candidates) when the caller already has it,
+// so that one round computes the candidates' joint posterior once.
+const checkedPrediction = (prediction, count) => {
+  if (!prediction?.mean || !prediction?.cov || prediction.mean.length !== count || prediction.cov.length !== count * count) {
+    throw new RangeError('prediction does not match the candidates');
+  }
+  return prediction;
+};
 export function nextPair(model, candidates, rng, {
-  infoRate = 0.2, repeatRate = 0.05, rejected = [], rejectRadius = 0.1,
+  infoRate = 0.2, repeatRate = 0.05, rejected = [], rejectRadius = 0.1, prediction: given = null,
 } = {}) {
   if (![infoRate, repeatRate, rejectRadius].every(x => Number.isFinite(x) && x >= 0) ||
       infoRate + repeatRate > 1) throw new RangeError('acquisition options');
@@ -42,7 +50,7 @@ export function nextPair(model, candidates, rng, {
   });
   const excluded = point => rejectedFeatures.some(features => distance(point.features, features) <= rejectRadius);
   // Validate every point, including excluded ones, without modifying the model.
-  const prediction = predict(model, candidates);
+  const prediction = given ? checkedPrediction(given, candidates.length) : predict(model, candidates);
   const eligible = candidates.map((_, i) => i).filter(i => !excluded(candidates[i]));
   const scenes = new Set(eligible.map(i => sceneNumber(candidates[i].scene)));
   const roll = rng.next();
@@ -68,7 +76,7 @@ export function nextPair(model, candidates, rng, {
   // a candidate index; otherwise the pool's highest mean is the incumbent.
   const shown = model.looks.filter(p => p.scene === scene && !excluded(p));
   if (shown.length) {
-    const means = predict(model, shown).mean;
+    const means = predictMean(model, shown);
     const best = shown[argmax(means)];
     const index = pool.find(i => distance(candidates[i].features, best.features) < 1e-12);
     if (index !== undefined) anchor = index;
@@ -96,12 +104,15 @@ export function nextPair(model, candidates, rng, {
   return {a: anchor, b: pool[argmax(draw, localAnchor)], kind: 'thompson'};
 }
 
-export function settled(model, candidates, rng, {draws = 200, prob = 0.9} = {}) {
+// `best` is the index of the reported best look among the candidates; by default
+// the candidate with the highest posterior mean.
+export function settled(model, candidates, rng, {draws = 200, prob = 0.9, prediction: given = null, best: bestIndex = null} = {}) {
   if (!Number.isInteger(draws) || draws < 1 || !Number.isFinite(prob) || prob < 0 || prob > 1 || !candidates.length) {
     throw new RangeError('settled options or candidates');
   }
-  const prediction = predict(model, candidates);
-  const best = argmax(prediction.mean);
+  const prediction = given ? checkedPrediction(given, candidates.length) : predict(model, candidates);
+  const best = bestIndex ?? argmax(prediction.mean);
+  if (!Number.isInteger(best) || best < 0 || best >= candidates.length) throw new RangeError('best');
   const sample = createJointSampler(prediction);
   let wins = 0;
   for (let i = 0; i < draws; i++) {

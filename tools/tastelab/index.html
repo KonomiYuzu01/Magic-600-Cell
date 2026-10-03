@@ -23,6 +23,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--display); pad
 header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 24px; }
 h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; }
 .scenes { display: flex; flex-wrap: wrap; gap: 6px; }
+.scenes[hidden] { display: none; }
 .scenes button[aria-pressed="true"] kbd { color: inherit; border-color: currentColor; }
 .scenes button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -43,12 +44,26 @@ aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; c
 #matters li { display: grid; grid-template-columns: 1fr 80px; gap: 8px; align-items: center; }
 .bar { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) var(--w), var(--line) var(--w)); }
 #status { color: var(--muted); font-size: 13px; min-height: 1.2em; margin: 0; }
+.tabs { display: flex; gap: 4px; }
+.tabs button[aria-selected="true"] { border-color: var(--accent); }
+.tabs button:disabled { opacity: 0.55; cursor: not-allowed; }
+.scenes kbd[title] { align-self: center; }
+.reason { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
+.reason[hidden] { display: none; }
+.reason input { font: inherit; flex: 1 1 240px; min-width: 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--fg); }
+.reason input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hint { color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;600&family=JetBrains+Mono&display=swap">
 <div class="shell">
   <header>
     <h1>Taste Lab</h1>
+    <div class="tabs" role="tablist" aria-label="Studio">
+      <button type="button" role="tab" aria-selected="true">Looks</button>
+      <button type="button" role="tab" aria-selected="false" disabled title="Phase 1b waits for an owner approval">Images (phase 1b)</button>
+    </div>
+    <div class="scenes" id="families" role="group" aria-label="Theme family" hidden></div>
     <div class="scenes" role="group" aria-label="Scene">
       <button type="button" data-scene="solving" aria-pressed="true">Solving <kbd>1</kbd></button>
       <button type="button" data-scene="inspecting" aria-pressed="false">Inspecting <kbd>2</kbd></button>
@@ -66,13 +81,19 @@ aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; c
       <button type="button" id="same">About the same <kbd>S</kbd></button>
       <button type="button" id="bad">Both bad <kbd>X</kbd></button>
       <button type="button" id="undo">Undo <kbd>Z</kbd></button>
+      <button type="button" id="why">Reason <kbd>W</kbd></button>
     </div>
+    <form id="reasonForm" class="reason" hidden>
+      <label for="reason">Reason for the last answer (optional)</label>
+      <input id="reason" maxlength="140" autocomplete="off">
+      <span class="hint"><kbd>Enter</kbd> save <kbd>Esc</kbd> close</span>
+    </form>
     <p id="status" role="status">Loading the model.</p>
   </main>
   <aside>
     <section>
       <h2>Progress</h2>
-      <div class="stat"><span><span id="count">0</span> answers</span><span id="kind">Exploring</span><span id="settled">Confidence 0%</span><span id="pruned" hidden></span></div>
+      <div class="stat"><span><span id="count">0</span> answers <span id="countFamily"></span></span><span id="kind">Exploring</span><span id="settled">Confidence 0%</span><span id="pruned" hidden></span></div>
     </section>
     <section>
       <h2>What matters to you</h2>

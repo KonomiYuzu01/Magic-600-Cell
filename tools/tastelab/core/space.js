@@ -21,8 +21,72 @@ const PARAMS = [
   ['easeA', 'Motion', 0, 1, 'linear'],
   ['easeB', 'Motion', 0, 1, 'linear'],
 ];
+// Theme families (plan section 4.5): each is learned on its own. A table
+// without `families` has one family; one without `sceneLimits` has none.
+const FAMILIES = [['f1', 'Family 1'], ['f2', 'Family 2']];
+// Celebrating is tuned toward subtle (plan section 4.1).
+const SCENE_LIMITS = {celebrating: {glow: {max: 0.5}, turnMs: {max: 600}}};
+const FAMILY_ID = /^[a-z0-9][a-z0-9-]{0,15}$/;
+export const MAX_FAMILIES = 6;
+
 export function defaultSpace() {
-  return {params: PARAMS.map(([id, group, min, max, kind]) => ({id, group, min, max, kind}))};
+  return {
+    params: PARAMS.map(([id, group, min, max, kind]) => ({id, group, min, max, kind})),
+    families: FAMILIES.map(([id, name]) => ({id, name})),
+    sceneLimits: JSON.parse(JSON.stringify(SCENE_LIMITS)),
+  };
+}
+
+export function familiesOf(space) {
+  validateSpace(space);
+  return (space.families || [{id: FAMILIES[0][0], name: FAMILIES[0][1]}]).map(f => ({id: f.id, name: f.name}));
+}
+
+// The table of one scene: every parameter's range narrowed by the scene's limits.
+// Encoding keeps the full table's ranges, so looks of different scenes stay comparable.
+export function sceneSpace(space, scene) {
+  validateSpace(space);
+  if (!SCENES.includes(scene)) throw new RangeError('scene');
+  const limits = (space.sceneLimits && space.sceneLimits[scene]) || {};
+  return {params: space.params.map(p => {
+    const l = limits[p.id];
+    return l ? {...p, min: l.min ?? p.min, max: l.max ?? p.max} : {...p};
+  })};
+}
+
+// True when every parameter of `look` lies within the scene's ranges.
+export function withinScene(space, look, scene) {
+  return sceneSpace(space, scene).params.every(p => Number.isFinite(look?.[p.id]) &&
+    (p.kind === 'circular' || (look[p.id] >= p.min && look[p.id] <= p.max)));
+}
+
+const plain = x => x !== null && typeof x === 'object' && !Array.isArray(x);
+
+function validateExtras(space, byId) {
+  if (space.families !== undefined) {
+    const f = space.families;
+    if (!Array.isArray(f) || !f.length || f.length > MAX_FAMILIES) throw new TypeError('malformed families');
+    const seen = new Set();
+    for (const x of f) {
+      if (!plain(x) || typeof x.id !== 'string' || !FAMILY_ID.test(x.id) || seen.has(x.id) ||
+          typeof x.name !== 'string' || !x.name.trim() || x.name.length > 40) throw new TypeError('malformed families');
+      seen.add(x.id);
+    }
+  }
+  if (space.sceneLimits !== undefined) {
+    if (!plain(space.sceneLimits)) throw new TypeError('malformed scene limits');
+    for (const [scene, limits] of Object.entries(space.sceneLimits)) {
+      if (!SCENES.includes(scene) || !plain(limits)) throw new TypeError('malformed scene limits');
+      for (const [id, l] of Object.entries(limits)) {
+        const p = byId.get(id);
+        const keys = plain(l) ? Object.keys(l) : [];
+        if (!p || p.kind === 'circular' || !keys.length || keys.some(k => k !== 'min' && k !== 'max')) throw new TypeError('malformed scene limits');
+        const min = l.min ?? p.min, max = l.max ?? p.max;
+        if (!Number.isFinite(min) || !Number.isFinite(max) || min < p.min || max > p.max || min >= max ||
+            (p.kind === 'integer' && (!Number.isInteger(min) || !Number.isInteger(max)))) throw new TypeError('malformed scene limits');
+      }
+    }
+  }
 }
 
 export function validateSpace(space) {
@@ -33,11 +97,14 @@ export function validateSpace(space) {
         typeof p.group !== 'string' || !p.group || !Number.isFinite(p.min) ||
         !Number.isFinite(p.max) || p.min >= p.max || !['linear', 'integer', 'circular'].includes(p.kind) ||
         (p.kind === 'integer' && (!Number.isInteger(p.min) || !Number.isInteger(p.max))) ||
-        (p.kind === 'circular' && (p.min !== 0 || p.max !== 360))) {
+        (p.kind === 'circular' && (p.min !== 0 || p.max !== 360)) ||
+        // The palette rule colours the ring graph with 4 to 8 classes.
+        (p.id === 'classes' && (p.kind !== 'integer' || p.min < 4 || p.max > 8))) {
       throw new TypeError('malformed parameter');
     }
     ids.add(p.id);
   }
+  validateExtras(space, new Map(space.params.map(p => [p.id, p])));
 }
 
 export function canonical(space, look) {
@@ -53,6 +120,17 @@ export function canonical(space, look) {
 export function featureDim(space) {
   validateSpace(space);
   return space.params.reduce((n, p) => n + (p.kind === 'circular' ? 2 : 1), 0);
+}
+// For each parameter, the slice of encode()'s features that carries it.
+export function featureSlices(space) {
+  validateSpace(space);
+  let start = 0;
+  return space.params.map(p => {
+    const count = p.kind === 'circular' ? 2 : 1;
+    const slice = {id: p.id, start, count};
+    start += count;
+    return slice;
+  });
 }
 export function encode(space, look) {
   const values = canonical(space, look);
@@ -140,7 +218,8 @@ export function palette(look) {
 }
 export const background = look => mapToGamut(look.bgLightness, look.bgTint, look.bgHue);
 
-export function hardCheck(look, classPairs, thresholds = {deltaE: 0.08, bgL: 0.20}) {
+// Ranges are checked against `space`: the session's parameter table.
+export function hardCheck(look, classPairs, thresholds = {deltaE: 0.08, bgL: 0.20}, space = defaultSpace()) {
   const limits = {deltaE: 0.08, bgL: 0.20, ...thresholds};
   if (Object.values(limits).some(x => !Number.isFinite(x) || x < 0)) throw new RangeError('thresholds');
   const minDeltaE = {normal: Infinity, protan: Infinity, deutan: Infinity, tritan: Infinity};
@@ -150,7 +229,8 @@ export function hardCheck(look, classPairs, thresholds = {deltaE: 0.08, bgL: 0.2
   const bg = background(look);
   if (!bg.ok || colours.some(c => !c.ok)) return failure('gamut');
   const reasons = [];
-  for (const p of defaultSpace().params) {
+  validateSpace(space);
+  for (const p of space.params) {
     const x = look[p.id];
     if (!Number.isFinite(x) || x < p.min || x > p.max || (p.kind === 'integer' && !Number.isInteger(x))) {
       reasons.push(`range:${p.id}`);

@@ -3,7 +3,13 @@ import {SCENES} from './space.js';
 const SQRT2 = Math.SQRT2;
 const LOG_SQRT_2PI = 0.5 * Math.log(2 * Math.PI);
 const logPhiDensity = x => -0.5 * x * x - LOG_SQRT_2PI;
-const dot = (a, b) => a.reduce((sum, x, i) => sum + x * b[i], 0);
+// A plain loop, in the same order as a left-to-right reduce: the posterior
+// covariance of a round spends most of its time here.
+function dot(a, b) {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+  return sum;
+}
 const maxAbs = a => a.reduce((value, x) => Math.max(value, Math.abs(x)), 0);
 
 function polynomial(x, coefficients, leadingOne = false) {
@@ -292,9 +298,13 @@ export function logEvidence(model) {
   return value;
 }
 
-export function fitHyper(model, {maxEvals = 60} = {}) {
+// The hyperparameter search as a resumable object: each step() runs one
+// evaluation on the looks and comparisons present when the search started, so
+// a worker can spread the search over idle time. adopt() applies the best
+// hyperparameters; when answers arrived meanwhile, it refits on the current data.
+export function createHyperSearch(model, {maxEvals = 60} = {}) {
   if (!Number.isInteger(maxEvals) || maxEvals < 0) throw new RangeError('maxEvals');
-  if (!maxEvals) return 0;
+  const snapshot = {looks: model.looks.slice(), observations: model._observations.slice(), revision: model._revision};
   const parameters = h => [Math.log(h.signal), ...Array.from(h.lengths, Math.log),
     Math.log(h.rho / (1 - h.rho)), Math.log(h.eps)];
   const bound = (x, i) => i === 0 ? x : i <= model.dim
@@ -309,41 +319,64 @@ export function fitHyper(model, {maxEvals = 60} = {}) {
   const evaluate = x => {
     evaluations++;
     const trial = createModel({dim: model.dim, scenes: model.scenes, hyper: toHyper(x)});
-    trial.looks = model.looks;
-    trial._observations = model._observations;
-    trial._revision = model._revision;
+    trial.looks = snapshot.looks;
+    trial._observations = snapshot.observations;
+    trial._revision = snapshot.revision;
     const result = fit(trial);
     return {trial, value: result.converged ? logEvidence(trial) : -Infinity};
   };
-  let x = parameters(model.hyper);
-  let best = evaluate(x);
-  let step = 0.8;
+  let best = null;
   // Bounded coordinate search in log/logit coordinates; the budget includes
   // the initial fit and failed trials. No unsuccessful trial changes the model.
-  while (evaluations < maxEvals && step >= 0.025) {
-    let improved = false;
-    for (let i = 0; i < x.length && evaluations < maxEvals; i++) {
-      const base = x.slice();
-      for (const sign of [1, -1]) {
-        if (evaluations >= maxEvals) break;
-        const candidate = base.slice();
-        candidate[i] = bound(candidate[i] + sign * step, i);
-        if (candidate[i] === base[i]) continue;
-        const result = evaluate(candidate);
-        if (result.value > best.value + 1e-9) {
-          best = result;
-          x = candidate;
-          improved = true;
+  function* steps() {
+    let x = parameters(model.hyper);
+    best = evaluate(x);
+    yield;
+    let step = 0.8;
+    while (evaluations < maxEvals && step >= 0.025) {
+      let improved = false;
+      for (let i = 0; i < x.length && evaluations < maxEvals; i++) {
+        const base = x.slice();
+        for (const sign of [1, -1]) {
+          if (evaluations >= maxEvals) break;
+          const candidate = base.slice();
+          candidate[i] = bound(candidate[i] + sign * step, i);
+          if (candidate[i] === base[i]) continue;
+          const result = evaluate(candidate);
+          if (result.value > best.value + 1e-9) {
+            best = result;
+            x = candidate;
+            improved = true;
+          }
+          yield;
         }
       }
+      if (!improved) step *= 0.5;
     }
-    if (!improved) step *= 0.5;
   }
-  if (Number.isFinite(best.value)) {
-    model.hyper = best.trial.hyper;
-    model._posterior = best.trial._posterior;
-  }
-  return evaluations;
+  const runner = maxEvals ? steps() : null;
+  let done = !runner;
+  return {
+    // Runs one evaluation; false once the search has finished.
+    step() {
+      if (!done) done = runner.next().done;
+      return !done;
+    },
+    get evaluations() { return evaluations; },
+    adopt() {
+      if (best && Number.isFinite(best.value)) {
+        model.hyper = best.trial.hyper;
+        if (model._revision === snapshot.revision) model._posterior = best.trial._posterior;
+        else fit(model);
+      }
+      return evaluations;
+    },
+  };
+}
+export function fitHyper(model, {maxEvals = 60} = {}) {
+  const search = createHyperSearch(model, {maxEvals});
+  while (search.step());
+  return search.adopt();
 }
 
 export function predict(model, points) {
@@ -371,6 +404,19 @@ export function predict(model, points) {
     }
   }
   return {mean, cov};
+}
+// Posterior means only, without the covariance that predict() computes:
+// enough to choose the best look.
+export function predictMean(model, points) {
+  const test = points.map(p => checkedPoint(model, p.features, p.scene));
+  const p = model._posterior;
+  const hyper = p?.hyper ?? model.hyper;
+  const mean = new Float64Array(test.length);
+  if (!p || !p.looks.length) return mean;
+  for (let j = 0; j < test.length; j++) {
+    mean[j] = dot(Float64Array.from(p.looks, look => kernel(look, test[j], hyper)), p.alpha);
+  }
+  return mean;
 }
 // Acquisition reuses this factor for hundreds of draws of the same posterior.
 export function createJointSampler({mean, cov}) {

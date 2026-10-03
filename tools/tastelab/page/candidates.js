@@ -37,7 +37,7 @@ export function buildPool(space, pairsOf, { draws = 16384, map = (l) => l } = {}
   const pool = [];
   for (const u of sobol(draws, space.params.length, 1)) {
     const look = canonical(space, map(fromUnit(space, u)));
-    if (hardCheck(look, pairsOf(look.classes).pairs).ok) pool.push(look);
+    if (hardCheck(look, pairsOf(look.classes).pairs, undefined, space).ok) pool.push(look);
   }
   return pool;
 }
@@ -58,7 +58,7 @@ export function roundCandidates(space, pool, pairsOf, rng, { best = null, n = 51
         return space.params[i].kind === "circular" ? ((y % 1) + 1) % 1 : Math.min(0.999999, Math.max(0, y));
       });
       const look = canonical(space, map(fromUnit(space, u)));
-      if (hardCheck(look, pairsOf(look.classes).pairs).ok) push(look);
+      if (hardCheck(look, pairsOf(look.classes).pairs, undefined, space).ok) push(look);
     }
   }
   // Fill the rest with a random subset of the feasible pool.

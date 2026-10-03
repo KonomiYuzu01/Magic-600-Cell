@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-03] decision | Taste Lab evaluation points and settled rule
+Recorded in [owner-decisions-2026-10-03-taste-lab](decisions/owner-decisions-2026-10-03-taste-lab.md): the learner missed criterion 3 at 60 comparisons; the owner kept the thresholds, moved the checks to 90 comparisons per family (relevance ranking at 160, provisional before) and had the settled rule recalibrated.
+
 ## [2026-10-02] decision | Scope reduction and review risk tiers
 Recorded in [owner-decisions-2026-10-02-scope](decisions/owner-decisions-2026-10-02-scope.md): only sound and the mathematical-language work are reduced, design stays the core of 1.0; `AGENTS.md` gains risk tiers for review and a weekly process budget; the tester source for G1 to G6 is open.
 

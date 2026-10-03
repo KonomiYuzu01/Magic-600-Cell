@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createModel, addLook, addObservation, observations, removeLast, fit, fitHyper,
-  logEvidence, predict, sampleJoint, createJointSampler, serialize, deserialize,
+import {createModel, addLook, addObservation, observations, removeLast, fit, fitHyper, createHyperSearch,
+  logEvidence, predict, predictMean, sampleJoint, createJointSampler, serialize, deserialize,
   logPhi, outcomeProbabilities, likelihoodTerms} from '../gp.js';
 import {defaultSpace, encode} from '../space.js';
 import {createRng} from '../rng.js';
@@ -188,6 +188,50 @@ test('hyper fitting learns smaller rho for opposing scenes and larger rho for sh
   }
   assert.ok(fitted[0] > 0.65, `shared rho ${fitted[0]}`);
   assert.ok(fitted[1] < 0.35, `opposite rho ${fitted[1]}`);
+});
+
+const hyperOf = model => JSON.stringify({...model.hyper, lengths: Array.from(model.hyper.lengths)});
+test('a stepped hyper search equals fitHyper and, after new answers, refits on the current data', () => {
+  const whole = randomModel(11), stepped = randomModel(11);
+  assert.equal(fit(whole).converged, true);
+  assert.equal(fit(stepped).converged, true);
+  const evaluations = fitHyper(whole, {maxEvals: 12});
+  const search = createHyperSearch(stepped, {maxEvals: 12});
+  let steps = 0;
+  while (search.step()) {
+    steps++;
+    assert.equal(search.evaluations, steps);
+  }
+  assert.equal(search.step(), false);
+  assert.equal(search.adopt(), evaluations);
+  assert.equal(serialize(stepped), serialize(whole));
+  // An answer arrives during the search: the search keeps its snapshot, and adopting
+  // its result refits on every answer, as a fresh fit with those hyperparameters does.
+  const late = randomModel(11);
+  assert.equal(fit(late).converged, true);
+  const pending = createHyperSearch(late, {maxEvals: 12});
+  pending.step();
+  addObservation(late, {a: 0, b: 1, outcome: 'A'});
+  assert.equal(fit(late).converged, true);
+  while (pending.step());
+  pending.adopt();
+  assert.equal(hyperOf(late), hyperOf(whole));
+  assert.equal(late._posterior.revision, late._revision);
+  const fresh = randomModel(11);
+  addObservation(fresh, {a: 0, b: 1, outcome: 'A'});
+  fresh.hyper = whole.hyper;
+  assert.equal(fit(fresh).converged, true);
+  close(predict(late, late.looks).mean, predict(fresh, fresh.looks).mean, 1e-10);
+  assert.throws(() => createHyperSearch(late, {maxEvals: -1}));
+});
+
+test('predictMean equals the mean of predict, before and after a fit', () => {
+  const model = randomModel();
+  const points = [{features: [0.25, 0.25], scene: 0}, {features: [0.6, 0.4], scene: 2}, {features: [0.9, 0.1], scene: 1}];
+  assert.deepEqual(predictMean(model, points), predict(model, points).mean);
+  assert.equal(fit(model).converged, true);
+  assert.deepEqual(predictMean(model, points), predict(model, points).mean);
+  assert.throws(() => predictMean(model, [{features: [0.5], scene: 0}]));
 });
 
 test('joint draws reproduce posterior covariance and serialized models preserve predictions', () => {

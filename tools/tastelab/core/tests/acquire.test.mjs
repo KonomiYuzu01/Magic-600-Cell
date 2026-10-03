@@ -88,3 +88,27 @@ test('settled is false before learning and true after a long consistent run', ()
   assert.ok(result.prob <= 1);
   assert.throws(() => settled(model, [], createRng(2)));
 });
+
+test('a supplied prediction gives the same pair and settled result as computing it', () => {
+  const model = trained(60);
+  const prediction = predict(model, points);
+  for (const infoRate of [0, 1]) {
+    assert.deepEqual(nextPair(model, points, createRng(8), {infoRate, repeatRate: 0, prediction}),
+      nextPair(model, points, createRng(8), {infoRate, repeatRate: 0}));
+  }
+  assert.deepEqual(settled(model, points, createRng(3), {prediction}), settled(model, points, createRng(3)));
+  assert.throws(() => nextPair(model, points, createRng(8), {prediction: predict(model, points.slice(1))}), /prediction/);
+  assert.throws(() => settled(model, points, createRng(3), {prediction: {mean: prediction.mean}}), /prediction/);
+});
+
+test('settled tests the reported best look, not the candidate with the highest mean', () => {
+  const model = trained(800);
+  const means = predict(model, points).mean;
+  const top = means.indexOf(Math.max(...means));
+  assert.deepEqual(settled(model, points, createRng(2), {best: top}), settled(model, points, createRng(2)));
+  assert.equal(settled(model, points, createRng(2), {best: top}).settled, true);
+  const other = settled(model, points, createRng(2), {best: (top + 1) % points.length});
+  assert.equal(other.settled, false);
+  assert.ok(other.prob < 0.1, `prob ${other.prob}`);
+  for (const best of [-1, points.length, 1.5]) assert.throws(() => settled(model, points, createRng(2), {best}), /best/);
+});

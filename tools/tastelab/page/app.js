@@ -1,21 +1,24 @@
 // Taste Lab page: shows two looks, records the owner's choice in the
 // artifact's owner-only store, and asks the model worker for the next pair.
+// Each theme family is learned on its own (plan section 4.5).
 import { buildGeometry, properColouring } from "./geometry.js";
-import { palette, background, defaultSpace, SCENES } from "../core/space.js";
+import { palette, background, defaultSpace, validateSpace, familiesOf, SCENES } from "../core/space.js";
 import { Preview } from "./preview.js";
+import { COST_HEAVY } from "./presets.js";
 
 const $ = (id) => document.getElementById(id);
 const use = (name) => (window.claude && window.claude.use ? window.claude.use(name) : Promise.resolve(null));
 const LABELS = {
   hueRotation: "Hue rotation", hueSpread: "Hue spread", lightness: "Lightness", lightnessAlt: "Lightness alternation",
   chroma: "Chroma", classes: "Colour classes", bgLightness: "Background lightness", bgHue: "Background tint hue",
-  bgTint: "Background tint", gap: "Sticker gap", edgeWeight: "Edge weight", edgeBrightness: "Edge brightness",
-  gloss: "Gloss", glow: "Glow", fog: "Fog", turnMs: "Turn duration", easeA: "Easing start", easeB: "Easing end",
+  bgTint: "Background tint", gap: "Cell gap", edgeWeight: "Edge weight", edgeBrightness: "Edge brightness",
+  gloss: "Gloss", glow: "Glow", fog: "Fog", turnMs: "Twist duration", easeA: "Easing start", easeB: "Easing end",
 };
 
 const geo = buildGeometry();
 const session = Math.random().toString(36).slice(2, 10);
-const state = { scene: "solving", records: [], ids: [], pair: null, busy: true, db: null, space: defaultSpace(), turnCell: 0 };
+const PAGE = 500; // documents per read; the store answers at most 1000 per query
+const state = { scene: "solving", family: null, records: [], ids: [], sessions: [], pair: null, busy: true, db: null, space: defaultSpace(), turnCell: 0 };
 const colourings = new Map();
 
 function cellColours(look) {
@@ -40,21 +43,29 @@ function showPair(msg) {
     previews[i].setLook(look, cellColours(look), background(look).srgb);
   });
   $("count").textContent = String(msg.counts.answers);
+  $("countFamily").textContent = familiesOf(state.space).length > 1 ? `for ${familyName(msg.family)}` : "";
   $("kind").textContent = msg.kind === "info" ? "Testing a question" : msg.kind === "repeat" ? "Checking consistency" : "Exploring";
-  $("settled").textContent = msg.settled ? "Settled for this scene" : `Confidence ${Math.round(100 * msg.settledProb)}%`;
-  $("pruned").hidden = !msg.counts.pruned;
-  $("pruned").textContent = `${msg.counts.pruned} older answers are outside the model's 400-look window.`;
-  renderRelevance(msg.relevance);
+  $("settled").textContent = msg.settled ? "Settled for this scene"
+    : msg.sessionSettled ? "Settled in this session; confirm in another session"
+      : `Confidence ${Math.round(100 * msg.settledProb)}%`;
+  const notes = [];
+  if (msg.counts.pruned) notes.push(`${msg.counts.pruned} older answers are outside the model's 400-look window.`);
+  if (msg.counts.skipped) notes.push(`${msg.counts.skipped} answers do not fit the current parameter table and are not used.`);
+  $("pruned").hidden = !notes.length;
+  $("pruned").textContent = notes.join(" ");
+  recordSettled(msg);
+  renderRelevance(msg.relevance, msg.counts.answers);
   if (!state.statusSticky) $("status").textContent = "";
   setBusy(false);
 }
 
-function renderRelevance(rel) {
+// Relevance of the shown family's model; `answers` counts that family's answers.
+function renderRelevance(rel, answers) {
   const list = $("matters");
   list.replaceChildren();
-  if (state.records.length < 10) {
+  if (answers < 10) {
     const li = document.createElement("li");
-    li.textContent = `Appears after 10 answers (${state.records.length} so far).`;
+    li.textContent = `Appears after 10 answers (${answers} so far).`;
     list.append(li);
     return;
   }
@@ -77,10 +88,14 @@ function setBusy(b) {
 }
 
 const worker = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
+let presetRequest = null;
 worker.onmessage = (e) => {
   const m = e.data;
+  const forPresets = presetRequest && m.id === presetRequest.id;
   if (m.type === "pair") showPair(m);
   else if (m.type === "nopair") { $("status").textContent = m.reason; setBusy(false); }
+  else if (m.type === "presets" && forPresets) { presetRequest.resolve(m); presetRequest = null; }
+  else if (m.type === "error" && forPresets) { presetRequest.reject(new Error(m.message)); presetRequest = null; }
   else if (m.type === "error") { $("status").textContent = "The model stopped: " + m.message; setBusy(false); }
 };
 
@@ -96,25 +111,94 @@ async function save(record) {
   }
 }
 
+// A session that settles stores its best look per family and scene in
+// sessions/<id>; another session that settles in the same region confirms it
+// (plan section 5.6).
+const sessionDoc = { started: new Date().toISOString(), settled: {} };
+let sessionWrite = Promise.resolve();
+function recordSettled(msg) {
+  if (!state.db || !msg.sessionSettled || !msg.best) return;
+  const byScene = sessionDoc.settled[msg.family] || (sessionDoc.settled[msg.family] = {});
+  const entry = byScene[msg.scene];
+  if (entry && JSON.stringify(entry.best) === JSON.stringify(msg.best)) return;
+  byScene[msg.scene] = { best: msg.best, t: new Date().toISOString() };
+  const body = JSON.parse(JSON.stringify(sessionDoc));
+  state.sessions = state.sessions.filter((s) => s.id !== session).concat([{ id: session, ...body }]);
+  sessionWrite = sessionWrite.then(() => state.db.doc(`sessions/${session}`).set(body))
+    .catch(() => { delete byScene[msg.scene]; });
+}
+
+// Settled bests as { family: { scene: entry } }; a session stored before theme
+// families has { scene: entry }, and its entries belong to the first family.
+function settledRecords() {
+  const out = [];
+  for (const s of state.sessions) {
+    for (const [key, value] of Object.entries(s.settled || {})) {
+      if (!value || typeof value !== "object") continue;
+      if ("best" in value) out.push({ scene: key, session: s.id, best: value.best });
+      else for (const [scene, e] of Object.entries(value)) out.push({ family: key, scene, session: s.id, best: e && e.best });
+    }
+  }
+  return out;
+}
+
+function init() {
+  worker.postMessage({ type: "init", space: state.space, records: state.records, settled: settledRecords(), session, scene: state.scene, family: state.family, seed: Date.now() });
+}
+
 async function answer(kind) {
   if (state.busy || !state.pair) return;
   setBusy(true);
-  const record = { lookA: state.pair.lookA, lookB: state.pair.lookB, scene: state.scene, answer: kind, t: new Date().toISOString(), session };
+  closeReason();
+  const record = { lookA: state.pair.lookA, lookB: state.pair.lookB, family: state.family, scene: state.scene, answer: kind, t: new Date().toISOString(), session };
   const id = await save(record);
   state.records.push(record);
   state.ids.push(id);
-  worker.postMessage({ type: "answer", record, scene: state.scene });
+  worker.postMessage({ type: "answer", record, scene: state.scene, family: state.family });
+}
+
+// The optional one-line reason for the last answer (plan section 7). It is
+// stored with that answer in the owner-only store and exported with it.
+let reasonWrite = Promise.resolve();
+function openReason() {
+  if (state.busy) return;
+  if (!state.records.length) { $("status").textContent = "Answer a pair first; the reason belongs to the last answer."; return; }
+  $("reason").value = state.records[state.records.length - 1].reason || "";
+  $("reasonForm").hidden = false;
+  $("reason").focus();
+}
+
+function closeReason() {
+  $("reasonForm").hidden = true;
+}
+
+function saveReason() {
+  const i = state.records.length - 1;
+  if (i >= 0) {
+    const record = state.records[i];
+    const text = $("reason").value.trim().slice(0, 140);
+    if (text) record.reason = text;
+    else delete record.reason;
+    const id = state.ids[i];
+    if (id && state.db) {
+      const body = JSON.parse(JSON.stringify(record));
+      reasonWrite = reasonWrite.then(() => state.db.doc(`comparisons/${id}`).set(body))
+        .catch((err) => { $("status").textContent = `The reason was not saved (${err.code || "error"}).`; });
+    }
+  }
+  closeReason();
 }
 
 async function undo() {
   if (state.busy || !state.records.length) return;
   setBusy(true);
+  closeReason();
   state.records.pop();
   const id = state.ids.pop();
   if (id && state.db) {
     try { await state.db.doc(`comparisons/${id}`).delete(); } catch (err) { $("status").textContent = "The last answer could not be removed from storage."; }
   }
-  worker.postMessage({ type: "init", space: state.space, records: state.records, scene: state.scene, seed: Date.now() });
+  init();
 }
 
 function setScene(scene) {
@@ -122,15 +206,84 @@ function setScene(scene) {
   state.scene = scene;
   for (const b of document.querySelectorAll("[data-scene]")) b.setAttribute("aria-pressed", String(b.dataset.scene === scene));
   setBusy(true);
-  worker.postMessage({ type: "next", scene });
+  worker.postMessage({ type: "next", scene, family: state.family });
+}
+
+const familyName = (id) => (familiesOf(state.space).find((f) => f.id === id) || { name: id }).name;
+
+// One button per theme family of the table; F shows the next family.
+function renderFamilies() {
+  const families = familiesOf(state.space);
+  const group = $("families");
+  group.replaceChildren();
+  group.hidden = families.length < 2;
+  for (const f of families) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.family = f.id;
+    b.setAttribute("aria-pressed", String(f.id === state.family));
+    b.textContent = f.name;
+    b.addEventListener("click", () => setFamily(f.id));
+    group.append(b);
+  }
+  const hint = document.createElement("kbd");
+  hint.textContent = "F";
+  hint.title = "Next family";
+  group.append(hint);
+}
+
+function setFamily(family) {
+  if (state.busy || family === state.family) return;
+  closeReason();
+  state.family = family;
+  for (const b of document.querySelectorAll("[data-family]")) b.setAttribute("aria-pressed", String(b.dataset.family === family));
+  setBusy(true);
+  worker.postMessage({ type: "next", scene: state.scene, family });
+}
+
+function nextFamily() {
+  const ids = familiesOf(state.space).map((f) => f.id);
+  if (ids.length > 1) setFamily(ids[(ids.indexOf(state.family) + 1) % ids.length]);
+}
+
+// The starting points of every family and scene, computed by the worker.
+function requestPresets() {
+  return new Promise((resolve, reject) => {
+    const id = `presets-${Date.now().toString(36)}`;
+    presetRequest = { id, resolve, reject };
+    worker.postMessage({ type: "presets", id, settled: settledRecords() });
+  });
 }
 
 async function exportData() {
+  if (state.exporting) return;
   const downloads = await use("downloads");
-  const data = JSON.stringify({ kind: "tastelab-export", version: 1, space: state.space, comparisons: state.records, best: state.pair && state.pair.best }, null, 2);
   if (!downloads) { $("status").textContent = "Export is not available in this view."; return; }
-  try { await downloads.save({ filename: "tastelab-export.json", data }); $("status").textContent = "Exported."; }
-  catch (err) { if (err.code !== "declined") $("status").textContent = `Export failed (${err.code}).`; }
+  state.exporting = true;
+  $("status").textContent = "Preparing the export: every family's model finishes its fit.";
+  try {
+    const result = await requestPresets();
+    const data = JSON.stringify({
+      kind: "tastelab-export",
+      version: 2,
+      space: state.space,
+      families: familiesOf(state.space),
+      comparisons: state.records,
+      sessions: state.sessions,
+      presets: result.presets,
+      shared: result.shared,
+      costHeavy: {
+        params: COST_HEAVY,
+        note: "Parameters whose frame-time cost H-06 measures before a preset reaches G3. Taste Lab measures no performance; this export makes no performance claim.",
+      },
+    }, null, 2);
+    await downloads.save({ filename: "tastelab-export.json", data });
+    $("status").textContent = "Exported.";
+  } catch (err) {
+    if (err.code !== "declined") $("status").textContent = err.code ? `Export failed (${err.code}).` : `Export failed: ${err.message}`;
+  } finally {
+    state.exporting = false;
+  }
 }
 
 document.addEventListener("keydown", (e) => {
@@ -141,20 +294,62 @@ document.addEventListener("keydown", (e) => {
   else if (k === "s") answer("same");
   else if (k === "x") answer("bad");
   else if (k === "z") undo();
+  else if (k === "w") openReason();
+  else if (k === "f") nextFamily();
   else if (k === "1" || k === "2" || k === "3") setScene(SCENES[Number(k) - 1]);
   else return;
   e.preventDefault();
 });
 for (const [id, kind] of [["pickA", "A"], ["pickB", "B"], ["same", "same"], ["bad", "bad"]]) $(id).addEventListener("click", () => answer(kind));
 $("undo").addEventListener("click", undo);
+$("why").addEventListener("click", openReason);
+$("reasonForm").addEventListener("submit", (e) => { e.preventDefault(); saveReason(); });
+$("reason").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); closeReason(); } });
 $("export").addEventListener("click", exportData);
 for (const b of document.querySelectorAll("[data-scene]")) b.addEventListener("click", () => setScene(b.dataset.scene));
 
+// Every stored comparison in answer order, read in pages by time stamp.
 async function loadRecords(db) {
-  const out = [];
-  const snap = await db.collection("comparisons").orderBy("t").get();
-  snap.docs.forEach((d) => { out.push(d.data()); state.ids.push(d.id); });
-  return out;
+  const records = [], ids = [], seen = new Set();
+  let last = null;
+  for (;;) {
+    let query = db.collection("comparisons").orderBy("t").limit(PAGE);
+    if (last !== null) query = query.where("t", ">=", last);
+    const snap = await query.get();
+    let added = 0;
+    for (const d of snap.docs) {
+      if (seen.has(d.id)) continue;
+      seen.add(d.id);
+      records.push(d.data());
+      ids.push(d.id);
+      added++;
+    }
+    if (snap.size < PAGE || !added) break;
+    last = snap.docs[snap.docs.length - 1].data().t;
+  }
+  return { records, ids };
+}
+
+async function loadSessions(db) {
+  const snap = await db.collection("sessions").orderBy("started", "desc").limit(PAGE).get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+// A stored table from before theme families takes the default families and scene limits.
+function withDefaults(space) {
+  const d = defaultSpace();
+  return { ...space, families: space.families ?? d.families, sceneLimits: space.sceneLimits ?? d.sceneLimits };
+}
+
+// A stored parameter table is used only when it is valid and names every parameter the page draws.
+function usableSpace(space) {
+  try {
+    validateSpace(space);
+    const ids = new Set(space.params.map((p) => p.id));
+    return defaultSpace().params.every((p) => ids.has(p.id));
+  } catch {
+    return false;
+  }
 }
 
 async function boot() {
@@ -168,15 +363,24 @@ async function boot() {
   }
   const user = await use("user");
   const db = await use("db");
-  if (db && user && user.isOwner && !user.isOwner()) {
+  const owner = user ? await user.isOwner() : null;
+  if (db && owner === false) {
     $("status").textContent = "Only the owner of this page can record answers.";
     state.statusSticky = true;
   } else if (db) {
     state.db = db;
     try {
       const sp = await db.doc("space/current").get();
-      if (sp.exists) state.space = sp.data();
-      state.records = await loadRecords(db);
+      if (sp.exists) {
+        const stored = sp.data();
+        const usable = [withDefaults(stored), stored].find(usableSpace);
+        if (usable) state.space = usable;
+        else { $("status").textContent = "The stored parameter table is not usable; the default table is used."; state.statusSticky = true; }
+      }
+      const loaded = await loadRecords(db);
+      state.records = loaded.records;
+      state.ids = loaded.ids;
+      state.sessions = await loadSessions(db);
     } catch (err) {
       $("status").textContent = `Stored answers could not be read (${err.code || "error"}).`;
     }
@@ -184,7 +388,9 @@ async function boot() {
     $("status").textContent = "Storage is not available here; answers stay in this tab.";
     state.statusSticky = true;
   }
-  worker.postMessage({ type: "init", space: state.space, records: state.records, scene: state.scene, seed: Date.now() });
+  state.family = familiesOf(state.space)[0].id;
+  renderFamilies();
+  init();
 }
 
 boot();
