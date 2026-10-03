@@ -112,8 +112,8 @@ export function createLearner(geometry, {
   }
 
   // `hyper`, the result of an earlier search (a stored one, or the model's before a
-  // rebuild at the cap), serves pairs until the search started here ends; that
-  // search still starts from the starting values (plan section 9).
+  // rebuild at the cap), serves pairs until a search started here ends; the
+  // searches start as they would without it (plan section 9).
   function reset(space, records, { seed = 1, session = null, settledRecords = [], family = null, hyper = null } = {}) {
     const sp = space || defaultSpace();
     const families = familiesOf(sp);
@@ -188,11 +188,17 @@ export function createLearner(geometry, {
   }
 
   // Applies the best point of the pending search, which has `ended` or is being
-  // replaced. Once a search ends, the model holds what it would hold without
+  // replaced. While carried values are in force (no search has ended here), a
+  // replaced search only moves `base`, where the next search starts, and the model
+  // keeps them. Once a search ends, the model holds what it would hold without
   // carried values: the best point found, else `base`.
   function handOver(ended) {
     const search = state.search, found = search.found;
     state.search = null;
+    if (!ended && state.fitted && !state.searched) {
+      if (found) state.base = search.best;
+      return;
+    }
     search.adopt();
     if (found) state.base = state.model.hyper;
     if (!ended) return;

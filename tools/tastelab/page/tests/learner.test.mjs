@@ -302,21 +302,32 @@ test("a search replaced before it ends hands its replacement the same start with
   const records = Array.from({ length: 4 }, (_, i) => record(2 * i, 2 * i + 1, i % 2 ? "B" : "A"));
   const scenes = ["solving", "inspecting", "celebrating"];
   const answers = Array.from({ length: 10 }, (_, i) => record(20 + 2 * i, 21 + 2 * i, i % 3 ? "A" : "B", scenes[i % 3]));
+  const carried = carriedHyper();
   const run = (hyper, steps) => {
     const learner = createLearner(geometry, { ...options, cap: 40, hyperEvals: 12, deferHyper: true });
     learner.reset(space, records, { hyper });
     for (let i = 0; i < steps; i++) learner.idle();
     // The tenth answer starts a new search, which takes over from the pending one.
     for (const r of answers) learner.answer(r);
-    assert.equal(learner.propose("solving").searched, false, "the replacement has not ended");
+    const pair = learner.propose("solving");
+    assert.equal(pair.searched, false, "the replacement has not ended");
+    const { model, base } = learner.state;
+    const replaced = { pair, holdsStart: model.hyper === base, hyper: structuredClone(model.hyper), start: structuredClone(base) };
     while (learner.idle());
     assert.equal(learner.propose("solving").searched, true);
-    return learner;
+    return { learner, replaced };
   };
   for (const steps of [0, 1, 5]) {
-    const cold = run(null, steps), warm = run(carriedHyper(), steps);
-    assert.deepEqual(warm.state.model.hyper, cold.state.model.hyper, `${steps} steps before the answers`);
-    sameMeans(cold, warm);
+    const cold = run(null, steps), warm = run(carried, steps);
+    // Both replacements start at the same point. Without carried values the model holds
+    // that point, as before; carried values stay in force until a search ends.
+    assert.deepEqual(warm.replaced.start, cold.replaced.start, `${steps} steps: the same start`);
+    assert.equal(cold.replaced.holdsStart, true);
+    assert.deepEqual(warm.replaced.hyper, carried, `${steps} steps: the carried values in force`);
+    assert.deepEqual([warm.replaced.pair.fitted, warm.replaced.pair.searched], [true, false]);
+    assert.deepEqual(warm.replaced.pair.relevance.map((r) => r.value), Array.from(carried.lengths, (l) => 1 / l));
+    assert.deepEqual(warm.learner.state.model.hyper, cold.learner.state.model.hyper, `${steps} steps before the answers`);
+    sameMeans(cold.learner, warm.learner);
   }
 });
 
@@ -388,6 +399,23 @@ test("a rebuild at the cap before any search has ended carries nothing", () => {
   assert.deepEqual([pair.fitted, pair.searched], [false, false], "the starting values are not presented as fitted");
   while (live.idle());
   assert.deepEqual([live.propose("solving").fitted, live.propose("solving").searched], [true, true]);
+});
+
+test("a rebuild at the cap while carried values are in force carries them, not a replaced search's point", () => {
+  // Five records show ten looks; ten answers among them replace the search after one
+  // evaluation, and two more records with new looks reach the cap of twelve.
+  const records = Array.from({ length: 5 }, (_, i) => record(2 * i, 2 * i + 1, i % 2 ? "B" : "A"));
+  const carried = carriedHyper();
+  const live = createLearner(geometry, { ...options, hyperEvals: 30, deferHyper: true });
+  live.reset(space, records, { hyper: carried });
+  live.idle();
+  for (let i = 0; i < 10; i++) assert.equal(live.answer(record(i, (i + 3) % 10, i % 3 ? "A" : "B")).rebuilt, false);
+  assert.deepEqual(live.state.model.hyper, carried);
+  assert.equal(live.answer(record(10, 11)).rebuilt, false);
+  assert.equal(live.answer(record(12, 13)).rebuilt, true);
+  assert.deepEqual(live.state.model.hyper, carried);
+  const pair = live.propose("solving");
+  assert.deepEqual([pair.fitted, pair.searched], [true, false]);
 });
 
 test("stored hyperparameters are used only when complete and stored for this family and parameter table", () => {

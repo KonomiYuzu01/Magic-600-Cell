@@ -442,6 +442,8 @@ export function createHyperSearch(model, {
     get evaluations() { return evaluations; },
     // True once some evaluation converged: adopt() then applies its best point.
     get found() { return Boolean(best && Number.isFinite(best.value)); },
+    // The hyperparameters of that point, without applying them; null before one.
+    get best() { return best && Number.isFinite(best.value) ? best.trial.hyper : null; },
     adopt() {
       if (best && Number.isFinite(best.value)) {
         model.hyper = best.trial.hyper;

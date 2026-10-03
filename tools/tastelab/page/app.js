@@ -284,7 +284,7 @@ async function exportData() {
   const downloads = await use("downloads");
   if (!downloads) { $("status").textContent = "Export is not available in this view."; return; }
   state.exporting = true;
-  $("status").textContent = "Preparing the export: every family's model finishes its fit.";
+  $("status").textContent = "Preparing the export.";
   try {
     const result = await requestPresets();
     const data = JSON.stringify({

@@ -78,7 +78,7 @@ test("a pair says whether its family's hyperparameter search has finished since 
   // Another family's learner is built on first use and searches on its own.
   assert.equal(send({ type: "next", scene: "solving", family: "f2" }).fitted, false);
   send({ type: "presets", id: "p3", settled: [] });
-  assert.equal(send({ type: "next", scene: "solving", family: "f2" }).fitted, true, "presets finish every family's search");
+  assert.equal(send({ type: "next", scene: "solving", family: "f2" }).fitted, true, "presets finish the search of a family with nothing fitted");
   assert.deepEqual(models.map((m) => m.family), ["f1", "f2"]);
   assert.equal(send({ type: "next", scene: "solving", family: "f1" }).fitted, true);
 });
@@ -111,4 +111,68 @@ test("stored hyperparameters serve the first pair after a load or an undo until 
   const linear = space.params.findIndex((p) => p.kind === "linear");
   const wider = { ...space, params: space.params.map((p, i) => (i === linear ? { ...p, max: p.max + 1 } : p)) };
   assert.equal(init({ space: wider }).fitted, false);
+});
+
+const exportRecords = () => {
+  const records = Array.from({ length: 12 }, (_, i) => record(i, i + 1, "f1", i % 3 ? "A" : "B"));
+  records.push(record(13, 14, "f2"), record(14, 15, "f2", "B"));
+  return records;
+};
+const at = (msg, family) => msg.presets.find((x) => x.family === family && x.scene === "solving");
+const flags = (msg) => ["f1", "f2"].flatMap((f) => [at(msg, f).fitted, at(msg, f).searched]);
+// Both families' documents after their searches, which an export without stored values finishes.
+function storedDocs(session, seed) {
+  send({ type: "init", space, records: exportRecords(), settled: [], session, scene: "solving", family: "f1", seed });
+  models.length = 0;
+  const msg = send({ type: "presets", id: `all-${session}`, settled: [] });
+  assert.deepEqual(flags(msg), [true, true, true, true]);
+  assert.deepEqual(models.map((m) => m.family).sort(), ["f1", "f2"]);
+  return Object.fromEntries(models.map((m) => [m.family, JSON.parse(JSON.stringify(m.doc))]));
+}
+
+test("the export uses the hyperparameters in force and settles nothing before a search since the load has ended", async () => {
+  const records = exportRecords();
+  const stored = storedDocs("s5", 13);
+  // With stored values the export finishes no search and says where its values come from.
+  // Stored lengths of 50 put every look in one region, so two sessions' settled bests
+  // would confirm it, but the search since the load has not ended.
+  const wide = { ...stored.f1, hyper: { ...stored.f1.hyper, lengths: stored.f1.hyper.lengths.map(() => 50) } };
+  const settled = [1, 2].map((s) => ({ family: "f1", scene: "solving", session: `s${s - 1}`, best: points[4 * s] }));
+  const pair = send({ type: "init", space, records, settled, models: { f1: wide, f2: stored.f2 }, session: "s6", scene: "solving", family: "f1", seed: 13 });
+  assert.deepEqual([pair.fitted, pair.searched], [true, false]);
+  models.length = 0;
+  let msg = send({ type: "presets", id: "p6", settled });
+  assert.equal(models.length, 0, "the export finishes no search");
+  assert.deepEqual(flags(msg), [true, false, true, false]);
+  assert.deepEqual(at(msg, "f1").look, pair.best, "the export's best look is the page's");
+  assert.equal(at(msg, "f1").settled, false, "not settled before the search since the load has ended");
+  // The shown family's search after the load still ends in idle time.
+  assert.equal(send({ type: "next", scene: "solving", family: "f1" }).searched, false);
+  for (let i = 0; i < 20000 && !models.length; i++) await tick();
+  assert.deepEqual(models.map((m) => m.family), ["f1"]);
+  assert.equal(send({ type: "next", scene: "solving", family: "f1" }).searched, true);
+  // Then two sessions whose settled best is the exported look settle it, and one does
+  // not; the family whose search is still pending stays unsettled.
+  const looks = send({ type: "presets", id: "p7", settled: [] });
+  const by = (family, n) => Array.from({ length: n }, (_, s) => ({ family, scene: "solving", session: `s${s}`, best: at(looks, family).look }));
+  msg = send({ type: "presets", id: "p8", settled: [...by("f1", 2), ...by("f2", 2)] });
+  assert.deepEqual(flags(msg), [true, true, true, false]);
+  assert.deepEqual([at(msg, "f1").settled, at(msg, "f2").settled], [true, false]);
+  assert.equal(at(send({ type: "presets", id: "p9", settled: by("f1", 1) }), "f1").settled, false, "one session does not settle");
+});
+
+test("a search replaced before it ends leaves the stored values in force for pairs and the export", async () => {
+  const stored = storedDocs("s7", 17);
+  let pair = send({ type: "init", space, records: exportRecords(), settled: [], models: stored, session: "s8", scene: "solving", family: "f1", seed: 17 });
+  assert.deepEqual([pair.fitted, pair.searched], [true, false]);
+  // One idle evaluation, then ten answers: the tenth starts the next search before this one ends.
+  await tick();
+  for (let i = 0; i < 10; i++) {
+    pair = send({ type: "answer", record: record(i, i + 2, "f1", i % 3 ? "B" : "A"), scene: "solving", family: "f1" });
+  }
+  assert.deepEqual([pair.fitted, pair.searched], [true, false]);
+  assert.deepEqual(pair.relevance.map((r) => r.value), stored.f1.hyper.lengths.map((l) => 1 / l), "the stored lengths");
+  const msg = send({ type: "presets", id: "p10", settled: [] });
+  assert.deepEqual(flags(msg), [true, false, true, false]);
+  assert.deepEqual(at(msg, "f1").look, pair.best, "the export's best look is the page's");
 });

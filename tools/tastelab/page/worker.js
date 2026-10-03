@@ -41,12 +41,15 @@ function propose(family, scene) {
   return learnerFor(family).propose(scene);
 }
 
-// The export's starting points: every family's searches finish first.
+// The export's starting points, under each family's hyperparameters in force
+// (plan section 9). Only a family without fitted ones finishes its pending search
+// first (plan section 7).
 function presets(settled) {
   const out = [];
   for (const f of familiesOf(ctx.space)) {
     const learner = learnerFor(f.id);
-    while (learner.idle());
+    if (!learner.state.fitted) while (learner.idle());
+    const { fitted, searched } = learner.state;
     for (const scene of SCENES) {
       const look = learner.best(scene);
       const own = (r) => r && r.scene === scene && recordFamily(ctx.space, r) === f.id;
@@ -56,7 +59,10 @@ function presets(settled) {
         scene,
         look,
         answers: ctx.records.filter(own).length,
-        settled: confirmedBy(look, settled.filter(own), learner.sameRegion),
+        // As on the page, nothing is settled before a search since the load has ended.
+        settled: searched && confirmedBy(look, settled.filter(own), learner.sameRegion),
+        fitted,
+        searched,
       });
     }
   }
