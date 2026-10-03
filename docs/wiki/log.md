@@ -2,6 +2,15 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-03] decision | Taste Lab acceptance ruling
+Recorded in [owner-decisions-2026-10-03-taste-lab](decisions/owner-decisions-2026-10-03-taste-lab.md): on the acceptance seeds the full setting with one family and the bump owner passed every criterion, while two families, the low setting and the cross owner's ranking missed; the owner accepted the learner with these as recorded limitations and moved the two-family checkpoint to 150 comparisons per family, with one confirmation run on fresh seeds whose rule was fixed before the run; it passed (0.045 at 150 comparisons per family).
+
+## [2026-10-03] decision | Taste Lab image library approved
+Recorded in [owner-decisions-2026-10-03-image-library](decisions/owner-decisions-2026-10-03-image-library.md): the owner approved the class A sources, the embedding model and its runtime (phase 1b), class B private references kept local (phase 2), and the annotated references and nexus cards (4A), to start in parallel with the close of phase 1a; the review and installation-approval gates are unchanged.
+
+## [2026-10-03] decision | Taste Lab: current learner final
+Recorded in [owner-decisions-2026-10-03-taste-lab](decisions/owner-decisions-2026-10-03-taste-lab.md): a time-boxed diagnosis found no change that closes the cross owner's miss on development seeds, so the owner made the current learner final for phase 1a and had the acceptance run once; the owner rules on the cross result.
+
 ## [2026-10-03] decision | Testers, charter signature and Windows CI
 Recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md): the owner alone takes G1 to G6, the stage 2.0 [charter](../progress/1.0/charter-2.0-draft.md) is signed as written (closing stage 2.0), and a Windows CI job runs the headless checks without counting as Windows/DirectX evidence.
 
