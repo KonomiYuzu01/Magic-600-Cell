@@ -302,6 +302,31 @@ class CheckoutBytesTests(unittest.TestCase):
         self.assertIn("line-ending conversion still enabled: lf.txt", out)
         self.assertEqual((root / "lf.txt").read_bytes(), crlf(FILES["lf.txt"]))
 
+    def test_a_root_reached_through_a_link_or_short_name_is_repaired(self):
+        # A checkout opened through an alias above its root (a link here; an 8.3 short name
+        # such as C:\\Users\\RUNNER~1 on Windows) is still one checkout: nothing below the root is a link.
+        source = self.repo(attributes=False)
+        clone = self.tmp() / "clone"
+        subprocess.run(["git", "-c", "core.autocrlf=true", "clone", "-q", str(source), str(clone)], check=True, capture_output=True)
+        subprocess.run(["git", "config", "core.autocrlf", "true"], cwd=clone, check=True)
+        (clone / ".gitattributes").write_bytes(b"* -text\n")
+        alias = self.tmp() / "alias"
+        try:
+            if os.name == "nt":
+                import _winapi
+                _winapi.CreateJunction(str(clone), str(alias))
+            else:
+                os.symlink(clone, alias, target_is_directory=True)
+        except OSError:
+            self.skipTest("this system can create neither symlinks nor junctions")
+        if os.name == "nt":
+            self.addCleanup(lambda: os.path.lexists(alias) and os.rmdir(alias))  # the junction itself, never its target
+        code, out = self.run_main(alias, "--fix")
+        self.assertEqual(code, 0, out)
+        for name in ("lf.txt", "ignored/[glob].txt", ".gitignore"):
+            self.assertEqual((clone / name).read_bytes(), FILES[name])
+        self.assertEqual(self.run_main(alias)[0], 0)
+
     def test_links_are_never_followed(self):
         root = self.repo()
         outside = self.tmp()
