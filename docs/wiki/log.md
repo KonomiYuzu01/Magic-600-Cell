@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-02] decision | Scope reduction and review risk tiers
+Recorded in [owner-decisions-2026-10-02-scope](decisions/owner-decisions-2026-10-02-scope.md): only sound and the mathematical-language work are reduced, design stays the core of 1.0; `AGENTS.md` gains risk tiers for review and a weekly process budget; the tester source for G1 to G6 is open.
+
 ## [2026-10-02] decision | Migration path B
 Recorded in [owner-decisions-2026-10-02-migration](decisions/owner-decisions-2026-10-02-migration.md): a 1.0 importer reads a locked copy of the 0.4 database; the design is the [migration exporter proposal](../progress/1.0/migration-exporter-proposal.md) and charter section 6 records the choice.
 
