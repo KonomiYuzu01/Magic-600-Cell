@@ -509,13 +509,26 @@ def _wait_barrier(worker, barrier, timeout):
         raise RuntimeError('worker-barrier-missing')
 
 
-def interrupt(run_root):
+def expected_active(barrier, previous):
+    """A process stop (no power loss) before the S7 move returns keeps the previous generation."""
+    return 'B' if BARRIERS.index(barrier) >= BARRIERS.index('after-S7') else previous
+
+
+def run(run_root) -> dict:
+    """Qualification plus every interruption case, as one JSON-safe record (run_probes.py)."""
+    records = []
+    qualification, passed = interrupt(run_root, records.append)
+    return dict(qualification=qualification, interruptions=records, passed=passed,
+                evidence='process-interruption; buffered-write loss: tests/test_migration_p2.py (test double)')
+
+
+def interrupt(run_root, emit=None):
+    emit = emit or (lambda record: print(json.dumps(record), flush=True))
     qualification = qualify(run_root)
     fs = WindowsFS(run_root)
     if not qualification['passed']:
-        print(json.dumps(dict(passed=False, qualification=qualification, error='FixtureFailure', winerror=None)),
-              flush=True)
-        return False
+        emit(dict(passed=False, qualification=qualification, error='FixtureFailure', winerror=None))
+        return qualification, False
     access_name = qualification['directory_access']
     fs.directory_access = fs.W.FILE_ADD_FILE | fs.W.FILE_ADD_SUBDIRECTORY if access_name == DIRECTORY_ACCESS[0] \
         else getattr(fs.W, access_name)
@@ -525,8 +538,9 @@ def interrupt(run_root):
     for start in ('no-previous', 'previous-A'):
         previous = 'A' if start == 'previous-A' else None
         for barrier in BARRIERS:
-            record = dict(barrier=barrier, start=start, recovered=None, valid=False, retry_status=None,
-                          passed=False, evidence='process-interruption', directory_access=access_name)
+            record = dict(barrier=barrier, start=start, expected=expected_active(barrier, previous), recovered=None,
+                          valid=False, retry_status=None, passed=False, evidence='process-interruption',
+                          directory_access=access_name)
             try:
                 case = fs._path(base / (start + '-' + barrier))
                 fs.mkdir(case)
@@ -553,13 +567,13 @@ def interrupt(run_root):
                 retry = _fresh(fs, case, 'retry', _request(fs, dest, 'publish', generation='B2'))
                 record['retry_status'] = retry.get('status')
                 final = _fresh(fs, case, 'retry-recovery', _request(fs, dest, 'recover'))
-                record['passed'] = recovered['valid'] and recovered['active'] in (previous, 'B') \
+                record['passed'] = recovered['valid'] and recovered['active'] == record['expected'] \
                     and retry.get('status') == 'published' and final['valid'] and final['active'] == 'B2'
             except Exception as failure:
                 record.update(short_error(failure))
             all_passed = all_passed and record['passed']
-            print(json.dumps(record), flush=True)
-    return all_passed
+            emit(record)
+    return qualification, all_passed
 
 
 def main(argv=None) -> int:
@@ -580,7 +594,7 @@ def main(argv=None) -> int:
             result = qualify(run_root)
             print(json.dumps(result), flush=True)
             return 0 if result['passed'] else 1
-        return 0 if interrupt(run_root) else 1
+        return 0 if interrupt(run_root)[1] else 1
     except Exception as failure:
         print(json.dumps(dict(passed=False, **short_error(failure))), flush=True)
         return 1

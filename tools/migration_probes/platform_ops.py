@@ -35,12 +35,18 @@ class LockRefused(RuntimeError):
 class ReadOnlyLock:
     """Proposal 4.1: an exclusive lock of engine.lock byte 0 through a read-only handle; never creates the file."""
 
-    def __init__(self, directory):
-        path = Path(directory) / 'engine.lock'
+    def __init__(self, directory, guard_entries: dict | None = None):
+        """`guard_entries` (the pre-lock snapshot) adds the WriteGuard. It is taken before the lock and
+        released after it, so it covers the whole lock-held interval (review finding MPR-A01)."""
+        self.held = False
+        self.directory = Path(directory)
+        self.write_guard = WriteGuard(self.directory, guard_entries) if guard_entries is not None else None
+        path = self.directory / 'engine.lock'
         try:
             self.handle = W.open_handle(path, W.GENERIC_READ, W.FILE_SHARE_READ | W.FILE_SHARE_WRITE,
                                         W.OPEN_EXISTING, W.FILE_FLAG_OPEN_REPARSE_POINT)
         except OSError as error:
+            self._release_guard()
             if error.winerror == W.ERROR_FILE_NOT_FOUND:
                 raise LockRefused('engine-lock-missing', error.winerror) from None
             raise LockRefused('engine-lock-open-failed', error.winerror) from None
@@ -48,38 +54,35 @@ class ReadOnlyLock:
             W.lock_range(self.handle, 0, 1)
         except OSError as error:
             self.handle.close()
+            self._release_guard()
             reason = 'engine-running' if error.winerror == W.ERROR_LOCK_VIOLATION else 'lock-failed'
             raise LockRefused(reason, error.winerror) from None
         self.held = True
-        self.write_guard = None
-        self.directory = Path(directory)
-
-    def guard(self, entries: dict) -> None:
-        """Hold the WriteGuard for the files of the pre-lock snapshot; refuses (and releases) on failure."""
-        try:
-            self.write_guard = WriteGuard(self.directory, entries)
-        except LockRefused:
-            self.release()
-            raise
 
     def read_bytes(self) -> bytes:
         return W.read_all(self.handle)
 
-    def release(self) -> None:
+    def _release_guard(self) -> None:
         if self.write_guard is not None:
             self.write_guard.release()
             self.write_guard = None
-        if self.held:
-            self.held = False
-            try:
-                W.unlock_range(self.handle, 0, 1)
-            finally:
-                self.handle.close()
+
+    def release(self) -> None:
+        try:
+            if self.held:
+                self.held = False
+                try:
+                    W.unlock_range(self.handle, 0, 1)
+                finally:
+                    self.handle.close()
+        finally:
+            self._release_guard()
 
 
 class WriteGuard:
-    """MPR-04: prevention in the importer's own path. While the lock is held, a read handle that
-    shares read only is open on every existing file of the source except engine.lock, so no
+    """MPR-04: prevention in the importer's own path. From before the lock is taken until after it
+    is released, a read handle that shares read only is open on every existing file of the source
+    except engine.lock, so no
     process can open one of them for writing or deletion (and so cannot map it writable).
 
     The watch cannot see a mapped write that is restored before the final digest; this guard
@@ -352,6 +355,10 @@ STRATEGIES = {
                 text='mode=ro, nolock=1 under the importer lock, NO_CKPT_ON_CLOSE'),
     'C2b': dict(query='mode=ro&nolock=1&readonly_shm=1', pragmas=(), persist_wal=False,
                 text='mode=ro, nolock=1, readonly_shm=1, NO_CKPT_ON_CLOSE'),
+    # Owner decision 2026-10-03 (option b), after no candidate above passed.
+    'C3': dict(query=None, pragmas=(), persist_wal=False, staged=True,
+               text='byte copy of the database and -wal under the lock and write guard; SQLite recovers and '
+                    'backs up only the copy'),
 }
 
 
@@ -567,6 +574,37 @@ class CSource:
             self.db = ctypes.c_void_p()
 
 
-def open_source_for_backup(database: Path, strategy: str):
+class StagedSource(PySource):
+    """C3: read the database, its -wal and a rollback journal (if any) through handles that share
+    read only, which the write guard allows and which no writer can share, into the importer's own
+    staging directory; SQLite then opens, recovers and backs up only that copy. -shm is never opened:
+    SQLite rebuilds the WAL index from the copied WAL. `copied` holds the SHA-256 of each copied file,
+    which must equal the digest taken under the lock."""
+
+    SUFFIXES = ('', '-wal', '-journal')
+
+    def __init__(self, database: Path, staging: Path):
+        staging.mkdir()
+        self.copied = {}
+        for suffix in self.SUFFIXES:
+            name = database.name + suffix
+            try:
+                handle = W.open_handle(database.parent / name, W.GENERIC_READ, W.FILE_SHARE_READ,
+                                       W.OPEN_EXISTING, W.FILE_FLAG_OPEN_REPARSE_POINT)
+            except OSError as error:
+                if suffix and error.winerror == W.ERROR_FILE_NOT_FOUND:
+                    continue
+                raise
+            with handle:
+                data = W.read_all(handle)
+            with open(staging / name, 'xb') as target:
+                target.write(data)
+            self.copied[name] = hashlib.sha256(data).hexdigest()
+        self.connection = sqlite3.connect(staging / database.name, isolation_level=None)
+
+
+def open_source_for_backup(database: Path, strategy: str, staging: Path | None = None):
     spec = STRATEGIES[strategy]
+    if spec.get('staged'):
+        return StagedSource(database, staging)
     return CSource(database, spec) if spec['persist_wal'] else PySource(database, spec)

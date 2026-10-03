@@ -9,21 +9,26 @@ import os
 import re
 from pathlib import Path
 
+FILE_URI = re.compile(r'(?i)\bfile:/[^\s"\'<>|]*')
 DRIVE_PATH = re.compile(r'(?i)(?<![A-Za-z])[a-z]:[\\/][^\s"\'<>|]*')
-UNC_PATH = re.compile(r'\\\\[^\s"\'<>|]+')
-SID = re.compile(r'S-1-5-21(?:-\d+){3,}')
+# \\server\share, \\?\ and \\.\ prefixes, and //server/share where a path starts (not the // of a URL).
+UNC_PATH = re.compile(r'(?m)(?:\\\\|(?:^|(?<=[\s"\'(=,\[]))//(?=[^\s/]))[^\s"\'<>|]+')
+SID = re.compile(r'(?i)\bS-1-\d+(?:-\d+)+')
 
 
 def _private_words() -> list:
-    words = []
-    for name in ('USERNAME', 'COMPUTERNAME', 'USERDOMAIN'):
-        value = os.environ.get(name, '')
-        if len(value) >= 3:
-            words.append(value)
-    home = Path.home().name
-    if len(home) >= 3:
-        words.append(home)
-    return sorted(set(words), key=len, reverse=True)
+    """User, host and domain names of any length (review finding MPB-02)."""
+    words = [os.environ.get(name, '') for name in ('USERNAME', 'COMPUTERNAME', 'USERDOMAIN')]
+    words.append(Path.home().name)
+    return sorted({word for word in words if word}, key=len, reverse=True)
+
+
+def _word(word: str):
+    """A name of three or more characters matches anywhere; a shorter one only as a whole word."""
+    pattern = re.escape(word)
+    if len(word) < 3:
+        pattern = r'(?<![A-Za-z0-9])' + pattern + r'(?![A-Za-z0-9])'
+    return re.compile(pattern, re.IGNORECASE)
 
 
 def _replacements(roots: dict) -> list:
@@ -43,11 +48,12 @@ def sanitize(value, roots: dict):
     def clean(text: str) -> str:
         for form, placeholder in pairs:
             text = re.sub(re.escape(form), lambda match, value=placeholder: value, text, flags=re.IGNORECASE)
+        text = FILE_URI.sub('<path>', text)
         text = DRIVE_PATH.sub('<path>', text)
         text = UNC_PATH.sub('<path>', text)
         text = SID.sub('<sid>', text)
         for word in words:
-            text = re.sub(re.escape(word), '<private>', text, flags=re.IGNORECASE)
+            text = _word(word).sub('<private>', text)
         return text
 
     def walk(item):
@@ -64,9 +70,29 @@ def sanitize(value, roots: dict):
 
 def leaks(text: str) -> list:
     found = []
-    if DRIVE_PATH.search(text) or UNC_PATH.search(text):
+    if FILE_URI.search(text) or DRIVE_PATH.search(text) or UNC_PATH.search(text):
         found.append('absolute-path')
     if SID.search(text):
         found.append('sid')
-    found.extend('private-word' for word in _private_words() if word.lower() in text.lower())
+    found.extend('private-word' for word in _private_words() if _word(word).search(text))
     return sorted(set(found))
+
+
+def leaks_in(value) -> list:
+    """`leaks` for every decoded key and string of a JSON-safe value. Serialized JSON escapes newlines and
+    non-ASCII characters, which can hide a path start or a name boundary (review finding MPB-03)."""
+    found = set()
+
+    def walk(item):
+        if isinstance(item, str):
+            found.update(leaks(item))
+        elif isinstance(item, dict):
+            for key, entry in item.items():
+                walk(str(key))
+                walk(entry)
+        elif isinstance(item, (list, tuple)):
+            for entry in item:
+                walk(entry)
+
+    walk(value)
+    return sorted(found)

@@ -1,8 +1,9 @@
 {
  "commands": {
-  "p1": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p1",
-  "p3": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline",
-  "pipeline": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline"
+  "p1": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline p1 p2",
+  "p2": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline p1 p2",
+  "p3": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline p1 p2",
+  "pipeline": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline p1 p2"
  },
  "probes": {
   "p1": {
@@ -655,6 +656,142 @@
        0,
        101
       ],
+      "case": "clean",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "clean",
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "clean",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
       "case": "crash",
       "copy": {
        "head_event_present": true,
@@ -1242,6 +1379,146 @@
       "reasons": [],
       "snapshot_changes": [],
       "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
       "watch_errors": []
      },
      {
@@ -1873,10 +2150,150 @@
       "reasons": [],
       "snapshot_changes": [],
       "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash-noshm",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash-noshm",
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash-noshm",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
       "watch_errors": []
      }
     ],
-    "chosen": null,
+    "chosen": "C3",
     "controls": {
      "external-append-control": {
       "accepted": false,
@@ -1923,7 +2340,14 @@
        "engine.lock:size",
        "engine.lock:written"
       ],
-      "strategy": "C1b",
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
       "watch_errors": []
      },
      "forwarding-control": {
@@ -2003,7 +2427,7 @@
       "overflow_forms": [
        "ok-zero-bytes-last-error-1022"
       ],
-      "overflows": 900,
+      "overflows": 895,
       "passed": true,
       "reasons": [
        "overflow"
@@ -2018,7 +2442,8 @@
      "C1c": "mode=ro, locking_mode=EXCLUSIVE, NO_CKPT_ON_CLOSE",
      "C1d": "mode=ro, SQLITE_FCNTL_PERSIST_WAL=1, NO_CKPT_ON_CLOSE (C API)",
      "C2a": "mode=ro, nolock=1 under the importer lock, NO_CKPT_ON_CLOSE",
-     "C2b": "mode=ro, nolock=1, readonly_shm=1, NO_CKPT_ON_CLOSE"
+     "C2b": "mode=ro, nolock=1, readonly_shm=1, NO_CKPT_ON_CLOSE",
+     "C3": "byte copy of the database and -wal under the lock and write guard; SQLite recovers and backs up only the copy"
     },
     "verdicts": {
      "C1a": {
@@ -2056,10 +2481,445 @@
       "inconclusive_attempts": 0,
       "passed_attempts": 0,
       "verdict": "fail"
+     },
+     "C3": {
+      "attempts": 12,
+      "inconclusive_attempts": 0,
+      "passed_attempts": 12,
+      "verdict": "pass"
      }
     }
    },
-   "run": "20261003T000735Z"
+   "run": "20261003T005400Z"
+  },
+  "p2": {
+   "result": {
+    "evidence": "process-interruption; buffered-write loss: tests/test_migration_p2.py (test double)",
+    "interruptions": [
+     {
+      "barrier": "before-S0",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S0",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S1",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S1",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S2",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S2",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S3",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S3",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S4",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S4",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S5",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S5",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S6",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S6",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S7",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S7",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S8",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S8",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S0",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S0",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S1",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S1",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S2",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S2",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S3",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S3",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S4",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S4",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S5",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S5",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S6",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S6",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S7",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S7",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S8",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S8",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     }
+    ],
+    "passed": true,
+    "qualification": {
+     "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+     "directory_flush": {
+      "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY": {
+       "ok": true
+      },
+      "GENERIC_READ": {
+       "error": "PermissionError",
+       "ok": false,
+       "winerror": 5
+      },
+      "GENERIC_WRITE": {
+       "ok": true
+      }
+     },
+     "file_flush": {
+      "ok": true
+     },
+     "file_system": "NTFS",
+     "move_write_through": {
+      "ok": true
+     },
+     "passed": true
+    }
+   },
+   "run": "20261003T005400Z"
   },
   "p3": {
    "result": {
@@ -2231,7 +3091,7 @@
      "snapshot_changes_after_release": []
     }
    },
-   "run": "20261003T000632Z"
+   "run": "20261003T005400Z"
   },
   "pipeline": {
    "result": {
@@ -2391,22 +3251,11 @@
      "watch_errors": []
     }
    },
-   "run": "20261003T000632Z"
+   "run": "20261003T005400Z"
   }
  },
  "runs": {
-  "20261003T000632Z": {
-   "engine_environment": true,
-   "evidence_class": "actual Windows (synthetic sessions; no performance claims)",
-   "file_system": "NTFS",
-   "os": "Windows",
-   "os_build": "10.0.26200",
-   "os_release": "11",
-   "python": "3.14.7",
-   "python_bits": 64,
-   "sqlite": "3.50.4"
-  },
-  "20261003T000735Z": {
+  "20261003T005400Z": {
    "engine_environment": true,
    "evidence_class": "actual Windows (synthetic sessions; no performance claims)",
    "file_system": "NTFS",

@@ -271,6 +271,15 @@ class PublicationTests(unittest.TestCase):
             fs.read_file(DEST / 'generations/B/MANIFEST.json')).hexdigest()})
 
 
+class WindowsExpectationTests(unittest.TestCase):
+    def test_process_stop_switches_only_after_the_move_returned(self):
+        for barrier in BARRIERS:
+            with self.subTest(barrier=barrier):
+                after_move = BARRIERS.index(barrier) >= BARRIERS.index('after-S7')
+                self.assertEqual(P.expected_active(barrier, 'A'), 'B' if after_move else 'A')
+                self.assertEqual(P.expected_active(barrier, None), 'B' if after_move else None)
+
+
 class RecoveryTests(unittest.TestCase):
     def test_missing_destination_or_pointer_is_valid_unpublished_state(self):
         for start in ('missing', 'empty'):

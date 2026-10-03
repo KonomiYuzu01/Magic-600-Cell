@@ -2,12 +2,16 @@
 verdicts and path guards. The Windows probes themselves run only through run_probes.py."""
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import shutil
+import sqlite3
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools' / 'migration_probes'))
@@ -15,6 +19,7 @@ import fixtures as F  # noqa: E402
 import p1_source as S  # noqa: E402
 import pipeline  # noqa: E402
 import platform_ops as P  # noqa: E402
+import run_probes  # noqa: E402
 import sanitize  # noqa: E402
 
 META = dict(size=10, links=1, directory=False, attributes=32, created=1, written=2, changed=3, id='a')
@@ -199,6 +204,110 @@ class GuardTests(unittest.TestCase):
         with self.assertRaises(F.FixtureRefusal):
             F.create_run_root(Path(ROOT.anchor) / 'migration-probe-outside')
 
+    def test_fixture_child_refuses_outside_and_existing_directories(self):
+        # Review finding MPR-A02: refused before any 0.4 Session is constructed.
+        run_root = F.create_run_root(self.base / 'run')
+        outside = self.base / 'outside-session'
+        with self.assertRaises(F.ProbeRefusal):
+            F._child('clean', run_root, [outside])
+        self.assertFalse(outside.exists())
+        existing = run_root / 'existing'
+        existing.mkdir()
+        with self.assertRaises(F.ProbeRefusal):
+            F._child('clean', run_root, [existing])
+        self.assertEqual(list(existing.iterdir()), [])
+
+    def test_request_child_refuses_outside_or_existing_results(self):
+        run_root = F.create_run_root(self.base / 'run')
+        work = run_root / 'work'
+        work.mkdir()
+        request = work / 'request.json'
+        request.write_text(json.dumps(dict(run_root=str(run_root))), encoding='utf-8')
+        outside = self.base / 'outside-result.json'
+        with self.assertRaises(F.ProbeRefusal):
+            F.load_request(request, outside)
+        (work / 'result.json').write_text('{}', encoding='utf-8')
+        with self.assertRaises(F.ProbeRefusal):
+            F.load_request(request, work / 'result.json')
+        loaded, root, result = F.load_request(request, work / 'fresh.json')
+        self.assertEqual((root, result), (run_root, work / 'fresh.json'))
+        stray = self.base / 'stray-request.json'
+        stray.write_text(json.dumps(dict(run_root=str(run_root))), encoding='utf-8')
+        with self.assertRaises(F.ProbeRefusal):
+            F.load_request(stray, work / 'other.json')
+
+
+@unittest.skipUnless(os.name == 'nt', 'Windows lock calls')
+class LockGuardOrderTests(unittest.TestCase):
+    """Review finding MPR-A01: the WriteGuard is taken before the lock and released after it."""
+
+    def setUp(self):
+        calls = self.calls = []
+
+        class FakeGuard:
+            def __init__(self, directory, entries):
+                calls.append('guard')
+
+            def release(self):
+                calls.append('guard-release')
+
+        class FakeHandle:
+            def close(self):
+                calls.append('close')
+
+        def open_handle(*args, **kwargs):
+            calls.append('open')
+            return FakeHandle()
+
+        for target, value in (('WriteGuard', FakeGuard),):
+            patcher = mock.patch.object(P, target, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        for name, value in (('open_handle', open_handle), ('lock_range', lambda *a: calls.append('lock')),
+                            ('unlock_range', lambda *a: calls.append('unlock'))):
+            patcher = mock.patch.object(P.W, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_guard_brackets_the_lock(self):
+        P.ReadOnlyLock(ROOT, guard_entries={}).release()
+        self.assertEqual(self.calls, ['guard', 'open', 'lock', 'unlock', 'close', 'guard-release'])
+
+    def test_refused_lock_releases_the_guard(self):
+        def refuse(*args):
+            raise OSError(None, 'lock violation', None, P.W.ERROR_LOCK_VIOLATION)
+        with mock.patch.object(P.W, 'lock_range', refuse):
+            with self.assertRaises(P.LockRefused) as caught:
+                P.ReadOnlyLock(ROOT, guard_entries={})
+        self.assertEqual(caught.exception.reason, 'engine-running')
+        self.assertEqual(self.calls, ['guard', 'open', 'close', 'guard-release'])
+
+
+@unittest.skipUnless(os.name == 'nt', 'Windows handles')
+class StagedSourceTests(unittest.TestCase):
+    """C3 (owner decision 2026-10-03): only the staged copy is opened by SQLite."""
+
+    def test_source_directory_is_only_read(self):
+        base = Path(tempfile.gettempdir()).resolve() / ('migration-probe-staged-%d' % os.getpid())
+        self.addCleanup(shutil.rmtree, base, True)
+        source = base / 'source'
+        source.mkdir(parents=True)
+        database = source / 'session.sqlite3'
+        connection = sqlite3.connect(database)
+        connection.execute('CREATE TABLE t (x)')
+        connection.execute('INSERT INTO t VALUES (7)')
+        connection.commit()
+        connection.close()
+        before = sorted(item.name for item in source.iterdir())
+        staged = P.StagedSource(database, base / 'staged')
+        try:
+            value = staged.connection.execute('SELECT x FROM t').fetchone()[0]
+        finally:
+            staged.close()
+        self.assertEqual(value, 7)
+        self.assertEqual(sorted(item.name for item in source.iterdir()), before)
+        self.assertEqual(staged.copied, {'session.sqlite3': hashlib.sha256(database.read_bytes()).hexdigest()})
+
 
 class SanitizeTests(unittest.TestCase):
     def test_paths_and_identifiers_are_replaced(self):
@@ -218,6 +327,121 @@ class SanitizeTests(unittest.TestCase):
         self.assertIn('absolute-path', sanitize.leaks('C:/x/y'))
         self.assertIn('sid', sanitize.leaks('S-1-5-21-1-2-3-4'))
         self.assertEqual(sanitize.leaks('<run>/p1 session.sqlite3-shm:added'), [])
+
+    def test_uri_and_forward_slash_unc_forms(self):
+        # Review finding MPB-01.
+        forms = ['file://review-host/share/private.bin', '//review-host/share/private.bin',
+                 'file:///C:/x/private.bin', '\\\\?\\C:\\x\\private.bin', '\\\\review-host\\share\\x']
+        for form in forms:
+            self.assertIn('absolute-path', sanitize.leaks(form), form)
+            clean = sanitize.sanitize({'error': 'open failed: ' + form}, {})
+            self.assertNotIn('review-host', clean['error'])
+            self.assertNotIn('private.bin', clean['error'])
+            self.assertEqual(sanitize.leaks(json.dumps(clean)), [], form)
+        self.assertEqual(sanitize.leaks('see https://www.sqlite.org/wal.html'), [])
+
+    def test_short_identities_and_every_sid_family(self):
+        # Review finding MPB-02.
+        environment = dict(USERNAME='Qx', COMPUTERNAME='Z9', USERDOMAIN='D8')
+        with mock.patch.dict(os.environ, environment), \
+                mock.patch('pathlib.Path.home', return_value=Path('C:/Users/Qx')):
+            text = 'User Qx on Z9 in D8; Qxylophone stays'
+            self.assertEqual(sanitize.leaks(text), ['private-word'])
+            clean = sanitize.sanitize({'e': text, 's': 'S-1-12-1-1111111111-2222222222-3333333333-4444444444'}, {})
+            self.assertEqual(clean['e'], 'User <private> on <private> in <private>; Qxylophone stays')
+            self.assertEqual(clean['s'], '<sid>')
+            self.assertEqual(sanitize.leaks(json.dumps(clean)), [])
+
+    def test_merged_output_is_checked_whole(self):
+        # Review finding MPB-03: an older probe entry with a private path blocks the write.
+        base = Path(tempfile.gettempdir()).resolve() / ('migration-probe-merge-%d' % os.getpid())
+        base.mkdir()
+        self.addCleanup(shutil.rmtree, base, True)
+        out = base / 'results.json'
+        old = json.dumps(dict(runs={}, commands={}, probes={'p1': dict(run='r0', result=dict(
+            error='R:/Users/SyntheticPerson/private.db'))}))
+        out.write_text(old, encoding='utf-8')
+        public = dict(run='r1', environment={}, probes={'p2': dict(passed=True)}, commands={'p2': 'command'})
+        self.assertIn('absolute-path', run_probes.merge_out(out, public))
+        self.assertEqual(out.read_text(encoding='utf-8'), old)
+        out.write_text(json.dumps(dict(runs={}, commands={}, probes={})), encoding='utf-8')
+        self.assertEqual(run_probes.merge_out(out, public), [])
+        self.assertEqual(json.loads(out.read_text(encoding='utf-8'))['probes']['p2']['run'], 'r1')
+
+    def test_json_escaping_hides_nothing(self):
+        # Review finding MPB-03, verification round 1: escaped newlines and non-ASCII names.
+        base = Path(tempfile.gettempdir()).resolve() / ('migration-probe-escape-%d' % os.getpid())
+        base.mkdir()
+        self.addCleanup(shutil.rmtree, base, True)
+        out = base / 'results.json'
+        public = dict(run='r1', environment={}, probes={'p2': dict(passed=True)}, commands={'p2': 'command'})
+        cases = [({}, 'open failed:\n//review-host/share/private.bin', 'absolute-path'),
+                 ({}, 'account\nS-1-5-21-1111111111-2222222222-3333333333-1001', 'sid'),
+                 (dict(USERNAME='Qx'), 'user\nQx', 'private-word'),
+                 (dict(USERNAME='Jörg'), 'User Jörg', 'private-word')]
+        for environment, error, kind in cases:
+            old = json.dumps(dict(runs={}, commands={}, probes={'p1': dict(run='r0', result=dict(error=error))}))
+            out.write_text(old, encoding='utf-8')
+            with mock.patch.dict(os.environ, environment):
+                self.assertIn(kind, run_probes.merge_out(out, public), error)
+                self.assertIn(kind, sanitize.leaks_in({'key': [error]}), error)
+            self.assertEqual(out.read_text(encoding='utf-8'), old)
+
+
+class AttemptVerdictTests(unittest.TestCase):
+    """Review finding MPR-A04: a C3 copy that differs from the bytes under the lock never passes."""
+
+    def run_attempt(self, outcome: str, copied_digest: str) -> dict:
+        class Watch:
+            def __init__(self, source):
+                pass
+
+            def start(self):
+                pass
+
+            def stop_and_drain(self):
+                return watch()
+
+        class Lock:
+            def __init__(self, source, guard_entries=None):
+                pass
+
+            def release(self):
+                pass
+
+        class Staged:
+            copied = {'session.sqlite3': copied_digest}
+            statuses = [0]
+
+            def model(self):
+                return 'model'
+
+            def backup(self, copy, fail_after_first_step, after_first_step=None):
+                if fail_after_first_step:
+                    raise P.InjectedFailure('injected')
+
+            def close(self):
+                pass
+
+        base = Path(tempfile.gettempdir()).resolve() / ('migration-probe-attempt-%d' % os.getpid())
+        self.addCleanup(shutil.rmtree, base, True)
+        with mock.patch.object(P, 'DirectoryWatch', Watch), mock.patch.object(P, 'ReadOnlyLock', Lock), \
+                mock.patch.object(P, 'snapshot', lambda source: SNAPSHOT), \
+                mock.patch.object(P, 'digests', lambda *args, **kwargs: DIGESTS), \
+                mock.patch.object(P, 'open_source_for_backup', lambda *args, **kwargs: Staged()), \
+                mock.patch.object(S, 'verify_copy', lambda copy, expected: dict(ok=True)):
+            return S.attempt(base / 'source', base / ('copy-%s-%s' % (outcome, copied_digest)), 'C3', outcome,
+                             dict(model='model', head=1, state_hash='h'))
+
+    def test_digest_mismatch_fails_both_outcomes(self):
+        for outcome in ('success', 'failure'):
+            matching = self.run_attempt(outcome, DIGESTS['session.sqlite3'])
+            self.assertTrue(matching['passed'], outcome)
+            different = self.run_attempt(outcome, 'other')
+            self.assertFalse(different['staged']['matches_lock_digests'])
+            self.assertTrue(different['preserved'])
+            self.assertFalse(different['passed'], outcome)
+            self.assertEqual(S.strategy_verdict([matching, different])['verdict'], 'fail')
 
 
 @unittest.skipUnless(os.name == 'nt', 'Windows watch classification')

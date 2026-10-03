@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-03] update | Migration probes P1 to P3 on Windows
+[Results](../progress/1.0/migration-probe-results.md) on fresh synthetic sessions: P3, F20, F15, F18, F21 and P2 pass (the publication order survives every process interruption; the barriers are `FlushFileBuffers` on file and directory handles and a write-through `MoveFileExW`). P1 passes with C3, the owner's locked byte copy, in 12 of 12 attempts; no read-only SQLite strategy passes. The importer of the [migration proposal](../progress/1.0/migration-exporter-proposal.md) may start on C3.
+
+## [2026-10-03] decision | Locked byte copy of the 0.4 database
+Recorded in [owner-decisions-2026-10-03-migration](decisions/owner-decisions-2026-10-03-migration.md): after P1 found no read-only SQLite strategy, the owner relaxed only the "no file copy" part of invariant 2. The importer copies the database and WAL bytes under the lock and the write guard, and recovers only the copy; P1 was re-run for this strategy before any importer work.
+
 ## [2026-10-02] decision | Scope reduction and review risk tiers
 Recorded in [owner-decisions-2026-10-02-scope](decisions/owner-decisions-2026-10-02-scope.md): only sound and the mathematical-language work are reduced, design stays the core of 1.0; `AGENTS.md` gains risk tiers for review and a weekly process budget; the tester source for G1 to G6 is open.
 

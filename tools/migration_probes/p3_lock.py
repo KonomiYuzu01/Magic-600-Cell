@@ -92,8 +92,7 @@ def p3b_attempt(source: Path, run_root: Path) -> dict:
     watch = P.DirectoryWatch(source)
     watch.start()
     pre = P.snapshot(source)
-    lock = P.ReadOnlyLock(source)
-    lock.guard(pre)
+    lock = P.ReadOnlyLock(source, guard_entries=pre)
     try:
         lock_digests = P.digests(source, lock, pre)
         bytes_before = lock.read_bytes()
@@ -121,8 +120,7 @@ def p3c_attempt(source: Path) -> dict:
     watch = P.DirectoryWatch(source)
     watch.start()
     pre = P.snapshot(source)
-    lock = P.ReadOnlyLock(source)
-    lock.guard(pre)
+    lock = P.ReadOnlyLock(source, guard_entries=pre)
     try:
         lock_digests = P.digests(source, lock, pre)
         final = P.snapshot(source)
@@ -157,8 +155,7 @@ def f20_verdict(record: dict) -> bool:
 
 
 def _child(args) -> int:
-    request = json.loads(Path(args.request).read_text(encoding='utf-8'))
-    run_root = Path(request['run_root'])
+    request, run_root, result = F.load_request(args.request, args.result)
     source = F.guard(request['source'], run_root)
     kind = request['kind']
     if kind == 'p3a':
@@ -174,7 +171,7 @@ def _child(args) -> int:
                                      {request['barrier']: f20_hook(run_root)})
     else:
         raise F.ProbeRefusal('unknown-request')
-    Path(args.result).write_text(json.dumps(record, indent=1), encoding='utf-8')
+    F.write_result(result, record)
     return 0
 
 

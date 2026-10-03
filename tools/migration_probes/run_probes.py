@@ -38,7 +38,7 @@ def environment(run_root: Path) -> dict:
 def summarize_p1(result: dict) -> dict:
     keep = ('case', 'strategy', 'mode', 'outcome', 'passed', 'inconclusive', 'preserved', 'reached', 'error',
             'opened', 'model_matches', 'reasons', 'snapshot_changes', 'digest_changes', 'backup_statuses',
-            'overflows', 'watch_errors', 'harness_error')
+            'overflows', 'watch_errors', 'harness_error', 'staged')
     attempts = []
     for record in result['attempts']:
         item = {key: record[key] for key in keep if key in record}
@@ -78,27 +78,40 @@ def main(argv=None) -> int:
         began = time.monotonic()
         raw['probes'][name] = run_probe(name, run_root)
         print('%s finished in %.0f s' % (name, time.monotonic() - began), flush=True)
-        (run_root / 'raw.json').write_text(json.dumps(raw, indent=1), encoding='utf-8')
+        (run_root / 'raw.json').write_text(json.dumps(raw, indent=1), encoding='utf-8', newline='\n')
     public = dict(raw)
     public['probes'] = {name: summarize_p1(result) if name == 'p1' else result for name, result in raw['probes'].items()}
     command = 'tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py ' + ' '.join(args.probes)
     public['commands'] = {name: command for name in args.probes}
     public = sanitize.sanitize(public, {'<run>': run_root, '<repo>': F.ROOT})
     text = json.dumps(public, indent=1, sort_keys=True)
-    (run_root / 'public.json').write_text(text, encoding='utf-8')
-    found = sanitize.leaks(text)
+    (run_root / 'public.json').write_text(text, encoding='utf-8', newline='\n')
+    found = sorted(set(sanitize.leaks(text)) | set(sanitize.leaks_in(public)))
     if found:
         print('sanitized result still contains: ' + ', '.join(found) + '; not written to --out', file=sys.stderr)
         return 2
     if args.out:
-        out = F.ROOT / args.out if not args.out.is_absolute() else args.out
-        merged = json.loads(out.read_text(encoding='utf-8')) if out.exists() else dict(runs={}, probes={}, commands={})
-        merged['runs'][run_id] = public['environment']
-        for name in args.probes:
-            merged['probes'][name] = dict(run=run_id, result=public['probes'][name])
-            merged['commands'][name] = public['commands'][name]
-        out.write_text(json.dumps(merged, indent=1, sort_keys=True) + '\n', encoding='utf-8')
+        found = merge_out(F.ROOT / args.out if not args.out.is_absolute() else args.out, public)
+        if found:
+            print('merged result contains: ' + ', '.join(found) + '; --out not written', file=sys.stderr)
+            return 2
     return 0
+
+
+def merge_out(out: Path, public: dict) -> list:
+    """Merge one sanitized run into `out`, per probe. The leak check covers the whole merged document,
+    not only this run, both as text and as decoded keys and strings (review finding MPB-03); while it
+    finds anything, `out` is left unchanged."""
+    merged = json.loads(out.read_text(encoding='utf-8')) if out.exists() else dict(runs={}, probes={}, commands={})
+    merged['runs'][public['run']] = public['environment']
+    for name, result in public['probes'].items():
+        merged['probes'][name] = dict(run=public['run'], result=result)
+        merged['commands'][name] = public['commands'][name]
+    final = json.dumps(merged, indent=1, sort_keys=True) + '\n'
+    found = sorted(set(sanitize.leaks(final)) | set(sanitize.leaks_in(merged)))
+    if not found:
+        out.write_text(final, encoding='utf-8', newline='\n')
+    return found
 
 
 if __name__ == '__main__':

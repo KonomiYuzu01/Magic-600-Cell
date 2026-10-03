@@ -78,8 +78,7 @@ def run_import(source: Path, dest: Path, temp: Path, copier, hooks: dict | None 
     context['watch'] = watch
     pre = P.snapshot(source)
     try:
-        lock = P.ReadOnlyLock(source)
-        lock.guard(pre)
+        lock = P.ReadOnlyLock(source, guard_entries=pre)
     except P.LockRefused as refused:
         watch.stop_and_drain()
         return dict(stage='lock', refused=refused.reason, accepted=False, published=False,
@@ -171,14 +170,13 @@ def verdict(name: str, record: dict) -> bool:
 
 
 def _child(args) -> int:
-    request = json.loads(Path(args.request).read_text(encoding='utf-8'))
-    run_root = Path(request['run_root'])
+    request, run_root, result = F.load_request(args.request, args.result)
     source = F.guard(request['source'], run_root)
     dest = F.guard(request['dest'], run_root)
     temp = F.guard(request['temp'], run_root)
     state, copier, barrier, hook = CASES[request['case']]
     record = run_import(source, dest, temp, COPIERS[copier](), {barrier: hook} if barrier else None)
-    Path(args.result).write_text(json.dumps(record, indent=1), encoding='utf-8')
+    F.write_result(result, record)
     return 0
 
 

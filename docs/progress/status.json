@@ -1,8 +1,9 @@
 {
   "schema": 2,
-  "updated": "2026-10-02",
+  "updated": "2026-10-03",
   "current": "2.0",
   "paid_api_ceiling_usd": 100,
+  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}],
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "done", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null,
      "items": [
@@ -61,6 +62,16 @@
       {"id": "architecture-freeze", "title": "1.0 architecture frozen (architecture-freeze ruling)", "weight": 1, "done": false, "evidence": null},
       {"id": "migration-format-freeze", "title": "Migration format frozen (migration-format-freeze ruling)", "weight": 1, "done": false, "evidence": null},
       {"id": "design-system-adr", "title": "Design-system ADR accepted", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "migration-probes", "track": "migration", "title": "Migration probes P1 to P3 on Windows", "status": "in_progress", "acceptance": "P1 to P3 run on Windows on synthetic sessions with sanitised results; the importer starts only after a P1 strategy passes or the owner settles the conflict", "acceptance_source": "docs/progress/1.0/migration-exporter-proposal.md", "blocker": null,
+     "items": [
+      {"id": "p3", "title": "P3 lock compatibility and F20 run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
+      {"id": "pipeline", "title": "Pipeline fixtures F15, F18, F21 run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
+      {"id": "p1", "title": "P1 source preservation matrix and controls run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
+      {"id": "p2", "title": "P2 publication test double and Windows interruptions run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
+      {"id": "results", "title": "Results document written", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.md"},
+      {"id": "invariant-decision", "title": "Owner decides the P1 invariant conflict", "weight": 1, "done": true, "evidence": "docs/wiki/decisions/owner-decisions-2026-10-03-migration.md"},
+      {"id": "p1-c3", "title": "P1 re-run with the owner's locked byte copy (C3) passes", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"}
      ]}
   ]
 }

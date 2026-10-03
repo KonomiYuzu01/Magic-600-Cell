@@ -78,8 +78,13 @@ def _sha256(path: Path) -> str:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def _child(case: str, directories: list) -> None:
-    """Runs in the engine environment. Clean sessions close; crash sessions stay open until the parent kills us."""
+def _child(case: str, run_root, directories: list) -> None:
+    """Runs in the engine environment. Clean sessions close; crash sessions stay open until the parent kills us.
+    Every directory is checked again here, before any 0.4 Session is constructed: inside the marked
+    run root and not yet existing (review finding MPR-A02)."""
+    directories = [guard(directory, run_root) for directory in directories]
+    if any(directory.exists() for directory in directories):
+        raise ProbeRefusal('fixture-exists')
     sys.path.insert(0, str(ROOT))
     from core import Model
     from session import Session
@@ -245,7 +250,7 @@ def build_sessions(case: str, directories: list, run_root, timeout: float = 300,
         if directory.exists():
             raise ProbeRefusal('fixture-exists')
     child_case = 'clean' if case == 'clean' else 'crash'
-    worker = Worker([Path(__file__).resolve(), 'child', child_case, *directories],
+    worker = Worker([Path(__file__).resolve(), 'child', child_case, run_root, *directories],
                     worker_log(run_root, 'fixture'), via_launcher=via_launcher)
     binding = {}
     try:
@@ -277,6 +282,25 @@ def build_sessions(case: str, directories: list, run_root, timeout: float = 300,
     return infos
 
 
+def load_request(request_path, result_path) -> tuple:
+    """Child side of run_request: the request and the result file must lie in the marked run root the
+    request names, and the result must not exist yet (review finding MPR-A02). Returns
+    (request, run_root, result path); the child still guards every path the request names."""
+    request_path = guard_path(Path(request_path))
+    request = json.loads(request_path.read_text(encoding='utf-8'))
+    run_root = guard_path(Path(request['run_root']))
+    guard(request_path, run_root)
+    result_path = guard(result_path, run_root)
+    if result_path.exists():
+        raise ProbeRefusal('result-exists')
+    return request, run_root, result_path
+
+
+def write_result(result_path: Path, record: dict) -> None:
+    with open(result_path, 'x', encoding='utf-8') as stream:
+        stream.write(json.dumps(record, indent=1))
+
+
 def run_request(script: Path, request: dict, work: Path, timeout: float = 300) -> dict:
     """Run one probe request in a fresh child of the engine environment (`<script> child <request> <result>`)."""
     request_path = Path(work) / 'request.json'
@@ -301,10 +325,11 @@ def main(argv=None) -> int:
     sub = parser.add_subparsers(dest='command', required=True)
     child = sub.add_parser('child')
     child.add_argument('case', choices=('clean', 'crash'))
+    child.add_argument('run_root')
     child.add_argument('directories', nargs='+')
     args = parser.parse_args(argv)
     if args.command == 'child':
-        _child(args.case, args.directories)
+        _child(args.case, args.run_root, args.directories)
     return 0
 
 

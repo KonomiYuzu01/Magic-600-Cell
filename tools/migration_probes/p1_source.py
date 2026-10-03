@@ -83,8 +83,7 @@ def attempt(source: Path, copy_dir: Path, strategy: str, outcome: str, expected:
     watch.start()
     pre = P.snapshot(source)
     try:
-        lock = P.ReadOnlyLock(source)
-        lock.guard(pre)  # MPR-04: prevention in the importer's own path, in both modes
+        lock = P.ReadOnlyLock(source, guard_entries=pre)  # MPR-04: prevention in the importer's own path
     except P.LockRefused as refused:
         watch.stop_and_drain()
         record.update(error='refused: ' + refused.reason, accepted=False, preserved=False, reached=False,
@@ -95,7 +94,12 @@ def attempt(source: Path, copy_dir: Path, strategy: str, outcome: str, expected:
     copy_dir.mkdir(parents=True)
     connection, error, stalled = None, None, False
     try:
-        connection = P.open_source_for_backup(database, strategy)
+        connection = P.open_source_for_backup(database, strategy, staging=copy_dir / 'staged')
+        copied = getattr(connection, 'copied', None)
+        if copied is not None:
+            record['staged'] = dict(files=sorted(copied),
+                                    matches_lock_digests=all(lock_digests.get(name) == digest
+                                                             for name, digest in copied.items()))
         record['model_matches'] = connection.model() == expected['model']
         hook = None
         if external:
@@ -129,10 +133,12 @@ def attempt(source: Path, copy_dir: Path, strategy: str, outcome: str, expected:
     if outcome == 'success' and error is None:
         record['copy'] = verify_copy(copy, expected)
     record['preserved'] = decision.accepted
+    # C3: the staged bytes must equal the bytes under the lock, whatever the outcome (MPR-A04).
+    staged_ok = record.get('staged', {}).get('matches_lock_digests', True)
     if outcome == 'success':
-        record['reached'] = error is None and record.get('copy', {}).get('ok', False)
+        record['reached'] = error is None and record.get('copy', {}).get('ok', False) and staged_ok
     else:
-        record['reached'] = error == 'injected'
+        record['reached'] = error == 'injected' and staged_ok
     record['passed'] = record['preserved'] and record['reached']
     # MPR-07: a resource bound with no observed change says nothing about preservation.
     record['inconclusive'] = stalled and decision.accepted
@@ -203,9 +209,7 @@ def mapped_write_control(source: Path, guard: bool = False, offset: int = 4096) 
     watch = P.DirectoryWatch(source)
     watch.start()
     pre = P.snapshot(source)
-    lock = P.ReadOnlyLock(source)
-    if guard:
-        lock.guard(pre)
+    lock = P.ReadOnlyLock(source, guard_entries=pre if guard else None)
     lock_digests = P.digests(source, lock, pre)
     record = dict(guarded=guard)
     try:
@@ -241,8 +245,7 @@ def mapped_write_prevention(source: Path) -> dict:
 
 
 def _child(args) -> int:
-    request = json.loads(Path(args.request).read_text(encoding='utf-8'))
-    run_root = Path(request['run_root'])
+    request, run_root, result = F.load_request(args.request, args.result)
     source = F.guard(request['source'], run_root)
     if request['kind'] == 'attempt':
         copy_dir = F.guard(request['copy_dir'], run_root)
@@ -260,7 +263,7 @@ def _child(args) -> int:
         record = overflow_control(source)
     else:
         raise F.ProbeRefusal('unknown-request')
-    Path(args.result).write_text(json.dumps(record, indent=1), encoding='utf-8')
+    F.write_result(result, record)
     return 0
 
 
@@ -306,7 +309,7 @@ def strategy_verdict(mine: list) -> dict:
 
 
 def run(run_root: Path, strategies=None) -> dict:
-    """The whole P1 matrix plus both controls. Returns the raw (unsanitized) result."""
+    """The whole P1 matrix plus every control. Returns the raw (unsanitized) result."""
     import winapi as W
     strategies = list(strategies or P.STRATEGIES)
     sid = W.current_user_sid()
@@ -357,7 +360,6 @@ def run_controls(run_root: Path, base: Path, sid: str) -> dict:
                             'forwarding')}
     F.build_sessions('clean', [sources['negative'], sources['overflow']], run_root)
     F.build_sessions('crash', [sources['mapped'], sources['mapped-guarded'], sources['mapped-deny']], run_root)
-    external_info, = F.build_sessions('crash', [sources['external']], run_root)
     for name, kind in (('negative', 'negative-control'), ('overflow', 'overflow-control'),
                        ('mapped', 'mapped-write-control'), ('mapped-guarded', 'mapped-write-guarded')):
         work = F.guard(base / 'work' / ('control-' + name), run_root)
@@ -380,18 +382,7 @@ def run_controls(run_root: Path, base: Path, sid: str) -> dict:
     record.update(deny=deny, passed=bool(record.get('prevented')) and deny['removed'])
     controls['mapped-write-prevention'] = record
 
-    # MPR-06: an external 0.4 lock attempt inside the copy window; C1b on a crash source is the
-    # combination the spike found preserving, so the external append is the only change expected.
-    work = F.guard(base / 'work' / 'control-external', run_root)
-    work.mkdir(parents=True)
-    record = run_child(dict(kind='attempt', run_root=str(run_root), source=str(sources['external']),
-                            copy_dir=str(base / 'importer-temp' / 'control-external'), strategy='C1b',
-                            outcome='success', external=True,
-                            expected=dict(head=external_info['head'], state_hash=external_info['state_hash'],
-                                          model=external_info['model'])), work)
-    record['passed'] = (record.get('injected', {}).get('exit') == 3 and record.get('accepted') is False
-                        and 'event' in record.get('reasons', []) and 'engine.lock' in record.get('digest_changes', []))
-    controls['external-append-control'] = record
+    controls['external-append-control'] = external_control(run_root, base, sources['external'], 'C3')
 
     # MPR-05: build a crash fixture through the venv launcher and require the bound worker to be terminated.
     info, = F.build_sessions('crash', [sources['forwarding']], run_root, via_launcher=True)
@@ -401,6 +392,23 @@ def run_controls(run_root: Path, base: Path, sid: str) -> dict:
                                           passed=worker.get('worker_terminated') is True
                                           and (worker['forwarding'] or not launcher))
     return controls
+
+
+def external_control(run_root: Path, base: Path, source: Path, strategy: str) -> dict:
+    """MPR-06: an external 0.4 lock attempt inside the copy window, on a crash source with a strategy
+    that otherwise preserves it, so the external append is the only change expected. The run uses C3,
+    the owner's choice of 2026-10-03; the first run used C1b."""
+    info, = F.build_sessions('crash', [source], run_root)
+    work = F.guard(base / 'work' / 'control-external', run_root)
+    work.mkdir(parents=True)
+    record = run_child(dict(kind='attempt', run_root=str(run_root), source=str(source),
+                            copy_dir=str(base / 'importer-temp' / 'control-external'), strategy=strategy,
+                            outcome='success', external=True,
+                            expected=dict(head=info['head'], state_hash=info['state_hash'], model=info['model'])),
+                       work)
+    record['passed'] = (record.get('injected', {}).get('exit') == 3 and record.get('accepted') is False
+                        and 'event' in record.get('reasons', []) and 'engine.lock' in record.get('digest_changes', []))
+    return record
 
 
 def main(argv=None) -> int:
