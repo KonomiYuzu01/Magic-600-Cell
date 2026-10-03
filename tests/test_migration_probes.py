@@ -15,6 +15,7 @@ import fixtures as F  # noqa: E402
 import p1_source as S  # noqa: E402
 import pipeline  # noqa: E402
 import platform_ops as P  # noqa: E402
+import sanitize  # noqa: E402
 
 META = dict(size=10, links=1, directory=False, attributes=32, created=1, written=2, changed=3, id='a')
 SNAPSHOT = {'.': dict(META, directory=True, attributes=16), 'engine.lock': dict(META, size=1),
@@ -197,6 +198,26 @@ class GuardTests(unittest.TestCase):
             F.guard(self.base / 'unmarked' / 'x', self.base / 'unmarked')
         with self.assertRaises(F.FixtureRefusal):
             F.create_run_root(Path(ROOT.anchor) / 'migration-probe-outside')
+
+
+class SanitizeTests(unittest.TestCase):
+    def test_paths_and_identifiers_are_replaced(self):
+        run_root = Path(tempfile.gettempdir()).resolve() / 'probe-run'
+        home = str(Path.home())
+        value = {'source': str(run_root / 'p1' / 'x'), 'uri': (run_root / 'db').as_uri() + '?mode=ro',
+                 'error': 'OperationalError: unable to open %s/other' % home,
+                 'account': 'S-1-5-21-1111111111-2222222222-3333333333-1001', 'n': 3}
+        clean = sanitize.sanitize(value, {'<run>': run_root})
+        self.assertEqual(clean['source'], '<run>' + os.sep + 'p1' + os.sep + 'x')
+        self.assertTrue(clean['uri'].startswith('<run>'))
+        self.assertEqual(clean['account'], '<sid>')
+        self.assertEqual(clean['n'], 3)
+        self.assertEqual(sanitize.leaks(repr(clean).replace('\\', '/')), [])
+
+    def test_leaks_are_found(self):
+        self.assertIn('absolute-path', sanitize.leaks('C:/x/y'))
+        self.assertIn('sid', sanitize.leaks('S-1-5-21-1-2-3-4'))
+        self.assertEqual(sanitize.leaks('<run>/p1 session.sqlite3-shm:added'), [])
 
 
 @unittest.skipUnless(os.name == 'nt', 'Windows watch classification')
