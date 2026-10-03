@@ -16,7 +16,7 @@ Then the integrator reviews `changes.patch`, applies it, checks every `delete` a
 - Base commit: the committed HEAD this worktree was created from. Source only; no Windows or native behaviour is claimed beyond the inventories and the source.
 
 ## 4. Necessary source and evidence
-- Units of shard s6: `docs/progress/1.0/dispositions/units.json` (fields `rows`, `names`, `entry_points`, `depends_on_units`, `used_by_units`, `open_candidates`, `screening`). Row details (behaviour, evidence, reads, writes, engine call): `docs/progress/1.0/inventory/bottom-up-s6.json` and `claude-source-s6.json`; rows are named `codex:<id>` and `claude:<id>`.
+- Units of shard s6: `docs/progress/1.0/dispositions/units.json` (fields `rows`, `names`, `entry_points`, `depends_on_units`, `used_by_units`, `unresolved_depends_on`, `open_candidates`, `screening`, `screening_rows`). Row details (behaviour, evidence, reads, writes, engine call): `docs/progress/1.0/inventory/bottom-up-s6.json` and `claude-source-s6.json`; rows are named `codex:<id>` and `claude:<id>`.
 - Units of other shards may be read to fill `same_purpose_as`; follow `depends_on_units` and `used_by_units` first.
 - Flows: `docs/progress/1.0/dispositions/flows.json` (provisional).
 - Binding inputs: `docs/progress/1.0/dispositions/README.md`, `docs/progress/1.0/solving-workflow.md` (sections 2 to 7, especially section 7, the human-solve boundary), `docs/progress/1.0/charter-2.0-draft.md` (sections 2, 4, 5), `docs/wiki/decisions/owner-decisions-2026-10-02-design.md`, `docs/wiki/decisions/owner-decisions-2026-10-02-scope.md`, `docs/wiki/decisions/owner-decisions-2026-10-02-migration.md`, `docs/progress/1.0/command-table.md`, and the screening findings `docs/progress/0.4.1/screening-findings.md` with their attachments `docs/progress/1.0/inventory/merged.md`.
@@ -36,7 +36,8 @@ Then the integrator reviews `changes.patch`, applies it, checks every `delete` a
   - `reason`: one or two sentences citing the flow, rule, charter section or owner decision it rests on;
   - `flows`: flow ids from `flows.json`; at least one for `keep` and `redesign`;
   - `same_purpose_as`: unit ids in other layers or shards with the same purpose (may be empty);
-  - `requirements`: strings; for `keep` and `redesign`, one `<finding id>: <requirement>` entry for every open or needs-verification screening finding in the unit's `screening`, plus any other requirement the reason implies (may be empty otherwise).
+  - `requirements`: strings; for `keep`, `redesign` and `automate`, one `<finding id>: <requirement>` entry for every open or needs-verification screening finding in the unit's `screening`, plus any other requirement the reason implies (may be empty otherwise).
+- When a unit's rows serve different purposes (a coarse row matched to several fine rows), write one row with `"disposition": "split"` and the fields `unit`, `disposition`, `purpose`, `reason`, `same_purpose_as`, `parts` (plus optional `notes`). Each of at least two parts has exactly `rows` (a non-empty subset of the unit's inventory rows), `disposition`, `purpose`, `reason`, `flows` and `requirements`, with the rules above; every inventory row of the unit is in at least one part, and a part's screening findings are those attached to its rows (`screening_rows`). Do not split a unit whose rows share one purpose.
 - Check your file with `python docs/progress/1.0/dispositions/check_dispositions.py docs/progress/1.0/dispositions/dispositions-s6.json` before you finish.
 
 ```implement-contract

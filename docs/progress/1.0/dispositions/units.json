@@ -28,7 +28,24 @@
    "screening": [
     "X-01 (open)"
    ],
+   "screening_rows": {
+    "X-01": [
+     "claude:S1-1",
+     "codex:S1-1",
+     "claude:S1-2"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "Model.__init__ (core.py)",
+    "Session.__init__ (session.py)",
+    "core.Model.__init__",
+    "enhanced.Workflow.__init__",
+    "session.Session.__init__",
+    "session.Session._recover",
+    "session_lock.SessionLock",
+    "session_lock.py:4"
+   ],
    "used_by_units": []
   },
   {
@@ -48,7 +65,9 @@
     "codex:S1-2"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -73,7 +92,20 @@
    "screening": [
     "B-001 (fixed)"
    ],
+   "screening_rows": {
+    "B-001": [
+     "claude:S1-3",
+     "codex:S1-3",
+     "claude:S1-6"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "engine_process.py:stop_owned_process",
+    "enhanced.Workflow.timer",
+    "session.Session.close",
+    "session_lock.SessionLock.close"
+   ],
    "used_by_units": [
     "U2-026",
     "U3-150",
@@ -96,7 +128,15 @@
    "screening": [
     "B-001 (fixed)"
    ],
+   "screening_rows": {
+    "B-001": [
+     "claude:S1-4"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "engine_process.py:EngineProcess.start (set by the launcher/EngineProcess)"
+   ],
    "used_by_units": []
   },
   {
@@ -115,7 +155,9 @@
     "claude:S1-9"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U5-001"
    ]
@@ -138,7 +180,9 @@
     "codex:S1-7"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U2-020",
     "U5-077"
@@ -165,7 +209,9 @@
     "claude:S1-10"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U5-001",
     "U5-067"
@@ -194,7 +240,9 @@
     "claude:S1-11"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U5-001"
    ]
@@ -217,13 +265,18 @@
     "codex:S1-9"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.check_cancel"
+   ],
    "used_by_units": [
     "U1-069",
     "U3-068",
     "U3-150",
     "U4-040",
-    "U5-047"
+    "U5-047",
+    "U6-025"
    ]
   },
   {
@@ -241,7 +294,9 @@
     "codex:S1-8"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U1-069",
     "U2-020",
@@ -267,7 +322,22 @@
     "B-005 (needs verification)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "codex:S1-10",
+     "claude:S1-13"
+    ],
+    "X-02": [
+     "codex:S1-10",
+     "claude:S1-13"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState.progress",
+    "session.Session.focus_info",
+    "session.Session.inspection_info"
+   ],
    "used_by_units": [
     "U1-015",
     "U1-017",
@@ -303,12 +373,18 @@
     "claude:S1-12"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.structure"
+   ],
    "used_by_units": [
     "U4-002",
+    "U4-047",
     "U5-001",
     "U5-004",
-    "U5-039"
+    "U5-039",
+    "U6-001"
    ]
   },
   {
@@ -329,7 +405,14 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "codex:S1-12",
+     "claude:S1-16"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -350,7 +433,14 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "codex:S1-13",
+     "claude:S1-14"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-049"
    ]
@@ -377,7 +467,17 @@
    "screening": [
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "B-004": [
+     "codex:S1-14",
+     "claude:S1-39"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.net",
+    "core.PuzzleState"
+   ],
    "used_by_units": [
     "U1-018",
     "U4-049"
@@ -403,7 +503,14 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-15",
+     "codex:S1-21"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-050"
    ]
@@ -429,7 +536,21 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S1-15",
+     "claude:S1-58"
+    ],
+    "X-02": [
+     "codex:S1-15",
+     "claude:S1-58"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.net",
+    "core.invrecipe"
+   ],
    "used_by_units": [
     "U4-027"
    ]
@@ -456,7 +577,20 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S1-16",
+     "claude:S1-59"
+    ],
+    "X-02": [
+     "codex:S1-16",
+     "claude:S1-59"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.net"
+   ],
    "used_by_units": [
     "U4-028"
    ]
@@ -479,7 +613,16 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-17",
+     "codex:S1-39"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "grips.grips"
+   ],
    "used_by_units": [
     "U4-002",
     "U4-012",
@@ -505,7 +648,9 @@
     "claude:S1-60"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-015"
    ]
@@ -528,7 +673,16 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-18",
+     "codex:S1-40"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.cap_mask"
+   ],
    "used_by_units": []
   },
   {
@@ -549,7 +703,11 @@
     "claude:S1-61"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState"
+   ],
    "used_by_units": [
     "U4-048"
    ]
@@ -574,9 +732,17 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-19",
+     "codex:S1-44"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
-    "U4-002"
+    "U4-002",
+    "U6-001"
    ]
   },
   {
@@ -597,7 +763,12 @@
     "claude:S1-33"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState",
+    "log_io.validate_camera"
+   ],
    "used_by_units": [
     "U4-035"
    ]
@@ -627,7 +798,21 @@
     "B-005 (needs verification)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-20",
+     "codex:S1-47"
+    ],
+    "X-02": [
+     "claude:S1-20",
+     "codex:S1-47"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "session.Session.cell_status",
+    "session.Session.interactive_styles"
+   ],
    "used_by_units": [
     "U1-066",
     "U4-002"
@@ -648,7 +833,9 @@
     "claude:S1-62"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U1-034",
     "U4-017"
@@ -678,7 +865,15 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-21",
+     "codex:S1-45",
+     "codex:S1-46"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -699,7 +894,14 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-22",
+     "codex:S1-41"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U2-020",
     "U2-026"
@@ -725,7 +927,9 @@
     "claude:S1-43"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U1-016",
     "U1-036",
@@ -750,7 +954,17 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-23",
+     "codex:S1-42"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Filters.styles",
+    "session.Session.render_styles"
+   ],
    "used_by_units": [
     "U1-025",
     "U1-027"
@@ -772,7 +986,9 @@
     "claude:S1-40"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -795,7 +1011,16 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-24",
+     "codex:S1-53"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.expand"
+   ],
    "used_by_units": [
     "U4-020"
    ]
@@ -816,7 +1041,9 @@
     "claude:S1-41"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -840,7 +1067,20 @@
     "A-02 (fixed)",
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S1-25",
+     "codex:S1-63"
+    ],
+    "B-005": [
+     "claude:S1-25",
+     "codex:S1-63"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "log_io.encode_export"
+   ],
    "used_by_units": [
     "U4-018"
    ]
@@ -863,7 +1103,13 @@
     "claude:S1-28"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Filters.styles",
+    "core.Model.normalize",
+    "session.Session.validate_inspection"
+   ],
    "used_by_units": [
     "U1-037",
     "U1-039",
@@ -906,7 +1152,21 @@
     "A-02 (fixed)",
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S1-26",
+     "codex:S1-65"
+    ],
+    "B-005": [
+     "claude:S1-26",
+     "codex:S1-65"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "log_io.encode_log",
+    "session.Session.export"
+   ],
    "used_by_units": [
     "U1-048"
    ]
@@ -930,7 +1190,9 @@
     "claude:S1-29"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-016",
     "U4-070"
@@ -958,7 +1220,18 @@
    "screening": [
     "B-005 (needs verification)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "claude:S1-27",
+     "codex:S1-66"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.expand",
+    "mpult_log.export_native",
+    "session.Session.export"
+   ],
    "used_by_units": [
     "U1-050"
    ]
@@ -981,7 +1254,11 @@
     "claude:S1-68"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState.piece"
+   ],
    "used_by_units": [
     "U4-054",
     "U4-056",
@@ -1007,7 +1284,12 @@
     "claude:S1-49"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState.piece",
+    "session.Session.interactive_styles"
+   ],
    "used_by_units": []
   },
   {
@@ -1030,7 +1312,12 @@
     "claude:S1-50"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState.piece",
+    "session.Session.interactive_styles"
+   ],
    "used_by_units": []
   },
   {
@@ -1049,7 +1336,13 @@
     "codex:S1-37"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Filters.parse",
+    "core.Filters.styles",
+    "session.Session.filter_context"
+   ],
    "used_by_units": [
     "U1-044",
     "U4-024",
@@ -1078,7 +1371,12 @@
     "claude:S1-51"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState.piece",
+    "session.Session.interactive_styles"
+   ],
    "used_by_units": []
   },
   {
@@ -1101,7 +1399,9 @@
     "codex:S1-38"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-078"
    ]
@@ -1125,7 +1425,9 @@
     "claude:S1-32"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-060"
    ]
@@ -1146,7 +1448,9 @@
     "claude:S1-64"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -1165,7 +1469,11 @@
     "claude:S1-65"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState.piece"
+   ],
    "used_by_units": [
     "U4-055"
    ]
@@ -1191,7 +1499,14 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S1-34",
+     "codex:S1-67"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -1210,7 +1525,11 @@
     "claude:S1-66"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState.piece"
+   ],
    "used_by_units": [
     "U4-057"
    ]
@@ -1235,7 +1554,9 @@
     "codex:S1-68"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -1256,7 +1577,11 @@
     "claude:S1-67"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState.piece"
+   ],
    "used_by_units": [
     "U4-056"
    ]
@@ -1285,7 +1610,20 @@
     "A-02 (fixed)",
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S1-36",
+     "codex:S1-69"
+    ],
+    "B-004": [
+     "claude:S1-36",
+     "codex:S1-69"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "log_io.decode_log"
+   ],
    "used_by_units": []
   },
   {
@@ -1304,7 +1642,13 @@
     "claude:S1-63"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.path",
+    "core.Planner.buffer_info",
+    "core.PuzzleState.piece"
+   ],
    "used_by_units": [
     "U1-043",
     "U4-045"
@@ -1334,7 +1678,18 @@
    "screening": [
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "B-004": [
+     "claude:S1-37",
+     "codex:S1-70"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "log_io.validate_camera",
+    "mpult_log.import_native",
+    "session.Session._import_plan"
+   ],
    "used_by_units": []
   },
   {
@@ -1360,7 +1715,22 @@
     "A-02 (fixed)",
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S1-38",
+     "codex:S1-64"
+    ],
+    "B-004": [
+     "claude:S1-38",
+     "codex:S1-64"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "log_io.validate_camera",
+    "log_io.validate_record",
+    "session.Session._import_plan"
+   ],
    "used_by_units": [
     "U1-052"
    ]
@@ -1386,7 +1756,16 @@
    "screening": [
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "B-004": [
+     "codex:S1-43",
+     "claude:S1-48"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "native_bridge.verify_native"
+   ],
    "used_by_units": [
     "U1-023",
     "U1-025",
@@ -1401,7 +1780,8 @@
     "U2-026",
     "U3-150",
     "U4-001",
-    "U4-002"
+    "U4-002",
+    "U6-001"
    ]
   },
   {
@@ -1424,7 +1804,11 @@
     "codex:S1-59"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Filters.parse"
+   ],
    "used_by_units": [
     "U4-037"
    ]
@@ -1465,7 +1849,26 @@
     "A-03 (open)",
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "A-03": [
+     "claude:S1-45",
+     "codex:S1-54",
+     "codex:S1-56",
+     "codex:S1-57"
+    ],
+    "B-004": [
+     "claude:S1-45",
+     "codex:S1-54",
+     "codex:S1-55",
+     "codex:S1-56",
+     "codex:S1-57"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.normalize",
+    "core.invrecipe"
+   ],
    "used_by_units": []
   },
   {
@@ -1487,7 +1890,9 @@
     "codex:S1-58"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-043"
    ]
@@ -1520,7 +1925,15 @@
    "screening": [
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "B-004": [
+     "claude:S1-47",
+     "codex:S1-60",
+     "codex:S1-61"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -1547,7 +1960,18 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S1-48",
+     "claude:S1-52"
+    ],
+    "X-02": [
+     "codex:S1-48",
+     "claude:S1-52"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-061"
    ]
@@ -1573,7 +1997,21 @@
     "A-01 (open)",
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "A-01": [
+     "codex:S1-49",
+     "claude:S1-54"
+    ],
+    "B-004": [
+     "codex:S1-49",
+     "claude:S1-54"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.net",
+    "core.Model.support"
+   ],
    "used_by_units": [
     "U1-032",
     "U1-058",
@@ -1611,7 +2049,17 @@
    "screening": [
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "B-004": [
+     "codex:S1-50",
+     "claude:S1-55"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.Model.star_net",
+    "core.Planner.next"
+   ],
    "used_by_units": [
     "U4-038"
    ]
@@ -1639,7 +2087,24 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-01": [
+     "codex:S1-51",
+     "claude:S1-56"
+    ],
+    "A-04": [
+     "codex:S1-51",
+     "claude:S1-56"
+    ],
+    "X-02": [
+     "codex:S1-51",
+     "claude:S1-56"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [
+    "core.PuzzleState"
+   ],
    "used_by_units": [
     "U1-060",
     "U1-061",
@@ -1665,7 +2130,9 @@
     "claude:S1-57"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-040"
    ]
@@ -1690,7 +2157,13 @@
    "screening": [
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "X-02": [
+     "claude:S1-53"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -1716,7 +2189,14 @@
    "screening": [
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "B-004": [
+     "codex:S1-62",
+     "claude:S1-69"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -1736,7 +2216,9 @@
     "claude:S1-70"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -1770,7 +2252,13 @@
    "screening": [
     "B-004 (needs verification)"
    ],
+   "screening_rows": {
+    "B-004": [
+     "claude:S1-71"
+    ]
+   },
    "shard": "s1",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -1795,7 +2283,18 @@
    "screening": [
     "X-01 (open)"
    ],
+   "screening_rows": {
+    "X-01": [
+     "claude:S2-1",
+     "codex:S2-56"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "adapter.install",
+    "command server.py main",
+    "server.main"
+   ],
    "used_by_units": [
     "U2-003",
     "U2-006",
@@ -1816,7 +2315,15 @@
     "codex:S2-1"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "adapter.Workbench.bound_macro",
+    "adapter.Workbench.replace_phase",
+    "adapter.Workbench.review_context",
+    "adapter.Workbench.review_draft",
+    "current_recommendation.sort_recommendations"
+   ],
    "used_by_units": []
   },
   {
@@ -1847,7 +2354,22 @@
     "B-001 (fixed)",
     "X-01 (open)"
    ],
+   "screening_rows": {
+    "B-001": [
+     "claude:S2-2",
+     "codex:S2-57"
+    ],
+    "X-01": [
+     "claude:S2-2",
+     "codex:S2-57"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "EngineProcess in engine_process.py",
+    "engine_process.EngineProcess",
+    "webbrowser.open"
+   ],
    "used_by_units": []
   },
   {
@@ -1864,7 +2386,15 @@
     "codex:S2-2"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "macro_use._score",
+    "macro_use.checked",
+    "macro_use.infer_use",
+    "work_intents._frame_pair",
+    "work_intents.evaluate_goal"
+   ],
    "used_by_units": []
   },
   {
@@ -1884,7 +2414,24 @@
    "screening": [
     "D-03 (needs verification)"
    ],
+   "screening_rows": {
+    "D-03": [
+     "codex:S2-3"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "adapter.Workbench.bound_macro",
+    "adapter.Workbench.cached_residuals",
+    "adapter.Workbench.effect",
+    "adapter.Workbench.effect_decomposition",
+    "adapter.Workbench.guard",
+    "adapter.Workbench.piece",
+    "adapter.Workbench.residual_bundle",
+    "adapter.Workbench.review_context",
+    "filter_projection.PieceFilterProjection",
+    "transported_frames.TransportedFrames.frame"
+   ],
    "used_by_units": [
     "U2-028"
    ]
@@ -1915,7 +2462,33 @@
     "B-003 (open)",
     "X-01 (open)"
    ],
+   "screening_rows": {
+    "B-001": [
+     "claude:S2-4",
+     "codex:S2-58"
+    ],
+    "B-002": [
+     "claude:S2-4",
+     "codex:S2-58"
+    ],
+    "B-003": [
+     "claude:S2-4",
+     "codex:S2-58"
+    ],
+    "X-01": [
+     "claude:S2-4",
+     "codex:S2-58"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "EngineProcess in engine_process.py",
+    "engine_process.EngineProcess",
+    "native host executable",
+    "native_launch.build",
+    "native_launch.check_evidence",
+    "native_launch.prepare_runtime"
+   ],
    "used_by_units": [
     "U2-008"
    ]
@@ -1934,7 +2507,18 @@
     "codex:S2-4"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "adapter.Workbench.effect",
+    "adapter.Workbench.guard",
+    "adapter.Workbench.piece",
+    "adapter.Workbench.review_context",
+    "core.PuzzleState",
+    "filter_projection.PieceFilterProjection",
+    "position_requirements.holds",
+    "position_requirements.prepare"
+   ],
    "used_by_units": [
     "U2-028"
    ]
@@ -1962,7 +2546,24 @@
     "B-002 (fixed)",
     "B-003 (open)"
    ],
+   "screening_rows": {
+    "B-002": [
+     "claude:S2-5",
+     "codex:S2-59"
+    ],
+    "B-003": [
+     "claude:S2-5",
+     "codex:S2-59"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "build_identity.product_binding",
+    "native.bootstrap.compile_program",
+    "native.bootstrap.compile_recipe",
+    "native_launch.capture_identity",
+    "native_launch.check_evidence"
+   ],
    "used_by_units": []
   },
   {
@@ -1980,7 +2581,11 @@
     "codex:S2-5"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Filters.styles"
+   ],
    "used_by_units": [
     "U2-029"
    ]
@@ -2002,7 +2607,17 @@
     "codex:S2-60"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "build_identity.identity_payload",
+    "build_identity.product_binding",
+    "build_identity.py",
+    "native_launch.current_tools",
+    "native_launch.native_sources",
+    "native_launch.product_sources",
+    "native_launch.py identity helpers"
+   ],
    "used_by_units": []
   },
   {
@@ -2019,7 +2634,13 @@
     "codex:S2-6"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "transported_frames.TransportedFrames.ensure",
+    "transported_frames.TransportedFrames.finite_group",
+    "transported_frames.TransportedFrames.frame"
+   ],
    "used_by_units": [
     "U2-013",
     "U2-015",
@@ -2044,7 +2665,9 @@
     "claude:S2-7"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U2-014"
    ]
@@ -2065,7 +2688,13 @@
     "codex:S2-7"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.net",
+    "core.commp",
+    "core.invrecipe"
+   ],
    "used_by_units": []
   },
   {
@@ -2095,7 +2724,21 @@
    "screening": [
     "B-001 (fixed)"
    ],
+   "screening_rows": {
+    "B-001": [
+     "claude:S2-8",
+     "codex:S2-61"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "EngineProcess in engine_process.py",
+    "engine_process.EngineProcess",
+    "native.directx_runtime.find_directx",
+    "packaging.engine_entry",
+    "packaging.launcher.prepare_native",
+    "packaging.package_contract.verify_package"
+   ],
    "used_by_units": [
     "U2-012"
    ]
@@ -2116,7 +2759,13 @@
     "codex:S2-8"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.net",
+    "core.commp",
+    "core.invrecipe"
+   ],
    "used_by_units": []
   },
   {
@@ -2135,7 +2784,12 @@
     "codex:S2-62"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "engine_process.redact",
+    "packaging.package_contract.write_json"
+   ],
    "used_by_units": []
   },
   {
@@ -2154,7 +2808,13 @@
     "codex:S2-9"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.net",
+    "core.commp",
+    "core.invrecipe"
+   ],
    "used_by_units": []
   },
   {
@@ -2174,7 +2834,12 @@
     "codex:S2-63"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "packaging.package_contract.verify_package",
+    "packaging.package_contract.write_json"
+   ],
    "used_by_units": [
     "U2-026"
    ]
@@ -2195,7 +2860,13 @@
     "codex:S2-10"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.net",
+    "core.commp",
+    "core.invrecipe"
+   ],
    "used_by_units": []
   },
   {
@@ -2232,7 +2903,13 @@
     "codex:S2-65"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "engine_process.EngineProcess",
+    "route GET /api/job/{job}",
+    "server.main"
+   ],
    "used_by_units": [
     "U2-026"
    ]
@@ -2251,7 +2928,11 @@
     "codex:S2-11"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "grips.grips"
+   ],
    "used_by_units": [
     "U2-025",
     "U2-046",
@@ -2276,7 +2957,13 @@
     "codex:S2-66"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "native.directx_runtime.find_directx",
+    "packaging.launcher.prepare_native",
+    "packaging.package_contract.write_json"
+   ],
    "used_by_units": [
     "U2-026"
    ]
@@ -2295,7 +2982,11 @@
     "codex:S2-12"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "grips.grips"
+   ],
    "used_by_units": []
   },
   {
@@ -2327,7 +3018,25 @@
    "screening": [
     "X-01 (open)"
    ],
+   "screening_rows": {
+    "X-01": [
+     "claude:S2-13",
+     "codex:S2-67"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "PyInstaller.__main__.run",
+    "build_identity.inventory_problems",
+    "native build receipt from cli native_launch.py --build-only",
+    "native.bootstrap.compile_recipe",
+    "packaging.assemble.allowed_sources",
+    "packaging.assemble.checked_native",
+    "packaging.assemble.copy_licenses",
+    "packaging.assemble.validate_assembly_inputs",
+    "packaging.package_contract.inspect_payload",
+    "zipfile.ZipFile"
+   ],
    "used_by_units": []
   },
   {
@@ -2346,7 +3055,13 @@
     "codex:S2-13"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.word_net",
+    "core.invword",
+    "grips.grips"
+   ],
    "used_by_units": []
   },
   {
@@ -2399,7 +3114,15 @@
     "codex:S2-69"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "engine_process.EngineProcess",
+    "packaging.package_contract.inspect_payload",
+    "packaging.package_contract.verify_package",
+    "route GET /api/job/{job}",
+    "session_lock.SessionLock"
+   ],
    "used_by_units": []
   },
   {
@@ -2416,7 +3139,9 @@
     "codex:S2-14"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -2442,7 +3167,16 @@
     "codex:S2-70"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "Workbench in adapter.py",
+    "adapter.Workbench.command",
+    "adapter.Workbench.snapshot",
+    "core.Model",
+    "server.NativeSnapshotCache.read",
+    "session.Session"
+   ],
    "used_by_units": []
   },
   {
@@ -2463,7 +3197,16 @@
    "screening": [
     "D-02 (rejected)"
    ],
+   "screening_rows": {
+    "D-02": [
+     "codex:S2-15"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "adapter.Workbench.frame_choices",
+    "adapter.Workbench.position_locks"
+   ],
    "used_by_units": [
     "U2-028"
    ]
@@ -2482,7 +3225,11 @@
     "codex:S2-16"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "macro_library._metadata"
+   ],
    "used_by_units": []
   },
   {
@@ -2499,7 +3246,11 @@
     "codex:S2-17"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "macro_use.infer_use"
+   ],
    "used_by_units": []
   },
   {
@@ -2516,7 +3267,11 @@
     "codex:S2-18"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.normalize"
+   ],
    "used_by_units": []
   },
   {
@@ -2533,7 +3288,12 @@
     "codex:S2-19"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.normalize",
+    "grip_frames.frames"
+   ],
    "used_by_units": []
   },
   {
@@ -2550,7 +3310,11 @@
     "codex:S2-20"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "transported_frames.TransportedFrames.decompose"
+   ],
    "used_by_units": []
   },
   {
@@ -2567,7 +3331,12 @@
     "codex:S2-21"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.certify_seed",
+    "core.Model.star_net"
+   ],
    "used_by_units": []
   },
   {
@@ -2584,7 +3353,12 @@
     "codex:S2-22"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "macro_use._score",
+    "macro_use.checked"
+   ],
    "used_by_units": []
   },
   {
@@ -2601,7 +3375,11 @@
     "codex:S2-23"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "macro_use.checked"
+   ],
    "used_by_units": []
   },
   {
@@ -2618,7 +3396,9 @@
     "codex:S2-24"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -2635,7 +3415,9 @@
     "codex:S2-25"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -2652,7 +3434,9 @@
     "codex:S2-26"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -2669,7 +3453,9 @@
     "codex:S2-27"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -2686,7 +3472,9 @@
     "codex:S2-28"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U2-045"
    ]
@@ -2705,7 +3493,9 @@
     "codex:S2-29"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U2-044"
    ]
@@ -2726,7 +3516,9 @@
     "codex:S2-30"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U2-045"
    ]
@@ -2748,7 +3540,9 @@
     "codex:S2-31"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -2767,7 +3561,9 @@
     "codex:S2-32"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -2786,7 +3582,11 @@
     "codex:S2-33"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "reference_variants.ReferenceVariants._mapping"
+   ],
    "used_by_units": []
   },
   {
@@ -2805,7 +3605,14 @@
     "codex:S2-34"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.expand",
+    "core.Model.move",
+    "core.Model.net",
+    "core.invword"
+   ],
    "used_by_units": []
   },
   {
@@ -2822,7 +3629,14 @@
     "codex:S2-35"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "orbit_invariants.OrbitInvariants.evaluate",
+    "residuals.certify_completion",
+    "transported_frames.TransportedFrames.decompose",
+    "transported_frames.TransportedFrames.ensure"
+   ],
    "used_by_units": []
   },
   {
@@ -2839,7 +3653,9 @@
     "codex:S2-36"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U2-069"
    ]
@@ -2858,7 +3674,9 @@
     "codex:S2-37"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -2878,7 +3696,16 @@
    "screening": [
     "X-01 (open)"
    ],
+   "screening_rows": {
+    "X-01": [
+     "codex:S2-38"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "orbit_invariants.position_parity",
+    "transported_frames.TransportedFrames.ensure"
+   ],
    "used_by_units": []
   },
   {
@@ -2897,7 +3724,12 @@
     "codex:S2-39"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.certify_seed",
+    "core.Model.mapped"
+   ],
    "used_by_units": []
   },
   {
@@ -2914,7 +3746,13 @@
     "codex:S2-40"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "enhanced.Workflow.stats",
+    "enhanced.Workflow.timer",
+    "session.Session.event"
+   ],
    "used_by_units": [
     "U2-055",
     "U2-056",
@@ -2937,7 +3775,9 @@
     "codex:S2-41"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -2956,7 +3796,11 @@
     "codex:S2-42"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "enhanced.Workflow.timer"
+   ],
    "used_by_units": []
   },
   {
@@ -2975,7 +3819,15 @@
    "screening": [
     "C-04 (open)"
    ],
+   "screening_rows": {
+    "C-04": [
+     "codex:S2-43"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "enhanced.Workflow.scramble"
+   ],
    "used_by_units": []
   },
   {
@@ -2994,7 +3846,16 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "codex:S2-44"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "enhanced.Workflow.timer",
+    "session.Session.save_log"
+   ],
    "used_by_units": []
   },
   {
@@ -3013,7 +3874,16 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "codex:S2-45"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "enhanced.Workflow.timer",
+    "session.Session.export_log"
+   ],
    "used_by_units": []
   },
   {
@@ -3032,7 +3902,17 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "codex:S2-46"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "log_io.decode_log",
+    "log_io.validate_record",
+    "mpult_log.import_native"
+   ],
    "used_by_units": [
     "U2-061"
    ]
@@ -3055,7 +3935,15 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "codex:S2-47"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "session.Session.import_log"
+   ],
    "used_by_units": []
   },
   {
@@ -3072,7 +3960,13 @@
     "codex:S2-48"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "enhanced.Workflow.stats",
+    "session.Session.commit",
+    "transported_frames.TransportedFrames.ensure"
+   ],
    "used_by_units": []
   },
   {
@@ -3091,7 +3985,11 @@
     "codex:S2-49"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "session.Session._put"
+   ],
    "used_by_units": []
   },
   {
@@ -3108,7 +4006,9 @@
     "codex:S2-50"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -3125,7 +4025,9 @@
     "codex:S2-51"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -3142,7 +4044,12 @@
     "codex:S2-52"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "work_intents._frame_pair",
+    "work_intents.normalize_goal"
+   ],
    "used_by_units": [
     "U2-069"
    ]
@@ -3163,7 +4070,15 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S2-53"
+    ]
+   },
    "shard": "s2",
+   "unresolved_depends_on": [
+    "workflow_continuity.capture_orbit_context"
+   ],
    "used_by_units": [
     "U2-069"
    ]
@@ -3182,7 +4097,11 @@
     "codex:S2-54"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "core.Model.hosting"
+   ],
    "used_by_units": [
     "U2-069"
    ]
@@ -3206,11 +4125,18 @@
     "codex:S2-55"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s2",
+   "unresolved_depends_on": [
+    "session.Session.commit"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-002",
+    "U6-002"
+   ],
    "entry_points": [
     "command index",
     "key A: F1",
@@ -3253,7 +4179,11 @@
     "codex:S3-134"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(index)"
+   ],
    "used_by_units": []
   },
   {
@@ -3279,14 +4209,21 @@
     "claude:S3-286"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "launcher token (launch.py)",
+    "web/index.html"
+   ],
    "used_by_units": [
     "U5-001"
    ]
   },
   {
    "depends_on_units": [
-    "U3-041"
+    "U3-041",
+    "U5-003",
+    "U6-007"
    ],
    "entry_points": [
     "command bank",
@@ -3330,7 +4267,12 @@
     "codex:S3-27"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(bank)",
+    "Workbench.banks"
+   ],
    "used_by_units": []
   },
   {
@@ -3352,7 +4294,25 @@
     "B-005 (needs verification)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "codex:S3-2",
+     "claude:S3-287"
+    ],
+    "X-02": [
+     "codex:S3-2",
+     "claude:S3-287"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "PieceFilterProjection",
+    "PuzzleState.progress",
+    "Session.render_styles",
+    "Session.status",
+    "SessionWorkflow.report",
+    "Workbench.snapshot"
+   ],
    "used_by_units": [
     "U2-001",
     "U2-020",
@@ -3362,7 +4322,10 @@
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-010",
+    "U6-030"
+   ],
    "entry_points": [
     "command macro-search",
     "key A: F3",
@@ -3407,7 +4370,11 @@
     "codex:S3-69"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(macro-search)"
+   ],
    "used_by_units": []
   },
   {
@@ -3431,11 +4398,32 @@
     "B-005 (needs verification)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "B-005": [
+     "codex:S3-3",
+     "claude:S3-288"
+    ],
+    "X-02": [
+     "codex:S3-3",
+     "claude:S3-288"
+    ]
+   },
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "cell_state (local_geometry.py)",
+    "context['native_snapshots'].read",
+    "local_geometry.cell_state",
+    "native snapshot reader (context native_snapshots)",
+    "route POST /api/native/handshake (server.py)"
+   ],
+   "used_by_units": [
+    "U6-001"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-025"
+   ],
    "entry_points": [
     "command operation-focus",
     "key A: F4",
@@ -3478,7 +4466,11 @@
     "codex:S3-72"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(operation-focus)"
+   ],
    "used_by_units": []
   },
   {
@@ -3497,16 +4489,29 @@
     "claude:S3-289"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "MathematicalNames.cell",
+    "MathematicalNames.orbit",
+    "local_geometry.geometry",
+    "mathematical_names.py",
+    "model.structure (core.py)"
+   ],
    "used_by_units": [
     "U4-002",
+    "U4-047",
     "U5-001",
     "U5-004",
-    "U5-039"
+    "U5-039",
+    "U6-001"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-048",
+    "U6-022"
+   ],
    "entry_points": [
     "command filter",
     "key A: F5",
@@ -3561,10 +4566,16 @@
     "claude:S3-279"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.filter_preview / filter_apply (session.py)",
+    "core.Filters"
+   ],
    "used_by_units": [
     "U5-048",
-    "U5-050"
+    "U5-050",
+    "U6-022"
    ]
   },
   {
@@ -3583,11 +4594,19 @@
     "claude:S3-293"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U6-017",
+    "U6-042"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-062",
+    "U6-009"
+   ],
    "entry_points": [
     "command keyboard",
     "key A: F8",
@@ -3630,7 +4649,12 @@
     "codex:S3-142"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentInput",
+    "ExperimentShell.RunCommand(keyboard)"
+   ],
    "used_by_units": []
   },
   {
@@ -3653,18 +4677,29 @@
     "claude:S3-220"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "MathematicalNames.parse_identity",
+    "Session.interactive_styles",
+    "route POST /api/native/handshake (server.py)"
+   ],
    "used_by_units": [
     "U3-026",
     "U3-148",
     "U5-025",
     "U5-052",
-    "U5-067"
+    "U5-067",
+    "U6-008",
+    "U6-014",
+    "U6-015"
    ]
   },
   {
    "depends_on_units": [
-    "U3-041"
+    "U3-041",
+    "U5-005",
+    "U6-007"
    ],
    "entry_points": [
     "command bank-previous",
@@ -3708,7 +4743,9 @@
     "codex:S3-30"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -3731,17 +4768,30 @@
     "claude:S3-221"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "MathematicalNames.parse_address",
+    "Session.interactive_styles",
+    "route POST /api/native/handshake (server.py)"
+   ],
    "used_by_units": [
     "U3-036",
     "U3-037",
     "U3-038",
     "U3-148",
-    "U5-053"
+    "U5-053",
+    "U6-005",
+    "U6-008",
+    "U6-025",
+    "U6-026",
+    "U6-035"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-009"
+   ],
    "entry_points": [
     "command keyboard-extra",
     "key A: Backquote",
@@ -3784,11 +4834,18 @@
     "codex:S3-143"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(keyboard-extra)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-023",
+    "U6-005"
+   ],
    "entry_points": [
     "command focus",
     "key Cycles: KeyO",
@@ -3813,17 +4870,32 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S3-8",
+     "claude:S3-13",
+     "claude:S3-222"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "MathematicalNames.parse_address",
+    "MathematicalNames.parse_identity",
+    "workflow_continuity.switch_context",
+    "workflow_continuity.switch_context (workflow_continuity.py)"
+   ],
    "used_by_units": [
     "U3-018",
     "U3-020",
     "U5-023",
-    "U5-024"
+    "U5-024",
+    "U6-005"
    ]
   },
   {
    "depends_on_units": [
-    "U3-041"
+    "U3-041",
+    "U6-007"
    ],
    "entry_points": [
     "command functions-toggle",
@@ -3863,12 +4935,15 @@
     "codex:S3-31"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-016"
+    "U3-016",
+    "U6-005"
    ],
    "entry_points": [
     "command set-current",
@@ -3890,11 +4965,21 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S3-9",
+     "claude:S3-14"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-037",
+    "U6-017"
+   ],
    "entry_points": [
     "command local",
     "key Functions: F6",
@@ -3915,12 +5000,18 @@
     "codex:S3-135"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(local)",
+    "NativeCellView"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-016"
+    "U3-016",
+    "U6-005"
    ],
    "entry_points": [
     "command assign-target",
@@ -3938,11 +5029,16 @@
     "claude:S3-15"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-039",
+    "U6-017"
+   ],
    "entry_points": [
     "command global",
     "key Functions: F7",
@@ -3963,11 +5059,18 @@
     "codex:S3-136"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(global)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-004",
+    "U6-003"
+   ],
    "entry_points": [
     "command orbit",
     "key Workspace: KeyQ",
@@ -3990,14 +5093,30 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S3-11",
+     "claude:S3-12",
+     "claude:S3-231"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "workflow_continuity.switch_context",
+    "workflow_continuity.switch_context (workflow_continuity.py)"
+   ],
    "used_by_units": [
     "U3-110",
-    "U5-004"
+    "U5-004",
+    "U6-003",
+    "U6-035"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-026",
+    "U6-014"
+   ],
    "entry_points": [
     "command next-pin",
     "key Cycles: KeyY",
@@ -4020,13 +5139,22 @@
     "claude:S3-223"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "MathematicalNames.parse_address",
+    "MathematicalNames.parse_identity"
+   ],
    "used_by_units": [
-    "U5-026"
+    "U5-026",
+    "U6-014"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-027",
+    "U6-014"
+   ],
    "entry_points": [
     "command next-clear",
     "key Workspace: KeyP",
@@ -4047,13 +5175,19 @@
     "claude:S3-224"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
-    "U5-027"
+    "U5-027",
+    "U6-014"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-028",
+    "U6-014"
+   ],
    "entry_points": [
     "command next-activate",
     "key Cycles: KeyI",
@@ -4080,14 +5214,28 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S3-14",
+     "claude:S3-20",
+     "claude:S3-229"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "workflow_continuity.switch_context",
+    "workflow_continuity.switch_context (workflow_continuity.py)"
+   ],
    "used_by_units": [
-    "U5-028"
+    "U5-028",
+    "U6-014"
    ]
   },
   {
    "depends_on_units": [
-    "U3-012"
+    "U3-012",
+    "U5-025",
+    "U6-014"
    ],
    "entry_points": [
     "command next-locate",
@@ -4109,12 +5257,17 @@
     "claude:S3-22"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(next-locate)"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-031"
+    "U3-031",
+    "U6-005"
    ],
    "entry_points": [
     "command assign-a",
@@ -4132,11 +5285,16 @@
     "codex:S3-22"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-030",
+    "U6-014"
+   ],
    "entry_points": [
     "command next-menu",
     "key Workspace: KeyC",
@@ -4153,12 +5311,17 @@
     "claude:S3-23"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(next-menu)"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-031"
+    "U3-031",
+    "U6-005"
    ],
    "entry_points": [
     "command assign-b",
@@ -4176,11 +5339,15 @@
     "codex:S3-23"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-028"
+   ],
    "entry_points": [
     "command goal-block",
     "command goal-endgame",
@@ -4231,13 +5398,23 @@
     "claude:S3-225"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "work_intents.evaluate_goal",
+    "work_intents.normalize_goal",
+    "work_intents.normalize_goal (work_intents.py)"
+   ],
    "used_by_units": [
-    "U2-020"
+    "U2-020",
+    "U6-028"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-035",
+    "U6-005"
+   ],
    "entry_points": [
     "command roles",
     "key A: KeyN",
@@ -4264,15 +5441,22 @@
     "claude:S3-256"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "MathematicalNames.parse_address"
+   ],
    "used_by_units": [
     "U3-027",
     "U3-029",
-    "U5-035"
+    "U5-035",
+    "U6-005"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-005"
+   ],
    "entry_points": [
     "command target-home",
     "key Operation: Minus",
@@ -4293,11 +5477,17 @@
     "claude:S3-226"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U6-005"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-005"
+   ],
    "entry_points": [
     "command target-capture",
     "key Workspace: KeyM",
@@ -4318,11 +5508,17 @@
     "claude:S3-227"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U6-005"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-020"
+   ],
    "entry_points": [
     "command block-reference",
     "key Workspace: KeyN",
@@ -4343,11 +5539,18 @@
     "claude:S3-228"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U6-020"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-032",
+    "U6-020"
+   ],
    "entry_points": [
     "command block-add",
     "command block-capture",
@@ -4390,14 +5593,21 @@
     "claude:S3-253"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "position_requirements.holds",
+    "position_requirements.mode"
+   ],
    "used_by_units": [
-    "U5-032"
+    "U5-032",
+    "U6-020"
    ]
   },
   {
    "depends_on_units": [
-    "U3-014"
+    "U3-014",
+    "U6-005"
    ],
    "entry_points": [
     "command solve-locate-a",
@@ -4417,12 +5627,17 @@
     "claude:S3-74"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(solve-locate-a)"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-014"
+    "U3-014",
+    "U6-005"
    ],
    "entry_points": [
     "command solve-locate-b",
@@ -4442,12 +5657,17 @@
     "claude:S3-75"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(solve-locate-b)"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-014"
+    "U3-014",
+    "U6-005"
    ],
    "entry_points": [
     "command solve-locate-target",
@@ -4467,11 +5687,17 @@
     "claude:S3-76"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(solve-locate-target)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-020"
+   ],
    "entry_points": [
     "command block-remove",
     "key Workspace: KeyF",
@@ -4492,11 +5718,18 @@
     "claude:S3-254"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U6-020"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-034",
+    "U6-020"
+   ],
    "entry_points": [
     "command block-protect",
     "command block-protect-position",
@@ -4561,14 +5794,22 @@
     "claude:S3-255"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "position_requirements.mode"
+   ],
    "used_by_units": [
     "U5-034",
-    "U5-059"
+    "U5-059",
+    "U6-020"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-007",
+    "U6-007"
+   ],
    "entry_points": [
     "command bank-A",
     "command bank-B",
@@ -4654,7 +5895,12 @@
     "claude:S3-230"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "keymap_catalog.commands",
+    "keymap_catalog.shared_banks"
+   ],
    "used_by_units": [
     "U3-003",
     "U3-013",
@@ -4662,12 +5908,14 @@
     "U3-042",
     "U5-003",
     "U5-005",
-    "U5-007"
+    "U5-007",
+    "U6-007"
    ]
   },
   {
    "depends_on_units": [
-    "U3-041"
+    "U3-041",
+    "U6-007"
    ],
    "entry_points": [
     "command bank-next",
@@ -4694,7 +5942,11 @@
     "claude:S3-36"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "keymap_catalog.shared_banks"
+   ],
    "used_by_units": []
   },
   {
@@ -4714,14 +5966,18 @@
     "claude:S3-282"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U5-006"
    ]
   },
   {
    "depends_on_units": [
-    "U3-086"
+    "U3-086",
+    "U6-007",
+    "U6-030"
    ],
    "entry_points": [
     "command bank-macro-1",
@@ -4748,11 +6004,16 @@
     "claude:S3-60"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-058",
+    "U6-020"
+   ],
    "entry_points": [
     "command protection",
     "key Cycles: KeyJ",
@@ -4777,14 +6038,23 @@
     "claude:S3-251"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.save_prefs (session.py)"
+   ],
    "used_by_units": [
     "U3-084",
-    "U5-058"
+    "U5-058",
+    "U6-020",
+    "U6-029"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-016",
+    "U6-034"
+   ],
    "entry_points": [
     "command capture",
     "key Keyboard: KeyE",
@@ -4805,15 +6075,19 @@
     "claude:S3-232"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U3-047",
-    "U5-016"
+    "U5-016",
+    "U6-034"
    ]
   },
   {
    "depends_on_units": [
-    "U3-046"
+    "U3-046",
+    "U6-034"
    ],
    "entry_points": [
     "command capture-piece",
@@ -4835,7 +6109,9 @@
     "claude:S3-124"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -5057,11 +6333,18 @@
     "claude:S3-200"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentInput.HandleKeyDown",
+    "ExperimentInput.HandleKeyUp"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-004"
+   ],
    "entry_points": [
     "command solve-actions",
     "key Workspace: KeyV",
@@ -5078,11 +6361,17 @@
     "codex:S3-71"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(solve-actions)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-019"
+   ],
    "entry_points": [
     "command grip-frame",
     "key A: KeyV",
@@ -5113,11 +6402,22 @@
     "claude:S3-234"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "grip_frames (grip_frames.py)",
+    "grip_frames.frames",
+    "grip_frames.frames (grip_frames.py)",
+    "grip_frames.notation"
+   ],
+   "used_by_units": [
+    "U6-019"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-023"
+   ],
    "entry_points": [
     "command inspect-actual",
     "command inspect-cleanup",
@@ -5162,12 +6462,24 @@
     "claude:S3-204"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "draft_inspection.inspect_phase",
+    "draft_inspection.inspect_phase (draft_inspection.py)",
+    "route POST /api/experiment/native-command with inspect_boundary=actual",
+    "route POST /api/experiment/native-command with inspect_boundary=cleanup",
+    "route POST /api/experiment/native-command with inspect_boundary=macro",
+    "route POST /api/experiment/native-command with inspect_boundary=prepare"
+   ],
    "used_by_units": [
     "U3-079",
     "U3-104",
     "U3-105",
-    "U3-106"
+    "U3-106",
+    "U6-023",
+    "U6-036",
+    "U6-037"
    ]
   },
   {
@@ -5187,7 +6499,13 @@
     "claude:S3-284"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "grip_frames.rotation_table",
+    "grips.grips",
+    "grips.grips (grips.py)"
+   ],
    "used_by_units": []
   },
   {
@@ -5333,17 +6651,52 @@
     "C-04 (open)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S3-39",
+     "claude:S3-201",
+     "claude:S3-238",
+     "claude:S3-239"
+    ],
+    "C-03": [
+     "codex:S3-39",
+     "claude:S3-201",
+     "claude:S3-238",
+     "claude:S3-239"
+    ],
+    "C-04": [
+     "codex:S3-39",
+     "claude:S3-238",
+     "claude:S3-239"
+    ],
+    "X-02": [
+     "codex:S3-39",
+     "claude:S3-201",
+     "claude:S3-238",
+     "claude:S3-239"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.preview / Session.commit (session.py)",
+    "grip_frames.resolve",
+    "grip_frames.resolve (grip_frames.py)",
+    "route POST /api/native/handshake (server.py)",
+    "workflow_continuity.plan_commit_continuity"
+   ],
    "used_by_units": [
     "U2-026",
     "U3-048",
     "U3-148",
-    "U5-011"
+    "U5-011",
+    "U6-013",
+    "U6-015"
    ]
   },
   {
    "depends_on_units": [
-    "U3-125"
+    "U3-125",
+    "U6-024"
    ],
    "entry_points": [
     "command phase-cleanup",
@@ -5395,12 +6748,15 @@
     "claude:S3-90"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-125"
+    "U3-125",
+    "U6-024"
    ],
    "entry_points": [
     "command input-draft",
@@ -5429,11 +6785,15 @@
     "claude:S3-105"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-025"
+   ],
    "entry_points": [
     "command compare-preview",
     "key Views: KeyK",
@@ -5452,12 +6812,18 @@
     "codex:S3-106"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(compare-preview)",
+    "Workbench.snapshot(prediction=True)"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-125"
+    "U3-125",
+    "U6-012"
    ],
    "entry_points": [
     "command grip-hold",
@@ -5482,13 +6848,20 @@
     "claude:S3-126"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentInput"
+   ],
    "used_by_units": [
     "U3-048"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-033",
+    "U6-024"
+   ],
    "entry_points": [
     "command edit-cleanup",
     "command edit-macro",
@@ -5528,15 +6901,27 @@
    "screening": [
     "C-04 (open)"
    ],
+   "screening_rows": {
+    "C-04": [
+     "codex:S3-43",
+     "claude:S3-235"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(phase-input)"
+   ],
    "used_by_units": [
     "U2-020",
     "U5-033",
-    "U5-036"
+    "U5-036",
+    "U6-024"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-030"
+   ],
    "entry_points": [
     "command macro-insert",
     "command macro-replace",
@@ -5570,14 +6955,23 @@
    "screening": [
     "C-04 (open)"
    ],
+   "screening_rows": {
+    "C-04": [
+     "codex:S3-44",
+     "claude:S3-236"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
-    "U5-015"
+    "U5-015",
+    "U6-030"
    ]
   },
   {
    "depends_on_units": [
-    "U3-125"
+    "U3-125",
+    "U6-017"
    ],
    "entry_points": [
     "command local-center",
@@ -5621,11 +7015,25 @@
    "screening": [
     "D-02 (rejected)"
    ],
+   "screening_rows": {
+    "D-02": [
+     "claude:S3-45",
+     "claude:S3-46",
+     "claude:S3-47",
+     "codex:S3-128"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "local_geometry.cell_state"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-038",
+    "U6-032"
+   ],
    "entry_points": [
     "command cleanup-inverse",
     "key E: F10",
@@ -5652,13 +7060,26 @@
    "screening": [
     "C-04 (open)"
    ],
+   "screening_rows": {
+    "C-04": [
+     "codex:S3-45",
+     "claude:S3-237"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "core.invrecipe"
+   ],
    "used_by_units": [
-    "U5-038"
+    "U5-038",
+    "U6-032"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-040",
+    "U6-025"
+   ],
    "entry_points": [
     "command review",
     "key A: Comma",
@@ -5689,15 +7110,30 @@
     "claude:S3-240"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session pending state (session.py)",
+    "current_recommendation.score_current",
+    "position_requirements.holds",
+    "position_requirements.prepare",
+    "residuals.derive_delta",
+    "residuals.derive_residual",
+    "residuals.py",
+    "work_intents.evaluate_goal"
+   ],
    "used_by_units": [
     "U2-020",
     "U5-040",
-    "U5-049"
+    "U5-049",
+    "U6-025"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-042",
+    "U6-025"
+   ],
    "entry_points": [
     "command preview",
     "key A: Period",
@@ -5730,14 +7166,26 @@
    "screening": [
     "C-04 (open)"
    ],
+   "screening_rows": {
+    "C-04": [
+     "codex:S3-47",
+     "claude:S3-241"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.preview (session.py)"
+   ],
    "used_by_units": [
     "U2-020",
-    "U5-042"
+    "U5-042",
+    "U6-025"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-024"
+   ],
    "entry_points": [
     "command prefix-off",
     "command prefix-on",
@@ -5767,13 +7215,19 @@
     "claude:S3-252"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
-    "U5-058"
+    "U5-058",
+    "U6-024"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-044",
+    "U6-025"
+   ],
    "entry_points": [
     "command commit",
     "key A: Slash",
@@ -5808,15 +7262,43 @@
     "C-03 (fixed)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S3-48",
+     "claude:S3-96",
+     "claude:S3-242"
+    ],
+    "C-03": [
+     "codex:S3-48",
+     "claude:S3-96",
+     "claude:S3-242"
+    ],
+    "X-02": [
+     "codex:S3-48",
+     "claude:S3-96",
+     "claude:S3-242"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.commit (session.py)",
+    "SessionWorkflow.completion_plan",
+    "residuals.derive_delta",
+    "workflow_continuity.plan_commit_continuity",
+    "workflow_continuity.plan_commit_continuity (workflow_continuity.py)"
+   ],
    "used_by_units": [
     "U2-020",
     "U4-032",
-    "U5-044"
+    "U5-044",
+    "U6-025"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-045",
+    "U6-025"
+   ],
    "entry_points": [
     "command cancel-preview",
     "key A: F10",
@@ -5847,13 +7329,19 @@
     "claude:S3-245"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
-    "U5-045"
+    "U5-045",
+    "U6-025"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-019",
+    "U6-030"
+   ],
    "entry_points": [
     "command macro-new",
     "key M: KeyB",
@@ -5876,14 +7364,19 @@
     "claude:S3-268"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
-    "U5-019"
+    "U5-019",
+    "U6-030"
    ]
   },
   {
    "depends_on_units": [
-    "U1-009"
+    "U1-009",
+    "U5-047",
+    "U6-025"
    ],
    "entry_points": [
     "command cancel-analysis",
@@ -5903,11 +7396,18 @@
     "claude:S3-98"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.StopAnalysis",
+    "route POST /api/stop-job (server.py)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-030"
+   ],
    "entry_points": [
     "command macro-details",
     "key M: F12",
@@ -5930,15 +7430,28 @@
     "claude:S3-266"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Workbench.applicability",
+    "macro_use.classify_effect",
+    "macro_use.classify_effect (macro_use.py)",
+    "macro_use.scoped_stars"
+   ],
    "used_by_units": [
     "U3-079",
     "U3-086",
-    "U5-014"
+    "U5-014",
+    "U6-030",
+    "U6-032",
+    "U6-033",
+    "U6-036"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-025"
+   ],
    "entry_points": [
     "command operation-new",
     "key I: F12",
@@ -5963,13 +7476,18 @@
     "claude:S3-243"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
-    "U2-026"
+    "U2-026",
+    "U6-025"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-025"
+   ],
    "entry_points": [
     "command operation-reuse",
     "key Operation: KeyH",
@@ -5992,11 +7510,18 @@
     "claude:S3-244"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U6-025"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-071",
+    "U6-025"
+   ],
    "entry_points": [
     "command undo",
     "key A: F11",
@@ -6033,14 +7558,39 @@
     "C-03 (fixed)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S3-53",
+     "claude:S3-99",
+     "claude:S3-246"
+    ],
+    "C-03": [
+     "codex:S3-53",
+     "claude:S3-99",
+     "claude:S3-246"
+    ],
+    "X-02": [
+     "codex:S3-53",
+     "claude:S3-99",
+     "claude:S3-246"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.undo (session.py)",
+    "Workbench.restore_completed_operation"
+   ],
    "used_by_units": [
     "U2-020",
-    "U5-071"
+    "U5-071",
+    "U6-025"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-025",
+    "U6-030"
+   ],
    "entry_points": [
     "command macro-close",
     "command operation-hide",
@@ -6062,11 +7612,18 @@
     "claude:S3-103"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.HideWorkWindow"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-072",
+    "U6-025"
+   ],
    "entry_points": [
     "command redo",
     "key Operation: KeyF",
@@ -6093,13 +7650,38 @@
     "C-03 (fixed)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S3-54",
+     "claude:S3-100",
+     "claude:S3-247"
+    ],
+    "C-03": [
+     "codex:S3-54",
+     "claude:S3-100",
+     "claude:S3-247"
+    ],
+    "X-02": [
+     "codex:S3-54",
+     "claude:S3-100",
+     "claude:S3-247"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.redo (session.py)",
+    "Workbench.restore_completed_operation"
+   ],
    "used_by_units": [
-    "U5-072"
+    "U5-072",
+    "U6-025"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-029",
+    "U6-027"
+   ],
    "entry_points": [
     "command reference",
     "key A: KeyM",
@@ -6130,14 +7712,20 @@
     "claude:S3-257"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U5-029",
-    "U5-031"
+    "U5-031",
+    "U6-027"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-073",
+    "U6-034"
+   ],
    "entry_points": [
     "command checkpoint",
     "key Functions: Control+KeyS",
@@ -6160,14 +7748,24 @@
     "claude:S3-249"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.checkpoint (session.py)"
+   ],
    "used_by_units": [
     "U2-026",
-    "U5-073"
+    "U5-073",
+    "U6-034"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-029",
+    "U5-031",
+    "U6-027",
+    "U6-032"
+   ],
    "entry_points": [
     "command macro-inverse",
     "command reference-transform",
@@ -6209,14 +7807,28 @@
     "claude:S3-259"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ReferenceVariants.compile",
+    "core.invrecipe",
+    "core.invword",
+    "macro_library.edit_metadata",
+    "macro_library.export_selected",
+    "reference_variants.ReferenceVariants (reference_variants.py)"
+   ],
    "used_by_units": [
     "U5-029",
-    "U5-031"
+    "U5-031",
+    "U6-027",
+    "U6-032"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-074",
+    "U6-034"
+   ],
    "entry_points": [
     "command restore",
     "key Functions: Control+KeyO",
@@ -6241,16 +7853,30 @@
    "screening": [
     "C-03 (fixed)"
    ],
+   "screening_rows": {
+    "C-03": [
+     "codex:S3-56",
+     "claude:S3-171",
+     "claude:S3-250"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.restore (session.py)",
+    "Workbench.restore_completed_operation"
+   ],
    "used_by_units": [
     "U2-026",
-    "U5-074"
+    "U5-074",
+    "U6-034"
    ]
   },
   {
    "depends_on_units": [
     "U3-051",
-    "U3-069"
+    "U3-069",
+    "U6-036",
+    "U6-037"
    ],
    "entry_points": [
     "command cycles-after",
@@ -6310,11 +7936,26 @@
    "screening": [
     "D-03 (needs verification)"
    ],
+   "screening_rows": {
+    "D-03": [
+     "codex:S3-101",
+     "claude:S3-152",
+     "claude:S3-203"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "cycle_projection.inspect_cycle_display",
+    "cycle_projection.inspect_cycles",
+    "cycle_projection.inspect_cycles (cycle_projection.py)",
+    "cycle_projection.validate_cycle_display"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-039"
+   ],
    "entry_points": [
     "command reset",
     "command reset-workspace",
@@ -6354,13 +7995,26 @@
    "screening": [
     "C-03 (fixed)"
    ],
+   "screening_rows": {
+    "C-03": [
+     "codex:S3-57",
+     "claude:S3-172",
+     "claude:S3-248"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.reset (session.py)"
+   ],
    "used_by_units": [
-    "U5-075"
+    "U5-075",
+    "U6-039"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-031"
+   ],
    "entry_points": [
     "command macro-filter",
     "key Macro: KeyJ",
@@ -6381,11 +8035,21 @@
     "claude:S3-273"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "macro_library.facets",
+    "macro_use.infer_use",
+    "macro_use.use_context"
+   ],
+   "used_by_units": [
+    "U6-031"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-031"
+   ],
    "entry_points": [
     "command macro-label",
     "command macro-pin",
@@ -6411,13 +8075,22 @@
     "claude:S3-269"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "macro_library.edit_metadata",
+    "macro_library.edit_metadata (macro_library.py)"
+   ],
    "used_by_units": [
-    "U5-020"
+    "U5-020",
+    "U6-031"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-021",
+    "U6-032"
+   ],
    "entry_points": [
     "command macro-compare",
     "key Macro: KeyC",
@@ -6438,14 +8111,18 @@
     "claude:S3-267"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
-    "U5-021"
+    "U5-021",
+    "U6-032"
    ]
   },
   {
    "depends_on_units": [
-    "U3-045"
+    "U3-045",
+    "U6-029"
    ],
    "entry_points": [
     "command solve-macros",
@@ -6479,11 +8156,19 @@
     "claude:S3-72"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(solve-macros)",
+    "ExperimentShell.RunCommand(solve-prepare)",
+    "ExperimentShell.RunCommand(solve-protection)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-031"
+   ],
    "entry_points": [
     "command macro-check-library",
     "key Macro: Digit1",
@@ -6504,12 +8189,19 @@
     "claude:S3-274"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "macro_use.classify_effect"
+   ],
+   "used_by_units": [
+    "U6-031"
+   ]
   },
   {
    "depends_on_units": [
-    "U3-069"
+    "U3-069",
+    "U6-033"
    ],
    "entry_points": [
     "command endgame-select-saved",
@@ -6531,13 +8223,17 @@
     "claude:S3-265"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U3-044"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-032"
+   ],
    "entry_points": [
     "command macro-geometry",
     "key Macro: Digit5",
@@ -6558,12 +8254,20 @@
     "claude:S3-261"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ReferenceVariants.compile",
+    "reference_variants.py"
+   ],
+   "used_by_units": [
+    "U6-032"
+   ]
   },
   {
    "depends_on_units": [
-    "U3-089"
+    "U3-089",
+    "U6-033"
    ],
    "entry_points": [
     "command endgame-choices",
@@ -6581,11 +8285,18 @@
     "codex:S3-91"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "EndgameLibrary",
+    "ExperimentShell.RunCommand(endgame-choices)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-033"
+   ],
    "entry_points": [
     "command endgame-x",
     "command endgame-y",
@@ -6611,14 +8322,23 @@
     "claude:S3-262"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "EndgameLibrary.options",
+    "MathematicalNames.address",
+    "endgame_library.py"
+   ],
    "used_by_units": [
     "U2-020",
-    "U3-088"
+    "U3-088",
+    "U6-033"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-032"
+   ],
    "entry_points": [
     "command macro-candidates",
     "key Macro: Semicolon",
@@ -6639,11 +8359,20 @@
     "claude:S3-275"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "candidate_analysis.analyse_candidates",
+    "candidate_analysis.py"
+   ],
+   "used_by_units": [
+    "U6-032"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-033"
+   ],
    "entry_points": [
     "command endgame-q",
     "command endgame-r",
@@ -6665,11 +8394,18 @@
     "codex:S3-93"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(endgame-q)",
+    "ExperimentShell.RunCommand(endgame-r)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-031"
+   ],
    "entry_points": [
     "command macro-export",
     "key Functions: Control+KeyE",
@@ -6690,11 +8426,21 @@
     "claude:S3-270"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(macro-export)",
+    "macro_library.export_selected",
+    "macro_library.export_selected (macro_library.py)"
+   ],
+   "used_by_units": [
+    "U6-031"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-033"
+   ],
    "entry_points": [
     "command endgame-check",
     "key Macro: Minus",
@@ -6715,12 +8461,20 @@
     "claude:S3-263"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "EndgameLibrary.compose",
+    "endgame_library.EndgameLibrary.compose (endgame_library.py)"
+   ],
+   "used_by_units": [
+    "U6-033"
+   ]
   },
   {
    "depends_on_units": [
-    "U3-096"
+    "U3-096",
+    "U6-031"
    ],
    "entry_points": [
     "command macro-import",
@@ -6742,11 +8496,20 @@
     "claude:S3-271"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "macro_library.inspect_import",
+    "macro_library.inspect_import (macro_library.py)"
+   ],
+   "used_by_units": [
+    "U6-031"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-033"
+   ],
    "entry_points": [
     "command endgame-save",
     "key Macro: Equal",
@@ -6767,8 +8530,17 @@
     "claude:S3-264"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "EndgameLibrary.compose",
+    "endgame_library.py",
+    "macro_library.edit_metadata",
+    "macro_library.export_selected"
+   ],
+   "used_by_units": [
+    "U6-033"
+   ]
   },
   {
    "depends_on_units": [],
@@ -6787,13 +8559,21 @@
     "claude:S3-272"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "macro_library.inspect_import",
+    "macro_library.inspect_import (macro_library.py)"
+   ],
    "used_by_units": [
-    "U3-094"
+    "U3-094",
+    "U6-031"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-033"
+   ],
    "entry_points": [
     "command endgame-details",
     "key Macro: BracketRight",
@@ -6810,7 +8590,12 @@
     "codex:S3-96"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "EndgameLibrary",
+    "ExperimentShell.RunCommand(endgame-details)"
+   ],
    "used_by_units": []
   },
   {
@@ -6830,11 +8615,22 @@
     "claude:S3-260"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "MathematicalNames.cell",
+    "grip_frames.frames",
+    "grip_frames.frames (grip_frames.py)"
+   ],
+   "used_by_units": [
+    "U6-032"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-025",
+    "U6-026"
+   ],
    "entry_points": [
     "command review-details",
     "key E: F12",
@@ -6853,11 +8649,18 @@
     "codex:S3-107"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(review-details)",
+    "Workbench.review_draft"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-025"
+   ],
    "entry_points": [
     "command review-locate",
     "key Operation: KeyI",
@@ -6874,11 +8677,18 @@
     "codex:S3-108"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(review-locate)",
+    "Workbench.review_draft"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-040"
+   ],
    "entry_points": [
     "command worksheet-save",
     "key Functions: Control+Shift+KeyS",
@@ -6901,15 +8711,23 @@
     "claude:S3-276"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "work_sheets.build_sheet",
+    "work_sheets.build_sheet (work_sheets.py)"
+   ],
    "used_by_units": [
     "U3-102",
-    "U5-056"
+    "U5-056",
+    "U6-040"
    ]
   },
   {
    "depends_on_units": [
-    "U3-101"
+    "U3-101",
+    "U5-055",
+    "U6-040"
    ],
    "entry_points": [
     "command worksheet",
@@ -6933,14 +8751,21 @@
     "claude:S3-277"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "work_sheets.inspect_sheet",
+    "work_sheets.inspect_sheet (work_sheets.py)"
+   ],
    "used_by_units": [
-    "U3-103"
+    "U3-103",
+    "U6-040"
    ]
   },
   {
    "depends_on_units": [
-    "U3-102"
+    "U3-102",
+    "U6-040"
    ],
    "entry_points": [
     "command worksheet-use",
@@ -6964,14 +8789,21 @@
     "claude:S3-278"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "work_sheets.inspect_sheet",
+    "work_sheets.inspect_sheet (work_sheets.py)"
+   ],
    "used_by_units": [
-    "U5-057"
+    "U5-057",
+    "U6-040"
    ]
   },
   {
    "depends_on_units": [
-    "U3-051"
+    "U3-051",
+    "U6-037"
    ],
    "entry_points": [
     "command cycles-refresh",
@@ -6989,12 +8821,18 @@
     "claude:S3-145"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(cycles-refresh)",
+    "cycle_projection.inspect_cycle_display"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-051"
+    "U3-051",
+    "U6-037"
    ],
    "entry_points": [
     "command cycles-next",
@@ -7019,12 +8857,24 @@
    "screening": [
     "D-03 (needs verification)"
    ],
+   "screening_rows": {
+    "D-03": [
+     "codex:S3-103",
+     "claude:S3-146",
+     "claude:S3-147"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(cycles-next)",
+    "ExperimentShell.RunCommand(cycles-previous)"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-051"
+    "U3-051",
+    "U6-037"
    ],
    "entry_points": [
     "command cycles-back",
@@ -7049,11 +8899,24 @@
    "screening": [
     "D-03 (needs verification)"
    ],
+   "screening_rows": {
+    "D-03": [
+     "codex:S3-104",
+     "claude:S3-148",
+     "claude:S3-149"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(cycles-back)",
+    "ExperimentShell.RunCommand(cycles-more)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-035"
+   ],
    "entry_points": [
     "command residual-details",
     "key Operation: Equal",
@@ -7076,13 +8939,29 @@
    "screening": [
     "X-01 (open)"
    ],
+   "screening_rows": {
+    "X-01": [
+     "codex:S3-105",
+     "claude:S3-118",
+     "claude:S3-202"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "endgame_invariants.load_audited_invariants",
+    "residual helpers derive_residual / derive_delta (residuals.py)",
+    "residuals.derive_delta",
+    "residuals.derive_residual"
+   ],
    "used_by_units": [
-    "U2-020"
+    "U2-020",
+    "U6-035"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-026"
+   ],
    "entry_points": [
     "command review-reason-1",
     "command review-reason-2",
@@ -7109,11 +8988,18 @@
     "claude:S3-117"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.InspectOperationEvidence",
+    "current_recommendation.score_current"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-035"
+   ],
    "entry_points": [
     "command journal-delta",
     "key Operation: Quote",
@@ -7130,12 +9016,18 @@
     "claude:S3-119"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "MathematicalNames.address",
+    "Workbench.journal_delta"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-022"
+    "U3-022",
+    "U6-035"
    ],
    "entry_points": [
     "command orbit-following",
@@ -7155,11 +9047,23 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S3-111",
+     "claude:S3-120"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "workflow_continuity.plan_commit_continuity"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-069",
+    "U6-039"
+   ],
    "entry_points": [
     "command session",
     "command session-report",
@@ -7185,14 +9089,22 @@
     "claude:S3-209"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "SessionWorkflow.report",
+    "SessionWorkflow.report (session_workflow.py)"
+   ],
    "used_by_units": [
     "U2-026",
-    "U3-121"
+    "U3-121",
+    "U6-039"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-039"
+   ],
    "entry_points": [
     "command session-resume",
     "key Functions: Control+KeyR",
@@ -7213,13 +9125,21 @@
     "claude:S3-210"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "SessionWorkflow.resume",
+    "SessionWorkflow.resume (session_workflow.py)"
+   ],
    "used_by_units": [
-    "U2-026"
+    "U2-026",
+    "U6-039"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-039"
+   ],
    "entry_points": [
     "command session-new",
     "key Functions: Control+KeyN",
@@ -7242,13 +9162,29 @@
    "screening": [
     "C-03 (fixed)"
    ],
+   "screening_rows": {
+    "C-03": [
+     "codex:S3-114",
+     "claude:S3-186",
+     "claude:S3-218"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.reset (session.py)",
+    "SessionWorkflow.plan_new_attempt",
+    "SessionWorkflow.plan_new_attempt (session_workflow.py)",
+    "Workflow.timer"
+   ],
    "used_by_units": [
-    "U2-026"
+    "U2-026",
+    "U6-039"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-039"
+   ],
    "entry_points": [
     "command session-timer-pause",
     "command session-timer-start",
@@ -7274,13 +9210,21 @@
     "claude:S3-211"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "SessionWorkflow.timer",
+    "SessionWorkflow.timer (session_workflow.py)"
+   ],
    "used_by_units": [
-    "U2-026"
+    "U2-026",
+    "U6-039"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-039"
+   ],
    "entry_points": [
     "command session-save-log",
     "key Functions: Control+Shift+KeyL",
@@ -7303,13 +9247,28 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "codex:S3-116",
+     "claude:S3-192",
+     "claude:S3-212"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.save_log (session.py)",
+    "SessionWorkflow.save_log",
+    "SessionWorkflow.save_log (session_workflow.py)"
+   ],
    "used_by_units": [
-    "U2-026"
+    "U2-026",
+    "U6-039"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-039"
+   ],
    "entry_points": [
     "command session-export-log",
     "key Functions: Control+Alt+KeyL",
@@ -7335,15 +9294,29 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "codex:S3-117",
+     "claude:S3-199",
+     "claude:S3-213"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.ExportSessionLog",
+    "SessionWorkflow.export_log",
+    "SessionWorkflow.export_log (session_workflow.py)"
+   ],
    "used_by_units": [
     "U2-026",
-    "U3-149"
+    "U3-149",
+    "U6-039"
    ]
   },
   {
    "depends_on_units": [
-    "U3-118"
+    "U3-118",
+    "U6-039"
    ],
    "entry_points": [
     "command session-import-log",
@@ -7370,10 +9343,22 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "codex:S3-118",
+     "claude:S3-198",
+     "claude:S3-214"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "SessionWorkflow.inspect_log",
+    "SessionWorkflow.inspect_log (session_workflow.py)"
+   ],
    "used_by_units": [
     "U2-026",
-    "U3-149"
+    "U3-149",
+    "U6-039"
    ]
   },
   {
@@ -7398,11 +9383,22 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "codex:S3-119",
+     "claude:S3-215"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "SessionWorkflow.apply_log",
+    "SessionWorkflow.apply_log (session_workflow.py)"
+   ],
    "used_by_units": [
     "U2-026",
     "U3-117",
-    "U3-149"
+    "U3-149",
+    "U6-039"
    ]
   },
   {
@@ -7422,12 +9418,20 @@
     "claude:S3-216"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "SessionWorkflow.acknowledge",
+    "SessionWorkflow.acknowledge (session_workflow.py)"
+   ],
+   "used_by_units": [
+    "U6-039"
+   ]
   },
   {
    "depends_on_units": [
-    "U3-125"
+    "U3-125",
+    "U6-011"
    ],
    "entry_points": [
     "command key-edit",
@@ -7452,12 +9456,18 @@
     "codex:S3-130"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(key-edit)",
+    "ExperimentShell.RunCommand(key-edit-advanced)"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-111"
+    "U3-111",
+    "U6-039"
    ],
    "entry_points": [
     "command session-summary",
@@ -7475,11 +9485,18 @@
     "claude:S3-195"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(session-summary)",
+    "SessionWorkflow.report"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-039"
+   ],
    "entry_points": [
     "command scramble",
     "key Functions: Control+KeyG",
@@ -7502,13 +9519,28 @@
    "screening": [
     "C-04 (open)"
    ],
+   "screening_rows": {
+    "C-04": [
+     "codex:S3-122",
+     "claude:S3-189",
+     "claude:S3-217"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "SessionWorkflow.scramble_recipe",
+    "SessionWorkflow.scramble_recipe (session_workflow.py)"
+   ],
    "used_by_units": [
-    "U2-026"
+    "U2-026",
+    "U6-039"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-070",
+    "U6-034"
+   ],
    "entry_points": [
     "command fixture-e1",
     "key Functions: Control+Shift+KeyE",
@@ -7534,9 +9566,25 @@
     "C-01 (fixed)",
     "C-03 (fixed)"
    ],
+   "screening_rows": {
+    "C-01": [
+     "codex:S3-124",
+     "claude:S3-174",
+     "claude:S3-283"
+    ],
+    "C-03": [
+     "codex:S3-124",
+     "claude:S3-174",
+     "claude:S3-283"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "Session.preview / Session.commit (session.py)"
+   ],
    "used_by_units": [
-    "U5-070"
+    "U5-070",
+    "U6-034"
    ]
   },
   {
@@ -7556,7 +9604,9 @@
     "claude:S3-280"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U5-051"
    ]
@@ -7580,7 +9630,9 @@
     "claude:S3-281"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U3-054",
     "U3-055",
@@ -7588,11 +9640,17 @@
     "U3-060",
     "U3-120",
     "U5-013",
-    "U5-018"
+    "U5-018",
+    "U6-011",
+    "U6-012",
+    "U6-017",
+    "U6-024"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-010"
+   ],
    "entry_points": [
     "command keymap-export",
     "key Functions: Control+Alt+KeyE",
@@ -7613,14 +9671,21 @@
     "claude:S3-206"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "keymap_catalog (this shard)",
+    "keymap_catalog.export_keymap"
+   ],
    "used_by_units": [
-    "U2-026"
+    "U2-026",
+    "U6-010"
    ]
   },
   {
    "depends_on_units": [
-    "U3-128"
+    "U3-128",
+    "U6-010"
    ],
    "entry_points": [
     "command keymap-import",
@@ -7642,9 +9707,15 @@
     "claude:S3-207"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "keymap_catalog (this shard)",
+    "keymap_catalog.inspect_keymap"
+   ],
    "used_by_units": [
-    "U2-026"
+    "U2-026",
+    "U6-010"
    ]
   },
   {
@@ -7664,14 +9735,22 @@
     "claude:S3-208"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "keymap_catalog (this shard)",
+    "keymap_catalog.import_keymap"
+   ],
    "used_by_units": [
     "U2-026",
-    "U3-127"
+    "U3-127",
+    "U6-010"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-034"
+   ],
    "entry_points": [
     "command puzzle",
     "key Functions: Control+KeyP",
@@ -7690,11 +9769,17 @@
     "claude:S3-167"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(puzzle)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-017"
+   ],
    "entry_points": [
     "command views",
     "key Functions: Control+KeyV",
@@ -7711,11 +9796,17 @@
     "claude:S3-178"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(views)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-016"
+   ],
    "entry_points": [
     "command windows-hide",
     "key Functions: Control+KeyW",
@@ -7734,11 +9825,17 @@
     "claude:S3-168"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(windows-hide)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-017"
+   ],
    "entry_points": [
     "command views-close",
     "key Functions: Control+Shift+KeyW",
@@ -7757,11 +9854,17 @@
     "claude:S3-169"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(views-close)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-016"
+   ],
    "entry_points": [
     "command workspace-fullscreen",
     "key Functions: Control+KeyF",
@@ -7778,11 +9881,17 @@
     "claude:S3-179"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(workspace-fullscreen)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-017"
+   ],
    "entry_points": [
     "command local-reset",
     "key Functions: Control+KeyL",
@@ -7801,11 +9910,17 @@
     "claude:S3-153"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(local-reset)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-017"
+   ],
    "entry_points": [
     "command local-down",
     "command local-left",
@@ -7845,11 +9960,20 @@
     "claude:S3-159"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(local-down)",
+    "ExperimentShell.RunCommand(local-left)",
+    "ExperimentShell.RunCommand(local-right)",
+    "ExperimentShell.RunCommand(local-up)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-017"
+   ],
    "entry_points": [
     "command local-zoom-in",
     "command local-zoom-out",
@@ -7875,11 +9999,18 @@
     "claude:S3-155"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(local-zoom-in)",
+    "ExperimentShell.RunCommand(local-zoom-out)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-017"
+   ],
    "entry_points": [
     "command global-reset",
     "key Functions: Alt+KeyG",
@@ -7898,11 +10029,17 @@
     "claude:S3-160"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(global-reset)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-017"
+   ],
    "entry_points": [
     "command global-down",
     "command global-left",
@@ -7942,11 +10079,20 @@
     "claude:S3-166"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(global-down)",
+    "ExperimentShell.RunCommand(global-left)",
+    "ExperimentShell.RunCommand(global-right)",
+    "ExperimentShell.RunCommand(global-up)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-017"
+   ],
    "entry_points": [
     "command global-zoom-in",
     "command global-zoom-out",
@@ -7972,12 +10118,18 @@
     "claude:S3-162"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(global-zoom-in)",
+    "ExperimentShell.RunCommand(global-zoom-out)"
+   ],
    "used_by_units": []
   },
   {
    "depends_on_units": [
-    "U3-141"
+    "U3-141",
+    "U6-021"
    ],
    "entry_points": [
     "command display",
@@ -7995,11 +10147,18 @@
     "claude:S3-175"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentBridge.DisplaySlider",
+    "ExperimentBridge.SetDisplayValue"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-021"
+   ],
    "entry_points": [
     "command detail-toggle",
     "command frame-toggle",
@@ -8025,13 +10184,21 @@
     "claude:S3-205"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentBridge.AdaptiveMotion",
+    "ExperimentBridge.FrameworkHidden"
+   ],
    "used_by_units": [
-    "U3-140"
+    "U3-140",
+    "U6-021"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-039"
+   ],
    "entry_points": [
     "command reset-view",
     "key Functions: Control+Shift+KeyF",
@@ -8048,11 +10215,18 @@
     "claude:S3-193"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentBridge",
+    "ExperimentShell.RunCommand(reset-view)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-006"
+   ],
    "entry_points": [
     "command help",
     "key Functions: Shift+F1",
@@ -8069,11 +10243,18 @@
     "claude:S3-180"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(help)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U5-068",
+    "U6-034"
+   ],
    "entry_points": [
     "command copy-selection",
     "key Functions: Control+KeyC",
@@ -8090,11 +10271,18 @@
     "claude:S3-181"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(copy-selection)",
+    "MathematicalNames"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U6-034"
+   ],
    "entry_points": [
     "command copy-selection-canonical",
     "key Functions: Control+Shift+KeyC",
@@ -8111,7 +10299,11 @@
     "claude:S3-182"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand(copy-selection-canonical)"
+   ],
    "used_by_units": []
   },
   {
@@ -8128,7 +10320,11 @@
     "claude:S3-290"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [
+    "route POST /api/job result retrieval (server.py)"
+   ],
    "used_by_units": [
     "U2-001",
     "U2-026"
@@ -8152,7 +10348,15 @@
    "screening": [
     "C-03 (fixed)"
    ],
+   "screening_rows": {
+    "C-03": [
+     "claude:S3-291"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "route POST /api/job result retrieval (server.py)"
+   ],
    "used_by_units": []
   },
   {
@@ -8184,9 +10388,24 @@
     "C-03 (fixed)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "claude:S3-292"
+    ],
+    "C-03": [
+     "claude:S3-292"
+    ],
+    "X-02": [
+     "claude:S3-292"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [
+    "native profile (native handshake, other shard)"
+   ],
    "used_by_units": [
-    "U3-053"
+    "U3-053",
+    "U6-015"
    ]
   },
   {
@@ -8213,7 +10432,13 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S3-294"
+    ]
+   },
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U2-026"
    ]
@@ -8238,7 +10463,9 @@
     "claude:S3-295"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8255,7 +10482,9 @@
     "claude:S3-296"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s3",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8294,7 +10523,19 @@
    "screening": [
     "X-01 (open)"
    ],
+   "screening_rows": {
+    "X-01": [
+     "codex:S4-1",
+     "claude:S4-90"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "cli engine_process.py",
+    "engine_process.EngineProcess",
+    "native.directx_runtime.find_directx",
+    "native.inspect_runtime.inspect"
+   ],
    "used_by_units": []
   },
   {
@@ -8322,7 +10563,12 @@
     "claude:S4-3"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "GET /api/grips?cell=<lab-cell>",
+    "GET /api/native/snapshot?protocol=2"
+   ],
    "used_by_units": [
     "U4-001",
     "U4-065",
@@ -8359,7 +10605,17 @@
    "screening": [
     "B-001 (fixed)"
    ],
+   "screening_rows": {
+    "B-001": [
+     "codex:S4-3",
+     "claude:S4-4"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "_3dedit.Form1.Form1_FormClosing",
+    "engine_process.EngineProcess.__exit__"
+   ],
    "used_by_units": []
   },
   {
@@ -8388,7 +10644,9 @@
     "claude:S4-12"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8416,7 +10674,9 @@
     "codex:S4-7"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8437,7 +10697,9 @@
     "claude:S4-13"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8477,7 +10739,16 @@
     "codex:S4-14"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "_3dedit.Form1.trk_LightAmb.ValueChanged",
+    "_3dedit.Form1.trk_LightDiff.ValueChanged",
+    "_3dedit.Form1.trk_LightSpec.ValueChanged",
+    "_3dedit.Form1.trk_StickerSize.ValueChanged",
+    "_3dedit.Form1.trk_ViewAngle.ValueChanged",
+    "_3dedit.Form1.trk_faceShrink.ValueChanged"
+   ],
    "used_by_units": []
   },
   {
@@ -8501,7 +10772,9 @@
     "claude:S4-15"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8530,7 +10803,9 @@
     "codex:S4-8"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8547,7 +10822,9 @@
     "claude:S4-8"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8571,7 +10848,9 @@
     "codex:S4-23"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8596,7 +10875,11 @@
     "codex:S4-15"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "GET /api/grips?cell=<lab-cell>"
+   ],
    "used_by_units": []
   },
   {
@@ -8626,7 +10909,17 @@
    "screening": [
     "E-02 (needs verification)"
    ],
+   "screening_rows": {
+    "E-02": [
+     "claude:S4-11",
+     "codex:S4-17"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "GET /api/grips?cell=<lab-cell>",
+    "_3dedit.S4Camera.Recenter"
+   ],
    "used_by_units": [
     "U4-059",
     "U4-069",
@@ -8668,7 +10961,9 @@
     "claude:S4-14"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8701,7 +10996,9 @@
     "codex:S4-41"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8725,7 +11022,9 @@
     "claude:S4-31"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-059",
     "U4-065",
@@ -8758,7 +11057,9 @@
     "codex:S4-42"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8785,7 +11086,14 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S4-18",
+     "codex:S4-53"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8817,7 +11125,11 @@
     "claude:S4-52"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "GET /api/native/snapshot?protocol=2"
+   ],
    "used_by_units": []
   },
   {
@@ -8841,7 +11153,9 @@
     "codex:S4-54"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -8870,7 +11184,17 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S4-20",
+     "codex:S4-50"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "POST /api/log/save",
+    "route POST /api/log/save"
+   ],
    "used_by_units": []
   },
   {
@@ -8903,7 +11227,9 @@
     "claude:S4-44"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-026",
     "U4-031",
@@ -8937,7 +11263,17 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S4-21",
+     "codex:S4-51"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "POST /api/log/import",
+    "route POST /api/log/import"
+   ],
    "used_by_units": []
   },
   {
@@ -8959,7 +11295,9 @@
     "claude:S4-43"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-026"
    ]
@@ -8990,7 +11328,18 @@
    "screening": [
     "A-02 (fixed)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S4-22",
+     "codex:S4-52"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "GET /api/log/export?format=c600",
+    "GET /api/log/export?format=mpult",
+    "route GET /api/log/export"
+   ],
    "used_by_units": []
   },
   {
@@ -9021,7 +11370,9 @@
     "claude:S4-40"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9053,7 +11404,18 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "claude:S4-23",
+     "codex:S4-119"
+    ],
+    "X-02": [
+     "claude:S4-23",
+     "codex:S4-119"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9085,7 +11447,18 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "claude:S4-24",
+     "codex:S4-120"
+    ],
+    "X-02": [
+     "claude:S4-24",
+     "codex:S4-120"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9107,7 +11480,9 @@
     "claude:S4-45"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9133,7 +11508,9 @@
     "codex:S4-118"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9167,7 +11544,9 @@
     "claude:S4-46"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9209,7 +11588,13 @@
     "claude:S4-26"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "command buffers",
+    "command cancel",
+    "command suggest"
+   ],
    "used_by_units": []
   },
   {
@@ -9231,7 +11616,12 @@
     "codex:S4-117"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "POST /api/scramble",
+    "route POST /api/scramble"
+   ],
    "used_by_units": []
   },
   {
@@ -9257,7 +11647,9 @@
     "claude:S4-47"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9285,7 +11677,9 @@
     "codex:S4-44"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9306,7 +11700,9 @@
     "claude:S4-48"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9337,7 +11733,9 @@
     "claude:S4-49"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9376,7 +11774,9 @@
     "claude:S4-35"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9407,7 +11807,18 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "claude:S4-33",
+     "codex:S4-33"
+    ],
+    "X-02": [
+     "claude:S4-33",
+     "codex:S4-33"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9435,7 +11846,9 @@
     "codex:S4-34"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9516,7 +11929,11 @@
     "claude:S4-36"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "GET /api/grips?cell=<lab-cell>"
+   ],
    "used_by_units": []
   },
   {
@@ -9541,7 +11958,9 @@
     "claude:S4-37"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9564,7 +11983,9 @@
     "claude:S4-39"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9583,7 +12004,9 @@
     "claude:S4-38"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9617,7 +12040,9 @@
     "claude:S4-50"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-046"
    ]
@@ -9644,11 +12069,16 @@
     "claude:S4-51"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U1-012",
+    "U3-008"
+   ],
    "entry_points": [
     "button Filters tab: Structure…",
     "button Filters: Structure…",
@@ -9667,7 +12097,9 @@
     "codex:S4-78"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9697,7 +12129,11 @@
     "claude:S4-53"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "GET /api/grips?cell=<lab-cell>"
+   ],
    "used_by_units": []
   },
   {
@@ -9726,7 +12162,9 @@
     "claude:S4-54"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9761,7 +12199,12 @@
     "claude:S4-55"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "POST /api/timer",
+    "route POST /api/timer"
+   ],
    "used_by_units": []
   },
   {
@@ -9800,7 +12243,19 @@
    "screening": [
     "A-03 (open)"
    ],
+   "screening_rows": {
+    "A-03": [
+     "codex:S4-55",
+     "claude:S4-56",
+     "codex:S4-56",
+     "codex:S4-57"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "POST /api/compose",
+    "route POST /api/compose"
+   ],
    "used_by_units": []
   },
   {
@@ -9820,7 +12275,9 @@
     "codex:S4-59"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9850,7 +12307,17 @@
    "screening": [
     "A-03 (open)"
    ],
+   "screening_rows": {
+    "A-03": [
+     "claude:S4-58",
+     "codex:S4-61"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "POST /api/compose",
+    "route POST /api/compose"
+   ],
    "used_by_units": []
   },
   {
@@ -9878,7 +12345,9 @@
     "codex:S4-65"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9900,7 +12369,9 @@
     "codex:S4-66"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9925,7 +12396,9 @@
     "codex:S4-67"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9952,7 +12425,9 @@
     "codex:S4-69"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -9976,7 +12451,12 @@
     "claude:S4-65"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "POST /api/native/inspect",
+    "route POST /api/native/inspect"
+   ],
    "used_by_units": []
   },
   {
@@ -10004,7 +12484,14 @@
    "screening": [
     "E-02 (needs verification)"
    ],
+   "screening_rows": {
+    "E-02": [
+     "claude:S4-63",
+     "codex:S4-70"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10026,7 +12513,9 @@
     "codex:S4-64"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10056,7 +12545,24 @@
     "E-01 (needs verification)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "claude:S4-66",
+     "codex:S4-71"
+    ],
+    "E-01": [
+     "claude:S4-66",
+     "codex:S4-71"
+    ],
+    "X-02": [
+     "claude:S4-66",
+     "codex:S4-71"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "_3dedit.Form1 native ProcessClick"
+   ],
    "used_by_units": []
   },
   {
@@ -10102,7 +12608,19 @@
    "screening": [
     "E-01 (needs verification)"
    ],
+   "screening_rows": {
+    "E-01": [
+     "claude:S4-67",
+     "codex:S4-72"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "_3dedit camera mouse handlers",
+    "_3dedit.Form1 native ProcessClick",
+    "_3dedit.S4Camera.Recenter",
+    "window Main"
+   ],
    "used_by_units": []
   },
   {
@@ -10125,7 +12643,9 @@
     "claude:S4-68"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10149,7 +12669,9 @@
     "codex:S4-115"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10182,7 +12704,9 @@
     "codex:S4-94"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-068",
     "U4-071"
@@ -10218,7 +12742,9 @@
     "codex:S4-95"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-068",
     "U4-071"
@@ -10244,7 +12770,9 @@
     "codex:S4-97"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10274,7 +12802,9 @@
     "codex:S4-105"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10377,7 +12907,20 @@
     "E-02 (needs verification)",
     "E-03 (needs verification)"
    ],
+   "screening_rows": {
+    "E-02": [
+     "claude:S4-74",
+     "codex:S4-102"
+    ],
+    "E-03": [
+     "claude:S4-76",
+     "codex:S4-101"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "window Main"
+   ],
    "used_by_units": [
     "U4-071"
    ]
@@ -10407,7 +12950,14 @@
    "screening": [
     "E-02 (needs verification)"
    ],
+   "screening_rows": {
+    "E-02": [
+     "claude:S4-75",
+     "codex:S4-93"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10445,7 +12995,9 @@
     "codex:S4-106"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10486,7 +13038,9 @@
     "codex:S4-83"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-026",
     "U4-073",
@@ -10532,7 +13086,9 @@
     "codex:S4-82"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10559,7 +13115,9 @@
     "codex:S4-84"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": [
     "U4-026",
     "U4-076"
@@ -10592,7 +13150,9 @@
     "codex:S4-85"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10630,7 +13190,9 @@
     "codex:S4-91"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10657,7 +13219,9 @@
     "codex:S4-92"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10679,7 +13243,9 @@
     "codex:S4-89"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10701,7 +13267,9 @@
     "codex:S4-90"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10724,7 +13292,9 @@
     "codex:S4-114"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10747,7 +13317,16 @@
    "screening": [
     "E-04 (needs verification)"
    ],
+   "screening_rows": {
+    "E-04": [
+     "claude:S4-89",
+     "codex:S4-121"
+    ]
+   },
    "shard": "s4",
+   "unresolved_depends_on": [
+    "GET /api/native/snapshot?protocol=2"
+   ],
    "used_by_units": []
   },
   {
@@ -10766,7 +13345,11 @@
     "codex:S4-110"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "tests/native/NativeHostRegression.cs"
+   ],
    "used_by_units": [
     "U4-083",
     "U4-084"
@@ -10790,7 +13373,13 @@
     "codex:S4-111"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "cli engine_process.py",
+    "engine_process.EngineProcess",
+    "tests/native/NativeRendererRegression.cs"
+   ],
    "used_by_units": []
   },
   {
@@ -10811,7 +13400,13 @@
     "codex:S4-112"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "cli engine_process.py",
+    "engine_process.EngineProcess",
+    "tests/native/NativePerformanceRegression.cs"
+   ],
    "used_by_units": []
   },
   {
@@ -10835,7 +13430,11 @@
     "codex:S4-108"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [
+    "engine_process.redact"
+   ],
    "used_by_units": []
   },
   {
@@ -10857,7 +13456,9 @@
     "codex:S4-107"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10878,7 +13479,9 @@
     "codex:S4-109"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10903,7 +13506,9 @@
     "codex:S4-113"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10945,7 +13550,9 @@
     "codex:S4-116"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s4",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -10974,7 +13581,11 @@
     "codex:S5-1"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "Renderer (/web/renderer.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -11001,8 +13612,14 @@
     "codex:S5-2"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "dispatch (app.js)"
+   ],
+   "used_by_units": [
+    "U3-001"
+   ]
   },
   {
    "depends_on_units": [
@@ -11047,8 +13664,14 @@
     "codex:S5-4"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "KeyboardRouter.reset (keys.js)"
+   ],
+   "used_by_units": [
+    "U3-003"
+   ]
   },
   {
    "depends_on_units": [
@@ -11084,8 +13707,20 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S5-3",
+     "claude:S5-8",
+     "claude:S5-9"
+    ]
+   },
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "globalDiagram (graphics.js)"
+   ],
+   "used_by_units": [
+    "U3-022"
+   ]
   },
   {
    "depends_on_units": [
@@ -11108,8 +13743,12 @@
     "codex:S5-5"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-013"
+   ]
   },
   {
    "depends_on_units": [
@@ -11136,7 +13775,9 @@
     "codex:S5-6"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -11176,8 +13817,12 @@
     "codex:S5-7"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-041"
+   ]
   },
   {
    "depends_on_units": [],
@@ -11239,7 +13884,13 @@
     "claude:S5-65"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "KeyboardRouter.releasePointerGrip (keys.js)",
+    "KeyboardRouter.setPointerGrip (keys.js)",
+    "bindings (app.js)"
+   ],
    "used_by_units": [
     "U5-011"
    ]
@@ -11262,7 +13913,11 @@
     "claude:S5-63"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "KeyboardRouter.reset (keys.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -11304,8 +13959,12 @@
     "codex:S5-20"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-005"
+   ]
   },
   {
    "depends_on_units": [
@@ -11354,7 +14013,22 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S5-10",
+     "claude:S5-66",
+     "claude:S5-67"
+    ],
+    "X-02": [
+     "codex:S5-10",
+     "claude:S5-66",
+     "claude:S5-67"
+    ]
+   },
    "shard": "s5",
+   "unresolved_depends_on": [
+    "KeyboardRouter.twist (keys.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -11376,7 +14050,9 @@
     "claude:S5-68"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -11405,7 +14081,11 @@
     "claude:S5-44"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "KeyboardRouter.reset (keys.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -11427,7 +14107,11 @@
     "codex:S5-21"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "workspaceDiagram (graphics.js)"
+   ],
    "used_by_units": [
     "U5-031"
    ]
@@ -11472,7 +14156,14 @@
     "codex:S5-30"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "rememberDraft (app.js)",
+    "route POST /api/experiment/command action=insert-macro phase=cleanup append=true",
+    "route POST /api/experiment/command action=insert-macro phase=macro append=false",
+    "route POST /api/experiment/command action=insert-macro phase=prepare append=true"
+   ],
    "used_by_units": []
   },
   {
@@ -11516,8 +14207,15 @@
     "claude:S5-60"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "KeyboardRouter.reset (keys.js)",
+    "parseId (ids.js)"
+   ],
+   "used_by_units": [
+    "U3-046"
+   ]
   },
   {
    "depends_on_units": [],
@@ -11539,7 +14237,9 @@
     "codex:S5-40"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -11577,7 +14277,12 @@
     "claude:S5-61"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "KeyboardRouter.reset (keys.js)",
+    "download (app.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -11605,8 +14310,12 @@
     "codex:S5-22"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-067"
+   ]
   },
   {
    "depends_on_units": [
@@ -11633,7 +14342,9 @@
     "codex:S5-23"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -11661,8 +14372,12 @@
     "codex:S5-24"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-083"
+   ]
   },
   {
    "depends_on_units": [],
@@ -11692,7 +14407,12 @@
     "claude:S5-31"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "globalDiagram (graphics.js)",
+    "workspaceDiagram (graphics.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -11724,8 +14444,18 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "claude:S5-20",
+     "codex:S5-45"
+    ]
+   },
    "shard": "s5",
+   "unresolved_depends_on": [
+    "parseId (ids.js)"
+   ],
    "used_by_units": [
+    "U3-016",
     "U5-052"
    ]
   },
@@ -11756,7 +14486,14 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "claude:S5-21",
+     "codex:S5-44"
+    ]
+   },
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -11784,8 +14521,14 @@
     "codex:S5-50"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "Renderer.focus (/web/renderer.js)"
+   ],
+   "used_by_units": [
+    "U3-026"
+   ]
   },
   {
    "depends_on_units": [
@@ -11816,8 +14559,12 @@
     "codex:S5-47"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-023"
+   ]
   },
   {
    "depends_on_units": [
@@ -11842,8 +14589,12 @@
     "codex:S5-48"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-024"
+   ]
   },
   {
    "depends_on_units": [
@@ -11872,8 +14623,19 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "claude:S5-25",
+     "codex:S5-49"
+    ]
+   },
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "rememberDraft (app.js)"
+   ],
+   "used_by_units": [
+    "U3-025"
+   ]
   },
   {
    "depends_on_units": [
@@ -11905,8 +14667,12 @@
     "claude:S5-30"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": [
+    "U3-075",
+    "U3-077",
     "U5-031"
    ]
   },
@@ -11930,8 +14696,12 @@
     "codex:S5-46"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-028"
+   ]
   },
   {
    "depends_on_units": [
@@ -11955,8 +14725,12 @@
     "codex:S5-26"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-077"
+   ]
   },
   {
    "depends_on_units": [
@@ -11979,8 +14753,12 @@
     "codex:S5-51"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-035"
+   ]
   },
   {
    "depends_on_units": [
@@ -12017,8 +14795,14 @@
     "claude:S5-43"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "rememberDraft (app.js)"
+   ],
+   "used_by_units": [
+    "U3-058"
+   ]
   },
   {
    "depends_on_units": [
@@ -12041,8 +14825,12 @@
     "codex:S5-52"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-040"
+   ]
   },
   {
    "depends_on_units": [
@@ -12069,8 +14857,14 @@
     "codex:S5-53"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "parseId (ids.js)"
+   ],
+   "used_by_units": [
+    "U3-031"
+   ]
   },
   {
    "depends_on_units": [
@@ -12092,7 +14886,13 @@
     "claude:S5-45"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "route POST /api/experiment/command action=draft phase=cleanup",
+    "route POST /api/experiment/command action=draft phase=macro",
+    "route POST /api/experiment/command action=draft phase=prepare"
+   ],
    "used_by_units": []
   },
   {
@@ -12119,8 +14919,14 @@
     "codex:S5-64"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "localDiagram (graphics.js)"
+   ],
+   "used_by_units": [
+    "U3-019"
+   ]
   },
   {
    "depends_on_units": [
@@ -12142,8 +14948,14 @@
     "claude:S5-46"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "rememberDraft (app.js)"
+   ],
+   "used_by_units": [
+    "U3-061"
+   ]
   },
   {
    "depends_on_units": [
@@ -12172,8 +14984,14 @@
     "codex:S5-65"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "globalDiagram (graphics.js)"
+   ],
+   "used_by_units": [
+    "U3-021"
+   ]
   },
   {
    "depends_on_units": [
@@ -12197,8 +15015,13 @@
     "claude:S5-50"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "workspaceDiagram (graphics.js)"
+   ],
    "used_by_units": [
+    "U3-062",
     "U5-042"
    ]
   },
@@ -12224,7 +15047,14 @@
     "codex:S5-66"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "Renderer.draw (/web/renderer.js)",
+    "Renderer.fit (/web/renderer.js)",
+    "Renderer.setState (/web/renderer.js)",
+    "installRender (app.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -12248,8 +15078,11 @@
     "claude:S5-51"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": [
+    "U3-063",
     "U5-044"
    ]
   },
@@ -12276,7 +15109,9 @@
     "codex:S5-71"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -12304,8 +15139,20 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S5-35",
+     "claude:S5-52"
+    ],
+    "X-02": [
+     "codex:S5-35",
+     "claude:S5-52"
+    ]
+   },
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": [
+    "U3-065",
     "U4-032"
    ]
   },
@@ -12329,8 +15176,12 @@
     "claude:S5-53"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-066"
+   ]
   },
   {
    "depends_on_units": [],
@@ -12350,7 +15201,11 @@
     "codex:S5-72"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "KeyboardRouter.reset (keys.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -12374,8 +15229,12 @@
     "claude:S5-54"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-068"
+   ]
   },
   {
    "depends_on_units": [
@@ -12422,8 +15281,11 @@
     "codex:S5-56"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": [
+    "U3-009",
     "U5-060",
     "U5-061"
    ]
@@ -12457,7 +15319,12 @@
     "claude:S5-42"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "installRender (app.js)",
+    "workspaceDiagram (graphics.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -12479,7 +15346,9 @@
     "codex:S5-57"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -12502,7 +15371,9 @@
     "codex:S5-60"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -12533,7 +15404,11 @@
     "claude:S5-74"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "Renderer picking callback (/web/renderer.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -12563,7 +15438,9 @@
     "claude:S5-75"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -12592,7 +15469,9 @@
     "claude:S5-76"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -12616,8 +15495,12 @@
     "codex:S5-61"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-102"
+   ]
   },
   {
    "depends_on_units": [
@@ -12639,7 +15522,9 @@
     "codex:S5-62"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -12662,7 +15547,11 @@
     "codex:S5-63"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "rememberDraft (app.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -12695,8 +15584,12 @@
     "claude:S5-56"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-045"
+   ]
   },
   {
    "depends_on_units": [
@@ -12719,7 +15612,11 @@
     "claude:S5-57"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "route POST /api/experiment/command action=block-protect enabled=false"
+   ],
    "used_by_units": []
   },
   {
@@ -12743,7 +15640,9 @@
     "codex:S5-58"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -12764,7 +15663,9 @@
     "codex:S5-59"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -12789,8 +15690,12 @@
     "codex:S5-83"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-011"
+   ]
   },
   {
    "depends_on_units": [],
@@ -12811,7 +15716,12 @@
     "claude:S5-69"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "Renderer.fit (/web/renderer.js)",
+    "Renderer.focus (/web/renderer.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -12833,7 +15743,11 @@
     "claude:S5-70"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "Renderer.focus (/web/renderer.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -12855,7 +15769,12 @@
     "claude:S5-71"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "Renderer.focus (/web/renderer.js)",
+    "labCellIndex (ids.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -12877,7 +15796,12 @@
     "claude:S5-72"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "Renderer.rebuild (/web/renderer.js)",
+    "file work/experiments/magic600-04/web/renderer.js (/web/renderer.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -12901,7 +15825,9 @@
     "claude:S5-73"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -12921,8 +15847,15 @@
     "claude:S5-86"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "formatIdentity (ids.js)",
+    "navigator.clipboard.writeText"
+   ],
+   "used_by_units": [
+    "U3-144"
+   ]
   },
   {
    "depends_on_units": [],
@@ -12944,8 +15877,12 @@
     "claude:S5-77"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-111"
+   ]
   },
   {
    "depends_on_units": [
@@ -12970,8 +15907,19 @@
    "screening": [
     "C-01 (fixed)"
    ],
+   "screening_rows": {
+    "C-01": [
+     "codex:S5-75",
+     "claude:S5-78"
+    ]
+   },
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "route POST /api/experiment/command action=fixture name=e1"
+   ],
+   "used_by_units": [
+    "U3-123"
+   ]
   },
   {
    "depends_on_units": [
@@ -12997,8 +15945,21 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S5-76",
+     "claude:S5-79"
+    ],
+    "X-02": [
+     "codex:S5-76",
+     "claude:S5-79"
+    ]
+   },
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-072"
+   ]
   },
   {
    "depends_on_units": [
@@ -13024,8 +15985,21 @@
     "A-04 (rejected)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "codex:S5-77",
+     "claude:S5-80"
+    ],
+    "X-02": [
+     "codex:S5-77",
+     "claude:S5-80"
+    ]
+   },
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-074"
+   ]
   },
   {
    "depends_on_units": [
@@ -13047,8 +16021,12 @@
     "claude:S5-81"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-076"
+   ]
   },
   {
    "depends_on_units": [
@@ -13070,8 +16048,12 @@
     "claude:S5-82"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-078"
+   ]
   },
   {
    "depends_on_units": [
@@ -13094,7 +16076,9 @@
     "claude:S5-83"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -13115,7 +16099,11 @@
     "claude:S5-84"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s5",
+   "unresolved_depends_on": [
+    "download (app.js)"
+   ],
    "used_by_units": []
   },
   {
@@ -13142,11 +16130,27 @@
    "screening": [
     "B-001 (fixed)"
    ],
+   "screening_rows": {
+    "B-001": [
+     "codex:S5-82",
+     "claude:S5-85"
+    ]
+   },
    "shard": "s5",
+   "unresolved_depends_on": [
+    "KeyboardRouter.dispose (keys.js)",
+    "Renderer worker and animation lifecycle (/web/renderer.js)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U1-012",
+    "U1-023",
+    "U1-056",
+    "U3-006",
+    "U3-008"
+   ],
    "entry_points": [
     "cli ExperimentProgram <exe> <root> <token> <mode>",
     "cli ExperimentProgram <retained-exe> <api-root> <token> <mode>",
@@ -13168,7 +16172,13 @@
     "codex:S6-1"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [
+    "NativeSnapshot.Read (s4)",
+    "Program.UseEnglishUi (s4)",
+    "_3dedit.Form1 (retained runtime)"
+   ],
    "used_by_units": []
   },
   {
@@ -13196,13 +16206,20 @@
     "codex:S6-72"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand"
+   ],
    "used_by_units": [
+    "U3-001",
     "U6-004"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-022"
+   ],
    "entry_points": [
     "button Working orbit: Activate selected entry",
     "button main workspace: Active orbit by mathematical structure (drop-down)",
@@ -13226,8 +16243,17 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S6-2",
+     "claude:S6-6"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-022"
+   ]
   },
   {
    "depends_on_units": [
@@ -13250,11 +16276,21 @@
     "codex:S6-73"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-049"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-014",
+    "U3-016",
+    "U3-031",
+    "U3-032",
+    "U3-033"
+   ],
    "entry_points": [
     "button Buffer role assignment: Apply explicitly",
     "button Current identity and destination: Apply explicitly",
@@ -13325,8 +16361,28 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S6-3",
+     "codex:S6-4",
+     "claude:S6-24"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-016",
+    "U3-018",
+    "U3-020",
+    "U3-027",
+    "U3-029",
+    "U3-031",
+    "U3-032",
+    "U3-033",
+    "U3-036",
+    "U3-037",
+    "U3-038"
+   ]
   },
   {
    "depends_on_units": [],
@@ -13357,11 +16413,17 @@
     "codex:S6-118"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-143"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-041"
+   ],
    "entry_points": [
     "button G1 workspace header: Keymap",
     "button G2 workspace header: active bank label",
@@ -13430,11 +16492,25 @@
     "codex:S6-64"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "route POST api action=bank"
+   ],
+   "used_by_units": [
+    "U3-003",
+    "U3-013",
+    "U3-017",
+    "U3-041",
+    "U3-042",
+    "U3-044"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-012",
+    "U3-014"
+   ],
    "entry_points": [
     "button Hub Current trace: At / After position link",
     "button Hub Current trace: Home identity link",
@@ -13495,7 +16571,9 @@
     "codex:S6-183"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -13537,11 +16615,28 @@
    "screening": [
     "F-04 (needs verification)"
    ],
+   "screening_rows": {
+    "F-04": [
+     "claude:S6-8",
+     "codex:S6-65"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand",
+    "ExperimentShell.SaveWindowLayout"
+   ],
+   "used_by_units": [
+    "U3-011",
+    "U3-015"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-126",
+    "U3-127",
+    "U3-128"
+   ],
    "entry_points": [
     "button Export keybindings file picker: Save",
     "button Import keybindings: Replace all bindings",
@@ -13568,11 +16663,18 @@
     "codex:S6-78"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-126",
+    "U3-127"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-125"
+   ],
    "entry_points": [
     "button Change command key: Binding scope (drop-down)",
     "button Change command key: Existing shortcut to replace, or add another (drop-down)",
@@ -13605,11 +16707,17 @@
     "codex:S6-75"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-120"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-125"
+   ],
    "entry_points": [
     "button G1 input row: hold / latch (Grip mode drop-down)",
     "command grip-hold",
@@ -13626,13 +16734,18 @@
     "codex:S6-67"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": [
-    "U3-048"
+    "U3-048",
+    "U3-057"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-053"
+   ],
    "entry_points": [
     "button Keyboard: effective Grip slot keys",
     "button Keyboard: effective Twist keys",
@@ -13682,11 +16795,33 @@
     "C-03 (fixed)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "claude:S6-12",
+     "codex:S6-69"
+    ],
+    "C-03": [
+     "claude:S6-12",
+     "codex:S6-69"
+    ],
+    "X-02": [
+     "claude:S6-12",
+     "codex:S6-69"
+    ]
+   },
    "shard": "s6",
+   "unresolved_depends_on": [
+    "route POST experiment/native-input"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-012",
+    "U3-023",
+    "U3-024",
+    "U3-025"
+   ],
    "entry_points": [
     "button Hub: Activate Next",
     "button Next is an identity bookmark, not mechanical protection: Activate selected entry",
@@ -13731,11 +16866,31 @@
    "screening": [
     "C-02 (fixed)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "codex:S6-15",
+     "claude:S6-25"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ExperimentBridge.LocateCell",
+    "ExperimentShell.RunCommand"
+   ],
+   "used_by_units": [
+    "U3-023",
+    "U3-024",
+    "U3-025",
+    "U3-026",
+    "U3-028"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-012",
+    "U3-053",
+    "U3-148"
+   ],
    "entry_points": [
     "button native Puzzle viewport: mouse-up after a native inspection gesture",
     "button native Puzzle viewport: mouse-up after a retained turn gesture",
@@ -13759,7 +16914,27 @@
     "C-03 (fixed)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "claude:S6-13",
+     "codex:S6-105"
+    ],
+    "C-03": [
+     "claude:S6-13",
+     "codex:S6-105"
+    ],
+    "X-02": [
+     "claude:S6-13",
+     "codex:S6-105"
+    ]
+   },
    "shard": "s6",
+   "unresolved_depends_on": [
+    "NativePickingVisibility (s4)",
+    "NativePickingVisibility.TakeInspection (s4)",
+    "_3dedit.Form1 native mouse handling (s4)",
+    "route POST experiment/native-command action=turn"
+   ],
    "used_by_units": []
   },
   {
@@ -13781,11 +16956,21 @@
     "codex:S6-88"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ExperimentShell.SaveWindowLayout"
+   ],
+   "used_by_units": [
+    "U3-131",
+    "U3-133"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-010",
+    "U3-125"
+   ],
    "entry_points": [
     "button G1 native view tabs: Global",
     "button G1 native view tabs: Local",
@@ -13865,8 +17050,32 @@
    "screening": [
     "D-02 (rejected)"
    ],
+   "screening_rows": {
+    "D-02": [
+     "claude:S6-15",
+     "codex:S6-96",
+     "codex:S6-97",
+     "codex:S6-98"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand",
+    "ExperimentShell.SaveWindowLayout"
+   ],
+   "used_by_units": [
+    "U3-019",
+    "U3-021",
+    "U3-060",
+    "U3-130",
+    "U3-132",
+    "U3-134",
+    "U3-135",
+    "U3-136",
+    "U3-137",
+    "U3-138",
+    "U3-139"
+   ]
   },
   {
    "depends_on_units": [],
@@ -13911,11 +17120,18 @@
     "codex:S6-95"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [
+    "ExperimentBridge.LocateCell",
+    "retained camera (s4)"
+   ],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-050"
+   ],
    "entry_points": [
     "button Grip frame · <cell name>: Apply selected frame",
     "button Grip frame · <cell name>: Twelve legal ordered frames relative to base corners",
@@ -13934,11 +17150,21 @@
     "codex:S6-81"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-050"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-034",
+    "U3-035",
+    "U3-039",
+    "U3-040",
+    "U3-045"
+   ],
    "entry_points": [
     "button Block destination reference: Apply explicitly",
     "button Orbit protection: Apply boundary",
@@ -14013,11 +17239,34 @@
    "screening": [
     "F-01 (fixed)"
    ],
+   "screening_rows": {
+    "F-01": [
+     "codex:S6-19",
+     "codex:S6-22",
+     "codex:S6-23",
+     "codex:S6-24",
+     "claude:S6-26"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "POST experiment/native-command action=block-add capture_current=true",
+    "POST experiment/native-command action=block-add capture_current=true mode=position",
+    "POST experiment/native-command action=block-protect enabled=false",
+    "POST experiment/native-command action=block-protect mode=position"
+   ],
+   "used_by_units": [
+    "U3-034",
+    "U3-035",
+    "U3-039",
+    "U3-040",
+    "U3-045"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-141"
+   ],
    "entry_points": [
     "button G1 Puzzle tab: Display…",
     "button Puzzle display: Ambient light slider",
@@ -14055,11 +17304,23 @@
     "codex:S6-104"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ExperimentBridge.SetDisplayValue",
+    "retained trk_LightDiff / trk_LightSpec / trk_LightAmb (s4)",
+    "retained trk_ViewAngle (s4)",
+    "retained trk_faceShrink / trk_StickerSize (s4)"
+   ],
+   "used_by_units": [
+    "U3-140",
+    "U3-141"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-009"
+   ],
    "entry_points": [
     "button Piece Filter: &Apply filter",
     "button Piece Filter: All pieces",
@@ -14089,11 +17350,17 @@
     "codex:S6-108"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-009"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-051"
+   ],
    "entry_points": [
     "button Hub phase strip: Actual",
     "button Hub phase strip: After Cleanup",
@@ -14124,11 +17391,19 @@
     "codex:S6-56"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-051"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-058",
+    "U3-064",
+    "U3-125"
+   ],
    "entry_points": [
     "button G1 input row: Turns to > draft / live",
     "button G1 operation strip: Edit steps",
@@ -14192,11 +17467,29 @@
     "codex:S6-41"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-054",
+    "U3-055",
+    "U3-058",
+    "U3-064"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U1-009",
+    "U3-014",
+    "U3-062",
+    "U3-063",
+    "U3-065",
+    "U3-066",
+    "U3-070",
+    "U3-071",
+    "U3-072",
+    "U3-074"
+   ],
    "entry_points": [
     "button Conflicting protected positions: Activate selected entry",
     "button G1 operation strip: Cancel preview",
@@ -14298,13 +17591,52 @@
     "C-03 (fixed)",
     "X-02 (open)"
    ],
+   "screening_rows": {
+    "A-04": [
+     "claude:S6-22",
+     "codex:S6-48",
+     "codex:S6-51",
+     "codex:S6-52"
+    ],
+    "C-03": [
+     "claude:S6-22",
+     "codex:S6-48",
+     "codex:S6-51",
+     "codex:S6-52"
+    ],
+    "X-02": [
+     "claude:S6-22",
+     "codex:S6-48",
+     "codex:S6-51",
+     "codex:S6-52"
+    ]
+   },
    "shard": "s6",
+   "unresolved_depends_on": [
+    "ExperimentShell.SaveWindowLayout"
+   ],
    "used_by_units": [
+    "U3-007",
+    "U3-056",
+    "U3-062",
+    "U3-063",
+    "U3-065",
+    "U3-066",
+    "U3-068",
+    "U3-070",
+    "U3-071",
+    "U3-072",
+    "U3-073",
+    "U3-074",
+    "U3-099",
+    "U3-100",
     "U4-032"
    ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-014"
+   ],
    "entry_points": [
     "button G1 protection strip: Check results",
     "button Hub: Whole-operation protection check",
@@ -14337,11 +17669,19 @@
     "codex:S6-45"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-099",
+    "U3-108"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-075",
+    "U3-077"
+   ],
    "entry_points": [
     "button Explicit reference R; no setup search: Apply explicitly",
     "button Macro details: Save with R…",
@@ -14366,11 +17706,18 @@
     "codex:S6-139"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-075",
+    "U3-077"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-030"
+   ],
    "entry_points": [
     "button Solve: Explicit work goal (drop-down)",
     "command goal-block",
@@ -14393,11 +17740,17 @@
     "codex:S6-28"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-030"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-045"
+   ],
    "entry_points": [
     "button Hub: Solve (header)",
     "button Solve navigation: Macros",
@@ -14424,11 +17777,19 @@
     "codex:S6-54"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-084"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-059",
+    "U3-067",
+    "U3-069"
+   ],
    "entry_points": [
     "button G1 / G2 Macro Base: search text",
     "button G1 / G2 Macro Base: select library entry",
@@ -14498,11 +17859,41 @@
     "F-03 (needs verification)",
     "F-05 (needs verification)"
    ],
+   "screening_rows": {
+    "F-02": [
+     "claude:S6-30",
+     "codex:S6-133"
+    ],
+    "F-03": [
+     "claude:S6-30",
+     "codex:S6-133"
+    ],
+    "F-05": [
+     "claude:S6-30",
+     "codex:S6-120",
+     "codex:S6-122"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-005",
+    "U3-044",
+    "U3-059",
+    "U3-067",
+    "U3-069",
+    "U3-073"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-081",
+    "U3-082",
+    "U3-085",
+    "U3-092",
+    "U3-094",
+    "U3-096"
+   ],
    "entry_points": [
     "button Edit macro · <name>: Export…",
     "button Edit macro · <name>: Import…",
@@ -14565,11 +17956,27 @@
     "codex:S6-132"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-081",
+    "U3-082",
+    "U3-085",
+    "U3-092",
+    "U3-094"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-061",
+    "U3-069",
+    "U3-077",
+    "U3-083",
+    "U3-087",
+    "U3-090",
+    "U3-098"
+   ],
    "entry_points": [
     "button Macro details Compare: Check comparison",
     "button Macro details Compare: Second macro to compare (drop-down)",
@@ -14633,11 +18040,24 @@
     "codex:S6-145"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-061",
+    "U3-077",
+    "U3-083",
+    "U3-087",
+    "U3-090"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-069",
+    "U3-089",
+    "U3-093",
+    "U3-095"
+   ],
    "entry_points": [
     "button Known endgame effect tabs: Effect",
     "button Known endgame effect tabs: Recipe and proof",
@@ -14693,11 +18113,26 @@
     "codex:S6-153"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-086",
+    "U3-088",
+    "U3-089",
+    "U3-091",
+    "U3-093",
+    "U3-095",
+    "U3-097"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-046",
+    "U3-076",
+    "U3-078",
+    "U3-123"
+   ],
    "entry_points": [
     "button G1 input row: Capture / rebind…",
     "button G1 native view tabs: Puzzle",
@@ -14749,11 +18184,39 @@
     "C-01 (fixed)",
     "C-03 (fixed)"
    ],
+   "screening_rows": {
+    "C-01": [
+     "claude:S6-41",
+     "codex:S6-119"
+    ],
+    "C-03": [
+     "claude:S6-41",
+     "codex:S6-117",
+     "codex:S6-119"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ExperimentBridge.Apply",
+    "_3dedit.Form1 (retained runtime, s4)"
+   ],
+   "used_by_units": [
+    "U3-046",
+    "U3-047",
+    "U3-076",
+    "U3-078",
+    "U3-123",
+    "U3-129",
+    "U3-144",
+    "U3-145"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-014",
+    "U3-022",
+    "U3-107"
+   ],
    "entry_points": [
     "button Last committed step: Locate position",
     "button Last completion suggestions · inspect and choose: Activate selected entry",
@@ -14788,11 +18251,29 @@
     "C-02 (fixed)",
     "X-01 (open)"
    ],
+   "screening_rows": {
+    "C-02": [
+     "claude:S6-34",
+     "codex:S6-157"
+    ],
+    "X-01": [
+     "claude:S6-34",
+     "codex:S6-154"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-107",
+    "U3-109",
+    "U3-110"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-051",
+    "U3-069"
+   ],
    "entry_points": [
     "button Hub displayed effect scope: Selected macro / Macro steps / All steps",
     "command cycles-complete",
@@ -14821,11 +18302,17 @@
     "codex:S6-159"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-079"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-051"
+   ],
    "entry_points": [
     "button Hub cycle canvas: click a directed effect arrow",
     "button Hub cycle overview: After",
@@ -14882,8 +18369,22 @@
    "screening": [
     "D-03 (needs verification)"
    ],
+   "screening_rows": {
+    "D-03": [
+     "claude:S6-36",
+     "codex:S6-158",
+     "codex:S6-164",
+     "codex:S6-165"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [],
+   "used_by_units": [
+    "U3-079",
+    "U3-104",
+    "U3-105",
+    "U3-106"
+   ]
   },
   {
    "depends_on_units": [],
@@ -14901,11 +18402,25 @@
     "claude:S6-38"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-080",
+    "U3-111",
+    "U3-112",
+    "U3-113",
+    "U3-114",
+    "U3-115",
+    "U3-116",
+    "U3-117",
+    "U3-118",
+    "U3-119",
+    "U3-122"
+   ],
    "entry_points": [
     "button Export session log file picker: Save",
     "button Import session log: Check file",
@@ -15003,11 +18518,49 @@
     "C-03 (fixed)",
     "C-04 (open)"
    ],
+   "screening_rows": {
+    "A-02": [
+     "claude:S6-39",
+     "codex:S6-177",
+     "codex:S6-178",
+     "codex:S6-179",
+     "codex:S6-180"
+    ],
+    "C-03": [
+     "claude:S6-39",
+     "codex:S6-171",
+     "codex:S6-172"
+    ],
+    "C-04": [
+     "claude:S6-39",
+     "codex:S6-175"
+    ]
+   },
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ExperimentBridge.ResetView",
+    "ExperimentShell.ResetPuzzleView"
+   ],
+   "used_by_units": [
+    "U3-080",
+    "U3-111",
+    "U3-112",
+    "U3-113",
+    "U3-114",
+    "U3-115",
+    "U3-116",
+    "U3-117",
+    "U3-121",
+    "U3-122",
+    "U3-142"
+   ]
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-101",
+    "U3-102",
+    "U3-103"
+   ],
    "entry_points": [
     "button Choose work sheet: Activate selected entry",
     "button Reuse work sheet · <name> tabs: Prepare / Macro / Cleanup / Reference / Macro revisions",
@@ -15058,8 +18611,16 @@
     "codex:S6-115"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
-   "used_by_units": []
+   "unresolved_depends_on": [
+    "ExperimentShell.RunCommand"
+   ],
+   "used_by_units": [
+    "U3-101",
+    "U3-102",
+    "U3-103"
+   ]
   },
   {
    "depends_on_units": [],
@@ -15076,11 +18637,15 @@
     "claude:S6-42"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
-   "depends_on_units": [],
+   "depends_on_units": [
+    "U3-010"
+   ],
    "entry_points": [
     "button Local / Global / Solve / Keyboard window frame: Close",
     "button Local / Global / Solve / Keyboard window frame: move / resize"
@@ -15094,7 +18659,9 @@
     "codex:S6-89"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -15158,7 +18725,9 @@
     "codex:S6-182"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -15181,7 +18750,16 @@
     "F-02 (needs verification)",
     "F-03 (needs verification)"
    ],
+   "screening_rows": {
+    "F-02": [
+     "codex:S6-184"
+    ],
+    "F-03": [
+     "codex:S6-184"
+    ]
+   },
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -15201,7 +18779,13 @@
    "screening": [
     "B-001 (fixed)"
    ],
+   "screening_rows": {
+    "B-001": [
+     "codex:S6-185"
+    ]
+   },
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -15219,7 +18803,9 @@
     "codex:S6-186"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -15238,7 +18824,9 @@
     "codex:S6-187"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   },
   {
@@ -15257,7 +18845,9 @@
     "codex:S6-188"
    ],
    "screening": [],
+   "screening_rows": {},
    "shard": "s6",
+   "unresolved_depends_on": [],
    "used_by_units": []
   }
  ]

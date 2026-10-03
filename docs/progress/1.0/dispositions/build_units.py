@@ -17,6 +17,25 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 INV = HERE.parent / "inventory"
 ROW_ID = re.compile(r"^S([1-6])-(\d+)$")
+HANDLER = re.compile(r"^native shell handler registered for command ([\w-]+)\b")
+ROUTE = re.compile(r"^(?:route\s+)?(GET|POST|PUT|DELETE)\s+/?(?:api/)?(\S.*)$", re.I)
+
+
+def normalize(ref):
+    """Map the notations the two inventories use for one entry point to one key.
+
+    `route POST /api/x action=y`, `POST /api/x action=y` and `POST x action=y`
+    name the same route; `native shell handler registered for command x (...)`
+    names `command x`. Anything else is compared as written.
+    """
+    ref = " ".join(ref.split())
+    m = HANDLER.match(ref)
+    if m:
+        return f"command {m.group(1)}"
+    m = ROUTE.match(ref)
+    if m:
+        return f"route {m.group(1).upper()} {m.group(2)}"
+    return ref
 
 
 def _key(row_id):
@@ -70,13 +89,15 @@ def build():
     entry_owner = defaultdict(set)
     for rid, r in rows.items():
         for ep in r["entry_points"]:
-            entry_owner[ep].add(unit_of[rid])
+            entry_owner[normalize(ep)].add(unit_of[rid])
 
     findings = defaultdict(set)
+    finding_rows = defaultdict(lambda: defaultdict(list))
     for f in merged["screening"]:
         for rid in f.get("rows", []):
             if rid in unit_of:
                 findings[unit_of[rid]].add(f"{f['id']} ({f['status']})")
+                finding_rows[unit_of[rid]][f["id"]].append(rid)
 
     open_pairs = defaultdict(set)
     for c in merged["open_candidates"]:
@@ -85,18 +106,21 @@ def build():
             open_pairs[a].add(b)
             open_pairs[b].add(a)
 
-    links_of = {}
+    links_of, unresolved = {}, {}
     for uid, shard, members in units:
-        links = set()
+        links, missing = set(), set()
         for m in members:
             side = m.split(":")[0]
             for dep in rows[m]["depends_on"]:
                 target = f"{side}:{dep}" if ROW_ID.match(dep) else None
-                if target in unit_of:
-                    links.add(unit_of[target])
-                links |= entry_owner.get(dep, set())
+                found = ({unit_of[target]} if target in unit_of else set()) | entry_owner.get(normalize(dep), set())
+                if found:
+                    links |= found
+                else:
+                    missing.add(dep)
         links.discard(uid)
         links_of[uid] = links
+        unresolved[uid] = sorted(missing)
     used_by = defaultdict(set)
     for uid, links in links_of.items():
         for t in links:
@@ -114,6 +138,8 @@ def build():
             "used_by_units": sorted(used_by[uid]),
             "open_candidates": sorted(open_pairs[uid]),
             "screening": sorted(findings[uid]),
+            "screening_rows": {k: sorted(v, key=_key) for k, v in sorted(finding_rows[uid].items())},
+            "unresolved_depends_on": unresolved[uid],
         })
     return {"format": "C600-DISPOSITION-UNITS-draft",
             "source": "docs/progress/1.0/inventory/merged.json and the twelve sealed inventory files",
@@ -123,7 +149,12 @@ def build():
 def main():
     text = json.dumps(build(), indent=1, ensure_ascii=False, sort_keys=True) + "\n"
     (HERE / "units.json").write_text(text, encoding="utf-8", newline="\n")
-    print(f"units: {len(json.loads(text)['units'])}")
+    units = json.loads(text)["units"]
+    print(f"units: {len(units)}")
+    for n in range(1, 7):
+        mine = [u for u in units if u["shard"] == f"s{n}"]
+        print(f"s{n}: {sum(1 for u in mine if u['depends_on_units'])} with links, "
+              f"{sum(len(u['unresolved_depends_on']) for u in mine)} unresolved dependencies (module functions and free text)")
 
 
 if __name__ == "__main__":
