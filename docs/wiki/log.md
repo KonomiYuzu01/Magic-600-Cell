@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-03] update | S-B probe meets the W3 gate
+Added [s-b-probe-results](evidence/s-b-probe-results.md). Three attended cold W3 runs of the bare Direct3D 12 probe meet the selection gate for build `2b5bf5e6...`, and the PresentMon 2.6 capture lessons from the capture script reviews are recorded; the handoff, the other scenes and the cost table are still open.
+
 ## [2026-10-02] decision | Scope reduction and review risk tiers
 Recorded in [owner-decisions-2026-10-02-scope](decisions/owner-decisions-2026-10-02-scope.md): only sound and the mathematical-language work are reduced, design stays the core of 1.0; `AGENTS.md` gains risk tiers for review and a weekly process budget; the tester source for G1 to G6 is open.
 
