@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-03] decision | A selected construction is the solver's own macro
+Recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md) section 4; the stage 2.2 draft dispositions of the endgame family constructors are `redesign`.
+
 ## [2026-10-03] decision | Testers, charter signature and Windows CI
 Recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md): the owner alone takes G1 to G6, the stage 2.0 [charter](../progress/1.0/charter-2.0-draft.md) is signed as written (closing stage 2.0), and a Windows CI job runs the headless checks without counting as Windows/DirectX evidence.
 

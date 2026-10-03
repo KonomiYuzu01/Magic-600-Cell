@@ -238,19 +238,23 @@
     },
     {
       "unit": "U2-013",
-      "disposition": "delete",
-      "purpose": "Obtain a newly constructed placement-star solving recipe for supplied orbit, auxiliary and frame parameters.",
-      "reason": "EndgameLibrary.compose family=placement-star outputs a new solving recipe, even though its parameters are explicit. That crosses solving-workflow.md section 7 and charter section 5: the solver supplies or chooses their own macro and the program supplies analysis.",
+      "disposition": "redesign",
+      "purpose": "Expand a placement star the solver selects by orbit, auxiliaries and frame into its exact recipe.",
+      "reason": "Solving-workflow.md section 3.4 has the solver select a known construction such as the report's final-buffer commutator; the owner ruled that such a selection is the solver's own macro, so the purpose survives within the human-solve boundary of section 7.",
       "flows": [
-        "F-COMPOSE"
+        "F-COMPOSE",
+        "F-MACRO"
       ],
       "same_purpose_as": [
         "U3-093",
         "U3-095",
         "U6-033"
       ],
-      "requirements": [],
-      "notes": "This proposal removes generated solving recipes, not inspection of finite orientation parameters, analysis of solver-entered endgames, named-target setup search or explicit composition and reuse of the solver's own macros. U6-033 contains both surviving inspection and prohibited construction purposes."
+      "requirements": [
+        "The solver chooses the family and every parameter; the program never picks a family, parameter, target or correction by itself.",
+        "Expand the selection into its exact word, show the complete effect on all labels and every protection check, and execute only on the solver's explicit action."
+      ],
+      "notes": "Owner decision, 3 October 2026 (owner-decisions-2026-10-03 section 4): a construction the solver selects by family and parameters is the solver's own macro. Changed from the drafted delete."
     },
     {
       "unit": "U2-014",
@@ -278,19 +282,23 @@
     },
     {
       "unit": "U2-015",
-      "disposition": "delete",
-      "purpose": "Obtain a newly constructed two-star orientation-transfer solving recipe for supplied position and frame parameters.",
-      "reason": "EndgameLibrary.compose family=transfer outputs a new solving recipe, even though its parameters are explicit. That crosses solving-workflow.md section 7 and charter section 5: the solver supplies or chooses their own macro and the program supplies analysis.",
+      "disposition": "redesign",
+      "purpose": "Expand a two-star orientation transfer the solver selects by position and frame into its exact recipe.",
+      "reason": "Solving-workflow.md section 3.4 has the solver select a known construction such as the report's final-buffer commutator; the owner ruled that such a selection is the solver's own macro, so the purpose survives within the human-solve boundary of section 7.",
       "flows": [
-        "F-ENDGAME"
+        "F-ENDGAME",
+        "F-MACRO"
       ],
       "same_purpose_as": [
         "U3-093",
         "U3-095",
         "U6-033"
       ],
-      "requirements": [],
-      "notes": "This proposal removes generated solving recipes, not inspection of finite orientation parameters, analysis of solver-entered endgames, named-target setup search or explicit composition and reuse of the solver's own macros. U6-033 contains both surviving inspection and prohibited construction purposes."
+      "requirements": [
+        "The solver chooses the family and every parameter; the program never picks a family, parameter, target or correction by itself.",
+        "Expand the selection into its exact word, show the complete effect on all labels and every protection check, and execute only on the solver's explicit action."
+      ],
+      "notes": "Owner decision, 3 October 2026 (owner-decisions-2026-10-03 section 4): a construction the solver selects by family and parameters is the solver's own macro. Changed from the drafted delete."
     },
     {
       "unit": "U2-016",
@@ -313,19 +321,23 @@
     },
     {
       "unit": "U2-017",
-      "disposition": "delete",
-      "purpose": "Obtain a newly constructed buffer-A orientation-correction solving recipe for supplied auxiliary and frame parameters.",
-      "reason": "EndgameLibrary.compose family=buffer-a outputs a new solving recipe, even though its parameters are explicit. That crosses solving-workflow.md section 7 and charter section 5: the solver supplies or chooses their own macro and the program supplies analysis.",
+      "disposition": "redesign",
+      "purpose": "Expand a buffer-A orientation correction the solver selects by auxiliaries and frame into its exact recipe.",
+      "reason": "Solving-workflow.md section 3.4 has the solver select a known construction such as the report's final-buffer commutator; the owner ruled that such a selection is the solver's own macro, so the purpose survives within the human-solve boundary of section 7.",
       "flows": [
-        "F-ENDGAME"
+        "F-ENDGAME",
+        "F-MACRO"
       ],
       "same_purpose_as": [
         "U3-093",
         "U3-095",
         "U6-033"
       ],
-      "requirements": [],
-      "notes": "This proposal removes generated solving recipes, not inspection of finite orientation parameters, analysis of solver-entered endgames, named-target setup search or explicit composition and reuse of the solver's own macros. U6-033 contains both surviving inspection and prohibited construction purposes."
+      "requirements": [
+        "The solver chooses the family and every parameter; the program never picks a family, parameter, target or correction by itself.",
+        "Expand the selection into its exact word, show the complete effect on all labels and every protection check, and execute only on the solver's explicit action."
+      ],
+      "notes": "Owner decision, 3 October 2026 (owner-decisions-2026-10-03 section 4): a construction the solver selects by family and parameters is the solver's own macro. Changed from the drafted delete."
     },
     {
       "unit": "U2-018",
@@ -344,19 +356,23 @@
     },
     {
       "unit": "U2-019",
-      "disposition": "delete",
-      "purpose": "Obtain a newly constructed final-buffer commutator solving recipe for supplied auxiliaries and group elements.",
-      "reason": "EndgameLibrary.compose family=final-b outputs a new solving recipe, even though its parameters are explicit. That crosses solving-workflow.md section 7 and charter section 5: the solver supplies or chooses their own macro and the program supplies analysis.",
+      "disposition": "redesign",
+      "purpose": "Expand a final-buffer commutator the solver selects by auxiliaries and group elements into its exact recipe.",
+      "reason": "Solving-workflow.md section 3.4 has the solver select a known construction such as the report's final-buffer commutator; the owner ruled that such a selection is the solver's own macro, so the purpose survives within the human-solve boundary of section 7.",
       "flows": [
-        "F-ENDGAME"
+        "F-ENDGAME",
+        "F-MACRO"
       ],
       "same_purpose_as": [
         "U3-093",
         "U3-095",
         "U6-033"
       ],
-      "requirements": [],
-      "notes": "This proposal removes generated solving recipes, not inspection of finite orientation parameters, analysis of solver-entered endgames, named-target setup search or explicit composition and reuse of the solver's own macros. U6-033 contains both surviving inspection and prohibited construction purposes."
+      "requirements": [
+        "The solver chooses the family and every parameter; the program never picks a family, parameter, target or correction by itself.",
+        "Expand the selection into its exact word, show the complete effect on all labels and every protection check, and execute only on the solver's explicit action."
+      ],
+      "notes": "Owner decision, 3 October 2026 (owner-decisions-2026-10-03 section 4): a construction the solver selects by family and parameters is the solver's own macro. Changed from the drafted delete."
     },
     {
       "unit": "U2-020",

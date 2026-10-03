@@ -1753,10 +1753,13 @@
     },
     {
       "unit": "U3-093",
-      "disposition": "delete",
-      "purpose": "Receive a complete solving recipe synthesized from a built-in endgame family and chosen parameters.",
-      "reason": "The human-solve boundary in charter section 5 and solving-workflow.md section 7 forbids program-produced solving macros; adapter.py endgame_choice returns EndgameLibrary.compose's recipe even when its family parameters are explicit.",
-      "flows": [],
+      "disposition": "redesign",
+      "purpose": "Expand and check an endgame construction the solver selects by family and parameters.",
+      "reason": "Solving-workflow.md section 3.4 has the solver select a known construction such as the report's final-buffer commutator; the owner ruled that such a selection is the solver's own macro, so the purpose survives within the human-solve boundary of section 7.",
+      "flows": [
+        "F-ENDGAME",
+        "F-CHECK"
+      ],
       "same_purpose_as": [
         "U2-013",
         "U2-015",
@@ -1764,8 +1767,11 @@
         "U2-019",
         "U6-033"
       ],
-      "requirements": [],
-      "notes": "Proposal only; owner signature pending. The source returns a new family-derived solving recipe, not only analysis of a solver-entered macro; generic own-macro checking survives in U3-062, U3-069 and U3-097."
+      "requirements": [
+        "The solver chooses the family and every parameter; the program never picks a family, parameter, target or correction by itself.",
+        "Expand the selection into its exact word, show the complete effect on all labels and every protection check, and execute only on the solver's explicit action."
+      ],
+      "notes": "Owner decision, 3 October 2026 (owner-decisions-2026-10-03 section 4): a construction the solver selects by family and parameters is the solver's own macro. Changed from the drafted delete."
     },
     {
       "unit": "U3-094",
@@ -1787,10 +1793,13 @@
     },
     {
       "unit": "U3-095",
-      "disposition": "delete",
-      "purpose": "Create a personal macro whose solving body is synthesized by the built-in endgame constructor.",
-      "reason": "Charter section 5 and solving-workflow.md section 7 forbid program-produced solving macros; adapter.py save_endgame calls endgame_choice to regenerate and store a solving recipe rather than saving the solver's entered body.",
-      "flows": [],
+      "disposition": "redesign",
+      "purpose": "Save an endgame construction the solver selected by family and parameters as a personal macro.",
+      "reason": "Solving-workflow.md section 3.4 has the solver select a known construction such as the report's final-buffer commutator; the owner ruled that such a selection is the solver's own macro, so the purpose survives within the human-solve boundary of section 7.",
+      "flows": [
+        "F-ENDGAME",
+        "F-REUSE"
+      ],
       "same_purpose_as": [
         "U2-013",
         "U2-015",
@@ -1798,8 +1807,11 @@
         "U2-019",
         "U6-033"
       ],
-      "requirements": [],
-      "notes": "Proposal only; owner signature pending. Saving the solver's entered or explicitly transformed macro survives in U3-067 and U3-077; this particular path constructs its body from the built-in family."
+      "requirements": [
+        "The solver chooses the family and every parameter; the program never picks a family, parameter, target or correction by itself.",
+        "Expand the selection into its exact word, show the complete effect on all labels and every protection check, and execute only on the solver's explicit action."
+      ],
+      "notes": "Owner decision, 3 October 2026 (owner-decisions-2026-10-03 section 4): a construction the solver selects by family and parameters is the solver's own macro. Changed from the drafted delete."
     },
     {
       "unit": "U3-096",

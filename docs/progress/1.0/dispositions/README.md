@@ -46,18 +46,18 @@ Rules:
 ## Integrator check (3 October 2026)
 
 Six Codex Sol shards drafted the files from commit `0472333` (calls `20261003T170236Z-81491429`, `-170256Z-df5e8341`, `-170316Z-6fe9efa8`, `-170336Z-ce4710a3`, `-170356Z-6ee02d0b`, `-170416Z-da016664`); every patch passed its acceptance check and was applied unchanged.
-- Result: 503 units, 556 decisions (keep 52, redesign 479, delete 19, automate 6); see [dispositions.md](dispositions.md).
-- All 25 `delete` and `automate` decisions were read against the source and the rules. They fall into four groups:
+- Draft result: 503 units, 556 decisions (keep 52, redesign 479, delete 19, automate 6). After the owner's ruling below: keep 52, redesign 486, delete 12, automate 6; see [dispositions.md](dispositions.md).
+- All 25 drafted `delete` and `automate` decisions were read against the source and the rules. They fall into four groups:
   - 0.4 infrastructure that 1.0 does not inherit: the browser client, the frozen engine entry, Managed DirectX preparation and the MPUlt regression, inspection and patch modes;
   - the standalone Global or Local view dismissal, because the owner decided that both views are visible together;
-  - program-built solving recipes;
-  - bookkeeping that becomes automatic: completion receipts, refreshes, the session timer and the library effect check.
-- **Boundary question for the owner.** The drafts delete the insertion planner (`/api/suggest`, U1-063 and U4-038/2) and the endgame family constructors (U2-013, U2-015, U2-017, U2-019, U3-093, U3-095 and U6-033/2). These produce a placement star, an orientation transfer, a buffer-A correction or the final-buffer commutator from parameters the solver supplies.
-  - Setup search for a named target survives (U1-053, U4-045), as do preview of a star the solver selects (U4-046) and composition of the solver's own macros (U1-058, U4-051).
-  - The drafts read "the program constructs the recipe" as outputting a solving macro.
-  - [solving-workflow.md](../solving-workflow.md) section 3.4, however, has the solver select "the report's final-buffer construction" as a correction macro.
-  - The owner decides whether a construction that the solver selects by family and parameters is the solver's own macro (`redesign`) or a program-output macro (`delete`).
-- Mixed pairs in the report were checked. Every pair is one of three legitimate kinds: a split unit whose other part keeps the purpose, a 0.4 host control redesigned while the 0.4 serving infrastructure is deleted, or analysis kept while construction is deleted.
+  - program-built solving recipes: the insertion planner (`/api/suggest`, U1-063 and U4-038/2) and the endgame family constructors;
+  - bookkeeping that becomes automatic: completion receipts, cycle-inspection refreshes, session-report refresh and the library effect check. Starting and pausing the session timer stays an explicit action (U4-050/1, U6-039).
+- **Owner ruling (3 October 2026, [owner-decisions-2026-10-03](../../../wiki/decisions/owner-decisions-2026-10-03.md) section 4).** A construction that the solver selects by family and parameters (placement star, orientation transfer, buffer-A correction, final-buffer commutator) is the solver's own macro. The seven drafted deletions U2-013, U2-015, U2-017, U2-019, U3-093, U3-095 and U6-033/2 are therefore `redesign`, each with a note naming the ruling. Setup search for a named target (U1-053, U4-045), preview of a star the solver selects (U4-046) and composition of the solver's own macros (U1-058, U4-051) were already kept. The insertion planner stays `delete`: it chooses targets, stars, transfers and corrections from the orbit state itself.
+- Mixed pairs in the report were checked. Every pair is one of four legitimate kinds:
+  - a split unit whose other part keeps the purpose;
+  - a 0.4 host control redesigned while the 0.4 serving infrastructure is deleted;
+  - analysis kept while construction by the program is deleted;
+  - retained analysis whose invocation or refresh becomes automatic (U2-005 and U3-104, U2-034 and U3-085).
 - A sample of 14 `keep` and `redesign` decisions was read against their units: the flows, reasons and requirements were consistent. No row was changed.
 
 ## Evidence

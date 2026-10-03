@@ -1319,13 +1319,17 @@
             "codex:S6-151",
             "claude:S6-33"
           ],
-          "disposition": "delete",
-          "purpose": "Obtain and save a ready-made solving recipe for a parameterized endgame family.",
-          "reason": "Solving-workflow section 7 and charter section 5 prohibit outputting a solving macro; choosing family parameters does not supply the solver's own concrete word for analysis.",
+          "disposition": "redesign",
+          "purpose": "Select a parameterized endgame family construction, see its exact expansion and effect, and save it as the solver's own macro.",
+          "reason": "Solving-workflow.md section 3.4 has the solver select a known construction such as the report's final-buffer commutator; the owner ruled that such a selection is the solver's own macro, so the purpose survives within the human-solve boundary of section 7.",
           "flows": [
-            "F-ENDGAME"
+            "F-ENDGAME",
+            "F-MACRO"
           ],
-          "requirements": []
+          "requirements": [
+            "The solver chooses the family and every parameter; the program never picks a family, parameter, target or correction by itself.",
+            "Expand the selection into its exact word, show the complete effect on all labels and every protection check, and execute only on the solver's explicit action."
+          ]
         },
         {
           "rows": [
@@ -1349,7 +1353,7 @@
           ]
         }
       ],
-      "notes": "The coarse Claude row spans these purposes and is repeated in the applicable parts; the fine Codex rows identify each action separately. Delete part 2 is a proposal requiring owner signature. ExperimentEndgame.cs CheckEndgameParameters sends family/X/q/Y/r to endgame-compose, and SaveEndgameParameters saves the returned recipe without a solver-supplied word. Part 1 corresponds to U2-011/U3-088/U3-089/U3-091; part 2 to U2-013/U2-015/U2-017/U2-019/U3-093/U3-095; part 3 to U3-086/U3-097. Other-shard dispositions were not consulted."
+      "notes": "The coarse Claude row spans these purposes and is repeated in the applicable parts; the fine Codex rows identify each action separately. Delete part 2 is a proposal requiring owner signature. ExperimentEndgame.cs CheckEndgameParameters sends family/X/q/Y/r to endgame-compose, and SaveEndgameParameters saves the returned recipe without a solver-supplied word. Part 1 corresponds to U2-011/U3-088/U3-089/U3-091; part 2 to U2-013/U2-015/U2-017/U2-019/U3-093/U3-095; part 3 to U3-086/U3-097. Other-shard dispositions were not consulted. Part 2: Owner decision, 3 October 2026 (owner-decisions-2026-10-03 section 4): a construction the solver selects by family and parameters is the solver's own macro. Changed from the drafted delete."
     },
     {
       "unit": "U6-034",
