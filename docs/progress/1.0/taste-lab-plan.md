@@ -1,79 +1,188 @@
 # Taste Lab phase 1: plan
 
-Status: **draft plan, before its Codex plan check.** Owner decision of 2 October 2026 ([owner-decisions-2026-10-02](../../wiki/decisions/owner-decisions-2026-10-02.md)): Taste Lab is built now, its front end is a private Artifact page on claude.ai, and its model learns from few pairwise choices and draws new variants itself.
+Status: **revised after the plan check** (call 20261002T171939Z-9e60ff72, findings TL-P01 to TL-P09, all adopted) and its scoped re-checks (call 20261002T174128Z-223bc76c, TL-P03, TL-P07 and TL-P09 tightened; call 20261002T174734Z-867f3bb0, passed with no new blocking finding); the palette rule changed after the feasibility prototype (section 4.3). Owner decision of 2 October 2026 ([owner-decisions-2026-10-02](../../wiki/decisions/owner-decisions-2026-10-02.md)): Taste Lab is built now, its front end is a private Artifact page on claude.ai, and its model learns from few pairwise choices and draws new variants itself. The owner design decisions of 2 October 2026 ([owner-decisions-2026-10-02-design](../../wiki/decisions/owner-decisions-2026-10-02-design.md)) changed sections 1, 2, 4, 6 and 7: two theme families, each learned separately (section 4.5); subtler celebrating ranges (section 4.1); an optional one-line reason per answer, the preset export with cost marks, and labels that follow the glossary (section 7). Scoped re-check of these changes: call 20261002T234348Z-2397245e, one major finding (TL-P10: the two-family criterion accepted collapsed results), adopted in section 6; verification round call 20261002T235138Z-5bbb135e: pass. Revised on 3 October 2026: the simulated-owner experiment missed its criteria at 60 comparisons; an escalated diagnosis replaced the learner's kernel, priors, hyperparameter search and pair choice (sections 5.1 and 5.3 to 5.5), and the owner decisions of 3 October 2026 ([owner-decisions-2026-10-03-taste-lab](../../wiki/decisions/owner-decisions-2026-10-03-taste-lab.md)) moved the evaluation points (section 6) and had the settled rule recalibrated (section 5.6). Later on 3 October 2026 the kernel gained a smooth part and an interaction part, each weighted by the evidence (section 5.3), after two more synthetic owners showed where the additive quadratic kernel falls short (section 6); the fit moved to function space (sections 5.3 and 5.5). Scoped re-check of this change: call 20261003T042340Z-fc28e691, pass. Later still, the strict relevance ranking at 160 comparisons held in only 32 of 50 development seeds: circular parameters gained a quadratic term and the length search gained refinement steps (section 5.3), and the settled rule was calibrated to τ = 0.05 and K = 10 (sections 5.6 and 9). Scoped re-check of this change: call 20261003T072600Z-80356dde, pass. After the acceptance run on 3 October 2026 the owner accepted the learner with recorded limitations and moved the two-family checkpoint to 150 comparisons per family ([owner-decisions-2026-10-03-taste-lab](../../wiki/decisions/owner-decisions-2026-10-03-taste-lab.md)); the results are in the [experiment report](taste-lab-experiment.md).
 
 ## 1. Goal and acceptance
 
-Give the owner a private page on which a model learns the owner's visual preferences for the 600-cell from a few dozen pairwise choices, and hands the result to the design track (G2 to G5) as starting points.
+Give the owner a private page on which a model learns the owner's visual preferences for the 600-cell from a few dozen pairwise choices, and hands the result to the design track (G2 to G5) as starting points: one look per theme family and scene, six with the default two families.
 
 Phase 1 is accepted when:
-1. the core tests pass headless (`python tests/test_tastelab_core.py`);
-2. a simulated-owner experiment (section 6) reports how many comparisons the model needs to find a known optimum, over many seeds, with the noise level stated;
-3. the page is published privately, its storage rules allow writes by the owner only, and one functional pass (record a comparison, read it back with `ArtifactData`) succeeds;
-4. no class B image, personal data, key or private path is in the page, its storage or the repository.
+1. the core and geometry tests pass headless (`python tests/test_tastelab.py`, which runs the node tests of both folders);
+2. the palette feasibility sweep (section 4.3) finds feasible looks under the hard checks and reports the rejection rate;
+3. the simulated-owner experiment (section 6) meets its pass criteria; if it does not, the result goes to the owner before the learner is offered as one;
+4. the canary (section 7.1) and the final page pass their Artifact checks, and one functional pass (record a comparison, read it back with `ArtifactData`) succeeds;
+5. no class B image, personal data, key or private path is in the page, its storage or the repository.
 
 ## 2. Scope
 
 - **Phase 1a (this plan):** the parameter studio. No downloads, no installs, no external sources: the page draws every look itself.
-- **Phase 1b (later, one owner approval first):** the class A image swipe. It needs an embedding model (about 1 GB of weights) and a deep-learning runtime on the allowlist, plus the class A source domains. These are "Ask the owner" items (allowlist sources, large model download), even in the cloud container. The page reserves a tab for it.
-- **Out of scope:** class B images (phase 2, local only); sound; shipping a look tuner to end users (a 1.0 candidate for stage 2.2); the full-detail renderer (Look Lab, G3).
+- **Phase 1b (approved by the owner on 3 October 2026, [owner-decisions-2026-10-03-image-library](../../wiki/decisions/owner-decisions-2026-10-03-image-library.md); its own plan):** the class A image swipe, with an embedding model (CLIP ViT-B/16 in NumPy, about 572 MB of weights), its runtime and the class A source domains on the allowlist. The page reserves a tab for it, which stays a disabled placeholder until that plan's code passes review. The owner chose annotated references and nexus cards (4A), not embedding-first discovery (4C); in phase 1b, embeddings organise class A images and suggest comparisons, and the owner's ratings and notes decide.
+- **Out of scope:** class B images (phase 2, local only; approved with phase 1b and planned with it); sound (decision 10B); text budgets (gap 9); shipping a look tuner to end users (a 1.0 candidate for stage 2.2); the full-detail renderer (Look Lab, G3); performance measurement; the mechanical model. The preview is synthetic geometry of the 600-cell, not the 259,800-slot puzzle, and says so.
 
 ## 3. Parts
 
 | Part | Path | Owner | Notes |
 |---|---|---|---|
-| Colour core | `tools/tastelab/core/color.js` | Codex packet P1 | sRGB and OKLab conversion, ΔE in OKLab, colour-vision-deficiency simulation (protan, deutan, tritan; Machado 2009 matrices) |
-| Preference model | `tools/tastelab/core/gp.js` | Codex packet P1 | Gaussian-process preference model with probit likelihood, Laplace approximation, ARD squared-exponential kernel, marginal-likelihood fit of length scales, signal and noise |
-| Next-pair choice | `tools/tastelab/core/acquire.js` | Codex packet P1 | Sobol candidates plus local perturbations around the current best, hard checks first, current best as one side, Thompson sampling for the other, about 20% information-gain pairs, repeat pairs for consistency |
-| Parameter space and checks | `tools/tastelab/core/space.js` | Codex packet P1 | parameters, ranges, scenes, hard checks |
-| Core tests | `tools/tastelab/core/tests/*.test.mjs`, `tests/test_tastelab_core.py` | Codex packet P1 | `node --test` run from the Python test; the Python test skips with a clear message when Node.js is missing |
-| Geometry | `tools/tastelab/page/geometry.js` (+ test) | Codex packet P2 | 120 vertices of the 600-cell as unit quaternions, 720 edges, 1,200 triangles, 600 tetrahedral cells, cell adjacency, the 20 rings of 30 cells; tested against these counts |
-| Preview | `tools/tastelab/page/preview.js` | Claude | WebGL 2: perspective projection from 4D, cells shrunk by the gap parameter, edges, gloss, glow, fog; one animated cap turn with the chosen duration and easing |
-| Page | `tools/tastelab/page/index.html`, `app.js` | Claude | two looks side by side, keys A, B, S (same), X (both bad), Z (undo), "what matters" panel, scene switch, export |
+| Colour core | `tools/tastelab/core/color.js` | Codex packet P1 | sRGB, linear RGB and OKLab conversion; gamut mapping by chroma reduction at constant L and hue; ΔE in OKLab; colour-vision-deficiency simulation (protan, deutan, tritan; Machado 2009, severity 1.0, applied in linear RGB) |
+| Preference model | `tools/tastelab/core/gp.js` | Codex packet P1 | section 5 |
+| Next-pair choice | `tools/tastelab/core/acquire.js` | Codex packet P1 | section 5.4 |
+| Parameter space and checks | `tools/tastelab/core/space.js` | Codex packet P1 | section 4 |
+| Core tests | `tools/tastelab/core/tests/*.test.mjs` | Codex packet P1 | acceptance: `node --test "tools/tastelab/core/tests/*.test.mjs"` |
+| Geometry | `tools/tastelab/page/geometry.js` | Codex packet P2 | section 4.4 |
+| Geometry tests | `tools/tastelab/page/tests/*.test.mjs`, `tools/tastelab/page/tests/fixtures/600cell.json` | Codex packet P2 | acceptance: `node --test "tools/tastelab/page/tests/*.test.mjs"` |
+| Test runner | `tests/test_tastelab.py` | Claude | runs `node --test` on the test files of both folders and checks the geometry fixture; skips with a clear message when Node.js is missing |
+| Preview | `tools/tastelab/page/preview.js` | Claude | WebGL 2: perspective projection from 4D, cells shrunk by the gap parameter, edges, gloss, glow, fog; one animated cap turn (section 4.4) with the chosen duration and easing |
+| Page | `tools/tastelab/page/index.html`, `app.js`, `worker.js` | Claude | two looks side by side, keys A, B, S (same), X (both bad), Z (undo), "what matters" panel, scene switch, export; model work in a Web Worker |
+| Sweep and experiment | `tools/tastelab/sim/sweep.mjs`, `tools/tastelab/sim/experiment.mjs` | Claude | section 4.3 and section 6 |
 
-The page publishes its JavaScript as supporting files of the Artifact, so no bundler is needed. The repository holds only code; the page's storage holds the owner's data.
+P1 and P2 own disjoint files. Each packet carries its interfaces (exported functions, argument and return shapes) in its text; no skeleton is committed before review. If the Artifact runtime does not serve supporting modules (section 7.1), a small build script inlines them into one HTML file.
 
 ## 4. Parameter space (first proposal; the owner edits it before the first session)
 
-| Group | Parameter | Range |
-|---|---|---|
-| Palette | hue rotation | 0 to 360 degrees |
-| Palette | hue spread | 60 to 360 degrees |
-| Palette | lightness (OKLab L) | 0.45 to 0.85 |
-| Palette | chroma (OKLab C) | 0.04 to 0.20 |
-| Background | lightness, tint hue, tint strength | 0.05 to 0.95; 0 to 360; 0 to 0.05 |
-| Geometry | sticker gap, edge weight, edge brightness | 0 to 0.3; 0 to 3 px; 0 to 1 |
-| Material | gloss, glow, fog density | 0 to 1 each |
-| Motion | turn duration; easing shape (two numbers of one curve family) | 150 to 900 ms; 0 to 1 each |
+| Group | Parameter | Range | Encoding |
+|---|---|---|---|
+| Palette | hue rotation | 0 to 360 degrees | circular (cos, sin) |
+| Palette | hue spread | 60 to 360 degrees | linear |
+| Palette | lightness (OKLab L) | 0.45 to 0.85 | linear |
+| Palette | lightness alternation | 0 to 0.2 | linear |
+| Palette | colour classes k | 4 to 8 | integer |
+| Palette | chroma (OKLab C) | 0.04 to 0.20 | linear |
+| Background | lightness, tint hue, tint strength | 0.05 to 0.95; 0 to 360; 0 to 0.05 | linear; circular; linear |
+| Geometry | cell gap, edge weight, edge brightness | 0 to 0.3; 0 to 3 px; 0 to 1 | linear |
+| Material | gloss, glow, fog density | 0 to 1 each | linear |
+| Motion | twist duration; easing shape (two numbers of one curve family) | 150 to 900 ms; 0 to 1 each | linear |
 
-- **Scenes:** solving, inspecting, celebrating. The scene enters the model as a context input with its own length scale, so looks can differ by scene where the owner's choices say so and stay shared where they do not.
-- **Colouring rule:** cells are coloured by a structural rule; the first version colours the 20 rings of 30 cells. The real sticker palette is G4's job; the studio learns the palette character (hue spread, lightness, chroma, background).
-- **Hard checks before a look is shown:** touching cells of different colour classes differ by at least the ΔE threshold in OKLab under normal vision and under each simulated deficiency (threshold proposed in G4; first value 0.08); background contrast; parameter ranges. A failing look is never shown.
+### 4.1 Scenes
+
+Solving, inspecting, celebrating. The model is one joint Gaussian process over (look, scene). The kernel is k((x,s),(x',s')) = k_x(x,x') · k_s(s,s') with k_s = 1 for the same scene and ρ otherwise; ρ in [0, 1] is fitted. Looks are shared where the owner's choices agree across scenes and differ where they do not. All hyperparameters are shared and stored once.
+
+Celebrating is tuned toward subtle, because rewards are small, in place and never modal (owner design decision 1). The table carries scene limits that narrow a parameter's range in one scene; the first values are glow at most 0.5 and twist duration at most 600 ms in the celebrating scene. A scene's candidates stay within its limits, and the encoding keeps the table's ranges, so looks of different scenes stay comparable. The preview has no full-screen effect in any scene: glow is a rim light on each cell, and fog fades distant cells toward the background.
+
+### 4.2 Palette rule and hard checks
+
+- Cells are coloured by a structural rule: the 600 cells form 20 rings of 30 cells, and a proper colouring of the ring adjacency graph (rings that share a face get different classes) assigns each ring one of k colour classes. Class i has hue = rotation + spread · i / k, lightness = L ± alternation (alternating by i), chroma C. The real sticker palette is G4's job; the studio learns the palette character. Colour carries the class, never identity (owner design decision 2); the preview shows no exact IDs, so resolving repeated colours on focus stays with G4 and the product.
+- One function maps every OKLCh colour into sRGB by reducing chroma at constant L and hue. It returns a failure, not a colour, when no chroma at that L fits (in particular when the derived L is outside 0 to 1). A look with any failed class colour is invalid and is rejected before rendering and before any other check. The renderer and the checks use the same mapped colour.
+- Hard checks, on the mapped colours: touching classes (rings that share a face) differ by at least the ΔE threshold in OKLab under normal vision and each simulated deficiency (first value 0.08, to be set in G4); every class differs from the background by at least 0.20 in OKLab L; parameters within range.
+- A failing look is never shown. Thresholds are never relaxed automatically.
+
+### 4.3 Feasibility sweep (before the model)
+
+A prototype (pure Python, 4,096 random points, Machado severity 1.0) showed that 20 distinct ring colours cannot meet the 0.08 threshold: no point passed, the best worst-view minimum ΔE was 0.015 with the hue-order assignment and 0.066 with a searched assignment, and deuteranopia was the limiting view in most points. The ring adjacency graph of a 7-regular ring cover (each ring touches 7 others) has chromatic number 4; with k = 4 to 8 classes the best worst-view minimum ΔE was 0.14 to 0.16. `tools/tastelab/sim/sweep.mjs` must reproduce this result before the model is built. Phase 1 therefore colours by graph colouring with k classes; the threshold is unchanged. The ring cover is the one in which every ring touches exactly 7 others.
+
+Evaluate 4,096 Sobol points of the palette and background parameters under the hard checks. Report the rejection rate and the feasible region, and keep the feasible set as a fallback pool. If no look is feasible, stop and give the owner the options (threshold, palette rule). If a round finds no feasible candidate, the page draws from the fallback pool and says so.
+
+### 4.4 Geometry and the cap turn
+
+- 120 vertices as unit quaternions (the binary icosahedral group), 720 edges, 1,200 triangles, 600 tetrahedral cells, face adjacency.
+- Rings: the 600 cells split into 20 disjoint rings of 30 face-connected tetrahedra (Boerdijk–Coxeter helices). The construction is stated in the code with its source.
+- Cap turn (illustrative): a rotation of 4D space that fixes the chosen cell's centre direction c and rotates the orthogonal 3-space by a symmetry of the cell's tetrahedron (order 3 about a vertex axis). The cap is the set of cells whose centre has dot product with c above a stated cut. The animation interpolates the angle.
+- Tests: the vertex set equals a fixture generated from `research/audit/verify_regular_geometry.py`'s construction; unit norms; edge length 1/φ; each cell has 4 face neighbours; the rings are disjoint, cover all 600 cells, and each is a closed face-connected cycle; every intermediate turn matrix is orthogonal and fixes c; the endpoint maps the cap's vertex set onto itself.
+
+### 4.5 Theme families
+
+1.0 ships two authored theme families, each with the three scene looks (owner design decision 3). The stored table lists the families (default two, which the owner can rename). The count is a parameter, not a constant: a later scope triage can drop the second family without code changes, and with one family the page and the export work as before.
+
+- **Choice: each family is learned separately** (option b of the hand-off of 2 October). Every answer records its family. Each family has its own model, hyperparameters, look cap and settled state, and reads only its own answers. Reasons: the families cannot blend, however few the answers; the single-family learner, its tests and its experiment carry over unchanged; dropping a family touches no model code. Cost: nothing transfers between families, so each family needs its own comparisons (section 6 states the number).
+- **Not chosen.** (a) The family as a context input with its own fitted correlation, like ρ for scenes: it would share answers between families, but the correlation is estimated from few answers, an overestimate pulls the families together, and one correlation cannot say which parameters are shared. (c) The second family starting from a region that contrasts with the first: it presumes which parameters should differ and steers the second family away from the owner's own choice.
+- **Shared-attribute summary.** The export lists, per parameter and scene, each family's best value and the difference between the families in units of the parameter's range. A parameter within 0.1 in every scene is marked shared. The summary describes the answers; whether a shared attribute becomes fixed is the design track's decision.
+- **Fixed across families:** commands, keys, layout anchors, role glyphs, status meanings, comparison conventions, motion meanings, accessibility alternatives and the projection. None of them is a studio parameter; the page keeps the preview's projection, layout and keys the same for every family. Every studio parameter belongs to what families may vary: palette character (the palette and background groups), surfaces and materials (gloss, glow, fog, edges) and density (cell gap, edge weight). Typography is not a studio parameter in phase 1. Twist duration and easing vary by family only within the table's motion range (150 to 900 ms; the easing family has no overshoot), a first proposal that G5's motion table (H-03) replaces.
+- The worker keeps one learner per family and runs only the shown family's work; the limits of section 5.5 apply per family.
 
 ## 5. Model (theory in the owner's guide, sections 8.20 and 8.21)
 
-- Choice likelihood: P(A over B) = Φ((f(A) − f(B)) / (√2 σ)). "Same" is a tie with a learned threshold; "both bad" records both below a virtual reference at the level of the chosen looks; undo removes the last record.
-- Prior: zero-mean GP with an ARD squared-exponential kernel over normalized parameters plus the scene context.
-- Update: Laplace approximation by Newton's method after each answer; hyperparameters re-fitted every 10 answers by maximizing the approximate marginal likelihood.
-- Next pair: current best against a Thompson sample among the top candidates by an upper confidence bound; about 20% of pairs by expected information gain; about 5% repeats of earlier pairs.
-- Size: at most a few hundred looks per scene; older looks far from every choice may be pruned.
-- "Settled" when the model is at least 90% sure that the best beats every candidate of its round, the best is unchanged for 15 answers, and two separate sessions end in the same region.
+### 5.1 Scale
+
+The probit noise is fixed at σ = 1, which fixes the utility scale (the likelihood depends only on signal/σ). With the kernel of section 5.3 the amplitude of its polynomial part is redundant with the length scales, so it is fixed at 1. The fitted hyperparameters are one length scale per parameter (0.05 to 50 on the normalized axes; both features of a circular parameter share it), the weight amp of the kernel's smooth part (0 to 10), the weight β of its interactions (0 to 1), ρ and the tie threshold. Each length has a log-normal prior density on its value (including the 1/l factor), with median e^√2 · √D, where D is the number of encoded features (about 18 for the default table's D = 20), and log-sd √3. A prior without the 1/l factor pulls every length to the median. amp and β have no prior term: the search takes them from small grids (section 9) by the evidence alone. The priors on ρ (logit-normal) and the tie threshold (log-normal, median 0.2) are unchanged.
+
+### 5.2 Observations
+
+With d = f(A) − f(B) and a tie threshold ε > 0 (fitted), the three outcomes are normalized:
+- P(A over B) = Φ((d − ε)/√2),
+- P(same) = Φ((ε − d)/√2) − Φ((−ε − d)/√2),
+- P(B over A) = Φ((−d − ε)/√2).
+
+"Both bad" adds no preference observation in phase 1. It marks both looks as rejected: candidates within a stated radius of a rejected look are excluded, and the next round explores away from the current best. An acceptability model is a later option. Undo removes the last record; the model is refitted from the remaining records, and the tests check that undo equals a fresh fit.
+
+### 5.3 Fit
+
+- Prior: zero-mean GP with the kernel of section 4.1, where k_x is built from the parameters, one length scale l_p each. For a linear or integer parameter, s_p = (x_p − ½)(x'_p − ½)/l_p² on the normalized axis and q_p = s_p²; for a circular parameter, s_p is the dot product of the two looks' (cos, sin) features divided by l_p², and q_p = s_p², which adds the second harmonic; r_p is the squared distance of the two looks' features of the parameter divided by l_p². Then
+  k_x = Σ_p (2 s_p + q_p + amp · exp(−r_p/2)) + β ((Σ_p s_p)² − Σ_p q_p).
+  - The polynomial part gives each parameter a linear and a quadratic term of its own: a long length scale switches a parameter off, and the fitted lengths rank the parameters' relevance.
+  - The smooth part (weight amp) lets a parameter's effect saturate or bend where a parabola cannot.
+  - The interaction part (weight β) adds the products of the parameters' linear terms and gives up a share β of the separate quadratic terms. The kernel equals Σ_p (2 s_p + amp · exp(−r_p/2)) + (1 − β) Σ_p q_p + β (Σ_p s_p)², so it is positive semi-definite for β in [0, 1].
+  - With amp = β = 0 it is the additive quadratic kernel.
+  (The first choice, ARD squared-exponential, explains every answer with one joint distance; one short irrelevant length then decorrelates all looks, and the relevance ranking failed in every simulated seed.)
+- The fit works in function space, on the latent utilities of the shown looks with the kernel matrix above.
+- Update: Laplace approximation by Newton's method on the latent utilities after each answer, starting at zero, at most 30 iterations; on non-convergence the previous fit is kept and the page says so.
+- Hyperparameters: refitted every 10 answers by maximizing the approximate marginal likelihood plus the priors. Grid search: each length in turn over 13 log-spaced values from 0.1 to 50, then moves of ±0.8 and ±0.3 on logit ρ and log ε, then each value of the grids for amp and β (section 9); every move starts from the best point so far; two passes. Then each length in turn moves one step up and one step down by the factor 1.5^(1/2), and again by 1.5^(1/4), so that lengths fall between the grid values (section 9). At most 600 evaluations. Every grid value is evaluated directly, so the search cannot stall on the flat evidence of a long length.
+
+### 5.4 Next pair
+
+- Candidates per round, hard checks first: 512 from the feasible pool and local perturbations around the predicted optimum (the previous round's candidate with the highest posterior mean, shown or not); four single-parameter moves per parameter and 24 moves of two or three parameters from the predicted optimum; and the best shown look.
+- The anchor is the candidate with the highest posterior mean. In half of the rounds its partner is the candidate with the largest mutual information between the three-outcome answer and the two latent utilities. In the other half the pair is the best, by the same measure, of the anchor pair and 3,000 random pairs of candidates. The mutual information is computed by 16-point quantile quadrature of the pair's posterior difference, without sampling. (The first choice, the best shown look against a Thompson draw, aimed at the current best rather than at the answers that fix the final pick and the relevance; pairs far from the optimum carry most of the relevance information.)
+
+### 5.5 Limits
+
+- At most 400 latent looks in total (all scenes). Pruning first removes candidates that were never shown. When the shown looks alone reach 400, the fit uses the comparisons among the 400 most recently shown looks; older comparisons stay stored and exported but leave the fit, and the page says how many.
+- Work runs in a Web Worker. Target: the next pair is ready within 1 s at the maximum size. The benchmark in headless Chromium is indicative only, not a measurement on the owner's laptop. The fit scales with the shown looks (one Cholesky factorization of their covariance per Newton step) and the pair choice with the round's candidates, so the look cap bounds the fit's cost as well as the stored state.
+
+### 5.6 Settled
+
+"Settled" when, in a scene: (1) the expected regret of the reported best look, E[max f − f(best)] over 200 joint posterior draws f of the round's candidates, divided by the predicted range D = (the highest posterior mean among the candidates) − (the median posterior mean over the scene's feasible pool), is at most τ. This is the normalization of the experiment's r with posterior means in place of the true utilities; D is fixed before the draws, so the statistic has a finite expectation (a draw-dependent denominator can approach zero and make it diverge; plan re-check finding TL-P11). The test fails when D ≤ 0, and the ratio is capped at 1 for display; (2) the best after each of the last K answers in that scene, within the session, lies in the region of the current best (section 9); (3) two separate sessions end in the same region. First values τ = 0.05 and K = 15; the experiment calibrated them on development seeds so that criterion 4 of section 6 holds, which gave τ = 0.05 and K = 10 (section 9), and the report states the values used. (The first rule asked the best to beat every one of the round's 512 candidates in 90% of draws; near-identical candidates made that practically impossible, and it never fired in simulation. Owner decision of 3 October 2026. Condition (2) first asked for the same best look for K answers. In the calibration on development seeds it never held for 15 or 20 answers, because each round's anchor near the predicted optimum often becomes the new best shown look: among the last 15 bests a seed typically had 5 to 8 different looks. Stability is therefore judged by region.)
 
 ## 6. Simulated-owner experiment
 
-A synthetic utility with a known optimum (a smooth function of a few parameters, the others irrelevant) answers the page's questions with probit noise of several sizes. Over at least 50 seeds per noise level, record the distance from the found best to the true optimum against the number of comparisons, whether the length scales single out the relevant parameters, and how often "settled" is wrong. Compare with random pairs. The result is a sanitized report in `docs/progress/1.0/` and sets the expected number of comparisons honestly before the owner starts.
+- Synthetic utilities with a known optimum: a smooth function of three to five parameters, the others irrelevant, with scene-specific and shared parts; its optimum lies inside the feasible set of section 4.3.
+- Answers use the observation model of section 5.2 at three noise levels (signal-to-noise 1, 2 and 4) and a fixed tie threshold.
+- Measure normalized regret r = (u* − u(best)) / (u* − median u over the feasible sweep), not distance to one optimum vector.
+- Run a low-dimensional baseline first, then the full space. In the low setting the parameters held at the optimum carry no data, so the relevance ranking cannot separate them there, and the settled rule is calibrated in the full setting only; the owner recorded the low setting's misses as known limitations on 3 October 2026. Before any page mode narrows the parameter space, the settled rule is calibrated again in the narrowed space and the ranking check is defined for parameters that never vary. At least 50 paired seeds per noise level; random pairs with the same budget as the baseline method.
+- Pass, at the middle noise level, in sessions of 30 comparisons: at 90 comparisons, median r ≤ 0.10, the model beats random pairs on paired seeds (one-sided Wilcoxon signed-rank test, p < 0.01), and "settled" is wrong (declared while r > 0.20) in at most 10% of seeds; at 160 comparisons, the fitted length scales rank the relevant parameters above the irrelevant ones in at least 80% of seeds. The thresholds are those of 2 October 2026; the owner moved the evaluation points from 60 comparisons on 3 October 2026, after 60 answers proved too few to separate 4 relevant parameters from 14 irrelevant ones (a reference learner that knows the utility's form, centres and scale ranked them correctly in 58% of seeds). Until a family has 160 comparisons, the page marks its parameter ranking as provisional.
+- In the celebrating scene the synthetic optimum lies within the scene limits (section 4.1).
+- Robustness checks (added on 3 October 2026 with the kernel's smooth and interaction parts): two more synthetic owners each break one assumption of the additive quadratic utility. "cross" adds an interaction of chroma and cell gap, and "bump" makes every term a bounded bump instead of a parabola. They run with one family at the middle noise level and are scored by the same criteria; the report states their results next to the main result. A miss goes to the owner like any other miss (section 1, item 3); no threshold changes.
+- Two families (added by the owner design decisions; the criteria above are unchanged): the synthetic owner has two family optima, drawn so that their regions of regret at most 0.10 are disjoint: under the utilities' common weighted metric (circular for hue), the distance between the optima exceeds the sum of the two regions' radii, so no single look is within 0.10 of both optima. The answers of both families are stored together, interleaved, and each family's learner reads its own. A seed recovers both families when each family's reported best look has regret at most 0.10 against its own optimum, which takes two different looks. Pass: at the middle noise level and 150 comparisons per family (300 in total, five sessions of 30 per family), the median over seeds of the larger of the two families' regrets is at most 0.10. The owner moved this checkpoint from 90 comparisons per family after the acceptance run on 3 October 2026; the threshold is unchanged. Before the run, the harness checks in every seed that the fixture's regions are disjoint and that a collapsed control (both families reporting the same look: either optimum, or the feasible look with the smallest summed regret) fails the predicate.
+- The result is a sanitized report in `docs/progress/1.0/` and sets the expected number of comparisons before the owner starts.
 
 ## 7. Storage, privacy and export
 
 - Capabilities: `db` (owner-only rules: every path readable and writable only at owner level), `user`, `downloads` for export. No `sample`, `mcp`, `room` or `comments`.
-- Collections: `comparisons` (looks as parameter vectors, scene, answer, time, session), `sessions`, `space` (the edited parameter space), `model` (fitted hyperparameters per scene).
+- Collections: `comparisons` (looks as parameter vectors, family, scene, answer, time, session, an optional reason), `sessions`, `space` (the edited parameter space, with the families and the scene limits), `model` (fitted hyperparameters).
 - Claude reads the data with `ArtifactData` and writes a copy to `work/loop-memory/tastelab/` (private, ignored by Git). Export saves the same JSON to the owner's computer.
 - Never stored: images, names, keys, anything from the owner's sessions.
+- **Reason (optional).** After an answer, W opens a one-line field for that answer (at most 140 characters); Enter saves it into the answer's record and Esc closes the field. The reason stays in the page's owner-only storage like every answer and is exported with it. It is raw material for the owner's annotated references and nexus cards (4A), from which agents extract transferable attributes only, never assets.
+- **Export.** The answers, plus `presets` (the best shown look per family and scene with its answer count and settled state: 2 × 3 starting points by default), `shared` (section 4.5) and `costHeavy`: gloss, glow, fog and edge weight, the parameters whose frame-time cost H-06 must measure before a preset reaches G3. Taste Lab measures no performance and the export makes no performance claim; each family's most expensive scene must pass the renderer gate in the design and engineering tracks.
+- **Labels.** Every term the page shows follows the glossary (`docs/progress/1.0/glossary/glossary.md`): the motion parameter is the twist duration (glossary: twist), and the parameter that shrinks each drawn cell is the cell gap (a sticker slot is a different concept). Concepts the page names that the glossary does not define yet (colour class, scene, theme family) are listed in the report for the concept table of owner design decision 2; the page does not define them.
+
+### 7.1 Canary first
+
+Before the learner is connected, publish a minimal private canary page with code-contained fixtures. It checks: one supporting module import; one WebGL 2 pixel; persist and reload one fixture; read it through `ArtifactData`; export it with `downloads`; the page's behaviour when a capability is absent or a write fails; the declared owner-only rules as read back. A read or write by a second account cannot be tested from this session; it stays unverified until the owner opens the page from another account, and the report says so. The canary is deleted after the check if the owner agrees.
 
 ## 8. Process
 
-1. Codex plan check of this plan (Sol, max, standard tier; no critical path is touched).
-2. Commit the interfaces and test skeletons, then run packets P1 and P2 through `--kind implement` in parallel while Claude writes the preview and the page.
-3. Review: Claude reviews Codex's patches; a Codex review covers Claude's page code; one review of the finished candidate.
-4. Checks: `python tests/test_tastelab_core.py`, the simulated-owner experiment, a browser check of the page with the pre-installed Chromium (rendering and keys), then publish and the functional pass.
-5. Owner: edit the parameter space, then start comparing.
+1. Scoped re-check of this revised plan (Astra, max, fast tier).
+2. Canary (section 7.1) and feasibility sweep (section 4.3).
+3. Commit this plan. Then run packets P1 and P2 through `--kind implement` in parallel, each with its interfaces, owned files including tests, acceptance command and stop condition. Nobody commits while they run. Claude writes the runner, preview, page, sweep and experiment.
+4. Claude reviews and applies Codex's patches.
+5. Checks on the integrated candidate: `python tests/test_tastelab.py`, the simulated-owner experiment, a browser check of the page with the pre-installed Chromium (rendering and keys).
+6. One Astra review of the candidate that passed step 5 (behaviour and design), then at most two scoped verification rounds; the checks run again on every changed candidate. Commit only when the checks pass and the review covers that candidate.
+7. Publish and the functional pass.
+8. Owner: edit the parameter space, then start comparing.
+
+## 9. Deviations recorded during implementation
+
+- The page entry is `tools/tastelab/index.html`, not `page/index.html`, so that the published file layout matches the repository: `page/worker.js` imports `../core/`.
+- `page/candidates.js` was added. It builds the feasible pool once from 16,384 Sobol points (with the default table about 1.5% pass the hard checks, 247 looks) and fills each round from it after up to 256 local perturbations around the current best (σ = 0.08 on the unit axes, at most 1,024 tries).
+- `page/learner.js` was added. It holds the learner state behind the worker, so that Node tests cover the look cap, the rebuild when the cap is reached during a session, skipped records and the settled rule. `page/worker.js` only passes messages.
+- Settled (section 5.6): two best looks are in "the same region" when their scaled distance under the fitted length scales, the square root of Σ ((x_i − x'_i)/l_i)² over the encoded features, is at most 1. A session that settles stores its best look per scene in `sessions/<id>`. Stability counts answers per scene, not proposals or scene changes; it compares the best after each of the last K answers with the current best under the current length scales, and its history starts empty in every session (the page rebuilds the learner on load) and survives a rebuild at the look cap.
+- Storage (section 7): the page uses `comparisons`, `sessions` and `space`. It does not store `model`; the worker refits the hyperparameters from the comparisons on every load.
+- A stored parameter table is used only when it is valid and names every parameter the page draws; hard checks use the session's table. Records that do not fit the current table are skipped, and the page shows how many.
+- Hyperparameters (sections 5.3 and 5.5): the worker runs the search of every tenth answer, and the one after a load, in its idle time, one evaluation per task, and proposes the next pair first. Until the search ends, pairs use the previous hyperparameters. A search still running when the next one starts hands over its best point; answers that arrive during a search are fitted when its result is adopted.
+- Next pair (section 5.4): one joint posterior of the round's candidates serves the pair choice and the settled test; the best look and the pool's median need only posterior means.
+- Settled (section 5.6): the regret test concerns the reported best look, the shown look with the highest posterior mean, which every round includes unless it fails the scene's current hard checks (possible only after the parameter table changed); then no round shows it again, the regret test is skipped and the scene is not settled.
+- Settled (section 5.6): the reference of the predicted range is the median posterior mean over the scene's feasible pool, at most its first 1,024 looks (with the default table the pool has fewer). The sample of looks is fixed when the learner is built; the posterior means are recomputed in every round.
+- Candidates (section 5.4): after the pool fill, a round adds the best shown look and the moves from the predicted optimum (four values drawn uniformly on each parameter's own axis, and 24 moves that redraw up to three randomly chosen parameters), each only if it passes the hard checks and is not already in the round. With the default table a round has at most 512 + 1 + 4 · 18 + 24 = 609 candidates.
+- Kernel weights (section 5.3): the search tries amp from {0, 0.1, 0.3, 1, 3} and β from {0, 0.1, 0.3, 1}, after the lengths, ρ and ε of each pass. Development runs of the scratch harness (seeds 100 to 123, 120 comparisons, middle noise, one family) gave a median regret at 90 comparisons of 0.044, 0.080 and 0.080 for the quad, cross and bump owners, against 0.038, 0.100 and 0.133 with amp = β = 0. The evidence kept amp = 0 for the quad owner in 20 of 24 seeds and β = 0 in 23 of 24, chose amp = 3 for the bump owner in 12 seeds and β = 0.1 for the cross owner in 15. The experiment of section 6 decides; these runs only chose the grids.
+- Model (section 5.3): the stored model format is version 2 (kernel groups, amp and β). The page stores no model (see the storage bullet above), so no stored data needs migration. The search starts from the current hyperparameters; a new model starts at length 1 for every parameter, ρ = 0.5, ε = 0.2 and amp = β = 0.
+- Settled calibration (section 5.6): the learner's pairs and best looks do not depend on τ or K, and the settled test draws the same random numbers for every τ, so one experiment run replays the settled rule for a grid of τ and K. The harness checks that the replay of the learner's own values equals the learner's flags in every round.
+- Experiment (section 6), owner decision of 2 October 2026 to fix these as defects: the noise level is the latent signal over σ, d = level · Δu / sd(u) over the feasible sweep; random pairs are two distinct looks drawn uniformly from the feasible sweep; u* is the scene's optimum, which passes the hard checks; the median and the spread come from the setting's own feasible sweep. Both methods run the page's learner (`page/learner.js`) on their own answers. Sessions are 30 comparisons long (three by the 90-comparison checkpoint), so that "settled" is scored by the page's two-session rule; one session's settled state is reported separately.
+- Relevance ranking (sections 5.3 and 6): with the learner as first ported, the strict ranking at 160 comparisons (every relevant length shorter than every irrelevant one) held in 32 of 50 development seeds (seeds 100 to 149; full setting, quad owner, middle noise, sessions of 30). The search was not at fault: refits of three failing seeds from seven starts all reached the same evidence optimum, and lengths near the truth had lower evidence by 12 to 22. The relevant parameters most often not ranked first were glow and hue rotation (on the fresh seeds 150 to 199: glow in 10 and hue rotation in 7 of the 14 failing seeds), and 6 of those 14 failures were exact ties of grid lengths. Hue rotation, the only relevant circular parameter, had the first harmonic only and no second-order term of its own. The quadratic term for circular parameters raised the strict ranking to 38 of 50, and the refinement steps of section 5.3 to 40 of 50 (39 at 120 and 41 at 180 comparisons). On the fresh development seeds 150 to 199, used for no choice, it held in 40 of 50 seeds against 36 of 50 for the learner as first ported (37 against 33 at 120 comparisons, 44 against 38 at 180); over all 100 development seeds, in 80 against 68. Of the 10 failures left on seeds 150 to 199, 2 are ties and 7 involve hue rotation. The changes cost some regret: the median at 90 comparisons over the 100 seeds is 0.068 against 0.058 (paired signed-rank test, z = 1.61, not significant), and 0.026 against 0.021 at 180. Tried and dropped: relevance probe pairs from the 90th comparison (29 of 50 at 160), and both changes with amp = β = 0 (41 of 50 at 160, but 31 at 120 and a median regret of 0.070 at 90; the robustness owners need the smooth and interaction parts). About 80% of development seeds is at the threshold: the acceptance run decides, and a miss goes to the owner.
+- Settled calibration result (section 5.6): the selection rule was fixed before the results. Grid: τ in {0.02, 0.05, 0.1, 0.15, 0.2, 0.3} and K in {10, 15, 20}, on development seeds 100 to 149 (full setting, quad owner, middle noise, 180 comparisons in sessions of 30). Constraint: falsely settled (declared while r > 0.20) by 90 comparisons in at most 5% of seeds, half of criterion 4's 10% as a margin for the acceptance seeds, and by 180 comparisons in at most 10%. Objective: the most seeds settled by 90 comparisons, then by 180, then the smaller τ, then the larger K; if no grid point met the constraint, τ = 0.02 and K = 20. The first run, with an unchanged best look as condition (2), never settled at any grid point, and condition (2) became the region rule before the next run. For the learner of the bullet above, the rule gives τ = 0.05 and K = 10: settled by 90 comparisons in 1 of 50 seeds and by 180 in 13, never falsely. Every larger τ broke the constraint (τ = 0.1 with K = 20: falsely settled by 90 comparisons in 3 of 50 seeds). On seeds 150 to 199 the same grid would have chosen τ = 0.3 and K = 20 (settled by 90 comparisons in 16 of 50 seeds, falsely in 2); the rule uses seeds 100 to 149 only. With these values "settled" seldom fires by 90 comparisons: criterion 4 limits wrong settled states, not their absence.
