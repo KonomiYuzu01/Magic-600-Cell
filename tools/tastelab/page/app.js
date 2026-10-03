@@ -43,6 +43,7 @@ function showPair(msg) {
     previews[i].setLook(look, cellColours(look), background(look).srgb);
   });
   $("count").textContent = String(msg.counts.answers);
+  $("countWord").textContent = msg.counts.answers === 1 ? "answer" : "answers";
   $("countFamily").textContent = familiesOf(state.space).length > 1 ? `for ${familyName(msg.family)}` : "";
   $("kind").textContent = msg.kind === "mi" ? "Testing the current favourite" : "Exploring";
   // The settled test's expected regret, relative to the predicted range (plan section 5.6).
@@ -55,29 +56,28 @@ function showPair(msg) {
   $("pruned").hidden = !notes.length;
   $("pruned").textContent = notes.join(" ");
   recordSettled(msg);
-  renderRelevance(msg.relevance, msg.counts.answers);
+  renderRelevance(msg.relevance, msg.counts.answers, msg.fitted);
   if (!state.statusSticky) $("status").textContent = "";
   setBusy(false);
 }
 
 // Relevance of the shown family's model; `answers` counts that family's answers.
-// The ranking is provisional until 160 answers (plan section 6).
+// The ranking is provisional until 160 answers (plan section 6). It waits for the
+// model's first finished hyperparameter search after a load or a rebuild: before
+// it, every parameter has the starting length scale and the order means nothing.
 const RANKING_AT = 160;
-function renderRelevance(rel, answers) {
+function renderRelevance(rel, answers, fitted) {
   const list = $("matters");
   list.replaceChildren();
-  if (answers < 10) {
-    const li = document.createElement("li");
-    li.textContent = `Appears after 10 answers (${answers} so far).`;
-    list.append(li);
-    return;
-  }
-  if (answers < RANKING_AT) {
+  const note = (text) => {
     const li = document.createElement("li");
     li.className = "note";
-    li.textContent = `Provisional until ${RANKING_AT} answers (${answers} so far).`;
+    li.textContent = text;
     list.append(li);
-  }
+  };
+  if (answers < 10) return note(`Appears after 10 answers (${answers} so far).`);
+  if (!fitted) return note(`Appears once the model is fitted (${answers} answers so far).`);
+  if (answers < RANKING_AT) note(`Provisional until ${RANKING_AT} answers (${answers} so far).`);
   const max = Math.max(...rel.map((r) => r.value), 1e-9);
   for (const r of [...rel].sort((a, b) => b.value - a.value).slice(0, 8)) {
     const li = document.createElement("li");

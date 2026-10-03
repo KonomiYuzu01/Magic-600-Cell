@@ -57,3 +57,22 @@ test("presets give every family and scene its best look, answer count and settle
   assert.equal(msg.shared.length, space.params.length);
   for (const s of msg.shared) assert.equal(s.shared, null, s.id);
 });
+
+test("a pair says whether its family's hyperparameter search has finished since the learner was built", async () => {
+  const records = Array.from({ length: 12 }, (_, i) => record(i, i + 1, "f1", i % 3 ? "A" : "B"));
+  records.push(record(13, 14, "f2"), record(14, 15, "f2", "B"));
+  let msg = send({ type: "init", space, records, settled: [], session: "s3", scene: "solving", family: "f1", seed: 11 });
+  assert.equal(msg.type, "pair");
+  assert.equal(msg.fitted, false, "the search after a load has not run yet");
+  // The search runs one evaluation per task between messages.
+  for (let i = 0; i < 20000 && !msg.fitted; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    if (i % 200 === 199) msg = send({ type: "next", scene: "solving", family: "f1" });
+  }
+  assert.equal(msg.fitted, true);
+  // Another family's learner is built on first use and searches on its own.
+  assert.equal(send({ type: "next", scene: "solving", family: "f2" }).fitted, false);
+  send({ type: "presets", id: "p3", settled: [] });
+  assert.equal(send({ type: "next", scene: "solving", family: "f2" }).fitted, true, "presets finish every family's search");
+  assert.equal(send({ type: "next", scene: "solving", family: "f1" }).fitted, true);
+});

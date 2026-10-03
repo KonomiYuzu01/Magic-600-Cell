@@ -12,6 +12,11 @@ const learners = new Map();
 let ctx = null; // the space, records, settled records, session and seed of the last init
 let shown = null; // the family whose search runs when idle
 let idleTimer = null;
+// Learners with a search under way, and learners whose search has finished since
+// they were built: until then every parameter has the starting length scale, so the
+// pair says that its relevance ranking is not fitted yet.
+const searching = new WeakSet();
+const fitted = new WeakSet();
 
 const fail = (err, id) => self.postMessage({ type: "error", id, message: String(err && err.message ? err.message : err) });
 
@@ -29,7 +34,18 @@ function learnerFor(family) {
 
 function propose(family, scene) {
   shown = family;
-  return learnerFor(family).propose(scene);
+  const learner = learnerFor(family);
+  return { ...learner.propose(scene), fitted: fitted.has(learner) };
+}
+
+// One evaluation of a learner's pending search; true while work remains.
+function step(learner) {
+  if (learner.idle()) {
+    searching.add(learner);
+    return true;
+  }
+  if (searching.delete(learner)) fitted.add(learner);
+  return false;
 }
 
 // The export's starting points: every family's searches finish first.
@@ -37,7 +53,7 @@ function presets(settled) {
   const out = [];
   for (const f of familiesOf(ctx.space)) {
     const learner = learnerFor(f.id);
-    while (learner.idle());
+    while (step(learner));
     for (const scene of SCENES) {
       const look = learner.best(scene);
       const own = (r) => r && r.scene === scene && recordFamily(ctx.space, r) === f.id;
@@ -57,7 +73,7 @@ function presets(settled) {
 function runIdle() {
   idleTimer = null;
   try {
-    if (shown !== null && learners.has(shown) && learners.get(shown).idle()) scheduleIdle();
+    if (shown !== null && learners.has(shown) && step(learners.get(shown))) scheduleIdle();
   } catch (err) {
     fail(err);
   }
@@ -78,7 +94,9 @@ self.onmessage = (e) => {
       ctx.records.push(m.record);
       // A family without a learner yet reads the record from ctx when first shown.
       const family = recordFamily(ctx.space, m.record);
-      if (learners.has(family)) learners.get(family).answer(m.record);
+      const learner = learners.get(family);
+      // A rebuild at the look cap starts again from the starting hyperparameters.
+      if (learner && learner.answer(m.record).rebuilt) fitted.delete(learner);
       self.postMessage(propose(m.family, m.scene));
     } else if (m.type === "next") {
       self.postMessage(propose(m.family, m.scene));
