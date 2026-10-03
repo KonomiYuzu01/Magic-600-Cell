@@ -1,6 +1,6 @@
-# Stage 2.0 charter (draft for owner signature)
+# Stage 2.0 charter
 
-Status: **draft, not signed**. Exit of stage 2.0 is the owner's signature, targeted for working day 2 (the owner's next working day after 1 October 2026). Sections marked **Owner** are written or chosen by the owner; agents only collect inputs for them. Schedule and limits: [stage-2-experiment-protocol](stage-2-experiment-protocol.md) section 5.
+Status: **signed by the owner on 3 October 2026, as written** ([owner-decisions-2026-10-03](../../wiki/decisions/owner-decisions-2026-10-03.md)). This signature is the exit of stage 2.0. The file keeps its name `charter-2.0-draft.md` so that existing links stay valid. Sections marked **Owner** are written or chosen by the owner; agents only collect inputs for them. Schedule and limits: [stage-2-experiment-protocol](stage-2-experiment-protocol.md) section 5.
 
 ## 1. Purpose
 
@@ -30,7 +30,7 @@ Stage 2 removes the named uncertainties that block building 1.0, in this order: 
 
 Model agreement never decides taste or correctness. A task likely to miss its target exit day is reported once with a re-plan, and the owner moves the target, cuts the task or drops it.
 
-## 4. Scope of 1.0 (to confirm)
+## 4. Scope of 1.0 (confirmed at signing)
 
 In scope:
 - A new application with its own runtime; it does not inherit the 0.4 runtime or process split.
@@ -44,7 +44,7 @@ Out of scope for stage 2: shipping code, release packaging, NVIDIA-only features
 
 ## 5. Design charter (**Owner**)
 
-Owner input of 2 October 2026, translated from the owner's notes and clarifications by Claude. The owner confirms or corrects the wording at signing; the original notes stay private.
+Owner input of 2 October 2026, translated from the owner's notes and clarifications by Claude. The owner confirmed the wording as written at signing on 3 October 2026; the original notes stay private.
 
 - **Product thesis.** A complete solve of the 600-cell is harder in practice than its mathematical description suggests. 1.0 gives the solver tools that compensate for that complexity, so that the result still counts as a human solve with appropriate tools. Once learned, the tool is as efficient as an office application used from the keyboard alone (the reference is the Hyperspeedcube keybind workflow); learning it feels like progressing through a game with a complex but learnable mechanic. The toolset and workflow are built backward from the only practical full-solve method, orbit-first block building ([solving-workflow](solving-workflow.md)). In 0.4 this failed: the functions under Command All could not be found or understood, and even a simple operation was hard.
 - **Target users.** Core: people who seriously intend to solve the complete 600-cell (the owner and, as far as the owner knows, two or three others in the community). Secondary: people who know hypercube puzzles and want to understand the 600-cell and explore the program. The core users' workflow decides trade-offs; the secondary users get exploration and onboarding (S1, S3, S6) that never slows the core workflow.
@@ -59,7 +59,7 @@ Owner input of 2 October 2026, translated from the owner's notes and clarificati
   - One entry for everyone: one workspace and path, task-led optional coaching, direct resume for returning users, and a clearly labelled practice copy of the full model.
   - Role priority: an engineer's evaluation that demonstrates something wrong affecting the work or correctness is fixed first; otherwise, among admissible options, core workflow, then legibility and delight, then cost beyond the gates, then notation preference beyond correctness.
   - Sound is reduced ([owner-decisions-2026-10-02-scope](../../wiki/decisions/owner-decisions-2026-10-02-scope.md)): one short G5 comparison (silent against a two-cue set), then the owner adopts or rejects it; if adopted, at most two cues in 1.0 ("completed", "invalid action"), shared by all themes, each with a visual equivalent and mute; motion-table sound semantics and the full set move to 1.x.
-- **Anti-goals** (owner draft, more to come; split into single checkable items by Claude; the reasons are Claude's reading of the owner's notes and are confirmed at signing):
+- **Anti-goals** (owner draft, more to come; split into single checkable items by Claude; the reasons are Claude's reading of the owner's notes, confirmed at signing on 3 October 2026; more anti-goals may be added by the owner):
   1. **Outdated stack.** Never build on an outdated UI stack such as WinForms on the .NET Framework with Managed DirectX, the 0.4 host: effective new work cannot be built on a stack Windows has moved past.
   2. **Screens full of text.** Never use text where a graphic can carry the meaning: text is slow to read in a dense, repetitive workflow.
   3. **Unreviewed wording and stray jargon.** Never ship UI text that no person has reviewed, or terms that are not in the glossary: 0.4's front end was cluttered with generated wording nobody could follow.
@@ -74,7 +74,7 @@ Owner input of 2 October 2026, translated from the owner's notes and clarificati
   12. **One fixed look.** Never offer only one tone: users need the freedom to tune a comfortable experience.
   13. **Only mainstream taste.** Never only generic mainstream aesthetics: the owner's own interests and nexus points make the product distinct.
 - **Candidate metaphors** (two or three, one paragraph each): _owner draft_. Examples on the table: observatory instrument, museum exhibit, precision watch, Japanese stationery.
-- **Quality bar** (proposal for the owner to keep, change or drop). Intent: 1.0 should read as the work of a senior software engineer, a mathematician, a front-end designer and an interaction artist working together. The owner's definitions of the four roles: the engineer builds the high-performance graphics and renderer and the low-latency backend, integrates, accepts and packages, and implements the other three roles' designs in high-quality code; the mathematician builds the tool's own mathematical language (the existing IDs are only part of it), keeps the remaining mathematical rigour and continues the research reports; the front-end designer designs the whole skill, the layout and the mechanisms, from convenience and the product thesis, together with the artist, for an art-integrated front end; the interaction artist colours the project from the trained Taste Lab, keeps the skill enjoyable, and understands the engineering and the mathematics well enough to do so. Every bar below can be checked by a measurement, a review against a written list, or an owner judgement in the living test. The bars apply to the vertical slice's scope on day 15 and to the whole product at release. They never relax a binding input in section 2. Numbers marked _proposal_ are set in 2.3 and frozen at 2.5.
+- **Quality bar** (kept by the owner at signing; numbers marked _proposal_ stay proposals as stated below). Intent: 1.0 should read as the work of a senior software engineer, a mathematician, a front-end designer and an interaction artist working together. The owner's definitions of the four roles: the engineer builds the high-performance graphics and renderer and the low-latency backend, integrates, accepts and packages, and implements the other three roles' designs in high-quality code; the mathematician builds the tool's own mathematical language (the existing IDs are only part of it), keeps the remaining mathematical rigour and continues the research reports; the front-end designer designs the whole skill, the layout and the mechanisms, from convenience and the product thesis, together with the artist, for an art-integrated front end; the interaction artist colours the project from the trained Taste Lab, keeps the skill enjoyable, and understands the engineering and the mathematics well enough to do so. Every bar below can be checked by a measurement, a review against a written list, or an owner judgement in the living test. The bars apply to the vertical slice's scope on day 15 and to the whole product at release. They never relax a binding input in section 2. Numbers marked _proposal_ are set in 2.3 and frozen at 2.5.
 
   **Signature moments.** Four to six moments get many times the polish of ordinary features; everything else must be clean and consistent, not extraordinary. For each one the owner names a benchmark work, and the living test compares the two side by side.
   - S1 First launch: the user reaches a first legal turn within 30 seconds, and the structure is introduced from one cap and one orbit, not from all 259,800 stickers at once.
@@ -150,4 +150,4 @@ Chosen path: **option B**, a 1.0 importer reading a locked copy of the 0.4 datab
 
 ## 9. Signature
 
-Signed by the owner: _name, date_ — sections 5 and 6 filled.
+Signed by the owner on 3 October 2026, as written, sections 5 and 6 filled. The owner approved in a chat message; the record is [owner-decisions-2026-10-03](../../wiki/decisions/owner-decisions-2026-10-03.md). Items this signature does not settle: the manifesto (stage 2.3), the review-lens role cards (section 5, a later process change) and every number marked _proposal_.
