@@ -1,0 +1,753 @@
+--- a/tools/toolchain/bootstrap.py
++++ b/tools/toolchain/bootstrap.py
+@@ -67,6 +67,7 @@
+ LEDGER_PATH = ROOT / "work" / "loop-memory" / "ledgers" / "installs.jsonl"
+ PROBE_TIMEOUT = 20
+ INSTALL_TIMEOUT = 1800
++SOCKET_TIMEOUT = 60
+ ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+ PLATFORM = {"win32": "windows", "darwin": "macos"}.get(sys.platform, "linux")
+ REQUIRED_KEYS = {"id", "purpose", "profiles", "method", "status", "installable", "platforms"}
+@@ -175,6 +176,7 @@
+         names.add(name)
+         path = archive["path"]
+         require(_archive_rel(path) and re.fullmatch(r"[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*", path) is not None, "archive path")
++        require(_mirror_url(base + path, path), "base_url/network_hosts")  # the first request obeys the redirect policy too
+         require(type(archive["bytes"]) is int and archive["bytes"] > 0, "archive bytes")
+         require(isinstance(archive["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", archive["sha256"]) is not None, "archive sha256")
+         path = archive["install_path"]
+@@ -231,13 +233,16 @@
+     """Expand {python}, {venv} and {prefix} placeholders to a concrete executable path."""
+     if name == "{python}":
+         return sys.executable
++    # An archive tool runs only from its final version tree, reached without any link (so never from staging).
++    archive = name.startswith("{prefix}/") and entry["method"] == "archive-7z-hashed"
+     if name.startswith("{venv}/"):
+         root = safe_dest(entry["venv"])
+         venv_contained(entry)  # the interpreter and scripts it runs must stay inside the environment
+         base = _bin_dir(root) / name[len("{venv}/"):]
+     elif name.startswith("{prefix}/"):
+-        root = safe_dest(entry["prefix"])
+-        base = root / name[len("{prefix}/"):]
++        prefix = safe_dest(entry["prefix"])
++        root = safe_dest(entry["prefix"] + "/" + entry["root"]) if archive else prefix
++        base = prefix / name[len("{prefix}/"):]
+     else:
+         found = shutil.which(name)
+         if found is None and PLATFORM == "windows":
+@@ -249,6 +254,11 @@
+     for suffix in ([".exe", ".cmd", ""] if PLATFORM == "windows" else [""]):
+         candidate = base.with_name(base.name + suffix)
+         if os.path.lexists(candidate):
++            if archive:
++                try:
++                    safe_dest(candidate.relative_to(ROOT.resolve()).as_posix())
++                except Refused:
++                    raise Refused(f"{name}: executable passes through a link") from None
+             real = candidate.resolve()
+             if root.resolve() not in real.parents:
+                 raise Refused(f"{name}: executable leads outside {root.relative_to(ROOT).as_posix()}")
+@@ -534,14 +544,60 @@
+         return None
+ 
+ 
++class _DeadlineSocket:
++    """TLS socket mixin for archive downloads: every handshake, send and receive waits at most
++    SOCKET_TIMEOUT and never past the download deadline. A buffered read loops over many receives,
++    so a per-receive timeout alone would let a server that trickles bytes outlast the deadline."""
++
++    deadline: float
++
++    def _bound(self) -> None:
++        remaining = self.deadline - time.monotonic()
++        if remaining <= 0:
++            raise TimeoutError("download deadline exceeded")
++        self.settimeout(min(SOCKET_TIMEOUT, remaining))
++
++    def do_handshake(self, *args, **kwargs):
++        self._bound()
++        return super().do_handshake(*args, **kwargs)
++
++    def recv(self, *args, **kwargs):
++        self._bound()
++        return super().recv(*args, **kwargs)
++
++    def recv_into(self, *args, **kwargs):
++        self._bound()
++        return super().recv_into(*args, **kwargs)
++
++    def send(self, *args, **kwargs):
++        self._bound()
++        return super().send(*args, **kwargs)
++
++    def sendall(self, *args, **kwargs):
++        self._bound()
++        return super().sendall(*args, **kwargs)
++
++
+ def _http_get(url: str, timeout: float) -> tuple[int, Mapping[str, str], object]:
+-    opener = urllib.request.build_opener(_NoRedirect(), urllib.request.HTTPSHandler(context=ssl.create_default_context()))
++    """GET one URL without following redirects; timeout is the time left before the download deadline."""
++    if timeout <= 0:
++        raise TimeoutError("download deadline exceeded")
++    context = ssl.create_default_context()
++    context.sslsocket_class = type("_DeadlineSSLSocket", (_DeadlineSocket, ssl.SSLSocket), {"deadline": time.monotonic() + timeout})
++    opener = urllib.request.build_opener(_NoRedirect(), urllib.request.HTTPSHandler(context=context))
+     request = urllib.request.Request(url, headers={"Accept-Encoding": "identity", "User-Agent": "magic600-bootstrap"})
+     try:
+-        response = opener.open(request, timeout=timeout)
++        response = opener.open(request, timeout=min(SOCKET_TIMEOUT, timeout))
+     except urllib.error.HTTPError as response_error:
+         response = response_error  # expose redirects and errors to the policy, without following them
+     return response.code, response.headers, response
++
++
++def _header_values(headers, name: str) -> list[str]:
++    """Every value of one header field: a dict copy would keep only one of repeated fields."""
++    if hasattr(headers, "get_all"):
++        return list(headers.get_all(name) or [])
++    return [value for key, value in headers.items() if key.lower() == name]
+ 
+ 
+ def _archive_refusal(archive: dict, reason: str) -> Refused:
+@@ -568,23 +624,25 @@
+ 
+ def fetch_archive(entry: dict, archive: dict, dest_dir: Path) -> str:
+     url = entry["base_url"] + archive["path"]
++    if not _mirror_url(url, archive["path"]):
++        raise _archive_refusal(archive, "URL policy refused")
+     deadline = time.monotonic() + INSTALL_TIMEOUT
+     part = dest_dir / (archive["name"] + ".part")
+     hops = 0
+ 
+     def check_deadline():
+-        if time.monotonic() > deadline:
++        if time.monotonic() >= deadline:
+             raise _archive_refusal(archive, "download deadline exceeded")
+ 
+     try:
+         while True:
+             check_deadline()
+-            status, headers, stream = _http_get(url, 60)
++            status, headers, stream = _http_get(url, deadline - time.monotonic())
+             try:
+                 check_deadline()
+-                headers = {key.lower(): value for key, value in headers.items()}
+                 if status in (301, 302, 303, 307, 308):
+-                    location = headers.get("location")
++                    locations = _header_values(headers, "location")
++                    location = locations[0] if len(locations) == 1 else None
+                     if not location or "?" in location or "#" in location or any(ord(c) < 32 or 127 <= ord(c) <= 159 for c in location):
+                         raise _archive_refusal(archive, "invalid redirect location")
+                     redirected = urllib.parse.urljoin(url, location)
+@@ -594,8 +652,10 @@
+                     continue
+                 if status != 200:
+                     raise _archive_refusal(archive, f"HTTP status {status}")
+-                length = headers.get("content-length")
+-                if length is not None and (not re.fullmatch(r"[0-9]+", length.strip()) or int(length) != archive["bytes"]):
++                lengths = _header_values(headers, "content-length")
++                if len(lengths) > 1:
++                    raise _archive_refusal(archive, "repeated Content-Length")  # http.client frames the body by the first
++                if lengths and (not re.fullmatch(r"[0-9]+", lengths[0].strip()) or int(lengths[0]) != archive["bytes"]):
+                     raise _archive_refusal(archive, "Content-Length differs from the pin")
+                 total, digest = 0, hashlib.sha256()
+                 with part.open("wb") as f:
+@@ -619,6 +679,8 @@
+             finally:
+                 stream.close()
+     except (OSError, ValueError, HTTPException) as exc:
++        if time.monotonic() >= deadline:
++            raise _archive_refusal(archive, "download deadline exceeded") from None
+         raise _archive_refusal(archive, f"download failed ({type(exc).__name__})") from None
+     finally:
+         part.unlink(missing_ok=True)
+@@ -694,24 +756,35 @@
+                 if stat.S_ISDIR(mode):
+                     stack.append(path)
+                 elif stat.S_ISREG(mode):
++                    info = os.lstat(path)  # a scandir entry reports no link count on Windows
++                    if info.st_nlink > 1:
++                        raise Refused("extracted tree contains a hard-linked file")
+                     key = rel.casefold()
+                     if key in files:
+                         raise Refused("extracted tree contains duplicate file names")
+-                    files[key] = child.stat(follow_symlinks=False).st_size
++                    files[key] = info.st_size
+                 else:
+                     raise Refused("extracted tree contains a non-regular member")
+     return files, longest
+ 
+ 
+-def _remove_staging(staging: Path) -> None:
++def _remove_tree(top: Path) -> None:
++    """Delete a staging tree or a just-installed tree. A read-only file is made writable only inside
++    the tree and only when no other hard link shares its attributes, so nothing outside changes."""
++    if _is_link(top):
++        raise Refused(f"{top.name} is a link; remove it or ask the owner")
++
+     def writable_retry(func, path, exc):
+         target = Path(os.path.abspath(path))
+-        if (staging not in target.parents and target != staging) or _is_link(target):
++        if (top not in target.parents and target != top) or _is_link(target):
+             raise exc
++        info = os.lstat(target)
++        if not stat.S_ISDIR(info.st_mode) and info.st_nlink > 1:
++            raise Refused(f"{top.name} holds a hard-linked read-only file; remove it or ask the owner")
+         os.chmod(target, stat.S_IREAD | stat.S_IWRITE)
+         func(path)
+ 
+-    shutil.rmtree(staging, onexc=writable_retry)
++    shutil.rmtree(top, onexc=writable_retry)
+ 
+ 
+ def install_archives(entry: dict) -> None:
+@@ -729,83 +802,89 @@
+             _archive_tree(leftover)
+         except Refused:
+             raise Refused(f"unexpected leftover {leftover.name}; remove it or ask the owner") from None
+-        _remove_staging(leftover)
++        _remove_tree(leftover)
+     archives = entry["archives"]
+     if shutil.disk_usage(prefix).free < sum(a["bytes"] for a in archives) + entry["max_unpacked_bytes"]:
+         raise Refused(f"{entry['id']}: too little free space")
+     started = time.monotonic()
+     staging = prefix / f".st-{os.getpid()}"
+     staging.mkdir()
+-    records, expected, overlaps = [], {}, 0
+-    try:
+-        (staging / ".magic600-staging").write_bytes(b"magic600\n")
+-        dl, tree = staging / "dl", staging / "x"
+-        dl.mkdir()
+-        tree.mkdir()
+-        for archive in archives:
+-            host = fetch_archive(entry, archive, dl)
+-            records.append({"name": archive["name"], "bytes": archive["bytes"], "host": host})
+-        extractor = entry_for(load_lock(), entry["extractor"])
+-        venv = safe_dest(extractor["venv"])
+-        venv_contained(extractor)
+-        if venv_conflicts(extractor):
+-            raise Refused(f"{entry['id']}: extractor environment differs from its pins")
+-        interpreter = venv / "Scripts" / "python.exe"
+-
+-        def child(mode, archive, target=None):
+-            cmd = [str(interpreter), "-I", "-c", EXTRACT_CODE, mode, str(dl / archive["name"])]
+-            if target is not None:
+-                cmd.append(str(target))
+-            try:
+-                r = subprocess.run(cmd, cwd=staging, env=probe_env(), timeout=INSTALL_TIMEOUT, capture_output=True, text=True)
+-            except (OSError, subprocess.TimeoutExpired) as exc:
+-                raise _archive_refusal(archive, f"extractor failed ({type(exc).__name__})") from None
+-            if r.returncode != 0:
+-                raise _archive_refusal(archive, f"extractor exit {r.returncode}")
+-            if mode == "list":
++    records, expected, overlaps, moved = [], {}, 0, False
++    try:
++        try:
++            (staging / ".magic600-staging").write_bytes(b"magic600\n")
++            dl, tree = staging / "dl", staging / "x"
++            dl.mkdir()
++            tree.mkdir()
++            for archive in archives:
++                host = fetch_archive(entry, archive, dl)
++                records.append({"name": archive["name"], "bytes": archive["bytes"], "host": host})
++            extractor = entry_for(load_lock(), entry["extractor"])
++            venv = safe_dest(extractor["venv"])
++            venv_contained(extractor)
++            if venv_conflicts(extractor):
++                raise Refused(f"{entry['id']}: extractor environment differs from its pins")
++            interpreter = venv / "Scripts" / "python.exe"
++
++            def child(mode, archive, target=None):
++                cmd = [str(interpreter), "-I", "-c", EXTRACT_CODE, mode, str(dl / archive["name"])]
++                if target is not None:
++                    cmd.append(str(target))
+                 try:
+-                    return json.loads(r.stdout)
+-                except (ValueError, TypeError):
+-                    raise _archive_refusal(archive, "unparsable extractor listing") from None
+-
+-        unpacked = 0
+-        for archive in archives:
+-            listing = child("list", archive)
+-            problems = member_problems(listing, archive["install_path"])
+-            if problems:
+-                raise _archive_refusal(archive, "; ".join(problems))
+-            for member in listing:
+-                if member["file"]:
+-                    key = (archive["install_path"] + "/" + member["name"].replace("\\", "/")).casefold()
+-                    overlaps += key in expected
+-                    expected[key] = member["size"]
+-                    unpacked += member["size"]
+-        if unpacked > entry["max_unpacked_bytes"] or shutil.disk_usage(prefix).free < unpacked:
+-            raise Refused(f"{entry['id']}: unpacked size exceeds the limit or available free space")
+-        for archive in archives:
+-            target = tree / archive["install_path"]
+-            target.mkdir(parents=True, exist_ok=True)
+-            child("extract", archive, target)
+-        actual, longest = _archive_tree(tree, entry["root"])
+-        if actual.keys() != expected.keys():
+-            raise Refused(f"{entry['id']}: extracted file set differs from the listings")
+-        if actual != expected:
+-            raise Refused(f"{entry['id']}: extracted file size differs from the listings")
+-        conf = tree / archives[0]["install_path"] / "bin" / "qt.conf"
+-        replaced = conf.is_file()
+-        conf.parent.mkdir(parents=True, exist_ok=True)
+-        conf.write_bytes(b"[Paths]\r\nPrefix=..\r\n")
+-        longest = max(longest, len(conf.relative_to(tree).as_posix()))
+-        for rel in entry["required_files"]:
+-            path = tree / rel
+-            if _is_link(path) or not path.is_file():
+-                raise Refused(f"{entry['id']}: missing required file {rel}")
+-        os.rename(tree / entry["root"], final)
+-    finally:
+-        _remove_staging(staging)
+-    ledger({"tool": entry["id"], "phase": "archives", "archives": records, "overlaps": overlaps,
+-            "longest_path": len(str(prefix)) + 1 + longest, "qt_conf": "replaced" if replaced else "created",
+-            "seconds": round(time.monotonic() - started, 1)})
++                    r = subprocess.run(cmd, cwd=staging, env=probe_env(), timeout=INSTALL_TIMEOUT, capture_output=True, text=True)
++                except (OSError, subprocess.TimeoutExpired) as exc:
++                    raise _archive_refusal(archive, f"extractor failed ({type(exc).__name__})") from None
++                if r.returncode != 0:
++                    raise _archive_refusal(archive, f"extractor exit {r.returncode}")
++                if mode == "list":
++                    try:
++                        return json.loads(r.stdout)
++                    except (ValueError, TypeError):
++                        raise _archive_refusal(archive, "unparsable extractor listing") from None
++
++            unpacked = 0
++            for archive in archives:
++                listing = child("list", archive)
++                problems = member_problems(listing, archive["install_path"])
++                if problems:
++                    raise _archive_refusal(archive, "; ".join(problems))
++                for member in listing:
++                    if member["file"]:
++                        key = (archive["install_path"] + "/" + member["name"].replace("\\", "/")).casefold()
++                        overlaps += key in expected
++                        expected[key] = member["size"]
++                        unpacked += member["size"]
++            if unpacked > entry["max_unpacked_bytes"] or shutil.disk_usage(prefix).free < unpacked:
++                raise Refused(f"{entry['id']}: unpacked size exceeds the limit or available free space")
++            for archive in archives:
++                target = tree / archive["install_path"]
++                target.mkdir(parents=True, exist_ok=True)
++                child("extract", archive, target)
++            actual, longest = _archive_tree(tree, entry["root"])
++            if actual.keys() != expected.keys():
++                raise Refused(f"{entry['id']}: extracted file set differs from the listings")
++            if actual != expected:
++                raise Refused(f"{entry['id']}: extracted file size differs from the listings")
++            conf = tree / archives[0]["install_path"] / "bin" / "qt.conf"
++            replaced = conf.is_file()
++            conf.parent.mkdir(parents=True, exist_ok=True)
++            conf.write_bytes(b"[Paths]\r\nPrefix=..\r\n")
++            longest = max(longest, len(conf.relative_to(tree).as_posix()))
++            for rel in entry["required_files"]:
++                path = tree / rel
++                if _is_link(path) or not path.is_file():
++                    raise Refused(f"{entry['id']}: missing required file {rel}")
++            os.rename(tree / entry["root"], final)
++            moved = True
++        finally:
++            _remove_tree(staging)
++        ledger({"tool": entry["id"], "phase": "archives", "archives": records, "overlaps": overlaps,
++                "longest_path": len(str(prefix)) + 1 + longest, "qt_conf": "replaced" if replaced else "created",
++                "seconds": round(time.monotonic() - started, 1)})
++    except BaseException:
++        if moved:
++            _remove_tree(final)  # a failure after the move leaves the absent destination absent
++        raise
+ 
+ 
+ def install_entry(entry: dict) -> None:
+@@ -977,11 +1056,17 @@
+                           "replacing an installed tool needs owner approval")
+     started = time.monotonic()
+     install_entry(entry)
+-    ok, detail = run_probe(entry)
+-    ledger({"tool": tool_id, "version": entry.get("version"), "method": entry["method"], "result": "ok" if ok else "probe-failed",
+-            "approval": approval_state(), "seconds": round(time.monotonic() - started, 1)})
+-    if not ok:
+-        raise Refused(f"{tool_id}: installed but the probe failed ({detail})")
++    try:
++        ok, detail = run_probe(entry)
++        ledger({"tool": tool_id, "version": entry.get("version"), "method": entry["method"], "result": "ok" if ok else "probe-failed",
++                "approval": approval_state(), "seconds": round(time.monotonic() - started, 1)})
++        if not ok:
++            raise Refused(f"{tool_id}: installed but the probe failed ({detail})")
++    except BaseException:
++        if entry["method"] == "archive-7z-hashed":
++            # install_archives refuses an existing destination, so this attempt created the tree: remove it.
++            _remove_tree(safe_dest(entry["prefix"] + "/" + entry["root"]))
++        raise
+     done.add(tool_id)
+     print(f"{tool_id}: installed ({detail})")
+     return "installed"
+--- a/tests/test_bootstrap.py
++++ b/tests/test_bootstrap.py
+@@ -4,11 +4,14 @@
+ import contextlib
+ import copy
+ import hashlib
++import http.client
+ import io
+ import json
+ import os
+ import re
+ import shutil
++import socket
++import ssl
+ import stat
+ import subprocess
+ import sys
+@@ -764,6 +767,10 @@
+             changed("base_url", value)
+         changed("network_hosts", [])
+         changed("network_hosts", "download.qt.io")
++        for host in ("127.0.0.1", "localhost", "a.localhost", "internal"):
++            entry = copy.deepcopy(good)
++            entry["base_url"], entry["network_hosts"] = f"https://{host}/", [host]
++            cases.append(("listed local host " + host, entry))
+         for value in (None, {}, dict(good["redirects"], extra=1), dict(good["redirects"], scheme="http"),
+                       dict(good["redirects"], same_path=False), dict(good["redirects"], same_path=1)):
+             changed("redirects", value)
+@@ -898,7 +905,7 @@
+         return status, headers or {}, stream
+ 
+     def fake_http(self, url, timeout):
+-        self.assertEqual(timeout, 60)
++        self.assertTrue(0 < timeout <= bootstrap.INSTALL_TIMEOUT)
+         self.requests.append(url)
+         self.events.append("get")
+         body = self.bodies[url.rsplit("/", 1)[-1]]
+@@ -953,7 +960,7 @@
+ 
+             def get(url, timeout):
+                 seen.append(url)
+-                self.assertEqual(timeout, 60)
++                self.assertTrue(0 < timeout <= bootstrap.INSTALL_TIMEOUT)
+                 if url in redirects:
+                     status, location = redirects[url]
+                     return self.response(b"", status, {"Location": location})
+@@ -1025,9 +1032,16 @@
+         self.assertEqual(contained, [])
+ 
+     def test_download_deadline_closes_stream_and_removes_partial_body(self):
+-        saved = bootstrap.time.monotonic
+-        ticks = iter((0, 0, 0, 0, bootstrap.INSTALL_TIMEOUT + 1))
+-        bootstrap.time.monotonic = lambda: next(ticks)
++        saved, clock = bootstrap.time.monotonic, [0.0]
++        bootstrap.time.monotonic = lambda: clock[0]
++
++        def late(url, timeout):
++            status, headers, stream = self.fake_http(url, timeout)
++            read = stream.read
++            stream.read = lambda n: clock.__setitem__(0, bootstrap.INSTALL_TIMEOUT + 1) or read(n)
++            return status, headers, stream
++
++        bootstrap._http_get = late
+         try:
+             with self.assertRaisesRegex(bootstrap.Refused, "base.7z: download deadline exceeded"):
+                 bootstrap.fetch_archive(self.entry, self.entry["archives"][0], self.base)
+@@ -1035,6 +1049,94 @@
+             bootstrap.time.monotonic = saved
+         self.assertTrue(self.streams[-1].closed)
+         self.assertEqual(list(self.base.iterdir()), [])
++
++    def test_trickling_server_is_cut_off_at_the_deadline(self):
++        # Every receive stays inside the socket timeout, so only the deadline can end the buffered read.
++        body = b"q" * 64
++        archive = dict(self.entry["archives"][0], bytes=len(body), sha256=hashlib.sha256(body).hexdigest())
++        head = b"HTTP/1.1 200 OK\r\nContent-Length: 64\r\n\r\n"
++        clock = [0.0]
++
++        class Trickle:
++            """Socket double: after `fast` bytes, one byte per 59 simulated seconds."""
++
++            def __init__(self, data, fast):
++                self.data, self.fast, self.timeout = data, fast, None
++
++            def settimeout(self, value):
++                self.timeout = value
++
++            def recv_into(self, buffer, nbytes=None, flags=0):
++                if self.fast <= 0:
++                    if self.timeout < 59:
++                        clock[0] += self.timeout
++                        raise TimeoutError("timed out")
++                    clock[0] += 59
++                self.fast -= 1
++                if not self.data:
++                    return 0
++                buffer[0], self.data = self.data[0], self.data[1:]
++                return 1
++
++            def makefile(self, mode):
++                return io.BufferedReader(socket.SocketIO(self, mode))
++
++            def _decref_socketios(self):
++                pass
++
++        saved = bootstrap.time.monotonic
++        bootstrap.time.monotonic = lambda: clock[0]
++        try:
++            for fast, phase in ((0, "headers"), (len(head), "body")):
++                clock[0] = 0.0
++
++                def get(url, timeout):
++                    sock = type("Sock", (bootstrap._DeadlineSocket, Trickle), {"deadline": clock[0] + timeout})(head + body, fast)
++                    response = http.client.HTTPResponse(sock, method="GET")
++                    response.begin()
++                    return response.status, response.headers, response
++
++                bootstrap._http_get = get
++                with self.subTest(phase=phase):
++                    with self.assertRaisesRegex(bootstrap.Refused, "download deadline exceeded"):
++                        bootstrap.fetch_archive(self.entry, archive, self.base)
++                    self.assertEqual(clock[0], bootstrap.INSTALL_TIMEOUT)
++                    self.assertEqual(list(self.base.iterdir()), [])
++        finally:
++            bootstrap.time.monotonic = saved
++
++    def test_repeated_length_or_location_is_refused(self):
++        # http.client frames the body by the first Content-Length; a dict copy of the headers keeps the last.
++        body = b"abc"
++        archive = dict(self.entry["archives"][0], bytes=len(body), sha256=hashlib.sha256(body).hexdigest())
++        location = "Location: https://mirror.example.org/" + archive["path"] + "\r\n"
++        cases = [("length", b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\nContent-Length: 3\r\n\r\nabc", "repeated Content-Length"),
++                 ("location", ("HTTP/1.1 302 Found\r\n" + location * 2 + "Content-Length: 0\r\n\r\n").encode(),
++                  "invalid redirect location")]
++        for name, raw, reason in cases:
++            responses = []
++
++            def get(url, timeout):
++                response = http.client.HTTPResponse(SimpleNamespace(makefile=lambda mode: io.BytesIO(raw)), method="GET")
++                response.begin()
++                responses.append(response)
++                return response.status, response.headers, response
++
++            bootstrap._http_get = get
++            with self.subTest(case=name):
++                with self.assertRaisesRegex(bootstrap.Refused, reason):
++                    bootstrap.fetch_archive(self.entry, archive, self.base)
++                self.assertEqual(len(responses), 1)
++                self.assertTrue(responses[0].isclosed())
++                self.assertEqual(list(self.base.iterdir()), [])
++
++    def test_initial_url_policy_applies_before_any_request(self):
++        archive = self.entry["archives"][0]
++        for host in ("127.0.0.1", "localhost", "a.localhost", "internal"):
++            self.entry["base_url"], self.entry["network_hosts"] = f"https://{host}/", [host]
++            with self.subTest(host=host), self.assertRaisesRegex(bootstrap.Refused, "URL policy refused"):
++                bootstrap.fetch_archive(self.entry, archive, self.base)
++        self.assertEqual(self.requests, [])
+ 
+     def test_transport_exception_is_sanitized_and_blocks_extraction(self):
+         def failed_get(url, timeout):
+@@ -1271,11 +1373,141 @@
+         self.assertEqual(probed, ["QT_VERSION", "QT_INSTALL_PREFIX"])
+         self.assertEqual(sum(r.get("phase") == "archives" for r in self.records), 1)
+ 
++    def staged_copy(self):
++        bootstrap.install_archives(self.entry)
++        staged = self.prefix / ".st-old/x/6.10.3"
++        shutil.copytree(self.final, staged)
++        return staged
++
++    def assert_probe_refused_without_running(self):
++        calls = []
++        bootstrap.subprocess.run = lambda cmd, **kwargs: calls.append(cmd)
++        ok, detail = bootstrap.run_probe(self.entry)
++        self.assertFalse(ok)
++        self.assertIn("refused", detail)
++        self.assertFalse(bootstrap.present(self.entry))
++        self.assertEqual(calls, [])
++
++    def test_probe_refuses_a_linked_qmake(self):
++        staged = self.staged_copy()
++        qmake = self.final / "msvc2022_64/bin/qmake.exe"
++        qmake.unlink()
++        try:
++            os.symlink(staged / "msvc2022_64/bin/qmake.exe", qmake)
++        except (OSError, NotImplementedError):
++            self.skipTest("symlinks not available")
++        self.assert_probe_refused_without_running()
++
++    def test_probe_refuses_a_final_root_junction_into_staging(self):
++        staged = self.staged_copy()
++        shutil.rmtree(self.final)
++        try:
++            if sys.platform == "win32":
++                import _winapi
++                _winapi.CreateJunction(str(staged), str(self.final))
++            else:
++                os.symlink(staged, self.final, target_is_directory=True)
++        except (OSError, NotImplementedError):
++            self.skipTest("links not available")
++        try:
++            self.assert_probe_refused_without_running()
++        finally:
++            (os.rmdir if sys.platform == "win32" else os.unlink)(self.final)  # the link only, never its target
++
++    def install_with(self, prefix_output=None):
++        saved = bootstrap.run_probe
++        bootstrap.run_probe = lambda e: saved(e) if e["id"] == self.entry["id"] else (True, "dependency ready")
++        extractor_child = self.fake_child
++
++        def child_or_probe(cmd, **kwargs):
++            if cmd[1:4] == ["-I", "-c", bootstrap.EXTRACT_CODE]:
++                return extractor_child(cmd, **kwargs)
++            output = self.entry["version"] if cmd[-1] == "QT_VERSION" else prefix_output or str(self.final / "msvc2022_64")
++            return subprocess.CompletedProcess(cmd, 0, output, "")
++
++        bootstrap.subprocess.run = child_or_probe
++        lock = bootstrap.load_lock()
++        lock["tools"] = [self.entry if e["id"] == self.entry["id"] else e for e in lock["tools"]]
++        try:
++            with contextlib.redirect_stdout(io.StringIO()):
++                return bootstrap.install(lock, self.entry["id"], set())
++        finally:
++            bootstrap.run_probe = saved
++
++    def test_failures_after_the_move_remove_the_new_tree(self):
++        def read_only_ledger(record):
++            if record.get("phase") == "archives":
++                raise PermissionError("ledger is read-only")
++            self.records.append(record)
++
++        bootstrap.ledger = read_only_ledger
++        with self.assertRaises(PermissionError):
++            self.install_with()
++        self.assertFalse(os.path.lexists(self.final))
++        self.assertEqual(list(self.prefix.glob(".st-*")), [])
++        bootstrap.ledger = self.records.append
++        with self.assertRaisesRegex(bootstrap.Refused, "installed but the probe failed"):
++            self.install_with(prefix_output=str(self.base / "other"))
++        self.assertFalse(os.path.lexists(self.final))
++        self.assertEqual(list(self.prefix.glob(".st-*")), [])
++        self.assertEqual([r["result"] for r in self.records if "result" in r], ["probe-failed"])
++
++    def test_existing_destination_survives_a_failed_install(self):
++        self.final.mkdir(parents=True)
++        (self.final / "owner.txt").write_bytes(b"owner")
++        with self.assertRaisesRegex(bootstrap.Refused, "destination already exists"):
++            self.install_with()
++        self.assertEqual((self.final / "owner.txt").read_bytes(), b"owner")
++        self.assertEqual(self.requests, [])
++
++    def test_marked_leftover_with_a_hard_link_is_preserved(self):
++        sentinel = self.base / "sentinel"
++        sentinel.write_bytes(b"owner")
++        leftover = self.prefix / ".st-old"
++        leftover.mkdir(parents=True)
++        (leftover / ".magic600-staging").write_bytes(b"marker")
++        try:
++            os.link(sentinel, leftover / "readonly.txt")
++        except (OSError, NotImplementedError):
++            self.skipTest("hard links not available")
++        os.chmod(sentinel, stat.S_IREAD)
++        try:
++            before = os.stat(sentinel).st_mode
++            with self.assertRaisesRegex(bootstrap.Refused, "unexpected leftover .st-old"):
++                bootstrap.install_archives(self.entry)
++            self.assertEqual((os.stat(sentinel).st_mode, os.stat(sentinel).st_nlink), (before, 2))
++            self.assertEqual(sentinel.read_bytes(), b"owner")
++            self.assertEqual(self.requests, [])
++        finally:
++            os.chmod(sentinel, stat.S_IREAD | stat.S_IWRITE)
++
++    def test_cleanup_never_makes_a_hard_linked_file_writable(self):
++        sentinel = self.base / "sentinel"
++        sentinel.write_bytes(b"owner")
++        top = self.base / "tree"
++        top.mkdir()
++        try:
++            os.link(sentinel, top / "readonly.txt")
++        except (OSError, NotImplementedError):
++            self.skipTest("hard links not available")
++        os.chmod(sentinel, stat.S_IREAD)
++        try:
++            if sys.platform == "win32":
++                # Windows cannot delete a read-only file, and every hard link shares that attribute.
++                with self.assertRaisesRegex(bootstrap.Refused, "hard-linked read-only file"):
++                    bootstrap._remove_tree(top)
++            else:
++                bootstrap._remove_tree(top)
++            self.assertEqual(sentinel.read_bytes(), b"owner")
++            self.assertFalse(os.stat(sentinel).st_mode & stat.S_IWRITE)
++        finally:
++            os.chmod(sentinel, stat.S_IREAD | stat.S_IWRITE)
++
+ 
+ class ArchiveTransportTests(unittest.TestCase):
+     def test_http_seam_uses_default_tls_fixed_headers_and_no_redirects(self):
+-        saved = (bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener)
+-        context, seen = object(), []
++        saved = (bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener, bootstrap.time.monotonic)
++        context, seen = ssl.create_default_context(), []
+         stream = CountingStream(b"")
+         stream.code, stream.headers = 200, {}
+ 
+@@ -1293,17 +1525,53 @@
+ 
+         bootstrap.ssl.create_default_context = lambda: context
+         bootstrap.urllib.request.build_opener = build
+-        try:
+-            status, headers, response = bootstrap._http_get("https://download.qt.io/archive.7z", 60)
+-        finally:
+-            bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener = saved
++        bootstrap.time.monotonic = lambda: 1000.0
++        try:
++            status, headers, response = bootstrap._http_get("https://download.qt.io/archive.7z", 1700)
++            deadline = context.sslsocket_class.deadline
++            bootstrap._http_get("https://download.qt.io/archive.7z", 10)
++            with self.assertRaises(TimeoutError):
++                bootstrap._http_get("https://download.qt.io/archive.7z", 0)
++        finally:
++            (bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener, bootstrap.time.monotonic) = saved
+             stream.close()
+         self.assertEqual(status, 200)
+         self.assertIs(response, stream)
+-        request, timeout = seen[0]
+-        self.assertEqual(timeout, 60)
+-        self.assertEqual(dict((k.lower(), v) for k, v in request.header_items()),
++        self.assertEqual([timeout for _, timeout in seen], [bootstrap.SOCKET_TIMEOUT, 10])
++        self.assertTrue(issubclass(context.sslsocket_class, bootstrap._DeadlineSocket))
++        self.assertTrue(issubclass(context.sslsocket_class, ssl.SSLSocket))
++        self.assertEqual(deadline, 2700.0)
++        self.assertEqual(dict((k.lower(), v) for k, v in seen[0][0].header_items()),
+                          {"accept-encoding": "identity", "user-agent": "magic600-bootstrap"})
++
++    def test_tls_socket_waits_no_longer_than_the_deadline(self):
++        # A real TLS client socket over a local socket pair whose peer never answers the handshake.
++        saved = (bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener)
++        context = ssl.create_default_context()
++        stream = CountingStream(b"")
++        stream.code, stream.headers = 200, {}
++        bootstrap.ssl.create_default_context = lambda: context
++        bootstrap.urllib.request.build_opener = lambda *handlers: SimpleNamespace(open=lambda request, timeout: stream)
++        try:
++            bootstrap._http_get("https://download.qt.io/archive.7z", 0.3)
++        finally:
++            bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener = saved
++        client, peer = socket.socketpair()
++        try:
++            client.settimeout(30)
++            wrapped = context.wrap_socket(client, server_hostname="download.qt.io", do_handshake_on_connect=False)
++            started = bootstrap.time.monotonic()
++            with self.assertRaises(TimeoutError):
++                wrapped.recv(1)
++            self.assertLess(bootstrap.time.monotonic() - started, 10)
++            while bootstrap.time.monotonic() < context.sslsocket_class.deadline:
++                bootstrap.time.sleep(0.01)  # a socket timer may fire a little before the deadline
++            with self.assertRaisesRegex(TimeoutError, "download deadline exceeded"):
++                wrapped.do_handshake()
++            wrapped.close()
++        finally:
++            client.close()
++            peer.close()
+ 
+ 
+ class AqtAndRealExtractorTests(unittest.TestCase):
