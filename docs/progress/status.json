@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "updated": "2026-10-03",
-  "current": "2.2",
+  "current": "2.3",
   "paid_api_ceiling_usd": 100,
   "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}],
   "steps": [
@@ -31,11 +31,11 @@
       {"id": "inventory-a", "title": "Inventory A (commands, physical input, API, windows, persistence)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/35"},
       {"id": "inventory-b", "title": "Inventory B, independent of A", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/27"}
      ]},
-    {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null,
+    {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "done", "acceptance": null, "acceptance_source": null, "blocker": null,
      "items": [
-      {"id": "dispositions", "title": "A disposition for every inventory item", "weight": 1, "done": false, "evidence": null}
+      {"id": "dispositions", "title": "A disposition for every inventory item", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/51"}
      ]},
-    {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+    {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null,
      "items": [
       {"id": "command-model", "title": "Command model", "weight": 1, "done": false, "evidence": null},
       {"id": "keyboard-model", "title": "Keyboard model", "weight": 1, "done": false, "evidence": null},
