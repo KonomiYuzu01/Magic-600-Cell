@@ -12,7 +12,7 @@ import {
 import { defaultSpace } from "../core/space.js";
 
 const DOC_FILE = "references.json";
-const COPY = /^references-conflict-\d{8}-\d{6}\.json$/; // the page's version, kept when Save meets a changed file
+const COPY = /^references-conflict-\d{8}-\d{6}-[0-9a-f]{6}\.json$/; // the page's version, kept when Save meets a changed file
 const IMAGE = /\.(jpe?g|png|webp|gif|avif|bmp)$/i;
 const SIDE = 256; // longest side of the copy that is measured
 const PARAMS = defaultSpace().params.map((p) => p.id);
@@ -163,6 +163,18 @@ async function writeText(dir, name, text) {
   }
 }
 
+// Writes a conflict copy under a name no file has: the time to the second and a
+// random part, so that two tabs saving in the same second never share a name.
+async function writeCopy(dir, text) {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const name = `references-conflict-${stamp(new Date())}-${hex(crypto.getRandomValues(new Uint8Array(3)))}.json`;
+    if ((await readText(dir, name)) !== null) continue;
+    await writeText(dir, name, text);
+    return name;
+  }
+  throw new Error("No free name for a conflict copy");
+}
+
 // Without folder access (browsers other than Chrome and Edge) the owner picks the
 // images and references.json as files, and Save downloads the document.
 async function openFiles(event) {
@@ -254,15 +266,15 @@ async function save() {
       status(`Download of ${DOC_FILE} started; keep it next to the images. The page cannot see whether it arrived, so the changes still count as unsaved.`);
       return;
     }
-    // A file changed after the page read it (another tab, a program or an agent) is never overwritten.
+    // A file changed after the page read it (another tab, a program or an agent) is not overwritten.
+    // The browser offers no lock, so a write between this check and the save itself goes unseen.
     const current = await readText(state.dir, DOC_FILE);
     if (current !== null && current !== state.baseline) {
-      const copy = `references-conflict-${stamp(new Date())}.json`;
-      if (!confirm(`${DOC_FILE} changed in this folder after the page read it, for example in another tab or by an agent. The page does not overwrite it.\n\nOK saves this page's version as ${copy} next to it. Cancel saves nothing.`)) {
+      if (!confirm(`${DOC_FILE} changed in this folder after the page read it, for example in another tab or by an agent. The page does not overwrite it.\n\nOK saves this page's version next to it as a new conflict copy. Cancel saves nothing.`)) {
         status(`Not saved: ${DOC_FILE} changed in the folder after the page read it.`, "error");
         return;
       }
-      await writeText(state.dir, copy, text);
+      const copy = await writeCopy(state.dir, text);
       status(`${DOC_FILE} was kept. This page's version is in ${copy}; open the folder again to work from ${DOC_FILE}.`, "error");
     } else {
       await writeText(state.dir, DOC_FILE, text);
