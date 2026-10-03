@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -301,6 +302,85 @@ class CheckoutBytesTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("line-ending conversion still enabled: lf.txt", out)
         self.assertEqual((root / "lf.txt").read_bytes(), crlf(FILES["lf.txt"]))
+
+    def test_a_root_reached_through_a_link_or_short_name_is_repaired(self):
+        # A checkout opened through an alias above its root (a link here; an 8.3 short name
+        # such as C:\\Users\\RUNNER~1 on Windows) is still one checkout: nothing below the root is a link.
+        source = self.repo(attributes=False)
+        clone = self.tmp() / "clone"
+        subprocess.run(["git", "-c", "core.autocrlf=true", "clone", "-q", str(source), str(clone)], check=True, capture_output=True)
+        subprocess.run(["git", "config", "core.autocrlf", "true"], cwd=clone, check=True)
+        (clone / ".gitattributes").write_bytes(b"* -text\n")
+        alias = self.tmp() / "alias"
+        try:
+            if os.name == "nt":
+                import _winapi
+                _winapi.CreateJunction(str(clone), str(alias))
+            else:
+                os.symlink(clone, alias, target_is_directory=True)
+        except OSError:
+            self.skipTest("this system can create neither symlinks nor junctions")
+        if os.name == "nt":
+            self.addCleanup(lambda: os.path.lexists(alias) and os.rmdir(alias))  # the junction itself, never its target
+        code, out = self.run_main(alias, "--fix")
+        self.assertEqual(code, 0, out)
+        for name in ("lf.txt", "ignored/[glob].txt", ".gitignore"):
+            self.assertEqual((clone / name).read_bytes(), FILES[name])
+        self.assertEqual(self.run_main(alias)[0], 0)
+
+    def test_a_root_alias_retargeted_during_the_repair_moves_nothing(self):
+        # The root is resolved once: retargeting its alias to another checkout, after
+        # classification or right after a backup move, leaves that other checkout alone.
+        def converted_clone(name):
+            source = self.repo(attributes=False)
+            clone = self.tmp() / name
+            subprocess.run(["git", "-c", "core.autocrlf=true", "clone", "-q", str(source), str(clone)], check=True, capture_output=True)
+            subprocess.run(["git", "config", "core.autocrlf", "true"], cwd=clone, check=True)
+            (clone / ".gitattributes").write_bytes(b"* -text\n")
+            return clone
+
+        def point(alias, target):
+            if os.path.lexists(alias):
+                os.rmdir(alias) if os.name == "nt" else os.unlink(alias)
+            if os.name == "nt":
+                import _winapi
+                _winapi.CreateJunction(str(target), str(alias))
+            else:
+                os.symlink(target, alias, target_is_directory=True)
+
+        for when in ("after classification", "after the backup move"):
+            with self.subTest(when=when):
+                a, b = converted_clone("a"), converted_clone("b")
+                before = {name: (b / name).read_bytes() for name in ("lf.txt", "ignored/[glob].txt", ".gitignore")}
+                alias = self.tmp() / "alias"
+                try:
+                    point(alias, a)
+                except OSError:
+                    self.skipTest("this system can create neither symlinks nor junctions")
+                if os.name == "nt":
+                    self.addCleanup(lambda alias=alias: os.path.lexists(alias) and os.rmdir(alias))
+                if when == "after classification":
+                    real_classify = checkout_bytes.classify
+
+                    def classify(root, entries):
+                        result = real_classify(root, entries)
+                        point(alias, b)
+                        return result
+                    patcher = mock.patch.object(checkout_bytes, "classify", classify)
+                else:
+                    real_rename = os.rename
+
+                    def rename(src, dst):
+                        real_rename(src, dst)
+                        point(alias, b)
+                    patcher = mock.patch.object(checkout_bytes.os, "rename", rename)
+                with patcher:
+                    code, out = self.run_main(alias, "--fix")
+                for name, data in before.items():
+                    self.assertEqual((b / name).read_bytes(), data, out)
+                self.assertEqual(git(b, "diff", "--cached", "--name-only").stdout, b"")
+                self.assertFalse((Path(git(b, "rev-parse", "--absolute-git-dir").stdout.decode().strip()) / "checkout-bytes").exists())
+                self.assertEqual((a / "lf.txt").read_bytes(), FILES["lf.txt"], out)
 
     def test_links_are_never_followed(self):
         root = self.repo()
