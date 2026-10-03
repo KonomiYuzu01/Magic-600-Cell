@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import http.client
 import importlib.util
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import unittest
 from pathlib import Path
@@ -48,6 +50,31 @@ def load_serve():
     return module
 
 
+def request(server, method: str, path: str):
+    conn = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=10)
+    try:
+        conn.request(method, path)
+        response = conn.getresponse()
+        return response.status, {k.lower(): v for k, v in response.getheaders()}, response.read()
+    finally:
+        conn.close()
+
+
+def make_dir_link(link: Path, target: Path) -> bool:
+    """A directory symbolic link, or a junction where links need a privilege; False if neither works."""
+    try:
+        os.symlink(target, link, target_is_directory=True)
+        return True
+    except OSError:
+        pass
+    try:
+        import _winapi
+        _winapi.CreateJunction(str(target), str(link))
+        return True
+    except (ImportError, AttributeError, OSError):
+        return False
+
+
 class ReferencesServerTests(unittest.TestCase):
     """The local references page server: 127.0.0.1 only, the page's own files, nothing received."""
 
@@ -65,13 +92,7 @@ class ReferencesServerTests(unittest.TestCase):
         cls.thread.join(timeout=10)
 
     def request(self, method: str, path: str):
-        conn = http.client.HTTPConnection("127.0.0.1", self.server.server_address[1], timeout=10)
-        try:
-            conn.request(method, path)
-            response = conn.getresponse()
-            return response.status, {k.lower(): v for k, v in response.getheaders()}, response.read()
-        finally:
-            conn.close()
+        return request(self.server, method, path)
 
     def test_listens_on_loopback_only(self):
         self.assertEqual(self.server.server_address[0], "127.0.0.1")
@@ -100,6 +121,30 @@ class ReferencesServerTests(unittest.TestCase):
     def test_receives_nothing(self):
         for method in ("POST", "PUT", "DELETE"):
             self.assertEqual(self.request(method, "/refs/index.html")[0], 501, method)
+
+    def test_refuses_links_that_lead_outside(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, outside = Path(tmp, "root"), Path(tmp, "outside")
+            root.mkdir()
+            outside.mkdir()
+            (root / "inside.css").write_text("body {}\n", encoding="utf-8")
+            (outside / "secret.css").write_text("secret\n", encoding="utf-8")
+            link = root / "link"
+            if not make_dir_link(link, outside):
+                self.skipTest("this system cannot create a directory link")
+            server = self.serve.make_server(0, root)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                for method in ("GET", "HEAD"):
+                    self.assertEqual(request(server, method, "/inside.css")[0], 200, method)
+                    self.assertEqual(request(server, method, "/link/secret.css")[0], 404, method)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=10)
+                # Remove the link itself, never what it points to.
+                (os.rmdir if os.name == "nt" else os.unlink)(link)
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ import {
 import { defaultSpace } from "../core/space.js";
 
 const DOC_FILE = "references.json";
+const COPY = /^references-conflict-\d{8}-\d{6}\.json$/; // the page's version, kept when Save meets a changed file
 const IMAGE = /\.(jpe?g|png|webp|gif|avif|bmp)$/i;
 const SIDE = 256; // longest side of the copy that is measured
 const PARAMS = defaultSpace().params.map((p) => p.id);
@@ -31,7 +32,8 @@ const MEASURE_LABELS = {
 
 const $ = (id) => document.getElementById(id);
 const intro = $("intro");
-const state = { dir: null, name: "", urls: new Map(), doc: null, problems: null, dirty: false, rev: 0, busy: false, tab: "pairs" };
+// baseline: the text of references.json as the page last read or wrote it (null: there was none).
+const state = { dir: null, name: "", urls: new Map(), doc: null, baseline: null, problems: null, dirty: false, rev: 0, busy: false, tab: "pairs" };
 
 // el("tag", {class, text, on<event>, value, checked, ...attributes}, ...children)
 function el(tag, props = {}, ...children) {
@@ -82,6 +84,8 @@ function changed() {
 
 const hex = (buffer) => Array.from(new Uint8Array(buffer), (b) => b.toString(16).padStart(2, "0")).join("");
 const count = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const two = (n) => String(n).padStart(2, "0");
+const stamp = (d) => `${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}${two(d.getSeconds())}`;
 const fmt = (x) => (typeof x !== "number" ? "-" : String(Math.abs(x) >= 10 ? Math.round(x) : Math.round(x * 100) / 100));
 const pct = (x) => (typeof x !== "number" ? "-" : `${Math.round(100 * x)}%`);
 
@@ -125,15 +129,38 @@ async function openFolder() {
     return;
   }
   await loading(async () => {
-    const files = [];
+    const files = [], copies = [];
     let text = null;
     for await (const handle of dir.values()) {
       if (handle.kind !== "file") continue;
       if (handle.name === DOC_FILE) text = await (await handle.getFile()).text();
+      else if (COPY.test(handle.name)) copies.push(handle.name);
       else if (IMAGE.test(handle.name)) files.push(await handle.getFile());
     }
-    await load(dir, dir.name, files, text);
+    await load(dir, dir.name, files, text, copies);
   });
+}
+
+// The text of a file in the folder, or null when there is none.
+async function readText(dir, name) {
+  try {
+    return await (await (await dir.getFileHandle(name)).getFile()).text();
+  } catch (err) {
+    if (err && err.name === "NotFoundError") return null;
+    throw err;
+  }
+}
+
+// The browser writes a temporary file and replaces the target only on close.
+async function writeText(dir, name, text) {
+  const writable = await (await dir.getFileHandle(name, { create: true })).createWritable();
+  try {
+    await writable.write(text);
+    await writable.close();
+  } catch (err) {
+    await writable.abort().catch(() => {});
+    throw err;
+  }
 }
 
 // Without folder access (browsers other than Chrome and Edge) the owner picks the
@@ -162,14 +189,14 @@ async function loading(task) {
   }
 }
 
-async function load(dir, name, files, text) {
+async function load(dir, name, files, text, copies = []) {
   status("");
   let doc = emptyDoc();
   if (text !== null) {
     const parsed = parseDoc(text);
     if (parsed.problems.length) {
       // Without a document the page cannot save over the file.
-      Object.assign(state, { dir: null, doc: null, problems: parsed.problems, dirty: false });
+      Object.assign(state, { dir: null, doc: null, baseline: null, problems: parsed.problems, dirty: false });
       return;
     }
     doc = parsed.doc;
@@ -192,9 +219,12 @@ async function load(dir, name, files, text) {
   doc.pairs = doc.pairs.filter((p, i) => i < merged.pairs.length || fresh.has(p.liked) || fresh.has(p.disliked));
   for (const url of state.urls.values()) URL.revokeObjectURL(url);
   state.urls = new Map(files.map((f) => [f.name, URL.createObjectURL(f)]));
-  Object.assign(state, { dir, name, doc, problems: null, dirty: JSON.stringify(doc) !== before });
+  Object.assign(state, { dir, name, doc, baseline: text, problems: null, dirty: JSON.stringify(doc) !== before });
   const unread = doc.references.filter((r) => !r.missing && !r.attributes).length;
-  status(unread ? `${count(unread, "image")} could not be measured; notes still work.` : "");
+  const notes = [];
+  if (unread) notes.push(`${count(unread, "image")} could not be measured; notes still work.`);
+  if (copies.length) notes.push(`Conflict copies of ${DOC_FILE} in this folder: ${copies.sort().join(", ")}. Merge what you need, then delete them.`);
+  status(notes.join(" "));
 }
 
 function renderProblems(problems) {
@@ -215,26 +245,33 @@ async function save() {
     return;
   }
   setBusy(true);
-  let writable = null;
   try {
-    if (state.dir) {
-      // The browser writes a temporary copy and replaces the file only on close.
-      const handle = await state.dir.getFileHandle(DOC_FILE, { create: true });
-      writable = await handle.createWritable();
-      await writable.write(text);
-      await writable.close();
-      writable = null;
-      status(`Saved ${DOC_FILE}.`);
-    } else {
+    if (!state.dir) {
+      // The page cannot see whether the download arrived, so the changes stay unsaved.
       const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
       el("a", { href: url, download: DOC_FILE }).click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      status(`Downloaded ${DOC_FILE}; keep it next to the images.`);
+      status(`Download of ${DOC_FILE} started; keep it next to the images. The page cannot see whether it arrived, so the changes still count as unsaved.`);
+      return;
+    }
+    // A file changed after the page read it (another tab, a program or an agent) is never overwritten.
+    const current = await readText(state.dir, DOC_FILE);
+    if (current !== null && current !== state.baseline) {
+      const copy = `references-conflict-${stamp(new Date())}.json`;
+      if (!confirm(`${DOC_FILE} changed in this folder after the page read it, for example in another tab or by an agent. The page does not overwrite it.\n\nOK saves this page's version as ${copy} next to it. Cancel saves nothing.`)) {
+        status(`Not saved: ${DOC_FILE} changed in the folder after the page read it.`, "error");
+        return;
+      }
+      await writeText(state.dir, copy, text);
+      status(`${DOC_FILE} was kept. This page's version is in ${copy}; open the folder again to work from ${DOC_FILE}.`, "error");
+    } else {
+      await writeText(state.dir, DOC_FILE, text);
+      state.baseline = text;
+      status(`Saved ${DOC_FILE}.`);
     }
     state.doc.updated = JSON.parse(text).updated;
     state.dirty = state.rev !== rev;
   } catch (err) {
-    if (writable) await writable.abort().catch(() => {});
     status(`Not saved (${err.name || err.message}).`, "error");
   } finally {
     setBusy(false);

@@ -5,7 +5,8 @@
 The page opens a folder of the owner's reference images through the browser's
 file system access and keeps references.json in that folder. This server only
 sends the page's own code: it listens on 127.0.0.1, answers GET and HEAD for
-files under tools/tastelab/, lists no directories and receives nothing.
+files under tools/tastelab/ (not through a link that leads elsewhere), lists no
+directories and receives nothing.
 """
 from __future__ import annotations
 
@@ -38,6 +39,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         super().do_GET()
 
+    def send_head(self):
+        # A symbolic link or junction could lead outside the folder: serve only what resolves inside it.
+        root = Path(self.directory).resolve()
+        try:
+            inside = Path(self.translate_path(self.path)).resolve().is_relative_to(root)
+        except (OSError, ValueError):
+            inside = False
+        if not inside:
+            self.send_error(404)
+            return None
+        return super().send_head()
+
     def end_headers(self):
         self.send_header("Content-Security-Policy", CSP)
         self.send_header("X-Content-Type-Options", "nosniff")
@@ -59,8 +72,8 @@ class Server(http.server.ThreadingHTTPServer):
     daemon_threads = True
 
 
-def make_server(port: int = PORT) -> Server:
-    return Server((HOST, port), functools.partial(Handler, directory=str(ROOT)))
+def make_server(port: int = PORT, root: Path = ROOT) -> Server:
+    return Server((HOST, port), functools.partial(Handler, directory=str(root)))
 
 
 def main(argv: list[str] | None = None) -> int:
