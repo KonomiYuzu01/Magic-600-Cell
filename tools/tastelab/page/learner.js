@@ -31,16 +31,47 @@ export function recordFamily(space, record) {
   return familiesOf(space)[0].id;
 }
 
+// Stored hyperparameters (plan section 7, `model/<family>`) name the parameter
+// table they were fitted on: the id, kind and range of every parameter, in order,
+// which fix the encoding that the length scales measure.
+const tableKey = (space) => space.params.map((p) => `${p.id}:${p.kind}:${p.min}:${p.max}`);
+const modelShape = (space) => ({ dim: featureDim(space), scenes: SCENES.length, groups: groupsOf(space) });
+
+// The document that stores one family's hyperparameters after a finished search.
+export function hyperDoc(space, family, hyper, answers) {
+  return {
+    version: 1, family, params: tableKey(space), answers,
+    hyper: { lengths: Array.from(hyper.lengths), rho: hyper.rho, eps: hyper.eps, amp: hyper.amp, beta: hyper.beta },
+  };
+}
+
+// The hyperparameters of a stored document, or null unless the document is this
+// family's, on this parameter table, complete and within the model's ranges.
+export function storedHyper(space, doc, family) {
+  const plain = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
+  if (!plain(doc) || doc.version !== 1 || doc.family !== family || !plain(doc.hyper)) return null;
+  const key = tableKey(space);
+  if (!Array.isArray(doc.params) || doc.params.length !== key.length || doc.params.some((p, i) => p !== key[i])) return null;
+  const { lengths, rho, eps, amp, beta } = doc.hyper;
+  if (!Array.isArray(lengths) || ![...lengths, rho, eps, amp, beta].every((x) => typeof x === "number")) return null;
+  try {
+    return createModel({ ...modelShape(space), hyper: { lengths, rho, eps, amp, beta } }).hyper;
+  } catch {
+    return null;
+  }
+}
+
 // `settledTest` replaces the regret test of plan section 5.6 in unit tests only.
 // `map` fixes parameters of every candidate (the experiment's low-dimensional setting).
 // With `deferHyper`, the hyperparameter search runs in idle() steps instead of
 // inside reset() and answer(), so that the worker can propose the next pair first.
 // `ampGrid` and `betaGrid` are the values the search tries for the weights of the
 // kernel's smooth part and of its interactions (plan section 5.3).
+// `onSearch(hyper)` is called whenever a search ends with a result.
 export function createLearner(geometry, {
   cap = 400, candidates = 512, stableAnswers = 10, tau = 0.05, hyperEvals = 600, poolDraws = 16384,
   settledTest = settled, map = identity, deferHyper = false, ampGrid = AMP_GRID, betaGrid = BETA_GRID,
-  anchorRate = 0.5, freePairs = 3000, axis = 4, multi = 24, referenceLooks = 1024,
+  anchorRate = 0.5, freePairs = 3000, axis = 4, multi = 24, referenceLooks = 1024, onSearch = null,
 } = {}) {
   const pairsOf = classPairsFor(geometry);
   let state = null;
@@ -80,18 +111,33 @@ export function createLearner(geometry, {
     return state.familyIds.has(family) ? "other" : "unknown";
   }
 
-  function reset(space, records, { seed = 1, session = null, settledRecords = [], family = null } = {}) {
+  // `hyper`, the result of an earlier search (a stored one, or the model's before a
+  // rebuild at the cap), serves pairs until a search ends; the searches start as
+  // they would without it. A rebuild at the cap also passes its running `search`,
+  // which goes on with the data it started on, and `searched` (plan section 9).
+  function reset(space, records, { seed = 1, session = null, settledRecords = [], family = null, hyper = null, search = null, searched = false } = {}) {
     const sp = space || defaultSpace();
     const families = familiesOf(sp);
     const fam = family === null ? families[0].id : family;
     if (!families.some((f) => f.id === fam)) throw new RangeError("family");
+    const model = createModel(modelShape(sp));
+    const base = model.hyper;
+    if (hyper) model.hyper = createModel({ ...modelShape(sp), hyper }).hyper;
     state = {
       space: sp,
       family: fam,
       familyIds: new Set(families.map((f) => f.id)),
       session,
       settledRecords,
-      model: createModel({ dim: featureDim(sp), scenes: SCENES.length, groups: groupsOf(sp) }),
+      model,
+      // Every search starts from `base`: the result of the last search that ended
+      // here, else the starting values. Searches therefore never depend on carried values.
+      base,
+      // True once a search has ended here, or when values were carried in.
+      fitted: Boolean(hyper),
+      // True once a search has ended since the load or the undo; a rebuild at the cap
+      // keeps it. The settled rule waits for it.
+      searched: searched || !hyperEvals,
       allRecords: records.slice(),
       answers: 0,
       used: 0,
@@ -101,7 +147,12 @@ export function createLearner(geometry, {
       rejected: [],
       rng: createRng(seed >>> 0),
       answersSinceHyper: 0,
-      search: null,
+      // A search carried over a rebuild goes on with the data it started on; its
+      // result is fitted to this model when it ends.
+      search,
+      carried: Boolean(search),
+      // True when the next search waits for the running one (plan section 9).
+      queued: false,
       bestHistory: SCENES.map(() => []),
       // Per scene: the previous round's candidate with the highest posterior mean, shown or not.
       predicted: SCENES.map(() => null),
@@ -134,22 +185,44 @@ export function createLearner(geometry, {
     }
   }
 
-  // Starts the hyperparameter search of plan section 5.3. A search still
-  // running hands over its best point so far, so its work is not lost.
+  // Starts the hyperparameter search of plan section 5.3 from `base`. While a
+  // search is running, the next one is queued instead, so every search ends.
   function refitHyper() {
     if (!hyperEvals) return;
-    if (state.search) state.search.adopt();
-    state.search = createHyperSearch(state.model, { maxEvals: hyperEvals, ampGrid, betaGrid, refine: REFINE });
+    if (state.search) state.queued = true;
+    else state.search = createHyperSearch(state.model, { maxEvals: hyperEvals, ampGrid, betaGrid, refine: REFINE, start: state.base });
     if (!deferHyper) while (idle());
   }
 
-  // Runs one evaluation of the pending search; true while work remains.
+  // Applies the result of the search that has ended: the model then holds what it
+  // would hold without carried values, the best point found, else `base`. A search
+  // carried over a rebuild ran on the data before it, so the model is refitted.
+  // A queued search starts from there.
+  function handOver() {
+    const search = state.search, found = search.found;
+    state.search = null;
+    if (!state.carried) search.adopt();
+    if (found) state.base = state.carried ? search.best : state.model.hyper;
+    state.carried = false;
+    if (state.model.hyper !== state.base) {
+      state.model.hyper = state.base;
+      fit(state.model);
+    }
+    state.searched = state.fitted = true;
+    if (found && onSearch) onSearch(state.model.hyper);
+    if (state.queued) {
+      state.queued = false;
+      refitHyper();
+    }
+  }
+
+  // Runs one evaluation of the running search; true while work remains, including
+  // a queued search that has just started.
   function idle() {
     if (!state || !state.search) return false;
     if (state.search.step()) return true;
-    state.search.adopt();
-    state.search = null;
-    return false;
+    handOver();
+    return Boolean(state.search);
   }
 
   function lookId(look, scene) {
@@ -186,9 +259,13 @@ export function createLearner(geometry, {
     if (!parsed) { state.skipped++; return { rebuilt: false }; }
     let rebuilt = false;
     if (!ingest(record, parsed)) {
-      // The cap is reached during a session: rebuild from every stored record.
-      const { bestHistory, predicted, session, settledRecords, family } = state;
-      reset(state.space, state.allRecords, { seed: state.rng.int(2 ** 31), session, settledRecords, family });
+      // The cap is reached during a session: rebuild from every stored record. Fitted
+      // hyperparameters serve until a search ends; a running search goes on, and the
+      // rebuild's own search waits for it (plan section 9).
+      const { bestHistory, predicted, session, settledRecords, family, fitted, search, searched } = state;
+      reset(state.space, state.allRecords, {
+        seed: state.rng.int(2 ** 31), session, settledRecords, family, hyper: fitted ? state.model.hyper : null, search, searched,
+      });
       state.bestHistory = bestHistory;
       state.predicted = predicted;
       rebuilt = true;
@@ -276,7 +353,8 @@ export function createLearner(geometry, {
     // Settled (plan section 5.6): the expected regret of the reported best, relative
     // to the predicted range, is at most tau; the best after each of the last
     // answers in this scene lies in the current best's region; and another session
-    // settled in the same region.
+    // settled in the same region. Each test needs fitted length scales, so nothing
+    // is settled before a search has ended since the load or the undo.
     const bestIndex = bestValue ? looks.findIndex((l) => lookKey(l) === lookKey(bestValue)) : -1;
     const st = state.comparisons && bestIndex >= 0
       ? settledTest(state.model, points, state.rng, {
@@ -285,7 +363,7 @@ export function createLearner(geometry, {
       : { settled: false, regret: 1 };
     const recent = state.bestHistory[scene].slice(-stableAnswers);
     const stable = Boolean(bestValue) && recent.length === stableAnswers && recent.every((l) => l !== null && sameRegion(l, bestValue));
-    const sessionSettled = Boolean(st.settled && stable && bestValue);
+    const sessionSettled = Boolean(state.searched && st.settled && stable && bestValue);
     const confirmed = sessionSettled && state.settledRecords.some((r) =>
       r && r.scene === sceneName && recordFamily(state.space, r) === state.family &&
       r.session !== state.session && sameRegion(r.best, bestValue));
@@ -301,6 +379,8 @@ export function createLearner(geometry, {
       stable,
       sessionSettled,
       settled: confirmed,
+      fitted: state.fitted,
+      searched: state.searched,
       relevance: relevance(),
       counts: { answers: state.answers, used: state.used, looks: state.looks.length, pruned: state.pruned, skipped: state.skipped },
     };

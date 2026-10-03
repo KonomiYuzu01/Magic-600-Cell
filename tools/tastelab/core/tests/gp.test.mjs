@@ -579,3 +579,33 @@ test('look capacity and input checks', () => {
   assert.throws(() => addLook(empty, [0], 3));
   assert.throws(() => addLook(empty, [0, 1], 0));
 });
+
+test('a search can start away from the model, and found and best report its best converged evaluation', () => {
+  const plain = randomModel(13), shifted = randomModel(13);
+  assert.equal(fit(plain).converged, true);
+  const start = plain.hyper;
+  shifted.hyper = {...plain.hyper, lengths: plain.hyper.lengths.map(l => l * 3), rho: 0.9};
+  assert.equal(fit(shifted).converged, true);
+  const options = {maxEvals: 12, lengthGrid: [0.15, 0.75, 2.5, 50]};
+  const a = createHyperSearch(plain, options), b = createHyperSearch(shifted, {...options, start});
+  assert.deepEqual([b.found, b.best], [false, null]);
+  b.step();
+  assert.equal(b.found, true);
+  while (a.step());
+  while (b.step());
+  const point = b.best;
+  assert.notEqual(shifted.hyper, point, 'reading best applies nothing');
+  a.adopt();
+  b.adopt();
+  assert.equal(shifted.hyper, point, 'adopt() applies best');
+  assert.equal(serialize(shifted), serialize(plain));
+  // Before its first evaluation a search has nothing to adopt and leaves the model alone.
+  const untouched = randomModel(13);
+  assert.equal(fit(untouched).converged, true);
+  const before = serialize(untouched);
+  const unused = createHyperSearch(untouched, {...options, start: shifted.hyper});
+  assert.deepEqual([unused.found, unused.best], [false, null]);
+  unused.adopt();
+  assert.equal(serialize(untouched), before);
+  assert.throws(() => createHyperSearch(plain, {...options, start: {rho: 1}}), RangeError);
+});

@@ -18,7 +18,7 @@ const LABELS = {
 const geo = buildGeometry();
 const session = Math.random().toString(36).slice(2, 10);
 const PAGE = 500; // documents per read; the store answers at most 1000 per query
-const state = { scene: "solving", family: null, records: [], ids: [], sessions: [], pair: null, busy: true, db: null, space: defaultSpace(), turnCell: 0 };
+const state = { scene: "solving", family: null, records: [], ids: [], sessions: [], models: {}, pair: null, busy: true, db: null, space: defaultSpace(), turnCell: 0 };
 const colourings = new Map();
 
 function cellColours(look) {
@@ -62,9 +62,10 @@ function showPair(msg) {
 }
 
 // Relevance of the shown family's model; `answers` counts that family's answers.
-// The ranking is provisional until 160 answers (plan section 6). It waits for the
-// model's first finished hyperparameter search after a load or a rebuild: before
-// it, every parameter has the starting length scale and the order means nothing.
+// The ranking is provisional until 160 answers (plan section 6). It waits for
+// length scales from a finished hyperparameter search, in this view or stored by
+// an earlier one: before that, every parameter has the starting length scale and
+// the order means nothing.
 const RANKING_AT = 160;
 function renderRelevance(rel, answers, fitted) {
   const list = $("matters");
@@ -103,6 +104,7 @@ worker.onmessage = (e) => {
   const forPresets = presetRequest && m.id === presetRequest.id;
   if (m.type === "pair") showPair(m);
   else if (m.type === "nopair") { $("status").textContent = m.reason; setBusy(false); }
+  else if (m.type === "model") saveModel(m);
   else if (m.type === "presets" && forPresets) { presetRequest.resolve(m); presetRequest = null; }
   else if (m.type === "error" && forPresets) { presetRequest.reject(new Error(m.message)); presetRequest = null; }
   else if (m.type === "error") { $("status").textContent = "The model stopped: " + m.message; setBusy(false); }
@@ -118,6 +120,16 @@ async function save(record) {
     $("status").textContent = `This answer was not saved (${err.code || "error"}). Answers continue in this tab only.`;
     return null;
   }
+}
+
+// Each finished hyperparameter search is stored in model/<family>, and the next
+// load or undo starts from it (plan section 7). A failed write only costs that
+// faster start, so it is not reported.
+let modelWrite = Promise.resolve();
+function saveModel(m) {
+  state.models[m.family] = m.doc;
+  if (!state.db) return;
+  modelWrite = modelWrite.then(() => state.db.doc(`model/${m.family}`).set(m.doc)).catch(() => {});
 }
 
 // A session that settles stores its best look per family and scene in
@@ -152,7 +164,10 @@ function settledRecords() {
 }
 
 function init() {
-  worker.postMessage({ type: "init", space: state.space, records: state.records, settled: settledRecords(), session, scene: state.scene, family: state.family, seed: Date.now() });
+  worker.postMessage({
+    type: "init", space: state.space, records: state.records, settled: settledRecords(), models: state.models,
+    session, scene: state.scene, family: state.family, seed: Date.now(),
+  });
 }
 
 async function answer(kind) {
@@ -269,7 +284,7 @@ async function exportData() {
   const downloads = await use("downloads");
   if (!downloads) { $("status").textContent = "Export is not available in this view."; return; }
   state.exporting = true;
-  $("status").textContent = "Preparing the export: every family's model finishes its fit.";
+  $("status").textContent = "Preparing the export.";
   try {
     const result = await requestPresets();
     const data = JSON.stringify({
@@ -339,6 +354,12 @@ async function loadRecords(db) {
   return { records, ids };
 }
 
+// The stored hyperparameters by family; the worker checks each against the table.
+async function loadModels(db) {
+  const snap = await db.collection("model").limit(PAGE).get();
+  return Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+}
+
 async function loadSessions(db) {
   const snap = await db.collection("sessions").orderBy("started", "desc").limit(PAGE).get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -390,6 +411,7 @@ async function boot() {
       state.records = loaded.records;
       state.ids = loaded.ids;
       state.sessions = await loadSessions(db);
+      try { state.models = await loadModels(db); } catch { /* the first search starts from the starting values */ }
     } catch (err) {
       $("status").textContent = `Stored answers could not be read (${err.code || "error"}).`;
     }

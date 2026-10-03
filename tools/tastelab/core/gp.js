@@ -338,9 +338,10 @@ export function logEvidence(model) {
 // evaluation on the looks and comparisons present when the search started, so
 // a worker can spread the search over idle time. adopt() applies the best
 // hyperparameters; when answers arrived meanwhile, it refits on the current data.
+// The search starts at `start`, by default the model's current hyperparameters.
 export function createHyperSearch(model, {
   maxEvals = 500, lengthGrid = [0.1, 0.15, 0.22, 0.33, 0.5, 0.75, 1.1, 1.7, 2.5, 4, 8, 16, 50],
-  ampGrid = [0], betaGrid = [0], passes = 2, refine = [],
+  ampGrid = [0], betaGrid = [0], passes = 2, refine = [], start = null,
 } = {}) {
   if (!Number.isInteger(maxEvals) || maxEvals < 0) throw new RangeError('maxEvals');
   if (!Number.isInteger(passes) || passes < 1) throw new RangeError('passes');
@@ -356,7 +357,7 @@ export function createHyperSearch(model, {
   betaGrid = betaGrid.slice();
   refine = refine.slice();
   const groups = checkedGroups(model.dim, model.groups);
-  const initial = checkedHyper(groups.length, model.hyper);
+  const initial = checkedHyper(groups.length, start ?? model.hyper);
   const snapshot = {
     looks: model.looks.map(p => ({features: Float64Array.from(p.features), scene: p.scene})),
     observations: observations(model), revision: model._revision,
@@ -439,6 +440,10 @@ export function createHyperSearch(model, {
       return !done;
     },
     get evaluations() { return evaluations; },
+    // True once some evaluation converged: adopt() then applies its best point.
+    get found() { return Boolean(best && Number.isFinite(best.value)); },
+    // The hyperparameters of that point, without applying them; null before one.
+    get best() { return best && Number.isFinite(best.value) ? best.trial.hyper : null; },
     adopt() {
       if (best && Number.isFinite(best.value)) {
         model.hyper = best.trial.hyper;
