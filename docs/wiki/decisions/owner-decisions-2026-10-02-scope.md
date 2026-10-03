@@ -3,7 +3,7 @@ id: owner-decisions-2026-10-02-scope
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 2 October 2026 - only sound and the mathematical-language work are reduced in scale (design stays the core of 1.0), review effort is tiered by risk with a weekly process budget, and the source of G1 to G6 testers is open.
+summary: Owner decisions of 2 October 2026 - only sound and the mathematical-language work are reduced in scale (design stays the core of 1.0), review effort is tiered by risk with a weekly process budget, and the source of G1 to G6 testers was left open (decided on 3 October 2026: the owner only).
 related: [owner-decisions-2026-10-02-design, owner-decisions-2026-09-30]
 supersedes: []
 claims:
@@ -47,7 +47,9 @@ The owner approved the following text verbatim; it is in `AGENTS.md` under "Revi
 
 This page and the rule change were themselves recorded under the owner-dictated exemption: no Codex review, agent-rules and wiki checks only.
 
-## 3. Tester source for G1 to G6 (open; owner decides)
+## 3. Tester source for G1 to G6 (decided 3 October 2026: option a)
+
+**Decided:** the owner chose (a), the owner only ([owner-decisions-2026-10-03](owner-decisions-2026-10-03.md)). The options are kept below as the record of what was considered.
 
 The trial numbers of the design decisions (text budgets, motion timing, encoding legibility) are set by the stage 2.3 tests G1 to G6. Who takes them is open:
 
@@ -57,4 +59,4 @@ The trial numbers of the design decisions (text budgets, motion timing, encoding
 | (b) 3 to 5 recruited puzzlers from the hypercube community | Real core and secondary users; also an early, private first showing | Recruiting time; consent and data rules for their sessions; needs a build worth showing |
 | (c) Trial values now, tuning in 1.x | No test cost in stage 2 | Numbers stay guesses through 1.0; the risk moves to users after release |
 
-Not decided here. Options can combine, for example (a) in stage 2 and (b) on the vertical slice.
+Options can combine, for example (a) in stage 2 and (b) on the vertical slice; a later (b) round needs a new owner decision.

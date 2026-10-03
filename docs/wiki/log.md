@@ -20,6 +20,33 @@ The owner pinned `godot` (Godot .NET 4.7.2, user-scope portable zip) and approve
 ## [2026-10-03] update | S-B probe meets the W3 gate
 Added [s-b-probe-results](evidence/s-b-probe-results.md). Three attended cold W3 runs of the bare Direct3D 12 probe meet the selection gate for build `2b5bf5e6...`, and the PresentMon 2.6 capture lessons from the capture script reviews are recorded; the handoff, the other scenes and the cost table are still open.
 
+## [2026-10-03] decision | Taste Lab acceptance ruling
+Recorded in [owner-decisions-2026-10-03-taste-lab](decisions/owner-decisions-2026-10-03-taste-lab.md): on the acceptance seeds the full setting with one family and the bump owner passed every criterion, while two families, the low setting and the cross owner's ranking missed; the owner accepted the learner with these as recorded limitations and moved the two-family checkpoint to 150 comparisons per family, with one confirmation run on fresh seeds whose rule was fixed before the run; it passed (0.045 at 150 comparisons per family).
+
+## [2026-10-03] decision | Taste Lab image library approved
+Recorded in [owner-decisions-2026-10-03-image-library](decisions/owner-decisions-2026-10-03-image-library.md): the owner approved the class A sources, the embedding model and its runtime (phase 1b), class B private references kept local (phase 2), and the annotated references and nexus cards (4A), to start in parallel with the close of phase 1a; the review and installation-approval gates are unchanged.
+
+## [2026-10-03] decision | Taste Lab: current learner final
+Recorded in [owner-decisions-2026-10-03-taste-lab](decisions/owner-decisions-2026-10-03-taste-lab.md): a time-boxed diagnosis found no change that closes the cross owner's miss on development seeds, so the owner made the current learner final for phase 1a and had the acceptance run once; the owner rules on the cross result.
+
+## [2026-10-03] decision | Stage 2.2 dispositions signed
+The owner signed all 12 `delete` and 6 `automate` decisions of the [stage 2.2 dispositions](../progress/1.0/dispositions/dispositions.md); recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md) section 5.
+
+## [2026-10-03] decision | A selected construction is the solver's own macro
+Recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md) section 4; the stage 2.2 draft dispositions of the endgame family constructors are `redesign`.
+
+## [2026-10-03] decision | Testers, charter signature and Windows CI
+Recorded in [owner-decisions-2026-10-03](decisions/owner-decisions-2026-10-03.md): the owner alone takes G1 to G6, the stage 2.0 [charter](../progress/1.0/charter-2.0-draft.md) is signed as written (closing stage 2.0), and a Windows CI job runs the headless checks without counting as Windows/DirectX evidence.
+
+## [2026-10-03] update | Migration probes P1 to P3 on Windows
+[Results](../progress/1.0/migration-probe-results.md) on fresh synthetic sessions: P3, F20, F15, F18, F21 and P2 pass (the publication order survives every process interruption; the barriers are `FlushFileBuffers` on file and directory handles and a write-through `MoveFileExW`). P1 passes with C3, the owner's locked byte copy, in 12 of 12 attempts; no read-only SQLite strategy passes. The importer of the [migration proposal](../progress/1.0/migration-exporter-proposal.md) may start on C3.
+
+## [2026-10-03] decision | Locked byte copy of the 0.4 database
+Recorded in [owner-decisions-2026-10-03-migration](decisions/owner-decisions-2026-10-03-migration.md): after P1 found no read-only SQLite strategy, the owner relaxed only the "no file copy" part of invariant 2. The importer copies the database and WAL bytes under the lock and the write guard, and recovers only the copy; P1 was re-run for this strategy before any importer work.
+
+## [2026-10-03] decision | Taste Lab evaluation points and settled rule
+Recorded in [owner-decisions-2026-10-03-taste-lab](decisions/owner-decisions-2026-10-03-taste-lab.md): the learner missed criterion 3 at 60 comparisons; the owner kept the thresholds, moved the checks to 90 comparisons per family (relevance ranking at 160, provisional before) and had the settled rule recalibrated.
+
 ## [2026-10-02] decision | Scope reduction and review risk tiers
 Recorded in [owner-decisions-2026-10-02-scope](decisions/owner-decisions-2026-10-02-scope.md): only sound and the mathematical-language work are reduced, design stays the core of 1.0; `AGENTS.md` gains risk tiers for review and a weekly process budget; the tester source for G1 to G6 is open.
 
