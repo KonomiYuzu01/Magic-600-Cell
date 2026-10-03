@@ -2,8 +2,11 @@
 #include <windows.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <dwmapi.h>
+#include <powersetting.h>
 #include <wrl/client.h>
 #include <algorithm>
+#include <atomic>
 #include <cstring>
 #include <iostream>
 #include <limits>
@@ -69,8 +72,14 @@ public:
     int64_t frequency=0;
     bool tearing=false;
     double vramPeak=0;
-    uint64_t presents=0,occluded=0; // occluded: Present returned DXGI_STATUS_OCCLUDED
+    uint64_t presents=0;
     bool foregroundAtStart=false;
+    // Conditions sampled every 100 ms of the trace. A flip-model Present never returns
+    // DXGI_STATUS_OCCLUDED, so visibility comes from the window itself, and the power
+    // source must hold for the whole trace, not only when run.json is written.
+    uint64_t conditionSamples=0,samplesNotVisible=0,samplesCovered=0,samplesNotForeground=0,samplesMains=0,samplesBattery=0;
+    std::atomic<int> powerMode{-1}; // EFFECTIVE_POWER_MODE, set by the notification callback
+    int powerModeAtStart=-1;bool powerModeChanged=false;void* powerRegistration=nullptr;
     std::string adapterName,driver;
     Frame* active=nullptr;
 
@@ -114,8 +123,13 @@ public:
             try{readback=buffer(readbackSlots*LabelBytes,D3D12_HEAP_TYPE_READBACK,D3D12_RESOURCE_STATE_COPY_DEST);}
             catch(const std::exception&){throw std::runtime_error("cannot allocate the run's preserved label readback buffer ("+std::to_string(readbackSlots*LabelBytes/1048576)+" MiB); no timing run started");}
         }
+        // Last, after every step that can throw: only a constructed Gpu runs ~Gpu, which
+        // unregisters (waiting for running callbacks) before the members are destroyed.
+        // The callback reports the current effective power mode at registration and every change.
+        if(FAILED(PowerRegisterForEffectivePowerModeNotifications(EFFECTIVE_POWER_MODE_V2,&Gpu::onPowerMode,this,&powerRegistration)))powerRegistration=nullptr;
     }
     ~Gpu(){
+        if(powerRegistration)PowerUnregisterFromEffectivePowerModeNotifications(powerRegistration);
         if(queue&&fence&&event){try{idle();}catch(...){}}
         for(auto& f:frame){if(f.cbData)f.cb.resource->Unmap(0,nullptr);if(f.uploadData)f.upload.resource->Unmap(0,nullptr);}
         if(hwnd&&IsWindow(hwnd))DestroyWindow(hwnd);
@@ -148,7 +162,7 @@ public:
     }
     void submit(bool present){
         hr(list->Close(),"command list Close");ID3D12CommandList* submitted[]={list.Get()};queue->ExecuteCommandLists(1,submitted);
-        if(present){auto result=swap->Present(opt.vsync?1:0,!opt.vsync&&tearing?DXGI_PRESENT_ALLOW_TEARING:0);hr(result,"Present");++presents;if(result==DXGI_STATUS_OCCLUDED)++occluded;}
+        if(present){hr(swap->Present(opt.vsync?1:0,!opt.vsync&&tearing?DXGI_PRESENT_ALLOW_TEARING:0),"Present");++presents;}
         active->fence=nextFence++;hr(queue->Signal(fence.Get(),active->fence),"frame Signal");
     }
     void makeRoot(){
@@ -228,10 +242,46 @@ public:
         list->CopyBufferRegion(readback.resource.Get(),slot*LabelBytes,bound.resource.Get(),0,LabelBytes);transition(bound,D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
     void sampleMemory(){DXGI_QUERY_VIDEO_MEMORY_INFO info{};hr(memoryAdapter->QueryVideoMemoryInfo(0,DXGI_MEMORY_SEGMENT_GROUP_LOCAL,&info),"QueryVideoMemoryInfo");vramPeak=std::max(vramPeak,double(info.CurrentUsage)/1048576);}
+    static VOID WINAPI onPowerMode(EFFECTIVE_POWER_MODE mode,VOID* context){static_cast<Gpu*>(context)->powerMode.store(int(mode));}
+    static const char* powerModeName(int mode){
+        switch(mode){
+        case EffectivePowerModeBatterySaver:return "battery_saver";case EffectivePowerModeBetterBattery:return "better_battery";
+        case EffectivePowerModeBalanced:return "balanced";case EffectivePowerModeHighPerformance:return "high_performance";
+        case EffectivePowerModeMaxPerformance:return "max_performance";case EffectivePowerModeGameMode:return "game_mode";
+        case EffectivePowerModeMixedReality:return "mixed_reality";default:return "unknown";
+        }
+    }
+    bool covered(){
+        // IsWindowVisible is true for a window that another window hides completely, so hit-test
+        // the centre and four inner points: each must belong to this window.
+        RECT r{};if(!GetWindowRect(hwnd,&r))return true;LONG w=r.right-r.left,h=r.bottom-r.top;
+        const POINT points[]={{r.left+w/2,r.top+h/2},{r.left+w/10,r.top+h/10},{r.right-w/10,r.top+h/10},{r.left+w/10,r.bottom-h/10},{r.right-w/10,r.bottom-h/10}};
+        for(const auto& point:points){HWND hit=WindowFromPoint(point);if(!hit||GetAncestor(hit,GA_ROOT)!=hwnd)return true;}
+        return false;
+    }
+    void sampleConditions(){
+        BOOL cloaked=FALSE;bool hidden=SUCCEEDED(DwmGetWindowAttribute(hwnd,DWMWA_CLOAKED,&cloaked,sizeof(cloaked)))&&cloaked;
+        bool coveredNow=covered();if(coveredNow)++samplesCovered;
+        if(conditionSamples==0)powerModeAtStart=powerMode.load();else if(powerMode.load()!=powerModeAtStart)powerModeChanged=true;
+        ++conditionSamples;if(!IsWindowVisible(hwnd)||IsIconic(hwnd)||hidden||coveredNow)++samplesNotVisible;if(GetForegroundWindow()!=hwnd)++samplesNotForeground;
+        SYSTEM_POWER_STATUS power{};if(GetSystemPowerStatus(&power)!=0){if(power.ACLineStatus==1)++samplesMains;else if(power.ACLineStatus==0)++samplesBattery;}
+    }
+    bool outputOnAdapter(){
+        // True when the window's monitor is an output of the rendering adapter (a discrete-only
+        // or MUX mode); false when another adapter scans it out (hybrid copy to the iGPU).
+        HMONITOR monitor=MonitorFromWindow(hwnd,MONITOR_DEFAULTTOPRIMARY);
+        for(UINT i=0;;++i){ComPtr<IDXGIOutput> output;if(adapter->EnumOutputs(i,&output)==DXGI_ERROR_NOT_FOUND)return false;DXGI_OUTPUT_DESC d{};if(SUCCEEDED(output->GetDesc(&d))&&d.Monitor==monitor)return true;}
+    }
     Json environment(){
-        SYSTEM_POWER_STATUS power{};require(GetSystemPowerStatus(&power)!=0,"power source unavailable");std::string source=power.ACLineStatus==1?"mains":power.ACLineStatus==0?"battery":"unknown";
-        MONITORINFOEXW info{};info.cbSize=sizeof(info);require(GetMonitorInfoW(MonitorFromWindow(hwnd,MONITOR_DEFAULTTOPRIMARY),&info)!=0,"window monitor unavailable");DEVMODEW mode{};mode.dmSize=sizeof(mode);require(EnumDisplaySettingsW(info.szDevice,ENUM_CURRENT_SETTINGS,&mode)!=0,"window monitor mode unavailable");
-        return Json::Object{{"power_source",source},{"declared",opt.declared},{"display",Json::Object{{"width",mode.dmPelsWidth},{"height",mode.dmPelsHeight}}},{"backbuffer",Json::Object{{"width",width},{"height",height}}},{"refresh_hz",mode.dmDisplayFrequency},{"vsync",opt.vsync},{"tearing",tearing},{"adapter",adapterName},{"driver",driver},{"msaa",opt.msaa},{"warp",opt.warp}};
+        if(conditionSamples==0)sampleConditions(); // a run stopped before its trace started
+        std::string source=samplesMains==conditionSamples?"mains":samplesBattery==conditionSamples?"battery":samplesMains+samplesBattery==conditionSamples?"changed":"unknown";
+        std::string mode=powerModeChanged?"changed":powerModeName(powerModeAtStart);
+        std::string presenting=adapterName+", driver "+driver+(outputOnAdapter()?", drives the window's display":", display driven by another adapter");
+        MONITORINFOEXW info{};info.cbSize=sizeof(info);require(GetMonitorInfoW(MonitorFromWindow(hwnd,MONITOR_DEFAULTTOPRIMARY),&info)!=0,"window monitor unavailable");DEVMODEW display{};display.dmSize=sizeof(display);require(EnumDisplaySettingsW(info.szDevice,ENUM_CURRENT_SETTINGS,&display)!=0,"window monitor mode unavailable");
+        // Keys in the shape the gate summary publishes (tools/perf/b412_summary.py public_environment).
+        return Json::Object{{"power_source",source},{"power_mode",mode},{"presenting_adapter",presenting},{"presentation_interval",opt.vsync?1:0},{"declared",opt.declared},
+            {"display",Json::Object{{"width",display.dmPelsWidth},{"height",display.dmPelsHeight},{"refresh_hz",display.dmDisplayFrequency}}},{"backbuffer",Json::Object{{"width",width},{"height",height}}},
+            {"power_samples",Json::Object{{"samples",conditionSamples},{"mains",samplesMains},{"battery",samplesBattery}}},{"vsync",opt.vsync},{"tearing",tearing},{"adapter",adapterName},{"driver",driver},{"msaa",opt.msaa},{"warp",opt.warp}};
     }
 };
 
@@ -293,7 +343,7 @@ int runGpu(const Assets& a,const Options& opt){
     bool labelScene=opt.scene=="w3"||opt.scene=="w4";auto labels=a.oracle[0];uint64_t authoritative=0;
     unsigned expected=0,bound=0;bool injectionApplied=false;std::optional<unsigned> pending;
     LabelRecords records;std::vector<Trace> trace;trace.reserve(size_t(opt.duration*200));
-    Matrix q=identity();int64_t duration=turnTicks(opt.turnMs,gpu.frequency),start=0,stop=0,renderStart=qpc();uint64_t serial=0;
+    Matrix q=identity();int64_t duration=turnTicks(opt.turnMs,gpu.frequency),start=0,stop=0,renderStart=qpc(),nextSample=0;uint64_t serial=0;
     bool running=true;MSG message{};
     while(running){
         while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){if(message.message==WM_QUIT)running=false;TranslateMessage(&message);DispatchMessageW(&message);}
@@ -303,6 +353,7 @@ int runGpu(const Assets& a,const Options& opt){
         // before this frame's upload, draw and Present. It is the single trace clock.
         int64_t now=qpc();if(!start&&double(now-renderStart)/double(gpu.frequency)>=opt.preroll){start=now;gpu.foregroundAtStart=GetForegroundWindow()==gpu.hwnd;}
         bool timed=start!=0;if(timed&&double(now-start)/double(gpu.frequency)>=opt.duration){stop=now;break;}
+        if(timed&&now>=nextSample){gpu.sampleConditions();nextSample=now+gpu.frequency/10;}
         uint64_t frameIndex=uint64_t(trace.size());Turn turn{0,0,0};if(timed)turn=turnAt(now,start,duration,a.angle);
         bool copy=false;
         if(labelScene&&timed){
@@ -336,10 +387,18 @@ int runGpu(const Assets& a,const Options& opt){
     }
     Options written=opt;if(written.runId.empty())written.runId="sb-"+opt.scene+'-'+std::to_string(GetCurrentProcessId())+'-'+std::to_string(start);
     Json run=runJson(written,gpu.frequency,start,stop,build,gpu.environment(),check,gpu.vramPeak);run["frames"]=uint64_t(trace.size());
-    run["window"]=Json::Object{{"topmost",true},{"foreground_at_trace_start",gpu.foregroundAtStart},{"presents",gpu.presents},{"presents_occluded",gpu.occluded}};run["injection_applied"]=injectionApplied;
+    bool visible=gpu.samplesNotVisible==0,foreground=gpu.samplesNotForeground==0;
+    run["window"]=Json::Object{{"topmost",true},{"foreground_at_trace_start",gpu.foregroundAtStart},{"sample_period_ms",100},{"samples",gpu.conditionSamples},
+        {"samples_not_visible",gpu.samplesNotVisible},{"samples_covered",gpu.samplesCovered},{"samples_not_foreground",gpu.samplesNotForeground},{"visible_throughout",visible},{"foreground_throughout",foreground},{"presents",gpu.presents}};run["injection_applied"]=injectionApplied;
     writeText(opt.out/"run.json",run.dump()+'\n');std::ostringstream lines;for(const auto& entry:trace)lines<<entry.json().dump()<<'\n';writeText(opt.out/"trace.jsonl",lines.str());
     selfTiming(trace,gpu.frequency,start,stop);
-    std::cout<<"window: foreground at trace start "<<(gpu.foregroundAtStart?"yes":"no")<<", occluded presents "<<gpu.occluded<<" of "<<gpu.presents<<std::endl;
-    return labelScene&&check.at("status").string()=="fail"?2:0;
+    const auto& environment=run.at("environment");
+    std::cout<<"window: foreground at trace start "<<(gpu.foregroundAtStart?"yes":"no")<<", samples "<<gpu.conditionSamples<<", not visible "<<gpu.samplesNotVisible<<" (covered "<<gpu.samplesCovered<<"), not foreground "<<gpu.samplesNotForeground<<'\n';
+    std::cout<<"conditions: power "<<environment.at("power_source").string()<<", power mode "<<environment.at("power_mode").string()<<", "<<environment.at("presenting_adapter").string()<<std::endl;
+    // Exit 2: label check failed. Exit 3: in some sample of the trace the window was hidden,
+    // minimised, cloaked, covered or not in the foreground, so the run does not represent
+    // visible full-screen rendering and is no gate evidence.
+    if(labelScene&&check.at("status").string()=="fail")return 2;
+    return visible&&foreground?0:3;
 }
 }

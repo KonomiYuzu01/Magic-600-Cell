@@ -40,7 +40,8 @@ struct Options {
     double duration=192, preroll=4, turnMs=190;
     bool vsync=false, warp=false, debug=false, geometry=false, selftest=false;
     unsigned msaa=1;
-    Json::Object declared{{"frame_generation",false},{"upscaling",false}};
+    // run_scene.ps1 replaces the overlays placeholder with the operator's post-run confirmation.
+    Json::Object declared{{"frame_generation",false},{"upscaling",false},{"overlays","OPERATOR-CONFIRMATION-PENDING"}};
 };
 Options options(int argc,char** argv);
 struct Turn { uint64_t index; double phase,theta; };

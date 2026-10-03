@@ -3,6 +3,7 @@ param(
     [ValidateRange(1,100)][int]$Runs = 3,
     [ValidateSet('corrupt-label','swap-same-colour','delay-adoption','stale-binding')][string]$Inject,
     [string[]]$Declare = @(),
+    [string]$Overlays,
     [ValidateRange(1,86400)][double]$Duration = 192,
     [ValidateRange(0,60)][double]$Preroll = 4
 )
@@ -17,6 +18,8 @@ $presentMon = Join-Path $env:ProgramFiles 'Intel/PresentMon/PresentMonConsoleApp
 if (-not (Test-Path -LiteralPath $probe)) { throw 'Build the probe in probe/build with build.cmd first.' }
 if (-not (Test-Path -LiteralPath $presentMon)) { throw 'PresentMon 2.6.0.0 was not found at the pinned location.' }
 if ($Inject -and $Scene -notin @('w3','w4')) { throw 'Fault injection requires W3 or W4.' }
+if (-not $Inject -and -not $Overlays) { throw "State the overlay configuration with -Overlays, for example -Overlays 'none running'." }
+if (@($Declare | Where-Object { $_ -like 'overlays=*' }).Count) { throw 'Give the overlay configuration with -Overlays, not -Declare.' }
 function Native-Arguments([string[]]$Values) {
     # CommandLineToArgvW quoting, including a trailing backslash before the quote.
     return (($Values | ForEach-Object { '"' + (($_ -replace '(\\*)"', '$1$1\"') -replace '(\\+)$', '$1$1') + '"' }) -join ' ')
@@ -47,18 +50,58 @@ for ($i = 1; $i -le $Runs; $i++) {
         $capture = Start-Process -FilePath $presentMon -ArgumentList (Native-Arguments $captureArguments) -PassThru -WindowStyle Hidden
         $null = $capture.Handle
         $process.WaitForExit()
-        $capture.WaitForExit()
-        if ($capture.ExitCode -ne 0) { throw "PresentMon exited $($capture.ExitCode); no gate evidence." }
-        # Exit 2 is an intentional label-check failure in a negative test.
+        # Check the probe first: a probe that failed before PresentMon saw it never ends the
+        # capture. Exit 2 is an intentional label-check failure in a negative test; exit 3
+        # means the window was hidden, minimised, cloaked, covered or not in the foreground
+        # in some sample of the trace.
+        if ($process.ExitCode -eq 3) { throw 'The probe window was not visible in the foreground throughout the trace; no gate evidence.' }
         if ($process.ExitCode -ne 0 -and $process.ExitCode -ne 2) { throw "Probe exited $($process.ExitCode)." }
+        if (-not $capture.WaitForExit(60000)) { throw 'PresentMon did not stop within 60 s of the probe exit; no gate evidence.' }
+        if ($capture.ExitCode -ne 0) { throw "PresentMon exited $($capture.ExitCode); no gate evidence." }
         $runPath = Join-Path $directory 'run.json'
         $chains = Import-Csv -LiteralPath $csv | Where-Object { $_.ProcessID -eq "$($process.Id)" -and $_.SwapChainAddress } | Group-Object SwapChainAddress | Sort-Object Count -Descending
         if (-not $chains) { throw 'PresentMon has no swap-chain rows for the probe PID.' }
-        # Replace the placeholder in the text: a ConvertFrom/ConvertTo-Json round trip in
+        $rows = @(@($chains)[0].Group)
+        if ($null -eq $rows[0].PSObject.Properties['Dropped'] -or $null -eq $rows[0].PSObject.Properties['QPCTime']) {
+            throw 'The PresentMon CSV has no Dropped or QPCTime column; displayed presents cannot be checked.'
+        }
+        # Every second of the gate interval [T0+10 s, T0+190 s), as renderer_gate.py counts it,
+        # needs a displayed present: displayed preroll or warm-up frames cannot stand in for it.
+        $marks = [IO.File]::ReadAllText($runPath) | ConvertFrom-Json
+        $frequency = [int64]$marks.qpc_frequency
+        $begin = [int64]$marks.markers.trace_start_qpc + 10 * $frequency
+        $end = [Math]::Min([int64]$marks.markers.trace_start_qpc + 190 * $frequency, [int64]$marks.markers.trace_stop_qpc)
+        $inInterval = 0; $dropped = 0; $blind = 0; $seconds = 0
+        if ($end -gt $begin) {
+            $seconds = [int][Math]::Ceiling(($end - $begin) / [double]$frequency)
+            $shown = New-Object bool[] $seconds
+            foreach ($row in $rows) {
+                $t = [int64]$row.QPCTime
+                if ($t -lt $begin -or $t -ge $end) { continue }
+                $inInterval++
+                if ($row.Dropped -eq '0') { $shown[[int][Math]::Floor(($t - $begin) / [double]$frequency)] = $true } else { $dropped++ }
+            }
+            $blind = @($shown | Where-Object { -not $_ }).Count
+        }
+        $modes = ($rows | Group-Object PresentMode | Sort-Object Count -Descending | ForEach-Object { "$($_.Name) $($_.Count)" }) -join ', '
+        Write-Host "$runId`: PresentMon gate interval $inInterval presents, $dropped not displayed, $blind of $seconds seconds without a displayed present; present modes: $modes"
+        if ($blind -gt 0) { throw "PresentMon shows $blind second(s) of the gate interval without a displayed present; no gate evidence." }
+        # The automatic visibility checks are samples, not proof of continuous full-area
+        # visibility, so a formal run also needs the operator's confirmation, given after the
+        # run, that it was watched throughout with nothing covering the probe (Astra ruling
+        # 20261003T033021Z-274f20af). The summary publishes it as declared.overlays.
+        if ($Inject) { $overlay = 'fault-injection run; not gate evidence' }
+        else {
+            $answer = Read-Host "$runId`: did you watch the whole run, with nothing covering any part of the probe window? Type yes to keep it"
+            if ("$answer".Trim() -ne 'yes') { throw "$runId was not confirmed by the operator; no gate evidence." }
+            $overlay = "$Overlays; operator-declared after the run: watched throughout, no visible obstruction; automatic checks sample visibility every 100 ms and do not prove continuous full-area visibility"
+        }
+        # Replace the placeholders in the text: a ConvertFrom/ConvertTo-Json round trip in
         # Windows PowerShell 5.1 can change numbers in run.json.
         $text = [IO.File]::ReadAllText($runPath)
-        if (-not $text.Contains('"FILL-FROM-CSV"')) { throw 'run.json has no swap-chain placeholder.' }
-        [IO.File]::WriteAllText($runPath, $text.Replace('"FILL-FROM-CSV"', '"' + @($chains)[0].Name + '"'), [Text.UTF8Encoding]::new($false))
+        if (-not $text.Contains('"FILL-FROM-CSV"') -or -not $text.Contains('"OPERATOR-CONFIRMATION-PENDING"')) { throw 'run.json lacks the swap-chain or operator-confirmation placeholder.' }
+        $text = $text.Replace('"FILL-FROM-CSV"', '"' + @($chains)[0].Name + '"').Replace('"OPERATOR-CONFIRMATION-PENDING"', (ConvertTo-Json -InputObject $overlay -Compress))
+        [IO.File]::WriteAllText($runPath, $text, [Text.UTF8Encoding]::new($false))
         $run = $text | ConvertFrom-Json
         $runDirectories += $directory
         Write-Host "$runId`: probe exit $($process.ExitCode), label check $($run.label_check.status), vram_peak_mb $($run.vram_peak_mb)"

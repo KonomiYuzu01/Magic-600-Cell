@@ -182,7 +182,7 @@ void selftest(const Assets& a){
     LabelRecords missing;missing.uploads={{1,1,1}};missing.uses={{1,1,1,1,1}};
     require(checkLabels(a,missing,[&](const Copy&)->std::span<const uint32_t>{return a.oracle[1];}).at("status").string()=="fail","missing copy accepted");
     Options opt;opt.runId="selftest-synthetic-200s";
-    Json environment=Json::Object{{"power_source","mains"},{"declared",opt.declared},{"display",Json::Object{{"width",2560},{"height",1600}}},{"backbuffer",Json::Object{{"width",2560},{"height",1600}}},{"refresh_hz",60},{"vsync",false},{"tearing",true},{"adapter","synthetic fixture"},{"driver","fixture"}};
+    Json environment=Json::Object{{"power_source","mains"},{"declared",opt.declared},{"power_mode","max_performance"},{"presenting_adapter","synthetic fixture"},{"presentation_interval",0},{"display",Json::Object{{"width",2560},{"height",1600},{"refresh_hz",60}}},{"backbuffer",Json::Object{{"width",2560},{"height",1600}}},{"vsync",false},{"tearing",true},{"adapter","synthetic fixture"},{"driver","fixture"}};
     Json label=Json::Object{{"status","pass"},{"copies",1052},{"revisions",1052},{"mismatches",0},{"late_adoptions",0},{"missing",0},{"oracle_sha256",Json::Object{{"even",a.oracleHash[0]},{"odd",a.oracleHash[1]}}}};
     auto run=Json::parse(runJson(opt,freq,start,start+200*freq,std::string(64,'a'),environment,label,1).dump());
     require(run.at("format").string()=="magic600-renderer-run-v1"&&run.at("candidate").string()=="s-b"&&run.at("qpc_frequency").integer()==freq&&run.at("markers").at("trace_stop_qpc").integer()==start+200*freq,"run JSON shape");

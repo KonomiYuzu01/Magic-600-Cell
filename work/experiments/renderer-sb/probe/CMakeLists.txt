@@ -11,7 +11,7 @@ add_executable(sb_probe src/probe.cpp src/gpu.cpp)
 target_compile_definitions(sb_probe PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UNICODE _UNICODE
     M600_REPO_ROOT="${REPO_ROOT}")
 target_compile_options(sb_probe PRIVATE /W4 /permissive- /utf-8 /EHsc)
-target_link_libraries(sb_probe PRIVATE d3d12 dxgi dxguid bcrypt user32)
+target_link_libraries(sb_probe PRIVATE d3d12 dxgi dxguid bcrypt user32 dwmapi powrprof)
 function(compile_shader output source entry profile)
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${output}"
         COMMAND "${DXC_EXECUTABLE}" -nologo -O3 -Ges -T "${profile}" -E "${entry}"

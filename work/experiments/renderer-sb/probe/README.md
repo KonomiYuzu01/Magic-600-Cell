@@ -46,10 +46,26 @@ carry their own allocator, constants, upload memory and fence. Reusing them limi
 submissions to two frames in flight; no per-frame GPU drain is used.
 
 The borderless window uses the primary monitor's current display mode. It is
-topmost, so no other window covers it even when Windows refuses the foreground
-request (a launcher that is not in the foreground); `run.json` `window` records
-`foreground_at_trace_start`, `presents` and `presents_occluded` (presents that
-returned `DXGI_STATUS_OCCLUDED`). A run with occluded presents is not representative. The
+topmost and asks for the foreground. A flip-model `Present` never
+returns `DXGI_STATUS_OCCLUDED`, so every 100 ms of the trace the probe samples the
+window itself: visible, not minimised, not cloaked (`DWMWA_CLOAKED`), not covered
+(the centre and four inner points hit-test to the window) and in the foreground.
+`run.json` `window` records `foreground_at_trace_start`, `samples`,
+`samples_not_visible`, `samples_covered`, `samples_not_foreground`,
+`visible_throughout`, `foreground_throughout` and `presents`. A run that failed any
+sample exits 3 and is no gate evidence. The capture script also refuses a run in
+which some second of the gate interval [T0+10 s, T0+190 s) has no present that
+PresentMon saw displayed (`Dropped` = 0).
+
+These checks are safeguards, not proof of continuous full-area visibility.
+`visible_throughout` means only that every collected sample passed. A disabled
+window (which `WindowFromPoint` skips) or coverage between two samples can escape
+them, and one displayed present per second does not show that the whole window was
+visible. Formal gate captures are therefore owner-attended (Astra ruling
+`20261003T033021Z-274f20af`): the owner watches each capture throughout, turns off
+avoidable overlays, and discards any interrupted, visibly obstructed or
+insufficiently observed run even if the script accepted it. An unattended run is no
+gate evidence. The
 flip-discard swap chain has three R8G8B8A8_UNORM buffers. Depth is D32_FLOAT, with
 less-equal comparison, no blending, no culling and no MSAA by default. Presentation
 uses sync interval zero and tearing when supported. `--vsync` uses interval one.
@@ -111,9 +127,18 @@ the frame-context fence wait, before upload/draw/Present. The probe leaves
 `presentmon.swap_chain` as `FILL-FROM-CSV`. Only the capture script writes
 `presentmon.csv` and fills that address.
 
-The environment records power via `GetSystemPowerStatus`, display and refresh
-via the window monitor's `EnumDisplaySettingsW`, backbuffer dimensions, adapter,
-UMD driver version via `CheckInterfaceSupport`, V-Sync and tearing. Local process
+The environment uses the keys the gate summary publishes. `power_source` is
+sampled with `GetSystemPowerStatus` every 100 ms of the trace: `mains` or `battery`
+only when every sample agrees, otherwise `changed` or `unknown` (the gate accepts
+only `mains`). `power_mode` is the Windows effective power mode from
+`PowerRegisterForEffectivePowerModeNotifications` (for example `max_performance` for
+Best performance), or `changed` if it changed during the trace. `presenting_adapter`
+names the rendering adapter, its UMD driver version (`CheckInterfaceSupport`) and
+whether that adapter drives the window's display (a discrete-only or MUX mode) or
+another adapter does (a hybrid copy). `display` carries the window monitor's mode and
+refresh rate (`EnumDisplaySettingsW`), `backbuffer` its dimensions and
+`presentation_interval` the sync interval; V-Sync, tearing and the raw adapter and
+driver fields are kept beside them. Local process
 video-memory usage is sampled once per frame with `QueryVideoMemoryInfo`. An
 unavailable UMD version is recorded explicitly. The final `probe self-timing
 (not gate evidence)` line reports trace-QPC steps, using [T0+10 s,T0+190 s) for
@@ -121,18 +146,32 @@ long captures and the whole trace for shorter ones; it cannot replace PresentMon
 
 ## Owner measurements and negative tests
 
-On the owner's machine (RTX 4070 Laptop GPU 8 GB, driver 616.92, hybrid panel
-driven by AMD Radeon 610M, 2560×1600 at 60 Hz), first run the geometry check below.
-Then use an **administrator PowerShell** for PresentMon 2.6.0.0 captures:
+On the owner's machine (RTX 4070 Laptop GPU 8 GB, driver 616.92, 2560×1600 at
+60 Hz), first run the geometry check below. Then use an **administrator
+PowerShell** for PresentMon 2.6.0.0 captures:
 
 ```powershell
-& .\work\experiments\renderer-sb\probe\run_scene.ps1 -Scene w3 -Runs 3 -Declare 'high_performance=true','discrete_gpu=true'
+& .\work\experiments\renderer-sb\probe\run_scene.ps1 -Scene w3 -Runs 3 -Overlays '<none running, or the overlays running>' -Declare 'vendor_mode=<GPU and performance mode set in the vendor software>'
 ```
+
+Owner declarations go into `declared` with the keys the summary publishes:
+`vendor_mode`, `frame_generation`, `driver_vsync` and `overlays`. Frame generation
+and upscaling default to `false`; power source, power mode, adapter and display are
+measured, not declared. `-Overlays` states the overlay configuration and is required
+for every run except fault injections. After each run the script asks whether the
+owner watched the whole run with nothing covering the probe window; only `yes` keeps
+the run. `declared.overlays` then records the configuration, that the confirmation
+is operator-declared and was given after the run, and the sampling limitation above;
+the gate summary publishes it. A run without the confirmation is refused, so an
+intention stated before the run is never recorded as an observation.
 
 Repeat with W1, W2 and W4 for attribution. Each run is a new process, with a
 20-second pause between runs. The script refuses an unelevated terminal, attaches
 the pinned PresentMon executable to the PID with `--v1_metrics --qpc_time
---terminate_on_proc_exit`, waits for both processes, picks the swap-chain address with the most PID rows, and runs
+--terminate_on_proc_exit`, waits for the probe, then at most 60 s for PresentMon,
+picks the swap-chain address with the most PID rows, prints the gate interval's
+present count, presents not displayed, seconds without a displayed present and the
+present modes, and runs
 `python tools/perf/renderer_gate.py <runs> --out <summary directory>/summary.json`.
 It prints the verdict, fps, nearest-rank p99, VRAM peak and invalid reasons. Raw
 captures stay private under `work/loop-memory/perf/renderer/sb/`.
