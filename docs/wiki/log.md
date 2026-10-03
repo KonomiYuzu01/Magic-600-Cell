@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-02] update | Framework paper comparison
+[framework-paper-comparison](../progress/1.0/framework-paper-comparison.md) collects documented facts on Godot 4.7 .NET (S-A2) and Qt Quick 6.12 (S-D): D3D12 interop, UI and text, licence, later platforms and tooling, with nine questions for the smoke tests. It is input for day 7, not a selection, and makes no performance claim.
+
 ## [2026-10-02] decision | Scope reduction and review risk tiers
 Recorded in [owner-decisions-2026-10-02-scope](decisions/owner-decisions-2026-10-02-scope.md): only sound and the mathematical-language work are reduced, design stays the core of 1.0; `AGENTS.md` gains risk tiers for review and a weekly process budget; the tester source for G1 to G6 is open.
 
