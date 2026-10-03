@@ -2,21 +2,64 @@
 from __future__ import annotations
 
 import contextlib
+import copy
+import hashlib
+import http.client
 import io
 import json
 import os
+import re
+import shutil
+import socket
+import ssl
+import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
+import uuid
+from types import SimpleNamespace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "tools" / "toolchain"))
 sys.path.insert(0, str(ROOT / ".claude" / "hooks"))
 import bootstrap  # noqa: E402
 import install_guard  # noqa: E402
+
+
+# Keep all temporary fixtures inside the worktree. Windows CPython 3.14's
+# mkdir(0700) drops inherited sandbox access, so test directories inherit ACLs.
+def setUpModule():
+    global TEST_TEMP, _saved_temp, _saved_ledger
+    TEST_TEMP = ROOT / "work" / f"test-bootstrap-{os.getpid()}-{uuid.uuid4().hex}"
+    TEST_TEMP.mkdir(parents=True)
+    _saved_ledger = bootstrap.LEDGER_PATH
+    bootstrap.LEDGER_PATH = TEST_TEMP / "installs.jsonl"
+    _saved_temp = (tempfile.mkdtemp, tempfile.tempdir, os.environ.get("TEMP"), os.environ.get("TMP"))
+
+    def fixture_dir(suffix=None, prefix=None, dir=None):
+        path = Path(dir or TEST_TEMP) / ((prefix or "tmp") + uuid.uuid4().hex + (suffix or ""))
+        path.mkdir()  # inherit access from the test directory on Windows
+        return str(path)
+
+    tempfile.mkdtemp, tempfile.tempdir = fixture_dir, str(TEST_TEMP)
+    os.environ["TEMP"] = os.environ["TMP"] = str(TEST_TEMP)
+
+
+def tearDownModule():
+    bootstrap.LEDGER_PATH = _saved_ledger
+    tempfile.mkdtemp, tempfile.tempdir = _saved_temp[:2]
+    for key, value in zip(("TEMP", "TMP"), _saved_temp[2:]):
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+    assert TEST_TEMP.parent == ROOT / "work"
+    shutil.rmtree(TEST_TEMP)
 
 
 def run(argv):
@@ -30,6 +73,10 @@ def run(argv):
 
 
 class LockfileTests(unittest.TestCase):
+    def test_install_ledger_is_isolated_for_the_entire_suite(self):
+        self.assertNotEqual(bootstrap.LEDGER_PATH, ROOT / "work/loop-memory/ledgers/installs.jsonl")
+        self.assertEqual(bootstrap.LEDGER_PATH.parent, TEST_TEMP)
+
     def test_lockfile_loads_and_is_consistent(self):
         lock = bootstrap.load_lock()
         profiles = set(lock["profiles"])
@@ -116,10 +163,14 @@ class RefusalTests(unittest.TestCase):
         self.assertEqual(run(["install", "--profile", "everything"])[0], 2)
 
     def test_approve_requires_an_interactive_terminal(self):
-        r = subprocess.run([sys.executable, str(ROOT / "tools" / "toolchain" / "bootstrap.py"), "approve"],
-                           input="approve x\n", capture_output=True, text=True, timeout=30)
-        self.assertEqual(r.returncode, 2)
-        self.assertIn("interactive terminal", r.stderr)
+        saved = sys.stdin
+        sys.stdin = io.StringIO("approve x\n")
+        try:
+            code, err = run(["approve"])
+        finally:
+            sys.stdin = saved
+        self.assertEqual(code, 2)
+        self.assertIn("interactive terminal", err)
 
     def test_unpinned_skill_source_is_refused_before_network(self):
         with tempfile.TemporaryDirectory() as td:
@@ -203,8 +254,9 @@ class RefusalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             site = Path(td) / "lib" / "python3.11" / "site-packages"
             site.mkdir(parents=True)
-            saved = (bootstrap.run_probe, bootstrap.present, bootstrap.install_entry, bootstrap.safe_dest)
-            installs = []
+            saved = (bootstrap.run_probe, bootstrap.present, bootstrap.install_entry, bootstrap.safe_dest, bootstrap.ledger)
+            installs, records = [], []
+            bootstrap.ledger = records.append
             bootstrap.run_probe = lambda e: (e["id"] == "uv" or e["id"] in installs, "missing")  # uv (a dependency) works
             bootstrap.present = lambda e: False
             bootstrap.install_entry = lambda e: installs.append(e["id"])
@@ -222,8 +274,9 @@ class RefusalTests(unittest.TestCase):
                 (site / "viztracer-1.1.1.dist-info").mkdir()
                 bootstrap.install(lock, "py-spy", set())
             finally:
-                bootstrap.run_probe, bootstrap.present, bootstrap.install_entry, bootstrap.safe_dest = saved
+                bootstrap.run_probe, bootstrap.present, bootstrap.install_entry, bootstrap.safe_dest, bootstrap.ledger = saved
         self.assertEqual(installs, ["py-spy"])
+        self.assertEqual([r["tool"] for r in records], ["py-spy"])
 
     def test_linked_venv_descendants_are_refused(self):
         entry = bootstrap.entry_for(bootstrap.load_lock(), "marimo")
@@ -676,6 +729,1007 @@ class RefusalTests(unittest.TestCase):
     def test_requirements_outside_repository_are_refused(self):
         with self.assertRaises(bootstrap.Refused):
             bootstrap._require_file("../outside.txt")
+
+
+class ArchiveLockTests(unittest.TestCase):
+    def test_qt_and_extractor_entries_and_lockfile_format(self):
+        lock = bootstrap.load_lock()
+        ids = [e["id"] for e in lock["tools"]]
+        self.assertEqual(ids[ids.index("aqtinstall"):ids.index("aqtinstall") + 3], ["aqtinstall", "py7zr", "qt-6-10-3"])
+        self.assertEqual(bootstrap.entry_for(lock, "py7zr")["version"], "1.1.3")
+        qt = bootstrap.entry_for(lock, "qt-6-10-3")
+        self.assertEqual(qt["method"], "archive-7z-hashed")
+        self.assertEqual([a["name"] for a in qt["archives"]], ["qtbase.7z", "qtshadertools.7z", "qtsvg.7z", "qtdeclarative.7z"])
+        self.assertEqual(sum(a["bytes"] for a in qt["archives"]), 203969690)
+        self.assertEqual(bootstrap.LOCK_PATH.read_bytes(), (json.dumps(lock, indent=2) + "\n").encode())
+        self.assertIn("tools/qt/", (ROOT / ".gitignore").read_text().splitlines())
+
+    def test_malformed_archive_fields_are_rejected(self):
+        lock = bootstrap.load_lock()
+        good = bootstrap.entry_for(lock, "qt-6-10-3")
+        cases = []
+
+        def changed(field, value):
+            entry = copy.deepcopy(good)
+            entry[field] = value
+            cases.append((field + "=" + repr(value), entry))
+
+        for field in {"prefix", "root", "base_url", "redirects", "archives", "max_unpacked_bytes", "required_files", "prefix_check", "extractor", "requires"}:
+            entry = copy.deepcopy(good)
+            del entry[field]
+            cases.append(("missing " + field, entry))
+        for value in ([], ["linux"], ["windows", "linux"], "windows"):
+            changed("platforms", value)
+        for field in ("prefix", "root"):
+            for value in (None, 1, "", "/absolute", "C:/qt", "a\\b", "a//b", "a/../b", "a/", "../a", "a/./b"):
+                changed(field, value)
+        for value in (None, "http://download.qt.io/", "https://download.qt.io", "https://download.qt.io/path/",
+                      "https://user@download.qt.io/", "https://download.qt.io:443/", "https://download.qt.io/?secret"):
+            changed("base_url", value)
+        changed("network_hosts", [])
+        changed("network_hosts", "download.qt.io")
+        for host in ("127.0.0.1", "localhost", "a.localhost", "internal"):
+            entry = copy.deepcopy(good)
+            entry["base_url"], entry["network_hosts"] = f"https://{host}/", [host]
+            cases.append(("listed local host " + host, entry))
+        for value in (None, {}, dict(good["redirects"], extra=1), dict(good["redirects"], scheme="http"),
+                      dict(good["redirects"], same_path=False), dict(good["redirects"], same_path=1)):
+            changed("redirects", value)
+        for hops in (-1, 11, 1.5, True, "5"):
+            changed("redirects", dict(good["redirects"], max_hops=hops))
+        for value in (None, [], {}, ["bad"], [dict(good["archives"][0], extra=1)]):
+            changed("archives", value)
+        changed("archives", [good["archives"][0], good["archives"][0]])
+        for field in good["archives"][0]:
+            archive = dict(good["archives"][0])
+            del archive[field]
+            changed("archives", [archive])
+        archive_cases = {
+            "name": [None, "", "Qt.7z", "../a.7z", "a.zip", "a.7z\n"],
+            "path": [None, "", "/a", "a//b", "a/../b", "a/./b", "C:/a", "a\\b", "a?secret", "a#fragment", "a space/b"],
+            "bytes": [None, 0, -1, True, 1.0, "1"],
+            "sha256": [None, "a" * 63, "A" * 64, "g" * 64, "a" * 64 + "\n"],
+            "install_path": [None, "other/bin", "6.10.30/bin", "6.10.3/../outside", "6.10.3//bin", "6.10.3/bin/"]
+        }
+        for field, values in archive_cases.items():
+            for value in values:
+                changed("archives", [dict(good["archives"][0], **{field: value})])
+        for value in (None, 0, -1, True, 4.0, "4"):
+            changed("max_unpacked_bytes", value)
+        for value in (None, [], "6.10.3/bin/a", [None], ["other/bin/a"], ["6.10.3/../a"], ["6.10.3//a"], ["6.10.3"]):
+            changed("required_files", value)
+        for value in (None, {}, dict(good["prefix_check"], extra=True), {"command": [], "path": "{prefix}/bin"},
+                      {"command": [None], "path": "{prefix}/bin"}, {"command": ["qmake"], "path": "{prefix}/bin"},
+                      {"command": "{prefix}/qmake", "path": "{prefix}/bin"},
+                      {"command": ["{prefix}/bin/qmake", 1], "path": "{prefix}/bin"},
+                      dict(good["prefix_check"], path=None), dict(good["prefix_check"], path="other/bin"),
+                      dict(good["prefix_check"], path="{prefix}/../outside")):
+            changed("prefix_check", value)
+        for value in (None, "absent", "uv"):
+            changed("extractor", value)
+        for value in (None, [], "py7zr", ["uv"]):
+            changed("requires", value)
+        saved = bootstrap.LOCK_PATH
+        with tempfile.TemporaryDirectory() as td:
+            bootstrap.LOCK_PATH = Path(td) / "lock.json"
+            try:
+                for name, candidate in cases:
+                    trial = copy.deepcopy(lock)
+                    trial["tools"][trial["tools"].index(bootstrap.entry_for(trial, "qt-6-10-3"))] = candidate
+                    bootstrap.LOCK_PATH.write_text(json.dumps(trial), encoding="utf-8")
+                    with self.subTest(case=name), self.assertRaisesRegex(SystemExit, r"lockfile: qt-6-10-3 "):
+                        bootstrap.load_lock()
+            finally:
+                bootstrap.LOCK_PATH = saved
+
+
+def member(name, size=0, directory=False, **extra):
+    return dict({"name": name, "dir": directory, "file": not directory, "symlink": False,
+                 "junction": False, "socket": False, "size": size}, **extra)
+
+
+class ArchiveMemberTests(unittest.TestCase):
+    def test_clean_nested_members(self):
+        self.assertEqual(bootstrap.member_problems([member("bin", directory=True), member("bin/qmake.exe", 3),
+                                                  member("lib\\cmake\\Qt6Config.cmake", 4)], "6.10.3/msvc2022_64"), [])
+
+    def test_every_unsafe_member_rule(self):
+        cases = [[member(name)] for name in ("", None, 1, "a\x00b", "a\x01b", "a\x7fb", "a\x85b", "/bin/a", "\\bin\\a",
+                  "C:/bin/a", "\\\\server\\share\\a", "a//b", "a/./b", "a/../b", "a/", "a./b", "a /b")]
+        cases += [[member("a" + c + "b")] for c in '<>:"|?*']
+        cases += [[member("bin/" + name)] for name in ("CON", "prn.txt", "AuX", "NUL.exe", "com1.dll", "COM9", "lpt1", "LPT9.txt")]
+        cases += [[member("bin/a", **flags)] for flags in ({"dir": True}, {"file": False}, {"symlink": True}, {"junction": True},
+                                                          {"socket": True}, {"file": 1}, {"size": -1}, {"size": True})]
+        cases += [[member("Bin/A"), member("bin\\a")], ["bad object"]]
+        for listing in cases:
+            with self.subTest(listing=listing):
+                self.assertTrue(bootstrap.member_problems(listing, "6.10.3/msvc2022_64"))
+        self.assertTrue(bootstrap.member_problems({}, "6.10.3"))
+        self.assertEqual(len(bootstrap.member_problems([member("../bad")] * 50, "6.10.3")), 20)
+
+
+class CountingStream(io.BytesIO):
+    def __init__(self, body):
+        super().__init__(body)
+        self.read_bytes = 0
+
+    def read(self, n):
+        chunk = super().read(n)
+        self.read_bytes += len(chunk)
+        return chunk
+
+
+class ArchiveInstallTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="archives-")
+        self.base = Path(self.tmp.name)
+        self.entry = copy.deepcopy(bootstrap.entry_for(bootstrap.load_lock(), "qt-6-10-3"))
+        self.entry["prefix"] = (self.base.relative_to(ROOT) / "qt").as_posix()
+        self.bodies = {"base.7z": b"pinned base archive", "addon.7z": b"pinned addon archive"}
+        self.entry["archives"] = [{"name": name, "path": "repository/qt/" + name, "bytes": len(body),
+                                   "sha256": hashlib.sha256(body).hexdigest(), "install_path": "6.10.3/msvc2022_64"}
+                                  for name, body in self.bodies.items()]
+        self.entry["max_unpacked_bytes"] = 4096
+        self.entry["required_files"] = ["6.10.3/msvc2022_64/" + path for path in
+                                        ("bin/qmake.exe", "bin/Qt6Core.dll", "plugins/platforms/qwindows.dll")]
+        self.listings = {"base.7z": [member("bin", directory=True), member("bin/qmake.exe", 3),
+                                      member("bin/Qt6Core.dll", 4), member("bin/qt.conf", 2)],
+                         "addon.7z": [member("bin/Qt6Core.dll", 6), member("plugins/platforms/qwindows.dll", 5)]}
+        self.calls, self.requests, self.streams, self.records, self.events = [], [], [], [], []
+        self.damage, self.exit_code, self.list_output = None, 0, None
+        self.saved = (bootstrap.PLATFORM, bootstrap._http_get, bootstrap.subprocess.run, bootstrap.venv_contained,
+                      bootstrap.venv_conflicts, bootstrap.shutil.disk_usage, bootstrap.ledger)
+        bootstrap.PLATFORM = "windows"
+        bootstrap._http_get = self.fake_http
+        bootstrap.subprocess.run = self.fake_child
+        bootstrap.venv_contained = lambda e: []
+        bootstrap.venv_conflicts = lambda e: []
+        bootstrap.shutil.disk_usage = lambda p: SimpleNamespace(free=100000)
+        bootstrap.ledger = self.records.append
+
+    def tearDown(self):
+        (bootstrap.PLATFORM, bootstrap._http_get, bootstrap.subprocess.run, bootstrap.venv_contained,
+         bootstrap.venv_conflicts, bootstrap.shutil.disk_usage, bootstrap.ledger) = self.saved
+        self.tmp.cleanup()
+
+    @property
+    def prefix(self):
+        return ROOT / self.entry["prefix"]
+
+    @property
+    def final(self):
+        return self.prefix / self.entry["root"]
+
+    def response(self, body, status=200, headers=None):
+        stream = CountingStream(body)
+        self.streams.append(stream)
+        return status, headers or {}, stream
+
+    def fake_http(self, url, timeout):
+        self.assertTrue(0 < timeout <= bootstrap.INSTALL_TIMEOUT)
+        self.requests.append(url)
+        self.events.append("get")
+        body = self.bodies[url.rsplit("/", 1)[-1]]
+        return self.response(body, headers={"Content-Length": str(len(body)), "X-Checksum-SHA256": hashlib.sha256(body).hexdigest()})
+
+    def fake_child(self, cmd, **kwargs):
+        self.calls.append((cmd, kwargs))
+        self.assertEqual(cmd[1:4], ["-I", "-c", bootstrap.EXTRACT_CODE])
+        self.assertEqual(kwargs["cwd"], self.prefix / f".st-{os.getpid()}")
+        self.assertEqual(kwargs["timeout"], bootstrap.INSTALL_TIMEOUT)
+        self.assertEqual(kwargs["env"], bootstrap.probe_env())
+        self.assertTrue(kwargs["capture_output"])
+        mode, name = cmd[4], Path(cmd[5]).name
+        self.events.append(mode)
+        if self.exit_code:
+            return subprocess.CompletedProcess(cmd, self.exit_code, "", "")
+        if mode == "list":
+            # Every archive must already have passed its pinned hash before any child.
+            for archive in self.entry["archives"]:
+                data = (Path(kwargs["cwd"]) / "dl" / archive["name"]).read_bytes()
+                self.assertEqual(hashlib.sha256(data).hexdigest(), archive["sha256"])
+            return subprocess.CompletedProcess(cmd, 0, self.list_output or json.dumps(self.listings[name]), "")
+        self.assertEqual(mode, "extract")
+        target = Path(cmd[6])
+        for item in self.listings[name]:
+            path = target / item["name"].replace("\\", "/")
+            if item["dir"]:
+                path.mkdir(parents=True, exist_ok=True)
+            else:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"x" * item["size"])
+        if name == self.entry["archives"][-1]["name"] and self.damage:
+            self.damage(target)
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    def assert_clean_refusal(self, text):
+        with self.assertRaisesRegex(bootstrap.Refused, text):
+            bootstrap.install_entry(self.entry)
+        self.assertFalse(self.final.exists())
+        self.assertEqual(list(self.prefix.glob(".st-*")), [])
+        self.assertEqual(self.records, [])
+
+    def test_download_accepts_direct_and_two_hop_mirror_and_records_host(self):
+        archive = self.entry["archives"][0]
+        start = self.entry["base_url"] + archive["path"]
+        middle = "https://redirect.example.net/" + archive["path"]
+        mirror = "https://mirror.example.org/sites/qt.io/" + archive["path"]
+        for i, redirects in enumerate(({}, {start: (302, middle), middle: (307, mirror)})):
+            dest = self.base / str(i)
+            dest.mkdir()
+            seen = []
+
+            def get(url, timeout):
+                seen.append(url)
+                self.assertTrue(0 < timeout <= bootstrap.INSTALL_TIMEOUT)
+                if url in redirects:
+                    status, location = redirects[url]
+                    return self.response(b"", status, {"Location": location})
+                return self.response(self.bodies[archive["name"]])
+
+            bootstrap._http_get = get
+            host = bootstrap.fetch_archive(self.entry, archive, dest)
+            self.assertEqual(host, "mirror.example.org" if redirects else "download.qt.io")
+            self.assertEqual(seen, [start, middle, mirror] if redirects else [start])
+            self.assertEqual((dest / archive["name"]).read_bytes(), self.bodies[archive["name"]])
+            self.assertTrue(all(s.closed for s in self.streams))
+
+    def test_download_refusals_are_offline_and_bounded(self):
+        archive = self.entry["archives"][0]
+        path = archive["path"]
+        body = self.bodies[archive["name"]]
+        bad_urls = ["http://mirror.example.org/" + path, "https://user@mirror.example.org/" + path,
+                    "https://mirror.example.org:8443/" + path, "https://127.0.0.1/" + path,
+                    "https://[::1]/" + path, "https://localhost/" + path, "https://a.localhost/" + path,
+                    "https://mirror.example.org/" + path + "?secret=private", "https://mirror.example.org/" + path + "#secret",
+                    "https://mirror.example.org/" + path + "?", "https://mirror.example.org/" + path + "#",
+                    "https://mirror.example.org/elsewhere.7z", "https://mirror/" + path]
+        cases = [("redirect " + str(i), 302, {"Location": url}, b"") for i, url in enumerate(bad_urls)]
+        cases += [("404", 404, {}, b""), ("206", 206, {}, body),
+                  ("length", 200, {"Content-Length": str(len(body) + 1)}, body),
+                  ("short", 200, {}, body[:-1]), ("long", 200, {}, body + b"z" * 100000)]
+        for i, (name, status, headers, data) in enumerate(cases):
+            dest = self.base / str(i)
+            dest.mkdir()
+            calls = []
+
+            def get(url, timeout):
+                calls.append(url)
+                return self.response(data, status, headers)
+
+            bootstrap._http_get = get
+            with self.subTest(case=name), self.assertRaises(bootstrap.Refused) as ctx:
+                bootstrap.fetch_archive(self.entry, archive, dest)
+            self.assertIn(archive["name"], str(ctx.exception))
+            self.assertIn("installation blocked until verified again", str(ctx.exception))
+            self.assertNotIn("secret", str(ctx.exception))
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(list(dest.iterdir()), [])
+            self.assertTrue(self.streams[-1].closed)
+            if name == "long":
+                self.assertEqual(self.streams[-1].read_bytes, archive["bytes"] + 1)
+
+    def test_download_refuses_one_redirect_beyond_max_hops(self):
+        archive = self.entry["archives"][0]
+        self.entry["redirects"]["max_hops"] = 2
+        calls = []
+
+        def get(url, timeout):
+            calls.append(url)
+            return self.response(b"", 308, {"Location": f"https://mirror.example.org/hop{len(calls)}/" + archive["path"]})
+
+        bootstrap._http_get = get
+        with self.assertRaisesRegex(bootstrap.Refused, "redirect policy refused"):
+            bootstrap.fetch_archive(self.entry, archive, self.base)
+        self.assertEqual(len(calls), 3)
+        self.assertTrue(all(s.closed for s in self.streams))
+
+    def test_hash_pin_wins_over_server_checksum_before_any_extractor(self):
+        self.bodies["base.7z"] = b"z" * len(self.bodies["base.7z"])
+        contained = []
+        bootstrap.venv_contained = lambda e: contained.append(e) or []
+        self.assert_clean_refusal("SHA-256 differs from the pin")
+        self.assertEqual(self.calls, [])
+        self.assertEqual(contained, [])
+
+    def test_download_deadline_closes_stream_and_removes_partial_body(self):
+        saved, clock = bootstrap.time.monotonic, [0.0]
+        bootstrap.time.monotonic = lambda: clock[0]
+
+        def late(url, timeout):
+            status, headers, stream = self.fake_http(url, timeout)
+            read = stream.read
+            stream.read = lambda n: clock.__setitem__(0, bootstrap.INSTALL_TIMEOUT + 1) or read(n)
+            return status, headers, stream
+
+        bootstrap._http_get = late
+        try:
+            with self.assertRaisesRegex(bootstrap.Refused, "base.7z: download deadline exceeded"):
+                bootstrap.fetch_archive(self.entry, self.entry["archives"][0], self.base)
+        finally:
+            bootstrap.time.monotonic = saved
+        self.assertTrue(self.streams[-1].closed)
+        self.assertEqual(list(self.base.iterdir()), [])
+
+    def test_trickling_server_is_cut_off_at_the_deadline(self):
+        # Every receive stays inside the socket timeout, so only the deadline can end the buffered read.
+        body = b"q" * 64
+        archive = dict(self.entry["archives"][0], bytes=len(body), sha256=hashlib.sha256(body).hexdigest())
+        head = b"HTTP/1.1 200 OK\r\nContent-Length: 64\r\n\r\n"
+        clock = [0.0]
+
+        class Trickle:
+            """Socket double: after `fast` bytes, one byte per 59 simulated seconds."""
+
+            def __init__(self, data, fast):
+                self.data, self.fast, self.timeout = data, fast, None
+
+            def settimeout(self, value):
+                self.timeout = value
+
+            def recv_into(self, buffer, nbytes=None, flags=0):
+                if self.fast <= 0:
+                    if self.timeout < 59:
+                        clock[0] += self.timeout
+                        raise TimeoutError("timed out")
+                    clock[0] += 59
+                self.fast -= 1
+                if not self.data:
+                    return 0
+                buffer[0], self.data = self.data[0], self.data[1:]
+                return 1
+
+            def makefile(self, mode):
+                return io.BufferedReader(socket.SocketIO(self, mode))
+
+            def _decref_socketios(self):
+                pass
+
+        saved = bootstrap.time.monotonic
+        bootstrap.time.monotonic = lambda: clock[0]
+        try:
+            for fast, phase in ((0, "headers"), (len(head), "body")):
+                clock[0] = 0.0
+
+                def get(url, timeout):
+                    sock = type("Sock", (bootstrap._DeadlineSocket, Trickle), {"deadline": clock[0] + timeout})(head + body, fast)
+                    response = http.client.HTTPResponse(sock, method="GET")
+                    response.begin()
+                    return response.status, response.headers, response
+
+                bootstrap._http_get = get
+                with self.subTest(phase=phase):
+                    with self.assertRaisesRegex(bootstrap.Refused, "download deadline exceeded"):
+                        bootstrap.fetch_archive(self.entry, archive, self.base)
+                    self.assertEqual(clock[0], bootstrap.INSTALL_TIMEOUT)
+                    self.assertEqual(list(self.base.iterdir()), [])
+        finally:
+            bootstrap.time.monotonic = saved
+
+    def test_repeated_length_or_location_is_refused(self):
+        # http.client frames the body by the first Content-Length; a dict copy of the headers keeps the last.
+        body = b"abc"
+        archive = dict(self.entry["archives"][0], bytes=len(body), sha256=hashlib.sha256(body).hexdigest())
+        location = "Location: https://mirror.example.org/" + archive["path"] + "\r\n"
+        cases = [("length", b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\nContent-Length: 3\r\n\r\nabc", "repeated Content-Length"),
+                 ("location", ("HTTP/1.1 302 Found\r\n" + location * 2 + "Content-Length: 0\r\n\r\n").encode(),
+                  "invalid redirect location")]
+        for name, raw, reason in cases:
+            responses = []
+
+            def get(url, timeout):
+                response = http.client.HTTPResponse(SimpleNamespace(makefile=lambda mode: io.BytesIO(raw)), method="GET")
+                response.begin()
+                responses.append(response)
+                return response.status, response.headers, response
+
+            bootstrap._http_get = get
+            with self.subTest(case=name):
+                with self.assertRaisesRegex(bootstrap.Refused, reason):
+                    bootstrap.fetch_archive(self.entry, archive, self.base)
+                self.assertEqual(len(responses), 1)
+                self.assertTrue(responses[0].isclosed())
+                self.assertEqual(list(self.base.iterdir()), [])
+
+    def test_initial_url_policy_applies_before_any_request(self):
+        archive = self.entry["archives"][0]
+        for host in ("127.0.0.1", "localhost", "a.localhost", "internal"):
+            self.entry["base_url"], self.entry["network_hosts"] = f"https://{host}/", [host]
+            with self.subTest(host=host), self.assertRaisesRegex(bootstrap.Refused, "URL policy refused"):
+                bootstrap.fetch_archive(self.entry, archive, self.base)
+        self.assertEqual(self.requests, [])
+
+    def test_transport_exception_is_sanitized_and_blocks_extraction(self):
+        def failed_get(url, timeout):
+            raise bootstrap.HTTPException("https://mirror.example.org/?secret=private")
+
+        bootstrap._http_get = failed_get
+        self.assert_clean_refusal("base.7z: download failed")
+        self.assertEqual(self.calls, [])
+
+    def test_success_checks_tree_writes_qt_conf_moves_and_logs(self):
+        saved = bootstrap.os.rename
+
+        def move(src, dst):
+            if dst == self.final:
+                self.events.append("move")
+                self.assertEqual(self.events, ["get", "get", "list", "list", "extract", "extract", "move"])
+            saved(src, dst)
+
+        bootstrap.os.rename = move
+        try:
+            bootstrap.install_entry(self.entry)
+        finally:
+            bootstrap.os.rename = saved
+        self.assertEqual((self.final / "msvc2022_64/bin/qt.conf").read_bytes(), b"[Paths]\r\nPrefix=..\r\n")
+        self.assertEqual((self.final / "msvc2022_64/bin/Qt6Core.dll").stat().st_size, 6)
+        self.assertEqual(list(self.prefix.glob(".st-*")), [])
+        extractor = bootstrap.entry_for(bootstrap.load_lock(), "py7zr")
+        interpreter = ROOT / extractor["venv"] / "Scripts/python.exe"
+        for cmd, kwargs in self.calls:
+            self.assertEqual(cmd[0], str(interpreter))
+            self.assertNotIn(str(self.final), cmd[0])
+            self.assertNotIn(str(kwargs["cwd"]), cmd[0])
+        self.assertEqual(len(self.records), 1)
+        record = self.records[0]
+        self.assertEqual(record["phase"], "archives")
+        self.assertEqual(record["tool"], self.entry["id"])
+        self.assertEqual(record["overlaps"], 1)
+        self.assertEqual(record["qt_conf"], "replaced")
+        self.assertEqual(record["archives"], [{"name": a["name"], "bytes": a["bytes"], "host": "download.qt.io"} for a in self.entry["archives"]])
+        self.assertEqual(record["longest_path"], max(len(str(p)) for p in self.final.rglob("*")))
+        self.assertGreaterEqual(record["seconds"], 0)
+
+    def test_success_creates_qt_conf_when_not_listed(self):
+        self.listings["base.7z"] = [m for m in self.listings["base.7z"] if m["name"] != "bin/qt.conf"]
+        bootstrap.install_archives(self.entry)
+        self.assertEqual(self.records[0]["qt_conf"], "created")
+        self.assertEqual((self.final / "msvc2022_64/bin/qt.conf").read_bytes(), b"[Paths]\r\nPrefix=..\r\n")
+
+
+    def test_extracted_symlink_is_refused_and_staging_is_removed(self):
+        sentinel = self.base / "sentinel"
+        sentinel.write_bytes(b"untouched")
+        link = self.base / "link"
+        try:
+            os.symlink(sentinel, link)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks not available")
+        link.unlink()
+        self.damage = lambda target: os.symlink(sentinel, target / "link")
+        self.assert_clean_refusal("contains a link")
+        self.assertEqual(sentinel.read_bytes(), b"untouched")
+
+    def test_unlisted_extracted_file_is_refused(self):
+        self.damage = lambda target: (target / "unlisted").write_bytes(b"bad")
+        self.assert_clean_refusal("file set differs")
+
+    def test_read_only_staging_files_are_cleaned_on_failure(self):
+        sentinel = self.base / "sentinel"
+        sentinel.write_bytes(b"untouched")
+        before = sentinel.stat().st_mode
+
+        def damaged(target):
+            (target / "unlisted").write_bytes(b"bad")
+            os.chmod(target / "bin/qmake.exe", stat.S_IREAD)
+
+        self.damage = damaged
+        self.assert_clean_refusal("file set differs")
+        self.assertEqual(sentinel.read_bytes(), b"untouched")
+        self.assertEqual(sentinel.stat().st_mode, before)
+
+    def test_extracted_junction_is_refused_without_descending(self):
+        saved = bootstrap._is_link
+        linked = self.prefix / f".st-{os.getpid()}/x/6.10.3/msvc2022_64/bin"
+        bootstrap._is_link = lambda p: Path(p) == linked or saved(p)
+        try:
+            self.assert_clean_refusal("contains a link")
+        finally:
+            bootstrap._is_link = saved
+
+    def test_extracted_size_mismatch_is_refused(self):
+        self.damage = lambda target: (target / "bin/qmake.exe").write_bytes(b"bad size")
+        self.assert_clean_refusal("file size differs")
+
+    def test_other_root_in_extracted_tree_is_refused(self):
+        self.damage = lambda target: (target.parents[1] / "outside").mkdir()
+        self.assert_clean_refusal("outside root")
+
+    def test_existing_destination_is_refused_before_download(self):
+        self.final.mkdir(parents=True)
+        with self.assertRaisesRegex(bootstrap.Refused, "destination already exists"):
+            bootstrap.install_archives(self.entry)
+        self.assertEqual(self.requests, [])
+        self.assertEqual(self.calls, [])
+
+    def test_too_little_space_is_refused_before_any_request(self):
+        bootstrap.shutil.disk_usage = lambda p: SimpleNamespace(free=1)
+        self.assert_clean_refusal("too little free space")
+        self.assertEqual(self.requests, [])
+        self.assertEqual(self.calls, [])
+
+    def test_unmarked_leftover_is_preserved_and_refused(self):
+        leftover = self.prefix / ".st-old"
+        leftover.mkdir(parents=True)
+        (leftover / "sentinel").write_bytes(b"owner")
+        with self.assertRaisesRegex(bootstrap.Refused, r"unexpected leftover .st-old; remove it or ask the owner"):
+            bootstrap.install_archives(self.entry)
+        self.assertEqual((leftover / "sentinel").read_bytes(), b"owner")
+        self.assertEqual(self.requests, [])
+
+    def test_marked_leftover_is_removed(self):
+        leftover = self.prefix / ".st-old"
+        leftover.mkdir(parents=True)
+        (leftover / ".magic600-staging").write_bytes(b"marker")
+        (leftover / "dl").mkdir()
+        (leftover / "dl/partial").write_bytes(b"old")
+        bootstrap.install_archives(self.entry)
+        self.assertFalse(leftover.exists())
+        self.assertTrue(self.final.is_dir())
+
+    def test_marked_leftover_containing_a_link_is_preserved(self):
+        leftover = self.prefix / ".st-old"
+        leftover.mkdir(parents=True)
+        (leftover / ".magic600-staging").write_bytes(b"marker")
+        linked = leftover / "junction"
+        linked.mkdir()
+        saved = bootstrap._is_link
+        bootstrap._is_link = lambda p: Path(p) == linked or saved(p)
+        try:
+            with self.assertRaisesRegex(bootstrap.Refused, "unexpected leftover"):
+                bootstrap.install_archives(self.entry)
+        finally:
+            bootstrap._is_link = saved
+        self.assertTrue(linked.is_dir())
+        self.assertEqual(self.requests, [])
+
+    def test_missing_required_file_is_refused(self):
+        self.entry["required_files"].append("6.10.3/msvc2022_64/bin/missing.dll")
+        self.assert_clean_refusal("missing required file")
+
+    def test_password_archive_extractor_exit_3_is_refused(self):
+        self.exit_code = 3
+        self.assert_clean_refusal("base.7z: extractor exit 3")
+        self.assertEqual([cmd[4] for cmd, _ in self.calls], ["list"])
+
+    def test_unparsable_extractor_listing_is_refused(self):
+        self.list_output = "not JSON"
+        self.assert_clean_refusal("unparsable extractor listing")
+        self.assertNotIn("extract", self.events)
+
+    def test_unsafe_listing_is_refused_before_extraction(self):
+        self.listings["addon.7z"].append(member("../escape", 10))
+        self.assert_clean_refusal("unsafe path segment")
+        self.assertNotIn("extract", self.events)
+
+    def test_unpacked_limit_and_free_space_are_checked_before_extraction(self):
+        self.entry["max_unpacked_bytes"] = 1
+        self.assert_clean_refusal("unpacked size exceeds")
+        self.assertNotIn("extract", self.events)
+        self.entry["max_unpacked_bytes"] = 4096
+        self.events.clear()
+        spaces = iter((100000, 1))
+        bootstrap.shutil.disk_usage = lambda p: SimpleNamespace(free=next(spaces))
+        self.assert_clean_refusal("unpacked size exceeds")
+        self.assertNotIn("extract", self.events)
+
+    def test_conflicting_extractor_environment_is_refused(self):
+        bootstrap.venv_conflicts = lambda e: ["unapproved 1.0"]
+        self.assert_clean_refusal("extractor environment differs")
+        self.assertEqual(self.calls, [])
+
+    def test_archive_method_is_windows_only(self):
+        bootstrap.PLATFORM = "linux"
+        self.assert_clean_refusal("Windows only")
+        self.assertEqual(self.requests, [])
+
+    def test_run_probe_requires_exact_version_and_final_prefix(self):
+        bootstrap.install_archives(self.entry)
+        calls = []
+        final_prefix = self.final / "msvc2022_64"
+        for version, prefix, ok in (("6.10.3", str(final_prefix), True), ("6.10.3rc1", str(final_prefix), False),
+                                    ("6.10.3", str(self.base / "other"), False)):
+            calls.clear()
+
+            def probe(cmd, **kwargs):
+                calls.append(cmd)
+                self.assertEqual(Path(cmd[0]), final_prefix / "bin/qmake.exe")
+                self.assertEqual(kwargs["timeout"], bootstrap.PROBE_TIMEOUT)
+                self.assertEqual(kwargs["env"], bootstrap.probe_env())
+                output = version if cmd[-1] == "QT_VERSION" else prefix
+                return subprocess.CompletedProcess(cmd, 0, output + "\n", "")
+
+            bootstrap.subprocess.run = probe
+            with self.subTest(version=version, prefix=prefix):
+                result, detail = bootstrap.run_probe(self.entry)
+                self.assertEqual(result, ok)
+                if prefix != str(final_prefix):
+                    self.assertIn("prefix check failed:", detail)
+                self.assertEqual(len(calls), 1 if "rc1" in version else 2)
+
+    def test_install_runs_probes_after_the_checked_tree_is_moved(self):
+        saved = bootstrap.run_probe
+        bootstrap.run_probe = lambda e: saved(e) if e["id"] == self.entry["id"] else (True, "dependency ready")
+        extractor_child = self.fake_child
+        probed = []
+
+        def child_or_probe(cmd, **kwargs):
+            if cmd[1:4] == ["-I", "-c", bootstrap.EXTRACT_CODE]:
+                return extractor_child(cmd, **kwargs)
+            self.assertTrue(self.final.is_dir())
+            self.assertEqual(list(self.prefix.glob(".st-*")), [])
+            self.assertEqual(Path(cmd[0]), self.final / "msvc2022_64/bin/qmake.exe")
+            probed.append(cmd[-1])
+            output = self.entry["version"] if cmd[-1] == "QT_VERSION" else str(self.final / "msvc2022_64")
+            return subprocess.CompletedProcess(cmd, 0, output, "")
+
+        bootstrap.subprocess.run = child_or_probe
+        lock = bootstrap.load_lock()
+        lock["tools"] = [self.entry if e["id"] == self.entry["id"] else e for e in lock["tools"]]
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(bootstrap.install(lock, self.entry["id"], set()), "installed")
+        finally:
+            bootstrap.run_probe = saved
+        self.assertEqual(probed, ["QT_VERSION", "QT_INSTALL_PREFIX"])
+        self.assertEqual(sum(r.get("phase") == "archives" for r in self.records), 1)
+
+    def staged_copy(self):
+        bootstrap.install_archives(self.entry)
+        staged = self.prefix / ".st-old/x/6.10.3"
+        shutil.copytree(self.final, staged)
+        return staged
+
+    def assert_probe_refused_without_running(self):
+        calls = []
+        bootstrap.subprocess.run = lambda cmd, **kwargs: calls.append(cmd)
+        ok, detail = bootstrap.run_probe(self.entry)
+        self.assertFalse(ok)
+        self.assertIn("refused", detail)
+        self.assertFalse(bootstrap.present(self.entry))
+        self.assertEqual(calls, [])
+
+    def test_probe_refuses_a_linked_qmake(self):
+        staged = self.staged_copy()
+        qmake = self.final / "msvc2022_64/bin/qmake.exe"
+        qmake.unlink()
+        try:
+            os.symlink(staged / "msvc2022_64/bin/qmake.exe", qmake)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks not available")
+        self.assert_probe_refused_without_running()
+
+    def test_probe_refuses_a_final_root_junction_into_staging(self):
+        staged = self.staged_copy()
+        shutil.rmtree(self.final)
+        try:
+            if sys.platform == "win32":
+                import _winapi
+                _winapi.CreateJunction(str(staged), str(self.final))
+            else:
+                os.symlink(staged, self.final, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("links not available")
+        try:
+            self.assert_probe_refused_without_running()
+        finally:
+            (os.rmdir if sys.platform == "win32" else os.unlink)(self.final)  # the link only, never its target
+
+    def install_with(self, prefix_output=None):
+        saved = bootstrap.run_probe
+        bootstrap.run_probe = lambda e: saved(e) if e["id"] == self.entry["id"] else (True, "dependency ready")
+        extractor_child = self.fake_child
+
+        def child_or_probe(cmd, **kwargs):
+            if cmd[1:4] == ["-I", "-c", bootstrap.EXTRACT_CODE]:
+                return extractor_child(cmd, **kwargs)
+            output = self.entry["version"] if cmd[-1] == "QT_VERSION" else prefix_output or str(self.final / "msvc2022_64")
+            return subprocess.CompletedProcess(cmd, 0, output, "")
+
+        bootstrap.subprocess.run = child_or_probe
+        lock = bootstrap.load_lock()
+        lock["tools"] = [self.entry if e["id"] == self.entry["id"] else e for e in lock["tools"]]
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                return bootstrap.install(lock, self.entry["id"], set())
+        finally:
+            bootstrap.run_probe = saved
+
+    def test_failures_after_the_move_remove_the_new_tree(self):
+        def read_only_ledger(record):
+            if record.get("phase") == "archives":
+                raise PermissionError("ledger is read-only")
+            self.records.append(record)
+
+        bootstrap.ledger = read_only_ledger
+        with self.assertRaises(PermissionError):
+            self.install_with()
+        self.assertFalse(os.path.lexists(self.final))
+        self.assertEqual(list(self.prefix.glob(".st-*")), [])
+        bootstrap.ledger = self.records.append
+        with self.assertRaisesRegex(bootstrap.Refused, "installed but the probe failed"):
+            self.install_with(prefix_output=str(self.base / "other"))
+        self.assertFalse(os.path.lexists(self.final))
+        self.assertEqual(list(self.prefix.glob(".st-*")), [])
+        self.assertEqual([r["result"] for r in self.records if "result" in r], ["probe-failed"])
+
+    def test_existing_destination_survives_a_failed_install(self):
+        self.final.mkdir(parents=True)
+        (self.final / "owner.txt").write_bytes(b"owner")
+        with self.assertRaisesRegex(bootstrap.Refused, "destination already exists"):
+            self.install_with()
+        self.assertEqual((self.final / "owner.txt").read_bytes(), b"owner")
+        self.assertEqual(self.requests, [])
+
+    def test_marked_leftover_with_a_hard_link_is_preserved(self):
+        sentinel = self.base / "sentinel"
+        sentinel.write_bytes(b"owner")
+        leftover = self.prefix / ".st-old"
+        leftover.mkdir(parents=True)
+        (leftover / ".magic600-staging").write_bytes(b"marker")
+        try:
+            os.link(sentinel, leftover / "readonly.txt")
+        except (OSError, NotImplementedError):
+            self.skipTest("hard links not available")
+        os.chmod(sentinel, stat.S_IREAD)
+        try:
+            before = os.stat(sentinel).st_mode
+            with self.assertRaisesRegex(bootstrap.Refused, "unexpected leftover .st-old"):
+                bootstrap.install_archives(self.entry)
+            self.assertEqual((os.stat(sentinel).st_mode, os.stat(sentinel).st_nlink), (before, 2))
+            self.assertEqual(sentinel.read_bytes(), b"owner")
+            self.assertEqual(self.requests, [])
+        finally:
+            os.chmod(sentinel, stat.S_IREAD | stat.S_IWRITE)
+
+    def test_cleanup_never_makes_a_hard_linked_file_writable(self):
+        sentinel = self.base / "sentinel"
+        sentinel.write_bytes(b"owner")
+        top = self.base / "tree"
+        top.mkdir()
+        try:
+            os.link(sentinel, top / "readonly.txt")
+        except (OSError, NotImplementedError):
+            self.skipTest("hard links not available")
+        os.chmod(sentinel, stat.S_IREAD)
+        try:
+            if sys.platform == "win32":
+                # Windows cannot delete a read-only file, and every hard link shares that attribute.
+                with self.assertRaisesRegex(bootstrap.Refused, "hard-linked read-only file"):
+                    bootstrap._remove_tree(top)
+            else:
+                bootstrap._remove_tree(top)
+            self.assertEqual(sentinel.read_bytes(), b"owner")
+            self.assertFalse(os.stat(sentinel).st_mode & stat.S_IWRITE)
+        finally:
+            os.chmod(sentinel, stat.S_IREAD | stat.S_IWRITE)
+
+
+class ArchiveTransportTests(unittest.TestCase):
+    def test_http_seam_uses_default_tls_fixed_headers_and_no_redirects(self):
+        saved = (bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener, bootstrap.time.monotonic)
+        context, seen, deadlines = ssl.create_default_context(), [], []
+        stream = CountingStream(b"")
+        stream.code, stream.headers = 200, {}
+
+        class Opener:
+            def open(self, request, timeout):
+                seen.append((request, timeout))
+                return stream
+
+        def build(*handlers):
+            self.assertIsInstance(handlers[0], bootstrap._NoRedirect)
+            self.assertIsNone(handlers[0].redirect_request(None, None, 302, "", {}, "https://mirror.example.org/"))
+            self.assertIsInstance(handlers[1], bootstrap._DeadlineHTTPSHandler)
+            self.assertIs(handlers[1]._context, context)
+            deadlines.append(handlers[1].deadline)
+            return Opener()
+
+        bootstrap.ssl.create_default_context = lambda: context
+        bootstrap.urllib.request.build_opener = build
+        bootstrap.time.monotonic = lambda: 1000.0
+        try:
+            status, headers, response = bootstrap._http_get("https://download.qt.io/archive.7z", 1700)
+            deadline = context.sslsocket_class.deadline
+            bootstrap._http_get("https://download.qt.io/archive.7z", 10)
+            with self.assertRaises(TimeoutError):
+                bootstrap._http_get("https://download.qt.io/archive.7z", 0)
+        finally:
+            (bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener, bootstrap.time.monotonic) = saved
+            stream.close()
+        self.assertEqual(status, 200)
+        self.assertIs(response, stream)
+        self.assertEqual([timeout for _, timeout in seen], [bootstrap.SOCKET_TIMEOUT, 10])
+        self.assertTrue(issubclass(context.sslsocket_class, bootstrap._DeadlineSocket))
+        self.assertTrue(issubclass(context.sslsocket_class, ssl.SSLSocket))
+        self.assertEqual(deadline, 2700.0)
+        self.assertEqual(deadlines, [2700.0, 1010.0])  # the plain socket gets the same deadline
+        self.assertEqual(dict((k.lower(), v) for k, v in seen[0][0].header_items()),
+                         {"accept-encoding": "identity", "user-agent": "magic600-bootstrap"})
+
+    def test_tls_socket_waits_no_longer_than_the_deadline(self):
+        # A real TLS client socket over a local socket pair whose peer never answers the handshake.
+        saved = (bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener)
+        context = ssl.create_default_context()
+        stream = CountingStream(b"")
+        stream.code, stream.headers = 200, {}
+        bootstrap.ssl.create_default_context = lambda: context
+        bootstrap.urllib.request.build_opener = lambda *handlers: SimpleNamespace(open=lambda request, timeout: stream)
+        try:
+            bootstrap._http_get("https://download.qt.io/archive.7z", 0.3)
+        finally:
+            bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener = saved
+        client, peer = socket.socketpair()
+        try:
+            client.settimeout(30)
+            wrapped = context.wrap_socket(client, server_hostname="download.qt.io", do_handshake_on_connect=False)
+            started = bootstrap.time.monotonic()
+            with self.assertRaises(TimeoutError):
+                wrapped.recv(1)
+            self.assertLess(bootstrap.time.monotonic() - started, 10)
+            while bootstrap.time.monotonic() < context.sslsocket_class.deadline:
+                bootstrap.time.sleep(0.01)  # a socket timer may fire a little before the deadline
+            with self.assertRaisesRegex(TimeoutError, "download deadline exceeded"):
+                wrapped.do_handshake()
+            wrapped.close()
+        finally:
+            client.close()
+            peer.close()
+
+    def test_real_opener_obeys_the_deadline_with_and_without_a_proxy(self):
+        # The real opener, proxy handler, CONNECT tunnel and TLS client; only the TCP connection is a local
+        # socket pair. Through the proxy, the peer answers CONNECT with one byte every 0.2 s, 13 s for the
+        # whole reply; without a proxy, it never answers the TLS handshake.
+        reply = b"HTTP/1.1 407 Proxy Authentication Required\r\nContent-Length: 0\r\n\r\n"
+        for proxy in (None, "http://proxy.example.org:8080"):
+            client, peer = socket.socketpair()
+            received, connected, stop = bytearray(), [], threading.Event()
+
+            def serve():
+                with contextlib.suppress(OSError):
+                    while b"\r\n\r\n" not in received and not received.startswith(b"\x16"):
+                        chunk = peer.recv(4096)
+                        if not chunk:
+                            return
+                        received.extend(chunk)
+                    for byte in reply if proxy else b"":
+                        if stop.wait(0.2):
+                            return
+                        peer.sendall(bytes([byte]))
+                    stop.wait(30)
+
+            def create_connection(address, timeout=None, source_address=None, **kwargs):
+                connected.append((address, timeout))
+                return client
+
+            saved_env = {key: os.environ.pop(key) for key in list(os.environ) if key.lower().endswith("_proxy")}
+            if proxy:
+                os.environ["HTTPS_PROXY"] = proxy
+            saved = bootstrap.socket.create_connection
+            bootstrap.socket.create_connection = create_connection
+            thread = threading.Thread(target=serve, daemon=True)
+            thread.start()
+            try:
+                started = bootstrap.time.monotonic()
+                with self.assertRaises(OSError) as raised:
+                    bootstrap._http_get("https://download.qt.io/repository/qt/archive.7z", 0.6)
+                elapsed = bootstrap.time.monotonic() - started
+            finally:
+                bootstrap.socket.create_connection = saved
+                os.environ.pop("HTTPS_PROXY", None)
+                os.environ.update(saved_env)
+                stop.set()
+                thread.join(10)
+                client.close()
+                peer.close()
+            with self.subTest(proxy=bool(proxy)):
+                # urllib reports a connection-phase timeout as URLError(reason=TimeoutError).
+                self.assertIsInstance(getattr(raised.exception, "reason", raised.exception), TimeoutError)
+                self.assertGreaterEqual(elapsed, 0.5)  # a socket timer may fire a little before the deadline
+                self.assertLess(elapsed, 5)
+                if proxy:
+                    self.assertEqual(connected, [(("proxy.example.org", 8080), 0.6)])
+                    self.assertTrue(received.startswith(b"CONNECT download.qt.io:443 HTTP/1.1\r\n"))
+                else:
+                    self.assertEqual(connected, [(("download.qt.io", 443), 0.6)])
+                    self.assertTrue(received.startswith(b"\x16"))  # a TLS handshake record
+
+
+class AqtAndRealExtractorTests(unittest.TestCase):
+    @staticmethod
+    def launches_aqt(command):
+        if Path(command[0]).stem.lower() == "aqt":
+            return True
+        for i, arg in enumerate(command[:-1]):
+            if arg == "-m" and (command[i + 1] == "aqt" or command[i + 1].startswith("aqt.")):
+                return True
+            if arg == "-c" and re.search(r"\b(?:import\s+aqt\b|from\s+aqt(?:\.|\s))", command[i + 1]):
+                return True
+        return False
+
+    def test_lockfile_never_launches_or_imports_aqt(self):
+        lock = bootstrap.load_lock()
+        expected = ["{venv}/python", "-I", "-c", "import importlib.metadata as m; print(m.version('aqtinstall'))"]
+        self.assertEqual(bootstrap.entry_for(lock, "aqtinstall")["probe"], expected)
+        self.assertEqual(bootstrap.entry_for(lock, "aqtinstall")["expect"], r"^3\.3\.0\s*$")
+        for entry in lock["tools"]:
+            commands = [entry["probe"]] if entry.get("probe") else []
+            if entry.get("prefix_check"):
+                commands.append(entry["prefix_check"]["command"])
+            for command in commands:
+                with self.subTest(tool=entry["id"], command=command):
+                    self.assertFalse(self.launches_aqt(command))
+
+    def test_doctor_and_renderer_profile_routing_never_launch_aqt(self):
+        saved = (bootstrap.resolve_executable, bootstrap.subprocess.run, bootstrap.install_entry, bootstrap.venv_conflicts)
+        calls = []
+        bootstrap.resolve_executable = lambda e, n: str(ROOT / "work" / Path(n).name)
+        bootstrap.subprocess.run = lambda cmd, **kwargs: calls.append(cmd) or subprocess.CompletedProcess(cmd, 1, "failed", "")
+        bootstrap.install_entry = lambda e: None
+        bootstrap.venv_conflicts = lambda e: []
+        try:
+            self.assertEqual(run(["doctor"])[0], 0)
+            self.assertEqual(run(["install", "--profile", "renderer-spike"])[0], 2)
+        finally:
+            bootstrap.resolve_executable, bootstrap.subprocess.run, bootstrap.install_entry, bootstrap.venv_conflicts = saved
+        self.assertTrue(calls)
+        self.assertTrue(any("importlib.metadata" in " ".join(cmd) for cmd in calls))
+        self.assertFalse(any(self.launches_aqt(cmd) for cmd in calls))
+
+    def test_real_metadata_probe_has_no_aqt_side_effects(self):
+        python = ROOT / "tools/.venv/renderer-spike/Scripts/python.exe"
+        if not python.is_file():
+            self.skipTest("renderer-spike interpreter is absent in this worktree")
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            sentinel = base / "appdata/aqt/tmp/sentinel"
+            sentinel.parent.mkdir(parents=True)
+            sentinel.write_bytes(b"unchanged")
+            config = base / "logging.ini"
+            config.write_bytes(b"invalid logging config: must never be read")
+            saved = (os.getcwd(), os.environ.get("APPDATA"), os.environ.get("LOG_CFG"))
+            os.environ.update(APPDATA=str(base / "appdata"), LOG_CFG=str(config))
+            try:
+                os.chdir(base)
+                ok, detail = bootstrap.run_probe(bootstrap.entry_for(bootstrap.load_lock(), "aqtinstall"))
+                self.assertTrue(ok, detail)
+                self.assertEqual(sentinel.read_bytes(), b"unchanged")
+                self.assertEqual(list(base.rglob("aqtinstall.log")), [])
+            finally:
+                os.chdir(saved[0])
+                for key, value in zip(("APPDATA", "LOG_CFG"), saved[1:]):
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
+
+    def test_real_extractor_child_lists_and_extracts_tiny_archive(self):
+        python = ROOT / "tools/.venv/renderer-spike/Scripts/python.exe"
+        if not python.is_file():
+            self.skipTest("renderer-spike interpreter is absent in this worktree")
+        env = bootstrap.probe_env()
+        r = subprocess.run([str(python), "-I", "-c", "import py7zr"], env=env,
+                           capture_output=True, text=True, timeout=bootstrap.PROBE_TIMEOUT)
+        if r.returncode != 0:
+            self.skipTest("renderer-spike interpreter cannot import py7zr")
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            source, archive, target = base / "source", base / "tiny.7z", base / "out"
+            source.write_bytes(b"tiny fixture")
+            build = "import sys,py7zr; a=py7zr.SevenZipFile(sys.argv[1],'w'); a.write(sys.argv[2],'nested/file'); a.close()"
+            kwargs = dict(cwd=base, env=env, capture_output=True, text=True, timeout=bootstrap.INSTALL_TIMEOUT)
+            r = subprocess.run([str(python), "-I", "-c", build, str(archive), str(source)], **kwargs)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            command = [str(python), "-I", "-c", bootstrap.EXTRACT_CODE]
+            r = subprocess.run([*command, "list", str(archive)], **kwargs)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            listing = json.loads(r.stdout)
+            self.assertEqual(bootstrap.member_problems(listing, "6.10.3/msvc2022_64"), [])
+            self.assertEqual([m["name"] for m in listing if m["file"]], ["nested/file"])
+            target.mkdir()
+            r = subprocess.run([*command, "extract", str(archive), str(target)], **kwargs)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual((target / "nested/file").read_bytes(), source.read_bytes())
 
 
 class ApprovalTests(unittest.TestCase):
