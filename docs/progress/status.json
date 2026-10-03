@@ -63,7 +63,7 @@
       {"id": "migration-format-freeze", "title": "Migration format frozen (migration-format-freeze ruling)", "weight": 1, "done": false, "evidence": null},
       {"id": "design-system-adr", "title": "Design-system ADR accepted", "weight": 1, "done": false, "evidence": null}
      ]},
-    {"id": "migration-probes", "track": "migration", "title": "Migration probes P1 to P3 on Windows", "status": "in_progress", "acceptance": "P1 to P3 run on Windows on synthetic sessions with sanitised results; the importer starts only after a P1 strategy passes or the owner settles the conflict", "acceptance_source": "docs/progress/1.0/migration-exporter-proposal.md", "blocker": null,
+    {"id": "migration-probes", "track": "migration", "title": "Migration probes P1 to P3 on Windows", "status": "done", "acceptance": "P1 to P3 run on Windows on synthetic sessions with sanitised results; the importer starts only after a P1 strategy passes or the owner settles the conflict", "acceptance_source": "docs/progress/1.0/migration-exporter-proposal.md", "blocker": null,
      "items": [
       {"id": "p3", "title": "P3 lock compatibility and F20 run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
       {"id": "pipeline", "title": "Pipeline fixtures F15, F18, F21 run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
