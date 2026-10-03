@@ -7,7 +7,7 @@ byte-identical output.
 """
 import json
 import sys
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -30,25 +30,9 @@ def _cell(text):
     return " ".join(str(text).split()).replace("|", "\\|")
 
 
-def purpose_groups(rows):
-    parent = {u: u for u in rows}
-
-    def find(x):
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    for uid, row in rows.items():
-        for other in row["same_purpose_as"]:
-            if other in parent:
-                a, b = find(uid), find(other)
-                if a != b:
-                    parent[max(a, b)] = min(a, b)
-    groups = defaultdict(list)
-    for u in rows:
-        groups[find(u)].append(u)
-    return [sorted(g) for g in groups.values() if len(g) > 1]
+def purpose_pairs(rows):
+    return sorted({tuple(sorted((uid, other))) for uid, row in rows.items()
+                   for other in row["same_purpose_as"] if other in rows})
 
 
 def render(units, flows, rows):
@@ -72,12 +56,12 @@ def render(units, flows, rows):
                 what = "; ".join(units[uid]["names"]) + (f" (rows {', '.join(part_rows)})" if part_rows else "")
                 out.append(f"| {label} | {d['disposition']} | {_cell(what)} | {_cell(d['purpose'])} | {_cell(d['reason'])} | {', '.join(r['same_purpose_as']) or '-'} |")
     out += ["", "## Purpose groups with mixed dispositions", "",
-            "Units that share a purpose across layers (`same_purpose_as`). A group is listed for the integrator's check when it mixes `delete` with any disposition that keeps the purpose, or `automate` with `keep` or `redesign`; layers may differ legitimately (an engine function kept, its 0.4 button redesigned).", ""]
-    mixed = [g for g in purpose_groups(rows) if _mixed(_kinds(rows, g))]
+            "Pairs of units that name each other's purpose (`same_purpose_as`, either direction). A pair is listed for the integrator's check when it mixes `delete` with any disposition that keeps the purpose, or `automate` with `keep` or `redesign`; layers may differ legitimately (an engine function kept, its 0.4 button redesigned). Pairs are not closed transitively: a chain of related purposes is not one purpose.", ""]
+    mixed = [(a, b) for a, b in purpose_pairs(rows) if _mixed(_kinds(rows, [a, b]))]
     if not mixed:
         out.append("- none")
-    for g in mixed:
-        out.append("- " + ", ".join(f"{u} {'/'.join(sorted(_kinds(rows, [u])))}" for u in g))
+    for a, b in mixed:
+        out.append(f"- {a} {'/'.join(sorted(_kinds(rows, [a])))} and {b} {'/'.join(sorted(_kinds(rows, [b])))}")
     out += ["", "## Flows", "", "| Flow | Units | Title |", "|---|---|---|"]
     per_flow = Counter(f for r in rows.values() for _, d, _ in cd.decisions(r) for f in d["flows"])
     for f in flows:

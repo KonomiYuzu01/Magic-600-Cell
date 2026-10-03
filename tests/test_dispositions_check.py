@@ -116,13 +116,13 @@ class ReportTests(unittest.TestCase):
         rows = {"U1-001": row("U1-001", same=["U4-001"]), "U4-001": row("U4-001", "delete", flows=[], reqs=[]),
                 "U1-002": row("U1-002", "automate", reqs=["B-005: answer outside the lock"])}
         text = self.render(rows)
-        self.assertIn("U1-001 keep, U4-001 delete", text)
+        self.assertIn("U1-001 keep and U4-001 delete", text)
         self.assertIn("| U1-002 | automate |", text)
 
     def test_delete_against_automate_is_listed(self):
         rows = {"U1-001": row("U1-001", "automate", same=["U4-001"]), "U4-001": row("U4-001", "delete", flows=[], reqs=[]),
                 "U1-002": U1_002_DELETE}
-        self.assertIn("U1-001 automate, U4-001 delete", self.render(rows))
+        self.assertIn("U1-001 automate and U4-001 delete", self.render(rows))
 
     def test_split_parts_reach_the_signature_table(self):
         rows = {"U1-001": row("U1-001"), "U4-001": row("U4-001", reqs=[]),

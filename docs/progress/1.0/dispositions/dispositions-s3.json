@@ -1,0 +1,2970 @@
+{
+  "shard": "s3",
+  "rows": [
+    {
+      "unit": "U3-001",
+      "disposition": "redesign",
+      "purpose": "Find and invoke any available command with its current keyboard meaning.",
+      "reason": "F-NAVIGATE and charter section 5 E5 require a discoverable keyboard route for every operation, so the command index becomes the shared command catalogue.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U5-002",
+        "U6-002"
+      ],
+      "requirements": [
+        "Use the command table's IDs, contexts, engine availability and gates for every invocation.",
+        "Soft disclosure may change hints but must leave all commands discoverable; final keys and wording belong to stage 2.3."
+      ],
+      "notes": "All dispositions are source-only proposals from base commit 0472333de8f2aabe517c7d2de3148c83bc574f19; delete and automate await the owner's signature, and flows remain provisional. same_purpose_as refers to the matching function within a coarse other-layer unit, not a judgement of its unrelated functions. Editable source: this JSON; production command: python - (read and format this editable JSON) with Python 3.11.15 stdlib json. Input-set SHA-256 e16e2f30fcbead2bcc94eec82036a21683cc5ea4d09f9406286b8b5914c24628 is the digest of the compact, sorted JSON mapping of these repository paths to their file SHA-256 digests: AGENTS.md, docs/development-guide/AGENT_BRIEFING.md, docs/progress/0.4.1/screening-findings.md, docs/progress/1.0/charter-2.0-draft.md, docs/progress/1.0/command-table.md, docs/progress/1.0/dispositions/README.md, docs/progress/1.0/dispositions/check_dispositions.py, docs/progress/1.0/dispositions/flows.json, docs/progress/1.0/dispositions/units.json, docs/progress/1.0/inventory/bottom-up-s3.json, docs/progress/1.0/inventory/claude-source-s3.json, docs/progress/1.0/inventory/merged.md, docs/progress/1.0/inventory/shards.json, docs/progress/1.0/solving-workflow.md, docs/wiki/decisions/owner-decisions-2026-10-02-design.md, docs/wiki/decisions/owner-decisions-2026-10-02-migration.md, docs/wiki/decisions/owner-decisions-2026-10-02-scope.md, work/experiments/magic600-04/adapter.py, work/experiments/magic600-04/keymap_catalog.py. units.json SHA-256 fb510a36bd7fffe3d4e49a73a0b35e1a52019f8dbea8dbabd3d22fe7a5f987c0; flows.json SHA-256 d4422725434e550ff60de5e1587476ac4f7972f780e91371a3dc233bc7d7b133."
+    },
+    {
+      "unit": "U3-002",
+      "disposition": "delete",
+      "purpose": "Obtain the separate browser experiment and its executable web assets.",
+      "reason": "Charter section 4 chooses one new GUI and does not inherit the 0.4 runtime; serving the separate experiment's HTML, scripts and styles is obsolete infrastructure.",
+      "flows": [],
+      "same_purpose_as": [
+        "U1-005",
+        "U1-007",
+        "U2-003",
+        "U5-001"
+      ],
+      "requirements": [],
+      "notes": "Proposal only; owner signature pending. This is removal of the separate 0.4 browser service and its assets, not removal of entering the solving workspace; that surviving entry is rehosted in the single 1.0 GUI."
+    },
+    {
+      "unit": "U3-003",
+      "disposition": "redesign",
+      "purpose": "Choose the explicit keyboard context used for the next actions.",
+      "reason": "F-NAVIGATE and solving-workflow.md section 4.3 retain explicit key-set switching, while charter section 5 replaces the old chooser interaction.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U5-003",
+        "U6-007"
+      ],
+      "requirements": [
+        "Show the active context and effective meanings before input; a camera, filter or moving piece must not silently change them.",
+        "Route context changes through the common command layer without changing the working orbit or puzzle."
+      ]
+    },
+    {
+      "unit": "U3-004",
+      "disposition": "redesign",
+      "purpose": "Read one authoritative snapshot of the puzzle and the solver's working context.",
+      "reason": "F-SESSION and F-CHECK need consistent state and work after every action; charter section 4 replaces the browser snapshot transport with the six-layer boundary.",
+      "flows": [
+        "F-SESSION",
+        "F-CHECK",
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U1-011",
+        "U1-028",
+        "U1-030",
+        "U6-048"
+      ],
+      "requirements": [
+        "Publish immutable state, workspace and protection revisions together, including the full-state hash and model identity.",
+        "Mark draft predictions separately from committed labels and never give a snapshot its own execution authority.",
+        "B-005: Capture an immutable revision-consistent snapshot under the session lock, then release the lock before encoding, publishing or waiting for a consumer; verify that a deliberately stalled large-snapshot reader cannot delay other session work.",
+        "X-02: Serve checkpoint summaries from small indexed metadata without reading full checkpoint label blobs on status, snapshot, commit, undo or redo; verify latency growth with increasing checkpoint counts."
+      ]
+    },
+    {
+      "unit": "U3-005",
+      "disposition": "redesign",
+      "purpose": "Find a saved macro by orbit and intended use.",
+      "reason": "F-MACRO and solving-workflow.md section 6 require a macro base organized by the solver's work, rather than the old window-opening interaction.",
+      "flows": [
+        "F-MACRO",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U5-010",
+        "U6-030"
+      ],
+      "requirements": [
+        "Search and focus the same catalogue from every entry point; selecting a result must remain explicit.",
+        "Expose exact source revision, effect evidence and applicability without manufacturing a solving macro."
+      ]
+    },
+    {
+      "unit": "U3-006",
+      "disposition": "redesign",
+      "purpose": "Compare Local and Global information captured from the same puzzle revision.",
+      "reason": "F-FIND, F-RELATE and F-CHECK require linked comparisons; owner-decisions-2026-10-02-design section 6 replaces the native paired-snapshot presentation.",
+      "flows": [
+        "F-FIND",
+        "F-RELATE",
+        "F-CHECK",
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U1-025",
+        "U1-066",
+        "U6-048"
+      ],
+      "requirements": [
+        "Pair committed geometry, Local records, workspace and protection at one revision and reject mixed-revision replies.",
+        "Bind predictions to the current review and clearly distinguish them from the committed renderer state; native transport indices belong behind the platform boundary.",
+        "B-005: Capture an immutable revision-consistent snapshot under the session lock, then release the lock before encoding, publishing or waiting for a consumer; verify that a deliberately stalled large-snapshot reader cannot delay other session work.",
+        "X-02: Serve checkpoint summaries from small indexed metadata without reading full checkpoint label blobs on status, snapshot, commit, undo or redo; verify latency growth with increasing checkpoint counts."
+      ]
+    },
+    {
+      "unit": "U3-007",
+      "disposition": "redesign",
+      "purpose": "Reach the controls for checking and explicitly executing the current operation.",
+      "reason": "F-COMPOSE, F-CHECK and F-EXECUTE retain direct access to operation work; charter section 5 requires a new interaction for this purpose.",
+      "flows": [
+        "F-COMPOSE",
+        "F-CHECK",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U6-025"
+      ],
+      "requirements": [
+        "Focus the current operation without altering its phases, target, protection or review.",
+        "Reflect current engine availability and require the same execution gate from keys, menus and controls."
+      ]
+    },
+    {
+      "unit": "U3-008",
+      "disposition": "keep",
+      "purpose": "Read the canonical structure, geometry and mathematical names of the complete model.",
+      "reason": "F-FIND and F-RELATE depend on these exact model facts; charter section 2 preserves model identity and mathematics while section 4 allows rehosting their query contract.",
+      "flows": [
+        "F-FIND",
+        "F-RELATE",
+        "F-LEARN",
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U1-012",
+        "U2-027",
+        "U2-041",
+        "U2-042",
+        "U4-047"
+      ],
+      "requirements": [
+        "Return model-bound canonical cell and piece IDs, all moving-orbit profiles, hosting cells, affecting caps and orientation groups without relabelling.",
+        "Keep the immutable model query separate from view preferences and prove geometric correspondence for the matching model; any identity change requires its own authorized migration."
+      ]
+    },
+    {
+      "unit": "U3-009",
+      "disposition": "redesign",
+      "purpose": "Compose, check and apply a work filter while retaining the full puzzle context.",
+      "reason": "F-NAVIGATE and solving-workflow.md section 4.3 keep filtering but separate work scope from mechanics and reference display.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND",
+        "F-RELATE"
+      ],
+      "same_purpose_as": [
+        "U1-042",
+        "U1-044",
+        "U4-022",
+        "U4-024",
+        "U5-048",
+        "U5-050",
+        "U6-022"
+      ],
+      "requirements": [
+        "Validate expressions and typed identity or position members before applying the exact previewed composition.",
+        "Keep mechanical analysis, interactive work scope and noninteractive references distinct; filtering must not suppress full-operation collateral or protection conflicts."
+      ]
+    },
+    {
+      "unit": "U3-010",
+      "disposition": "redesign",
+      "purpose": "Resume a useful arrangement of the workspace and its supporting tools.",
+      "reason": "F-SESSION and F-NAVIGATE retain workspace persistence, while charter section 4 replaces detached-window storage with shell-owned preferences.",
+      "flows": [
+        "F-SESSION",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-017",
+        "U6-042"
+      ],
+      "requirements": [
+        "Validate and persist presentation preferences independently of puzzle commits, with generations that prevent stale overwrites.",
+        "Restore the two linked views and retained work without rolling back protection; defer a busy save explicitly rather than silently losing it."
+      ]
+    },
+    {
+      "unit": "U3-011",
+      "disposition": "redesign",
+      "purpose": "See and invoke the effective keyboard actions for the current context.",
+      "reason": "F-NAVIGATE and F-COMPOSE keep visible key meanings; owner-decisions-2026-10-02-design section 5 replaces the keyboard window with soft disclosure.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-062",
+        "U6-009"
+      ],
+      "requirements": [
+        "Show effective command, Grip and Twist meanings from the same binding resolver used by physical input.",
+        "Invoke the common command layer and keep every operation available through the palette regardless of disclosed hints."
+      ]
+    },
+    {
+      "unit": "U3-012",
+      "disposition": "redesign",
+      "purpose": "Inspect a chosen piece identity and track its current location.",
+      "reason": "F-FIND and solving-workflow.md sections 4 and 4.3 separate tracking a piece from assigning a target, grip or camera.",
+      "flows": [
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U1-047",
+        "U2-045",
+        "U5-052",
+        "U6-008"
+      ],
+      "requirements": [
+        "Resolve model-bound typed identities against the current revision and retain the identity as the piece moves.",
+        "Inspection must not change Current, destination, buffers, grip or camera; distinguish the identity from its present occupant record."
+      ]
+    },
+    {
+      "unit": "U3-013",
+      "disposition": "redesign",
+      "purpose": "Return to the previously chosen keyboard context.",
+      "reason": "F-NAVIGATE and solving-workflow.md section 4.3 retain deliberate context switching; the old bank-return control is rehosted through the shared command layer.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U5-005",
+        "U6-007"
+      ],
+      "requirements": [
+        "Remember the exact previous context and show its effective bindings on return.",
+        "Preserve user overrides and never switch orbit, execute a turn or retarget a macro as a side effect."
+      ]
+    },
+    {
+      "unit": "U3-014",
+      "disposition": "redesign",
+      "purpose": "Inspect a fixed position and the piece occupying it now.",
+      "reason": "F-FIND and F-CHECK need positions distinguished from identities; owner-decisions-2026-10-02-design section 2 makes that distinction part of the encoding grammar.",
+      "flows": [
+        "F-FIND",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-046",
+        "U2-044",
+        "U5-053",
+        "U6-008"
+      ],
+      "requirements": [
+        "Keep the canonical destination fixed while resolving its occupant and labels from the current revision.",
+        "An inspection or hover must not assign solving roles, change protection, select a grip or move the camera."
+      ]
+    },
+    {
+      "unit": "U3-015",
+      "disposition": "redesign",
+      "purpose": "Reveal additional keyboard meanings when the solver wants them.",
+      "reason": "F-NAVIGATE and F-LEARN retain this disclosure purpose; owner-decisions-2026-10-02-design section 5 specifies soft disclosure and an expert show-all option.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U6-009"
+      ],
+      "requirements": [
+        "Changing disclosure must never alter bindings, command availability or mechanics.",
+        "Keep disclosure levels distinct from rewards and leave the command palette complete."
+      ]
+    },
+    {
+      "unit": "U3-016",
+      "disposition": "redesign",
+      "purpose": "Choose the current piece and its destination in a shared solving context.",
+      "reason": "F-TARGET and F-COMPOSE retain explicit identity and destination selection; solving-workflow.md section 4.2 requires coherent per-orbit context restoration.",
+      "flows": [
+        "F-TARGET",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-023",
+        "U5-024",
+        "U6-005"
+      ],
+      "requirements": [
+        "Validate identity and position types and their common moving orbit before one atomic context update.",
+        "Restore drafts and choices while retaining current global protection, resolving current positions and withdrawing old review and execution authority."
+      ]
+    },
+    {
+      "unit": "U3-017",
+      "disposition": "redesign",
+      "purpose": "Temporarily reach general commands and then return to the prior keyboard context.",
+      "reason": "F-NAVIGATE and charter section 5 E5 preserve efficient access to tools while replacing the old Functions-bank interaction.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-007"
+      ],
+      "requirements": [
+        "Expose the changed context and restore the exact prior context on explicit return.",
+        "Respect explicit user bindings and use common command availability and gates."
+      ]
+    },
+    {
+      "unit": "U3-018",
+      "disposition": "redesign",
+      "purpose": "Make an inspected piece the current working identity.",
+      "reason": "F-TARGET retains this explicit assignment; solving-workflow.md section 4.3 requires inspecting and assigning to remain separate actions.",
+      "flows": [
+        "F-TARGET"
+      ],
+      "same_purpose_as": [
+        "U5-023",
+        "U6-005"
+      ],
+      "requirements": [
+        "Resolve the inspected identity at the current revision and validate any retained destination.",
+        "Switch orbit and workspace atomically if necessary, retaining current protection and invalidating the prior review."
+      ]
+    },
+    {
+      "unit": "U3-019",
+      "disposition": "redesign",
+      "purpose": "Focus the Local comparison of the piece with its target.",
+      "reason": "F-FIND and F-CHECK retain Local's purpose; owner-decisions-2026-10-02-design section 6 requires both views to remain visible and linked.",
+      "flows": [
+        "F-FIND",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U5-037",
+        "U6-017"
+      ],
+      "requirements": [
+        "Focus or expand Local without introducing a separate third view or hiding the required linked Global context.",
+        "Compare current and target frames with fixed anchors and one shared revision."
+      ]
+    },
+    {
+      "unit": "U3-020",
+      "disposition": "redesign",
+      "purpose": "Assign an inspected position as the destination of the current piece.",
+      "reason": "F-TARGET and F-COMPOSE keep deliberate destination assignment; solving-workflow.md section 4.3 separates it from inspection.",
+      "flows": [
+        "F-TARGET",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-023",
+        "U6-005"
+      ],
+      "requirements": [
+        "Validate the fixed position, current identity and common moving orbit before changing the role.",
+        "Retain the other roles and invalidate frame-dependent analysis, preview and execution authority."
+      ]
+    },
+    {
+      "unit": "U3-021",
+      "disposition": "redesign",
+      "purpose": "Focus the Global relationship between the piece, target and buffers.",
+      "reason": "F-RELATE retains Global's purpose; owner-decisions-2026-10-02-design section 6 requires linked Global and Local views rather than the old window.",
+      "flows": [
+        "F-RELATE"
+      ],
+      "same_purpose_as": [
+        "U5-039",
+        "U6-017"
+      ],
+      "requirements": [
+        "Locate the roles in the actual complete structure at the same revision as Local.",
+        "Focusing Global must not hide Local, change roles or silently remap turn keys."
+      ]
+    },
+    {
+      "unit": "U3-022",
+      "disposition": "redesign",
+      "purpose": "Choose a working orbit and recover its saved solving context.",
+      "reason": "F-TARGET, F-ENDGAME and solving-workflow.md section 4.2 require returning to an orbit without losing its draft.",
+      "flows": [
+        "F-TARGET",
+        "F-ENDGAME",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U2-067",
+        "U5-004",
+        "U6-003"
+      ],
+      "requirements": [
+        "Commit orbit and workspace changes atomically, including follow-up focus fields, so any save failure leaves both unchanged.",
+        "Resolve saved identities in current state, retain global protection and invalidate old execution permission; selecting the current orbit is a no-op."
+      ]
+    },
+    {
+      "unit": "U3-023",
+      "disposition": "redesign",
+      "purpose": "Bookmark an explicit next piece and destination.",
+      "reason": "F-TARGET and solving-workflow.md sections 3.3 and 4.2 give a locked Next priority while keeping it a solver choice.",
+      "flows": [
+        "F-TARGET"
+      ],
+      "same_purpose_as": [
+        "U5-026",
+        "U6-014"
+      ],
+      "requirements": [
+        "Store an identity and fixed destination in the same moving orbit; replacing a bookmark must be explicit.",
+        "Keep Next independent of protection and do not activate or execute it automatically."
+      ]
+    },
+    {
+      "unit": "U3-024",
+      "disposition": "redesign",
+      "purpose": "Clear the solver's next-work bookmark.",
+      "reason": "F-TARGET retains deliberate control of Next under solving-workflow.md section 4.2.",
+      "flows": [
+        "F-TARGET"
+      ],
+      "same_purpose_as": [
+        "U5-027",
+        "U6-014"
+      ],
+      "requirements": [
+        "Clear only the bookmark through a workspace command, retaining Current, draft, protection and journal state."
+      ]
+    },
+    {
+      "unit": "U3-025",
+      "disposition": "redesign",
+      "purpose": "Explicitly begin work on the bookmarked next piece.",
+      "reason": "F-TARGET and solving-workflow.md section 4.2 retain locked Next activation without choosing or executing a solving macro.",
+      "flows": [
+        "F-TARGET"
+      ],
+      "same_purpose_as": [
+        "U5-028",
+        "U6-014"
+      ],
+      "requirements": [
+        "Consume the bookmark and update orbit, Current and destination in one transaction or retain all of them on failure.",
+        "Restore saved work with fresh position resolution, current global protection and no reused execution authority."
+      ]
+    },
+    {
+      "unit": "U3-026",
+      "disposition": "redesign",
+      "purpose": "Locate the bookmarked next piece without beginning its work.",
+      "reason": "F-FIND and F-TARGET need location independently of activation; solving-workflow.md section 4.3 keeps inspection and assignment separate.",
+      "flows": [
+        "F-FIND",
+        "F-TARGET"
+      ],
+      "same_purpose_as": [
+        "U5-025",
+        "U6-014"
+      ],
+      "requirements": [
+        "Follow the Next identity to its current position while leaving Current, roles, protection and operation authority untouched.",
+        "Report an absent or stale bookmark explicitly."
+      ]
+    },
+    {
+      "unit": "U3-027",
+      "disposition": "redesign",
+      "purpose": "Assign an inspected fixed position as buffer A.",
+      "reason": "F-COMPOSE and F-ENDGAME retain explicit buffer roles; solving-workflow.md section 3.1 distinguishes buffer positions from their changing occupants.",
+      "flows": [
+        "F-COMPOSE",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U5-035",
+        "U6-005"
+      ],
+      "requirements": [
+        "Validate the active orbit and distinct A/B positions, retain B and show A's current occupant separately.",
+        "Invalidate role-dependent review and execution authority without executing any move."
+      ]
+    },
+    {
+      "unit": "U3-028",
+      "disposition": "redesign",
+      "purpose": "Reach the available actions for the solver's next-work bookmark.",
+      "reason": "F-TARGET and F-NAVIGATE retain discoverable Next actions under charter section 5 E5.",
+      "flows": [
+        "F-TARGET",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U5-030",
+        "U6-014"
+      ],
+      "requirements": [
+        "Offer pin, replace, clear, locate and activate through their existing command identities and current availability.",
+        "Opening actions must not consume Next or change the puzzle."
+      ]
+    },
+    {
+      "unit": "U3-029",
+      "disposition": "redesign",
+      "purpose": "Assign an inspected fixed position as buffer B.",
+      "reason": "F-COMPOSE and F-ENDGAME retain explicit buffer roles; solving-workflow.md section 3.1 distinguishes buffer positions from their changing occupants.",
+      "flows": [
+        "F-COMPOSE",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U5-035",
+        "U6-005"
+      ],
+      "requirements": [
+        "Validate the active orbit and distinct A/B positions, retain A and show B's current occupant separately.",
+        "Invalidate role-dependent review and execution authority without executing any move."
+      ]
+    },
+    {
+      "unit": "U3-030",
+      "disposition": "redesign",
+      "purpose": "Declare what the solver's complete operation is intended to achieve.",
+      "reason": "F-COMPOSE, F-CHECK and F-ENDGAME retain the chosen goal; solving-workflow.md section 4.1 separates progress from legal execution permission.",
+      "flows": [
+        "F-COMPOSE",
+        "F-CHECK",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U2-066",
+        "U6-028"
+      ],
+      "requirements": [
+        "Evaluate the declared placement, orientation, insertion, buffer, block or orbit goal against exact complete effects.",
+        "A goal does not select or generate a macro, and an unmet goal must not prohibit an otherwise legal protected operation."
+      ]
+    },
+    {
+      "unit": "U3-031",
+      "disposition": "redesign",
+      "purpose": "Assign two distinct fixed buffer positions for the current orbit.",
+      "reason": "F-COMPOSE and F-ENDGAME depend on explicit A/B roles under solving-workflow.md section 3.1.",
+      "flows": [
+        "F-COMPOSE",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U5-035",
+        "U6-005"
+      ],
+      "requirements": [
+        "Validate both positions in the working orbit and record them atomically.",
+        "Display their current occupants separately and invalidate any review, template confirmation or execution token that depends on the old roles."
+      ]
+    },
+    {
+      "unit": "U3-032",
+      "disposition": "redesign",
+      "purpose": "Require the current piece to match its exact Home arrangement.",
+      "reason": "F-COMPOSE and F-ENDGAME retain exact destination requirements under solving-workflow.md sections 3.3 and 3.4.",
+      "flows": [
+        "F-COMPOSE",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U6-005"
+      ],
+      "requirements": [
+        "Accept Home capture only for the matching identity, destination and active orbit.",
+        "Use exact canonical slots and orientation rather than face colours, and invalidate the previous operation review."
+      ]
+    },
+    {
+      "unit": "U3-033",
+      "disposition": "redesign",
+      "purpose": "Capture the current destination arrangement as the required target frame.",
+      "reason": "F-COMPOSE and F-CHECK retain explicit frame requirements under solving-workflow.md sections 3.3 and 4.",
+      "flows": [
+        "F-COMPOSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U6-005"
+      ],
+      "requirements": [
+        "Require the declared Current identity to occupy the destination before capturing its exact labels at one revision.",
+        "Keep a captured reference distinguishable from Home and invalidate any earlier review when it changes."
+      ]
+    },
+    {
+      "unit": "U3-034",
+      "disposition": "redesign",
+      "purpose": "Express block requirements in a solver-chosen legal reference.",
+      "reason": "F-COMPOSE and F-PROTECT retain referenced blocks; solving-workflow.md section 3.3 permits only verified common-reference relations.",
+      "flows": [
+        "F-COMPOSE",
+        "F-PROTECT"
+      ],
+      "same_purpose_as": [
+        "U6-020"
+      ],
+      "requirements": [
+        "Validate the finite legal word and transport required positions and labels in chronological source-to-destination order.",
+        "Changing desired block requirements must leave captured protection at its existing locations and cannot claim rigid transport without proof."
+      ]
+    },
+    {
+      "unit": "U3-035",
+      "disposition": "redesign",
+      "purpose": "Record the exact or placement-only conditions that define a working block.",
+      "reason": "F-TARGET, F-COMPOSE and F-PROTECT retain Home and referenced blocks under solving-workflow.md section 3.3.",
+      "flows": [
+        "F-TARGET",
+        "F-COMPOSE",
+        "F-PROTECT"
+      ],
+      "same_purpose_as": [
+        "U5-032",
+        "U6-020"
+      ],
+      "requirements": [
+        "Distinguish Home, exact captured and position-only requirements; a current-state capture must verify its declared occupant.",
+        "Record identity, reference, progress condition and preservation policy separately; block membership alone does not confer completion or protection."
+      ]
+    },
+    {
+      "unit": "U3-036",
+      "disposition": "redesign",
+      "purpose": "Inspect buffer A's fixed position and current occupant.",
+      "reason": "F-FIND and F-ENDGAME retain buffer inspection under solving-workflow.md sections 3.1 and 4.",
+      "flows": [
+        "F-FIND",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U6-005"
+      ],
+      "requirements": [
+        "Locate the fixed A position and resolve its occupant and frame at the current shared revision.",
+        "Inspection must not reassign A or alter the operation, grip or protection."
+      ]
+    },
+    {
+      "unit": "U3-037",
+      "disposition": "redesign",
+      "purpose": "Inspect buffer B's fixed position and current occupant.",
+      "reason": "F-FIND and F-ENDGAME retain buffer inspection under solving-workflow.md sections 3.1 and 4.",
+      "flows": [
+        "F-FIND",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U6-005"
+      ],
+      "requirements": [
+        "Locate the fixed B position and resolve its occupant and frame at the current shared revision.",
+        "Inspection must not reassign B or alter the operation, grip or protection."
+      ]
+    },
+    {
+      "unit": "U3-038",
+      "disposition": "redesign",
+      "purpose": "Inspect the chosen destination and its current occupant.",
+      "reason": "F-FIND and F-COMPOSE retain destination inspection under solving-workflow.md section 4.",
+      "flows": [
+        "F-FIND",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U6-005"
+      ],
+      "requirements": [
+        "Show fixed destination, current occupant and wanted identity as separate facts at one revision.",
+        "Opening inspection must not retarget the operation or change grip, protection or camera."
+      ]
+    },
+    {
+      "unit": "U3-039",
+      "disposition": "redesign",
+      "purpose": "Remove a solver-chosen requirement from the working block.",
+      "reason": "F-TARGET and F-COMPOSE retain editable blocks under solving-workflow.md section 3.3.",
+      "flows": [
+        "F-TARGET",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U6-020"
+      ],
+      "requirements": [
+        "Remove only the identified member requirement and invalidate dependent goal and review results.",
+        "Do not release independently captured protection or change journal state."
+      ]
+    },
+    {
+      "unit": "U3-040",
+      "disposition": "redesign",
+      "purpose": "Capture or release explicit protection at a fixed position.",
+      "reason": "F-PROTECT and F-CHECK retain fine-grained protection under solving-workflow.md section 3.3 and charter section 2.",
+      "flows": [
+        "F-PROTECT",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U5-034",
+        "U5-059",
+        "U6-020"
+      ],
+      "requirements": [
+        "Keep exact-label and occupant-only locks distinct so releasing one mode cannot release the other; release-all must have explicit scope.",
+        "Capture committed labels or occupants, enforce identical forecast restrictions at every entry point, and invalidate previews when protection changes.",
+        "Preserve the current global protection across all saved orbit contexts; restoration must not resurrect released locks."
+      ]
+    },
+    {
+      "unit": "U3-041",
+      "disposition": "redesign",
+      "purpose": "Select a named keyboard context for the current task.",
+      "reason": "F-NAVIGATE and F-COMPOSE retain per-orbit work sets and a general command context under solving-workflow.md section 4.3.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-007",
+        "U6-007"
+      ],
+      "requirements": [
+        "Switch explicitly, remember the prior context and keep orbit selection separate from bank selection.",
+        "Preserve user overrides and stable Grip/Twist meanings; all 1,200 generators and every command must remain reachable without specifying 1.0 key assignments here."
+      ]
+    },
+    {
+      "unit": "U3-042",
+      "disposition": "redesign",
+      "purpose": "Move deliberately between the available keyboard contexts.",
+      "reason": "F-NAVIGATE and solving-workflow.md section 4.3 retain explicit switching, while stage 2.3 decides the new context interaction.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-007"
+      ],
+      "requirements": [
+        "Expose the selected context before input and cycle without executing commands, changing the active orbit or discarding bindings.",
+        "Leave context order and physical keys to the keyboard design."
+      ]
+    },
+    {
+      "unit": "U3-043",
+      "disposition": "redesign",
+      "purpose": "Give a saved keyboard context a useful personal name.",
+      "reason": "F-NAVIGATE and F-REUSE retain recognizable reusable work sets under solving-workflow.md section 4.3.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U5-006"
+      ],
+      "requirements": [
+        "Persist a validated display name separately from stable context identity and bindings.",
+        "Renaming must not alter command resolution, orbit selection or mechanics."
+      ]
+    },
+    {
+      "unit": "U3-044",
+      "disposition": "redesign",
+      "purpose": "Select an explicitly identified macro from the current keyboard context.",
+      "reason": "F-MACRO and F-COMPOSE retain keyboard selection of fixed library entries under solving-workflow.md section 4.",
+      "flows": [
+        "F-MACRO",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U6-007",
+        "U6-030"
+      ],
+      "requirements": [
+        "Bind each shortcut to a visible exact macro ID, version and recipe, and check that binding before selection.",
+        "Selection must not insert, execute, substitute a different macro or choose one automatically from the target; insertion requires the solver's separate action."
+      ]
+    },
+    {
+      "unit": "U3-045",
+      "disposition": "redesign",
+      "purpose": "Choose which whole orbits the complete operation must preserve.",
+      "reason": "F-PROTECT and F-CHECK retain orbit protection under charter section 2 and solving-workflow.md section 2.",
+      "flows": [
+        "F-PROTECT",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-035",
+        "U4-034",
+        "U5-058",
+        "U6-020",
+        "U6-029"
+      ],
+      "requirements": [
+        "Capture current state for an unfinished protected orbit and check full labelled effects, including filtered regions.",
+        "Keep explicit unlocks authoritative, show protection independently from solved status and invalidate execution authority on changes."
+      ]
+    },
+    {
+      "unit": "U3-046",
+      "disposition": "redesign",
+      "purpose": "Bind an explicit ordered set of canonical caps to the solver's Grip context.",
+      "reason": "F-NAVIGATE and F-COMPOSE retain editable Grip captures under solving-workflow.md section 4.3.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-016",
+        "U6-034"
+      ],
+      "requirements": [
+        "Validate the full cap list before atomically saving visible stable mappings, retaining order and user overrides.",
+        "Captures are ergonomic work sets and must not restrict the full set of 1,200 legal generators."
+      ]
+    },
+    {
+      "unit": "U3-047",
+      "disposition": "redesign",
+      "purpose": "Review and capture the caps that can affect an inspected piece.",
+      "reason": "F-FIND, F-NAVIGATE and F-COMPOSE retain contextual Grip preparation under solving-workflow.md section 4.3.",
+      "flows": [
+        "F-FIND",
+        "F-NAVIGATE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-016",
+        "U6-034"
+      ],
+      "requirements": [
+        "Resolve the identity's current position and show its affecting caps, distinguishing them from hosting cells.",
+        "Apply the reviewed mapping only on explicit capture; later piece movement, camera changes or filtering must not silently rebind keys."
+      ]
+    },
+    {
+      "unit": "U3-048",
+      "disposition": "redesign",
+      "purpose": "Select the explicitly bound cap for the next physical turn.",
+      "reason": "F-COMPOSE and F-NAVIGATE retain the Grip half of the Grip/Twist editor under solving-workflow.md section 4.3.",
+      "flows": [
+        "F-COMPOSE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U5-008",
+        "U6-013"
+      ],
+      "requirements": [
+        "Show the canonical cap and ordered frame for an effective binding and enforce the chosen Hold or Latch mode.",
+        "Grip selection must be separate from inspection, target assignment and camera actions and must not execute a move."
+      ]
+    },
+    {
+      "unit": "U3-049",
+      "disposition": "redesign",
+      "purpose": "Find the commands relevant to the currently selected work object.",
+      "reason": "F-NAVIGATE and F-COMPOSE retain contextual discovery under charter section 5 E5.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U6-004"
+      ],
+      "requirements": [
+        "Offer shared command IDs with current engine availability and fall back to the complete palette when no work object is selected.",
+        "Opening actions must leave roles, drafts and puzzle state unchanged."
+      ]
+    },
+    {
+      "unit": "U3-050",
+      "disposition": "redesign",
+      "purpose": "Inspect and explicitly choose the ordered frame of a captured cap.",
+      "reason": "F-COMPOSE and F-CHECK retain unambiguous frame-bound turns under solving-workflow.md section 4.",
+      "flows": [
+        "F-COMPOSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U2-021",
+        "U6-019"
+      ],
+      "requirements": [
+        "List the twelve proper ordered cap frames and their exact meanings.",
+        "Recheck context, captured cell and previous frame before saving; reject stale edits atomically and invalidate affected analysis without silently remapping turns."
+      ]
+    },
+    {
+      "unit": "U3-051",
+      "disposition": "redesign",
+      "purpose": "Inspect committed objects and the predicted objects at each operation phase boundary.",
+      "reason": "F-CHECK and F-COMPOSE retain phase inspection; solving-workflow.md section 4.1 requires predictions and committed state to remain distinct.",
+      "flows": [
+        "F-CHECK",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U2-007",
+        "U6-023"
+      ],
+      "requirements": [
+        "Bind detached inspection to the full state, workspace, protection and selected source revisions, and reject stale results.",
+        "Show intermediate prefixes as unchecked until their protection is actually checked; inspection never grants execution permission or publishes predicted labels as committed state."
+      ]
+    },
+    {
+      "unit": "U3-052",
+      "disposition": "keep",
+      "purpose": "Read every legal axis and inverse witness for an explicitly named cap.",
+      "reason": "F-COMPOSE and F-NAVIGATE depend on legal Grip/Twist mathematics; charter section 2 preserves all 1,200 generators and finite chronological witnesses.",
+      "flows": [
+        "F-COMPOSE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U1-019"
+      ],
+      "requirements": [
+        "Preserve canonical cap IDs, legal directions, signed words and inverse relationships for the full model.",
+        "Keep any retained zero-based index conversion explicit and separate from canonical identity; prove the query against the matching model rather than a visible subset."
+      ]
+    },
+    {
+      "unit": "U3-053",
+      "disposition": "redesign",
+      "purpose": "Enter explicit physical turns into a draft or execute them as guarded live turns.",
+      "reason": "F-COMPOSE and F-EXECUTE retain solver-entered turns; solving-workflow.md section 4.1 requires distinct draft and live paths.",
+      "flows": [
+        "F-COMPOSE",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U1-061",
+        "U4-061",
+        "U5-011",
+        "U6-013",
+        "U6-015"
+      ],
+      "requirements": [
+        "Recheck the full-state hash, model and exact Grip/frame or verified input mapping before resolving the complete finite word.",
+        "Draft input changes only the selected phase; live input requires the solver's explicit action, active protection and no conflicting pending preview, and cannot borrow later cleanup.",
+        "Prevent committing input from key repeat and preserve a durable applied receipt even if its subsequent display refresh fails.",
+        "C-04: Validate draft edits and preview staging before changing phases, source receipts or recorded-scramble provenance; a rejected edit or preview must preserve the prior draft and source classification so the next journal receipt still reports the correct scramble provenance.",
+        "X-02: Serve checkpoint summaries from small indexed metadata without reading full checkpoint label blobs on status, snapshot, commit, undo or redo; verify latency growth with increasing checkpoint counts."
+      ]
+    },
+    {
+      "unit": "U3-054",
+      "disposition": "redesign",
+      "purpose": "Choose which phase receives the next explicit draft input.",
+      "reason": "F-COMPOSE retains Prepare, Macro and Cleanup under solving-workflow.md section 4.",
+      "flows": [
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-013",
+        "U6-024"
+      ],
+      "requirements": [
+        "Make the active input phase explicit and persist it as workspace state.",
+        "Selecting a phase must not move labels, discard other phases or create execution permission."
+      ]
+    },
+    {
+      "unit": "U3-055",
+      "disposition": "redesign",
+      "purpose": "Choose explicitly between drafting future turns and making guarded live turns.",
+      "reason": "F-COMPOSE and F-EXECUTE require the draft/live separation in solving-workflow.md section 4.1.",
+      "flows": [
+        "F-COMPOSE",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U5-013",
+        "U6-024"
+      ],
+      "requirements": [
+        "Expose the destination before every turn and preserve it across resume without silently switching modes.",
+        "A live turn goes through the complete-operation protection and commit gates; a draft updates only predicted work."
+      ]
+    },
+    {
+      "unit": "U3-056",
+      "disposition": "redesign",
+      "purpose": "Compare the actual arrangement with the current complete-operation prediction.",
+      "reason": "F-CHECK retains before-and-after comparison; owner-decisions-2026-10-02-design section 6 embeds operation summaries in the two linked views.",
+      "flows": [
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U5-049",
+        "U6-025"
+      ],
+      "requirements": [
+        "Use one shared context and revision with unmistakable actual and predicted evidence states.",
+        "Invalidate predictions after relevant edits, retain full collateral under filters and never treat a comparison as execution permission."
+      ]
+    },
+    {
+      "unit": "U3-057",
+      "disposition": "redesign",
+      "purpose": "Choose whether an explicitly selected Grip is held or latched.",
+      "reason": "F-NAVIGATE and F-COMPOSE retain deliberate Grip release semantics under solving-workflow.md section 4.3.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-009",
+        "U6-012"
+      ],
+      "requirements": [
+        "Show the selected input mode and implement matching press, release and focus-loss behavior.",
+        "Changing the mode must not select another cap, alter its frame or execute a Twist."
+      ]
+    },
+    {
+      "unit": "U3-058",
+      "disposition": "redesign",
+      "purpose": "Enter and edit the explicit finite steps of an operation phase.",
+      "reason": "F-MACRO and F-COMPOSE retain the solver's own input under charter section 5's human-solve boundary.",
+      "flows": [
+        "F-MACRO",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-033",
+        "U5-036",
+        "U6-024"
+      ],
+      "requirements": [
+        "Validate signed steps and aggregate recipe limits before publishing an edit; preserve chronological order and phase-local undo.",
+        "Invalidate the complete review after an accepted edit and retain exact source receipts for unaffected spans; a rejected edit must retain all prior work.",
+        "C-04: Validate draft edits and preview staging before changing phases, source receipts or recorded-scramble provenance; a rejected edit or preview must preserve the prior draft and source classification so the next journal receipt still reports the correct scramble provenance."
+      ]
+    },
+    {
+      "unit": "U3-059",
+      "disposition": "redesign",
+      "purpose": "Append or replace phase steps with an explicitly selected saved macro.",
+      "reason": "F-MACRO, F-COMPOSE and F-REUSE allow the solver's own macro reuse under solving-workflow.md section 4.1.",
+      "flows": [
+        "F-MACRO",
+        "F-COMPOSE",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U5-015",
+        "U6-030"
+      ],
+      "requirements": [
+        "Validate the selected macro ID, version, recipe and insertion scope before changing the phase, retaining exact span receipts.",
+        "Replacement is explicit, any accepted change invalidates the complete review, and insertion never commits or automatically chooses another macro.",
+        "C-04: Validate draft edits and preview staging before changing phases, source receipts or recorded-scramble provenance; a rejected edit or preview must preserve the prior draft and source classification so the next journal receipt still reports the correct scramble provenance."
+      ]
+    },
+    {
+      "unit": "U3-060",
+      "disposition": "redesign",
+      "purpose": "Choose the geometric cell used for the Local comparison.",
+      "reason": "F-FIND, F-CHECK and F-NAVIGATE retain Local centering; owner-decisions-2026-10-02-design section 6 supplies its new linked-view purpose.",
+      "flows": [
+        "F-FIND",
+        "F-CHECK",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-017"
+      ],
+      "requirements": [
+        "Resolve explicit canonical cell, Current-based or Grip-based centering from the shared current context without changing solving roles.",
+        "Run engine lookups as cancellable jobs off the UI thread and show lookup errors with a recoverable continuation."
+      ]
+    },
+    {
+      "unit": "U3-061",
+      "disposition": "redesign",
+      "purpose": "Use the exact inverse of the solver's preparation as Cleanup.",
+      "reason": "F-COMPOSE and solving-workflow.md section 4 permit this deterministic composition of the solver's own steps under the human-solve boundary.",
+      "flows": [
+        "F-COMPOSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-058",
+        "U5-038",
+        "U6-032"
+      ],
+      "requirements": [
+        "Reverse chronological step order and invert every signed primitive or star, including the validated default positive star sign.",
+        "Validate the aggregate operation before replacing Cleanup, invalidate its review and never commit the derived cleanup automatically.",
+        "C-04: Validate draft edits and preview staging before changing phases, source receipts or recorded-scramble provenance; a rejected edit or preview must preserve the prior draft and source classification so the next journal receipt still reports the correct scramble provenance."
+      ]
+    },
+    {
+      "unit": "U3-062",
+      "disposition": "redesign",
+      "purpose": "Check the exact complete effect of the solver's operation against its goal and protection.",
+      "reason": "F-CHECK and solving-workflow.md sections 2 and 4.1 require whole-operation analysis; charter section 2 preserves all labelled collateral effects.",
+      "flows": [
+        "F-CHECK",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U1-062",
+        "U5-040",
+        "U6-025"
+      ],
+      "requirements": [
+        "Analyse Prepare, Macro and Cleanup together on all 259,800 labels, with finite witnesses, frame effects, collateral, residuals and every chosen protection scope.",
+        "Bind the result to state, workspace, protection and macro revisions and keep evidence, progress score and permission separate.",
+        "Report unmet goals and certificate gaps without selecting a correction macro, unlocking protection or denying an otherwise legal protected operation."
+      ]
+    },
+    {
+      "unit": "U3-063",
+      "disposition": "redesign",
+      "purpose": "Stage the exact reviewed complete operation for explicit execution.",
+      "reason": "F-CHECK and F-EXECUTE retain current-preview gating under charter section 2 and command-table.md section 1.",
+      "flows": [
+        "F-CHECK",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U1-062",
+        "U5-042",
+        "U6-025"
+      ],
+      "requirements": [
+        "Recheck review revisions, full-state hash and all protected constraints before staging the exact reviewed recipe.",
+        "Replace a pending preview only explicitly; failure must restore the prior preview and execution authority without losing draft or provenance.",
+        "C-04: Validate draft edits and preview staging before changing phases, source receipts or recorded-scramble provenance; a rejected edit or preview must preserve the prior draft and source classification so the next journal receipt still reports the correct scramble provenance."
+      ]
+    },
+    {
+      "unit": "U3-064",
+      "disposition": "redesign",
+      "purpose": "Choose net-boundary or per-primitive protection for the complete operation.",
+      "reason": "F-CHECK and F-PROTECT retain Net and Strict semantics under solving-workflow.md section 2.",
+      "flows": [
+        "F-CHECK",
+        "F-PROTECT"
+      ],
+      "same_purpose_as": [
+        "U5-058",
+        "U6-024"
+      ],
+      "requirements": [
+        "Net checks the end of the full chronological word; Strict checks every primitive and reports the first violation of any protected scope.",
+        "Changing the policy invalidates the review, and an unchecked prefix must never be described as safe."
+      ]
+    },
+    {
+      "unit": "U3-065",
+      "disposition": "redesign",
+      "purpose": "Explicitly execute the exact staged and currently permitted operation.",
+      "reason": "F-EXECUTE retains the commit contract in charter section 2 and command-table.md, with no execution without the solver's action.",
+      "flows": [
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U1-064",
+        "U4-039",
+        "U5-044",
+        "U6-025"
+      ],
+      "requirements": [
+        "Recheck preview revisions, full-state hash, model identity and all protection immediately before one atomic journal commit of the immutable witness and full collateral effects.",
+        "Commit state, work transitions and completion records consistently with a durable command ID; never repeat a committing key or classify an applied operation as failed because refresh failed.",
+        "X-02: Serve checkpoint summaries from small indexed metadata without reading full checkpoint label blobs on status, snapshot, commit, undo or redo; verify latency growth with increasing checkpoint counts."
+      ]
+    },
+    {
+      "unit": "U3-066",
+      "disposition": "redesign",
+      "purpose": "Withdraw a staged preview and its execution permission.",
+      "reason": "F-CHECK and F-COMPOSE retain explicit cancellation under command-table.md section 1.",
+      "flows": [
+        "F-CHECK",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U1-065",
+        "U4-040",
+        "U5-045",
+        "U6-025"
+      ],
+      "requirements": [
+        "Clear the pending preview and every corresponding execution token together.",
+        "Preserve the draft, saved macros and committed journal; a cancelled or superseded preview cannot later commit."
+      ]
+    },
+    {
+      "unit": "U3-067",
+      "disposition": "redesign",
+      "purpose": "Save an explicitly entered finite macro for later analysis and reuse.",
+      "reason": "F-MACRO and F-REUSE retain personal macros under charter section 5's human-solve boundary.",
+      "flows": [
+        "F-MACRO",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U1-059",
+        "U4-043",
+        "U5-019",
+        "U6-030"
+      ],
+      "requirements": [
+        "Validate the complete finite recipe before allocating and persisting a model-bound ID and revision with the solver's name and provenance.",
+        "Retain full collateral and exact source steps, and never generate a solving body or execute it as part of saving."
+      ]
+    },
+    {
+      "unit": "U3-068",
+      "disposition": "redesign",
+      "purpose": "Stop an analysis job and regain control of the workspace.",
+      "reason": "F-CHECK and F-PLATFORM retain cancellation under command-table.md's job and busy rules.",
+      "flows": [
+        "F-CHECK",
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U1-009",
+        "U4-040",
+        "U5-047",
+        "U6-025"
+      ],
+      "requirements": [
+        "Keep the UI responsive and wait for cancellation acknowledgement before admitting conflicting input.",
+        "Cancelled jobs cannot publish stale analysis or execution authority, and cancelling analysis must not undo a completed commit."
+      ]
+    },
+    {
+      "unit": "U3-069",
+      "disposition": "redesign",
+      "purpose": "Inspect an explicitly selected macro's exact effect and applicability.",
+      "reason": "F-MACRO and F-CHECK retain analysis of the solver's own macros under solving-workflow.md sections 4 and 7.",
+      "flows": [
+        "F-MACRO",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U2-034",
+        "U2-037",
+        "U5-014",
+        "U5-017",
+        "U6-030"
+      ],
+      "requirements": [
+        "Bind the body to an exact ID, version and recipe and analyse full labelled effects, roles, destination and frame.",
+        "Keep body facts distinct from complete-operation protection, expose unknown or unchecked references and change selection only by explicit request."
+      ]
+    },
+    {
+      "unit": "U3-070",
+      "disposition": "redesign",
+      "purpose": "Start a new empty operation while retaining the solving context.",
+      "reason": "F-COMPOSE retains deliberate operation boundaries under solving-workflow.md section 4.",
+      "flows": [
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U6-025"
+      ],
+      "requirements": [
+        "Require the solver to handle an outstanding preview, then clear all phases and their source receipts with a fresh operation generation.",
+        "Retain roles and protection, and withdraw old review and execution authority."
+      ]
+    },
+    {
+      "unit": "U3-071",
+      "disposition": "redesign",
+      "purpose": "Reuse retained phase steps as a fresh operation.",
+      "reason": "F-REUSE and F-COMPOSE retain exact method reuse, and solving-workflow.md section 4.1 forbids reusing a review.",
+      "flows": [
+        "F-REUSE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U6-025"
+      ],
+      "requirements": [
+        "Preserve the exact phase recipes and source bindings while creating a fresh generation after any outstanding preview is handled.",
+        "Reanalyse against current roles, state and protection before a new preview or execution."
+      ]
+    },
+    {
+      "unit": "U3-072",
+      "disposition": "redesign",
+      "purpose": "Undo a committed operation without losing journal or work identity.",
+      "reason": "F-EXECUTE and F-SESSION retain recoverable journal navigation under charter section 5 E4 and solving-workflow.md section 4.2.",
+      "flows": [
+        "F-EXECUTE",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U1-017",
+        "U4-027",
+        "U5-071",
+        "U6-025"
+      ],
+      "requirements": [
+        "Restore exact labelled state and compatible workflow receipts for the resulting ancestry, with one durable command outcome.",
+        "Resolve identities again, invalidate old reviews and pending celebrations, retain unlocked explanations and saved macros, and preserve explicit protection decisions.",
+        "X-02: Serve checkpoint summaries from small indexed metadata without reading full checkpoint label blobs on status, snapshot, commit, undo or redo; verify latency growth with increasing checkpoint counts."
+      ]
+    },
+    {
+      "unit": "U3-073",
+      "disposition": "redesign",
+      "purpose": "Dismiss expanded solving tools and return attention to the current work.",
+      "reason": "F-NAVIGATE retains focus management; charter section 4 and owner-decisions-2026-10-02-design section 6 replace the old Solve window with one linked workspace.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-025",
+        "U6-030"
+      ],
+      "requirements": [
+        "Dismissal must retain drafts, selections, jobs and saved work and return input focus predictably.",
+        "The baseline Global and Local views remain visible and linked; hiding a tool cannot grant or revoke engine permission."
+      ],
+      "notes": "The two legacy commands in this unit share the same dismissal purpose, so no split is needed."
+    },
+    {
+      "unit": "U3-074",
+      "disposition": "redesign",
+      "purpose": "Redo an undone journal operation explicitly.",
+      "reason": "F-EXECUTE and F-SESSION retain journal replay under charter section 5 E4 and solving-workflow.md section 4.2.",
+      "flows": [
+        "F-EXECUTE",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U1-018",
+        "U4-028",
+        "U5-072",
+        "U6-025"
+      ],
+      "requirements": [
+        "Restore the exact stored chronological witness, state and compatible work receipts without selecting another branch silently.",
+        "Produce a durable command outcome, re-resolve current identities and withdraw stale reviews and duplicate completion celebrations.",
+        "X-02: Serve checkpoint summaries from small indexed metadata without reading full checkpoint label blobs on status, snapshot, commit, undo or redo; verify latency growth with increasing checkpoint counts."
+      ]
+    },
+    {
+      "unit": "U3-075",
+      "disposition": "redesign",
+      "purpose": "Record an explicit legal reference word for the solver's work.",
+      "reason": "F-COMPOSE and F-CHECK retain reference selection under solving-workflow.md sections 3.3 and 4.",
+      "flows": [
+        "F-COMPOSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U5-029",
+        "U6-027"
+      ],
+      "requirements": [
+        "Validate the finite signed primitive word or explicit canonical empty reference before saving.",
+        "Keep reference, current arrangement and desired target distinct and invalidate dependent review without moving the puzzle or protection."
+      ]
+    },
+    {
+      "unit": "U3-076",
+      "disposition": "redesign",
+      "purpose": "Save a named recovery point for puzzle state and working context.",
+      "reason": "F-SESSION and F-PROTECT retain checkpoints under charter section 5 E4 and solving-workflow.md section 4.2.",
+      "flows": [
+        "F-SESSION",
+        "F-PROTECT"
+      ],
+      "same_purpose_as": [
+        "U1-020",
+        "U4-015",
+        "U5-073",
+        "U6-034"
+      ],
+      "requirements": [
+        "Capture the exact state, journal ancestry and compatible saved work transactionally with an identifiable durable receipt.",
+        "Saving a checkpoint must not change solving roles, release protection or certify completion."
+      ]
+    },
+    {
+      "unit": "U3-077",
+      "disposition": "redesign",
+      "purpose": "Save a solver-requested inverse or reference variant of an existing macro.",
+      "reason": "F-REUSE, F-MACRO and F-COMPOSE allow deterministic transformations of the solver's own macros under charter section 5 and solving-workflow.md section 7.",
+      "flows": [
+        "F-REUSE",
+        "F-MACRO",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U1-058",
+        "U2-048",
+        "U5-031",
+        "U6-027",
+        "U6-032"
+      ],
+      "requirements": [
+        "Bind the exact source ID, version and recipe and explicit reference or proper frame pair, preserving the source and operation.",
+        "Use chronological inversion or R^-1 / Macro / R with a finite verified geometric witness and full-action comparison; report missing proof instead of inventing a solving word.",
+        "Persist provenance in a new record only after validation and the solver's request, with no automatic selection, insertion or execution."
+      ]
+    },
+    {
+      "unit": "U3-078",
+      "disposition": "redesign",
+      "purpose": "Restore a chosen recovery checkpoint and its compatible work.",
+      "reason": "F-SESSION and F-PROTECT retain recoverable restore under solving-workflow.md section 4.2 and AGENTS.md persistence rules.",
+      "flows": [
+        "F-SESSION",
+        "F-PROTECT"
+      ],
+      "same_purpose_as": [
+        "U1-022",
+        "U5-074",
+        "U6-034"
+      ],
+      "requirements": [
+        "Validate the complete checkpoint and model before an atomic journal transition that retains a recovery route and current preferences.",
+        "Reload compatible drafts and macro bindings, resolve current identities and invalidate all old review and execution tokens; snapshot failure after restore must report the durable applied outcome."
+      ]
+    },
+    {
+      "unit": "U3-079",
+      "disposition": "redesign",
+      "purpose": "Inspect directed cycles and orientation effects from an explicitly chosen analysis source.",
+      "reason": "F-CHECK and F-ENDGAME retain complete-effect graphics under solving-workflow.md sections 3.4 and 6.",
+      "flows": [
+        "F-CHECK",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U2-005",
+        "U6-036",
+        "U6-037"
+      ],
+      "requirements": [
+        "Distinguish selected body, entered steps, full operation, actual residual and conditional After residual, with source and revision visible.",
+        "Retain all labelled collateral even under view filters; an unavailable prediction or empty graph is not completion evidence or permission.",
+        "D-03: Consult a cache keyed by the full state and inspection source before rebuilding After forecasts on cycle selection or paging; prove that unchanged-context paging reuses the forecast and changed revisions invalidate it."
+      ]
+    },
+    {
+      "unit": "U3-080",
+      "disposition": "split",
+      "purpose": "Reset either the puzzle state recoverably or only the solver's workspace selections.",
+      "reason": "F-SESSION reset changes the mechanical journal, whereas F-NAVIGATE workspace reset edits work and presentation only; AGENTS.md persistence rules and solving-workflow.md section 4.2 require distinct scopes.",
+      "same_purpose_as": [
+        "U1-024",
+        "U4-035",
+        "U5-075",
+        "U6-039"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "codex:S3-57",
+            "claude:S3-172",
+            "claude:S3-219",
+            "claude:S3-248"
+          ],
+          "disposition": "redesign",
+          "purpose": "Return the full puzzle to a solved state with a recovery route.",
+          "reason": "F-SESSION retains explicit reset under charter section 5 E4 and AGENTS.md transactional persistence rules.",
+          "flows": [
+            "F-SESSION"
+          ],
+          "requirements": [
+            "Validate the full-model reset and explicitly confirmed scope before one journal transaction, retaining current preferences and a recovery checkpoint.",
+            "Clear pending preview and old review, execution, cached-analysis and completion authority; disclose protection consequences rather than silently treating an old review as current.",
+            "Preserve a durable applied command receipt if post-reset view construction fails."
+          ]
+        },
+        {
+          "rows": [
+            "codex:S3-123",
+            "claude:S3-194",
+            "claude:S3-219"
+          ],
+          "disposition": "redesign",
+          "purpose": "Clear work selections and presentation without resetting puzzle state or protection.",
+          "reason": "F-NAVIGATE and F-SESSION retain a fresh workspace under solving-workflow.md section 4.2 while keeping mechanical state and protection separate from presentation.",
+          "flows": [
+            "F-NAVIGATE",
+            "F-SESSION"
+          ],
+          "requirements": [
+            "Confirm the workspace scope before clearing Current, target, Next, references and draft receipts across active and saved contexts in one workspace update.",
+            "Retain puzzle labels, journal, blocks, captured and whole-orbit protection, personal macros, banks and preferences unrelated to the reset; invalidate old execution authority.",
+            "Restore a usable presentation with both baseline linked views, never the old default that hid Global."
+          ]
+        }
+      ],
+      "notes": "claude:S3-219 covers both explicit reset scopes and therefore appears in both parts; the fine rows separate mechanical reset from workspace reset."
+    },
+    {
+      "unit": "U3-081",
+      "disposition": "redesign",
+      "purpose": "Filter the solver's macro catalogue by names, exact facts and intended use.",
+      "reason": "F-MACRO and F-REUSE retain catalogue search under solving-workflow.md section 6.",
+      "flows": [
+        "F-MACRO",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U2-031",
+        "U2-036",
+        "U5-010",
+        "U6-031"
+      ],
+      "requirements": [
+        "Keep metadata, verified effect facts and unchecked counts distinguishable, with revision-keyed results and defined text matching.",
+        "Search or sorting must not change the selected macro, draft, protection or pending operation."
+      ]
+    },
+    {
+      "unit": "U3-082",
+      "disposition": "redesign",
+      "purpose": "Describe and organize personal macros with names, notes, tags and pins.",
+      "reason": "F-MACRO and F-REUSE retain reusable personal knowledge under solving-workflow.md section 4.",
+      "flows": [
+        "F-MACRO",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U2-030",
+        "U5-020",
+        "U6-031"
+      ],
+      "requirements": [
+        "Persist validated metadata separately from exact recipe identity and effect evidence.",
+        "A metadata edit or pin must not silently replace a body, change selection or execute work."
+      ]
+    },
+    {
+      "unit": "U3-083",
+      "disposition": "redesign",
+      "purpose": "Compare the complete labelled actions of two explicitly chosen macros.",
+      "reason": "F-MACRO, F-CHECK and F-REUSE retain exact comparison under charter section 2 and solving-workflow.md section 7.",
+      "flows": [
+        "F-MACRO",
+        "F-CHECK",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U5-021",
+        "U6-032"
+      ],
+      "requirements": [
+        "Compare full equality, inverse equality and per-orbit equality on all labelled slots using bound source revisions.",
+        "Present cost and net equality separately from prefix behavior and protection permission; equal target-orbit cycles alone do not prove whole-operation equality."
+      ]
+    },
+    {
+      "unit": "U3-084",
+      "disposition": "redesign",
+      "purpose": "Reach macro, preparation and protection tools in the shared solving context.",
+      "reason": "F-MACRO, F-COMPOSE and F-PROTECT preserve these tool purposes, while charter section 5 replaces the old Solve pages.",
+      "flows": [
+        "F-MACRO",
+        "F-COMPOSE",
+        "F-PROTECT",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-029"
+      ],
+      "requirements": [
+        "All entry points use shared command IDs, current roles and engine availability in one workspace.",
+        "Opening a tool must neither duplicate puzzle state nor change phases, protection, selection or execution authority."
+      ]
+    },
+    {
+      "unit": "U3-085",
+      "disposition": "automate",
+      "purpose": "Obtain trustworthy complete-effect facts for the solver's saved macros.",
+      "reason": "F-MACRO and F-CHECK need these facts, and command-table.md sections 1 and 4 assign derived analysis to responsive jobs; charter section 5 allows analysis without choosing a macro.",
+      "flows": [
+        "F-MACRO",
+        "F-CHECK",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U2-034",
+        "U6-031"
+      ],
+      "requirements": [
+        "Populate missing effect facts on demand in bounded cancellable jobs keyed by model, macro ID, version and exact recipe.",
+        "Show unchecked or unknown until verified and analyse every labelled collateral effect.",
+        "Background bookkeeping must not generate a solving body, rank-and-select a macro, change drafts or protection, or execute anything."
+      ],
+      "notes": "Proposal only; owner signature pending. Automate requests for effect bookkeeping, not the mathematical engine contract, macro choice, macro generation or execution; unchecked entries stay labelled until the analysis completes."
+    },
+    {
+      "unit": "U3-086",
+      "disposition": "redesign",
+      "purpose": "Select the exact saved macro revision the solver intends to use.",
+      "reason": "F-MACRO and F-ENDGAME retain explicit selection, including the solver's recorded endgame work, under solving-workflow.md sections 3.4 and 7.",
+      "flows": [
+        "F-MACRO",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U5-014",
+        "U6-030",
+        "U6-033"
+      ],
+      "requirements": [
+        "Recheck ID, version and recipe before binding a selection, including migrated or previously saved endgame records.",
+        "Selection alone must not generate, insert or execute a recipe; require fresh analysis for current roles, references and protection."
+      ]
+    },
+    {
+      "unit": "U3-087",
+      "disposition": "redesign",
+      "purpose": "Check an existing macro in explicitly chosen geometric reference frames.",
+      "reason": "F-COMPOSE and F-CHECK permit analysis and reference reuse of the solver's own macro under solving-workflow.md section 7.",
+      "flows": [
+        "F-COMPOSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U2-048",
+        "U6-032"
+      ],
+      "requirements": [
+        "Require an exact source binding and explicit proper source and destination frames; no implicit destination may be inferred from the target.",
+        "Return finite verified reference evidence and full effects, with certificate gaps explicit, and leave saving and insertion to separate solver actions."
+      ]
+    },
+    {
+      "unit": "U3-088",
+      "disposition": "redesign",
+      "purpose": "Inspect endgame family meanings and choose the solver's own recorded endgame work.",
+      "reason": "F-ENDGAME retains informed correction choice under solving-workflow.md section 3.4; charter section 5 permits explanations and own-macro reuse while excluding program-produced solving macros.",
+      "flows": [
+        "F-ENDGAME",
+        "F-MACRO",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U6-033"
+      ],
+      "requirements": [
+        "Limit family discovery to definitions, proof status, explicit parameters and the solver's saved macros.",
+        "Do not construct or supply a solving recipe from a built-in family; macro choice, entry, full review and execution remain explicit."
+      ],
+      "notes": "Family explanations and own-macro discovery survive; construction and saving of a new solving recipe from built-in family parameters are the delete proposals U3-093 and U3-095."
+    },
+    {
+      "unit": "U3-089",
+      "disposition": "redesign",
+      "purpose": "Choose auxiliary positions and inspect their finite orientation possibilities.",
+      "reason": "F-ENDGAME and F-COMPOSE retain position and group inspection under solving-workflow.md section 3.4 and the permitted analysis boundary in section 7.",
+      "flows": [
+        "F-ENDGAME",
+        "F-COMPOSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U2-011",
+        "U6-033"
+      ],
+      "requirements": [
+        "Validate explicit X and Y against the working orbit, current buffer positions and model-bound frame reference, showing role mismatches.",
+        "Return group elements and reference facts as analysis, without expanding a family into a solving recipe or choosing a correction."
+      ]
+    },
+    {
+      "unit": "U3-090",
+      "disposition": "redesign",
+      "purpose": "Compare explicitly supplied personal macros for the current work and read the reasons.",
+      "reason": "F-MACRO and F-CHECK retain explained analysis of the solver's own candidates under solving-workflow.md sections 3.3 and 7.",
+      "flows": [
+        "F-MACRO",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U2-002",
+        "U6-032"
+      ],
+      "requirements": [
+        "Bind the candidate set and complete current context, preserving selection, drafts, protection and pending preview.",
+        "Keep evidence, measured score and permission separate; ordering is explanatory and cannot select, insert, synthesize or execute a solving macro."
+      ]
+    },
+    {
+      "unit": "U3-091",
+      "disposition": "redesign",
+      "purpose": "Choose explicit orientation elements while describing the solver's endgame work.",
+      "reason": "F-ENDGAME and F-COMPOSE need exact orientation parameters under solving-workflow.md section 3.4, within the own-macro boundary of section 7.",
+      "flows": [
+        "F-ENDGAME",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U2-011",
+        "U6-033"
+      ],
+      "requirements": [
+        "Use exact model- and frame-bound q and r elements with their definitions and visible auxiliary positions.",
+        "Parameter selection is workspace input or annotation for the solver's own macro, never a request to generate a solving recipe."
+      ]
+    },
+    {
+      "unit": "U3-092",
+      "disposition": "redesign",
+      "purpose": "Export explicitly chosen personal macro records for preservation and reuse.",
+      "reason": "F-REUSE and F-SESSION retain the solver's work under charter section 5 E4.",
+      "flows": [
+        "F-REUSE",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U2-032",
+        "U6-031"
+      ],
+      "requirements": [
+        "Export exact source IDs, revisions, model identity, finite legal recipes and provenance in a versioned document that can be checked before reimport.",
+        "Validate the entire selected set before publication and keep unverified evidence status explicit; exporting must not select or execute macros."
+      ]
+    },
+    {
+      "unit": "U3-093",
+      "disposition": "delete",
+      "purpose": "Receive a complete solving recipe synthesized from a built-in endgame family and chosen parameters.",
+      "reason": "The human-solve boundary in charter section 5 and solving-workflow.md section 7 forbids program-produced solving macros; adapter.py endgame_choice returns EndgameLibrary.compose's recipe even when its family parameters are explicit.",
+      "flows": [],
+      "same_purpose_as": [
+        "U2-013",
+        "U2-015",
+        "U2-017",
+        "U2-019",
+        "U6-033"
+      ],
+      "requirements": [],
+      "notes": "Proposal only; owner signature pending. The source returns a new family-derived solving recipe, not only analysis of a solver-entered macro; generic own-macro checking survives in U3-062, U3-069 and U3-097."
+    },
+    {
+      "unit": "U3-094",
+      "disposition": "redesign",
+      "purpose": "Inspect a macro file and its conflicts before changing the personal catalogue.",
+      "reason": "F-REUSE and F-MACRO retain safe personal-macro import under charter section 5 E4 and AGENTS.md transactional input rules.",
+      "flows": [
+        "F-REUSE",
+        "F-MACRO"
+      ],
+      "same_purpose_as": [
+        "U2-033",
+        "U6-031"
+      ],
+      "requirements": [
+        "Validate the complete document, model identity, exact finite recipes, record IDs and conflicts before any write.",
+        "Bind confirmation to the exact bytes and current library revision; malformed, conflicting or stale inputs leave all current work intact."
+      ]
+    },
+    {
+      "unit": "U3-095",
+      "disposition": "delete",
+      "purpose": "Create a personal macro whose solving body is synthesized by the built-in endgame constructor.",
+      "reason": "Charter section 5 and solving-workflow.md section 7 forbid program-produced solving macros; adapter.py save_endgame calls endgame_choice to regenerate and store a solving recipe rather than saving the solver's entered body.",
+      "flows": [],
+      "same_purpose_as": [
+        "U2-013",
+        "U2-015",
+        "U2-017",
+        "U2-019",
+        "U6-033"
+      ],
+      "requirements": [],
+      "notes": "Proposal only; owner signature pending. Saving the solver's entered or explicitly transformed macro survives in U3-067 and U3-077; this particular path constructs its body from the built-in family."
+    },
+    {
+      "unit": "U3-096",
+      "disposition": "redesign",
+      "purpose": "Add freshly checked macro records to the personal catalogue.",
+      "reason": "F-REUSE and F-MACRO retain safe own-macro reuse under charter section 5 and AGENTS.md persistence rules.",
+      "flows": [
+        "F-REUSE",
+        "F-MACRO"
+      ],
+      "same_purpose_as": [
+        "U6-031"
+      ],
+      "requirements": [
+        "Recheck the exact document and confirmation against the current library, rejecting conflicts or stale inspection before any write.",
+        "Publish all additions atomically, retain existing work and require fresh effect, reference and protection analysis before later use."
+      ]
+    },
+    {
+      "unit": "U3-097",
+      "disposition": "redesign",
+      "purpose": "Inspect the exact effect and proof of the solver's chosen endgame macro.",
+      "reason": "F-ENDGAME and F-CHECK retain endgame evidence under solving-workflow.md section 3.4 without crossing section 7's human-solve boundary.",
+      "flows": [
+        "F-ENDGAME",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U2-034",
+        "U6-033"
+      ],
+      "requirements": [
+        "Analyse an explicitly entered or bound saved macro, showing exact residual change, inverse residual, reference evidence and all collateral.",
+        "Missing applicable work or certification is a visible gap, never a request to create a correction or unlock protection."
+      ]
+    },
+    {
+      "unit": "U3-098",
+      "disposition": "redesign",
+      "purpose": "Inspect the proper ordered frames of an explicitly chosen canonical cell.",
+      "reason": "F-COMPOSE and F-NAVIGATE retain frame literacy under solving-workflow.md section 4.",
+      "flows": [
+        "F-COMPOSE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U2-021",
+        "U6-019",
+        "U6-032"
+      ],
+      "requirements": [
+        "Return the twelve proper frames with exact canonical cell names and model identity.",
+        "Listing choices must not choose or change a Grip frame, reference, target or macro."
+      ]
+    },
+    {
+      "unit": "U3-099",
+      "disposition": "redesign",
+      "purpose": "Inspect the complete findings and evidence of the current operation review.",
+      "reason": "F-CHECK and charter section 5 S4 retain understandable full-effect and protection evidence.",
+      "flows": [
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U2-004",
+        "U5-017",
+        "U6-025",
+        "U6-026"
+      ],
+      "requirements": [
+        "Show full collateral, witness, frame and protection results with evidence status distinct from score and permission.",
+        "Reject or mark stale reviews after any relevant edit and present graphics with reviewed glossary wording under the stage 2.3 text budgets."
+      ]
+    },
+    {
+      "unit": "U3-100",
+      "disposition": "redesign",
+      "purpose": "Locate the exact positions implicated by the current operation review.",
+      "reason": "F-CHECK and F-FIND retain geometric evidence under charter section 5 S4 and the linked-view decision of 2 October 2026.",
+      "flows": [
+        "F-CHECK",
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U5-053",
+        "U6-025"
+      ],
+      "requirements": [
+        "Bind each location to the reviewed source and revisions, refusing stale reasons rather than rebinding them to different work.",
+        "Highlight conflicts through filters and locate only on explicit invocation, without assigning roles, changing protection or granting execution."
+      ]
+    },
+    {
+      "unit": "U3-101",
+      "disposition": "redesign",
+      "purpose": "Save the solver's roles, references and fixed phase steps as a reusable work sheet.",
+      "reason": "F-REUSE and solving-workflow.md sections 4 and 4.1 retain the solver's own methods and require a fresh review on reuse.",
+      "flows": [
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U2-064",
+        "U5-056",
+        "U6-040"
+      ],
+      "requirements": [
+        "Persist exact roles, goal, references, phase recipes and source macro revisions with model identity and explicit protection requirements.",
+        "Store method evidence rather than reusable execution authority, and never add a solving recipe the solver did not supply."
+      ]
+    },
+    {
+      "unit": "U3-102",
+      "disposition": "redesign",
+      "purpose": "Compare a saved work sheet with the current solving inputs before reuse.",
+      "reason": "F-REUSE and F-CHECK require an informed fresh comparison under solving-workflow.md section 4.1.",
+      "flows": [
+        "F-REUSE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U2-065",
+        "U5-055",
+        "U6-040"
+      ],
+      "requirements": [
+        "Show saved and current roles, references, macro revisions and protection differences with explicit mismatch or gap status.",
+        "Bind any confirmation to the exact sheet and current state, workspace and protection revisions; do not silently retarget it."
+      ]
+    },
+    {
+      "unit": "U3-103",
+      "disposition": "redesign",
+      "purpose": "Load the solver-confirmed fixed steps of a saved work sheet.",
+      "reason": "F-REUSE and F-COMPOSE retain method reuse, while solving-workflow.md section 4.1 requires every reuse to be analysed again.",
+      "flows": [
+        "F-REUSE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U5-057",
+        "U6-040"
+      ],
+      "requirements": [
+        "Recheck exact sheet, source bindings and confirmation before one atomic workspace update with a fresh operation generation.",
+        "Retain current global protection and handle a pending preview explicitly; never restore a saved review, execution token or silent role substitution."
+      ]
+    },
+    {
+      "unit": "U3-104",
+      "disposition": "automate",
+      "purpose": "Keep cycle inspection current when its analysis inputs change.",
+      "reason": "F-CHECK and F-ENDGAME require current diagrams, and command-table.md section 1 assigns derived view updates to the view model instead of manual refresh bookkeeping.",
+      "flows": [
+        "F-CHECK",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U2-005",
+        "U6-037"
+      ],
+      "requirements": [
+        "Refresh only after relevant state, workspace, protection, source, orbit or inspection-setting changes, using immutable revision-keyed results.",
+        "Reuse unchanged forecasts before rebuilding, cancel superseded jobs and never publish stale or partial evidence as current.",
+        "Refresh must not choose, generate, insert or execute a solving macro or change the solver's selection."
+      ],
+      "notes": "Proposal only; owner signature pending. Automatic refresh responds to changed analysis inputs and never changes puzzle state or solving choices."
+    },
+    {
+      "unit": "U3-105",
+      "disposition": "redesign",
+      "purpose": "Move explicit inspection focus to the next or previous cycle.",
+      "reason": "F-CHECK and F-ENDGAME retain cycle navigation under solving-workflow.md sections 3.4 and 6.",
+      "flows": [
+        "F-CHECK",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U6-037"
+      ],
+      "requirements": [
+        "Retain the chosen source, orbit, full-state revision and exact directed cycle identity across navigation.",
+        "Cycle focus changes inspection only; expose all available cycles without treating an empty page as solved.",
+        "D-03: Consult a cache keyed by the full state and inspection source before rebuilding After forecasts on cycle selection or paging; prove that unchanged-context paging reuses the forecast and changed revisions invalidate it."
+      ]
+    },
+    {
+      "unit": "U3-106",
+      "disposition": "redesign",
+      "purpose": "Page through the complete cycle and orientation inspection.",
+      "reason": "F-CHECK and F-ENDGAME retain access to complete effects under charter section 2 and solving-workflow.md section 3.4.",
+      "flows": [
+        "F-CHECK",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U2-005",
+        "U6-037"
+      ],
+      "requirements": [
+        "Page one immutable analysis result with bounded work and stable indices tied to its source and revision.",
+        "Pagination is presentation only and must neither truncate the checked effect nor hide remaining residuals or protection conflicts.",
+        "D-03: Consult a cache keyed by the full state and inspection source before rebuilding After forecasts on cycle selection or paging; prove that unchanged-context paging reuses the forecast and changed revisions invalidate it."
+      ]
+    },
+    {
+      "unit": "U3-107",
+      "disposition": "redesign",
+      "purpose": "Inspect exact orbit residuals, invariant evidence and the change predicted by the entered operation.",
+      "reason": "F-ENDGAME, F-TARGET and F-CHECK rely on exact residuals under solving-workflow.md section 3.4.",
+      "flows": [
+        "F-ENDGAME",
+        "F-TARGET",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U2-049",
+        "U2-050",
+        "U2-051",
+        "U2-052",
+        "U2-053",
+        "U6-035"
+      ],
+      "requirements": [
+        "Distinguish misplaced identities, wrong buffer occupants, orientation errors, unknown frames and exact completion; permitted nonidentity residuals remain unsolved.",
+        "Bind Current and conditional After to the full context and show provenance or certificate gaps for impossible residuals, never unlocking or synthesizing a correction.",
+        "Exact completion requires every required labelled condition, not matching colours, an empty graph or exhausted candidates.",
+        "X-01: Keep hashed model assets and invariant-proof sources in their authoritative byte representation across checkouts, including Git for Windows CRLF settings; accept an invariant certificate only when its model, source version and digests match, otherwise show stale or unknown evidence."
+      ]
+    },
+    {
+      "unit": "U3-108",
+      "disposition": "redesign",
+      "purpose": "Inspect the measured evidence behind an operation-benefit reason.",
+      "reason": "F-CHECK and F-FIND retain explained analysis under solving-workflow.md sections 3.3 and 4.1.",
+      "flows": [
+        "F-CHECK",
+        "F-FIND"
+      ],
+      "same_purpose_as": [
+        "U2-004",
+        "U6-026"
+      ],
+      "requirements": [
+        "Bind each reason to the complete operation, exact inputs and review revisions; reject stale evidence rather than substituting current work.",
+        "Locate its geometric evidence while keeping score, goal progress, verification and execution permission distinct."
+      ]
+    },
+    {
+      "unit": "U3-109",
+      "disposition": "redesign",
+      "purpose": "Inspect the last committed step and its exact residual changes.",
+      "reason": "F-EXECUTE and F-SESSION retain post-action review under solving-workflow.md section 4.",
+      "flows": [
+        "F-EXECUTE",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U2-051",
+        "U6-035"
+      ],
+      "requirements": [
+        "Read the authoritative event and compatible workflow receipt for the current journal ancestry.",
+        "Show bounded changes with exact typed position names and evidence status, distinguishing unavailable metadata from an empty or solved result."
+      ]
+    },
+    {
+      "unit": "U3-110",
+      "disposition": "redesign",
+      "purpose": "Choose an explained following-orbit suggestion explicitly.",
+      "reason": "F-TARGET and F-ENDGAME retain continuation under solving-workflow.md section 4.2, which leaves the next orbit to the solver.",
+      "flows": [
+        "F-TARGET",
+        "F-ENDGAME"
+      ],
+      "same_purpose_as": [
+        "U2-069",
+        "U6-035"
+      ],
+      "requirements": [
+        "Give locked Next priority and derive suggestions from actual residuals and collateral dependencies rather than numeric orbit order.",
+        "Switch only on explicit choice, atomically retaining per-orbit drafts, current global protection and no stale execution permission; a suggestion must not choose a macro."
+      ]
+    },
+    {
+      "unit": "U3-111",
+      "disposition": "redesign",
+      "purpose": "Read the authoritative record of the current solve attempt.",
+      "reason": "F-SESSION and charter section 5 E4 retain work, timing and journal visibility in the new workspace.",
+      "flows": [
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U2-054",
+        "U5-069",
+        "U6-039",
+        "U6-048"
+      ],
+      "requirements": [
+        "Read consistent attempt, state, timer, assistance and journal facts with model identity and evidence status.",
+        "Keep timing, learning attainment, legal execution, current progress and exact completion separate, without reclassifying a historical achievement as current."
+      ]
+    },
+    {
+      "unit": "U3-112",
+      "disposition": "redesign",
+      "purpose": "Resume the saved solve attempt and its working context.",
+      "reason": "F-SESSION and solving-workflow.md section 4.2 require recovery without losing work; owner-decisions-2026-10-02-design section 7 requires direct return in one workspace.",
+      "flows": [
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U2-055",
+        "U6-039"
+      ],
+      "requirements": [
+        "Retain the exact puzzle, journal ancestry, drafts, personal macros and preferences while resolving saved identities against current state.",
+        "Keep current global protection and invalidate old preview and execution authority; resume must not turn or select a solving macro."
+      ]
+    },
+    {
+      "unit": "U3-113",
+      "disposition": "redesign",
+      "purpose": "Begin a new solved full-model attempt while retaining personal tools and a recovery route.",
+      "reason": "F-SESSION and F-LEARN retain new work and the practice entry under charter section 5 and owner-decisions-2026-10-02-design section 7.",
+      "flows": [
+        "F-SESSION",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U1-024",
+        "U6-039"
+      ],
+      "requirements": [
+        "Confirm the affected scope and validate a full-model initial state before a transactional reset with a recovery checkpoint for existing work.",
+        "Preserve personal macros, keybindings, captures, frames, work sheets and saved filters, and explicitly initialize attempt, timer and protection policy without inheriting old execution authority.",
+        "Clearly distinguish a practice copy from the personal solve; first-orbit context must follow the certified collateral workflow rather than a presentation order."
+      ]
+    },
+    {
+      "unit": "U3-114",
+      "disposition": "redesign",
+      "purpose": "Start or pause the solver's shared attempt timer explicitly.",
+      "reason": "F-SESSION and F-LEARN retain local timing under owner-decisions-2026-10-02-design section 5 and command-table.md's timer open point.",
+      "flows": [
+        "F-SESSION",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U1-031",
+        "U1-033",
+        "U2-056",
+        "U6-039"
+      ],
+      "requirements": [
+        "Use one authoritative timer that survives resume without multiple clocks or counting paused intervals.",
+        "Keep measurements local and separate from correctness, achievement and permission; timer storage classification remains for the command-table freeze."
+      ]
+    },
+    {
+      "unit": "U3-115",
+      "disposition": "redesign",
+      "purpose": "Save a verified move log for the current solve attempt.",
+      "reason": "F-SESSION retains recoverable work under charter section 5 E4 and AGENTS.md persistence rules.",
+      "flows": [
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U1-048",
+        "U1-050",
+        "U2-058",
+        "U6-039"
+      ],
+      "requirements": [
+        "Validate full witness history, model identity and the destination before publishing a log that the matching importer accepts within the same budgets.",
+        "Report an oversized log with a session-backup continuation; saving a move log cannot substitute for migration of workspace or preferences."
+      ]
+    },
+    {
+      "unit": "U3-116",
+      "disposition": "redesign",
+      "purpose": "Export an explicitly chosen verified move-history document.",
+      "reason": "F-SESSION and F-REUSE retain portable witness evidence under charter section 2 and section 5 E4.",
+      "flows": [
+        "F-SESSION",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U1-036",
+        "U1-038",
+        "U2-059",
+        "U6-039"
+      ],
+      "requirements": [
+        "Validate the whole record against matching import limits before writing, and identify the exact output bytes, digest, format and model.",
+        "Legacy format conversion requires a verified mapping and full chronological effects; a move log is not the locked-database migration package."
+      ]
+    },
+    {
+      "unit": "U3-117",
+      "disposition": "redesign",
+      "purpose": "Inspect a move-log file and its replayed result before authorizing import.",
+      "reason": "F-SESSION retains safe restoration under AGENTS.md transactional input rules; owner-decisions-2026-10-02-migration keeps full 0.4 data migration a separate locked-copy path.",
+      "flows": [
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U2-060",
+        "U6-039"
+      ],
+      "requirements": [
+        "Check the entire bounded file, exact byte digest, model, legal chronological witnesses and replayed endpoint before any database write.",
+        "Show the resulting state and affected scope, and bind explicit confirmation to the same bytes and current revisions; legacy inputs require verified mapping evidence."
+      ]
+    },
+    {
+      "unit": "U3-118",
+      "disposition": "redesign",
+      "purpose": "Import a freshly confirmed move log through a recoverable journal transition.",
+      "reason": "F-SESSION retains restoration under AGENTS.md persistence rules; the owner migration decision requires the original 0.4 session to remain untouched.",
+      "flows": [
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U1-052",
+        "U1-054",
+        "U2-061",
+        "U6-039"
+      ],
+      "requirements": [
+        "Recheck exact input bytes, model, mapping, replay result and confirmation at the current revision before one transaction with a recovery branch or checkpoint.",
+        "Preserve current preferences and work selections, invalidate all preview, review, execution and cached-analysis authority, and never modify the source session directory."
+      ]
+    },
+    {
+      "unit": "U3-119",
+      "disposition": "automate",
+      "purpose": "Remember which exact completion notice has already been presented.",
+      "reason": "F-SESSION and F-LEARN retain durable completion bookkeeping; owner-decisions-2026-10-02-design section 1 replaces modal acknowledgement with small in-place rewards.",
+      "flows": [
+        "F-SESSION",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U2-063",
+        "U6-039"
+      ],
+      "requirements": [
+        "Mark an already displayed durable completion ID idempotently without an acknowledgement task or any new solving action.",
+        "Require a fresh exact committed completion before creating the notice; after undo withdraw current achievement and pending celebration while retaining unlocked explanations and saved macros.",
+        "Bookkeeping must not certify a new completion, select or generate a macro, execute work or prevent later reopening of the historical summary."
+      ],
+      "notes": "Proposal only; owner signature pending. Automatic acknowledgement records that an exact-completion notice was presented; it is not a new achievement check or an automatic solving action."
+    },
+    {
+      "unit": "U3-120",
+      "disposition": "redesign",
+      "purpose": "Edit personal command and physical-turn bindings explicitly.",
+      "reason": "F-NAVIGATE and solving-workflow.md section 4.3 retain editable key sets; stage 2.3 decides the keyboard model under charter section 5 E5.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U5-018",
+        "U6-011"
+      ],
+      "requirements": [
+        "Validate stable command IDs, contexts, Grip/Twist targets, conflicts and explicit unbindings before atomically saving.",
+        "Preserve editor input isolation, visible effective meanings and full generator reachability; camera or filter changes cannot rebind keys and committing commands cannot repeat."
+      ]
+    },
+    {
+      "unit": "U3-121",
+      "disposition": "redesign",
+      "purpose": "Reopen an existing exact-completion record as historical evidence.",
+      "reason": "F-SESSION and F-LEARN retain access to earned explanations; owner-decisions-2026-10-02-design section 1 separates historical unlocks from current achievement.",
+      "flows": [
+        "F-SESSION",
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U2-062",
+        "U6-039"
+      ],
+      "requirements": [
+        "Identify the original model, state hash, journal event and completion ID and label the summary as historical when it is not current.",
+        "Reopening must not create a new completion, restart rewards or imply that an undone solve is still complete."
+      ]
+    },
+    {
+      "unit": "U3-122",
+      "disposition": "redesign",
+      "purpose": "Stage a reproducible scramble explicitly without applying it yet.",
+      "reason": "F-LEARN, F-SESSION and F-COMPOSE retain practice preparation under owner-decisions-2026-10-02-design section 7; scrambling does not choose a solving macro.",
+      "flows": [
+        "F-LEARN",
+        "F-SESSION",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U1-060",
+        "U2-057",
+        "U6-039"
+      ],
+      "requirements": [
+        "Generate and retain a finite legal full-model word with count, seed and source provenance, then stage it in draft only.",
+        "Replacing existing phases or preview authority requires explicit scope; apply only after fresh full review and the solver's execute action, using an isolated practice copy when practicing.",
+        "C-04: Validate draft edits and preview staging before changing phases, source receipts or recorded-scramble provenance; a rejected edit or preview must preserve the prior draft and source classification so the next journal receipt still reports the correct scramble provenance."
+      ]
+    },
+    {
+      "unit": "U3-123",
+      "disposition": "redesign",
+      "purpose": "Load a known legal practice task in an isolated full-model session.",
+      "reason": "F-LEARN retains fixture competence tasks and a practice copy under owner-decisions-2026-10-02-design sections 5 and 7.",
+      "flows": [
+        "F-LEARN"
+      ],
+      "same_purpose_as": [
+        "U1-067",
+        "U5-070",
+        "U6-034"
+      ],
+      "requirements": [
+        "Require an explicit fixture action in a fresh clearly labelled practice copy, leaving the personal solve untouched.",
+        "Apply the exact finite witness through ordinary model, protection and transactional command gates; reject incompatible head, pending preview, captured locks or protected effects before writes.",
+        "Install fixture roles and work atomically and preserve a durable applied outcome if display refresh fails."
+      ]
+    },
+    {
+      "unit": "U3-124",
+      "disposition": "redesign",
+      "purpose": "Save a named work filter for later reuse.",
+      "reason": "F-NAVIGATE and F-REUSE retain saved work sets under solving-workflow.md section 4.3.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U1-057",
+        "U5-051"
+      ],
+      "requirements": [
+        "Save a validated query and readable name with explicit query, frozen-identity or frozen-position semantics where supported.",
+        "Reuse must distinguish interactive work scope from noninteractive references and never change mechanical analysis or hide protection effects."
+      ]
+    },
+    {
+      "unit": "U3-125",
+      "disposition": "redesign",
+      "purpose": "Retain explicit input and presentation preferences with the workspace.",
+      "reason": "F-SESSION, F-NAVIGATE and F-COMPOSE require persistent choices under solving-workflow.md sections 4.2 and 4.3.",
+      "flows": [
+        "F-SESSION",
+        "F-NAVIGATE",
+        "F-COMPOSE"
+      ],
+      "same_purpose_as": [
+        "U1-035",
+        "U5-013",
+        "U5-018",
+        "U6-011",
+        "U6-012",
+        "U6-017",
+        "U6-024"
+      ],
+      "requirements": [
+        "Replace the unrestricted settings merge with typed validated preferences owned by their layers and saved atomically.",
+        "Preserve active phase, draft/live destination, Grip mode, bindings and geometric context as distinct fields; resume keeps two linked views, current protection and stable command meanings."
+      ]
+    },
+    {
+      "unit": "U3-126",
+      "disposition": "redesign",
+      "purpose": "Export the solver's saved keyboard bindings for reuse.",
+      "reason": "F-NAVIGATE and F-REUSE retain personal key sets under solving-workflow.md section 4.3.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U6-010"
+      ],
+      "requirements": [
+        "Export only validated overrides in a bounded versioned model-bound document using stable command and context IDs.",
+        "Preserve explicit unbindings and physical targets; export must not include session labels, private paths or unrelated preferences."
+      ]
+    },
+    {
+      "unit": "U3-127",
+      "disposition": "redesign",
+      "purpose": "Inspect a keyboard binding file before replacing the saved overrides.",
+      "reason": "F-NAVIGATE and F-SESSION retain safe workspace import under charter section 5 E4.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U6-010"
+      ],
+      "requirements": [
+        "Validate the complete UTF-8 document, format, model, scope, actions, context IDs, duplicate bindings and physical conflicts without writes.",
+        "Bind inspection to exact file bytes and current bindings, show the replacement scope and require explicit confirmation; compatibility translation cannot silently guess commands."
+      ]
+    },
+    {
+      "unit": "U3-128",
+      "disposition": "redesign",
+      "purpose": "Apply an explicitly confirmed keyboard binding replacement atomically.",
+      "reason": "F-NAVIGATE and F-SESSION retain safe personal-key reuse under charter section 5 E4 and AGENTS.md transactional input rules.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-SESSION"
+      ],
+      "same_purpose_as": [
+        "U6-010"
+      ],
+      "requirements": [
+        "Revalidate exact bytes, confirmation basis and current binding revisions before replacing the saved override set.",
+        "A failure preserves all bindings; the applied set must keep command gates, editor isolation, stable meanings and full legal-generator reachability."
+      ]
+    },
+    {
+      "unit": "U3-129",
+      "disposition": "redesign",
+      "purpose": "Focus the actual committed puzzle geometry in the solving workspace.",
+      "reason": "F-FIND, F-RELATE and F-CHECK retain the old Puzzle control's inspection purpose; owner-decisions-2026-10-02-design section 6 keeps only linked Global and Local views.",
+      "flows": [
+        "F-FIND",
+        "F-RELATE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U5-041",
+        "U6-034"
+      ],
+      "requirements": [
+        "Focus the actual committed geometry within the two linked views rather than creating a third peer view.",
+        "Keep actual labels distinguishable from forecast overlays and leave solving roles, protection and grip unchanged."
+      ]
+    },
+    {
+      "unit": "U3-130",
+      "disposition": "redesign",
+      "purpose": "Reach the controls for navigating the linked structural views.",
+      "reason": "F-NAVIGATE, F-FIND and F-RELATE retain view control under owner-decisions-2026-10-02-design section 6.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND",
+        "F-RELATE"
+      ],
+      "same_purpose_as": [
+        "U6-017"
+      ],
+      "requirements": [
+        "Provide shared commands for the chosen geometric context without introducing separate state copies or a third view.",
+        "View actions must not assign solving roles or silently remap physical turns."
+      ]
+    },
+    {
+      "unit": "U3-131",
+      "disposition": "redesign",
+      "purpose": "Dismiss supporting tools to concentrate on the geometric work.",
+      "reason": "F-NAVIGATE retains focus and density control under charter section 5, while the two-view owner decision replaces separate auxiliary windows.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U5-043",
+        "U6-016"
+      ],
+      "requirements": [
+        "Dismiss only expanded or supporting tools, keep baseline Global and Local visible and linked, and restore focus predictably.",
+        "Retain drafts, bindings, selections and running jobs; hiding presentation cannot change engine permission or mechanical state."
+      ]
+    },
+    {
+      "unit": "U3-132",
+      "disposition": "redesign",
+      "purpose": "Leave expanded structural inspection and return to the shared workspace.",
+      "reason": "F-NAVIGATE, F-FIND and F-RELATE retain a way back from inspection; owner-decisions-2026-10-02-design section 6 rules out closing away both required views.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND",
+        "F-RELATE"
+      ],
+      "same_purpose_as": [
+        "U5-043",
+        "U6-017"
+      ],
+      "requirements": [
+        "Collapse or leave expanded inspection while preserving both baseline linked views and their shared context.",
+        "Keep geometric selections and work state, return input focus and never release protection or cancel a preview as a closing side effect."
+      ]
+    },
+    {
+      "unit": "U3-133",
+      "disposition": "redesign",
+      "purpose": "Choose fullscreen presentation for the workspace.",
+      "reason": "F-NAVIGATE retains comfortable view control under charter section 5's user-tunable presentation requirement.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-016"
+      ],
+      "requirements": [
+        "Preserve the two linked views, roles, input focus, scale and usable command access through fullscreen transitions.",
+        "Keep window operations behind platform interfaces and do not alter mechanics, bindings or permission."
+      ]
+    },
+    {
+      "unit": "U3-134",
+      "disposition": "redesign",
+      "purpose": "Restore a useful default Local comparison camera.",
+      "reason": "F-FIND and F-NAVIGATE retain recoverable view navigation under the Local question in owner-decisions-2026-10-02-design section 6.",
+      "flows": [
+        "F-FIND",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-017"
+      ],
+      "requirements": [
+        "Reset only Local's presentation using its explicit geometric context and shared role anchors.",
+        "Preserve Current, target, buffers, protection, state and physical-turn meanings."
+      ]
+    },
+    {
+      "unit": "U3-135",
+      "disposition": "redesign",
+      "purpose": "Adjust the Local camera to inspect the piece and target relation.",
+      "reason": "F-FIND and F-NAVIGATE retain Local navigation under solving-workflow.md section 4.",
+      "flows": [
+        "F-FIND",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-017"
+      ],
+      "requirements": [
+        "Apply camera commands to Local's geometric presentation while maintaining exact target, piece and buffer anchors.",
+        "Camera movement must not change mechanical labels, solving roles, interactive scope or fixed-frame key meanings."
+      ]
+    },
+    {
+      "unit": "U3-136",
+      "disposition": "redesign",
+      "purpose": "Change Local magnification without losing comparison context.",
+      "reason": "F-FIND and F-NAVIGATE retain geometric inspection under owner-decisions-2026-10-02-design section 6.",
+      "flows": [
+        "F-FIND",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-017"
+      ],
+      "requirements": [
+        "Keep target and current frame comparison interpretable through validated zoom ranges and shared anchors.",
+        "Zoom changes presentation only and must not relabel pieces, change pick scope or remap turns."
+      ]
+    },
+    {
+      "unit": "U3-137",
+      "disposition": "redesign",
+      "purpose": "Restore a useful default Global camera for the current geometric context.",
+      "reason": "F-RELATE and F-NAVIGATE retain recovery from disorienting view changes under owner-decisions-2026-10-02-design section 6.",
+      "flows": [
+        "F-RELATE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-017"
+      ],
+      "requirements": [
+        "Reset only Global presentation while retaining exact locations of the working piece, destination and buffers.",
+        "Keep Local linked at the same revision and preserve all solving roles, protection and bindings."
+      ]
+    },
+    {
+      "unit": "U3-138",
+      "disposition": "redesign",
+      "purpose": "Adjust the Global camera to understand relationships in the polytope.",
+      "reason": "F-RELATE and F-NAVIGATE retain whole-structure navigation under solving-workflow.md section 4.",
+      "flows": [
+        "F-RELATE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-017"
+      ],
+      "requirements": [
+        "Represent the actual canonical structure and keep shared role markers and the Local context consistent.",
+        "Direction commands alter the camera only; they must not turn caps, choose grips, retarget work or silently change keys."
+      ]
+    },
+    {
+      "unit": "U3-139",
+      "disposition": "redesign",
+      "purpose": "Change Global magnification to inspect structural relationships.",
+      "reason": "F-RELATE and F-NAVIGATE retain geometric navigation under owner-decisions-2026-10-02-design section 6.",
+      "flows": [
+        "F-RELATE",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-017"
+      ],
+      "requirements": [
+        "Keep exact role locations and canonical adjacency interpretable through validated zoom ranges.",
+        "Magnification affects drawing only and leaves mechanics, interaction scope, Local context and turn bindings intact."
+      ]
+    },
+    {
+      "unit": "U3-140",
+      "disposition": "redesign",
+      "purpose": "Tune the geometric display for comfortable and legible work.",
+      "reason": "F-NAVIGATE and charter section 5 preserve user tuning within a shared design language; owner-decisions-2026-10-02-design section 3 requires two authored theme families.",
+      "flows": [
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U4-007",
+        "U6-021"
+      ],
+      "requirements": [
+        "Offer validated presentation ranges for geometric size, field of view and lighting without changing model geometry or labels.",
+        "Keep encoding, status meanings, interaction scope and protection overlays invariant across themes, and pass the full-detail renderer gate in the most expensive supported look."
+      ]
+    },
+    {
+      "unit": "U3-141",
+      "disposition": "split",
+      "purpose": "Control framework visibility separately from optional motion-detail presentation.",
+      "reason": "F-NAVIGATE includes two independent display purposes here: structural visibility and motion sampling; charter section 2 binds both to immutable mechanics and the full-detail renderer gate.",
+      "same_purpose_as": [
+        "U6-021"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "codex:S3-151",
+            "claude:S3-176",
+            "claude:S3-205"
+          ],
+          "disposition": "redesign",
+          "purpose": "Show or hide structural framework references for legible geometric work.",
+          "reason": "F-NAVIGATE retains framework visibility, and charter section 2 requires rendering choices never to change the model.",
+          "flows": [
+            "F-NAVIGATE",
+            "F-FIND",
+            "F-RELATE"
+          ],
+          "requirements": [
+            "Persist a validated presentation preference without changing canonical labels, fixed structures or legal-generator reachability.",
+            "Hidden framework elements must not remove complete-effect or protection information, and pick scope must remain explicitly distinguished from noninteractive reference display."
+          ]
+        },
+        {
+          "rows": [
+            "codex:S3-151",
+            "claude:S3-177",
+            "claude:S3-205"
+          ],
+          "disposition": "redesign",
+          "purpose": "Choose optional motion-detail presentation while retaining exact full-model work.",
+          "reason": "F-NAVIGATE retains configurable motion presentation, while charter section 2 requires the renderer gate on all 259,800 stickers at full detail regardless of this option.",
+          "flows": [
+            "F-NAVIGATE"
+          ],
+          "requirements": [
+            "Restrict adaptive sampling to presentation; it must never alter committed labels, chronological effects, full protection analysis or canonical IDs.",
+            "Keep full detail available and restore it after motion; establish the renderer's required performance with full detail and the most complex animation, not with this option.",
+            "Make comparison, protection and picking evidence exact despite any visual sampling; this row makes no performance claim and fixes no 1.0 motion design."
+          ]
+        }
+      ],
+      "notes": "The two coarse settings rows cover both preferences and occur in both parts; the two fine toggle rows identify separate purposes."
+    },
+    {
+      "unit": "U3-142",
+      "disposition": "redesign",
+      "purpose": "Restore the main geometric presentation to a known useful view.",
+      "reason": "F-NAVIGATE, F-FIND and F-RELATE keep camera recovery; charter section 4 and the two-view owner decision replace the retained native camera reset.",
+      "flows": [
+        "F-NAVIGATE",
+        "F-FIND",
+        "F-RELATE"
+      ],
+      "same_purpose_as": [
+        "U4-012",
+        "U5-063",
+        "U6-039"
+      ],
+      "requirements": [
+        "Restore only validated camera and display defaults in the linked workspace, retaining role locations and any unsaved solving work.",
+        "Never reset puzzle labels, journal, protection, keys or the selected macro as part of a view reset."
+      ]
+    },
+    {
+      "unit": "U3-143",
+      "disposition": "redesign",
+      "purpose": "Find contextual explanations and learn the concepts used in the current work.",
+      "reason": "F-LEARN and F-NAVIGATE retain discoverable help under charter section 5 M1 to M6 and owner-decisions-2026-10-02-scope section 1.",
+      "flows": [
+        "F-LEARN",
+        "F-NAVIGATE"
+      ],
+      "same_purpose_as": [
+        "U6-006"
+      ],
+      "requirements": [
+        "Use reviewed glossary terms and real-model diagrams for the concepts actually shown, with proofs only for facts UI correctness relies on.",
+        "Keep learning optional, respect the trial text budgets with the documented error and theory exceptions, preserve work, and return focus to the owning tool."
+      ]
+    },
+    {
+      "unit": "U3-144",
+      "disposition": "redesign",
+      "purpose": "Copy an unambiguous typed mathematical name for the inspected object.",
+      "reason": "F-FIND, F-COMPOSE and F-REUSE retain exact names under owner-decisions-2026-10-02-design section 2.",
+      "flows": [
+        "F-FIND",
+        "F-COMPOSE",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U2-044",
+        "U2-045",
+        "U6-034"
+      ],
+      "requirements": [
+        "Distinguish Piece identity from fixed Position and include model and naming-version evidence for reliable parsing.",
+        "Preserve exact reference and inverse notation with explicit precision; copied data must contain no private path or unrelated session information."
+      ]
+    },
+    {
+      "unit": "U3-145",
+      "disposition": "redesign",
+      "purpose": "Copy the exact canonical ID of an inspected piece or position.",
+      "reason": "F-FIND, F-COMPOSE and F-REUSE retain precise references under charter section 2 and owner-decisions-2026-10-02-design section 2.",
+      "flows": [
+        "F-FIND",
+        "F-COMPOSE",
+        "F-REUSE"
+      ],
+      "same_purpose_as": [
+        "U5-068",
+        "U6-034"
+      ],
+      "requirements": [
+        "Keep identity and fixed-position ID types explicit, preserving canonical IDs independently of camera, colour and native indices.",
+        "Copying must not assign a target or grip, alter the selected object or expose unrelated user data."
+      ]
+    },
+    {
+      "unit": "U3-146",
+      "disposition": "redesign",
+      "purpose": "Invoke one explicit command through a single responsive and guarded boundary.",
+      "reason": "F-PLATFORM, F-COMPOSE and F-EXECUTE depend on the shared command layer defined by charter section 4 and command-table.md section 1.",
+      "flows": [
+        "F-PLATFORM",
+        "F-COMPOSE",
+        "F-EXECUTE"
+      ],
+      "same_purpose_as": [
+        "U1-068",
+        "U1-069"
+      ],
+      "requirements": [
+        "Replace adapter action dispatch with stable command IDs and typed arguments using engine availability, context, busy, preview, protection and file gates as applicable.",
+        "Admit conflicting jobs atomically, keep work off the UI thread and support acknowledged cancellation without stale publication.",
+        "A durable command ID commits at most once; external callers cannot gain a route that chooses or executes a solving macro without the solver's action."
+      ]
+    },
+    {
+      "unit": "U3-147",
+      "disposition": "redesign",
+      "purpose": "Receive an authoritative command outcome with a consistently paired view result.",
+      "reason": "F-PLATFORM, F-EXECUTE and F-CHECK require durable outcomes independent of refresh under command-table.md section 1.",
+      "flows": [
+        "F-PLATFORM",
+        "F-EXECUTE",
+        "F-CHECK"
+      ],
+      "same_purpose_as": [
+        "U1-066",
+        "U6-048"
+      ],
+      "requirements": [
+        "Use the same command dispatch and gates for every shell path, pairing immutable view records at the resulting revision.",
+        "Preserve a durable receipt after an applied command even if snapshot or detached-inspection construction fails; report applied with display out of date and provide safe refresh instead of a failed-command retry.",
+        "Keep transport and native-index conversion behind the platform boundary."
+      ],
+      "notes": "The open candidate U3-006 supplies the paired snapshot used here; a read-only snapshot and an authoritative command outcome are related contracts, not interchangeable purposes."
+    },
+    {
+      "unit": "U3-148",
+      "disposition": "split",
+      "purpose": "Route explicit turn input separately from inspection of clicked identities and fixed positions.",
+      "reason": "F-COMPOSE and F-EXECUTE can mutate draft or puzzle state, while F-FIND inspections are read-only; solving-workflow.md sections 4.1 and 4.3 require these actions to remain separate.",
+      "same_purpose_as": [
+        "U1-061",
+        "U1-046",
+        "U1-047",
+        "U4-061",
+        "U5-011",
+        "U5-052",
+        "U5-053",
+        "U6-013",
+        "U6-015"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "claude:S3-292"
+          ],
+          "disposition": "redesign",
+          "purpose": "Enter an explicit viewport turn into draft or guarded live execution.",
+          "reason": "F-COMPOSE and F-EXECUTE retain the explicit turn purpose under solving-workflow.md sections 4.1 and 7, rehosted through the common command layer.",
+          "flows": [
+            "F-COMPOSE",
+            "F-EXECUTE"
+          ],
+          "requirements": [
+            "Resolve the picked cap and finite signed word against the current full-state hash, model identity and verified mapping before invoking the ordinary turn command.",
+            "Draft input changes only the chosen phase and preserves prior draft and recorded-scramble provenance on rejection; live input requires fresh protection and the solver's explicit action.",
+            "Prevent repeated commit input, preserve the durable applied receipt across refresh failure and keep retained native-token translation behind the platform boundary.",
+            "X-02: Serve checkpoint summaries from small indexed metadata without reading full checkpoint label blobs on status, snapshot, commit, undo or redo; verify latency growth with increasing checkpoint counts."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S3-292"
+          ],
+          "disposition": "redesign",
+          "purpose": "Inspect the current piece identity at a clicked interactive sticker.",
+          "reason": "F-FIND retains piece tracking under solving-workflow.md section 4.3, which separates inspection from turning and role assignment.",
+          "flows": [
+            "F-FIND"
+          ],
+          "requirements": [
+            "Resolve a visible interactive pick to the actual current occupant identity at the shared revision and verified model mapping.",
+            "Retain the identity as it moves, distinguish it from the clicked fixed position, and never turn, assign a role, release protection or select a grip as an inspection side effect.",
+            "X-02: Serve checkpoint summaries from small indexed metadata without reading full checkpoint label blobs on status, snapshot, commit, undo or redo; verify latency growth with increasing checkpoint counts."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S3-292"
+          ],
+          "disposition": "redesign",
+          "purpose": "Inspect the fixed position of a clicked interactive sticker.",
+          "reason": "F-FIND and F-CHECK retain fixed-position inspection under solving-workflow.md section 4.3 and the encoding decision of 2 October 2026.",
+          "flows": [
+            "F-FIND",
+            "F-CHECK"
+          ],
+          "requirements": [
+            "Resolve the pick to a canonical fixed position at the shared revision and display its changing occupant separately.",
+            "Respect interactive versus reference-only scope and verified mapping; inspection never turns, assigns a destination or grip, changes protection or grants execution authority.",
+            "X-02: Serve checkpoint summaries from small indexed metadata without reading full checkpoint label blobs on status, snapshot, commit, undo or redo; verify latency growth with increasing checkpoint counts."
+          ]
+        }
+      ],
+      "notes": "claude:S3-292 is one coarse row covering turns and both inspection kinds, so it is deliberately repeated; X-02 is retained conservatively for each path sharing that snapshot response."
+    },
+    {
+      "unit": "U3-149",
+      "disposition": "split",
+      "purpose": "Export move-log evidence, inspect incoming evidence and apply confirmed evidence through separate file actions.",
+      "reason": "F-SESSION has distinct export, read-only inspection and transactional import purposes; AGENTS.md persistence rules and command-table.md keep their permissions and confirmation gates separate.",
+      "same_purpose_as": [
+        "U1-036",
+        "U1-038",
+        "U1-052",
+        "U1-054",
+        "U2-059",
+        "U2-060",
+        "U2-061",
+        "U6-039"
+      ],
+      "parts": [
+        {
+          "rows": [
+            "claude:S3-294"
+          ],
+          "disposition": "redesign",
+          "purpose": "Export the explicitly chosen verified move-log bytes.",
+          "reason": "F-SESSION and F-REUSE retain portable witness evidence under charter section 2 and section 5 E4.",
+          "flows": [
+            "F-SESSION",
+            "F-REUSE"
+          ],
+          "requirements": [
+            "Validate the complete model-bound history and matching import budgets before writing, with exact output byte count and digest.",
+            "Keep legacy format mapping verified and publication explicit; do not use this log as the owner-approved full-workspace migration vehicle."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S3-294"
+          ],
+          "disposition": "redesign",
+          "purpose": "Inspect a move-log file and replayed endpoint before import.",
+          "reason": "F-SESSION retains safe read-only validation under AGENTS.md transactional input rules.",
+          "flows": [
+            "F-SESSION"
+          ],
+          "requirements": [
+            "Validate complete bounded input bytes, model, format, chronological legal witnesses and replayed state without database writes.",
+            "Show affected scope and bind confirmation to the exact digest and current revisions; errors or stale input preserve all current work."
+          ]
+        },
+        {
+          "rows": [
+            "claude:S3-294"
+          ],
+          "disposition": "redesign",
+          "purpose": "Apply a freshly confirmed move-log import recoverably.",
+          "reason": "F-SESSION retains explicit transactional restoration under AGENTS.md persistence rules; owner-decisions-2026-10-02-migration requires the source session to remain untouched.",
+          "flows": [
+            "F-SESSION"
+          ],
+          "requirements": [
+            "Recheck exact file bytes, confirmation, model, mapping and replay at the current revision before an atomic journal transition.",
+            "Retain current preferences and a recovery checkpoint or branch, invalidate stale review and execution authority, preserve the durable applied outcome and never modify the original 0.4 session."
+          ]
+        }
+      ],
+      "notes": "The single coarse transport row covers all three actions and is repeated in each part; dedicated adapter actions U3-116, U3-117 and U3-118 implement their corresponding purposes."
+    },
+    {
+      "unit": "U3-150",
+      "disposition": "redesign",
+      "purpose": "Refuse invocation paths that bypass the permitted command set or human-solve boundary.",
+      "reason": "F-PLATFORM and charter section 4 require one command boundary; charter section 5 and solving-workflow.md section 7 prohibit automatic solving paths.",
+      "flows": [
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U1-068"
+      ],
+      "requirements": [
+        "Reject unknown or unauthorized commands and alternate paths before state, workspace or file changes, with typed errors.",
+        "Apply the same gates to keys, controls and automation; allowed target-named setup search must remain distinct from prohibited solving-macro generation.",
+        "Keep owned shutdown and cancellation narrowly scoped without treating a transport allowlist as a filesystem or subprocess data boundary."
+      ],
+      "notes": "The open candidate U3-068 is not a purpose match: cancellation stops a selected job, whereas this unit refuses bypass routes."
+    },
+    {
+      "unit": "U3-151",
+      "disposition": "redesign",
+      "purpose": "Measure bounded local backend component costs when investigating responsiveness.",
+      "reason": "F-PLATFORM and charter section 5 E1 to E3 retain demonstrated engineering evidence, while the new runtime replaces the adapter-specific timing hook.",
+      "flows": [
+        "F-PLATFORM"
+      ],
+      "same_purpose_as": [
+        "U2-028"
+      ],
+      "requirements": [
+        "Make measurement opt-in, bounded and local, with declared output scope and no raw personal paths, credentials, user state or uploaded diagnostics.",
+        "Record source/build identity, tool versions and precise intervals, separating headless timings from actual Windows, input and renderer performance evidence.",
+        "Instrumentation must not influence mechanical decisions, lose committed work or run regression fixtures during normal startup."
+      ]
+    }
+  ]
+}
