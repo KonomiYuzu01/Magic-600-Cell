@@ -166,9 +166,22 @@ the gate summary publishes it. A run without the confirmation is refused, so an
 intention stated before the run is never recorded as an observation.
 
 Repeat with W1, W2 and W4 for attribution. Each run is a new process, with a
-20-second pause between runs. The script refuses an unelevated terminal, attaches
-the pinned PresentMon executable to the PID with `--v1_metrics --qpc_time
---terminate_on_proc_exit`, waits for the probe, then at most 60 s for PresentMon,
+20-second pause between runs. The script refuses an unelevated terminal and a
+second invocation: it holds a global mutex from its first trace-session check
+through its last cleanup, so no other invocation can start, stop or remove a
+session under its name meanwhile. It refuses to start a run while a trace session
+named `PresentMon` or `magic600-sb-capture` is running (one left by a killed
+capture adds tracing work to every present). It attaches the pinned PresentMon
+executable to the PID with `--v1_metrics --qpc_time` and the session name
+`magic600-sb-capture`, and waits for the probe, at most its preroll and duration
+plus 300 s. PresentMon 2.6 handles a target's exit only when a later present
+arrives, so `--terminate_on_proc_exit` never fires after the probe's last frame;
+the script instead stops the session with PresentMon's
+`--terminate_existing_session`, waits at most 60 s for PresentMon to exit 0, and
+requires the session to be gone and the CSV to end with a complete row. On any
+failure its cleanup stops the session with PresentMon, then with `logman stop`;
+each step is guarded, each helper is bounded to 30 s plus 5 s for a kill, and it
+warns with the stop command if the session may still run. It then
 picks the swap-chain address with the most PID rows, prints the gate interval's
 present count, presents not displayed, seconds without a displayed present and the
 present modes, and runs
