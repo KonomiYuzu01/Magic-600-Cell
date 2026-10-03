@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "updated": "2026-10-02",
+  "updated": "2026-10-03",
   "current": "2.0",
   "paid_api_ceiling_usd": 100,
   "steps": [
@@ -22,12 +22,12 @@
      "items": [
       {"id": "charter", "title": "Charter", "weight": 1, "done": false, "evidence": null},
       {"id": "authority", "title": "Authority record", "weight": 1, "done": false, "evidence": null},
-      {"id": "design-records", "title": "First design records", "weight": 1, "done": false, "evidence": null},
-      {"id": "migration-path", "title": "Migration path chosen", "weight": 1, "done": false, "evidence": null}
+      {"id": "design-records", "title": "First design records", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/34"},
+      {"id": "migration-path", "title": "Migration path chosen", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/38"}
      ]},
     {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "in_progress", "acceptance": "Two independent inventories merged into one list; each disagreement listed.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null,
      "items": [
-      {"id": "inventory-a", "title": "Inventory A (commands, physical input, API, windows, persistence)", "weight": 1, "done": false, "evidence": null},
+      {"id": "inventory-a", "title": "Inventory A (commands, physical input, API, windows, persistence)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/35"},
       {"id": "inventory-b", "title": "Inventory B, independent of A", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/27"}
      ]},
     {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
