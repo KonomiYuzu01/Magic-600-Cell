@@ -26,6 +26,24 @@ import test_tastelab_store as test_store
 
 NODE = shutil.which("node")
 PAGE_BUNDLE = (ROOT / "tools" / "tastelab" / "page" / "bundle.js").as_uri()
+PAGE_IMAGES_UI = (ROOT / "tools" / "tastelab" / "page" / "images-ui.js").as_uri()
+# Rates three images through the page's reducers (no note, a note with a tab, a cleared
+# note), adds a pair note, and prints the page's version 3 export.
+PAGE_RATINGS_SCRIPT = """
+const ui = await import(process.argv[1]);
+const [a, b, c] = JSON.parse(process.argv[2]), at = "2026-10-04T07:00:00.000Z";
+let state = ui.createRatingState();
+state = ui.reduceRating(state, { type: "rate", imageId: a, verdict: "like", ratedAt: at });
+state = ui.reduceRating(state, { type: "rate", imageId: b, verdict: "dislike", ratedAt: at });
+state = ui.reduceRating(state, { type: "note", imageId: b, note: ui.cleanNote("  Too\\tbusy  ") });
+state = ui.reduceRating(state, { type: "rate", imageId: c, verdict: "like", ratedAt: at });
+state = ui.reduceRating(state, { type: "note", imageId: c, note: "Kept" });
+state = ui.reduceRating(state, { type: "note", imageId: c, note: ui.cleanNote(" ") });
+const pair = ui.pairDocument({ likedImageId: a, dislikedImageId: b, note: ui.cleanNote("Calmer\\tlines"), notedAt: at }).body;
+const base = { kind: "tastelab-export", version: 2, presets: [] };
+process.stdout.write(JSON.stringify(ui.assembleImageExport(base, { bundles: [], ratings: [], pairs: [],
+  ratingChanges: state.changes, pairChanges: new Map([["pair", pair]]) })));
+"""
 # Reads {file name: base64 bytes} from stdin, validates the folder as the page does, and
 # prints the outcome, the item ids and the decoded vectors.
 PAGE_SCRIPT = """
@@ -297,6 +315,20 @@ class BundleTests(test_store.TempDir):
             with self.subTest(field=field), self.assertRaises(common.Refused):
                 fetch.import_ratings(self.library, self.page_export([self.rating(a)], [bad]))
             self.assertEqual(self.library.ratings(), [])
+
+    @unittest.skipIf(NODE is None, "node is not on PATH")
+    def test_importer_accepts_the_page_rating_export(self):
+        # The page's export (tools/tastelab/page/images-ui.js) must pass fetch.import_ratings unchanged.
+        a, b, c = self.add(), self.add(), self.add()
+        run = subprocess.run([NODE, "--input-type=module", "-e", PAGE_RATINGS_SCRIPT, PAGE_IMAGES_UI, json.dumps([a, b, c])],
+                             capture_output=True, text=True, encoding="utf-8", timeout=120)
+        self.assertEqual(run.returncode, 0, run.stderr[-2000:])
+        data = json.loads(run.stdout)
+        self.assertEqual([rating["note"] for rating in data["images"]["ratings"]], [None, "Too busy", None])
+        self.assertEqual(fetch.import_ratings(self.library, data), {"ratings": 3, "pairs": 1, "unknown": []})
+        self.assertEqual(sorted((r.sha256, r.verdict, r.note) for r in self.library.ratings()),
+                         sorted([(a, "like", None), (b, "dislike", "Too busy"), (c, "like", None)]))
+        self.assertEqual([row[0] for row in self.library.db.execute("SELECT note FROM pair_notes")], ["Calmer lines"])
 
     def test_import_newest_timestamp_wins_and_unknown_ids_are_reported(self):
         a, b = self.add(), self.add()

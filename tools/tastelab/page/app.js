@@ -5,6 +5,7 @@ import { buildGeometry, properColouring } from "./geometry.js";
 import { palette, background, defaultSpace, validateSpace, familiesOf, SCENES } from "../core/space.js";
 import { Preview } from "./preview.js";
 import { COST_HEAVY } from "./presets.js";
+import { createImagesUI, keyAction } from "./images-ui.js";
 
 const $ = (id) => document.getElementById(id);
 const use = (name) => (window.claude && window.claude.use ? window.claude.use(name) : Promise.resolve(null));
@@ -20,6 +21,41 @@ const session = Math.random().toString(36).slice(2, 10);
 const PAGE = 500; // documents per read; the store answers at most 1000 per query
 const state = { scene: "solving", family: null, records: [], ids: [], sessions: [], models: {}, pair: null, busy: true, db: null, space: defaultSpace(), turnCell: 0 };
 const colourings = new Map();
+let activeTab = "looks", looksStatus = "Loading the model.", imagesStatus = "";
+function setLooksStatus(message) {
+  looksStatus = message;
+  if (activeTab === "looks") $("status").textContent = message;
+}
+const images = createImagesUI({ setStatus(message) {
+  imagesStatus = message;
+  if (activeTab === "images") $("status").textContent = message;
+} });
+
+function selectTab(tab) {
+  activeTab = tab;
+  for (const name of ["looks", "images"]) {
+    const selected = name === tab;
+    $(name + "Tab").setAttribute("aria-selected", String(selected));
+    $(name + "Tab").tabIndex = selected ? 0 : -1;
+    $(name + "Panel").hidden = $(name + "Stats").hidden = !selected;
+  }
+  $("sceneControls").hidden = tab !== "looks";
+  $("families").hidden = tab !== "looks" || familiesOf(state.space).length < 2;
+  $("status").textContent = tab === "looks" ? looksStatus : imagesStatus;
+}
+for (const tab of ["looks", "images"]) {
+  $(tab + "Tab").addEventListener("click", (event) => {
+    selectTab(tab);
+    // After a mouse click the arrow keys would switch tabs here; release the focus so they rate images.
+    if (event.detail > 0) event.currentTarget.blur();
+  });
+  $(tab + "Tab").addEventListener("keydown", (event) => {
+    if (event.repeat || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+    event.preventDefault();
+    selectTab(tab === "looks" ? "images" : "looks");
+    $(activeTab + "Tab").focus();
+  });
+}
 
 function cellColours(look) {
   const k = look.classes;
@@ -57,7 +93,7 @@ function showPair(msg) {
   $("pruned").textContent = notes.join(" ");
   recordSettled(msg);
   renderRelevance(msg.relevance, msg.counts.answers, msg.fitted);
-  if (!state.statusSticky) $("status").textContent = "";
+  if (!state.statusSticky) setLooksStatus("");
   setBusy(false);
 }
 
@@ -103,11 +139,11 @@ worker.onmessage = (e) => {
   const m = e.data;
   const forPresets = presetRequest && m.id === presetRequest.id;
   if (m.type === "pair") showPair(m);
-  else if (m.type === "nopair") { $("status").textContent = m.reason; setBusy(false); }
+  else if (m.type === "nopair") { setLooksStatus(m.reason); setBusy(false); }
   else if (m.type === "model") saveModel(m);
   else if (m.type === "presets" && forPresets) { presetRequest.resolve(m); presetRequest = null; }
   else if (m.type === "error" && forPresets) { presetRequest.reject(new Error(m.message)); presetRequest = null; }
-  else if (m.type === "error") { $("status").textContent = "The model stopped: " + m.message; setBusy(false); }
+  else if (m.type === "error") { setLooksStatus("The model stopped: " + m.message); setBusy(false); }
 };
 
 async function save(record) {
@@ -117,7 +153,7 @@ async function save(record) {
     await state.db.doc(`comparisons/${id}`).set(record);
     return id;
   } catch (err) {
-    $("status").textContent = `This answer was not saved (${err.code || "error"}). Answers continue in this tab only.`;
+    setLooksStatus(`This answer was not saved (${err.code || "error"}). Answers continue in this tab only.`);
     return null;
   }
 }
@@ -186,7 +222,7 @@ async function answer(kind) {
 let reasonWrite = Promise.resolve();
 function openReason() {
   if (state.busy) return;
-  if (!state.records.length) { $("status").textContent = "Answer a pair first; the reason belongs to the last answer."; return; }
+  if (!state.records.length) { setLooksStatus("Answer a pair first; the reason belongs to the last answer."); return; }
   $("reason").value = state.records[state.records.length - 1].reason || "";
   $("reasonForm").hidden = false;
   $("reason").focus();
@@ -207,7 +243,7 @@ function saveReason() {
     if (id && state.db) {
       const body = JSON.parse(JSON.stringify(record));
       reasonWrite = reasonWrite.then(() => state.db.doc(`comparisons/${id}`).set(body))
-        .catch((err) => { $("status").textContent = `The reason was not saved (${err.code || "error"}).`; });
+        .catch((err) => { setLooksStatus(`The reason was not saved (${err.code || "error"}).`); });
     }
   }
   closeReason();
@@ -220,7 +256,7 @@ async function undo() {
   state.records.pop();
   const id = state.ids.pop();
   if (id && state.db) {
-    try { await state.db.doc(`comparisons/${id}`).delete(); } catch (err) { $("status").textContent = "The last answer could not be removed from storage."; }
+    try { await state.db.doc(`comparisons/${id}`).delete(); } catch (err) { setLooksStatus("The last answer could not be removed from storage."); }
   }
   init();
 }
@@ -240,7 +276,7 @@ function renderFamilies() {
   const families = familiesOf(state.space);
   const group = $("families");
   group.replaceChildren();
-  group.hidden = families.length < 2;
+  group.hidden = activeTab !== "looks" || families.length < 2;
   for (const f of families) {
     const b = document.createElement("button");
     b.type = "button";
@@ -281,13 +317,18 @@ function requestPresets() {
 
 async function exportData() {
   if (state.exporting) return;
+  const exportTab = activeTab;
+  const status = (message) => {
+    if (exportTab === "looks") setLooksStatus(message);
+    else { imagesStatus = message; if (activeTab === "images") $("status").textContent = message; }
+  };
   const downloads = await use("downloads");
-  if (!downloads) { $("status").textContent = "Export is not available in this view."; return; }
+  if (!downloads) { status("Export is not available in this view."); return; }
   state.exporting = true;
-  $("status").textContent = "Preparing the export.";
+  status("Preparing the export.");
   try {
     const result = await requestPresets();
-    const data = JSON.stringify({
+    const data = JSON.stringify(await images.exportData({
       kind: "tastelab-export",
       version: 2,
       space: state.space,
@@ -300,27 +341,24 @@ async function exportData() {
         params: COST_HEAVY,
         note: "Parameters whose frame-time cost H-06 measures before a preset reaches G3. Taste Lab measures no performance; this export makes no performance claim.",
       },
-    }, null, 2);
+    }), null, 2);
     await downloads.save({ filename: "tastelab-export.json", data });
-    $("status").textContent = "Exported.";
+    status("Exported.");
   } catch (err) {
-    if (err.code !== "declined") $("status").textContent = err.code ? `Export failed (${err.code}).` : `Export failed: ${err.message}`;
+    if (err.code !== "declined") status(err.code ? `Export failed (${err.code}).` : `Export failed: ${err.message}`);
   } finally {
     state.exporting = false;
   }
 }
 
 document.addEventListener("keydown", (e) => {
-  if (e.target.closest && e.target.closest("input, textarea, select")) return;
-  const k = e.key.toLowerCase();
-  if (k === "a") answer("A");
-  else if (k === "b") answer("B");
-  else if (k === "s") answer("same");
-  else if (k === "x") answer("bad");
-  else if (k === "z") undo();
-  else if (k === "w") openReason();
-  else if (k === "f") nextFamily();
-  else if (k === "1" || k === "2" || k === "3") setScene(SCENES[Number(k) - 1]);
+  if (activeTab === "images") { images.handleKey(e); return; }
+  const action = keyAction(e, "looks");
+  if (["A", "B", "same", "bad"].includes(action)) answer(action);
+  else if (action === "undo") undo();
+  else if (action === "note") openReason();
+  else if (action === "family") nextFamily();
+  else if (action?.startsWith("scene-")) setScene(SCENES[Number(action.slice(-1)) - 1]);
   else return;
   e.preventDefault();
 });
@@ -328,7 +366,10 @@ for (const [id, kind] of [["pickA", "A"], ["pickB", "B"], ["same", "same"], ["ba
 $("undo").addEventListener("click", undo);
 $("why").addEventListener("click", openReason);
 $("reasonForm").addEventListener("submit", (e) => { e.preventDefault(); saveReason(); });
-$("reason").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); closeReason(); } });
+$("reason").addEventListener("keydown", (e) => {
+  if (e.repeat && ["Enter", "Escape"].includes(e.key)) e.preventDefault();
+  else if (e.key === "Escape") { e.preventDefault(); closeReason(); }
+});
 $("export").addEventListener("click", exportData);
 for (const b of document.querySelectorAll("[data-scene]")) b.addEventListener("click", () => setScene(b.dataset.scene));
 
@@ -384,18 +425,20 @@ function usableSpace(space) {
 
 async function boot() {
   setBusy(true);
+  const user = await use("user");
+  const db = await use("db");
+  const owner = user ? await user.isOwner() : null;
+  if (db && owner !== false) state.db = db;
+  images.load(state.db, owner);
   try {
     previews = [new Preview($("viewA"), geo), new Preview($("viewB"), geo)];
     previews.forEach((p) => p.start());
   } catch (err) {
-    $("status").textContent = err.message;
+    setLooksStatus(err.message);
     return;
   }
-  const user = await use("user");
-  const db = await use("db");
-  const owner = user ? await user.isOwner() : null;
   if (db && owner === false) {
-    $("status").textContent = "Only the owner of this page can record answers.";
+    setLooksStatus("Only the owner of this page can record answers.");
     state.statusSticky = true;
   } else if (db) {
     state.db = db;
@@ -405,7 +448,7 @@ async function boot() {
         const stored = sp.data();
         const usable = [withDefaults(stored), stored].find(usableSpace);
         if (usable) state.space = usable;
-        else { $("status").textContent = "The stored parameter table is not usable; the default table is used."; state.statusSticky = true; }
+        else { setLooksStatus("The stored parameter table is not usable; the default table is used."); state.statusSticky = true; }
       }
       const loaded = await loadRecords(db);
       state.records = loaded.records;
@@ -413,10 +456,10 @@ async function boot() {
       state.sessions = await loadSessions(db);
       try { state.models = await loadModels(db); } catch { /* the first search starts from the starting values */ }
     } catch (err) {
-      $("status").textContent = `Stored answers could not be read (${err.code || "error"}).`;
+      setLooksStatus(`Stored answers could not be read (${err.code || "error"}).`);
     }
   } else {
-    $("status").textContent = "Storage is not available here; answers stay in this tab.";
+    setLooksStatus("Storage is not available here; answers stay in this tab.");
     state.statusSticky = true;
   }
   state.family = familiesOf(state.space)[0].id;
