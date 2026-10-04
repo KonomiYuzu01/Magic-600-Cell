@@ -1,0 +1,32 @@
+{
+  "search": {
+    "total": 3,
+    "objectIDs": [
+      901,
+      902
+    ]
+  },
+  "objects": {
+    "901": {
+      "objectID": 901,
+      "isPublicDomain": true,
+      "primaryImageSmall": "https://images.metmuseum.org/synthetic/901.jpg",
+      "artistDisplayName": "Invented Met Artist",
+      "creditLine": "Synthetic gift",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/901",
+      "title": "Invented dial",
+      "tags": [
+        {
+          "term": "instrument"
+        }
+      ]
+    },
+    "902": {
+      "objectID": 902,
+      "isPublicDomain": false,
+      "primaryImageSmall": "https://images.metmuseum.org/synthetic/902.jpg",
+      "artistDisplayName": "Invented Other Artist",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/902"
+    }
+  }
+}

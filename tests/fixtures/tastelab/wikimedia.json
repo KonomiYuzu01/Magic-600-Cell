@@ -1,0 +1,46 @@
+{
+  "batchcomplete": true,
+  "continue": {
+    "gsroffset": 20,
+    "continue": "gsroffset||"
+  },
+  "query": {
+    "pages": [
+      {
+        "pageid": 8001,
+        "ns": 6,
+        "title": "File:Invented mechanism.jpg",
+        "index": 1,
+        "imageinfo": [
+          {
+            "thumburl": "https://upload.wikimedia.org/synthetic/mechanism.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Invented_mechanism.jpg",
+            "extmetadata": {
+              "License": {
+                "value": "cc-by-sa-4.0"
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 4.0"
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/4.0/"
+              },
+              "Artist": {
+                "value": "<a>Invented Maker</a>"
+              },
+              "Credit": {
+                "value": "Synthetic collection"
+              },
+              "ObjectName": {
+                "value": "Invented mechanism"
+              },
+              "Categories": {
+                "value": "Mechanisms|Illustrations"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

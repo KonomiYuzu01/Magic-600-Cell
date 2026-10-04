@@ -1,0 +1,44 @@
+{
+  "search": {
+    "count": 2,
+    "next": null,
+    "previous": null,
+    "results": [
+      {
+        "id": 701,
+        "title": "Invented graphic",
+        "demozoo_url": "https://demozoo.org/productions/701/",
+        "tags": []
+      },
+      {
+        "id": 702,
+        "title": "Invented lost graphic",
+        "tags": [
+          "lost"
+        ]
+      }
+    ]
+  },
+  "detail": {
+    "id": 701,
+    "title": "Invented graphic",
+    "demozoo_url": "https://demozoo.org/productions/701/",
+    "author_nicks": [
+      {
+        "name": "Invented Demo Creator",
+        "releaser": {
+          "id": 99,
+          "name": "Invented Demo Creator",
+          "is_group": false
+        }
+      }
+    ],
+    "screenshots": [
+      {
+        "original_url": "https://media.demozoo.org/synthetic/701.png",
+        "thumbnail_url": "https://media.demozoo.org/synthetic/701-small.png"
+      }
+    ],
+    "tags": []
+  }
+}

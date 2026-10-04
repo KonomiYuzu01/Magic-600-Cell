@@ -1,0 +1,33 @@
+{
+  "search": {
+    "responseHeader": {
+      "status": 0
+    },
+    "response": {
+      "numFound": 1,
+      "start": 0,
+      "docs": [
+        {
+          "identifier": "synthetic-reference-1",
+          "title": "Invented reference print"
+        }
+      ]
+    }
+  },
+  "metadata": {
+    "files": [
+      {
+        "name": "synthetic-scan.png",
+        "source": "original",
+        "size": "1000",
+        "format": "PNG"
+      }
+    ],
+    "metadata": {
+      "identifier": "synthetic-reference-1",
+      "mediatype": "image",
+      "title": "Invented reference print",
+      "creator": "Invented Archive Creator"
+    }
+  }
+}

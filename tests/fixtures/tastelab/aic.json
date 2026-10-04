@@ -1,0 +1,40 @@
+{
+  "pagination": {
+    "total": 80,
+    "limit": 20,
+    "offset": 0,
+    "total_pages": 4,
+    "current_page": 1
+  },
+  "data": [
+    {
+      "_score": 2.5,
+      "id": 601,
+      "title": "Invented apparatus",
+      "artist_title": "Invented AIC Artist",
+      "artist_display": "Invented maker, imaginary era",
+      "credit_line": "Synthetic gift",
+      "image_id": "synthetic-image-601",
+      "is_public_domain": true
+    },
+    {
+      "_score": 2.0,
+      "id": 602,
+      "title": "Invented reserved image",
+      "image_id": "synthetic-image-602",
+      "is_public_domain": false
+    },
+    {
+      "_score": 0.5,
+      "id": 603,
+      "title": "Unmatched invented image",
+      "artist_title": "Invented Artist",
+      "image_id": "synthetic-image-603",
+      "is_public_domain": true
+    }
+  ],
+  "config": {
+    "iiif_url": "https://www.artic.edu/iiif/2",
+    "website_url": "https://www.artic.edu"
+  }
+}

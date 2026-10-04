@@ -1,0 +1,38 @@
+{
+  "result_count": 3,
+  "page_count": 2,
+  "page_size": 20,
+  "page": 1,
+  "results": [
+    {
+      "id": "synthetic-open-1",
+      "title": "Invented open scene",
+      "url": "https://unapproved.example.invalid/original.jpg",
+      "thumbnail": "https://api.openverse.org/v1/images/synthetic-open-1/thumb/",
+      "creator": "Invented Open Creator",
+      "attribution": "Synthetic attribution",
+      "license": "by",
+      "license_version": "4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "mature": false,
+      "unstable__sensitivity": [],
+      "tags": [
+        {
+          "name": "mechanism"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-open-2",
+      "mature": true,
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "synthetic-open-3",
+      "mature": false,
+      "unstable__sensitivity": [
+        "synthetic-sensitive"
+      ]
+    }
+  ]
+}
