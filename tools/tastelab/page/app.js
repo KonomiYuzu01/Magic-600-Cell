@@ -328,6 +328,7 @@ async function exportData() {
   status("Preparing the export.");
   try {
     const result = await requestPresets();
+    let imageWarning = "";
     const data = JSON.stringify(await images.exportData({
       kind: "tastelab-export",
       version: 2,
@@ -341,9 +342,9 @@ async function exportData() {
         params: COST_HEAVY,
         note: "Parameters whose frame-time cost H-06 measures before a preset reaches G3. Taste Lab measures no performance; this export makes no performance claim.",
       },
-    }), null, 2);
+    }, (warning) => { imageWarning = warning; }), null, 2);
     await downloads.save({ filename: "tastelab-export.json", data });
-    status("Exported.");
+    status(imageWarning ? "Exported. " + imageWarning : "Exported.");
   } catch (err) {
     if (err.code !== "declined") status(err.code ? `Export failed (${err.code}).` : `Export failed: ${err.message}`);
   } finally {

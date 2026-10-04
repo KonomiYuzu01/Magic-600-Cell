@@ -27,7 +27,8 @@ export function createRatingState(records = []) {
 }
 
 // Only this tab's likes and dislikes enter its undo history. Null changes are
-// deletion markers, so an unsuccessful undo never reappears in an export.
+// deletion markers. Keep all changes since load, even after successful saves,
+// so an export's storage read cannot replace what this tab currently shows.
 export function reduceRating(state, action) {
   const ratings = new Map(state.ratings), skips = new Map(state.skips), changes = new Map(state.changes), history = [...state.history];
   if (action.type === "rate") {
@@ -42,7 +43,11 @@ export function reduceRating(state, action) {
   } else if (action.type === "note") {
     if (!validateNote(action.note)) throw new RangeError("Image notes must have at most 140 characters.");
     if (!ratings.has(action.imageId)) return state;
-    const record = ratingDocument({ ...ratings.get(action.imageId), note: action.note }).body;
+    const previous = ratings.get(action.imageId);
+    // ratedAt orders the record's last change, verdict or note, for the importer.
+    // A stationary or backwards clock still advances a note edit by 1 ms.
+    const ratedAt = new Date(Math.max(Date.parse(action.ratedAt), Date.parse(previous.ratedAt) + 1)).toISOString();
+    const record = ratingDocument({ ...previous, note: action.note, ratedAt }).body;
     ratings.set(action.imageId, record);
     changes.set(action.imageId, record);
   } else if (action.type === "undo") {
@@ -126,7 +131,7 @@ export function createImagesUI({ setStatus }) {
   const cache = createIdbCache(), files = new Map(), writes = new Map();
   let bundles = [], merged = mergeBundles([]), thumbnails = new Map();
   let ratingState = createRatingState(), pairs = new Map(), pairChanges = new Map();
-  let db = null, loading = true, opening = false, working = false, current = null, revision = 0;
+  let db = null, loading = true, answersReady = false, readingAnswers = false, opening = false, working = false, current = null, revision = 0;
   let ratingUrls = [], pairUrls = [], noteImageId = null, shownPair = null, worker = null;
 
   const cacheUnavailable = () => { $("imageCacheNote").hidden = false; };
@@ -167,10 +172,20 @@ export function createImagesUI({ setStatus }) {
   }
 
   function controls() {
-    for (const id of ["imageLike", "imageDislike", "imageSkip"]) $(id).disabled = loading || opening || working || !current;
-    $("imageUndo").disabled = loading || !ratingState.history.length;
-    $("imageNoteButton").disabled = loading || !ratingState.history.length;
+    for (const id of ["imageLike", "imageDislike", "imageSkip"]) $(id).disabled = loading || !answersReady || opening || working || !current;
+    $("imageUndo").disabled = loading || !answersReady || !ratingState.history.length;
+    $("imageNoteButton").disabled = loading || !answersReady || !ratingState.history.length;
+    for (const id of ["imageNote", "imagePairNote", "imagePairSave"]) $(id).disabled = loading || !answersReady;
+    $("imageAnswersRetry").hidden = !db || answersReady;
+    $("imageAnswersRetry").disabled = loading || readingAnswers;
     $("bundleFolder").disabled = $("bundleFiles").disabled = loading || opening;
+  }
+
+  function refuseAnswerChange() {
+    if (answersReady) return false;
+    setStatus(readingAnswers ? "Stored image answers are being read. Rating is paused so they are not overwritten."
+      : "Stored image answers could not be read. Rating is paused so they are not overwritten. Retry reading stored answers.");
+    return true;
   }
 
   function progress() {
@@ -285,14 +300,13 @@ export function createImagesUI({ setStatus }) {
 
   // Serialize every write to a document, including a later undo. A failure
   // leaves its local change available to the worker and the export.
-  function write(path, body, saved) {
+  function write(path, body) {
     const pending = (writes.get(path) || Promise.resolve()).then(async () => {
       if (!db) { setStatus("Storage is not available; this image answer stays in this tab."); return; }
       try {
         const doc = db.doc(path);
         if (body === null) await doc.delete();
         else await doc.set(body);
-        saved();
       } catch (error) {
         setStatus(`This image answer was not saved (${error.code || "error"}). It stays in this tab and will be included in the export.`);
       }
@@ -303,13 +317,11 @@ export function createImagesUI({ setStatus }) {
   function saveRating(imageId) {
     const record = ratingState.changes.get(imageId);
     const path = `imageRatings/${imageId}`;
-    write(path, record, () => {
-      if (ratingState.changes.get(imageId) === record) ratingState.changes.delete(imageId);
-    });
+    write(path, record);
   }
 
   function action(kind) {
-    if (loading) return;
+    if (loading || refuseAnswerChange()) return;
     if (["like", "dislike", "skip"].includes(kind)) {
       if (working || opening || !current) return;
       closeNote();
@@ -359,23 +371,25 @@ export function createImagesUI({ setStatus }) {
   for (const id of ["bundleFolder", "bundleFiles"]) $(id).addEventListener("change", () => openFiles($(id)));
   $("imageNoteForm").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (loading || refuseAnswerChange()) return;
     const note = cleanNote($("imageNote").value);
     if (!validateNote(note)) { setStatus("Image notes need at most 140 characters, without control characters."); return; }
     if (noteImageId && ratingState.ratings.has(noteImageId)) {
-      ratingState = reduceRating(ratingState, { type: "note", imageId: noteImageId, note });
+      ratingState = reduceRating(ratingState, { type: "note", imageId: noteImageId, note, ratedAt: new Date().toISOString() });
       saveRating(noteImageId);
     }
     closeNote();
   });
   $("imagePairForm").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (loading || refuseAnswerChange()) return;
     const note = cleanNote($("imagePairNote").value);
     if (!validateNote(note, "pair")) { setStatus("Pair notes need 1 to 280 characters, without control characters."); return; }
     if (!shownPair) return;
     const { path, body } = pairDocument({ ...shownPair, note, notedAt: new Date().toISOString() });
     const key = pairKey(body.likedImageId, body.dislikedImageId);
     pairs.set(key, body); pairChanges.set(key, body);
-    write(path, body, () => { if (pairChanges.get(key) === body) pairChanges.delete(key); });
+    write(path, body);
     closePair();
     refresh();
   });
@@ -388,8 +402,28 @@ export function createImagesUI({ setStatus }) {
   }
 
   let ready = Promise.resolve();
+  async function readAnswers() {
+    if (readingAnswers || answersReady) return;
+    readingAnswers = true;
+    controls();
+    const loaded = await Promise.allSettled([loadImageDocuments(db, "imageRatings"), loadImageDocuments(db, "imagePairs")]);
+    // Install the baseline together. No answer may be changed until both reads
+    // succeed, so a retry cannot overwrite this tab's edits or delete old answers.
+    if (loaded.every((result) => result.status === "fulfilled")) {
+      ratingState = createRatingState(loaded[0].value);
+      pairs = new Map(loaded[1].value.map((record) => [pairKey(record.likedImageId, record.dislikedImageId), pairDocument(record).body]));
+      answersReady = true;
+      setStatus("Stored image answers loaded. Rating is available.");
+    } else setStatus("Stored image answers could not be read. Rating is paused so they are not overwritten. Retry reading stored answers.");
+    readingAnswers = false;
+    refresh();
+  }
+  $("imageAnswersRetry").addEventListener("click", () => { ready = readAnswers(); return ready; });
+
   async function load(storage, owner) {
     db = storage;
+    // Without a storage capability, local-only actions cannot touch stored answers.
+    answersReady = !db;
     const cachedFiles = new Map();
     const cached = await loadCached({ ...cache, async get(key) {
       const value = await cache.get(key);
@@ -403,14 +437,12 @@ export function createImagesUI({ setStatus }) {
       bundles.push(bundle);
     }
     refuse(refusals);
-    if (db) {
-      const loaded = await Promise.allSettled([loadImageDocuments(db, "imageRatings"), loadImageDocuments(db, "imagePairs")]);
-      if (loaded[0].status === "fulfilled") ratingState = createRatingState(loaded[0].value);
-      if (loaded[1].status === "fulfilled") pairs = new Map(loaded[1].value.map((record) => [pairKey(record.likedImageId, record.dislikedImageId), pairDocument(record).body]));
-      if (loaded.some((result) => result.status === "rejected")) setStatus("Stored image answers could not all be read. Answers continue in this tab.");
-    } else setStatus(owner === false ? "Only the owner of this page can save image answers." : "Storage is not available here; image answers stay in this tab.");
+    // Storage reads may wait or fail; opening and viewing bundles remains available.
     loading = false;
     refresh();
+    if (db) {
+      await readAnswers();
+    } else setStatus(owner === false ? "Only the owner of this page can save image answers." : "Storage is not available here; image answers stay in this tab.");
   }
 
   controls();
@@ -420,16 +452,18 @@ export function createImagesUI({ setStatus }) {
       const kind = keyAction(event, "images");
       if (kind) { event.preventDefault(); action(kind); }
     },
-    async exportData(base) {
+    async exportData(base, warn = setStatus) {
       await ready;
       await Promise.allSettled([...writes.values()]);
-      let ratings = [...ratingState.ratings.values()], notes = [...pairs.values()];
+      let stored = null;
       if (db) {
-        const stored = await Promise.allSettled([loadImageDocuments(db, "imageRatings"), loadImageDocuments(db, "imagePairs")]);
-        if (stored.some((result) => result.status === "rejected")) throw new Error("Stored image answers could not be read for export. Try exporting again.");
-        ratings = stored[0].value; notes = stored[1].value;
+        const refreshed = await Promise.allSettled([loadImageDocuments(db, "imageRatings"), loadImageDocuments(db, "imagePairs")]);
+        if (refreshed.every((result) => result.status === "fulfilled")) stored = refreshed;
+        else warn("Stored image answers could not be refreshed; answers saved from another tab may be missing.");
       }
-      return assembleImageExport(base, { bundles, ratings, pairs: notes, ratingChanges: ratingState.changes, pairChanges });
+      return assembleImageExport(base, { bundles,
+        ratings: stored ? stored[0].value : [...ratingState.ratings.values()],
+        pairs: stored ? stored[1].value : [...pairs.values()], ratingChanges: ratingState.changes, pairChanges });
     },
   };
 }

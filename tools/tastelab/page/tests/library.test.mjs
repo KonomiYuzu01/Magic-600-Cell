@@ -26,7 +26,7 @@ function fixture(suffix = "0", indices = [0, 1]) {
   return { manifest, manifestText, files };
 }
 function fileList(files, folder = "bundle") {
-  return [...files].map(([name, bytes]) => ({ name, webkitRelativePath: folder === null ? "" : folder + "/" + name,
+  return [...files].map(([name, bytes]) => ({ name, size: bytes.length, webkitRelativePath: folder === null ? "" : folder + "/" + name,
     async arrayBuffer() { return bytes.slice().buffer; } }));
 }
 function memoryCache() {
@@ -220,4 +220,62 @@ test("two bundles show a shared image once, in opening and item order; closing o
   const remaining = mergeBundles((await loadCached(cache)).bundles);
   assert.deepEqual(remaining.order, b.manifest.items.map((item) => item.imageId));
   assert.equal(remaining.items.get(shared).title, "Bundle 1");
+});
+
+const manifestMaxBytes = 8 * 1024 * 1024, thumbMaxBytes = 204800, embeddingMaxBytes = 300 * 512 * 2;
+const sizeRefusals = [
+  ["oversized manifest", (files) => { files.find((file) => file.name === "manifest.json").size = manifestMaxBytes + 1; }],
+  ["oversized thumbnail", (files) => { files[0].size = thumbMaxBytes + 1; }],
+  ["oversized embeddings file", (files) => { files.push({ name: "embeddings.bin", size: embeddingMaxBytes + 1, webkitRelativePath: "bundle/embeddings.bin" }); }],
+  ["too many files", (files) => {
+    for (let i = files.length; i < 302; i++) files.push({ name: digest(`extra ${i}`) + ".jpg", size: 1, webkitRelativePath: "" });
+    files.forEach((file) => { file.webkitRelativePath = ""; });
+  }],
+  ["oversized total", (files) => {
+    files.length = 0;
+    files.push({ name: "manifest.json", size: manifestMaxBytes + 1, webkitRelativePath: "" });
+    for (let i = 0; i < 300; i++) files.push({ name: digest(`full ${i}`) + ".jpg", size: thumbMaxBytes, webkitRelativePath: "" });
+  }],
+];
+for (const [name, mutate] of sizeRefusals) test(`selection refuses ${name} before any arrayBuffer call`, async () => {
+  const files = fileList(fixture().files); mutate(files);
+  let reads = 0;
+  files.forEach((file) => { file.arrayBuffer = async () => { reads++; return new ArrayBuffer(0); }; });
+  const result = await readSelection(files);
+  assert.equal(result.ok, false); assert.ok(result.errors.length); assert.equal(reads, 0);
+  if (name === "oversized total") assert.match(result.errors[0], /total/i);
+});
+
+test("selection refuses a separate embeddings file even within the vector byte bound", async () => {
+  const files = fileList(fixture().files);
+  files.push({ name: "embeddings.bin", size: embeddingMaxBytes, webkitRelativePath: "bundle/embeddings.bin" });
+  let reads = 0;
+  files.forEach((file) => { file.arrayBuffer = async () => { reads++; return new ArrayBuffer(0); }; });
+  assert.equal((await readSelection(files)).ok, false); assert.equal(reads, 0);
+});
+
+test("selection refuses a small separate embeddings file by its name", async () => {
+  const files = fileList(fixture().files);
+  files.push({ name: "embeddings.bin", size: 1024, webkitRelativePath: "bundle/embeddings.bin" });
+  let reads = 0;
+  files.forEach((file) => { file.arrayBuffer = async () => { reads++; return new ArrayBuffer(0); }; });
+  assert.equal((await readSelection(files)).ok, false); assert.equal(reads, 0);
+});
+
+test("bounded valid selections read their files and still open", async () => {
+  const f = fixture(), files = fileList(f.files), cache = memoryCache();
+  let reads = 0;
+  files.forEach((file) => { const read = file.arrayBuffer; file.arrayBuffer = async () => { reads++; return read(); }; });
+  const selected = await readSelection(files);
+  assert.equal(selected.ok, true); assert.equal(reads, files.length);
+  assert.equal((await openBundle(selected, cache)).ok, true);
+});
+
+test("selection checks actual manifest and thumbnail lengths even if declared sizes are smaller", async () => {
+  for (const name of ["manifest.json", fixture().manifest.items[0].thumbSha256 + ".jpg"]) {
+    const files = fileList(fixture().files), file = files.find((file) => file.name === name);
+    file.arrayBuffer = async () => new ArrayBuffer((name === "manifest.json" ? manifestMaxBytes : thumbMaxBytes) + 1);
+    const result = await readSelection(files);
+    assert.equal(result.ok, false); assert.equal(result.files, undefined);
+  }
 });
