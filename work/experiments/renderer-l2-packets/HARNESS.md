@@ -1,6 +1,6 @@
 # Level 2 harness contract (packets L2-F, L2-G and L2-Q)
 
-Status: binding for L2-F, L2-G and L2-Q (stage day 4, 4 October 2026). Claude owns this file; the packets read it and never change it. It turns plan section 3 (`PLAN.md`) into exact behaviour. "Verify at the pinned version" marks a framework fact (Godot 4.7.2 .NET, Qt 6.10.3) the code relies on. The Codex sandbox has no framework source, so a packet lists each such fact as assumed, names the runtime check of this file that catches it if it is wrong, and keeps the code fail-closed. The integrator verifies the assumed facts against the pinned source before the owner's runs. Where the pinned version contradicts this file, follow the facts, keep the check and say so.
+Status: binding for L2-F, L2-G and L2-Q (stage day 4, 4 October 2026). Claude owns this file; the packets read it and never change it. It turns plan section 3 (`PLAN.md`) into exact behaviour. "Verify at the pinned version" marks a framework fact (Godot 4.7.2 .NET, Qt 6.10.3) the code relies on. The Codex sandbox has no framework source, so a packet lists each such fact as assumed, names the runtime check of this file that catches it if it is wrong, and keeps the code fail-closed. The integrator verifies the assumed facts against the pinned source before the owner's runs and records the result in `FRAMEWORK-FACTS.md`. Where the pinned version contradicts this file, follow the facts, keep the check and say so.
 
 ## 1. Parts
 
@@ -20,7 +20,7 @@ Status: binding for L2-F, L2-G and L2-Q (stage day 4, 4 October 2026). Claude ow
 ## 2. Window, display and presentation (both apps)
 
 - One window on the primary monitor. It is borderless, covers the whole monitor and is topmost. The slot texture fills its client area, with nothing drawn over it: no UI, text, cursor overlay or debug display.
-  - Godot: use the window mode that covers the monitor exactly. In Godot 4 on Windows, `WINDOW_MODE_FULLSCREEN` keeps a 1-pixel border and `WINDOW_MODE_EXCLUSIVE_FULLSCREEN` does not. Content scale mode is disabled and the content scale factor is 1. Verify at the pinned version.
+  - Godot: use the window mode that covers the monitor exactly. At 4.7.2 on Windows, `WINDOW_MODE_FULLSCREEN` extends the window 2 pixels past the monitor and clips them with a window region, and `WINDOW_MODE_EXCLUSIVE_FULLSCREEN` uses the exact monitor rectangle (`FRAMEWORK-FACTS.md`, G1). Content scale mode is disabled and the content scale factor is 1.
   - Qt: `showFullScreen()` on the primary screen. Check at the pinned version that the Windows platform plugin adds no border to a Direct3D 12 window.
 - The app is per-monitor DPI aware (version 2), as both frameworks are by default. `harness.json` records the awareness of the render thread.
 - Five sizes, all in physical pixels:
@@ -39,7 +39,7 @@ Status: binding for L2-F, L2-G and L2-Q (stage day 4, 4 October 2026). Claude ow
   - The app calls `SetForegroundWindow` once after its window is shown.
   - It uses no workaround for the foreground lock: no `AttachThreadInput`, no synthetic input, no helper process.
   - The runner starts it from the operator's console, which may give it the foreground.
-- Adapter: the framework's device uses the high-performance adapter. Use the framework's own setting where it has one, and verify which adapter it picks at the pinned version.
+- Adapter: the framework's device uses the high-performance adapter. Use the framework's own setting where it has one (`FRAMEWORK-FACTS.md`, G6 and Q5). The finalizer refuses a run on any other adapter (section 7, `adapter`).
 
 ## 3. App command line
 
@@ -159,7 +159,7 @@ Format `magic600-l2-harness-v1`. UTF-8, written to a temporary name in `--l2-out
 ```
 
 - `configuration` holds every setting that can change what is drawn or how it is presented, as flat strings, numbers or booleans. It never holds run options or paths (section 8). The validation switches are run options (`options.gpu_validation`), so they stay out of it: Godot's `--gpu-validation` and `--gpu-abort`, Qt's debug layer and `QSG_RHI_DEBUG_LAYER`.
-  - Godot: the framework version string, the rendering driver, window mode, vsync mode, the render thread, the level 1 options, and the engine arguments (`OS.GetCmdlineArgs()`) without `--path`, `--log-file`, their values and the validation switches.
+  - Godot: the framework version string, the rendering driver, window mode, vsync mode, the render thread, the level 1 options, and the engine arguments. These come from the process command line (`GetCommandLineW`, split with `CommandLineToArgvW`), without the executable, `--path`, `--log-file`, their values, the validation switches and everything from `--` on. `OS.GetCmdlineArgs()` cannot serve: at 4.7.2 it leaves out every argument the engine consumes (`FRAMEWORK-FACTS.md`, G4).
   - Qt: `qVersion()`, the graphics API, the render loop, swap interval, the level 1 options, and every environment variable named `QSG_*` or `QT_*` that affects the scene graph or the RHI, by name and value, except the validation switch.
 - `files` maps part names to absolute paths. `dll` is the DLL the app loaded.
   - Godot: also `godot:exe` (the running executable), `godot:assembly` (the project's C# assembly as loaded), and `godot:<name>` for every project file the run reads (`project.godot`, `Main.tscn`, every other resource it loads).
@@ -167,7 +167,7 @@ Format `magic600-l2-harness-v1`. UTF-8, written to a temporary name in `--l2-out
 - `dll_identity` is the parsed output of `sa2_identity`.
 - `scaling` holds the raw facts:
   - Godot: `content_scale_mode`, `content_scale_factor` and `texture_stretch` (how the display node maps the texture to its rectangle);
-  - Qt: `device_pixel_ratio`, the item's size in logical pixels, and `texture_stretch`.
+  - Qt: `device_pixel_ratio`, `item_width` and `item_height` (the item's size in logical pixels, as numbers), and `texture_stretch`.
 - `environment` uses S-B's keys and meanings (`gpu.cpp`, `environment()`), except `tearing`, which the finalizer fills from PresentMon:
   - `power_samples` counts the condition samples of section 5 and the mains and battery samples among them. `power_source` is derived from them as S-B does: `mains` when every sample was on mains, `battery` when every sample was on battery, `changed` when both occurred, and `unknown` otherwise. `power_mode` is `changed` when the effective power mode changed during the trace;
   - `adapter` is the framework's adapter name (Godot: `RenderingServer.GetVideoAdapterName()`; Qt: `QRhi::driverInfo().deviceName`);
@@ -179,7 +179,9 @@ Format `magic600-l2-harness-v1`. UTF-8, written to a temporary name in `--l2-out
 
 ## 7. Finalizer (`finalize_run.py`)
 
-`python -B finalize_run.py <dir> --candidate sa2|sd --mode run|short|geometry|validation --launched-pid <pid> --app-exit <code> [--overlays <text> | --fault-injection]`
+`python -B finalize_run.py <dir> --candidate sa2|sd --mode run|short|geometry|validation --launched-pid <pid> --app-exit <code> [--adapter <name>] [--overlays <text> | --fault-injection]`
+
+- `--adapter` names the adapter the run must use. Its default is the gate's GPU, `NVIDIA GeForce RTX 4070 Laptop GPU`.
 
 - Its mode selects the app mode it expects in `harness.json`: `run`, `short` and `validation` expect `run`, and `geometry` expects `geometry`.
 - It reads `harness.json`, the DLL outputs of that mode and `presentmon.csv` (`run` and `short` modes) in `<dir>`:
@@ -202,8 +204,9 @@ Checks and refusal codes. The interval `[a, b)` is on the QPC clock of `native.j
 | `app-exit` | all | `--app-exit` differs from `exit_code`, or is neither 0 nor 2 |
 | `native` | all | The mode's DLL outputs are missing or malformed. `run`, `short`, `validation`: `scene` differs from `harness.json`; `frames` differs from the number of `trace.jsonl` lines or from `window.presents`, or trace frames are not consecutive from 0; W3 `turn_ms` differs from the option. `geometry`: `geometry.json` lacks S-B's format `magic600-sb-geometry-check-v1`, or `native.json` or `trace.jsonl` exists |
 | `identity` | all | a part file is missing or unreadable; a recomputed DLL or shader digest differs from `dll_identity` or, in the modes that read it, from `native.json`'s `identity`; a required part is missing (`sa2`: `godot:exe`, `godot:assembly`, `godot:project.godot`, `godot:Main.tscn`; `sd`: `qt:exe` and at least one `qt:Qt6*` module) |
+| `adapter` | all | `environment.adapter` is not exactly the `--adapter` name |
 | `size-mismatch` | run, short, validation | the five sizes differ, `samples_changed` > 0, or `native.json` `target` or `viewport` differ from `sizes.target` |
-| `scaling` | run, short, validation | `sa2`: content scale mode not disabled, factor not 1, or `texture_stretch` not `none`. `sd`: displayed width and height in physical pixels differ from the item size times the device pixel ratio, or `texture_stretch` not `none` |
+| `scaling` | run, short, validation | `sa2`: content scale mode not disabled, factor not 1, or `texture_stretch` not `none`. `sd`: displayed width or height in physical pixels differs from `item_width` or `item_height` times `device_pixel_ratio` by more than 0.000001 pixel, or `texture_stretch` not `none` |
 | `conditions-not-enforced` | run, short | `options.conditions` is not `enforce` |
 | `conditions` | run, short | The condition record contradicts itself or the trace: `window.samples` is 0 or fewer than half the trace length in 100 ms steps; `environment.power_samples.samples` differs from `window.samples`, or `mains` plus `battery` exceeds it; `power_source` is not the value section 6 derives from `power_samples`; `samples_not_visible`, `samples_covered` or `samples_not_foreground` is not 0; or `visible_throughout`, `foreground_throughout` or `foreground_at_trace_start` is not true. Enforce mode ends a run at the first failed visibility or foreground sample, so a finished run that records one is inconsistent. A battery sample is no refusal: it makes `power_source` `battery` or `changed`, and the gate judges it |
 | `debug-switch` | run | `gpu_validation`, `no_vram` or `debug_half_target` is set, or `debug.debug_layer` is not 0 |
@@ -227,7 +230,7 @@ Outputs:
   - `build`: `{"build_identity", "parts": [{"name", "sha256"}] sorted by name, "dll_identity"}`;
   - `environment`: `harness.json`'s, with `tearing` (true only when every row of the chain in `[T0, stop)` has `AllowsTearing` 1) and `declared.overlays`. That is the `--overlays` text, or S-B's `fault-injection run; not gate evidence`;
   - `window`: `harness.json`'s;
-  - `l2`: `sizes`, `scaling`, `options`, `configuration`, `native` (`target`, `viewport`, `queue_mode`, `barrier_api`, `vram_samples`), `presentmon` (`rows`, `present_modes`, `sync_intervals`, `allows_tearing`, all in `[T0, stop)`), `condition_reasons`, and `checks` (every code above with `pass`).
+  - `l2`: `sizes`, `scaling`, `options`, `configuration`, `native` (`target`, `viewport`, `queue_mode`, `barrier_api`, `vram_samples`), `presentmon` (`rows`, `present_modes`, `sync_intervals`, `allows_tearing`, all in `[T0, stop)`), `expected_adapter`, `condition_reasons`, and `checks` (every code above with `pass`).
 - `short-check.json` (`short`): format `magic600-l2-short-check-v1`, with `run_id`, `candidate`, `scene`, `build`, `l2.presentmon`, `presentmon`, `sizes`, `vram_peak_mb`, `window` and `checks`. Debug switches are allowed in this mode, so their effect is refused by its own check: half target gives `size-mismatch` only, and no VRAM gives `vram-missing` only.
 - `geometry-record.json` (`geometry`): format `magic600-l2-geometry-record-v1`, with `candidate`, `run_id`, `status` (from `geometry.json`), `build` and the geometry summary. A failed geometry check gives exit 2.
 - `validation-record.json` (`validation`): format `magic600-l2-validation-record-v1`, with `candidate`, `run_id`, `scene`, `build`, `debug` and `label_check` (W3, W4). A failed label check gives exit 2.
@@ -262,7 +265,8 @@ Changes:
   - `-Short`: 30 s trace, no operator question, no gate summary;
   - `-Geometry`: one geometry run, no PresentMon, no administrator rights;
   - `-Validation`: W1 to W4, 20 s each, `--l2-gpu-validation 1 --l2-conditions record`, no PresentMon, no administrator rights;
-  - `-NoVram` and `-DebugHalfTarget`: only with `-Short`.
+  - `-NoVram` and `-DebugHalfTarget`: only with `-Short`;
+  - `-Adapter <name>`: passed to the finalizer as `--adapter`; without it the finalizer's default applies.
 - Launch:
   - Read `<Build>\launch.json`, format `magic600-l2-launch-v1`, written by the candidate's prepare step. It holds `candidate`, `executable`, `dll` (the absolute path for `--l2-dll`), `working_directory`, `arguments`, `run_arguments` (each `{out}` is replaced by the run directory; Godot: `--log-file {out}\godot.log`), `validation_arguments`, `separator` (`["--"]` for Godot, `[]` for Qt), `environment` and `validation_environment`. The command line is `arguments`, `run_arguments`, `validation_arguments` (validation runs only), `separator`, then the `--l2-` options.
   - `environment` and `validation_environment` map variable names to values; `null` removes the variable from the app's environment.

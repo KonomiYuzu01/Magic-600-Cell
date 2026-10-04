@@ -41,6 +41,9 @@ Plan: `work/experiments/renderer-l2-packets/PLAN.md` (sections 3 and 4). Contrac
 - Evidence kind in the sandbox: source/fixture only.
 
 ## 4. Necessary source and evidence
+- Contract amendments made after the first call. They bind this call. This worktree's `HARNESS.md` predates them; the integrator commits them with the result:
+  - New refusal `adapter`, in every mode: `environment.adapter` is not exactly the name given by the new finalizer option `--adapter <name>`, whose default is the gate's GPU, `NVIDIA GeForce RTX 4070 Laptop GPU`. `run.json` adds `l2.expected_adapter`. `run_scene.ps1` takes `-Adapter <name>` and passes it on as `--adapter`; without it the finalizer's default applies. The valid fixtures use the default name.
+  - Qt's `scaling` keys are `device_pixel_ratio`, `item_width` and `item_height` (the item's size in logical pixels, as numbers) and `texture_stretch`. The `sd` `scaling` refusal: the displayed width or height in physical pixels differs from `item_width` or `item_height` times `device_pixel_ratio` by more than 0.000001 pixel, or `texture_stretch` is not `none`.
 - `work/experiments/renderer-l2-packets/HARNESS.md`: binding. Read all of it; the app side (sections 2 to 6) defines what the finalizer reads.
 - S-B, read-only:
   - `work/experiments/renderer-sb/probe/run_scene.ps1`: the runner to port;
@@ -54,7 +57,7 @@ Plan: `work/experiments/renderer-l2-packets/PLAN.md` (sections 3 and 4). Contrac
 - The gate, read-only and imported: `tools/perf/renderer_gate.py` (`validate_run`, `condition_reasons`, `summarize_private`) and `tools/perf/b412_summary.py`.
 
 ## 5. Attempts so far
-None. This is the first call.
+- Call 20261004T055817Z-915d5d9b was invalid through no fault of its own: implement runs from another checkout created `codex/*` branches while it ran, which the wrapper refuses. Its output is not used. This call starts fresh, with the amendments of section 4.
 
 ## 6. Constraints and owned files
 Owned: everything under `work/experiments/renderer-l2/`:
@@ -86,7 +89,7 @@ Rules:
 - Line endings: LF for `.py` and `.md`, CRLF for `.ps1`.
 
 ```implement-contract
-{"allowed_files": ["work/experiments/renderer-l2/*"], "acceptance_check": ["python", "work/experiments/renderer-l2/check_l2.py"], "stop_condition": "finalize_run.py implements every mode, check, refusal code and output of HARNESS.md sections 7 and 8; run_scene.ps1 implements section 9 with every guard of S-B's runner; check_l2.py passes and covers section 10 for L2-F (a valid synthetic W3 run that renderer_gate accepts and judges met over three runs, one fixture per refusal code with exactly that reason, each finalizer mode with the app mode it expects, the geometry fixture with only harness.json and geometry.json, the condition-sample cases, the short-mode half-target and no-VRAM cases, the label-fail exit 2, the identity acceptance, output-exists, geometry and validation records, and the static runner checks); README.md gives the owner's commands"}
+{"allowed_files": ["work/experiments/renderer-l2/*"], "acceptance_check": ["python", "work/experiments/renderer-l2/check_l2.py"], "stop_condition": "finalize_run.py implements every mode, check, refusal code and output of HARNESS.md sections 7 and 8; run_scene.ps1 implements section 9 with every guard of S-B's runner; check_l2.py passes and covers section 10 for L2-F (a valid synthetic W3 run that renderer_gate accepts and judges met over three runs, one fixture per refusal code with exactly that reason, including adapter, each finalizer mode with the app mode it expects, the geometry fixture with only harness.json and geometry.json, the condition-sample cases, the short-mode half-target and no-VRAM cases, the label-fail exit 2, the identity acceptance, output-exists, geometry and validation records, and the static runner checks); README.md gives the owner's commands"}
 ```
 
 ## 7. Required return format

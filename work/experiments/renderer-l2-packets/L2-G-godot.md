@@ -52,14 +52,21 @@ Plan: `work/experiments/renderer-l2-packets/PLAN.md` (sections 3 and 4). Contrac
   - `work/experiments/renderer-sa2/check_project.py` and `work/experiments/renderer-sa2/README.md`.
 - S-B, read-only:
   - `work/experiments/renderer-sb/probe/src/gpu.cpp`: `sampleConditions`, `environment()`, `DisplayRequest`, the effective power mode, the five-point covered test.
-- Godot 4.7.2 facts the code relies on. The sandbox has no Godot source, so list each one as assumed in the final message, with the runtime check of `HARNESS.md` that catches it if it is wrong (`HARNESS.md` line 3). Claude verifies them against tag `4.7.2-stable` before the owner's runs:
-  - which window mode covers the monitor without the 1-pixel border on Windows, and how to set it and topmost from C#;
-  - `RenderingDevice.ScreenGetWidth/ScreenGetHeight` for the main window, and on which thread they may be called;
-  - what `OS.GetCmdlineArgs()` returns, and that `--disable-vsync` turns vsync off for the D3D12 driver;
-  - how the D3D12 driver chooses its adapter, and how to make it pick the high-performance adapter.
+- Godot 4.7.2 facts, which Claude verified against the source at tag `4.7.2-stable`. This is source evidence only, so the final message lists each fact with the runtime check of `HARNESS.md` that catches it if it is wrong (`HARNESS.md` line 3):
+  - G1: `DisplayServer.WindowMode.ExclusiveFullscreen` gives the window the exact monitor rectangle. `Fullscreen` extends it 2 pixels past the monitor and clips them with a window region (`platform/windows/display_server_windows.cpp`). Use `ExclusiveFullscreen`.
+  - G2: `DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.AlwaysOnTop, true)` makes the window `HWND_TOPMOST`.
+  - G3: `RenderingDevice.ScreenGetWidth/ScreenGetHeight(window)` may be called from any thread. They return the window surface's size, which the display server sets on resize; the swap chain follows at the next frame.
+  - G4: `OS.GetCmdlineArgs()` leaves out every argument the engine consumes (`--path`, `--rendering-driver`, `--disable-vsync`, `--log-file`, `--gpu-index`, `--gpu-validation` and the others), so it cannot supply the engine arguments (amendment below).
+  - G5: `--disable-vsync` sets the window's vsync mode to `VSYNC_DISABLED`; the D3D12 driver then presents with sync interval 0 and `DXGI_PRESENT_ALLOW_TEARING` when tearing is supported. Record `DisplayServer.WindowGetVsyncMode()` as the vsync fact.
+  - G6: the D3D12 driver enumerates adapters in high-performance order and takes the discrete adapter, unless `--gpu-index` or the Windows per-app GPU preference says otherwise. Pass no `--gpu-index`.
+  - G7: `..._console.exe` starts the non-console executable as a suspended child in a kill-on-close job and returns its exit code. Level 2 starts the non-console executable itself.
+- Contract amendments made after the first call. They bind this call. This worktree's `HARNESS.md` predates them; the integrator commits them with the result:
+  - Section 6, Godot `configuration`: the engine arguments come from the process command line (`GetCommandLineW`, split with `CommandLineToArgvW`), without the executable, `--path`, `--log-file`, their values, the validation switches (`--gpu-validation`, `--gpu-abort`) and everything from `--` on. They are one string value, since `configuration` holds flat values only.
+  - Section 7 adds the finalizer refusal `adapter`: `environment.adapter` is not exactly the expected adapter (default `NVIDIA GeForce RTX 4070 Laptop GPU`). The app records the adapter and does not judge it.
+  - Section 2 states G1 instead of the 1-pixel border.
 
 ## 5. Attempts so far
-None. This is the first call.
+- Call 20261004T055837Z-8a7f93ab was invalid through no fault of its own: implement runs from another checkout created `codex/*` branches while it ran, which the wrapper refuses. Its output is not used. This call starts fresh, with the verified facts and the amendments of section 4.
 
 ## 6. Constraints and owned files
 Owned:
@@ -98,7 +105,7 @@ Rules:
 - Implementation: changes only in the assigned worktree. The final message lists:
   - the changed files;
   - the acceptance result;
-  - each Godot 4.7.2 fact the code relies on (section 4 and any other), as assumed, with the runtime check that catches it;
+  - each Godot 4.7.2 fact the code relies on, with the runtime check that catches it: those of section 4 as source-verified, any other as assumed;
   - what was not verified in the sandbox (every Godot, .NET, GPU and window step);
   - each choice the contract left open, and the choice made;
   - every place where the pinned version contradicts `HARNESS.md`, what you did, and how the check still holds;
