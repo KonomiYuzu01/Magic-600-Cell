@@ -4,6 +4,7 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
+#include <QtCore/QLoggingCategory>
 #include <QtCore/QProcessEnvironment>
 #include <QtCore/QRegularExpression>
 #include <dwmapi.h>
@@ -172,15 +173,27 @@ void selectHighPerformanceAdapter() {
 namespace {
 std::atomic<bool> frameFailed_{false};
 QtMessageHandler previousHandler_ = nullptr;
+QLoggingCategory::CategoryFilter previousFilter_ = nullptr;
 void frameFailureHandler(QtMsgType type, const QMessageLogContext& context, const QString& message) {
     if (type != QtDebugMsg && type != QtInfoMsg && message.startsWith(QLatin1String("Failed to end frame"))) frameFailed_.store(true);
     if (previousHandler_) previousHandler_(type, context, message);
 }
+// The warning is a plain qWarning, and Qt drops it before any handler when logging rules disable the default
+// category's warnings. Apply the rules first, then keep those warnings on. Qt runs this filter under its registry
+// lock, so it matches the name instead of calling QLoggingCategory::defaultCategory().
+void keepDefaultWarnings(QLoggingCategory* category) {
+    if (previousFilter_) previousFilter_(category);
+    if (qstrcmp(category->categoryName(), "default") == 0) category->setEnabled(QtWarningMsg, true);
+}
 }
 // Qt 6.10.3's render loops log this warning for every failed endFrame, a failed Present included, and still emit
-// afterFrameEnd (FRAMEWORK-FACTS Q9), so it is the only sign of a frame that was not presented. Install it before
-// QGuiApplication starts any thread; the previous handler, Qt's default one, still writes every message.
-void watchFrameFailures() { previousHandler_ = qInstallMessageHandler(frameFailureHandler); }
+// afterFrameEnd (FRAMEWORK-FACTS Q9), so it is the only sign of a frame that was not presented. Install both before
+// QGuiApplication reads the logging rules and starts any thread; the previous handler, Qt's default one, still
+// writes every message.
+void watchFrameFailures() {
+    previousFilter_ = QLoggingCategory::installFilter(keepDefaultWarnings);
+    previousHandler_ = qInstallMessageHandler(frameFailureHandler);
+}
 bool frameFailed() { return frameFailed_.load(); }
 
 L2::L2(L2Options value) : options(std::move(value)) {

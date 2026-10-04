@@ -136,7 +136,14 @@ def l2_static_checks(sources):
     require(after.index('fn_sa2_mark_shown(') < after.index('l2->presented(') < after.index('fn_sa2_scene_trace_end('), "mark after submit/present; stop on boundary")
     require('fail("present")' in after and after.index('frameFailed()') < after.index('fn_sa2_mark_shown('), "no mark or trace end after a failed endFrame (Q9)")
     require(window.index('sd::watchFrameFailures()') < window.index('QGuiApplication app(argc, argv)'), "failed endFrame watched before Qt starts")
-    require('previousHandler_ = qInstallMessageHandler(frameFailureHandler)' in cpp_body(l2, "watchFrameFailures"), "message handler installed")
+    watch = cpp_body(l2, "watchFrameFailures")
+    require('previousHandler_ = qInstallMessageHandler(frameFailureHandler)' in watch, "message handler installed")
+    require('previousFilter_ = QLoggingCategory::installFilter(keepDefaultWarnings)' in watch, "default warnings kept on (Q9)")
+    keep = cpp_body(l2, "keepDefaultWarnings")
+    require('qstrcmp(category->categoryName(), "default") == 0' in keep and 'defaultCategory(' not in keep
+            and 'setEnabled(QtWarningMsg, true)' in keep
+            and keep.index('previousFilter_(category)') < keep.index('setEnabled(QtWarningMsg, true)'),
+            "the rules apply first, then the default category's warnings stay on")
     handler = cpp_body(l2, "frameFailureHandler")
     require('message.startsWith(QLatin1String("Failed to end frame"))' in handler and 'previousHandler_(type, context, message)' in handler,
             "Q9 warning flags the frame; the previous handler still logs")
@@ -240,6 +247,13 @@ def planted_static_checks(header, loader, structs, sources):
         ("main.cpp", '    sd::watchFrameFailures();\n', ''),
         ("l2.cpp", '"Failed to end frame"', '"Failed to present"'),
         ("l2.cpp", 'if (previousHandler_) previousHandler_(type, context, message);', ''),
+        ("l2.cpp", '    previousFilter_ = QLoggingCategory::installFilter(keepDefaultWarnings);\n', ''),
+        ("l2.cpp", 'category->setEnabled(QtWarningMsg, true)', 'category->setEnabled(QtWarningMsg, false)'),
+        ("l2.cpp", 'qstrcmp(category->categoryName(), "default") == 0', 'category == QLoggingCategory::defaultCategory()'),
+        ("l2.cpp", '    if (previousFilter_) previousFilter_(category);\n'
+                   '    if (qstrcmp(category->categoryName(), "default") == 0) category->setEnabled(QtWarningMsg, true);\n',
+                   '    if (qstrcmp(category->categoryName(), "default") == 0) category->setEnabled(QtWarningMsg, true);\n'
+                   '    if (previousFilter_) previousFilter_(category);\n'),
     )
     for name, good, bad in defects:
         require(good in sources[name], "defect target missing: " + good)
