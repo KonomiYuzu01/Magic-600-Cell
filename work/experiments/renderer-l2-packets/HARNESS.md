@@ -97,9 +97,9 @@ The trace must contain exactly one DLL record per present. The finalizer checks 
 | 0 | done; DLL outputs written |
 | 1 | usage, device, DLL, framework or I/O failure; no usable outputs |
 | 2 | label check (`run`) or geometry check (`geometry`) failed; outputs written |
-| 3 | enforce mode: the window was not in the foreground before trace begin, or a condition sample of section 5 failed. The app stops at that sample: trace end, drain, no `write_run`, teardown. |
+| 3 | enforce mode: the window was not in the foreground before trace begin, or a condition sample of section 5 failed. The app stops at that sample: trace end, drain, no `write_run`, teardown. The DLL also ends the process with exit 3 when a drain is not confirmed (`TerminateProcess`, as its header requires); then no `harness.json` exists. |
 
-On every exit after the options are parsed, `harness.json` is written, with `exit_code` and `reason` (`null` on exit 0). A size change during the trace does not stop the run. The samples record it and the finalizer refuses it. Never rebuild the ring during the trace.
+On every exit after the options are parsed, `harness.json` is written, with `exit_code` and `reason` (`null` on exit 0). Two exits cannot write it: the DLL's exit 3 after an unconfirmed drain, and a framework process abort. The runner stops on every exit 3, and the finalizer refuses a run without `harness.json` (`harness`). A size change during the trace does not stop the run. The samples record it and the finalizer refuses it. Never rebuild the ring during the trace.
 
 ## 5. Condition sampling (run mode, during the trace)
 
@@ -267,6 +267,7 @@ Changes:
   - `-Validation`: W1 to W4, 20 s each, `--l2-gpu-validation 1 --l2-conditions record`, no PresentMon, no administrator rights;
   - `-NoVram` and `-DebugHalfTarget`: only with `-Short`;
   - `-Adapter <name>`: passed to the finalizer as `--adapter`; without it the finalizer's default applies.
+  - A run without `-Inject` refuses to start unless `-Declare` gives `frame_generation` and `upscaling` once each as `true` or `false`, because the gate marks a run without them `conditions-missing`.
 - Launch:
   - Read `<Build>\launch.json`, format `magic600-l2-launch-v1`, written by the candidate's prepare step. It holds `candidate`, `executable`, `dll` (the absolute path for `--l2-dll`), `working_directory`, `arguments`, `run_arguments` (each `{out}` is replaced by the run directory; Godot: `--log-file {out}\godot.log`), `validation_arguments`, `separator` (`["--"]` for Godot, `[]` for Qt), `environment` and `validation_environment`. The command line is `arguments`, `run_arguments`, `validation_arguments` (validation runs only), `separator`, then the `--l2-` options.
   - `environment` and `validation_environment` map variable names to values; `null` removes the variable from the app's environment.
@@ -274,7 +275,7 @@ Changes:
 - Sessions:
   - session and mutex name `magic600-<candidate>-capture`;
   - `Assert-NoSession` refuses while `PresentMon`, `magic600-sb-capture`, `magic600-sa2-capture` or `magic600-sd-capture` runs.
-- Before each run, refuse while any of these runs: another runner, a `codex_review.py --kind implement` process, a build (`cl`, `link`, `ninja`, `cmake`, `msbuild`, `dotnet`, `VBCSCompiler`), or Godot, Blender or FFmpeg other than this run's app. Name the process.
+- Before each run, refuse while any of these runs: another runner, a `codex_review.py --kind implement` process, a build (`cl`, `link`, `ninja`, `cmake`, `msbuild`, `dotnet`, `VBCSCompiler`), or Godot, Blender or FFmpeg other than this run's app. Name the process. Also refuse the PresentMon overlay (`PresentMon.exe`, `PresentMonUI.exe`) and another PresentMon console (`PresentMon-*.exe`), but not `PresentMonService.exe`, the always-on service of Intel's installer, which runs on the owner's machine.
 - Run directories: `work/loop-memory/perf/renderer/<candidate>/<stamp>-<scene>-<i>`. The runner creates each one and checks that it is empty before it starts the app; the framework's log and PresentMon's CSV then land beside the app's outputs. The run ID is the directory name.
 - After the app exits and the capture is stopped, call the finalizer with the app's PID and exit code. Pass `--overlays` (S-B's composed text) only after the operator typed `yes`, or `--fault-injection` with `-Inject`.
   - Finalizer exit 5: stop the series and print the reasons.

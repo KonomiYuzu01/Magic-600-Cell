@@ -412,11 +412,11 @@ After L2-F is integrated, follow HARNESS section 11 in this order:
 & work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Short -Scene w3
 & work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Short -Scene w3 -DebugHalfTarget
 & work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Short -Scene w3 -NoVram
-& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w1 -Declare @('frame_generation=false','upscaling=false')
-& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w2 -Declare @('frame_generation=false','upscaling=false')
-& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w4 -Declare @('frame_generation=false','upscaling=false')
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w1 -Overlays '<none running, or the overlays running>' -Declare @('frame_generation=false','upscaling=false')
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w2 -Overlays '<none running, or the overlays running>' -Declare @('frame_generation=false','upscaling=false')
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w4 -Overlays '<none running, or the overlays running>' -Declare @('frame_generation=false','upscaling=false')
 # Three owner-attended cold W3 runs, with the runner's operator confirmation:
-& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w3 -Runs 3 -Declare @('frame_generation=false','upscaling=false')
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w3 -Runs 3 -Overlays '<none running, or the overlays running>' -Declare @('frame_generation=false','upscaling=false')
 ```
 
 Require four passing validation records, a passing geometry record and a passing
