@@ -12,6 +12,7 @@ struct Failure : std::runtime_error {
 };
 void scene_require(bool condition, const std::string& text, int32_t status = SA2_E_WRONG_STATE);
 void validate_scene_config(const sa2_scene_config* config);
+uint64_t label_copies(const sa2_scene_config& config); // S-B: ceil(trace_ms / turn_ms) + 2, W4 at 190 ms
 std::filesystem::path output_directory(const char* utf8);
 void require_new_file(const std::filesystem::path& file);
 void write_new_file(const std::filesystem::path& file, const std::string& text);

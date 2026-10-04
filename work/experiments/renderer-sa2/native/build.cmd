@@ -13,6 +13,8 @@ set "CMAKE=cmake.exe"
 set "NINJA=ninja.exe"
 if exist "%VENV%\cmake.exe" set "CMAKE=%VENV%\cmake.exe"
 if exist "%VENV%\ninja.exe" set "NINJA=%VENV%\ninja.exe"
+rem Application Control can refuse unsigned executables in system temp, so the
+rem default build stays under the repository's ignored work tree.
 if "%~1"=="" (set "BUILD=%HERE%build") else (set "BUILD=%~f1")
 set "DXC=%WindowsSdkDir%bin\%WindowsSDKVersion%x64\dxc.exe"
 if not exist "%DXC%" (echo Windows SDK dxc.exe not found & exit /b 1)

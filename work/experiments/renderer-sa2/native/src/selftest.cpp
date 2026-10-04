@@ -181,7 +181,7 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(text == "{\"format\":\"magic600-sa2-native-selftest-v1\",\"mode\":\"cpu\",\"checks\":[{\"name\":\"x\",\"status\":\"unsupported\",\"reason\":\"reason\"}]}\n", "JSON envelope mismatch");
     });
     suite.check("scene arguments", [] {
-        sa2_scene_config config{sizeof(sa2_scene_config), 3, 190, nullptr, 0, 0};
+        sa2_scene_config config{sizeof(sa2_scene_config), 3, 190, nullptr, 0, 180000};
         invalid(sa2_scene_load(nullptr, nullptr), "sa2_scene_load");
         invalid(sa2_scene_load(nullptr, &config), "sa2_scene_load");
         auto refuses = [&](sa2_scene_config value) {
@@ -199,7 +199,11 @@ void run_cpu(Suite& suite, const Options& options) {
         bad = config; bad.inject = "unknown"; refuses(bad);
         bad = config; bad.inject = ""; refuses(bad);
         bad = config; bad.scene = 1; bad.inject = "corrupt-label"; refuses(bad);
-        bad = config; bad.reserved = 1; refuses(bad);
+        for (uint32_t ms : {0u, 3600001u}) { bad = config; bad.trace_ms = ms; refuses(bad); }
+        bad = config; bad.turn_ms = 1e-9; refuses(bad); // readback beyond 64-bit sizes
+        expect(sa2::label_copies(config) == 950, "S-B readback rule: ceil(180000 / 190) + 2 copies");
+        { auto w4 = config; w4.scene = 4; w4.turn_ms = 0; expect(sa2::label_copies(w4) == 950, "W4 readback not sized at 190 ms"); }
+        { auto one = config; one.trace_ms = 1; expect(sa2::label_copies(one) == 3, "one-millisecond trace must reserve three copies"); }
         bad = config; bad.flags = 2; refuses(bad);
         for (const char* fault : {"corrupt-label", "swap-same-colour", "delay-adoption", "stale-binding"}) {
             auto good = config; good.inject = fault; sa2::validate_scene_config(&good);
@@ -218,7 +222,7 @@ void run_cpu(Suite& suite, const Options& options) {
         char buffer[8]{}; invalid(sa2_identity(buffer, 0), "sa2_identity");
     });
     suite.check("scene state", [] {
-        sa2_scene_config config{sizeof(sa2_scene_config), 3, 190, nullptr, 0, 0};
+        sa2_scene_config config{sizeof(sa2_scene_config), 3, 190, nullptr, 0, 180000};
         sa2::SceneRecord record(config, 10000000, 640, 360);
         auto wrong = [](const auto& call) {
             bool caught = false;
@@ -245,7 +249,7 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(turn.index == 20 && turn.phase == 0, "S-B QPC turn clock mismatch");
     });
     suite.check("scene native writer", [] {
-        sa2_scene_config config{sizeof(sa2_scene_config), 3, 190, nullptr, 0, 0};
+        sa2_scene_config config{sizeof(sa2_scene_config), 3, 190, nullptr, 0, 180000};
         sa2::SceneRecord record(config, 10000000, 2560, 1600); record.begin(100); record.end(200);
         record.vram_peak = 123.5; record.vram_samples = 1; record.trace.push_back({0, 150, 0, true, 0, 0.25, 1});
         const Json labels = Json::Object{{"status", "pass"}, {"copies", 0}, {"revisions", 0}, {"mismatches", 0},
@@ -261,7 +265,9 @@ void run_cpu(Suite& suite, const Options& options) {
             && json.at("target").at("height").integer() == 1600 && json.at("identity").dump() == identity.dump(), "native sizes/identity mismatch");
         const auto trace = Json::parse(record.trace_text());
         expect(trace.at("frame").integer() == 0 && trace.at("qpc").integer() == 150 && trace.at("camera").integer() == 1, "S-B trace writer mismatch");
-        record.config.flags = SA2_SCENE_NO_VRAM;
+        record.vram_samples = 0;
+        expect(record.native(labels, identity, 0, 1).at("vram_peak_mb").null(), "VRAM peak without a sample was not null");
+        record.vram_samples = 1; record.config.flags = SA2_SCENE_NO_VRAM;
         expect(record.native(labels, identity, 0, 1).at("vram_peak_mb").null(), "NO_VRAM did not write null");
         for (uint32_t scene : {1u, 2u, 4u}) {
             record.config.scene = scene; const auto j = record.native(labels, identity, 0, 1);

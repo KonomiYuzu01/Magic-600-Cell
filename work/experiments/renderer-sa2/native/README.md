@@ -17,7 +17,8 @@ python work/experiments/renderer-sa2/native/check_native.py
 ```
 
 The check builds Release with NMake into a plain-mkdir directory
-`%TEMP%/m600-sa2-native-<pid>`, outside the repository.
+`native/build-check-<pid>` inside the repository's ignored work tree, because
+Application Control can refuse unsigned executables in system temp.
 It runs only `--cpu`, validates the JSON and final `selftest: ok` line, and removes
 that directory. It passes the three code vectors directly from `code_layout.json`.
 It creates no tracked repository output and starts no D3D12 device. CPU checks cover
@@ -114,13 +115,17 @@ imported three-slot ring. WARP uses 640 x 360 and 40 total frames; hardware uses
 trace begin/end inside each run (34 or 594 traced frames). Every traced frame
 must have one consecutive zero-based S-B record, the actual full target and
 viewport sizes, and a positive process-local VRAM sample unless sampling is
-explicitly disabled. W3/W4 require S-B's exact label check to pass. Skipped turns
-remain failures under S-B's unchanged checker; the self-test never relaxes it
-for a slow software device.
+explicitly disabled. W3/W4 require S-B's exact label check to pass; the checker
+is unchanged. A frame slower than the label clock skips revisions, which the
+checker counts as missing. WARP draws a frame in about a second, so its W3 runs
+use 3000 ms turns. W4's label clock is fixed at S-B's 190 ms, so a WARP W4 run
+is reported unsupported when skipped revisions are its only failure and a
+traced step is longer than the clock; any mismatch, binding error or late
+adoption still fails. Hardware runs use S-B's 190 ms and must pass.
 
 The same device also gets one geometry check: all nine reference camera/pose
 comparisons at aspect 1.6 and the per-cell invocation counts, using the DLL's
-own 2560 x 1600 targets. A negative W3 run uses a 1000 ms turn and paces its first
+own 2560 x 1600 targets. A negative W3 run uses a 1000 ms turn (3000 ms on WARP) and paces its first
 21 traced frames so S-B's fixed turn-20 `corrupt-label` fault is actually applied;
 it requires CHECK_FAILED, label status `fail`, `injection_applied: true` and
 nonzero mismatches. A separate W1 run with NO_VRAM requires a null peak and zero
@@ -216,7 +221,8 @@ the framework's queue. Call from its render/context thread:
 
 1. Probe and attach the framework's own device and DIRECT queue with the
    handover states that its tracker expects.
-2. Create/import and register all three equally sized slots, then `scene_load`.
+2. Create/import and register all three equally sized slots, then `scene_load`
+   with `trace_ms` set to the planned trace length.
    The DLL creates all fixed scene resources during load. Static copies execute
    with the first scene submission; their staging buffers stay alive until
    unload. Resize requires drain, unload, ring rebuild and a new scene load.
@@ -232,7 +238,7 @@ the framework's queue. Call from its render/context thread:
    for the duration. W3's clock starts at that call; W4 uses the same 190 ms
    label clock without turn animation. W2/W3 rotate once per produced frame,
    including preroll, exactly as S-B does.
-6. Call `sa2_scene_trace_end`, then `sa2_drain` after the last framework use.
+6. Call `sa2_scene_trace_end` within `trace_ms` of trace begin, then `sa2_drain` after the last framework use.
    `sa2_scene_write_run` writes `trace.jsonl` and `native.json` into an existing
    fresh directory. A failed label check still writes both and returns
    `SA2_E_CHECK_FAILED`. Existing outputs return `SA2_E_IO` and are preserved.
@@ -260,11 +266,15 @@ PSOs, bindings, camera/turn logic, label upload/use/copy records and geometry
 checks. Its device creation, window, swap chain, presents, condition sampling,
 features and MSAA variants are omitted for the framework-hosted path. Internal
 resources retain S-B's legacy barriers; only slot handovers use the selected
-legacy/enhanced API. No S-B source or shader was edited.
+legacy/enhanced API. Unlike S-B, default-heap buffers are created in COMMON:
+the runtime ignores any other initial state for buffers and the debug layer
+warns about it; the first use promotes them implicitly. No S-B source or
+shader was edited.
 
 The ring is fixed at three equally sized slots per load, with three constant and
-upload entries protected by slot completion. Label readbacks grow in preserved
-64-revision chunks. Trace frames start at zero independently of ABI fence frames
+upload entries protected by slot completion. W3/W4 allocate the whole run's
+preserved label readback at load (S-B's rule: `ceil(trace_ms / turn_ms) + 2`
+copies), so nothing is allocated inside the trace. Trace frames start at zero independently of ABI fence frames
 starting at one. `native.json` uses string queue/barrier names (`same`/`own`,
 `legacy`/`enhanced`). Identity uses sorted basenames and exact on-disk bytes,
 located through `GetModuleHandleExW(FROM_ADDRESS)` in this DLL. The geometry

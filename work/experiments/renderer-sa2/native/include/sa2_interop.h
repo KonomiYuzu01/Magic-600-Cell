@@ -3,6 +3,9 @@
  * and the native Direct3D 12 producer DLL sa2_interop.dll (native/).
  * ABI version 2; the ABI 1 declarations and layouts are retained.
  *
+ * The integrator owns this file. An implementation must not change it; if a
+ * change is unavoidable, stop and report the reason instead.
+ *
  * Threading: every function except sa2_abi_version is called from one thread,
  * Godot's render thread (inside RenderingServer.call_on_render_thread). The
  * info-queue callback the DLL registers may run on any thread.
@@ -266,7 +269,8 @@ typedef struct sa2_scene_config {
     const char* inject; /* NULL, or corrupt-label, swap-same-colour,
                         * delay-adoption, stale-binding; W3/W4 only; copied */
     uint32_t flags; /* SA2_SCENE_NO_VRAM only; unknown bits are invalid */
-    uint32_t reserved; /* must be zero */
+    uint32_t trace_ms; /* planned trace length, 1..3600000 ms; sizes the W3/W4
+                        * preserved label readback (see sa2_scene_load) */
 } sa2_scene_config;
 #ifdef __cplusplus
 static_assert(sizeof(sa2_scene_config) == 32, "sa2_scene_config requires the x64 ABI");
@@ -279,6 +283,9 @@ static_assert(sizeof(sa2_scene_config) == 32, "sa2_scene_config requires the x64
  * SA2_E_INVALID_ARGUMENT. Missing/unreadable assets or blobs: SA2_E_IO (file
  * named in last error). D3D12 failures: SA2_E_D3D12 / SA2_E_DEVICE_REMOVED.
  * Load submits no work; static uploads execute with the first scene command.
+ * W3/W4: load also allocates S-B's preserved label readback for
+ * ceil(trace_ms / turn_ms) + 2 copies (W4: turn_ms 190) as one buffer, so
+ * nothing is allocated inside the trace. A failed allocation fails the load.
  */
 SA2_API int32_t sa2_scene_load(sa2_context* ctx, const sa2_scene_config* config);
 
@@ -292,6 +299,8 @@ SA2_API int32_t sa2_scene_load(sa2_context* ctx, const sa2_scene_config* config)
  * clock from trace begin; W4 uses S-B's 190 ms label clock without animation.
  * Outside the trace, preroll/postroll draws do not change label revisions.
  * Returns SA2_E_TIMEOUT, SA2_E_D3D12 / SA2_E_DEVICE_REMOVED on GPU failure.
+ * A trace that needs more label copies than load reserved fails closed
+ * (SA2_E_WRONG_STATE, the scene is poisoned): end the trace within trace_ms.
  */
 SA2_API int32_t sa2_scene_produce(sa2_context* ctx, uint32_t slot, uint64_t frame);
 
@@ -312,6 +321,8 @@ SA2_API int32_t sa2_scene_trace_end(sa2_context* ctx);
  * wrong lifecycle/drain: WRONG_STATE; file failures/existing output: E_IO.
  * Label mismatch (including an injection not reached): E_CHECK_FAILED with
  * both outputs written. Success: SA2_OK. Repeated writes need fresh outputs.
+ * native.json's vram_peak_mb (MiB) is null with SA2_SCENE_NO_VRAM or when no
+ * sample was taken; a harness refuses a gate record without it.
  */
 SA2_API int32_t sa2_scene_write_run(sa2_context* ctx, const char* directory_utf8);
 

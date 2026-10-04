@@ -1,4 +1,4 @@
-"""Build out of tree and check CPU fixtures and identity; --gpu runs owner GPU checks."""
+"""Build in a fresh ignored directory and check CPU fixtures and identity; --gpu also runs the owner GPU checks."""
 
 import argparse
 import hashlib
@@ -8,7 +8,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import tempfile
 
 
 def run_bounded(arguments, timeout, **kwargs):
@@ -71,8 +70,9 @@ def main():
     parser.add_argument("--gpu", action="store_true")
     options = parser.parse_args()
     source = Path(__file__).resolve().parent
-    temp_root = Path(tempfile.gettempdir()).resolve()
-    build = temp_root / f"m600-sa2-native-{os.getpid()}"
+    # Application Control can refuse unsigned executables in system temp. Build
+    # beside this script, inside the repository's ignored work tree.
+    build = source / f"build-check-{os.getpid()}"
     created = False
     try:
         batch = (source / "build.cmd").read_bytes()
@@ -106,7 +106,7 @@ def main():
         return 1
     finally:
         if created:
-            if build.resolve().parent != temp_root or build.name != f"m600-sa2-native-{os.getpid()}":
+            if build.resolve().parent != source or build.name != f"build-check-{os.getpid()}":
                 raise RuntimeError("refusing cleanup outside this check's build directory")
             shutil.rmtree(build)
 

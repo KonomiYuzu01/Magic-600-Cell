@@ -12,12 +12,20 @@ void validate_scene_config(const sa2_scene_config* config) {
     scene_require(config->scene >= 1 && config->scene <= 4, "scene must be 1..4", SA2_E_INVALID_ARGUMENT);
     scene_require(config->scene != 3 || (std::isfinite(config->turn_ms) && config->turn_ms > 0 && config->turn_ms <= 10000),
         "W3 turn_ms must be finite and in (0,10000]", SA2_E_INVALID_ARGUMENT);
-    scene_require(config->reserved == 0 && !(config->flags & ~SA2_SCENE_NO_VRAM), "invalid reserved or flags", SA2_E_INVALID_ARGUMENT);
+    scene_require(!(config->flags & ~SA2_SCENE_NO_VRAM), "unknown scene flags", SA2_E_INVALID_ARGUMENT);
+    scene_require(config->trace_ms >= 1 && config->trace_ms <= 3600000, "trace_ms must be in 1..3600000", SA2_E_INVALID_ARGUMENT);
+    if (config->scene >= 3) label_copies(*config);
     if (config->inject) {
         const std::string fault(config->inject);
         scene_require((config->scene == 3 || config->scene == 4) && (fault == "corrupt-label" || fault == "swap-same-colour"
             || fault == "delay-adoption" || fault == "stale-binding"), "unknown injection or injection outside W3/W4", SA2_E_INVALID_ARGUMENT);
     }
+}
+uint64_t label_copies(const sa2_scene_config& config) {
+    const double copies = std::ceil(double(config.trace_ms) / (config.scene == 3 ? config.turn_ms : 190.0)) + 2;
+    scene_require(copies * double(sb::LabelBytes) < 9.0e18, "trace_ms / turn_ms needs a label readback beyond 64-bit sizes",
+        SA2_E_INVALID_ARGUMENT);
+    return uint64_t(copies);
 }
 std::filesystem::path output_directory(const char* utf8) {
     scene_require(utf8 && *utf8, "directory_utf8 is null or empty", SA2_E_INVALID_ARGUMENT);
@@ -107,7 +115,7 @@ Json SceneRecord::native(const Json& labels, const Json& identity, int32_t queue
     Json result = Json::Object{{"format", "magic600-sa2-scene-native-v1"}, {"scene", "w" + std::to_string(config.scene)},
         {"qpc_frequency", frequency}, {"markers", Json::Object{{"trace_start_qpc", start}, {"trace_stop_qpc", stop}}},
         {"frames", uint64_t(trace.size())}, {"injection_applied", injection_applied},
-        {"vram_peak_mb", config.flags & SA2_SCENE_NO_VRAM ? Json() : Json(vram_peak)}, {"vram_samples", vram_samples},
+        {"vram_peak_mb", (config.flags & SA2_SCENE_NO_VRAM) || !vram_samples ? Json() : Json(vram_peak)}, {"vram_samples", vram_samples},
         {"target", size}, {"viewport", size}, {"identity", identity},
         {"queue_mode", queue_mode == SA2_QUEUE_OWN ? "own" : "same"},
         {"barrier_api", barriers == SA2_BARRIERS_ENHANCED ? "enhanced" : "legacy"}};

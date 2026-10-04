@@ -60,13 +60,14 @@ Plan: `work/experiments/renderer-l2-packets/PLAN.md` (sections 2 to 4). This pac
 | # | Hypothesis | Change | Verification | Result |
 |---|---|---|---|---|
 | 1 | ABI 2 as section 6 specifies | implement call 20261004T034445Z-f90946bb | acceptance passed: 17 CPU checks and the SHA-256 recomputation | run invalid: the Claude app fetched `origin` during the run, so its patch cannot be used |
+| 2 | the same, rerun | implement call 20261004T041516Z-2bc526e3 | acceptance passed in the sandbox; on the owner's machine, the CPU acceptance passed and the GPU self-test failed on two defects | valid; applied unchanged as `4bc3fe1`. Claude's review adopted four majors in the next commit: the label readback is reserved at load from the new `trace_ms` (chunks had grown inside the trace, unlike S-B); the check builds under `work/` again; default-heap buffers are created in COMMON (S-B's initial states raised a debug-layer warning); and the WARP self-test uses 3000 ms W3 turns and reports W4 `unsupported` when WARP frames outrun its 190 ms clock. After the fixes: CPU acceptance passed; GPU self-test with the debug layer passed on hardware (29 checks) and on WARP except W4 (`unsupported`) |
 
 Attempt 1 made these choices. They stand unless you find a defect:
 - a fixed, equally sized three-slot ring;
 - zero-based trace frame numbers;
 - W4 on S-B's 190 ms clock;
 - a three-entry constant and upload ring;
-- readbacks that grow in chunks of 64 revisions;
+- readbacks that grow in chunks of 64 revisions (replaced after attempt 2: one readback reserved at load from `trace_ms`);
 - identity file names sorted within the DLL's directory;
 - string queue and barrier names in `native.json`;
 - legacy barriers for the DLL's internal resources, with the selected barrier API only for slot handovers.

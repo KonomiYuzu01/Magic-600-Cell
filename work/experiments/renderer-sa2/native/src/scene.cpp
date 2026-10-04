@@ -69,7 +69,7 @@ struct Scene::Impl {
     sb::LabelRecords records;
     sb::Matrix q = sb::identity();
     bool initialized = false, healthy = true;
-    static constexpr uint64_t readback_slots = 64;
+    uint64_t readback_capacity = 0;
 
     explicit Impl(ID3D12Device* attached) : device(attached), assets(scene_assets()), sample(assets.samples()), authoritative_labels(assets.oracle[0]) {}
     ~Impl() {
@@ -87,7 +87,12 @@ struct Scene::Impl {
         D3D12_HEAP_PROPERTIES heap{}; heap.Type = type; heap.CreationNodeMask = heap.VisibleNodeMask = 1;
         D3D12_RESOURCE_DESC d{}; d.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; d.Width = size; d.Height = 1;
         d.DepthOrArraySize = d.MipLevels = 1; d.SampleDesc.Count = 1; d.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; d.Flags = flags;
-        hr(device, device->CreateCommittedResource(&heap, D3D12_HEAP_FLAG_NONE, &d, state, nullptr, IID_PPV_ARGS(&out.resource)), "CreateCommittedResource(scene buffer)");
+        // The runtime creates every default-heap buffer in COMMON whatever the
+        // initial state says, and the debug layer warns about any other value.
+        // The first use promotes the buffer implicitly, so the tracked state
+        // stays the state that use needs.
+        const auto initial = type == D3D12_HEAP_TYPE_DEFAULT ? D3D12_RESOURCE_STATE_COMMON : state;
+        hr(device, device->CreateCommittedResource(&heap, D3D12_HEAP_FLAG_NONE, &d, initial, nullptr, IID_PPV_ARGS(&out.resource)), "CreateCommittedResource(scene buffer)");
         name(out.resource.Get(), L"SA2 scene buffer");
         return out;
     }
@@ -216,7 +221,16 @@ struct Scene::Impl {
         adapter_name.resize(static_cast<size_t>(n));
         WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, adapter_name.data(), n, nullptr, nullptr); adapter_name.pop_back();
         if (!(record.config.flags & SA2_SCENE_NO_VRAM)) hr(device, adapter.As(&memory_adapter), "QueryInterface(IDXGIAdapter3)");
-        if (record.config.scene >= 3) readbacks.push_back(buffer(readback_slots * sb::LabelBytes, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST));
+        if (record.config.scene >= 3) {
+            // S-B's rule: the run's whole preserved readback exists before the
+            // trace, so nothing is allocated inside the measured window.
+            readback_capacity = label_copies(record.config);
+            try { readbacks.push_back(buffer(readback_capacity * sb::LabelBytes, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST)); }
+            catch (const Failure& error) {
+                throw Failure(error.status, "cannot allocate the run's preserved label readback buffer ("
+                    + std::to_string(readback_capacity * sb::LabelBytes / 1048576) + " MiB): " + error.what());
+            }
+        }
     }
     void bind(ID3D12GraphicsCommandList* list, const Constants& c, Buffer& constants_buffer, uint8_t* data,
               Buffer& label, bool compute) {
@@ -308,10 +322,10 @@ void Scene::record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CP
     const auto c = constants(g.assets, g.q, float(record.width) / float(record.height), record.config.scene == 3 && timed ? float(turn.theta) : 0);
     g.draw(list, c, g.cb[slot], g.cb_data[slot], g.label_buffers[g.bound], g.draw_pso.Get(), target, record.width, record.height, false);
     if (copy) {
-        const auto index = uint64_t(g.records.copies.size()), chunk = index / Impl::readback_slots;
-        while (chunk >= g.readbacks.size()) g.readbacks.push_back(g.buffer(Impl::readback_slots * sb::LabelBytes, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST));
+        const auto index = uint64_t(g.records.copies.size());
+        scene_require(index < g.readback_capacity, "preserved label readback capacity exceeded; end the trace within trace_ms");
         auto& label = g.label_buffers[g.bound]; g.transition(list, label, D3D12_RESOURCE_STATE_COPY_SOURCE);
-        list->CopyBufferRegion(g.readbacks[size_t(chunk)].resource.Get(), index % Impl::readback_slots * sb::LabelBytes, label.resource.Get(), 0, sb::LabelBytes);
+        list->CopyBufferRegion(g.readbacks[0].resource.Get(), index * sb::LabelBytes, label.resource.Get(), 0, sb::LabelBytes);
         g.transition(list, label, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         g.records.copies.push_back({frame, g.label_revision[g.bound], uint64_t(g.bound + 1), uint64_t(g.expected + 1), index});
     }
@@ -339,7 +353,7 @@ Json Scene::labels() {
         copied.push_back(static_cast<const uint32_t*>(data));
     }
     auto check = sb::checkLabels(g.assets, g.records, [&](const sb::Copy& c) {
-        return std::span<const uint32_t>(copied.at(size_t(c.slot / Impl::readback_slots)) + c.slot % Impl::readback_slots * sb::Slots, sb::Slots);
+        return std::span<const uint32_t>(copied.at(0) + c.slot * sb::Slots, sb::Slots);
     });
     if (!record.injection.empty() && !record.injection_applied) { check["status"] = "fail"; check["injection_not_reached"] = true; }
     return check;
