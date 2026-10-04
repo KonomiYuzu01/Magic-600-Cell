@@ -14,6 +14,7 @@ public partial class Smoke : Control
     private readonly Queue<Action> _mailbox = new();
     private Arguments _args;
     private RunResult _result;
+    private Level2 _level2;
     private bool _abort, _notDrawn, _failurePosted;
 
     // Main thread only.
@@ -45,7 +46,14 @@ public partial class Smoke : Control
 
     public override void _Ready()
     {
-        try { _args = Arguments.Parse(OS.GetCmdlineUserArgs()); }
+        string[] userArgs = OS.GetCmdlineUserArgs();
+        if (Level2Arguments.Requested(userArgs))
+        {
+            _level2 = new Level2();
+            AddChild(_level2);
+            return;
+        }
+        try { _args = Arguments.Parse(userArgs); }
         catch (ArgumentException e) { Console.Error.WriteLine("sa2: " + e.Message); GetTree().Quit(2); _stage = Stage.Finished; return; }
         // Measured on the main thread: the safe model renders here, so IsOnRenderThread()
         // is true; with a separate render thread it is false.
@@ -97,6 +105,7 @@ public partial class Smoke : Control
 
     public override void _Process(double delta)
     {
+        if (_level2 != null) return;
         if (_stage == Stage.Finished) return;
         _frame++;
         if (_expectDraw && _frame > 1 && _preDrawFrame != _frame - 1)

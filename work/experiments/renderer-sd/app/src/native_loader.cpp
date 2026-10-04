@@ -11,7 +11,7 @@ void Native::load(const wchar_t* absolutePath) {
     SD_BIND(sa2_abi_version)
     // ABI and struct sizes are checked before binding/calling the rest of the ABI.
     if (fn_sa2_abi_version() != SA2_ABI_VERSION || sizeof(sa2_device_info) != 48
-        || sizeof(sa2_config) != 28 || sizeof(struct sa2_debug_counts) != 128)
+        || sizeof(sa2_config) != 28 || sizeof(struct sa2_debug_counts) != 128 || sizeof(sa2_scene_config) != 32)
         throw std::runtime_error("SA2 ABI mismatch");
     SD_BIND(sa2_last_error)
     SD_BIND(sa2_probe)
@@ -31,6 +31,14 @@ void Native::load(const wchar_t* absolutePath) {
     SD_BIND(sa2_remove_device)
     SD_BIND(sa2_device_removed_reason)
     SD_BIND(sa2_detach)
+    SD_BIND(sa2_scene_load)
+    SD_BIND(sa2_scene_produce)
+    SD_BIND(sa2_scene_trace_begin)
+    SD_BIND(sa2_scene_trace_end)
+    SD_BIND(sa2_scene_write_run)
+    SD_BIND(sa2_scene_geometry_check)
+    SD_BIND(sa2_identity)
+    SD_BIND(sa2_scene_unload)
 #undef SD_BIND
 }
 Native::~Native() { if (module) FreeLibrary(module); }

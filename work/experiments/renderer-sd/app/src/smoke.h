@@ -54,11 +54,13 @@ struct Stats {
     std::chrono::steady_clock::time_point lossStarted{};
 };
 struct GuiAction { bool close, resize, renderDone; int width, height; };
+class L2;
 
 class Harness {
 public:
-    explicit Harness(Options options) : options(std::move(options)) {}
+    explicit Harness(Options options, L2* level2 = nullptr) : options(std::move(options)), l2(level2) {}
     Options options;
+    L2* l2 = nullptr;
     Native native;
     QQuickWindow* window = nullptr;
     QRhi* suppliedRhi = nullptr;
@@ -72,6 +74,7 @@ public:
     void afterFrameEnd();
     void rendererGone(QRhi* rhi);
     void setNode(QSGNode* root, QSize size);
+    void setLayout(QSizeF size);
     GuiAction guiAction();
     void fail(const std::string& reason);
     void edit(const std::function<void(Stats&)>& function);
@@ -104,6 +107,7 @@ private:
     Fields currentFields_{};
     QSize currentSize_;
     std::vector<std::unique_ptr<Readback>> readbacks_;
+    bool sceneLoaded_ = false, l2Produced_ = false, l2TraceFrame_ = false;
     sa2_config config() const;
     bool call(const char* name, int status);
     bool createRing(QSize size);
@@ -114,6 +118,8 @@ private:
     void readback(QRhiResourceUpdateBatch* batch, QRhiTexture* texture, bool composite);
     void completeTransition();
     void showSlot(unsigned slot);
+    void renderScene(QRhiCommandBuffer* cb, QRhiTexture* color, QRhiRenderTarget* target, QSize size);
+    void teardownScene();
 };
 
 class RhiItem : public QQuickRhiItem {

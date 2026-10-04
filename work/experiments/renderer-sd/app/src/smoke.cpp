@@ -1,4 +1,5 @@
 #include "smoke.h"
+#include "l2.h"
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
@@ -50,6 +51,14 @@ void Harness::fail(const std::string& reason) {
     edit([&](Stats& s) { s.reasons.insert(reason); if (!s.lossTriggered) s.stop = true; });
 }
 bool Harness::call(const char* name, int status) {
+    if (l2) {
+        char error[1024]{};
+        if (status != SA2_OK) native.fn_sa2_last_error(context_, error, sizeof(error));
+        l2->status(status, QString::fromUtf8(error));
+        if (status == SA2_E_CHECK_FAILED && (std::strcmp(name, "sa2_scene_write_run") == 0
+            || std::strcmp(name, "sa2_scene_geometry_check") == 0)) return true;
+        if (status != SA2_OK) l2->failure("dll");
+    }
     if (snapshot().lossTriggered) edit([&](Stats& s) { s.lossStatuses.push_back({name, status}); });
     if (status == SA2_OK) return true;
     char error[1024]{};
@@ -62,7 +71,7 @@ sa2_config Harness::config() const {
     const int state = options.route == "import-direct" ? SA2_STATE_PIXEL_SHADER_RESOURCE : SA2_STATE_COPY_SOURCE;
     return {sizeof(sa2_config), options.route == "rhi-upload" || options.queue == "same" ? SA2_QUEUE_SAME : SA2_QUEUE_OWN,
         options.barriers == "legacy" ? SA2_BARRIERS_LEGACY : SA2_BARRIERS_MATCH_GODOT,
-        state, options.handover == "declared" ? SA2_STATE_RENDER_TARGET : state, options.timeoutMs, 1};
+        state, options.handover == "declared" ? SA2_STATE_RENDER_TARGET : state, options.timeoutMs, l2 ? int(l2->options.gpuValidation) : 1};
 }
 
 void Harness::initialized() {
@@ -72,6 +81,7 @@ void Harness::initialized() {
         rhi_ = static_cast<QRhi*>(rif->getResource(window, QSGRendererInterface::RhiResource));
         const auto previous = snapshot();
         edit([](Stats& s) { ++s.initialized; });
+        if (l2 && previous.initialized) { fail("scenegraph-reinitialized"); return; }
         if (previous.lossTriggered) {
             edit([&](Stats& s) {
                 s.reasons.insert("loss-reinitialized");
@@ -84,7 +94,7 @@ void Harness::initialized() {
         const auto dpr = window->effectiveDevicePixelRatio();
         edit([&](Stats& s) { s.graphicsApi = int(api); s.dpr = dpr; });
         if (api != QSGRendererInterface::Direct3D12) { fail("backend-not-d3d12"); return; }
-        if (dpr != 1.0) { fail("dpr-not-1"); return; }
+        if (!l2 && dpr != 1.0) { fail("dpr-not-1"); return; }
         if (!rhi_) { fail("rhi-create-failed"); return; }
         firstRhi_ = rhi_;
         const auto* handles = static_cast<const QRhiD3D12NativeHandles*>(rhi_->nativeHandles());
@@ -113,14 +123,23 @@ void Harness::initialized() {
             throw std::runtime_error("matching adapter lookup failed");
         DXGI_ADAPTER_DESC1 description{};
         if (FAILED(adapter->GetDesc1(&description))) throw std::runtime_error("adapter description failed");
+        if (l2) {
+            ComPtr<IDXGIAdapter1> preferred;
+            DXGI_ADAPTER_DESC1 expected{};
+            if (FAILED(factory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&preferred)))
+                || FAILED(preferred->GetDesc1(&expected)) || expected.AdapterLuid.LowPart != description.AdapterLuid.LowPart
+                || expected.AdapterLuid.HighPart != description.AdapterLuid.HighPart) { fail("high-performance-adapter"); return; }
+        }
         sa2_device_info info{};
         info.struct_size = sizeof(info);
         if (!call("sa2_probe", native.fn_sa2_probe(handle(device), handle(queue), handle(adapter.Get()), &info))) return;
         const auto adapterName = QString::fromWCharArray(description.Description).toStdString();
+        if (l2 && QString::fromUtf8(rhi_->driverInfo().deviceName).toStdString() != adapterName) { fail("adapter-name"); return; }
         edit([&](Stats& s) {
             s.info = info; s.adapter = adapterName;
             if (options.device == "from-device") s.qtQueueDeviceMatches = info.queue_device_matches != 0;
         });
+        if (l2) l2->initialized(rhi_, info);
         if (!info.queue_device_matches || !info.adapter_matches_device || info.queue_type != D3D12_COMMAND_LIST_TYPE_DIRECT) {
             fail("identity-mismatch"); return;
         }
@@ -128,6 +147,11 @@ void Harness::initialized() {
         const auto settings = config();
         if (!call("sa2_attach", native.fn_sa2_attach(handle(device), handle(queue), &settings, &context_))) return;
         edit([](Stats& s) { s.attached = true; });
+        if (l2) {
+            char identity[65536]{};
+            if (!call("sa2_identity", native.fn_sa2_identity(identity, sizeof(identity)))) return;
+            l2->identity(QByteArray(identity));
+        }
     } catch (const std::exception&) { fail("exception"); }
 }
 
@@ -233,8 +257,130 @@ void Harness::setNode(QSGNode* root, QSize size) {
     // Sync precedes beforeRendering, so choose the slot of the next render step.
     showSlot(unsigned((frame_ + 1) % SA2_RING_SLOTS));
 }
+void Harness::setLayout(QSizeF size) { if (l2) l2->layout(size); }
+
+void Harness::renderScene(QRhiCommandBuffer* cb, QRhiTexture* color, QRhiRenderTarget* target, QSize size) {
+    try {
+        if (snapshot().stop || cleanupStarted_ || !context_) return;
+        if (ringSize_.isEmpty()) {
+            // The first synchronized frame must already have the final full-screen dimensions.
+            if (!l2->finalSize(window)) { fail("fullscreen-size"); return; }
+            const auto displayed = l2->displayed(window);
+            const QSize wanted = l2->options.halfTarget ? QSize(displayed.width() / 2, displayed.height() / 2) : displayed;
+            if (options.route != "import-direct" && size != wanted) { fail("color-buffer-size"); return; }
+            if (!createRing(wanted)) return;
+            if (target) { cb->beginPass(target, Qt::transparent, QRhiDepthStencilClearValue(1.0f, 0)); cb->endPass(); }
+            for (const auto& slot : slots_) {
+                if (slot.target) { cb->beginPass(slot.target, Qt::transparent, QRhiDepthStencilClearValue(1.0f, 0)); cb->endPass(); }
+            }
+            const auto inject = l2->options.inject.toUtf8();
+            const sa2_scene_config scene{sizeof(sa2_scene_config), l2->options.scene.isEmpty() ? 1u : l2->options.scene.right(1).toUInt(),
+                l2->options.turnMs, inject.isEmpty() ? nullptr : inject.constData(),
+                l2->options.noVram ? SA2_SCENE_NO_VRAM : 0u, l2->options.traceMs};
+            if (!call("sa2_scene_load", native.fn_sa2_scene_load(context_, &scene))) return;
+            sceneLoaded_ = true;
+            l2->captureSizes(window, ringSize_);
+            if (l2->options.mode == "geometry") {
+                const auto directory = l2->options.out.toUtf8();
+                const auto result = native.fn_sa2_scene_geometry_check(context_, directory.constData());
+                if (call("sa2_scene_geometry_check", result)) l2->outcome(result, "geometry-check");
+                edit([](Stats& s) { s.stop = true; });
+                return;
+            }
+        }
+        // No size-based rebuild here. During trace, sample() records all five sizes instead.
+        if (options.route == "export-copy") {
+            for (const auto& slot : slots_) {
+                if (slot.texture->nativeTexture().object != slot.resource) { fail("resource-changed"); return; }
+            }
+        }
+        if (!warmupLeft_ && !l2->traceActive && !l2->traceCompleted && l2->readyToTrace()) {
+            if (!call("sa2_scene_trace_begin", native.fn_sa2_scene_trace_begin(context_))) return;
+            l2->beginTrace(window, ringSize_);
+        }
+        if (l2->exitCode == 3 || !l2->sample(window, ringSize_)) {
+            if (l2->traceActive) {
+                call("sa2_scene_trace_end", native.fn_sa2_scene_trace_end(context_));
+                l2->traceActive = false;
+            }
+            edit([](Stats& s) { s.stop = true; });
+            return;
+        }
+        ++frame_;
+        if (!call("sa2_signal_godot_free", native.fn_sa2_signal_godot_free(context_, frame_ - 1))) return;
+        const unsigned k = unsigned(frame_ % SA2_RING_SLOTS);
+        if (warmupLeft_) {
+            auto* batch = rhi_->nextResourceUpdateBatch();
+            batch->copyTexture(color, slots_[k].texture); cb->resourceUpdate(batch);
+            --warmupLeft_;
+            l2Produced_ = true; l2TraceFrame_ = false; // Route warm-up is wholly before the trace.
+            return;
+        }
+        if (!l2->firstProduce) l2->firstProduce = L2::qpc();
+        if (!call("sa2_scene_produce", native.fn_sa2_scene_produce(context_, k, frame_))
+            || !call("sa2_godot_wait_ready", native.fn_sa2_godot_wait_ready(context_, frame_))) return;
+        if (options.route == "import-direct") showSlot(k);
+        else {
+            if (options.handover == "declared") slots_[k].texture->setNativeLayout(D3D12_RESOURCE_STATE_RENDER_TARGET);
+            auto* batch = rhi_->nextResourceUpdateBatch();
+            QRhiTextureCopyDescription copy;
+            copy.setPixelSize(QSize(std::min(color->pixelSize().width(), ringSize_.width()), std::min(color->pixelSize().height(), ringSize_.height())));
+            batch->copyTexture(color, slots_[k].texture, copy); cb->resourceUpdate(batch);
+        }
+        l2Produced_ = true; l2TraceFrame_ = l2->traceActive;
+    } catch (const std::exception&) { fail("exception"); }
+}
+
+void Harness::teardownScene() {
+    const auto observations = snapshot();
+    if (!observations.reasons.empty()) l2->failure(QString::fromStdString(*observations.reasons.begin()));
+    if (l2->traceActive) {
+        call("sa2_scene_trace_end", native.fn_sa2_scene_trace_end(context_)); l2->traceActive = false;
+        l2->failure("interrupted");
+    }
+    if (context_) {
+        const auto drained = native.fn_sa2_drain(context_, 5000);
+        const bool confirmed = drained == SA2_OK;
+        const bool removed = drained == SA2_E_DEVICE_REMOVED;
+        call("sa2_drain", drained);
+        if (!confirmed && !removed) { l2->releaseConditions(); return; }
+        if (confirmed && l2->traceCompleted && observations.reasons.empty() && l2->exitCode != 3) {
+            const auto directory = l2->options.out.toUtf8();
+            const auto result = native.fn_sa2_scene_write_run(context_, directory.constData());
+            if (call("sa2_scene_write_run", result)) l2->outcome(result, "label-check");
+        }
+        if (l2->options.gpuValidation) {
+            struct sa2_debug_counts counts{}; counts.struct_size = sizeof(counts);
+            char messages[8192]{};
+            if (call("sa2_debug_counts", native.fn_sa2_debug_counts(context_, &counts))
+                && call("sa2_debug_messages", native.fn_sa2_debug_messages(context_, messages, sizeof(messages)))) l2->debug(counts, QString::fromUtf8(messages));
+        }
+        if (sceneLoaded_) {
+            if (!call("sa2_scene_unload", native.fn_sa2_scene_unload(context_))) { l2->releaseConditions(); return; }
+            sceneLoaded_ = false;
+        }
+        for (unsigned k = 0; k < slots_.size(); ++k) {
+            if (slots_[k].registered && call("sa2_unregister_slot", native.fn_sa2_unregister_slot(context_, k))) slots_[k].registered = false;
+        }
+        node_ = nullptr; root_ = nullptr;
+        destroyWrappers();
+        for (auto& slot : slots_) {
+            if (slot.resource && !slot.registered && options.route != "export-copy") {
+                std::uint32_t count = 0;
+                if (call("sa2_release_texture", native.fn_sa2_release_texture(context_, slot.resource, &count))) {
+                    slot.resource = 0;
+                    if (count != 0) l2->failure("refcount-nonzero");
+                }
+            }
+        }
+        if (call("sa2_detach", native.fn_sa2_detach(context_))) context_ = nullptr;
+    } else { node_ = nullptr; root_ = nullptr; destroyWrappers(); }
+    l2->releaseConditions();
+    edit([](Stats& s) { s.renderDone = true; });
+}
 
 void Harness::renderStep(QRhiCommandBuffer* cb, QRhiTexture* color, QRhiRenderTarget* target, QSize size) {
+    if (l2) { renderScene(cb, color, target, size); return; }
     currentEligible_ = false;
     try {
         // Completion callbacks have returned before this render-thread step.
@@ -395,6 +541,7 @@ void Harness::readback(QRhiResourceUpdateBatch* batch, QRhiTexture* texture, boo
 }
 
 void Harness::afterRendering() {
+    if (l2) return;
     if (!currentEligible_ || cleanupStarted_ || snapshot().lossTriggered) return;
     try {
         auto* batch = rhi_->nextResourceUpdateBatch();
@@ -404,6 +551,22 @@ void Harness::afterRendering() {
     currentEligible_ = false;
 }
 void Harness::afterFrameEnd() {
+    if (l2) {
+        try {
+            if (!l2Produced_ || cleanupStarted_) return;
+            l2Produced_ = false;
+            // A failed endFrame still ends here (Q9): never mark that frame shown or complete the trace on it.
+            if (frameFailed()) { fail("present"); return; }
+            if (!call("sa2_mark_shown", native.fn_sa2_mark_shown(context_, unsigned(frame_ % SA2_RING_SLOTS), frame_))) return;
+            l2->presented(l2TraceFrame_);
+            if (l2->endDue()) {
+                if (!call("sa2_scene_trace_end", native.fn_sa2_scene_trace_end(context_))) return;
+                l2->traceActive = false; l2->traceCompleted = true;
+                edit([](Stats& s) { s.stop = true; });
+            }
+        } catch (const std::exception&) { fail("exception"); }
+        return;
+    }
     const auto s = snapshot();
     if (s.lossTriggered) return;
     edit([](Stats& result) { result.frameEnded = true; });
@@ -431,6 +594,7 @@ void Harness::teardown(QRhi* rhi) {
     cleanupStarted_ = true;
     currentEligible_ = false;
     if (rhi) rhi->finish();
+    if (l2) { teardownScene(); rhi_ = nullptr; return; }
     // The renderer/node is being deleted on this thread while the QRhi is alive.
     node_ = nullptr;
     root_ = nullptr;
@@ -573,7 +737,7 @@ public:
     explicit Renderer(Harness& harness) : harness_(harness) {}
     ~Renderer() override { harness_.rendererGone(rhi()); }
     void initialize(QRhiCommandBuffer*) override {}
-    void synchronize(QQuickRhiItem*) override {}
+    void synchronize(QQuickRhiItem* item) override { harness_.setLayout(QSizeF(item->width(), item->height())); }
     void render(QRhiCommandBuffer* cb) override {
         harness_.renderStep(cb, colorTexture(), renderTarget(), colorTexture()->pixelSize());
     }
@@ -584,6 +748,7 @@ QQuickRhiItemRenderer* RhiItem::createRenderer() { return new Renderer(harness_)
 QSGNode* DirectItem::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
     auto* root = old ? old : new QSGNode;
     harness_.setNode(root, QSize(qRound(width()), qRound(height())));
+    harness_.setLayout(QSizeF(width(), height()));
     return root;
 }
 }

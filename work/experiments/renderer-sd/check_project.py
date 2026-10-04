@@ -1,8 +1,10 @@
-"""Packet SD-Q acceptance: source/static evidence and Python fixtures only."""
+"""Packets SD-Q and L2-Q: source/static evidence and Python fixtures only."""
 import sys
 sys.dont_write_bytecode = True
 
 import copy
+import ctypes
+import fnmatch
 import json
 import os
 from pathlib import Path
@@ -14,6 +16,7 @@ import tempfile
 import uuid
 from unittest.mock import patch
 
+import prepare_l2
 import run_smoke
 import sd_reference as reference
 import smoke_summary
@@ -29,11 +32,246 @@ def require(condition, message):
         raise AssertionError(message)
 
 
+def abi_checks(header, loader, structs):
+    require(re.search(r"^#define SA2_ABI_VERSION 2u$", header, re.M), "ABI 2 pin")
+    declarations = re.findall(r"SA2_API\s+\w+\s+(sa2_\w+)\(", header)
+    bindings = re.findall(r"SD_BIND\((sa2_\w+)\)", loader)
+    fields = re.findall(r"SD_FUNCTION\((sa2_\w+)\)", structs)
+    require(len(declarations) == len(set(declarations)) == 27, "27 header exports")
+    require(len(bindings) == len(fields) == 27 and set(declarations) == set(bindings) == set(fields), "bind every ABI export exactly by name")
+    require("GetProcAddress(module, #name)" in loader and "reinterpret_cast<decltype(&name)>" in loader
+            and "decltype(&name) fn_##name" in structs, "ABI-derived function types")
+    require("LoadLibraryW(absolutePath)" in loader and "fn_sa2_abi_version() != SA2_ABI_VERSION" in loader, "ABI check before other calls")
+    require(loader.index("fn_sa2_abi_version()") < loader.index("SD_BIND(sa2_last_error)"), "ABI call must precede the rest")
+    types = {"uint32_t": ctypes.c_uint32, "int32_t": ctypes.c_int32, "uint64_t": ctypes.c_uint64,
+             "double": ctypes.c_double, "const char*": ctypes.c_void_p}
+    require(ctypes.sizeof(ctypes.c_void_p) == 8, "x64 fixture ABI")
+    for name, size in (("sa2_device_info", 48), ("sa2_config", 28), ("sa2_debug_counts", 128), ("sa2_scene_config", 32)):
+        declaration = "sizeof(" + ("struct " if name == "sa2_debug_counts" else "") + name + ") == " + str(size)
+        require(declaration in structs, "ABI size assertion missing: " + name)
+        body = re.search(r"typedef struct " + name + r"\s*\{(.*?)\}\s*" + name + ";", header, re.S).group(1)
+        body = re.sub(r"/\*.*?\*/", "", body, flags=re.S)
+        fields = []
+        for field in body.split(";"):
+            if not field.strip():
+                continue
+            parsed = re.fullmatch(r"\s*(uint32_t|int32_t|uint64_t|double|const char\*)\s+(\w+)(?:\[(\d+)\])?\s*", field)
+            require(parsed is not None, "unknown ABI field layout")
+            kind, field_name, count = parsed.groups()
+            fields.append((field_name, types[kind] * int(count) if count else types[kind]))
+        native_struct = type(name, (ctypes.Structure,), {"_fields_": fields})
+        require(ctypes.sizeof(native_struct) == size, "header-derived struct size: " + name)
+
+
+def cpp_body(source, name):
+    start = source.index(name + "(")
+    start = source.index("{", start)
+    depth = 1
+    end = start + 1
+    while depth:
+        require(end < len(source), "unterminated function: " + name)
+        depth += (source[end] == "{") - (source[end] == "}")
+        end += 1
+    return source[start:end]
+
+
+def l2_static_checks(sources):
+    main, smoke, l2 = (sources[name] for name in ("main.cpp", "smoke.cpp", "l2.cpp"))
+    parser = cpp_body(l2, "parseL2")
+    options = {"mode", "scene", "out", "run-id", "dll", "trace-ms", "preroll-ms", "turn-ms", "inject", "declare",
+               "gpu-validation", "conditions", "no-vram", "debug-half-target"}
+    require(set(re.findall(r'key == "--l2-([\w-]+)"', parser)) == options, "every level 2 option parsed")
+    for token in ('key != "--l2-declare"', '!seen.insert(key).second', 'else usage();', '"run", "geometry"',
+                  '"w1", "w2", "w3", "w4"', 'integer(1000, 3600000)', 'integer(0, 60000)',
+                  '!std::isfinite(result)', 'result <= 0 || result > 10000', 'integer(0, 1)', '"enforce", "record"',
+                  'options.scene != "w3"', 'options.scene != "w4"', 'name == "overlays"', 'options.declared.contains(name)',
+                  'declared == "true"', 'declared == "false"', '[A-Za-z0-9][A-Za-z0-9._-]{0,127}',
+                  'options.mode.isEmpty()', 'options.mode == "run" && options.scene.isEmpty()', 'options.runId.isEmpty()',
+                  'QFileInfo(options.dll).isAbsolute()', 'QFileInfo(options.dll).isFile()', '"sa2_interop.dll"',
+                  '"corrupt-label", "swap-same-colour", "delay-adoption", "stale-binding"', 'outputDirectory(options.out, true)'):
+        require(token in parser, "L2 parsing rule missing: " + token)
+    for name in ("frames", "resize-every", "verify-every", "device-loss-at", "debug-layer", "out", "dll"):
+        require('key == "--sd-' + name + '"' not in parser, "meaningless smoke option accepted")
+    require('"rhi-upload"' not in parser, "level 2 must draw DLL scenes")
+    for token in ('"qt", "from-rhi", "from-device"', '"import-copy", "export-copy", "import-direct"', '"same", "own"',
+                  '"tracked", "declared"', '"legacy", "match"', 'integer(5000, 5000)', 'M600_SA2_INJECT_UNCONFIRMED_DRAIN'):
+        require(token in parser, "L2 framework options")
+    directory = cpp_body(l2, "outputDirectory")
+    names = set(re.findall(r'"([\w.]+)"', directory))
+    require(names == {"harness.json", "harness.json.tmp", "native.json", "trace.jsonl", "geometry.json"}, "output check must allow logs and CSV")
+    require('directory.exists(name)' in directory and '!QFileInfo(path).isDir()' in directory, "output directory checks")
+    window = cpp_body(main, "level2Main")
+    for token in ('sd::usableL2Out', 'result.failure("usage")', 'QGuiApplication::primaryScreen()', 'window->setScreen(screen)',
+                  'Qt::FramelessWindowHint', 'Qt::WindowStaysOnTopHint', 'HWND_TOPMOST', 'Qt::BlankCursor',
+                  'window->showFullScreen()', 'surface.setSwapInterval(0)', 'graphics.setDebugLayer(options.gpuValidation)',
+                  'debug->EnableDebugLayer()', 'setFixedColorBufferWidth', 'setFixedColorBufferHeight',
+                  'QQuickWindow::afterFrameEnd', 'Qt::DirectConnection', 'window.reset()', 'owned.release(harness)', 'result.write()'):
+        require(token in window, "L2 window/setup setting: " + token)
+    require("SetEnableGPUBasedValidation" not in window, "validation uses the debug layer only")
+    require(window.count('SetForegroundWindow(') == 1 and window.index('window->showFullScreen()') < window.index('SetForegroundWindow('), "one foreground request after show")
+    require('starts_with("--l2-")' in main and 'return level2Main(argc, argv)' in main, "L2 dispatch before smoke parsing")
+    require('framework.route = "import-direct"' in sources["l2.h"] and 'device = "qt"' in sources["smoke.h"], "Q5 defaults")
+    for forbidden in ("AttachThreadInput", "SendInput", "QQml", "QQuickView"):
+        require(forbidden not in main + l2 + smoke, "unexpected foreground helper or overlay")
+    init = cpp_body(smoke, "Harness::initialized")
+    require(init.index('fn_sa2_probe(') < init.index('fn_sa2_attach(') < init.index('fn_sa2_identity('), "probe/attach/identity on render thread")
+    require('DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE' in init and 'expected.AdapterLuid.LowPart != description.AdapterLuid.LowPart' in init,
+            "actual high-performance adapter checked")
+    require('rhi_->driverInfo().deviceName).toStdString() != adapterName' in init, "QRhi adapter name agrees with DXGI")
+    require('qputenv("QT_D3D_ADAPTER_INDEX"' in l2 and 'selectHighPerformanceAdapter()' in window, "Qt adapter selection")
+    require('l2 ? int(l2->options.gpuValidation) : 1' in cpp_body(smoke, "Harness::config"), "scene callback only with validation")
+    render = cpp_body(smoke, "Harness::renderScene")
+    for token in ('if (ringSize_.isEmpty())', 'l2->finalSize(window)', 'displayed.width() / 2', 'displayed.height() / 2',
+                  'l2->options.traceMs', 'l2->options.turnMs', 'SA2_SCENE_NO_VRAM', 'l2->options.mode == "geometry"',
+                  'fn_sa2_scene_geometry_check(', 'l2->readyToTrace()', 'l2->sample(window, ringSize_)', 'frame_ - 1',
+                  'frame_ % SA2_RING_SLOTS', 'setNativeLayout', 'showSlot(k)', 'l2->firstProduce = L2::qpc()'):
+        require(token in render, "scene protocol: " + token)
+    ordered = ('createRing(wanted)', 'fn_sa2_scene_load(', 'fn_sa2_scene_trace_begin(', 'fn_sa2_signal_godot_free(',
+               'fn_sa2_scene_produce(', 'fn_sa2_godot_wait_ready(')
+    positions = [render.index(token) for token in ordered]
+    require(positions == sorted(positions) and render.count('createRing(') == render.count('fn_sa2_scene_produce(') == 1,
+            "one ring and one produce per render step")
+    require('releaseRing(' not in render and 'ringSize_ != size' not in render and 'fn_sa2_mark_shown(' not in render, "no trace rebuild or early mark")
+    after = cpp_body(smoke, "Harness::afterFrameEnd")
+    require(after.index('fn_sa2_mark_shown(') < after.index('l2->presented(') < after.index('fn_sa2_scene_trace_end('), "mark after submit/present; stop on boundary")
+    require('fail("present")' in after and after.index('frameFailed()') < after.index('fn_sa2_mark_shown('), "no mark or trace end after a failed endFrame (Q9)")
+    require(window.index('sd::watchFrameFailures()') < window.index('QGuiApplication app(argc, argv)'), "failed endFrame watched before Qt starts")
+    watch = cpp_body(l2, "watchFrameFailures")
+    require('previousHandler_ = qInstallMessageHandler(frameFailureHandler)' in watch, "message handler installed")
+    require('previousFilter_ = QLoggingCategory::installFilter(keepDefaultWarnings)' in watch, "default warnings kept on (Q9)")
+    keep = cpp_body(l2, "keepDefaultWarnings")
+    require('qstrcmp(category->categoryName(), "default") == 0' in keep and 'defaultCategory(' not in keep
+            and 'setEnabled(QtWarningMsg, true)' in keep
+            and keep.index('previousFilter_(category)') < keep.index('setEnabled(QtWarningMsg, true)'),
+            "the rules apply first, then the default category's warnings stay on")
+    handler = cpp_body(l2, "frameFailureHandler")
+    require('message.startsWith(QLatin1String("Failed to end frame"))' in handler and 'previousHandler_(type, context, message)' in handler,
+            "Q9 warning flags the frame; the previous handler still logs")
+    cleanup = cpp_body(smoke, "Harness::teardownScene")
+    order = ('fn_sa2_scene_trace_end(', 'fn_sa2_drain(', 'fn_sa2_scene_write_run(', 'fn_sa2_scene_unload(',
+             'fn_sa2_unregister_slot(', 'destroyWrappers()', 'fn_sa2_release_texture(', 'fn_sa2_detach(')
+    positions = [cleanup.index(token) for token in order]
+    require(positions == sorted(positions), "end/drain/write/unload/unregister/release/detach order")
+    require('l2->traceCompleted && observations.reasons.empty() && l2->exitCode != 3' in cleanup, "no write_run on enforce failure")
+    require('SA2_E_CHECK_FAILED' in cpp_body(smoke, "Harness::call") and 'exitCode = 2' in cpp_body(l2, "L2::outcome"), "check failures return 2")
+    for token in ('failure("foreground", 3)', 'failure(!visible ? "visibility" : "foreground", 3)',
+                  'now - foregroundWait_ < 5 * frequency_', 'qint64(options.prerollMs) * frequency_',
+                  'qint64(options.traceMs) * frequency_'):
+        require(token in l2, "timing and exit-3 rule: " + token)
+    ctor = cpp_body(l2, "L2::L2")
+    required_keys = {"format", "candidate", "mode", "run_id", "scene", "process_id", "exit_code", "reason", "options", "configuration", "files",
+                     "dll_identity", "dll_status", "qpc_frequency", "sizes", "scaling", "dpi_awareness", "environment", "window", "debug",
+                     "trace_ms", "preroll_ms", "turn_ms", "inject", "declared", "gpu_validation", "conditions", "no_vram", "debug_half_target",
+                     "abi_version", "last_status", "last_error", "display", "backbuffer", "displayed", "target", "samples", "samples_changed",
+                     "device_pixel_ratio", "item_width", "item_height", "texture_stretch", "power_source", "power_mode", "presenting_adapter",
+                     "presentation_interval", "refresh_hz", "power_samples", "mains", "battery", "vsync", "adapter", "driver", "msaa", "warp",
+                     "topmost", "display_required", "foreground_at_trace_start", "sample_period_ms", "samples_not_visible", "samples_covered",
+                     "samples_not_foreground", "visible_throughout", "foreground_throughout", "presents", "enabled", "debug_layer", "counts", "messages"}
+    require(required_keys <= set(re.findall(r'\{\s*"(\w+)"\s*,', ctor)), "complete harness shape on failure paths")
+    require('"magic600-l2-harness-v1"' in ctor and '{"candidate", "sd"}' in ctor, "harness identity")
+    for token in ('GetThreadDpiAwarenessContext()', 'DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2',
+                  'ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED', 'PowerRegisterForEffectivePowerModeNotifications',
+                  'PowerUnregisterFromEffectivePowerModeNotifications', 'rhi->driverInfo().deviceName', 'EnumDisplayDevicesW',
+                  'MONITOR_DEFAULTTOPRIMARY', 'EnumDisplaySettingsW', 'ENUM_CURRENT_SETTINGS', 'GetClientRect', 'currentPixelSize()',
+                  'itemSize_.width() * ratio', 'itemSize_.height() * ratio', 'EnumProcessModules', '"qt:exe"', 'file.startsWith(directory',
+                  '"qt:" + QFileInfo(file).fileName()', 'name != "QSG_RHI_DEBUG_LAYER"', 'name.startsWith("QSG_")', 'name.startsWith("QT_")'):
+        require(token in l2, "runtime fact recorded: " + token)
+    sampler = cpp_body(l2, "L2::sample")
+    for token in ('frequency_ / 10', 'IsWindowVisible', 'IsIconic', 'DWMWA_CLOAKED', 'covered(hwnd)', 'GetForegroundWindow()',
+                  'powerModeAtStart_ = mode', 'powerChanged_ = true', 'GetSystemPowerStatus', 'power.ACLineStatus == 1',
+                  'power.ACLineStatus == 0', 'sizes(window, target) != initialSizes_', 'options.enforce && (!visible || !foreground)'):
+        require(token in sampler, "100 ms condition sampling: " + token)
+    cover = cpp_body(l2, "covered")
+    require(cover.count('w / 10') == cover.count('h / 10') == 4 and 'GA_ROOT' in cover and 'WindowFromPoint' in cover, "five-point root hit test")
+    conditions = cpp_body(l2, "L2::updateConditions")
+    for token in ('samples_ && mains_ == samples_ ? "mains"', 'samples_ && battery_ == samples_ ? "battery"',
+                  'mains_ && battery_ && mains_ + battery_ == samples_ ? "changed" : "unknown"', 'powerChanged_ ? QString("changed")'):
+        require(token in conditions, "derive power source/mode from samples")
+    debug = cpp_body(l2, "L2::debug")
+    for field in ('struct_size', 'distinct_id_count', 'corruption', 'error', 'warning', 'info', 'message', 'mismatching_clear_value', 'mentioning_sa2', 'ids'):
+        require('{"' + field + '"' in debug, "all debug-count fields")
+    writer = cpp_body(l2, "L2::write")
+    require('QIODevice::WriteOnly | QIODevice::NewOnly' in writer and 'output.flush()' in writer and 'MoveFileExW' in writer
+            and 'MOVEFILE_WRITE_THROUGH' in writer and 'MOVEFILE_REPLACE_EXISTING' not in writer, "atomic exclusive harness writer")
+    require('outputDirectory(options.out, false)' in writer and '"harness.json.tmp"' in writer and '"harness.json"' in writer,
+            "writer refuses existing outputs")
+    for body in (render, after[:after.index('const auto s = snapshot();')], sampler):
+        require('std::cout' not in body and 'std::cerr' not in body, "no per-frame logging")
+
+
+def planted_static_checks(header, loader, structs, sources):
+    for changed_header, changed_loader, changed_structs in (
+            (header.replace("SA2_ABI_VERSION 2u", "SA2_ABI_VERSION 1u"), loader, structs),
+            (header, loader.replace("    SD_BIND(sa2_scene_load)", ""), structs),
+            (header, loader.replace("SD_BIND(sa2_scene_load)", "SD_BIND(sa2_scene_unload)"), structs),
+            (header, loader.replace("reinterpret_cast<decltype(&name)>", "reinterpret_cast<void*>"), structs),
+            (header, loader.replace("fn_sa2_abi_version() != SA2_ABI_VERSION", "false"), structs),
+            (header, loader, structs.replace("sizeof(sa2_scene_config) == 32", "sizeof(sa2_scene_config) == 31")),
+            (header.replace("uint32_t flags;", "uint64_t flags;"), loader, structs)):
+        try:
+            abi_checks(changed_header, changed_loader, changed_structs)
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("planted ABI defect accepted")
+    defects = (
+        ("l2.cpp", 'integer(1000, 3600000)', 'integer(999, 3600000)'),
+        ("l2.cpp", 'integer(0, 60000)', 'integer(0, 60001)'),
+        ("l2.cpp", 'result <= 0 || result > 10000', 'result < 0 || result > 10000'),
+        ("l2.cpp", 'integer(0, 1)', 'integer(0, 2)'),
+        ("l2.cpp", '!seen.insert(key).second', 'false'),
+        ("l2.cpp", 'name == "overlays"', 'name == "other"'),
+        ("l2.cpp", 'options.scene != "w4"', 'false'),
+        ("l2.cpp", '"geometry.json"', '"geometry.json", "qt.log"'),
+        ("l2.cpp", 'samples_ && mains_ == samples_ ? "mains"', 'samples_ ? "mains"'),
+        ("l2.cpp", 'frequency_ / 10', 'frequency_ / 20'),
+        ("l2.cpp", 'powerChanged_ = true', 'powerChanged_ = false'),
+        ("l2.cpp", 'samples_not_visible', 'not_visible'),
+        ("l2.cpp", '{"qpc_frequency", unknown}', '{"clock", unknown}'),
+        ("l2.cpp", 'MOVEFILE_WRITE_THROUGH)', 'MOVEFILE_WRITE_THROUGH | MOVEFILE_REPLACE_EXISTING)'),
+        ("l2.cpp", 'QIODevice::WriteOnly | QIODevice::NewOnly', 'QIODevice::WriteOnly'),
+        ("l2.cpp", 'file.startsWith(directory', 'file.endsWith(directory'),
+        ("l2.cpp", 'name != "QSG_RHI_DEBUG_LAYER"', 'name != "other"'),
+        ("l2.cpp", 'exitCode = 2', 'exitCode = 1'),
+        ("main.cpp", 'surface.setSwapInterval(0)', 'surface.setSwapInterval(1)'),
+        ("main.cpp", 'window->showFullScreen()', 'window->show()'),
+        ("main.cpp", 'Qt::WindowStaysOnTopHint', 'Qt::WindowTitleHint'),
+        ("main.cpp", 'SetForegroundWindow(result.hwnd)', 'IsWindowVisible(result.hwnd)'),
+        ("main.cpp", 'past the W3/W4 turns.\n', 'past the W3/W4 turns.\n            debug->SetEnableGPUBasedValidation(TRUE);\n'),
+        ("smoke.cpp", 'fn_sa2_scene_produce(context_, k, frame_)', 'fn_sa2_produce(context_, k, frame_, 0, 0)'),
+        ("smoke.cpp", 'createRing(wanted)', 'createRing(size)'),
+        ("smoke.cpp", 'l2->exitCode != 3', 'l2->exitCode != 4'),
+        ("smoke.cpp", 'rhi_->driverInfo().deviceName).toStdString() != adapterName', 'rhi_->driverInfo().deviceName).toStdString() == adapterName'),
+        ("smoke.cpp", 'fn_sa2_mark_shown(context_, unsigned(frame_ % SA2_RING_SLOTS), frame_)', 'fn_sa2_godot_wait_ready(context_, frame_)'),
+        ("smoke.cpp", 'if (frameFailed()) { fail("present"); return; }', ''),
+        ("main.cpp", '    sd::watchFrameFailures();\n', ''),
+        ("l2.cpp", '"Failed to end frame"', '"Failed to present"'),
+        ("l2.cpp", 'if (previousHandler_) previousHandler_(type, context, message);', ''),
+        ("l2.cpp", '    previousFilter_ = QLoggingCategory::installFilter(keepDefaultWarnings);\n', ''),
+        ("l2.cpp", 'category->setEnabled(QtWarningMsg, true)', 'category->setEnabled(QtWarningMsg, false)'),
+        ("l2.cpp", 'qstrcmp(category->categoryName(), "default") == 0', 'category == QLoggingCategory::defaultCategory()'),
+        ("l2.cpp", '    if (previousFilter_) previousFilter_(category);\n'
+                   '    if (qstrcmp(category->categoryName(), "default") == 0) category->setEnabled(QtWarningMsg, true);\n',
+                   '    if (qstrcmp(category->categoryName(), "default") == 0) category->setEnabled(QtWarningMsg, true);\n'
+                   '    if (previousFilter_) previousFilter_(category);\n'),
+    )
+    for name, good, bad in defects:
+        require(good in sources[name], "defect target missing: " + good)
+        broken = dict(sources)
+        broken[name] = sources[name].replace(good, bad, 1)
+        try:
+            l2_static_checks(broken)
+        except (AssertionError, ValueError):
+            pass
+        else:
+            raise AssertionError("planted static defect accepted: " + good)
+
+
 def static_checks():
     required = ("app/CMakeLists.txt", "app/src/main.cpp", "app/src/smoke.h", "app/src/smoke.cpp",
                 "app/src/native_loader.h", "app/src/native_loader.cpp", "app/src/code_layout.h",
                 "app/src/code_layout.cpp", "app/src/code_layout_test.cpp", "build.cmd", "run_smoke.py",
-                "smoke_summary.py", "sd_reference.py", "check_project.py", "README.md")
+                "smoke_summary.py", "sd_reference.py", "check_project.py", "README.md", "app/src/l2.h", "app/src/l2.cpp", "prepare_l2.py")
     for name in required:
         require((HERE / name).is_file(), "missing " + name)
     cmake = (HERE / "app/CMakeLists.txt").read_text(encoding="utf-8")
@@ -50,14 +288,12 @@ def static_checks():
     for text in (b"vswhere", b"vcvars64.bat", b"renderer-spike", b"-G Ninja", b"-DCMAKE_BUILD_TYPE=Release", b"-DCMAKE_PREFIX_PATH", b"6.10.3"):
         require(text in build, "build script setting missing")
     header = HEADER.read_text(encoding="utf-8")
-    exports = set(re.findall(r"SA2_API\s+\w+\s+(sa2_\w+)\(", header))
     loader = (HERE / "app/src/native_loader.cpp").read_text(encoding="utf-8")
-    require(exports == set(re.findall(r"SD_BIND\((sa2_\w+)\)", loader)), "bind every ABI export exactly by name")
-    require("GetProcAddress(module, #name)" in loader and "reinterpret_cast<decltype(&name)>" in loader, "ABI-derived function types")
-    require("LoadLibraryW(absolutePath)" in loader and "fn_sa2_abi_version() != SA2_ABI_VERSION" in loader, "ABI check before other calls")
     structs = (HERE / "app/src/native_loader.h").read_text(encoding="utf-8")
-    for declaration in ("sizeof(sa2_device_info) == 48", "sizeof(sa2_config) == 28", "sizeof(struct sa2_debug_counts) == 128"):
-        require(declaration in structs, "ABI size assertion missing")
+    abi_checks(header, loader, structs)
+    sources = {path.name: path.read_text(encoding="utf-8") for path in (HERE / "app/src").glob("*") if path.suffix in (".h", ".cpp")}
+    l2_static_checks(sources)
+    planted_static_checks(header, loader, structs, sources)
     defines = dict(re.findall(r"^#define\s+(SA2_\w+)\s+(\d+)u?\b", header, re.M))
     cpp = "\n".join(path.read_text(encoding="utf-8") for path in (HERE / "app/src").glob("*") if path.suffix in (".h", ".cpp"))
     constants = set(re.findall(r"\bSA2_(?:OK|E_\w+|QUEUE_\w+|BARRIERS_\w+|STATE_\w+)\b", cpp))
@@ -251,7 +487,7 @@ def summary_checks(directory):
 
 
 def pathspec_checks(directory):
-    """In a temporary repository, the diff pathspecs ignore excluded output and see source changes."""
+    """Exercise the runner's literal/glob exclusions in a plain fixture, without a Git child process."""
     repo = directory / "pathspec-fixture"
     excluded = ("work/experiments/renderer-sd/results/sd-smoke-summary.json", "work/experiments/renderer-sd/app/build/x.obj",
                 "work/experiments/renderer-sa2/native/build-check-1/x.obj")
@@ -260,20 +496,28 @@ def pathspec_checks(directory):
     for name in excluded + sources:
         (repo / name).parent.mkdir(parents=True, exist_ok=True)
         (repo / name).write_bytes(b"0")
-    git = ["git", "--no-optional-locks", "-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid",
-           "-c", "core.autocrlf=false", "-c", "commit.gpgsign=false"]
-    for args in (["init", "-q"], ["add", "-f", "."], ["commit", "-q", "--no-verify", "-m", "fixture"]):
-        subprocess.run(git + args, cwd=repo, check=True, capture_output=True, timeout=30)
+    baseline = {name: run_smoke.sha256(repo / name) for name in excluded + sources}
+    specs = run_smoke.diff_pathspecs()
 
-    def changed():
-        return subprocess.run(git + ["diff", "--quiet", "HEAD", "--", *run_smoke.diff_pathspecs()],
-                              cwd=repo, capture_output=True, timeout=30, check=False).returncode
+    def selected(name, spec):
+        if spec.startswith(":(exclude,glob)"):
+            return fnmatch.fnmatchcase(name, spec[len(":(exclude,glob)"):])
+        literal = spec.removeprefix(":(exclude)")
+        return name == literal or name.startswith(literal + "/")
+
+    def changed(active_specs=specs):
+        included = [spec for spec in active_specs if not spec.startswith(":(exclude")]
+        omitted = [spec for spec in active_specs if spec.startswith(":(exclude")]
+        return any(run_smoke.sha256(repo / name) != digest and any(selected(name, spec) for spec in included)
+                   and not any(selected(name, spec) for spec in omitted) for name, digest in baseline.items())
     for name in excluded:
         (repo / name).write_bytes(b"1")
-    require(changed() == 0, "a change under an excluded folder counts as a source change")
+    require(not changed(), "a change under an excluded folder counts as a source change")
+    require(changed([spec for spec in specs if "renderer-sd/results" not in spec and "renderer-sd/**/results" not in spec]),
+            "planted missing exclusion not caught")
     for name in sources:
         (repo / name).write_bytes(b"1")
-        require(changed() == 1, "source change missed: " + name)
+        require(changed(), "source change missed: " + name)
         (repo / name).write_bytes(b"0")
 
 
@@ -316,6 +560,60 @@ def reuse_checks(directory):
             raise AssertionError("modified artifact reused")
 
 
+def launch_checks(directory):
+    build = directory / "launch-fixture"
+    for relative in ("native/sa2_interop.dll", "deploy/sd_smoke.exe", "deploy/Qt6Core.dll"):
+        path = build / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(relative.encode("ascii"))
+    foreign_qt = directory / "other-qt/bin"
+    foreign_qt.mkdir(parents=True)
+    (foreign_qt / "qmake.exe").write_bytes(b"fixture")
+    ordinary = directory / "ordinary-bin"
+    ordinary.mkdir()
+    env = dict(PATH=os.pathsep.join((str(foreign_qt), str(ordinary))), QT_PLUGIN_PATH="other", QML_IMPORT_PATH="other",
+               QSG_RHI_DEBUG_LAYER="1", QSG_RENDER_TIMING="1", QT_LOGGING_RULES="*.debug=true")
+    with patch.dict(os.environ, env, clear=True):
+        record = prepare_l2.write_launch(build)
+        require(json.loads((build / "launch.json").read_text(encoding="utf-8")) == record, "launch writer round trip")
+    require(set(record) == {"format", "candidate", "executable", "dll", "working_directory", "arguments", "run_arguments",
+                            "validation_arguments", "separator", "environment", "validation_environment"}, "launch shape")
+    require(record["format"] == "magic600-l2-launch-v1" and record["candidate"] == "sd", "launch identity")
+    require(Path(record["executable"]) == build / "deploy/sd_smoke.exe" and Path(record["dll"]) == build / "native/sa2_interop.dll"
+            and Path(record["working_directory"]) == build / "deploy", "launch uses deployed presenter and built DLL")
+    require(all(Path(record[key]).is_absolute() for key in ("executable", "dll", "working_directory")), "absolute launch paths")
+    require(record["separator"] == record["arguments"] == record["run_arguments"] == record["validation_arguments"] == []
+            and record["validation_environment"] == {}, "ordinary Qt options; validation via app flag")
+    cleaned = record["environment"]
+    require(cleaned["PATH"].split(os.pathsep) == [str(build / "deploy"), str(ordinary)], "foreign Qt PATH removed")
+    for name in ("QSG_RHI_DEBUG_LAYER", "M600_SA2_INJECT_UNCONFIRMED_DRAIN", "QT_PLUGIN_PATH", "QT_QPA_PLATFORM_PLUGIN_PATH",
+                 "QML_IMPORT_PATH", "QML2_IMPORT_PATH", "QSG_RHI_BACKEND", "QSG_INFO", "QSG_RENDER_TIMING", "QSG_RHI_PROFILE", "QSG_VISUALIZE",
+                 "QSG_RENDERER_DEBUG", "QT_DEBUG_PLUGINS"):
+        require(cleaned[name] is None, "inherited validation/plugin/frame logging removed")
+    require(cleaned["QT_ENABLE_HIGHDPI_SCALING"] == "0" and cleaned["QSG_RENDER_LOOP"] == "threaded"
+            and cleaned["QT_LOGGING_RULES"] == "qt.rhi.general=true;qt.scenegraph.general=true", "level 1 run environment")
+    require(not (build / "launch.json.tmp").exists(), "launch atomic rename completed")
+    # The C++ output allowlist is tested on the runner's pre-populated directory, without Qt.
+    out = directory / "output-fixture"
+    out.mkdir()
+    (out / "qt.log").write_text("fixture", encoding="utf-8")
+    (out / "presentmon.csv").write_text("fixture", encoding="utf-8")
+    body = cpp_body((HERE / "app/src/l2.cpp").read_text(encoding="utf-8"), "outputDirectory")
+    reserved = set(re.findall(r'"([\w.]+)"', body))
+    require(not any((out / name).exists() for name in reserved), "logs and CSV accepted")
+    for name in reserved:
+        path = out / name
+        path.write_bytes(b"preserve")
+        require(any((out / item).exists() for item in reserved), "existing output refused")
+        path.unlink()
+    source = (HERE / "prepare_l2.py").read_text(encoding="utf-8")
+    for token in ('run_smoke.build_all(build, build, env, source)', 'run_smoke.reuse_build(source, version)',
+                  'len(str(build / "native")) > 150', 'version != "6.10.3"', 'run_smoke.source_identity()', '"work/sdb"', 'write_launch(build)'):
+        require(token in source, "prepare reuses level 1 build contract")
+    body = source.split("def main(argv=None):", 1)[1].split('if __name__ == "__main__":', 1)[0]
+    require('sd_smoke.exe' not in body, "prepare never starts presenter")
+
+
 def main():
     layout = static_checks()
     reference_checks(layout)
@@ -328,6 +626,7 @@ def main():
         summary_checks(directory)
         reuse_checks(directory)
         pathspec_checks(directory)
+        launch_checks(directory)
     finally:
         require(directory.resolve().parent == base, "temp cleanup boundary")
         remove_tree(directory)
