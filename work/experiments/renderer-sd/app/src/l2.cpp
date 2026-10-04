@@ -169,6 +169,20 @@ void selectHighPerformanceAdapter() {
     throw std::runtime_error("adapter index unavailable");
 }
 
+namespace {
+std::atomic<bool> frameFailed_{false};
+QtMessageHandler previousHandler_ = nullptr;
+void frameFailureHandler(QtMsgType type, const QMessageLogContext& context, const QString& message) {
+    if (type != QtDebugMsg && type != QtInfoMsg && message.startsWith(QLatin1String("Failed to end frame"))) frameFailed_.store(true);
+    if (previousHandler_) previousHandler_(type, context, message);
+}
+}
+// Qt 6.10.3's render loops log this warning for every failed endFrame, a failed Present included, and still emit
+// afterFrameEnd (FRAMEWORK-FACTS Q9), so it is the only sign of a frame that was not presented. Install it before
+// QGuiApplication starts any thread; the previous handler, Qt's default one, still writes every message.
+void watchFrameFailures() { previousHandler_ = qInstallMessageHandler(frameFailureHandler); }
+bool frameFailed() { return frameFailed_.load(); }
+
 L2::L2(L2Options value) : options(std::move(value)) {
     const auto optionalText = [](const QString& text) { return text.isEmpty() ? unknown : QJsonValue(text); };
     record_ = {{"format", "magic600-l2-harness-v1"}, {"candidate", "sd"}, {"mode", optionalText(options.mode)},

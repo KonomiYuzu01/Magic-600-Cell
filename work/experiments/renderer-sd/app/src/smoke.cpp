@@ -555,6 +555,8 @@ void Harness::afterFrameEnd() {
         try {
             if (!l2Produced_ || cleanupStarted_) return;
             l2Produced_ = false;
+            // A failed endFrame still ends here (Q9): never mark that frame shown or complete the trace on it.
+            if (frameFailed()) { fail("present"); return; }
             if (!call("sa2_mark_shown", native.fn_sa2_mark_shown(context_, unsigned(frame_ % SA2_RING_SLOTS), frame_))) return;
             l2->presented(l2TraceFrame_);
             if (l2->endDue()) {

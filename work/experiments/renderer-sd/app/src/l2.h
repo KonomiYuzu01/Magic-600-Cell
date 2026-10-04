@@ -17,6 +17,8 @@ struct L2Options {
 void parseL2(int argc, char** argv, L2Options& options);
 QString usableL2Out(int argc, char** argv);
 void selectHighPerformanceAdapter();
+void watchFrameFailures();
+bool frameFailed();
 
 // Written on the render thread; the GUI reads the report only after window deletion joins it.
 class L2 {

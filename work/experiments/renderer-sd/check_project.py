@@ -134,6 +134,12 @@ def l2_static_checks(sources):
     require('releaseRing(' not in render and 'ringSize_ != size' not in render and 'fn_sa2_mark_shown(' not in render, "no trace rebuild or early mark")
     after = cpp_body(smoke, "Harness::afterFrameEnd")
     require(after.index('fn_sa2_mark_shown(') < after.index('l2->presented(') < after.index('fn_sa2_scene_trace_end('), "mark after submit/present; stop on boundary")
+    require('fail("present")' in after and after.index('frameFailed()') < after.index('fn_sa2_mark_shown('), "no mark or trace end after a failed endFrame (Q9)")
+    require(window.index('sd::watchFrameFailures()') < window.index('QGuiApplication app(argc, argv)'), "failed endFrame watched before Qt starts")
+    require('previousHandler_ = qInstallMessageHandler(frameFailureHandler)' in cpp_body(l2, "watchFrameFailures"), "message handler installed")
+    handler = cpp_body(l2, "frameFailureHandler")
+    require('message.startsWith(QLatin1String("Failed to end frame"))' in handler and 'previousHandler_(type, context, message)' in handler,
+            "Q9 warning flags the frame; the previous handler still logs")
     cleanup = cpp_body(smoke, "Harness::teardownScene")
     order = ('fn_sa2_scene_trace_end(', 'fn_sa2_drain(', 'fn_sa2_scene_write_run(', 'fn_sa2_scene_unload(',
              'fn_sa2_unregister_slot(', 'destroyWrappers()', 'fn_sa2_release_texture(', 'fn_sa2_detach(')
@@ -230,6 +236,10 @@ def planted_static_checks(header, loader, structs, sources):
         ("smoke.cpp", 'l2->exitCode != 3', 'l2->exitCode != 4'),
         ("smoke.cpp", 'rhi_->driverInfo().deviceName).toStdString() != adapterName', 'rhi_->driverInfo().deviceName).toStdString() == adapterName'),
         ("smoke.cpp", 'fn_sa2_mark_shown(context_, unsigned(frame_ % SA2_RING_SLOTS), frame_)', 'fn_sa2_godot_wait_ready(context_, frame_)'),
+        ("smoke.cpp", 'if (frameFailed()) { fail("present"); return; }', ''),
+        ("main.cpp", '    sd::watchFrameFailures();\n', ''),
+        ("l2.cpp", '"Failed to end frame"', '"Failed to present"'),
+        ("l2.cpp", 'if (previousHandler_) previousHandler_(type, context, message);', ''),
     )
     for name, good, bad in defects:
         require(good in sources[name], "defect target missing: " + good)

@@ -132,6 +132,7 @@ int level2Main(int argc, char** argv) {
     if (!qEnvironmentVariableIsSet("QSG_RENDER_LOOP")) qputenv("QSG_RENDER_LOOP", "threaded");
     for (const auto* name : {"QSG_INFO", "QSG_RENDER_TIMING", "QSG_RHI_PROFILE", "QSG_VISUALIZE", "QSG_RENDERER_DEBUG", "QT_DEBUG_PLUGINS"}) qunsetenv(name);
     qputenv("QT_LOGGING_RULES", "qt.rhi.general=true;qt.scenegraph.general=true");
+    sd::watchFrameFailures();
     QGuiApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
     sd::Harness harness(options.framework, &result);
