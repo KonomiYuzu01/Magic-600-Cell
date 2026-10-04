@@ -421,12 +421,13 @@ def check_l2_source(sources=None):
     finish = between(app, "private void FinishMain()", "private void Flush()")
     ordered(finish, ("_image.Texture = null", "texture.Dispose()", "_views.Clear()", "Queue(Teardown, finishing: true)"), "clear framework wrappers before teardown")
     teardown = between(app, "private unsafe void Teardown()", "private unsafe void ReadDebug()")
-    ordered(teardown, ("MarkPrevious(); EndTrace(); Flush();", "_native.sa2_drain", "_writeRun && !Aborted",
+    ordered(teardown, ("MarkPrevious(); EndTrace(); Flush();", "_native.sa2_drain",
+                       'if (drain == Native.SA2_E_DEVICE_REMOVED) Fail(1, "sa2_drain");', "_writeRun && !Aborted",
                        "_native.sa2_scene_write_run", "_native.sa2_scene_unload", "_native.sa2_unregister_slot",
                        "_rd.FreeRid(_rids[i])", "Flush();", "_native.sa2_drain", "ReadDebug()", "_native.sa2_release_texture", "_native.sa2_detach", "Complete();"), "scene output and safe release order")
     for token in ('GetTree().Quit(1)', '_exitCode = 2; _reason = reason', 'status == Native.SA2_E_CHECK_FAILED',
                   '_result.exit_code = _exitCode; _result.reason = _reason', '_result.Write(_args.out_path)', 'GetTree().Quit(_exitCode)',
-                  'usage.reason = "usage"', 'Level2Arguments.UsageOutput(values)', 'window.AutoAcceptQuit = false', 'window.CloseRequested += CloseRequested'):
+                  'usage.reason = "usage"', 'Level2Arguments.UsageOutput(values)', 'GetTree().AutoAcceptQuit = false', 'window.CloseRequested += CloseRequested'):
         require(token in app, f"usage/exit/output path {token}")
 
 
@@ -457,6 +458,7 @@ def check_l2_defects():
         ("Level2", 'Require("sa2_drain", _native.sa2_drain(_context, 5000));\n            LoadScene();', 'LoadScene();'),
         ("Level2", '_native.sa2_scene_write_run(_context, path)', '_native.sa2_scene_geometry_check(_context, path)'),
         ("Level2", '_writeRun && !Aborted', '_writeRun'),
+        ("Level2", 'if (drain == Native.SA2_E_DEVICE_REMOVED) Fail(1, "sa2_drain");', ''),
         ("Level2", 'if ((Aborted || _ending) && !finishing) return;', 'if (Aborted && !finishing) return;'),
         ("Level2", '_nextSample = now + _windows.Frequency / 10', '_nextSample = now + _windows.Frequency'),
         ("Level2", 'Fail(3, "conditions")', 'Fail(1, "conditions")'),

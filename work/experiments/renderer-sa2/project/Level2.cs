@@ -86,14 +86,14 @@ public partial class Level2 : Node
             if (normalized != "4.7.2.stable.mono.official.ed1daf0bf") throw new InvalidOperationException("engine-version");
             if ((string)_result.configuration["rendering_driver"] != "d3d12") throw new InvalidOperationException("driver-not-d3d12");
             if (!RenderingServer.IsOnRenderThread() != (_args.render_thread == "separate")) throw new InvalidOperationException("render-thread-mismatch");
-            if (Environment.GetEnvironmentVariable("M600_SA2_INJECT_UNCONFIRMED_DRAIN") == "1")
+            if (System.Environment.GetEnvironmentVariable("M600_SA2_INJECT_UNCONFIRMED_DRAIN") == "1")
                 throw new ArgumentException("drain injection is inapplicable in level 2");
-            _result.files["godot:exe"] = Path.GetFullPath(Environment.ProcessPath);
+            _result.files["godot:exe"] = Path.GetFullPath(System.Environment.ProcessPath);
             _result.files["godot:assembly"] = Path.GetFullPath(typeof(Smoke).Assembly.Location);
             foreach (string name in new[] { "project.godot", "Main.tscn", "Smoke.cs" })
                 _result.files["godot:" + name] = ProjectSettings.GlobalizePath("res://" + name);
             Window window = GetWindow();
-            window.AutoAcceptQuit = false;
+            GetTree().AutoAcceptQuit = false;
             window.CloseRequested += CloseRequested;
             window.ContentScaleMode = Window.ContentScaleModeEnum.Disabled;
             window.ContentScaleFactor = 1.0f;
@@ -505,6 +505,8 @@ public partial class Level2 : Node
             int drain = _native.sa2_drain(_context, 5000);
             NativeStatus("sa2_drain", drain);
             if (drain != Native.SA2_OK && drain != Native.SA2_E_DEVICE_REMOVED) throw new InvalidOperationException("sa2_drain");
+            // A removal reported here is a device failure (exit 1), even after a complete trace; teardown goes on.
+            if (drain == Native.SA2_E_DEVICE_REMOVED) Fail(1, "sa2_drain");
             if (_writeRun && !Aborted && drain == Native.SA2_OK)
             {
                 byte[] directory = Encoding.UTF8.GetBytes(_args.out_path + "\0");
