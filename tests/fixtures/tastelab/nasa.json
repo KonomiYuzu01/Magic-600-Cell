@@ -1,0 +1,56 @@
+{
+  "collection": {
+    "version": "1.0",
+    "items": [
+      {
+        "href": "https://images-assets.nasa.gov/synthetic/item",
+        "data": [
+          {
+            "nasa_id": "synthetic-nasa-1",
+            "center": "JSC",
+            "photographer": "Invented Photographer",
+            "title": "Invented laboratory scene",
+            "description": "An invented instrument study",
+            "media_type": "image",
+            "keywords": [
+              "instrument"
+            ]
+          }
+        ],
+        "links": [
+          {
+            "href": "https://images-assets.nasa.gov/synthetic/preview.jpg",
+            "rel": "preview",
+            "render": "image"
+          }
+        ]
+      },
+      {
+        "data": [
+          {
+            "nasa_id": "synthetic-nasa-2",
+            "center": "ESA",
+            "photographer": "ESA",
+            "title": "Invented external scene"
+          }
+        ],
+        "links": [
+          {
+            "href": "https://images-assets.nasa.gov/synthetic/other.jpg",
+            "rel": "preview",
+            "render": "image"
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "total_hits": 3
+    },
+    "links": [
+      {
+        "rel": "next",
+        "href": "https://images-api.nasa.gov/search?page=2"
+      }
+    ]
+  }
+}

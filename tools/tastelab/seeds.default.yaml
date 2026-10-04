@@ -1,0 +1,104 @@
+# Taste Lab seed plan (default). The first fetch copies this file to
+# work/loop-memory/tastelab/library/seeds.yaml; edit that copy, not this one.
+#
+# kind:      focus (a style the owner explores), adjacency (bridges between styles)
+#            or control (neutral reference images).
+# target:    images to fetch for the category in the initial pool; terms share it.
+# tier:      B forces tier B (private reference) on every image of the category.
+# sources:   adapters to search, from the approved list in `sources` below.
+# terms:     search terms; a term may give a per-source query, for example booru tags.
+# adjacent:  candidate terms that the rating window may propose after every 100
+#            ratings; nothing is fetched until the owner ticks a proposal.
+# The category is a label for reports and quotas, never a model feature.
+
+version: 1
+# Minimum image-to-term similarity (same embedding model) for a search result to be
+# kept; 0 keeps everything the source returns.
+relevance_min: 0.20
+
+sources:            # approved adapters; set one to false to stop using it
+  wikimedia: true
+  met: true
+  aic: true
+  nasa: true
+  openverse: true
+  archive: true
+  demozoo: true
+  safebooru: true
+
+categories:
+  gaming:
+    kind: focus
+    target: 300
+    sources: [wikimedia, openverse, archive, demozoo]
+    terms: [pixel art, PS1 low poly, arcade cabinet, JRPG menu UI, game HUD, Dreamcast, GameCube design, Game Boy]
+    adjacent: [sprite sheet, isometric pixel art, Sega Saturn, CRT scanlines, chiptune album art, 16-bit RPG town, handheld console design, Mode 7]
+
+  y2k:
+    kind: focus
+    target: 300
+    sources: [wikimedia, openverse, archive]
+    terms: [Frutiger Aero, translucent plastic electronics, iMac G3, chrome bubble type, Windows XP Luna, early Flash website, vaporwave]
+    adjacent: [iridescent plastic, inflatable furniture, PDA design, liquid metal type, blobject, frosted glass interface, clear phone, Y2K web graphics]
+
+  cyberpunk:
+    kind: focus
+    target: 300
+    sources: [wikimedia, openverse, archive]
+    terms: [neon city night, Kowloon Walled City, cassette futurism, glitch art, techwear, retrofuturism]
+    adjacent: [Hong Kong neon signs, holographic display, LED matrix sign, rainy street at night, megastructure, server room, scanline interface]
+
+  steampunk:
+    kind: focus
+    target: 300
+    sources: [wikimedia, met, aic, openverse]
+    terms: [brass scientific instrument, orrery, armillary sphere, clockwork mechanism, dieselpunk, Jules Verne illustration, Art Nouveau]
+    adjacent: [astrolabe, theodolite, pocket watch movement, Victorian scientific illustration, brass telescope, Art Deco machine, Tesla coil]
+
+  early_tech:
+    kind: focus
+    target: 300
+    sources: [wikimedia, met, aic, nasa, openverse, archive]
+    terms: [Dieter Rams Braun, CRT monitor, vector display, oscilloscope, vintage computer, mission control, 1970s electronics]
+    adjacent: [Olivetti design, teletext, Nixie tube, reel-to-reel tape recorder, punch card, minicomputer front panel, Bauhaus product design]
+
+  experimental:
+    kind: focus
+    target: 300
+    sources: [wikimedia, met, aic, openverse, archive, demozoo]
+    terms: [generative art, demoscene, net art, op art, data visualization art, computer art 1960s]
+    adjacent: [plotter drawing, cellular automaton, fractal, Lissajous figure, ASCII art, procedural pattern, Vera Molnar]
+
+  idm_edm:
+    kind: focus
+    target: 300
+    sources: [wikimedia, openverse, archive, demozoo]
+    terms: [The Designers Republic, Warp Records artwork, rave flyer 1990s, Winamp skin, Milkdrop visualizer, modular synthesizer, VJ loop, festival stage design]
+    adjacent: [laser show, LED wall stage, drum machine, Roland TB-303, club flyer typography, audio visualizer, synthesizer panel]
+
+  bishoujo_2000s:
+    kind: focus
+    target: 300
+    tier: B
+    sources: [safebooru]
+    terms:
+      - {text: visual novel UI, safebooru: dialogue_box}
+      - {text: 2000s anime illustration style, safebooru: retro_artstyle}
+      - {text: light novel cover 2000s, safebooru: novel_cover}
+      - {text: pastel anime background, safebooru: scenery no_humans pastel_colors}
+      - {text: sparkle effect, safebooru: sparkle no_humans}
+    adjacent: [anime sky background, school rooftop scenery, anime title logo, anime game menu, cel shaded background]
+
+  nexus:
+    kind: adjacency
+    target: 1000
+    sources: [wikimedia, openverse, archive, demozoo]
+    terms: [Rez game, Tetris Effect, Wipeout 2097, Serial Experiments Lain, Jet Set Radio, Frutiger Aero, oscilloscope music, Ryoji Ikeda]
+    adjacent: [Lumines, Child of Eden, Vib-Ribbon, Fantavision, wireframe interface, light installation, audiovisual installation]
+
+  control:
+    kind: control
+    target: 600
+    sources: [wikimedia, met, aic, nasa, openverse]
+    terms: [Swiss style poster, modernist architecture interior, museum scientific instrument, macro nature photography]
+    adjacent: [botanical illustration, Japanese woodblock print, Bauhaus poster, brutalist architecture, mineral specimen, topographic map]
