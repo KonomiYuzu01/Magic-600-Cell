@@ -1,10 +1,14 @@
-# SD-Q Qt Quick interop smoke test
+# SD-Q Qt Quick interop: levels 1 and 2
 
 This is E-2.4-03 level 1: a synthetic sequence-numbered code image, displayed by
 Qt Quick's Direct3D 12 backend. It implements packet SD-Q against the committed
-SA2 producer ABI 1 and immutable `../renderer-sa2/code_layout.json`. It loads the
-DLL by absolute path and binds all 19 functions declared by the header. It uses
-C++ items, dynamic Qt linking and no QML, shaders, geometry, session or database.
+SA2 producer ABI 2 and immutable `../renderer-sa2/code_layout.json`. It loads the
+DLL by absolute path and binds all 27 functions declared by the header, checking
+the ABI before any other call and asserting the four struct sizes. The level 1
+defaults, synthetic image path, runner and result format are retained. It uses
+C++ items, dynamic Qt linking and no QML, session or database. Level 2 selects
+the DLL's S-B scenes with `--l2-mode`; its contract is
+[`HARNESS.md`](../renderer-l2-packets/HARNESS.md).
 
 Codex wrote the harness in a sandbox without Qt or a GPU; statements below
 marked source-verified come from Qt 6.10.3's source. The owner-machine results
@@ -287,3 +291,173 @@ the deployment totals answer the preliminary package-size question. Exact sequen
 and generation readbacks, resize transition counts and teardown reference counts
 supply the corresponding level-1 evidence. Source facts alone answer none of
 these runtime questions. The integrator reviews this candidate before merging.
+
+## Level 2 mode (L2-Q)
+
+`--l2-mode run` displays one of W1 to W4, produced by the ABI 2 DLL on Qt's
+Direct3D 12 device. The defaults are Q5: device `qt`, route `import-direct`,
+queue `same`, handover `tracked`, barriers `legacy`, render loop `threaded`.
+The app requests the primary monitor, borderless full screen, topmost, a blank
+cursor and swap interval 0. A matching high-performance adapter is independently
+checked through DXGI after Qt has created its device. The render thread must be
+per-monitor-v2 DPI aware. No UI or debug layer is drawn over the texture.
+
+The synchronized item and the display, client and swap-chain sizes must match
+before the three-slot ring is created. The ring is then fixed through teardown.
+Each frame signals free, produces one scene slot and waits ready; `afterFrameEnd`
+marks the slot shown after Qt submits and presents. The export route retains its
+three copy-only warm-up frames before preroll and trace. During trace, each
+produced frame increments `window.presents`. There are no composite readbacks,
+synthetic code images or per-frame application logs in this mode.
+
+Preroll and trace use QPC. After preroll the app allows up to 5 seconds for the
+window to become foreground. During trace it samples visibility, cloaking,
+five-point coverage, foreground, mains/battery, effective power mode and all five
+sizes every 100 ms, as S-B does. Enforce mode stops at the first failed visibility
+or foreground sample with exit 3 and no `write_run`. Record mode retains the
+counts and continues. Size changes are recorded; the app keeps the ring and the
+finalizer refuses the resulting evidence. Copy routes limit a copy to the source
+and destination extents after a resize, so this never requires a ring rebuild.
+
+At the first presented frame boundary at or after the requested trace length,
+the app ends the trace, stops requesting frames and closes. On the render thread
+it finishes Qt's submitted work, drains, writes the DLL outputs, unloads,
+unregisters, destroys wrappers, releases imports and detaches. GPU-validation
+counters and messages are read after the drain. The supplied QRhi/device/queue
+are released only after window deletion joins the render thread. `geometry` mode
+loads W1 when no scene was supplied, runs the DLL's offscreen geometry check,
+drains and tears down without a trace or condition sampling.
+
+All handled exits write `harness.json` next to the DLL outputs when `--l2-out`
+is usable. It uses exclusive `harness.json.tmp` creation, flush, close and a
+Windows rename with `MOVEFILE_WRITE_THROUGH` and no replacement flag. Existing
+outputs are preserved. DLL-enforced `TerminateProcess` on an unconfirmed drain,
+external termination and framework aborts cannot execute the final writer; the
+finalizer refuses a missing harness. No successful evidence is claimed for
+those exits. Exit 0 means outputs written, 1 means usage/setup/DLL/framework/I/O
+failure, 2 means an output-bearing label or geometry failure, and 3 means an
+enforced foreground/visibility failure. `reason` is null only on success.
+
+The options implement HARNESS section 3. Required are `--l2-mode`, `--l2-out`
+(existing directory), `--l2-run-id`, `--l2-dll` (absolute existing
+`sa2_interop.dll`) and, in run mode, `--l2-scene w1|w2|w3|w4`.
+Defaults/ranges: trace 192000 ms (1000 to 3600000), preroll 4000 ms (0 to 60000),
+W3 turn 190 ms (finite, greater than 0, at most 10000), GPU validation 0 (0 or 1),
+conditions `enforce` (`enforce` or `record`). `--l2-inject` accepts the four named
+faults only for W3/W4. Repeated `--l2-declare key=value` converts `true`/`false`
+to booleans; `overlays` and repeated declaration keys are refused.
+`--l2-no-vram` and `--l2-debug-half-target` are flags. Half target rounds down.
+Unknown, repeated, malformed and inappropriate options exit 1 before window
+work. Logs and `presentmon.csv` already in the output directory are accepted;
+only `harness.json`, its temporary name, `native.json`, `trace.jsonl` and
+`geometry.json` block a fresh run.
+
+Framework device/route/queue/handover/barrier options keep their `--sd-` names.
+`--sd-timeout-ms` accepts only 5000, the contract's fixed wait bound. The CPU
+`rhi-upload` baseline has no scene meaning and is refused in level 2, along with
+frame counts, resize, verification, loss and smoke debug-layer options and an
+inherited drain injection. GPU validation uses `--l2-gpu-validation 1`, enables
+the D3D12 debug layer (`EnableDebugLayer` and `QQuickGraphicsConfiguration::setDebugLayer`),
+and attaches with `debug_callback=1`. It does not enable GPU-based validation:
+level 1 and the DLL self-test use the debug layer only, and GPU-based validation
+would slow frames past the W3 and W4 turns. The render loop remains an environment
+setting (`threaded` or `basic`).
+
+Choices where the contract leaves representation open: Qt scaling uses
+`device_pixel_ratio`, `item_width`, `item_height` (logical pixels) and
+`texture_stretch="none"`. Configuration is flat and includes all effective
+`QSG_*`/`QT_*` environment names and values except `QSG_RHI_DEBUG_LAYER`, plus
+the framework options, API, loop, version and swap interval. Validation options
+are excluded from configuration. The file map uses `qt:exe` and
+`qt:<basename>` for each loaded module under the deployment directory; duplicate
+basenames with different paths fail. Effective power mode is `unknown` if its
+notification is unavailable. Incomplete AC samples give `unknown`, matching
+S-B; all mains gives `mains`, all battery gives `battery`, complete mixed samples
+give `changed`. Foreground is requested once, without a foreground-lock workaround.
+
+## Level 2 owner-machine commands
+
+Run in a short checkout on an idle machine, with no build, implementation call,
+H-06 or capture active. Preparation reuses `run_smoke.py`'s Qt version check,
+offline DLL/app/deployment commands, 150-character native build path bound and
+artifact digest manifest. It starts no Qt app. A new build goes to
+`work/sdb/<UTC stamp>/`; `--skip-build` selects only the newest build whose source,
+Qt version and complete recorded artifact manifest still match. Build logs stay
+in that build directory. The prepare command prints the build directory.
+
+```powershell
+python work/experiments/renderer-sd/check_project.py
+python work/experiments/renderer-sd/prepare_l2.py
+# Or, after an unchanged successful preparation:
+python work/experiments/renderer-sd/prepare_l2.py --skip-build
+$build = 'work/sdb/<printed stamp>'
+```
+
+`launch.json` starts the deployed `sd_smoke.exe` itself, with the built native
+DLL's absolute path, deployment working directory and no argument separator.
+The three argument lists and validation environment are empty: Q5 defaults and
+the runner's `--l2-` options select the mode. Its environment prepends this
+deployment to the cleaned PATH, removes other Qt installations and plugin/import
+overrides, retains level 1's DPI setting and startup-only diagnostics, and sets
+the threaded loop. Inherited debug-layer, drain, timing, profiling, visualization
+and renderer-debug switches are removed with null overrides. The app also clears
+inherited visualization/frame logging and the debug-layer environment switch.
+
+After L2-F is integrated, follow HARNESS section 11 in this order:
+
+```powershell
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Validation
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Geometry
+# The commands below require administrator PowerShell, mains power and an idle machine.
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Short -Scene w3
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Short -Scene w3 -DebugHalfTarget
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Short -Scene w3 -NoVram
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w1 -Declare @('frame_generation=false','upscaling=false')
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w2 -Declare @('frame_generation=false','upscaling=false')
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w4 -Declare @('frame_generation=false','upscaling=false')
+# Three owner-attended cold W3 runs, with the runner's operator confirmation:
+& work/experiments/renderer-l2/run_scene.ps1 -Candidate sd -Build $build -Scene w3 -Runs 3 -Declare @('frame_generation=false','upscaling=false')
+```
+
+Require four passing validation records, a passing geometry record and a passing
+short check. The deliberate half target must give only `size-mismatch`; no VRAM
+must give only `vram-missing`. W1/W2/W4 are preliminary without owner attendance.
+The shared finalizer alone writes run/short/geometry/validation/refusal records;
+the app writes only `harness.json` and the DLL writes its own outputs. Level 1
+should also be exercised with the ABI 2 build by the unchanged `run_smoke.py`.
+
+## Additional Qt 6.10.3 assumptions for level 2
+
+The implementing sandbox had no Qt headers or source, compiler or GPU, so it
+assumed every fact in this table. The integrator then checked the window,
+swap-interval, swap-chain size, adapter, device-name, debug-layer and DPI facts
+against tag `v6.10.3` (`work/experiments/renderer-l2-packets/FRAMEWORK-FACTS.md`,
+Q1 to Q8) and found no contradiction. That is source evidence only; the other
+rows stay assumed until the owner's build and runs. The DLL README says to end within the planned trace length; the
+binding harness instead requires the first frame boundary at or after it, which
+this app follows (the DLL reserves two additional label copies).
+
+| Assumed fact | Check that catches an incorrect assumption |
+| --- | --- |
+| `showFullScreen` on the primary screen and frameless/topmost hints produce a borderless native D3D12 window; Win32 topmost request persists | Startup compares display/client/backbuffer/displayed sizes and topmost; condition samples, `size-mismatch` and `conditions` in the short capture |
+| `QSurfaceFormat` swap interval 0 reaches Qt's D3D12 swap chain and uses the no-vsync present flags | Short PresentMon capture: `sync-interval`; the finalizer derives tearing from `AllowsTearing` rather than assuming present flags |
+| `QQuickWindow::swapChain()->currentPixelSize()` is available and legal in render callbacks | Owner compilation, startup size comparison, trace `size-mismatch` |
+| `QT_D3D_ADAPTER_INDEX` selects the `EnumAdapters1` index on Qt's D3D12 device | Owner compilation/source check; the render-thread device LUID must match DXGI's first high-performance adapter or startup fails |
+| `QRhi::driverInfo().deviceName` is the adapter name | Owner compilation; recorded adapter/presenting-adapter compared with DXGI and the expected GPU in validation/short capture and gate conditions |
+| `QQuickGraphicsConfiguration::setDebugLayer` works before expose and leaves graphics-device import behavior intact | Owner compilation; probe `debug_layer`, validation refusal `validation`, debug counts and imported-device identities |
+| Qt defaults to per-monitor-v2 awareness even with level 1's DPI scaling disabled | Render-thread awareness check fails startup otherwise; five native sizes and scaling check |
+| Sync, `beforeRendering`, RHI-item render, submit/present and `afterFrameEnd` retain level 1's order, with one render per present | Short capture `trace-steps`, native frame count versus `window.presents`; validation catches handover hazards |
+| Effective DPR times item logical size equals its physical rectangle; texture node nearest filtering fills it without another scaling transform | `scaling`, `size-mismatch` and half-target refusal in short captures |
+| `QQuickRhiItem::setFixedColorBufferWidth/Height` fixes its physical color-buffer size; explicit copy extents are supported | Owner compilation, copy-route startup color-buffer comparison and half-target `size-mismatch` |
+| `releaseResources`, window deletion, renderer destruction and `QRhi::finish` retain level 1's render-thread teardown/join behavior | Validation/geometry/short run completion, native teardown statuses and import reference counts; runner timeout bounds Qt waits |
+| Qt Core JSON, path, environment, `QFile::NewOnly`/flush and Qt screen/format/configuration APIs used here retain their established behavior | Owner compilation; usage/output-preservation checks and complete `harness.json` in every handled run; finalizer `harness` and `identity` checks |
+| The retained scenegraph/RHI general logging rules log startup only | Inspect validation/short logs; application frame callbacks contain no log statements |
+
+The acceptance check runs only Python. It retains the level 1 matrices, reference
+images, privacy checks and reuse fixtures, updates the four header-derived ABI
+layouts, tests the new launch writer and checks sections 2 to 6 statically with
+planted defects. Pathspec exclusion scenarios now run through a Python matcher
+in a plain fixture; actual Git pathspec execution is not evidence from this
+sandbox. C++ parsing, Qt rendering, Windows window behavior, DLL/GPU execution,
+deployment and every owner command above remain unverified, as do all performance
+claims. The static pass is source/fixture evidence only.

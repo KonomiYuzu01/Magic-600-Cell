@@ -25,6 +25,14 @@ struct Native {
     SD_FUNCTION(sa2_remove_device)
     SD_FUNCTION(sa2_device_removed_reason)
     SD_FUNCTION(sa2_detach)
+    SD_FUNCTION(sa2_scene_load)
+    SD_FUNCTION(sa2_scene_produce)
+    SD_FUNCTION(sa2_scene_trace_begin)
+    SD_FUNCTION(sa2_scene_trace_end)
+    SD_FUNCTION(sa2_scene_write_run)
+    SD_FUNCTION(sa2_scene_geometry_check)
+    SD_FUNCTION(sa2_identity)
+    SD_FUNCTION(sa2_scene_unload)
 #undef SD_FUNCTION
     void load(const wchar_t* absolutePath);
     ~Native();
@@ -32,4 +40,5 @@ struct Native {
 static_assert(sizeof(sa2_device_info) == 48);
 static_assert(sizeof(sa2_config) == 28);
 static_assert(sizeof(struct sa2_debug_counts) == 128);
+static_assert(sizeof(sa2_scene_config) == 32);
 }
