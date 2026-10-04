@@ -81,7 +81,7 @@ Reading: neither takes portable HLSL directly. Both keep the platform layer port
 
 ## 7. Questions only the experiments answer, and the smoke-test answers
 
-The level-1 smoke tests of 3 October 2026 answered part of these on the owner's RTX 4070 Laptop GPU (NVIDIA driver 616.92), for the builds stated: Godot `4.7.2.stable.mono.official` (editor build, D3D12 with enhanced barriers) and Qt **6.10.3** (`msvc2022_64`, D3D12 with legacy barriers). Qt 6.12 was not tested; nothing below holds for it. The full records are the renderer session's result cards E-2.4-02 and E-2.4-03 and the evidence page `interop-smoke-results` (commit `f3c367d` on branch `claude/renderer-l2`, not yet on `main`). They are actual Windows/DirectX evidence for those builds only. **No timing was measured**, so nothing here says what the interop costs.
+The level-1 smoke tests of 3 October 2026 answered part of these on the owner's RTX 4070 Laptop GPU (NVIDIA driver 616.92), for the builds stated: Godot `4.7.2.stable.mono.official` (editor build, D3D12 with enhanced barriers) and Qt **6.10.3** (`msvc2022_64`, D3D12 with legacy barriers). Qt 6.12 was not tested; nothing below holds for it. The full records are the renderer session's result cards E-2.4-02 and E-2.4-03 and the evidence page `interop-smoke-results` (commit `f3c367d`, merged to `main` with branch `claude/renderer-sb`). They are actual Windows/DirectX evidence for those builds only. **No timing was measured**, so nothing here says what the interop costs.
 
 Packets: [E-2.4-02](packets/renderer/E-2.4-02-sa2-godot.md), [E-2.4-03](packets/renderer/E-2.4-03-sd-qt.md).
 

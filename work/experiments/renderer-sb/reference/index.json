@@ -1,0 +1,57 @@
+{
+  "aspect": 1.6,
+  "cells": 600,
+  "files": {
+    "c0_end.f32": "3ffbfb05e99550068dad44ce5fe81a7d8e221a665c535d7651281b37b23a70f5",
+    "c0_mid.f32": "795dbe2059577e2a7c4605b722666129c8b801783b73799c3f468b2a53ace1c1",
+    "c0_start.f32": "8334baf9c516ea593cb161f8f15ef3bcc9817333ae8d5b6a5d9b1aeb1878b118",
+    "c1_end.f32": "51aa6d29c28e2b622c305198d53b2f0a2498aa500120396fe0139412ec910e0b",
+    "c1_mid.f32": "4841d6d5e9058e8fa4cf8cc6114cc6ee387408466ac9f12c382493819078e11b",
+    "c1_start.f32": "281dc158e263356c32d1114cf150ee7e937427e9bd380212e545001c1c240a54",
+    "c2_end.f32": "547135116accbca11b36004abd44d20d5a4e3137003a54b2b48e9c0fefae3e30",
+    "c2_mid.f32": "14d4b921c605fa8e071bc0231bbadb3e845427679da9b3ce45012436ae9f58fc",
+    "c2_start.f32": "e0a7e1173709bd6fd25c8c47d50baa9074fd41a4741fccf2a109f73c5634b83e",
+    "sample.u32": "d05055c5114bd42592f5d019b7406bb88abd26aacdab0ce42a28df5ea0c605a0"
+  },
+  "format": "magic600-sb-reference-v1",
+  "inputs": {
+    "assets/cell_frames.f32": "2dfceb37625b3f37985ea94193eca79c6e50e6ad00563eb4ba13a54dd7d3001f",
+    "assets/manifest.json": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
+    "assets/mesh.json": "357fb767272d8e08caa8220903d4f3fc687be47c771b96b170f2cff4ac6ddb03",
+    "assets/mesh_centers.f32": "91ac80a0be89c3ec2f78ff8ecb214e9949266c8bbdbabf30d18b441c3cbe1cbb",
+    "assets/mesh_sticker.u32": "34d15cf938814957a40c360822889bc7f4e4c9ac65388d63242af31b170e26c7",
+    "assets/mesh_vertices.f32": "696f82b56ba7562126a6fc158936cdfe837c594ba666b9b342815bde66a7f4df",
+    "work/experiments/renderer-sb/cameras.json": "6bb4288cc46e9ad4516b99d74322293dfe9eb076f12f58dc0a7d0e51b6403c50",
+    "work/experiments/renderer-sb/workload/turn.json": "13811e74385b7a07e2e66d7177178b41fdac7921a6e2fd1287e6eac9504445e1"
+  },
+  "moving_sample_count": 4680,
+  "offsets_check": {
+    "count": 434,
+    "first": 0,
+    "last": 30480,
+    "matches_stickers": true,
+    "strictly_increasing": true,
+    "triangle_aligned": true
+  },
+  "parameters": {
+    "R": 4.576491222541474,
+    "cs": 0.76,
+    "d4": 1.18,
+    "far": 100.0,
+    "near": 0.05,
+    "ss": 0.82,
+    "zoom": 1.15
+  },
+  "per_cell_vertex_count": 30480,
+  "poses": {
+    "end": 3.141592653589793,
+    "mid": 1.5707963267948966,
+    "start": 0.0
+  },
+  "sample_count": 9066,
+  "sample_stride": 4099,
+  "tolerance": {
+    "absolute": 0.0001,
+    "relative": 0.0001
+  }
+}

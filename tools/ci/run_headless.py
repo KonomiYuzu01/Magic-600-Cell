@@ -56,6 +56,7 @@ CHECKS: list[list[str]] = [
     ["tests/test_turn_probe.py"],
     ["tests/test_renderer_gate.py"],
     ["tests/test_renderer_tools.py"],
+    ["tests/test_feature_costs.py"],
     ["tests/test_migration_probes.py"],
     ["tests/test_migration_p2.py"],
     ["tests/test_inventory_check.py"],

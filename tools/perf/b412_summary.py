@@ -27,11 +27,12 @@ PRESENTMON_COLUMNS = {
 PUBLIC_SCALARS = (
     'build_identity', 'executable_sha256', 'package_sha256', 'presenting_adapter',
     'cpu_name', 'ram_bytes', 'presentation_interval', 'power_source', 'power_mode',
+    'msaa', 'vsync', 'tearing', 'warp',
 )
 PUBLIC_OBJECTS = {
     'display': ('width', 'height', 'refresh_hz', 'dpi'),
     'backbuffer': ('width', 'height'),
-    'declared': ('vendor_mode', 'frame_generation', 'driver_vsync', 'overlays'),
+    'declared': ('vendor_mode', 'frame_generation', 'upscaling', 'driver_vsync', 'overlays'),
 }
 
 

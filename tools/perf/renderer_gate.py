@@ -20,6 +20,8 @@ exactly one entry. Its phase is the elapsed fraction of the current turn on the 
 
 The PresentMon parsing, the nearest-rank percentile and the output sanitizing come from
 b412_summary.py.
+Runs of different features are judged separately; w3f is an attribution scene for H-06
+costs and never gate evidence.
 """
 from __future__ import annotations
 
@@ -38,9 +40,9 @@ from b412_summary import (PRESENTMON_COLUMNS, RunError, csv_integer, csv_interva
                           integer, nearest_rank, number, public_environment, read_json,
                           require, sanitize)
 
-SCENES = ('w1', 'w2', 'w3', 'w4', 'w5')
+SCENES = ('w1', 'w2', 'w3', 'w3f', 'w4', 'w5')
 GATE_SCENES = ('w3', 'w5')
-LABEL_SCENES = ('w3', 'w4', 'w5')
+LABEL_SCENES = ('w3', 'w3f', 'w4', 'w5')
 WARMUP_S = 10
 INTERVAL_S = 180
 EDGE_S = 0.5           # the first and last kept frame must lie this close to the interval edges
@@ -62,7 +64,8 @@ METHOD = ('every frame of the declared swap chain in [trace start + 10 s, + 190 
           'p99 <= 33.3 ms, with at least three valid runs of one build; optional vram_peak_mb '
           'must be positive and finite; vram_risk flags peaks above 7168 MB without changing '
           'the verdict; this input contract previously ignored vram_peak_mb (including 0); '
-          'no committed run carried that key before this change')
+          'no committed run carried that key before this change. Runs of different features '
+          'are judged separately; w3f is an attribution scene for H-06 costs and never gate evidence')
 
 
 def validate_run(run):
@@ -71,6 +74,8 @@ def validate_run(run):
     require(isinstance(run.get('run_id'), str) and bool(run['run_id'].strip()))
     require(run.get('scene') in SCENES)
     require(isinstance(run.get('candidate'), str) and NAME.fullmatch(run['candidate']) is not None, 'bad-candidate')
+    if 'feature' in run:
+        require(isinstance(run['feature'], str) and NAME.fullmatch(run['feature']) is not None, 'bad-feature')
     require(integer(run.get('qpc_frequency')) and run['qpc_frequency'] > 0)
     markers = run.get('markers')
     require(isinstance(markers, dict), 'missing-marker')
@@ -84,6 +89,10 @@ def validate_run(run):
             and bool(build['build_identity'].strip()), 'missing-build-identity')
     if run['scene'] in GATE_SCENES:
         require(number(run.get('turn_ms')) and 0 < run['turn_ms'] <= TURN_MS_MAX, 'bad-turn-duration')
+    if run['scene'] == 'w3f':
+        require(integer(run.get('turn_frames')) and run['turn_frames'] >= 2
+                and integer(run.get('cycle_frames')) and run['cycle_frames'] > 0
+                and run['cycle_frames'] % (2 * run['turn_frames']) == 0, 'bad-cycle')
     if run['scene'] in LABEL_SCENES:
         check = run.get('label_check')
         require(isinstance(check, dict) and check.get('status') in ('pass', 'fail'), 'missing-label-check')
@@ -178,14 +187,36 @@ def read_trace(directory):
         require(isinstance(entry, dict) and integer(entry.get('qpc')) and integer(entry.get('revision')), 'bad-trace')
         require(entry.get('turn') is None or integer(entry['turn']), 'bad-trace')
         require(entry.get('phase') is None or (number(entry['phase']) and 0 <= entry['phase'] <= 1), 'bad-trace')
+        if 'camera' in entry:
+            require(integer(entry['camera']) and entry['camera'] >= 0, 'bad-trace')
     return sorted(entries, key=lambda entry: entry['qpc'])
 
 
-def trace_reasons(entries, run, frame_ticks):
-    """Each step between two measured presents holds exactly one trace entry and the trace
-    covers the interval; every entry animates a turn; the phase follows the QPC clock at the
-    declared duration and turns follow one another without a pause; and each frame shows the
-    label revision of the turns completed before it (revision == turn)."""
+def run_frames(directory, run, columns, timing):
+    """The PresentMon frames, or the probe trace's QPC steps for preliminary callers."""
+    if timing == 'presentmon':
+        return read_frames(directory, run, columns)
+    if timing != 'trace':
+        raise ValueError('bad-timing')
+    entries = read_trace(directory)
+    begin, end = interval_ticks(run)
+    kept = [index for index, entry in enumerate(entries) if begin <= entry['qpc'] < end]
+    if not kept:
+        return None, [], [], ['trace-empty']
+    ticks = [entries[index]['qpc'] for index in kept]
+    values = [(entries[index]['qpc'] - entries[index - 1]['qpc']) * 1000 / run['qpc_frequency']
+              for index in kept if index > 0]
+    reasons = []
+    if run['markers']['trace_stop_qpc'] < end:
+        reasons.append('capture-short')
+    edge = EDGE_S * run['qpc_frequency']
+    if ticks[0] > begin + edge or ticks[-1] < end - edge:
+        reasons.append('capture-not-covered')
+    return values, ticks, [], reasons
+
+
+def trace_step_reasons(entries, run, frame_ticks):
+    """Exactly one entry per measured present step, with trace coverage of the interval."""
     begin, end = interval_ticks(run)
     window = [entry for entry in entries if begin <= entry['qpc'] < end]
     if not window:
@@ -197,6 +228,16 @@ def trace_reasons(entries, run, frame_ticks):
     if (any(bisect.bisect_right(times, after) - bisect.bisect_right(times, before) != 1 for before, after in steps)
             or window[0]['qpc'] > begin + edge or window[-1]['qpc'] < end - edge):
         reasons.add('trace-incomplete')
+    return sorted(reasons)
+
+
+def trace_reasons(entries, run, frame_ticks):
+    """Check trace steps, continuous clock-driven turns and immediate label adoption."""
+    reasons = set(trace_step_reasons(entries, run, frame_ticks))
+    if 'trace-empty' in reasons:
+        return sorted(reasons)
+    begin, end = interval_ticks(run)
+    window = [entry for entry in entries if begin <= entry['qpc'] < end]
     # Each entry places its turn's start at qpc - phase x duration. A frozen, slowed or
     # frame-stepped animation spreads those starts; a pause between turns delays the next start.
     turn_ticks = run['turn_ms'] * run['qpc_frequency'] / 1000
@@ -237,7 +278,15 @@ def judge(values):
             'met': fps >= FPS_MIN and p99 <= P99_MAX_MS}
 
 
-def summarize(directories, columns=None):
+def summarize(directories, columns=None, timing='presentmon'):
+    return sanitize(summarize_private(directories, columns, timing))
+
+
+def summarize_private(directories, columns=None, timing='presentmon'):
+    """The result before sanitizing, with raw candidates, run IDs and build identities for
+    joins (sanitized values can collide). Never print or write it; publish summarize()."""
+    if timing not in ('presentmon', 'trace'):
+        raise ValueError('bad-timing')
     columns = {**CAPTURE_COLUMNS, **(columns or {})}
     resolved = [os.path.normcase(str(Path(directory).resolve())) for directory in directories]
     if len(set(resolved)) != len(resolved):
@@ -245,6 +294,8 @@ def summarize(directories, columns=None):
     result = {'format': 'magic600-renderer-gate-v1', 'method': METHOD,
               'interval_s': INTERVAL_S, 'warmup_s': WARMUP_S, 'scenes': [],
               'invalid_runs': [], 'unreadable': [], 'environment': []}
+    if timing == 'trace':
+        result.update(timing='probe-trace', preliminary=True)
     scenes, frames, run_ids = {}, {}, set()
     for directory in map(Path, directories):
         try:
@@ -253,24 +304,38 @@ def summarize(directories, columns=None):
             if run['run_id'] in run_ids:
                 raise ValueError('duplicate-run')
             run_ids.add(run['run_id'])
-            values, ticks, ignored, reasons = read_frames(directory, run, columns)
+            values, ticks, ignored, reasons = run_frames(directory, run, columns, timing)
             reasons += condition_reasons(run.get('environment'))
             if run['scene'] in GATE_SCENES:
                 reasons += trace_reasons(read_trace(directory), run, ticks)
+            elif run['scene'] == 'w3f':
+                reasons += trace_step_reasons(read_trace(directory), run, ticks)
+            if timing == 'trace':
+                window = run.get('window')
+                if not isinstance(window, dict):
+                    reasons.append('window-missing')
+                else:
+                    if window.get('visible_throughout') is not True:
+                        reasons.append('window-not-visible')
+                    if window.get('foreground_throughout') is not True:
+                        reasons.append('window-not-foreground')
             if run['scene'] in LABEL_SCENES and run['label_check']['status'] != 'pass':
                 reasons.append('label-check-failed')
             environment = public_environment(run.get('environment', {}))
         except RunError as error:
             result['unreadable'].append({'reason': str(error)})
             continue
-        key = (run['candidate'], run['scene'])
+        feature = run.get('feature', 'none')
+        key = (run['candidate'], run['scene'], feature)
         scene = scenes.setdefault(key, {'candidate': run['candidate'], 'scene': run['scene'],
+                                                  'feature': feature,
                                                   'gate_scene': run['scene'] in GATE_SCENES,
                                                   'runs': [], 'pooled': None, 'verdict': 'no-data',
                                                   'vram_peak_mb': None})
         if reasons:
             result['invalid_runs'].append({'run_id': run['run_id'], 'candidate': run['candidate'],
-                                           'scene': run['scene'], 'reasons': sorted(set(reasons))})
+                                           'scene': run['scene'], 'feature': feature,
+                                           'reasons': sorted(set(reasons))})
             continue
         vram_peak = run.get('vram_peak_mb')
         scene['runs'].append({'run_id': run['run_id'], 'build_identity': run['build']['build_identity'],
@@ -298,7 +363,7 @@ def summarize(directories, columns=None):
             # Per-run passes imply the pooled pass (summed nearest ranks, mediant of fps); the
             # pooled check is kept as the documented rule and as a guard against later changes.
             scene['verdict'] = 'met' if scene['pooled']['met'] and all(run['met'] for run in scene['runs']) else 'not-met'
-    return sanitize(result)
+    return result
 
 
 def main(argv=None):

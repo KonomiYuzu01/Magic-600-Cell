@@ -5,6 +5,24 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-10-04] update | Framework comparison: smoke-test answers
 [framework-paper-comparison](../progress/1.0/framework-paper-comparison.md) section 7 now gives the level-1 smoke-test answers for Godot 4.7.2 and Qt 6.10.3 from the renderer session's result cards; questions 5, 7, 8 and 9 stay open, and no timing was measured.
 
+## [2026-10-03] update | Qt interop smoke test passes
+Updated [interop-smoke-results](evidence/interop-smoke-results.md). On the owner's GPU, Qt 6.10.3 showed a texture written by our own Direct3D 12 code on Qt's own device and queue, on a QRhi created with our device and queue (`fromRhi`) and with our device only (`fromDeviceAndContext`), on both queues and through resizes and teardown, with 0 validation errors; imported textures need no RENDER_TARGET handover. The page answers PR #43 section 7 for Qt 6.10.3 as smoke-test results; Qt 6.12 is untested.
+
+## [2026-10-03] update | Godot interop smoke test passes
+Created [interop-smoke-results](evidence/interop-smoke-results.md). On the owner's GPU, Godot 4.7.2 showed a texture written by our own Direct3D 12 code on its device and queue, on both queues and through resizes and teardown, with 0 validation errors; an imported texture needs the layout Godot's tracker holds, not RENDER_TARGET. The page answers PR #43 section 7 for Godot as smoke-test results; Qt waits for the owner's approval of its installer entry.
+
+## [2026-10-03] update | S-B resource handoff works
+Updated [s-b-probe-results](evidence/s-b-probe-results.md). The S-B handoff test verified every frame on the owner's GPU, with the debug layer, on the same device, to a second device in a child process, to a D3D11 consumer and across ring rebuilds; an unconfirmed drain ends the process without releasing GPU objects. The owner allowed the commit under an exception after the review-round limit and started the framework smoke tests: Godot now, Qt after its lockfile entry.
+
+## [2026-10-03] update | S-B label check catches injected faults
+Updated [s-b-probe-results](evidence/s-b-probe-results.md). Each of the four faults from the renderer plan, injected into a W3 run of the bare Direct3D 12 probe on the owner's GPU, failed its label check; the runs had no PresentMon capture, so they are label-check runs, not gate captures.
+
+## [2026-10-03] update | Godot 4.7.2 pinned
+The owner pinned `godot` (Godot .NET 4.7.2, user-scope portable zip) and approved the lockfile revision; the installer hash matches `winget show`. The [build-identity-v2](concepts/build-identity-v2.md) lockfile claim is refreshed, since the engine entries are unchanged, and the [renderer readiness](../progress/1.0/packets/renderer/E-2.4-00-readiness.md) table records the pin and the installed .NET SDK 10.0.401.
+
+## [2026-10-03] update | S-B probe meets the W3 gate
+Added [s-b-probe-results](evidence/s-b-probe-results.md). Three attended cold W3 runs of the bare Direct3D 12 probe meet the selection gate for build `2b5bf5e6...`, and the PresentMon 2.6 capture lessons from the capture script reviews are recorded; the handoff, the other scenes and the cost table are still open.
+
 ## [2026-10-03] decision | Taste Lab acceptance ruling
 Recorded in [owner-decisions-2026-10-03-taste-lab](decisions/owner-decisions-2026-10-03-taste-lab.md): on the acceptance seeds the full setting with one family and the bump owner passed every criterion, while two families, the low setting and the cross owner's ranking missed; the owner accepted the learner with these as recorded limitations and moved the two-family checkpoint to 150 comparisons per family, with one confirmation run on fresh seeds whose rule was fixed before the run; it passed (0.045 at 150 comparisons per family).
 

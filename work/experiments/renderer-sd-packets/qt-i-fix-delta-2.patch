@@ -1,0 +1,179 @@
+--- a/tools/toolchain/bootstrap.py
++++ b/tools/toolchain/bootstrap.py
+@@ -17,12 +17,14 @@
+ 
+ import argparse
+ import hashlib
++import http.client
+ import importlib.util
+ import ipaddress
+ import json
+ import os
+ import re
+ import shutil
++import socket
+ import ssl
+ import stat
+ import subprocess
+@@ -545,9 +547,10 @@
+ 
+ 
+ class _DeadlineSocket:
+-    """TLS socket mixin for archive downloads: every handshake, send and receive waits at most
+-    SOCKET_TIMEOUT and never past the download deadline. A buffered read loops over many receives,
+-    so a per-receive timeout alone would let a server that trickles bytes outlast the deadline."""
++    """Socket mixin for archive downloads, on the plain and on the TLS socket: every handshake, send
++    and receive waits at most SOCKET_TIMEOUT and never past the download deadline. A buffered read
++    loops over many receives, so a per-receive timeout alone would let a server that trickles bytes
++    outlast the deadline."""
+ 
+     deadline: float
+ 
+@@ -578,13 +581,42 @@
+         return super().sendall(*args, **kwargs)
+ 
+ 
++class _DeadlineHTTPSConnection(http.client.HTTPSConnection):
++    """HTTPS connection whose plain socket obeys the download deadline as well: through a proxy, the
++    CONNECT request and its reply travel on that socket before TLS starts."""
++
++    def __init__(self, *args, deadline: float, **kwargs):
++        super().__init__(*args, **kwargs)
++        plain = type("_DeadlinePlainSocket", (_DeadlineSocket, socket.socket), {"deadline": deadline})
++
++        def create_connection(address, timeout, source_address=None):
++            fileno = socket.create_connection(address, timeout, source_address).detach()
++            try:
++                return plain(fileno=fileno)
++            except BaseException:
++                socket.close(fileno)
++                raise
++
++        self._create_connection = create_connection
++
++
++class _DeadlineHTTPSHandler(urllib.request.HTTPSHandler):
++    def __init__(self, context: ssl.SSLContext, deadline: float):
++        super().__init__(context=context)
++        self.deadline = deadline
++
++    def https_open(self, req):
++        return self.do_open(_DeadlineHTTPSConnection, req, context=self._context, deadline=self.deadline)
++
++
+ def _http_get(url: str, timeout: float) -> tuple[int, Mapping[str, str], object]:
+     """GET one URL without following redirects; timeout is the time left before the download deadline."""
+     if timeout <= 0:
+         raise TimeoutError("download deadline exceeded")
++    deadline = time.monotonic() + timeout
+     context = ssl.create_default_context()
+-    context.sslsocket_class = type("_DeadlineSSLSocket", (_DeadlineSocket, ssl.SSLSocket), {"deadline": time.monotonic() + timeout})
+-    opener = urllib.request.build_opener(_NoRedirect(), urllib.request.HTTPSHandler(context=context))
++    context.sslsocket_class = type("_DeadlineSSLSocket", (_DeadlineSocket, ssl.SSLSocket), {"deadline": deadline})
++    opener = urllib.request.build_opener(_NoRedirect(), _DeadlineHTTPSHandler(context, deadline))
+     request = urllib.request.Request(url, headers={"Accept-Encoding": "identity", "User-Agent": "magic600-bootstrap"})
+     try:
+         response = opener.open(request, timeout=min(SOCKET_TIMEOUT, timeout))
+--- a/tests/test_bootstrap.py
++++ b/tests/test_bootstrap.py
+@@ -16,6 +16,7 @@
+ import subprocess
+ import sys
+ import tempfile
++import threading
+ import unittest
+ import uuid
+ from types import SimpleNamespace
+@@ -1507,7 +1508,7 @@
+ class ArchiveTransportTests(unittest.TestCase):
+     def test_http_seam_uses_default_tls_fixed_headers_and_no_redirects(self):
+         saved = (bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener, bootstrap.time.monotonic)
+-        context, seen = ssl.create_default_context(), []
++        context, seen, deadlines = ssl.create_default_context(), [], []
+         stream = CountingStream(b"")
+         stream.code, stream.headers = 200, {}
+ 
+@@ -1519,8 +1520,9 @@
+         def build(*handlers):
+             self.assertIsInstance(handlers[0], bootstrap._NoRedirect)
+             self.assertIsNone(handlers[0].redirect_request(None, None, 302, "", {}, "https://mirror.example.org/"))
+-            self.assertIsInstance(handlers[1], bootstrap.urllib.request.HTTPSHandler)
++            self.assertIsInstance(handlers[1], bootstrap._DeadlineHTTPSHandler)
+             self.assertIs(handlers[1]._context, context)
++            deadlines.append(handlers[1].deadline)
+             return Opener()
+ 
+         bootstrap.ssl.create_default_context = lambda: context
+@@ -1541,6 +1543,7 @@
+         self.assertTrue(issubclass(context.sslsocket_class, bootstrap._DeadlineSocket))
+         self.assertTrue(issubclass(context.sslsocket_class, ssl.SSLSocket))
+         self.assertEqual(deadline, 2700.0)
++        self.assertEqual(deadlines, [2700.0, 1010.0])  # the plain socket gets the same deadline
+         self.assertEqual(dict((k.lower(), v) for k, v in seen[0][0].header_items()),
+                          {"accept-encoding": "identity", "user-agent": "magic600-bootstrap"})
+ 
+@@ -1572,6 +1575,64 @@
+         finally:
+             client.close()
+             peer.close()
++
++    def test_real_opener_obeys_the_deadline_with_and_without_a_proxy(self):
++        # The real opener, proxy handler, CONNECT tunnel and TLS client; only the TCP connection is a local
++        # socket pair. Through the proxy, the peer answers CONNECT with one byte every 0.2 s, 13 s for the
++        # whole reply; without a proxy, it never answers the TLS handshake.
++        reply = b"HTTP/1.1 407 Proxy Authentication Required\r\nContent-Length: 0\r\n\r\n"
++        for proxy in (None, "http://proxy.example.org:8080"):
++            client, peer = socket.socketpair()
++            received, connected, stop = bytearray(), [], threading.Event()
++
++            def serve():
++                with contextlib.suppress(OSError):
++                    while b"\r\n\r\n" not in received and not received.startswith(b"\x16"):
++                        chunk = peer.recv(4096)
++                        if not chunk:
++                            return
++                        received.extend(chunk)
++                    for byte in reply if proxy else b"":
++                        if stop.wait(0.2):
++                            return
++                        peer.sendall(bytes([byte]))
++                    stop.wait(30)
++
++            def create_connection(address, timeout=None, source_address=None, **kwargs):
++                connected.append((address, timeout))
++                return client
++
++            saved_env = {key: os.environ.pop(key) for key in list(os.environ) if key.lower().endswith("_proxy")}
++            if proxy:
++                os.environ["HTTPS_PROXY"] = proxy
++            saved = bootstrap.socket.create_connection
++            bootstrap.socket.create_connection = create_connection
++            thread = threading.Thread(target=serve, daemon=True)
++            thread.start()
++            try:
++                started = bootstrap.time.monotonic()
++                with self.assertRaises(OSError) as raised:
++                    bootstrap._http_get("https://download.qt.io/repository/qt/archive.7z", 0.6)
++                elapsed = bootstrap.time.monotonic() - started
++            finally:
++                bootstrap.socket.create_connection = saved
++                os.environ.pop("HTTPS_PROXY", None)
++                os.environ.update(saved_env)
++                stop.set()
++                thread.join(10)
++                client.close()
++                peer.close()
++            with self.subTest(proxy=bool(proxy)):
++                # urllib reports a connection-phase timeout as URLError(reason=TimeoutError).
++                self.assertIsInstance(getattr(raised.exception, "reason", raised.exception), TimeoutError)
++                self.assertGreaterEqual(elapsed, 0.5)  # a socket timer may fire a little before the deadline
++                self.assertLess(elapsed, 5)
++                if proxy:
++                    self.assertEqual(connected, [(("proxy.example.org", 8080), 0.6)])
++                    self.assertTrue(received.startswith(b"CONNECT download.qt.io:443 HTTP/1.1\r\n"))
++                else:
++                    self.assertEqual(connected, [(("download.qt.io", 443), 0.6)])
++                    self.assertTrue(received.startswith(b"\x16"))  # a TLS handshake record
+ 
+ 
+ class AqtAndRealExtractorTests(unittest.TestCase):

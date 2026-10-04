@@ -1,0 +1,714 @@
+{
+  "format": "magic600-sb-handoff-summary-v1",
+  "source_format": "magic600-sb-handoff-v1",
+  "run_set": "20261003T063841Z",
+  "date": "2026-10-03",
+  "build": {
+    "sb_handoff_exe_sha256": "f8d252bb17c36d2faa52a9766b5e812a8d59399962b2730f7b747a4a90532537",
+    "source_sha256": {
+      "build.cmd": "a74bfe512d8424bc5aa02188448e3b6423b1c38de9af56ba3cef86de9c783561",
+      "check_handoff.py": "7afb5bee5861ccd06838ad6deec84eba76f4db68bc7fc00a2e166c5602082eda",
+      "CMakeLists.txt": "a19f8324fe0ee16dcc68552985c77c0cbd2a47dc0818934ea879e2981db8dc97",
+      "README.md": "d8cdf4e66a3d7f5ae05991de1ea54f97a45cffcce842487210a98d8bb3b6f383",
+      "src/handoff.cpp": "b22cf4cce042bb52c5de0404c6ca5b7a1bdeb18acce2c688ba3e1e137dc69d65",
+      "src/handoff.h": "ce5c2c1b7865306ece273052e8907532cf1039006509650f917613e248b9ff11",
+      "src/main.cpp": "eebfbc40128e9e5253213796eb6b0b78954c19262aa36c99062ee849ea409dc7",
+      "src/protocol.cpp": "cc303f8f2b290c7b6dbeccdb5385c26e6d091b28906e60be5ac7cba101765033",
+      "src/protocol.h": "c1e043b65a96d3604868500a1f8ff78e63bdf917a12544111332b0b7e22abad4"
+    },
+    "compiler": "MSVC 19.51.36260 x64",
+    "windows_sdk": [
+      "10.0.26100.0"
+    ],
+    "generator": "Ninja 1.13.2, CMake 4.4.3, Release"
+  },
+  "machine": "RTX 4070 Laptop GPU, NVIDIA user-mode driver 32.0.16.1692; WARP is the Windows software adapter",
+  "omitted": "adapter LUIDs, per-iteration timings and local paths stay in the private run records",
+  "runs": [
+    {
+      "run": "hardware-debug-layer",
+      "adapter": "hardware",
+      "debug_layer": true,
+      "exit_code": 0,
+      "modes": [
+        {
+          "mode": "same-device",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": true
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "pass",
+            "unexpected_live_objects": 0,
+            "report_messages": 1
+          },
+          "resize_count": 0,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 7.665,
+            "p99_nearest_rank": 33.668
+          },
+          "errors": []
+        },
+        {
+          "mode": "second-device",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": true
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "pass",
+            "unexpected_live_objects": 0,
+            "report_messages": 2
+          },
+          "resize_count": 0,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 34.337,
+            "p99_nearest_rank": 71.621
+          },
+          "errors": []
+        },
+        {
+          "mode": "d3d11-consumer",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": null
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "pass",
+            "unexpected_live_objects": 0,
+            "report_messages": 1
+          },
+          "resize_count": 0,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 5.598,
+            "p99_nearest_rank": 20.789
+          },
+          "errors": []
+        },
+        {
+          "mode": "resize",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": true
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "pass",
+            "unexpected_live_objects": 0,
+            "report_messages": 1
+          },
+          "resize_count": 9,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 11.95,
+            "p99_nearest_rank": 38.445
+          },
+          "errors": []
+        }
+      ]
+    },
+    {
+      "run": "hardware",
+      "adapter": "hardware",
+      "debug_layer": false,
+      "exit_code": 0,
+      "modes": [
+        {
+          "mode": "same-device",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": true
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "not_requested",
+            "unexpected_live_objects": 0,
+            "report_messages": 0
+          },
+          "resize_count": 0,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 4.032,
+            "p99_nearest_rank": 8.713
+          },
+          "errors": []
+        },
+        {
+          "mode": "second-device",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": true
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "not_requested",
+            "unexpected_live_objects": 0,
+            "report_messages": 0
+          },
+          "resize_count": 0,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 33.787,
+            "p99_nearest_rank": 68.339
+          },
+          "errors": []
+        },
+        {
+          "mode": "d3d11-consumer",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": null
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "not_requested",
+            "unexpected_live_objects": 0,
+            "report_messages": 0
+          },
+          "resize_count": 0,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 4.511,
+            "p99_nearest_rank": 18.267
+          },
+          "errors": []
+        },
+        {
+          "mode": "resize",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": true
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "not_requested",
+            "unexpected_live_objects": 0,
+            "report_messages": 0
+          },
+          "resize_count": 9,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 4.053,
+            "p99_nearest_rank": 23.955
+          },
+          "errors": []
+        }
+      ]
+    },
+    {
+      "run": "warp-debug-layer",
+      "adapter": "warp",
+      "debug_layer": true,
+      "exit_code": 0,
+      "modes": [
+        {
+          "mode": "same-device",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": true
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "pass",
+            "unexpected_live_objects": 0,
+            "report_messages": 1
+          },
+          "resize_count": 0,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 29.317,
+            "p99_nearest_rank": 66.707
+          },
+          "errors": []
+        },
+        {
+          "mode": "second-device",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": true
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "pass",
+            "unexpected_live_objects": 0,
+            "report_messages": 2
+          },
+          "resize_count": 0,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 45.183,
+            "p99_nearest_rank": 84.425
+          },
+          "errors": []
+        },
+        {
+          "mode": "d3d11-consumer",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": null
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "pass",
+            "unexpected_live_objects": 0,
+            "report_messages": 1
+          },
+          "resize_count": 0,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 26.385,
+            "p99_nearest_rank": 59.84
+          },
+          "errors": []
+        },
+        {
+          "mode": "resize",
+          "status": "pass",
+          "reason": "every handed-over frame verified",
+          "iterations": 1000,
+          "submitted_iterations": 1000,
+          "verified_iterations": 1000,
+          "first_failing_iteration": null,
+          "singleton_result": {
+            "producer_same_pointer": true,
+            "consumer_same_pointer": true
+          },
+          "consumer_on_producer_adapter": true,
+          "teardown": {
+            "status": "pass",
+            "unexpected_live_objects": 0,
+            "report_messages": 1
+          },
+          "resize_count": 9,
+          "timings_ms": {
+            "measurement": "CPU submission to CPU verification observation",
+            "samples": 1000,
+            "mean": 24.001,
+            "p99_nearest_rank": 67.236
+          },
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "unconfirmed_drain_injection": {
+    "command": "--mode <mode> --iterations <n> --debug-layer --inject-unconfirmed-drain <role>",
+    "expected": "exit 3 and the failing mode in the JSON with teardown fail, no later mode and no process left; for a consumer injection in second-device the child ends with exit 3 and the parent records its failure and exits 1",
+    "runs": [
+      {
+        "role": "producer",
+        "requested_mode": "same-device",
+        "iterations": 50,
+        "exit_code": 3,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "same-device",
+            "status": "fail",
+            "verified_iterations": 50,
+            "teardown": "fail",
+            "errors": [
+              "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      },
+      {
+        "role": "producer",
+        "requested_mode": "second-device",
+        "iterations": 50,
+        "exit_code": 3,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "second-device",
+            "status": "fail",
+            "verified_iterations": 50,
+            "teardown": "fail",
+            "errors": [
+              "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      },
+      {
+        "role": "producer",
+        "requested_mode": "d3d11-consumer",
+        "iterations": 50,
+        "exit_code": 3,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "d3d11-consumer",
+            "status": "fail",
+            "verified_iterations": 50,
+            "teardown": "fail",
+            "errors": [
+              "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      },
+      {
+        "role": "producer",
+        "requested_mode": "resize",
+        "iterations": 150,
+        "exit_code": 3,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "resize",
+            "status": "fail",
+            "verified_iterations": 100,
+            "teardown": "fail",
+            "errors": [
+              "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      },
+      {
+        "role": "producer",
+        "requested_mode": "all",
+        "iterations": 50,
+        "exit_code": 3,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "same-device",
+            "status": "fail",
+            "verified_iterations": 50,
+            "teardown": "fail",
+            "errors": [
+              "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      },
+      {
+        "role": "consumer",
+        "requested_mode": "same-device",
+        "iterations": 50,
+        "exit_code": 3,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "same-device",
+            "status": "fail",
+            "verified_iterations": 50,
+            "teardown": "fail",
+            "errors": [
+              "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      },
+      {
+        "role": "consumer",
+        "requested_mode": "second-device",
+        "iterations": 50,
+        "exit_code": 1,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "second-device",
+            "status": "fail",
+            "verified_iterations": 50,
+            "teardown": "fail",
+            "errors": [
+              "child: injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      },
+      {
+        "role": "consumer",
+        "requested_mode": "d3d11-consumer",
+        "iterations": 50,
+        "exit_code": 3,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "d3d11-consumer",
+            "status": "fail",
+            "verified_iterations": 50,
+            "teardown": "fail",
+            "errors": [
+              "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      },
+      {
+        "role": "consumer",
+        "requested_mode": "resize",
+        "iterations": 150,
+        "exit_code": 3,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "resize",
+            "status": "fail",
+            "verified_iterations": 100,
+            "teardown": "fail",
+            "errors": [
+              "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      },
+      {
+        "role": "consumer",
+        "requested_mode": "all",
+        "iterations": 50,
+        "exit_code": 3,
+        "processes_left_2_s_later": 0,
+        "reported_modes": [
+          {
+            "mode": "same-device",
+            "status": "fail",
+            "verified_iterations": 50,
+            "teardown": "fail",
+            "errors": [
+              "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "abort_report_to_unread_pipe": {
+    "command": "--mode same-device --iterations 10000 --inject-unconfirmed-drain producer, stdout to a pipe",
+    "stdout_never_read": {
+      "exit_code": 3,
+      "seconds_to_exit": 52.9,
+      "processes_left_2_s_later": 0
+    },
+    "stdout_read": {
+      "exit_code": 3,
+      "seconds_to_exit": 32.5,
+      "stdout_bytes": 80041,
+      "parsed_modes": [
+        [
+          "same-device",
+          "fail",
+          10000,
+          [
+            "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+          ]
+        ]
+      ],
+      "processes_left_2_s_later": 0
+    }
+  },
+  "allocation_failure_in_abort_recording": {
+    "finding": "SB-C-001 as left open by review 20261003T061832Z-fc4fbad5: recording the failure in abandon() could throw before the process ended",
+    "design": "instrumented scratch copies of the reviewed source (before) and of this source (after), never committed; both read the same switches: the injected producer drain fails on every attempt or only on the first, and the first diagnostic construction in abandon() (just before its fail call) throws std::bad_alloc; stderr traces show when a Queue destructor is entered and when it goes on to release its members",
+    "command": "--mode same-device --iterations 50 --debug-layer --inject-unconfirmed-drain producer",
+    "source_sha256": {
+      "before_reviewed_handoff_cpp": "4d3ebdea5ac96f886a4d2540ebfad55c9c2203f39d59e70800ad42053797f6f2",
+      "before_instrumented_handoff_cpp": "33e534d2bd8858fefbdd5a589353ee5db812a22710a039e9ad7de7dc8152869c",
+      "after_instrumented_handoff_cpp": "bc9f70a4f19114d6ba123187e395d5fa8f05141ba9cf264a4b2de53f3a7b2f82"
+    },
+    "exe_sha256": {
+      "before": "e1725344d6cf98ff2d366fda3bd097b6c7b330ed1faa3df2ad10ad812cb312cd",
+      "after": "65147b215c52b595a95714a453acb96316b93dbc55ed7d9ba54c2409beb3dbe9"
+    },
+    "expected": "before: a queue releases its members after the failed drain when the recording throws; after: every case exits 3 and no Queue destructor is entered",
+    "runs": [
+      {
+        "variant": "before",
+        "case": "control",
+        "meaning": "every producer drain fails; recording succeeds",
+        "exit_code": 3,
+        "queue_destructor_traces": [],
+        "status": "fail",
+        "teardown": "fail",
+        "errors": [
+          "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+        ],
+        "processes_left_2_s_later": 0
+      },
+      {
+        "variant": "before",
+        "case": "bad-alloc",
+        "meaning": "every producer drain fails; the first diagnostic construction throws std::bad_alloc",
+        "exit_code": 3,
+        "queue_destructor_traces": [
+          "enter ~Queue consumer",
+          "release consumer queue members",
+          "enter ~Queue producer"
+        ],
+        "status": "fail",
+        "teardown": "fail",
+        "errors": [
+          "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+        ],
+        "processes_left_2_s_later": 0
+      },
+      {
+        "variant": "before",
+        "case": "drain-once",
+        "meaning": "only the first producer drain fails; recording succeeds",
+        "exit_code": 3,
+        "queue_destructor_traces": [],
+        "status": "fail",
+        "teardown": "fail",
+        "errors": [
+          "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+        ],
+        "processes_left_2_s_later": 0
+      },
+      {
+        "variant": "before",
+        "case": "drain-once-bad-alloc",
+        "meaning": "only the first producer drain fails and the first diagnostic construction throws std::bad_alloc",
+        "exit_code": 1,
+        "queue_destructor_traces": [
+          "enter ~Queue consumer",
+          "release consumer queue members",
+          "enter ~Queue producer",
+          "release producer queue members"
+        ],
+        "status": "fail",
+        "teardown": "fail",
+        "errors": [
+          "bad allocation"
+        ],
+        "processes_left_2_s_later": 0
+      },
+      {
+        "variant": "after",
+        "case": "control",
+        "meaning": "every producer drain fails; recording succeeds",
+        "exit_code": 3,
+        "queue_destructor_traces": [],
+        "status": "fail",
+        "teardown": "fail",
+        "errors": [
+          "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+        ],
+        "processes_left_2_s_later": 0
+      },
+      {
+        "variant": "after",
+        "case": "bad-alloc",
+        "meaning": "every producer drain fails; the first diagnostic construction throws std::bad_alloc",
+        "exit_code": 3,
+        "queue_destructor_traces": [],
+        "status": "fail",
+        "teardown": "fail",
+        "errors": [],
+        "processes_left_2_s_later": 0
+      },
+      {
+        "variant": "after",
+        "case": "drain-once",
+        "meaning": "only the first producer drain fails; recording succeeds",
+        "exit_code": 3,
+        "queue_destructor_traces": [],
+        "status": "fail",
+        "teardown": "fail",
+        "errors": [
+          "injected unconfirmed drain (test); drain unconfirmed, so the process ended without releasing GPU objects"
+        ],
+        "processes_left_2_s_later": 0
+      },
+      {
+        "variant": "after",
+        "case": "drain-once-bad-alloc",
+        "meaning": "only the first producer drain fails and the first diagnostic construction throws std::bad_alloc",
+        "exit_code": 3,
+        "queue_destructor_traces": [],
+        "status": "fail",
+        "teardown": "fail",
+        "errors": [],
+        "processes_left_2_s_later": 0
+      }
+    ]
+  },
+  "timing_note": "timings are informational: the machine was busier than for run set 20261003T061444Z (the all-mode runs took 22-44 s instead of 6-8 s); in separate timing runs of this build the abort report appeared 0.6-0.9 s after start and the process ended 0.5-8 s after the report, during operating-system teardown after TerminateProcess"
+}
