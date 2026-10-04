@@ -370,7 +370,9 @@ def check_l2_source(sources=None):
                   'WindowSetCurrentScreen(DisplayServer.GetPrimaryScreen())', 'WindowSetMode(DisplayServer.WindowMode.ExclusiveFullscreen)',
                   'WindowSetFlag(DisplayServer.WindowFlags.AlwaysOnTop, true)', 'WindowGetVsyncMode() == DisplayServer.VSyncMode.Disabled',
                   'Input.MouseMode = Input.MouseModeEnum.Hidden', 'GetGlobalRect().Size', 'ScreenGetWidth()', 'ScreenGetHeight()',
-                  '"godot:exe"', 'Environment.ProcessPath', '"godot:assembly"', 'typeof(Smoke).Assembly.Location',
+                  '"godot:exe"', 'Environment.ProcessPath', '"godot:assembly"', 'ProjectAssemblyPath(typeof(Smoke).Assembly)',
+                  'GetProperty("AssemblyLoadedPath")', 'AssemblyName.GetAssemblyName(path).FullName == assembly.FullName',
+                  'throw new InvalidOperationException("assembly-path")',
                   '"project.godot", "Main.tscn", "Smoke.cs"', 'JsonSerializer.Deserialize<JsonElement>',
                   'Level2Windows.DpiAwareness', 'info.umd_version >> 48', 'info.umd_version >> 32', 'info.umd_version >> 16',
                   'debug_callback = _args.gpu_validation ? 1 : 0', 'wait_timeout_ms = 5000', 'conditions == "enforce"'):
@@ -386,6 +388,8 @@ def check_l2_source(sources=None):
         require(token in windows, f"Windows condition/configuration path {token}")
     require(windows.count("SetForegroundWindow(window)") == 1, "one foreground request")
     require(not any(token in app + windows for token in ("AttachThreadInput", "SendInput", "mouse_event", "keybd_event", "OS.GetCmdlineArgs()")), "no foreground workaround or consumed-argument identity")
+    # Godot loads the project assembly from memory, so its Location is empty (FRAMEWORK-FACTS G9).
+    require("Assembly.Location" not in app, "the project assembly path comes from its load context")
     covered = between(windows, "private bool Covered()", "public bool Sample(")
     require(covered.count("new(r.") == 5 and "GetAncestor(hit, 2) != _window" in covered, "five-point root-window covered test")
     sample = between(windows, "public bool Sample(", "private static string PowerModeName(")
@@ -449,6 +453,8 @@ def check_l2_defects():
         ("Level2Result", 'battery == samples ? "battery"', 'battery == samples ? "mains"'),
         ("Level2Result", 'FileMode.CreateNew', 'FileMode.Create'),
         ("Level2Result", 'File.Move(temporary, destination, false)', 'File.Move(temporary, destination, true)'),
+        ("Level2", 'ProjectAssemblyPath(typeof(Smoke).Assembly)', 'Path.GetFullPath(typeof(Smoke).Assembly.Location)'),
+        ("Level2", 'AssemblyName.GetAssemblyName(path).FullName == assembly.FullName', 'AssemblyName.GetAssemblyName(path).FullName != null'),
         ("Level2", 'WindowMode.ExclusiveFullscreen', 'WindowMode.Fullscreen'),
         ("Level2", 'ContentScaleFactor = 1.0f', 'ContentScaleFactor = 0.5f'),
         ("Level2", 'WindowGetVsyncMode() == DisplayServer.VSyncMode.Disabled', 'true'),

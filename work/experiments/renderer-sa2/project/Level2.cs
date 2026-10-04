@@ -89,7 +89,7 @@ public partial class Level2 : Node
             if (System.Environment.GetEnvironmentVariable("M600_SA2_INJECT_UNCONFIRMED_DRAIN") == "1")
                 throw new ArgumentException("drain injection is inapplicable in level 2");
             _result.files["godot:exe"] = Path.GetFullPath(System.Environment.ProcessPath);
-            _result.files["godot:assembly"] = Path.GetFullPath(typeof(Smoke).Assembly.Location);
+            _result.files["godot:assembly"] = ProjectAssemblyPath(typeof(Smoke).Assembly);
             foreach (string name in new[] { "project.godot", "Main.tscn", "Smoke.cs" })
                 _result.files["godot:" + name] = ProjectSettings.GlobalizePath("res://" + name);
             Window window = GetWindow();
@@ -133,6 +133,22 @@ public partial class Level2 : Node
             _stage = Stage.Settle;
         }
         catch (Exception e) { Fail(1, e is ArgumentException ? "usage" : e.Message); FinishMain(); }
+    }
+
+    // Godot loads the project assembly from memory, so its Location is empty (FRAMEWORK-FACTS G9).
+    // The load context keeps the path of the file it read; the name check ties that file to this assembly.
+    private static string ProjectAssemblyPath(System.Reflection.Assembly assembly)
+    {
+        try
+        {
+            var context = System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(assembly);
+            string path = context?.GetType().GetProperty("AssemblyLoadedPath")?.GetValue(context) as string;
+            if (!string.IsNullOrEmpty(path) && File.Exists(path)
+                && System.Reflection.AssemblyName.GetAssemblyName(path).FullName == assembly.FullName)
+                return Path.GetFullPath(path);
+        }
+        catch (Exception) { }
+        throw new InvalidOperationException("assembly-path");
     }
 
     private void PreDraw() => _preDrawIteration = _iteration;
