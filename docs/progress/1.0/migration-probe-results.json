@@ -1,0 +1,3270 @@
+{
+ "commands": {
+  "p1": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline p1 p2",
+  "p2": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline p1 p2",
+  "p3": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline p1 p2",
+  "pipeline": "tools/.venv/engine/Scripts/python.exe tools/migration_probes/run_probes.py p3 pipeline p1 p2"
+ },
+ "probes": {
+  "p1": {
+   "result": {
+    "attempts": [
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "clean",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [
+       "session.sqlite3-shm",
+       "session.sqlite3-wal"
+      ],
+      "error": null,
+      "events": [
+       "added session.sqlite3-shm",
+       "added session.sqlite3-wal",
+       "modified session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added",
+       "session.sqlite3-wal:added"
+      ],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "clean",
+      "digest_changes": [
+       "session.sqlite3-shm",
+       "session.sqlite3-wal"
+      ],
+      "error": "injected",
+      "events": [
+       "added session.sqlite3-shm",
+       "added session.sqlite3-wal",
+       "modified session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added",
+       "session.sqlite3-wal:added"
+      ],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "clean",
+      "digest_changes": [
+       "session.sqlite3-shm",
+       "session.sqlite3-wal"
+      ],
+      "error": "BackupStalled: backup-no-progress",
+      "events": [
+       "added session.sqlite3-shm",
+       "added session.sqlite3-wal"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": false,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added",
+       "session.sqlite3-wal:added"
+      ],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "clean",
+      "digest_changes": [
+       "session.sqlite3-shm",
+       "session.sqlite3-wal"
+      ],
+      "error": "injected",
+      "events": [
+       "added session.sqlite3-shm",
+       "added session.sqlite3-wal"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added",
+       "session.sqlite3-wal:added"
+      ],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "clean",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [
+       "session.sqlite3-shm",
+       "session.sqlite3-wal"
+      ],
+      "error": null,
+      "events": [
+       "added session.sqlite3-shm",
+       "added session.sqlite3-wal",
+       "modified session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added",
+       "session.sqlite3-wal:added"
+      ],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "clean",
+      "digest_changes": [
+       "session.sqlite3-shm",
+       "session.sqlite3-wal"
+      ],
+      "error": "injected",
+      "events": [
+       "added session.sqlite3-shm",
+       "added session.sqlite3-wal",
+       "modified session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added",
+       "session.sqlite3-wal:added"
+      ],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file (rc 14)",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file (rc 14)",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "clean",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "clean",
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "clean",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "clean",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash-noshm",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [
+       "session.sqlite3-shm"
+      ],
+      "error": null,
+      "events": [
+       "added session.sqlite3-shm",
+       "modified session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added"
+      ],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash-noshm",
+      "digest_changes": [
+       "session.sqlite3-shm"
+      ],
+      "error": "injected",
+      "events": [
+       "added session.sqlite3-shm",
+       "modified session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added"
+      ],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash-noshm",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [
+       "session.sqlite3-shm"
+      ],
+      "error": null,
+      "events": [
+       "added session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added"
+      ],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash-noshm",
+      "digest_changes": [
+       "session.sqlite3-shm"
+      ],
+      "error": "injected",
+      "events": [
+       "added session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added"
+      ],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: disk I/O error",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1c",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash-noshm",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [
+       "session.sqlite3-shm"
+      ],
+      "error": null,
+      "events": [
+       "added session.sqlite3-shm",
+       "modified session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added"
+      ],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash-noshm",
+      "digest_changes": [
+       "session.sqlite3-shm"
+      ],
+      "error": "injected",
+      "events": [
+       "added session.sqlite3-shm",
+       "modified session.sqlite3-shm"
+      ],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written",
+       "session.sqlite3-shm:added"
+      ],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file (rc 14)",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file (rc 14)",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C1d",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2a",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "OperationalError: unable to open database file",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": false,
+      "preserved": true,
+      "reached": false,
+      "reasons": [],
+      "snapshot_changes": [],
+      "strategy": "C2b",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash-noshm",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash-noshm",
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "watch",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "case": "crash-noshm",
+      "copy": {
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": null,
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     {
+      "backup_statuses": [
+       0
+      ],
+      "case": "crash-noshm",
+      "deny": {
+       "applied": true,
+       "effective": true,
+       "removed": true
+      },
+      "digest_changes": [],
+      "error": "injected",
+      "events": [],
+      "inconclusive": false,
+      "mode": "deny",
+      "model_matches": true,
+      "opened": true,
+      "outcome": "failure",
+      "overflows": 0,
+      "passed": true,
+      "preserved": true,
+      "reached": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     }
+    ],
+    "chosen": "C3",
+    "controls": {
+     "external-append-control": {
+      "accepted": false,
+      "backup_statuses": [
+       0,
+       101
+      ],
+      "copy": {
+       "events": 3,
+       "head_event_present": true,
+       "head_matches": true,
+       "integrity": "ok",
+       "ok": true
+      },
+      "digest_changes": [
+       "engine.lock"
+      ],
+      "error": null,
+      "events": [
+       [
+        "modified",
+        "engine.lock"
+       ]
+      ],
+      "inconclusive": false,
+      "injected": {
+       "exit": 3,
+       "writer": "external-0.4-session-lock"
+      },
+      "model_matches": true,
+      "opened": true,
+      "outcome": "success",
+      "overflows": 0,
+      "passed": true,
+      "preserved": false,
+      "reached": true,
+      "reasons": [
+       "event",
+       "snapshot-diff",
+       "digest-diff"
+      ],
+      "snapshot_changes": [
+       "engine.lock:changed",
+       "engine.lock:size",
+       "engine.lock:written"
+      ],
+      "staged": {
+       "files": [
+        "session.sqlite3",
+        "session.sqlite3-wal"
+       ],
+       "matches_lock_digests": true
+      },
+      "strategy": "C3",
+      "watch_errors": []
+     },
+     "forwarding-control": {
+      "forwarding": true,
+      "launcher_exited_by_itself": true,
+      "passed": true,
+      "venv_launcher": true,
+      "worker_terminated": true
+     },
+     "mapped-write-control": {
+      "accepted": true,
+      "byte_changed_in_view": true,
+      "digest_changes": [],
+      "event_count": 0,
+      "events": [],
+      "guarded": false,
+      "passed": null,
+      "reasons": [],
+      "snapshot_changes": [],
+      "writable_open": "allowed",
+      "write_happened_undetected": true
+     },
+     "mapped-write-guarded": {
+      "accepted": true,
+      "digest_changes": [],
+      "event_count": 0,
+      "events": [],
+      "guarded": true,
+      "passed": true,
+      "reasons": [],
+      "snapshot_changes": [],
+      "writable_open": "refused",
+      "write_happened_undetected": false
+     },
+     "mapped-write-prevention": {
+      "deny": {
+       "applied": true,
+       "checks": {
+        "create-file": "denied",
+        "existing-file-write-open": "denied"
+       },
+       "effective": true,
+       "removed": true
+      },
+      "passed": true,
+      "prevented": true
+     },
+     "negative-control": {
+      "accepted": false,
+      "event_count": 6,
+      "events_seen": 3,
+      "passed": true,
+      "reasons": [
+       "event",
+       "snapshot-diff"
+      ],
+      "shm_events": [
+       "added",
+       "modified",
+       "removed"
+      ],
+      "sidecars_after_close": [],
+      "sidecars_while_open": [
+       "session.sqlite3-shm",
+       "session.sqlite3-wal"
+      ],
+      "snapshot_changes": [
+       ".:changed",
+       ".:written"
+      ]
+     },
+     "overflow-control": {
+      "accepted": false,
+      "buffer_size": 64,
+      "burst": 300,
+      "event_count": 0,
+      "overflow_forms": [
+       "ok-zero-bytes-last-error-1022"
+      ],
+      "overflows": 895,
+      "passed": true,
+      "reasons": [
+       "overflow"
+      ],
+      "snapshot_changes": [],
+      "snapshots_equal": true
+     }
+    },
+    "strategies": {
+     "C1a": "mode=ro, NO_CKPT_ON_CLOSE",
+     "C1b": "mode=ro, readonly_shm=1, NO_CKPT_ON_CLOSE",
+     "C1c": "mode=ro, locking_mode=EXCLUSIVE, NO_CKPT_ON_CLOSE",
+     "C1d": "mode=ro, SQLITE_FCNTL_PERSIST_WAL=1, NO_CKPT_ON_CLOSE (C API)",
+     "C2a": "mode=ro, nolock=1 under the importer lock, NO_CKPT_ON_CLOSE",
+     "C2b": "mode=ro, nolock=1, readonly_shm=1, NO_CKPT_ON_CLOSE",
+     "C3": "byte copy of the database and -wal under the lock and write guard; SQLite recovers and backs up only the copy"
+    },
+    "verdicts": {
+     "C1a": {
+      "attempts": 12,
+      "inconclusive_attempts": 0,
+      "passed_attempts": 4,
+      "verdict": "fail"
+     },
+     "C1b": {
+      "attempts": 12,
+      "inconclusive_attempts": 0,
+      "passed_attempts": 4,
+      "verdict": "fail"
+     },
+     "C1c": {
+      "attempts": 12,
+      "inconclusive_attempts": 0,
+      "passed_attempts": 0,
+      "verdict": "fail"
+     },
+     "C1d": {
+      "attempts": 12,
+      "inconclusive_attempts": 0,
+      "passed_attempts": 4,
+      "verdict": "fail"
+     },
+     "C2a": {
+      "attempts": 12,
+      "inconclusive_attempts": 0,
+      "passed_attempts": 0,
+      "verdict": "fail"
+     },
+     "C2b": {
+      "attempts": 12,
+      "inconclusive_attempts": 0,
+      "passed_attempts": 0,
+      "verdict": "fail"
+     },
+     "C3": {
+      "attempts": 12,
+      "inconclusive_attempts": 0,
+      "passed_attempts": 12,
+      "verdict": "pass"
+     }
+    }
+   },
+   "run": "20261003T005400Z"
+  },
+  "p2": {
+   "result": {
+    "evidence": "process-interruption; buffered-write loss: tests/test_migration_p2.py (test double)",
+    "interruptions": [
+     {
+      "barrier": "before-S0",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S0",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S1",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S1",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S2",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S2",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S3",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S3",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S4",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S4",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S5",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S5",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S6",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S6",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S7",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": null,
+      "passed": true,
+      "recovered": null,
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S7",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S8",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "after-S8",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "no-previous",
+      "valid": true
+     },
+     {
+      "barrier": "before-S0",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S0",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S1",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S1",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S2",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S2",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S3",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S3",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S4",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S4",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S5",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S5",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S6",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S6",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S7",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "A",
+      "passed": true,
+      "recovered": "A",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S7",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "before-S8",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     },
+     {
+      "barrier": "after-S8",
+      "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+      "evidence": "process-interruption",
+      "expected": "B",
+      "passed": true,
+      "recovered": "B",
+      "retry_status": "published",
+      "start": "previous-A",
+      "valid": true
+     }
+    ],
+    "passed": true,
+    "qualification": {
+     "directory_access": "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY",
+     "directory_flush": {
+      "FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY": {
+       "ok": true
+      },
+      "GENERIC_READ": {
+       "error": "PermissionError",
+       "ok": false,
+       "winerror": 5
+      },
+      "GENERIC_WRITE": {
+       "ok": true
+      }
+     },
+     "file_flush": {
+      "ok": true
+     },
+     "file_system": "NTFS",
+     "move_write_through": {
+      "ok": true
+     },
+     "passed": true
+    }
+   },
+   "run": "20261003T005400Z"
+  },
+  "p3": {
+   "result": {
+    "F20-B1": {
+     "accepted": false,
+     "barrier": "B1",
+     "destination_unchanged": true,
+     "digest_changes": [],
+     "error": null,
+     "events": [
+      [
+       "modified",
+       "engine.lock"
+      ]
+     ],
+     "notes": {
+      "injected": "external-0.4-start",
+      "start_04": {
+       "exit_code": 1,
+       "refused_with_own_message": true,
+       "started": false
+      }
+     },
+     "overflow_forms": [],
+     "overflows": 0,
+     "passed": true,
+     "published": false,
+     "reasons": [
+      "event",
+      "snapshot-diff"
+     ],
+     "snapshot_changes": [
+      "engine.lock:changed",
+      "engine.lock:size",
+      "engine.lock:written"
+     ],
+     "stage": "decided",
+     "watch_errors": []
+    },
+    "F20-B2": {
+     "accepted": false,
+     "barrier": "B2",
+     "destination_unchanged": true,
+     "digest_changes": [
+      "engine.lock"
+     ],
+     "error": null,
+     "events": [
+      [
+       "modified",
+       "engine.lock"
+      ]
+     ],
+     "notes": {
+      "injected": "external-0.4-start",
+      "start_04": {
+       "exit_code": 1,
+       "refused_with_own_message": true,
+       "started": false
+      }
+     },
+     "overflow_forms": [],
+     "overflows": 0,
+     "passed": true,
+     "published": false,
+     "reasons": [
+      "event",
+      "snapshot-diff",
+      "digest-diff"
+     ],
+     "snapshot_changes": [
+      "engine.lock:changed",
+      "engine.lock:size",
+      "engine.lock:written"
+     ],
+     "stage": "decided",
+     "watch_errors": []
+    },
+    "F20-B3": {
+     "accepted": false,
+     "barrier": "B3",
+     "destination_unchanged": true,
+     "digest_changes": [],
+     "error": null,
+     "events": [
+      [
+       "modified",
+       "engine.lock"
+      ]
+     ],
+     "notes": {
+      "injected": "external-0.4-start",
+      "start_04": {
+       "exit_code": 1,
+       "refused_with_own_message": true,
+       "started": false
+      }
+     },
+     "overflow_forms": [],
+     "overflows": 0,
+     "passed": true,
+     "published": false,
+     "reasons": [
+      "event"
+     ],
+     "snapshot_changes": [],
+     "stage": "decided",
+     "watch_errors": []
+    },
+    "P3a": {
+     "engine_lock_events": [],
+     "engine_lock_size": 2,
+     "metadata_changes": [],
+     "other_events": 0,
+     "overflows": 0,
+     "passed": true,
+     "refused": "engine-running",
+     "settle_events": [
+      [
+       "modified",
+       "engine.lock"
+      ]
+     ],
+     "start_04": {
+      "refused_with_own_message": false,
+      "started": true
+     },
+     "stop_04": {
+      "exit_code": 0,
+      "forced": false,
+      "graceful_request": true
+     },
+     "tail_unchanged": true,
+     "watch_errors": []
+    },
+    "P3b": {
+     "accepted": false,
+     "appended_by_04": "0",
+     "digest_changes": [
+      "engine.lock"
+     ],
+     "engine_lock_events": [
+      "modified"
+     ],
+     "engine_lock_size_after": 2,
+     "engine_lock_size_before": 1,
+     "passed": true,
+     "reasons": [
+      "event",
+      "snapshot-diff",
+      "digest-diff"
+     ],
+     "snapshot_changes": [
+      "engine.lock:changed",
+      "engine.lock:size",
+      "engine.lock:written"
+     ],
+     "start_04": {
+      "exit_code": 1,
+      "refused_with_own_message": true,
+      "started": false
+     }
+    },
+    "P3c": {
+     "accepted": true,
+     "event_count": 0,
+     "passed": true,
+     "reasons": [],
+     "snapshot_changes_after_release": []
+    }
+   },
+   "run": "20261003T005400Z"
+  },
+  "pipeline": {
+   "result": {
+    "F15": {
+     "accepted": false,
+     "barrier": "B2",
+     "copier": "null",
+     "destination_unchanged": true,
+     "digest_changes": [],
+     "error": null,
+     "events": [
+      [
+       "modified",
+       "session.sqlite3"
+      ]
+     ],
+     "fixture": "crash-noshm",
+     "notes": {
+      "injected": "importer-bug-double:last-write-time"
+     },
+     "overflow_forms": [],
+     "overflows": 0,
+     "passed": true,
+     "published": false,
+     "reasons": [
+      "event",
+      "snapshot-diff"
+     ],
+     "snapshot_changes": [
+      "session.sqlite3:written"
+     ],
+     "stage": "decided",
+     "watch_errors": []
+    },
+    "F18": {
+     "accepted": false,
+     "barrier": "stage4",
+     "copier": "null",
+     "destination_unchanged": true,
+     "digest_changes": [],
+     "error": null,
+     "events": [
+      [
+       "added",
+       "session.sqlite3-shm"
+      ],
+      [
+       "removed",
+       "session.sqlite3-shm"
+      ]
+     ],
+     "fixture": "crash-noshm",
+     "notes": {
+      "injected": "test-double:create-remove-shm"
+     },
+     "overflow_forms": [],
+     "overflows": 0,
+     "passed": true,
+     "published": false,
+     "reasons": [
+      "event",
+      "snapshot-diff"
+     ],
+     "snapshot_changes": [
+      ".:changed",
+      ".:written"
+     ],
+     "stage": "decided",
+     "watch_errors": []
+    },
+    "F21-error": {
+     "accepted": false,
+     "barrier": "B2",
+     "copier": "null",
+     "destination_unchanged": true,
+     "digest_changes": [],
+     "error": null,
+     "events": [],
+     "fixture": "crash-noshm",
+     "notes": {
+      "injected": "watch:error-87"
+     },
+     "overflow_forms": [],
+     "overflows": 0,
+     "passed": true,
+     "published": false,
+     "reasons": [
+      "watch-error"
+     ],
+     "snapshot_changes": [],
+     "stage": "decided",
+     "watch_errors": [
+      "injected-error-87"
+     ]
+    },
+    "F21-zero": {
+     "accepted": false,
+     "barrier": "B2",
+     "copier": "null",
+     "destination_unchanged": true,
+     "digest_changes": [],
+     "error": null,
+     "events": [],
+     "fixture": "crash-noshm",
+     "notes": {
+      "injected": "watch:zero-byte-completion"
+     },
+     "overflow_forms": [
+      "injected-ok-zero-bytes"
+     ],
+     "overflows": 1,
+     "passed": true,
+     "published": false,
+     "reasons": [
+      "overflow"
+     ],
+     "snapshot_changes": [],
+     "stage": "decided",
+     "watch_errors": []
+    },
+    "baseline-C1b": {
+     "accepted": true,
+     "barrier": null,
+     "copier": "C1b",
+     "destination_unchanged": false,
+     "digest_changes": [],
+     "error": null,
+     "events": [],
+     "fixture": "crash",
+     "notes": {},
+     "overflow_forms": [],
+     "overflows": 0,
+     "passed": true,
+     "published": true,
+     "reasons": [],
+     "snapshot_changes": [],
+     "stage": "decided",
+     "watch_errors": []
+    },
+    "baseline-null": {
+     "accepted": true,
+     "barrier": null,
+     "copier": "null",
+     "destination_unchanged": false,
+     "digest_changes": [],
+     "error": null,
+     "events": [],
+     "fixture": "crash-noshm",
+     "notes": {},
+     "overflow_forms": [],
+     "overflows": 0,
+     "passed": true,
+     "published": true,
+     "reasons": [],
+     "snapshot_changes": [],
+     "stage": "decided",
+     "watch_errors": []
+    }
+   },
+   "run": "20261003T005400Z"
+  }
+ },
+ "runs": {
+  "20261003T005400Z": {
+   "engine_environment": true,
+   "evidence_class": "actual Windows (synthetic sessions; no performance claims)",
+   "file_system": "NTFS",
+   "os": "Windows",
+   "os_build": "10.0.26200",
+   "os_release": "11",
+   "python": "3.14.7",
+   "python_bits": 64,
+   "sqlite": "3.50.4"
+  }
+ }
+}

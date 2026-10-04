@@ -229,7 +229,8 @@ class RefusalTests(unittest.TestCase):
         entry = bootstrap.entry_for(bootstrap.load_lock(), "marimo")
         with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as outside:
             venv = Path(td)
-            (venv / "bin").mkdir()
+            bindir = bootstrap._bin_dir(venv)  # bin, or Scripts on Windows
+            bindir.mkdir()
             (venv / "lib" / "python3.11").mkdir(parents=True)
             try:
                 os.symlink("lib", venv / "lib64", target_is_directory=True)  # legitimate internal link
@@ -243,7 +244,7 @@ class RefusalTests(unittest.TestCase):
                     bootstrap.venv_conflicts(entry)
                 (venv / "lib" / "python3.11" / "site-packages").unlink()
                 (venv / "lib" / "python3.11" / "site-packages").mkdir()
-                os.symlink(Path(outside) / "x", venv / "bin" / "marimo")
+                os.symlink(Path(outside) / "x", bindir / "marimo")
                 with self.assertRaises(bootstrap.Refused):
                     bootstrap.venv_conflicts(entry)
                 spawned = []
@@ -256,14 +257,14 @@ class RefusalTests(unittest.TestCase):
                 self.assertFalse(ok)
                 self.assertIn("refused", detail)
                 self.assertEqual(spawned, [])
-                (venv / "bin" / "marimo").unlink()
-                os.symlink(sys.executable, venv / "bin" / "python")  # interpreter link is allowed
+                (bindir / "marimo").unlink()
+                os.symlink(sys.executable, bindir / "python")  # interpreter link is allowed
                 self.assertEqual(bootstrap.venv_conflicts(entry), [])
-                (venv / "bin" / "python").unlink()
-                os.symlink(Path(outside) / "evil-python", venv / "bin" / "python")  # any other interpreter is not
+                (bindir / "python").unlink()
+                os.symlink(Path(outside) / "evil-python", bindir / "python")  # any other interpreter is not
                 with self.assertRaises(bootstrap.Refused):
                     bootstrap.venv_conflicts(entry)
-                (venv / "bin" / "python").unlink()
+                (bindir / "python").unlink()
                 nested = venv / "lib" / "python3.11" / "site-packages" / "marimo"
                 nested.mkdir()
                 os.symlink(outside, nested / "_plugins", target_is_directory=True)  # deeper link

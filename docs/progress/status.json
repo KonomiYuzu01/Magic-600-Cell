@@ -1,8 +1,9 @@
 {
   "schema": 2,
-  "updated": "2026-10-02",
-  "current": "2.0",
+  "updated": "2026-10-03",
+  "current": "2.3",
   "paid_api_ceiling_usd": 100,
+  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}],
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "done", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null,
      "items": [
@@ -18,23 +19,23 @@
       {"id": "native-clean-build", "title": "Native build reproducible from a clean checkout on Windows", "weight": 3, "done": true, "evidence": "docs/wiki/concepts/build-identity-v2.md"},
       {"id": "workbench-phase-1", "title": "Development workbench phase 1 delivered", "weight": 2, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/20"}
      ]},
-    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "in_progress", "acceptance": "The owner signs the charter with the design charter (anti-goals, metaphors, UX criteria) and the migration path filled in, by day 2.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null,
+    {"id": "2.0", "track": "stage-2", "title": "Charter and authority", "status": "done", "acceptance": "The owner signs the charter with the design charter (anti-goals, metaphors, UX criteria) and the migration path filled in, by day 2.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null,
      "items": [
-      {"id": "charter", "title": "Charter", "weight": 1, "done": false, "evidence": null},
-      {"id": "authority", "title": "Authority record", "weight": 1, "done": false, "evidence": null},
-      {"id": "design-records", "title": "First design records", "weight": 1, "done": false, "evidence": null},
-      {"id": "migration-path", "title": "Migration path chosen", "weight": 1, "done": false, "evidence": null}
+      {"id": "charter", "title": "Charter", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/47"},
+      {"id": "authority", "title": "Authority record", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/47"},
+      {"id": "design-records", "title": "First design records", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/34"},
+      {"id": "migration-path", "title": "Migration path chosen", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/38"}
      ]},
-    {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "in_progress", "acceptance": "Two independent inventories merged into one list; each disagreement listed.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null,
+    {"id": "2.1", "track": "stage-2", "title": "Two independent inventories", "status": "done", "acceptance": "Two independent inventories merged into one list; each disagreement listed.", "acceptance_source": "docs/progress/1.0/charter-2.0-draft.md", "blocker": null,
      "items": [
-      {"id": "inventory-a", "title": "Inventory A (commands, physical input, API, windows, persistence)", "weight": 1, "done": false, "evidence": null},
+      {"id": "inventory-a", "title": "Inventory A (commands, physical input, API, windows, persistence)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/35"},
       {"id": "inventory-b", "title": "Inventory B, independent of A", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/27"}
      ]},
-    {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+    {"id": "2.2", "track": "stage-2", "title": "Dispositions", "status": "done", "acceptance": null, "acceptance_source": null, "blocker": null,
      "items": [
-      {"id": "dispositions", "title": "A disposition for every inventory item", "weight": 1, "done": false, "evidence": null}
+      {"id": "dispositions", "title": "A disposition for every inventory item", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/51"}
      ]},
-    {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "not_started", "acceptance": null, "acceptance_source": null, "blocker": null,
+    {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null,
      "items": [
       {"id": "command-model", "title": "Command model", "weight": 1, "done": false, "evidence": null},
       {"id": "keyboard-model", "title": "Keyboard model", "weight": 1, "done": false, "evidence": null},
@@ -61,6 +62,16 @@
       {"id": "architecture-freeze", "title": "1.0 architecture frozen (architecture-freeze ruling)", "weight": 1, "done": false, "evidence": null},
       {"id": "migration-format-freeze", "title": "Migration format frozen (migration-format-freeze ruling)", "weight": 1, "done": false, "evidence": null},
       {"id": "design-system-adr", "title": "Design-system ADR accepted", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "migration-probes", "track": "migration", "title": "Migration probes P1 to P3 on Windows", "status": "done", "acceptance": "P1 to P3 run on Windows on synthetic sessions with sanitised results; the importer starts only after a P1 strategy passes or the owner settles the conflict", "acceptance_source": "docs/progress/1.0/migration-exporter-proposal.md", "blocker": null,
+     "items": [
+      {"id": "p3", "title": "P3 lock compatibility and F20 run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
+      {"id": "pipeline", "title": "Pipeline fixtures F15, F18, F21 run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
+      {"id": "p1", "title": "P1 source preservation matrix and controls run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
+      {"id": "p2", "title": "P2 publication test double and Windows interruptions run", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"},
+      {"id": "results", "title": "Results document written", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.md"},
+      {"id": "invariant-decision", "title": "Owner decides the P1 invariant conflict", "weight": 1, "done": true, "evidence": "docs/wiki/decisions/owner-decisions-2026-10-03-migration.md"},
+      {"id": "p1-c3", "title": "P1 re-run with the owner's locked byte copy (C3) passes", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"}
      ]}
   ]
 }

@@ -1,6 +1,6 @@
 # Framework paper comparison: Godot 4.7 .NET (S-A2) and Qt Quick 6.12 (S-D)
 
-Status: **input, not a selection.** This page collects documented facts for the stage 2.4 day-7 go/no-go and the framework selection ([renderer-candidates](../../wiki/decisions/renderer-candidates.md), [renderer-experiment-plan](renderer-experiment-plan.md)). It replaces no measurement. It makes no performance claim: whether either stack meets the gate is answered only by the S-A2 and S-D runs.
+Status: **input, not a selection.** This page collects documented facts for the stage 2.4 day-7 go/no-go and the framework selection ([renderer-candidates](../../wiki/decisions/renderer-candidates.md), [renderer-experiment-plan](renderer-experiment-plan.md)). It replaces no measurement; section 7 adds the level-1 smoke-test answers. It makes no performance claim: whether either stack meets the gate is answered only by the S-A2 and S-D runs.
 
 How to read it:
 - Sources were accessed on 2 October 2026.
@@ -79,19 +79,23 @@ Reading: neither takes portable HLSL directly. Both keep the platform layer port
 | R-14: no synchronous engine call on the UI thread; a failed or slow lookup shows an error in place and never reaches the application-exit path | Godot's main loop owns the UI thread; engine calls must be asynchronous by design, and lookup failures must be caught before any engine-level quit path (U) | QQuickRhiItem renders on the scenegraph render thread, separate from the GUI thread (D); engine calls must still be asynchronous, and failures must be shown in place, never through an exit path (U) |
 | R-17: device loss during any input leaves no publication or input state held; the renderer recovers or reports | No D3D12 device-loss guidance found (U). The smoke test must show that a device loss during a drag or key sequence releases input capture and any publication guard, not only that the loss is reported | No device-loss guidance found on the pages read (U). Same check: released input and publication state, then recovery or a report |
 
-## 7. Questions only the experiments answer
+## 7. Questions only the experiments answer, and the smoke-test answers
 
-These go to the S-A2 and S-D smoke tests and runs ([E-2.4-02](packets/renderer/E-2.4-02-sa2-godot.md), [E-2.4-03](packets/renderer/E-2.4-03-sd-qt.md)):
+The level-1 smoke tests of 3 October 2026 answered part of these on the owner's RTX 4070 Laptop GPU (NVIDIA driver 616.92), for the builds stated: Godot `4.7.2.stable.mono.official` (editor build, D3D12 with enhanced barriers) and Qt **6.10.3** (`msvc2022_64`, D3D12 with legacy barriers). Qt 6.12 was not tested; nothing below holds for it. The full records are the renderer session's result cards E-2.4-02 and E-2.4-03 and the evidence page `interop-smoke-results` (commit `f3c367d` on branch `claude/renderer-l2`, not yet on `main`). They are actual Windows/DirectX evidence for those builds only. **No timing was measured**, so nothing here says what the interop costs.
 
-1. Godot: does an imported `ID3D12Resource` that is not in `RENDER_TARGET` state get correct barriers, or must S-B always hand it over in that state?
-2. Both: where can our `Wait`/`Signal` go on the exposed queue, so that our command lists finish before composition, without stalls or cross-frame hazards?
-3. Godot: can a C# host get the device and queue before the first frame and share resources without a copy? Do device loss or a resize invalidate imported RIDs?
-4. Qt: do `createFrom` and QQuickRhiItem behave correctly on Qt's own device and queue through resize and `releaseResources()`? On pinned Qt 6.12, does a QRhi created with our device and queue and handed to Qt Quick through `fromRhi` keep the native device and queue identities, and do QQuickRhiItem rendering, resize and teardown work on it? Does the device-only route (`fromDeviceAndContext`) work as a fallback?
-5. Both: can PIX and RenderDoc capture each stack with our command lists visible and named?
-6. Both: what is the minimal Windows package size?
-7. Both: do NVDA and Narrator read the relationship strip and the term cards?
-8. Both: which math rendering path (prerendered SVG or a library) stays sharp at high DPI?
-9. Both: does the stack meet the renderer gate with the interop overhead included? No source answers this.
+Packets: [E-2.4-02](packets/renderer/E-2.4-02-sa2-godot.md), [E-2.4-03](packets/renderer/E-2.4-03-sd-qt.md).
+
+1. **Import state.** Neither stack needs RENDER_TARGET. Godot: an imported `ID3D12Resource` must arrive in the layout Godot's tracker holds, after one warm-up use per slot; RENDER_TARGET handovers gave validation errors, and the producer must use Godot's barrier type (enhanced on this GPU). Qt: the tracker starts at the state the host declares in `createFrom` or `QSGD3D12Texture::fromNative`; handovers in that state passed without a warm-up, and mixed legacy and enhanced barriers gave 0 errors.
+2. **Wait and Signal placement.** The same order worked on both stacks, on the framework's queue and on the producer's own queue: in the render step of frame f, before the framework records it, the framework's queue signals `free = f - 1`, the producer writes slot f mod 3, signals `ready = f`, and the framework's queue waits for it. Not timed, so stalls are unknown.
+3. **Device, queue, zero copy, resize, device loss.** Godot: the C# host took the device and queue from `RenderingDevice.GetDriverResource` on the render thread; zero copy works for textures Godot creates; in the editor build an imported texture is shown only through a copy (release export templates untested); resizes invalidated no RID; after device removal Godot kept running and teardown completed, but recovery is untested. Qt: the host got the device and queue in `sceneGraphInitialized` before the first frame; zero copy works through `fromNative`; resizes worked; after device removal Qt recovered on its own device and did not recover on an application-supplied QRhi.
+4. **Qt routes.** `createFrom` and `QQuickRhiItem` work on Qt's own device and queue through resize and `releaseResources()`. A QRhi created with our device and queue and handed over through `fromRhi` keeps the native identities, and rendering, resize and teardown work on it. The device-only route `fromDeviceAndContext` works as a fallback. All on 6.10.3, not 6.12.
+5. Open: PIX and RenderDoc captures.
+6. Partly answered: the Qt smoke-test deployment was 40.8 MB in 33 files (not a release package). Godot: open.
+7. Open: NVDA and Narrator.
+8. Open: high-DPI math rendering.
+9. Open: the gate with interop overhead needs the level-2 geometry ports and gate runs.
+
+Both level-1 acceptance items are met for the stated builds, so both level-2 geometry ports may start. The day-7 go/no-go is not decided here; it is an Astra gate ruling across all candidates.
 
 ## 8. What this suggests for day 7 (not a selection)
 
