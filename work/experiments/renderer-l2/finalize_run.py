@@ -182,8 +182,9 @@ def read_native(directory, h, mode):
             pair = (result['camera'], result['pose'])
             require(pair in pairs and pair not in seen)
             seen.add(pair)
+            # The DLL compares three coordinates per sample and counts each one that fails.
             require(result['samples'] == samples and integer(result['failures'])
-                    and 0 <= result['failures'] <= samples)
+                    and 0 <= result['failures'] <= 3 * samples)
             require(result['status'] == ('fail' if result['failures'] else 'pass')
                     and finite(result['max_abs_error']) and result['max_abs_error'] >= 0)
         counts = g['per_cell_count']

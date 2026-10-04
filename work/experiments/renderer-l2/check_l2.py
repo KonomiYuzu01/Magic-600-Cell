@@ -393,7 +393,7 @@ def refusal_cases(root):
             ('duplicate', lambda g: g['results'].__setitem__(1, dict(g['results'][0]))),
             ('camera', lambda g: g['results'][0].update(camera='front')),
             ('samples', lambda g: g['results'][0].update(samples=64)),
-            ('failures-range', lambda g: g['results'][0].update(failures=9067, status='fail')),
+            ('failures-range', lambda g: g['results'][0].update(failures=3 * 9066 + 1, status='fail')),
             ('not-checked-pass', lambda g: (g.update(error='fixture', results=[]),
                                             g['per_cell_count'].update(status='not-checked', counts=None, failures=None))),
             ('not-checked-results', lambda g: (g.update(status='fail', error='fixture'),
@@ -469,6 +469,15 @@ def extra_cases(root):
                                                g['per_cell_count'].update(failures=1, status='fail')))
     invoke(directory, mode='geometry', app_exit=2, expected=2)
     expect(read_json(directory / 'geometry-record.json')['status'] == 'fail', 'consistent failed geometry record missing')
+    # L2-V-001: the DLL counts each failed coordinate, three per sample, so failures may exceed samples.
+    for failures in (9066 + 1, 3 * 9066):
+        directory = fixture(root, f'geometry-failed-coordinates-{failures}', mode='geometry')
+        edit(directory, 'harness.json', lambda h: h.update(exit_code=2))
+        edit(directory, 'geometry.json', lambda g, failures=failures: (
+            g.update(status='fail'), g['results'][2].update(failures=failures, status='fail')))
+        invoke(directory, mode='geometry', app_exit=2, expected=2)
+        expect(read_json(directory / 'geometry-record.json')['geometry']['results'][2]['failures'] == failures,
+               'failed coordinate count lost')
     # A W3 trace shorter than one turn reaches no revision; its clean label check copied nothing.
     directory = fixture(root, 'label-no-revision')
     trace_edit(directory, lambda entries: [entry.update(revision=0) for entry in entries])
