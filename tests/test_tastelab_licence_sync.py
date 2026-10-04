@@ -37,6 +37,20 @@ BY_SA = "https://creativecommons.org/licenses/by-sa/4.0/"
 WM_PAGE = "https://commons.wikimedia.org/wiki/File:Example.jpg"
 NASA = "https://www.nasa.gov/nasa-brand-center/images-and-media/"
 
+RAW_PATH_CASES = [("https://creativecommons.org/licenses/by/" + segment + "/by-nc/4.0/", False)
+                  for segment in (".", "..", "%2e", "%2E", "%2e%2e", "%2E%2E", "%2e%2E", ".%2e", "%2E.", "%252e")]
+RAW_PATH_CASES += [
+    (r"https://creativecommons.org/licenses/by/4.0/..\..\by-nc/4.0/", False),
+    (r"https://creativecommons.org/licenses/by/4.0\extra", False),
+    ("https://creativecommons.org/licenses/by/4.0/%41", False),
+    ("https://creativecommons.org/licenses/by/2.0/?ref=openverse", True),
+    ("https://creativecommons.org/licenses/by/2.0?ref=openverse#reference", True),
+    ("https://creativecommons.org/licenses/by?ref=openverse", True),
+    ("https://creativecommons.org/licenses/by/4.0/?ref=%2e%2e#../by-nc", True),
+    (r"https://creativecommons.org/licenses/by/4.0/?ref=\#reference", True),
+    ("https://creativecommons.org/licenses/by-nc/4.0/?ref=openverse", False),
+]
+
 LICENCES = ["CC0-1.0", "CC-PDM-1.0", "CC-BY-4.0", "CC-BY-2.5-SCOTLAND", "CC-BY-3.0-IGO", "CC-BY-SA-4.0",
             "CC-BY-SA-2.0-UK", "public-domain", "US-Gov-PD", "cc0-1.0", "CC0-1.0 ", "CC-BY-4", "CC-BY-SA",
             "CC-BY-4.0-de", "private-reference", "", "CC-BY-4.0\n"]
@@ -76,6 +90,7 @@ def cases():
             out.append([source, "CC0-1.0", CC0, page])
     for source in (None, 1, "", "unknown", "Wikimedia", ["wikimedia"]):  # not class A sources
         out.append([source, "CC0-1.0", CC0, WM_PAGE])
+    out.extend(["openverse", "CC-BY-4.0", url, PAGES["openverse"][0]] for url, _ in RAW_PATH_CASES)
     return out
 
 
@@ -103,6 +118,13 @@ class LicenceTablesAgree(unittest.TestCase):
                 mismatches.append({"case": case, "python": local, "page": page_answer})
         self.assertEqual(len(self.page["answers"]), len(self.cases))
         self.assertEqual(mismatches[:10], [], f"{len(mismatches)} of {len(self.cases)} cases differ")
+
+    def test_raw_path_cases_have_expected_answers_in_python_and_javascript(self):
+        for url, expected in RAW_PATH_CASES:
+            with self.subTest(url=url):
+                case = ["openverse", "CC-BY-4.0", url, PAGES["openverse"][0]]
+                self.assertEqual(licences.licence_ok(*case[:3]), expected)
+                self.assertEqual(self.page["answers"][self.cases.index(case)][1], expected)
 
     def test_expected_answers(self):
         expect = [

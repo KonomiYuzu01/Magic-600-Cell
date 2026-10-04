@@ -50,9 +50,30 @@ def meta(sha: str, **over) -> store.ImageMeta:
     return store.ImageMeta(**fields)
 
 
+def metadata_images():
+    """Synthetic metadata canaries, shared by both thumbnail boundary tests."""
+    from PIL import PngImagePlugin
+    canary = br"PRIVATE-PATH-CANARY C:\synthetic-private\notes.txt"
+    with Image.new("RGB", (96, 96), (80, 130, 170)) as image:
+        exif = Image.Exif()
+        exif[0x010e] = canary.decode()
+        text = PngImagePlugin.PngInfo()
+        text.add_text("private", canary.decode())
+        text.add_itxt("private-xmp", canary.decode())
+        for name, fmt, kwargs in (
+                ("comment", "JPEG", {"comment": canary}),
+                ("exif", "JPEG", {"exif": exif.tobytes()}),
+                ("xmp", "JPEG", {"xmp": canary}),
+                ("icc_profile", "JPEG", {"icc_profile": canary}),
+                ("png_text", "PNG", {"pnginfo": text})):
+            output = io.BytesIO()
+            image.save(output, format=fmt, **kwargs)
+            yield name, output.getvalue(), canary
+
+
 class TempDir(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.gettempdir()) / f"tastelab-test-{uuid4().hex}"
+        self.tmp = Path(tempfile.gettempdir()) / f"tastelab-{uuid4().hex}"
         self.tmp.mkdir()
         self.base_patch = mock.patch.object(common, "PRIVATE_BASE", self.tmp)
         self.base_patch.start()
@@ -286,6 +307,21 @@ class GuardTests(TempDir):
 
 
 class RecoveryTests(TempDir):
+    def test_missing_committed_bytes_roll_back_the_admission_seen_marker(self):
+        root = self.tmp / "library"
+        with store.Store(root) as library:
+            with mock.patch.object(library, "_reconcile"):
+                library.add_image(meta(SHA_A), b"thumb", b"original", "png")
+            library.mark_seen("met", "unrelated")
+            for path in root.rglob(".part-*"):
+                path.unlink()
+        with store.Store(root) as reopened:
+            self.assertFalse(reopened.has_image(SHA_A))
+            self.assertFalse(reopened.has_seen("wikimedia", "File:x.jpg"))
+            self.assertTrue(reopened.has_seen("met", "unrelated"))
+            self.assertFalse(reopened.is_blocked(SHA_A))
+            self.assertEqual(reopened.db.execute("SELECT COUNT(*) FROM file_ops").fetchone()[0], 0)
+
     def test_failed_unlink_retried_on_reopen(self):
         root = self.tmp / "library"
         with store.Store(root) as library:
@@ -616,6 +652,12 @@ class ImageTests(unittest.TestCase):
         with mock.patch.object(images, "MAX_PIXELS", 100 * 99):
             with self.assertRaises(images.BadImage):
                 images.decode(self.encode(Image.new("RGB", (100, 100)), "PNG"))
+        for size in ((64, 4097), (4097, 64)):
+            with self.subTest(size=size), self.assertRaisesRegex(images.BadImage, "aspect"):
+                images.decode(self.encode(Image.new("RGB", size), "PNG"))
+        for size in ((64, 4096), (4096, 64)):
+            with self.subTest(size=size):
+                self.assertEqual(images.decode(self.encode(Image.new("RGB", size), "PNG")).image.size, size)
 
     def test_transparency_is_flattened_on_white_and_orientation_applied(self):
         from tastelab import images
@@ -634,6 +676,21 @@ class ImageTests(unittest.TestCase):
         thumb = Image.open(io.BytesIO(data))
         self.assertEqual((thumb.format, thumb.size), ("JPEG", (512, 256)))
         self.assertEqual(len(thumb.getexif()), 0)
+
+    def test_thumbnail_strips_comment_exif_xmp_icc_and_png_text(self):
+        from tastelab import images
+        for name, data, canary in metadata_images():
+            with self.subTest(metadata=name):
+                self.assertIn(canary, data)
+                decoded = images.decode(data)
+                try:
+                    output = images.thumbnail_jpeg(decoded.image)
+                finally:
+                    decoded.image.close()
+                self.assertNotIn(canary, output)
+                with Image.open(io.BytesIO(output)) as thumbnail:
+                    self.assertLessEqual(set(thumbnail.info), {"jfif", "jfif_version", "jfif_unit", "jfif_density"})
+                    self.assertEqual(len(thumbnail.getexif()), 0)
 
     def test_fake_embedder_is_deterministic_and_pinnable(self):
         from tastelab import embed

@@ -268,6 +268,9 @@ class Store:
                    for f in files):
                 # A committed add with missing bytes is rolled back. Commit its
                 # removal journal before attempting the corresponding deletions.
+                if not self.is_blocked(op["sha256"]):
+                    self.db.execute("DELETE FROM seen WHERE (source, source_id) IN "
+                                    "(SELECT source, source_id FROM images WHERE sha256=?)", (op["sha256"],))
                 self.db.execute("DELETE FROM images WHERE sha256=?", (op["sha256"],))
                 self.db.execute("UPDATE file_ops SET op='remove' WHERE id=?", (op["id"],))
                 return False

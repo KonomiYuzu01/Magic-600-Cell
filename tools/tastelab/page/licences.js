@@ -48,7 +48,11 @@ export function licenceOk(source, licence, url) {
   if (typeof source !== "string" || !Object.hasOwn(TABLE.pageHosts, source) || !safeUrl(url)) return false;
   const rule = licenceRule(licence);
   if (!rule || (rule.sources && !rule.sources.includes(source))) return false;
-  const withSlash = url.endsWith("/") ? url : url + "/";
+  // Use the raw path: URL() has already normalized dot segments and backslashes.
+  const [, host, path] = /^https:\/\/([^/?#]+)([^?#]*)/i.exec(url);
+  if (/[%\\]/.test(path) || path.split("/").some((segment) => segment === "." || segment === "..")) return false;
+  const canonical = "https://" + host + path;
+  const withSlash = canonical.endsWith("/") ? canonical : canonical + "/";
   return rule.prefixes.some((prefix) => withSlash.startsWith(prefix));
 }
 

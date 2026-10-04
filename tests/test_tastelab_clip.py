@@ -6,6 +6,7 @@ skipped.
 """
 from __future__ import annotations
 
+import io
 import json
 import math
 import struct
@@ -141,7 +142,7 @@ def ref_text(t, ids):
 @unittest.skipUnless(HAVE_ENV, "needs the tastelab environment (numpy, scipy, Pillow, regex, ftfy)")
 class TinyModelTests(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.gettempdir()) / f"tastelab-test-{uuid4().hex}"
+        self.tmp = Path(tempfile.gettempdir()) / f"tastelab-{uuid4().hex}"
         self.tmp.mkdir()
         self.tensors = tiny_checkpoint()
         self.path = self.tmp / "tiny.safetensors"
@@ -206,11 +207,59 @@ class TinyModelTests(unittest.TestCase):
         red = (np.array([1.0, 0.0, 0.0], dtype=np.float32) - clip.MEAN) / clip.STD
         np.testing.assert_allclose(x[:, 112, 112], red, rtol=1e-5)
         self.assertTrue(np.allclose(x[:, :, 5:].mean(axis=(1, 2)), red, atol=1e-3))
-        for size in ((10, 4000), (4000, 10), (1, 1), (224, 224)):
+        for size in ((10, 640), (640, 10), (1, 1), (224, 224)):
             with self.subTest(size=size):
                 self.assertEqual(clip.preprocess(Image.new("L", size, 128)).shape, (3, 224, 224))
         rgba = Image.new("RGBA", (300, 300), (0, 255, 0, 0))
         self.assertEqual(clip.preprocess(rgba).shape, (3, 224, 224))
+
+    def test_preprocess_equals_full_resize_then_crop(self):
+        rng = np.random.default_rng(7)
+        maximum, differing, total = 0, 0, 0
+        for w, h in ((65, 321), (321, 65), (50, 1000), (223, 225), (224, 224), (448, 7), (64, 4096), (4096, 64),
+                     (65, 4160), (97, 5003)):
+            y, x = np.indices((h, w))
+            pattern = np.stack(((17 * x + 31 * y) % 256, ((x // 3 + y // 5) % 2) * 255,
+                                (x * y) % 256), axis=-1).astype(np.uint8)
+            for name, pixels in (("random", rng.integers(0, 256, (h, w, 3), dtype=np.uint8)), ("pattern", pattern)):
+                with self.subTest(size=(w, h), image=name), Image.fromarray(pixels) as image:
+                    size = (224, int(224 * h / w)) if w <= h else (int(224 * w / h), 224)
+                    left, top = (int(round((edge - 224) / 2.0)) for edge in size)
+                    with image.resize(size, Image.Resampling.BICUBIC) as resized:
+                        with resized.crop((left, top, left + 224, top + 224)) as crop:
+                            expected = np.asarray(crop, dtype=np.int16)
+                    normalized = clip.preprocess(image)
+                    actual = np.rint((normalized.transpose(1, 2, 0) * clip.STD + clip.MEAN) * 255).astype(np.int16)
+                    difference = np.abs(actual - expected)
+                    observed = int(difference.max())
+                    changed = int(np.count_nonzero(difference))
+                    maximum, differing, total = max(maximum, observed), differing + changed, total + difference.size
+                    print(f"preprocess {w}x{h} {name}: max={observed} uint8, differing={changed}/{difference.size}")
+                    self.assertEqual(observed, 0)
+        print(f"preprocess total: max={maximum} uint8, differing={differing}/{total} ({differing / total:.8%})")
+
+    def test_extreme_aspect_ratios_are_refused_and_the_full_resize_stays_bounded(self):
+        from tastelab import images
+        for size in ((64, 20001), (20001, 64), (65, 10003), (10, 641)):
+            with self.subTest(size=size), Image.new("RGB", size) as image:
+                with self.assertRaisesRegex(ValueError, "aspect"):
+                    clip.preprocess(image)
+                encoded = io.BytesIO()
+                image.save(encoded, format="PNG")
+                with self.assertRaisesRegex(images.BadImage, "aspect"):
+                    images.decode(encoded.getvalue())
+        resize = Image.Image.resize
+        def bounded(image, size, *args, **kwargs):
+            self.assertLessEqual(size[0] * size[1], 224 * 224 * images.MAX_ASPECT)
+            return resize(image, size, *args, **kwargs)
+        with mock.patch.object(Image.Image, "resize", bounded):
+            for size in ((64 * 20, 20), (20, 64 * 20), (7, 7 * 64)):
+                with self.subTest(size=size), Image.new("RGB", size) as image:
+                    self.assertEqual(clip.preprocess(image).shape, (3, 224, 224))
+        for size in ((64, 4096), (4096, 64), (65, 4159)):    # the re-embed path reads thumbnails of decoded images
+            with self.subTest(thumbnail=size), Image.new("RGB", size) as image:
+                with Image.open(io.BytesIO(images.thumbnail_jpeg(image))) as thumbnail:
+                    self.assertEqual(clip.preprocess(thumbnail).shape, (3, 224, 224))
 
     def test_byte_map_is_a_bijection_onto_printable_characters(self):
         table = clip.bytes_to_unicode()
@@ -224,7 +273,7 @@ class TinyModelTests(unittest.TestCase):
 @unittest.skipUnless(HAVE_ENV, "needs the Taste Lab environment")
 class PinTests(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.gettempdir()) / f"tastelab-test-{uuid4().hex}"
+        self.tmp = Path(tempfile.gettempdir()) / f"tastelab-{uuid4().hex}"
         self.tmp.mkdir()
         self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self.path = self.tmp / "tiny.safetensors"
@@ -289,7 +338,7 @@ class PinTests(unittest.TestCase):
 @unittest.skipUnless(HAVE_ENV, "needs the Taste Lab environment")
 class TokenizerTests(unittest.TestCase):
     def test_synthetic_merges_unicode_padding_and_truncation(self):
-        folder = Path(tempfile.gettempdir()) / f"tastelab-test-{uuid4().hex}"
+        folder = Path(tempfile.gettempdir()) / f"tastelab-{uuid4().hex}"
         folder.mkdir()
         self.addCleanup(shutil.rmtree, folder, ignore_errors=True)
         path = folder / "merges.txt"

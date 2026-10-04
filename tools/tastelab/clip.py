@@ -31,6 +31,8 @@ import ftfy
 import numpy as np
 import regex
 from PIL import Image
+
+from tastelab import images
 from scipy.special import erf
 
 IMAGE_SIZE = 224
@@ -41,7 +43,6 @@ HEAD_WIDTH = 64
 EPS = 1e-5
 MERGES = 49152 - 256 - 2        # merges used by CLIP (lines 1..48894 of merges.txt)
 MAX_HEADER = 16 * 1024 * 1024   # safetensors header bytes
-MAX_ASPECT = 4                  # longer images are cut to this aspect around the centre before resizing
 
 # Special tokens are not matched in the text: a caption that contains them is tokenized as plain text.
 _PATTERN = regex.compile(r"""'s|'t|'re|'ve|'m|'ll|'d|[\p{L}]+|[\p{N}]|[^\s\p{L}\p{N}]+""", regex.IGNORECASE)
@@ -135,24 +136,20 @@ class Tokenizer:
 
 
 def preprocess(image: Image.Image) -> np.ndarray:
-    """A PIL image to the model's (3, 224, 224) float32 input."""
+    """A PIL image to the model's (3, 224, 224) float32 input, exactly as OpenCLIP prepares it: bicubic resize of the
+    shorter side to 224, then the centre crop. The full resize is kept because a resize box (PIL takes it in single
+    precision) samples differently; `images.decode` refuses an aspect ratio above `images.MAX_ASPECT`, which bounds it."""
     image = image.convert("RGB")
     w, h = image.size
-    if max(w, h) > MAX_ASPECT * min(w, h):     # only the centre survives the crop; keep a margin around it
-        if w > h:
-            keep = MAX_ASPECT * h
-            image = image.crop(((w - keep) // 2, 0, (w - keep) // 2 + keep, h))
-        else:
-            keep = MAX_ASPECT * w
-            image = image.crop((0, (h - keep) // 2, w, (h - keep) // 2 + keep))
-        w, h = image.size
+    if max(w, h) > images.MAX_ASPECT * min(w, h):
+        raise ValueError(f"aspect ratio above {images.MAX_ASPECT}")
     if w <= h:
         size = (IMAGE_SIZE, int(IMAGE_SIZE * h / w))
     else:
         size = (int(IMAGE_SIZE * w / h), IMAGE_SIZE)
-    image = image.resize(size, Image.Resampling.BICUBIC)
     left = int(round((size[0] - IMAGE_SIZE) / 2.0))
     top = int(round((size[1] - IMAGE_SIZE) / 2.0))
+    image = image.resize(size, Image.Resampling.BICUBIC)
     image = image.crop((left, top, left + IMAGE_SIZE, top + IMAGE_SIZE))
     pixels = np.asarray(image, dtype=np.float32) / np.float32(255.0)
     return np.ascontiguousarray(((pixels - MEAN) / STD).transpose(2, 0, 1))

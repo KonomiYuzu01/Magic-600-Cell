@@ -93,6 +93,7 @@ def _thumbnail(path):
         thumb = original.convert("RGB")
     try:
         thumb.thumbnail((common.THUMB_EDGE, common.THUMB_EDGE), Image.Resampling.LANCZOS)
+        thumb = Image.frombytes("RGB", thumb.size, thumb.tobytes())
         for quality in (85, 75, 65, 50, 35, 20):
             output = io.BytesIO()
             thumb.save(output, format="JPEG", quality=quality, optimize=True)

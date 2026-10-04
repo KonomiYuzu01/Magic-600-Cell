@@ -27,6 +27,25 @@ def fixture(name):
     return json.loads((ROOT / "tests" / "fixtures" / "tastelab" / (name + ".json")).read_text(encoding="utf-8"))
 
 
+RESULT_PATHS = {"wikimedia": ("query", "pages"), "met": ("objectIDs",), "aic": ("data",),
+                "openverse": ("results",), "nasa": ("collection", "items"), "archive": ("response", "docs"),
+                "demozoo": ("results",), "safebooru": ()}
+
+
+def result_response(name, results):
+    value = results
+    for key in reversed(RESULT_PATHS[name]):
+        value = {key: value}
+    return value
+
+
+def metadata_errors(name):
+    empty = result_response(name, [])
+    return [{"error": {"code": "synthetic-transient-error", "detail": "PRIVATE-CANARY" * 1000},
+             **(empty if isinstance(empty, dict) else {})}, None, "wrong type", 42, {},
+            result_response(name, None), result_response(name, {}), result_response(name, [None])]
+
+
 class JSONClient:
     def __init__(self, responses):
         self.responses, self.calls = list(responses), []
@@ -262,6 +281,86 @@ class AdapterTests(unittest.TestCase):
             got, _ = sources.ADAPTERS["nasa"].search(JSONClient([data]), "x", None)
             self.assertEqual(got, [])
 
+    def test_nasa_checks_complete_rights_fields_at_start_middle_and_end(self):
+        notice = " Copyright Synthetic Rights Holder "
+        filler = "A" * (10_000 - len(notice))
+        for field in ("photographer", "secondary_creator", "description"):
+            for position in (0, len(filler) // 2, len(filler)):
+                with self.subTest(field=field, position=position):
+                    data = fixture("nasa")
+                    data["collection"]["items"][0]["data"][0][field] = filler[:position] + notice + filler[position:]
+                    got, _ = sources.ADAPTERS["nasa"].search(JSONClient([data]), "x", None)
+                    self.assertEqual(got, [])
+        data = fixture("nasa")
+        data["collection"]["items"][0]["data"][0]["photographer"] = "A" * 10_000
+        got, _ = sources.ADAPTERS["nasa"].search(JSONClient([data]), "x", None)
+        self.assertEqual(len(got), 1)
+        self.assertTrue(got[0].attribution.endswith("A" * 300))
+
+    def test_wikimedia_checks_complete_licence_fields(self):
+        notice = " Copyright Synthetic Rights Holder "
+        filler = "A" * (10_000 - len(notice))
+        for field in ("License", "LicenseShortName"):
+            for position in (0, len(filler) // 2, len(filler)):
+                with self.subTest(field=field, position=position):
+                    data = fixture("wikimedia")
+                    metadata = data["query"]["pages"][0]["imageinfo"][0]["extmetadata"]
+                    metadata["License"]["value"] = ""
+                    metadata[field]["value"] = filler[:position] + notice + filler[position:]
+                    got, _ = sources.ADAPTERS["wikimedia"].search(JSONClient([data]), "x", None)
+                    self.assertEqual(got, [])
+
+    def test_every_adapter_rejects_invalid_result_containers_with_bounded_errors(self):
+        for name, adapter in sources.ADAPTERS.items():
+            for index, payload in enumerate(metadata_errors(name)):
+                with self.subTest(source=name, payload=index):
+                    with self.assertRaisesRegex(net.NetError, "metadata") as error:
+                        adapter.search(JSONClient([payload]), "instrument", None)
+                    self.assertLess(len(str(error.exception)), 100)
+                    self.assertNotIn("PRIVATE-CANARY", str(error.exception))
+
+    def test_item_metadata_errors_are_bounded(self):
+        for name in ("met", "archive", "demozoo"):
+            data = fixture(name)
+            path = RESULT_PATHS[name]
+            listing = data["search"]
+            rows = listing
+            for key in path[:-1]:
+                rows = rows[key]
+            rows[path[-1]] = rows[path[-1]][:1]
+            invalid = [{"error": {"code": "synthetic-transient-error"}}, None, [], "wrong type"]
+            if name != "met":
+                field = "files" if name == "archive" else "screenshots"
+                invalid += ([] if name == "archive" else [{}]) + [{field: None}, {field: {}}, {field: [None]}]
+            for index, payload in enumerate(invalid):
+                with self.subTest(source=name, payload=index), self.assertRaisesRegex(net.NetError, "metadata"):
+                    sources.ADAPTERS[name].search(JSONClient([listing, payload]), "instrument", None)
+
+    def test_documented_empty_answers_complete_and_near_misses_are_refused(self):
+        empty = {"wikimedia": {"batchcomplete": True}, "met": {"total": 0, "objectIDs": None}}
+        for name, payload in empty.items():
+            with self.subTest(source=name):
+                self.assertEqual(sources.ADAPTERS[name].search(JSONClient([payload]), "instrument", None), ([], None))
+        near_misses = {"wikimedia": [{"batchcomplete": True, "error": {"code": "synthetic"}}, {"batchcomplete": False},
+                                     {"batchcomplete": "true"}, {"batchcomplete": True, "query": None}],
+                       "met": [{"total": 1, "objectIDs": None}, {"total": False, "objectIDs": None},
+                               {"total": "0", "objectIDs": None}, {"total": 0, "objectIDs": None, "error": "synthetic"}]}
+        for name, payloads in near_misses.items():
+            for index, payload in enumerate(payloads):
+                with self.subTest(source=name, payload=index), self.assertRaisesRegex(net.NetError, "metadata"):
+                    sources.ADAPTERS[name].search(JSONClient([payload]), "instrument", None)
+
+    def test_archive_skips_an_unknown_item_and_keeps_the_rest_of_the_page(self):
+        data = fixture("archive")
+        listing = data["search"]
+        docs = listing["response"]["docs"]
+        self.assertGreaterEqual(len(docs), 1)
+        listing["response"]["docs"] = [{"identifier": "synthetic-dark-item", "title": "Dark"}] + docs[:1]
+        client = JSONClient([listing, {}, data["metadata"]])
+        got, _ = sources.ADAPTERS["archive"].search(client, "x", None)
+        self.assertEqual([item.source_id for item in got], [docs[0]["identifier"]])
+        self.assertEqual(len(client.calls), 3)
+
     def test_archive_and_demozoo_skip_seen_and_lost_without_item_requests(self):
         for name in ("archive", "demozoo"):
             data = fixture(name)
@@ -484,6 +583,97 @@ class PipelineTests(test_store.TempDir):
         self.assertEqual(self.ingest(pipeline, item).kind, "duplicate")
         self.assertEqual(self.library.count_images(), 1)
         self.assertTrue(self.library.has_image(first.sha256))
+
+    def test_metadata_failures_leave_cursors_retryable_then_valid_empty_search_completes(self):
+        number = 0
+        for name, adapter in sources.ADAPTERS.items():
+            plan = seeds.parse({"version": 1, "sources": {name: True}, "categories": {
+                "synthetic": {"kind": "focus", "target": 1, "sources": [name], "terms": ["instrument"]}}})
+            key = adapter.cursor_key("instrument")
+            resumed = "https://demozoo.org/api/v1/productions/?page=2" if name == "demozoo" else "2"
+            for initial in (None, resumed):
+                for index, payload in enumerate(metadata_errors(name)):
+                    number += 1
+                    with self.subTest(source=name, initial=initial, payload=index), store.Store(self.tmp / str(number)) as library:
+                        if initial is not None:
+                            library.set_cursor(name, key, initial, False)
+                        before = [tuple(row) for row in library.db.execute("SELECT * FROM fetch_state")]
+                        client = JSONClient([payload, result_response(name, [])])
+                        counts = fetch.run(library, self.fake, self.content_screen, client, plan, sources=[name], log=lambda _: None)
+                        self.assertEqual(counts, {"error": 1})
+                        self.assertEqual([tuple(row) for row in library.db.execute("SELECT * FROM fetch_state")], before)
+                        self.assertEqual(library.cursor(name, key), (initial, False))
+                        self.assertEqual(len(client.calls), 1)
+                        counts = fetch.run(library, self.fake, self.content_screen, client, plan, sources=[name], log=lambda _: None)
+                        self.assertEqual(counts, {})
+                        self.assertEqual(library.cursor(name, key), (None, True))
+                        self.assertEqual(len(client.calls), 2)
+                        self.assertEqual(library.count_images(), 0)
+
+    def test_item_metadata_failure_retries_and_recovers_an_admitted_candidate(self):
+        for name in ("met", "archive", "demozoo"):
+            with self.subTest(source=name), store.Store(self.tmp / name) as library:
+                data = fixture(name)
+                listing = data["search"]
+                rows = listing
+                path = RESULT_PATHS[name]
+                for key in path[:-1]:
+                    rows = rows[key]
+                rows[path[-1]] = rows[path[-1]][:1]
+                detail = data["objects"]["901"] if name == "met" else data["metadata" if name == "archive" else "detail"]
+                client = JSONClient([listing, {"error": {"code": "synthetic-transient-error"}}, listing, detail])
+                plan = seeds.parse({"version": 1, "sources": {name: True}, "categories": {
+                    "synthetic": {"kind": "focus", "target": 1, "sources": [name], "terms": ["instrument"]}}})
+                with mock.patch.object(fetch.Pipeline, "ingest_candidate", return_value=fetch.Outcome("stored")) as ingest:
+                    first = fetch.run(library, self.fake, self.content_screen, client, plan, sources=[name], limit=1, log=lambda _: None)
+                    self.assertEqual(first, {"error": 1})
+                    self.assertEqual(library.db.execute("SELECT COUNT(*) FROM fetch_state").fetchone()[0], 0)
+                    ingest.assert_not_called()
+                    second = fetch.run(library, self.fake, self.content_screen, client, plan, sources=[name], limit=1, log=lambda _: None)
+                    self.assertEqual(second, {"stored": 1})
+                    ingest.assert_called_once()
+                    self.assertTrue(sources.admit(ingest.call_args.args[0], sources.ADAPTERS[name].tier))
+
+    def test_recovery_missing_committed_bytes_can_refetch(self):
+        pipeline, item, replay = self.pipeline()
+        with mock.patch.object(self.library, "_reconcile"):
+            first = self.ingest(pipeline, item)
+        self.assertEqual(first.kind, "stored")
+        for path in self.library.root.rglob(".part-*"):
+            path.unlink()
+        self.library._reconcile()
+        self.assertFalse(self.library.has_image(first.sha256))
+        self.assertFalse(self.library.has_seen(item.source, item.source_id))
+        self.assertEqual(self.library.db.execute("SELECT COUNT(*) FROM file_ops").fetchone()[0], 0)
+        second = self.ingest(pipeline, item)
+        self.assertEqual((second.kind, second.sha256), ("stored", first.sha256))
+        self.assertEqual(len(replay.calls), 2)
+        self.assertTrue(self.library.has_seen(item.source, item.source_id))
+        self.assertTrue(self.library.thumb_path(second.sha256).is_file())
+
+    def test_recovery_keeps_removed_and_blocked_candidates_suppressed(self):
+        for disposition in ("removed", "blocked"):
+            with self.subTest(disposition=disposition), store.Store(self.tmp / disposition) as library:
+                pipeline, item, replay = self.pipeline()
+                pipeline.store = library
+                with mock.patch.object(library, "_reconcile"):
+                    first = self.ingest(pipeline, item)
+                self.assertEqual(first.kind, "stored")
+                if disposition == "removed":
+                    library.remove_image(first.sha256)
+                else:
+                    with library.db:
+                        library.db.execute("INSERT INTO blocked VALUES (?, ?)", (first.sha256, common.now_iso()))
+                    for path in library.root.rglob(".part-*"):
+                        path.unlink()
+                    library._reconcile()
+                self.assertFalse(library.has_image(first.sha256))
+                self.assertTrue(library.is_blocked(first.sha256))
+                self.assertTrue(library.has_seen(item.source, item.source_id))
+                replay.calls.clear()
+                self.assertEqual(self.ingest(pipeline, item).kind, "duplicate")
+                self.assertEqual(replay.calls, [])
+                self.assertEqual(library.db.execute("SELECT COUNT(*) FROM file_ops").fetchone()[0], 0)
 
     def test_run_resumes_midpage_without_losing_unhandled_items(self):
         plan = seeds.parse({"version": 1, "sources": {"met": True}, "categories": {

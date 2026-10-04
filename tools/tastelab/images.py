@@ -19,6 +19,7 @@ from tastelab import common
 
 FORMATS = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp", "GIF": "gif"}
 MAX_PIXELS = 40_000_000
+MAX_ASPECT = 64          # longer side / shorter side; bounds the model's full-size resize at 224 x 14,336
 MIN_EDGE = 64
 JPEG_QUALITY = 85
 
@@ -49,6 +50,8 @@ def decode(data: bytes) -> Decoded:
             width, height = im.size
             if width * height > MAX_PIXELS:
                 raise BadImage("too many pixels")
+            if max(width, height) > MAX_ASPECT * min(width, height):
+                raise BadImage("aspect ratio above 64")
             animated = bool(getattr(im, "is_animated", False)) or getattr(im, "n_frames", 1) > 1
             im.seek(0)
             im.load()
@@ -74,6 +77,7 @@ def thumbnail_jpeg(image: Image.Image, edge: int = common.THUMB_EDGE) -> bytes:
     """A JPEG no larger than `edge` on its longer side, with no metadata."""
     thumb = image.copy()
     thumb.thumbnail((edge, edge), Image.Resampling.LANCZOS)
+    thumb = Image.frombytes(thumb.mode, thumb.size, thumb.tobytes())
     out = io.BytesIO()
     thumb.save(out, format="JPEG", quality=JPEG_QUALITY, optimize=True)
     return out.getvalue()

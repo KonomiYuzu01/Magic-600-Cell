@@ -41,8 +41,30 @@ test("licence prefixes accept exactly one appended slash and remain case-sensiti
   for (const url of [
     "https://creativecommons.org/licenses/by-sa/4.0/", "https://creativecommons.org/licenses/by-other/",
     "https://creativecommons.org/Licenses/by/", "https://CreativeCommons.org/licenses/by/",
-    "https://creativecommons.org.evil.invalid/licenses/by/", "https://creativecommons.org/licenses/by?x=1",
+    "https://creativecommons.org.evil.invalid/licenses/by/",
   ]) assert.equal(licenceOk("met", "CC-BY-4.0", url), false, url);
+});
+
+test("raw licence paths reject traversal, percent encodings and backslashes", () => {
+  const base = "https://creativecommons.org/licenses/by/";
+  for (const segment of [".", "..", "%2e", "%2E", "%2e%2e", "%2E%2E", "%2e%2E", ".%2e", "%2E.", "%252e"]) {
+    const url = base + segment + "/by-nc/4.0/";
+    assert.equal(licenceOk("openverse", "CC-BY-4.0", url), false, url);
+  }
+  for (const path of [String.raw`4.0/..\..\by-nc/4.0/`, String.raw`4.0\extra`, "4.0/%41"]) {
+    assert.equal(licenceOk("openverse", "CC-BY-4.0", base + path), false, path);
+  }
+});
+
+test("licence queries and fragments do not change the allowed raw path", () => {
+  for (const url of [
+    "https://creativecommons.org/licenses/by/2.0/?ref=openverse",
+    "https://creativecommons.org/licenses/by/2.0?ref=openverse#reference",
+    "https://creativecommons.org/licenses/by?ref=openverse",
+    "https://creativecommons.org/licenses/by/4.0/?ref=%2e%2e#../by-nc",
+    String.raw`https://creativecommons.org/licenses/by/4.0/?ref=\#reference`,
+  ]) assert.equal(licenceOk("openverse", "CC-BY-4.0", url), true, url);
+  assert.equal(licenceOk("openverse", "CC-BY-4.0", "https://creativecommons.org/licenses/by-nc/4.0/?ref=openverse"), false);
 });
 
 for (const licence of ["private-reference", "CC-BY-NC-4.0", "CC-BY-ND-4.0", "CC-BY-SA-4", "CC-BY-4x0",

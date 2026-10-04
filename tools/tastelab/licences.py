@@ -52,12 +52,17 @@ def class_a_source(source) -> bool:
 
 def licence_ok(source, licence, url) -> bool:
     family = licence_family(licence)
-    if not class_a_source(source) or family is None or https_url(url) is None:
+    parts = https_url(url)
+    if not class_a_source(source) or family is None or parts is None:
+        return False
+    path = parts.path
+    if "%" in path or "\\" in path or any(segment in (".", "..") for segment in path.split("/")):
         return False
     row = next(row for row in TABLE["licences"] if row["family"] == family)
     if "sources" in row and source not in row["sources"]:
         return False
-    return any((url if url.endswith("/") else url + "/").startswith(prefix) for prefix in row["prefixes"])
+    canonical = "https://" + parts.netloc + path
+    return any((canonical if canonical.endswith("/") else canonical + "/").startswith(prefix) for prefix in row["prefixes"])
 
 
 def page_url_ok(source, url) -> bool:

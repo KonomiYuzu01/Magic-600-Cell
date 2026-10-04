@@ -62,14 +62,15 @@ class _Text(HTMLParser):
         self.parts.append(data)
 
 
-def clean(value):
+def clean(value, *, limit=300):
     if isinstance(value, list):
         value = "; ".join(v for v in value if isinstance(v, str))
     if not isinstance(value, str):
         return ""
     parser = _Text()
     parser.feed(value)
-    return " ".join(html.unescape(" ".join(parser.parts)).split())[:300]
+    text = " ".join(html.unescape(" ".join(parser.parts)).split())
+    return text if limit is None else text[:limit]
 
 
 class Adapter:
@@ -86,13 +87,29 @@ class Adapter:
     def cursor_key(self, query):
         return query
 
-    def _json(self, client, url):
+    def _json(self, client, url, *, results=None, record_type=dict, empty=None):
+        """The parsed response, checked against the shape the adapter reads. `empty` maps the source's own
+        documented form of an empty answer to that shape; any other shape, or an error member, is refused."""
         response = client.get(url, hosts=self.hosts, min_interval=self.min_interval, max_bytes=4 * 1024 * 1024,
                               accept="application/json", extra_headers=self.headers())
         try:
-            return json.loads(response.body)
+            data = json.loads(response.body)
         except (ValueError, UnicodeError):
             raise net.NetError(f"{self.name}: invalid metadata JSON") from None
+        error = f"{self.name}: invalid metadata response"
+        if results != () and (not isinstance(data, dict) or "error" in data):
+            raise net.NetError(error)
+        if empty is not None:
+            data = empty(data) or data
+        rows = data
+        for key in results or ():
+            if not isinstance(rows, dict) or "error" in rows or key not in rows:
+                raise net.NetError(error)
+            rows = rows[key]
+        if results is not None and (not isinstance(rows, list) or any(
+                type(row) is not record_type or isinstance(row, dict) and "error" in row for row in rows)):
+            raise net.NetError(error)
+        return data
 
     def _admitted(self, items):
         return [item for item in items if admit(item, self.tier)]
@@ -128,10 +145,10 @@ class Wikimedia(Adapter):
         params = {"action": "query", "format": "json", "formatversion": 2, "generator": "search", "gsrsearch": query,
                   "gsrnamespace": 6, "gsrlimit": min(page_size, 50), "gsroffset": int(cursor or 0),
                   "prop": "imageinfo", "iiprop": "url|extmetadata", "iiurlwidth": 960, "maxlag": 5}
-        data = self._json(client, "https://commons.wikimedia.org/w/api.php?" + urlencode(params))
-        pages = data.get("query", {}).get("pages", [])
-        if isinstance(pages, dict):
-            pages = list(pages.values())
+        # A search with no (more) results answers {"batchcomplete": true} without a query member.
+        data = self._json(client, "https://commons.wikimedia.org/w/api.php?" + urlencode(params), results=("query", "pages"),
+                          empty=lambda d: {"query": {"pages": []}} if "query" not in d and d.get("batchcomplete") is True else None)
+        pages = data["query"]["pages"]
         items = []
         for page in pages:
             infos = page.get("imageinfo") or []
@@ -142,7 +159,7 @@ class Wikimedia(Adapter):
                 continue
             metadata = info.get("extmetadata", {})
             field = lambda k: metadata.get(k, {}).get("value", "")
-            raw = clean(field("License") or field("LicenseShortName")).lower().replace(" ", "-")
+            raw = clean(field("License") or field("LicenseShortName"), limit=None).lower().replace(" ", "-")
             licence, url = "", field("LicenseUrl")
             if raw in ("cc0", "cc0-1.0"):
                 licence, url = "CC0-1.0", CC0_URL
@@ -173,8 +190,11 @@ class Met(Adapter):
 
     def search(self, client, query, cursor, *, page_size=20, seen=None):
         offset, limit = int(cursor or 0), min(page_size, 500)
-        data = self._json(client, MET_SEARCH + "?" + urlencode({"q": query, "hasImages": "true", "offset": offset, "limit": limit}))
-        ids, items = data.get("objectIDs") or [], []
+        data = self._json(client, MET_SEARCH + "?" + urlencode({"q": query, "hasImages": "true", "offset": offset, "limit": limit}),
+                          results=("objectIDs",), record_type=int,
+                          empty=lambda d: {"total": 0, "objectIDs": []} if type(d.get("total")) is int and d["total"] == 0
+                          and d.get("objectIDs") is None else None)   # no match: {"total": 0, "objectIDs": null}
+        ids, items = data["objectIDs"], []
         for ident in ids:
             ident = str(ident)
             if seen and seen(ident):
@@ -201,9 +221,9 @@ class Aic(Adapter):
         page = int(cursor or 1)
         fields = "id,title,artist_title,artist_display,credit_line,image_id,is_public_domain"
         data = self._json(client, "https://api.artic.edu/api/v1/artworks/search?" +
-                          urlencode({"q": query, "page": page, "limit": min(page_size, 100), "fields": fields}))
+                          urlencode({"q": query, "page": page, "limit": min(page_size, 100), "fields": fields}), results=("data",))
         items, unmatched = [], False
-        for row in data.get("data", []):
+        for row in data["data"]:
             if row.get("_score", 0) < AIC_MIN_SCORE:
                 unmatched = True
                 break
@@ -228,9 +248,9 @@ class Openverse(Adapter):
     def search(self, client, query, cursor, *, page_size=20, seen=None):
         page = int(cursor or 1)
         data = self._json(client, "https://api.openverse.org/v1/images/?" +
-                          urlencode({"q": query, "page": page, "page_size": min(page_size, 20), "mature": "false"}))
+                          urlencode({"q": query, "page": page, "page_size": min(page_size, 20), "mature": "false"}), results=("results",))
         items = []
-        for row in data.get("results", []):
+        for row in data["results"]:
             if row.get("mature") is not False or row.get("unstable__sensitivity") != []:
                 continue
             ident = str(row.get("id", ""))
@@ -254,22 +274,23 @@ class Nasa(Adapter):
     def search(self, client, query, cursor, *, page_size=20, seen=None):
         page = int(cursor or 1)
         data = self._json(client, "https://images-api.nasa.gov/search?" +
-                          urlencode({"q": query, "media_type": "image", "page": page, "page_size": min(page_size, 100)}))
+                          urlencode({"q": query, "media_type": "image", "page": page, "page_size": min(page_size, 100)}), results=("collection", "items"))
         items = []
-        collection = data.get("collection", {})
-        for item in collection.get("items", []):
+        collection = data["collection"]
+        for item in collection["items"]:
             rows = item.get("data") or []
             if not rows:
                 continue
             row = rows[0]
-            ident, centre = str(row.get("nasa_id", "")), clean(row.get("center")).upper()
+            ident, centre = str(row.get("nasa_id", "")), clean(row.get("center"), limit=None).upper()
             if seen and seen(ident):
                 continue
-            credit = clean(row.get("photographer"))
-            rights = " ".join(clean(row.get(k)) for k in ("photographer", "secondary_creator", "description"))
+            credit = clean(row.get("photographer"), limit=None)
+            rights = " ".join(clean(row.get(k), limit=None) for k in ("photographer", "secondary_creator", "description"))
             if (centre not in NASA_CENTRES and not re.search(r"\bNASA\b", credit, re.I)) or re.search(
                     r"copyright|courtesy|\(c\)|©|\b(?:ESA|NOAA|JAXA|DLR|CSA|ISRO)\b", rights, re.I):
                 continue
+            credit = credit[:300]
             preview = next((link.get("href", "") for link in item.get("links", []) if
                             link.get("rel") == "preview" and link.get("render") == "image"), "")
             items.append(Candidate(self.name, ident, preview, "https://images.nasa.gov/details/" + ident, "US-Gov-PD",
@@ -289,14 +310,16 @@ class Archive(Adapter):
         page = int(cursor or 1)
         params = {"q": query + " AND mediatype:image", "fl[]": ["identifier", "title"], "rows": min(page_size, 100),
                   "page": page, "output": "json"}
-        data = self._json(client, "https://archive.org/advancedsearch.php?" + urlencode(params, doseq=True))
-        rows, items = data.get("response", {}).get("docs", []), []
+        data = self._json(client, "https://archive.org/advancedsearch.php?" + urlencode(params, doseq=True), results=("response", "docs"))
+        rows, items = data["response"]["docs"], []
         for row in rows:
             ident = row.get("identifier", "")
             if not ident or seen and seen(ident):
                 continue
-            detail = self._json(client, "https://archive.org/metadata/" + quote(ident, safe=""))
-            filename = next((f.get("name") for f in detail.get("files", []) if
+            # An unknown or dark item answers {}: it has no files and is skipped.
+            detail = self._json(client, "https://archive.org/metadata/" + quote(ident, safe=""), results=("files",),
+                                empty=lambda d: {"files": []} if d == {} else None)
+            filename = next((f.get("name") for f in detail["files"] if
                              str(f.get("name", "")).lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif"))), None)
             if not filename:
                 continue
@@ -327,14 +350,14 @@ class Demozoo(Adapter):
 
     def search(self, client, query, cursor, *, page_size=20, seen=None):
         url = cursor or "https://demozoo.org/api/v1/productions/?" + self.cursor_key(query)
-        data = self._json(client, url)
+        data = self._json(client, url, results=("results",))
         items = []
-        for row in data.get("results", []):
+        for row in data["results"]:
             ident = str(row.get("id", ""))
             if "lost" in row.get("tags", []) or seen and seen(ident):
                 continue
-            detail = self._json(client, "https://demozoo.org/api/v1/productions/" + quote(ident, safe="") + "/")
-            screenshots = detail.get("screenshots") or []
+            detail = self._json(client, "https://demozoo.org/api/v1/productions/" + quote(ident, safe="") + "/", results=("screenshots",))
+            screenshots = detail["screenshots"]
             if not screenshots:
                 continue
             shot = screenshots[0]
@@ -356,7 +379,7 @@ class Safebooru(Adapter):
         tags += ["rating:general"] + ["-" + t for t in SAFEBOORU_EXCLUDED_TAGS]
         url = "https://safebooru.org/index.php?" + urlencode({"page": "dapi", "s": "post", "q": "index", "json": 1,
                                                            "pid": page, "limit": limit, "tags": " ".join(tags)})
-        data = self._json(client, url)
+        data = self._json(client, url, results=())
         items = []
         for row in data:
             keywords = tuple(str(row.get("tags", "")).lower().split())

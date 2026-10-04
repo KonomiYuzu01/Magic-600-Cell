@@ -108,6 +108,24 @@ class BundleTests(test_store.TempDir):
         np.testing.assert_array_equal(values[0], self.unit)
         self.assertIsNotNone(bundle._complete(folder))
 
+    def test_bundle_thumbnail_strips_metadata_from_raw_and_stored_inputs(self):
+        for name, original, canary in test_store.metadata_images():
+            decoded = images.decode(original)
+            try:
+                stored = images.thumbnail_jpeg(decoded.image)
+            finally:
+                decoded.image.close()
+            for boundary, data in (("raw", original), ("stored", stored)):
+                with self.subTest(metadata=name, boundary=boundary):
+                    path = self.tmp / (name + "-" + boundary)
+                    path.write_bytes(data)
+                    output, width, height = bundle._thumbnail(path)
+                    self.assertEqual((width, height), (96, 96))
+                    self.assertNotIn(canary, output)
+                    with Image.open(io.BytesIO(output)) as thumbnail:
+                        self.assertLessEqual(set(thumbnail.info), {"jfif", "jfif_version", "jfif_unit", "jfif_density"})
+                        self.assertEqual(len(thumbnail.getexif()), 0)
+
     @unittest.skipIf(NODE is None, "node is not on PATH")
     def test_page_validator_accepts_an_exported_bundle(self):
         # The page's validateBundle (tools/tastelab/page/bundle.js) must accept what this exporter writes.
