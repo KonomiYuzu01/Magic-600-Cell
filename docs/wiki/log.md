@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-04] update | Framework comparison: smoke-test answers
+[framework-paper-comparison](../progress/1.0/framework-paper-comparison.md) section 7 now gives the level-1 smoke-test answers for Godot 4.7.2 and Qt 6.10.3 from the renderer session's result cards; questions 5, 7, 8 and 9 stay open, and no timing was measured.
+
 ## [2026-10-03] update | Qt interop smoke test passes
 Updated [interop-smoke-results](evidence/interop-smoke-results.md). On the owner's GPU, Qt 6.10.3 showed a texture written by our own Direct3D 12 code on Qt's own device and queue, on a QRhi created with our device and queue (`fromRhi`) and with our device only (`fromDeviceAndContext`), on both queues and through resizes and teardown, with 0 validation errors; imported textures need no RENDER_TARGET handover. The page answers PR #43 section 7 for Qt 6.10.3 as smoke-test results; Qt 6.12 is untested.
 
@@ -46,6 +49,9 @@ Recorded in [owner-decisions-2026-10-03-migration](decisions/owner-decisions-202
 
 ## [2026-10-03] decision | Taste Lab evaluation points and settled rule
 Recorded in [owner-decisions-2026-10-03-taste-lab](decisions/owner-decisions-2026-10-03-taste-lab.md): the learner missed criterion 3 at 60 comparisons; the owner kept the thresholds, moved the checks to 90 comparisons per family (relevance ranking at 160, provisional before) and had the settled rule recalibrated.
+
+## [2026-10-02] update | Framework paper comparison
+[framework-paper-comparison](../progress/1.0/framework-paper-comparison.md) collects documented facts on Godot 4.7 .NET (S-A2) and Qt Quick 6.12 (S-D): D3D12 interop, UI and text, licence, later platforms and tooling, with nine questions for the smoke tests. It is input for day 7, not a selection, and makes no performance claim.
 
 ## [2026-10-02] decision | Scope reduction and review risk tiers
 Recorded in [owner-decisions-2026-10-02-scope](decisions/owner-decisions-2026-10-02-scope.md): only sound and the mathematical-language work are reduced, design stays the core of 1.0; `AGENTS.md` gains risk tiers for review and a weekly process budget; the tester source for G1 to G6 is open.

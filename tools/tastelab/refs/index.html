@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Taste Lab references</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <h1>Taste Lab references</h1>
+    <p class="privacy">Local only. The page reads the folder you open and saves <code>references.json</code> there. Images are never copied, uploaded or stored; the file holds your notes and the measured numbers.</p>
+  </div>
+  <div class="bar">
+    <button id="open" type="button">Open folder</button>
+    <input id="fallback" type="file" multiple accept="image/*,.json" hidden>
+    <button id="save" type="button" disabled>Save</button>
+    <button id="copy" type="button" disabled>Copy summary</button>
+    <span id="folder"></span>
+    <span id="status" role="status" aria-live="polite"></span>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button type="button" role="tab" data-tab="pairs" aria-selected="true">Pairs</button>
+    <button type="button" role="tab" data-tab="cards" aria-selected="false">Nexus cards</button>
+    <button type="button" role="tab" data-tab="references" aria-selected="false">References</button>
+  </nav>
+</header>
+<main id="main">
+  <section id="intro" class="intro">
+    <h2>Annotated reference pairs and nexus cards</h2>
+    <p>Open the folder with your reference images. Name a liked and a disliked image with the same number, for example <code>01-like-harbour.jpg</code> and <code>01-dislike-poster.png</code>, and the page pairs them. You can also pair any two images by hand.</p>
+    <p>For each pair, write the specific visual property you mean, the feeling you want and any connection to another reference. Keep what an image shows (its subject) apart from how it looks.</p>
+    <p>A connection becomes a nexus card: the interest, its bridge to the project (symmetry, quaternions, Hopf fibres, the stage order, the instrument metaphor) and the place it could take in the product (a theme, a signature moment, a theory-book figure, an icon motif, a celebration).</p>
+    <p>The page measures palette relations and structure of each image on this computer and keeps only the numbers. Material, typography, rhythm and motion stay with your notes.</p>
+  </section>
+</main>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
