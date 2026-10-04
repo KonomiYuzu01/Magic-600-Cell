@@ -1,11 +1,11 @@
-# SA2 Godot 4.7.2 .NET interop smoke test
+# SA2 Godot 4.7.2 .NET interop (levels 1 and 2)
 
 E-2.4-02 level 1: a synthetic sequence-numbered RGBA8 texture on Godot's
 own D3D12 device, displayed by Godot and decoded from its composited viewport.
 There is no geometry port, personal session, product UI or performance claim.
 The immutable interfaces are [sa2_interop.h](native/include/sa2_interop.h)
-(ABI 1) and [code_layout.json](code_layout.json). Integrate packet SA2-N before
-building: this packet does not supply the native producer DLL or self-test.
+(ABI 2, retaining the level 1 exports) and [code_layout.json](code_layout.json).
+The native producer DLL and self-test are built from [native/](native/README.md).
 
 ## Prerequisites and commands
 
@@ -76,6 +76,192 @@ the HTTP cache are private; telemetry, first-time setup, workload notification
 and shared compilation are disabled. The source project's `.godot/`, `bin/`
 and `obj/` are neither copied nor used. There is no editor/import invocation
 and no release template build.
+
+## Level 2: S-B scenes on Godot's device
+
+Packet L2-G implements [HARNESS.md](../renderer-l2-packets/HARNESS.md)
+sections 2 to 6 for candidate `sa2`, and its Godot preparation step. The packet's
+three amendments apply: exclusive fullscreen covers the exact monitor rectangle;
+engine arguments come from the Windows process command line; the finalizer
+checks the recorded adapter against its expected adapter. The level 1 smoke
+mode and its project settings remain unchanged, with ABI 2 bindings for all
+27 exports and runtime guards for the four structures (48, 28, 128 and 32 bytes).
+
+[Level2.cs](project/Level2.cs) is a separate controller, selected by `--l2-mode`
+among Godot's user arguments after `--`. It displays only the DLL's scene texture,
+on the primary monitor, with exclusive fullscreen, topmost, content scaling
+disabled, 3D scale 1, the cursor hidden and vsync disabled. It waits for two
+consecutive frames with equal physical display, client, displayed and framework
+surface sizes before creating the ring. Failure to settle within five seconds
+exits 1. The ring is fixed for the rest of the process, including size changes
+during the trace. Size samples record those changes for the finalizer.
+
+Defaults are R2: `export`, `same`, `tracked`, `match`, render thread `safe`, three
+warm-up frames. Warm-up establishes Godot's resource tracking before scene load.
+Its shown-fence value is zero, so scene production can start at frame 1. The
+warm-up ends with a Godot flush and native drain before scene load; this
+prevents the own queue from treating fence zero as a completed warm-up read. Each
+scene frame signals free `f-1`, produces slot `f%3` once, waits ready `f`, and
+queues Godot's draw/present. The next render callback marks that preceding
+frame shown, before signalling its free fence. `FramePreDraw` checks that the
+previous iteration drew; the short PresentMon capture must confirm one trace
+entry per present interval. Teardown clears wrappers on the main thread,
+ends the trace, flushes Godot, drains, writes the DLL outputs on a completed
+run, unloads and unregisters, frees RIDs, flushes/drains deferred destruction,
+releases imported resources and detaches. All DLL and RD work uses
+`CallOnRenderThread`. The display request is released on its requesting thread.
+
+Run mode uses QPC for preroll (4,000 ms), the foreground wait (at most five
+seconds), trace (192,000 ms) and 100 ms condition samples. Enforce mode stops at
+the first invisible, covered or non-foreground sample, with exit 3 and no
+`scene_write_run`. Record mode continues and preserves the counts. Power source
+is derived from all samples, including unknown samples, and effective power
+mode uses S-B's names and change rule. Geometry mode defaults to loading W1
+when no scene is supplied; the DLL checks all reference cameras on its own
+offscreen targets. It takes no condition samples and starts no trace.
+
+The app writes only `harness.json` and requests the DLL's `native.json`,
+`trace.jsonl` or `geometry.json`. The shared L2-F finalizer writes gate records.
+Harness output uses exclusive `harness.json.tmp`, flush and rename without
+overwrite. A directory containing `godot.log` or `presentmon.csv` is accepted;
+the five reserved app/DLL names are refused. Usage failures write a null-filled
+harness when a single usable `--l2-out` can be recovered. Esc and window close
+follow the same teardown and write path. Exit codes are 0 (outputs written),
+1 (usage/framework/device/DLL/I/O failure), 2 (written label/geometry check
+failure), and 3 (enforce condition failure). Unknown failure-time facts stay
+null, with the required object shapes intact.
+
+On an unconfirmed drain the DLL ends the process with `TerminateProcess` and
+exit code 3, as its header requires, so the managed exit writer never runs and
+no `harness.json` is written; a framework process abort also leaves none. These
+are the exceptions to the every-exit harness rule. The runner stops the series
+on every exit 3 and names both causes, and the finalizer refuses a run without
+`harness.json` (`harness`). The app refuses the intentional drain injection. A
+pending harness written in advance is not an option, because the no-overwrite
+rule would keep it from being replaced.
+
+Level 2 options, all passed after `--`:
+
+| Option | Values / default |
+| --- | --- |
+| `--l2-mode` | required: `run` or `geometry` |
+| `--l2-scene` | `w1` through `w4`, required for `run` |
+| `--l2-out` | required existing directory without the five reserved outputs |
+| `--l2-run-id` | required `[A-Za-z0-9][A-Za-z0-9._-]{0,127}` |
+| `--l2-dll` | required absolute path of `sa2_interop.dll` |
+| `--l2-trace-ms` | 1,000 to 3,600,000; default 192,000 |
+| `--l2-preroll-ms` | 0 to 60,000; default 4,000 |
+| `--l2-turn-ms` | W3 only: finite, greater than 0 and at most 10,000; default 190 |
+| `--l2-inject` | W3/W4 run only: `corrupt-label`, `swap-same-colour`, `delay-adoption`, `stale-binding` |
+| `--l2-declare` | repeatable `key=value`; lowercase `true`/`false` are booleans; `overlays` and duplicate keys are refused |
+| `--l2-gpu-validation` | `0` or `1`, default `0`; engine `--gpu-validation` must agree |
+| `--l2-conditions` | `enforce` (default) or `record` |
+| `--l2-no-vram` | flag, passes `SA2_SCENE_NO_VRAM` |
+| `--l2-debug-half-target` | flag, halves only registered slot width/height, rounded down |
+
+Meaningful level 1 options keep their `--sa2-` names: route, queue, handover,
+barriers, warmup, render-thread and timeout-ms (fixed at 5,000 in level 2).
+`--sa2-gpu-validation`, if supplied, must agree with `--l2-gpu-validation`.
+The `rd-compute` baseline cannot draw DLL scenes and is refused in level 2.
+Frame-count, resize, verify, device-loss, smoke output/DLL and drain-injection
+options are refused. An inherited unconfirmed-drain injection is also refused
+before attaching. Experimental import/handover/barrier values retain their
+level 1 meanings; R2 is the prepared configuration. The imported shared-view
+route still checks the editor binary's refusal.
+
+[prepare_l2.py](prepare_l2.py) imports the level 1 offline DLL/.NET build recipe,
+the 150-character native-build path limit and isolated NuGet/.NET environment.
+It copies the project into a new `work/sa2b/<stamp>/`, builds Debug, and prints
+that directory. Logs and caches use the same private root as level 1. It locates
+the pinned WinGet package without executing either Godot executable, and the
+app checks the exact engine version when it starts. It writes `launch.json`
+with `magic600-l2-launch-v1`: the non-console executable, D3D12, no vsync,
+render-thread `safe`, per-run `--log-file {out}\godot.log`, validation-only
+`--gpu-validation`, the `--` separator, and a whitelist of isolated environment
+values (the drain injection is removed). It passes no `--gpu-index`.
+
+`--skip-build` reuses only the newest prepared level 2 build whose source,
+Godot executable, DLL, shader, assembly and copied-project digests still match
+`l2-build-identity.json`; otherwise it refuses. Unchanged `launch.json` is reused;
+different launch settings require a new build. It launches no Godot, editor,
+import or GPU process and changes no installed tool. No whole inherited
+environment is copied into the launch record.
+
+The configuration records raw framework facts and engine arguments as one
+JSON-array string. The latter comes from `GetCommandLineW` split with
+`CommandLineToArgvW`, dropping the executable, `--path`/`--log-file` and their
+values, `--gpu-validation`, `--gpu-abort` and all user arguments from `--` onward.
+Run options and paths therefore do not change the composite identity. `files`
+records the loaded DLL, actual running exe and loaded assembly, `project.godot`,
+`Main.tscn` and its external `Smoke.cs` resource. The DLL supplies shader digests.
+The full-rectangle `TextureRect` maps the texture directly, with no fit/crop or
+aspect-preservation transform (`texture_stretch: none`); the raw enum is also
+recorded. Half-target injection keeps those framework settings and displayed
+extent, so the intended refusal is `size-mismatch` alone.
+
+Owner-machine order from HARNESS section 11, once L2-F is integrated:
+
+```powershell
+# Source/fixture check only. Preparation builds but starts no Godot process.
+python work/experiments/renderer-sa2/check_project.py
+$build = python work/experiments/renderer-sa2/prepare_l2.py
+# Optional, after a successful preparation with unchanged source and binaries:
+# $build = python work/experiments/renderer-sa2/prepare_l2.py --skip-build
+$runner = 'work/experiments/renderer-l2/run_scene.ps1'
+
+# Four validation records, then the geometry record; no administrator rights.
+& $runner -Candidate sa2 -Build $build -Validation
+& $runner -Candidate sa2 -Build $build -Geometry
+
+# Steps below: administrator PowerShell, idle machine, mains power.
+# These declarations require the operator to have disabled both features.
+$declare = @('frame_generation=false', 'upscaling=false')
+# State the overlays that are actually running, for example 'none running'.
+$overlays = '<none running, or the overlays running>'
+& $runner -Candidate sa2 -Build $build -Short -Scene w3 -Declare $declare
+# Each must be refused for exactly its named reason.
+& $runner -Candidate sa2 -Build $build -Short -Scene w3 -Declare $declare -DebugHalfTarget
+& $runner -Candidate sa2 -Build $build -Short -Scene w3 -Declare $declare -NoVram
+
+# Preliminary unless owner-attended. After each run, answer the runner's
+# question whether you watched all of it.
+& $runner -Candidate sa2 -Build $build -Scene w1 -Runs 1 -Overlays $overlays -Declare $declare
+& $runner -Candidate sa2 -Build $build -Scene w2 -Runs 1 -Overlays $overlays -Declare $declare
+& $runner -Candidate sa2 -Build $build -Scene w4 -Runs 1 -Overlays $overlays -Declare $declare
+
+# Three owner-attended cold W3 processes; the runner judges the series.
+& $runner -Candidate sa2 -Build $build -Scene w3 -Runs 3 -Overlays $overlays -Declare $declare
+```
+
+The sandbox check preserves every level 1 check and adds ABI 2 layout/export
+checks, static checks of sections 2 to 6, planted defects, a real fixture write
+of `launch.json`, and digest-change refusal fixtures. It starts only Python
+processes and removes its plain-mkdir system-temp fixture directory on every
+exit. It does not compile C#, start Godot or measure GPU/window behavior.
+
+Godot 4.7.2 dependencies for level 2 and their runtime checks:
+
+| Fact | Evidence / use | Owner-machine check in HARNESS |
+| --- | --- | --- |
+| G1 | Source-verified by the integrator: exclusive fullscreen is the exact monitor rectangle; ordinary fullscreen extends 2 pixels and clips them. Use exclusive fullscreen. This supersedes section 2's earlier 1-pixel explanation. | Section 7 `size-mismatch`, using section 2's five measured physical sizes. |
+| G2 | Source-verified: `AlwaysOnTop` sets `HWND_TOPMOST`. | The app checks `WS_EX_TOPMOST` before building; failure is `app-exit`; section 5 covered samples feed `conditions`. |
+| G3 | Source-verified: RD screen width/height report the window surface; resize reaches the swap chain at the next frame. | Two settled frames before the ring, section 7 `size-mismatch` including size-change samples, and the half-target short refusal. |
+| G4 | Source-verified: `OS.GetCmdlineArgs()` omits engine-consumed arguments. The amended section 6 uses native process argv instead. | Inspect recorded `configuration.engine_arguments` against `launch.json`; section 8 checks settings identity and stability across run options. No dependency on `OS.GetCmdlineArgs()` remains. |
+| G5 | Source-verified: `--disable-vsync` gives `VSYNC_DISABLED`, sync interval 0 and tearing when supported. | Actual `WindowGetVsyncMode()` is recorded and required disabled; section 7 `sync-interval` and the PresentMon tearing fact. |
+| G6 | Source-verified: the D3D12 adapter order prefers discrete unless a GPU index or Windows preference overrides it. | Record `GetVideoAdapterName()` without judging; the amended section 7 `adapter` refusal checks the expected RTX 4070 name. |
+| G7 | Source-verified at the pinned tag: the console executable starts a suspended non-console child in a kill-on-close job and returns its exit code. | Prepare launches the non-console exe itself; section 7 `harness` checks the app PID equals the launched PID, then `presentmon`/`swap-chain` select it. No wrapper was run in the sandbox. |
+| S1/S2/S4 | Existing level 1 source facts: import ownership/initial tracking, barrier matching, and exported texture pointer stability. | Warm-up and pointer/wrap checks, section 7 `validation` on W1 to W4; rerun R2 with ABI 2 for preserved smoke behavior. |
+| S3 | Existing source fact: editor builds reject shared views of foreign allocations. | Explicit imported-wrapper check exits 1; section 7 `app-exit`. |
+| S5 | Existing source fact: GPU validation enables the debug layer/callback. | Section 7 `validation` requires actual debug layer 1 and the full native counters. |
+| S6 | Existing source fact: safe callbacks run immediately; separate render callbacks and draws are FIFO, wrapping is deferred, pre-draw is synchronous. | Measured thread model and pre-draw guard, section 7 `trace-steps` in the short capture, then validation runs. |
+| S7 | Existing source fact used by the preserved smoke path: RGBA8 viewport readback is tightly packed, captures the previous frame and changes RID on resize. | R2's two-corner decode, readback coverage and resize checks with ABI 2; level 2 uses the DLL's checks. |
+| S8 | Existing source fact: drawn frames submit at swap-buffers; synchronous readback submits and disposes deferred freed textures. | Bounded drains and native Release counts; teardown failures give `app-exit`, and section 7 `validation` checks the resulting counters. |
+| Additional assumptions | Window/scaling and TextureRect C# setters report effective values; disabled content scaling gives physical layout pixels; default Windows DPI awareness is per-monitor v2. Newly used C# API signatures have not been compiled here. | Raw scaling and physical rectangle measurements feed section 7 `scaling`/`size-mismatch`; render-thread DPI is required v2 before attach (`app-exit`). The owner build checks signatures; validation and short capture check behavior. |
+
+Every level 2 Godot, .NET compilation, device, GPU, window, foreground,
+validation, geometry, PresentMon, shutdown and performance check remains
+unverified in the sandbox. Source/fixture success is the L2-G packet's
+acceptance evidence, not a renderer gate or performance result.
 
 ## Run matrix
 

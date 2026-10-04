@@ -29,9 +29,18 @@ public unsafe struct Sa2DebugCounts
     public fixed int Ids[16];
 }
 
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct Sa2SceneConfig
+{
+    public uint struct_size, scene;
+    public double turn_ms;
+    public byte* inject;
+    public uint flags, trace_ms;
+}
+
 public unsafe sealed class Native : IDisposable
 {
-    public const uint SA2_ABI_VERSION = 1;
+    public const uint SA2_ABI_VERSION = 2;
     public const int SA2_OK = 0;
     public const int SA2_E_INVALID_ARGUMENT = 1;
     public const int SA2_E_WRONG_STATE = 2;
@@ -40,6 +49,9 @@ public unsafe sealed class Native : IDisposable
     public const int SA2_E_DEVICE_REMOVED = 5;
     public const int SA2_E_VERIFY = 6;
     public const int SA2_E_UNSUPPORTED = 7;
+    public const int SA2_E_CHECK_FAILED = 8;
+    public const int SA2_E_IO = 9;
+    public const uint SA2_SCENE_NO_VRAM = 1;
     public const int SA2_QUEUE_SAME = 0;
     public const int SA2_QUEUE_OWN = 1;
     public const int SA2_BARRIERS_MATCH_GODOT = 0;
@@ -53,6 +65,7 @@ public unsafe sealed class Native : IDisposable
     public const int DeviceInfoSize = 48;
     public const int ConfigSize = 28;
     public const int DebugCountsSize = 128;
+    public const int SceneConfigSize = 32;
 
     public readonly delegate* unmanaged[Cdecl]<uint> sa2_abi_version;
     public readonly delegate* unmanaged[Cdecl]<nint, byte*, uint, int> sa2_last_error;
@@ -73,12 +86,20 @@ public unsafe sealed class Native : IDisposable
     public readonly delegate* unmanaged[Cdecl]<nint, int> sa2_remove_device;
     public readonly delegate* unmanaged[Cdecl]<nint, int*, int> sa2_device_removed_reason;
     public readonly delegate* unmanaged[Cdecl]<nint, int> sa2_detach;
+    public readonly delegate* unmanaged[Cdecl]<nint, Sa2SceneConfig*, int> sa2_scene_load;
+    public readonly delegate* unmanaged[Cdecl]<nint, uint, ulong, int> sa2_scene_produce;
+    public readonly delegate* unmanaged[Cdecl]<nint, int> sa2_scene_trace_begin;
+    public readonly delegate* unmanaged[Cdecl]<nint, int> sa2_scene_trace_end;
+    public readonly delegate* unmanaged[Cdecl]<nint, byte*, int> sa2_scene_write_run;
+    public readonly delegate* unmanaged[Cdecl]<nint, byte*, int> sa2_scene_geometry_check;
+    public readonly delegate* unmanaged[Cdecl]<byte*, uint, int> sa2_identity;
+    public readonly delegate* unmanaged[Cdecl]<nint, int> sa2_scene_unload;
     private readonly nint _library;
 
     public Native(string absolutePath)
     {
         if (sizeof(Sa2DeviceInfo) != DeviceInfoSize || sizeof(Sa2Config) != ConfigSize
-            || sizeof(Sa2DebugCounts) != DebugCountsSize)
+            || sizeof(Sa2DebugCounts) != DebugCountsSize || sizeof(Sa2SceneConfig) != SceneConfigSize)
             throw new InvalidOperationException("ABI struct size mismatch");
         _library = NativeLibrary.Load(absolutePath);
         try
@@ -104,6 +125,14 @@ public unsafe sealed class Native : IDisposable
             sa2_remove_device = (delegate* unmanaged[Cdecl]<nint, int>)Export("sa2_remove_device");
             sa2_device_removed_reason = (delegate* unmanaged[Cdecl]<nint, int*, int>)Export("sa2_device_removed_reason");
             sa2_detach = (delegate* unmanaged[Cdecl]<nint, int>)Export("sa2_detach");
+            sa2_scene_load = (delegate* unmanaged[Cdecl]<nint, Sa2SceneConfig*, int>)Export("sa2_scene_load");
+            sa2_scene_produce = (delegate* unmanaged[Cdecl]<nint, uint, ulong, int>)Export("sa2_scene_produce");
+            sa2_scene_trace_begin = (delegate* unmanaged[Cdecl]<nint, int>)Export("sa2_scene_trace_begin");
+            sa2_scene_trace_end = (delegate* unmanaged[Cdecl]<nint, int>)Export("sa2_scene_trace_end");
+            sa2_scene_write_run = (delegate* unmanaged[Cdecl]<nint, byte*, int>)Export("sa2_scene_write_run");
+            sa2_scene_geometry_check = (delegate* unmanaged[Cdecl]<nint, byte*, int>)Export("sa2_scene_geometry_check");
+            sa2_identity = (delegate* unmanaged[Cdecl]<byte*, uint, int>)Export("sa2_identity");
+            sa2_scene_unload = (delegate* unmanaged[Cdecl]<nint, int>)Export("sa2_scene_unload");
         }
         catch { NativeLibrary.Free(_library); throw; }
     }

@@ -11,17 +11,20 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 from sa2_reference import crc16, decode_image, decode_viewport, encode, expected_image
 from run_smoke import DRAIN_LINE, INJECT, commands, judge, matrix, run_environment
 from smoke_summary import GODOT_VERSION, build_summary, driver_version, scan_public, write_summary
 import blank_control
+import prepare_l2
 
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE / "project"
 REQUIRED = ("project.godot", "SA2Smoke.csproj", "nuget.config", "Main.tscn",
-            "Smoke.cs", "Native.cs", "CodeLayout.cs", "Arguments.cs", "RunResult.cs", ".gitignore")
+            "Smoke.cs", "Native.cs", "CodeLayout.cs", "Arguments.cs", "RunResult.cs", ".gitignore",
+            "Level2.cs", "Level2Arguments.cs", "Level2Result.cs", "Level2Windows.cs")
 EXPORT_BINDING = re.compile(r'\b(sa2_\w+) = \(delegate\* unmanaged\[Cdecl\]<([^>]+)>\)Export\("(\w+)"\);')
 
 
@@ -92,17 +95,18 @@ def check_settings():
         require(entry in ignored, f"ignore {entry}")
 
 
-def check_abi():
+def check_abi(native=None):
     header = (HERE / "native/include/sa2_interop.h").read_text(encoding="utf-8")
-    native = (PROJECT / "Native.cs").read_text(encoding="utf-8")
+    native = (PROJECT / "Native.cs").read_text(encoding="utf-8") if native is None else native
     code = (PROJECT / "CodeLayout.cs").read_text(encoding="utf-8")
     h_constants = {key: int(value, 0) for key, value in re.findall(r"^#define\s+(SA2_\w+)\s+(0x[0-9A-Fa-f]+|\d+)u?\b", header, re.M)}
     c_constants = {key: int(value, 0) for key, value in re.findall(r"const (?:int|uint) (SA2_\w+) = (0x[0-9A-Fa-f]+|\d+);", native + code)}
     require(h_constants == c_constants, "C#/header constant mismatch")
+    require(h_constants["SA2_ABI_VERSION"] == 2, "ABI 2 pin")
     types = {"uint32_t": "uint", "int32_t": "int", "uint64_t": "ulong", "char*": "byte*",
              "sa2_context*": "nint", "sa2_context**": "nint*", "sa2_device_info*": "Sa2DeviceInfo*",
              "sa2_config*": "Sa2Config*", "sa2_debug_counts*": "Sa2DebugCounts*", "uint64_t*": "ulong*",
-             "uint32_t*": "uint*", "int32_t*": "int*"}
+             "uint32_t*": "uint*", "int32_t*": "int*", "sa2_scene_config*": "Sa2SceneConfig*"}
     declared = {}
     for return_type, name, params in re.findall(r"SA2_API\s+(uint32_t|int32_t)\s+(sa2_\w+)\((.*?)\);", header, re.S):
         parameters = [] if params.strip() == "void" else params.split(",")
@@ -114,6 +118,7 @@ def check_abi():
     bound = {name: [part.strip() for part in parameters.split(",")]
              for parameters, name in re.findall(r"public readonly delegate\* unmanaged\[Cdecl\]<([^>]+)> (sa2_\w+);", native)}
     require(declared == bound, "every export must bind the ABI parameter count/types and return type")
+    require(len(bound) == 27, "all 27 ABI 2 exports")
     check_export_bindings(native, bound)
     # Planted defect: two same-signature pointers bound to each other's export.
     pair = ("sa2_signal_godot_free", "sa2_godot_wait_ready")
@@ -122,26 +127,30 @@ def check_abi():
     require(bound[pair[0]] == bound[pair[1]] and swapped != native, "planted export swap")
     require(rejects(check_export_bindings, swapped, bound), "swapped export bindings must be refused")
     require("NativeLibrary.Load(absolutePath)" in native and "NativeLibrary.GetExport(_library, name)" in native, "absolute DLL loader")
-    for name, size in (("DeviceInfoSize", 48), ("ConfigSize", 28), ("DebugCountsSize", 128)):
+    for name, size in (("DeviceInfoSize", 48), ("ConfigSize", 28), ("DebugCountsSize", 128), ("SceneConfigSize", 32)):
         require(f"const int {name} = {size};" in native, f"struct size {name}")
-    for name, size_name in (("Sa2DeviceInfo", "DeviceInfoSize"), ("Sa2Config", "ConfigSize"), ("Sa2DebugCounts", "DebugCountsSize")):
+    for name, size_name in (("Sa2DeviceInfo", "DeviceInfoSize"), ("Sa2Config", "ConfigSize"), ("Sa2DebugCounts", "DebugCountsSize"),
+                            ("Sa2SceneConfig", "SceneConfigSize")):
         require(f"sizeof({name}) != {size_name}" in native, f"runtime struct guard {name}")
-    require("fixed int Ids[16]" in native and native.count("StructLayout(LayoutKind.Sequential)") == 3, "native struct layout")
+    require("fixed int Ids[16]" in native and native.count("StructLayout(LayoutKind.Sequential)") == 4, "native struct layout")
     require("sa2_abi_version() != SA2_ABI_VERSION" in native, "ABI version guard")
 
     # Derive layouts from the immutable C declarations and compare the C# fields.
-    scalar_c = {"uint32_t": ctypes.c_uint32, "int32_t": ctypes.c_int32, "uint64_t": ctypes.c_uint64}
-    scalar_cs = {"uint32_t": "uint", "int32_t": "int", "uint64_t": "ulong"}
+    scalar_c = {"uint32_t": ctypes.c_uint32, "int32_t": ctypes.c_int32, "uint64_t": ctypes.c_uint64,
+                "double": ctypes.c_double, "char*": ctypes.c_void_p}
+    scalar_cs = {"uint32_t": "uint", "int32_t": "int", "uint64_t": "ulong", "double": "double", "char*": "byte*"}
     for c_name, cs_name, expected_size in (("sa2_device_info", "Sa2DeviceInfo", 48),
-                                         ("sa2_config", "Sa2Config", 28), ("sa2_debug_counts", "Sa2DebugCounts", 128)):
+                                         ("sa2_config", "Sa2Config", 28), ("sa2_debug_counts", "Sa2DebugCounts", 128),
+                                         ("sa2_scene_config", "Sa2SceneConfig", 32)):
         c_body = re.search(r"typedef struct " + c_name + r"\s*\{(.*?)\}", header, re.S).group(1)
         c_body = re.sub(r"/\*.*?\*/", "", c_body, flags=re.S)
-        c_fields = re.findall(r"(uint32_t|int32_t|uint64_t)\s+(\w+)(?:\[(\d+)\])?\s*;", c_body)
+        c_body = re.sub(r"\bconst\s+", "", c_body)
+        c_fields = re.findall(r"(uint32_t|int32_t|uint64_t|double|char\*)\s+(\w+)(?:\[(\d+)\])?\s*;", c_body)
         struct = type(cs_name, (ctypes.Structure,), {"_fields_": [(n, scalar_c[t] * int(length) if length else scalar_c[t]) for t, n, length in c_fields]})
         require(ctypes.sizeof(struct) == expected_size, f"header layout {c_name}")
         cs_body = re.search(r"struct " + cs_name + r"\s*\{(.*?)\}", native, re.S).group(1)
         actual_fields = []
-        for fixed, field_type, names in re.findall(r"public\s+(fixed\s+)?(uint|int|ulong)\s+([^;]+);", cs_body):
+        for fixed, field_type, names in re.findall(r"public\s+(fixed\s+)?(uint|int|ulong|double|byte\*)\s+([^;]+);", cs_body):
             for name in names.split(","):
                 actual_fields.append((field_type, re.sub(r"\s+", "", name)))
         expected_fields = [(scalar_cs[t], "Ids[16]" if n == "ids" else n) for t, n, _ in c_fields]
@@ -153,6 +162,16 @@ def check_abi():
     for field in layout["fields"]:
         require(c_constants["SA2_CODE_" + field["name"].upper() + "_BITS"] == field["bits"], "code field bits")
     require("0x1021" in code and "0xFFFF" in code and "bytes[..6]" in code, "C# CRC parameters")
+
+
+def check_abi_defects():
+    source = (PROJECT / "Native.cs").read_text(encoding="utf-8")
+    for original, defect in (("SA2_ABI_VERSION = 2", "SA2_ABI_VERSION = 1"),
+                             ("SceneConfigSize = 32", "SceneConfigSize = 28"),
+                             ("sizeof(Sa2SceneConfig) != SceneConfigSize", "false"),
+                             ("public double turn_ms;", "public ulong turn_ms;"),
+                             ('Export("sa2_scene_trace_begin")', 'Export("sa2_scene_trace_end")')):
+        require(original in source and rejects(check_abi, source.replace(original, defect, 1)), f"ABI 2 planted defect {original}")
 
 
 def check_export_bindings(native, bound):
@@ -258,6 +277,263 @@ def check_declared_options():
                 and ("--gpu-validation" in engine) == row["validation"], f"{row['id']} validation declaration")
         require(values["--sa2-render-thread"] == row["render_thread"] == engine[engine.index("--render-thread") + 1],
                 f"{row['id']} render-thread declaration")
+
+
+def ordered(source, tokens, message):
+    start = 0
+    for token in tokens:
+        found = source.find(token, start)
+        require(found >= 0, f"{message}: {token}")
+        start = found + len(token)
+
+
+def l2_sources():
+    return {name: (PROJECT / (name + ".cs")).read_text(encoding="utf-8")
+            for name in ("Level2", "Level2Arguments", "Level2Result", "Level2Windows")}
+
+
+def check_l2_source(sources=None):
+    sources = l2_sources() if sources is None else sources
+    app, args, result, windows = (sources[name] for name in ("Level2", "Level2Arguments", "Level2Result", "Level2Windows"))
+    smoke = (PROJECT / "Smoke.cs").read_text(encoding="utf-8")
+    ready = between(smoke, "public override void _Ready()", "private void Update(")
+    ordered(ready, ("Level2Arguments.Requested(userArgs)", "new Level2()", "AddChild(_level2)", "return;", "Arguments.Parse(userArgs)"), "level 2 dispatch before level 1 parsing")
+    require("if (_level2 != null) return;" in smoke, "level 1 processing disabled only in level 2")
+    require('StartsWith("--l2-", StringComparison.Ordinal)' in args, "missing l2-mode is a level 2 usage error")
+
+    options = {"--l2-mode", "--l2-scene", "--l2-out", "--l2-run-id", "--l2-dll", "--l2-trace-ms", "--l2-preroll-ms",
+               "--l2-turn-ms", "--l2-inject", "--l2-declare", "--l2-gpu-validation", "--l2-conditions",
+               "--l2-no-vram", "--l2-debug-half-target"}
+    parsed = re.findall(r'case "(--[a-z0-9-]+)":', args)
+    require(len(parsed) == len(set(parsed)), "level 2 option parsed once")
+    require(set(parsed) | {"--l2-no-vram", "--l2-debug-half-target"} == options | {
+        "--sa2-route", "--sa2-queue", "--sa2-handover", "--sa2-barriers", "--sa2-render-thread", "--sa2-warmup",
+        "--sa2-timeout-ms", "--sa2-gpu-validation"}, "exact meaningful level 2 options")
+    pins = ('mode = Choice(value, "run", "geometry")', 'scene = Choice(value, "w1", "w2", "w3", "w4")',
+            'trace_ms = Number(value, 1000, 3600000)', 'preroll_ms = Number(value, 0, 60000)',
+            'a.turn_ms <= 0 || a.turn_ms > 10000', '!double.IsFinite(a.turn_ms)',
+            'inject = Choice(value, "corrupt-label", "swap-same-colour", "delay-adoption", "stale-binding")',
+            'gpu_validation = Choice(value, "0", "1") == "1"', 'conditions = Choice(value, "enforce", "record")',
+            'key == "--l2-no-vram"', 'key == "--l2-debug-half-target"',
+            'key != "--l2-declare" && !seen.Add(key)', '++i >= values.Length', 'n < minimum || n > maximum',
+            'a.mode == null || a.out_path == null || a.run_id == null || a.dll_path == null',
+            '(a.mode == "run" && a.scene == null)', r'\A[A-Za-z0-9][A-Za-z0-9._-]{0,127}\z',
+            'Path.IsPathFullyQualified(a.dll_path)', 'Path.GetFileName(a.dll_path), "sa2_interop.dll"',
+            'seen.Contains("--l2-turn-ms") && a.scene != "w3"', '(a.scene != "w3" && a.scene != "w4")',
+            'value[..equal] == "overlays"', 'a.declared.ContainsKey(value[..equal])',
+            'declaredValue == "true" ? true : declaredValue == "false" ? false',
+            'trace_ms = 192000, preroll_ms = 4000', 'turn_ms = 190',
+            'route = "export", queue = "same", handover = "tracked", barriers = "match", render_thread = "safe"',
+            'warmup = 3, timeout_ms = 5000', 'timeout_ms = Number(value, 5000, 5000)',
+            'a.warmup < 3', 'noWarmup && a.warmup != 0', 'validation options disagree',
+            'default: throw new ArgumentException')
+    for token in pins:
+        require(token in args, f"level 2 parser/default/range {token}")
+    reserved = re.findall(r'"([^"]+)"', between(args, "string[] Outputs =", ";"))
+    require(reserved == ["harness.json", "harness.json.tmp", "native.json", "trace.jsonl", "geometry.json"], "only app/DLL outputs reserved")
+    output = between(args, "public static bool OutputUsable", "// Recover")
+    for token in ("Directory.Exists(path)", "Array.TrueForAll(Outputs", "File.Exists(Path.Combine(path, name))", "Directory.Exists(Path.Combine(path, name))"):
+        require(token in output, "l2-out refuses only reserved names")
+    require("GetFiles" not in output and "Enumerate" not in output, "logs/PresentMon accepted in output directory")
+
+    for field in ("format", "candidate", "mode", "run_id", "scene", "process_id", "exit_code", "reason", "options", "configuration",
+                  "files", "dll_identity", "dll_status", "qpc_frequency", "sizes", "scaling", "dpi_awareness", "environment", "window", "debug"):
+        require(re.search(r"public (?:string|int|long\?|object|Level2Sizes|Dictionary<string, object>)[^;]*\b" + field + r"\b", result),
+                f"harness top-level field {field}")
+    shapes = (
+        (between(result, "options = new()", "configuration = new()"), "trace_ms preroll_ms turn_ms inject declared gpu_validation conditions no_vram debug_half_target"),
+        (between(result, "configuration = new()", 'environment["declared"]'), "framework framework_version rendering_driver window_mode vsync route queue handover barriers render_thread warmup_frames engine_arguments scaling_3d_mode scaling_3d_scale"),
+        (between(result, "public Dictionary<string, object> dll_status", "public long? qpc_frequency"), "abi_version last_status last_error"),
+        (between(result, "public Dictionary<string, object> files", "public object dll_identity"), "dll godot:exe godot:assembly godot:project.godot godot:Main.tscn godot:Smoke.cs"),
+        (between(result, "public Dictionary<string, object> scaling", "public string dpi_awareness"), "content_scale_mode content_scale_factor texture_stretch"),
+        (between(result, "public Dictionary<string, object> environment", "public Dictionary<string, object> window"), "power_source power_mode presenting_adapter presentation_interval declared display width height refresh_hz backbuffer power_samples samples mains battery vsync adapter driver msaa warp"),
+        (between(result, "public Dictionary<string, object> window", "public Dictionary<string, object> debug"), "topmost display_required foreground_at_trace_start sample_period_ms samples samples_not_visible samples_covered samples_not_foreground visible_throughout foreground_throughout presents"),
+        (between(result, "public Dictionary<string, object> debug", "public Level2Result("), "enabled debug_layer counts messages"),
+        (between(app, 'debug["counts"]', "byte* messages"), "struct_size distinct_id_count corruption error warning info message mismatching_clear_value mentioning_sa2 ids"),
+    )
+    for body, keys in shapes:
+        for key in keys.split():
+            require(f'["{key}"]' in body, f"harness nested key {key}")
+    for token in ('format = "magic600-l2-harness-v1", candidate = "sa2"', 'process_id = Environment.ProcessId',
+                  'samples == 0 ? "unknown"', 'mains == samples ? "mains"', 'battery == samples ? "battery"',
+                  'mains + battery == samples && mains > 0 && battery > 0 ? "changed" : "unknown"',
+                  'FileMode.CreateNew', 'File.Move(temporary, destination, false)', 'stream.Flush(true)', 'IncludeFields = true'):
+        require(token in result, f"harness writer/power-source {token}")
+    sizes = between(result, "public sealed class Level2Sizes", "public sealed class Level2Result")
+    for name in ("display", "window", "backbuffer", "displayed", "target", "samples", "samples_changed"):
+        require(name in sizes, f"five-size record {name}")
+    for token in ("display.Same(window)", "display.Same(backbuffer)", "display.Same(displayed)", "target.Same(other.target)"):
+        require(token in sizes, f"physical size comparison {token}")
+
+    for token in ('ContentScaleMode = Window.ContentScaleModeEnum.Disabled', 'ContentScaleFactor = 1.0f',
+                  'ContentScaleSize = Vector2I.Zero', 'Scaling3DScale = 1.0f', 'Scaling3DMode = Viewport.Scaling3DModeEnum.Bilinear',
+                  'WindowSetCurrentScreen(DisplayServer.GetPrimaryScreen())', 'WindowSetMode(DisplayServer.WindowMode.ExclusiveFullscreen)',
+                  'WindowSetFlag(DisplayServer.WindowFlags.AlwaysOnTop, true)', 'WindowGetVsyncMode() == DisplayServer.VSyncMode.Disabled',
+                  'Input.MouseMode = Input.MouseModeEnum.Hidden', 'GetGlobalRect().Size', 'ScreenGetWidth()', 'ScreenGetHeight()',
+                  '"godot:exe"', 'Environment.ProcessPath', '"godot:assembly"', 'typeof(Smoke).Assembly.Location',
+                  '"project.godot", "Main.tscn", "Smoke.cs"', 'JsonSerializer.Deserialize<JsonElement>',
+                  'Level2Windows.DpiAwareness', 'info.umd_version >> 48', 'info.umd_version >> 32', 'info.umd_version >> 16',
+                  'debug_callback = _args.gpu_validation ? 1 : 0', 'wait_timeout_ms = 5000', 'conditions == "enforce"'):
+        require(token in app, f"level 2 framework fact/path {token}")
+    for token in ('MonitorFromWindow(_window, 1)', 'GetMonitorInfoW(', 'EnumDisplaySettingsW(monitor.device, -1',
+                  'GetClientRect(_window', 'EnumDisplayDevicesW(null, i', 'device.name == monitor.device',
+                  'AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(), (nint)(-4))',
+                  'SetThreadExecutionState(0x80000000u | 1u | 2u)', 'SetThreadExecutionState(0x80000000u)',
+                  'SetForegroundWindow(window)', 'GetWindowLongPtrW(_window, -20)', 'PowerRegisterForEffectivePowerModeNotifications(2',
+                  'PowerUnregisterFromEffectivePowerModeNotifications', 'GetCommandLineW()', 'CommandLineToArgvW(GetCommandLineW()', 'LocalFree(arguments)',
+                  'processArguments[i] != "--"', 'value == "--path" || value == "--log-file"',
+                  'value == "--gpu-validation" || value == "--gpu-abort"', 'JsonSerializer.Serialize(kept)'):
+        require(token in windows, f"Windows condition/configuration path {token}")
+    require(windows.count("SetForegroundWindow(window)") == 1, "one foreground request")
+    require(not any(token in app + windows for token in ("AttachThreadInput", "SendInput", "mouse_event", "keybd_event", "OS.GetCmdlineArgs()")), "no foreground workaround or consumed-argument identity")
+    covered = between(windows, "private bool Covered()", "public bool Sample(")
+    require(covered.count("new(r.") == 5 and "GetAncestor(hit, 2) != _window" in covered, "five-point root-window covered test")
+    sample = between(windows, "public bool Sample(", "private static string PowerModeName(")
+    for token in ("IsWindowVisible(_window)", "IsIconic(_window)", "DwmGetWindowAttribute(_window, 14", "GetSystemPowerStatus(out PowerStatus power)",
+                  'power.ac == 1', 'power.ac == 0', 'mode != _firstPowerMode', 'Level2Result.PowerSource(_samples, _mains, _battery)', '_powerChanged ? "changed"'):
+        require(token in sample, f"S-B condition sampling {token}")
+    for name in ("battery_saver", "better_battery", "balanced", "high_performance", "max_performance", "game_mode", "mixed_reality"):
+        require(f'"{name}"' in windows, f"S-B effective power mode {name}")
+
+    settle = between(app, "private void Settle(", "private unsafe void NativeStatus(")
+    ordered(settle, ("if (_initializing) return;", "ReadSizes(displayed)", "current.WindowSettled()", "if (_settled < 2)", "_initializing = true", "Initialize("), "ring only after final fullscreen extent")
+    require("_windows.Frequency * 5" in settle, "bounded fullscreen settle")
+    initialize = between(app, "private unsafe void Initialize(", "private Rid MakeTexture(")
+    ordered(initialize, ("new Native(_args.dll_path)", "_native.sa2_probe", "_native.sa2_attach", "BuildRing()"), "probe/attach/ring order")
+    require('_args.debug_half_target ? width / 2 : width' in initialize and '_args.debug_half_target ? height / 2 : height' in initialize, "half target uses physical floor")
+    require(app.count("BuildRing();") == 1 and "_width =" not in between(app, "private unsafe void Frame(", "private unsafe void EndTrace()"), "ring never rebuilt during trace")
+    require('_native.sa2_register_slot' in between(app, "private unsafe void BuildRing()", "private void CopyDisplay(") and
+            '_native.sa2_scene_load' in between(app, "private unsafe void LoadScene()", "private unsafe void Frame("), "register before load")
+    frame = between(app, "private unsafe void Frame(", "private unsafe void EndTrace()")
+    ordered(frame, ("MarkPrevious();", "if (!_sceneLoaded)", "CheckWrap(wrapped)", "Flush();", "_native.sa2_drain", "LoadScene();",
+                    'if (_args.mode == "geometry")', "_native.sa2_scene_geometry_check",
+                    "now - _traceStart >=", "EndTrace(); _writeRun = true;", "_args.preroll_ms", "_windows.Frequency * 5",
+                    'Fail(3, "foreground")', "ReadSizes(displayed)", "_native.sa2_scene_trace_begin", "_windows.Sample(_result)",
+                    'Fail(3, "conditions")', "_native.sa2_signal_godot_free(_context, frame - 1)",
+                    "_native.sa2_scene_produce(_context, (uint)(frame % 3), frame)", "_native.sa2_godot_wait_ready(_context, frame)", "_pendingShown = frame"), "scene clock and per-frame order")
+    require(app.count("_native.sa2_scene_produce(") == 1 and "_native.sa2_produce(" not in app, "only DLL scenes, one produce path")
+    require("if ((Aborted || _ending) && !finishing) return;" in app and frame.count("_ending = true;") == 2,
+            "queued callbacks stop after geometry output or trace end")
+    for token in ('_traceBegun && now >= _nextSample', '_nextSample = now + _windows.Frequency / 10', '_result.sizes.samples++',
+                  '_result.sizes.samples_changed++', 'if (_traceBegun) _result.window["presents"]', '_pendingShown % 3',
+                  'RenderingServer.FramePreDraw += PreDraw', '_preDrawIteration != _iteration - 1', 'Fail(1, "not-drawn")'):
+        require(token in app, f"trace frame/sample guard {token}")
+    finish = between(app, "private void FinishMain()", "private void Flush()")
+    ordered(finish, ("_image.Texture = null", "texture.Dispose()", "_views.Clear()", "Queue(Teardown, finishing: true)"), "clear framework wrappers before teardown")
+    teardown = between(app, "private unsafe void Teardown()", "private unsafe void ReadDebug()")
+    ordered(teardown, ("MarkPrevious(); EndTrace(); Flush();", "_native.sa2_drain", "_writeRun && !Aborted",
+                       "_native.sa2_scene_write_run", "_native.sa2_scene_unload", "_native.sa2_unregister_slot",
+                       "_rd.FreeRid(_rids[i])", "Flush();", "_native.sa2_drain", "ReadDebug()", "_native.sa2_release_texture", "_native.sa2_detach", "Complete();"), "scene output and safe release order")
+    for token in ('GetTree().Quit(1)', '_exitCode = 2; _reason = reason', 'status == Native.SA2_E_CHECK_FAILED',
+                  '_result.exit_code = _exitCode; _result.reason = _reason', '_result.Write(_args.out_path)', 'GetTree().Quit(_exitCode)',
+                  'usage.reason = "usage"', 'Level2Arguments.UsageOutput(values)', 'window.AutoAcceptQuit = false', 'window.CloseRequested += CloseRequested'):
+        require(token in app, f"usage/exit/output path {token}")
+
+
+def check_l2_defects():
+    sources = l2_sources()
+    # Each source check with a level 1 counterpart is exercised on a current
+    # candidate and a planted defect, including same-signature scene call swaps.
+    defects = (
+        ("Level2Arguments", 'trace_ms = Number(value, 1000, 3600000)', 'trace_ms = Number(value, 1, 3600000)'),
+        ("Level2Arguments", 'preroll_ms = Number(value, 0, 60000)', 'preroll_ms = Number(value, 0, 60001)'),
+        ("Level2Arguments", 'a.turn_ms > 10000', 'a.turn_ms > 10001'),
+        ("Level2Arguments", 'a.mode == null ||', ''),
+        ("Level2Arguments", 'key != "--l2-declare" && !seen.Add(key)', 'false'),
+        ("Level2Arguments", '"geometry.json"', '"godot.log"'),
+        ("Level2Arguments", 'value[..equal] == "overlays"', 'false'),
+        ("Level2Arguments", 'default: throw new ArgumentException', 'default: break; //'),
+        ("Level2Result", '["gpu_validation"]', '["validation"]'),
+        ("Level2Result", '["samples_changed"]', '["changed"]'),
+        ("Level2Result", 'battery == samples ? "battery"', 'battery == samples ? "mains"'),
+        ("Level2Result", 'FileMode.CreateNew', 'FileMode.Create'),
+        ("Level2Result", 'File.Move(temporary, destination, false)', 'File.Move(temporary, destination, true)'),
+        ("Level2", 'WindowMode.ExclusiveFullscreen', 'WindowMode.Fullscreen'),
+        ("Level2", 'ContentScaleFactor = 1.0f', 'ContentScaleFactor = 0.5f'),
+        ("Level2", 'WindowGetVsyncMode() == DisplayServer.VSyncMode.Disabled', 'true'),
+        ("Level2", 'if (_settled < 2)', 'if (_settled < 0)'),
+        ("Level2", '_args.debug_half_target ? width / 2 : width', 'width'),
+        ("Level2", '_native.sa2_scene_trace_begin(_context)', '_native.sa2_scene_trace_end(_context)'),
+        ("Level2", 'Require("sa2_drain", _native.sa2_drain(_context, 5000));\n            LoadScene();', 'LoadScene();'),
+        ("Level2", '_native.sa2_scene_write_run(_context, path)', '_native.sa2_scene_geometry_check(_context, path)'),
+        ("Level2", '_writeRun && !Aborted', '_writeRun'),
+        ("Level2", 'if ((Aborted || _ending) && !finishing) return;', 'if (Aborted && !finishing) return;'),
+        ("Level2", '_nextSample = now + _windows.Frequency / 10', '_nextSample = now + _windows.Frequency'),
+        ("Level2", 'Fail(3, "conditions")', 'Fail(1, "conditions")'),
+        ("Level2Windows", 'GetSystemPowerStatus(out PowerStatus power)', 'false'),
+        ("Level2Windows", 'GetAncestor(hit, 2) != _window', 'false'),
+        ("Level2Windows", 'JsonSerializer.Serialize(kept)', 'JsonSerializer.Serialize(processArguments)'),
+    )
+    for name, original, defect in defects:
+        # samples_changed is a field rather than a dictionary key.
+        if original == '["samples_changed"]':
+            original, defect = "samples_changed;", "changed;"
+        require(original in sources[name], f"level 2 planted defect anchor {original}")
+        planted = dict(sources)
+        planted[name] = sources[name].replace(original, defect, 1)
+        require(rejects(check_l2_source, planted), f"level 2 defect must be caught: {original}")
+
+
+def check_l2_prepare(temporary):
+    build = temporary / "prepared"
+    native, project = build / "native", build / "project"
+    native.mkdir(parents=True)
+    assembly = project / ".godot/mono/temp/bin/Debug/SA2Smoke.dll"
+    assembly.parent.mkdir(parents=True)
+    executable = temporary / prepare_l2.GODOT_EXE
+    for path in (executable, assembly, native / "sa2_interop.dll", native / "draw_vs.dxil", project / "project.godot", project / "Main.tscn"):
+        path.write_bytes(b"source/fixture only")
+    identity = {"native": str(native), "project": str(project), "source": {"sha256": "a" * 64}, "godot_version": GODOT_VERSION}
+    environment = {"NUGET_PACKAGES": str(temporary / "packages"), INJECT: None}
+    destination = prepare_l2.write_launch(build, identity, executable, environment)
+    launch = json.loads(destination.read_text(encoding="utf-8"))
+    require(launch == {"format": "magic600-l2-launch-v1", "candidate": "sa2", "executable": str(executable.resolve()),
+                       "dll": str((native / "sa2_interop.dll").resolve()), "working_directory": str(project.resolve()),
+                       "arguments": ["--path", str(project.resolve()), "--rendering-driver", "d3d12", "--disable-vsync", "--render-thread", "safe"],
+                       "run_arguments": ["--log-file", "{out}\\godot.log"], "validation_arguments": ["--gpu-validation"],
+                       "separator": ["--"], "environment": environment, "validation_environment": {}}, "prepared launch.json exact contract")
+    require("--gpu-index" not in launch["arguments"] and not destination.with_name("launch.json.tmp").exists(), "high performance default and atomic launch")
+    before = destination.read_bytes()
+    prepare_l2.write_launch(build, identity, executable, environment)
+    require(destination.read_bytes() == before, "unchanged prepared launch reused")
+    try:
+        prepare_l2.write_launch(build, identity, executable, dict(environment, OTHER="1"))
+    except RuntimeError:
+        require(destination.read_bytes() == before, "changed launch never overwritten")
+    else:
+        raise AssertionError("changed launch was overwritten")
+    try:
+        prepare_l2.launch_value(identity, executable.with_name(prepare_l2.GODOT_CONSOLE), environment)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("console wrapper accepted as presenting executable")
+    manifest = {"build": identity, "parts": prepare_l2.part_digests(identity, executable), "environment": environment}
+    manifest_path = build / "l2-build-identity.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with patch.object(prepare_l2.smoke, "BUILD_ROOT", temporary):
+        require(prepare_l2.reuse_prepared(identity["source"], executable)[0] == build.resolve(), "matching prepared digests reused")
+        for path in (assembly, native / "sa2_interop.dll", native / "draw_vs.dxil", executable, project / "project.godot"):
+            original = path.read_bytes()
+            path.write_bytes(original + b"changed")
+            try:
+                prepare_l2.reuse_prepared(identity["source"], executable)
+            except RuntimeError:
+                pass
+            else:
+                raise AssertionError(f"changed prepared part reused: {path.name}")
+            finally:
+                path.write_bytes(original)
+        try:
+            prepare_l2.reuse_prepared({"sha256": "b" * 64}, executable)
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError("changed source reused")
+    source = (HERE / "prepare_l2.py").read_text(encoding="utf-8")
+    for token in ("sys.dont_write_bytecode = True\nimport run_smoke", "smoke.build(", "smoke.offline_environment(", "smoke.BUILD_PATH_LIMIT", "part_digests(identity, executable)"):
+        require(token in source, f"offline prepare reuses level 1 recipe {token}")
+    require("subprocess" not in source and "smoke.locate_godot(" not in source and "run_process(" not in source, "prepare launches no Godot/editor")
 
 
 def check_run_environment(build):
@@ -486,7 +762,7 @@ def check_blank_control():
 
 def check_owned_files():
     paths = [HERE / name for name in ("run_smoke.py", "smoke_summary.py", "sa2_reference.py", "check_project.py",
-                                      "blank_control.py", "README.md")]
+                                      "blank_control.py", "README.md", "prepare_l2.py")]
     paths.extend(p for p in PROJECT.rglob("*") if p.is_file() and not any(part in {".godot", "bin", "obj", ".sandbox-build", "__pycache__"} for part in p.relative_to(PROJECT).parts))
     users = "Use" + "rs"
     for path in paths:
@@ -508,15 +784,19 @@ def main():
         created = True
         check_settings()
         check_abi()
+        check_abi_defects()
         check_reference()
         check_harness_source()
         check_pending_write_defects()
         check_declared_options()
+        check_l2_source()
+        check_l2_defects()
+        check_l2_prepare(temporary)
         check_runner()
         check_summary(temporary)
         check_blank_control()
         check_owned_files()
-        print("SA2 project: PASS (settings, ABI, reference images, run matrix, judging, summary privacy, R10 control; source/fixtures only)")
+        print("SA2 project: PASS (level 1 checks, ABI 2/27 exports/four layouts, level 2 source and planted defects, prepared launch fixture; source/fixtures only)")
         return 0
     except (AssertionError, OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
         print(f"SA2 project: FAIL: {error}", file=sys.stderr)
