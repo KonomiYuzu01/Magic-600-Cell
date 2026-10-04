@@ -49,6 +49,9 @@ CHECKS = {
 CSV_COLUMNS = ('ProcessID', 'SwapChainAddress', 'QPCTime', 'msBetweenPresents',
                'Dropped', 'SyncInterval', 'PresentMode', 'AllowsTearing')
 SHADERS = {'count_vs.dxil', 'draw_ps.dxil', 'draw_vs.dxil', 'geometry_cs.dxil'}
+# The DLL checks its geometry against S-B's reference set and verifies the files' digests in this index.
+REFERENCE_INDEX = REPOSITORY / 'work' / 'experiments' / 'renderer-sb' / 'reference' / 'index.json'
+LABEL_COUNTERS = ('mismatches', 'binding_mismatches', 'late_adoptions', 'missing')
 
 
 def require(condition):
@@ -130,6 +133,38 @@ def size(value):
     return value['width'], value['height']
 
 
+def geometry_reference():
+    """Camera and pose pairs, sample count, cells and per-cell count of S-B's reference set."""
+    index = read_json(REFERENCE_INDEX)
+    pairs = set()
+    for name in index['files']:
+        stem, _, suffix = name.rpartition('.')
+        if suffix == 'f32':
+            camera, _, pose = stem.rpartition('_')
+            pairs.add((camera, pose))
+    require(pairs and all(integer(index[key]) and index[key] > 0
+                          for key in ('sample_count', 'cells', 'per_cell_vertex_count')))
+    return pairs, index['sample_count'], index['cells'], index['per_cell_vertex_count']
+
+
+def check_labels(labels, entries):
+    """S-B's checkLabels passes only when every failure counter is zero; a summary must agree with its counters."""
+    fields(labels, ('status', 'copies', 'revisions', *LABEL_COUNTERS, 'oracle_sha256'))
+    fields(labels['oracle_sha256'], ('even', 'odd'))
+    require(labels['status'] in ('pass', 'fail'))
+    require(all(integer(labels[key]) and labels[key] >= 0 for key in ('copies', 'revisions', *LABEL_COUNTERS)))
+    require(labels['binding_mismatches'] <= labels['mismatches'])
+    unreached = labels.get('injection_not_reached', False)
+    require(type(unreached) is bool)
+    clean = not unreached and all(labels[key] == 0 for key in LABEL_COUNTERS)
+    require(labels['status'] == ('pass' if clean else 'fail'))
+    if clean:
+        # A clean check adopted each turn's revision on time with exactly one copy, and the trace
+        # records the adopted revision per frame, so the check covered every revision the trace reached.
+        last = max((entry['revision'] for entry in entries), default=0)
+        require(labels['copies'] == labels['revisions'] == last)
+
+
 def read_native(directory, h, mode):
     if mode == 'geometry':
         require(not os.path.lexists(directory / 'native.json')
@@ -137,26 +172,35 @@ def read_native(directory, h, mode):
         g = read_json(directory / 'geometry.json')
         fields(g, ('format', 'status', 'build_identity', 'adapter', 'results', 'per_cell_count'))
         require(g['format'] == 'magic600-sb-geometry-check-v1' and g['status'] in ('pass', 'fail'))
-        require(isinstance(g['build_identity'], str) and bool(g['build_identity'])
+        require(isinstance(g['build_identity'], str)
+                and re.fullmatch(r'[0-9a-f]{64}', g['build_identity']) is not None
                 and isinstance(g['adapter'], str) and isinstance(g['results'], list))
+        pairs, samples, cells, expected = geometry_reference()
+        seen = set()
         for result in g['results']:
             fields(result, ('camera', 'pose', 'samples', 'max_abs_error', 'failures', 'status'))
-            require(isinstance(result['camera'], str) and result['pose'] in ('start', 'mid', 'end'))
-            require(integer(result['samples']) and result['samples'] > 0
-                    and integer(result['failures']) and result['failures'] >= 0)
-            require(result['status'] in ('pass', 'fail') and finite(result['max_abs_error'])
-                    and result['max_abs_error'] >= 0)
+            pair = (result['camera'], result['pose'])
+            require(pair in pairs and pair not in seen)
+            seen.add(pair)
+            require(result['samples'] == samples and integer(result['failures'])
+                    and 0 <= result['failures'] <= samples)
+            require(result['status'] == ('fail' if result['failures'] else 'pass')
+                    and finite(result['max_abs_error']) and result['max_abs_error'] >= 0)
         counts = g['per_cell_count']
         fields(counts, ('cells', 'expected', 'failures', 'counts', 'status'))
-        require(integer(counts['cells']) and counts['cells'] > 0
-                and integer(counts['expected']) and counts['expected'] > 0)
+        require(counts['cells'] == cells and counts['expected'] == expected)
         if counts['status'] == 'not-checked':
-            require(g['status'] == 'fail' and counts['counts'] is None and counts['failures'] is None)
+            # The DLL's error record: no comparison ran.
+            require(g['status'] == 'fail' and not g['results'] and isinstance(g.get('error'), str)
+                    and bool(g['error']) and counts['counts'] is None and counts['failures'] is None)
         else:
-            require(counts['status'] in ('pass', 'fail') and integer(counts['failures'])
-                    and counts['failures'] >= 0 and isinstance(counts['counts'], list)
-                    and len(counts['counts']) == counts['cells']
+            # A checked record compares every reference pair, and each summary agrees with its parts.
+            require(seen == pairs and isinstance(counts['counts'], list) and len(counts['counts']) == cells
                     and all(integer(value) and value >= 0 for value in counts['counts']))
+            require(counts['failures'] == sum(value != expected for value in counts['counts']))
+            require(counts['status'] == ('fail' if counts['failures'] else 'pass'))
+            passed = counts['status'] == 'pass' and all(result['status'] == 'pass' for result in g['results'])
+            require(g['status'] == ('pass' if passed else 'fail'))
         return g, None
     n = read_json(directory / 'native.json')
     fields(n, ('format', 'scene', 'qpc_frequency', 'markers', 'frames', 'injection_applied',
@@ -172,9 +216,6 @@ def read_native(directory, h, mode):
     require(n['queue_mode'] in ('same', 'own') and n['barrier_api'] in ('legacy', 'enhanced'))
     if n['scene'] == 'w3':
         require(finite(n.get('turn_ms')) and n['turn_ms'] == h['options']['turn_ms'])
-    if n['scene'] in ('w3', 'w4'):
-        require(isinstance(n.get('label_check'), dict)
-                and n['label_check'].get('status') in ('pass', 'fail'))
     entries = []
     with (directory / 'trace.jsonl').open(encoding='utf-8') as stream:
         for index, line in enumerate(stream):
@@ -191,6 +232,8 @@ def read_native(directory, h, mode):
             entries.append(entry)
     require(n['frames'] == len(entries) and integer(h['window']['presents'])
             and n['frames'] == h['window']['presents'])
+    if n['scene'] in ('w3', 'w4'):
+        check_labels(n.get('label_check'), entries)
     return n, entries
 
 
@@ -222,7 +265,11 @@ def build_identity(h, n, mode):
         digest = file_digest(dll if prefix == 'dll' else dll.parent / name)
         require(digest == part['sha256'])
         parts.append({'name': f'{prefix}:{name}', 'sha256': digest})
-    if n is not None and mode != 'geometry':
+    if n is not None and mode == 'geometry':
+        # The DLL hashes its compact, key-sorted identity JSON (S-B's json.h), which canonical()
+        # reproduces for these ASCII names; this ties the geometry result to the measured parts.
+        require(n['build_identity'] == hashlib.sha256(canonical(identity)).hexdigest())
+    elif n is not None:
         require(canonical(n['identity']) == canonical(identity))
     for name, path in files.items():
         if name != 'dll':

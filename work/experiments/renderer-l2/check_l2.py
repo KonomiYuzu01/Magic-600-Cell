@@ -118,9 +118,9 @@ def fixture(root, name, candidate='sa2', mode='run', scene='w3', seconds=30, par
         geometry = {'format': 'magic600-sb-geometry-check-v1', 'status': 'pass',
                     'build_identity': hashlib.sha256(finalizer.canonical(h['dll_identity'])).hexdigest(),
                     'adapter': finalizer.DEFAULT_ADAPTER,
-                    'results': [{'camera': camera, 'pose': pose, 'samples': 64, 'max_abs_error': 0,
+                    'results': [{'camera': camera, 'pose': pose, 'samples': 9066, 'max_abs_error': 0,
                                  'failures': 0, 'status': 'pass'}
-                                for camera in ('front', 'oblique', 'far') for pose in ('start', 'mid', 'end')],
+                                for camera in ('c0', 'c1', 'c2') for pose in ('start', 'mid', 'end')],
                     'per_cell_count': {'cells': 600, 'expected': 30480, 'failures': 0,
                                        'counts': [30480] * 600, 'status': 'pass'}}
         write_json(directory / 'geometry.json', geometry)
@@ -133,7 +133,10 @@ def fixture(root, name, candidate='sa2', mode='run', scene='w3', seconds=30, par
     if scene == 'w3':
         n['turn_ms'] = 190
     if scene in ('w3', 'w4'):
-        n['label_check'] = {'status': 'pass', 'mismatches': 0, 'missing': 0}
+        last = (seconds * 60 - 1) * (FREQUENCY // 60) // (190 * FREQUENCY // 1000)
+        n['label_check'] = {'status': 'pass', 'copies': last, 'revisions': last, 'mismatches': 0,
+                            'binding_mismatches': 0, 'late_adoptions': 0, 'missing': 0,
+                            'oracle_sha256': {'even': '0' * 64, 'odd': '1' * 64}}
     write_json(directory / 'native.json', n)
     with (directory / 'trace.jsonl').open('w', encoding='utf-8', newline='\n') as stream:
         for frame in range(seconds * 60):
@@ -373,6 +376,43 @@ def refusal_cases(root):
             lambda d: edit(d, 'geometry.json', lambda g: g['results'][0].update(samples='unknown')), mode='geometry')
     refusal(root, 'geometry-identity', 'identity',
             h_edit(lambda h: h['dll_identity']['shaders'][0].update(sha256='0' * 64)), mode='geometry')
+    # L2-B-01: the DLL's geometry hash must be the hash of the verified identity.
+    refusal(root, 'geometry-build-identity', 'identity',
+            lambda d: edit(d, 'geometry.json', lambda g: g.update(build_identity='0' * 64)), mode='geometry')
+    refusal(root, 'geometry-build-identity-format', 'native',
+            lambda d: edit(d, 'geometry.json', lambda g: g.update(build_identity='fixture')), mode='geometry')
+    # L2-B-02: each geometry summary agrees with its parts, and a checked record covers S-B's reference set.
+    for name, action in (
+            ('result-summary', lambda g: g['results'][0].update(failures=1)),
+            ('overall-summary', lambda g: g['results'][0].update(failures=1, status='fail')),
+            ('count-summary', lambda g: g['per_cell_count']['counts'].__setitem__(0, 1)),
+            ('count-failures', lambda g: g['per_cell_count'].update(failures=1)),
+            ('count-status', lambda g: g['per_cell_count'].update(status='fail')),
+            ('count-cells', lambda g: g['per_cell_count'].update(cells=599)),
+            ('incomplete', lambda g: g['results'].pop()),
+            ('duplicate', lambda g: g['results'].__setitem__(1, dict(g['results'][0]))),
+            ('camera', lambda g: g['results'][0].update(camera='front')),
+            ('samples', lambda g: g['results'][0].update(samples=64)),
+            ('failures-range', lambda g: g['results'][0].update(failures=9067, status='fail')),
+            ('not-checked-pass', lambda g: (g.update(error='fixture', results=[]),
+                                            g['per_cell_count'].update(status='not-checked', counts=None, failures=None))),
+            ('not-checked-results', lambda g: (g.update(status='fail', error='fixture'),
+                                               g['per_cell_count'].update(status='not-checked', counts=None, failures=None))),
+            ('not-checked-error', lambda g: (g.update(status='fail', results=[]),
+                                             g['per_cell_count'].update(status='not-checked', counts=None, failures=None)))):
+        refusal(root, 'geometry-' + name, 'native', lambda d, action=action: edit(d, 'geometry.json', action), mode='geometry')
+    # L2-B-02: a label summary agrees with S-B's counters and covers every revision the trace reached.
+    for name, action in (
+            ('status', lambda labels: labels.update(mismatches=1)),
+            ('binding', lambda labels: labels.update(status='fail', binding_mismatches=1)),
+            ('unreached', lambda labels: labels.update(injection_not_reached=True)),
+            ('unreached-type', lambda labels: labels.update(status='fail', injection_not_reached='yes')),
+            ('copies', lambda labels: labels.update(copies=labels['copies'] - 1)),
+            ('revisions', lambda labels: labels.update(copies=0, revisions=0)),
+            ('negative', lambda labels: labels.update(status='fail', missing=-1)),
+            ('fields', lambda labels: labels.pop('late_adoptions')),
+            ('oracle', lambda labels: labels.update(oracle_sha256={}))):
+        refusal(root, 'label-' + name, 'native', n_edit(lambda n, action=action: action(n['label_check'])))
     def half_target(directory):
         edit(directory, 'harness.json', lambda h: (h['options'].update(debug_half_target=True),
                                                   h['sizes']['target'].update(width=1280, height=800)))
@@ -418,13 +458,26 @@ def extra_cases(root):
         expect(read_json(directory / output)['label_check']['status'] == 'fail', 'failed label record missing')
     directory = fixture(root, 'geometry-failed', mode='geometry')
     edit(directory, 'harness.json', lambda h: h.update(exit_code=2))
-    edit(directory, 'geometry.json', lambda g: (g.update(status='fail', error='synthetic reference mismatch'),
+    edit(directory, 'geometry.json', lambda g: (g.update(status='fail', error='synthetic reference mismatch', results=[]),
                                                g['per_cell_count'].update(status='not-checked', counts=None, failures=None)))
     invoke(directory, mode='geometry', app_exit=2, expected=2)
     expect(read_json(directory / 'geometry-record.json')['status'] == 'fail', 'failed geometry record missing')
+    directory = fixture(root, 'geometry-failed-counts', mode='geometry')
+    edit(directory, 'harness.json', lambda h: h.update(exit_code=2))
+    edit(directory, 'geometry.json', lambda g: (g.update(status='fail'), g['results'][4].update(failures=3, status='fail'),
+                                               g['per_cell_count']['counts'].__setitem__(7, 30479),
+                                               g['per_cell_count'].update(failures=1, status='fail')))
+    invoke(directory, mode='geometry', app_exit=2, expected=2)
+    expect(read_json(directory / 'geometry-record.json')['status'] == 'fail', 'consistent failed geometry record missing')
+    # A W3 trace shorter than one turn reaches no revision; its clean label check copied nothing.
+    directory = fixture(root, 'label-no-revision')
+    trace_edit(directory, lambda entries: [entry.update(revision=0) for entry in entries])
+    edit(directory, 'native.json', lambda n: n['label_check'].update(copies=0, revisions=0))
+    invoke(directory)
     directory = fixture(root, 'injected-label')
     edit(directory, 'harness.json', lambda h: (h.update(exit_code=2), h['options'].update(inject='corrupt-label')))
-    edit(directory, 'native.json', lambda n: (n.update(injection_applied=True), n['label_check'].update(status='fail')))
+    edit(directory, 'native.json', lambda n: (n.update(injection_applied=True),
+                                             n['label_check'].update(status='fail', mismatches=1)))
     invoke(directory, app_exit=2, overlays=None, extra=('--fault-injection',), expected=2)
     record = read_json(directory / 'run.json')
     expect(record['injected_fault'] == 'corrupt-label' and record['injection_applied'] is True
