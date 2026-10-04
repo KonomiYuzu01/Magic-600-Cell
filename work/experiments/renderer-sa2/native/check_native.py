@@ -1,12 +1,14 @@
-"""Build in a fresh ignored directory and check CPU fixtures; --gpu also runs the owner GPU checks."""
+"""Build out of tree and check CPU fixtures and identity; --gpu runs owner GPU checks."""
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 
 
 def run_bounded(arguments, timeout, **kwargs):
@@ -35,7 +37,7 @@ def check_result(executable, build, mode, vectors):
     arguments = [str(executable), f"--{mode}", "--vectors", vectors, "--out", str(output)]
     if mode != "cpu":
         arguments.append("--debug")
-    stdout, _ = run_bounded(arguments, 30 if mode == "cpu" else 600, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, _ = run_bounded(arguments, 60 if mode == "cpu" else 7200, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     print(stdout, end="")
     if not stdout.splitlines() or stdout.splitlines()[-1] != "selftest: ok":
         raise RuntimeError(f"{mode}: missing final success marker")
@@ -48,8 +50,20 @@ def check_result(executable, build, mode, vectors):
         if mode == "cpu" and check["status"] != "pass":
             raise RuntimeError("CPU acceptance requires all CPU checks to pass")
     expected = {"abi", "exports", "invalid arguments", "last error truncation", "crc", "vectors", "images", "decode rejection", "hex masking", "state tables", "json writer"}
+    expected.update({"scene arguments", "scene state", "scene assets", "scene native writer", "scene output IO", "identity"})
     if mode == "cpu" and {check["name"] for check in report["checks"]} != expected:
         raise RuntimeError("CPU check set is incomplete")
+    if mode == "cpu":
+        identity = report["identity"]
+        shaders = identity["shaders"]
+        names = [part["file"] for part in shaders]
+        if identity["dll"]["file"] != "sa2_interop.dll" or names != ["count_vs.dxil", "draw_ps.dxil", "draw_vs.dxil", "geometry_cs.dxil"]:
+            raise RuntimeError("identity does not cover the DLL and every loaded shader in sorted order")
+        for part in [identity["dll"], *shaders]:
+            digest = hashlib.sha256((build / part["file"]).read_bytes()).hexdigest()
+            if digest != part["sha256"]:
+                raise RuntimeError(f'identity SHA-256 mismatch: {part["file"]}')
+        print("identity: DLL and all four shader SHA-256 values recomputed")
 
 
 def main():
@@ -57,9 +71,8 @@ def main():
     parser.add_argument("--gpu", action="store_true")
     options = parser.parse_args()
     source = Path(__file__).resolve().parent
-    # Application Control can refuse unsigned executables in system temp. Build
-    # beside this script, inside the repository's ignored work tree.
-    build = source / f"build-check-{os.getpid()}"
+    temp_root = Path(tempfile.gettempdir()).resolve()
+    build = temp_root / f"m600-sa2-native-{os.getpid()}"
     created = False
     try:
         batch = (source / "build.cmd").read_bytes()
@@ -93,7 +106,7 @@ def main():
         return 1
     finally:
         if created:
-            if build.resolve().parent != source or build.name != f"build-check-{os.getpid()}":
+            if build.resolve().parent != temp_root or build.name != f"m600-sa2-native-{os.getpid()}":
                 raise RuntimeError("refusing cleanup outside this check's build directory")
             shutil.rmtree(build)
 

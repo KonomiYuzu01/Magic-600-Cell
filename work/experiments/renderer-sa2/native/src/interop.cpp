@@ -1,4 +1,5 @@
 #include "pure.h"
+#include "scene.h"
 #include <d3d12sdklayers.h>
 #include <dxgi1_6.h>
 #include <wrl/client.h>
@@ -18,10 +19,7 @@ using Microsoft::WRL::ComPtr;
 using Clock = std::chrono::steady_clock;
 
 namespace {
-struct Failure : std::runtime_error {
-    int32_t status;
-    Failure(int32_t code, const std::string& text) : std::runtime_error(text), status(code) {}
-};
+using sa2::Failure;
 std::string global_error;
 std::string hr_text(const char* call, HRESULT hr) {
     std::ostringstream text;
@@ -100,6 +98,7 @@ struct sa2_context {
     ComPtr<ID3D12InfoQueue1> info_queue;
     std::array<Slot, SA2_RING_SLOTS> slots;
     std::unordered_map<ID3D12Resource*, ComPtr<ID3D12Resource>> textures;
+    std::unique_ptr<sa2::Scene> scene;
     Debug debug;
     std::string last_error;
     HANDLE completion = nullptr;
@@ -727,6 +726,7 @@ int32_t sa2_device_removed_reason(sa2_context* ctx, int32_t* out_hresult) {
 int32_t sa2_detach(sa2_context* ctx) {
     return invoke(ctx, "sa2_detach", [&] {
         context(ctx);
+        require(!ctx->scene, "scene remains loaded", SA2_E_WRONG_STATE);
         for (const auto& slot : ctx->slots) require(!slot.resource, "slots remain registered", SA2_E_WRONG_STATE);
         require(ctx->textures.empty(), "created textures remain unreleased", SA2_E_WRONG_STATE);
         require_drained(ctx);
@@ -736,6 +736,134 @@ int32_t sa2_detach(sa2_context* ctx) {
             ctx->callback_registered = false;
         }
         delete ctx;
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_scene_load(sa2_context* ctx, const sa2_scene_config* config) {
+    return invoke(ctx, "sa2_scene_load", [&] {
+        sa2::validate_scene_config(config);
+        context(ctx);
+        require(!ctx->scene, "a scene is already loaded", SA2_E_WRONG_STATE);
+        const auto& first = slot_at(ctx, 0);
+        for (const auto& slot : ctx->slots) {
+            require(slot.resource != nullptr, "register the complete three-slot ring before load", SA2_E_WRONG_STATE);
+            require(slot.width == first.width && slot.height == first.height, "scene slots must be equally sized");
+        }
+        live(ctx);
+        ctx->scene = std::make_unique<sa2::Scene>(ctx->device.Get(), *config, first.width, first.height);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_scene_produce(sa2_context* ctx, uint32_t index, uint64_t frame) {
+    return invoke(ctx, "sa2_scene_produce", [&] {
+        context(ctx);
+        require(index < SA2_RING_SLOTS && frame != UINT64_MAX, "invalid slot or reserved fence value");
+        require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
+        auto& slot = slot_at(ctx, index);
+        auto& scene = *ctx->scene;
+        for (const auto& current : ctx->slots)
+            require(current.resource && current.width == scene.record.width && current.height == scene.record.height,
+                "scene needs its load-time three-slot size", SA2_E_WRONG_STATE);
+        require(frame > ctx->last_frame, "frame must increase strictly from 1", SA2_E_WRONG_STATE);
+        if (ctx->own_queue) require(slot.last_shown <= ctx->last_free, "slot's shown frame has not been signalled free", SA2_E_WRONG_STATE);
+        scene.require_healthy();
+        const auto now = sa2::scene_qpc();
+        live(ctx);
+        scene.wait_geometry(ctx->config.wait_timeout_ms);
+        reset(ctx, slot);
+        if (ctx->own_queue && slot.last_shown) queue_wait(ctx, ctx->own_queue.Get(), ctx->free.Get(), slot.last_shown);
+        try {
+            transition(ctx, slot, ctx->config.state_before_write, SA2_STATE_RENDER_TARGET, true);
+            scene.record_draw(slot.list.Get(), index, rtv(ctx, index), now);
+            scene.sample_vram();
+            transition(ctx, slot, SA2_STATE_RENDER_TARGET, ctx->config.state_after_write, false);
+            ctx->last_frame = frame;
+            execute(ctx, slot, ctx->ready.Get(), frame);
+            ctx->last_ready = frame;
+        } catch (...) { scene.poison(); throw; }
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_scene_trace_begin(sa2_context* ctx) {
+    return invoke(ctx, "sa2_scene_trace_begin", [&] {
+        context(ctx);
+        require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
+        ctx->scene->require_healthy();
+        ctx->scene->record.begin(sa2::scene_qpc());
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_scene_trace_end(sa2_context* ctx) {
+    return invoke(ctx, "sa2_scene_trace_end", [&] {
+        context(ctx);
+        require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
+        ctx->scene->record.end(sa2::scene_qpc());
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_scene_write_run(sa2_context* ctx, const char* directory_utf8) {
+    return invoke(ctx, "sa2_scene_write_run", [&] {
+        const auto directory = sa2::output_directory(directory_utf8);
+        context(ctx);
+        require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
+        auto& scene = *ctx->scene;
+        scene.record.require_write(ctx->drained);
+        live(ctx); scene.require_healthy();
+        sa2::require_new_file(directory / "trace.jsonl"); sa2::require_new_file(directory / "native.json");
+        const auto labels = scene.labels();
+        const auto native = scene.record.native(labels, sa2::scene_identity(), ctx->config.queue_mode, ctx->config.barrier_api);
+        sa2::write_new_file(directory / "trace.jsonl", scene.record.trace_text());
+        sa2::write_new_file(directory / "native.json", native.dump() + '\n');
+        require(labels.null() || labels.at("status").string() == "pass", "S-B exact label check failed", SA2_E_CHECK_FAILED);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_scene_geometry_check(sa2_context* ctx, const char* directory_utf8) {
+    return invoke(ctx, "sa2_scene_geometry_check", [&] {
+        const auto directory = sa2::output_directory(directory_utf8);
+        context(ctx);
+        require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
+        auto& scene = *ctx->scene;
+        scene.record.require_geometry(); scene.require_healthy(); live(ctx);
+        const auto file = directory / "geometry.json"; sa2::require_new_file(file);
+        Json result;
+        try {
+            result = scene.geometry_check(ctx->producer(), ctx->config.wait_timeout_ms, [&] { ctx->drained = false; });
+        } catch (const Failure& error) {
+            if (error.status != SA2_E_CHECK_FAILED) {
+                // A bounded timeout keeps every submitted resource alive; a
+                // failed recording requires a drain/unload before reuse.
+                if (error.status != SA2_E_TIMEOUT) scene.poison();
+                throw;
+            }
+            result = scene.geometry_error(error.what());
+        } catch (...) { scene.poison(); throw; }
+        sa2::write_new_file(file, result.dump() + '\n');
+        require(result.at("status").string() == "pass", "S-B geometry check failed", SA2_E_CHECK_FAILED);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_identity(char* buffer, uint32_t buffer_size) {
+    return invoke(nullptr, "sa2_identity", [&] {
+        require(buffer && buffer_size, "buffer and buffer_size must be nonzero");
+        copy_text(sa2::scene_identity().dump(), buffer, buffer_size);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_scene_unload(sa2_context* ctx) {
+    return invoke(ctx, "sa2_scene_unload", [&] {
+        context(ctx);
+        require(ctx->scene != nullptr, "no loaded scene", SA2_E_WRONG_STATE);
+        require_drained(ctx);
+        ctx->scene.reset();
         return SA2_OK;
     });
 }

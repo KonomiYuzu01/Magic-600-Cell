@@ -1,10 +1,11 @@
-# SA2 native producer (ABI 1)
+# SA2 native producer (ABI 2)
 
-This directory implements the D3D12 producer for the E-2.4-02 level-1 Godot
-smoke test. It uses the device and DIRECT queue supplied by Godot. It creates
-neither a second device nor shared handles. No geometry, window or shaders are
-involved. The fixed interface is [include/sa2_interop.h](include/sa2_interop.h);
-the image contract is [../code_layout.json](../code_layout.json).
+This DLL retains the ABI 1 code-image producer and adds S-B's W1 to W4 drawing
+method for the Godot and Qt level-2 hosts. It uses the device and DIRECT queue
+supplied by the framework. The scene path uses S-B feature `none`, MSAA 1, full
+259,800 labelled slots and 600 instances of 30,480 vertices. The interface is
+[include/sa2_interop.h](include/sa2_interop.h); the ABI 1 image contract remains
+[../code_layout.json](../code_layout.json).
 
 ## Build and CPU acceptance
 
@@ -15,15 +16,18 @@ the Windows SDK installed:
 python work/experiments/renderer-sa2/native/check_native.py
 ```
 
-The check builds Release with NMake into a freshly created `build-check-<pid>`
-directory beside this README, inside the repository's ignored `work/` tree
-(Application Control can refuse unsigned executables in the system temp folder).
+The check builds Release with NMake into a plain-mkdir directory
+`%TEMP%/m600-sa2-native-<pid>`, outside the repository.
 It runs only `--cpu`, validates the JSON and final `selftest: ok` line, and removes
 that directory. It passes the three code vectors directly from `code_layout.json`.
 It creates no tracked repository output and starts no D3D12 device. CPU checks cover
 every ABI export, invalid arguments and error-buffer truncation, CRC and code
 vectors, exact images at three sizes, both-corner decode and corrupted-block
-rejection, text masking, state mappings and JSON escaping.
+rejection, text masking, state mappings and JSON escaping. The six ABI 2 CPU groups check
+scene arguments, the shared lifecycle validators, S-B's readers and asset counts,
+synthetic native/trace records, exclusive file creation and identity/truncation.
+Python independently recomputes the DLL and all four shader SHA-256 values.
+The CPU self-test must finish within 60 seconds.
 
 For binaries that the Godot run script can keep and load:
 
@@ -35,12 +39,16 @@ $build = 'work/experiments/renderer-sa2/native/build'
 
 `build.cmd [build-dir]` locates Visual Studio with `vswhere`, calls `vcvars64.bat`,
 and uses the pinned CMake/Ninja under `tools/.venv/renderer-spike/Scripts` when
-available, otherwise Visual Studio's copies. It prints the actual tool versions.
+available, otherwise Visual Studio's copies. It prints the actual tool versions, including the Windows SDK DXC.
 The default generator is Ninja; setting `$env:M600_SA2_CPU_CHECK = '1'` selects
 NMake for environments where Ninja stalls. Use a fresh build directory when
 switching generators. Both `sa2_interop.dll` and `sa2_selftest.exe` are placed
-directly in the build directory. All three targets use the static CRT (`/MT`)
-and C++20, with Windows SDK libraries only.
+directly in the build directory. All native targets use the static CRT (`/MT`) and C++20, with Windows SDK
+libraries only. DXC compiles S-B's unmodified `draw.hlsl` and `check.hlsl` (which
+include `geometry.hlsl`) with S-B's entries/profiles and `-nologo -O3 -Ges`.
+The DLL loads only `draw_vs.dxil`, `draw_ps.dxil`, `count_vs.dxil` and
+`geometry_cs.dxil`, all next to the DLL. Keep those four files with the DLL;
+there is no runtime shader compiler.
 
 ## Owner GPU checks
 
@@ -98,6 +106,27 @@ results are in [../RESULT.md](../RESULT.md). Even an owner GPU pass establishes
 native interop only: Godot display,
 its resource-state tracker, window resize and frame composition still require
 the separate Godot smoke test. There are no performance claims here.
+
+ABI 2 adds 16 scene runs per device: W1 to W4, same/own queue and
+legacy/enhanced slot barriers. These use a common stand-in device and an
+imported three-slot ring. WARP uses 640 x 360 and 40 total frames; hardware uses
+2560 x 1600 and 600 total frames. Three preroll and three postroll frames put
+trace begin/end inside each run (34 or 594 traced frames). Every traced frame
+must have one consecutive zero-based S-B record, the actual full target and
+viewport sizes, and a positive process-local VRAM sample unless sampling is
+explicitly disabled. W3/W4 require S-B's exact label check to pass. Skipped turns
+remain failures under S-B's unchanged checker; the self-test never relaxes it
+for a slow software device.
+
+The same device also gets one geometry check: all nine reference camera/pose
+comparisons at aspect 1.6 and the per-cell invocation counts, using the DLL's
+own 2560 x 1600 targets. A negative W3 run uses a 1000 ms turn and paces its first
+21 traced frames so S-B's fixed turn-20 `corrupt-label` fault is actually applied;
+it requires CHECK_FAILED, label status `fail`, `injection_applied: true` and
+nonzero mismatches. A separate W1 run with NO_VRAM requires a null peak and zero
+samples. The scene tests check state/order guards, exclusive outputs, debug
+errors/corruption and restored references too. These offscreen checks establish
+neither framework display nor PresentMon gate performance.
 
 ## States, references and fence protocol
 
@@ -175,8 +204,73 @@ release without a confirmed drain, but drain returns `SA2_E_DEVICE_REMOVED` and
 does not report a false confirmation. A live-device unconfirmed drain writes
 the fixed stderr line with `WriteFile` and calls `TerminateProcess` with code 3.
 
-The fixed header declares **19** exported functions, despite the packet's count
-of 21. The surface test checks every declared export by its ABI name; no extra
-functions are invented. MSVC accepts the header's `sa2_debug_counts` type/function
-name overlap; implementation type references use `struct sa2_debug_counts`.
-Both the header and `code_layout.json` remain unchanged.
+ABI 1 has 19 declared exports (the level-1 packet counted 21); ABI 2 adds eight,
+for 27. The surface test checks every declared name. MSVC accepts the header's
+`sa2_debug_counts` type/function name overlap; implementation type references
+use `struct sa2_debug_counts`. `code_layout.json` remains byte-identical.
+
+## Scene host call order
+
+The same API serves either framework; `godot` in the ABI 1 fence names denotes
+the framework's queue. Call from its render/context thread:
+
+1. Probe and attach the framework's own device and DIRECT queue with the
+   handover states that its tracker expects.
+2. Create/import and register all three equally sized slots, then `scene_load`.
+   The DLL creates all fixed scene resources during load. Static copies execute
+   with the first scene submission; their staging buffers stay alive until
+   unload. Resize requires drain, unload, ring rebuild and a new scene load.
+3. Optionally run `scene_geometry_check` before the trace, with an existing
+   output directory. It writes `geometry.json`; it never touches a slot. Its
+   bounded wait uses `wait_timeout_ms`. Drain again after the check before
+   teardown; a successful geometry wait is not an explicit drain confirmation.
+4. Produce preroll frames. For each frame `f` starting at 1, call
+   `sa2_signal_godot_free(ctx, f - 1)`,
+   `sa2_scene_produce(ctx, f % 3, f)`, `sa2_godot_wait_ready(ctx, f)`;
+   submit the framework's draws, then `sa2_mark_shown(ctx, f % 3, f)`.
+5. After preroll, call `sa2_scene_trace_begin`. Keep the same per-frame order
+   for the duration. W3's clock starts at that call; W4 uses the same 190 ms
+   label clock without turn animation. W2/W3 rotate once per produced frame,
+   including preroll, exactly as S-B does.
+6. Call `sa2_scene_trace_end`, then `sa2_drain` after the last framework use.
+   `sa2_scene_write_run` writes `trace.jsonl` and `native.json` into an existing
+   fresh directory. A failed label check still writes both and returns
+   `SA2_E_CHECK_FAILED`. Existing outputs return `SA2_E_IO` and are preserved.
+   The host merges `native.json` into its own `run.json`; the DLL never writes
+   `run.json`. Postroll is permitted, but requires another drain before writing.
+7. Unload the scene, unregister slots, free framework wrappers/RIDs, release
+   DLL-created textures and detach. A loaded scene prevents detach. Removal
+   permits scene unload without drain just as it permits ABI 1 releases.
+
+New context calls retain the ABI 1 last-error convention. A failed command
+recording poisons the scene to prevent reuse of speculative resource states;
+drain and unload before loading again. Geometry timeout retains every resource
+and permits a bounded wait/retry; it never unwinds in-flight resources.
+
+## Reuse and record choices
+
+`probe.cpp` and `edges.cpp` are compiled unchanged with S-B's repository-root
+definition. Only their unused standalone `main` symbol is renamed at compilation
+so the common reader library can link into the self-test. The unused `runGpu`
+symbol is satisfied by a DLL-local stub that throws a clear unsupported message.
+No DLL path calls S-B's `exeDir()` or `buildIdentity()`.
+
+`gpu.cpp` supplies the ported baseline resources, ten-parameter root signature,
+PSOs, bindings, camera/turn logic, label upload/use/copy records and geometry
+checks. Its device creation, window, swap chain, presents, condition sampling,
+features and MSAA variants are omitted for the framework-hosted path. Internal
+resources retain S-B's legacy barriers; only slot handovers use the selected
+legacy/enhanced API. No S-B source or shader was edited.
+
+The ring is fixed at three equally sized slots per load, with three constant and
+upload entries protected by slot completion. Label readbacks grow in preserved
+64-revision chunks. Trace frames start at zero independently of ABI fence frames
+starting at one. `native.json` uses string queue/barrier names (`same`/`own`,
+`legacy`/`enhanced`). Identity uses sorted basenames and exact on-disk bytes,
+located through `GetModuleHandleExW(FROM_ADDRESS)` in this DLL. The geometry
+record's `build_identity` is SHA-256 of the canonical identity JSON. Reference
+validation failures also write a failed geometry record; unrecorded counts are
+null and marked `not-checked`, never presented as measured counts.
+
+The implementation sandbox runs source/fixture checks only. Every ABI 2 GPU
+check, framework capture and day-7 gate remains for the owner's machine.

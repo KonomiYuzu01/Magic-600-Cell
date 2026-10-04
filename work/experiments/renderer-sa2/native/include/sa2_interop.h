@@ -1,10 +1,7 @@
 /*
  * sa2_interop.h: the C ABI between the Godot C# smoke-test harness (project/)
  * and the native Direct3D 12 producer DLL sa2_interop.dll (native/).
- * ABI version 1.
- *
- * The integrator owns this file. An implementation must not change it; if a
- * change is unavoidable, stop and report the reason instead.
+ * ABI version 2; the ABI 1 declarations and layouts are retained.
  *
  * Threading: every function except sa2_abi_version is called from one thread,
  * Godot's render thread (inside RenderingServer.call_on_render_thread). The
@@ -34,7 +31,7 @@ extern "C" {
 #define SA2_API __declspec(dllimport)
 #endif
 
-#define SA2_ABI_VERSION 1u
+#define SA2_ABI_VERSION 2u
 
 /* Code layout; must match code_layout.json and project/CodeLayout.cs. */
 #define SA2_CODE_BLOCK_PX 8
@@ -56,6 +53,8 @@ extern "C" {
 #define SA2_E_DEVICE_REMOVED 5
 #define SA2_E_VERIFY 6 /* a slot's texels differ from the expected image */
 #define SA2_E_UNSUPPORTED 7 /* e.g. enhanced barriers requested but not supported */
+#define SA2_E_CHECK_FAILED 8 /* a geometry or label check failed; output is written */
+#define SA2_E_IO 9 /* file read/write failure, or an output already exists */
 
 /* Queue modes. */
 #define SA2_QUEUE_SAME 0 /* record on Godot's queue (DRIVER_RESOURCE_COMMAND_QUEUE) */
@@ -249,10 +248,98 @@ SA2_API int32_t sa2_device_removed_reason(sa2_context* ctx, int32_t* out_hresult
 /*
  * Ends the context after a confirmed sa2_drain. Every slot must be
  * unregistered and every sa2_create_texture texture released first (else
- * SA2_E_WRONG_STATE). Then it releases what sa2_attach created, unregisters
+ * SA2_E_WRONG_STATE). ABI 2 also requires any scene to be unloaded first.
+ * Then it releases what sa2_attach created, unregisters
  * the callback and releases its references to Godot's device and queue.
  */
 SA2_API int32_t sa2_detach(sa2_context* ctx);
+
+/* ABI 2 scene API. All context calls use the context's render thread.
+ * Invalid arguments (including struct_size) return SA2_E_INVALID_ARGUMENT
+ * before state checks. Every failure sets sa2_last_error as in ABI 1.
+ */
+#define SA2_SCENE_NO_VRAM 1u
+typedef struct sa2_scene_config {
+    uint32_t struct_size; /* sizeof(sa2_scene_config); 32 on x64 */
+    uint32_t scene; /* 1..4 for S-B W1..W4, feature none, MSAA 1 */
+    double turn_ms; /* W3: finite, 0 < turn_ms <= 10000; ignored otherwise */
+    const char* inject; /* NULL, or corrupt-label, swap-same-colour,
+                        * delay-adoption, stale-binding; W3/W4 only; copied */
+    uint32_t flags; /* SA2_SCENE_NO_VRAM only; unknown bits are invalid */
+    uint32_t reserved; /* must be zero */
+} sa2_scene_config;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_scene_config) == 32, "sa2_scene_config requires the x64 ABI");
+#endif
+
+/* Load assets with S-B's readers and all four baseline/check shader blobs
+ * from the DLL's directory; create scene resources on the attached device.
+ * Register all three equally sized slots before load; keep that size until
+ * unload. Missing slots or a second load: SA2_E_WRONG_STATE; unequal sizes:
+ * SA2_E_INVALID_ARGUMENT. Missing/unreadable assets or blobs: SA2_E_IO (file
+ * named in last error). D3D12 failures: SA2_E_D3D12 / SA2_E_DEVICE_REMOVED.
+ * Load submits no work; static uploads execute with the first scene command.
+ */
+SA2_API int32_t sa2_scene_load(sa2_context* ctx, const sa2_scene_config* config);
+
+/* Draw into the registered slot with the full-size viewport, using exactly
+ * sa2_produce's monotonically increasing frame (starts at 1), bounded allocator
+ * wait, fail-closed free/ready checks, queue mode and handover states. Needs a
+ * loaded scene and the load-time slot size (SA2_E_WRONG_STATE). Each successful
+ * call during the trace appends one S-B record with a zero-based trace frame,
+ * QPC read at entry, camera, turn and actual bound revision; samples process
+ * local CurrentUsage on the device's adapter unless NO_VRAM. W3 runs its turn
+ * clock from trace begin; W4 uses S-B's 190 ms label clock without animation.
+ * Outside the trace, preroll/postroll draws do not change label revisions.
+ * Returns SA2_E_TIMEOUT, SA2_E_D3D12 / SA2_E_DEVICE_REMOVED on GPU failure.
+ */
+SA2_API int32_t sa2_scene_produce(sa2_context* ctx, uint32_t slot, uint64_t frame);
+
+/* Record trace_start_qpc at the call. Once per load, before trace_end;
+ * missing scene or repeated/out-of-order call: SA2_E_WRONG_STATE.
+ */
+SA2_API int32_t sa2_scene_trace_begin(sa2_context* ctx);
+
+/* Record trace_stop_qpc at the call. Once per load, after trace_begin;
+ * missing scene or repeated/out-of-order call: SA2_E_WRONG_STATE.
+ */
+SA2_API int32_t sa2_scene_trace_end(sa2_context* ctx);
+
+/* After trace_end and a live-device confirmed sa2_drain covering every scene
+ * command list, run S-B's exact label check (W3/W4) and write trace.jsonl and
+ * native.json into an existing UTF-8 directory. Never writes run.json or
+ * overwrites either output. NULL/empty/malformed UTF-8: INVALID_ARGUMENT;
+ * wrong lifecycle/drain: WRONG_STATE; file failures/existing output: E_IO.
+ * Label mismatch (including an injection not reached): E_CHECK_FAILED with
+ * both outputs written. Success: SA2_OK. Repeated writes need fresh outputs.
+ */
+SA2_API int32_t sa2_scene_write_run(sa2_context* ctx, const char* directory_utf8);
+
+/* With a loaded scene, outside the trace window, run S-B's geometry/count
+ * check on the producer queue using owned 2560x1600 offscreen targets, never
+ * a slot. Wait for its own work up to config.wait_timeout_ms. Writes
+ * geometry.json (S-B format) in an existing UTF-8 directory without overwrite.
+ * Invalid directory argument: INVALID_ARGUMENT; wrong lifecycle: WRONG_STATE;
+ * file failure: E_IO; bounded wait: E_TIMEOUT; GPU failure: E_D3D12 or
+ * E_DEVICE_REMOVED; mismatch: E_CHECK_FAILED with output written; pass: SA2_OK.
+ * A geometry submission invalidates the drain; drain again before teardown.
+ */
+SA2_API int32_t sa2_scene_geometry_check(sa2_context* ctx, const char* directory_utf8);
+
+/* No context. Copy NUL-terminated JSON, truncated to buffer_size (as
+ * sa2_debug_messages): {dll:{file,sha256},shaders:[{file,sha256},...]}, every
+ * blob loaded by the DLL, sorted by file name. File names are basenames in
+ * the DLL's directory; digests cover exact disk bytes. NULL buffer/zero size:
+ * INVALID_ARGUMENT; unreadable files: E_IO; sets the DLL-wide last error.
+ */
+SA2_API int32_t sa2_identity(char* buffer, uint32_t buffer_size);
+
+/* Release scene resources after a confirmed drain covering all scene work;
+ * removal permits release without confirmation, as sa2_unregister_slot.
+ * Missing scene or unconfirmed drain: WRONG_STATE. A loaded scene prevents
+ * sa2_detach (WRONG_STATE); unload before detaching. Slots remain registered.
+ */
+SA2_API int32_t sa2_scene_unload(sa2_context* ctx);
 
 #ifdef __cplusplus
 }

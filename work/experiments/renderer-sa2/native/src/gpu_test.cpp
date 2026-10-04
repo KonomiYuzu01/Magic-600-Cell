@@ -1,4 +1,5 @@
 #include "test.h"
+#include "scene_record.h"
 #include <d3d12sdklayers.h>
 #include <dxgi1_6.h>
 #include <wrl/client.h>
@@ -6,6 +7,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <utility>
 
@@ -133,8 +135,8 @@ struct Harness {
     ULONG device_before = 0, queue_before = 0;
     uint32_t width = 0, height = 0;
 
-    Harness(const Options& options, int32_t queue_mode, int32_t barriers, bool is_external)
-        : env(options), enhanced(barriers == SA2_BARRIERS_ENHANCED), external(is_external) {
+    Harness(const Options& options, int32_t queue_mode, int32_t barriers, bool is_external, const Device* shared = nullptr)
+        : env(shared ? *shared : Device(options)), enhanced(barriers == SA2_BARRIERS_ENHANCED), external(is_external) {
         sa2_device_info info{};
         info.struct_size = sizeof(info);
         api(nullptr, sa2_probe(handle(env.device.Get()), handle(env.queue.Get()), handle(env.adapter.Get()), &info));
@@ -167,6 +169,7 @@ struct Harness {
         // their owning COM pointers unwind. An unconfirmed drain exits in DLL.
         if (!ctx) return;
         sa2_drain(ctx, timeout_ms);
+        sa2_scene_unload(ctx); // WRONG_STATE is harmless for ABI 1 configurations.
         for (uint32_t i = 0; i < SA2_RING_SLOTS; ++i) {
             if (registered[i]) sa2_unregister_slot(ctx, i);
             if (!external && resources[i]) {
@@ -263,7 +266,7 @@ struct Harness {
             list7->Barrier(1, &group);
         }
     }
-    void consume(uint32_t frame, uint32_t generation) {
+    void consume(uint32_t frame, uint32_t generation, bool code_image = true) {
         const auto index = frame % SA2_RING_SLOTS;
         auto* texture = reinterpret_cast<ID3D12Resource*>(resources[index]);
         check(allocator->Reset(), "Reset consumer allocator");
@@ -286,6 +289,7 @@ struct Harness {
         expect(WaitForSingleObject(completion.get(), timeout_ms) == WAIT_OBJECT_0, "consumer fence wait failed or timed out");
         const auto completed = consumer_done->GetCompletedValue();
         expect(completed != UINT64_MAX && completed >= consumer_value && SUCCEEDED(env.device->GetDeviceRemovedReason()), "consumer completion was not confirmed");
+        if (!code_image) return;
         void* bytes = nullptr;
         const D3D12_RANGE read_range{static_cast<SIZE_T>(footprint.Offset), static_cast<SIZE_T>(readback_bytes)};
         check(readback->Map(0, &read_range, &bytes), "Map consumer readback");
@@ -358,6 +362,126 @@ void configuration(const Options& options, int32_t queue_mode, int32_t barriers,
     harness.finish(options.debug);
 }
 
+struct SceneDirectory {
+    std::filesystem::path path;
+    std::string utf8;
+    explicit SceneDirectory(const std::string& name) {
+        path = executable_path().parent_path() / ("scene-" + std::to_string(GetCurrentProcessId()) + '-' + name);
+        expect(std::filesystem::create_directory(path), "scene run directory already exists");
+        const auto text = path.u8string(); utf8.assign(text.begin(), text.end());
+    }
+    ~SceneDirectory() { std::error_code error; std::filesystem::remove_all(path, error); }
+    Json read(const char* file) const { return sb::readJson(path / file); }
+};
+void scene_geometry(const Options& options, const Device& device) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false, &device);
+    harness.make_ring(options.mode == "warp" ? 640 : 2560, options.mode == "warp" ? 360 : 1600);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 0};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    SceneDirectory directory("geometry");
+    api(harness.ctx, sa2_scene_geometry_check(harness.ctx, directory.utf8.c_str()));
+    const auto json = directory.read("geometry.json");
+    expect(json.at("format").string() == "magic600-sb-geometry-check-v1" && json.at("status").string() == "pass"
+        && json.at("results").array().size() == 9 && json.at("per_cell_count").at("failures").integer() == 0,
+        "scene geometry/count check did not pass all nine camera/pose combinations");
+    expect(sa2_scene_geometry_check(harness.ctx, directory.utf8.c_str()) == SA2_E_IO, "geometry output overwritten");
+    expect(sa2_scene_unload(harness.ctx) == SA2_E_WRONG_STATE, "geometry work unloaded before explicit drain");
+    api(harness.ctx, sa2_drain(harness.ctx, timeout_ms)); api(harness.ctx, sa2_scene_unload(harness.ctx));
+    harness.finish(options.debug);
+}
+void scene_configuration(const Options& options, const Device& device, uint32_t scene, int32_t queue, int32_t barriers,
+                         bool inject = false, bool no_vram = false) {
+    Harness harness(options, queue, barriers, false, &device);
+    auto* ctx = harness.ctx;
+    const uint32_t width = options.mode == "warp" ? 640 : 2560, height = options.mode == "warp" ? 360 : 1600;
+    const uint32_t frames = options.mode == "warp" ? 40 : 600, preroll = 3, trace_stop_frame = frames - 2;
+    harness.make_ring(width, height);
+    SceneDirectory directory("w" + std::to_string(scene) + '-' + std::to_string(queue) + '-' + std::to_string(barriers)
+        + (inject ? "-fault" : no_vram ? "-no-vram" : ""));
+    expect(sa2_scene_trace_begin(ctx) == SA2_E_WRONG_STATE && sa2_scene_trace_end(ctx) == SA2_E_WRONG_STATE
+        && sa2_scene_unload(ctx) == SA2_E_WRONG_STATE, "scene API accepted absent scene");
+    sa2_scene_config config{sizeof(sa2_scene_config), scene, inject ? 1000.0 : 190.0,
+        inject ? "corrupt-label" : nullptr, no_vram ? SA2_SCENE_NO_VRAM : 0u, 0};
+    auto bad = config; bad.struct_size = 0;
+    expect(sa2_scene_load(ctx, &bad) == SA2_E_INVALID_ARGUMENT, "scene struct_size accepted on live context");
+    api(ctx, sa2_scene_load(ctx, &config));
+    expect(sa2_scene_load(ctx, &config) == SA2_E_WRONG_STATE, "second scene load succeeded");
+    expect(sa2_detach(ctx) == SA2_E_WRONG_STATE && sa2_scene_write_run(ctx, directory.utf8.c_str()) == SA2_E_WRONG_STATE,
+        "scene detach/write before trace succeeded");
+    expect(sa2_scene_trace_end(ctx) == SA2_E_WRONG_STATE, "trace_end before begin succeeded");
+    int64_t start = 0;
+    LARGE_INTEGER hz{}; expect(QueryPerformanceFrequency(&hz) != 0, "QPC frequency unavailable");
+    for (uint32_t frame = 1; frame <= frames; ++frame) {
+        if (frame == preroll + 1) {
+            api(ctx, sa2_scene_trace_begin(ctx)); start = sa2::scene_qpc();
+            expect(sa2_scene_trace_begin(ctx) == SA2_E_WRONG_STATE, "second trace_begin succeeded");
+            expect(sa2_scene_geometry_check(ctx, directory.utf8.c_str()) == SA2_E_WRONG_STATE, "geometry ran inside trace");
+        }
+        if (frame == trace_stop_frame) {
+            api(ctx, sa2_scene_trace_end(ctx));
+            expect(sa2_scene_trace_end(ctx) == SA2_E_WRONG_STATE, "second trace_end succeeded");
+            expect(sa2_scene_write_run(ctx, directory.utf8.c_str()) == SA2_E_WRONG_STATE, "write_run without drain succeeded");
+        }
+        if (inject && frame > preroll && frame < trace_stop_frame && frame <= preroll + 21) {
+            // Pace the first 21 revisions so the fixed S-B turn-20 corruption
+            // is actually uploaded and read back, rather than merely unreached.
+            const auto target = start + int64_t(frame - preroll - 1) * sb::turnTicks(config.turn_ms, hz.QuadPart);
+            while (sa2::scene_qpc() < target) Sleep(1);
+        }
+        const auto slot = frame % SA2_RING_SLOTS;
+        api(ctx, sa2_signal_godot_free(ctx, frame - 1));
+        api(ctx, sa2_scene_produce(ctx, slot, frame));
+        api(ctx, sa2_godot_wait_ready(ctx, frame));
+        harness.consume(frame, 0, false); // framework work on its own queue
+        api(ctx, sa2_mark_shown(ctx, slot, frame));
+        if (frame == 1) {
+            expect(sa2_scene_produce(ctx, slot, frame) == SA2_E_WRONG_STATE, "scene frame did not increase");
+            expect(sa2_scene_produce(ctx, SA2_RING_SLOTS, frame + 1) == SA2_E_INVALID_ARGUMENT, "scene slot out of range accepted");
+            expect(sa2_scene_produce(ctx, slot, UINT64_MAX) == SA2_E_INVALID_ARGUMENT, "scene reserved fence accepted");
+            expect(sa2_scene_unload(ctx) == SA2_E_WRONG_STATE, "scene unloaded with unconfirmed work");
+            if (queue == SA2_QUEUE_OWN) {
+                expect(sa2_scene_produce(ctx, slot, frame + 1) == SA2_E_WRONG_STATE, "scene own queue enqueued unsafe free wait");
+                expect(sa2_godot_wait_ready(ctx, frame + 1) == SA2_E_WRONG_STATE, "scene enqueued unsafe ready wait");
+            }
+        }
+    }
+    api(ctx, sa2_drain(ctx, timeout_ms));
+    const auto status = sa2_scene_write_run(ctx, directory.utf8.c_str());
+    expect(status == (inject ? SA2_E_CHECK_FAILED : SA2_OK), "scene run/label check returned unexpected status");
+    const auto native = directory.read("native.json");
+    const auto traced_frames = trace_stop_frame - preroll - 1;
+    expect(native.at("format").string() == "magic600-sa2-scene-native-v1" && native.at("scene").string() == "w" + std::to_string(scene)
+        && native.at("frames").integer() == traced_frames, "native scene/frame count mismatch");
+    expect(native.at("target").at("width").integer() == width && native.at("target").at("height").integer() == height
+        && native.at("target").dump() == native.at("viewport").dump(), "native resolution/viewport mismatch");
+    expect(native.at("queue_mode").string() == (queue == SA2_QUEUE_OWN ? "own" : "same")
+        && native.at("barrier_api").string() == (barriers == SA2_BARRIERS_ENHANCED ? "enhanced" : "legacy"), "native queue/barrier mismatch");
+    if (no_vram) expect(native.at("vram_peak_mb").null() && native.at("vram_samples").integer() == 0, "NO_VRAM metadata mismatch");
+    else expect(native.at("vram_peak_mb").number() > 0 && native.at("vram_samples").integer() == traced_frames, "missing process local VRAM samples");
+    if (scene >= 3) expect(native.at("label_check").at("status").string() == (inject ? "fail" : "pass"), "label status mismatch");
+    if (inject) expect(std::get<bool>(native.at("injection_applied").value) && native.at("label_check").at("mismatches").integer() > 0,
+        "injected GPU label corruption was not copied/detected");
+    const auto begin = native.at("markers").at("trace_start_qpc").integer(), end = native.at("markers").at("trace_stop_qpc").integer();
+    expect(begin <= end, "trace markers reversed");
+    std::ifstream trace(directory.path / "trace.jsonl", std::ios::binary); expect(bool(trace), "trace.jsonl missing");
+    uint32_t count = 0; int64_t last_qpc = begin;
+    for (std::string line; std::getline(trace, line); ++count) {
+        const auto row = Json::parse(line); const auto now = row.at("qpc").integer();
+        expect(row.at("frame").integer() == count && now >= last_qpc && now >= begin && now <= end, "trace frame/QPC sequence mismatch");
+        last_qpc = now; row.at("camera"); row.at("revision");
+        expect(row.at("turn").null() == (scene != 3) && row.at("phase").null() == (scene != 3), "S-B trace turn/phase shape mismatch");
+        if (scene == 3) {
+            const auto turn = sb::turnAt(now, begin, sb::turnTicks(config.turn_ms, hz.QuadPart), 1);
+            expect(row.at("turn").integer() == int64_t(turn.index) && std::abs(row.at("phase").number() - turn.phase) < 1e-12,
+                "trace does not use the trace-start turn clock");
+        }
+    }
+    expect(count == traced_frames, "trace record count differs from traced frames");
+    expect(sa2_scene_write_run(ctx, directory.utf8.c_str()) == SA2_E_IO, "existing run outputs overwritten");
+    api(ctx, sa2_scene_unload(ctx)); expect(sa2_scene_unload(ctx) == SA2_E_WRONG_STATE, "second unload succeeded");
+    harness.finish(options.debug);
+}
+
 struct ChildResult { DWORD code = 0; std::string output, error; };
 std::string read_pipe(HANDLE pipe) {
     std::string text;
@@ -426,6 +550,22 @@ void run_gpu(Suite& suite, const Options& options) {
                 + " (300 frames, resize, negatives, references, debug)";
             suite.check(label, [&] { configuration(options, queue, barriers, external); });
         }
+    // Reuse one stand-in device across the complete ABI 2 matrix; geometry runs
+    // exactly once on that device, while each scene has its own drained context.
+    try {
+        Device scene_device(options);
+        suite.check("scene geometry", [&] { scene_geometry(options, scene_device); });
+        for (uint32_t scene = 1; scene <= 4; ++scene)
+            for (int32_t queue : {SA2_QUEUE_SAME, SA2_QUEUE_OWN})
+                for (int32_t barriers : {SA2_BARRIERS_LEGACY, SA2_BARRIERS_ENHANCED}) {
+                    const auto label = "scene w" + std::to_string(scene) + '/' + (queue == SA2_QUEUE_SAME ? "same" : "own")
+                        + '/' + (barriers == SA2_BARRIERS_LEGACY ? "legacy" : "enhanced");
+                    suite.check(label, [&] { scene_configuration(options, scene_device, scene, queue, barriers); });
+                }
+        suite.check("scene injected W3", [&] { scene_configuration(options, scene_device, 3, SA2_QUEUE_OWN, SA2_BARRIERS_LEGACY, true); });
+        suite.check("scene NO_VRAM", [&] { scene_configuration(options, scene_device, 1, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false, true); });
+    } catch (const Unsupported& error) { suite.check("scene device", [&] { throw Unsupported(error.what()); }); }
+      catch (const std::exception& error) { suite.check("scene device", [&] { throw std::runtime_error(error.what()); }); }
     suite.check("child inject-drain", [&] {
         Device available(options);
         const auto result = child_process(options, "inject-drain");

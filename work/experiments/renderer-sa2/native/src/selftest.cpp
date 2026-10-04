@@ -1,4 +1,5 @@
 #include "test.h"
+#include "scene_record.h"
 #include <algorithm>
 #include <cstring>
 #include <fstream>
@@ -58,14 +59,16 @@ void invalid(int32_t status, const char* call) {
     expect(std::strchr(error, '\n') == nullptr && std::strchr(error, '\r') == nullptr, "last error is not one line");
 }
 void run_cpu(Suite& suite, const Options& options) {
-    suite.check("abi", [] { expect(sa2_abi_version() == 1, "ABI version mismatch"); });
+    suite.check("abi", [] { expect(sa2_abi_version() == 2, "ABI version mismatch"); });
     suite.check("exports", [] {
         const auto dll = executable_path().parent_path() / "sa2_interop.dll";
         HMODULE module = LoadLibraryW(dll.c_str());
         expect(module != nullptr, "LoadLibraryW of adjacent DLL failed");
         constexpr const char* names[] = {"sa2_abi_version", "sa2_last_error", "sa2_probe", "sa2_attach", "sa2_create_texture", "sa2_release_texture",
             "sa2_register_slot", "sa2_unregister_slot", "sa2_signal_godot_free", "sa2_produce", "sa2_godot_wait_ready", "sa2_mark_shown",
-            "sa2_verify_slot", "sa2_drain", "sa2_debug_counts", "sa2_debug_messages", "sa2_remove_device", "sa2_device_removed_reason", "sa2_detach"};
+            "sa2_verify_slot", "sa2_drain", "sa2_debug_counts", "sa2_debug_messages", "sa2_remove_device", "sa2_device_removed_reason", "sa2_detach",
+            "sa2_scene_load", "sa2_scene_produce", "sa2_scene_trace_begin", "sa2_scene_trace_end", "sa2_scene_write_run",
+            "sa2_scene_geometry_check", "sa2_identity", "sa2_scene_unload"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -177,6 +180,125 @@ void run_cpu(Suite& suite, const Options& options) {
         const auto text = sa2::json_report("cpu", {{"x", "unsupported", "reason"}});
         expect(text == "{\"format\":\"magic600-sa2-native-selftest-v1\",\"mode\":\"cpu\",\"checks\":[{\"name\":\"x\",\"status\":\"unsupported\",\"reason\":\"reason\"}]}\n", "JSON envelope mismatch");
     });
+    suite.check("scene arguments", [] {
+        sa2_scene_config config{sizeof(sa2_scene_config), 3, 190, nullptr, 0, 0};
+        invalid(sa2_scene_load(nullptr, nullptr), "sa2_scene_load");
+        invalid(sa2_scene_load(nullptr, &config), "sa2_scene_load");
+        auto refuses = [&](sa2_scene_config value) {
+            invalid(sa2_scene_load(nullptr, &value), "sa2_scene_load");
+            bool caught = false;
+            try { sa2::validate_scene_config(&value); }
+            catch (const sa2::Failure& error) { caught = error.status == SA2_E_INVALID_ARGUMENT; }
+            expect(caught, "shared scene argument validator accepted invalid config");
+        };
+        auto bad = config; bad.struct_size = 0; refuses(bad);
+        for (uint32_t scene : {0u, 5u}) { bad = config; bad.scene = scene; refuses(bad); }
+        for (double ms : {0.0, -1.0, 10000.1, std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()}) {
+            bad = config; bad.turn_ms = ms; refuses(bad);
+        }
+        bad = config; bad.inject = "unknown"; refuses(bad);
+        bad = config; bad.inject = ""; refuses(bad);
+        bad = config; bad.scene = 1; bad.inject = "corrupt-label"; refuses(bad);
+        bad = config; bad.reserved = 1; refuses(bad);
+        bad = config; bad.flags = 2; refuses(bad);
+        for (const char* fault : {"corrupt-label", "swap-same-colour", "delay-adoption", "stale-binding"}) {
+            auto good = config; good.inject = fault; sa2::validate_scene_config(&good);
+        }
+        invalid(sa2_scene_produce(nullptr, 0, 1), "sa2_scene_produce");
+        invalid(sa2_scene_produce(nullptr, 3, UINT64_MAX), "sa2_scene_produce");
+        invalid(sa2_scene_trace_begin(nullptr), "sa2_scene_trace_begin");
+        invalid(sa2_scene_trace_end(nullptr), "sa2_scene_trace_end");
+        invalid(sa2_scene_write_run(nullptr, "existing"), "sa2_scene_write_run");
+        invalid(sa2_scene_write_run(nullptr, nullptr), "sa2_scene_write_run");
+        invalid(sa2_scene_write_run(nullptr, ""), "sa2_scene_write_run");
+        invalid(sa2_scene_geometry_check(nullptr, "existing"), "sa2_scene_geometry_check");
+        invalid(sa2_scene_geometry_check(nullptr, "\xff"), "sa2_scene_geometry_check");
+        invalid(sa2_scene_unload(nullptr), "sa2_scene_unload");
+        invalid(sa2_identity(nullptr, 1), "sa2_identity");
+        char buffer[8]{}; invalid(sa2_identity(buffer, 0), "sa2_identity");
+    });
+    suite.check("scene state", [] {
+        sa2_scene_config config{sizeof(sa2_scene_config), 3, 190, nullptr, 0, 0};
+        sa2::SceneRecord record(config, 10000000, 640, 360);
+        auto wrong = [](const auto& call) {
+            bool caught = false;
+            try { call(); } catch (const sa2::Failure& error) { caught = error.status == SA2_E_WRONG_STATE; }
+            expect(caught, "shared scene lifecycle validator did not return WRONG_STATE");
+        };
+        wrong([&] { record.end(200); }); wrong([&] { record.require_write(true); });
+        record.require_geometry(); record.begin(100);
+        wrong([&] { record.begin(101); }); wrong([&] { record.require_write(true); });
+        wrong([&] { record.require_geometry(); }); record.end(200);
+        wrong([&] { record.end(201); }); wrong([&] { record.begin(202); });
+        wrong([&] { record.require_write(false); }); record.require_write(true); record.require_geometry();
+        expect(record.start == 100 && record.stop == 200, "markers changed after rejected calls");
+    });
+    suite.check("scene assets", [] {
+        const auto assets = sa2::scene_assets();
+        expect(assets.vertices.size() == size_t(sb::Vertices) * 4 && assets.local.size() == sb::Vertices
+            && assets.centers.size() == size_t(sb::Stickers) * 4 && assets.frames.size() == size_t(sb::Cells) * 16
+            && assets.flags.size() == sb::Slots && assets.oracle[0].size() == sb::Slots
+            && assets.src.size() == 4600 && assets.moving.size() == 4605, "S-B full model counts mismatch");
+        const auto edges = sb::edgeMasks(assets);
+        expect(edges.featureEdges == 3277 && edges.diagonals == 5546, "unchanged S-B edge reader mismatch");
+        const auto turn = sb::turnAt(100 + 20 * sb::turnTicks(190, 10000000), 100, sb::turnTicks(190, 10000000), assets.angle);
+        expect(turn.index == 20 && turn.phase == 0, "S-B QPC turn clock mismatch");
+    });
+    suite.check("scene native writer", [] {
+        sa2_scene_config config{sizeof(sa2_scene_config), 3, 190, nullptr, 0, 0};
+        sa2::SceneRecord record(config, 10000000, 2560, 1600); record.begin(100); record.end(200);
+        record.vram_peak = 123.5; record.vram_samples = 1; record.trace.push_back({0, 150, 0, true, 0, 0.25, 1});
+        const Json labels = Json::Object{{"status", "pass"}, {"copies", 0}, {"revisions", 0}, {"mismatches", 0},
+            {"late_adoptions", 0}, {"missing", 0}, {"oracle_sha256", Json::Object{{"even", "even"}, {"odd", "odd"}}}};
+        const Json identity = Json::Object{{"dll", Json::Object{{"file", "sa2_interop.dll"}, {"sha256", "synthetic"}}}, {"shaders", Json::Array{}}};
+        const auto json = Json::parse(record.native(labels, identity, SA2_QUEUE_OWN, SA2_BARRIERS_ENHANCED).dump());
+        for (const char* field : {"format", "scene", "qpc_frequency", "markers", "frames", "turn_ms", "label_check", "injection_applied",
+            "vram_peak_mb", "vram_samples", "target", "viewport", "identity", "queue_mode", "barrier_api"}) json.at(field);
+        expect(json.at("format").string() == "magic600-sa2-scene-native-v1" && json.at("scene").string() == "w3"
+            && json.at("frames").integer() == 1 && json.at("turn_ms").number() == 190 && json.at("vram_peak_mb").number() == 123.5,
+            "native writer values mismatch");
+        expect(json.at("target").dump() == json.at("viewport").dump() && json.at("target").at("width").integer() == 2560
+            && json.at("target").at("height").integer() == 1600 && json.at("identity").dump() == identity.dump(), "native sizes/identity mismatch");
+        const auto trace = Json::parse(record.trace_text());
+        expect(trace.at("frame").integer() == 0 && trace.at("qpc").integer() == 150 && trace.at("camera").integer() == 1, "S-B trace writer mismatch");
+        record.config.flags = SA2_SCENE_NO_VRAM;
+        expect(record.native(labels, identity, 0, 1).at("vram_peak_mb").null(), "NO_VRAM did not write null");
+        for (uint32_t scene : {1u, 2u, 4u}) {
+            record.config.scene = scene; const auto j = record.native(labels, identity, 0, 1);
+            expect(!j.object().contains("turn_ms") && j.object().contains("label_check") == (scene == 4), "optional native fields mismatch");
+        }
+    });
+    suite.check("scene output IO", [] {
+        const auto directory = executable_path().parent_path() / ("scene-cpu-" + std::to_string(GetCurrentProcessId()));
+        expect(std::filesystem::create_directory(directory), "CPU IO fixture directory exists");
+        struct Cleanup { std::filesystem::path path; ~Cleanup() { std::error_code error; std::filesystem::remove_all(path, error); } } cleanup{directory};
+        const auto file = directory / "native.json";
+        sa2::require_new_file(file); sa2::write_new_file(file, "sentinel\n");
+        for (bool preflight : {true, false}) {
+            bool caught = false;
+            try { if (preflight) sa2::require_new_file(file); else sa2::write_new_file(file, "overwritten"); }
+            catch (const sa2::Failure& error) { caught = error.status == SA2_E_IO; }
+            expect(caught, "existing output did not return E_IO");
+        }
+        const auto raw = sa2::scene_bytes(file);
+        expect(std::string(raw.begin(), raw.end()) == "sentinel\n", "existing output was changed");
+        bool caught = false;
+        try { sa2::scene_bytes(directory / "absent.dxil"); } catch (const sa2::Failure& error) { caught = error.status == SA2_E_IO; }
+        expect(caught, "missing file did not return E_IO");
+    });
+    suite.check("identity", [] {
+        std::array<char, 4096> text{};
+        expect(sa2_identity(text.data(), uint32_t(text.size())) == SA2_OK, "sa2_identity failed");
+        const auto json = Json::parse(text.data());
+        expect(json.at("dll").at("file").string() == "sa2_interop.dll" && json.at("dll").at("sha256").string().size() == 64, "DLL identity incomplete");
+        const auto& shaders = json.at("shaders").array(); expect(shaders.size() == sa2::shader_names().size(), "shader identity incomplete");
+        for (size_t i = 0; i < shaders.size(); ++i)
+            expect(shaders[i].at("file").string() == sa2::shader_names()[i] && shaders[i].at("sha256").string().size() == 64, "shader identity order/name mismatch");
+        std::array<char, 10> truncated; truncated.fill('#');
+        expect(sa2_identity(truncated.data(), 1) == SA2_OK && truncated[0] == 0 && truncated[1] == '#', "identity size-1 truncation overrun");
+        truncated.fill('#');
+        expect(sa2_identity(truncated.data(), 8) == SA2_OK && truncated[7] == 0 && truncated[8] == '#', "identity size-8 truncation overrun");
+    });
 }
 Options parse(int argc, char** argv) {
     Options options;
@@ -206,7 +328,12 @@ int main(int argc, char** argv) {
         sa2test::Suite suite;
         if (options.mode == "cpu") sa2test::run_cpu(suite, options);
         else sa2test::run_gpu(suite, options);
-        const auto json = sa2::json_report(options.mode, suite.checks);
+        auto json = sa2::json_report(options.mode, suite.checks);
+        if (options.mode == "cpu" && suite.passed()) {
+            char identity[4096]{};
+            sa2test::expect(sa2_identity(identity, sizeof(identity)) == SA2_OK, "could not retrieve build identity");
+            auto report = Json::parse(json); report["identity"] = Json::parse(identity); json = report.dump() + '\n';
+        }
         if (options.out.empty()) std::cout << json;
         else {
             std::ofstream out(options.out, std::ios::binary);
