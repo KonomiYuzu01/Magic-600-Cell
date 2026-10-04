@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Allow named, invariant cultures in the cross-culture writer tests. -->
+    <PredefinedCulturesOnly>false</PredefinedCulturesOnly>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../core/LookLab.Core.csproj" />
+  </ItemGroup>
+</Project>

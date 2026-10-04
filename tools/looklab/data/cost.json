@@ -1,0 +1,16 @@
+{
+  "format": "magic600-look-cost",
+  "version": 1,
+  "features": {
+    "edgeWeight": null,
+    "gloss": null,
+    "glow": null,
+    "fog": null,
+    "highlight": null,
+    "finish": null,
+    "keyLight": null,
+    "fillLight": null,
+    "depthOfField": null,
+    "ambientOcclusion": null
+  }
+}

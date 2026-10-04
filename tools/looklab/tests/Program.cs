@@ -1,0 +1,130 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using LookLab.Core;
+
+internal sealed class SkipException : Exception
+{
+    public SkipException(string message) : base(message) { }
+}
+
+internal sealed class TestFolder : IDisposable
+{
+    public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "looklab-test-" + Guid.NewGuid().ToString("N"));
+    public TestFolder() => Directory.CreateDirectory(Path);
+    public void Dispose() => Directory.Delete(Path, true);
+}
+
+internal static partial class Program
+{
+    private static string Root = "", Lab = "";
+    private static Geometry? geometry;
+    private static TurnData? turn;
+    private static ParameterSchema? schema;
+    private static CommandCatalogue? commands;
+    private static Geometry Mesh => geometry ??= new Geometry(Root);
+    private static TurnData Turn => turn ??= new TurnData(FileAt("fixtures/w3-turn.json"));
+    private static ParameterSchema Schema => schema ??= ParameterSchema.Load(FileAt("data/parameters.json"));
+    private static CommandCatalogue Commands => commands ??= CommandCatalogue.Load(System.IO.Path.Combine(Root, "docs/progress/1.0/command-table.json"));
+    private static string FileAt(string path) => System.IO.Path.Combine(Lab, path.Replace('/', System.IO.Path.DirectorySeparatorChar));
+    private static string Read(string path) => File.ReadAllText(FileAt(path));
+
+    private static int Main(string[] args)
+    {
+        if (args.Length != 1) { Console.Error.WriteLine("LookLab.Tests: expected repository root"); return 2; }
+        Root = System.IO.Path.GetFullPath(args[0]); Lab = System.IO.Path.Combine(Root, "tools/looklab");
+        var tests = new List<(string Name, Action Run)>
+        {
+            ("HarnessIsolationAndRefusals", HarnessTests),
+            ("OfflineBuildContract", BuildContract),
+            ("ManifestMissingFileEntryAndMismatch", ManifestFailures),
+            ("NpyDtypeShapeAndOrderRefusals", NpyRefusals),
+            ("SbReferenceAll2700Samples", SbReference),
+            ("FixtureProvenanceAndTurnDigest", FixtureProvenance),
+            ("ProjectionKindsAndCameraOrder", ProjectionKinds),
+            ("FullCellAdjacencyAndVertexIncidence", CellIncidence),
+            ("RingsExactCoverClosedChainsAndPinnedGraph", RingFixture),
+            ("RingColouring4Through8Deterministic", RingColouring),
+            ("RingColouringTasteJsOracle", RingColouringJs),
+            ("SlotToCellFullBoundary", SlotCells),
+            ("TurnSnapshotsGeneratorAndInverse", TurnSnapshots),
+            ("TurnClockBeforeAndAtDAnd2D", TurnBoundaries),
+            ("TurnClockMidpointAndStaleBindingRefusal", TurnMidpoint),
+            ("ParameterSchemaAllKindsAndTasteRanges", ParameterContract),
+            ("ParameterSchemaRefusals", ParameterRefusals),
+            ("DefaultPresetCanonicalBytes", DefaultRoundTrip),
+            ("GeneratedPresetCanonicalBytes", GeneratedRoundTrips),
+            ("PresetStrictLoadRefusals", PresetRefusals),
+            ("PresetCultureInvariantDeAndFr", PresetCultures),
+            ("PresetExplicitMigrationHook", PresetMigration),
+            ("TasteImportOnePopulatedFiveNull", ImportNulls),
+            ("TasteImportMalformedAndVersionRefusals", ImportRefusals),
+            ("ColourRoundTripsAndGamutMapping", ColourConversions),
+            ("PaletteClassPairsSameRingAndThresholdInputs", PaletteGraph),
+            ("ColourAndPaletteTasteJsOracle", ColourJs),
+            ("EasingEndpointsMonotonicityAndTurnClamp", EaseTests),
+            ("EasingTasteJsOracle", EaseJs),
+            ("LayoutDefaultsCoverEveryCommandContext", LayoutDefaults),
+            ("LayoutValidationRefusals", LayoutRefusals),
+            ("DraftCoreFlowsAndLayoutReports", FlowDefaults),
+            ("FlowFormatUnknownCommandAndUnreachableRefusals", FlowRefusals),
+            ("FlowHandComputedTravelAndShannonTime", FlowTiny),
+            ("CostAllNullAndMeasuredSource", CostDefaults),
+            ("CostValidationRefusals", CostRefusals),
+            ("ThemeSetAllStructureMatchesAndDiffers", ThemeSets),
+            ("ReadmeFormatsParametersAndPrivacy", ReadmeContract)
+        };
+        int passed = 0, failed = 0, skipped = 0;
+        foreach (var (name, run) in tests)
+        {
+            try { run(); Console.WriteLine("PASS " + name); passed++; }
+            catch (SkipException ex) { Console.WriteLine("SKIP " + name + ": " + ex.Message); skipped++; }
+            catch (Exception ex) { Console.WriteLine("FAIL " + name + ": " + ex); failed++; }
+        }
+        Console.WriteLine($"LookLab.Tests: {tests.Count} tests; {passed} passed, {skipped} skipped, {failed} failed");
+        return failed == 0 ? 0 : 1;
+    }
+
+    private static void Check(bool condition, string message)
+    {
+        if (!condition) throw new Exception(message);
+    }
+    private static void Equal<T>(T actual, T expected, string message = "values differ") => Check(EqualityComparer<T>.Default.Equals(actual, expected), message + $": {actual} != {expected}");
+    private static void Sequence<T>(IEnumerable<T> actual, IEnumerable<T> expected, string message = "sequences differ") => Check(actual.SequenceEqual(expected), message);
+    private static void Near(double actual, double expected, double absolute = 1e-12, double relative = 0)
+    {
+        Check(double.IsFinite(actual) && double.IsFinite(expected) && Math.Abs(actual - expected) <= absolute + relative * Math.Abs(expected), $"{actual:R} != {expected:R}");
+    }
+    private static void Refuse(Action action, string id)
+    {
+        try { action(); }
+        catch (FormatException ex) { Check(ex.Message.Contains(id, StringComparison.Ordinal), "refusal did not name " + id + ": " + ex.Message); return; }
+        throw new Exception("expected refusal naming " + id);
+    }
+
+    private static (int Code, string Out, string Error) Run(string executable, IEnumerable<string> args, string input = "")
+    {
+        var info = new ProcessStartInfo(executable) { WorkingDirectory = Root, UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (string arg in args) info.ArgumentList.Add(arg);
+        using Process process = Process.Start(info) ?? throw new Exception("could not start " + executable);
+        Task<string> output = process.StandardOutput.ReadToEndAsync(), error = process.StandardError.ReadToEndAsync();
+        process.StandardInput.Write(input); process.StandardInput.Close();
+        if (!process.WaitForExit(60000)) { process.Kill(true); throw new Exception(executable + " timed out"); }
+        return (process.ExitCode, output.GetAwaiter().GetResult(), error.GetAwaiter().GetResult());
+    }
+
+    private static JsonDocument Node(object input)
+    {
+        (int Code, string Out, string Error) result;
+        try { result = Run("node", new[] { FileAt("tests/taste_oracle.mjs"), Root }, JsonSerializer.Serialize(input)); }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 2 || ex.NativeErrorCode == 3) { throw new SkipException("node is not on PATH"); }
+        Check(result.Code == 0, "Taste Lab JS oracle failed: " + result.Error + result.Out);
+        return JsonDocument.Parse(result.Out);
+    }
+}
