@@ -5,7 +5,9 @@ import base64
 import hashlib
 import io
 import json
+import shutil
 import sqlite3
+import subprocess
 import sys
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -21,6 +23,21 @@ import numpy as np
 from PIL import Image
 from tastelab import bundle, common, embed, fetch, images, sources, store
 import test_tastelab_store as test_store
+
+NODE = shutil.which("node")
+PAGE_BUNDLE = (ROOT / "tools" / "tastelab" / "page" / "bundle.js").as_uri()
+# Reads {file name: base64 bytes} from stdin, validates the folder as the page does, and
+# prints the outcome, the item ids and the decoded vectors.
+PAGE_SCRIPT = """
+const { validateBundle } = await import(process.argv[1]);
+let input = "";
+for await (const chunk of process.stdin) input += chunk;
+const files = new Map(Object.entries(JSON.parse(input)).map(([name, data]) => [name, new Uint8Array(Buffer.from(data, "base64"))]));
+const result = await validateBundle(new TextDecoder().decode(files.get("manifest.json")), files);
+process.stdout.write(JSON.stringify(result.ok
+  ? { ok: true, imageIds: result.bundle.items.map((item) => item.imageId), vectors: Array.from(result.bundle.vectors) }
+  : result));
+"""
 
 
 class BundleTests(test_store.TempDir):
@@ -90,6 +107,34 @@ class BundleTests(test_store.TempDir):
         values = np.frombuffer(raw, dtype="<f2").reshape(1, 512)
         np.testing.assert_array_equal(values[0], self.unit)
         self.assertIsNotNone(bundle._complete(folder))
+
+    @unittest.skipIf(NODE is None, "node is not on PATH")
+    def test_page_validator_accepts_an_exported_bundle(self):
+        # The page's validateBundle (tools/tastelab/page/bundle.js) must accept what this exporter writes.
+        rng = np.random.default_rng(7)
+        vectors = [v / np.linalg.norm(v) for v in rng.standard_normal((3, 512)).astype(np.float32)]
+        shas = [self.add(vector=vectors[0]),
+                self.add(vector=vectors[1], source="wikimedia", licence="CC-BY-SA-4.0",
+                         licence_url="https://creativecommons.org/licenses/by-sa/4.0/",
+                         page_url="https://commons.wikimedia.org/wiki/File:Invented_mechanism.jpg",
+                         image_url="https://upload.wikimedia.org/synthetic/mechanism.jpg"),
+                self.add(vector=vectors[2], source="nasa", licence="US-Gov-PD",
+                         licence_url="https://www.nasa.gov/nasa-brand-center/images-and-media/",
+                         page_url="https://images.nasa.gov/details/PIA00001",
+                         image_url="https://images-assets.nasa.gov/image/PIA00001/PIA00001~orig.jpg")]
+        folder, counts = bundle.export(self.library)
+        self.assertEqual(counts["exported"], 3)
+        files = {path.name: base64.b64encode(path.read_bytes()).decode("ascii") for path in folder.iterdir()}
+        run = subprocess.run([NODE, "--input-type=module", "-e", PAGE_SCRIPT, PAGE_BUNDLE], input=json.dumps(files),
+                             capture_output=True, text=True, encoding="utf-8", timeout=120)
+        self.assertEqual(run.returncode, 0, run.stderr[-2000:])
+        page = json.loads(run.stdout)
+        self.assertTrue(page["ok"], page)
+        manifest = self.manifest(folder)
+        self.assertEqual(page["imageIds"], [item["imageId"] for item in manifest["items"]])
+        self.assertEqual(sorted(page["imageIds"]), sorted(shas))
+        expected = np.frombuffer(base64.b64decode(manifest["embeddings"]["data"]), dtype="<f2").astype(np.float32)
+        np.testing.assert_array_equal(np.array(page["vectors"], dtype=np.float32), expected)
 
     def test_tier_b_canary_and_forced_private_class_a_never_exported(self):
         public = self.add()
