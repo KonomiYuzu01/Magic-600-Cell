@@ -59,7 +59,19 @@ Plan: `work/experiments/renderer-l2-packets/PLAN.md` (sections 2 to 4). This pac
 ## 5. Attempts so far
 | # | Hypothesis | Change | Verification | Result |
 |---|---|---|---|---|
-| — | none for level 2 | — | — | — |
+| 1 | ABI 2 as section 6 specifies | implement call 20261004T034445Z-f90946bb | acceptance passed: 17 CPU checks and the SHA-256 recomputation | run invalid: the Claude app fetched `origin` during the run, so its patch cannot be used |
+
+Attempt 1 made these choices. They stand unless you find a defect:
+- a fixed, equally sized three-slot ring;
+- zero-based trace frame numbers;
+- W4 on S-B's 190 ms clock;
+- a three-entry constant and upload ring;
+- readbacks that grow in chunks of 64 revisions;
+- identity file names sorted within the DLL's directory;
+- string queue and barrier names in `native.json`;
+- legacy barriers for the DLL's internal resources, with the selected barrier API only for slot handovers.
+
+It added the sources `scene.cpp`, `scene.h`, `scene_record.cpp`, `scene_record.h` and `sb_link.cpp`. It ported S-B's drawing code and needed no shader change.
 
 ## 6. Constraints and owned files
 
