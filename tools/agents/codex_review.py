@@ -101,6 +101,7 @@ SANDBOX_ROOTS = {"workdir", "/tmp", "$TMPDIR"}  # as Codex reports them: "worksp
 # The Codex sandbox leaves the temp directory writable, so a repository there would not be protected.
 SANDBOX_DEFAULT_WRITABLE = (Path(tempfile.gettempdir()),)
 CHILD_GIT_CONFIG = {"protocol.allow": "never", "core.hooksPath": os.devnull}
+CREDENTIAL_NAME_RE = re.compile(r"KEY|SECRET|TOKEN", re.I)
 # Every wrapper Git command runs without repository hooks or a filesystem monitor.
 SAFE_GIT = ["-c", "core.hooksPath=" + os.devnull, "-c", "core.fsmonitor=false"]
 
@@ -204,7 +205,7 @@ def run_bounded(cmd: list[str], prompt: str, timeout: float, cwd: Path | None = 
         if os.name != "nt":
             os.killpg(proc.pid, signal.SIGKILL)
         else:
-            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True, env=scoped_env())
         out, err = proc.communicate()
         return None, out, err
 
@@ -369,10 +370,15 @@ def patch_tree(wt: Path, base: str, patch: Path, index: Path) -> str:
     return git(wt, *opts, "write-tree", env=env).strip()
 
 
+def scoped_env() -> dict:
+    """Drop inherited credential names before adding any wrapper-owned variables."""
+    return {key: value for key, value in os.environ.items() if not CREDENTIAL_NAME_RE.search(key)}
+
+
 def child_env() -> dict:
-    """Environment for Codex and the acceptance check: no bytecode caches, no Git transport (so no push or
+    """Environment for Codex and the acceptance check: no credentials, no bytecode caches, no Git transport (so no push or
     fetch, even to a local path) and no repository hooks."""
-    env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", GIT_CONFIG_COUNT=str(len(CHILD_GIT_CONFIG)))
+    env = dict(scoped_env(), PYTHONDONTWRITEBYTECODE="1", GIT_CONFIG_COUNT=str(len(CHILD_GIT_CONFIG)))
     for i, (key, value) in enumerate(CHILD_GIT_CONFIG.items()):
         env[f"GIT_CONFIG_KEY_{i}"], env[f"GIT_CONFIG_VALUE_{i}"] = key, value
     return env
@@ -628,7 +634,7 @@ def main(argv=None) -> int:
                 raise Refused("cannot identify the current candidate (git failed); a review needs a source identity")
         base_cmd = codex_command()
         try:
-            login = subprocess.run([*base_cmd, "login", "status"], capture_output=True, text=True, timeout=60)
+            login = subprocess.run([*base_cmd, "login", "status"], capture_output=True, text=True, timeout=60, env=scoped_env())
         except (OSError, subprocess.SubprocessError) as exc:
             raise Refused(f"cannot check the Codex login: {type(exc).__name__}")
         if login.returncode != 0 or "chatgpt" not in (login.stdout + login.stderr).lower():
@@ -646,7 +652,7 @@ def main(argv=None) -> int:
             cmd += ["--sandbox", "read-only", "--output-schema", str(strict_schema_file(Path(td))),
                     "-o", str(out_dir / "review.json"), "-"]
             called = True
-            code, out, err = run_codex(cmd, build_prompt(args.kind, packet_text, args.gate), args.timeout)
+            code, out, err = run_codex(cmd, build_prompt(args.kind, packet_text, args.gate), args.timeout, env=scoped_env())
         (out_dir / "codex.log").write_text(err, encoding="utf-8")
         if code is None:
             record["outcome"] = "timeout"
