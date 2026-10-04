@@ -1,5 +1,19 @@
 import { licenceOk, pageUrlOk } from "./licences.js";
 
+// bundle.py writes at most 300 items, with JPEG thumbnails of at most 200 KiB.
+export const MAX_ITEMS = 300, THUMB_MAX_BYTES = 204800;
+// The writer embeds 512 float16 values per item in manifest.json: at most
+// 307200 raw bytes, or 409600 base64 bytes. No separate embeddings file is valid.
+export const MAX_EMBEDDING_BYTES = MAX_ITEMS * 512 * 2;
+// 8 MiB allows the embedded base64 plus all 300 items' bounded text and URLs,
+// including the writer's indented JSON and escaped Unicode (up to 12 bytes per
+// non-BMP character), with room for keys and metadata. It bounds JSON parsing.
+export const MAX_MANIFEST_BYTES = 8 * 1024 * 1024;
+// One manifest and one thumbnail per item; embeddings already occupy the
+// manifest allowance, so the total bound is 69828608 bytes, without double counting.
+export const MAX_BUNDLE_FILES = MAX_ITEMS + 1;
+export const MAX_SELECTION_BYTES = MAX_MANIFEST_BYTES + MAX_ITEMS * THUMB_MAX_BYTES;
+
 const ROOT_KEYS = ["format", "version", "id", "createdAt", "model", "items", "embeddings"];
 const ITEM_KEYS = ["imageId", "thumbSha256", "width", "height", "bytes", "source", "sourceId", "title", "credit", "pageUrl", "licence", "licenceUrl"];
 const fail = (message) => ({ ok: false, errors: [message] });
@@ -33,6 +47,8 @@ export async function sha256Hex(bytes) {
 
 export async function validateBundle(manifestText, files) {
   if (typeof manifestText !== "string") return fail("manifest.json must be text.");
+  const manifestBytes = files instanceof Map ? files.get("manifest.json") : null;
+  if (manifestText.length > MAX_MANIFEST_BYTES || (manifestBytes instanceof Uint8Array && manifestBytes.byteLength > MAX_MANIFEST_BYTES)) return fail("manifest.json exceeds its byte bound.");
   let manifest;
   try { manifest = JSON.parse(manifestText); }
   catch { return fail("manifest.json must contain valid JSON."); }
@@ -42,7 +58,7 @@ export async function validateBundle(manifestText, files) {
   if (!utcTime(manifest.createdAt)) return fail("createdAt must be an ISO 8601 UTC time.");
   if (!exactKeys(manifest.model, ["id", "weightsSha256"])) return fail("Model keys are invalid.");
   if (!text(manifest.model.id, 1, 100) || !hash(manifest.model.weightsSha256)) return fail("Model id or weightsSha256 is invalid.");
-  if (!Array.isArray(manifest.items) || !integer(manifest.items.length, 300)) return fail("A bundle must contain 1 to 300 items.");
+  if (!Array.isArray(manifest.items) || !integer(manifest.items.length, MAX_ITEMS)) return fail("A bundle must contain 1 to 300 items.");
 
   const imageIds = new Set(), names = new Set(["manifest.json"]);
   for (const item of manifest.items) {
@@ -53,7 +69,7 @@ export async function validateBundle(manifestText, files) {
     const name = item.thumbSha256 + ".jpg";
     if (names.has(name)) return fail("Each item must have its own thumbnail file.");
     names.add(name);
-    if (!integer(item.width, 512) || !integer(item.height, 512) || !integer(item.bytes, 204800)) return fail("Item width, height or bytes is outside its integer bounds.");
+    if (!integer(item.width, 512) || !integer(item.height, 512) || !integer(item.bytes, THUMB_MAX_BYTES)) return fail("Item width, height or bytes is outside its integer bounds.");
     if (!text(item.sourceId, 1, 200) || !text(item.title, 0, 300) || !text(item.credit, 1, 300) || !item.credit.trim()) return fail("Item text or credit is invalid.");
     if (!licenceOk(item.source, item.licence, item.licenceUrl)) return fail("Item source, licence or licenceUrl is not class A.");
     if (!pageUrlOk(item.source, item.pageUrl)) return fail("Item pageUrl is invalid for its source.");
@@ -77,7 +93,7 @@ export async function validateBundle(manifestText, files) {
   if (!exactKeys(embeddings, ["dtype", "dim", "count", "data"])) return fail("Embeddings keys are invalid.");
   if (embeddings.dtype !== "float16" || embeddings.dim !== 512 || embeddings.count !== manifest.items.length) return fail("Embeddings dtype, dim or count is invalid.");
   const byteCount = embeddings.count * 1024;
-  if (typeof embeddings.data !== "string" || embeddings.data.length !== 4 * Math.ceil(byteCount / 3)
+  if (byteCount > MAX_EMBEDDING_BYTES || typeof embeddings.data !== "string" || embeddings.data.length !== 4 * Math.ceil(byteCount / 3)
       || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(embeddings.data)) return fail("Embeddings must be base64 of exactly count × 1024 bytes.");
   let decoded;
   try { decoded = atob(embeddings.data); }

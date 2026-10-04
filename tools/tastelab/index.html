@@ -10,8 +10,8 @@
   --muted: #586074;
   --line: #d3d7e0;
   --accent: #2f45c9;
-  --display: "Familjen Grotesk", "Segoe UI", system-ui, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+  --display: "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", "Consolas", monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { --bg: #0e1016; --panel: #151821; --fg: #e4e7ef; --muted: #98a0b4; --line: #272b37; --accent: #8e9bff; color-scheme: dark; }
@@ -57,7 +57,7 @@ aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; c
 .hint { color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
 #looksPanel { display: grid; gap: 12px; min-width: 0; }
 #looksStats, #imagesStats, .images-panel { display: grid; gap: 16px; min-width: 0; }
-[role="tabpanel"][hidden], #looksPanel[hidden], #looksStats[hidden], #imagesStats[hidden], #imagePairDetail[hidden] { display: none; }
+[role="tabpanel"][hidden], #looksPanel[hidden], #looksStats[hidden], #imagesStats[hidden], #imagePairDetail[hidden], #imageAnswersRetry[hidden] { display: none; }
 .images-panel h2 { font-size: 14px; margin: 0 0 8px; }
 .bundle-open { display: grid; gap: 8px; font-size: 13px; }
 .bundle-open label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -73,7 +73,6 @@ aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; c
 #imagePairDetail { display: grid; gap: 12px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;600&family=JetBrains+Mono&display=swap">
 <div class="shell">
   <header>
     <h1>Taste Lab</h1>
@@ -115,6 +114,7 @@ aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; c
         <ul id="openBundles" aria-label="Open bundles"></ul>
         <ul id="imageRefusals" aria-label="Bundle refusals"></ul>
         <p id="imageCacheNote" class="image-hint" hidden>The browser cache is unavailable; open the folder again next time.</p>
+        <button type="button" id="imageAnswersRetry" hidden>Retry reading stored answers</button>
       </section>
       <div id="imageView"></div>
       <p id="imageEmpty" class="image-hint">Open a bundle folder to start rating images.</p>
@@ -136,7 +136,7 @@ aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; c
         <form id="imagePairForm" class="reason">
           <label for="imagePairNote">What differs?</label>
           <input id="imagePairNote" minlength="1" maxlength="280" required autocomplete="off">
-          <button type="submit">Save pair note</button>
+          <button type="submit" id="imagePairSave">Save pair note</button>
           <button type="button" id="imagePairClose">Close</button>
         </form>
       </section>

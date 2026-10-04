@@ -50,8 +50,8 @@ test("rating and note reducers are pure, skip stays local, and undo deletes only
   assert.deepEqual(state.history, [b]);
   assert.deepEqual(state.changes.get(b), rating(b, "dislike"));
   const ratedState = state, rated = structuredClone(state);
-  state = reduceRating(state, { type: "note", imageId: b, note: "why" });
-  assert.deepEqual(state.ratings.get(b), rating(b, "dislike", "why"));
+  state = reduceRating(state, { type: "note", imageId: b, note: "why", ratedAt: time });
+  assert.deepEqual(state.ratings.get(b), { ...rating(b, "dislike", "why"), ratedAt: "2026-10-04T12:00:00.001Z" });
   assert.deepEqual(state.history, [b]);
   const notedState = state, beforeUndo = structuredClone(state);
   state = reduceRating(state, { type: "undo" });
@@ -66,8 +66,20 @@ test("rating and note reducers are pure, skip stays local, and undo deletes only
   assert.equal(skipped.skips.has(b), true);
   assert.equal(beforeUndo.ratings.has(b), true);
   state = reduceRating(state, { type: "rate", ...rating(c) });
-  state = reduceRating(state, { type: "note", imageId: c, note: "" });
+  state = reduceRating(state, { type: "note", imageId: c, note: "", ratedAt: time });
   assert.equal(state.ratings.get(c).note, null, "a cleared note is null");
+});
+
+for (const clock of ["later", "unchanged", "backwards"]) test(`adding, replacing and clearing a note advance ratedAt with a ${clock} clock`, () => {
+  let state = reduceRating(createRatingState(), { type: "rate", ...rating() });
+  for (const note of ["First explanation", "Replacement explanation", ""]) {
+    const previous = state, before = structuredClone(state), last = Date.parse(state.ratings.get(a).ratedAt);
+    const ratedAt = new Date(last + (clock === "later" ? 1000 : clock === "backwards" ? -1000 : 0)).toISOString();
+    state = reduceRating(state, { type: "note", imageId: a, note, ratedAt });
+    assert.equal(Date.parse(state.ratings.get(a).ratedAt), last + (clock === "later" ? 1000 : 1));
+    assert.equal(state.ratings.get(a).note, note || null);
+    assert.deepEqual(previous, before, "the reducer does not mutate its input");
+  }
 });
 
 test("successive undo operations respect rating order without undoing a skip", () => {
@@ -133,7 +145,7 @@ test("key mappings are isolated by tab, retain Looks keys, and ignore repeat and
   assert.equal(keyAction(event("A", { target: { closest: (value) => value.includes("[role='tablist']") ? {} : null } }), "looks"), "A");
 });
 
-function fakeDB(ratings = [], pairs = [], onWrite = async () => {}) {
+function fakeDB(ratings = [], pairs = [], onWrite = async () => {}, onRead = async () => {}) {
   const values = new Map([...ratings.map(ratingDocument), ...pairs.map(pairDocument)].map(({ path, body }) => [path, body]));
   const reads = [], writes = [];
   function collection(name, field = null, filters = [], size = 500) {
@@ -146,7 +158,9 @@ function fakeDB(ratings = [], pairs = [], onWrite = async () => {}) {
         const rows = [...values].filter(([path]) => path.startsWith(name + "/")).map(([path, body]) => ({ id: path.slice(name.length + 1), body }))
           .filter(({ body }) => filters.every(([key, op, value]) => op === ">" ? body[key] > value : body[key] === value))
           .sort((a, b) => a.body[field] < b.body[field] ? -1 : a.body[field] > b.body[field] ? 1 : 0).slice(0, size);
-        return { size: rows.length, docs: rows.map(({ id, body }) => ({ id, data: () => structuredClone(body) })) };
+        const snapshot = rows.map(({ id, body }) => ({ id, body: structuredClone(body) }));
+        await onRead(name);
+        return { size: snapshot.length, docs: snapshot.map(({ id, body }) => ({ id, data: () => structuredClone(body) })) };
       },
     };
   }
@@ -205,14 +219,14 @@ function fixture(indices = [0, 1, 2]) {
     model: { id: "synthetic", weightsSha256: "ab".repeat(32) }, items,
     embeddings: { dtype: "float16", dim: 512, count: items.length, data: data.toString("base64") } };
   files.push(["manifest.json", new TextEncoder().encode(JSON.stringify(manifest))]);
-  return files.map(([name, bytes]) => ({ name, webkitRelativePath: "bundle/" + name, arrayBuffer: async () => bytes.slice().buffer }));
+  return files.map(([name, bytes]) => ({ name, size: bytes.length, webkitRelativePath: "bundle/" + name, arrayBuffer: async () => bytes.slice().buffer }));
 }
 
 async function withUI(db, run) {
   const keys = ["document", "Worker", "indexedDB", "URL"], saved = keys.map((key) => Object.getOwnPropertyDescriptor(globalThis, key));
   const elements = new Map(), status = [], workers = [], created = [], revoked = [], NativeURL = globalThis.URL;
   const $ = (id) => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
-  for (const id of ["imageCacheNote", "imageNoteForm", "imagePairDetail"]) $(id).hidden = true;
+  for (const id of ["imageCacheNote", "imageNoteForm", "imagePairDetail", "imageAnswersRetry"]) $(id).hidden = true;
   globalThis.document = { getElementById: $, createElement: (tag) => new Element(tag) };
   globalThis.indexedDB = { open() { throw new Error("Cache blocked"); } };
   globalThis.URL = class extends NativeURL {
@@ -335,5 +349,97 @@ test("late worker replies after a close cannot restore an image or enable rating
     worker.reply(message);
     assert.equal($("imageView").children.length, 0);
     assert.equal($("imageLike").disabled, true);
+  });
+});
+
+for (const collection of ["imageRatings", "imagePairs"]) test(`a failed initial ${collection} read pauses all answer writes until retry`, async () => {
+  let unavailable = true;
+  const original = rating(a, "dislike", "Original explanation"), originalPair = pair(b, a);
+  const db = fakeDB([original], [originalPair], undefined, async (name) => {
+    if (unavailable && name === collection) throw new Error("read unavailable");
+  });
+  await withUI(db, async ({ ui, $, open, status }) => {
+    assert.match(status.at(-1), /Stored image answers.*could not be read.*Rating is paused.*not overwritten/);
+    await open();
+    assert.equal($("imageView").children.length, 1, "viewing remains available");
+    assert.equal($("bundleFolder").disabled, false);
+    for (const id of ["imageLike", "imageDislike", "imageUndo", "imageNoteButton", "imageNote", "imagePairNote", "imagePairSave"]) {
+      assert.equal($(id).disabled, true, id);
+    }
+    assert.equal($("imageAnswersRetry").hidden, false);
+    unavailable = false; // Writes would now succeed, but the baseline is still unknown.
+    for (const id of ["imageLike", "imageDislike", "imageUndo", "imageNoteButton"]) await $(id).fire("click");
+    for (const key of ["ArrowRight", "ArrowLeft", "z", "w"]) ui.handleKey(event(key, { preventDefault() {} }));
+    $("imageNote").value = "Overwritten";
+    await $("imageNoteForm").fire("submit");
+    $("imagePairNote").value = "Overwritten pair";
+    await $("imagePairForm").fire("submit");
+    await tick();
+    assert.equal(db.writes.length, 0);
+    assert.deepEqual([...db.values.values()], [original, originalPair]);
+    await $("imageAnswersRetry").fire("click"); await tick();
+    assert.equal($("imageAnswersRetry").hidden, true);
+    assert.equal($("imageDislikes").textContent, "1");
+    assert.deepEqual((await ui.exportData({ version: 2 })).images.ratings, [original]);
+    await $("imageLike").fire("click"); await tick();
+    assert.equal(db.values.get(`imageRatings/${b}`).verdict, "like");
+    assert.deepEqual(db.values.get(`imageRatings/${a}`), original);
+  });
+});
+
+test("export retains known answers and Looks data when reads and writes fail", async () => {
+  let unavailable = false;
+  const storedRating = rating(c, "dislike", "Stored note"), storedPair = pair(a, c);
+  const fail = async () => { if (unavailable) throw new Error("storage outage"); };
+  const db = fakeDB([storedRating], [storedPair], fail, fail);
+  await withUI(db, async ({ ui, $, open, status }) => {
+    await open(); unavailable = true;
+    await $("imageLike").fire("click"); await tick();
+    assert.match(status.at(-1), /not saved/);
+    const base = { kind: "tastelab-export", version: 2, comparisons: [{ answer: "A" }], sessions: [{ settled: {} }], presets: [{ look: {} }] };
+    const data = await ui.exportData(base);
+    for (const key of ["comparisons", "sessions", "presets"]) assert.deepEqual(data[key], base[key]);
+    assert.equal(data.images.ratings.find((record) => record.imageId === a).verdict, "like");
+    assert.deepEqual(data.images.ratings.find((record) => record.imageId === c), storedRating);
+    assert.deepEqual(data.images.pairs, [storedPair]);
+    assert.match(status.at(-1), /could not be refreshed.*another tab may be missing/);
+    let warning = "";
+    await ui.exportData(base, (message) => { warning = message; });
+    assert.match(warning, /could not be refreshed.*another tab may be missing/);
+  });
+});
+
+test("export after failed initial reads still contains Looks data and warns about missing stored answers", async () => {
+  const db = fakeDB([rating()], [], undefined, async () => { throw new Error("storage outage"); });
+  await withUI(db, async ({ ui, $, open, status }) => {
+    await open(); await $("imageLike").fire("click"); await tick();
+    const base = { kind: "tastelab-export", version: 2, comparisons: [{ answer: "B" }], presets: [{ look: {} }] };
+    const data = await ui.exportData(base);
+    assert.deepEqual(data.images.ratings, []); assert.deepEqual(data.images.pairs, []);
+    assert.deepEqual(data.comparisons, base.comparisons); assert.deepEqual(data.presets, base.presets);
+    assert.equal(db.writes.length, 0);
+    assert.match(status.at(-1), /could not be refreshed.*another tab may be missing/);
+  });
+});
+
+for (const action of ["undo", "rate"]) test(`export reflects a saved ${action} while its ratings read is paused`, async () => {
+  let paused = false, release, began;
+  const gate = new Promise((resolve) => { release = resolve; }), reading = new Promise((resolve) => { began = resolve; });
+  const db = fakeDB([], [], undefined, async (name) => {
+    if (paused && name === "imageRatings") { began(); await gate; }
+  });
+  await withUI(db, async ({ ui, $, open }) => {
+    await open(); await $("imageLike").fire("click"); await tick();
+    assert.equal(db.values.get(`imageRatings/${a}`).verdict, "like");
+    paused = true;
+    const exporting = ui.exportData({ version: 2 });
+    await reading;
+    await $(action === "undo" ? "imageUndo" : "imageLike").fire("click"); await tick();
+    if (action === "undo") assert.equal(db.values.has(`imageRatings/${a}`), false);
+    else assert.equal(db.values.get(`imageRatings/${b}`).verdict, "like");
+    release();
+    const data = await exporting;
+    if (action === "undo") assert.deepEqual(data.images.ratings, []);
+    else assert.deepEqual(data.images.ratings.map((record) => record.imageId), [a, b]);
   });
 });

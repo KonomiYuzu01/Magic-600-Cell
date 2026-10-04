@@ -35,10 +35,10 @@ const [a, b, c] = JSON.parse(process.argv[2]), at = "2026-10-04T07:00:00.000Z";
 let state = ui.createRatingState();
 state = ui.reduceRating(state, { type: "rate", imageId: a, verdict: "like", ratedAt: at });
 state = ui.reduceRating(state, { type: "rate", imageId: b, verdict: "dislike", ratedAt: at });
-state = ui.reduceRating(state, { type: "note", imageId: b, note: ui.cleanNote("  Too\\tbusy  ") });
+state = ui.reduceRating(state, { type: "note", imageId: b, note: ui.cleanNote("  Too\\tbusy  "), ratedAt: at });
 state = ui.reduceRating(state, { type: "rate", imageId: c, verdict: "like", ratedAt: at });
-state = ui.reduceRating(state, { type: "note", imageId: c, note: "Kept" });
-state = ui.reduceRating(state, { type: "note", imageId: c, note: ui.cleanNote(" ") });
+state = ui.reduceRating(state, { type: "note", imageId: c, note: "Kept", ratedAt: at });
+state = ui.reduceRating(state, { type: "note", imageId: c, note: ui.cleanNote(" "), ratedAt: at });
 const pair = ui.pairDocument({ likedImageId: a, dislikedImageId: b, note: ui.cleanNote("Calmer\\tlines"), notedAt: at }).body;
 const base = { kind: "tastelab-export", version: 2, presets: [] };
 process.stdout.write(JSON.stringify(ui.assembleImageExport(base, { bundles: [], ratings: [], pairs: [],
@@ -329,6 +329,31 @@ class BundleTests(test_store.TempDir):
         self.assertEqual(sorted((r.sha256, r.verdict, r.note) for r in self.library.ratings()),
                          sorted([(a, "like", None), (b, "dislike", "Too busy"), (c, "like", None)]))
         self.assertEqual([row[0] for row in self.library.db.execute("SELECT note FROM pair_notes")], ["Calmer lines"])
+
+    @unittest.skipIf(NODE is None, "node is not on PATH")
+    def test_importer_accepts_added_replaced_and_cleared_page_notes(self):
+        a = self.add()
+        script = """
+const ui = await import(process.argv[1]), imageId = process.argv[2], at = "2026-10-04T07:00:00.000Z";
+let state = ui.reduceRating(ui.createRatingState(), { type: "rate", imageId, verdict: "like", ratedAt: at });
+const base = { kind: "tastelab-export", version: 2, presets: [] }, exports = [];
+const capture = () => exports.push(ui.assembleImageExport(base, { bundles: [], ratings: [...state.ratings.values()], pairs: [] }));
+capture();
+for (const note of ["Added explanation", "Replacement explanation", ""]) {
+  state = ui.reduceRating(state, { type: "note", imageId, note, ratedAt: at });
+  capture();
+}
+process.stdout.write(JSON.stringify(exports));
+"""
+        run = subprocess.run([NODE, "--input-type=module", "-e", script, PAGE_IMAGES_UI, a],
+                             capture_output=True, text=True, encoding="utf-8", timeout=120)
+        self.assertEqual(run.returncode, 0, run.stderr[-2000:])
+        exports = json.loads(run.stdout)
+        self.assertEqual(len(exports), 4)
+        for data, note in zip(exports, [None, "Added explanation", "Replacement explanation", None]):
+            with self.subTest(note=note):
+                self.assertEqual(fetch.import_ratings(self.library, data), {"ratings": 1, "pairs": 0, "unknown": []})
+                self.assertEqual([(r.sha256, r.verdict, r.note) for r in self.library.ratings()], [(a, "like", note)])
 
     def test_import_newest_timestamp_wins_and_unknown_ids_are_reported(self):
         a, b = self.add(), self.add()

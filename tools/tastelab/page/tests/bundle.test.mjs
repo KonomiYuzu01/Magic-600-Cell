@@ -221,3 +221,27 @@ test("unit norm tolerance and fractional UTC calendar times are accepted", async
     assert.equal((await validateBundle(syncManifest(f), f.files)).ok, true);
   }
 });
+
+test("bundle validation refuses actual manifest bytes over the selection bound", async () => {
+  const f = fixture(), max = 8 * 1024 * 1024;
+  const manifestText = syncManifest(f) + " ".repeat(max);
+  f.files.set("manifest.json", encode(manifestText));
+  const result = await validateBundle(manifestText, f.files);
+  assert.equal(result.ok, false); assert.match(result.errors[0], /manifest.*byte/i);
+});
+
+test("a full writer-style manifest with escaped Unicode metadata fits the bound", async () => {
+  const f = fixture(300);
+  for (const item of f.manifest.items) {
+    item.sourceId = "\u{1f600}".repeat(100); item.title = "\u{1f600}".repeat(150); item.credit = "\u{1f600}".repeat(150);
+    item.pageUrl = "https://commons.wikimedia.org/wiki/" + "\u{1f600}".repeat(230);
+    item.licenceUrl = "https://creativecommons.org/licenses/by-sa/4.0/?" + "\u{1f600}".repeat(225);
+  }
+  // bundle.py uses json.dumps(indent=2), with ensure_ascii=True. Escape both
+  // UTF-16 surrogates to mirror its non-BMP JSON representation.
+  const manifestText = JSON.stringify(f.manifest, null, 2).replace(/[\u007f-\uffff]/g,
+    (char) => "\\u" + char.charCodeAt(0).toString(16).padStart(4, "0")) + "\n";
+  f.files.set("manifest.json", encode(manifestText));
+  assert.ok(f.files.get("manifest.json").length < 8 * 1024 * 1024);
+  assert.equal((await validateBundle(manifestText, f.files)).ok, true);
+});
