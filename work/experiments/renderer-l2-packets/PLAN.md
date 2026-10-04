@@ -1,6 +1,6 @@
 # Level 2 plan: the S-B drawing method inside Godot and Qt (E-2.4-02 and E-2.4-03, H-09)
 
-Status: plan, written on stage day 3 (3 October 2026). The Astra plan check (20261003T213525Z-b263caa3) found the native route and the shader exception admissible and raised two major gaps; this revision of stage day 4 answers them in section 3 and moves the ABI 2 header text into L2-N. It turns into packets after the scoped re-check.
+Status: plan, written on stage day 3 (3 October 2026). The Astra plan check (20261003T213525Z-b263caa3) found the native route and the shader exception admissible and raised two major gaps; this revision of stage day 4 answers them in section 3 and moves the ABI 2 header text into L2-N. It turns into packets after the scoped re-check. L2-N is integrated (stage day 4; see the attempts table of its packet). The section 3 checks are specified exactly in `HARNESS.md`. A shared finalizer and runner (L2-F) now judge both candidates, so section 4 has three harness packets.
 
 Level 2 is unlocked. S-B met the W3 gate on three owner-attended cold runs of build `2b5bf5e6`. Both framework candidates passed level 1: Godot 4.7.2 .NET (`work/experiments/renderer-sa2/RESULT.md`) and Qt 6.10.3 (`work/experiments/renderer-sd/RESULT.md`).
 
@@ -41,7 +41,7 @@ Why this route:
 
 ## 3. What each harness must prove before it writes a gate record
 
-`tools/perf/renderer_gate.py` stays unchanged: nothing under the root `tools/` changes. The gate trusts the declared backbuffer size and the declared build identity, and it accepts a run without `vram_peak_mb`. So each level-2 harness (L2-G, L2-Q) checks the following itself, and refuses to write a gate run record when any check fails. The refusal is an exit code and a reason; no partial record is written.
+`HARNESS.md` gives the exact behaviour: options, call order, `harness.json`, refusal codes, identity and runner. `tools/perf/renderer_gate.py` stays unchanged: nothing under the root `tools/` changes. The gate trusts the declared backbuffer size and the declared build identity, and it accepts a run without `vram_peak_mb`. So the level-2 harness checks the following itself: each app (L2-G, L2-Q) records the facts, and the shared finalizer (L2-F) checks them and refuses to write a gate run record when any check fails. The refusal is an exit code and a reason; no partial record is written.
 
 **Native resolution (answers L2-PLAN-001).**
 - Each run records four sizes in physical pixels:
@@ -57,7 +57,7 @@ Why this route:
 - Acceptance test, before any formal capture: a debug switch that halves the producer target must make the harness refuse the run.
 
 **Complete run record and composite build identity (answers L2-PLAN-002).**
-- L2-G and L2-Q each own the whole run record that `renderer_gate.py` reads, in S-B's formats:
+- The level-2 harness owns the whole run record that `renderer_gate.py` reads, in S-B's formats. The apps and the DLL write their parts, and the shared finalizer writes `run.json`:
   - `run.json` and `trace.jsonl`;
   - the label check;
   - the PresentMon capture;
@@ -81,8 +81,9 @@ Why this route:
 |---|---|---|---|---|---|
 | L2-H | ABI version 2 contract: the additive scene functions, their semantics and error rules, written into the L2-N packet | Claude | the L2-N packet | — | — |
 | L2-N | Write `sa2_interop.h` ABI 2 to that contract, and implement it by porting S-B's drawing path into the DLL | Codex | `renderer-sa2/native/**`, including the header | `check_native.py` (build plus CPU self-test) | `check_native.py --gpu`: W1–W4 offscreen on WARP and the RTX 4070, geometry and label checks pass |
-| L2-G | Godot harness, level 2, including the section 3 checks | Codex | `renderer-sa2/project/**` and the run and check scripts in `renderer-sa2/` | `check_project.py`, including fixture tests of each section 3 refusal | level-2 runs, the section 3 acceptance tests and short capture, then three owner-attended cold W3 runs |
-| L2-Q | Qt harness, level 2, including the section 3 checks | Codex | `renderer-sd/**` | `check_project.py`, including fixture tests of each section 3 refusal | the same, candidate `sd` |
+| L2-F | Shared finalizer and runner (`HARNESS.md` sections 7 to 9): the only writer of run records, with every section 3 refusal | Codex | `renderer-l2/**` | `check_l2.py`, including a fixture test of each refusal | used by every level-2 run of both candidates |
+| L2-G | Godot app, level 2 (`HARNESS.md` sections 2 to 6), and its prepare step | Codex | `renderer-sa2/project/**`, `renderer-sa2/prepare_l2.py`, `renderer-sa2/check_project.py`, `renderer-sa2/README.md` | `check_project.py`: ABI 2 pins and static checks of the app | level-2 runs, the section 3 acceptance tests and short capture, then three owner-attended cold W3 runs |
+| L2-Q | Qt app, level 2 (`HARNESS.md` sections 2 to 6), and its prepare step | Codex | `renderer-sd/app/**`, `renderer-sd/build.cmd`, `renderer-sd/prepare_l2.py`, `renderer-sd/check_project.py`, `renderer-sd/README.md` | the same, `renderer-sd/check_project.py` | the same, candidate `sd` |
 | H-09 | Constraint lists | Claude | both `RESULT.md` files | — | from the level-2 runs, with framework source facts verified against the pinned versions |
 
 The scene functions L2-H adds:
@@ -98,7 +99,8 @@ The scene functions L2-H adds:
 The header moves from Claude to L2-N to save a round. The contract stays Claude's: Claude checks the header text against the contract when integrating L2-N, before L2-G and L2-Q are dispatched.
 
 Sequencing:
-- L2-G and L2-Q start in parallel once L2-N is integrated, because both depend on its ABI.
+- L2-F, L2-G and L2-Q start in parallel once L2-N is integrated and `HARNESS.md` is committed. `HARNESS.md` fixes their interfaces (`harness.json`, `launch.json` and the finalizer's command line), so none waits for another.
+- One finalizer and one runner judge both candidates. A difference between the candidates then comes from the frameworks, not from two copies of the checks.
 - Packet E-2.4-03 allows changes only under `renderer-sd/`, while S-D loads the DLL from `renderer-sa2/native/`. So L2-Q builds against the integrated L2-N header and DLL without changing them.
 - Every Codex-authored change gets Claude's review. Non-critical code gets one Sol fast review; none of these files is on a critical path.
 
@@ -108,7 +110,7 @@ Sequencing:
 |---|---|
 | 3 (night) | Astra plan check of this plan (`plan-check-1.md`): the route sets how both candidates are judged and adds a contract, so it is a design decision. The H-06 preliminary series runs once that check ends and the owner is away (section 6). |
 | 4 | Answer the plan check (this revision, scoped re-check). Write the L2-N packet with the ABI 2 contract and dispatch it. |
-| 5 | Integrate L2-N: check the header against the contract, then run the GPU self-test. Dispatch L2-G and L2-Q in parallel. |
+| 5 | Integrate L2-N: check the header against the contract, then run the GPU self-test. Dispatch L2-F, L2-G and L2-Q in parallel. |
 | 6 to 8 | Integrate. Level-2 runs, the section 3 acceptance tests and the short capture per candidate, then the owner-attended W3 runs per candidate, then the H-09 lists and the result cards. |
 | 9 (window day 7) | Packet E-2.4-04: the day-7 go/no-go, an Astra gate ruling. |
 
