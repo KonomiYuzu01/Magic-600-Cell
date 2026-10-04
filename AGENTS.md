@@ -41,7 +41,7 @@ Roles:
 Model calls:
 - Pass the model and the effort explicitly on every call. Do not rely on inherited defaults.
 - Codex calls default to `max`. Use `ultra` for joint attacks, escalation after repeated failure, coupled decision packages and the three Astra gates. If `ultra` is unavailable, say so and fall back to `max`. Use `high` only for mechanical checks that no script can do.
-- Speed tier: use `fast` for scoped verification rounds, plan re-checks, mechanical checks and reviews of non-critical changes. Use the standard tier for full reviews and plan checks of critical-path changes, joint attacks and escalations. Gate rulings always use the standard tier.
+- Speed tier (owner decision, 4 October 2026): use `fast` for every plan check, review and scoped verification round, critical paths included, and for mechanical checks. Use the standard tier only for gate rulings, joint attacks and escalations.
 - Sol works in a proactive persistent mode. Every review packet states "review only; do not perform follow-up work", and review calls stay read-only.
 - ChatGPT Space and other hosted workspaces are never an authority; the repository is.
 
