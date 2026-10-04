@@ -15,6 +15,8 @@ if (input.task === 'colouring') {
   output = Array.from({length: 5}, (_, i) => Array.from(properColouring(20, input.pairs, i + 4)));
 } else if (input.task === 'easing') {
   output = input.values.map(([t, a, b]) => ease(t, a, b));
+} else if (input.task === 'hard-check') {
+  output = space.hardCheck(input.look, input.pairs, {deltaE: 0, bgL: 0});
 } else if (input.task === 'colour') {
   output = {
     conversions: input.rgb.map(rgb => ({lab: colour.linearToOklab(rgb), roundTrip: colour.oklabToLinear(colour.linearToOklab(rgb)),

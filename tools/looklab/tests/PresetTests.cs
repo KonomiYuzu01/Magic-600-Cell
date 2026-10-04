@@ -157,10 +157,55 @@ internal static partial class Program
         foreach (int version in new[] { -1, 0, 2, 99 }) Refuse(() => PresetMigrations.Migrate("{}", version), "version");
     }
 
+    private static void PresetParseMigration()
+    {
+        JsonNode legacy = JsonNode.Parse(Read("presets/default.json"))!;
+        legacy["version"] = 0; legacy.AsObject().Remove("name"); legacy["title"] = "Migrated look";
+        legacy["params"]!["lightness"] = .61;
+        string text = legacy.ToJsonString(); int calls = 0;
+        string Migrate(string source, int version)
+        {
+            Equal(source, text); Equal(version, 0); calls++;
+            JsonNode migrated = JsonNode.Parse(source)!;
+            migrated["version"] = 1; migrated["name"] = migrated["title"]!.DeepClone(); migrated.AsObject().Remove("title");
+            return migrated.ToJsonString();
+        }
+        Preset preset = Presets.Parse(text, Schema, Migrate);
+        Equal(calls, 1); Equal(preset.Name, "Migrated look"); Near(preset.Params.Number("lightness"), .61);
+        Sequence(Presets.CanonicalBytes(Presets.Parse(Encoding.UTF8.GetString(Presets.CanonicalBytes(preset, Schema)), Schema), Schema), Presets.CanonicalBytes(preset, Schema));
+        Refuse(() => Presets.Parse(text, Schema, (source, version) =>
+        {
+            JsonNode migrated = JsonNode.Parse(Migrate(source, version))!; migrated["params"]!["gap"] = .9;
+            return migrated.ToJsonString();
+        }), "gap");
+        Refuse(() => Presets.Parse(text, Schema, (source, version) =>
+        {
+            JsonNode migrated = JsonNode.Parse(Migrate(source, version))!; migrated["extra"] = true;
+            return migrated.ToJsonString();
+        }), "extra");
+        Refuse(() => Presets.Parse(text, Schema, (source, version) => source), "version");
+        Refuse(() => Presets.Parse(text, Schema), "version");
+    }
+
+    private static void PresetVersionGate()
+    {
+        foreach (int version in new[] { 0, 2, 99 })
+        {
+            var text = new JsonObject { ["format"] = "magic600-look-preset", ["version"] = version, ["futureKey"] = true }.ToJsonString();
+            Refuse(() => Presets.Parse(text, Schema), "version");
+        }
+        Refuse(() => Presets.Parse("{\"format\":\"unknown\",\"version\":99,\"futureKey\":true}", Schema), "format");
+    }
+
     private static JsonNode Export()
     {
-        var values = JsonNode.Parse(Read("presets/default.json"))!["params"]!;
-        var look = new JsonObject(); foreach (string id in ParameterSchema.TasteIds) look[id] = values[id]!.DeepClone();
+        var look = new JsonObject
+        {
+            ["hueRotation"] = 217, ["hueSpread"] = 284, ["lightness"] = .63, ["lightnessAlt"] = .08,
+            ["chroma"] = .16, ["classes"] = 7, ["bgLightness"] = .18, ["bgHue"] = 132, ["bgTint"] = .024,
+            ["gap"] = .17, ["edgeWeight"] = 1.25, ["edgeBrightness"] = .42, ["gloss"] = .35, ["glow"] = .28,
+            ["fog"] = .22, ["turnMs"] = 333.3, ["easeA"] = .21, ["easeB"] = .64
+        };
         var entries = new JsonArray(); int i = 0;
         foreach (string family in new[] { "f1", "f2" }) foreach (string scene in new[] { "solving", "inspecting", "celebrating" })
             entries.Add(new JsonObject { ["family"] = family, ["scene"] = scene, ["name"] = family + " " + scene, ["look"] = i++ == 0 ? look : null });
@@ -169,9 +214,16 @@ internal static partial class Program
 
     private static void ImportNulls()
     {
-        string text = Export().ToJsonString(); ImportReport report = TasteImport.Parse(text, Schema);
-        Equal(report.Presets.Count, 1); Equal(report.Skips.Count, 5); Equal(report.Presets[0].Family, "f1"); Equal(report.Presets[0].Scene, "solving");
-        foreach (string id in ParameterSchema.TasteIds) Equal(report.Presets[0].Params.Values[id], Schema.Defaults.Values[id]);
+        JsonNode export = Export(); string text = export.ToJsonString(); ImportReport report = TasteImport.Parse(text, Schema);
+        JsonNode expectedLook = JsonNode.Parse(text)!["presets"]![0]!["look"]!;
+        Equal(report.Presets.Count, 1); Equal(report.Skips.Count, 5); Equal(report.Presets[0].Name, "f1 solving"); Equal(report.Presets[0].Family, "f1"); Equal(report.Presets[0].Scene, "solving");
+        foreach (string id in ParameterSchema.TasteIds)
+        {
+            double expected = expectedLook[id]!.GetValue<double>();
+            Check(expected >= Schema[id].Min && expected <= Schema[id].Max, id + " test value out of range");
+            double actual = id == "classes" ? report.Presets[0].Params.Integer(id) : report.Presets[0].Params.Number(id);
+            Equal(actual, expected, id); Check(report.Presets[0].Params.Values[id] != Schema[id].Default, id + " test uses default");
+        }
         foreach (ParameterDefinition p in Schema.Parameters.Where(p => !ParameterSchema.TasteIds.Contains(p.Id))) Equal(report.Presets[0].Params.Values[p.Id], p.Default);
         foreach (ImportSkip skip in report.Skips) Check(skip.Family != null && skip.Scene != null && skip.Reason.Contains("null", StringComparison.Ordinal), "skip omitted reason or identity");
         using var temp = new TestFolder(); string output = Path.Combine(temp.Path, "presets");
@@ -198,6 +250,35 @@ internal static partial class Program
         node = Export(); node["presets"]![0]!["look"]!["unknown"] = 1; Refuse(() => TasteImport.Parse(node.ToJsonString(), Schema), "unknown");
     }
 
+    private static void ImportReplacement()
+    {
+        using var temp = new TestFolder(); string output = Path.Combine(temp.Path, "presets"); Directory.CreateDirectory(output);
+        string[] otherNames = { "notes.txt", "preset-abc.json", "preset-01.json", "preset-1000.json", "preset-001.json.bak" };
+        foreach (string name in otherNames) File.WriteAllText(Path.Combine(output, name), "leave unchanged: " + name);
+        string subfolder = Path.Combine(output, "archive"); Directory.CreateDirectory(subfolder);
+        File.WriteAllText(Path.Combine(subfolder, "preset-999.json"), "leave nested file unchanged");
+        JsonNode exportA = Export();
+        for (int i = 1; i < 6; i++) exportA["presets"]![i]!["look"] = exportA["presets"]![0]!["look"]!.DeepClone();
+        Equal(TasteImport.Write(exportA.ToJsonString(), Schema, output).Presets.Count, 6);
+        var before = Directory.GetFiles(output, "*", SearchOption.AllDirectories).ToDictionary(p => p, File.ReadAllBytes);
+        JsonNode invalid = exportA.DeepClone(); invalid["presets"]![5]!["look"]!["gap"] = .9;
+        Refuse(() => TasteImport.Write(invalid.ToJsonString(), Schema, output), "gap");
+        Sequence(Directory.GetFiles(output, "*", SearchOption.AllDirectories).OrderBy(p => p), before.Keys.OrderBy(p => p));
+        foreach (var file in before) Sequence(File.ReadAllBytes(file.Key), file.Value, "invalid import changed " + Path.GetFileName(file.Key));
+        JsonNode exportB = exportA.DeepClone(); var entries = exportB["presets"]!.AsArray();
+        while (entries.Count > 2) entries.RemoveAt(entries.Count - 1);
+        entries[0]!["name"] = "B first"; entries[1]!["name"] = "B second"; entries[0]!["look"]!["hueRotation"] = 218;
+        ImportReport report = TasteImport.Write(exportB.ToJsonString(), Schema, output);
+        Equal(report.Presets.Count, 2);
+        Sequence(Directory.GetFiles(output).Select(Path.GetFileName).OrderBy(p => p), otherNames.Concat(new[] { "preset-000.json", "preset-001.json" }).OrderBy(p => p));
+        for (int i = 0; i < 2; i++) Sequence(File.ReadAllBytes(Path.Combine(output, $"preset-{i:D3}.json")), Presets.CanonicalBytes(report.Presets[i], Schema));
+        foreach (string name in otherNames) Sequence(File.ReadAllBytes(Path.Combine(output, name)), before[Path.Combine(output, name)]);
+        Equal(File.ReadAllText(Path.Combine(subfolder, "preset-999.json")), "leave nested file unchanged");
+        JsonNode empty = Export(); empty["presets"]![0]!["look"] = null;
+        Equal(TasteImport.Write(empty.ToJsonString(), Schema, output).Presets.Count, 0);
+        Sequence(Directory.GetFiles(output).Select(Path.GetFileName).OrderBy(p => p), otherNames.OrderBy(p => p));
+    }
+
     private static void ThemeSets()
     {
         Preset[] set = (from family in new[] { "f1", "f2" } from scene in new[] { "solving", "inspecting", "celebrating" }
@@ -209,6 +290,18 @@ internal static partial class Program
         set[5] = set[5] with { Params = Schema.Defaults.With("gloss", new NumberValue(.8)) }; Check(ThemeSet.Check(set, Schema).Matches, "non-Structure group constrained");
         Equal(ThemeSet.Check(set.Take(5), Schema).Missing.Single(), "f2/celebrating");
         Refuse(() => ThemeSet.Check(set.Concat(new[] { set[0] }), Schema), "f1/solving");
+    }
+
+    private static void ThemeFieldOfView()
+    {
+        foreach (string id in new[] { "gap", "stickerShrink", "d4", "fieldOfView" }) Equal(Schema[id].Group, "Structure", id);
+        Preset[] set = (from family in new[] { "f1", "f2" } from scene in new[] { "solving", "inspecting", "celebrating" }
+                        select new Preset(family + " " + scene, family, scene, Schema.Defaults)).ToArray();
+        Check(ThemeSet.Check(set, Schema).Matches, "default set differs");
+        set[5] = set[5] with { Params = Schema.Defaults.With("fieldOfView", new NumberValue(1.2)) };
+        ThemeSetReport report = ThemeSet.Check(set, Schema);
+        Check(!report.Matches, "fieldOfView mismatch missed"); Equal(report.Differences.Single().Id, "fieldOfView");
+        Check(set[5].Params.Structure(1).Zoom != set[0].Params.Structure(1).Zoom, "fieldOfView must change zoom");
     }
 
     private static void ReadmeContract()

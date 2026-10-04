@@ -76,7 +76,7 @@ def main():
     number("inertia", "Motion", 0, 1, .01, 0, "Camera inertia amount.")
     add("settle", "Motion", "curve", {"a": 1 / 3, "b": 1 / 3}, "Normalized settling response with controls (a,0) and (1-b,1).")
     number("cameraDamping", "Motion", 0, 1, .01, 0, "Camera damping amount.")
-    number("fieldOfView", "Motion", .2, 2.8, .01, 2 * math.atan(1 / 1.15), "Vertical field of view in radians; zoom is one over tan(fov/2).")
+    number("fieldOfView", "Structure", .2, 2.8, .01, 2 * math.atan(1 / 1.15), "Vertical field of view in radians; zoom is one over tan(fov/2).")
     number("panelDensity", "Frame", .5, 2, .05, 1, "Instrument spacing and row density scale.")
     number("typeScale", "Frame", .75, 2, .05, 1, "Typography scale relative to the app's base type sample.")
     add("layoutId", "Layout", "enum", "central-stage", "Greybox layout structure id.", values=["central-stage", "docked-workbench"])

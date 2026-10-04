@@ -144,10 +144,12 @@ public sealed class TurnClock
     public TurnFrame Frame(Func<long, ReadOnlyMemory<uint>>? binding = null)
     {
         double elapsed = nowMs() - start;
-        if (!double.IsFinite(elapsed) || elapsed < 0 || elapsed / duration >= long.MaxValue)
+        double turns = elapsed / duration;
+        if (!double.IsFinite(elapsed) || elapsed < 0 || turns >= long.MaxValue)
             throw Json.Error("clock", "invalid elapsed time");
-        long index = (long)Math.Floor(elapsed / duration);
-        double phase = (elapsed - index * duration) / duration;
+        long index = (long)Math.Floor(turns);
+        // Use the same rounded quotient for both fields, keeping phase in the index's half-open interval.
+        double phase = turns - index;
         double theta = (index % 2 == 0 ? 1 : -1) * turn.Angle * Easing.Ease(phase, a, b);
         ReadOnlyMemory<uint> labels = (binding ?? turn.Snapshot)(index);
         turn.ValidateBinding(index, labels.Span);

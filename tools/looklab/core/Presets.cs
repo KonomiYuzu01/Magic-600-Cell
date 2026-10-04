@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+
+[assembly: InternalsVisibleTo("LookLab.Tests")]
 
 namespace LookLab.Core;
 
@@ -24,14 +28,18 @@ public static class Presets
 {
     public static Preset Load(string path, ParameterSchema schema) => Parse(File.ReadAllText(path), schema);
 
-    public static Preset Parse(string text, ParameterSchema schema)
+    public static Preset Parse(string text, ParameterSchema schema) => Parse(text, schema, PresetMigrations.Migrate);
+
+    // Tests inject a migration per call without registering production migrations or changing global state.
+    internal static Preset Parse(string text, ParameterSchema schema, Func<string, int, string> migrate)
     {
-        using var document = Json.Parse(text);
+        using var source = Json.Parse(text);
+        if (Json.Text(source.RootElement, "format") != "magic600-look-preset") throw Json.Error("format", "expected magic600-look-preset");
+        int version = Json.Integer(Json.Get(source.RootElement, "version"), "version");
+        using var document = Json.Parse(migrate(text, version));
         JsonElement root = document.RootElement;
+        Json.Header(root, "magic600-look-preset");
         Json.Keys(root, "format", "version", "name", "family", "scene", "params");
-        if (Json.Text(root, "format") != "magic600-look-preset") throw Json.Error("format", "expected magic600-look-preset");
-        int version = Json.Integer(Json.Get(root, "version"), "version");
-        PresetMigrations.Migrate(text, version);
         string name = Json.Text(root, "name");
         string? family = NullableText(Json.Get(root, "family"), "family"), scene = NullableText(Json.Get(root, "scene"), "scene");
         var values = new Dictionary<string, ParameterValue>(StringComparer.Ordinal);
@@ -147,12 +155,14 @@ public static class TasteImport
         return new ImportReport(presets.AsReadOnly(), skips.AsReadOnly());
     }
 
-    // Parse and validate the entire export before creating a directory or writing.
+    // Validate and serialize the entire export before creating a directory, removing old imports or writing.
     public static ImportReport Write(string text, ParameterSchema schema, string outputFolder)
     {
         ImportReport report = Parse(text, schema);
         byte[][] bytes = report.Presets.Select(p => Presets.CanonicalBytes(p, schema)).ToArray();
         Directory.CreateDirectory(outputFolder);
+        foreach (string path in Directory.EnumerateFiles(outputFolder))
+            if (Regex.IsMatch(Path.GetFileName(path), @"\Apreset-[0-9]{3}\.json\z", RegexOptions.CultureInvariant)) File.Delete(path);
         for (int i = 0; i < bytes.Length; i++) File.WriteAllBytes(Path.Combine(outputFolder, "preset-" + i.ToString("D3", CultureInfo.InvariantCulture) + ".json"), bytes[i]);
         return report;
     }

@@ -37,6 +37,7 @@ internal static partial class Program
     {
         var s = Mesh.CellStructure;
         PaletteReport report = Colour.Report(Schema.Defaults, s);
+        Check(report.GamutOk && report.MeetsThresholds == null, "valid gamut or absent thresholds misreported");
         Equal(report.SameRingAdjacencies, 600); Equal(report.Modes.Count, 4);
         Check(report.ClassPairs.All(p => p.A < p.B), "same-class or duplicate pairs in distance graph");
         int[] colouring = CellStructure.ProperColouring(20, s.RingGraph, Schema.Defaults.Integer("classes"))!;
@@ -45,8 +46,40 @@ internal static partial class Program
         Check(report.Modes.All(m => m.MinDistance > 0 && m.MinBackgroundLightness > 0 && m.MeetsDistance == null && m.MeetsBackground == null), "core invented thresholds");
         Check(Colour.Report(Schema.Defaults, s, new PaletteThresholds(0, 0)).Modes.All(m => m.MeetsDistance == true && m.MeetsBackground == true), "caller thresholds not applied");
         Check(Colour.Report(Schema.Defaults, s, new PaletteThresholds(10, 10)).Modes.All(m => m.MeetsDistance == false && m.MeetsBackground == false), "caller thresholds not applied");
+        Equal(Colour.Report(Schema.Defaults, s, new PaletteThresholds(0, 0)).MeetsThresholds, true);
+        Equal(Colour.Report(Schema.Defaults, s, new PaletteThresholds(10, 10)).MeetsThresholds, false);
         Refuse(() => Colour.Report(Schema.Defaults, s, new PaletteThresholds(-1, 0)), "thresholds");
         Refuse(() => Colour.Report(Schema.Defaults.With("classes", new IntegerValue(3)), s), "classes");
+    }
+
+    private static void PaletteGamutFailure()
+    {
+        ParameterSet look = Schema.Defaults.With("lightness", new NumberValue(.85)).With("lightnessAlt", new NumberValue(.2));
+        Schema.Validate(look);
+        foreach (PaletteThresholds? thresholds in new PaletteThresholds?[] { null, new(0, 0) })
+        {
+            PaletteReport report = Colour.Report(look, Mesh.CellStructure, thresholds);
+            Check(!report.GamutOk && report.MeetsThresholds == false, "gamut failure passed the check");
+            Sequence(report.GamutFailures.Select(f => f.ClassIndex), new int?[] { 1, 3, 5 });
+            Check(report.GamutFailures.All(f => f.Reason == "lightness"), "gamut failure omitted its cause");
+            Sequence(report.Modes.Select(m => m.Mode), Colour.Modes);
+            Check(report.Modes.All(m => m.MinDistance == null && m.MinBackgroundLightness == null && m.MeetsDistance == false && m.MeetsBackground == false), "uncomputed gamut minima must not pass");
+            Equal(report.SameRingAdjacencies, 600); Check(report.ClassPairs.Count > 0, "gamut failure lost the comparison graph");
+        }
+        // No schema-valid background fails (bgLightness is 0.05 to 0.95); With() bypasses validation to reach the path.
+        PaletteReport background = Colour.Report(Schema.Defaults.With("bgLightness", new NumberValue(1.1)), Mesh.CellStructure);
+        Equal(background.GamutFailures.Single(), new GamutFailure(null, "lightness"));
+        Check(background.MeetsThresholds == false, "background gamut failure passed");
+    }
+
+    private static void PaletteGamutFailureJs()
+    {
+        ParameterSet look = Schema.Defaults.With("lightness", new NumberValue(.85)).With("lightnessAlt", new NumberValue(.2));
+        PaletteReport report = Colour.Report(look, Mesh.CellStructure, new PaletteThresholds(0, 0));
+        using JsonDocument result = Node(new { task = "hard-check", look = TasteLook(look), pairs = report.ClassPairs.Select(p => new[] { p.A, p.B }) });
+        Equal(result.RootElement.GetProperty("ok").GetBoolean(), false);
+        Equal(result.RootElement.GetProperty("reasons")[0].GetString(), "gamut");
+        Equal(report.MeetsThresholds, false);
     }
 
     private static Dictionary<string, object> TasteLook(ParameterSet p) => ParameterSchema.TasteIds.ToDictionary(id => id, id => p.Values[id] switch
@@ -93,10 +126,10 @@ internal static partial class Program
             foreach (PaletteModeReport mode in reports[i].Modes)
             {
                 var oracle = expected.GetProperty("modes").GetProperty(mode.Mode);
-                Near(mode.MinDistance, oracle.GetProperty("distance").GetDouble(), 1e-11);
-                Near(mode.MinBackgroundLightness, oracle.GetProperty("background").GetDouble(), 1e-11);
-                Near(mode.MinDistance, expected.GetProperty("hardCheck").GetProperty("minDeltaE").GetProperty(mode.Mode).GetDouble(), 1e-11);
-                if (mode.Mode == "normal") Near(mode.MinBackgroundLightness, expected.GetProperty("hardCheck").GetProperty("minBgL").GetDouble(), 1e-11);
+                Near(mode.MinDistance!.Value, oracle.GetProperty("distance").GetDouble(), 1e-11);
+                Near(mode.MinBackgroundLightness!.Value, oracle.GetProperty("background").GetDouble(), 1e-11);
+                Near(mode.MinDistance.Value, expected.GetProperty("hardCheck").GetProperty("minDeltaE").GetProperty(mode.Mode).GetDouble(), 1e-11);
+                if (mode.Mode == "normal") Near(mode.MinBackgroundLightness.Value, expected.GetProperty("hardCheck").GetProperty("minBgL").GetDouble(), 1e-11);
             }
         }
         foreach (JsonElement p in reference.GetProperty("ranges").EnumerateArray())

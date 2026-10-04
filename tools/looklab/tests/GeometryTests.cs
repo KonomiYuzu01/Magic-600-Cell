@@ -105,6 +105,71 @@ internal static partial class Program
         foreach (var digestEntry in f.GetProperty("inputDigests").EnumerateObject()) Check(Read("fixtures/PROVENANCE.md").Contains(digestEntry.Value.GetString()!, StringComparison.Ordinal), "provenance digest absent");
     }
 
+    private static void SbFixturePortable()
+    {
+        using var temp = new TestFolder();
+        string checkout = Path.Combine(temp.Path, "checkout"), fixtures = Path.Combine(checkout, "tools/looklab/fixtures");
+        Directory.CreateDirectory(fixtures); Directory.CreateDirectory(Path.Combine(checkout, "assets"));
+        File.WriteAllText(Path.Combine(checkout, "assets/model.npz"), "synthetic model input for provenance only");
+        string script = Path.Combine(fixtures, "make_sb_fixture.py"); File.Copy(FileAt("fixtures/make_sb_fixture.py"), script);
+        var missing = Run("python", new[] { "-B", script }, workingDirectory: temp.Path);
+        Equal(missing.Code, 2); Check(missing.Error.Contains("input_folder", StringComparison.Ordinal), "input folder is not a required argument");
+        Equal(Directory.GetFiles(fixtures).Length, 1, "missing argument wrote fixtures");
+        string source = Path.Combine(temp.Path, "inputs"); Directory.CreateDirectory(Path.Combine(source, "reference")); Directory.CreateDirectory(Path.Combine(source, "workload"));
+        void Input(string name, byte[] bytes) => File.WriteAllBytes(Path.Combine(source, name), bytes);
+        Input("SOURCE_COMMIT", Encoding.UTF8.GetBytes(new string('1', 40) + "\n"));
+        Input("SPEC.md", Encoding.UTF8.GetBytes("synthetic specification\n")); Input("reference_geometry.py", Encoding.UTF8.GetBytes("# synthetic reference\n"));
+        Input("workload/turn.json", File.ReadAllBytes(FileAt("fixtures/three-cycle-turn.json")));
+        var cameras = new JsonArray();
+        for (int c = 0; c < 3; c++) cameras.Add(new JsonObject { ["name"] = "c" + c, ["rotations"] = new JsonArray() });
+        Input("cameras.json", Encoding.UTF8.GetBytes(new JsonObject { ["cameras"] = cameras }.ToJsonString()));
+        const int count = 9066; var sample = new byte[count * 4];
+        for (int i = 0; i < count; i++) BinaryPrimitives.WriteUInt32LittleEndian(sample.AsSpan(i * 4, 4), (uint)(i * 7));
+        Input("reference/sample.u32", sample);
+        var files = new JsonObject { ["sample.u32"] = AssetCatalogue.Digest(sample) };
+        for (int c = 0; c < 3; c++) foreach (string pose in new[] { "start", "mid", "end" })
+        {
+            var bytes = new byte[count * 12];
+            for (int i = 0; i < count; i++)
+            {
+                BinaryPrimitives.WriteSingleLittleEndian(bytes.AsSpan(i * 12, 4), i);
+                BinaryPrimitives.WriteSingleLittleEndian(bytes.AsSpan(i * 12 + 4, 4), c);
+                BinaryPrimitives.WriteSingleLittleEndian(bytes.AsSpan(i * 12 + 8, 4), pose == "start" ? 0 : pose == "mid" ? 1 : 2);
+            }
+            string name = $"c{c}_{pose}.f32"; Input("reference/" + name, bytes); files[name] = AssetCatalogue.Digest(bytes);
+        }
+        var index = new JsonObject
+        {
+            ["sample_count"] = count, ["files"] = files,
+            ["inputs"] = new JsonObject
+            {
+                ["work/experiments/renderer-sb/cameras.json"] = AssetCatalogue.Digest(File.ReadAllBytes(Path.Combine(source, "cameras.json"))),
+                ["work/experiments/renderer-sb/workload/turn.json"] = AssetCatalogue.Digest(File.ReadAllBytes(Path.Combine(source, "workload/turn.json")))
+            },
+            ["poses"] = new JsonObject { ["start"] = 0, ["mid"] = 1, ["end"] = 2 },
+            ["parameters"] = new JsonObject { ["cs"] = .76, ["ss"] = .82, ["d4"] = 1.18, ["zoom"] = 1.15 }, ["aspect"] = 1.6
+        };
+        Input("reference/index.json", Encoding.UTF8.GetBytes(index.ToJsonString()));
+        var run = Run("python", new[] { "-B", script, "inputs" }, workingDirectory: temp.Path);
+        Check(run.Code == 0, "portable fixture generation failed: " + run.Out + run.Error);
+        using var result = JsonDocument.Parse(File.ReadAllText(Path.Combine(fixtures, "sb-reference.json")));
+        Equal(result.RootElement.GetProperty("sourceCommit").GetString(), new string('1', 40));
+        Equal(result.RootElement.GetProperty("cases").GetArrayLength(), 9);
+        foreach (var data in result.RootElement.GetProperty("cases").EnumerateArray())
+        {
+            var samples = data.GetProperty("samples"); Equal(samples.GetArrayLength(), 300);
+            for (int i = 0; i < 300; i++)
+            {
+                int position = i * 9065 / 299;
+                Equal(samples[i].GetProperty("vertex").GetInt32(), position * 7);
+                Near(samples[i].GetProperty("reference")[0].GetDouble(), position);
+            }
+        }
+        Sequence(File.ReadAllBytes(Path.Combine(fixtures, "w3-turn.json")), File.ReadAllBytes(FileAt("fixtures/three-cycle-turn.json")));
+        Sequence(File.ReadAllBytes(Path.Combine(fixtures, "three-cycle-turn.json")), File.ReadAllBytes(FileAt("fixtures/three-cycle-turn.json")));
+        Check(File.ReadAllText(Path.Combine(fixtures, "PROVENANCE.md")).Contains("make_sb_fixture.py <input_folder>", StringComparison.Ordinal), "provenance omits input argument");
+    }
+
     private static void ProjectionKinds()
     {
         double[] q = Geometry.Identity(); Geometry.Rotate(q, 0, 2, .4); Geometry.Rotate(q, 1, 3, -.7);
@@ -197,6 +262,29 @@ internal static partial class Program
         Refuse(() => Turn.ValidateBinding(1, corrupted), "revision_odd_sha256");
     }
 
+    private static void TurnCycle()
+    {
+        const string digest = "702e667319e5cbd463baaa823e43d5c16660abbb9019964efa43cd8e5c297c07";
+        string path = FileAt("fixtures/three-cycle-turn.json");
+        Equal(AssetCatalogue.Digest(File.ReadAllBytes(path)), digest);
+        Check(Read("fixtures/PROVENANCE.md").Contains(digest, StringComparison.Ordinal), "synthetic fixture digest absent");
+        var cycle = new TurnData(path);
+        Near(cycle.Angle, 2 * Math.PI / 3);
+        uint[] even = cycle.Snapshot(0).ToArray(), odd = cycle.Apply(even, false), twice = cycle.Apply(odd, false);
+        Sequence(odd.Take(3), new uint[] { 2, 0, 1 }); Sequence(twice.Take(3), new uint[] { 1, 2, 0 });
+        Check(!twice.SequenceEqual(even), "synthetic fixture must not be an involution");
+        Sequence(cycle.Apply(odd, true), even); Sequence(cycle.Apply(cycle.Apply(even, true), false), even);
+        Equal(TurnData.LabelsDigest(even), cycle.EvenDigest); Equal(TurnData.LabelsDigest(odd), cycle.OddDigest);
+        Sequence(odd.Skip(3), even.Skip(3));
+        double now = 0; var clock = new TurnClock(cycle, 190, .25, .25, () => now);
+        now = 190; Sequence(clock.Frame().Labels.ToArray(), odd);
+        now = 380; Sequence(clock.Frame().Labels.ToArray(), even);
+        using var temp = new TestFolder(); JsonNode wrong = JsonNode.Parse(Read("fixtures/three-cycle-turn.json"))!;
+        wrong["inverse_src"] = wrong["move_src"]!.DeepClone(); wrong["inverse_dst"] = wrong["move_dst"]!.DeepClone();
+        string malformed = Path.Combine(temp.Path, "wrong-inverse.json"); File.WriteAllText(malformed, wrong.ToJsonString());
+        Refuse(() => new TurnData(malformed), "inverse");
+    }
+
     private static void TurnBoundaries()
     {
         double now = 1000, duration = 190;
@@ -225,5 +313,21 @@ internal static partial class Program
         malformed["move_dst"]![0] = malformed["move_dst"]![1]!.GetValue<int>();
         string path = Path.Combine(temp.Path, "turn.json"); File.WriteAllText(path, malformed.ToJsonString());
         Refuse(() => new TurnData(path), "move_dst");
+    }
+
+    private static void TurnFractionalBoundary()
+    {
+        double now = 0; const double duration = 333.3;
+        var clock = new TurnClock(Turn, duration, .25, .25, () => now);
+        foreach (var (elapsed, revision) in new[] { (999.9, 3L), (2 * duration, 2L) })
+        {
+            now = elapsed; TurnFrame frame = clock.Frame();
+            Equal(frame.TurnIndex, revision); Equal(frame.BoundRevision, revision);
+            Check(frame.Phase >= 0 && frame.Phase < 1, "fractional-duration phase outside [0,1)");
+            Equal(frame.Phase, 0.0); Equal(frame.Theta, 0.0);
+            Equal(TurnData.LabelsDigest(frame.Labels.Span), revision % 2 == 0 ? Turn.EvenDigest : Turn.OddDigest);
+        }
+        now = Math.BitDecrement(999.9); TurnFrame before = clock.Frame();
+        Equal(before.TurnIndex, 2L); Check(before.Phase >= 0 && before.Phase < 1 && before.Phase > .999, "phase before rounded boundary inconsistent");
     }
 }

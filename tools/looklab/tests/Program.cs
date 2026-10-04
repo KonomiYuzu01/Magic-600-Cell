@@ -46,6 +46,7 @@ internal static partial class Program
             ("NpyDtypeShapeAndOrderRefusals", NpyRefusals),
             ("SbReferenceAll2700Samples", SbReference),
             ("FixtureProvenanceAndTurnDigest", FixtureProvenance),
+            ("SbFixtureRequiredInputAndPortableOutput", SbFixturePortable),
             ("ProjectionKindsAndCameraOrder", ProjectionKinds),
             ("FullCellAdjacencyAndVertexIncidence", CellIncidence),
             ("RingsExactCoverClosedChainsAndPinnedGraph", RingFixture),
@@ -53,7 +54,9 @@ internal static partial class Program
             ("RingColouringTasteJsOracle", RingColouringJs),
             ("SlotToCellFullBoundary", SlotCells),
             ("TurnSnapshotsGeneratorAndInverse", TurnSnapshots),
+            ("TurnSyntheticThreeCycleInverseAndDigest", TurnCycle),
             ("TurnClockBeforeAndAtDAnd2D", TurnBoundaries),
+            ("TurnClockFractionalDurationPhaseAndBoundary", TurnFractionalBoundary),
             ("TurnClockMidpointAndStaleBindingRefusal", TurnMidpoint),
             ("ParameterSchemaAllKindsAndTasteRanges", ParameterContract),
             ("ParameterSchemaRefusals", ParameterRefusals),
@@ -62,10 +65,15 @@ internal static partial class Program
             ("PresetStrictLoadRefusals", PresetRefusals),
             ("PresetCultureInvariantDeAndFr", PresetCultures),
             ("PresetExplicitMigrationHook", PresetMigration),
+            ("PresetParseUsesMigratedText", PresetParseMigration),
+            ("PresetVersionGateBeforeChangedKeys", PresetVersionGate),
             ("TasteImportOnePopulatedFiveNull", ImportNulls),
             ("TasteImportMalformedAndVersionRefusals", ImportRefusals),
+            ("TasteImportSmallerSetAndInvalidExportLeaveOtherFiles", ImportReplacement),
             ("ColourRoundTripsAndGamutMapping", ColourConversions),
             ("PaletteClassPairsSameRingAndThresholdInputs", PaletteGraph),
+            ("PaletteGamutFailureIsStructuredAndFailsCheck", PaletteGamutFailure),
+            ("PaletteGamutFailureTasteJsOracle", PaletteGamutFailureJs),
             ("ColourAndPaletteTasteJsOracle", ColourJs),
             ("EasingEndpointsMonotonicityAndTurnClamp", EaseTests),
             ("EasingTasteJsOracle", EaseJs),
@@ -77,6 +85,7 @@ internal static partial class Program
             ("CostAllNullAndMeasuredSource", CostDefaults),
             ("CostValidationRefusals", CostRefusals),
             ("ThemeSetAllStructureMatchesAndDiffers", ThemeSets),
+            ("ThemeSetFieldOfViewIsStructure", ThemeFieldOfView),
             ("ReadmeFormatsParametersAndPrivacy", ReadmeContract)
         };
         int passed = 0, failed = 0, skipped = 0;
@@ -107,9 +116,9 @@ internal static partial class Program
         throw new Exception("expected refusal naming " + id);
     }
 
-    private static (int Code, string Out, string Error) Run(string executable, IEnumerable<string> args, string input = "")
+    private static (int Code, string Out, string Error) Run(string executable, IEnumerable<string> args, string input = "", string? workingDirectory = null)
     {
-        var info = new ProcessStartInfo(executable) { WorkingDirectory = Root, UseShellExecute = false, CreateNoWindow = true,
+        var info = new ProcessStartInfo(executable) { WorkingDirectory = workingDirectory ?? Root, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (string arg in args) info.ArgumentList.Add(arg);
         using Process process = Process.Start(info) ?? throw new Exception("could not start " + executable);

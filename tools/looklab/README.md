@@ -102,6 +102,8 @@ A minimal schema example:
 The first 18 ids below retain the Taste Lab meanings and ranges. `classes`
 counts ring colour classes. `gap` shrinks cells, so cs = 1 - gap; stickerShrink
 is the independent S-B ss. fieldOfView is in radians and zoom = 1/tan(fov/2).
+The Look Lab follows the plan's Structure group for `gap` because it defines
+cell shrink cs = 1 - gap, although the protocol table lists sticker gaps under Material.
 The colour-vision preview and grid overlay belong to app state.
 
 | Id | Group / kind | Range or values | Description |
@@ -142,7 +144,7 @@ The colour-vision preview and grid overlay belong to app state.
 | `inertia` | Motion / number | 0..1; step 0.01 | Camera inertia amount. |
 | `settle` | Motion / curve | a,b in [0,1] | Normalized settling response with controls (a,0) and (1-b,1). |
 | `cameraDamping` | Motion / number | 0..1; step 0.01 | Camera damping amount. |
-| `fieldOfView` | Motion / number | 0.2..2.8; step 0.01 | Vertical field of view in radians; zoom is one over tan(fov/2). |
+| `fieldOfView` | Structure / number | 0.2..2.8; step 0.01 | Vertical field of view in radians; zoom is one over tan(fov/2). |
 | `panelDensity` | Frame / number | 0.5..2; step 0.05 | Instrument spacing and row density scale. |
 | `typeScale` | Frame / number | 0.75..2; step 0.05 | Typography scale relative to the app's base type sample. |
 | `layoutId` | Layout / enum | central-stage, docked-workbench | Greybox layout structure id. |
@@ -164,6 +166,9 @@ Every schema id is required. Unknown or missing ids, duplicate keys, wrong types
 unknown format/version, non-finite and out-of-range values are refused with the
 id in the error. There are no implicit migrations. `PresetMigrations.Migrate`
 is the explicit version hook; no older-version migration is registered yet.
+Parsing checks the source format and version before applying that hook, then
+validates the migrated text's current keys and values. Tests inject a migration
+through an internal per-call overload, leaving the production registry unchanged.
 
 Canonical bytes use UTF-8 without BOM, LF, two-space indent, schema parameter
 order, culture-invariant shortest round-trip doubles, integral integer values
@@ -259,7 +264,9 @@ ignores; `presets` is the same in both. Other export versions are refused. A nul
 family, scene and reason. It produces no default preset. A malformed non-null
 look fails the entire import and names the entry and parameter. Other export
 metadata is ignored. `TasteImport.Write(text, schema, outputFolder)` validates
-the entire export before writing deterministic preset-NNN.json files. Its
+the entire export before removing its previous preset-NNN.json files in the
+output folder and writing the new set. Other filenames and subfolders are
+untouched; an invalid export removes and writes nothing. Its
 production caller must pass `work/loop-memory/looklab/presets/`; tests pass a
 fresh temporary folder. Filenames do not derive from exported names.
 
@@ -276,8 +283,13 @@ separately (600 undirected adjacencies) and contribute no distance minimum.
 For normal and each CVD mode it reports the minimum OKLab class-pair distance
 and minimum lightness distance to the background. In a CVD mode the background
 is simulated too. Optional `PaletteThresholds` come from the caller; without
-them the core assigns no marks. Normal-mode minima and all colour-distance
+them a report with a valid gamut assigns no marks. Normal-mode minima and all colour-distance
 minima are compared with the original space.js hardCheck in the Node test.
+Gamut mapping failures return `GamutFailures`, each with a zero-based class
+index (null for the background) and the mapping reason. `GamutOk` is false,
+all mode marks and `MeetsThresholds` are false, and uncomputed minima are null.
+G4 callers use `MeetsThresholds`: it is null for valid gamut without caller
+thresholds, true when all supplied marks pass, and false for any failed check.
 
 `Easing.Ease` uses preview.js's 40-step bisection and Bezier controls in the
 interior; clamped endpoints return exact 0 and 1. This avoids floating-point
@@ -387,6 +399,8 @@ The tests compare all 2,700 results with absolute-plus-relative tolerance
 `1e-5 + 1e-5*abs(reference)`. w3-turn.json is copied byte for byte and checked
 against the original reference index's input digest. Acceptance needs none of
 the external read-only source copies.
+three-cycle-turn.json is a separate test-only permutation with its file and
+full-label digests recorded in PROVENANCE.md; it makes inverse-array use observable.
 
 The engine's orbit-34 piece positions determine ascending vertex ids, following
 core.py. Their retained face incidence determines vertex_cells and cell_vertices;
@@ -406,8 +420,8 @@ rings and colours in ascending order and is tested for classes 4 through 8.
 
 Additional choices required where the plan leaves representation open:
 
-- Existing gap and new stickerShrink use Structure, following the geometry
-  contract; fieldOfView uses Motion, following the protocol table.
+- gap, stickerShrink and fieldOfView use Structure, following the plan's
+  geometry contract: they define cs, ss and zoom respectively.
 - Visibility is cellsVisible plus an optional normalized w slice band. It is
   view data, with all labels and slots retained. Inverted slice bounds describe
   an empty band; the core never reorders them or relabels state.
@@ -426,7 +440,7 @@ Additional choices required where the plan leaves representation open:
 Generation commands (standard library only):
 
 ```text
-python tools/looklab/fixtures/make_sb_fixture.py
+python tools/looklab/fixtures/make_sb_fixture.py <input_folder>
 python tools/looklab/fixtures/make_rings_fixture.py
 python tools/looklab/data/make_defaults.py
 ```

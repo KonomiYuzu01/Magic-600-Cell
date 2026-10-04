@@ -10,8 +10,10 @@ The S-B source branch is `claude/renderer-sb`, at commit
 Production command for both fixtures:
 
 ```text
-python tools/looklab/fixtures/make_sb_fixture.py
+python tools/looklab/fixtures/make_sb_fixture.py <input_folder>
 ```
+
+`input_folder` is the read-only S-B source copy containing reference/ and workload/.
 
 Inputs (paths relative to the S-B source copy):
 
@@ -60,3 +62,21 @@ Vertex ids retain core.py's ascending orbit-34 piece-position order; cells retai
 Tools: Python standard library (the packet environment is CPython 3.14.7).
 The generators contain their editable production source. Rerunning them requires
 the scoped read-only S-B source copy for the S-B fixtures; acceptance only needs committed fixtures.
+
+## Synthetic inverse-path fixture
+
+`three-cycle-turn.json` is a test-only 3-cycle of slots 0, 1 and 2, with angle
+2*pi/3 and an orthonormal coordinate plane. It is not a legal model generator
+and is never used for rendering. The other 259,797 slots retain their labels.
+Its explicit inverse restores solved labels; applying its forward move twice does not.
+
+Production command (also regenerates the S-B fixtures above):
+
+```text
+python tools/looklab/fixtures/make_sb_fixture.py <input_folder>
+```
+
+Fixture SHA-256: `702e667319e5cbd463baaa823e43d5c16660abbb9019964efa43cd8e5c297c07`.
+Solved-label SHA-256: `88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6`.
+Turned-label SHA-256: `9ca93cc22eb14ab832639c9f589a1255051f54b611a81fff819c283ccd8e16b6`.
+Label digests cover all 259,800 labels encoded as u32 little-endian, like W3.

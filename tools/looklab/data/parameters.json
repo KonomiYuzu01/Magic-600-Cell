@@ -402,7 +402,7 @@
     },
     {
       "id": "fieldOfView",
-      "group": "Motion",
+      "group": "Structure",
       "kind": "number",
       "min": 0.2,
       "max": 2.8,

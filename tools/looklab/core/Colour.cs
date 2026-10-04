@@ -6,9 +6,17 @@ namespace LookLab.Core;
 
 public sealed record GamutColour(bool Ok, string? Reason, double Chroma, double[] Linear, double[] Srgb, double[] Lab);
 public sealed record PaletteThresholds(double Distance, double BackgroundLightness);
-public sealed record PaletteModeReport(string Mode, double MinDistance, double MinBackgroundLightness,
+public sealed record PaletteModeReport(string Mode, double? MinDistance, double? MinBackgroundLightness,
     bool? MeetsDistance, bool? MeetsBackground);
-public sealed record PaletteReport(IReadOnlyList<PaletteModeReport> Modes, IReadOnlyList<(int A, int B)> ClassPairs, int SameRingAdjacencies);
+// ClassIndex is null for a background gamut failure; otherwise it is the zero-based palette class.
+public sealed record GamutFailure(int? ClassIndex, string Reason);
+public sealed record PaletteReport(IReadOnlyList<PaletteModeReport> Modes, IReadOnlyList<(int A, int B)> ClassPairs, int SameRingAdjacencies)
+{
+    public IReadOnlyList<GamutFailure> GamutFailures { get; init; } = Array.Empty<GamutFailure>();
+    public bool GamutOk => GamutFailures.Count == 0;
+    public bool? MeetsThresholds => !GamutOk || Modes.Any(m => m.MeetsDistance == false || m.MeetsBackground == false) ? false
+        : Modes.All(m => m.MeetsDistance == true && m.MeetsBackground == true) ? true : null;
+}
 
 public static class Colour
 {
@@ -104,7 +112,9 @@ public static class Colour
             throw Json.Error("thresholds", "finite nonnegative thresholds required");
         GamutColour[] colours = Palette(look);
         GamutColour background = Background(look);
-        if (!background.Ok || colours.Any(c => !c.Ok)) throw Json.Error("palette", "gamut mapping failed");
+        var failures = new List<GamutFailure>();
+        for (int i = 0; i < colours.Length; i++) if (!colours[i].Ok) failures.Add(new GamutFailure(i, colours[i].Reason!));
+        if (!background.Ok) failures.Add(new GamutFailure(null, background.Reason!));
         int[] classes = CellStructure.ProperColouring(20, structure.RingGraph, colours.Length) ?? throw Json.Error("classes", "no proper ring colouring");
         var pairs = new HashSet<(int, int)>();
         int sameRing = 0;
@@ -116,6 +126,9 @@ public static class Colour
             pairs.Add((Math.Min(ca, cb), Math.Max(ca, cb)));
         }
         (int A, int B)[] classPairs = pairs.OrderBy(p => p.Item1).ThenBy(p => p.Item2).ToArray();
+        if (failures.Count > 0)
+            return new PaletteReport(Array.AsReadOnly(Modes.Select(mode => new PaletteModeReport(mode, null, null, false, false)).ToArray()),
+                Array.AsReadOnly(classPairs), sameRing) { GamutFailures = failures.AsReadOnly() };
         var reports = new List<PaletteModeReport>();
         foreach (string mode in Modes)
         {
