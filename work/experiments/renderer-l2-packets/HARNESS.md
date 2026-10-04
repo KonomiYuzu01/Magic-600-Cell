@@ -22,7 +22,10 @@ Status: binding for L2-F, L2-G and L2-Q (stage day 4, 4 October 2026). Claude ow
 - One window on the primary monitor. It is borderless, covers the whole monitor and is topmost. The slot texture fills its client area, with nothing drawn over it: no UI, text, cursor overlay or debug display.
   - Godot: use the window mode that covers the monitor exactly. At 4.7.2 on Windows, `WINDOW_MODE_FULLSCREEN` extends the window 2 pixels past the monitor and clips them with a window region, and `WINDOW_MODE_EXCLUSIVE_FULLSCREEN` uses the exact monitor rectangle (`FRAMEWORK-FACTS.md`, G1). Content scale mode is disabled and the content scale factor is 1.
   - Qt: `showFullScreen()` on the primary screen. Check at the pinned version that the Windows platform plugin adds no border to a Direct3D 12 window.
-- The app is per-monitor DPI aware (version 2), as both frameworks are by default. `harness.json` records the awareness of the render thread.
+- The app is DPI aware, and `harness.json` records the awareness of the render thread:
+  - Qt is per-monitor aware (version 2) by default; the Qt app stops on any other awareness.
+  - Godot 4.7.2 makes the process system aware (`FRAMEWORK-FACTS.md`, G10). The Godot app accepts per-monitor version 2 or system awareness, and stops on any other.
+  - Neither awareness hides scaling. `EnumDisplaySettingsW` reports physical pixels in every DPI context, so a window that Windows scales never matches the `display` size (section 7, `size-mismatch`).
 - Five sizes, all in physical pixels:
   - `display`: the current mode of the window's monitor (`MonitorFromWindow`, `GetMonitorInfoW`, `EnumDisplaySettingsW(ENUM_CURRENT_SETTINGS)`), with `refresh_hz`;
   - `window`: the client rectangle (`GetClientRect`);

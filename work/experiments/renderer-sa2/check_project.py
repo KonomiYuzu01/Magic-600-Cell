@@ -374,12 +374,14 @@ def check_l2_source(sources=None):
                   'GetProperty("AssemblyLoadedPath")', 'AssemblyName.GetAssemblyName(path).FullName == assembly.FullName',
                   'throw new InvalidOperationException("assembly-path")',
                   '"project.godot", "Main.tscn", "Smoke.cs"', 'JsonSerializer.Deserialize<JsonElement>',
-                  'Level2Windows.DpiAwareness', 'info.umd_version >> 48', 'info.umd_version >> 32', 'info.umd_version >> 16',
+                  'Level2Windows.DpiAwareness', '_result.dpi_awareness != "per-monitor-v2" && _result.dpi_awareness != "system"',
+                  'info.umd_version >> 48', 'info.umd_version >> 32', 'info.umd_version >> 16',
                   'debug_callback = _args.gpu_validation ? 1 : 0', 'wait_timeout_ms = 5000', 'conditions == "enforce"'):
         require(token in app, f"level 2 framework fact/path {token}")
     for token in ('MonitorFromWindow(_window, 1)', 'GetMonitorInfoW(', 'EnumDisplaySettingsW(monitor.device, -1',
                   'GetClientRect(_window', 'EnumDisplayDevicesW(null, i', 'device.name == monitor.device',
-                  'AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(), (nint)(-4))',
+                  'Awareness(GetThreadDpiAwarenessContext())', 'AreDpiAwarenessContextsEqual(context, (nint)(-4)) ? "per-monitor-v2"',
+                  'AreDpiAwarenessContextsEqual(context, (nint)(-2)) ? "system" : "unknown"',
                   'SetThreadExecutionState(0x80000000u | 1u | 2u)', 'SetThreadExecutionState(0x80000000u)',
                   'SetForegroundWindow(window)', 'GetWindowLongPtrW(_window, -20)', 'PowerRegisterForEffectivePowerModeNotifications(2',
                   'PowerUnregisterFromEffectivePowerModeNotifications', 'GetCommandLineW()', 'CommandLineToArgvW(GetCommandLineW()', 'LocalFree(arguments)',
@@ -471,6 +473,8 @@ def check_l2_defects():
         ("Level2Windows", 'GetSystemPowerStatus(out PowerStatus power)', 'false'),
         ("Level2Windows", 'GetAncestor(hit, 2) != _window', 'false'),
         ("Level2Windows", 'JsonSerializer.Serialize(kept)', 'JsonSerializer.Serialize(processArguments)'),
+        ("Level2Windows", '(nint)(-2)) ? "system"', '(nint)(-1)) ? "system"'),
+        ("Level2", '&& _result.dpi_awareness != "system"', '&& _result.dpi_awareness != "unknown"'),
     )
     for name, original, defect in defects:
         # samples_changed is a field rather than a dictionary key.

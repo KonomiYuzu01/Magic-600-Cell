@@ -247,8 +247,10 @@ public partial class Level2 : Node
         if (_initializing) return;
         _rd ??= RenderingServer.GetRenderingDevice();
         if (_rd == null) throw new InvalidOperationException("rendering-device-unavailable");
+        // System awareness is enough (FRAMEWORK-FACTS G10): EnumDisplaySettingsW reports physical pixels in every DPI
+        // context, so a window that Windows scales never matches the display size and never settles.
         _result.dpi_awareness = Level2Windows.DpiAwareness;
-        if (_result.dpi_awareness != "per-monitor-v2") throw new InvalidOperationException("dpi-awareness");
+        if (_result.dpi_awareness != "per-monitor-v2" && _result.dpi_awareness != "system") throw new InvalidOperationException("dpi-awareness");
         Level2Sizes current = ReadSizes(displayed);
         _result.sizes = current;
         _settled = current.WindowSettled() ? _settled + 1 : 0;

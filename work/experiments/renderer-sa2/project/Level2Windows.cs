@@ -71,7 +71,10 @@ public sealed class Level2Windows : IDisposable
     public bool DisplayRequired { get; }
     public bool Foreground => GetForegroundWindow() == _window;
     public bool Topmost => (GetWindowLongPtrW(_window, -20).ToInt64() & 8) != 0;
-    public static string DpiAwareness => AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(), (nint)(-4)) ? "per-monitor-v2" : "unknown";
+    // Godot 4.7.2 makes the process system DPI aware (FRAMEWORK-FACTS G10). Contexts: -4 per-monitor v2, -2 system aware.
+    public static string DpiAwareness => Awareness(GetThreadDpiAwarenessContext());
+    private static string Awareness(nint context) => AreDpiAwarenessContextsEqual(context, (nint)(-4)) ? "per-monitor-v2"
+        : AreDpiAwarenessContextsEqual(context, (nint)(-2)) ? "system" : "unknown";
 
     public Level2Windows(nint window)
     {
