@@ -986,7 +986,7 @@ class CountingStream(io.BytesIO):
 class ArchiveInstallTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix="archives-")
-        self.base = Path(self.tmp.name)
+        self.base = Path(self.tmp.name).resolve()  # long form: TEMP may be an 8.3 short path
         self.entry = copy.deepcopy(bootstrap.entry_for(bootstrap.load_lock(), "qt-6-10-3"))
         state = bootstrap.approval_state()  # the real installer revision, read before the root moves
         self.enterContext(mock.patch.object(bootstrap, "approval_state", lambda: state))
