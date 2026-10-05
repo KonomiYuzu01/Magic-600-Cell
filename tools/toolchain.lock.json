@@ -5,6 +5,7 @@
     "planning": "Now: notebooks, diagrams, documents, slides",
     "native-performance": "0.4.1 screening and optimization",
     "workbench": "0.4.1 development workbench (Qt Quick desktop app)",
+    "tastelab": "1.0 design track: Taste Lab, the owner's local taste library (Windows, CPU only)",
     "renderer-spike": "Stage 2.4 renderer experiments",
     "media": "Stages 5 and 7",
     "release": "Stage 8",
@@ -710,6 +711,238 @@
         "pypi.org",
         "files.pythonhosted.org"
       ]
+    },
+    {
+      "id": "tastelab-numerics",
+      "purpose": "NumPy and SciPy for the Taste Lab CLIP encoders on the CPU, with the text libraries of the CLIP tokenizer (version is NumPy's; the probe checks all four)",
+      "profiles": [
+        "tastelab"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "2.5.3",
+      "python": {
+        "implementation": "cpython",
+        "version": "3.14.7",
+        "bits": 64
+      },
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/tastelab",
+      "requirements": "tools/python/tastelab.txt",
+      "probe": [
+        "{venv}/python",
+        "-I",
+        "-c",
+        "from importlib.metadata import version as v; print('numpy', v('numpy'), 'scipy', v('scipy'), 'regex', v('regex'), 'ftfy', v('ftfy'))"
+      ],
+      "expect": "^numpy 2\\.5\\.3 scipy 1\\.18\\.1 regex 2026\\.9\\.10 ftfy 6\\.3\\.1$",
+      "license": "BSD-3-Clause (NumPy, SciPy); Apache-2.0 (regex); Apache-2.0 (ftfy)",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "note": "No PyTorch: Windows Smart App Control blocks the unsigned PyTorch DLLs on the owner's machine, so tools/tastelab/clip.py runs the pinned clip-vit-b-16 weights with NumPy on the CPU.",
+      "uninstall": "delete tools/.venv/tastelab"
+    },
+    {
+      "id": "scikit-learn",
+      "purpose": "Taste Lab preference model, cross-validation and clustering",
+      "profiles": [
+        "tastelab"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "1.9.1",
+      "python": {
+        "implementation": "cpython",
+        "version": "3.14.7",
+        "bits": 64
+      },
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/tastelab",
+      "requirements": "tools/python/tastelab.txt",
+      "probe": [
+        "{venv}/python",
+        "-I",
+        "-c",
+        "from importlib.metadata import version as v; print('scikit-learn', v('scikit-learn'))"
+      ],
+      "expect": "^scikit-learn 1\\.9\\.1$",
+      "license": "BSD-3-Clause",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    {
+      "id": "pillow",
+      "purpose": "Taste Lab image decoding and thumbnails",
+      "profiles": [
+        "tastelab"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "12.3.0",
+      "python": {
+        "implementation": "cpython",
+        "version": "3.14.7",
+        "bits": 64
+      },
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/tastelab",
+      "requirements": "tools/python/tastelab.txt",
+      "probe": [
+        "{venv}/python",
+        "-I",
+        "-c",
+        "from importlib.metadata import version as v; print('pillow', v('pillow'))"
+      ],
+      "expect": "^pillow 12\\.3\\.0$",
+      "license": "MIT-CMU",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    {
+      "id": "tastelab-qt",
+      "purpose": "Qt Quick toolkit for the Taste Lab rating window (same pin as the workbench)",
+      "profiles": [
+        "tastelab"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "6.11.2",
+      "python": {
+        "implementation": "cpython",
+        "version": "3.14.7",
+        "bits": 64
+      },
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/tastelab",
+      "requirements": "tools/python/tastelab.txt",
+      "probe": [
+        "{venv}/python",
+        "-c",
+        "import PySide6; print(PySide6.__version__)"
+      ],
+      "expect": "^6\\.11\\.2$",
+      "license": "LGPL-3.0-only",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    {
+      "id": "tastelab-marimo",
+      "purpose": "Notebook for the Taste Lab taste map (the planning environment lacks the model libraries)",
+      "profiles": [
+        "tastelab"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "0.25.0",
+      "python": {
+        "implementation": "cpython",
+        "version": "3.14.7",
+        "bits": 64
+      },
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/tastelab",
+      "requirements": "tools/python/tastelab.txt",
+      "probe": [
+        "{venv}/marimo",
+        "--version"
+      ],
+      "expect": "0\\.25\\.0",
+      "license": "Apache-2.0",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    {
+      "id": "clip-vit-b-16",
+      "purpose": "Taste Lab embedding model: OpenCLIP ViT-B/16 trained on LAION-2B (s34B b88K), image and text towers",
+      "profiles": [
+        "tastelab"
+      ],
+      "method": "download-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "7288da5a0d6f0b51c4a2b27c624837a9236d0112",
+      "url": "https://huggingface.co/laion/CLIP-ViT-B-16-laion2B-s34B-b88K/resolve/7288da5a0d6f0b51c4a2b27c624837a9236d0112/open_clip_model.safetensors",
+      "size": 598516980,
+      "sha256": "3f25d29d3cc74e1d25d47e0593b4dd0864ced1e9b4d8e486a247ca4502f227f1",
+      "dest": "tools/.models/clip-vit-b-16-laion2b/open_clip_model.safetensors",
+      "license": "MIT (model card of laion/CLIP-ViT-B-16-laion2B-s34B-b88K)",
+      "network_hosts": [
+        "huggingface.co",
+        "us.aws.cdn.hf.co"
+      ],
+      "note": "Weights only (safetensors, no code); the version is the pinned Hugging Face commit. Hugging Face serves the file through a redirect to us.aws.cdn.hf.co; a redirect to any other host is refused. tools/tastelab/clip.py reads it with NumPy. The content screen uses this model's text probes, so no other model is downloaded.",
+      "uninstall": "delete tools/.models/clip-vit-b-16-laion2b"
+    },
+    {
+      "id": "clip-vit-b-16-merges",
+      "purpose": "Taste Lab text tokenizer: the CLIP byte-pair merges of the pinned clip-vit-b-16 model",
+      "profiles": [
+        "tastelab"
+      ],
+      "method": "download-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "7288da5a0d6f0b51c4a2b27c624837a9236d0112",
+      "url": "https://huggingface.co/laion/CLIP-ViT-B-16-laion2B-s34B-b88K/resolve/7288da5a0d6f0b51c4a2b27c624837a9236d0112/merges.txt",
+      "size": 524657,
+      "sha256": "f526393189112391ce6f9795d4695f704121ce452c3aad1f5335cc41337eba85",
+      "dest": "tools/.models/clip-vit-b-16-laion2b/merges.txt",
+      "license": "MIT (model card of laion/CLIP-ViT-B-16-laion2B-s34B-b88K; the merges are OpenAI CLIP's, MIT)",
+      "network_hosts": [
+        "huggingface.co"
+      ],
+      "note": "Text file from the same pinned commit as the weights; Hugging Face serves it through a same-host redirect. tools/tastelab/clip.py builds the vocabulary from it as OpenAI CLIP does.",
+      "uninstall": "delete tools/.models/clip-vit-b-16-laion2b"
     },
     {
       "id": "godot",

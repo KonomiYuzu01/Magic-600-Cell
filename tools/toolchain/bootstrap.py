@@ -73,7 +73,9 @@ SOCKET_TIMEOUT = 60
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 PLATFORM = {"win32": "windows", "darwin": "macos"}.get(sys.platform, "linux")
 REQUIRED_KEYS = {"id", "purpose", "profiles", "method", "status", "installable", "platforms"}
-METHODS = {"external", "pip-hashed", "uv-venv-hashed", "npm-ci", "winget", "archive-7z-hashed"}
+METHODS = {"external", "pip-hashed", "uv-venv-hashed", "npm-ci", "winget", "archive-7z-hashed", "download-hashed"}
+DOWNLOAD_ROOT = "tools/.models/"
+DOWNLOAD_TIMEOUT = 60
 
 
 class Refused(Exception):
@@ -138,6 +140,8 @@ def load_lock() -> dict:
             raise SystemExit(f"lockfile: bad or duplicate id {entry['id']}")
         if "python" in entry and not valid_python_request(entry):
             raise SystemExit(f"lockfile: {entry['id']} has an invalid python request")
+        if entry["method"] == "download-hashed" and not valid_download(entry):
+            raise SystemExit(f"lockfile: {entry['id']} has an invalid download pin")
         ids.add(entry["id"])
     for entry in lock["tools"]:
         if entry["method"] == "archive-7z-hashed":
@@ -196,6 +200,32 @@ def validate_archive_entry(entry: dict, lock: dict) -> None:
     requires = entry.get("requires")
     require(extractor is not None and extractor["method"] == "uv-venv-hashed"
             and isinstance(requires, list) and extractor["id"] in requires, "extractor/requires")
+
+
+def valid_download(entry: dict) -> bool:
+    """A download-hashed entry pins one https file by size and sha256 and stores it in its own directory below tools/.models/."""
+    try:
+        check_url(entry["url"], entry["network_hosts"])
+    except (Refused, KeyError, TypeError, ValueError):
+        return False
+    dest = entry.get("dest")
+    return (isinstance(entry.get("sha256"), str) and re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]) is not None
+            and type(entry.get("size")) is int and entry["size"] > 0
+            and isinstance(dest, str) and dest.startswith(DOWNLOAD_ROOT) and "\\" not in dest and ":" not in dest
+            and ".." not in Path(dest).parts and len(Path(dest).parts) >= 4 and not dest.endswith(".part"))
+
+
+def check_url(url: str, hosts: list[str]) -> None:
+    """Refuse a URL that is not plain https to one of the entry's approved hosts."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+        port = parts.port
+    except (TypeError, ValueError, AttributeError):
+        raise Refused(f"{url!r} is not a valid URL") from None
+    if parts.scheme != "https" or parts.username or parts.password or port not in (None, 443) or not parts.hostname:
+        raise Refused(f"{parts.scheme}://{parts.hostname}: only plain https downloads are allowed")
+    if parts.hostname.lower() not in [h.lower() for h in hosts]:
+        raise Refused(f"{parts.hostname} is not among the entry's approved network hosts")
 
 
 def valid_python_request(entry: dict) -> bool:
@@ -271,6 +301,11 @@ def resolve_executable(entry: dict, name: str) -> str | None:
 
 def present(entry: dict) -> bool:
     """Cheap presence test without subprocesses (used by check and the SessionStart hook)."""
+    if entry["method"] == "download-hashed":
+        try:
+            return safe_dest(entry["dest"]).is_file()
+        except Refused:
+            return False
     probe = entry.get("probe")
     if not probe:
         return False
@@ -282,7 +317,29 @@ def present(entry: dict) -> bool:
         return False
 
 
+def verify_download(entry: dict) -> tuple[bool, str]:
+    """The probe of a download-hashed entry: the stored file has the pinned size and sha256."""
+    try:
+        dest = safe_dest(entry["dest"])
+    except Refused as exc:
+        return False, f"refused: {exc}"
+    if not dest.is_file():
+        return False, "missing"
+    size = dest.stat().st_size
+    if size != entry["size"]:
+        return False, f"size {size} is not the pinned {entry['size']}"
+    digest = hashlib.sha256()
+    with dest.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            digest.update(chunk)
+    if digest.hexdigest() != entry["sha256"]:
+        return False, "sha256 differs from the lockfile"
+    return True, f"sha256 {entry['sha256'][:12]} verified"
+
+
 def run_probe(entry: dict) -> tuple[bool, str]:
+    if entry["method"] == "download-hashed":
+        return verify_download(entry)
     probe = entry.get("probe")
     if not probe:
         return False, "no probe defined"
@@ -374,15 +431,61 @@ def venv_contained(entry: dict) -> list[Path]:
     return list(venv.glob("lib/python*/site-packages")) + list(venv.glob("Lib/site-packages"))
 
 
+def requirement_lines(path: Path) -> list[str]:
+    """Logical lines of a requirements file: continuations joined, comments and blank lines dropped."""
+    lines, current = [], ""
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        text = re.sub(r"(^|\s)#.*$", "", raw).rstrip()
+        if text.endswith("\\"):
+            current += text[:-1] + " "
+            continue
+        current += text
+        if current.strip():
+            lines.append(current.strip())
+        current = ""
+    if current.strip():
+        lines.append(current.strip())
+    return lines
+
+
+_PIN_RE = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)=="
+                     r"([0-9]+(?:\.[0-9]+)*(?:(?:a|b|rc)[0-9]+)?(?:\.post[0-9]+)?(?:\.dev[0-9]+)?)(?=\s|;|$)")
+
+
+def requirement_pins(path: Path) -> dict[str, str]:
+    """Pinned versions by normalized name (name==version lines)."""
+    pins = {}
+    for line in requirement_lines(path):
+        m = _PIN_RE.match(line)
+        if m:
+            pins[_norm(m.group(1))] = m.group(2)
+    return pins
+
+
+def check_requirement_sources(entry: dict) -> None:
+    """Refuse a requirements file that could choose its own sources.
+
+    Every line must pin one package as name==version with sha256 hashes; URL requirements and
+    index, find-links, constraint, include and editable options are refused, so packages come
+    only from the index the installer passes."""
+    for line in requirement_lines(_require_file(entry["requirements"])):
+        tokens = line.split()
+        if line.startswith("-") or any(t.startswith("-") and not t.startswith("--hash=") for t in tokens):
+            raise Refused(f"{entry['id']}: requirements option {tokens[0]!r} is not allowed; sources are fixed by the installer")
+        hashes = [t for t in tokens if t.startswith("--hash=")]
+        if not hashes or any(re.fullmatch(r"--hash=sha256:[0-9a-f]{64}", h) is None for h in hashes):
+            raise Refused(f"{entry['id']}: requirement {tokens[0]!r} needs valid lowercase sha256 hashes")
+        requirement = " ".join(t for t in tokens if not t.startswith("--hash="))
+        pin, separator, marker = requirement.partition(";")
+        if not _PIN_RE.fullmatch(pin.strip()) or (separator and not marker.strip()):
+            raise Refused(f"{entry['id']}: requirement {tokens[0]!r} is not an exact name==version pin")
+
+
 def venv_conflicts(entry: dict) -> list[str]:
     """Offline diagnostic: installed distributions that differ from the pins (markers are not evaluated).
 
     The authoritative check before a sync is sync_removals, which asks uv itself."""
-    pins = {}
-    for line in _require_file(entry["requirements"]).read_text(encoding="utf-8").splitlines():
-        m = re.match(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)", line)
-        if m:
-            pins[_norm(m.group(1))] = m.group(2)
+    pins = requirement_pins(_require_file(entry["requirements"]))
     site = venv_contained(entry)
     conflicts = []
     for sp in site:
@@ -924,11 +1027,15 @@ def install_entry(entry: dict) -> None:
     source = APPROVED_SOURCES.get(method)
     if source and source.split("/")[2] not in entry.get("network_hosts", []):
         raise Refused(f"{entry['id']}: {source} is not among the entry's approved network hosts")
+    if method in ("pip-hashed", "uv-venv-hashed"):
+        check_requirement_sources(entry)
     if method == "pip-hashed":
         req = _require_file(entry["requirements"])
         cert = ["--cert", os.environ["PIP_CERT"]] if os.environ.get("PIP_CERT") else []  # transport only; --isolated ignores PIP_*
         _run([sys.executable, "-m", "pip", "install", "--isolated", "--user", "--require-hashes", "--no-deps",
               "--index-url", PYPI_INDEX, *cert, "-r", str(req)])
+    elif method == "download-hashed":
+        download_hashed(entry)
     elif method == "uv-venv-hashed":
         req = _require_file(entry["requirements"])
         venv = safe_dest(entry["venv"])
@@ -977,6 +1084,61 @@ def install_entry(entry: dict) -> None:
               "--accept-source-agreements", "--accept-package-agreements"])
     else:
         raise Refused(f"{entry['id']}: {method} tools are installed by the owner")
+
+
+class _ApprovedRedirects(urllib.request.HTTPRedirectHandler):
+    """Follow a redirect only to plain https on one of the entry's approved hosts."""
+
+    def __init__(self, hosts: list[str]):
+        super().__init__()
+        self.hosts = hosts
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        check_url(urllib.parse.urljoin(req.full_url, newurl), self.hosts)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _download_opener(hosts: list[str]):
+    return urllib.request.build_opener(urllib.request.ProxyHandler({}), _ApprovedRedirects(hosts))
+
+
+def download_hashed(entry: dict) -> None:
+    """Download one pinned file (model weights) into tools/.models/; keep it only when size and sha256 match.
+
+    No credentials or cookies are sent. The file is written to a staging file that this call creates
+    and owns, and renamed only after the check, so a failed or tampered download never leaves a file
+    that looks installed."""
+    hosts = entry["network_hosts"]
+    check_url(entry["url"], hosts)
+    dest = safe_dest(entry["dest"])
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    safe_dest(entry["dest"])  # the directories just created are not links either
+    # A fresh name, created exclusively: a file or hard link planted at a staging path, or another
+    # download of the same entry, can neither receive these bytes nor replace them before the rename.
+    part = safe_dest(f"{entry['dest']}.{os.urandom(8).hex()}.part")
+    request = urllib.request.Request(entry["url"], headers={"User-Agent": "magic600-bootstrap"})
+    digest, size, created = hashlib.sha256(), 0, False
+    print(f"+ download {entry['url']} ({entry['size']} bytes)", flush=True)
+    try:
+        with _download_opener(hosts).open(request, timeout=DOWNLOAD_TIMEOUT) as response:
+            check_url(response.geturl(), hosts)
+            with part.open("xb") as out:
+                created = True
+                for chunk in iter(lambda: response.read(1 << 20), b""):
+                    size += len(chunk)
+                    if size > entry["size"]:
+                        raise Refused(f"{entry['id']}: download is larger than the pinned {entry['size']} bytes; installation blocked")
+                    digest.update(chunk)
+                    out.write(chunk)
+        if size != entry["size"] or digest.hexdigest() != entry["sha256"]:
+            raise Refused(f"{entry['id']}: size or sha256 differs from the lockfile; installation blocked until verified again")
+        os.replace(part, dest)
+        created = False
+    except (OSError, http.client.HTTPException) as exc:  # urllib.error.URLError is an OSError
+        raise Refused(f"{entry['id']}: download failed ({type(exc).__name__})") from None
+    finally:
+        if created:  # only this call's own staging file, never a file it did not create
+            part.unlink(missing_ok=True)
 
 
 PYTHON_FACTS = "import platform,struct;print(platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
@@ -1068,9 +1230,11 @@ def install(lock: dict, tool_id: str, done: set) -> str:
         elif not run_probe(dep_entry)[0]:  # owner-installed dependency must already work
             raise Refused(f"{tool_id}: requires {dep}, which the owner installs")
     ok, detail = run_probe(entry)
-    if ok and entry["method"] == "uv-venv-hashed" and venv_conflicts(entry):
-        raise Refused(f"{tool_id}: present, but {entry['venv']} differs from its pinned requirements; "
-                      "replacing an installed tool needs owner approval")
+    if ok and entry["method"] == "uv-venv-hashed":
+        check_venv_python(entry)  # passing package probes never excuse another interpreter
+        if venv_conflicts(entry):
+            raise Refused(f"{tool_id}: present, but {entry['venv']} differs from its pinned requirements; "
+                          "replacing an installed tool needs owner approval")
     if ok:
         done.add(tool_id)
         print(f"{tool_id}: already present ({detail})")
@@ -1196,7 +1360,7 @@ def doctor(lock: dict) -> int:
     for entry in lock["tools"]:
         if PLATFORM not in entry["platforms"]:
             continue
-        ok, detail = run_probe(entry) if entry.get("probe") else (False, "no probe")
+        ok, detail = run_probe(entry) if entry.get("probe") or entry["method"] == "download-hashed" else (False, "no probe")
         if ok and entry["method"] == "uv-venv-hashed":
             conflicts = venv_conflicts(entry)
             if conflicts:

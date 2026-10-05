@@ -1,0 +1,43 @@
+# Taste Lab text probes (default). The first use copies this file to
+# work/loop-memory/tastelab/library/probes.yaml; edit that copy, not this one.
+#
+# template: how a probe is phrased for the embedding model; {} is the probe text.
+# axes:     pairs of opposite descriptions; the taste map names its axes with the
+#           pair that best matches each axis direction.
+# terms:    free descriptions for naming clusters and for proposing search terms.
+# The content-screen probes are fixed in screen.py and are not listed here.
+
+version: 1
+template: "an image of {}"
+axes:
+  - [minimal and sparse, ornate and dense]
+  - [warm colours, cool colours]
+  - [precise and technical, handmade and organic]
+  - [dark, bright]
+  - [calm, energetic]
+  - [glossy plastic and chrome, matte paper and wood]
+  - [retro analog, futuristic digital]
+  - [flat graphic, deep three-dimensional]
+  - [monochrome, saturated colour]
+  - [geometric, figurative]
+terms:
+  - neon glow
+  - translucent plastic
+  - brass and wood
+  - pixel grid
+  - wireframe lines
+  - scanlines
+  - pastel gradient
+  - chrome reflection
+  - circuit board
+  - data visualization
+  - glitch distortion
+  - starfield
+  - control panel with knobs
+  - typographic poster
+  - holographic shimmer
+  - isometric view
+  - lens flare
+  - halftone print
+  - vector graphics
+  - soft bloom light

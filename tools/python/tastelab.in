@@ -1,0 +1,12 @@
+# Taste Lab environment (tools/.venv/tastelab), Windows x64 CPython 3.14 only.
+# No PyTorch: Windows Smart App Control blocks its unsigned DLLs on the owner's machine, so
+# Taste Lab runs the pinned CLIP weights with NumPy and SciPy on the CPU (tools/tastelab/clip.py).
+numpy==2.5.3
+scipy==1.18.1
+regex==2026.9.10
+ftfy==6.3.1
+PyYAML==6.0.3
+scikit-learn==1.9.1
+pillow==12.3.0
+PySide6-Essentials==6.11.2
+marimo==0.25.0

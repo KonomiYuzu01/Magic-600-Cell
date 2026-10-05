@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-04] decision | Fast tier for every review
+Recorded in [owner-decisions-2026-10-04](decisions/owner-decisions-2026-10-04.md): every Codex plan check, review and scoped verification round uses `--speed fast`, critical paths included; only gate rulings, joint attacks and escalations use the standard tier.
+
 ## [2026-10-04] update | Framework comparison: smoke-test answers
 [framework-paper-comparison](../progress/1.0/framework-paper-comparison.md) section 7 now gives the level-1 smoke-test answers for Godot 4.7.2 and Qt 6.10.3 from the renderer session's result cards; questions 5, 7, 8 and 9 stay open, and no timing was measured.
 

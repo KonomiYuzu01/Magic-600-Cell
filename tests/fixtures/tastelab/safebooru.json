@@ -1,0 +1,23 @@
+[
+  {
+    "id": 801,
+    "rating": "general",
+    "tags": "scenery no_humans pastel_colors",
+    "sample_url": "https://safebooru.org/synthetic/sample-801.jpg",
+    "file_url": "https://safebooru.org/synthetic/original-801.png",
+    "owner": "invented_uploader",
+    "source": ""
+  },
+  {
+    "id": 802,
+    "rating": "safe",
+    "tags": "scenery underwear",
+    "file_url": "https://safebooru.org/synthetic/802.png"
+  },
+  {
+    "id": 803,
+    "rating": "questionable",
+    "tags": "scenery",
+    "file_url": "https://safebooru.org/synthetic/803.png"
+  }
+]

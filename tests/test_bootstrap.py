@@ -21,6 +21,7 @@ import unittest
 import uuid
 from types import SimpleNamespace
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode = True
@@ -31,35 +32,96 @@ import bootstrap  # noqa: E402
 import install_guard  # noqa: E402
 
 
-# Keep all temporary fixtures inside the worktree. Windows CPython 3.14's
-# mkdir(0700) drops inherited sandbox access, so test directories inherit ACLs.
+# The real process and link functions, for the few integration tests that start a real process.
+REAL = {}
+
+
+@contextlib.contextmanager
+def real_processes(test):
+    """Allow real processes inside the block; skip where none can start (the Codex sandbox)."""
+    with mock.patch.object(subprocess, "run", REAL["run"]), mock.patch.object(subprocess, "Popen", REAL["Popen"]):
+        try:
+            yield
+        except PermissionError as exc:
+            test.skipTest(f"cannot start a process here ({exc})")
+
+
+@contextlib.contextmanager
+def real_sockets():
+    """Allow real local sockets inside the block, for the transport tests that build a socket pair."""
+    with mock.patch.object(socket, "create_connection", REAL["create_connection"]), \
+            mock.patch.object(socket.socket, "connect", REAL["connect"]):
+        yield
+
+
+def real_links_work(root: Path) -> bool:
+    """True where this process can make a real directory link, as on CI; the link tests then use real links."""
+    target, link = root / "link-probe-target", root / "link-probe"
+    target.mkdir()
+    try:
+        os.symlink(target, link, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        return False
+    os.unlink(link)
+    return True
+
+
+def synthetic_links():
+    """Stand in for links where none can be made (Windows without the symlink privilege, the Codex sandbox).
+
+    The fixture models realpath, readlink and is_symlink only, not stat or scandir, so it cannot
+    replace real links: the real-link runs on CI remain the coverage of record."""
+    links = {}
+    realpath, readlink, unlink, is_symlink = os.path.realpath, os.readlink, Path.unlink, Path.is_symlink
+
+    def link_fixture(source, dest, target_is_directory=False):
+        # Store synthetic link metadata on an ordinary empty file; never create a real link.
+        Path(dest).write_bytes(b"")
+        links[os.path.abspath(dest)] = os.fspath(source)
+
+    def fixture_realpath(path, **kwargs):
+        path = os.path.abspath(path)
+        for dest, source in links.items():
+            if os.path.normcase(path) == os.path.normcase(dest) or os.path.normcase(path).startswith(os.path.normcase(dest) + os.sep):
+                path = os.path.join(os.path.dirname(dest), source) + path[len(dest):]
+                break
+        return realpath(path, **kwargs)
+
+    def fixture_unlink(path, **kwargs):
+        unlink(path, **kwargs)
+        links.pop(os.path.abspath(path), None)
+
+    unittest.enterModuleContext(mock.patch.object(os, "symlink", side_effect=link_fixture))
+    unittest.enterModuleContext(mock.patch.object(os.path, "realpath", side_effect=fixture_realpath))
+    unittest.enterModuleContext(mock.patch.object(os, "readlink", side_effect=lambda p: links.get(os.path.abspath(p)) or readlink(p)))
+    unittest.enterModuleContext(mock.patch.object(Path, "is_symlink", autospec=True,
+                                                  side_effect=lambda p: os.path.abspath(p) in links or is_symlink(p)))
+    unittest.enterModuleContext(mock.patch.object(Path, "unlink", autospec=True, side_effect=fixture_unlink))
+
+
 def setUpModule():
-    global TEST_TEMP, _saved_temp, _saved_ledger
-    TEST_TEMP = ROOT / "work" / f"test-bootstrap-{os.getpid()}-{uuid.uuid4().hex}"
-    TEST_TEMP.mkdir(parents=True)
-    _saved_ledger = bootstrap.LEDGER_PATH
-    bootstrap.LEDGER_PATH = TEST_TEMP / "installs.jsonl"
-    _saved_temp = (tempfile.mkdtemp, tempfile.tempdir, os.environ.get("TEMP"), os.environ.get("TMP"))
+    global TEST_TEMP
+    REAL.update(run=subprocess.run, Popen=subprocess.Popen, symlink=os.symlink,
+                create_connection=socket.create_connection, connect=socket.socket.connect)
+    for target in ("subprocess.run", "subprocess.Popen", "socket.create_connection", "socket.socket.connect"):
+        unittest.enterModuleContext(mock.patch(target, side_effect=AssertionError(f"unmocked boundary: {target}")))
+    mkdtemp, mkdir = tempfile.mkdtemp, os.mkdir
 
     def fixture_dir(suffix=None, prefix=None, dir=None):
-        path = Path(dir or TEST_TEMP) / ((prefix or "tmp") + uuid.uuid4().hex + (suffix or ""))
-        path.mkdir()  # inherit access from the test directory on Windows
-        return str(path)
+        # CPython 3.14's Windows mode 0o700 ACL excludes the restricted sandbox token.
+        # Fixtures are created without that mode and inherit the temp directory's permissions instead.
+        with mock.patch.object(os, "mkdir", side_effect=lambda path, mode: mkdir(path)):
+            return mkdtemp(suffix, prefix, dir or fixture_root)
 
-    tempfile.mkdtemp, tempfile.tempdir = fixture_dir, str(TEST_TEMP)
-    os.environ["TEMP"] = os.environ["TMP"] = str(TEST_TEMP)
-
-
-def tearDownModule():
-    bootstrap.LEDGER_PATH = _saved_ledger
-    tempfile.mkdtemp, tempfile.tempdir = _saved_temp[:2]
-    for key, value in zip(("TEMP", "TMP"), _saved_temp[2:]):
-        if value is None:
-            os.environ.pop(key, None)
-        else:
-            os.environ[key] = value
-    assert TEST_TEMP.parent == ROOT / "work"
-    shutil.rmtree(TEST_TEMP)
+    fixture_root = None  # the system temp directory, never the repository
+    suite_dir = fixture_dir(prefix="bootstrap-tests-")
+    fixture_root = Path(suite_dir)
+    TEST_TEMP = fixture_root
+    unittest.enterModuleContext(mock.patch.object(bootstrap, "LEDGER_PATH", TEST_TEMP / "installs.jsonl"))
+    unittest.addModuleCleanup(shutil.rmtree, suite_dir)
+    unittest.enterModuleContext(mock.patch.object(tempfile, "mkdtemp", side_effect=fixture_dir))
+    if not real_links_work(fixture_root):
+        synthetic_links()
 
 
 def run(argv):
@@ -89,7 +151,10 @@ class LockfileTests(unittest.TestCase):
                 if entry["method"] in ("pip-hashed", "uv-venv-hashed"):
                     text = (ROOT / entry["requirements"]).read_text(encoding="utf-8")
                     self.assertIn("--hash=sha256:", text)
-                    self.assertIn(f"=={entry['version']}", text)
+                    self.assertIn(entry["version"], bootstrap.requirement_pins(ROOT / entry["requirements"]).values())
+                    bootstrap.check_requirement_sources(entry)  # exact name==version pins only
+                if entry["method"] == "download-hashed":
+                    self.assertTrue(bootstrap.valid_download(entry))
                 if entry["method"] == "npm-ci":
                     if entry["installable"]:
                         lockfile = json.loads((ROOT / entry["prefix"] / "package-lock.json").read_text(encoding="utf-8"))
@@ -163,14 +228,17 @@ class RefusalTests(unittest.TestCase):
         self.assertEqual(run(["install", "--profile", "everything"])[0], 2)
 
     def test_approve_requires_an_interactive_terminal(self):
-        saved = sys.stdin
-        sys.stdin = io.StringIO("approve x\n")
-        try:
+        with mock.patch.object(sys.stdin, "isatty", return_value=False):
             code, err = run(["approve"])
-        finally:
-            sys.stdin = saved
         self.assertEqual(code, 2)
         self.assertIn("interactive terminal", err)
+
+    def test_approve_refuses_piped_input_in_a_real_process(self):
+        with real_processes(self):
+            r = subprocess.run([sys.executable, str(ROOT / "tools" / "toolchain" / "bootstrap.py"), "approve"],
+                               input="approve x\n", capture_output=True, text=True, timeout=30)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("interactive terminal", r.stderr)
 
     def test_unpinned_skill_source_is_refused_before_network(self):
         with tempfile.TemporaryDirectory() as td:
@@ -231,8 +299,9 @@ class RefusalTests(unittest.TestCase):
         self.assertIn("owner approval", str(ctx.exception))
 
     def test_linked_destinations_are_refused(self):
-        with tempfile.TemporaryDirectory() as outside:
-            link = ROOT / "tools" / ".venv" / "link-test"
+        with tempfile.TemporaryDirectory() as outside, tempfile.TemporaryDirectory() as td, \
+                mock.patch.object(bootstrap, "ROOT", Path(td).resolve()):
+            link = bootstrap.ROOT / "tools" / ".venv" / "link-test"
             link.parent.mkdir(parents=True, exist_ok=True)
             try:
                 os.symlink(outside, link, target_is_directory=True)
@@ -440,6 +509,41 @@ class RefusalTests(unittest.TestCase):
                 (bootstrap._run, bootstrap.safe_dest, bootstrap.sync_removals, bootstrap.subprocess.run,
                  bootstrap.uv_binary) = saved
 
+    def test_present_environment_must_run_the_exact_owner_installed_python(self):
+        lock = bootstrap.load_lock()
+        entry = bootstrap.entry_for(lock, "tastelab-numerics")
+        with tempfile.TemporaryDirectory() as td:
+            venv_dir, system, managed = Path(td) / "tastelab", Path(td) / "system", Path(td) / "uv-python"
+            venv_dir.mkdir()
+            for facts, home, ok in (("cpython 3.14.7 64", system, True),
+                                    ("cpython 3.14.6 64", system, False),
+                                    ("cpython 3.14.7 64", managed / "cpython-3.14-windows-x86_64-none", False)):  # uv-managed copy
+                (venv_dir / "pyvenv.cfg").write_text(f"home = {home}\n", encoding="utf-8")
+                runs, installs = [], []
+
+                def fake_subprocess(cmd, *a, facts=facts, **k):
+                    runs.append(cmd)
+                    out = str(managed) if cmd[1:3] == ["python", "dir"] else facts
+                    return subprocess.CompletedProcess(cmd, 0, out + "\n", "")
+
+                # Every package probe passes and nothing conflicts: only the interpreter differs.
+                with self.subTest(facts=facts, home=home), \
+                        mock.patch.object(bootstrap, "run_probe", return_value=(True, "packages present")), \
+                        mock.patch.object(bootstrap, "venv_conflicts", return_value=[]), \
+                        mock.patch.object(bootstrap, "safe_dest", return_value=venv_dir), \
+                        mock.patch.object(bootstrap, "uv_binary", return_value=str(Path(td) / "uv.exe")), \
+                        mock.patch.object(bootstrap.subprocess, "run", side_effect=fake_subprocess), \
+                        mock.patch.object(bootstrap, "install_entry", side_effect=lambda e: installs.append(e["id"])), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    if ok:
+                        self.assertEqual(bootstrap.install(lock, entry["id"], set()), "present")
+                    else:
+                        with self.assertRaises(bootstrap.Refused) as ctx:
+                            bootstrap.install(lock, entry["id"], set())
+                        self.assertIn("replacing it needs owner approval", str(ctx.exception))
+                    self.assertTrue(any(cmd[1:3] == ["python", "dir"] for cmd in runs), "the interpreter check ran")
+                    self.assertEqual(installs, [])
+
     def test_probes_drop_code_injection_variables(self):
         seen = {}
         saved = (bootstrap.resolve_executable, bootstrap.subprocess.run, os.environ.get("NODE_OPTIONS"))
@@ -609,20 +713,36 @@ class RefusalTests(unittest.TestCase):
                 empty = Path(td)
                 env = bootstrap.git_env(empty)
                 self.assertFalse([k for k in env if k.upper().startswith("GIT_CONFIG_") and k.upper() not in ("GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_GLOBAL")])
-                bootstrap.refuse_git_rewrites("https://github.com/owner/repo", env)  # the ambient rewrite is gone
-                hooks = subprocess.run(bootstrap.git_cmd(empty, "config", "--get", "core.hooksPath"), env=env, cwd=td,
-                                       capture_output=True, text=True).stdout.strip()
-                self.assertEqual(hooks, str(empty))
-                with self.assertRaises(bootstrap.Refused):
-                    bootstrap.refuse_git_rewrites("https://github.com/owner/repo", dict(env, **{
-                        "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "url.https://mirror.invalid/.insteadOf",
-                        "GIT_CONFIG_VALUE_0": "https://github.com/"}))
+                with mock.patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([], 1, "", "")) as spawn:
+                    bootstrap.refuse_git_rewrites("https://github.com/owner/repo", env)  # the ambient rewrite is gone
+                    self.assertEqual(spawn.call_args.kwargs["env"], env)
+                    spawn.return_value = subprocess.CompletedProcess([], 0, "url.https://mirror.invalid/.insteadof https://github.com/\n", "")
+                    with self.assertRaises(bootstrap.Refused):
+                        bootstrap.refuse_git_rewrites("https://github.com/owner/repo", env)
+                cmd = bootstrap.git_cmd(empty, "config", "--get", "core.hooksPath")
+                self.assertIn(f"core.hooksPath={empty}", cmd)
         finally:
             for k, v in saved.items():
                 if v is None:
                     os.environ.pop(k, None)
                 else:
                     os.environ[k] = v
+
+    def test_real_git_sees_no_ambient_rewrite_or_hooks(self):
+        extra = {"GIT_CONFIG_COUNT": "2", "GIT_CONFIG_KEY_0": "url.https://mirror.invalid/.insteadOf",
+                 "GIT_CONFIG_VALUE_0": "https://github.com/", "GIT_CONFIG_KEY_1": "core.hooksPath",
+                 "GIT_CONFIG_VALUE_1": "/tmp/evil-hooks"}
+        with mock.patch.dict(os.environ, extra), tempfile.TemporaryDirectory() as td, real_processes(self):
+            empty = Path(td)
+            env = bootstrap.git_env(empty)
+            bootstrap.refuse_git_rewrites("https://github.com/owner/repo", env)  # the ambient rewrite is gone
+            hooks = subprocess.run(bootstrap.git_cmd(empty, "config", "--get", "core.hooksPath"), env=env, cwd=td,
+                                   capture_output=True, text=True).stdout.strip()
+            self.assertEqual(hooks, str(empty))
+            with self.assertRaises(bootstrap.Refused):
+                bootstrap.refuse_git_rewrites("https://github.com/owner/repo", dict(env, **{
+                    "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "url.https://mirror.invalid/.insteadOf",
+                    "GIT_CONFIG_VALUE_0": "https://github.com/"}))
 
     def test_npm_install_refuses_links_and_unapproved_npm_inputs(self):
         entry = dict(bootstrap.entry_for(bootstrap.load_lock(), "mermaid-cli"))
@@ -699,12 +819,14 @@ class RefusalTests(unittest.TestCase):
             self.assertEqual(tree_digest(skill), before)
 
     def test_linked_skill_destinations_are_refused_before_download(self):
-        with tempfile.TemporaryDirectory() as outside, tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory() as outside, tempfile.TemporaryDirectory() as td, \
+                mock.patch.object(bootstrap, "ROOT", Path(td).resolve()):
             lock_path = Path(td) / "skills.lock.json"
             lock_path.write_text(json.dumps({"skills": {"zz-link-test": {
                 "origin": "third-party", "repo": "https://github.com/owner/repo", "commit": "0" * 40,
                 "subdir": "x", "digest": "0" * 64}}}), encoding="utf-8")
-            link = ROOT / ".claude" / "skills" / "zz-link-test"
+            link = bootstrap.ROOT / ".claude" / "skills" / "zz-link-test"
+            link.parent.mkdir(parents=True)
             try:
                 os.symlink(outside, link, target_is_directory=True)
             except (OSError, NotImplementedError):
@@ -717,10 +839,11 @@ class RefusalTests(unittest.TestCase):
                     bootstrap.install_skill("zz-link-test")
                 sys.path.insert(0, str(ROOT / "tools" / "skills"))
                 import sync as skills_sync
-                with self.assertRaises(SystemExit):
-                    skills_sync.contained(link)
-                with self.assertRaises(SystemExit):
-                    skills_sync.contained(link / "SKILL.md")
+                with mock.patch.object(skills_sync, "ROOT", bootstrap.ROOT):
+                    with self.assertRaises(SystemExit):
+                        skills_sync.contained(link)
+                    with self.assertRaises(SystemExit):
+                        skills_sync.contained(link / "SKILL.md")
             finally:
                 bootstrap.SKILLS_LOCK_PATH, bootstrap._run = saved
                 link.unlink()
@@ -865,7 +988,10 @@ class ArchiveInstallTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory(prefix="archives-")
         self.base = Path(self.tmp.name)
         self.entry = copy.deepcopy(bootstrap.entry_for(bootstrap.load_lock(), "qt-6-10-3"))
-        self.entry["prefix"] = (self.base.relative_to(ROOT) / "qt").as_posix()
+        state = bootstrap.approval_state()  # the real installer revision, read before the root moves
+        self.enterContext(mock.patch.object(bootstrap, "approval_state", lambda: state))
+        self.enterContext(mock.patch.object(bootstrap, "ROOT", self.base))  # fixtures stay outside the repository
+        self.entry["prefix"] = (self.base.relative_to(bootstrap.ROOT) / "qt").as_posix()
         self.bodies = {"base.7z": b"pinned base archive", "addon.7z": b"pinned addon archive"}
         self.entry["archives"] = [{"name": name, "path": "repository/qt/" + name, "bytes": len(body),
                                    "sha256": hashlib.sha256(body).hexdigest(), "install_path": "6.10.3/msvc2022_64"}
@@ -895,7 +1021,7 @@ class ArchiveInstallTests(unittest.TestCase):
 
     @property
     def prefix(self):
-        return ROOT / self.entry["prefix"]
+        return bootstrap.ROOT / self.entry["prefix"]
 
     @property
     def final(self):
@@ -1166,7 +1292,7 @@ class ArchiveInstallTests(unittest.TestCase):
         self.assertEqual((self.final / "msvc2022_64/bin/Qt6Core.dll").stat().st_size, 6)
         self.assertEqual(list(self.prefix.glob(".st-*")), [])
         extractor = bootstrap.entry_for(bootstrap.load_lock(), "py7zr")
-        interpreter = ROOT / extractor["venv"] / "Scripts/python.exe"
+        interpreter = bootstrap.ROOT / extractor["venv"] / "Scripts/python.exe"
         for cmd, kwargs in self.calls:
             self.assertEqual(cmd[0], str(interpreter))
             self.assertNotIn(str(self.final), cmd[0])
@@ -1548,6 +1674,7 @@ class ArchiveTransportTests(unittest.TestCase):
         self.assertEqual(dict((k.lower(), v) for k, v in seen[0][0].header_items()),
                          {"accept-encoding": "identity", "user-agent": "magic600-bootstrap"})
 
+    @real_sockets()
     def test_tls_socket_waits_no_longer_than_the_deadline(self):
         # A real TLS client socket over a local socket pair whose peer never answers the handshake.
         saved = (bootstrap.ssl.create_default_context, bootstrap.urllib.request.build_opener)
@@ -1577,6 +1704,7 @@ class ArchiveTransportTests(unittest.TestCase):
             client.close()
             peer.close()
 
+    @real_sockets()
     def test_real_opener_obeys_the_deadline_with_and_without_a_proxy(self):
         # The real opener, proxy handler, CONNECT tunnel and TLS client; only the TCP connection is a local
         # socket pair. Through the proxy, the peer answers CONNECT with one byte every 0.2 s, 13 s for the
@@ -1692,7 +1820,8 @@ class AqtAndRealExtractorTests(unittest.TestCase):
             os.environ.update(APPDATA=str(base / "appdata"), LOG_CFG=str(config))
             try:
                 os.chdir(base)
-                ok, detail = bootstrap.run_probe(bootstrap.entry_for(bootstrap.load_lock(), "aqtinstall"))
+                with real_processes(self):
+                    ok, detail = bootstrap.run_probe(bootstrap.entry_for(bootstrap.load_lock(), "aqtinstall"))
                 self.assertTrue(ok, detail)
                 self.assertEqual(sentinel.read_bytes(), b"unchanged")
                 self.assertEqual(list(base.rglob("aqtinstall.log")), [])
@@ -1708,29 +1837,317 @@ class AqtAndRealExtractorTests(unittest.TestCase):
         python = ROOT / "tools/.venv/renderer-spike/Scripts/python.exe"
         if not python.is_file():
             self.skipTest("renderer-spike interpreter is absent in this worktree")
-        env = bootstrap.probe_env()
-        r = subprocess.run([str(python), "-I", "-c", "import py7zr"], env=env,
-                           capture_output=True, text=True, timeout=bootstrap.PROBE_TIMEOUT)
-        if r.returncode != 0:
-            self.skipTest("renderer-spike interpreter cannot import py7zr")
+        with real_processes(self):
+            env = bootstrap.probe_env()
+            r = subprocess.run([str(python), "-I", "-c", "import py7zr"], env=env,
+                               capture_output=True, text=True, timeout=bootstrap.PROBE_TIMEOUT)
+            if r.returncode != 0:
+                self.skipTest("renderer-spike interpreter cannot import py7zr")
+            with tempfile.TemporaryDirectory() as td:
+                base = Path(td)
+                source, archive, target = base / "source", base / "tiny.7z", base / "out"
+                source.write_bytes(b"tiny fixture")
+                build = "import sys,py7zr; a=py7zr.SevenZipFile(sys.argv[1],'w'); a.write(sys.argv[2],'nested/file'); a.close()"
+                kwargs = dict(cwd=base, env=env, capture_output=True, text=True, timeout=bootstrap.INSTALL_TIMEOUT)
+                r = subprocess.run([str(python), "-I", "-c", build, str(archive), str(source)], **kwargs)
+                self.assertEqual(r.returncode, 0, r.stderr)
+                command = [str(python), "-I", "-c", bootstrap.EXTRACT_CODE]
+                r = subprocess.run([*command, "list", str(archive)], **kwargs)
+                self.assertEqual(r.returncode, 0, r.stderr)
+                listing = json.loads(r.stdout)
+                self.assertEqual(bootstrap.member_problems(listing, "6.10.3/msvc2022_64"), [])
+                self.assertEqual([m["name"] for m in listing if m["file"]], ["nested/file"])
+                target.mkdir()
+                r = subprocess.run([*command, "extract", str(archive), str(target)], **kwargs)
+                self.assertEqual(r.returncode, 0, r.stderr)
+                self.assertEqual((target / "nested/file").read_bytes(), source.read_bytes())
+
+
+H = "--hash=sha256:" + "a" * 64
+WHEEL = "https://files.pythonhosted.org/packages/ab/cd/numpy-2.5.3-cp314-cp314-win_amd64.whl"
+
+
+class SourceAndDownloadTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.lock = bootstrap.load_lock()
+        self.saved = (bootstrap._require_file, bootstrap.safe_dest, bootstrap._download_opener, bootstrap._run,
+                      bootstrap.ledger, bootstrap.venv_contained)
+        self.req = self.root / "req.txt"
+        bootstrap._require_file = lambda rel: self.req
+        bootstrap.safe_dest = lambda rel: self.root / rel
+        bootstrap.ledger = lambda record: None
+
+    def tearDown(self):
+        (bootstrap._require_file, bootstrap.safe_dest, bootstrap._download_opener, bootstrap._run,
+         bootstrap.ledger, bootstrap.venv_contained) = self.saved
+        self.tmp.cleanup()
+
+    def test_requirement_files_cannot_choose_their_own_sources(self):
+        entry = bootstrap.entry_for(self.lock, "scikit-learn")
+        self.req.write_text(f"numpy==2.5.3 \\\n    {H}\n    # via scikit-learn\nscipy==1.18.1 \\\n    {H}\n", encoding="utf-8")
+        bootstrap.check_requirement_sources(entry)
+        self.assertEqual(bootstrap.requirement_pins(self.req), {"numpy": "2.5.3", "scipy": "1.18.1"})
+        bad = {"index": "--index-url https://mirror.invalid/simple", "short index": "-i https://mirror.invalid/simple",
+               "inline option": f"numpy==2.5.3 {H} --extra-index-url https://mirror.invalid/simple",
+               "find links": "--find-links https://mirror.invalid/", "include": "-r other.txt", "constraint": "-c other.txt",
+               "editable": "-e git+https://github.com/x/y", "vcs": f"y @ git+https://github.com/x/y {H}",
+               "wheel URL on an approved host": f"numpy @ {WHEEL} {H}",
+               "foreign host": f"numpy @ https://mirror.invalid/numpy-2.5.3-cp314-cp314-win_amd64.whl {H}",
+               "source archive": f"numpy @ https://files.pythonhosted.org/packages/ab/cd/numpy-2.5.3.tar.gz {H}",
+               "local file": f"numpy @ file:///C:/x/numpy-2.5.3-cp314-cp314-win_amd64.whl {H}",
+               "no hash": "numpy==2.5.3", "extras": f"numpy[all]==2.5.3 {H}"}
+        for name, line in bad.items():
+            self.req.write_text(line + "\n", encoding="utf-8")
+            with self.subTest(case=name), self.assertRaises(bootstrap.Refused):
+                bootstrap.check_requirement_sources(entry)
+        runs = []
+        bootstrap._run = lambda cmd, cwd=ROOT, env=None: runs.append(cmd)
+        self.req.write_text(bad["foreign host"] + "\n", encoding="utf-8")
+        for tool in ("scikit-learn", "uv"):  # refused before any command runs, for both Python methods
+            with self.subTest(tool=tool), self.assertRaises(bootstrap.Refused):
+                bootstrap.install_entry(bootstrap.entry_for(self.lock, tool))
+        self.assertEqual(runs, [])
+
+    def model(self, **changes) -> dict:
+        return dict(bootstrap.entry_for(self.lock, "clip-vit-b-16"), **changes)
+
+    def test_invalid_pins_and_hashes_are_refused_before_installation(self):
+        bad = {"wildcard": f"numpy==2.* {H}", "environment variable": f"numpy==${{TASTELAB_REVIEW_PIN}} {H}",
+               "empty hash": "numpy==2.5.3 --hash=sha256:", "uppercase hash": "numpy==2.5.3 " + H.upper(),
+               "uppercase hex": "numpy==2.5.3 --hash=sha256:" + "A" * 64,
+               "short hash": "numpy==2.5.3 --hash=sha256:" + "a" * 63,
+               "long hash": "numpy==2.5.3 --hash=sha256:" + "a" * 65,
+               "mixed hashes": f"numpy==2.5.3 {H} --hash=sha256:",
+               "URL": f"numpy @ {WHEEL} {H}", "index option": "--index-url https://mirror.invalid/simple",
+               "two pins": f"numpy==2.5.3 scipy==1.18.1 {H}", "trailing text": f"numpy==2.5.3 junk {H}"}
+        for name, line in bad.items():
+            self.req.write_text(line + "\n", encoding="utf-8")
+            for tool in ("scikit-learn", "uv"):
+                with self.subTest(case=name, tool=tool), contextlib.ExitStack() as guards:
+                    sentinels = [guards.enter_context(mock.patch.object(obj, attr, side_effect=AssertionError("installation work")))
+                                 for obj, attr in ((bootstrap, "_run"), (bootstrap.subprocess, "run"),
+                                                   (bootstrap, "install_env"), (Path, "mkdir"),
+                                                   (Path, "write_text"), (Path, "write_bytes"))]
+                    with self.assertRaises(bootstrap.Refused):
+                        bootstrap.install_entry(bootstrap.entry_for(self.lock, tool))
+                    for sentinel in sentinels:
+                        sentinel.assert_not_called()
+            self.assertEqual(list(self.root.iterdir()), [self.req])
+
+    def test_literal_release_versions_and_markers_are_allowed(self):
+        entry = bootstrap.entry_for(self.lock, "scikit-learn")
+        for version in ("2", "2.5.3", "2.5.3a1", "2.5.3b2", "2.5.3rc1", "2.5.3.post1", "2.5.3.dev1",
+                        "2.5.3rc1.post2.dev3"):
+            with self.subTest(version=version):
+                self.req.write_text(f"numpy=={version}; python_version >= '3.14' {H}\n", encoding="utf-8")
+                bootstrap.check_requirement_sources(entry)
+                self.assertEqual(bootstrap.requirement_pins(self.req), {"numpy": version})
+
+    def connection(self, data: bytes, redirect: str | None = None):
+        from email.message import Message
+
+        class Response(io.BytesIO):
+            def __init__(self, body, location=None):
+                super().__init__(body)
+                self.code = self.status = 302 if location else 200
+                self.reason = "Found" if location else "OK"
+                self.headers = Message()
+                if location:
+                    self.headers["Location"] = location
+
+            def geturl(self):
+                return self.url
+
+            def info(self):
+                return self.headers
+
+        connection = mock.Mock()
+        connection.sock = None
+        connection.set_tunnel.side_effect = AssertionError("a proxy tunnel was attempted")
+        connection.getresponse.side_effect = ([Response(b"", redirect)] if redirect else []) + [Response(data)]
+        return connection
+
+    def test_download_connects_directly_without_ambient_credentials(self):
+        import hashlib
+        import urllib.request
+        data = b"weights"
+        entry = self.model(size=len(data), sha256=hashlib.sha256(data).hexdigest())
+        proxies = {name: "http://user:password@proxy.invalid:8080"
+                   for name in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy")}
+        proxies.update({"NO_PROXY": "", "no_proxy": ""})
+        bootstrap._download_opener = self.saved[2]
+        connection = self.connection(data, "https://us.aws.cdn.hf.co/weights")
+        with mock.patch.dict(os.environ, proxies), \
+                mock.patch("urllib.request.getproxies", return_value={"http": proxies["HTTP_PROXY"], "https": proxies["HTTPS_PROXY"],
+                                                                     "all": proxies["ALL_PROXY"]}) as getproxies, \
+                mock.patch("netrc.netrc", side_effect=AssertionError("ambient credentials were read")) as netrc, \
+                mock.patch.object(bootstrap.http.client, "HTTPSConnection", return_value=connection) as connect, \
+                contextlib.redirect_stdout(io.StringIO()):
+            opener = bootstrap._download_opener(entry["network_hosts"])
+            self.assertTrue(all(not h.proxies for h in opener.handlers if isinstance(h, urllib.request.ProxyHandler)))
+            self.assertFalse(any(isinstance(h, (urllib.request.AbstractBasicAuthHandler, urllib.request.AbstractDigestAuthHandler,
+                                               urllib.request.HTTPCookieProcessor)) for h in opener.handlers))
+            bootstrap.download_hashed(entry)
+            getproxies.assert_not_called()
+            netrc.assert_not_called()
+        self.assertEqual([call.args[0] for call in connect.call_args_list], ["huggingface.co", "us.aws.cdn.hf.co"])
+        connection.set_tunnel.assert_not_called()
+        for call, host in zip(connection.request.call_args_list, ("huggingface.co", "us.aws.cdn.hf.co")):
+            self.assertEqual(call.args[3], {"Host": host, "User-Agent": "magic600-bootstrap", "Connection": "close"})
+        self.assertEqual((self.root / entry["dest"]).read_bytes(), data)
+
+    def test_unapproved_redirect_is_refused_before_connecting(self):
+        entry = self.model()
+        bootstrap._download_opener = self.saved[2]
+        connection = self.connection(b"", "https://mirror.invalid/weights")
+        with mock.patch.object(bootstrap.http.client, "HTTPSConnection", return_value=connection) as connect, \
+                contextlib.redirect_stdout(io.StringIO()), self.assertRaises(bootstrap.Refused) as ctx:
+            bootstrap.download_hashed(entry)
+        self.assertIn("not among the entry's approved network hosts", str(ctx.exception))
+        self.assertEqual([call.args[0] for call in connect.call_args_list], ["huggingface.co"])
+        dest = self.root / entry["dest"]
+        self.assertFalse(dest.exists())
+        self.assertEqual(list(dest.parent.glob("*.part")), [])
+
+    def serve(self, data: bytes, final_url: str | None = None) -> list:
+        opened = []
+
+        class Response(io.BytesIO):
+            def geturl(self):
+                return final_url or opened[-1]
+
+        class Opener:
+            def open(self, request, timeout=None):
+                opened.append(request.full_url)
+                self.headers = dict(request.header_items())
+                return Response(data)
+
+        bootstrap._download_opener = lambda hosts: Opener()
+        return opened
+
+    def test_download_keeps_only_the_pinned_file(self):
+        import hashlib
+        data = b"weights" * 1000
+        entry = self.model(size=len(data), sha256=hashlib.sha256(data).hexdigest())
+        dest = self.root / entry["dest"]
+        cases = {"other content": (b"WEIGHTS" * 1000, None), "too large": (data + b"x", None),
+                 "truncated": (data[:-1], None), "unapproved final host": (data, "https://mirror.invalid/weights")}
+        for name, (served, final) in cases.items():
+            self.serve(served, final)
+            with self.subTest(case=name):
+                with self.assertRaises(bootstrap.Refused), contextlib.redirect_stdout(io.StringIO()):
+                    bootstrap.download_hashed(entry)
+                self.assertFalse(dest.exists())
+                self.assertEqual(list(dest.parent.glob("*.part")), [])
+        opened = self.serve(data)
+        with contextlib.redirect_stdout(io.StringIO()):
+            bootstrap.download_hashed(entry)
+        self.assertEqual(opened, [entry["url"]])
+        self.assertEqual(dest.read_bytes(), data)
+        self.assertEqual(list(dest.parent.glob("*.part")), [])
+        self.assertEqual(bootstrap.verify_download(entry)[0], True)
+        self.assertTrue(bootstrap.present(entry))
+
+    def test_download_never_writes_through_a_planted_staging_file(self):
+        import hashlib
+        data = b"weights" * 1000
+        entry = self.model(size=len(data), sha256=hashlib.sha256(data).hexdigest())
+        dest = self.root / entry["dest"]
+        dest.parent.mkdir(parents=True)
+        outside = self.root / "outside.bin"
+        outside.write_bytes(b"outside")
+        fixed = bytes(8)
+        planted = [dest.with_name(dest.name + ".part"), dest.with_name(f"{dest.name}.{fixed.hex()}.part")]
+        try:
+            for path in planted:
+                os.link(outside, path)  # hard links: the link checks cannot see them
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f"hard links not available ({exc})")
+        self.serve(data)
+        with mock.patch.object(os, "urandom", return_value=fixed), contextlib.redirect_stdout(io.StringIO()), \
+                self.assertRaises(bootstrap.Refused):
+            bootstrap.download_hashed(entry)  # the staging name is taken: refused, never written through
+        self.assertEqual(outside.read_bytes(), b"outside")
+        self.assertFalse(dest.exists())
+        self.assertTrue(all(path.exists() for path in planted), "files this call did not create are left alone")
+        self.serve(data)
+        with contextlib.redirect_stdout(io.StringIO()):
+            bootstrap.download_hashed(entry)
+        self.assertEqual(outside.read_bytes(), b"outside")
+        self.assertEqual(dest.read_bytes(), data)
+
+    def test_concurrent_download_cannot_replace_checked_bytes(self):
+        import hashlib
+        data = b"weights" * 1000
+        entry = self.model(size=len(data), sha256=hashlib.sha256(data).hexdigest())
+        dest = self.root / entry["dest"]
+        replace, others = os.replace, []
+
+        def another_download_first(src, dst):
+            # This call has checked its bytes; a second download of the same entry runs and fails before the rename.
+            if not others:
+                others.append(entry["id"])
+                self.serve(data[:100])
+                with self.assertRaises(bootstrap.Refused):
+                    bootstrap.download_hashed(entry)
+            return replace(src, dst)
+
+        self.serve(data)
+        with mock.patch.object(os, "replace", side_effect=another_download_first), contextlib.redirect_stdout(io.StringIO()):
+            bootstrap.download_hashed(entry)
+        self.assertEqual(others, [entry["id"]])
+        self.assertEqual(dest.read_bytes(), data)
+        self.assertEqual([p.name for p in dest.parent.iterdir()], [dest.name], "each call removes only its own staging file")
+
+    def test_present_model_with_other_content_is_not_replaced(self):
+        entry = self.model()
+        dest = self.root / entry["dest"]
+        dest.parent.mkdir(parents=True)
+        dest.write_bytes(b"something else")
+        lock = dict(self.lock, tools=[entry if e["id"] == entry["id"] else e for e in self.lock["tools"]])
+        opened = self.serve(b"")
+        with self.assertRaises(bootstrap.Refused) as ctx:
+            bootstrap.install(lock, entry["id"], set())
+        self.assertIn("owner approval", str(ctx.exception))
+        self.assertEqual(opened, [])
+        self.assertEqual(dest.read_bytes(), b"something else")
+
+    def test_redirects_stay_on_approved_hosts(self):
+        handler = bootstrap._ApprovedRedirects(["huggingface.co", "us.aws.cdn.hf.co"])
+        request = __import__("urllib.request").request.Request("https://huggingface.co/m/resolve/x/w.safetensors")
+        follow = handler.redirect_request(request, None, 302, "Found", {}, "https://us.aws.cdn.hf.co/xet-bridge-us/abc?x=1")
+        self.assertEqual(follow.full_url, "https://us.aws.cdn.hf.co/xet-bridge-us/abc?x=1")
+        for target in ("https://mirror.invalid/w", "http://us.aws.cdn.hf.co/w", "https://us.aws.cdn.hf.co:8443/w",
+                       "https://user@us.aws.cdn.hf.co/w", "file:///C:/w.safetensors"):
+            with self.subTest(target=target), self.assertRaises(bootstrap.Refused):
+                handler.redirect_request(request, None, 302, "Found", {}, target)
+
+    def test_download_pins_are_validated_in_the_lockfile(self):
+        good = self.model()
+        self.assertTrue(bootstrap.valid_download(good))
+        bad = {"plain http": dict(good, url=good["url"].replace("https:", "http:")),
+               "unlisted host": dict(good, network_hosts=["us.aws.cdn.hf.co"]),
+               "short hash": dict(good, sha256="abc"), "upper-case hash": dict(good, sha256=good["sha256"].upper()),
+               "boolean size": dict(good, size=True), "zero size": dict(good, size=0),
+               "outside models": dict(good, dest="tools/.venv/x.safetensors"), "parent step": dict(good, dest="tools/.models/../x"),
+               "no subdirectory": dict(good, dest="tools/.models/x.safetensors"), "partial name": dict(good, dest="tools/.models/m/x.part")}
+        for name, entry in bad.items():
+            with self.subTest(case=name):
+                self.assertFalse(bootstrap.valid_download(entry))
         with tempfile.TemporaryDirectory() as td:
-            base = Path(td)
-            source, archive, target = base / "source", base / "tiny.7z", base / "out"
-            source.write_bytes(b"tiny fixture")
-            build = "import sys,py7zr; a=py7zr.SevenZipFile(sys.argv[1],'w'); a.write(sys.argv[2],'nested/file'); a.close()"
-            kwargs = dict(cwd=base, env=env, capture_output=True, text=True, timeout=bootstrap.INSTALL_TIMEOUT)
-            r = subprocess.run([str(python), "-I", "-c", build, str(archive), str(source)], **kwargs)
-            self.assertEqual(r.returncode, 0, r.stderr)
-            command = [str(python), "-I", "-c", bootstrap.EXTRACT_CODE]
-            r = subprocess.run([*command, "list", str(archive)], **kwargs)
-            self.assertEqual(r.returncode, 0, r.stderr)
-            listing = json.loads(r.stdout)
-            self.assertEqual(bootstrap.member_problems(listing, "6.10.3/msvc2022_64"), [])
-            self.assertEqual([m["name"] for m in listing if m["file"]], ["nested/file"])
-            target.mkdir()
-            r = subprocess.run([*command, "extract", str(archive), str(target)], **kwargs)
-            self.assertEqual(r.returncode, 0, r.stderr)
-            self.assertEqual((target / "nested/file").read_bytes(), source.read_bytes())
+            path = Path(td) / "lock.json"
+            lock = json.loads(bootstrap.LOCK_PATH.read_text(encoding="utf-8"))
+            bootstrap.entry_for(lock, "clip-vit-b-16")["url"] = bad["plain http"]["url"]
+            path.write_text(json.dumps(lock), encoding="utf-8")
+            saved = bootstrap.LOCK_PATH
+            bootstrap.LOCK_PATH = path
+            try:
+                with self.assertRaises(SystemExit):
+                    bootstrap.load_lock()
+            finally:
+                bootstrap.LOCK_PATH = saved
 
 
 class ApprovalTests(unittest.TestCase):
@@ -1835,7 +2252,23 @@ class ApprovalTests(unittest.TestCase):
                 os.symlink(ROOT / "tools" / "toolchain" / "bootstrap.py", link)
             except (OSError, NotImplementedError):
                 self.skipTest("symlinks not available")
-            r = subprocess.run([sys.executable, str(link), "check"], capture_output=True, text=True, timeout=20)
+            source = (ROOT / "tools" / "toolchain" / "bootstrap.py").read_bytes()
+            with self.assertRaises(SystemExit) as ctx:
+                exec(compile(source, str(link), "exec"), {"__file__": str(link), "__name__": "__main__"})
+            self.assertIn("is a link", str(ctx.exception))
+            self.assertNotIn("helper executed", str(ctx.exception))
+
+    def test_linked_installer_refuses_in_a_real_process(self):
+        with tempfile.TemporaryDirectory() as td:
+            (Path(td) / "tools" / "toolchain").mkdir(parents=True)
+            (Path(td) / "tools" / "repo_digest.py").write_text("raise SystemExit('helper executed')\n")
+            link = Path(td) / "tools" / "toolchain" / "bootstrap.py"
+            try:
+                REAL["symlink"](ROOT / "tools" / "toolchain" / "bootstrap.py", link)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks not available")
+            with real_processes(self):
+                r = subprocess.run([sys.executable, str(link), "check"], capture_output=True, text=True, timeout=20)
             self.assertNotEqual(r.returncode, 0)
             self.assertIn("is a link", r.stderr)
             self.assertNotIn("helper executed", r.stderr)
@@ -1848,8 +2281,16 @@ class ApprovalTests(unittest.TestCase):
 
 class CheckTests(unittest.TestCase):
     def test_check_is_fast_and_succeeds(self):
-        r = subprocess.run([sys.executable, str(ROOT / "tools" / "toolchain" / "bootstrap.py"), "check"],
-                           capture_output=True, text=True, timeout=10)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = bootstrap.main(["check"])
+        self.assertEqual(code, 0)
+        self.assertIn("toolchain planning:", out.getvalue())
+
+    def test_check_runs_fast_in_a_real_process(self):
+        with real_processes(self):
+            r = subprocess.run([sys.executable, str(ROOT / "tools" / "toolchain" / "bootstrap.py"), "check"],
+                               capture_output=True, text=True, timeout=10)
         self.assertEqual(r.returncode, 0)
         self.assertIn("toolchain planning:", r.stdout)
 

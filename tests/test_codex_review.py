@@ -10,10 +10,20 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools" / "agents"))
 import codex_review  # noqa: E402
+
+TEST_ENV = {
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "dummy-token",
+    "gh_token": "dummy-token",
+    "OPENAI_API_KEY": "dummy-key",
+    "MY_SECRET_VALUE": "dummy-secret",
+    "mixed_kEy_name": "dummy-key",
+    "PATH": "ordinary-path",
+}
 
 FAKE = r'''
 import json, os, re, sys, time
@@ -93,6 +103,59 @@ class CodexReviewTests(unittest.TestCase):
         self.assertEqual(len(metas), 1)
         return json.loads(metas[0].read_text(encoding="utf-8"))
 
+    def assert_filtered_env(self, env, allowed_names=()):
+        self.assertIsInstance(env, dict)
+        self.assertEqual(env["PATH"], TEST_ENV["PATH"])
+        for name in env:
+            if name not in allowed_names:
+                self.assertNotRegex(name, r"(?i)KEY|SECRET|TOKEN")
+
+    def test_child_and_sandbox_environments_filter_credentials(self):
+        with mock.patch.dict(os.environ, TEST_ENV, clear=True), \
+                mock.patch.object(codex_review, "WORKTREES", Path(self.tmp.name) / "worktrees"):
+            for builder in (codex_review.child_env, codex_review.sandbox_env):
+                with self.subTest(builder=builder.__name__):
+                    env = builder()
+                    keys = [f"GIT_CONFIG_KEY_{i}" for i in range(len(codex_review.CHILD_GIT_CONFIG))]
+                    self.assert_filtered_env(env, keys)
+                    self.assertEqual(env["PYTHONDONTWRITEBYTECODE"], "1")
+                    self.assertEqual(env["GIT_CONFIG_COUNT"], str(len(codex_review.CHILD_GIT_CONFIG)))
+                    for i, (key, value) in enumerate(codex_review.CHILD_GIT_CONFIG.items()):
+                        self.assertEqual(env[f"GIT_CONFIG_KEY_{i}"], key)
+                        self.assertEqual(env[f"GIT_CONFIG_VALUE_{i}"], value)
+                    if builder is codex_review.sandbox_env:
+                        self.assertEqual(env["CODEX_HOME"], str(Path(self.tmp.name) / "codex-sandbox-home"))
+            for name, value in TEST_ENV.items():
+                self.assertEqual(os.environ[name], value)
+
+    def test_plan_and_review_pass_filtered_environment_to_run_codex(self):
+        for kind in ("plan", "review"):
+            with self.subTest(kind=kind), mock.patch.dict(os.environ, TEST_ENV, clear=True), \
+                    mock.patch.object(codex_review, "source_identity", return_value={"digest": "test-source"}), \
+                    mock.patch.object(codex_review, "codex_command", return_value=["fake-codex"]), \
+                    mock.patch.object(subprocess, "run", return_value=subprocess.CompletedProcess(
+                        [], 0, "Logged in using ChatGPT", "")), \
+                    mock.patch.object(codex_review, "run_codex", return_value=(1, "", "")) as run:
+                code, _ = self.run_wrapper("pass", "--kind", kind)
+                self.assertEqual(code, 2)  # the mocked model call exits unsuccessfully
+                run.assert_called_once()
+                self.assert_filtered_env(run.call_args.kwargs.get("env"))
+
+    def test_login_preflight_uses_filtered_environment_for_every_call_kind(self):
+        contract = {"allowed_files": ["example.py"], "acceptance_check": ["python", "example.py"],
+                    "stop_condition": "acceptance passes"}
+        self.packet.write_text("# Test packet\n```implement-contract\n" + json.dumps(contract) + "\n```\n", encoding="utf-8")
+        for kind in ("plan", "review", "implement"):
+            with self.subTest(kind=kind), mock.patch.dict(os.environ, TEST_ENV, clear=True), \
+                    mock.patch.object(codex_review, "source_identity", return_value={"digest": "test-source"}), \
+                    mock.patch.object(codex_review, "codex_command", return_value=["fake-codex"]), \
+                    mock.patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([], 1, "", "")) as run:
+                code, _ = self.run_wrapper("pass", "--kind", kind)
+                self.assertEqual(code, 2)  # refuse before any model call or worktree creation
+                run.assert_called_once()
+                self.assertEqual(run.call_args.args[0], ["fake-codex", "login", "status"])
+                self.assert_filtered_env(run.call_args.kwargs.get("env"))
+
     def test_valid_pass(self):
         code, _ = self.run_wrapper("pass")
         self.assertEqual(code, 0)
@@ -132,7 +195,7 @@ class CodexReviewTests(unittest.TestCase):
     def test_speed_defaults(self):
         seen = []
         original = codex_review.run_codex
-        codex_review.run_codex = lambda cmd, prompt, timeout: (seen.append(cmd), (1, "", ""))[1]
+        codex_review.run_codex = lambda cmd, prompt, timeout, env=None: (seen.append(cmd), (1, "", ""))[1]
         try:
             self.run_wrapper("pass")
             self.run_wrapper("pass", "--model", "gpt-6-astra", "--effort", "ultra", "--gate", "architecture-freeze")
@@ -197,7 +260,7 @@ class CodexReviewTests(unittest.TestCase):
     def test_command_is_explicit_and_read_only(self):
         seen = {}
 
-        def fake_run(cmd, prompt, timeout):
+        def fake_run(cmd, prompt, timeout, env=None):
             seen["cmd"], seen["prompt"] = cmd, prompt
             return 1, "", ""
 
@@ -223,6 +286,23 @@ class CodexReviewTests(unittest.TestCase):
 
 
 class TimeoutTest(unittest.TestCase):
+    def test_windows_timeout_taskkill_uses_filtered_environment(self):
+        proc = mock.Mock(pid=1234)
+        proc.communicate.side_effect = [subprocess.TimeoutExpired("fake-codex", 1), ("out", "err")]
+        with mock.patch.dict(os.environ, TEST_ENV, clear=True), mock.patch.object(os, "name", "nt"), \
+                mock.patch.object(subprocess, "CREATE_NEW_PROCESS_GROUP", 512, create=True), \
+                mock.patch.object(subprocess, "Popen", return_value=proc), \
+                mock.patch.object(subprocess, "run") as kill:
+            result = codex_review.run_codex(["fake-codex"], "", 1, env={"PATH": TEST_ENV["PATH"]})
+        self.assertEqual(result, (None, "out", "err"))
+        kill.assert_called_once()
+        self.assertEqual(kill.call_args.args[0], ["taskkill", "/F", "/T", "/PID", "1234"])
+        env = kill.call_args.kwargs.get("env")
+        self.assertIsInstance(env, dict)
+        self.assertEqual(env["PATH"], TEST_ENV["PATH"])
+        for name in env:
+            self.assertNotRegex(name, r"(?i)KEY|SECRET|TOKEN")
+
     def test_run_codex_timeout_returns_none(self):
         code, _, _ = codex_review.run_codex([sys.executable, "-c", "import time; time.sleep(30)"], "", 1)
         self.assertIsNone(code)
