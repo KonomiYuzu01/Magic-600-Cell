@@ -1,0 +1,603 @@
+--- a/work/experiments/renderer-sd/run_smoke.py
++++ b/work/experiments/renderer-sd/run_smoke.py
+@@ -7,11 +7,11 @@
+ import hashlib
+ import json
+ import os
+-from pathlib import Path
++from pathlib import Path, PurePosixPath
+ import shutil
+ import subprocess
+ 
+-from smoke_summary import PHRASES, write_summary
++from smoke_summary import PHRASES, selftest_status, write_summary
+ 
+ HERE = Path(__file__).resolve().parent
+ ROOT = HERE.parents[2]
+@@ -20,6 +20,10 @@
+ SOURCE_ROOTS = (HERE, NATIVE)
+ EXCLUDED = {"results", "build", "bin", "obj", "deploy", "CMakeFiles", "__pycache__"}
+ DRAIN_LINE = "sa2: drain not confirmed; ending the process with exit code 3"
++# Observations a recorded probe row may report. Any other reason means the run
++# did not exercise its combination (setup, identity, teardown or harness failure).
++RECORDED_REASONS = frozenset({"debug-errors", "decode-mismatch", "verify-mismatch", "unverified-frames",
++                              "eligible-coverage", "readback-missing"})
+ 
+ 
+ def matrix(device_loss=False):
+@@ -74,10 +78,34 @@
+     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+ 
+ 
++def excluded(root, parts):
++    """True for a root-relative file path under an excluded directory or a native build folder."""
++    directories = parts[:-1]
++    return (any(part in EXCLUDED for part in directories)
++            or (root == NATIVE and bool(directories) and directories[0].startswith("build")))
++
++
+ def source_files():
+     return sorted((path for root in SOURCE_ROOTS for path in root.rglob("*")
+-                   if path.is_file() and not set(path.relative_to(root).parts) & EXCLUDED),
++                   if path.is_file() and not excluded(root, path.relative_to(root).parts)),
+                   key=lambda path: path.relative_to(ROOT).as_posix())
++
++
++def diff_pathspecs():
++    """Both source roots for `git diff`, minus every directory the source walk excludes."""
++    specs = []
++    for root in SOURCE_ROOTS:
++        base = root.relative_to(ROOT).as_posix()
++        specs.append(base)
++        for name in sorted(EXCLUDED):
++            specs += [f":(exclude){base}/{name}", f":(exclude,glob){base}/**/{name}/**"]
++    return specs + [f":(exclude,glob){NATIVE.relative_to(ROOT).as_posix()}/build*/**"]
++
++
++def git_environment():
++    env = os.environ.copy()
++    env["GIT_OPTIONAL_LOCKS"] = "0"
++    return env
+ 
+ 
+ def source_identity():
+@@ -86,12 +114,17 @@
+     for path in paths:
+         aggregate.update(path.relative_to(ROOT).as_posix().encode("utf-8") + b"\0")
+         aggregate.update(sha256(path).encode("ascii") + b"\n")
+-    roots = [path.relative_to(ROOT).as_posix() for path in SOURCE_ROOTS]
+-    head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+-    tracked = subprocess.check_output(["git", "ls-files", "-z", "--", *roots], cwd=ROOT).decode("utf-8").split("\0")
+-    tracked = {name for name in tracked if name and not set(Path(name).parts) & EXCLUDED}
++    env = git_environment()
++    head = subprocess.check_output(["git", "--no-optional-locks", "rev-parse", "HEAD"], cwd=ROOT, env=env, text=True).strip()
++    tracked = set()
++    for root in SOURCE_ROOTS:
++        base = root.relative_to(ROOT).as_posix()
++        names = subprocess.check_output(["git", "--no-optional-locks", "ls-files", "-z", "--", base],
++                                        cwd=ROOT, env=env).decode("utf-8").split("\0")
++        tracked |= {name for name in names if name and not excluded(root, PurePosixPath(name).relative_to(base).parts)}
+     walked = {path.relative_to(ROOT).as_posix() for path in paths}
+-    diff = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", *roots], cwd=ROOT, check=False)
++    diff = subprocess.run(["git", "--no-optional-locks", "diff", "--quiet", "HEAD", "--", *diff_pathspecs()],
++                          cwd=ROOT, env=env, check=False)
+     if diff.returncode not in (0, 1):
+         raise ValueError("source identity diff failed")
+     return dict(head=head, sha256=aggregate.hexdigest(), matches_head=walked == tracked and diff.returncode == 0)
+@@ -111,6 +144,15 @@
+     env["PATH"] = os.pathsep.join(paths)
+     env["QT_ENABLE_HIGHDPI_SCALING"] = "0"
+     env["QT_LOGGING_RULES"] = "qt.rhi.general=true;qt.scenegraph.general=true"
++    # Without a console window Qt logs to OutputDebugString, and the stderr counts would read 0.
++    env["QT_FORCE_STDERR_LOGGING"] = "1"
++    return env
++
++
++def deploy_environment(env):
++    """windeployqt adds the VC redistributable installer when VCINSTALLDIR is set (a developer prompt)."""
++    env = dict(env)
++    env.pop("VCINSTALLDIR", None)
+     return env
+ 
+ 
+@@ -142,7 +184,8 @@
+ 
+ 
+ def build_command(script, destination):
+-    return ["cmd.exe", "/d", "/c", f'call "{script}" "{destination}"']
++    # A string, not a list: list2cmdline would escape the quotes as \", which cmd.exe does not understand.
++    return f'cmd.exe /d /c call "{script}" "{destination}"'
+ 
+ 
+ def deployment_manifest(build):
+@@ -188,7 +231,7 @@
+     shutil.copy2(build / "app/sd_smoke.exe", deploy / "sd_smoke.exe")
+     command = [str(QT / "bin/windeployqt.exe"), "--release", "--no-translations", "--no-system-d3d-compiler",
+                "--no-opengl-sw", "--no-quick-import", "--dir", str(deploy), str(deploy / "sd_smoke.exe")]
+-    code, timeout, _, _ = run_process(command, ROOT, env, 300, private / "deploy")
++    code, timeout, _, _ = run_process(command, ROOT, deploy_environment(env), 300, private / "deploy")
+     if code != 0 or timeout:
+         raise ValueError("Qt deployment failed; see the private build log")
+     if source_identity() != source:
+@@ -201,6 +244,12 @@
+     return identity
+ 
+ 
++def teardown_complete(result):
++    teardown = result.get("teardown", {})
++    return (teardown.get("phase") == "complete" and teardown.get("drain_confirmed") is True
++            and teardown.get("detached") is True)
++
++
+ def judge(row, result, exit_code, timed_out, drain_line, expect_adapter):
+     if timed_out:
+         return "unexpected"
+@@ -208,8 +257,8 @@
+     if row["expected"] == "bounded-loss":
+         return "as-expected"
+     if row["id"] in ("Q0", "Q0b"):
+-        checks = result.get("checks", []) if result else []
+-        ok = exit_code == 0 and (row["id"] == "Q0b" or (checks and all(c.get("status") == "pass" for c in checks)))
++        # Q0: every check passes or is unsupported with a reason, and at least one passes.
++        ok = exit_code == 0 and (row["id"] == "Q0b" or selftest_status(result) == "pass")
+         return "as-expected" if ok else "unexpected"
+     if not result or result.get("format") != "magic600-sd-smoke-run-v1":
+         return "unexpected"
+@@ -220,6 +269,12 @@
+               and result.get("frames", {}).get("run") == row["frames"] and not result.get("sa2_failures"))
+     else:
+         ok = exit_code == 0 and result.get("status") == row["expected"]
++        if row["expected"] == "recorded":
++            # A probe row always reports recorded with exit 0, so it must also have run every
++            # requested frame, torn down completely and failed only by observation.
++            reasons = result.get("reasons", [])
++            ok = (ok and result.get("frames", {}).get("run") == row["frames"] and teardown_complete(result)
++                  and isinstance(reasons, list) and set(reasons) <= RECORDED_REASONS)
+     return "as-expected" if ok else "unexpected"
+ 
+ 
+--- a/work/experiments/renderer-sd/smoke_summary.py
++++ b/work/experiments/renderer-sd/smoke_summary.py
+@@ -19,6 +19,7 @@
+ PHRASES = ("Failed to", "Device loss detected", "Graphics device lost", "cannot import device",
+            "Using imported device", "Using existing native D3D12 device")
+ PRIVATE = re.compile(r"[a-z]:[\\/]|[\\/]users[\\/]|appdata|%[^%]+%|0x[0-9a-f]{8,}", re.I)
++SELFTEST_FORMAT = "magic600-sa2-native-selftest-v1"
+ 
+ 
+ def scan(value, username=None):
+@@ -33,6 +34,27 @@
+     elif isinstance(value, list):
+         for item in value:
+             scan(item, username)
++
++
++def selftest_status(result):
++    """Q0's status from its checks; the self-test JSON has no overall status field.
++
++    It passes only if every check passes or is unsupported with a reason, and at
++    least one check passes. An explicit overall status, if present, must be pass.
++    """
++    if not isinstance(result, dict):
++        return "fail"
++    checks = result.get("checks")
++    if isinstance(checks, dict):
++        checks = list(checks.values())
++    if not isinstance(checks, list):
++        return "fail"
++    ok = (result.get("format") == SELFTEST_FORMAT and result.get("status", "pass") == "pass"
++          and any(isinstance(c, dict) and c.get("status") == "pass" for c in checks)
++          and all(isinstance(c, dict) and (c.get("status") == "pass"
++                                           or (c.get("status") == "unsupported" and bool(c.get("reason"))))
++                  for c in checks))
++    return "pass" if ok else "fail"
+ 
+ 
+ def integers(source, keys):
+@@ -83,7 +105,8 @@
+     identity = result.get("device", {}).get("identity", {})
+     projected = {
+         "row": row_summary(run.get("row", {})),
+-        "status": enum(result.get("status"), {"pass", "fail", "recorded", "unsupported"}),
++        "status": (selftest_status(result) if run.get("row", {}).get("id") == "Q0"
++                   else enum(result.get("status"), {"pass", "fail", "recorded", "unsupported"})),
+         "judgement": enum(run.get("judgement"), {"as-expected", "unexpected"}),
+         "reasons": sorted({reason for reason in result.get("reasons", [])
+                            if isinstance(reason, str) and reason in REASONS}),
+--- a/work/experiments/renderer-sd/check_project.py
++++ b/work/experiments/renderer-sd/check_project.py
+@@ -8,6 +8,7 @@
+ from pathlib import Path
+ import re
+ import shutil
++import stat
+ import subprocess
+ import tempfile
+ import uuid
+@@ -37,10 +38,10 @@
+         require((HERE / name).is_file(), "missing " + name)
+     cmake = (HERE / "app/CMakeLists.txt").read_text(encoding="utf-8")
+     for text in ('cmake_minimum_required(VERSION 3.30)', 'set(CMAKE_CXX_STANDARD 20)',
+-                 'find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick)',
++                 'find_package(Qt6 REQUIRED COMPONENTS Core Gui GuiPrivate Quick)',
+                  'NOT Qt6_VERSION STREQUAL "6.10.3"', 'qt_standard_project_setup()',
+                  'add_executable(sd_smoke ', 'add_executable(sd_code_layout_test ',
+-                 'Qt6::Core Qt6::Gui Qt6::Quick d3d12 dxgi dxguid', '../../renderer-sa2/native/include'):
++                 'Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick d3d12 dxgi dxguid', '../../renderer-sa2/native/include'):
+         require(text in cmake, "CMake setting: " + text)
+     require(not re.search(r"add_executable\(sd_smoke\s+WIN32", cmake), "console executable required")
+     build = (HERE / "build.cmd").read_bytes()
+@@ -86,7 +87,9 @@
+                   "currentFrameCommandBuffer", "sa2_signal_godot_free", "sa2_godot_wait_ready", "sa2_mark_shown",
+                   "sa2_drain", "sa2_remove_device", 's.phase = "pending"', "std::chrono::seconds(10)"):
+         require(token in smoke, "render protocol source missing " + token)
+-    require(smoke.index('s.phase = "pending"') < smoke.index("releaseRing();", smoke.index('s.phase = "pending"')), "pending result before drain")
++    pending = smoke.find('s.phase = "pending"')
++    write, release = smoke.find("writeResult(false)", pending), smoke.find("releaseRing();", pending)
++    require(0 <= pending < write < release, "pending result written before drain")
+     for token in ("QQuickGraphicsDevice::fromRhi", "QQuickGraphicsDevice::fromDeviceAndContext",
+                   "QQuickWindow::setGraphicsApi(QSGRendererInterface::Direct3D12)", "Qt::QueuedConnection",
+                   "Qt::DirectConnection", "owned.release(harness)"):
+@@ -176,9 +179,39 @@
+     require(run_smoke.judge(rows["Q13"], pending, 3, False, False, adapter) == "unexpected", "drain stderr required")
+     require(run_smoke.judge(rows["Q14"], None, -1, False, False, adapter) == "as-expected", "bounded loss without result")
+     require(run_smoke.judge(rows["Q15"], result, 0, True, False, adapter) == "unexpected", "loss timeout")
+-    with patch.dict(os.environ, {"QSG_RHI_DEBUG_LAYER": "1", "M600_SA2_INJECT_UNCONFIRMED_DRAIN": "1"}):
++    recorded = dict(format="magic600-sd-smoke-run-v1", status="recorded", reasons=["debug-errors", "decode-mismatch", "unverified-frames"],
++                    device=dict(adapter_name=adapter), frames=dict(run=300),
++                    teardown=dict(phase="complete", drain_confirmed=True, detached=True))
++    require(run_smoke.judge(rows["Q10"], recorded, 0, False, False, adapter) == "as-expected", "recorded probe with observations")
++    for change in (dict(reasons=["debug-layer-unavailable"], frames=dict(run=0)), dict(reasons=["identity-mismatch"]),
++                   dict(frames=dict(run=299)), dict(teardown=dict(phase="pending", drain_confirmed=False, detached=False)),
++                   dict(teardown=dict(phase="complete", drain_confirmed=True, detached=False)), dict(reasons=["teardown-incomplete"])):
++        require(run_smoke.judge(rows["Q10"], {**recorded, **change}, 0, False, False, adapter) == "unexpected",
++                "recorded probe that did not run: " + json.dumps(change))
++    selftest = dict(format=smoke_summary.SELFTEST_FORMAT, checks=[dict(name="abi", status="pass"),
++                                                              dict(name="warp", status="unsupported", reason="no adapter")])
++    require(run_smoke.judge(rows["Q0"], selftest, 0, False, False, adapter) == "as-expected", "self-test with a reasoned unsupported check")
++    for broken in ({**selftest, "checks": [dict(name="warp", status="unsupported", reason="no adapter")]},
++                   {**selftest, "checks": [dict(name="abi", status="pass"), dict(name="warp", status="unsupported")]},
++                   {**selftest, "format": "other"}, {**selftest, "status": "fail"}, None):
++        require(run_smoke.judge(rows["Q0"], broken, 0, False, False, adapter) == "unexpected", "broken self-test accepted")
++    require(run_smoke.judge(rows["Q0"], selftest, 1, False, False, adapter) == "unexpected", "self-test exit code")
++    require(smoke_summary.run_summary(dict(row=rows["Q0"], result=selftest))["status"] == "pass", "Q0 summary status")
++    command = run_smoke.build_command(Path("C:/a b/build.cmd"), Path("C:/a b/out"))
++    require(isinstance(command, str) and command.startswith('cmd.exe /d /c call "') and '\\"' not in command, "cmd.exe string form")
++    native = run_smoke.NATIVE
++    require(run_smoke.excluded(native, ("build-check-1234", "x.obj")) and run_smoke.excluded(run_smoke.HERE, ("results", "s.json"))
++            and run_smoke.excluded(run_smoke.HERE, ("app", "build", "x.obj")) and not run_smoke.excluded(native, ("build.cmd",))
++            and not run_smoke.excluded(run_smoke.HERE, ("app", "src", "main.cpp")), "source walk exclusions")
++    specs = run_smoke.diff_pathspecs()
++    require(":(exclude)work/experiments/renderer-sd/results" in specs
++            and ":(exclude,glob)work/experiments/renderer-sa2/native/build*/**" in specs
++            and specs[0] == "work/experiments/renderer-sd" and "work/experiments/renderer-sa2/native" in specs, "diff exclusions")
++    with patch.dict(os.environ, {"QSG_RHI_DEBUG_LAYER": "1", "M600_SA2_INJECT_UNCONFIRMED_DRAIN": "1", "VCINSTALLDIR": "vc"}):
+         cleaned = run_smoke.clean_environment()
+         require("QSG_RHI_DEBUG_LAYER" not in cleaned and "M600_SA2_INJECT_UNCONFIRMED_DRAIN" not in cleaned, "inherited probes removed")
++        require(cleaned.get("QT_FORCE_STDERR_LOGGING") == "1", "Qt logs to stderr without a console")
++        require("VCINSTALLDIR" not in run_smoke.deploy_environment(cleaned), "no VC redistributable in the deployment")
+ 
+ 
+ def summary_checks(directory):
+@@ -217,6 +250,41 @@
+             raise AssertionError("private adapter string accepted")
+ 
+ 
++def pathspec_checks(directory):
++    """In a temporary repository, the diff pathspecs ignore excluded output and see source changes."""
++    repo = directory / "pathspec-fixture"
++    excluded = ("work/experiments/renderer-sd/results/sd-smoke-summary.json", "work/experiments/renderer-sd/app/build/x.obj",
++                "work/experiments/renderer-sa2/native/build-check-1/x.obj")
++    sources = ("work/experiments/renderer-sd/run_smoke.py", "work/experiments/renderer-sd/build.cmd",
++               "work/experiments/renderer-sa2/native/build.cmd")
++    for name in excluded + sources:
++        (repo / name).parent.mkdir(parents=True, exist_ok=True)
++        (repo / name).write_bytes(b"0")
++    git = ["git", "--no-optional-locks", "-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid",
++           "-c", "core.autocrlf=false", "-c", "commit.gpgsign=false"]
++    for args in (["init", "-q"], ["add", "-f", "."], ["commit", "-q", "--no-verify", "-m", "fixture"]):
++        subprocess.run(git + args, cwd=repo, check=True, capture_output=True, timeout=30)
++
++    def changed():
++        return subprocess.run(git + ["diff", "--quiet", "HEAD", "--", *run_smoke.diff_pathspecs()],
++                              cwd=repo, capture_output=True, timeout=30, check=False).returncode
++    for name in excluded:
++        (repo / name).write_bytes(b"1")
++    require(changed() == 0, "a change under an excluded folder counts as a source change")
++    for name in sources:
++        (repo / name).write_bytes(b"1")
++        require(changed() == 1, "source change missed: " + name)
++        (repo / name).write_bytes(b"0")
++
++
++def remove_tree(path):
++    """Remove a fixture tree, including Git's read-only object files."""
++    def retry(function, name, _):
++        os.chmod(name, stat.S_IWRITE)
++        function(name)
++    shutil.rmtree(path, onexc=retry)
++
++
+ def reuse_checks(directory):
+     root = directory / "reuse-fixture"
+     build = root / "work/sdb/20261003T000000Z"
+@@ -259,9 +327,10 @@
+     try:
+         summary_checks(directory)
+         reuse_checks(directory)
++        pathspec_checks(directory)
+     finally:
+         require(directory.resolve().parent == base, "temp cleanup boundary")
+-        shutil.rmtree(directory)
++        remove_tree(directory)
+     print("sd project: ok (source/static and Python fixtures; no Qt, C++ build or GPU)")
+     return 0
+ 
+--- a/work/experiments/renderer-sd/README.md
++++ b/work/experiments/renderer-sd/README.md
+@@ -132,14 +132,22 @@
+ the oracle image and attaches the DLL only for debug counters, without slots.
+ 
+ Imported copy textures start tracked at `COPY_SOURCE`; direct textures start at
+-`PIXEL_SHADER_RESOURCE`. Export textures are warmed with three copy-only steps,
++`PIXEL_SHADER_RESOURCE`. Qt allocates render targets without zeroing, so every
++ring creation first clears the item's new color buffer, which the scenegraph
++shows on that step, and on the export route each new slot texture, once. The
++clears use the optimized clear values Qt declares for its render targets (zero
++color, depth 1, stencil 0), so they add no clear-value warning (ID 820). Without
++these clears the debug layer reports error 1422 (render target read before
++initialization). Export textures are warmed with three copy-only steps,
+ one per slot, after every ring creation. Their actual Qt-created initial layout
+ is recorded; the steady producer state is `COPY_SOURCE`. Export pointers are
+-checked each step. Q10 follows the packet's deliberately probed combination:
+-initial `RENDER_TARGET`, producer-before `COPY_SOURCE`, producer-after
+-`RENDER_TARGET`, and `setNativeLayout(RENDER_TARGET)` after each production. Its
+-first-write assumptions, as well as the declared-layout handover, are therefore
+-observations, not a correctness claim. Qt's barriers remain legacy in every run;
++checked each step. Every imported slot starts in the producer-before state.
++Q10 declares the handover: producer-before `COPY_SOURCE`, producer-after
++`RENDER_TARGET`, and `setNativeLayout(RENDER_TARGET)` after each production.
++The packet's initial `RENDER_TARGET` for Q10 was not kept: it would start every
++slot's first write from a state mismatch the producer causes itself. The
++declared-layout handover is an observation, not a correctness claim. Qt's
++barriers remain legacy in every run;
+ Q12 resolves the producer's `match` API from adapter support.
+ 
+ Every 50 run frames, native routes verify the producer slot with the DLL.
+@@ -158,7 +166,8 @@
+ 800×600. On a size change, the render step finishes Qt work, removes the direct
+ texture node if present, destroys wrappers, drains the producer, unregisters
+ slots and releases imported resources. It increments generation modulo 4096,
+-creates the new ring and performs export warm-up. Each requested resize records
++creates the new ring, clears the new render targets and performs export
++warm-up. Each requested resize records
+ the render-step count through synchronization, rebuild and warm-up.
+ 
+ On device removal the harness records DLL statuses/removal reason and Qt
+@@ -229,6 +238,16 @@
+ | QRhiTextureUploadDescription/Entry/SubresourceUploadDescription; QRhiReadbackDescription(texture); QRhiReadbackResult::data | Supporting descriptors and data access for packet-listed upload/readback APIs |
+ | QString conversions, QByteArray, QSize/QPointF/QSizeF, qRound, qEnvironmentVariable, QFileInfo::isAbsolute, QJsonObject/Array/Document/Value, QSaveFile and QIODevice::WriteOnly | Longstanding Core value, path-validation, JSON and atomic file APIs |
+ 
++The integrator's first build against the installed 6.10.3 headers needed these
++changes: QRhi's headers are semi-public, so CMake finds and links
++`Qt6::GuiPrivate`; the Direct3D 12 native handles and init parameters are in
++`<rhi/qrhi_platform.h>` (6.10 has no `qrhid3d12.h`); `QRhiD3D12NativeHandles::dev`
++is `void *`; and `interface` is a `combaseapi.h` macro. From Qt source reading,
++the threaded loop emits `sceneGraphInitialized` before `QQuickWindow::rhi()` is
++set, so the harness reads the QRhi through the renderer interface; and the basic
++loop releases nothing on hide, so shutdown deletes the window without waiting
++for the renderer's teardown.
++
+ Not verified: Qt 6.11 or later; basic-loop behavior beyond Q8; recovery after
+ device loss with fromRhi or fromDeviceAndContext; native command-list injection;
+ geometry/label correctness, input/accessibility, long-session reliability,
+--- a/work/experiments/renderer-sd/app/CMakeLists.txt
++++ b/work/experiments/renderer-sd/app/CMakeLists.txt
+@@ -2,7 +2,8 @@
+ project(Magic600SdSmoke LANGUAGES CXX)
+ set(CMAKE_CXX_STANDARD 20)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+-find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick)
++# QRhi (<rhi/qrhi.h>) is semi-public API: it needs the GuiPrivate target, which Qt 6.10 finds only on request.
++find_package(Qt6 REQUIRED COMPONENTS Core Gui GuiPrivate Quick)
+ if(NOT Qt6_VERSION STREQUAL "6.10.3")
+     message(FATAL_ERROR "SD smoke requires exactly Qt 6.10.3")
+ endif()
+@@ -10,7 +11,7 @@
+ add_executable(sd_smoke src/main.cpp src/smoke.cpp src/native_loader.cpp src/code_layout.cpp)
+ target_include_directories(sd_smoke PRIVATE ../../renderer-sa2/native/include)
+ target_compile_definitions(sd_smoke PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+-target_link_libraries(sd_smoke PRIVATE Qt6::Core Qt6::Gui Qt6::Quick d3d12 dxgi dxguid)
++target_link_libraries(sd_smoke PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick d3d12 dxgi dxguid)
+ add_executable(sd_code_layout_test src/code_layout_test.cpp src/code_layout.cpp)
+ target_include_directories(sd_code_layout_test PRIVATE ../../renderer-sa2/native/include)
+ target_compile_definitions(sd_code_layout_test PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+--- a/work/experiments/renderer-sd/app/src/main.cpp
++++ b/work/experiments/renderer-sd/app/src/main.cpp
+@@ -4,7 +4,7 @@
+ #include <QtGui/QGuiApplication>
+ #include <QtQuick/QQuickGraphicsDevice>
+ #include <QtQuick/QSGRendererInterface>
+-#include <rhi/qrhid3d12.h>
++#include <rhi/qrhi_platform.h>
+ #include <d3d12sdklayers.h>
+ #include <dxgi1_6.h>
+ #include <wrl/client.h>
+@@ -104,7 +104,7 @@
+     ComPtr<IUnknown> expectedDevice, actualDevice;
+     const bool deviceMatches = actual && actual->dev
+         && SUCCEEDED(owned.device->QueryInterface(IID_PPV_ARGS(&expectedDevice)))
+-        && SUCCEEDED(actual->dev->QueryInterface(IID_PPV_ARGS(&actualDevice))) && expectedDevice.Get() == actualDevice.Get();
++        && SUCCEEDED(static_cast<IUnknown*>(actual->dev)->QueryInterface(IID_PPV_ARGS(&actualDevice))) && expectedDevice.Get() == actualDevice.Get();
+     const bool queueMatches = actual && actual->commandQueue == owned.queue;
+     harness.edit([&](sd::Stats& s) { s.deviceMatches = deviceMatches; s.queueMatches = queueMatches; s.fallbackDetected = !deviceMatches || !queueMatches; });
+     if (!deviceMatches || !queueMatches) { harness.fail("identity-mismatch"); throw std::runtime_error("QRhi identity mismatch"); }
+@@ -147,7 +147,7 @@
+             [&](QQuickWindow::SceneGraphError, const QString& message) { harness.sceneError(message); }, Qt::DirectConnection);
+         if (options.route == "import-direct")
+             QObject::connect(window.get(), &QQuickWindow::beforeRendering, window.get(),
+-                [&] { harness.renderStep(nullptr, nullptr, {}); }, Qt::DirectConnection);
++                [&] { harness.renderStep(nullptr, nullptr, nullptr, {}); }, Qt::DirectConnection);
+         QObject::connect(window.get(), &QQuickWindow::afterRendering, window.get(), [&] { harness.afterRendering(); }, Qt::DirectConnection);
+         QObject::connect(window.get(), &QQuickWindow::afterFrameEnd, window.get(), [&] { harness.afterFrameEnd(); }, Qt::DirectConnection);
+         bool stopping = false, finalized = false;
+@@ -166,9 +166,10 @@
+                 window->close();
+                 window->releaseResources();
+             }
+-            if (stopping && !finalized && (action.renderDone || harness.snapshot().initialized == 0)) {
++            if (stopping && !finalized) {
+                 finalized = true;
+-                // Window deletion joins its render thread before the application's QRhi is destroyed.
++                // The basic loop releases nothing on hide. Window deletion runs any remaining teardown and
++                // joins the render thread before the application's QRhi is destroyed.
+                 window.reset(); harness.window = nullptr;
+                 owned.release(harness);
+                 harness.edit([](sd::Stats& s) { s.phase = "complete"; });
+--- a/work/experiments/renderer-sd/app/src/smoke.h
++++ b/work/experiments/renderer-sd/app/src/smoke.h
+@@ -67,7 +67,7 @@
+     void initialized();
+     void invalidated();
+     void sceneError(const QString& message);
+-    void renderStep(QRhiCommandBuffer* cb, QRhiTexture* color, QSize size);
++    void renderStep(QRhiCommandBuffer* cb, QRhiTexture* color, QRhiRenderTarget* target, QSize size);
+     void afterRendering();
+     void afterFrameEnd();
+     void rendererGone(QRhi* rhi);
+@@ -82,6 +82,8 @@
+     struct Slot {
+         std::uint64_t resource = 0;
+         QRhiTexture* texture = nullptr;
++        QRhiTextureRenderTarget* target = nullptr; // export-copy only: clears the new slot once
++        QRhiRenderPassDescriptor* pass = nullptr;
+         QSGTexture* sceneTexture = nullptr;
+         bool registered = false;
+     };
+--- a/work/experiments/renderer-sd/app/src/smoke.cpp
++++ b/work/experiments/renderer-sd/app/src/smoke.cpp
+@@ -5,7 +5,7 @@
+ #include <QtCore/QSaveFile>
+ #include <QtQuick/QSGRendererInterface>
+ #include <QtQuick/qsgtexture_platform.h>
+-#include <rhi/qrhid3d12.h>
++#include <rhi/qrhi_platform.h>
+ #include <dxgi1_6.h>
+ #include <wrl/client.h>
+ #include <algorithm>
+@@ -67,7 +67,9 @@
+ 
+ void Harness::initialized() {
+     try {
+-        rhi_ = window->rhi();
++        // The threaded loop emits sceneGraphInitialized before the window publishes its QRhi.
++        auto* rif = window->rendererInterface();
++        rhi_ = static_cast<QRhi*>(rif->getResource(window, QSGRendererInterface::RhiResource));
+         const auto previous = snapshot();
+         edit([](Stats& s) { ++s.initialized; });
+         if (previous.lossTriggered) {
+@@ -78,8 +80,7 @@
+             });
+             return; // Never attach a second context after the removal probe.
+         }
+-        auto* interface = window->rendererInterface();
+-        const auto api = interface->graphicsApi();
++        const auto api = rif->graphicsApi();
+         const auto dpr = window->effectiveDevicePixelRatio();
+         edit([&](Stats& s) { s.graphicsApi = int(api); s.dpr = dpr; });
+         if (api != QSGRendererInterface::Direct3D12) { fail("backend-not-d3d12"); return; }
+@@ -87,14 +88,14 @@
+         if (!rhi_) { fail("rhi-create-failed"); return; }
+         firstRhi_ = rhi_;
+         const auto* handles = static_cast<const QRhiD3D12NativeHandles*>(rhi_->nativeHandles());
+-        auto* device = static_cast<ID3D12Device*>(interface->getResource(window, QSGRendererInterface::DeviceResource));
+-        auto* queue = static_cast<ID3D12CommandQueue*>(interface->getResource(window, QSGRendererInterface::CommandQueueResource));
++        auto* device = static_cast<ID3D12Device*>(rif->getResource(window, QSGRendererInterface::DeviceResource));
++        auto* queue = static_cast<ID3D12CommandQueue*>(rif->getResource(window, QSGRendererInterface::CommandQueueResource));
+         if (!device || !queue || !handles) { fail("identity-mismatch"); return; }
+-        bool deviceMatches = device == handles->dev && sameDevice(device, handles->dev);
++        // COM identity only: two interface pointers to one device need not be equal.
++        bool deviceMatches = sameDevice(device, static_cast<IUnknown*>(handles->dev));
+         bool queueMatches = queue == handles->commandQueue;
+         if (options.device != "qt") deviceMatches = deviceMatches && sameDevice(device, suppliedDevice);
+         if (options.device == "from-rhi") {
+-            deviceMatches = deviceMatches && device == suppliedDevice;
+             queueMatches = queueMatches && queue == suppliedQueue;
+             edit([&](Stats& s) { s.queueMatches = queueMatches; s.rhiMatches = rhi_ == suppliedRhi; });
+         }
+@@ -143,17 +144,21 @@
+             slot.texture = rhi_->newTexture(QRhiTexture::RGBA8, size, 1,
+                 QRhiTexture::RenderTarget | QRhiTexture::UsedAsTransferSource);
+             if (!slot.texture->create()) { fail("texture-create-failed"); return false; }
++            slot.target = rhi_->newTextureRenderTarget(QRhiTextureRenderTargetDescription(QRhiColorAttachment(slot.texture)));
++            slot.pass = slot.target->newCompatibleRenderPassDescriptor();
++            slot.target->setRenderPassDescriptor(slot.pass);
++            if (!slot.target->create()) { fail("texture-create-failed"); return false; }
+             slot.resource = slot.texture->nativeTexture().object;
+         } else {
+             if (!call("sa2_create_texture", native.fn_sa2_create_texture(context_, size.width(), size.height(),
+-                settings.state_after_write, &slot.resource))) return false;
++                settings.state_before_write, &slot.resource))) return false;
+             if (options.route == "import-direct") {
+                 slot.sceneTexture = QNativeInterface::QSGD3D12Texture::fromNative(
+                     reinterpret_cast<void*>(slot.resource), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, window, size);
+                 if (!slot.sceneTexture) { fail("texture-create-failed"); return false; }
+             } else {
+                 slot.texture = rhi_->newTexture(QRhiTexture::RGBA8, size, 1, QRhiTexture::UsedAsTransferSource);
+-                if (!slot.texture->createFrom(QRhiTexture::NativeTexture{slot.resource, legacyState(settings.state_after_write)})) {
++                if (!slot.texture->createFrom(QRhiTexture::NativeTexture{slot.resource, legacyState(settings.state_before_write)})) {
+                     fail("texture-create-failed"); return false;
+                 }
+             }
+@@ -168,6 +173,8 @@
+ 
+ void Harness::destroyWrappers() {
+     for (auto& slot : slots_) {
++        delete slot.target; slot.target = nullptr;
++        delete slot.pass; slot.pass = nullptr;
+         delete slot.texture; slot.texture = nullptr;
+         delete slot.sceneTexture; slot.sceneTexture = nullptr;
+     }
+@@ -227,7 +234,7 @@
+     showSlot(unsigned((frame_ + 1) % SA2_RING_SLOTS));
+ }
+ 
+-void Harness::renderStep(QRhiCommandBuffer* cb, QRhiTexture* color, QSize size) {
++void Harness::renderStep(QRhiCommandBuffer* cb, QRhiTexture* color, QRhiRenderTarget* target, QSize size) {
+     currentEligible_ = false;
+     try {
+         // Completion callbacks have returned before this render-thread step.
+@@ -266,6 +273,13 @@
+             rebuilding_ = true;
+             if (!observations.resizePending) transitionStart_ = frame_;
+             if (!createRing(size)) return;
++            // Qt allocates render targets without zeroing. The item's new color buffer (shown on this
++            // step) and new export slots (read by warm-up) are cleared once before anything reads them,
++            // with the optimized clear values Qt declares for its render targets (zero color, depth 1).
++            const QRhiDepthStencilClearValue depthStencil(1.0f, 0);
++            if (target) { cb->beginPass(target, Qt::transparent, depthStencil); cb->endPass(); }
++            for (const auto& slot : slots_)
++                if (slot.target) { cb->beginPass(slot.target, Qt::transparent, depthStencil); cb->endPass(); }
+             edit([](Stats& s) { ++s.transition; ++s.skippedTransition; });
+             if (options.route == "import-direct") showSlot(unsigned(frame_ % SA2_RING_SLOTS));
+             completeTransition();
+@@ -527,7 +541,7 @@
+             {"vendor_id", int(s.info.vendor_id)}, {"device_id", int(s.info.device_id)}, {"umd_version", number(s.info.umd_version)}, {"identity", identity}}},
+         {"dll", QJsonObject{{"abi_version", int(SA2_ABI_VERSION)}, {"resolved_barriers", settings.barrier_api == SA2_BARRIERS_LEGACY
+             || !s.info.enhanced_barriers ? "legacy" : "enhanced"}, {"state_before", settings.state_before_write},
+-            {"state_after", settings.state_after_write}, {"initial_state", options.route == "export-copy" ? SA2_STATE_COMMON : settings.state_after_write}}},
++            {"state_after", settings.state_after_write}, {"initial_state", options.route == "export-copy" ? SA2_STATE_COMMON : settings.state_before_write}}},
+         {"frames", QJsonObject{{"requested", int(options.frames)}, {"steps", number(s.steps)}, {"run", number(s.run)},
+             {"warmup", number(s.warmup)}, {"transition", number(s.transition)}, {"eligible", number(s.eligible)},
+             {"skipped_warmup", number(s.skippedWarmup)}, {"skipped_transition", number(s.skippedTransition)}}},
+@@ -560,7 +574,9 @@
+     ~Renderer() override { harness_.rendererGone(rhi()); }
+     void initialize(QRhiCommandBuffer*) override {}
+     void synchronize(QQuickRhiItem*) override {}
+-    void render(QRhiCommandBuffer* cb) override { harness_.renderStep(cb, colorTexture(), colorTexture()->pixelSize()); }
++    void render(QRhiCommandBuffer* cb) override {
++        harness_.renderStep(cb, colorTexture(), renderTarget(), colorTexture()->pixelSize());
++    }
+ private:
+     Harness& harness_;
+ };

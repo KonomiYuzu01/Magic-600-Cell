@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.30)
+project(Magic600SdSmoke LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# QRhi (<rhi/qrhi.h>) is semi-public API: it needs the GuiPrivate target, which Qt 6.10 finds only on request.
+find_package(Qt6 REQUIRED COMPONENTS Core Gui GuiPrivate Quick)
+if(NOT Qt6_VERSION STREQUAL "6.10.3")
+    message(FATAL_ERROR "SD smoke requires exactly Qt 6.10.3")
+endif()
+qt_standard_project_setup()
+add_executable(sd_smoke src/main.cpp src/smoke.cpp src/l2.cpp src/native_loader.cpp src/code_layout.cpp)
+target_include_directories(sd_smoke PRIVATE ../../renderer-sa2/native/include)
+target_compile_definitions(sd_smoke PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+target_link_libraries(sd_smoke PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick d3d12 dxgi dxguid dwmapi powrprof psapi)
+add_executable(sd_code_layout_test src/code_layout_test.cpp src/code_layout.cpp)
+target_include_directories(sd_code_layout_test PRIVATE ../../renderer-sa2/native/include)
+target_compile_definitions(sd_code_layout_test PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+# No WIN32 executable flag: both targets keep a console for captured output.

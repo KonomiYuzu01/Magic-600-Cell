@@ -1,0 +1,101 @@
+{
+  "format": "magic600-sb-label-fault-summary-v1",
+  "run_set": "neg-20261003T060641Z",
+  "date": "2026-10-03",
+  "scene": "w3",
+  "command": "sb_probe.exe --scene w3 --duration 10 --preroll 4 --inject <fault> --run-id <id> --out <private run directory>",
+  "capture": "none: the probe ran directly, without PresentMon, because no elevated terminal was available; these are label-check runs, not gate captures",
+  "expected": "each fault fails the label check (exit 2): integer mismatches for corrupt-label and swap-same-colour; late or binding/copy violations for delay-adoption and stale-binding",
+  "gate": "tools/perf/renderer_gate.py refused the four runs with no-readable-runs (exit 1), because they carry no PresentMon capture",
+  "oracle_sha256": {
+    "even": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+    "odd": "982ac5111dbe9f81c2156700e69120ee05bb6c26e3e90d76831344be08b2f736"
+  },
+  "omitted": "process ids, QPC markers, traces and local paths stay in the private run records",
+  "runs": [
+    {
+      "run_id": "neg-20261003T060641Z-corrupt-label",
+      "fault": "corrupt-label",
+      "injection_applied": true,
+      "exit_code": 2,
+      "build_identity": "2b5bf5e6c26c86eac97800fc9dbccbdb10c8648668c0cf306bac9023d2f04c14",
+      "label_check": {
+        "status": "fail",
+        "revisions": 52,
+        "copies": 52,
+        "mismatches": 1,
+        "late_adoptions": 0,
+        "binding_mismatches": 0,
+        "missing": 0
+      },
+      "trace_frames": 7780,
+      "power_source": "mains",
+      "power_mode": "max_performance",
+      "presenting_adapter": "NVIDIA GeForce RTX 4070 Laptop GPU, driver 32.0.16.1692, drives the window's display",
+      "window_visible_throughout": true
+    },
+    {
+      "run_id": "neg-20261003T060641Z-swap-same-colour",
+      "fault": "swap-same-colour",
+      "injection_applied": true,
+      "exit_code": 2,
+      "build_identity": "2b5bf5e6c26c86eac97800fc9dbccbdb10c8648668c0cf306bac9023d2f04c14",
+      "label_check": {
+        "status": "fail",
+        "revisions": 52,
+        "copies": 52,
+        "mismatches": 2,
+        "late_adoptions": 0,
+        "binding_mismatches": 0,
+        "missing": 0
+      },
+      "trace_frames": 7793,
+      "power_source": "mains",
+      "power_mode": "max_performance",
+      "presenting_adapter": "NVIDIA GeForce RTX 4070 Laptop GPU, driver 32.0.16.1692, drives the window's display",
+      "window_visible_throughout": true
+    },
+    {
+      "run_id": "neg-20261003T060641Z-delay-adoption",
+      "fault": "delay-adoption",
+      "injection_applied": true,
+      "exit_code": 2,
+      "build_identity": "2b5bf5e6c26c86eac97800fc9dbccbdb10c8648668c0cf306bac9023d2f04c14",
+      "label_check": {
+        "status": "fail",
+        "revisions": 52,
+        "copies": 52,
+        "mismatches": 1,
+        "late_adoptions": 2,
+        "binding_mismatches": 1,
+        "missing": 0
+      },
+      "trace_frames": 7707,
+      "power_source": "mains",
+      "power_mode": "max_performance",
+      "presenting_adapter": "NVIDIA GeForce RTX 4070 Laptop GPU, driver 32.0.16.1692, drives the window's display",
+      "window_visible_throughout": true
+    },
+    {
+      "run_id": "neg-20261003T060641Z-stale-binding",
+      "fault": "stale-binding",
+      "injection_applied": true,
+      "exit_code": 2,
+      "build_identity": "2b5bf5e6c26c86eac97800fc9dbccbdb10c8648668c0cf306bac9023d2f04c14",
+      "label_check": {
+        "status": "fail",
+        "revisions": 52,
+        "copies": 53,
+        "mismatches": 2,
+        "late_adoptions": 2,
+        "binding_mismatches": 2,
+        "missing": 1
+      },
+      "trace_frames": 7543,
+      "power_source": "mains",
+      "power_mode": "max_performance",
+      "presenting_adapter": "NVIDIA GeForce RTX 4070 Laptop GPU, driver 32.0.16.1692, drives the window's display",
+      "window_visible_throughout": true
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "format": "magic600-sb-cameras-v1",
+  "note": "Q starts as the identity (16 floats, column-major as web/renderer.js q); apply the rotate(a, b, t) steps in order (renderer.js:120).",
+  "aspect": 1.6,
+  "cameras": [
+    {"name": "c0", "rotations": []},
+    {"name": "c1", "rotations": [[0, 3, 0.6], [1, 2, 0.4]]},
+    {"name": "c2", "rotations": [[0, 2, 1.1], [1, 3, -0.7], [2, 3, 0.3]]}
+  ]
+}

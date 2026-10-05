@@ -1,0 +1,943 @@
+--- a/work/experiments/renderer-sa2/run_smoke.py
++++ b/work/experiments/renderer-sa2/run_smoke.py
+@@ -8,13 +8,14 @@
+ import shutil
+ import subprocess
+ import sys
+-from pathlib import Path
++from pathlib import Path, PurePosixPath
+ 
+ sys.dont_write_bytecode = True
+-from smoke_summary import GODOT_VERSION, write_summary
++from smoke_summary import GODOT_VERSION, selftest_status, write_summary
+ 
+ HERE = Path(__file__).resolve().parent
+ ROOT = HERE.parents[2]
++EXPERIMENT = "work/experiments/renderer-sa2"
+ PRIVATE_ROOT = ROOT / "work/loop-memory/perf/renderer/sa2-smoke"
+ # cl.exe is not long-path aware: CMake's try-compile objects under PRIVATE_ROOT
+ # pass 260 characters in a long checkout path. Binaries are built in a short
+@@ -23,6 +24,9 @@
+ BUILD_PATH_LIMIT = 150
+ PACKAGES = {"godot.net.sdk", "godot.sourcegenerators", "godotsharp", "godotsharpeditor"}
+ DRAIN_LINE = "sa2: drain not confirmed; ending the process with exit code 3"
++INJECT = "M600_SA2_INJECT_UNCONFIRMED_DRAIN"
++# Directories excluded from the source identity at any depth; native/build*/
++# (the manual build folders of native/README.md) are excluded as well.
+ EXCLUDED = {"results", ".godot", "bin", "obj", "__pycache__", ".sandbox-build"}
+ 
+ 
+@@ -64,8 +68,20 @@
+                 "--sa2-barriers", row["barriers"], "--sa2-frames", str(row["frames"]),
+                 "--sa2-warmup", "0" if row["handover"] == "render-target" or row["route"] == "rd-compute" else "3",
+                 "--sa2-resize-every", str(row["resize_every"]), "--sa2-verify-every", "50",
+-                "--sa2-device-loss-at", str(row.get("device_loss_at", 0)), "--sa2-timeout-ms", "5000"]
++                "--sa2-device-loss-at", str(row.get("device_loss_at", 0)), "--sa2-timeout-ms", "5000",
++                # Godot consumes --gpu-validation and --render-thread before the harness
++                # can see them, so the runner declares both again as user arguments.
++                "--sa2-gpu-validation", "1" if row["validation"] else "0",
++                "--sa2-render-thread", row["render_thread"]]
+     return command
++
++
++def run_environment(base_env, run_id):
++    """One run's environment: only R12 gets the drain injection, even if the base inherited it."""
++    env = {key: value for key, value in base_env.items() if key.upper() != INJECT}
++    if run_id == "R12":
++        env[INJECT] = "1"
++    return env
+ 
+ 
+ def sha256(path):
+@@ -73,10 +89,24 @@
+         return hashlib.file_digest(stream, "sha256").hexdigest()
+ 
+ 
++def excluded(parts):
++    """True for an experiment-relative file path under an excluded directory."""
++    directories = parts[:-1]
++    return (any(part in EXCLUDED for part in directories)
++            or (len(directories) > 1 and directories[0] == "native" and directories[1].startswith("build")))
++
++
+ def source_files():
+-    return sorted((p for p in HERE.rglob("*") if p.is_file()
+-                   and not any(part in EXCLUDED for part in p.relative_to(HERE).parts)),
++    return sorted((p for p in HERE.rglob("*") if p.is_file() and not excluded(p.relative_to(HERE).parts)),
+                   key=lambda p: p.relative_to(HERE).as_posix())
++
++
++def diff_pathspecs():
++    """The experiment for `git diff`, minus every directory the source walk excludes."""
++    specs = [EXPERIMENT]
++    for name in sorted(EXCLUDED):
++        specs += [f":(exclude){EXPERIMENT}/{name}", f":(exclude,glob){EXPERIMENT}/**/{name}/**"]
++    return specs + [f":(exclude,glob){EXPERIMENT}/native/build*/**"]
+ 
+ 
+ def git(*args):
+@@ -93,13 +123,13 @@
+     for path in files:
+         digest.update(path.relative_to(HERE).as_posix().encode("utf-8") + b"\0")
+         digest.update(sha256(path).encode("ascii") + b"\n")
+-    tracked = {name for name in git("ls-files", "--", "work/experiments/renderer-sa2").splitlines()
+-               if not any(part in EXCLUDED for part in Path(name).parts)}
++    tracked = {name for name in git("ls-files", "-z", "--", EXPERIMENT).split("\0")
++               if name and not excluded(PurePosixPath(name).relative_to(EXPERIMENT).parts)}
+     walked = {p.relative_to(ROOT).as_posix() for p in files}
+     env = os.environ.copy()
+     env["GIT_OPTIONAL_LOCKS"] = "0"
+-    changed = subprocess.run(["git", "--no-optional-locks", "diff", "--quiet", "HEAD", "--",
+-                              "work/experiments/renderer-sa2"], cwd=ROOT, env=env, timeout=30).returncode
++    changed = subprocess.run(["git", "--no-optional-locks", "diff", "--quiet", "HEAD", "--", *diff_pathspecs()],
++                             cwd=ROOT, env=env, timeout=30).returncode
+     if changed not in (0, 1):
+         raise RuntimeError("cannot compare source with HEAD")
+     return {"head": git("rev-parse", "HEAD"), "sha256": digest.hexdigest(),
+@@ -164,7 +194,7 @@
+ 
+ def offline_environment(private, nupkgs):
+     env = os.environ.copy()
+-    env.pop("M600_SA2_INJECT_UNCONFIRMED_DRAIN", None)
++    env.pop(INJECT, None)
+     env.update({"M600_GODOT_NUPKGS": str(nupkgs), "NUGET_PACKAGES": str(private / "packages"),
+                 "DOTNET_CLI_HOME": str(private / "dotnet-home"), "NUGET_HTTP_CACHE_PATH": str(private / "nuget-http-cache"),
+                 "DOTNET_CLI_TELEMETRY_OPTOUT": "1", "DOTNET_NOLOGO": "1", "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
+@@ -240,9 +270,17 @@
+                     for entry in teardown.get("refcount_after", [])))
+ 
+ 
++def _section(result, key):
++    value = result.get(key)
++    return value if isinstance(value, dict) else {}
++
++
+ def pass_evidence(row, result):
+     f, v, d = (result.get(key, {}) for key in ("frames", "verify", "debug"))
+     run = f.get("run", 0)
++    # The harness resizes after every resize_every-th run frame except the last, and
++    # each size differs from the one before, so every request rebuilds the ring once.
++    every = row["resize_every"]
+     return (run == row["frames"] and f.get("produced") == run and f.get("drawn") == run
+             and f.get("not_drawn") == 0 and f.get("mismatched") == 0
+             and f.get("eligible", 0) * 10 >= run * 9 and f.get("verified") == f.get("eligible")
+@@ -251,12 +289,29 @@
+             and v.get("native_checks") == (0 if row["route"] == "rd-compute" else run // 50)
+             and v.get("mismatched_texels") == 0 and not result.get("sa2_failures", [])
+             and (not row["validation"] or d.get("error") == d.get("corruption") == 0)
++            and (every <= 0 or _section(result, "resize").get("rebuilds") == (row["frames"] - 1) // every)
+             and teardown_ok(result))
++
++
++def config_mismatches(row, result):
++    """Row fields that the result's `config` echo does not report exactly (type and value)."""
++    config = _section(result, "config")
++    expected = {key: row[key] for key in ("route", "queue", "handover", "barriers", "frames", "resize_every")}
++    if row["route"] == "rd-compute":
++        del expected["handover"]  # the packet defines no handover for the compute baseline (R1)
++    expected.update(gpu_validation=row["validation"], render_thread=row["render_thread"],
++                    render_thread_separate_observed=row["render_thread"] == "separate")
++    return [key for key, value in expected.items()
++            if type(config.get(key)) is not type(value) or config.get(key) != value]
+ 
+ 
+ def judge(row, run, expect_adapter, stdout="", stderr=""):
+     result = run.get("result") or {}
+     reasons = []
++    # Godot's own ERROR:/WARNING: output lines are recorded data, not a pass
++    # condition (packet SA2-G pass rule); a non-gating note flags ERROR lines.
++    errors = (run.get("output_line_counts") or {}).get("error") or 0
++    run["judge_notes"] = ["godot-output-errors"] if errors > 0 else []
+     if run.get("timed_out"):
+         return "unexpected", ["timeout"]
+     adapter = result.get("engine", {}).get("adapter_name") or result.get("adapter_name")
+@@ -267,13 +322,8 @@
+     if adapter and adapter != expect_adapter:
+         reasons.append("adapter-mismatch")
+     if row["id"] == "R0":
+-        checks = result.get("checks", [])
+-        if isinstance(checks, dict):
+-            checks = list(checks.values())
+-        ok = run.get("exit_code") == 0 and result.get("format") == "magic600-sa2-native-selftest-v1"
+-        ok = ok and result.get("status", "pass") == "pass" and bool(checks)
+-        ok = ok and all(isinstance(c, dict) and c.get("status") in {"pass", "unsupported"}
+-                        and (c.get("status") != "unsupported" or c.get("reason")) for c in checks)
++        # Every check passes or is unsupported with a reason, and at least one passes.
++        ok = run.get("exit_code") == 0 and selftest_status(result) == "pass"
+         if not ok:
+             reasons.append("native-selftest-failed")
+     elif row["expected"] == "device-loss":
+@@ -283,6 +333,14 @@
+         ok = result.get("format") == "magic600-sa2-smoke-run-v1"
+         if not adapter:
+             reasons.append("adapter-mismatch")
++        run["config_mismatches"] = config_mismatches(row, result)
++        if run["config_mismatches"]:
++            reasons.append("config-mismatch")
++        # Validation counts prove nothing unless the debug layer was really active.
++        if row["validation"] and _section(result, "device").get("debug_layer") != 1:
++            reasons.append("validation-not-active")
++        if row["expected"] in ("recorded", "pending-drain"):
++            ok = ok and _section(result, "frames").get("run") == row["frames"]
+         if row["expected"] == "pending-drain":
+             ok = ok and run.get("exit_code") == 3 and result.get("teardown", {}).get("phase") == "pending"
+             if DRAIN_LINE not in stderr.splitlines():
+@@ -291,7 +349,7 @@
+         else:
+             ok = ok and run.get("exit_code") == 0 and result.get("status") == row["expected"] and teardown_ok(result)
+             if row["expected"] == "pass":
+-                ok = ok and pass_evidence(row, result) and run.get("output_line_counts", {}).get("error", 0) == 0
++                ok = ok and pass_evidence(row, result)
+             if row["expected"] == "unsupported":
+                 ok = ok and set(result.get("reasons", [])) == {"texture2drd-refused"}
+         if not ok:
+@@ -323,8 +381,8 @@
+             print(f"{row['id']}: {json.dumps(row, sort_keys=True)}")
+             print(subprocess.list2cmdline(commands(row, "<godot>", "<build>/project", "<build>/native",
+                                                   f"<private>/{row['id']}.json", f"<private>/{row['id']}.godot.log")))
+-            if row["id"] == "R12":
+-                print("  environment: M600_SA2_INJECT_UNCONFIRMED_DRAIN=1 (this run only)")
++            if INJECT in run_environment({}, row["id"]):
++                print(f"  environment: {INJECT}=1 (this run only)")
+         return 0
+     if os.name != "nt":
+         parser.exit(1, "SA2 GPU/build runs require Windows; --dry-run is portable\n")
+@@ -343,10 +401,8 @@
+             run_id = row["id"]
+             result_path = private / f"{run_id}.json"
+             command = commands(row, godot, identity["project"], identity["native"], result_path, private / f"{run_id}.godot.log")
+-            run_env = env.copy()
+-            if run_id == "R12":
+-                run_env["M600_SA2_INJECT_UNCONFIRMED_DRAIN"] = "1"
+-            run, stdout, stderr = run_process(command, identity["project"], run_env, 120 if run_id == "R13" else 300, private / run_id)
++            run, stdout, stderr = run_process(command, identity["project"], run_environment(env, run_id),
++                                              120 if run_id == "R13" else 300, private / run_id)
+             run.update(id=run_id, row=row, command=command, result_exists=result_path.is_file(), result=None)
+             if result_path.is_file():
+                 try:
+--- a/work/experiments/renderer-sa2/smoke_summary.py
++++ b/work/experiments/renderer-sa2/smoke_summary.py
+@@ -15,8 +15,11 @@
+     "device-ownership", "viewport-too-small", "dll-load-failed", "godot-call-failed",
+     "readback-coverage", "teardown-incomplete", "timeout", "result-missing",
+     "result-invalid", "exit-code", "adapter-mismatch", "expectation-mismatch",
+-    "native-selftest-failed", "drain-message-missing",
++    "native-selftest-failed", "drain-message-missing", "config-mismatch", "validation-not-active",
+ })
++# Non-gating judge notes (run_smoke.judge); they never change a judgement.
++NOTES = frozenset({"godot-output-errors"})
++SELFTEST_FORMAT = "magic600-sa2-native-selftest-v1"
+ FRAME_FIELDS = ("run", "produced", "drawn", "not_drawn", "eligible", "verified", "mismatched",
+                 "readbacks_requested", "readbacks_completed")
+ VERIFY_FIELDS = ("native_checks", "rd_checks", "native_mismatched_texels", "rd_mismatched_texels", "mismatched_texels")
+@@ -64,6 +67,27 @@
+             for child in item:
+                 visit(child)
+     visit(value)
++
++
++def selftest_status(result):
++    """R0's status from its checks; the self-test JSON has no overall status field.
++
++    It passes only if every check passes or is unsupported with a reason, and at
++    least one check passes. An explicit overall status, if present, must be pass.
++    """
++    if not isinstance(result, dict):
++        return "fail"
++    checks = result.get("checks")
++    if isinstance(checks, dict):
++        checks = list(checks.values())
++    if not isinstance(checks, list):
++        return "fail"
++    ok = (result.get("format") == SELFTEST_FORMAT and result.get("status", "pass") == "pass"
++          and any(isinstance(c, dict) and c.get("status") == "pass" for c in checks)
++          and all(isinstance(c, dict) and (c.get("status") == "pass"
++                                           or (c.get("status") == "unsupported" and bool(c.get("reason"))))
++                  for c in checks))
++    return "pass" if ok else "fail"
+ 
+ 
+ def driver_version(umd):
+@@ -138,13 +162,22 @@
+         if not isinstance(run_id, str) or not re.fullmatch(r"R(?:[0-9]|1[0-3])", run_id):
+             raise ValueError("invalid run ID")
+         result = run.get("result") or {}
+-        status = "timeout" if run.get("timed_out") else result.get("status", "missing")
++        if run.get("timed_out"):
++            status = "timeout"
++        elif run["row"].get("route") == "native-selftest" and result:
++            status = selftest_status(result)
++        else:
++            status = result.get("status", "missing")
++        notes = run.get("judge_notes")
+         item = {
+             "id": run_id, "row": _row(run["row"]),
+             "status": _choice(status, {"pass", "fail", "recorded", "unsupported", "missing", "timeout"}),
+             "judgement": _choice(run["judgement"], {"as-expected", "unexpected"}),
+             "reasons": sorted({r for r in result.get("reasons", []) + run.get("judge_reasons", [])
+                                if isinstance(r, str) and r in REASONS}),
++            "judge_notes": sorted({n for n in (notes if isinstance(notes, list) else [])
++                                   if isinstance(n, str) and n in NOTES}),
++            "output_line_counts": _counts(run.get("output_line_counts"), ("error", "warning")),
+             "frames": _counts(result.get("frames"), FRAME_FIELDS),
+             "verify": _counts(result.get("verify"), VERIFY_FIELDS),
+             "debug": _counts(result.get("debug"), DEBUG_FIELDS),
+--- a/work/experiments/renderer-sa2/check_project.py
++++ b/work/experiments/renderer-sa2/check_project.py
+@@ -14,18 +14,34 @@
+ 
+ sys.dont_write_bytecode = True
+ from sa2_reference import crc16, decode_image, decode_viewport, encode, expected_image
+-from run_smoke import DRAIN_LINE, commands, judge, matrix
++from run_smoke import DRAIN_LINE, INJECT, commands, judge, matrix, run_environment
+ from smoke_summary import GODOT_VERSION, build_summary, driver_version, scan_public, write_summary
++import blank_control
+ 
+ HERE = Path(__file__).resolve().parent
+ PROJECT = HERE / "project"
+ REQUIRED = ("project.godot", "SA2Smoke.csproj", "nuget.config", "Main.tscn",
+             "Smoke.cs", "Native.cs", "CodeLayout.cs", "Arguments.cs", "RunResult.cs", ".gitignore")
++EXPORT_BINDING = re.compile(r'\b(sa2_\w+) = \(delegate\* unmanaged\[Cdecl\]<([^>]+)>\)Export\("(\w+)"\);')
+ 
+ 
+ def require(condition, message):
+     if not condition:
+         raise AssertionError(message)
++
++
++def rejects(check, *args):
++    """True if a check refuses a planted defect."""
++    try:
++        check(*args)
++    except AssertionError:
++        return True
++    return False
++
++
++def between(text, start, end):
++    require(start in text and end in text.split(start, 1)[1], f"missing source section {start}")
++    return text.split(start, 1)[1].split(end, 1)[0]
+ 
+ 
+ def check_settings():
+@@ -98,8 +114,13 @@
+     bound = {name: [part.strip() for part in parameters.split(",")]
+              for parameters, name in re.findall(r"public readonly delegate\* unmanaged\[Cdecl\]<([^>]+)> (sa2_\w+);", native)}
+     require(declared == bound, "every export must bind the ABI parameter count/types and return type")
+-    for name in declared:
+-        require(f'Export("{name}")' in native, f"missing export lookup {name}")
++    check_export_bindings(native, bound)
++    # Planted defect: two same-signature pointers bound to each other's export.
++    pair = ("sa2_signal_godot_free", "sa2_godot_wait_ready")
++    swapped = re.sub(r'Export\("(%s|%s)"\)' % pair,
++                     lambda m: 'Export("%s")' % pair[1 - pair.index(m.group(1))], native)
++    require(bound[pair[0]] == bound[pair[1]] and swapped != native, "planted export swap")
++    require(rejects(check_export_bindings, swapped, bound), "swapped export bindings must be refused")
+     require("NativeLibrary.Load(absolutePath)" in native and "NativeLibrary.GetExport(_library, name)" in native, "absolute DLL loader")
+     for name, size in (("DeviceInfoSize", 48), ("ConfigSize", 28), ("DebugCountsSize", 128)):
+         require(f"const int {name} = {size};" in native, f"struct size {name}")
+@@ -132,6 +153,17 @@
+     for field in layout["fields"]:
+         require(c_constants["SA2_CODE_" + field["name"].upper() + "_BITS"] == field["bits"], "code field bits")
+     require("0x1021" in code and "0xFFFF" in code and "bytes[..6]" in code, "C# CRC parameters")
++
++
++def check_export_bindings(native, bound):
++    """Each delegate field is assigned once, from the export of its own name, with its own type."""
++    assigned = {}
++    for field, signature, export in EXPORT_BINDING.findall(native):
++        require(field == export, f"{field} is bound to export {export}")
++        require(field not in assigned, f"{field} is bound twice")
++        assigned[field] = [part.strip() for part in signature.split(",")]
++    require(assigned == bound, "every delegate field is bound from its export with its declared type")
++    require(native.count('Export("') == len(bound), "no export lookup outside the delegate bindings")
+ 
+ 
+ def check_reference():
+@@ -162,19 +194,22 @@
+     require(encode(2 ** 32 + 1, 16, 4096) == encode(1, 0, 0), "field wraparound")
+ 
+ 
+-def check_harness_source():
+-    source = (PROJECT / "Smoke.cs").read_text(encoding="utf-8")
++def check_harness_source(source=None):
++    source = (PROJECT / "Smoke.cs").read_text(encoding="utf-8") if source is None else source
+     for token in ("RenderingServer.CallOnRenderThread", "RenderingServer.FramePreDraw", "TextureGetDataAsync",
+                   "TextureGetData(_flushTexture", "TextureCreateFromExtension", "sa2_remove_device", "resource-changed",
+                   "texture2drd-refused", "not-drawn", "ObserveViewport", "FreeRingRids", "sa2_debug_messages"):
+         require(token in source, f"harness path {token}")
+-    # Check the safety-critical release ordering, including the pending result
+-    # before a DLL drain which may terminate the process without unwinding.
+-    release = source.split("private unsafe bool ReleaseRing", 1)[1].split("private unsafe void ReadDebug", 1)[0]
++    # Check the safety-critical release ordering, including the pending result,
++    # written to disk before a DLL drain which may terminate the process without unwinding.
++    release = between(source, "private unsafe bool ReleaseRing", "private unsafe void ReadDebug")
+     order = ("bool firstFlush = Flush()", "FreeRingRids()", "bool disposed = Flush()", 'teardown.phase = "pending"',
+-             "sa2_drain", "sa2_unregister_slot", "sa2_release_texture")
+-    positions = [release.index(token) for token in order]
+-    require(positions == sorted(positions), "ordered flush/free/flush/pending/drain/unregister/release")
++             "WriteResult();", "sa2_drain", "sa2_unregister_slot", "sa2_release_texture")
++    positions = [release.find(token) for token in order]
++    require(-1 not in positions and positions == sorted(positions),
++            "ordered flush/free/flush/pending/write/drain/unregister/release")
++    require("RunResult.WriteAtomic(_args.out_path" in between(source, "private void WriteResult()", "private void QuitMain"),
++            "WriteResult writes the result file")
+     for match in re.finditer(r"lock\s*\(_gate\)", source):
+         start = match.end()
+         while source[start].isspace():
+@@ -190,21 +225,93 @@
+         require(not any(token in body for token in ("_rd.", "_native.", "RenderingServer.", "GetTree()", "GetWindow()")), "no Godot/native call under shared lock")
+ 
+ 
+-def synthetic_run():
++def check_pending_write_defects():
++    """Planted defects: the pending result must be on disk before the native drain."""
++    source = (PROJECT / "Smoke.cs").read_text(encoding="utf-8")
++    pending = 'Update(r => r.teardown.phase = "pending"); WriteResult();'
++    drain = "int drain = _native.sa2_drain(_context, (uint)_args.timeout_ms);"
++    require(source.count(pending) == 1 and source.count(drain) == 1, "pending-write planted defect anchors")
++    dropped = source.replace(pending, 'Update(r => r.teardown.phase = "pending");')
++    late = dropped.replace(drain, drain + " WriteResult();")
++    for planted in (dropped, late):
++        require(rejects(check_harness_source, planted), "pending result not written before the drain must be refused")
++
++
++def check_declared_options():
++    """Godot consumes --gpu-validation/--render-thread; the runner declares them to the harness."""
++    arguments = (PROJECT / "Arguments.cs").read_text(encoding="utf-8")
++    smoke = (PROJECT / "Smoke.cs").read_text(encoding="utf-8")
++    parsed = re.findall(r'case "(--sa2-[a-z-]+)":', arguments)
++    require(len(parsed) == len(set(parsed)), "harness arguments parsed once")
++    for name in ("--sa2-gpu-validation", "--sa2-render-thread"):
++        require(name in parsed and f'!seen.Contains("{name}")' in arguments, f"required argument {name}")
++    require(not re.search(r"\brender_thread_separate\b", arguments + smoke), "no unmeasured render-thread field")
++    require("render_thread_separate_observed = !RenderingServer.IsOnRenderThread()"
++            in between(smoke, "public override void _Ready()", "private void Update("), "render thread measured in _Ready")
++    require("_args.gpu_validation && (counts.error != 0 || counts.corruption != 0)" in smoke, "declared validation flag")
++    for row in matrix(True)[1:]:
++        command = commands(row, "<godot>", "<project>", "<native>", "<result>", "<log>")
++        engine, user = command[:command.index("--")], command[command.index("--") + 1:]
++        values = dict(zip(user[0::2], user[1::2]))
++        require(len(user) % 2 == 0 and sorted(user[0::2]) == sorted(parsed), f"{row['id']} passes each harness argument once")
++        require(values["--sa2-gpu-validation"] == ("1" if row["validation"] else "0")
++                and ("--gpu-validation" in engine) == row["validation"], f"{row['id']} validation declaration")
++        require(values["--sa2-render-thread"] == row["render_thread"] == engine[engine.index("--render-thread") + 1],
++                f"{row['id']} render-thread declaration")
++
++
++def check_run_environment(build):
++    """Only R12 gets the drain injection, even when the base environment inherited it."""
++    for base in ({"PATH": "x"}, {"PATH": "x", INJECT: "1"}, {"PATH": "x", INJECT.lower(): "1"}):
++        snapshot = dict(base)
++        for row in matrix(True):
++            env = build(base, row["id"])
++            injected = [key for key in env if key.upper() == INJECT]
++            if row["id"] == "R12":
++                require(injected == [INJECT] and env[INJECT] == "1", "R12 drain injection")
++            else:
++                require(not injected, f"{row['id']} must not inherit the drain injection")
++            require(env.get("PATH") == "x", "base environment kept")
++        require(base == snapshot, "base environment unchanged")
++
++
++def synthetic_config(row):
++    return {"route": row["route"], "queue": row["queue"], "handover": row["handover"], "barriers": row["barriers"],
++            "frames": row["frames"], "resize_every": row["resize_every"], "gpu_validation": row["validation"],
++            "render_thread": row["render_thread"], "render_thread_separate_observed": row["render_thread"] == "separate"}
++
++
++def synthetic_selftest(*checks):
++    return {"format": "magic600-sa2-native-selftest-v1", "mode": "hardware",
++            "checks": [{"name": f"check {n}", "status": status, "reason": reason}
++                       for n, (status, reason) in enumerate(checks)]}
++
++
++def synthetic_run(row=None):
++    row = dict(matrix()[2], frames=100) if row is None else row
+     return {
+-        "format": "magic600-sa2-smoke-run-v1", "status": "pass", "reasons": [],
++        "format": "magic600-sa2-smoke-run-v1", "status": "pass", "reasons": [], "config": synthetic_config(row),
+         "engine": {"version": GODOT_VERSION, "editor_build": True, "adapter_name": "NVIDIA GeForce RTX 4070 Laptop GPU"},
+-        "device": {"enhanced_barriers": 1, "umd_version": (32 << 48) | (0 << 32) | (16 << 16) | 1692,
++        "device": {"enhanced_barriers": 1, "debug_layer": 1, "umd_version": (32 << 48) | (0 << 32) | (16 << 16) | 1692,
+                    "vendor_id": 123, "device_id": 456},
+         "frames": {"run": 100, "produced": 100, "drawn": 100, "not_drawn": 0, "eligible": 100, "verified": 100,
+                    "mismatched": 0, "readbacks_requested": 100, "readbacks_completed": 100,
+                    "skipped": {"warmup": 3, "transition": 1}},
+         "verify": {"native_checks": 2, "rd_checks": 2, "native_mismatched_texels": 0, "rd_mismatched_texels": 0, "mismatched_texels": 0},
++        "resize": {"rebuilds": 0, "sizes": [[1280, 720]], "transitions": [], "longest_transition": 0},
+         "debug": {"struct_size": 128, "distinct_id_count": 1, "corruption": 0, "error": 0, "warning": 1,
+                   "info": 0, "message": 0, "mismatching_clear_value": 1, "mentioning_sa2": 1, "ids": [820]},
+         "teardown": {"phase": "complete", "drain_result": 0, "detached": True, "slots_unregistered": 3,
+                      "refcount_after": [], "rebuild_drain_results": []}, "sa2_failures": [],
+     }
++
++
++def fixture(row, **result_changes):
++    result = synthetic_run(row)
++    for path, value in result_changes.items():
++        group, key = path.split("__", 1)
++        result[group][key] = value
++    return {"result": result, "exit_code": 0, "timed_out": False, "output_line_counts": {"error": 0, "warning": 0}}
+ 
+ 
+ def check_runner():
+@@ -216,25 +323,75 @@
+         require(dry.returncode == 0, f"dry run failed: {dry.stderr}")
+         require(re.findall(r"^R\d+:", dry.stdout, re.M) == [f"R{n}:" for n in range(14 if loss else 13)], "dry matrix order")
+         require(dry.stdout.count("M600_SA2_INJECT_UNCONFIRMED_DRAIN=1") == 1, "R12 injection is scoped")
++        godot_runs = 13 if loss else 12
++        require(dry.stdout.count("--sa2-gpu-validation") == dry.stdout.count("--sa2-render-thread") == godot_runs,
++                "declared engine options in every Godot command")
+     only = subprocess.run([sys.executable, str(HERE / "run_smoke.py"), "--dry-run", "--only", "R5,R2"], env=env, capture_output=True, text=True, timeout=30)
+     require(only.returncode == 0 and re.findall(r"^R\d+:", only.stdout, re.M) == ["R2:", "R5:"], "--only preserves matrix order")
+     rows = matrix(True)
+     require(rows[9]["frames"] == 3000 and not rows[9]["validation"] and rows[10]["render_thread"] == "separate", "R9/R10 configuration")
+     require(rows[11]["barriers"] == "legacy" and rows[13]["device_loss_at"] == 200, "probe configuration")
++    check_run_environment(run_environment)
++    require(rejects(check_run_environment, lambda base, run_id: dict(base, **({INJECT: "1"} if run_id == "R12" else {}))),
++            "an inherited drain injection must be refused")
+     row = dict(rows[2], frames=100)
+-    run = {"result": synthetic_run(), "exit_code": 0, "timed_out": False, "output_line_counts": {"error": 0}}
++    run = fixture(row)
+     adapter = run["result"]["engine"]["adapter_name"]
+-    require(judge(row, run, adapter)[0] == "as-expected", "clean pass evidence")
++    require(judge(row, run, adapter) == ("as-expected", []) and run["judge_notes"] == [], "clean pass evidence")
+     for group, key, value in (("frames", "verified", 99), ("frames", "eligible", 89), ("frames", "drawn", 99),
+                               ("frames", "readbacks_completed", 99), ("verify", "mismatched_texels", 1),
+-                              ("debug", "error", 1), ("teardown", "drain_result", None)):
++                              ("debug", "error", 1), ("teardown", "drain_result", None), ("resize", "rebuilds", 1)):
+         bad = copy.deepcopy(run)
+         bad["result"][group][key] = value
+         require(judge(row, bad, adapter)[0] == "unexpected", f"reject bad {group}.{key}")
+-    pending = {"result": synthetic_run(), "exit_code": 3, "timed_out": False}
+-    pending["result"]["teardown"]["phase"] = "pending"
+-    require(judge(rows[12], pending, adapter, stderr=DRAIN_LINE)[0] == "as-expected", "R12 pending drain evidence")
++    # Godot's own ERROR: lines are recorded with a note; they are not a pass condition.
++    noisy = dict(fixture(row), output_line_counts={"error": 1, "warning": 2})
++    require(judge(row, noisy, adapter) == ("as-expected", []) and noisy["judge_notes"] == ["godot-output-errors"],
++            "Godot output errors are a non-gating note")
++    # Validation evidence needs an active debug layer; R9 runs without validation.
++    require(judge(row, fixture(row, device__debug_layer=0), adapter) == ("unexpected", ["validation-not-active"]),
++            "validation row without the debug layer")
++    quiet = dict(rows[9], frames=100)
++    require(judge(quiet, fixture(quiet, device__debug_layer=0), adapter) == ("as-expected", []), "validation-off row")
++    # The result's config echo must equal the row, value and type.
++    for key, wrong in (("route", "import-copy"), ("queue", "own"), ("handover", "render-target"), ("barriers", "legacy"),
++                       ("frames", 99), ("resize_every", 0), ("gpu_validation", 1), ("render_thread", "separate"),
++                       ("render_thread_separate_observed", True)):
++        changed, missing = fixture(row, **{"config__" + key: wrong}), fixture(row)
++        del missing["result"]["config"][key]
++        for bad in (changed, missing):
++            require("config-mismatch" in judge(row, bad, adapter)[1], f"config echo {key}")
++    compute = dict(rows[1], frames=100)
++    baseline = fixture(compute, verify__native_checks=0)
++    del baseline["result"]["config"]["handover"]
++    require(judge(compute, baseline, adapter) == ("as-expected", []), "rd-compute has no handover to compare")
++    separate = dict(rows[10], frames=100)
++    require(judge(separate, fixture(separate), adapter) == ("as-expected", []), "separate render thread observed")
++    require(judge(separate, fixture(separate, config__render_thread_separate_observed=False), adapter)
++            == ("unexpected", ["config-mismatch"]), "separate render thread not observed")
++    resized = dict(row, resize_every=20)
++    require(judge(resized, fixture(resized, resize__rebuilds=4), adapter) == ("as-expected", []), "rebuilds = (100 - 1) // 20")
++    for rebuilds in (3, 5):
++        require(judge(resized, fixture(resized, resize__rebuilds=rebuilds), adapter)[0] == "unexpected", "rebuild count")
++    recorded = fixture(rows[7], frames__run=300)
++    recorded["result"]["status"] = "recorded"
++    require(judge(rows[7], recorded, adapter) == ("as-expected", []), "recorded probe")
++    recorded["result"]["frames"]["run"] = 299
++    require(judge(rows[7], recorded, adapter)[0] == "unexpected", "recorded probe run length")
++    refused = fixture(rows[6], frames__run=0)
++    refused["result"].update(status="unsupported", reasons=["texture2drd-refused"])
++    require(judge(rows[6], refused, adapter) == ("as-expected", []), "R6 refusal has no run frames")
++    for checks, verdict in (([("pass", "ok")], "as-expected"), ([("pass", "ok"), ("unsupported", "no OPTIONS12")], "as-expected"),
++                            ([("unsupported", "no OPTIONS12")], "unexpected"), ([], "unexpected"),
++                            ([("pass", "ok"), ("unsupported", "")], "unexpected"), ([("pass", "ok"), ("fail", "x")], "unexpected")):
++        native = {"result": synthetic_selftest(*checks), "exit_code": 0, "timed_out": False}
++        require(judge(rows[0], native, adapter)[0] == verdict, f"R0 self-test checks {checks}")
++    pending = fixture(rows[12], frames__run=120, teardown__phase="pending")
++    pending["exit_code"] = 3
++    require(judge(rows[12], pending, adapter, stderr=DRAIN_LINE) == ("as-expected", []), "R12 pending drain evidence")
+     require(judge(rows[12], pending, adapter)[0] == "unexpected", "R12 missing abort line")
++    pending["result"]["frames"]["run"] = 119
++    require(judge(rows[12], pending, adapter, stderr=DRAIN_LINE)[0] == "unexpected", "R12 run length")
+     loss = {"result": None, "exit_code": -1, "timed_out": False}
+     require(judge(rows[13], loss, adapter)[0] == "as-expected", "R13 engine abort recorded")
+     loss["timed_out"] = True
+@@ -248,7 +405,22 @@
+     private = {"source": {"head": "a" * 40, "sha256": "b" * 64, "matches_head": False, "file_count": 12},
+                "build": {"dll_sha256": "c" * 64, "assembly_sha256": "d" * 64, "godot_version": GODOT_VERSION},
+                "runs": [{"id": "R2", "row": row, "result": synthetic_run(), "exit_code": 0,
+-                         "timed_out": False, "judgement": "as-expected", "judge_reasons": []}]}
++                         "timed_out": False, "judgement": "as-expected", "judge_reasons": [],
++                         "judge_notes": ["godot-output-errors", "free text note"],
++                         "output_line_counts": {"error": 1, "warning": 2}},
++                        {"id": "R0", "row": matrix()[0], "exit_code": 0, "timed_out": False,
++                         "result": synthetic_selftest(("pass", "ok"), ("unsupported", "no OPTIONS12")),
++                         "judgement": "as-expected", "judge_reasons": [], "judge_notes": []}]}
++    # R0's JSON has no overall status: the public status is derived from its checks.
++    for checks, status in (([("pass", "ok"), ("unsupported", "no OPTIONS12")], "pass"),
++                           ([("unsupported", "no OPTIONS12")], "fail"), ([("pass", "ok"), ("fail", "x")], "fail"),
++                           (None, "missing")):
++        variant = copy.deepcopy(private)
++        variant["runs"][1]["result"] = None if checks is None else synthetic_selftest(*checks)
++        require(build_summary(variant, "sa2_fixture_person")["runs"][1]["status"] == status, f"R0 public status {status}")
++    projected = build_summary(private, "sa2_fixture_person")["runs"][0]
++    require(projected["judge_notes"] == ["godot-output-errors"] and projected["output_line_counts"] == {"error": 1, "warning": 2},
++            "known judge notes and Godot output line counts are carried")
+     planted_user = "sa2_fixture_person"
+     planted_path = "Q:" + "\\" + "Use" + "rs" + "\\" + planted_user + "\\private.txt"
+     planted = copy.deepcopy(private)
+@@ -278,8 +450,43 @@
+     require(driver_version(0) is None, "unknown UMD version")
+ 
+ 
++def check_blank_control():
++    """The R10 control keeps R10's engine flags, varies only the render-thread model and publishes counts only."""
++    r10 = next(row for row in matrix() if row["id"] == "R10")
++    full = commands(r10, "<godot>", "<project>", "<native>", "<result>", "<log>")
++    engine = full[:full.index("--")] + ["--quit-after", str(blank_control.FRAMES)]
++    require(blank_control.command("<godot>", "<project>", "separate", "<log>") == engine, "control uses R10's engine flags")
++    thread = engine.index("--render-thread") + 1
++    require(blank_control.command("<godot>", "<project>", "safe", "<log>") == engine[:thread] + ["safe"] + engine[thread + 1:],
++            "control varies only the render-thread model")
++    require("--gpu-validation" in engine and "--" not in engine, "control has validation and no harness arguments")
++    stdout = "Godot Engine v4.7.2\nD3D12 12_0 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4070 Laptop GPU\n"
++    require(blank_control.adapter_name(stdout) == "NVIDIA GeForce RTX 4070 Laptop GPU", "control adapter line")
++    require(blank_control.adapter_name(stdout + stdout) is None and blank_control.adapter_name("") is None, "one adapter line")
++    stderr = "WARNING: experimental\n" + blank_control.FINALIZE + " \n   at: finalize (servers/rendering/rendering_device.cpp)\n"
++    run = {"exit_code": 0, "timed_out": False, "output_line_counts": {"error": 1, "warning": 1}, "stdout": "private"}
++    counts = blank_control.run_counts("separate", 1, run, stdout, stderr)
++    require(counts == {"mode": "separate", "repeat": 1, "exit_code": 0, "timed_out": False,
++                       "adapter_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
++                       "output_line_counts": {"error": 1, "warning": 1}, "finalize_lines": 1}, "control run counts")
++    safe = blank_control.run_counts("safe", 1, dict(run, output_line_counts={"error": 0, "warning": 0}), stdout, "")
++    source = {"head": "a" * 40, "sha256": "b" * 64, "matches_head": True, "file_count": 3, "project": "private"}
++    summary = blank_control.build_summary(GODOT_VERSION, source, [safe, counts], "planted-user")
++    require(summary["totals"] == {"safe": {"runs": 1, "runs_with_finalize_line": 0, "error_lines": 0},
++                                  "separate": {"runs": 1, "runs_with_finalize_line": 1, "error_lines": 1}}, "control totals")
++    require(summary["source"] == {"head": "a" * 40, "sha256": "b" * 64, "matches_head": True}, "control source fields")
++    scan_public(summary, "planted-user")
++    for planted in ("planted-user GPU", "C:" + "\\x"):
++        try:
++            blank_control.build_summary(GODOT_VERSION, source, [dict(counts, adapter_name=planted)], "planted-user")
++        except ValueError:
++            continue
++        raise AssertionError("private text in a control summary was not refused")
++
++
+ def check_owned_files():
+-    paths = [HERE / name for name in ("run_smoke.py", "smoke_summary.py", "sa2_reference.py", "check_project.py", "README.md")]
++    paths = [HERE / name for name in ("run_smoke.py", "smoke_summary.py", "sa2_reference.py", "check_project.py",
++                                      "blank_control.py", "README.md")]
+     paths.extend(p for p in PROJECT.rglob("*") if p.is_file() and not any(part in {".godot", "bin", "obj", ".sandbox-build", "__pycache__"} for part in p.relative_to(PROJECT).parts))
+     users = "Use" + "rs"
+     for path in paths:
+@@ -303,10 +510,13 @@
+         check_abi()
+         check_reference()
+         check_harness_source()
++        check_pending_write_defects()
++        check_declared_options()
+         check_runner()
+         check_summary(temporary)
++        check_blank_control()
+         check_owned_files()
+-        print("SA2 project: PASS (settings, ABI, reference images, run matrix, judging, summary privacy; source/fixtures only)")
++        print("SA2 project: PASS (settings, ABI, reference images, run matrix, judging, summary privacy, R10 control; source/fixtures only)")
+         return 0
+     except (AssertionError, OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+         print(f"SA2 project: FAIL: {error}", file=sys.stderr)
+--- a/work/experiments/renderer-sa2/README.md
++++ b/work/experiments/renderer-sa2/README.md
+@@ -46,6 +46,9 @@
+ 
+ # Build, run, and write the sanitized public summary for review.
+ python work/experiments/renderer-sa2/run_smoke.py --write-summary
++
++# R10 control: a blank project with R10's engine flags, three runs per render-thread model.
++python work/experiments/renderer-sa2/blank_control.py --write-summary
+ ```
+ 
+ The runner locates exactly one console executable under the installed WinGet
+@@ -99,7 +102,7 @@
+ | R13 | export | own | tracked | match | on | safe | 400 | 0 | Only with `--device-loss`; removal at run frame 200, record engine/native outcome |
+ 
+ R12 alone gets `M600_SA2_INJECT_UNCONFIRMED_DRAIN=1`. The runner removes an
+-inherited injection variable from all other runs. Its required stderr line is
++inherited injection variable, in any letter case, from all other runs. Its required stderr line is
+ `sa2: drain not confirmed; ending the process with exit code 3`.
+ 
+ Every run has a 300-second limit; R13 has 120 seconds. A timeout kills only
+@@ -111,10 +114,44 @@
+ invented. Normal Godot runs require the exact expected adapter.
+ 
+ `--only` omits unselected rows, including R0. Use it for focused reruns after
+-the native self-test has passed. The runner counts stdout/stderr lines with
+-`ERROR:` and `WARNING:`. Warnings, including mismatching optimized clear values,
+-are recorded; validation errors/corruption prevent a normal pass. R6 may log
+-Godot errors describing the expected shared-view refusal.
++the native self-test has passed.
++
++Godot consumes `--gpu-validation` and `--render-thread` itself; they never
++reach the harness. The runner therefore repeats both as the required user
++arguments `--sa2-gpu-validation 0|1` and `--sa2-render-thread safe|separate`,
++taken from the row. A missing or invalid value prints one `sa2:` line on stderr
++and exits 2. The result's `config` echoes them as `gpu_validation` and
++`render_thread`. `config.render_thread_separate_observed` is measured, not
++declared: `_Ready` stores `!RenderingServer.IsOnRenderThread()` on the main
++thread, which is Godot's render thread in the safe model.
++
++Judging, in addition to each row's expected status:
++
++- R0 passes only with exit 0, format `magic600-sa2-native-selftest-v1`, every
++  check `pass` or `unsupported` with a reason, and at least one `pass`.
++- Every Godot run except R13 must echo its row in `config` with the exact JSON
++  type and value: route, queue, handover (not for R1, whose row has none),
++  barriers, frames, resize_every, gpu_validation and render_thread; and
++  `render_thread_separate_observed` must be true exactly when the row's render
++  thread is `separate`. Otherwise the reason is `config-mismatch`.
++- A validation row needs `device.debug_layer == 1` (`validation-not-active`):
++  zero validation counts prove nothing without an active debug layer.
++  Validation errors/corruption in the native debug counts prevent a normal pass.
++- A pass row with `resize_every > 0` needs `resize.rebuilds ==
++  (frames − 1) // resize_every`. Recorded rows and R12 need `frames.run` equal
++  to the row's frames; R6 and R13 are exempt.
++- The runner counts stdout/stderr lines with `ERROR:` and `WARNING:`. These
++  counts are recorded data, never a pass condition: the packet SA2-G pass rule
++  does not gate on Godot's own log. A run with an `ERROR:` line carries the
++  non-gating judge note `godot-output-errors`, which never changes its
++  judgement. R6 may log Godot errors describing the expected shared-view
++  refusal. R10 logs Godot's shutdown line `This function (finalize) can only be
++  called from the render thread.` [blank_control.py](blank_control.py) runs a
++  blank project (no harness, no DLL) with R10's engine flags under both
++  render-thread models, to show whether Godot prints that line without the
++  interop. It keeps raw output private and writes counts only to
++  `results/sa2-blank-control-summary.json`. Warnings, including mismatching
++  optimized clear values, are recorded.
+ 
+ ## Frame, ownership and shutdown protocol
+ 
+@@ -194,18 +231,25 @@
+ Source identity records HEAD, whether the source matches HEAD, and SHA-256 over
+ sorted experiment-relative paths followed by NUL, the file's SHA-256 in ASCII,
+ and newline. It covers the experiment including native source and the immutable
+-interface. It excludes `results/`, `.godot/`, `bin/`, `obj/`, `__pycache__/` and
+-`.sandbox-build/`. Since `work/` is ignored, the walked source file set is
+-compared with `git ls-files`, as well as `git diff --quiet HEAD --` for this
+-directory. The DLL and managed assembly have separate digests. Reuse refuses
++interface. It excludes every `results/`, `.godot/`, `bin/`, `obj/`,
++`__pycache__/` and `.sandbox-build/` directory at any depth, and the manual
++native build folders `native/build*/`. Since `work/` is ignored, the walked
++source file set is compared with `git ls-files` under the same exclusion rule,
++and `git diff --quiet HEAD` runs over this directory with `:(exclude)` and
++`:(exclude,glob)` pathspecs for the same directories, so a summary written to
++`results/` or a build output does not count as a source change. The DLL and
++managed assembly have separate digests. Reuse refuses
+ source/version/binary changes; a build whose source changed during compilation
+ is refused.
+ 
+ With `--write-summary`, [smoke_summary.py](smoke_summary.py) writes
+ `results/sa2-smoke-summary.json` (`magic600-sa2-smoke-summary-v1`). It copies only
+ allowlisted source/build identity, engine/editor flag, adapter/driver version,
+-enhanced-barrier flag, matrix row, status/judgement/reason codes, counts, distinct
+-debug IDs, teardown and exit code. It strips messages, last errors, configuration
++enhanced-barrier flag, matrix row, status/judgement/reason codes, known judge
++notes, counts (including the per-run `ERROR:`/`WARNING:` output line counts),
++distinct debug IDs, teardown and exit code. R0's public status is derived from
++its checks by the self-test rule above, never copied from the result. It strips
++messages, last errors, configuration
+ paths, command lines, LUIDs and vendor/device IDs. A final scan refuses private
+ path/environment patterns and the current user's name even in an allowed field.
+ Only reviewed source and this sanitized, matching-build summary may be committed.
+@@ -231,7 +275,7 @@
+ Additional C# API uses beyond packet section 3 are ordinary Node/Control
+ `GetNode`, `GetViewport`, `GetWindow`, `_Ready`, `_Process`; Viewport
+ `GetVisibleRect`/`GetTexture`; Resource `GetRid`/`Dispose`; Rid `IsValid`/equality;
+-`OS.GetCmdlineArgs`/`IsDebugBuild`; `RenderingServer.GetCurrentRenderingMethod`;
++`OS.IsDebugBuild`; `RenderingServer.GetCurrentRenderingMethod`/`IsOnRenderThread`;
+ `Callable.From` (including the byte-array callback); RDTextureFormat/RDTextureView
+ properties and constructors; RDShaderSource `SourceCompute`;
+ RDShaderSpirV `GetStageCompileError`; and RDUniform `UniformType`, `Binding`,
+--- a/work/experiments/renderer-sa2/project/Arguments.cs
++++ b/work/experiments/renderer-sa2/project/Arguments.cs
+@@ -9,11 +9,16 @@
+     public string route = "export", queue = "same", handover = "tracked", barriers = "match";
+     public int frames = 1200, warmup = 3, resize_every = 0, verify_every = 50;
+     public int device_loss_at = 0, timeout_ms = 5000;
+-    public bool gpu_validation, render_thread_separate;
++    // Godot consumes --gpu-validation and --render-thread itself; they never reach
++    // OS.GetCmdlineArgs(). The runner declares both again as required user arguments.
++    public bool gpu_validation;
++    public string render_thread = "";
++    // Measured by Smoke._Ready on the main thread, never inferred from arguments.
++    public bool render_thread_separate_observed;
+     public bool Probe => handover == "render-target" || barriers != "match"
+         || route == "import-texture2drd" || device_loss_at != 0;
+ 
+-    public static Arguments Parse(string[] values, string[] engineArgs)
++    public static Arguments Parse(string[] values)
+     {
+         Arguments a = new();
+         HashSet<string> seen = new();
+@@ -36,11 +41,15 @@
+                 case "--sa2-verify-every": a.verify_every = Number(value, false); break;
+                 case "--sa2-device-loss-at": a.device_loss_at = Number(value, true); break;
+                 case "--sa2-timeout-ms": a.timeout_ms = Number(value, false); break;
++                case "--sa2-gpu-validation": a.gpu_validation = Choice(value, "0", "1") == "1"; break;
++                case "--sa2-render-thread": a.render_thread = Choice(value, "safe", "separate"); break;
+                 default: throw new ArgumentException("unknown argument");
+             }
+         }
+         if (!Path.IsPathFullyQualified(a.out_path) || !Path.IsPathFullyQualified(a.dll_path))
+             throw new ArgumentException("--sa2-out and --sa2-dll require absolute paths");
++        if (!seen.Contains("--sa2-gpu-validation") || !seen.Contains("--sa2-render-thread"))
++            throw new ArgumentException("--sa2-gpu-validation and --sa2-render-thread are required");
+         bool noWarmup = a.route == "rd-compute" || a.handover == "render-target";
+         if (noWarmup && !seen.Contains("--sa2-warmup")) a.warmup = 0;
+         if ((noWarmup && a.warmup != 0) || (!noWarmup && a.warmup < 3))
+@@ -48,9 +57,6 @@
+         if (a.route == "rd-compute" && a.queue != "same")
+             throw new ArgumentException("rd-compute requires the same queue");
+         if (a.device_loss_at > a.frames) throw new ArgumentException("device-loss frame exceeds run length");
+-        a.gpu_validation = Array.IndexOf(engineArgs, "--gpu-validation") >= 0;
+-        int thread = Array.IndexOf(engineArgs, "--render-thread");
+-        a.render_thread_separate = thread >= 0 && thread + 1 < engineArgs.Length && engineArgs[thread + 1] == "separate";
+         return a;
+     }
+ 
+--- a/work/experiments/renderer-sa2/project/Smoke.cs
++++ b/work/experiments/renderer-sa2/project/Smoke.cs
+@@ -45,8 +45,11 @@
+ 
+     public override void _Ready()
+     {
+-        try { _args = Arguments.Parse(OS.GetCmdlineUserArgs(), OS.GetCmdlineArgs()); }
++        try { _args = Arguments.Parse(OS.GetCmdlineUserArgs()); }
+         catch (ArgumentException e) { Console.Error.WriteLine("sa2: " + e.Message); GetTree().Quit(2); _stage = Stage.Finished; return; }
++        // Measured on the main thread: the safe model renders here, so IsOnRenderThread()
++        // is true; with a separate render thread it is false.
++        _args.render_thread_separate_observed = !RenderingServer.IsOnRenderThread();
+         _result = new RunResult(_args);
+         var version = Engine.GetVersionInfo();
+         string hash = version["hash"].AsString();
+--- /dev/null
++++ b/work/experiments/renderer-sa2/blank_control.py
+@@ -0,0 +1,117 @@
++"""Owner-machine control for R10: Godot's own output with a blank project.
++
++R10 is the only matrix row with a separate render thread, and its Godot output has an ERROR line
++at shutdown. This control runs a blank project (no harness, no DLL) with R10's engine flags under
++both render-thread models and counts Godot's own ERROR:/WARNING: lines, so that the line can be
++attributed to Godot or to the interop. Raw output stays private; --write-summary writes counts
++only to results/sa2-blank-control-summary.json. Run it like the matrix: on an idle machine with
++mains power and the intended discrete GPU.
++"""
++
++import argparse
++import datetime as dt
++import os
++import re
++import subprocess
++import sys
++from pathlib import Path
++
++sys.dont_write_bytecode = True
++from run_smoke import BUILD_ROOT, HERE, PRIVATE_ROOT, commands, locate_godot, matrix, run_process, source_identity, write_json
++from smoke_summary import scan_public
++
++FORMAT = "magic600-sa2-blank-control-v1"
++FINALIZE = "ERROR: This function (finalize) can only be called from the render thread."
++MODES = ("safe", "separate")
++FRAMES = 600
++ADAPTER_LINE = re.compile(r"D3D12 \S+ - Forward\+ - Using Device #\d+: .+? - (.+)")
++PROJECT_FILES = {
++    "project.godot": ('config_version=5\n\n[application]\n\nconfig/name="SA2 blank control"\n'
++                      'run/main_scene="res://main.tscn"\nconfig/features=PackedStringArray("4.7")\n\n'
++                      '[rendering]\n\nrendering_device/driver.windows="d3d12"\n'),
++    "main.tscn": '[gd_scene format=3]\n\n[node name="Main" type="Node2D"]\n',
++}
++
++
++def command(godot, project, mode, log):
++    """R10's engine flags with the given render-thread model, without harness arguments, quitting after FRAMES frames."""
++    row = dict(next(row for row in matrix() if row["id"] == "R10"), render_thread=mode)
++    full = commands(row, godot, project, "<unused>", "<unused>", log)
++    return full[:full.index("--")] + ["--quit-after", str(FRAMES)]
++
++
++def adapter_name(stdout):
++    """The device name from Godot's one `Using Device` line, or None."""
++    names = [match.group(1).strip() for match in map(ADAPTER_LINE.fullmatch, stdout.splitlines()) if match]
++    return names[0] if len(names) == 1 else None
++
++
++def run_counts(mode, repeat, run, stdout, stderr):
++    lines = (stdout + "\n" + stderr).splitlines()
++    return {"mode": mode, "repeat": repeat, "exit_code": run["exit_code"], "timed_out": run["timed_out"],
++            "adapter_name": adapter_name(stdout),
++            "output_line_counts": {key: run["output_line_counts"][key] for key in ("error", "warning")},
++            "finalize_lines": sum(line.strip() == FINALIZE for line in lines)}
++
++
++def build_summary(godot_version, source, runs, current_user=None):
++    """Counts only; scan_public refuses private path, environment or user-name text before anything is written."""
++    totals = {mode: {"runs": sum(r["mode"] == mode for r in runs),
++                     "runs_with_finalize_line": sum(r["mode"] == mode and r["finalize_lines"] > 0 for r in runs),
++                     "error_lines": sum(r["output_line_counts"]["error"] for r in runs if r["mode"] == mode)}
++              for mode in MODES}
++    summary = {"format": FORMAT, "godot_version": godot_version,
++               "source": {key: source[key] for key in ("head", "sha256", "matches_head")},
++               "command": command("<godot>", "<project>", "<mode>", "<log>"), "frames": FRAMES,
++               "finalize_line": FINALIZE, "runs": runs, "totals": totals}
++    scan_public(summary, current_user)
++    return summary
++
++
++def main(argv=None):
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--godot", type=Path)
++    parser.add_argument("--expect-adapter", default="NVIDIA GeForce RTX 4070 Laptop GPU")
++    parser.add_argument("--repeats", type=int, default=3)
++    parser.add_argument("--write-summary", action="store_true")
++    args = parser.parse_args(argv)
++    if not 1 <= args.repeats <= 10:
++        parser.error("--repeats must be 1 to 10")
++    if os.name != "nt":
++        parser.exit(1, "the blank control requires Windows\n")
++    try:
++        godot, _, version = locate_godot(args.godot)
++        source = source_identity()
++        stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
++        private = PRIVATE_ROOT / f"control-{stamp}"
++        project = BUILD_ROOT / f"control-{stamp}"
++        private.mkdir(parents=True)
++        project.mkdir(parents=True)
++        for name, text in PROJECT_FILES.items():
++            (project / name).write_text(text, encoding="utf-8", newline="\n")
++        runs = []
++        for repeat in range(1, args.repeats + 1):
++            for mode in MODES:
++                name = f"{mode}-{repeat}"
++                run, stdout, stderr = run_process(command(godot, project, mode, private / f"{name}.godot.log"),
++                                                  project, os.environ.copy(), 180, private / name)
++                runs.append(run_counts(mode, repeat, run, stdout, stderr))
++                print(f"{name}: exit={run['exit_code']}; timeout={run['timed_out']}; "
++                      f"errors={runs[-1]['output_line_counts']['error']}; finalize={runs[-1]['finalize_lines']}")
++        summary = build_summary(version, source, runs)
++        write_json(private / "summary.json", summary)
++        wrong = [f"{r['mode']}-{r['repeat']}" for r in runs if r["timed_out"] or r["adapter_name"] != args.expect_adapter]
++        if wrong:
++            print(f"sa2 blank control: timed out or not on the expected adapter: {', '.join(wrong)}", file=sys.stderr)
++            return 1
++        if args.write_summary:
++            write_json(HERE / "results/sa2-blank-control-summary.json", summary)
++        print(f"Private outputs: {private}")
++        return 0
++    except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
++        print(f"sa2 blank control: {error}", file=sys.stderr)
++        return 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

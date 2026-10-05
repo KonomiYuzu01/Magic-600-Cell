@@ -10,6 +10,8 @@
 
 Only entries in tools/toolchain.lock.json with status "verified" and installable true
 are installed. Unknown arguments are rejected before any download or write.
+7z archive installs verify pinned bytes and hashes before listing or extraction, and
+run installed binaries only after the checked staging tree reaches its destination.
 """
 from __future__ import annotations
 
@@ -17,18 +19,25 @@ import argparse
 import hashlib
 import http.client
 import importlib.util
+import ipaddress
 import json
 import os
 import re
 import shutil
+import socket
+import ssl
+import stat
 import subprocess
 import sys
 import tempfile
 import time
 import types
+import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Mapping
 from datetime import datetime, timezone
+from http.client import HTTPException
 from pathlib import Path
 
 def _is_link(p: Path) -> bool:
@@ -60,10 +69,11 @@ APPROVAL_PATH = ROOT / "work" / "loop-memory" / "approvals" / "toolchain.json"
 LEDGER_PATH = ROOT / "work" / "loop-memory" / "ledgers" / "installs.jsonl"
 PROBE_TIMEOUT = 20
 INSTALL_TIMEOUT = 1800
+SOCKET_TIMEOUT = 60
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 PLATFORM = {"win32": "windows", "darwin": "macos"}.get(sys.platform, "linux")
 REQUIRED_KEYS = {"id", "purpose", "profiles", "method", "status", "installable", "platforms"}
-METHODS = {"external", "pip-hashed", "uv-venv-hashed", "npm-ci", "winget", "download-hashed"}
+METHODS = {"external", "pip-hashed", "uv-venv-hashed", "npm-ci", "winget", "archive-7z-hashed", "download-hashed"}
 DOWNLOAD_ROOT = "tools/.models/"
 DOWNLOAD_TIMEOUT = 60
 
@@ -133,7 +143,63 @@ def load_lock() -> dict:
         if entry["method"] == "download-hashed" and not valid_download(entry):
             raise SystemExit(f"lockfile: {entry['id']} has an invalid download pin")
         ids.add(entry["id"])
+    for entry in lock["tools"]:
+        if entry["method"] == "archive-7z-hashed":
+            validate_archive_entry(entry, lock)
     return lock
+
+
+def _archive_rel(value) -> bool:
+    return (isinstance(value, str) and bool(value) and "\\" not in value and ":" not in value
+            and all(part not in ("", ".", "..") for part in value.split("/")))
+
+
+def validate_archive_entry(entry: dict, lock: dict) -> None:
+    def require(ok, field):
+        if not ok:
+            raise SystemExit(f"lockfile: {entry['id']} has invalid {field}")
+
+    require(entry["platforms"] == ["windows"], "platforms")
+    for field in ("prefix", "root"):
+        require(_archive_rel(entry.get(field)), field)
+    base = entry.get("base_url")
+    match = re.fullmatch(r"https://([A-Za-z0-9.-]+)/", base) if isinstance(base, str) else None
+    hosts = entry.get("network_hosts")
+    require(isinstance(hosts, list) and match is not None and match[1] in hosts, "base_url/network_hosts")
+    redirects = entry.get("redirects")
+    require(isinstance(redirects, dict) and set(redirects) == {"max_hops", "scheme", "same_path"}
+            and type(redirects["max_hops"]) is int and 0 <= redirects["max_hops"] <= 10
+            and redirects["scheme"] == "https" and redirects["same_path"] is True, "redirects")
+    archives = entry.get("archives")
+    require(isinstance(archives, list) and bool(archives), "archives")
+    names = set()
+    root = entry["root"]
+    for archive in archives:
+        require(isinstance(archive, dict) and set(archive) == {"name", "path", "bytes", "sha256", "install_path"}, "archive fields")
+        name = archive["name"]
+        require(isinstance(name, str) and re.fullmatch(r"[a-z0-9][a-z0-9._-]*\.7z", name) is not None
+                and name not in names, "archive name")
+        names.add(name)
+        path = archive["path"]
+        require(_archive_rel(path) and re.fullmatch(r"[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*", path) is not None, "archive path")
+        require(_mirror_url(base + path, path), "base_url/network_hosts")  # the first request obeys the redirect policy too
+        require(type(archive["bytes"]) is int and archive["bytes"] > 0, "archive bytes")
+        require(isinstance(archive["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", archive["sha256"]) is not None, "archive sha256")
+        path = archive["install_path"]
+        require(_archive_rel(path) and (path == root or path.startswith(root + "/")), "archive install_path")
+    require(type(entry.get("max_unpacked_bytes")) is int and entry["max_unpacked_bytes"] > 0, "max_unpacked_bytes")
+    files = entry.get("required_files")
+    require(isinstance(files, list) and bool(files) and all(_archive_rel(p) and p.startswith(root + "/") for p in files), "required_files")
+    check = entry.get("prefix_check")
+    require(isinstance(check, dict) and set(check) == {"command", "path"}, "prefix_check")
+    command, path = check["command"], check["path"]
+    require(isinstance(command, list) and bool(command) and all(isinstance(arg, str) for arg in command)
+            and command[0].startswith("{prefix}/") and _archive_rel(command[0][len("{prefix}/"):])
+            and isinstance(path, str) and path.startswith("{prefix}/") and _archive_rel(path[len("{prefix}/"):]), "prefix_check")
+    extractor = next((e for e in lock["tools"] if e["id"] == entry.get("extractor")), None)
+    requires = entry.get("requires")
+    require(extractor is not None and extractor["method"] == "uv-venv-hashed"
+            and isinstance(requires, list) and extractor["id"] in requires, "extractor/requires")
 
 
 def valid_download(entry: dict) -> bool:
@@ -199,13 +265,16 @@ def resolve_executable(entry: dict, name: str) -> str | None:
     """Expand {python}, {venv} and {prefix} placeholders to a concrete executable path."""
     if name == "{python}":
         return sys.executable
+    # An archive tool runs only from its final version tree, reached without any link (so never from staging).
+    archive = name.startswith("{prefix}/") and entry["method"] == "archive-7z-hashed"
     if name.startswith("{venv}/"):
         root = safe_dest(entry["venv"])
         venv_contained(entry)  # the interpreter and scripts it runs must stay inside the environment
         base = _bin_dir(root) / name[len("{venv}/"):]
     elif name.startswith("{prefix}/"):
-        root = safe_dest(entry["prefix"])
-        base = root / name[len("{prefix}/"):]
+        prefix = safe_dest(entry["prefix"])
+        root = safe_dest(entry["prefix"] + "/" + entry["root"]) if archive else prefix
+        base = prefix / name[len("{prefix}/"):]
     else:
         found = shutil.which(name)
         if found is None and PLATFORM == "windows":
@@ -217,6 +286,11 @@ def resolve_executable(entry: dict, name: str) -> str | None:
     for suffix in ([".exe", ".cmd", ""] if PLATFORM == "windows" else [""]):
         candidate = base.with_name(base.name + suffix)
         if os.path.lexists(candidate):
+            if archive:
+                try:
+                    safe_dest(candidate.relative_to(ROOT.resolve()).as_posix())
+                except Refused:
+                    raise Refused(f"{name}: executable passes through a link") from None
             real = candidate.resolve()
             if root.resolve() not in real.parents:
                 raise Refused(f"{name}: executable leads outside {root.relative_to(ROOT).as_posix()}")
@@ -296,13 +370,27 @@ def run_probe(entry: dict) -> tuple[bool, str]:
         reported = re.search(r"(?<![\w.])v?(\d[\w.+-]*)", r.stdout + r.stderr)
         if not reported or reported.group(1).rstrip(".") != version:
             return False, f"version is not exactly {version}: {first[:120]}"
+    if entry["method"] == "archive-7z-hashed":
+        check = entry["prefix_check"]
+        try:
+            exe = resolve_executable(entry, check["command"][0])
+            expected = safe_dest(entry["prefix"] + "/" + check["path"][len("{prefix}/"):])
+            if exe is None:
+                return False, "prefix check failed: missing executable"
+            r = subprocess.run([exe, *check["command"][1:]], capture_output=True, text=True,
+                               timeout=PROBE_TIMEOUT, env=probe_env())
+        except (Refused, OSError, subprocess.TimeoutExpired) as exc:
+            return False, f"prefix check failed: {type(exc).__name__}"
+        output = (r.stdout + r.stderr).strip()
+        if r.returncode != 0 or os.path.normcase(os.path.normpath(output)) != os.path.normcase(str(expected)):
+            return False, f"prefix check failed: {output[:120]}"
     return True, first[:120]
 
 
 # Methods whose probe prints the pinned version. uv-venv-hashed tools are compared exactly
 # through the environment's installed distributions instead (venv_conflicts); a winget GUI
 # tool without a command on PATH is compared through winget's record (winget_installed).
-EXACT_VERSION_METHODS = {"pip-hashed", "npm-ci", "winget"}
+EXACT_VERSION_METHODS = {"pip-hashed", "npm-ci", "winget", "archive-7z-hashed"}
 
 
 def _norm(name: str) -> str:
@@ -556,6 +644,384 @@ def winget_installed(entry: dict) -> tuple[bool, str]:
     return True, f"installed through winget: {entry['version']}"
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+class _DeadlineSocket:
+    """Socket mixin for archive downloads, on the plain and on the TLS socket: every handshake, send
+    and receive waits at most SOCKET_TIMEOUT and never past the download deadline. A buffered read
+    loops over many receives, so a per-receive timeout alone would let a server that trickles bytes
+    outlast the deadline."""
+
+    deadline: float
+
+    def _bound(self) -> None:
+        remaining = self.deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("download deadline exceeded")
+        self.settimeout(min(SOCKET_TIMEOUT, remaining))
+
+    def do_handshake(self, *args, **kwargs):
+        self._bound()
+        return super().do_handshake(*args, **kwargs)
+
+    def recv(self, *args, **kwargs):
+        self._bound()
+        return super().recv(*args, **kwargs)
+
+    def recv_into(self, *args, **kwargs):
+        self._bound()
+        return super().recv_into(*args, **kwargs)
+
+    def send(self, *args, **kwargs):
+        self._bound()
+        return super().send(*args, **kwargs)
+
+    def sendall(self, *args, **kwargs):
+        self._bound()
+        return super().sendall(*args, **kwargs)
+
+
+class _DeadlineHTTPSConnection(http.client.HTTPSConnection):
+    """HTTPS connection whose plain socket obeys the download deadline as well: through a proxy, the
+    CONNECT request and its reply travel on that socket before TLS starts."""
+
+    def __init__(self, *args, deadline: float, **kwargs):
+        super().__init__(*args, **kwargs)
+        plain = type("_DeadlinePlainSocket", (_DeadlineSocket, socket.socket), {"deadline": deadline})
+
+        def create_connection(address, timeout, source_address=None):
+            fileno = socket.create_connection(address, timeout, source_address).detach()
+            try:
+                return plain(fileno=fileno)
+            except BaseException:
+                socket.close(fileno)
+                raise
+
+        self._create_connection = create_connection
+
+
+class _DeadlineHTTPSHandler(urllib.request.HTTPSHandler):
+    def __init__(self, context: ssl.SSLContext, deadline: float):
+        super().__init__(context=context)
+        self.deadline = deadline
+
+    def https_open(self, req):
+        return self.do_open(_DeadlineHTTPSConnection, req, context=self._context, deadline=self.deadline)
+
+
+def _http_get(url: str, timeout: float) -> tuple[int, Mapping[str, str], object]:
+    """GET one URL without following redirects; timeout is the time left before the download deadline."""
+    if timeout <= 0:
+        raise TimeoutError("download deadline exceeded")
+    deadline = time.monotonic() + timeout
+    context = ssl.create_default_context()
+    context.sslsocket_class = type("_DeadlineSSLSocket", (_DeadlineSocket, ssl.SSLSocket), {"deadline": deadline})
+    opener = urllib.request.build_opener(_NoRedirect(), _DeadlineHTTPSHandler(context, deadline))
+    request = urllib.request.Request(url, headers={"Accept-Encoding": "identity", "User-Agent": "magic600-bootstrap"})
+    try:
+        response = opener.open(request, timeout=min(SOCKET_TIMEOUT, timeout))
+    except urllib.error.HTTPError as response_error:
+        response = response_error  # expose redirects and errors to the policy, without following them
+    return response.code, response.headers, response
+
+
+def _header_values(headers, name: str) -> list[str]:
+    """Every value of one header field: a dict copy would keep only one of repeated fields."""
+    if hasattr(headers, "get_all"):
+        return list(headers.get_all(name) or [])
+    return [value for key, value in headers.items() if key.lower() == name]
+
+
+def _archive_refusal(archive: dict, reason: str) -> Refused:
+    return Refused(f"{archive['name']}: {reason}; installation blocked until verified again")
+
+
+def _mirror_url(url: str, path: str) -> bool:
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        host = (parsed.hostname or "").lower().rstrip(".")
+        if (parsed.scheme != "https" or parsed.username is not None or parsed.password is not None
+                or parsed.port not in (None, 443) or "?" in url or "#" in url
+                or not parsed.path.endswith("/" + path) or host == "localhost" or host.endswith(".localhost")):
+            return False
+        try:
+            ipaddress.ip_address(host)
+            return False
+        except ValueError:
+            pass
+        return "." in host and all(re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label) for label in host.split("."))
+    except ValueError:
+        return False
+
+
+def fetch_archive(entry: dict, archive: dict, dest_dir: Path) -> str:
+    url = entry["base_url"] + archive["path"]
+    if not _mirror_url(url, archive["path"]):
+        raise _archive_refusal(archive, "URL policy refused")
+    deadline = time.monotonic() + INSTALL_TIMEOUT
+    part = dest_dir / (archive["name"] + ".part")
+    hops = 0
+
+    def check_deadline():
+        if time.monotonic() >= deadline:
+            raise _archive_refusal(archive, "download deadline exceeded")
+
+    try:
+        while True:
+            check_deadline()
+            status, headers, stream = _http_get(url, deadline - time.monotonic())
+            try:
+                check_deadline()
+                if status in (301, 302, 303, 307, 308):
+                    locations = _header_values(headers, "location")
+                    location = locations[0] if len(locations) == 1 else None
+                    if not location or "?" in location or "#" in location or any(ord(c) < 32 or 127 <= ord(c) <= 159 for c in location):
+                        raise _archive_refusal(archive, "invalid redirect location")
+                    redirected = urllib.parse.urljoin(url, location)
+                    if hops >= entry["redirects"]["max_hops"] or not _mirror_url(redirected, archive["path"]):
+                        raise _archive_refusal(archive, "redirect policy refused")
+                    url, hops = redirected, hops + 1
+                    continue
+                if status != 200:
+                    raise _archive_refusal(archive, f"HTTP status {status}")
+                lengths = _header_values(headers, "content-length")
+                if len(lengths) > 1:
+                    raise _archive_refusal(archive, "repeated Content-Length")  # http.client frames the body by the first
+                if lengths and (not re.fullmatch(r"[0-9]+", lengths[0].strip()) or int(lengths[0]) != archive["bytes"]):
+                    raise _archive_refusal(archive, "Content-Length differs from the pin")
+                total, digest = 0, hashlib.sha256()
+                with part.open("wb") as f:
+                    while True:
+                        check_deadline()
+                        chunk = stream.read(min(65536, archive["bytes"] - total + 1))
+                        check_deadline()
+                        if not chunk:
+                            break
+                        total += len(chunk)
+                        if total > archive["bytes"]:
+                            raise _archive_refusal(archive, "body exceeds the pinned size")
+                        digest.update(chunk)
+                        f.write(chunk)
+                if total != archive["bytes"]:
+                    raise _archive_refusal(archive, "body is shorter than the pinned size")
+                if digest.hexdigest() != archive["sha256"]:
+                    raise _archive_refusal(archive, "SHA-256 differs from the pin")
+                part.rename(dest_dir / archive["name"])
+                return urllib.parse.urlsplit(url).hostname
+            finally:
+                stream.close()
+    except (OSError, ValueError, HTTPException) as exc:
+        if time.monotonic() >= deadline:
+            raise _archive_refusal(archive, "download deadline exceeded") from None
+        raise _archive_refusal(archive, f"download failed ({type(exc).__name__})") from None
+    finally:
+        part.unlink(missing_ok=True)
+
+
+EXTRACT_CODE = """import json, sys, py7zr
+with py7zr.SevenZipFile(sys.argv[2], mode="r") as archive:
+    if archive.needs_password():
+        sys.exit(3)
+    if sys.argv[1] == "list":
+        print(json.dumps([{"name": f.filename, "dir": f.is_directory, "file": f.is_file,
+                           "symlink": f.is_symlink, "junction": f.is_junction, "socket": f.is_socket,
+                           "size": f.uncompressed if f.uncompressed is not None else 0} for f in archive.files]))
+    elif sys.argv[1] == "extract":
+        archive.extractall(path=sys.argv[3])
+"""
+
+
+def member_problems(listing, install_path: str) -> list[str]:
+    if not isinstance(listing, list):
+        return ["listing is not an array"]
+    problems, seen = [], set()
+    for member in listing:
+        if not isinstance(member, dict):
+            problems.append("member is not an object")
+        else:
+            name = member.get("name")
+            if not isinstance(name, str) or not name:
+                problems.append("member name is empty or not a string")
+            else:
+                normalized = name.replace("\\", "/")
+                parts = normalized.split("/")
+                if any(ord(c) < 32 or 127 <= ord(c) <= 159 or c in '<>:"|?*' for c in name):
+                    problems.append(f"{name[:80]!r}: forbidden character")
+                if normalized.startswith("/") or re.match(r"^[A-Za-z]:", name):
+                    problems.append(f"{name[:80]!r}: absolute member path")
+                if any(p in ("", ".", "..") or p.endswith((".", " ")) for p in parts):
+                    problems.append(f"{name[:80]!r}: unsafe path segment")
+                if any(re.fullmatch(r"CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9]", p.split(".", 1)[0], re.I) for p in parts):
+                    problems.append(f"{name[:80]!r}: Windows device name")
+                key = normalized.casefold()
+                if key in seen:
+                    problems.append(f"{name[:80]!r}: duplicate member")
+                seen.add(key)
+            flags = ("dir", "file", "symlink", "junction", "socket")
+            if (any(type(member.get(flag)) is not bool for flag in flags)
+                    or member.get("dir") == member.get("file")
+                    or any(member.get(flag) for flag in flags[2:])):
+                problems.append(f"{name!r}: member must be a regular file or directory")
+            if type(member.get("size")) is not int or member["size"] < 0:
+                problems.append(f"{name!r}: invalid uncompressed size")
+        if len(problems) >= 20:
+            break
+    return problems[:20]
+
+
+def _archive_tree(directory: Path, root: str | None = None) -> tuple[dict, int]:
+    files, longest, stack = {}, 0, [directory]
+    while stack:
+        parent = stack.pop()
+        if _is_link(parent):
+            raise Refused("extracted tree contains a link")
+        with os.scandir(parent) as children:
+            for child in children:
+                path = Path(child.path)
+                if _is_link(path):
+                    raise Refused("extracted tree contains a link")
+                mode = child.stat(follow_symlinks=False).st_mode
+                rel = path.relative_to(directory).as_posix()
+                longest = max(longest, len(rel))
+                if root is not None and not (rel == root or rel.startswith(root + "/") or root.startswith(rel + "/")):
+                    raise Refused("extracted tree contains content outside root")
+                if stat.S_ISDIR(mode):
+                    stack.append(path)
+                elif stat.S_ISREG(mode):
+                    info = os.lstat(path)  # a scandir entry reports no link count on Windows
+                    if info.st_nlink > 1:
+                        raise Refused("extracted tree contains a hard-linked file")
+                    key = rel.casefold()
+                    if key in files:
+                        raise Refused("extracted tree contains duplicate file names")
+                    files[key] = info.st_size
+                else:
+                    raise Refused("extracted tree contains a non-regular member")
+    return files, longest
+
+
+def _remove_tree(top: Path) -> None:
+    """Delete a staging tree or a just-installed tree. A read-only file is made writable only inside
+    the tree and only when no other hard link shares its attributes, so nothing outside changes."""
+    if _is_link(top):
+        raise Refused(f"{top.name} is a link; remove it or ask the owner")
+
+    def writable_retry(func, path, exc):
+        target = Path(os.path.abspath(path))
+        if (top not in target.parents and target != top) or _is_link(target):
+            raise exc
+        info = os.lstat(target)
+        if not stat.S_ISDIR(info.st_mode) and info.st_nlink > 1:
+            raise Refused(f"{top.name} holds a hard-linked read-only file; remove it or ask the owner")
+        os.chmod(target, stat.S_IREAD | stat.S_IWRITE)
+        func(path)
+
+    shutil.rmtree(top, onexc=writable_retry)
+
+
+def install_archives(entry: dict) -> None:
+    if PLATFORM != "windows":
+        raise Refused(f"{entry['id']}: archive-7z-hashed installs on Windows only")
+    prefix = safe_dest(entry["prefix"])
+    final = safe_dest(entry["prefix"] + "/" + entry["root"])
+    if os.path.lexists(final):
+        raise Refused(f"{entry['id']}: destination already exists")
+    prefix.mkdir(parents=True, exist_ok=True)
+    for leftover in prefix.glob(".st-*"):
+        try:
+            if _is_link(leftover) or not leftover.is_dir() or not (leftover / ".magic600-staging").is_file():
+                raise Refused("unmarked staging")
+            _archive_tree(leftover)
+        except Refused:
+            raise Refused(f"unexpected leftover {leftover.name}; remove it or ask the owner") from None
+        _remove_tree(leftover)
+    archives = entry["archives"]
+    if shutil.disk_usage(prefix).free < sum(a["bytes"] for a in archives) + entry["max_unpacked_bytes"]:
+        raise Refused(f"{entry['id']}: too little free space")
+    started = time.monotonic()
+    staging = prefix / f".st-{os.getpid()}"
+    staging.mkdir()
+    records, expected, overlaps, moved = [], {}, 0, False
+    try:
+        try:
+            (staging / ".magic600-staging").write_bytes(b"magic600\n")
+            dl, tree = staging / "dl", staging / "x"
+            dl.mkdir()
+            tree.mkdir()
+            for archive in archives:
+                host = fetch_archive(entry, archive, dl)
+                records.append({"name": archive["name"], "bytes": archive["bytes"], "host": host})
+            extractor = entry_for(load_lock(), entry["extractor"])
+            venv = safe_dest(extractor["venv"])
+            venv_contained(extractor)
+            if venv_conflicts(extractor):
+                raise Refused(f"{entry['id']}: extractor environment differs from its pins")
+            interpreter = venv / "Scripts" / "python.exe"
+
+            def child(mode, archive, target=None):
+                cmd = [str(interpreter), "-I", "-c", EXTRACT_CODE, mode, str(dl / archive["name"])]
+                if target is not None:
+                    cmd.append(str(target))
+                try:
+                    r = subprocess.run(cmd, cwd=staging, env=probe_env(), timeout=INSTALL_TIMEOUT, capture_output=True, text=True)
+                except (OSError, subprocess.TimeoutExpired) as exc:
+                    raise _archive_refusal(archive, f"extractor failed ({type(exc).__name__})") from None
+                if r.returncode != 0:
+                    raise _archive_refusal(archive, f"extractor exit {r.returncode}")
+                if mode == "list":
+                    try:
+                        return json.loads(r.stdout)
+                    except (ValueError, TypeError):
+                        raise _archive_refusal(archive, "unparsable extractor listing") from None
+
+            unpacked = 0
+            for archive in archives:
+                listing = child("list", archive)
+                problems = member_problems(listing, archive["install_path"])
+                if problems:
+                    raise _archive_refusal(archive, "; ".join(problems))
+                for member in listing:
+                    if member["file"]:
+                        key = (archive["install_path"] + "/" + member["name"].replace("\\", "/")).casefold()
+                        overlaps += key in expected
+                        expected[key] = member["size"]
+                        unpacked += member["size"]
+            if unpacked > entry["max_unpacked_bytes"] or shutil.disk_usage(prefix).free < unpacked:
+                raise Refused(f"{entry['id']}: unpacked size exceeds the limit or available free space")
+            for archive in archives:
+                target = tree / archive["install_path"]
+                target.mkdir(parents=True, exist_ok=True)
+                child("extract", archive, target)
+            actual, longest = _archive_tree(tree, entry["root"])
+            if actual.keys() != expected.keys():
+                raise Refused(f"{entry['id']}: extracted file set differs from the listings")
+            if actual != expected:
+                raise Refused(f"{entry['id']}: extracted file size differs from the listings")
+            conf = tree / archives[0]["install_path"] / "bin" / "qt.conf"
+            replaced = conf.is_file()
+            conf.parent.mkdir(parents=True, exist_ok=True)
+            conf.write_bytes(b"[Paths]\r\nPrefix=..\r\n")
+            longest = max(longest, len(conf.relative_to(tree).as_posix()))
+            for rel in entry["required_files"]:
+                path = tree / rel
+                if _is_link(path) or not path.is_file():
+                    raise Refused(f"{entry['id']}: missing required file {rel}")
+            os.rename(tree / entry["root"], final)
+            moved = True
+        finally:
+            _remove_tree(staging)
+        ledger({"tool": entry["id"], "phase": "archives", "archives": records, "overlaps": overlaps,
+                "longest_path": len(str(prefix)) + 1 + longest, "qt_conf": "replaced" if replaced else "created",
+                "seconds": round(time.monotonic() - started, 1)})
+    except BaseException:
+        if moved:
+            _remove_tree(final)  # a failure after the move leaves the absent destination absent
+        raise
+
+
 def install_entry(entry: dict) -> None:
     method = entry["method"]
     source = APPROVED_SOURCES.get(method)
@@ -604,6 +1070,8 @@ def install_entry(entry: dict) -> None:
             raise Refused("npm is not available; install Node.js first")
         _run([npm, "ci", f"--prefix={prefix}", "--workspaces=false", "--ignore-scripts", "--no-audit", "--no-fund",
               f"--registry={NPM_REGISTRY}"], cwd=prefix)
+    elif method == "archive-7z-hashed":
+        install_archives(entry)
     elif method == "winget":
         if PLATFORM != "windows":
             raise Refused(f"{entry['id']}: winget entries install on Windows only")
@@ -784,11 +1252,17 @@ def install(lock: dict, tool_id: str, done: set) -> str:
                           "replacing an installed tool needs owner approval")
     started = time.monotonic()
     install_entry(entry)
-    ok, detail = run_probe(entry)
-    ledger({"tool": tool_id, "version": entry.get("version"), "method": entry["method"], "result": "ok" if ok else "probe-failed",
-            "approval": approval_state(), "seconds": round(time.monotonic() - started, 1)})
-    if not ok:
-        raise Refused(f"{tool_id}: installed but the probe failed ({detail})")
+    try:
+        ok, detail = run_probe(entry)
+        ledger({"tool": tool_id, "version": entry.get("version"), "method": entry["method"], "result": "ok" if ok else "probe-failed",
+                "approval": approval_state(), "seconds": round(time.monotonic() - started, 1)})
+        if not ok:
+            raise Refused(f"{tool_id}: installed but the probe failed ({detail})")
+    except BaseException:
+        if entry["method"] == "archive-7z-hashed":
+            # install_archives refuses an existing destination, so this attempt created the tree: remove it.
+            _remove_tree(safe_dest(entry["prefix"] + "/" + entry["root"]))
+        raise
     done.add(tool_id)
     print(f"{tool_id}: installed ({detail})")
     return "installed"
