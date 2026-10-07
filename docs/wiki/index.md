@@ -34,6 +34,7 @@ Start here. Each entry: link, one-line summary, status. Rules for pages and oper
 - [interop-smoke-results](evidence/interop-smoke-results.md) — Level-1 interop smoke tests on the owner's GPU: Godot 4.7.2 (.NET, editor build) and Qt 6.10.3 show a texture written by our own Direct3D 12 code, through resizes and teardown, with 0 validation errors; Godot needs the layout its tracker holds, Qt no RENDER_TARGET handover; Qt Quick keeps our device and queue through `fromRhi`, and `fromDeviceAndContext` works as a fallback; PR #43 section 7 answers for both. `verified`
 
 ## Questions
+- [engine-language-rust](questions/engine-language-rust.md) — Open for the 2.5 freeze: Rust for the engine, session store and command layer, GUI language following the renderer; spike deferred. `draft`
 - [no-0-4-1-release-open-items](questions/no-0-4-1-release-open-items.md) — Contradiction: the 1.0 engine selection input and the workbench performance boards still assume the cancelled 0.4.1 work. `draft`
 
 ## Dialogues
