@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-07] update | Engine language question recorded
+[engine-language-rust](questions/engine-language-rust.md) records the proposal to write the platform-independent 1.0 layers in Rust and the deferred spike that would decide it; nothing is started.
+
 ## [2026-10-04] decision | Fast tier for every review
 Recorded in [owner-decisions-2026-10-04](decisions/owner-decisions-2026-10-04.md): every Codex plan check, review and scoped verification round uses `--speed fast`, critical paths included; only gate rulings, joint attacks and escalations use the standard tier.
 
