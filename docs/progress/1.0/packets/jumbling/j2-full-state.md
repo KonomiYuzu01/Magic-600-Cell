@@ -8,7 +8,8 @@ Run as an implementation with the default reviewer model, effort `max` and speed
   - Geometry, once: `assets/mesh_vertices.f32`, `mesh_sticker.u32`, `mesh_centers.f32`, `cell_frames.f32`, `mesh.json` and `slot_piece.u32`, checked against `assets/manifest.json` (as `tools/perf/check_renderer_assets.py` does) and written unchanged with a `geometry.json` header naming their SHA-256.
   - States, per menu of `research/jumbling/fixtures/` (S4, I_a, I_b): `end` and `sweep-before`, written by `research/jumbling/fixtures/wj.py export` in the render contract format; and one `solved` state (`start`, the same for every menu).
   - Overlay, per menu: from the fixture, `grip_status`, the certificates of the blocked grips (piece and the two float points), and the swept twist (grip, `plane_u`, `plane_v`, angle in radians). The moving piece ids come from J1: classify the swept grip on the replayed `sweep-before` state, and the SHA-256 of the sorted ids must equal the fixture's `moved_sha256`. The overlay header carries the menu identity and the contract revision.
-  - Output in `research/jumbling/viewer/full/`. Generated data is not committed: `full/.gitignore` ignores everything except itself. `--b64 <dir>` also writes every binary file as base64 text with the same name plus `.b64`, for hosts that serve text only.
+  - Output in `research/jumbling/viewer/full/` by default, or in `--out <dir>`. Generated data is not committed: `full/.gitignore` ignores everything except itself. `--b64 <dir>` also writes every binary file as base64 text with the same name plus `.b64`, for hosts that serve text only.
+  - `--scratch` writes into a fresh temporary directory outside the repository, runs every check, prints the result and deletes the directory. It writes nothing in the repository.
   - `--menus` and `--stages` limit the work. Every replay checks the digest and the array hashes recorded in the fixture; any difference stops the export.
 - **Page** `research/jumbling/viewer/full.html` with `full.js`, WebGL2 with three.js 0.160.0 from the same import map and pinned digests as `index.html`:
   - **Drawing.** One instanced draw of the 30,480 base vertices × 600 facets, as in `work/experiments/renderer-sb/SPEC.md` section 3. Per vertex: shrink in the home frame (steps 1–2), facet frame (step 3), then `world = poses[pose_index[slot_piece[slot]]] · world` (render contract section 3), then the swept rotation for moving pieces (section 4), then the projection chain (section 6): camera rotation Q, then perspective (`d4` = 1.18) or stereographic from a pole, then the three-dimensional camera with orbit controls. Data reaches the shader through integer and float data textures, not through per-vertex copies of state.
@@ -28,7 +29,8 @@ Run as an implementation with the default reviewer model, effort `max` and speed
   - no request leaves the allowlist.
 - **README.** `research/jumbling/viewer/README.md` gets a section on the full-state page: what it draws, the data it reads, the commands, and its limits (no legality, no performance claim, look provisional).
 - **Acceptance.**
-  - The acceptance check below exits 0 inside the sandbox: it exports the S4 `end` state and the S4 overlay, with every digest, hash and moving-set check passing.
+  - The acceptance check below exits 0 inside the sandbox: it exports the S4 `end` state and the S4 overlay into a scratch directory, with every digest, hash and moving-set check passing.
+  - The worktree holds only the six allowed files when the run ends: delete every generated file, including anything under `full/` other than `full/.gitignore` (the wrapper counts ignored files too), and run exports during the work with `--out` under the temporary directory or with `--scratch`.
   - `node --check research/jumbling/viewer/full.js` passes.
   - The integrator then exports all menus and runs `check_full.mjs` outside the sandbox.
 - Out of scope:
@@ -57,12 +59,13 @@ Run as an implementation with the default reviewer model, effort `max` and speed
 |---|---|---|
 | 1 | J2 witness and S4 scenes (`3487b02`, `82a8ab2`) | 105 of 105 browser assertions; partial states only |
 | 2 | W-J fixtures and the render contract | full states available as arrays; no drawing yet |
+| 3 | First implementation call `20261009T221226Z-dc63d4b2` | code complete and its acceptance exited 0, but the run was invalid: the exports left generated files under `full/` in the worktree, and this packet's acceptance check also wrote there. Its six source files are kept in the main checkout under `work/reviews/20261009T221226Z-dc63d4b2/attempt/` (from the worktree root: `../../reviews/20261009T221226Z-dc63d4b2/attempt/`). Start from them: add `--out` and `--scratch`, keep the worktree free of generated files, and check the rest against this packet. |
 
 ## 6. Constraints and owned files
 - Change only the allowed files below. Do not commit; the wrapper collects the patch. The page decides no legality and changes no state; every number it shows comes from the arrays, the fixture or J1.
 
 ```implement-contract
-{"allowed_files": ["research/jumbling/viewer/export_full.py", "research/jumbling/viewer/full.html", "research/jumbling/viewer/full.js", "research/jumbling/viewer/check_full.mjs", "research/jumbling/viewer/README.md", "research/jumbling/viewer/full/.gitignore"], "acceptance_check": ["python", "research/jumbling/viewer/export_full.py", "--menus", "S4", "--stages", "end"], "stop_condition": "the exporter writes geometry, states and overlays with every check passing, the full-state page draws every sticker of a fixture state through the render contract with the controls, certificates and integrity checks above, the browser check is written, the README section exists, and the acceptance check passes"}
+{"allowed_files": ["research/jumbling/viewer/export_full.py", "research/jumbling/viewer/full.html", "research/jumbling/viewer/full.js", "research/jumbling/viewer/check_full.mjs", "research/jumbling/viewer/README.md", "research/jumbling/viewer/full/.gitignore"], "acceptance_check": ["python", "research/jumbling/viewer/export_full.py", "--scratch", "--menus", "S4", "--stages", "end"], "stop_condition": "the exporter writes geometry, states and overlays with every check passing, the full-state page draws every sticker of a fixture state through the render contract with the controls, certificates and integrity checks above, the browser check is written, the README section exists, and the acceptance check passes"}
 ```
 
 ## 7. Required return format
