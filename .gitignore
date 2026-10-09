@@ -36,5 +36,6 @@ team-project.json
 
 # Local tool installs and viewers
 tools/.venv/
+tools/.models/
 tools/node/*/node_modules/
 .obsidian/
