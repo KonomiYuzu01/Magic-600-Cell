@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.28)
+project(m600_renderer_readiness CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_executable(minimal_d3d12 minimal_d3d12.cpp)
+target_compile_definitions(minimal_d3d12 PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
+target_link_libraries(minimal_d3d12 PRIVATE d3d12 dxgi)

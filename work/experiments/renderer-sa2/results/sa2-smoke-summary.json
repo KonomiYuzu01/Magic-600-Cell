@@ -1,0 +1,1237 @@
+{
+  "format": "magic600-sa2-smoke-summary-v1",
+  "source": {
+    "head": "113a1b5e959b85c3955e2ad1e7924f8086320f1d",
+    "sha256": "a4bf57a9818fe0e918581ee07d5f71c2a78ee539eaa6e776625f0056660cb183",
+    "matches_head": true,
+    "file_count": 29
+  },
+  "build": {
+    "dll_sha256": "77637425b155a6b2a3973633b8cefa604901ed09607c9411ef047cd587bbc1a2",
+    "assembly_sha256": "47193b843be845de769b8da177e5eb3fe299c3f2c2e1d6d82b948379199e4700"
+  },
+  "godot": {
+    "version": "4.7.2.stable.mono.official.ed1daf0bf",
+    "editor_build": true
+  },
+  "adapter": {
+    "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "driver_version": "32.0.16.1692"
+  },
+  "enhanced_barriers": true,
+  "runs": [
+    {
+      "id": "R0",
+      "row": {
+        "route": "native-selftest",
+        "debug": true,
+        "hardware": true,
+        "expected": "pass"
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "skipped": {}
+      },
+      "verify": {},
+      "debug": {
+        "ids": []
+      },
+      "teardown": {},
+      "exit_code": 0
+    },
+    {
+      "id": "R1",
+      "row": {
+        "route": "rd-compute",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "pass",
+        "validation": true,
+        "frames": 1200,
+        "resize_every": 200
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 1200,
+        "produced": 1200,
+        "drawn": 1200,
+        "not_drawn": 0,
+        "eligible": 1195,
+        "verified": 1195,
+        "mismatched": 0,
+        "readbacks_requested": 1195,
+        "readbacks_completed": 1195,
+        "skipped": {
+          "warmup": 0,
+          "transition": 17
+        }
+      },
+      "verify": {
+        "native_checks": 0,
+        "rd_checks": 24,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 2,
+        "corruption": 0,
+        "error": 0,
+        "warning": 1236,
+        "info": 5399,
+        "message": 0,
+        "mismatching_clear_value": 1231,
+        "mentioning_sa2": 0,
+        "ids": [
+          820,
+          1356
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 0,
+        "detached": true,
+        "refcount_after": [],
+        "rebuild_drain_results": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R2",
+      "row": {
+        "route": "export",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "pass",
+        "validation": true,
+        "frames": 1200,
+        "resize_every": 200
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 1200,
+        "produced": 1200,
+        "drawn": 1200,
+        "not_drawn": 0,
+        "eligible": 1195,
+        "verified": 1195,
+        "mismatched": 0,
+        "readbacks_requested": 1195,
+        "readbacks_completed": 1195,
+        "skipped": {
+          "warmup": 18,
+          "transition": 17
+        }
+      },
+      "verify": {
+        "native_checks": 24,
+        "rd_checks": 24,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 2,
+        "corruption": 0,
+        "error": 0,
+        "warning": 8153,
+        "info": 7105,
+        "message": 0,
+        "mismatching_clear_value": 8148,
+        "mentioning_sa2": 0,
+        "ids": [
+          820,
+          1356
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "detached": true,
+        "refcount_after": [],
+        "rebuild_drain_results": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R3",
+      "row": {
+        "route": "export",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "pass",
+        "validation": true,
+        "frames": 1200,
+        "resize_every": 200
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 1200,
+        "produced": 1200,
+        "drawn": 1200,
+        "not_drawn": 0,
+        "eligible": 1195,
+        "verified": 1195,
+        "mismatched": 0,
+        "readbacks_requested": 1195,
+        "readbacks_completed": 1195,
+        "skipped": {
+          "warmup": 18,
+          "transition": 17
+        }
+      },
+      "verify": {
+        "native_checks": 24,
+        "rd_checks": 24,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 2,
+        "corruption": 0,
+        "error": 0,
+        "warning": 8153,
+        "info": 5803,
+        "message": 0,
+        "mismatching_clear_value": 8148,
+        "mentioning_sa2": 0,
+        "ids": [
+          820,
+          1356
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "detached": true,
+        "refcount_after": [],
+        "rebuild_drain_results": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R4",
+      "row": {
+        "route": "import-copy",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "pass",
+        "validation": true,
+        "frames": 1200,
+        "resize_every": 200
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 1200,
+        "produced": 1200,
+        "drawn": 1200,
+        "not_drawn": 0,
+        "eligible": 1195,
+        "verified": 1195,
+        "mismatched": 0,
+        "readbacks_requested": 1195,
+        "readbacks_completed": 1195,
+        "skipped": {
+          "warmup": 18,
+          "transition": 17
+        }
+      },
+      "verify": {
+        "native_checks": 24,
+        "rd_checks": 24,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 2,
+        "corruption": 0,
+        "error": 0,
+        "warning": 8135,
+        "info": 8001,
+        "message": 0,
+        "mismatching_clear_value": 8130,
+        "mentioning_sa2": 0,
+        "ids": [
+          820,
+          1356
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "detached": true,
+        "refcount_after": [
+          {
+            "generation": 0,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 0,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 0,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 1,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 1,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 1,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 2,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 2,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 2,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 3,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 3,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 3,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 4,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 4,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 4,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 5,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 5,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 5,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          }
+        ],
+        "rebuild_drain_results": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R5",
+      "row": {
+        "route": "import-copy",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "pass",
+        "validation": true,
+        "frames": 1200,
+        "resize_every": 200
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 1200,
+        "produced": 1200,
+        "drawn": 1200,
+        "not_drawn": 0,
+        "eligible": 1195,
+        "verified": 1195,
+        "mismatched": 0,
+        "readbacks_requested": 1195,
+        "readbacks_completed": 1195,
+        "skipped": {
+          "warmup": 18,
+          "transition": 17
+        }
+      },
+      "verify": {
+        "native_checks": 24,
+        "rd_checks": 24,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 2,
+        "corruption": 0,
+        "error": 0,
+        "warning": 8135,
+        "info": 5707,
+        "message": 0,
+        "mismatching_clear_value": 8130,
+        "mentioning_sa2": 0,
+        "ids": [
+          820,
+          1356
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "detached": true,
+        "refcount_after": [
+          {
+            "generation": 0,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 0,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 0,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 1,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 1,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 1,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 2,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 2,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 2,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 3,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 3,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 3,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 4,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 4,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 4,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 5,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 5,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 5,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          }
+        ],
+        "rebuild_drain_results": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R6",
+      "row": {
+        "route": "import-texture2drd",
+        "queue": "same",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "unsupported",
+        "validation": true,
+        "frames": 300,
+        "resize_every": 0
+      },
+      "status": "unsupported",
+      "judgement": "as-expected",
+      "reasons": [
+        "texture2drd-refused"
+      ],
+      "judge_notes": [
+        "godot-output-errors"
+      ],
+      "output_line_counts": {
+        "error": 12,
+        "warning": 0
+      },
+      "frames": {
+        "run": 0,
+        "produced": 0,
+        "drawn": 0,
+        "not_drawn": 0,
+        "eligible": 0,
+        "verified": 0,
+        "mismatched": 0,
+        "readbacks_requested": 0,
+        "readbacks_completed": 0,
+        "skipped": {
+          "warmup": 0,
+          "transition": 1
+        }
+      },
+      "verify": {
+        "native_checks": 0,
+        "rd_checks": 0,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 1,
+        "corruption": 0,
+        "error": 0,
+        "warning": 16,
+        "info": 35,
+        "message": 0,
+        "mismatching_clear_value": 16,
+        "mentioning_sa2": 0,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 3,
+        "detached": true,
+        "refcount_after": [
+          {
+            "generation": 0,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 0,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 0,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          }
+        ],
+        "rebuild_drain_results": []
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R7",
+      "row": {
+        "route": "export",
+        "queue": "same",
+        "handover": "render-target",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "recorded",
+        "validation": true,
+        "frames": 300,
+        "resize_every": 0
+      },
+      "status": "recorded",
+      "judgement": "as-expected",
+      "reasons": [
+        "debug-errors",
+        "decode-mismatch"
+      ],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 300,
+        "produced": 300,
+        "drawn": 300,
+        "not_drawn": 0,
+        "eligible": 300,
+        "verified": 297,
+        "mismatched": 3,
+        "readbacks_requested": 300,
+        "readbacks_completed": 300,
+        "skipped": {
+          "warmup": 0,
+          "transition": 2
+        }
+      },
+      "verify": {
+        "native_checks": 6,
+        "rd_checks": 6,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 3,
+        "corruption": 0,
+        "error": 312,
+        "warning": 2082,
+        "info": 1327,
+        "message": 0,
+        "mismatching_clear_value": 2082,
+        "mentioning_sa2": 312,
+        "ids": [
+          820,
+          1332,
+          1334
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 3,
+        "detached": true,
+        "refcount_after": [],
+        "rebuild_drain_results": []
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R8",
+      "row": {
+        "route": "import-copy",
+        "queue": "same",
+        "handover": "render-target",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "recorded",
+        "validation": true,
+        "frames": 300,
+        "resize_every": 0
+      },
+      "status": "recorded",
+      "judgement": "as-expected",
+      "reasons": [
+        "debug-errors"
+      ],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 300,
+        "produced": 300,
+        "drawn": 300,
+        "not_drawn": 0,
+        "eligible": 300,
+        "verified": 300,
+        "mismatched": 0,
+        "readbacks_requested": 300,
+        "readbacks_completed": 300,
+        "skipped": {
+          "warmup": 0,
+          "transition": 2
+        }
+      },
+      "verify": {
+        "native_checks": 6,
+        "rd_checks": 6,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 2,
+        "corruption": 0,
+        "error": 303,
+        "warning": 2079,
+        "info": 1337,
+        "message": 0,
+        "mismatching_clear_value": 2079,
+        "mentioning_sa2": 303,
+        "ids": [
+          820,
+          1334
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 3,
+        "detached": true,
+        "refcount_after": [
+          {
+            "generation": 0,
+            "slot": 0,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 0,
+            "slot": 1,
+            "refcount_after": 0,
+            "status": 0
+          },
+          {
+            "generation": 0,
+            "slot": 2,
+            "refcount_after": 0,
+            "status": 0
+          }
+        ],
+        "rebuild_drain_results": []
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R9",
+      "row": {
+        "route": "export",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "pass",
+        "validation": false,
+        "frames": 3000,
+        "resize_every": 500
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 3000,
+        "produced": 3000,
+        "drawn": 3000,
+        "not_drawn": 0,
+        "eligible": 2995,
+        "verified": 2995,
+        "mismatched": 0,
+        "readbacks_requested": 2995,
+        "readbacks_completed": 2995,
+        "skipped": {
+          "warmup": 18,
+          "transition": 17
+        }
+      },
+      "verify": {
+        "native_checks": 60,
+        "rd_checks": 60,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 0,
+        "corruption": 0,
+        "error": 0,
+        "warning": 0,
+        "info": 0,
+        "message": 0,
+        "mismatching_clear_value": 0,
+        "mentioning_sa2": 0,
+        "ids": []
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "detached": true,
+        "refcount_after": [],
+        "rebuild_drain_results": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R10",
+      "row": {
+        "route": "export",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "separate",
+        "expected": "pass",
+        "validation": true,
+        "frames": 1200,
+        "resize_every": 200
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "judge_notes": [
+        "godot-output-errors"
+      ],
+      "output_line_counts": {
+        "error": 1,
+        "warning": 2
+      },
+      "frames": {
+        "run": 1200,
+        "produced": 1200,
+        "drawn": 1200,
+        "not_drawn": 0,
+        "eligible": 1195,
+        "verified": 1195,
+        "mismatched": 0,
+        "readbacks_requested": 1195,
+        "readbacks_completed": 1195,
+        "skipped": {
+          "warmup": 18,
+          "transition": 17
+        }
+      },
+      "verify": {
+        "native_checks": 24,
+        "rd_checks": 24,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 2,
+        "corruption": 0,
+        "error": 0,
+        "warning": 8153,
+        "info": 5837,
+        "message": 0,
+        "mismatching_clear_value": 8148,
+        "mentioning_sa2": 0,
+        "ids": [
+          820,
+          1356
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 18,
+        "detached": true,
+        "refcount_after": [],
+        "rebuild_drain_results": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R11",
+      "row": {
+        "route": "export",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "legacy",
+        "render_thread": "safe",
+        "expected": "recorded",
+        "validation": true,
+        "frames": 1200,
+        "resize_every": 0
+      },
+      "status": "recorded",
+      "judgement": "as-expected",
+      "reasons": [
+        "debug-errors"
+      ],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 1200,
+        "produced": 1200,
+        "drawn": 1200,
+        "not_drawn": 0,
+        "eligible": 1200,
+        "verified": 1200,
+        "mismatched": 0,
+        "readbacks_requested": 1200,
+        "readbacks_completed": 1200,
+        "skipped": {
+          "warmup": 3,
+          "transition": 2
+        }
+      },
+      "verify": {
+        "native_checks": 24,
+        "rd_checks": 24,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 2,
+        "corruption": 0,
+        "error": 50,
+        "warning": 8172,
+        "info": 5229,
+        "message": 0,
+        "mismatching_clear_value": 8172,
+        "mentioning_sa2": 50,
+        "ids": [
+          820,
+          1350
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 0,
+        "slots_unregistered": 3,
+        "detached": true,
+        "refcount_after": [],
+        "rebuild_drain_results": []
+      },
+      "exit_code": 0
+    },
+    {
+      "id": "R12",
+      "row": {
+        "route": "export",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "pending-drain",
+        "validation": true,
+        "frames": 120,
+        "resize_every": 0
+      },
+      "status": "pass",
+      "judgement": "as-expected",
+      "reasons": [],
+      "judge_notes": [],
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "frames": {
+        "run": 120,
+        "produced": 120,
+        "drawn": 120,
+        "not_drawn": 0,
+        "eligible": 120,
+        "verified": 120,
+        "mismatched": 0,
+        "readbacks_requested": 120,
+        "readbacks_completed": 120,
+        "skipped": {
+          "warmup": 3,
+          "transition": 2
+        }
+      },
+      "verify": {
+        "native_checks": 2,
+        "rd_checks": 2,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "ids": []
+      },
+      "teardown": {
+        "phase": "pending",
+        "drain_result": null,
+        "slots_unregistered": 0,
+        "detached": false,
+        "refcount_after": [],
+        "rebuild_drain_results": []
+      },
+      "exit_code": 3
+    },
+    {
+      "id": "R13",
+      "row": {
+        "route": "export",
+        "queue": "own",
+        "handover": "tracked",
+        "barriers": "match",
+        "render_thread": "safe",
+        "expected": "device-loss",
+        "validation": true,
+        "frames": 400,
+        "resize_every": 0,
+        "device_loss_at": 200
+      },
+      "status": "recorded",
+      "judgement": "as-expected",
+      "reasons": [
+        "decode-mismatch",
+        "device-removed",
+        "godot-call-failed",
+        "sa2-call-failed"
+      ],
+      "judge_notes": [
+        "godot-output-errors"
+      ],
+      "output_line_counts": {
+        "error": 4,
+        "warning": 0
+      },
+      "frames": {
+        "run": 200,
+        "produced": 200,
+        "drawn": 200,
+        "not_drawn": 0,
+        "eligible": 199,
+        "verified": 198,
+        "mismatched": 1,
+        "readbacks_requested": 199,
+        "readbacks_completed": 199,
+        "skipped": {
+          "warmup": 3,
+          "transition": 2
+        }
+      },
+      "verify": {
+        "native_checks": 4,
+        "rd_checks": 4,
+        "native_mismatched_texels": 0,
+        "rd_mismatched_texels": 0,
+        "mismatched_texels": 0
+      },
+      "debug": {
+        "struct_size": 128,
+        "distinct_id_count": 1,
+        "corruption": 0,
+        "error": 0,
+        "warning": 1400,
+        "info": 902,
+        "message": 1,
+        "mismatching_clear_value": 1400,
+        "mentioning_sa2": 0,
+        "ids": [
+          820
+        ]
+      },
+      "teardown": {
+        "phase": "complete",
+        "drain_result": 5,
+        "slots_unregistered": 3,
+        "detached": true,
+        "refcount_after": [],
+        "rebuild_drain_results": []
+      },
+      "exit_code": 0
+    }
+  ]
+}

@@ -470,6 +470,80 @@ class GateTests(unittest.TestCase):
         self.assertNotIn('synthetic-owner', json.dumps(result))
         self.assertEqual([scene['verdict'] for scene in result['scenes']], ['met'])
 
+    def test_features_are_separate_sorted_groups(self):
+        dirs = [self.run_dir(f'{feature}{i}', edit=lambda run, f=feature: run.update(feature=f))
+                for feature in ('none', 'fog') for i in range(3)]
+        result = gate.summarize(dirs)
+        self.assertEqual([(s['candidate'], s['scene'], s['feature'], s['verdict'], len(s['runs']))
+                          for s in result['scenes']], [('sb', 'w3', 'fog', 'met', 3), ('sb', 'w3', 'none', 'met', 3)])
+        self.assertEqual(self.scene(gate.summarize([self.run_dir('absent')]))['feature'], 'none')
+        invalid = gate.summarize([self.run_dir('invalid', label='fail', edit=lambda r: r.update(feature='fog'))])
+        self.assertEqual(invalid['invalid_runs'][0]['feature'], 'fog')
+
+    def test_bad_features_are_unreadable(self):
+        for index, value in enumerate((None, True, 4, '', 'FOG', '../fog', 'a' * 33)):
+            with self.subTest(value=value):
+                result = gate.summarize([self.run_dir(f'feature{index}', edit=lambda r: r.update(feature=value))])
+                self.assertEqual(result['unreadable'], [{'reason': 'bad-feature'}])
+
+    def test_optional_camera_is_a_non_negative_integer(self):
+        for index, value in enumerate((None, True, -1, 1.5, '1')):
+            with self.subTest(value=value):
+                result = gate.summarize([self.run_dir(f'camera{index}', trace=lambda e: {**e, 'camera': value})])
+                self.assertEqual(result['unreadable'], [{'reason': 'bad-trace'}])
+        self.assertEqual(self.scene(self.three('okcamera', trace=lambda e: {**e, 'camera': 0}))['verdict'], 'met')
+
+    def test_w3f_is_attribution_and_requires_cycles_and_trace_steps(self):
+        cycle = lambda run: run.update(turn_frames=157, cycle_frames=3140)
+        self.assertEqual(self.scene(self.three(scene='w3f', edit=cycle), 'sb/w3f')['verdict'], 'attribution')
+        for index, fields in enumerate(({}, {'turn_frames': 157}, {'turn_frames': 1, 'cycle_frames': 2},
+                                        {'turn_frames': True, 'cycle_frames': 3140},
+                                        {'turn_frames': 157, 'cycle_frames': 0},
+                                        {'turn_frames': 157, 'cycle_frames': 3141},
+                                        {'turn_frames': 157, 'cycle_frames': 3140.0})):
+            with self.subTest(fields=fields):
+                result = gate.summarize([self.run_dir(f'cycle{index}', scene='w3f', edit=lambda r: r.update(fields))])
+                self.assertEqual(result['unreadable'], [{'reason': 'bad-cycle'}])
+        directory = self.run_dir('twice', scene='w3f', edit=cycle)
+        entries = gate.read_trace(directory)
+        with (directory / 'trace.jsonl').open('a', encoding='utf-8') as stream:
+            stream.write(json.dumps({**entries[2400], 'qpc': entries[2400]['qpc'] - 1}) + '\n')
+        self.assertIn('trace-incomplete', self.reasons(gate.summarize([directory])))
+        failed = self.run_dir('w3ffail', scene='w3f', edit=cycle, label='fail')
+        self.assertIn('label-check-failed', self.reasons(gate.summarize([failed])))
+
+    def test_trace_timing_uses_probe_steps_and_window_conditions(self):
+        visible = lambda run: run.update(window={'visible_throughout': True, 'foreground_throughout': True})
+        directory = self.run_dir('trace', edit=visible, freq=10_000_000)
+        (directory / 'presentmon.csv').unlink()
+        run = gate.read_json(directory / 'run.json')
+        values, ticks, ignored, reasons = gate.run_frames(directory, run, gate.CAPTURE_COLUMNS, 'trace')
+        self.assertEqual(values, [25] * 7200)
+        self.assertEqual(len(ticks), 7200)
+        self.assertEqual((ignored, reasons), ([], []))
+        result = gate.summarize([directory], timing='trace')
+        self.assertEqual((result['timing'], result['preliminary']), ('probe-trace', True))
+        self.assertEqual(self.scene(result)['pooled']['fps'], 40)
+        for index, (window, reason) in enumerate(((None, 'window-missing'),
+                ({'visible_throughout': False, 'foreground_throughout': True}, 'window-not-visible'),
+                ({'visible_throughout': True, 'foreground_throughout': False}, 'window-not-foreground'))):
+            with self.subTest(reason=reason):
+                bad = self.run_dir(f'window{index}', edit=lambda r: r.update(window=window))
+                self.assertIn(reason, self.reasons(gate.summarize([bad], timing='trace')))
+        uncovered = self.run_dir('uncovered', edit=visible, trace=lambda e: e if e['qpc'] - START > 20_000 else None)
+        self.assertIn('capture-not-covered', self.reasons(gate.summarize([uncovered], timing='trace')))
+        short = self.run_dir('traceshort', edit=visible, stop=START + 180_000)
+        self.assertIn('capture-short', self.reasons(gate.summarize([short], timing='trace')))
+        empty = self.run_dir('traceempty', edit=visible, trace=lambda e: None)
+        self.assertIn('trace-empty', self.reasons(gate.summarize([empty], timing='trace')))
+
+    def test_gate_cli_has_no_trace_timing_option(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit) as raised:
+            gate.main([str(self.base / 'unused'), '--out', str(self.base / 'unused.json'), '--timing', 'trace'])
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn('unrecognized arguments', stderr.getvalue())
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

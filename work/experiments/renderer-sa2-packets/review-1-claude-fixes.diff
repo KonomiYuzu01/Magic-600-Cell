@@ -1,0 +1,191 @@
+diff --git a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/README.md b/work/experiments/renderer-sa2/native/README.md
+index 2374a83..579602e 100644
+--- a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/README.md
++++ b/work/experiments/renderer-sa2/native/README.md
+@@ -15,10 +15,12 @@ the Windows SDK installed:
+ python work/experiments/renderer-sa2/native/check_native.py
+ ```
+ 
+-The check builds Release with NMake into its own freshly created temp directory,
+-runs only `--cpu`, validates the JSON and final `selftest: ok` line, and removes
++The check builds Release with NMake into a freshly created `build-check-<pid>`
++directory beside this README, inside the repository's ignored `work/` tree
++(Application Control can refuse unsigned executables in the system temp folder).
++It runs only `--cpu`, validates the JSON and final `selftest: ok` line, and removes
+ that directory. It passes the three code vectors directly from `code_layout.json`.
+-It creates no repository build output and starts no D3D12 device. CPU checks cover
++It creates no tracked repository output and starts no D3D12 device. CPU checks cover
+ every ABI export, invalid arguments and error-buffer truncation, CRC and code
+ vectors, exact images at three sizes, both-corner decode and corrupted-block
+ rejection, text masking, state mappings and JSON escaping.
+@@ -26,7 +28,7 @@ rejection, text masking, state mappings and JSON escaping.
+ For binaries that the Godot run script can keep and load:
+ 
+ ```powershell
+-$build = Join-Path $env:TEMP 'm600-sa2-owner-build'
++$build = 'work/experiments/renderer-sa2/native/build'
+ & work/experiments/renderer-sa2/native/build.cmd $build
+ & "$build/sa2_selftest.exe" --cpu --out "$build/cpu.json"
+ ```
+@@ -51,7 +53,7 @@ without the debug layer:
+ ```
+ 
+ Or build, run the CPU check, then run both GPU modes in an automatically cleaned
+-temp directory:
++build directory:
+ 
+ ```powershell
+ python work/experiments/renderer-sa2/native/check_native.py --gpu
+@@ -61,7 +63,7 @@ Every report uses `magic600-sa2-native-selftest-v1`, with a name, status
+ (`pass`, `fail`, `unsupported`) and reason for each check. The executable exits 0
+ only when all checks pass or have a reason for being unsupported. Keep the
+ explicit-build JSON files to retain owner GPU evidence; `check_native.py`
+-validates and deletes its reports with its temp directory. `--vectors` accepts
++validates and deletes its reports with its build directory. `--vectors` accepts
+ three semicolon-separated rows of `sequence,slot,generation,code`; the acceptance
+ script supplies these from the immutable JSON, whereas direct invocations use
+ the matching ABI-1 defaults.
+@@ -91,8 +93,9 @@ Both GPU modes launch two bounded child probes on their own device:
+   then unregisters, releases and detaches successfully. Removal affects only
+   the child's self-test device.
+ 
+-These GPU checks are implemented but have not been run in the implementation
+-sandbox. Even an owner GPU pass establishes native interop only: Godot display,
++The implementation sandbox did not run these GPU checks; the owner-machine
++results are in [../RESULT.md](../RESULT.md). Even an owner GPU pass establishes
++native interop only: Godot display,
+ its resource-state tracker, window resize and frame composition still require
+ the separate Godot smoke test. There are no performance claims here.
+ 
+diff --git a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/build.cmd b/work/experiments/renderer-sa2/native/build.cmd
+index 6d4c334..46216b9 100644
+--- a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/build.cmd
++++ b/work/experiments/renderer-sa2/native/build.cmd
+@@ -13,7 +13,9 @@ set "CMAKE=cmake.exe"
+ set "NINJA=ninja.exe"
+ if exist "%VENV%\cmake.exe" set "CMAKE=%VENV%\cmake.exe"
+ if exist "%VENV%\ninja.exe" set "NINJA=%VENV%\ninja.exe"
+-if "%~1"=="" (set "BUILD=%TEMP%\m600-sa2-native-build") else (set "BUILD=%~f1")
++rem Application Control can refuse unsigned executables in system temp, so the
++rem default build stays under the repository's ignored work tree.
++if "%~1"=="" (set "BUILD=%HERE%build") else (set "BUILD=%~f1")
+ cl 2>&1 | findstr /c:"Compiler Version"
+ "%CMAKE%" --version || exit /b 1
+ "%NINJA%" --version || exit /b 1
+diff --git a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/check_native.py b/work/experiments/renderer-sa2/native/check_native.py
+index 4b0e700..5689a12 100644
+--- a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/check_native.py
++++ b/work/experiments/renderer-sa2/native/check_native.py
+@@ -1,4 +1,4 @@
+-"""Build out of tree and check CPU fixtures; --gpu also runs the owner GPU checks."""
++"""Build in a fresh ignored directory and check CPU fixtures; --gpu also runs the owner GPU checks."""
+ 
+ import argparse
+ import json
+@@ -7,7 +7,6 @@ from pathlib import Path
+ import shutil
+ import subprocess
+ import sys
+-import tempfile
+ 
+ 
+ def run_bounded(arguments, timeout, **kwargs):
+@@ -58,8 +57,9 @@ def main():
+     parser.add_argument("--gpu", action="store_true")
+     options = parser.parse_args()
+     source = Path(__file__).resolve().parent
+-    temp_root = Path(tempfile.gettempdir()).resolve()
+-    build = temp_root / f"m600-sa2-native-{os.getpid()}"
++    # Application Control can refuse unsigned executables in system temp. Build
++    # beside this script, inside the repository's ignored work tree.
++    build = source / f"build-check-{os.getpid()}"
+     created = False
+     try:
+         batch = (source / "build.cmd").read_bytes()
+@@ -93,8 +93,8 @@ def main():
+         return 1
+     finally:
+         if created:
+-            if build.resolve().parent != temp_root or build.name != f"m600-sa2-native-{os.getpid()}":
+-                raise RuntimeError("refusing cleanup outside this check's temp directory")
++            if build.resolve().parent != source or build.name != f"build-check-{os.getpid()}":
++                raise RuntimeError("refusing cleanup outside this check's build directory")
+             shutil.rmtree(build)
+ 
+ 
+diff --git a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/include/sa2_interop.h b/work/experiments/renderer-sa2/native/include/sa2_interop.h
+index 3968414..44bcefa 100644
+--- a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/include/sa2_interop.h
++++ b/work/experiments/renderer-sa2/native/include/sa2_interop.h
+@@ -166,6 +166,8 @@ SA2_API int32_t sa2_release_texture(sa2_context* ctx, uint64_t resource, uint32_
+  * texture Godot created, from get_driver_resource(DRIVER_RESOURCE_TEXTURE,
+  * rid, 0)): the context adds a reference while the slot is registered. The
+  * resource must be a 2D texture of the given size with ALLOW_RENDER_TARGET.
++ * A resource already registered in another slot is refused with
++ * SA2_E_WRONG_STATE, because fence history is kept per slot.
+  */
+ SA2_API int32_t sa2_register_slot(sa2_context* ctx, uint32_t slot, uint64_t resource, uint32_t width, uint32_t height, int32_t godot_owned);
+ 
+diff --git a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/src/gpu_test.cpp b/work/experiments/renderer-sa2/native/src/gpu_test.cpp
+index 756f204..f0d5c42 100644
+--- a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/src/gpu_test.cpp
++++ b/work/experiments/renderer-sa2/native/src/gpu_test.cpp
+@@ -197,6 +197,8 @@ struct Harness {
+                 external_counts[i] = references(external_resources[i].Get());
+                 resources[i] = handle(external_resources[i].Get());
+             } else api(ctx, sa2_create_texture(ctx, w, h, SA2_STATE_ALL_SHADER_RESOURCE, &resources[i]));
++            if (i == 1) expect(sa2_register_slot(ctx, i, resources[0], w, h, external ? 1 : 0) == SA2_E_WRONG_STATE,
++                "one resource registered in two slots");
+             api(ctx, sa2_register_slot(ctx, i, resources[i], w, h, external ? 1 : 0));
+             registered[i] = true;
+         }
+diff --git a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/src/interop.cpp b/work/experiments/renderer-sa2/native/src/interop.cpp
+index b84b2ac..3c55d82 100644
+--- a/work/worktrees/20261003T143409Z-24c43648/work/experiments/renderer-sa2/native/src/interop.cpp
++++ b/work/experiments/renderer-sa2/native/src/interop.cpp
+@@ -234,6 +234,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE rtv(sa2_context* ctx, uint32_t index) {
+ std::array<float, 4> color(sa2::Pixel pixel) {
+     return {pixel[0] / 255.0f, pixel[1] / 255.0f, pixel[2] / 255.0f, pixel[3] / 255.0f};
+ }
++// The owner's NVIDIA driver ends the process with 0xC0000409 when one
++// ClearRenderTargetView call carries more than 32 rectangles (33 fails at the
++// first call, 32 runs; WARP accepts 100), so code blocks clear in batches.
++constexpr std::size_t max_clear_rects = 32;
+ void clear_code(sa2_context* ctx, Slot& slot, uint32_t index, uint32_t sequence, uint32_t generation) {
+     const auto fill = color(sa2::fill({sequence, index, generation}));
+     slot.list->ClearRenderTargetView(rtv(ctx, index), fill.data(), 0, nullptr);
+@@ -251,7 +255,10 @@ void clear_code(sa2_context* ctx, Slot& slot, uint32_t index, uint32_t sequence,
+         const auto k = static_cast<std::uint8_t>(bit_value ? 255 : 0);
+         const auto rgba = color({k, k, k, 255});
+         const auto& rects = rectangles[bit_value];
+-        if (!rects.empty()) slot.list->ClearRenderTargetView(rtv(ctx, index), rgba.data(), static_cast<UINT>(rects.size()), rects.data());
++        for (std::size_t first = 0; first < rects.size(); first += max_clear_rects) {
++            const auto count = std::min(max_clear_rects, rects.size() - first);
++            slot.list->ClearRenderTargetView(rtv(ctx, index), rgba.data(), static_cast<UINT>(count), rects.data() + first);
++        }
+     }
+ }
+ void CALLBACK debug_callback(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id,
+@@ -481,6 +488,11 @@ int32_t sa2_register_slot(sa2_context* ctx, uint32_t index, uint64_t resource, u
+             && (desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM || desc.Format == DXGI_FORMAT_R8G8B8A8_TYPELESS), "incompatible texture descriptor");
+         require(godot_owned || ctx->textures.contains(texture.Get()), "imported texture was not made by this context");
+         require(!slot.resource, "slot is already registered", SA2_E_WRONG_STATE);
++        // Fence history is kept per slot, so one resource in two slots could be
++        // written through one while Godot still reads it through the other.
++        for (const auto& other : ctx->slots)
++            if (other.resource) require(!same_identity(other.resource, texture.Get(), ctx->device.Get()),
++                "resource is already registered in another slot", SA2_E_WRONG_STATE);
+         D3D12_RENDER_TARGET_VIEW_DESC view{};
+         view.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+         view.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+@@ -529,7 +541,9 @@ int32_t sa2_produce(sa2_context* ctx, uint32_t index, uint64_t frame, uint32_t s
+         if (ctx->own_queue) require(slot.last_shown <= ctx->last_free, "slot's shown frame has not been signalled free", SA2_E_WRONG_STATE);
+         live(ctx);
+         reset(ctx, slot);
+-        if (ctx->own_queue) queue_wait(ctx, ctx->own_queue.Get(), ctx->free.Get(), slot.last_shown);
++        // A slot not yet shown needs no wait; a Wait for fence value 0 is always
++        // satisfied and draws a debug-layer warning.
++        if (ctx->own_queue && slot.last_shown) queue_wait(ctx, ctx->own_queue.Get(), ctx->free.Get(), slot.last_shown);
+         transition(ctx, slot, ctx->config.state_before_write, SA2_STATE_RENDER_TARGET, true);
+         clear_code(ctx, slot, index, sequence, generation);
+         transition(ctx, slot, SA2_STATE_RENDER_TARGET, ctx->config.state_after_write, false);

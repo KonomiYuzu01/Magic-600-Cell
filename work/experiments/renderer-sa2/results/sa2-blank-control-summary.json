@@ -1,0 +1,117 @@
+{
+  "format": "magic600-sa2-blank-control-v1",
+  "godot_version": "4.7.2.stable.mono.official.ed1daf0bf",
+  "source": {
+    "head": "113a1b5e959b85c3955e2ad1e7924f8086320f1d",
+    "sha256": "a4bf57a9818fe0e918581ee07d5f71c2a78ee539eaa6e776625f0056660cb183",
+    "matches_head": true
+  },
+  "command": [
+    "<godot>",
+    "--path",
+    "<project>",
+    "--rendering-driver",
+    "d3d12",
+    "--windowed",
+    "--resolution",
+    "1280x720",
+    "--position",
+    "40,40",
+    "--disable-vsync",
+    "--log-file",
+    "<log>",
+    "--render-thread",
+    "<mode>",
+    "--gpu-validation",
+    "--quit-after",
+    "600"
+  ],
+  "frames": 600,
+  "finalize_line": "ERROR: This function (finalize) can only be called from the render thread.",
+  "runs": [
+    {
+      "mode": "safe",
+      "repeat": 1,
+      "exit_code": 0,
+      "timed_out": false,
+      "adapter_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "finalize_lines": 0
+    },
+    {
+      "mode": "separate",
+      "repeat": 1,
+      "exit_code": 0,
+      "timed_out": false,
+      "adapter_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "output_line_counts": {
+        "error": 1,
+        "warning": 2
+      },
+      "finalize_lines": 1
+    },
+    {
+      "mode": "safe",
+      "repeat": 2,
+      "exit_code": 0,
+      "timed_out": false,
+      "adapter_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "finalize_lines": 0
+    },
+    {
+      "mode": "separate",
+      "repeat": 2,
+      "exit_code": 0,
+      "timed_out": false,
+      "adapter_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "output_line_counts": {
+        "error": 1,
+        "warning": 2
+      },
+      "finalize_lines": 1
+    },
+    {
+      "mode": "safe",
+      "repeat": 3,
+      "exit_code": 0,
+      "timed_out": false,
+      "adapter_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "output_line_counts": {
+        "error": 0,
+        "warning": 0
+      },
+      "finalize_lines": 0
+    },
+    {
+      "mode": "separate",
+      "repeat": 3,
+      "exit_code": 0,
+      "timed_out": false,
+      "adapter_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "output_line_counts": {
+        "error": 1,
+        "warning": 2
+      },
+      "finalize_lines": 1
+    }
+  ],
+  "totals": {
+    "safe": {
+      "runs": 3,
+      "runs_with_finalize_line": 0,
+      "error_lines": 0
+    },
+    "separate": {
+      "runs": 3,
+      "runs_with_finalize_line": 3,
+      "error_lines": 3
+    }
+  }
+}
