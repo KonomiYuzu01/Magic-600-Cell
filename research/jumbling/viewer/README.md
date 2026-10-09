@@ -163,3 +163,11 @@ Legality is never decided in the browser. Certificates are displayed with float 
 ## Publishing on hosts without a binary type
 
 Some page hosts serve no binary media type. For them, publish the bytes of `scene.bin` as base64 text, and in the published copy of `scene.json` set `bin.file` to that text file and `bin.encoding` to `"base64"`. `viewer.js` decodes it, then checks the byte count and SHA-256 of the decoded bytes against the same exported header values.
+
+## Review
+
+| Call | Kind | Result |
+| --- | --- | --- |
+| `20261009T195031Z-2a42a035` | Routine review of the prototype | V1 and V2 major; V3, V4 and V5 minor. All adopted |
+| `20261009T201016Z-d7b09cf4` | Implementation of the five fixes, integrated as `3487b02` after the integrator reviewed the patch | Headless check 43/43 |
+| `20261009T202151Z-5320d9c6` | Scoped verification by the senior reviewer | Pass: V1 and V2 fixed, no new blocker or major |
