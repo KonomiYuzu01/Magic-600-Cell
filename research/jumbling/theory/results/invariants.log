@@ -1,0 +1,5 @@
+{'centre_pieces': 600, 'centre_point_failures': 0, 'e2': {'trace_q_sqrt5': '(3426525189964 + -4987013400 sqrt5) / 860378847541', 'field_trace': '6853050379928/860378847541', 'field_norm': '13646256599056/860378847541', 'algebraic_integer': False, 'fixes_poles_0_and_13': True}}
+S4 {'records': 640, 'distinct_centre_poses_checked': 24665, 'centres_rotated_in_place_at_end': 97, 'most_centres_rotated_at_once': 99, 'seconds': 198.3}
+I_a {'records': 841, 'distinct_centre_poses_checked': 25230, 'centres_rotated_in_place_at_end': 79, 'most_centres_rotated_at_once': 79, 'seconds': 245.5}
+I_b {'records': 885, 'distinct_centre_poses_checked': 26969, 'centres_rotated_in_place_at_end': 86, 'most_centres_rotated_at_once': 86, 'seconds': 286.3}
+exit 0
