@@ -40,6 +40,8 @@ from tastelab import common, embed, images, licences, net, screen, seeds, source
 
 DOWNLOAD_MAX_BYTES = 20 * 1024 * 1024
 IMAGE_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif")
+# Openverse's thumbnail endpoint answers 406 unless the request allows any type; the content type is checked after download.
+IMAGE_ACCEPT = ", ".join(IMAGE_TYPES) + ", */*;q=0.1"
 NEAR_DUPLICATE = 0.97
 CALIBRATION_REPORT = "calibration.json"
 CALIBRATION_CASES = "calibration-cases.json"
@@ -64,7 +66,7 @@ class Pipeline:
             return Outcome("duplicate")
         try:
             response = self.client.get(candidate.image_url, hosts=adapter.hosts, min_interval=adapter.min_interval,
-                                       max_bytes=DOWNLOAD_MAX_BYTES, accept=", ".join(IMAGE_TYPES), extra_headers=adapter.headers())
+                                       max_bytes=DOWNLOAD_MAX_BYTES, accept=IMAGE_ACCEPT, extra_headers=adapter.headers())
         except net.NetError:
             return Outcome("error")
         content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()

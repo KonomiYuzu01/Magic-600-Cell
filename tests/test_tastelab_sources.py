@@ -639,6 +639,18 @@ class PipelineTests(test_store.TempDir):
         self.assertIn(sha, self.library.embeddings(self.fake.model_id))
         self.assertTrue(self.library.has_seen("met", "901"))
 
+    def test_image_downloads_prefer_image_types_and_still_refuse_other_content(self):
+        # Openverse's thumbnail endpoint answers 406 unless the Accept header allows any type.
+        pipeline, item, replay = self.pipeline()
+        self.assertEqual(self.ingest(pipeline, item).kind, "stored")
+        self.assertEqual(replay.calls[0][1]["Accept"], "image/jpeg, image/png, image/webp, image/gif, */*;q=0.1")
+        other = candidate(ident="902")
+        replay = net.ReplayTransport({other.image_url: (200, {"content-type": "text/html"}, png())})
+        pipeline = fetch.Pipeline(self.library, self.fake, self.content_screen, net.Client(replay, sleep=lambda _: None,
+                                                                                            clock=lambda: 0))
+        self.assertEqual(self.ingest(pipeline, other).kind, "invalid")
+        self.assertEqual(self.library.count_images(), 1)
+
     def test_discard_keeps_counts_only_no_seen_hash_metadata_or_files(self):
         self.content_screen.guard.return_value = [True]
         pipeline, item, _ = self.pipeline()
