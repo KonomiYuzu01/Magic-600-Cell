@@ -11,24 +11,27 @@
  "replay": {
   "S4": {
    "records": 640,
-   "distinct_centre_poses_checked": 24665,
+   "centre_checks": 53795,
+   "distinct_exact_centre_poses": 509,
    "centres_rotated_in_place_at_end": 97,
    "most_centres_rotated_at_once": 99,
-   "seconds": 198.3
+   "seconds": 178.3
   },
   "I_a": {
    "records": 841,
-   "distinct_centre_poses_checked": 25230,
+   "centre_checks": 56659,
+   "distinct_exact_centre_poses": 743,
    "centres_rotated_in_place_at_end": 79,
    "most_centres_rotated_at_once": 79,
-   "seconds": 245.5
+   "seconds": 223.8
   },
   "I_b": {
    "records": 885,
-   "distinct_centre_poses_checked": 26969,
+   "centre_checks": 65632,
+   "distinct_exact_centre_poses": 769,
    "centres_rotated_in_place_at_end": 86,
    "most_centres_rotated_at_once": 86,
-   "seconds": 286.3
+   "seconds": 293.3
   }
  }
 }
