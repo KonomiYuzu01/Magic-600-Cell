@@ -1191,6 +1191,21 @@ def selftest(geo, canon, menus, threshold):
     identities &= 'j1_menu_identity' not in menus['plane-36-float'].describe()
     print('selftest identities and relations for every exact menu:', 'ok' if identities else 'MISMATCH')
     ok &= identities
+    # Exact confirmation must invalidate a closed float search: a tiny exact plane rotation merges
+    # distinct positions within the float tolerance; A4 stays the closed positive control.
+    gf, gx, _ = plane_rotation(geo, geo.face_neighbour(), 1e-8, exact=True, max_den=10**12)
+    tiny = Menu(geo, 'plane-tiny', 'negative control', 'plane', [gf], [gx], {})
+    controls = []
+    for m in (tiny, menus['a4']):
+        res = Explorer(geo, canon, m, 'lattice', threshold, max_depth=1, log=lambda s: None).run()
+        controls.append((m.name, res['status'], verdict(res), res['exact_coincidence_check'], result_label(res)))
+    matches = (controls[0][2] == 'invalid: exact confirmation failed' and controls[0][4].startswith('invalid')
+               and controls[1][2].startswith('closed') and controls[1][4] == 'closed'
+               and controls[1][3]['checked'] == controls[1][3]['confirmed'])
+    for name, status, v, e, label in controls:
+        print(f'selftest exact-confirmation control {name}: status {status}, '
+              f'{e["confirmed"]}/{e["checked"]} confirmed, verdict {v!r}, table {label!r}', 'ok' if matches else 'MISMATCH')
+    ok &= matches
     for name, depth in (('s4', 2), ('class-00', 2), ('class-05', 2), ('plane-10', 1)):
         m = menus[name]
         ex = Explorer(geo, canon, m, 'lattice', threshold, max_depth=depth, log=lambda s: None)
@@ -1230,6 +1245,27 @@ def selftest(geo, canon, menus, threshold):
 # ---------------------------------------------------------------------------------------------
 # runs and command line
 
+def verdict(res):
+    """A failed exact confirmation invalidates the run; a closed float search is a lead only."""
+    e = res['exact_coincidence_check']
+    if e['checked'] != e['confirmed']:
+        return 'invalid: exact confirmation failed'
+    if res['status'] == 'closed':
+        return 'closed in the ball model: lead, not a finiteness proof'
+    return 'growing: not closed within the budget'
+
+
+def result_label(run):
+    """Result column of --table; the same invalidation rule as verdict()."""
+    v = verdict(run)
+    if v.startswith('invalid'):
+        return 'invalid (exact check failed)'
+    result = 'closed' if v.startswith('closed') else 'growing'
+    if run.get('growth_ratios'):
+        result += f' (×{run["growth_ratios"][-1]:.3g})'
+    return result
+
+
 def run_one(geo, canon, menu, twisting, threshold, depth, budget, time_limit, exact_cap,
             samples=True, log=print):
     ex = Explorer(geo, canon, menu, twisting, threshold, depth, budget, time_limit, exact_cap, log)
@@ -1242,8 +1278,7 @@ def run_one(geo, canon, menu, twisting, threshold, depth, budget, time_limit, ex
     res['separation_seconds'] = round(time.time() - t, 1)
     grips = [lv['new_grips'] for lv in res['levels'] if lv['complete']]
     res['growth_ratios'] = [round(b / a, 4) for a, b in zip(grips[1:], grips[2:]) if a]
-    res['verdict'] = ('finite: closed' if res['status'] == 'closed'
-                      else 'growing: not closed within the budget')
+    res['verdict'] = verdict(res)
     out = {'id': f'{menu.name}__{twisting}', 'menu': menu.name, 'twisting': twisting,
            'threshold_deg': threshold, 'depth_limit': depth, 'budget_representatives': budget,
            'time_limit_s': time_limit}
@@ -1396,9 +1431,7 @@ def table(path=OUT_RESULTS):
             ex = run['exact_coincidence_check']
             ex_txt = (f'{ex["confirmed"]:,}/{ex["checked"]:,}' if ex['checked']
                       else ('float menu' if not ex['menu_exact'] else '–'))
-            result = 'closed' if run['status'] == 'closed' else 'growing'
-            if run['growth_ratios']:
-                result += f' (×{run["growth_ratios"][-1]:.3g})'
+            result = result_label(run)
             print(f'| {m["label"]} | {m["jumble_elements"]} | {m.get("aligned_poles", "–")} | '
                   f'{done[-1]["depth"]} | {curve} | {result} | {sep_txt} | {ex_txt} |')
 

@@ -1,6 +1,6 @@
 # Rigid jumbling of the cell-cap 600-cell: theory draft
 
-Status: **integrator's draft for workstream J3 (9 October 2026), not yet verified.** It answers parts of the problem statement [`theory-problem.md`](../theory-problem.md) and marks the rest as open. It goes to the senior reviewer for one verification before any claim is used. Item numbers follow the problem statement. Scripts and results are in this folder (`*.py`, `results/`); every script runs from the repository root with Python 3 and NumPy, on top of the J1 reference (`research/jumbling/sim/`).
+Status: **integrator's draft for workstream J3 (9 October 2026), verified once by the senior reviewer** (review `20261009T221306Z-4784adf6`): Propositions 1.1, 1.2, 2.2, 2.3 and 3.1–3.3 were found sound, and Proposition 1.3 and Theorem 2.1 sound once restricted to valid lattice configurations. Its five findings (J3V-1 to J3V-5) are adopted below; a scoped verification of these changes is pending. It answers parts of the problem statement [`theory-problem.md`](../theory-problem.md) and marks the rest as open. Item numbers follow the problem statement. Scripts and results are in this folder (`*.py`, `results/`); every script runs from the repository root with Python 3 and NumPy, on top of the J1 reference (`research/jumbling/sim/`).
 
 Labels used below:
 - **Proved:** a proof is given here, from the definitions of the state contract and unconditional geometry.
@@ -26,20 +26,26 @@ Notation: P̃ is the 600-cell with facets n_e · x ≤ ‖n‖² (all poles have
 - Applying g⁻¹ to I restores every pose.
 - Admissible twists therefore form a groupoid on configurations. J1 asserts exactly this in `State.undo`.
 
-**Proposition 1.3 (proved).** On lattice configurations, a retained twist (c, a), a ∈ A4_c, acts on labels as the retained generator does.
-- A lattice configuration occupies exactly the retained chambers, each by one piece. Each chamber lies on one side of H_c, so (c, a) is admissible, and its inside set is the set of pieces in chambers whose signature contains c.
+**Lemma 1.2a (proved): chamber occupancy.** A valid lattice configuration occupies every chamber exactly once. Every configuration reachable from solved is valid.
+- K⁺ permutes the poles, hence the cut hyperplanes and the facet hyperplanes, hence the chambers: k(C) is a chamber for every k ∈ K⁺ and every chamber C. In a lattice configuration every posed region g_A(Ā₀), g_A ∈ K⁺, is therefore a chamber.
+- In a valid configuration two pieces have disjoint interiors, so they never occupy the same chamber: the map from pieces to occupied chambers is injective. There are as many pieces as chambers (each piece is one chamber at home), so the map is a bijection.
+- Solved is valid, and admissible twists keep validity (Proposition 1.1), so every reachable configuration is valid.
+- Validity is needed. The contract defines a lattice configuration by K⁺ poses alone: giving the 3,097 pieces of cap 0 the pose −I ∈ K⁺ and every other piece the identity is a lattice configuration that leaves cap 0 empty and stacks pieces elsewhere (review finding J3V-1, reproduced read-only with J1, which rejects its sticker projection as not bijective).
+
+**Proposition 1.3 (proved).** On valid lattice configurations, a retained twist (c, a), a ∈ A4_c, acts on labels as the retained generator does.
+- A valid lattice configuration occupies exactly the retained chambers, each by one piece (Lemma 1.2a). Each chamber lies on one side of H_c, so (c, a) is admissible, and its inside set is the set of pieces in chambers whose signature contains c.
 - a ∈ K⁺ maps the chamber of signature M onto the chamber of signature a(M), and each host facet patch onto the patch on the image facet. Through the labelled projection π (contract A3), this is the retained generator's slot permutation.
 - **Computed:** J1 checks this for all 1,200 generators against `primitives.npz`, `move_src` and `move_dst` (`sim/accept.py`, section 1).
 
 ## Item 2. Locality and blocking
 
-**Theorem 2.1 (proved).** Let X be any lattice configuration and (c, g) any twist with g ∈ SO(3)_c.
+**Theorem 2.1 (proved).** Let X be any valid lattice configuration (for example any lattice configuration reachable from solved) and (c, g) any twist with g ∈ SO(3)_c.
 1. (c, g) is admissible from X. It moves exactly the pieces in the chambers that make up K_c.
 2. After (c, g), a grip d ≠ c is blocked if and only if
    - w = g⁻¹ n_d is not a pole, and
    - the hyperplane Π = {w · x = κ} meets the interior of K_c.
 3. Equivalently, d is blocked if and only if w is not a pole and min over the vertices v of K_c of w · v < κ < max of the same.
-4. The blocked set depends only on (c, g), not on the lattice configuration X.
+4. The blocked set depends only on (c, g), not on the valid lattice configuration X.
 
 Proof.
 - (1) Every chamber lies on one side of every cut hyperplane, and the chambers with c in their signature tile K_c.
@@ -51,7 +57,7 @@ Proof.
     - So Π meets the interior of some chamber C ⊆ K_c. A hyperplane through an interior point of a convex body leaves points on both sides, so C straddles Π, and d is blocked.
   - Conversely, if Π misses int K_c, every chamber C ⊆ K_c has its interior on one side of Π, hence C itself. No moved piece straddles H_d.
 - (3) K_c is a full-dimensional polytope. A non-constant linear function takes values on both sides of κ over K_c exactly when its zero set meets int K_c, and its extremes over K_c are attained at vertices.
-- (4) The argument uses only the fact that X occupies the chambers.
+- (4) The argument uses only the fact that X occupies every chamber exactly once (Lemma 1.2a). Without validity the statement fails: in the configuration of Lemma 1.2a's last bullet, a quarter-turn of cap 0 moves nothing and leaves every grip admissible, where the theorem would give 16 blocked grips.
 
 **Computed (exact).** `blocking.py`, results in `results/blocking.json`:
 - K₀ has 40 vertices. They were computed by exact double description from the facets near n₀ and the cut H₀⁺, and each was checked against all 600 facet constraints, so the superset equals K₀.
@@ -78,7 +84,11 @@ Proof.
 - By Proposition 2.3, cap 0 is admissible there.
 - The configuration is not the earlier one: the pieces of K₁₃ now carry g or g².
 
-**Open (item 2).** Theorem 2.1 covers one twist from a lattice configuration. For a general configuration the same proof gives: d is blocked if and only if some pose class P (pieces with a common pose g_P, home chambers S_P) has g_P⁻¹ n_d not a pole and {g_P⁻¹ n_d · x = κ} meeting the interior of a chamber of S_P. When S_P is not convex, this is a union over its chambers rather than one vertex test. J1's anchor-cap superset test implements a sound version of it.
+**Proposition 2.4 (proved): blocking in any configuration.** In any configuration, grip d is blocked if and only if some pose class P (pieces with a common pose g_P, home chambers S_P) has w = g_P⁻¹ n_d not a pole and the hyperplane {w · x = κ} meeting the interior of a chamber of S_P.
+- A piece with pose g and home chamber C straddles H_d exactly when C straddles {w · x = κ}, because g is orthogonal (n_d · g(y) = w · y).
+- If w is a pole, that hyperplane is a cut hyperplane, and no chamber straddles it.
+- Otherwise a convex body straddles a hyperplane exactly when the hyperplane meets its interior.
+- The union over the pieces of P, and then over the pose classes, gives the criterion. It is a test per chamber, so S_P need not be convex. J1's anchor-cap superset test implements a sound version of it.
 
 ## Item 3. Finiteness of R(Λ)
 
@@ -100,6 +110,11 @@ Proof.
 - So the group strictly contains K⁺. K⁺ is a maximal finite subgroup of SO(4): a finite overgroup lifts to a finite subgroup of SU(2) × SU(2) whose two projections contain the binary icosahedral group 2I, which is maximal finite in SU(2).
 - This alone does not make R(Λ) infinite, because admissibility restricts which products occur.
 
+**Corollary 3.4 (proved): every menu outside the three groups is infinite.** If the base-cap menu Λ₀ is not contained in S4₀, I_a or I_b, then R(Λ) is infinite already at cap 0. ⟨Λ₀⟩ contains A4₀, so by Proposition 3.1 it is finite only when it is one of A4₀ ⊂ S4₀, S4₀, I_a or I_b, and ⟨Λ₀⟩ ⊆ G exactly when Λ₀ ⊆ G.
+- **Computed (exact), the E2 witness** (`invariants.py`, `results/invariants.json`): the plane rotation g of witness E2 (fixing n₀ and n₁₃, 9.99987°) has tr g = (3426525189964 − 4987013400√5)/860378847541, whose field trace to Q, 6853050379928/860378847541, is not an integer. So tr g is not an algebraic integer, g has infinite order, and every menu containing g gives infinite R at cap 0 (review finding J3V-3).
+- **Computed (exact), the explorer menus** (`research/jumbling/explorer/`, field `j1_relation`, exact matrix sets in J1's frame): class-00 ⊂ S4₀, class-03 ⊂ I_a and class-04 ⊂ I_b. Every other exact realignment menu (class-01, class-02 and class-05 to class-32) and the exact plane menus (plane-10, plane-36, plane-72) lie in none of the three groups, so each of them gives infinite R.
+- A menu Λ ⊆ Λ′ has R(Λ) ⊆ R(Λ′), because every twist sequence of Λ is one of Λ′. Finiteness for S4₀, I_a or I_b would therefore carry over to every menu contained in that group.
+
 **Leads (randomised, exact states).** Exact random walks of J(S4₀), J(I_a) and J(I_b), with uniformly random caps and jumble elements (`walk.py`, seeds 1–3, logged every five applied twists; summaries in `results/walk-*.json`, and the journals of the three longest runs are the W-J fixtures in `research/jumbling/fixtures/`):
 - In the long runs (seeds 2 and 3), 93–96% of attempted jumble twists are blocked.
 - After 620–885 applied twists:
@@ -108,7 +123,7 @@ Proof.
   - the largest logged coefficient or denominator of a non-K⁺ pose is 16 for I_a, 32 for S4₀ in both long runs, and 32 at one logged step of one I_b run.
 - Slowly growing heights would be consistent with infinite R. Bounded heights would imply finitely many poses. The data decide neither.
 
-**Open (item 3).** Finiteness of R(Λ) for S4₀, I_a, I_b and the realignment closures, and a multi-cap criterion.
+**Open (item 3).** Finiteness of R(Λ) for S4₀, I_a and I_b, the only menus containing A4₀ not settled by Corollary 3.4, and a multi-cap criterion for them.
 
 ## Item 4. Lattice states reached through jumbling
 
@@ -121,12 +136,18 @@ Proof.
 
 - (0, q⁻¹) was never blocked in these words.
 - The 8 other lattice states (d ∈ {24, 42, 74, 108}, two third-turns each, the same for both menus) move 2,808 pieces, which no single retained twist does: a retained twist moves 3,097.
-- They keep every centre in its own chamber, and the positional permutation of every K⁺-orbit is even (`conj.py`, exact on the K⁺ poses). The retained orientation invariants were not computed.
+- They keep every centre in its own chamber, as Proposition 4.1 requires of every reachable state, and the positional permutation of every K⁺-orbit is even (`conj.py`, exact on the K⁺ poses). The retained orientation invariants were not computed.
 - Without a witnessed retained word, J1 correctly refuses them as checkpoints.
 - **Open:** whether they lie in G·solved. Settling it needs the orientation invariants of the blueprint (a necessary test) and, for a positive answer, a witness word.
 
-**Proved remarks.**
-- A configuration rotated globally by k ∈ K⁺, k ≠ 1, is in L but moves centres, so it is not in G (centres are fixed by every retained move, hypothesis R). It is not reachable by twists from solved unless some twist sequence moves every centre; whether that can happen is open.
+**Proposition 4.1 (proved): centre points are fixed.** In every configuration reachable from solved, the centre piece of each cap c (the piece with signature {c}) has a pose g_c with g_c n_c = n_c. Centres can rotate in place about their own pole, but never move off it (review finding J3V-2).
+- The closed home region of the centre of c contains the point p_c = αn_c: n_c · p_c = κ, and n_e · p_c = α n_e · n_c ≤ κ and ≤ ‖n‖² for every pole e (computed exactly for all 600 centres, `invariants.py`).
+- The posed point x = g_c(p_c) has norm α‖n‖. Suppose an admissible twist (d, h) has the centre of c in its inside set. Then the posed region lies in H_d⁺, so n_d · x ≥ κ = α‖n‖². Cauchy–Schwarz gives n_d · x ≤ ‖n_d‖ ‖x‖ = α‖n‖². So equality holds, x = αn_d, and h fixes x because h fixes n_d.
+- A twist leaves every piece outside its inside set unchanged. By induction from solved, x = p_c after every twist, so g_c(αn_c) = αn_c.
+- **Consequence.** A configuration rotated globally by k ∈ K⁺, k ≠ 1, is not reachable: the 600 poles span four-space, so k n_c = n_c for every c forces k = 1. In a reachable lattice configuration every centre's pose lies in K⁺ ∩ Stab(n_c) = A4_c.
+- **Computed (exact, evidence, not part of the proof):** J1 replays of the three W-J journals check g_c n_c = n_c for every centre after every applied twist (`invariants.py --replay`, `results/invariants.json`). RESULT_INVARIANTS
+
+**Proved remark.**
 - The retained invariants (positional parity, orientation abelianization, the 2⁴³ · 5² quotient) are necessary conditions only. Membership of a lattice state in G·solved needs a witnessed word (contract section 5), not an invariant check.
 
 ## Item 5. Defect and return to the lattice
@@ -141,11 +162,11 @@ Proof.
 
 **Proved consequences for the workflow.**
 - "Return to lattice, then block-build" is correct only from a witnessed retained checkpoint (contract section 5). Reaching L is not enough (item 4).
-- Protection: an admissible twist (c, g) changes the pose of a piece exactly when the piece is in its inside class. A protected block (Net or Strict, on poses) is kept by every admissible twist whose cut leaves the whole block in H_c⁻. Proposition 2.3 adds that rotations fixing several poles keep those grips usable.
+- Protection: an admissible twist (c, g) changes the pose of a piece exactly when the piece is in its inside class and g ≠ I (review finding J3V-5: the identity is in every menu and changes nothing). A protected block (Net or Strict, on poses) is kept by every admissible twist whose cut leaves the whole block in H_c⁻. Proposition 2.3 adds that rotations fixing several poles keep those grips usable.
 
 **Open.** Block preservation through jumble twists, and per-phase certificates beyond those of the contract.
 
 ## Item 7. Scope
 
-- Not settled: the finiteness and size of R(Λ) for every candidate menu, worst-case distances, item 4 for any menu, and items 5 and 6 beyond the remarks above.
+- Not settled: the finiteness and size of R(Λ) for S4₀, I_a and I_b (every other menu containing A4₀ is infinite by Corollary 3.4), worst-case distances, the membership question of item 4 for any menu, and items 5 and 6 beyond the remarks above.
 - No performance, rendering or Windows claims.

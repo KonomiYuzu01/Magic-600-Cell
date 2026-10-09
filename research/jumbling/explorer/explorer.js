@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const $ = (id) => document.getElementById(id);
-const THRESHOLD_DEG = 46.8;
+// The interaction threshold comes from explorer-results.json (parameters.threshold_deg).
+let thresholdDeg = 46.8;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const KIND_TEXT = { lattice: '600 lattice grips twist', all: 'every grip twists' };
 const FAMILY_TEXT = { control: 'Control', group: 'Groups', realignment: 'Realignment classes', plane: 'Plane rotations' };
@@ -99,21 +100,30 @@ function sprite(kind) {
 const DISC = sprite('disc');
 const RING = sprite('ring');
 
-const ballRadius = Math.tan((THRESHOLD_DEG * Math.PI) / 360);
 const ball = new THREE.Mesh(
-  new THREE.SphereGeometry(ballRadius, 48, 32),
+  new THREE.SphereGeometry(1, 48, 32),
   new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.07, depthWrite: false }),
 );
 const ballRim = new THREE.LineLoop(
   new THREE.BufferGeometry().setFromPoints(
     Array.from({ length: 128 }, (_, i) => {
       const t = (i / 128) * Math.PI * 2;
-      return new THREE.Vector3(Math.cos(t) * ballRadius, 0, Math.sin(t) * ballRadius);
+      return new THREE.Vector3(Math.cos(t), 0, Math.sin(t));
     }),
   ),
   new THREE.LineBasicMaterial({ transparent: true, opacity: 0.45 }),
 );
 scene.add(ball, ballRim);
+
+// Stereographic radius of the interaction ball about n0, for the threshold the results were computed with.
+function setThreshold(deg) {
+  if (!(deg > 0 && deg < 180)) throw new Error(`explorer-results.json: bad threshold_deg ${deg}`);
+  thresholdDeg = deg;
+  const r = Math.tan((deg * Math.PI) / 360);
+  ball.scale.setScalar(r);
+  ballRim.scale.setScalar(r);
+  for (const node of document.querySelectorAll('[data-threshold]')) node.textContent = `${deg}°`;
+}
 
 const baseGeo = new THREE.BufferGeometry();
 baseGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0], 3));
@@ -232,13 +242,23 @@ function lastComplete(run) {
   return done[done.length - 1];
 }
 
+function exactCheckFailed(run) {
+  const e = run.exact_coincidence_check;
+  return Boolean(e) && e.checked !== e.confirmed;
+}
+
 function statusText(run) {
-  if (run.status === 'closed') return ['closed', 'Closed: finite'];
+  if (exactCheckFailed(run)) return ['invalid', 'Invalid: exact check failed'];
+  if (run.status === 'closed') return ['closed', 'Closed in the ball model (lead)'];
   return ['growing', 'Growing'];
 }
 
 function reasonText(run) {
   const last = run.levels[run.levels.length - 1];
+  if (exactCheckFailed(run)) {
+    const e = run.exact_coincidence_check;
+    return `${e.checked - e.confirmed} of ${e.checked} sampled float coincidences fail the exact check`;
+  }
   if (run.status === 'closed') return `no new grips at depth ${last.depth}`;
   if (run.status === 'depth limit reached') return `still adding grips at the depth limit ${last.depth}`;
   return `${run.status} during depth ${last.depth} (${(100 * last.fraction_of_level_processed).toFixed(1)}% of the level)`;
@@ -409,15 +429,20 @@ new ResizeObserver(() => { if (state.doc) drawChart(); }).observe($('chart'));
 
 // ------------------------------------------------------------------ selection
 
-async function loadRunPoints() {
-  const key = runKey(state.menu, state.kind);
+async function loadRunPoints(key) {
   if (!state.points.has(key)) state.points.set(key, await loadJSON(`points/${key}.json`));
   return state.points.get(key);
 }
 
+let refreshToken = 0;
+
 async function refresh() {
+  // Only the response for the current selection may update the scene and the panel.
+  const token = ++refreshToken;
+  const key = runKey(state.menu, state.kind);
   const run = currentRun();
-  const data = await loadRunPoints();
+  const data = await loadRunPoints(key);
+  if (token !== refreshToken || key !== runKey(state.menu, state.kind)) return;
   buildGroups(data);
   const maxDepth = Math.max(0, ...data.depths.map((d) => d.depth));
   const slider = $('depth');
@@ -460,6 +485,7 @@ async function main() {
   state.doc = await loadJSON('explorer-results.json');
   for (const m of state.doc.menus) state.menus.set(m.name, m);
   for (const r of state.doc.runs) state.runs.set(runKey(r.menu, r.twisting), r);
+  setThreshold(state.doc.parameters.threshold_deg);
   populateMenus();
   buildLattice(await loadJSON('points/lattice.json'));
   const fromHash = location.hash.slice(1);

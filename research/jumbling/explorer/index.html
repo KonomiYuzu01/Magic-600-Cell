@@ -15,6 +15,7 @@
   --muted: #687384;
   --rule: #d3d9e2;
   --accent: #1c5cab;
+  --danger: #b3261e;
   --viz-bg: #fafbfc;
   --ctx: #b4bdc9;
   --lattice: #8a919c;
@@ -29,7 +30,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0e1218; --panel: #151a22; --ink: #e6ebf2; --ink-2: #aeb8c6; --muted: #8692a3;
-    --rule: #2a3240; --accent: #6da7ec; --viz-bg: #121720; --ctx: #3b4554; --lattice: #7c8696;
+    --rule: #2a3240; --accent: #6da7ec; --viz-bg: #121720; --ctx: #3b4554; --lattice: #7c8696; --danger: #f2a49b;
     --base: #ee7a45;
     --d1: #cde2fb; --d2: #9ec5f4; --d3: #6da7ec; --d4: #5598e7;
     --d5: #3987e5; --d6: #2a78d6; --d7: #256abf; --d8: #1c5cab;
@@ -38,7 +39,7 @@
 }
 :root[data-theme="dark"] {
   --bg: #0e1218; --panel: #151a22; --ink: #e6ebf2; --ink-2: #aeb8c6; --muted: #8692a3;
-  --rule: #2a3240; --accent: #6da7ec; --viz-bg: #121720; --ctx: #3b4554; --lattice: #7c8696;
+  --rule: #2a3240; --accent: #6da7ec; --viz-bg: #121720; --ctx: #3b4554; --lattice: #7c8696; --danger: #f2a49b;
   --base: #ee7a45;
   --d1: #cde2fb; --d2: #9ec5f4; --d3: #6da7ec; --d4: #5598e7;
   --d5: #3987e5; --d6: #2a78d6; --d7: #256abf; --d8: #1c5cab;
@@ -126,6 +127,7 @@ input[type="checkbox"] { accent-color: var(--accent); }
   font-size: 0.85rem; font-weight: 600; border: 1px solid currentColor;
 }
 .pill.closed { color: var(--accent); }
+.pill.invalid { color: var(--danger); }
 .pill.growing { color: var(--ink-2); }
 .facts dl { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 0.9rem; }
 .facts dt { color: var(--muted); }
@@ -213,7 +215,7 @@ td { font-family: var(--font-data); }
         <div class="note" id="stage-note"></div>
       </div>
       <div class="legend" id="legend" aria-label="Legend"></div>
-      <p class="caption">Stereographic projection of S³ from −n₀ into R³: the base pole n₀ is at the centre, and spheres about n₀ stay spheres. The faint sphere is the 46.8° interaction ball of n₀. Orbit points are a sample of the grips within 50° of n₀, coloured by BFS depth; lattice poles are drawn out to 120°. Drag to rotate, scroll or pinch to zoom.</p>
+      <p class="caption">Stereographic projection of S³ from −n₀ into R³: the base pole n₀ is at the centre, and spheres about n₀ stay spheres. The faint sphere is the <span data-threshold>46.8°</span> interaction ball of n₀. Orbit points are a sample of the grips within 50° of n₀, coloured by BFS depth; lattice poles are drawn out to 120°. Drag to rotate, scroll or pinch to zoom.</p>
     </div>
     <aside class="facts" id="facts" aria-live="polite"></aside>
   </section>
@@ -234,8 +236,8 @@ td { font-family: var(--font-data); }
     <h2 id="def-title">Definitions and limits</h2>
     <p><strong>Grip.</strong> A rotation P in SO(4) that carries the base pole n₀ and its frame to the grip's position P n₀. Frames are compared modulo the cap group A4, so the 600 lattice grips are the 600 poles.</p>
     <p><strong>Menu.</strong> A finite set of rotations fixing n₀, closed under inverses and A4-conjugation; it always contains A4. Grip P twists by P m P⁻¹. The group menus are S4₀ (24 rotations), I_a and I_b (60 each). The realignment menus take one exact Q(√5) generator per class of the jumbling study; the plane menus rotate about the plane of n₀ and a face neighbour. Exact menus carry J1's identity after transport back to its pole 0, and their exact relation to those three groups.</p>
-    <p><strong>Closure.</strong> A twist of grip c moves every grip whose position lies within 46.8° of c (a ball standing in for the cap geometry, between the 44.48° and 49.12° shells). With "600 lattice grips" only the world-fixed lattice grips twist, as in the state contract; with "Every grip" each grip in the set twists by its own frame-conjugated menu.</p>
-    <p><strong>Limits.</strong> The ball replaces the exact cap and piece geometry, and moved pieces change the outer shape, which this closure ignores. Growth within a budget does not prove a set infinite, and a closed run is checked exactly only on the sampled coincidences.</p>
+    <p><strong>Closure.</strong> A twist of grip c moves every grip whose position lies within <span data-threshold>46.8°</span> of c (a ball standing in for the cap geometry; the preset's 46.8° lies between the 44.48° and 49.12° shells). With "600 lattice grips" only the world-fixed lattice grips twist, as in the state contract; with "Every grip" each grip in the set twists by its own frame-conjugated menu.</p>
+    <p><strong>Limits.</strong> The ball replaces the exact cap and piece geometry, and moved pieces change the outer shape, which this closure ignores. Growth within a budget does not prove a set infinite, and a closed run is not a finiteness proof: it is checked exactly only on the sampled coincidences, and a run whose sampled coincidences fail the exact check is marked invalid.</p>
   </section>
 </div>
 

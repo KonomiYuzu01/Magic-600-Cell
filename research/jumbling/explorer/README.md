@@ -33,7 +33,7 @@ Sources: the published formal definition of grip theory ([hypercubing.xyz, jumbl
 **Closures.** Depth 0 is the 600 lattice grips. Depth d adds every image of a pair (c, e) with both of depth at most d − 1, at least one of them of depth d − 1, that is not already present.
 - **lattice**: only the 600 lattice grips twist. This follows the state contract (section 1: grips are world-fixed; cut planes carried by moved pieces are not grips) and the formal definition, where twists use a fixed set of allowed axes and moved grips are stored grips. Here a grip is identified by its position alone, because only its position matters for later twists.
 - **all**: every grip in the set twists with its own frame-conjugated menu. Grips are identified by position and frame class. This is the frame model of the J4 brief.
-- A run is **closed** (finite) when a complete level adds nothing. It is **growing** when it still adds grips at the depth limit, or when the size budget (orbit representatives) or the time limit cuts a level off.
+- A run is **closed** when a complete level adds nothing. In the ball model with float merging this is a lead, not a finiteness proof. It is **growing** when it still adds grips at the depth limit, or when the size budget (orbit representatives) or the time limit cuts a level off. It is **invalid** when any sampled float coincidence fails the exact Q(√5) check: the float merge joined positions that differ. `--selftest` runs a tiny exact plane rotation (Cayley parameter of denominator up to 10¹²) as the negative control and A4 as the positive control.
 
 **Symmetry reduction.** Both closures are K⁺-invariant level by level, because the menus are K⁺-conjugated.
 - The search stores one representative per K⁺-orbit. A position is mapped into the Voronoi cell of n₀ (via its nearest pole), and then by A4 to the image with the largest score against a fixed generic vector. Near-ties within 10⁻⁹ look up every alternative, and the alternatives that fix a representative give its stabiliser order.
@@ -91,11 +91,11 @@ python research/jumbling/explorer/explore.py --preset --menus s4,i_a,i_b --worke
 python research/jumbling/explorer/explore.py --table                                    # the tables below
 ```
 
-Options: `--threshold` (degrees, default 46.8), `--budget` (orbit representatives, default 150,000), `--time-limit` (seconds), `--exact-cap` (coincidences checked exactly per run, default 2,000).
+Options: `--threshold` (degrees, default 46.8; the page reads it from `parameters.threshold_deg` for the ball and its captions), `--budget` (orbit representatives, default 150,000), `--time-limit` (seconds), `--exact-cap` (coincidences checked exactly per run, default 2,000).
 
 The preset uses depth limit 8, a budget of 150,000 representatives and a time limit of 600 s for the lattice closure. For the all-grips closure it uses depth limit 3, 60,000 representatives and 300 s. Separations are computed for complete levels of at most 50,000 representatives.
 
-`--menus` is available only with `--preset`. It selects named menus for both closures and merges their run records into an existing `explorer-results.json`, replacing a selected run with the same ID or appending a new one. Other run records retain their JSON bytes, and other point files, including an existing `points/lattice.json`, are not rewritten. Existing menu descriptions gain only the computed J1 identity and relation fields. The original preset parameters and duration stay in place; each merge records its own command, parameters, duration and run IDs in `preset_merges`. A merge with different search parameters is refused before running or writing. Without an existing results file, a filtered preset creates results for its selected menus. Unknown or empty menu selections are refused. The self-test checks that merging preserves other runs and parameters and replaces selected IDs without duplication.
+`--menus` is available only with `--preset`. It selects named menus for both closures and merges their run records into an existing `explorer-results.json`, replacing a selected run with the same ID or appending a new one. Other run records keep their values; the file is written again in the tool's own format (`indent=1`), so records the tool wrote stay byte for byte the same, and a record formatted by hand is reformatted, and other point files, including an existing `points/lattice.json`, are not rewritten. Existing menu descriptions gain only the computed J1 identity and relation fields. The original preset parameters and duration stay in place; each merge records its own command, parameters, duration and run IDs in `preset_merges`. A merge with different search parameters is refused before running or writing. Without an existing results file, a filtered preset creates results for its selected menus. Unknown or empty menu selections are refused. The self-test checks that merging preserves other runs and parameters and replaces selected IDs without duplication.
 
 Page check (Chromium is preinstalled; no `playwright install`):
 
@@ -106,11 +106,11 @@ NODE_PATH=$(npm root -g) PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers \
 
 `--vendor` answers the three.js and Google Fonts requests from local copies, for sandboxes without direct CDN access.
 
-The integrator runs the filtered three-group preset and the page check outside the implementation sandbox. The page check covers the three group selections, family/size labels, identities and relations as well as the original desktop/phone cases. Group orbit results are not included in the older tables below until that preset has been run.
+The page check covers the three group selections, family/size labels, identities and relations, the original desktop/phone cases, a late points response arriving after the selection changed (it must not replace the current points) and a results file with a different threshold (the ball and its captions must follow it).
 
 ## Results
 
-Preset run of 9 October 2026: θ = 46.8°, 4 worker processes, 1,200 s wall time, in a Linux cloud session whose CPU was shared with another job. `python research/jumbling/explorer/explore.py --table` prints these tables from `explorer-results.json`.
+Preset run of 9 October 2026: θ = 46.8°, 4 worker processes, 1,200 s wall time, in a Linux cloud session whose CPU was shared with another job. The group menus S4₀, I_a and I_b were merged into it later that day (`--preset --menus s4,i_a,i_b`, same parameters, 2 worker processes, 812 s); their rows are the last of each table. `python research/jumbling/explorer/explore.py --table` prints these tables from `explorer-results.json`.
 
 How to read the columns:
 - **Jumble twists**: menu elements outside A4.
@@ -163,6 +163,9 @@ How to read the columns:
 | plane 36° (exact Cayley, 35.99975°) | 8 | – | 2 | 600 → 1.09e5 → 2.04e7 → ≥1.09e9 | growing (×188) | 0.00417° (d2, exact) | 2,000/2,000 |
 | plane 72° (exact Cayley, 72.00021°) | 8 | – | 2 | 600 → 1.09e5 → 1.99e7 → ≥1.14e9 | growing (×183) | 0.0071° (d2, exact) | 2,000/2,000 |
 | plane 36° (float, exact angle) | 8 | – | 2 | 600 → 1.09e5 → 2.04e7 → ≥1.09e9 | growing (×188) | 0.0044° (d2) | float menu |
+| S4₀ (octahedral group) | 12 | – | 5 | 600 → 10,200 → 1.64e5 → 2.62e6 → 4.19e7 → 6.71e8 → ≥1.09e9 | growing (×16) | 0.0872° (d4, exact) | 2,000/2,000 |
+| I_a (icosahedral group) | 48 | – | 5 | 600 → 10,200 → 1.64e5 → 2.62e6 → 4.19e7 → 6.71e8 → ≥1.1e9 | growing (×16) | 0.0872° (d4, exact) | 2,000/2,000 |
+| I_b (icosahedral group) | 48 | – | 5 | 600 → 10,200 → 1.64e5 → 2.62e6 → 4.19e7 → 6.71e8 → ≥1.13e9 | growing (×16) | 0.0872° (d4, exact) | 2,000/2,000 |
 
 ### Closure: every grip twists
 
@@ -206,11 +209,15 @@ How to read the columns:
 | plane 36° (exact Cayley, 35.99975°) | 8 | – | 1 | 600 → 1.13e5 → ≥4.51e8 | growing | 0.365° (d1, exact) | 2,000/2,000 |
 | plane 72° (exact Cayley, 72.00021°) | 8 | – | 1 | 600 → 1.13e5 → ≥4.44e8 | growing | 0.102° (d1, exact) | 2,000/2,000 |
 | plane 36° (float, exact angle) | 8 | – | 1 | 600 → 1.13e5 → ≥4.51e8 | growing | 0.365° (d1) | float menu |
+| S4₀ (octahedral group) | 12 | – | 2 | 600 → 15,600 → 6.69e7 → ≥1.08e8 | growing (×4.46e+03) | 0.0872° (d2, exact) | 2,000/2,000 |
+| I_a (icosahedral group) | 48 | – | 2 | 600 → 12,600 → 3.4e7 → ≥4.59e7 | growing (×2.83e+03) | 0.0872° (d2, exact) | 2,000/2,000 |
+| I_b (icosahedral group) | 48 | – | 2 | 600 → 12,600 → 3.4e7 → ≥5.34e7 | growing (×2.83e+03) | 0.0872° (d2, exact) | 2,000/2,000 |
 
 ### Observations
 
 These are leads for J3 and the menu decision, not proofs.
 
+- **Groups.** In the lattice closure S4₀, I_a and I_b grow exactly like class-00, class-03 and class-04, the classes they contain: 40·(16^(d+1) − 1) grips after depth d through depth 5, and ×16 per level. With every grip twisting they reach 66,896,400 (S4₀) and 33,996,600 (I_a and I_b) grips at depth 2. These are ball-model leads: by the theory draft's Corollary 3.4 every menu outside the three groups has infinite R, and finiteness for the three groups themselves stays open.
 - **The control closes.** With A4 alone, no grips are added in either closure: the orbit stays at the 600 lattice grips.
 - **Every jumble menu grows.** In both closures, none of the 33 realignment classes and none of the plane menus closes before the size budget or the time limit. Every sampled coincidence was confirmed exactly, and every closest pair with a separation figure is exactly distinct. So the growth is not an effect of the float tolerance.
 - **Exact geometric growth for the classes with many aligned poles** (lattice closure, all complete levels):
@@ -237,7 +244,7 @@ These are leads for J3 and the menu decision, not proofs.
 
 - **Ball approximation.** A twist moves every grip whose position lies within θ of the twisting grip. The exact cap and piece geometry is not modelled: which pieces a twist carries, and whether a moved cut still allows a twist. The results depend on θ; use `--threshold` to vary it.
 - **No legality or shape condition.** Every grip is assumed twistable in every state, and the change of the outer shape after a jumble twist is ignored. This is an over-approximation of the grips a real puzzle reaches in the ball model.
-- **Growth is not a proof.** Growth within the budget does not prove that a set is infinite, and the growth factors are fitted from at most six levels. Only "closed" is a finite result, and only the control is closed.
+- **Growth is not a proof.** Growth within the budget does not prove that a set is infinite, and the growth factors are fitted from at most six levels. "Closed" is the only finite lead, and only the control is closed; no run is invalid.
 - **Exact checks are a sample.** At most 2,000 coincidences per run are rebuilt and checked exactly, out of up to 1.1·10⁷ coincidences in a run. The other merges rest on the 10⁻⁹ tolerance. The closest pair is checked only at levels with a separation figure.
 - **Cut levels depend on the machine.** The size budget is deterministic. The every-grip runs of class-00 to class-05, however, stopped at the 300 s time limit on a shared CPU, so their depth-3 counts are lower bounds that depend on the machine. Every cut level is a partial set, whose size depends on the processing order.
 - **Separation coverage.** Separations are computed only for complete levels with at most 50,000 representatives. They are distances between positions; frames are compared only for identity.

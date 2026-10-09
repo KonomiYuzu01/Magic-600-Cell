@@ -51,9 +51,10 @@ Source: [jumbling plan](../../jumbling-plan.md) section 3b, made standalone at m
   - `regions.py`: one exact region per K⁺-orbit, transported by K⁺;
   - `model.py`: model identity (SHA-256 of the asset bytes as read) and `CONTRACT_REVISION`.
 - **Fixtures:** `research/jumbling/fixtures/wj-<menu>.json` (menus S4, I_a, I_b): exact menu record, journal with identities, digests and array hashes at start, mid and end, the swept twist and the end survey with certificates. `research/jumbling/sim/acceptance.json` holds further replayable journals (the witness, seeded mixed sequences, the negative control).
-- **Theory used by the engine:** `research/jumbling/theory/theory-draft.md` (draft; one Astra verification is pending):
+- **Theory used by the engine:** `research/jumbling/theory/theory-draft.md` (draft, verified once by Astra; its findings are adopted and a scoped verification is pending):
   - Proposition 1.2: the inverse of an admissible twist is admissible with the same inside set, so undo is always legal;
-  - Theorem 2.1: after one twist from a lattice configuration, the blocked grips follow from the cap polytope alone, which gives an exact fast path for that common case;
+  - Theorem 2.1: after one twist from a valid lattice configuration (every reachable one), the blocked grips follow from the cap polytope alone, which gives an exact fast path for that common case;
+  - Proposition 4.1: in every reachable state each centre piece's pose fixes its own pole, so a centre never leaves its place; the engine can assert this after every committed twist, and a global rotation of the puzzle is never a reachable state;
   - Proposition 2.2: consecutive twists of one grip compose, which the journal witness uses.
 - **Layer rules:** `docs/progress/1.0/command-table.md` section 1 (layers, typed errors, evidence states); `docs/progress/1.0/requirements-from-screening.md` (R-numbers); the oracle specification `docs/progress/1.0/oracle/README.md` for the case and trace style.
 - **What each layer gets** (from the plan, section 3b):
@@ -70,7 +71,7 @@ Source: [jumbling plan](../../jumbling-plan.md) section 3b, made standalone at m
 | 1 | Contract and witness (`research/jumbling/state-contract.md`, `witness.py`) | plan-checked; exact witness E0–E4 reviewed |
 | 2 | J1 reference engine | accepted after an Astra review and scoped verification; 38 focused tests and 32 acceptance flags pass |
 | 3 | J2 viewer and J4 explorer | research prototypes; they read J1 output and decide nothing |
-| 4 | W-J fixtures (`research/jumbling/fixtures/wj.py`) | ENG_CHECK |
+| 4 | W-J fixtures (`research/jumbling/fixtures/wj.py`) | all three fixtures replay with J1 and match every reference (`wj.py check`, 9 October 2026; cloud timings only) |
 | — | Product engine, store or command rows | not started |
 
 ## 6. Constraints and owned files

@@ -159,6 +159,45 @@ for (const s of shots) {
   await page.screenshot({ path: path.join(here, 'shots', `${s.name}.png`), fullPage: true });
   await context.close();
 }
+
+// A late points response must not replace the current selection's points (review finding J4R002).
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  await route(context);
+  await context.route('**/points/class-00__lattice.json', async (r) => {
+    await new Promise((done) => setTimeout(done, 1500));
+    await r.continue();
+  });
+  const page = await context.newPage();
+  page.on('pageerror', (e) => problems.push(`late-response: page error: ${e.message}`));
+  await page.goto(base + '#class-05', { waitUntil: 'networkidle' });
+  await page.waitForSelector('#facts dl', { timeout: 30000 });
+  const expected = await page.evaluate(() => document.getElementById('stage-note').textContent);
+  await page.selectOption('#menu', 'class-00');
+  await page.selectOption('#menu', 'class-05');
+  await page.waitForTimeout(3000);
+  const note = await page.evaluate(() => document.getElementById('stage-note').textContent);
+  if (note !== expected) problems.push(`late-response: stage shows "${note}", expected "${expected}"`);
+  console.log(`late-response: ${note}`);
+  await context.close();
+}
+
+// The ball and its captions follow the threshold recorded in the results (review finding J4R003).
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  await route(context);
+  const custom = { ...results, parameters: { ...results.parameters, threshold_deg: 30 } };
+  await context.route('**/explorer-results.json', (r) => r.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(custom) }));
+  const page = await context.newPage();
+  page.on('pageerror', (e) => problems.push(`threshold: page error: ${e.message}`));
+  await page.goto(base + '#class-00', { waitUntil: 'networkidle' });
+  await page.waitForSelector('#facts dl', { timeout: 30000 });
+  const labels = await page.evaluate(() => Array.from(document.querySelectorAll('[data-threshold]'), (n) => n.textContent));
+  if (labels.length < 2 || labels.some((t) => t !== '30°')) problems.push(`threshold: captions ${JSON.stringify(labels)}, expected 30°`);
+  console.log(`threshold: ${labels.length} captions show ${[...new Set(labels)].join(', ')}`);
+  await context.close();
+}
 await browser.close();
 server.close();
 if (problems.length) {
