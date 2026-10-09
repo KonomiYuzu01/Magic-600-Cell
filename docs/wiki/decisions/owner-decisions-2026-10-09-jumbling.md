@@ -42,4 +42,4 @@ The owner gave these decisions in chat messages in Chinese. This page records th
 ## Where it is applied
 
 - Program plan: [jumbling-plan](../../progress/1.0/jumbling-plan.md).
-- The agent briefing is not yet updated. Rule files change only with the owner's explicit authorization.
+- `docs/development-guide/AGENT_BRIEFING.md` section 2, with the owner's explicit authorization in chat (9 October 2026).
