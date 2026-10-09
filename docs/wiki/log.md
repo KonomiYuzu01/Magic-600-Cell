@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-09] decision | Jumbling: engineering packet too
+Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 5): the jumbling work affects the renderer line and the engineering line, so mid-stage gives the owner two packets; the engineering packet's outline is in [jumbling-plan](../progress/1.0/jumbling-plan.md) section 3b.
+
 ## [2026-10-09] decision | Jumbling enters 1.0
 Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md): no fudged variant; rigid jumbling of the retained geometry becomes an independent 1.0 puzzle and a Jumble feature, with simulator, viewer, solving theory and grip-orbit explorer started and a renderer packet at mid-stage. Plan: [jumbling-plan](../progress/1.0/jumbling-plan.md).
 

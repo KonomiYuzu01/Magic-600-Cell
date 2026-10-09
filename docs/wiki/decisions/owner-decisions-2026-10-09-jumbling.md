@@ -3,13 +3,14 @@ id: owner-decisions-2026-10-09-jumbling
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 9 October 2026 - no fudged variant; rigid jumbling enters 1.0 as an independent puzzle and a Jumble feature; simulator, rendering and observation, solving theory and a four-dimensional grip-orbit explorer start now; a renderer packet follows at mid-stage.
+summary: Owner decisions of 9 October 2026 - no fudged variant; rigid jumbling enters 1.0 as an independent puzzle and a Jumble feature; simulator, rendering and observation, solving theory and a four-dimensional grip-orbit explorer start now; a renderer packet and an engineering packet follow at mid-stage.
 related: [owner-decisions-2026-10-02-scope, renderer-candidates]
 supersedes: []
 claims:
   - {id: no-fudged-variant, evidence_kind: decision, checked_at: 2026-10-09}
   - {id: jumbling-in-1-0, evidence_kind: decision, checked_at: 2026-10-09}
   - {id: renderer-packet-at-mid-stage, evidence_kind: decision, checked_at: 2026-10-09}
+  - {id: engineering-packet-at-mid-stage, evidence_kind: decision, checked_at: 2026-10-09}
 ---
 
 # Owner decisions, 9 October 2026: jumbling
@@ -26,6 +27,7 @@ The owner gave these decisions in chat messages in Chinese. This page records th
    - a complete solving theory for the jumbling puzzle;
    - a four-dimensional Jambler-style grip-orbit explorer.
 4. **Renderer packet at mid-stage.** When the workstreams reach mid-stage, the integrator gives the owner a packet to submit to the renderer route. Only changes such as geometry may need the renderer acceptance to be run again.
+5. **Engineering packet at mid-stage.** The jumbling work affects both the renderer line and the engineering line, so the integrator also gives the owner a mid-stage packet for the engineering line: the backend boundaries (engine, session store, command layer, view model).
 
 ## Scope and limits
 

@@ -1,6 +1,6 @@
 # Jumbling puzzle and Jumble feature: program plan
 
-Status: **revised after the Astra plan check of 9 October 2026 (call `20261009T201801Z-28fb9085`; all eight findings adopted, section 6); awaiting its scoped re-check.** An earlier run of the same packet on the owner's machine (`20261009T185506Z-1a2654f2`) raised the same areas, but its text was not transcribed. This plan implements the [owner decisions of 9 October 2026](../../wiki/decisions/owner-decisions-2026-10-09-jumbling.md): rigid jumbling enters 1.0 as an independent puzzle and a Jumble feature. Nothing here changes 600-cell-Full, its model identity or its contract.
+Status: **revised after the Astra plan check of 9 October 2026 (call `20261009T201801Z-28fb9085`; all eight findings adopted, section 6). Its scoped re-check (`20261009T202958Z-6200127b`) found all eight resolved and raised one new finding, JR1, adopted in section 6; the owner then added the engineering packet (section 3b). Both changes await a second scoped re-check.** An earlier run of the same packet on the owner's machine (`20261009T185506Z-1a2654f2`) raised the same areas, but its text was not transcribed. This plan implements the [owner decisions of 9 October 2026](../../wiki/decisions/owner-decisions-2026-10-09-jumbling.md): rigid jumbling enters 1.0 as an independent puzzle and a Jumble feature. Nothing here changes 600-cell-Full, its model identity or its contract.
 
 Inputs:
 - the jumbling study (`research/jumbling/README.md`);
@@ -95,7 +95,9 @@ Code: `research/jumbling/explorer/`. It is written here from the published forma
    - **J4:** orbit data for the candidate menus.
    - **J3:** lists which conclusions are verified, which are conjectural and which are open, after one Astra verification. Running an invocation is not by itself an acceptance result.
 
-   Then the integrator writes the renderer packet (section 3) and gives it to the owner.
+   Then the integrator writes the two mid-stage packets and gives them to the owner (owner, 9 October 2026: the jumbling work affects both the renderer line and the engineering line):
+   - the renderer packet (section 3);
+   - the engineering packet for the backend boundaries (section 3b).
 3. **After mid-stage.** The owner signs off the twist menu, which defines the puzzle. The design track adds the jumbling states (H-04 layout, H-05 pointing, the command table). Engine and command-layer interfaces enter the 2.5 freeze.
 
 A likely miss of the stage 2 schedule is reported once, with a re-plan, under the schedule rules. No duration is estimated here.
@@ -126,6 +128,32 @@ File: `packets/renderer/E-2.4-0J-jumbling.md`, in the seven-part format. Planned
   - The jumbling mode needs its own W-J gate runs.
   - A change to geometry (cut depth, piece or sticker meshes) re-runs the whole acceptance, as the owner said.
 - **Data contract.** Pose format (4 × 4 float or a unit-quaternion pair) with revision numbers, its update and adoption rule, and the engine side as the source of truth. Rendering never decides legality.
+
+## 3b. Engineering packet (outline; written at mid-stage)
+
+File: `packets/engineering/ENG-0J-jumbling-backend.md`, in the seven-part format. It covers the backend boundaries of charter section 4 (engine, session store, command layer, view model) for the jumbling puzzle. It feeds the engine-language question (`docs/wiki/questions/engine-language-rust.md`) and the 2.5 interface freeze; it starts no implementation. Planned content:
+
+- **Model identity.** The jumbling puzzle has its own model identity per signed menu, separate from 600-cell-Full. It shares the retained geometry (cut depth α, pieces, regions, stickers, the 1,200 generators), read from `assets/` without change. A geometry change gives a new identity for both puzzles and re-runs every acceptance.
+- **Engine.**
+  - State: an exact pose per piece over Q(√5), a pose table, lattice flags, and canonical digests (contract section 2).
+  - Twists: the exact domain and input map of A1 and the signed menu of A4. A non-representable rotation is rejected, never approximated.
+  - Admissibility: exact classification with certificates (contract section 3), and the filtered sign test of A2 as an optional accelerator whose result never differs from the exact one.
+  - Regions: one exact region per K⁺-orbit, transported by K⁺.
+  - Survey, preview of the swept motion, undo, replay and checkpoints (contract sections 4 and 5).
+  - J1 is the differential oracle: the product engine must match it on replayable fixtures for each menu, as the 0.4 oracle does for 600-cell-Full.
+- **Exact arithmetic.** The observed entry heights and denominators of the poses in scripted scrambles, and the cost of exact evaluation against the filtered test. These are inputs to the engine-language question, measured in Linux cloud sessions with the Python reference. They are not performance evidence for the product engine.
+- **Session store.**
+  - A versioned format for pose states, the pose table and the jumbling journal, with exact numbers stored losslessly.
+  - Transactional writes and recovery as for 600-cell-Full.
+  - Jumbling sessions are separate from 600-cell-Full sessions. Path B migration (the 0.4 importer) is unchanged, because 0.4 has no jumbling state.
+- **Command layer.**
+  - New command-table rows: jumble twist with angle and axis input, grip survey, blocked-grip and certificate inspection, preview scrubbing, checkpoint and handoff to the retained solver.
+  - The human-solve boundary applies unchanged: the program never chooses or executes a twist by itself, and a handoff needs a witnessed checkpoint.
+  - Pointing targets for H-05: grips, pieces and certificate points.
+- **View model.** Per-piece transforms and lattice flags with revision numbers, the admissible and blocked grip sets, and the certificate points, as the source of truth for the renderer data contract of section 3.
+- **Correctness evidence.** Differential runs against J1 on each fixture; negative tests for stale revisions, non-representable input, menu violations and the exact negative control of J1 acceptance item 9; replay determinism; and round trips through the session store.
+- **Re-acceptance.** A change to geometry, a menu or the contract re-runs the differential evidence for every affected fixture.
+- **Platform.** The engine, session store, command layer and view model stay free of Windows-only code (briefing section 2); their checks run headless.
 
 ## 4. Contract amendments (to be written into the contract after the re-check)
 
@@ -182,7 +210,7 @@ File: `packets/renderer/E-2.4-0J-jumbling.md`, in the seven-part format. Planned
 - **New files:**
   - `research/jumbling/sim/`, `viewer/`, `explorer/`, `theory-problem.md`;
   - this plan;
-  - `packets/renderer/E-2.4-0J-jumbling.md` (at mid-stage);
+  - `packets/renderer/E-2.4-0J-jumbling.md` and `packets/engineering/ENG-0J-jumbling-backend.md` (at mid-stage);
   - tests under `tests/test_jumbling_*.py`.
 - **Read-only:**
   - `assets/model.npz`, `assets/manifest.json` and every critical path (`core.py` and the others);
@@ -208,3 +236,9 @@ Finding Q2 holds: a filtered sign test with exact fallback keeps the containment
 | J-Q7 | major | adopt | J3 and the contract: L defined by occupation of retained surface chambers; solved ∈ L as a control |
 | J-Q7-SCOPE | minor | adopt | J1 acceptance item 9 and J3 item 3 use the exact negative control; J3 items 4 and 5 sharpened |
 | J-Q8 | major | adopt | J1 review assigned to Astra; mid-stage defined by an audited acceptance table |
+
+Scoped re-check `20261009T202958Z-6200127b`: the eight findings above are resolved.
+
+| Finding | Severity | Reply | Change |
+| --- | --- | --- | --- |
+| JR1 | major | adopt | Theory problem item 3, grip closure: the A4 control stays within the 600 poles; the explorer's growth is reported per tested menu and depth only, not as unbounded; unbounded growth needs a separate argument |
