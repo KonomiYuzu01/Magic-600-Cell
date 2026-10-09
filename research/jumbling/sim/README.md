@@ -53,11 +53,12 @@ st.undo()                                             # exact inverse
   - Plane rotations use the witness construction for any s ∈ Q(√5).
   - Cayley rotations (A1) use R = I + 2(W + W²)/(1 + |ω|²) in the exact frame u₁ = (−n₁, n₀, −n₃, n₂), u₂ = (−n₂, n₃, n₀, −n₁), u₃ = (−n₃, −n₂, n₁, n₀). As quaternions these are i·n, j·n and k·n.
   - Half-turns use `half_turn(ctx, c, axis)`, with three exact cap-frame coordinates, and H_u = 2(P_c + P_u) − I. The axis must be nonzero. The result is its own inverse; journal family `half_turn` records its exact axis.
-  - `cayley_axis_angle` maps a numerical axis and angle request to the global Frobenius minimum with numerator bound `max_num` (N, default 16) and common denominator bound `max_den` (D, default 1000). Within 1° of a half-turn it also searches exact half-turn axes. It reports the realised cap-frame axis, angle and distance. Ties within 10⁻¹² go to the smaller denominator, then the lexicographically smaller numerator triple. The identity may be the minimum for small requests. See the pruning proof below.
+  - A supplied K⁺ index is checked against the exact twist matrix before it can select the retained composition path. Omitted indices are derived exactly; −1 is valid only for a matrix outside K⁺.
+  - `cayley_axis_angle` maps a numerical axis and angle request to the global Frobenius minimum with numerator bound `max_num` (N, default 16) and common denominator bound `max_den` (D, default 1000). Within 1° of a half-turn it also searches exact half-turn axes. It reports the realised cap-frame axis, angle and distance. Only exactly equal distances are ties; they go to the smaller denominator, then the lexicographically smaller numerator triple. The identity may be the minimum for small requests. See the pruning and screening proof below.
   - A plane rotation with parameter s about pole d is exactly the Cayley rotation with ω = −s(uᵢ · n_d). The tests check this.
   - `TwistMenu` transports a base-cap menu by the retained frames, Λ_c = F_c Λ₀ F_c⁻¹. `close=True` adds all A4₀ elements, inverses and A4₀ conjugates. `close=False`, including record loading, refuses any missing requirement. Records carry `inverse_closed`, `a4_invariant`, `contains_a4` and a SHA-256 identity over the sorted canonical exact matrices, independent of labels and input order. `a4(ctx)` has 12 elements including identity; `s4(ctx)` has 24, generated exactly by A4₀ and the six Cayley parameters (±1,0,0), (0,±1,0), (0,0,±1) and their products.
   - A `State(menu=...)` rejects twists outside the exact menu as `invalid`. A mapped numerical request with nonzero approximation distance (above 10⁻¹² for float input comparisons) is also refused, even if its nearest candidate belongs to the menu. Passing `menu` to the input map refuses it at construction. Menu matrices themselves are never approximated.
-- **Journal.** Records hold the grip, exact matrix (Q5 entries as `[a, b, d]`), family parameters and moved count. Mapped requests also record N, D and the distance. Replay checks that retained, plane, Cayley and half-turn parameters rebuild the recorded matrix exactly; it never repeats the numerical search. The document carries the model identity (SHA-256 of both asset files as read), menu identity (or null in free mode) and contract revision. Replay requires these to match the supplied context and menu. Legacy documents without identity fields and bare record lists still replay. Undo applies the exact inverse after checking the recorded inside count.
+- **Journal.** Records hold the grip, exact matrix (Q5 entries as `[a, b, d]`), family parameters and moved count. Every Q5 component must be a JSON integer; floats, booleans and strings are refused, including in menu matrices. Mapped requests also record N, D and the distance. Replay checks that retained, plane, Cayley and half-turn parameters rebuild the recorded matrix exactly; it never repeats the numerical search. The document carries the model identity (SHA-256 of both asset files as read), menu identity (or null in free mode) and contract revision. Replay requires these to match the supplied context and menu. Legacy documents without identity fields and bare record lists still replay. Undo applies the exact inverse after checking the recorded inside count.
 - **Checkpoints** (contract section 5). `checkpoint()` requires a lattice configuration and a witness word in the 1,200 generators. Without a supplied word, it derives one from the journal by exact identities only:
   - consecutive twists of one grip merge, (c, g₁)(c, g₂) = (c, g₂g₁), since g₁ keeps every piece on its side of the cut;
   - identity twists drop.
@@ -68,10 +69,10 @@ st.undo()                                             # exact inverse
 
 ## A1 input-search proof
 
-Write the requested unit quaternion as (c,v). For a bounded integer numerator triple p and denominator d, the Cayley quaternion is (d,p)/√(d²+C), where B = v·p and C = p·p. The squared Frobenius distance is
+Treat each component of the requested float quaternion t = (c,v) as the exact rational `Fraction(float)`. Its norm need not be exactly one after float normalisation. For a bounded integer numerator triple p and denominator d, the Cayley quaternion is (d,p)/√(d²+C), where B = v·p and C = p·p. The squared Frobenius distance to the normalised target is
 
 ```text
-8 (1 − (c d + B)² / (d² + C)).
+8 (1 − (c d + B)² / ((d² + C) |t|²)).
 ```
 
 The input map enumerates every p ∈ [−N,N]³. For each p it maximises f(d) = (c d + B)²/(d²+C) on the integers 1…D. Its derivative is
@@ -80,11 +81,13 @@ The input map enumerates every p ∈ [−N,N]³. For each p it maximises f(d) = 
 f'(d) = 2 (c d + B) (c C − B d) / (d² + C)².
 ```
 
-The zero c d + B = 0 is a minimum of f, so cannot improve the rotation distance. The only possible interior maximum is d = c C/B. Consequently the endpoints and the floor/ceiling of that stationary point, clipped to 1…D, contain a minimum for every p. B = 0 and p = 0 give monotone or constant cases covered by the endpoints. This eliminates denominators without eliminating any possible improvement; it does not round the desired Cayley parameter independently in each coordinate.
+The zero c d + B = 0 is a minimum of f, so cannot improve the rotation distance. The only possible interior maximum is d = c C/B. Consequently the endpoints and the floor/ceiling of that stationary point, clipped to 1…D, contain a minimum for every p. B = 0 and p = 0 give monotone or constant cases covered by the endpoints. The floor and ceiling are calculated with integer arithmetic using a common denominator for the rational target components. Thus float error cannot omit a denominator candidate. This eliminates denominators without eliminating any possible improvement; it does not round the desired Cayley parameter independently in each coordinate.
 
-A second pass uses the global minimum plus 10⁻¹² and finds the smallest acceptable denominator for every tied p. It checks d = 1 first, then binary-searches between 1 and a minimising denominator. If the first endpoint is unacceptable, this interval has a single false-to-true crossing: at positive d the distance has either its sole interior minimum, or a maximum where the quaternion dot product vanishes, followed by a decreasing branch. The final comparison is (denominator, numerator triple). An identical key across the two families uses Cayley first for determinism.
+Float distances screen the resulting candidates with margin **10⁻¹²**, which is not a tie tolerance. For N,D ≤ 2⁵³, all candidate integers convert exactly, and their nonzero four-vector norms are in [1,2⁵⁴], so their squares and sums stay in the normal binary64 range. With u = 2⁻⁵³, normalising either four-vector contributes at most 12u in Euclidean norm (for the float target this bounds its deviation from its exactly normalised rational vector). Adding or subtracting them contributes at most 2u, and evaluating either resulting norm contributes at most 12u in absolute error. Each norm in √2‖q−t‖‖q+t‖ therefore has error at most 38u and magnitude at most 2 plus those errors. Product and √2 rounding leave total absolute distance error below **E = 256u + 2⁻⁵⁰⁰**. The absolute term conservatively covers underflow when a squared difference is tiny.
 
-For half-turns the quaternion is (0,p)/√C. Scaling an axis does not change its rotation, so every p/d has the same candidate at denominator 1; all nonzero bounded p are enumerated. These candidates are included only when the requested rotation angle is within 1° of π, modulo a full turn. The stable float distance √2‖q−q_target‖‖q+q_target‖ avoids cancellation near identical rotations. Independent tests enumerate **every** denominator and compare 3×3 Frobenius distances with the selected minimum and tie order.
+The float distance of any exact winner is at most 2E above the smallest computed distance: both the winner's distance and the computed minimum can err by E. Since 2E < 5.7·10⁻¹⁴ < 10⁻¹², no exact winner can fall outside the finalist margin. Outside N,D ≤ 2⁵³, screening is disabled and every pruned candidate is compared exactly. Finalists maximise the rational squared dot product above; only equality of those rational scores invokes (denominator, numerator triple) ordering. Constant cases include denominator 1, and adjacent denominators of an interior maximum are both present, so exact denominator ties are retained. An identical key across the two families uses Cayley first for determinism. Display distances are converted from the winner's exact squared distance.
+
+For half-turns the quaternion is (0,p)/√C, so the exact score uses d = 0. Scaling an axis does not change its rotation, so every p/d has the same candidate at denominator 1; all nonzero bounded p are enumerated. These candidates are included only when the requested rotation angle is within 1° of π, modulo a full turn. The stable float distance √2‖q−q_target‖‖q+q_target‖ avoids cancellation near identical rotations. Independent small-box tests enumerate **every** denominator, compare 3×3 Frobenius distances with the selected minimum, and check tie order using rational quaternion scores. Requests just above and below 45° distinguish unequal near-ties.
 
 This numerical input map chooses a nearby exact rotation. It does not claim that an arbitrary float matrix is field-valued. An exact request without a Q(√5) representation, such as a seventh turn, is represented by `UnrepresentableTwist` and rejected without changing state. Exact menu members are supplied as exact twists; a menu request is never rounded to another member.
 
@@ -96,7 +99,7 @@ Coverage is either the piece's complete exact vertex set (with its representativ
 
 ## Acceptance results (`acceptance.json`)
 
-The JSON carries the measured counts and pass flags for the current run. The original 22 flags remain, with these nine additional flags covering the amended contract:
+The JSON carries the measured counts and pass flags for the current run. The original 31 flags remain, with a further flag for the J1 review fixes:
 
 | Flag | Coverage |
 | --- | --- |
@@ -109,6 +112,7 @@ The JSON carries the measured counts and pass flags for the current run. The ori
 | `A1_input_map_and_half_turns` | Independent exhaustive small-box minimum and tie-order checks, half-turn record reconstruction, recorded N/D/distance, explicit nonrepresentable rejection and refusal of approximated menu requests |
 | `A2_certificate_fields` | Every recorded float decision on E2 grip 13 and E3 grip 0 has the required exact inputs, identities, coverage and versions; each finite enclosure excludes zero and agrees with the exact sign. Fallbacks are also recorded and checked |
 | `identity_in_journal` | Asset byte hashes, menu hash and contract revision recorded; mismatches refused; matching and legacy journals replay |
+| `review_fixes_F1_to_F4` | Mismatched K⁺ indices refused without change; 30 plane twists classified/surveyed with checked certificates and filtering off/on; huge Cayley parameter journal/replay/undo; exact near-ties and tie order in A1; non-integer exact JSON components refused in every reader |
 
 The retained flags still cover the exact K⁺/region/frame build, all generator actions and inverses, E0–E4, fresh independent double descriptions and literal certificate checks, conservative rejection, 20 seeded mixed-sequence replay/inverse/undo trials, supplied checkpoint witnesses, and the unfiltered/filtered sign comparison. The `A1_cayley_twists` flag now requires half-turn acceptance, as amended by A1.
 
@@ -125,6 +129,8 @@ The retained flags still cover the exact K⁺/region/frame build, all generator 
   - the float cross-check in `accept.py`;
   - the axis/angle search, which only proposes a rational parameter whose exact rotation is then built and checked;
   - displayed angles and h values.
+
+Display conversion keeps coefficient/denominator ratios as `Fraction` until the final binary64 conversion. Opposite-sign Q5 coefficients use (a²−5b²)/(d(a−b√5)) to avoid cancellation. Large coefficients alone never make display conversion fail; finite underflow returns zero, and a non-finite final value returns null. This helper is separate from the A2 filter conversion and never determines an exact sign or state change.
 
 ## Limits and open points
 

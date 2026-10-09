@@ -37,7 +37,8 @@ The test decides sign(S) = sign(S^) whenever |S^| > 2^-48 B^ + 2^-1000; the thre
 31.9u B^, which exceeds the error bound. Inputs outside the window, or not convertible to finite
 floats, are never filtered: their signs come from the exact kernel.
 """
-from math import gcd
+from fractions import Fraction
+from math import gcd, isfinite
 
 import numpy as np
 
@@ -58,14 +59,22 @@ def lcm(a, b):
 
 
 def q5_float(x):
-    """Float value of a Q5 number without cancellation in a + b sqrt5 (display only)."""
+    """Overflow-safe, cancellation-free display value; None only for a non-finite result.
+
+    Keep ratios rational until the final conversion, so large coefficients/denominators do
+    not overflow on their own. Opposite signs use the conjugate, whose denominator cannot
+    cancel. This approximation is never used by the exact kernel or the A2 filter.
+    """
     a, b, d = x.a, x.b, x.d
+    root = Fraction(S5)
     try:
         if a == 0 or b == 0 or (a > 0) == (b > 0):
-            return (a + b * S5) / d
-        return (a * a - 5 * b * b) / (d * (a - b * S5))
+            value = float((Fraction(a) + b * root) / d)
+        else:
+            value = float(Fraction(a * a - 5 * b * b) / (d * (a - b * root)))
     except OverflowError:
-        return float(x)
+        return None
+    return value if isfinite(value) else None
 
 
 def sign5(x, y):

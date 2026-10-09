@@ -11,7 +11,7 @@
   "cpus": 4,
   "workers": 4
  },
- "context_build_s": 4.1,
+ "context_build_s": 3.4,
  "build": {
   "kplus": {
    "order": 7200,
@@ -233,7 +233,7 @@
    "base_twists_max_float_deviation_from_exact_H0_T0": 1.2335811384723962e-16,
    "slot_layout_frame_covariant": "259800/259800"
   },
-  "runtime_s": 3.1
+  "runtime_s": 3.5
  },
  "generators": {
   "combinatorial_all_1200": {
@@ -277,7 +277,7 @@
    "labelled_stickers_per_configuration": 259800
   },
   "proof_note": "Labelled agreement is proved combinatorially: each generator matrix is an exact K+ element whose pole permutation is rotperms[k]; a K+ element maps the chamber of signature M onto the chamber of signature r(M) and each host facet patch onto the patch on the image facet, so perm_k(signature(src)) = signature(dst) proves that src lands exactly on dst, and the sticker and frame identities follow from the exact facet map and the frame-covariant slot layout. No floating-point geometry is used.",
-  "runtime_s": 255.9
+  "runtime_s": 83.5
  },
  "witness": {
   "c": 0,
@@ -374,7 +374,7 @@
    "unchanged": true,
    "straddling_piece": 0,
    "h_below": -0.014874056242417801,
-   "h_above": 0.013443699590311371,
+   "h_above": 0.01344369959031136,
    "matches_witness_certificate": true
   },
   "E3_apply": {
@@ -7269,7 +7269,7 @@
     }
    }
   },
-  "runtime_s": 2.8
+  "runtime_s": 2.7
  },
  "independent_certification": {
   "E2": {
@@ -7306,7 +7306,7 @@
    "straddles": 0
   },
   "method": "Blocked: each straddle certificate is re-checked from its JSON against all 1,200 posed constraints in plain Q5. Unblocked and blocked: all 600 statuses are recomputed from fresh double descriptions of each off-lattice piece (no K+ transport, no integer kernel). A float cross-check with a 1e-9 band is a third, non-certifying comparison.",
-  "runtime_s": 98.2
+  "runtime_s": 44.0
  },
  "uncertain_and_rejection": {
   "E0_control_regions": {
@@ -7333,7 +7333,7 @@
    "grips_surveyed": 120,
    "blocked": 54,
    "smallest_certified_abs_h": 1.5488e-17,
-   "largest_of_smaller_sides": 1.478972406262352e-09,
+   "largest_of_smaller_sides": 1.4789724062623518e-09,
    "both_sides_shallow": 12,
    "blocked_twist_rejected": "blocked",
    "unchanged": true
@@ -7355,7 +7355,7 @@
    "does_not_fix_grip": "rejected: matrix does not fix the pole of the grip",
    "tampered_record": "rejected: plane record: parameter does not reproduce the matrix"
   },
-  "runtime_s": 0.6
+  "runtime_s": 0.5
  },
  "round_trips": {
   "sequences": [
@@ -7377,7 +7377,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "f0cac0d4b891c682",
-    "runtime_s": 5.1
+    "runtime_s": 1.6
    },
    {
     "seed_index": 1,
@@ -7398,7 +7398,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "ac70d16526872b25",
-    "runtime_s": 4.8
+    "runtime_s": 1.3
    },
    {
     "seed_index": 2,
@@ -7419,7 +7419,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "3d50c0a7f5179ebc",
-    "runtime_s": 9.1
+    "runtime_s": 2.7
    },
    {
     "seed_index": 3,
@@ -7440,7 +7440,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "7a86aa92a4d0be36",
-    "runtime_s": 5.3
+    "runtime_s": 1.7
    },
    {
     "seed_index": 4,
@@ -7461,7 +7461,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "b6a65e7c4b603c74",
-    "runtime_s": 5.3
+    "runtime_s": 1.2
    },
    {
     "seed_index": 5,
@@ -7482,7 +7482,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "7884f7d5ce6e98d2",
-    "runtime_s": 8.2
+    "runtime_s": 2.3
    },
    {
     "seed_index": 6,
@@ -7503,7 +7503,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "a530c3faf7059f9c",
-    "runtime_s": 6.4
+    "runtime_s": 2.0
    },
    {
     "seed_index": 7,
@@ -7524,7 +7524,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "47635a9e08598d92",
-    "runtime_s": 4.8
+    "runtime_s": 1.8
    },
    {
     "seed_index": 8,
@@ -7545,7 +7545,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "44db46f1f96ea0e3",
-    "runtime_s": 5.3
+    "runtime_s": 2.1
    },
    {
     "seed_index": 9,
@@ -7566,7 +7566,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "2b33a1309fde7dc5",
-    "runtime_s": 2.5
+    "runtime_s": 1.0
    },
    {
     "seed_index": 10,
@@ -7587,7 +7587,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "1379d0be6d07d53d",
-    "runtime_s": 5.9
+    "runtime_s": 2.6
    },
    {
     "seed_index": 11,
@@ -7607,7 +7607,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "4798edb3f3a03c19",
-    "runtime_s": 2.5
+    "runtime_s": 1.1
    },
    {
     "seed_index": 12,
@@ -7628,7 +7628,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "38416b32a5c05bca",
-    "runtime_s": 2.6
+    "runtime_s": 1.2
    },
    {
     "seed_index": 13,
@@ -7649,7 +7649,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "4cf3ee5e5e15b5b8",
-    "runtime_s": 4.1
+    "runtime_s": 1.9
    },
    {
     "seed_index": 14,
@@ -7670,7 +7670,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "d1e150ec5437b565",
-    "runtime_s": 2.1
+    "runtime_s": 1.0
    },
    {
     "seed_index": 15,
@@ -7691,7 +7691,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "1c599fee0d3babf0",
-    "runtime_s": 3.8
+    "runtime_s": 1.5
    },
    {
     "seed_index": 16,
@@ -7712,7 +7712,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "5f6c3f9fd8d324b2",
-    "runtime_s": 3.5
+    "runtime_s": 1.4
    },
    {
     "seed_index": 17,
@@ -7733,7 +7733,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "07f86ae165b5fbf0",
-    "runtime_s": 2.1
+    "runtime_s": 0.6
    },
    {
     "seed_index": 18,
@@ -7754,7 +7754,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "6e1d7d51c7f8b411",
-    "runtime_s": 3.4
+    "runtime_s": 2.0
    },
    {
     "seed_index": 19,
@@ -7775,7 +7775,7 @@
     "inverse_sequence_returns_to_solved": true,
     "undo_returns_to_solved_bytes": true,
     "final_digest": "2260500abdf0ac73",
-    "runtime_s": 1.8
+    "runtime_s": 0.8
    }
   ],
   "count": 20,
@@ -7789,7 +7789,7 @@
   "total_rejections": {
    "blocked": 391
   },
-  "runtime_s": 23.4
+  "runtime_s": 8.8
  },
  "grouped_per_piece": {
   "seed": 20261026,
@@ -9763,7 +9763,7 @@
        "requested": {
         "D": 64,
         "N": 16,
-        "distance": 0.024322878626835874,
+        "distance": 0.02432287862683587,
         "requested_angle_deg": 3.8906686045426375,
         "requested_axis": [
          0.8250705855532259,
@@ -9890,7 +9890,7 @@
        "requested": {
         "D": 64,
         "N": 16,
-        "distance": 0.007306170066420711,
+        "distance": 0.00730617006642074,
         "requested_angle_deg": 42.84509605716821,
         "requested_axis": [
          0.4207240208108803,
@@ -10017,7 +10017,7 @@
        "requested": {
         "D": 64,
         "N": 16,
-        "distance": 0.01643941454176568,
+        "distance": 0.016439414541765687,
         "requested_angle_deg": 47.85182156719857,
         "requested_axis": [
          -0.9284604066878688,
@@ -10540,7 +10540,7 @@
        "requested": {
         "D": 64,
         "N": 16,
-        "distance": 0.021254107258490446,
+        "distance": 0.021254107258490456,
         "requested_angle_deg": 51.962061840043475,
         "requested_axis": [
          0.19545912931213763,
@@ -10762,7 +10762,7 @@
     ]
    }
   },
-  "runtime_s": 58.7
+  "runtime_s": 21.8
  },
  "checkpoints": {
   "retained_word": {
@@ -10829,7 +10829,7 @@
    "checkpoint": true,
    "witness_word": []
   },
-  "runtime_s": 3.0
+  "runtime_s": 2.8
  },
  "filter_A2": {
   "default_off": true,
@@ -10869,7 +10869,7 @@
    "vertex_signs_left_to_exact": 1148
   },
   "bound": "sign(S) = sign(S^) when |S^| > 2^-48 (sum m(y_i) m(x_i) + m(kappa)) + 2^-1000; derivation in kernel.py",
-  "runtime_s": 21.9
+  "runtime_s": 22.0
  },
  "twists_menus_frames": {
   "plane_equals_cayley_and_inverse": "20/20",
@@ -10899,13 +10899,13 @@
       1
      ]
     ],
-    "realised_deg": 10.001289195116867,
+    "realised_deg": 10.001289195116868,
     "axis_error_deg": 0.0,
-    "rotation_error_deg": 0.0012891951168669093,
+    "rotation_error_deg": 0.0012891951168667508,
     "retained": false,
     "N": 16,
     "D": 1000,
-    "distance": 3.1820794380912474e-05,
+    "distance": 3.1820794380908564e-05,
     "realised_axis": [
      1.0,
      0.0,
@@ -10939,11 +10939,11 @@
     ],
     "realised_deg": 17.483434886011924,
     "axis_error_deg": 0.0,
-    "rotation_error_deg": 0.01656511398807729,
+    "rotation_error_deg": 0.016565113988077185,
     "retained": false,
     "N": 16,
     "D": 100,
-    "distance": 0.0004088714558330649,
+    "distance": 0.00040887145583306226,
     "realised_axis": [
      0.2672612419124244,
      0.5345224838248488,
@@ -10977,11 +10977,11 @@
     ],
     "realised_deg": 72.37255861806287,
     "axis_error_deg": 1.1612843110724953,
-    "rotation_error_deg": 1.418021424304379,
+    "rotation_error_deg": 1.4180214243043812,
     "retained": false,
     "N": 16,
     "D": 64,
-    "distance": 0.03499968002258479,
+    "distance": 0.03499968002258485,
     "realised_axis": [
      0.31068488300060004,
      -0.18641092980036,
@@ -11015,11 +11015,11 @@
     ],
     "realised_deg": 119.99999999999999,
     "axis_error_deg": 0.0,
-    "rotation_error_deg": 1.2722218725854067e-14,
+    "rotation_error_deg": 1.1017764609091714e-14,
     "retained": true,
     "N": 16,
     "D": 1000,
-    "distance": 3.1401849173675503e-16,
+    "distance": 2.7194799110210365e-16,
     "realised_axis": [
      0.5773502691896258,
      0.5773502691896258,
@@ -11053,11 +11053,11 @@
     ],
     "realised_deg": 36.00832321182676,
     "axis_error_deg": 0.0,
-    "rotation_error_deg": 0.008323211826764898,
+    "rotation_error_deg": 0.008323211826763993,
     "retained": false,
     "N": 16,
     "D": 10000,
-    "distance": 0.00020543919879609384,
+    "distance": 0.00020543919879607148,
     "realised_axis": [
      0.0,
      0.0,
@@ -11082,7 +11082,7 @@
    "stickers_checked": 662,
    "frame_equals_pose_times_cell_frame": 662
   },
-  "runtime_s": 6.2
+  "runtime_s": 5.9
  },
  "menu_controls": {
   "transporters_per_cap": 12,
@@ -11114,7 +11114,7 @@
    "all_transports_equal": "600/600",
    "record_round_trip": true
   },
-  "runtime_s": 18.2
+  "runtime_s": 5.7
  },
  "negative_control": {
   "g": {
@@ -15524,10 +15524,10 @@
       -0.4082482904638631
      ],
      "realised_angle_deg": 180.0,
-     "distance": 0.5346104016617202,
-     "minimum_distance": 0.5346104016617202,
+     "distance": 0.5346104016617201,
+     "minimum_distance": 0.5346104016617201,
      "axis_error_deg": 10.893394649130864,
-     "rotation_error_deg": 21.790416594999094,
+     "rotation_error_deg": 21.79041659499909,
      "exact_angle_check_deg": 180.0
     }
    },
@@ -15612,8 +15612,8 @@
       0.0
      ],
      "realised_angle_deg": 180.0,
-     "distance": 1.7319121124709868e-16,
-     "minimum_distance": 1.7319121124709868e-16,
+     "distance": 1.7319121124709866e-16,
+     "minimum_distance": 1.7319121124709866e-16,
      "axis_error_deg": 0.0,
      "rotation_error_deg": 7.016709298534876e-15,
      "exact_angle_check_deg": 180.0
@@ -15686,6 +15686,13 @@
   "legacy_document_replays": true,
   "runtime_s": 0.1
  },
+ "review_fixes_F1_to_F4": {
+  "F1": true,
+  "F2": true,
+  "F3": true,
+  "F4": true,
+  "runtime_s": 0.8
+ },
  "summary": {
   "build_kplus_exact": true,
   "build_kplus_orbits_are_unions_of_g_orbits": true,
@@ -15717,7 +15724,8 @@
   "9_negative_control": true,
   "A1_input_map_and_half_turns": true,
   "A2_certificate_fields": true,
-  "identity_in_journal": true
+  "identity_in_journal": true,
+  "review_fixes_F1_to_F4": true
  },
- "runtime_s": 496.8
+ "runtime_s": 206.0
 }

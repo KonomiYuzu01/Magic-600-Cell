@@ -32,6 +32,7 @@ import random
 import sys
 import time
 from collections import Counter
+from fractions import Fraction
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -42,9 +43,10 @@ sys.path.insert(0, str(HERE.parent))
 import sim  # noqa: E402
 import witness as W  # noqa: E402
 from exact import ONE, ZERO, Q5, dot, matmul, matvec, transpose  # noqa: E402
-from sim.kernel import Evaluator, filtered_signs, int_form, lcm, pullback_form  # noqa: E402
+from sim.kernel import Evaluator, filtered_signs, int_form, lcm, pullback_form, q5_float  # noqa: E402
 from sim.kplus import generator_word_matrix, matrix_from_json, matrix_json, q5_from_json, to_tuple  # noqa: E402
 from sim.model import CELL_SLOTS, CONTRACT_REVISION, NP, NS  # noqa: E402
+from sim.twists import _input_quaternion, nearest_parameter  # noqa: E402
 
 OUT = HERE / 'acceptance.json'
 WORKERS = 4
@@ -100,10 +102,10 @@ def section_build(ctx):
                                                    'rep_host_patches_match_retained', 'rep_vertex_counts')}
     res['regions'].update(reg.certify())
     # retained frames: exact K+ elements; float frames agree
-    ferr = max(float(np.abs(data.frames[c] - np.array([[float(x) for x in r] for r in kp.matrix(int(kp.frame_idx[c]))])).max())
+    ferr = max(float(np.abs(data.frames[c] - np.array([[q5_float(x) for x in r] for r in kp.matrix(int(kp.frame_idx[c]))])).max())
                for c in range(600))
     fpole = all(int(kp.perms[int(kp.frame_idx[c])][0]) == c for c in range(600))
-    berr = max(float(np.abs(data.base_twists[t] - np.array([[float(x) for x in r] for r in kp.matrix(int(kp.gen_idx[t]))])).max())
+    berr = max(float(np.abs(data.base_twists[t] - np.array([[q5_float(x) for x in r] for r in kp.matrix(int(kp.gen_idx[t]))])).max())
                for t in range(2))
     res['frames'] = {'frames_exact_in_kplus': 600, 'frame_c_maps_pole_0_to_c': fpole,
                      'max_float_frame_deviation': ferr, 'frame_0_is_identity': int(kp.frame_idx[0]) == 0,
@@ -418,9 +420,9 @@ def float_survey(posed, band=1e-9):
     pts, owner = [], []
     for i, (p, vs) in enumerate(posed.items()):
         for v in vs:
-            pts.append([float(x) for x in v])
+            pts.append([q5_float(x) for x in v])
             owner.append(i)
-    pts = np.array(pts)
+    pts = np.array(pts, dtype=float)  # unavailable display values become NaN in this float-only cross-check
     owner = np.array(owner)
     h = pts @ nf.T / nn - 121 / 125
     starts = np.flatnonzero(np.r_[True, np.diff(owner) != 0])
@@ -1062,24 +1064,32 @@ def section_input_map(ctx):
     for axis, deg, n, dmax in (([1, 2, 3], 67, 2, 5), ([1, 3, 2], 179.6, 2, 4),
                                ([1, 2, -3], -179.7, 2, 3), ([1, 0, 0], 180, 2, 7),
                                ([1, 2, 3], 0, 2, 4)):
+        quaternion = [Fraction(float(x)) for x in _input_quaternion(axis, deg)[1]]
+        norm = sum(x * x for x in quaternion)
         unit = np.array(axis, float) / np.linalg.norm(axis)
         x, y, z = unit
         w = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
         theta = math.radians(deg)
         target = np.eye(3) + math.sin(theta) * w + (1 - math.cos(theta)) * (w @ w)
         candidates = []
+        exact_candidates = []
         for nums in itertools.product(range(-n, n + 1), repeat=3):
             p = np.array(nums, float)
+            b = sum(x * t for x, t in zip(nums, quaternion[1:]))
+            c = sum(x * x for x in nums)
             for den in range(1, dmax + 1):
                 x, y, z = p / den
                 w = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
                 rotation = np.eye(3) + 2 * (w + w @ w) / (1 + (p @ p) / (den * den))
                 candidates.append((float(np.linalg.norm(rotation - target)), den, nums, 'cayley'))
+                exact_candidates.append((-(den * quaternion[0] + b) ** 2 / ((den * den + c) * norm),
+                                         den, nums, 'cayley'))
             if abs(abs(math.remainder(deg, 360)) - 180) <= 1 and np.any(p):
                 rotation = 2 * np.outer(p, p) / (p @ p) - np.eye(3)
                 candidates.append((float(np.linalg.norm(rotation - target)), 1, nums, 'half_turn'))
+                exact_candidates.append((-b * b / (c * norm), 1, nums, 'half_turn'))
         minimum = min(r[0] for r in candidates)
-        chosen = min((den, nums, fam) for dist, den, nums, fam in candidates if dist <= minimum + 1e-12)
+        chosen = min(exact_candidates)[1:]
         tw, report = sim.cayley_axis_angle(ctx, 7, axis, deg, max_num=n, max_den=dmax)
         rows.append({'axis': axis, 'angle_deg': deg, 'N': n, 'D': dmax,
                      'global_minimum_equal': abs(report['minimum_distance'] - minimum) < 1e-12,
@@ -1119,6 +1129,86 @@ def section_journal_identity(ctx):
             'identity_fields_recorded': all(field in doc for field in refused), 'mismatches_refused': refused,
             'matching_identities_replay': sim.State.replay(st.journal_json(), ctx, menu=menu).snapshot() == st.snapshot(),
             'legacy_document_replays': sim.State.replay(legacy, ctx).snapshot() == st.snapshot()}
+
+
+def section_review_fixes(ctx):
+    """The adopted J1 F1-F4 counterexamples, on fresh synthetic states."""
+    def refused(fn, error=ValueError):
+        try:
+            fn()
+        except error:
+            return True
+        return False
+
+    kp = ctx.kplus
+    index_cases = []
+    for menu, index in ((None, int(kp.gen_idx[26])), (sim.TwistMenu.a4(ctx), 3)):
+        st = sim.State(ctx, menu=menu)
+        before = st.snapshot()
+        rejected = refused(lambda: st.apply(sim.Twist(ctx, 0, kp.matrix(0), kidx=index)), sim.TwistError)
+        index_cases.append(rejected and st.snapshot() == before)
+    st = sim.State(ctx)
+    generator = sim.generator(ctx, 0)
+    matching = st.apply(sim.Twist(ctx, 0, generator.matrix, kidx=generator.kidx)).applied
+    matching &= bool(np.array_equal(st.lattice_stickers()['labels'], ref_labels([1])))
+
+    st = sim.State(ctx)
+    plane = sim.plane(ctx, 0, 13, degrees=10)
+    applied = all(st.apply(plane).applied for _ in range(30))
+    before = st.snapshot()
+    certificate_checks = []
+    for filtered in (False, True):
+        st.filtered = filtered
+        cl = st.classify(1)
+        row = st.survey([1])[1]
+        certificate_checks.append(cl.status == row['status'] == 'blocked'
+                                  and verify_certificate(ctx, st, cl.straddle)
+                                  and verify_certificate(ctx, st, row['certificate'])
+                                  and all(math.isfinite(cert[key]) for cert in (cl.straddle, row['certificate'])
+                                          for key in ('h_below_float', 'h_above_float'))
+                                  and st.snapshot() == before)
+    st = sim.State(ctx)
+    solved = st.snapshot()
+    cayley = sim.cayley(ctx, 0, [Q5(10 ** 160 + 1, 0, 10 ** 160), 0, 0])
+    large_applied = st.apply(cayley).applied
+    replay = sim.State.replay(st.journal_json(), ctx)
+    large_replayed = replay.snapshot() == st.snapshot()
+    for state in (st, replay):
+        state.undo()
+    large_undone = st.snapshot() == replay.snapshot() == solved
+
+    requests = [(45.00000000002, [1, 0, 0]), (45.00000000001, [1, 0, 0]),
+                (44.99999999998, [0, 0, 0]), (44.99999999999, [0, 0, 0])]
+    input_checks = [nearest_parameter([1, 0, 0], deg, max_den=1, max_num=1)[:2] == (num, 1)
+                    for deg, num in requests]
+    ties = (nearest_parameter([1, 2, 3], 0, max_den=7, max_num=2)[:2] == ([0, 0, 0], 1)
+            and nearest_parameter([1, 0, 0], 180, max_den=7, max_num=2)[:2] == ([-2, 0, 0], 1))
+
+    st = sim.State(ctx)
+    st.apply(generator)
+    doc = json.loads(st.journal_json())
+    doc['records'][0]['matrix'][0][0] = [1, 1, 4.25]
+    corrupted_matrix = refused(lambda: sim.State.replay(json.dumps(doc), ctx))
+    records = [(plane.record(), 's'), (cayley.record(), 'omega'),
+               (sim.half_turn(ctx, 0, [1, 0, 0]).record(), 'axis')]
+    exact_reader_checks = []
+    for invalid in (1.0, 4.25, True, False, '1', None):
+        for component in range(3):
+            value = [1, 1, 4]
+            value[component] = invalid
+            exact_reader_checks.append(refused(lambda: q5_from_json(value)))
+        for rec, field in records:
+            bad = json.loads(json.dumps(rec))
+            value = bad['params'][field] if field == 's' else bad['params'][field][0]
+            value[0] = invalid
+            exact_reader_checks.append(refused(lambda: sim.Twist.from_record(ctx, bad)))
+        menu_record = sim.TwistMenu.a4(ctx).record()
+        menu_record['base'][0]['matrix'][0][0][0] = invalid
+        exact_reader_checks.append(refused(lambda: sim.TwistMenu.from_record(ctx, menu_record)))
+    return {'F1': all(index_cases) and matching,
+            'F2': applied and all(certificate_checks) and large_applied and large_replayed and large_undone,
+            'F3': all(input_checks) and ties,
+            'F4': corrupted_matrix and all(exact_reader_checks)}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1166,6 +1256,8 @@ def main():
     res['input_map_A1'] = timed(section_input_map, ctx)
     print('section journal identity', flush=True)
     res['journal_identity'] = timed(section_journal_identity, ctx)
+    print('section review fixes', flush=True)
+    res['review_fixes_F1_to_F4'] = timed(section_review_fixes, ctx)
     res['summary'] = summarise(res)
     res['runtime_s'] = round(time.time() - t0, 1)
     OUT.write_text(json.dumps(res, indent=1, default=_json_default) + '\n')
@@ -1273,6 +1365,7 @@ def summarise(r):
                                      for row in (fl[name]['certificate_fields'] for name in ('E2', 'E3'))),
         'identity_in_journal': (ji['identity_fields_recorded'] and ji['model_hashes_match_assets']
                                 and all(ji['mismatches_refused'].values()) and ji['matching_identities_replay'] and ji['legacy_document_replays']),
+        'review_fixes_F1_to_F4': all(r['review_fixes_F1_to_F4'][key] for key in ('F1', 'F2', 'F3', 'F4')),
     }
 
 

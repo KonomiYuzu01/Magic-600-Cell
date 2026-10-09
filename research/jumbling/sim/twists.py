@@ -112,6 +112,7 @@ def rotation_distance_deg(w1, w2):
 
 
 INPUT_TIE = 1e-12
+INPUT_SEARCH_MARGIN = 1e-12  # finalist screening only; exact distances determine all ties
 
 
 def _input_quaternion(axis, degrees):
@@ -155,56 +156,65 @@ def nearest_parameter(axis, degrees, max_den, max_num=16):
 
     Enumerate every numerator triple. For each, the squared quaternion dot product as a
     function of d is (c*d + B)^2/(d*d + C). Its maximum on integer 1..D is at an endpoint
-    or next to d=c*C/B. No other denominator can improve it. A second pass finds the first
-    denominator within 1e-12 of the global minimum, so tolerance ties are handled too.
+    or next to d=c*C/B, calculated exactly from Fraction(float) target components. Float
+    distances screen these candidates within a proven margin, then exact squared dot
+    products decide the winner. Only exact equality is a tie.
     Half-turn axes need only denominator 1: scaling an axis leaves its rotation unchanged.
     See README.md for the pruning and tie argument."""
     n, dmax = _input_bounds(max_num, max_den)
     a, target = _input_quaternion(axis, degrees)
     grid = np.arange(-n, n + 1, dtype=np.int64)
     nums = np.stack(np.meshgrid(grid, grid, grid, indexing='ij'), axis=-1).reshape(-1, 3)
-    b = nums @ target[1:]
-    c = np.sum(nums.astype(float) ** 2, axis=1)
-    stationary = np.divide(target[0] * c, b, out=np.ones(len(b)), where=b != 0)
-    stationary = np.clip(stationary, 1, dmax)
-    ds = np.stack((np.ones(len(b)), np.full(len(b), dmax),
-                   np.floor(stationary), np.ceil(stationary)), axis=1)
-    dist = _frobenius(nums, ds, target)
-    arg = np.argmin(dist, axis=1)
-    minima = dist[np.arange(len(nums)), arg]
-    best = float(minima.min())
+    rational_target = [Fraction(float(x)) for x in target]
+    common = max(x.denominator for x in rational_target)  # binary64 denominators are powers of 2
+    t = [x.numerator * (common // x.denominator) for x in rational_target]
+    target_norm = sum(x * x for x in t)
+    exact_nums = nums.astype(object)
+    b = exact_nums @ np.array(t[1:], dtype=object)
+    c = np.sum(exact_nums * exact_nums, axis=1)
+    ds = []
+    for bp, cp in zip(b, c):
+        if bp:
+            floor = (t[0] * cp) // bp
+            ceil = floor + int((t[0] * cp) % bp != 0)
+        else:
+            floor = ceil = 1
+        ds.append((1, dmax, max(1, min(dmax, floor)), max(1, min(dmax, ceil))))
     half = abs(abs(math.remainder(float(degrees), 360.0)) - 180.0) <= 1.0
     nonzero = np.any(nums != 0, axis=1)
-    half_dist = _frobenius(nums[nonzero], np.zeros(int(nonzero.sum())), target) if half and nonzero.any() else np.zeros(0)
-    if half_dist.size:
-        best = min(best, float(half_dist.min()))
-    limit = best + INPUT_TIE
-    tied = np.flatnonzero(minima <= limit)
-    choices = []
-    if tied.size:
-        ns = nums[tied]
-        lo = np.ones(len(tied), dtype=np.int64)
-        hi = ds[tied, arg[tied]].astype(np.int64)
-        # Before the first acceptable denominator the predicate is false, then true:
-        # a positive stationary point is the only distance minimum; if the dot product
-        # crosses zero instead, distance first increases, then decreases. Test d=1 first.
-        first_ok = _frobenius(ns, lo, target) <= limit
-        hi[first_ok] = 1
-        while np.any(lo < hi):
-            mid = (lo + hi) // 2
-            ok = _frobenius(ns, mid, target) <= limit
-            hi = np.where(ok, mid, hi)
-            lo = np.where(ok, lo, mid + 1)
-        for p, d in zip(ns.tolist(), hi.tolist()):
-            choices.append((d, tuple(p), 'cayley'))
-    if half_dist.size:
-        hn = nums[nonzero]
-        choices += [(1, tuple(p), 'half_turn') for p in hn[half_dist <= limit].tolist()]
-    den, num, family = min(choices)  # final identical-key tie is deterministic (Cayley first)
+    if max(n, dmax) <= 2 ** 53:
+        # Integers convert exactly, all norms are in normal range. Each distance's absolute
+        # error is < 256u + 2^-500, u=2^-53. The margin exceeds twice this bound (README).
+        dist = _frobenius(nums, np.array(ds), target)
+        best = float(dist.min())
+        half_dist = (_frobenius(nums[nonzero], np.zeros(int(nonzero.sum())), target)
+                     if half and nonzero.any() else np.zeros(0))
+        if half_dist.size:
+            best = min(best, float(half_dist.min()))
+        choices = {(ds[i][j], tuple(nums[i].tolist()), 'cayley')
+                   for i, j in np.argwhere(dist <= best + INPUT_SEARCH_MARGIN)}
+        if half_dist.size:
+            choices.update((1, tuple(p), 'half_turn')
+                           for p in nums[nonzero][half_dist <= best + INPUT_SEARCH_MARGIN].tolist())
+    else:
+        # Outside the screening proof's range, compare every exact pruned candidate.
+        choices = {(d, tuple(p), 'cayley') for p, dens in zip(nums.tolist(), ds) for d in dens}
+        if half:
+            choices.update((1, tuple(p), 'half_turn') for p in nums[nonzero].tolist())
+
+    def score(choice):
+        den, p, family = choice
+        d = 0 if family == 'half_turn' else den
+        squared_norm = d * d + sum(x * x for x in p)
+        product = d * t[0] + sum(x * y for x, y in zip(p, t[1:]))
+        return Fraction(product * product, squared_norm * target_norm)
+
+    den, num, family = min(choices, key=lambda choice: (-score(choice), choice))
     p = np.array(num, float)
     realised_axis = p / np.linalg.norm(p) if np.any(p) else a.copy()
-    realised = 180.0 if family == 'half_turn' else math.degrees(2 * math.atan(float(np.linalg.norm(p)) / den))
-    distance = float(_frobenius(p[None, :], np.array([0 if family == 'half_turn' else den]), target)[0])
+    realised = (180.0 if family == 'half_turn' else
+                math.degrees(2 * math.atan(float(np.linalg.norm(p)) * float(Fraction(1, den)))))
+    distance = math.sqrt(float(8 * (1 - score((den, num, family)))))
     requested_axis = target[1:] * (1 if target[0] >= 0 else -1)
     rn = np.linalg.norm(requested_axis)
     cosine = float(realised_axis @ requested_axis / rn) if rn else 1.0
@@ -213,7 +223,7 @@ def nearest_parameter(axis, degrees, max_den, max_num=16):
     report = {'requested_angle_deg': float(degrees), 'requested_axis': a.tolist(),
               'N': n, 'D': dmax, 'max_num': n, 'max_den': dmax, 'family': family,
               'numerators': list(num), 'denominator': den, 'realised_axis': realised_axis.tolist(),
-              'realised_angle_deg': realised, 'distance': distance, 'minimum_distance': best,
+              'realised_angle_deg': realised, 'distance': distance, 'minimum_distance': distance,
               'axis_error_deg': math.degrees(math.acos(max(-1.0, min(1.0, cosine)))),
               'rotation_error_deg': math.degrees(2 * math.asin(min(1.0, distance / (2 * math.sqrt(2)))))}
     return list(num), den, report
@@ -239,7 +249,20 @@ class Twist:
         self.matrix = m
         self.family = family
         self.params = dict(params or {})
-        self.kidx = ctx.kplus.index_of_matrix(m) if kidx is None else int(kidx)
+        if kidx is None:
+            self.kidx = ctx.kplus.index_of_matrix(m)
+        else:
+            try:
+                idx = operator.index(kidx)
+            except TypeError as exc:
+                raise TwistError('K+ index must be an integer') from exc
+            if idx == -1:
+                matches = ctx.kplus.index_of_matrix(m) == -1
+            else:
+                matches = 0 <= idx < len(ctx.kplus.perms) and ctx.kplus.matrix(idx) == m
+            if not matches:
+                raise TwistError('K+ index does not match the exact matrix')
+            self.kidx = idx
 
     @property
     def retained(self):
@@ -352,7 +375,7 @@ def plane(ctx, c, d, s=None, degrees=None, max_den=1000):
     if s is None:
         if degrees is None:
             raise TwistError('give s or degrees')
-        gram_m = float(dot(a, a) * dot(b, b) - dot(a, b) * dot(a, b))
+        gram_m = q5_float(dot(a, a) * dot(b, b) - dot(a, b) * dot(a, b))
         sf = Fraction(math.tan(math.radians(degrees) / 2) / math.sqrt(gram_m)).limit_denominator(max_den)
         s = Q5(sf.numerator, 0, sf.denominator)
     s = Q5.of(s)
@@ -390,7 +413,7 @@ def cayley_axis_angle(ctx, c, axis, degrees, max_den=1000, frame='cap', max_num=
         if np.any(v):
             v = v / np.max(np.abs(v))
         n = ctx.data.NF[c]
-        u = np.array([[float(x) for x in row] for row in cap_frame(ctx.data.N[c])])
+        u = np.array([[q5_float(x) for x in row] for row in cap_frame(ctx.data.N[c])])
         axis = (u @ v) / float(np.linalg.norm(n))
     elif frame != 'cap':
         raise TwistError("frame must be 'cap' or 'world'")

@@ -217,10 +217,12 @@ def q5_json(x):
 
 def q5_from_json(v):
     a, b, d = v
+    if any(type(x) is not int for x in (a, b, d)):
+        raise ValueError('Q5 components must be integers (not booleans)')
     if d <= 0:
         raise ValueError('denominator must be positive')
-    x = Q5(int(a), int(b), int(d))
-    if [x.a, x.b, x.d] != [int(a), int(b), int(d)]:
+    x = Q5(a, b, d)
+    if [x.a, x.b, x.d] != [a, b, d]:
         raise ValueError('Q5 record is not in lowest terms')
     return x
 

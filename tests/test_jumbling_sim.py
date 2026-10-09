@@ -13,6 +13,7 @@ import math
 import random
 import sys
 import unittest
+from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
@@ -24,10 +25,11 @@ import sim  # noqa: E402
 import witness as W  # noqa: E402
 from exact import ONE, ZERO, Q5, dot, identity, matmul, matvec, transpose  # noqa: E402
 from sim.kernel import (Evaluator, classify_signs, filtered_signs, float_rows, pullback_form,  # noqa: E402
-                        rows_form, sign5, sign5_vec)
+                        q5_float, rows_form, sign5, sign5_vec)
 from sim.kplus import generator_word_matrix, matrix_from_json, q5_from_json, to_tuple  # noqa: E402
 from sim.model import CELL_SLOTS, CONTRACT_REVISION, NS  # noqa: E402
 from sim.twists import nearest_parameter  # noqa: E402
+from sim.twists import _input_quaternion  # noqa: E402
 
 CTX = None
 PRIM = None
@@ -68,6 +70,8 @@ def negative_control():
 
 def brute_input_map(axis, degrees, n, dmax):
     """Independent exhaustive 3x3-matrix search, including every denominator."""
+    quaternion = [Fraction(float(x)) for x in _input_quaternion(axis, degrees)[1]]
+    norm = sum(x * x for x in quaternion)
     axis = np.array(axis, float)
     axis /= np.linalg.norm(axis)
     x, y, z = axis
@@ -75,23 +79,43 @@ def brute_input_map(axis, degrees, n, dmax):
     theta = math.radians(degrees)
     target = np.eye(3) + math.sin(theta) * cross + (1 - math.cos(theta)) * (cross @ cross)
     rows = []
+    exact_rows = []
     for nums in itertools.product(range(-n, n + 1), repeat=3):
         p = np.array(nums, float)
+        b = sum(x * t for x, t in zip(nums, quaternion[1:]))
+        c = sum(x * x for x in nums)
         for d in range(1, dmax + 1):
             x, y, z = p / d
             w = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
             r = np.eye(3) + 2 * (w + w @ w) / (1 + (p @ p) / (d * d))
             rows.append((float(np.linalg.norm(r - target)), d, nums, 'cayley'))
+            exact_rows.append((-(d * quaternion[0] + b) ** 2 / ((d * d + c) * norm), d, nums, 'cayley'))
         canonical_angle = abs(math.remainder(degrees, 360))
         if abs(canonical_angle - 180) <= 1 and np.any(p):
             r = 2 * np.outer(p, p) / (p @ p) - np.eye(3)
             rows.append((float(np.linalg.norm(r - target)), 1, nums, 'half_turn'))
+            exact_rows.append((-b * b / (c * norm), 1, nums, 'half_turn'))
     best = min(row[0] for row in rows)
-    choice = min((d, nums, family) for dist, d, nums, family in rows if dist <= best + 1e-12)
+    choice = min(exact_rows)[1:]
     return best, choice
 
 
 class KernelTest(unittest.TestCase):
+    def test_display_float_large_coefficients_and_cancellation(self):
+        huge = 10 ** 400
+        self.assertEqual(q5_float(Q5(huge + 1, 0, huge)), 1.0)
+        self.assertAlmostEqual(q5_float(Q5(huge, huge + 1, huge)), 1 + math.sqrt(5))
+        # Pell solutions a^2 - 5 b^2 = 1: the value is tiny despite huge coefficients.
+        a, b = 9, 4
+        for _ in range(9):
+            a, b = a * a + 5 * b * b, 2 * a * b
+        self.assertEqual(a * a - 5 * b * b, 1)
+        self.assertEqual(q5_float(Q5(a, -b)), 0.0)  # finite underflow, not an unavailable value
+        self.assertEqual(q5_float(Q5(a * huge, -b * huge)),
+                         q5_float(Q5(huge, 0, 2 * a)))
+        for value in (Q5(huge), Q5(-huge), Q5(0, huge)):
+            self.assertIsNone(q5_float(value))
+
     def test_sign5_matches_q5(self):
         rng = random.Random(1)
         xs = [(rng.randrange(-10 ** 6, 10 ** 6), rng.randrange(-10 ** 6, 10 ** 6)) for _ in range(3000)]
@@ -347,6 +371,101 @@ class WitnessTest(unittest.TestCase):
 
 
 class RuleTest(unittest.TestCase):
+    def test_review_F1_kplus_index_matches_matrix(self):
+        kp = CTX.kplus
+        for menu, idx in ((None, int(kp.gen_idx[26])), (sim.TwistMenu.a4(CTX), 3)):
+            st = sim.State(CTX, menu=menu)
+            before = st.snapshot()
+            with self.assertRaises(sim.TwistError):
+                st.apply(sim.Twist(CTX, 0, kp.matrix(0), kidx=idx))
+            self.assertEqual(st.snapshot(), before)
+        for idx in (-2, -1, len(kp.perms), 0.5):
+            with self.assertRaises(sim.TwistError):
+                sim.Twist(CTX, 0, kp.matrix(0), kidx=idx)
+        st = sim.State(CTX)
+        solved = st.snapshot()
+        self.assertTrue(st.apply(sim.Twist(CTX, 0, kp.matrix(0), kidx=0)).applied)
+        st.undo()
+        g = sim.generator(CTX, 0)
+        self.assertTrue(st.apply(sim.Twist(CTX, 0, g.matrix, kidx=g.kidx)).applied)
+        self.assertEqual(st.lattice_stickers()['labels'].tolist(), ref_labels([1]).tolist())
+        st.undo()
+        self.assertEqual(st.snapshot(), solved)
+        self.assertEqual(sim.Twist(CTX, 0, g.matrix).kidx, g.kidx)
+
+    def test_review_F2_repeated_plane_certificates(self):
+        st = sim.State(CTX)
+        g = sim.plane(CTX, 0, 13, degrees=10)
+        for _ in range(30):
+            self.assertTrue(st.apply(g).applied)
+        before = st.snapshot()
+        certificates = []
+        for filtered in (False, True):
+            st.filtered = filtered
+            cl = st.classify(1)
+            row = st.survey([1])[1]
+            self.assertEqual(cl.status, row['status'])
+            self.assertEqual(cl.status, 'blocked')
+            for cert in (cl.straddle, row['certificate']):
+                self.assertTrue(cert['points_checked_against_all_constraints'])
+                for side, sign in (('below', -1), ('above', 1)):
+                    x = [q5_from_json(v) for v in cert['point_' + side]]
+                    self.assertEqual(CTX.data.h(1, x), q5_from_json(cert['h_' + side]))
+                    self.assertEqual(CTX.data.h(1, x).sign(), sign)
+                    self.assertTrue(math.isfinite(cert['h_' + side + '_float']))
+                    self.assertTrue(sim.posed_point_check(CTX.data, CTX.data.signature(cert['piece']),
+                                                         st.pose(cert['piece']), x))
+            certificates.append(cl.straddle)
+            self.assertEqual(st.snapshot(), before)
+        self.assertEqual(certificates[0], certificates[1])
+
+    def test_review_F2_large_cayley_journal_round_trip(self):
+        st = sim.State(CTX)
+        solved = st.snapshot()
+        g = sim.cayley(CTX, 0, [Q5(10 ** 160 + 1, 0, 10 ** 160), 0, 0])
+        self.assertTrue(st.apply(g).applied)
+        self.assertTrue(math.isfinite(st.journal[0]['angle_deg']))
+        encoded = st.journal_json()
+        replay = sim.State.replay(encoded, CTX)
+        self.assertEqual(replay.snapshot(), st.snapshot())
+        for state in (st, replay):
+            self.assertTrue(state.undo().applied)
+            self.assertEqual(state.snapshot(), solved)
+
+    def test_review_F4_exact_json_components_require_integers(self):
+        for component in range(3):
+            for invalid in (4.25, 1.0, True, False, '1', None):
+                value = [1, 1, 4]
+                value[component] = invalid
+                with self.subTest(component=component, invalid=invalid):
+                    with self.assertRaises(ValueError):
+                        q5_from_json(value)
+        st = sim.State(CTX)
+        st.apply(sim.generator(CTX, 0))
+        before = st.snapshot()
+        doc = json.loads(st.journal_json())
+        doc['records'][0]['matrix'][0][0] = [1, 1, 4.25]
+        with self.assertRaises(ValueError):
+            sim.State.replay(json.dumps(doc), CTX)
+        self.assertEqual(st.snapshot(), before)
+        records = [(sim.plane(CTX, 0, 13, degrees=10).record(), 's'),
+                   (sim.cayley(CTX, 0, [1, 0, 0]).record(), 'omega'),
+                   (sim.half_turn(CTX, 0, [1, 0, 0]).record(), 'axis')]
+        for rec, field in records:
+            for invalid in (1.0, True, '1'):
+                bad = json.loads(json.dumps(rec))
+                value = bad['params'][field] if field == 's' else bad['params'][field][0]
+                value[0] = invalid
+                with self.subTest(field=field, invalid=invalid):
+                    with self.assertRaises(ValueError):
+                        sim.Twist.from_record(CTX, bad)
+        menu = sim.TwistMenu.a4(CTX)
+        for invalid in (1.0, True, '1'):
+            rec = menu.record()
+            rec['base'][0]['matrix'][0][0][0] = invalid
+            with self.assertRaises(ValueError):
+                sim.TwistMenu.from_record(CTX, rec)
+
     def test_uncertain_is_rejected_without_change(self):
         st = sim.State(CTX)
         st.apply(sim.plane(CTX, 0, 13, degrees=10))
@@ -447,6 +566,34 @@ class RuleTest(unittest.TestCase):
 
 
 class TwistTest(unittest.TestCase):
+    def test_review_F3_exact_input_minimum_and_ties(self):
+        for degrees, expected in ((45.00000000002, [1, 0, 0]), (45.00000000001, [1, 0, 0]),
+                                  (44.99999999998, [0, 0, 0]), (44.99999999999, [0, 0, 0])):
+            num, den, report = nearest_parameter([1, 0, 0], degrees, max_den=1, max_num=1)
+            self.assertEqual((num, den), (expected, 1))
+            self.assertEqual(report['distance'], report['minimum_distance'])
+        self.assertEqual(nearest_parameter([1, 2, 3], 0, max_den=7, max_num=2)[:2], ([0, 0, 0], 1))
+        self.assertEqual(nearest_parameter([1, 0, 0], 180, max_den=7, max_num=2)[:2], ([-2, 0, 0], 1))
+        # Exhaust every denominator independently using the float target as exact rationals.
+        for axis, degrees, n, dmax in (([1, 2, 3], 67, 2, 5), ([1, 3, 2], 179.6, 2, 4),
+                                       ([1, 0, 0], 45, 1, 1), ([1, 0, 0], 90, 1, 2 ** 54)):
+            target = [Fraction(float(x)) for x in _input_quaternion(axis, degrees)[1]]
+            norm = sum(x * x for x in target)
+            candidates = []
+            # The last case exercises the exact fallback with a known denominator-1 winner.
+            denominators = range(1, dmax + 1) if dmax < 10 else (1, 2, dmax)
+            for nums in itertools.product(range(-n, n + 1), repeat=3):
+                c = sum(x * x for x in nums)
+                b = sum(x * t for x, t in zip(nums, target[1:]))
+                for den in denominators:
+                    candidates.append((-(den * target[0] + b) ** 2 / ((den * den + c) * norm),
+                                       den, nums, 'cayley'))
+                if abs(abs(math.remainder(degrees, 360)) - 180) <= 1 and c:
+                    candidates.append((-b * b / (c * norm), 1, nums, 'half_turn'))
+            chosen = min(candidates)[1:]
+            num, den, report = nearest_parameter(axis, degrees, max_den=dmax, max_num=n)
+            self.assertEqual((den, tuple(num), report['family']), chosen)
+
     def test_input_map_is_exhaustive_minimum(self):
         for axis, deg, n, d in (([1, 2, 3], 67, 2, 5), ([0.2, -0.8, 0.3], 137, 3, 4),
                                 ([1, 3, 2], 179.6, 2, 4), ([1, 2, -3], -179.7, 2, 3),

@@ -29,7 +29,7 @@ import numpy as np
 
 from exact import matmul, matvec, transpose
 
-from .kernel import Evaluator, KAPPA_FORM, classify_signs, filtered_signs, pullback_form, rows_form, sign5
+from .kernel import Evaluator, KAPPA_FORM, classify_signs, filtered_signs, pullback_form, q5_float, rows_form, sign5
 from .kplus import matrix_json, q5_json, to_tuple
 from .model import CELL_SLOTS, CONTRACT_REVISION, NP, NS
 from .twists import INPUT_TIE, Twist, UnrepresentableTwist, primitive
@@ -334,7 +334,7 @@ class State:
                 'vertex_below': int(jneg), 'vertex_above': int(jpos),
                 'point_below': [q5_json(x) for x in xb], 'point_above': [q5_json(x) for x in xa],
                 'h_below': q5_json(hb), 'h_above': q5_json(ha),
-                'h_below_float': float(hb), 'h_above_float': float(ha),
+                'h_below_float': q5_float(hb), 'h_above_float': q5_float(ha),
                 'points_checked_against_all_constraints': True}
 
     # ------------------------------------------------------------------------------ apply
