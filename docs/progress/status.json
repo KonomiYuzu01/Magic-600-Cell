@@ -1,9 +1,9 @@
 {
   "schema": 2,
-  "updated": "2026-10-03",
+  "updated": "2026-10-09",
   "current": "2.3",
   "paid_api_ceiling_usd": 100,
-  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}],
+  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}],
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "done", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null,
      "items": [
@@ -74,6 +74,21 @@
       {"id": "results", "title": "Results document written", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.md"},
       {"id": "invariant-decision", "title": "Owner decides the P1 invariant conflict", "weight": 1, "done": true, "evidence": "docs/wiki/decisions/owner-decisions-2026-10-03-migration.md"},
       {"id": "p1-c3", "title": "P1 re-run with the owner's locked byte copy (C3) passes", "weight": 1, "done": true, "evidence": "docs/progress/1.0/migration-probe-results.json"}
+     ]},
+    {"id": "jumbling-study", "track": "jumbling", "title": "Jumbling study, state contract and exact witness", "status": "done", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "contract", "title": "State contract plan-checked", "weight": 2, "done": true, "evidence": "research/jumbling/state-contract.md"},
+      {"id": "witness", "title": "Exact witness E0-E4 reviewed", "weight": 2, "done": true, "evidence": "research/jumbling/witness-results.json"},
+      {"id": "impact", "title": "Impact assessment", "weight": 1, "done": true, "evidence": "research/jumbling/impact-assessment.md"}
+     ]},
+    {"id": "jumbling-mid", "track": "jumbling", "title": "Jumbling workstreams to mid-stage", "status": "in_progress", "acceptance": "Mid-stage criteria of jumbling-plan section 2 met and renderer packet delivered", "acceptance_source": "docs/progress/1.0/jumbling-plan.md", "blocker": null,
+     "items": [
+      {"id": "plan-check", "title": "Program plan and amendments A1-A4 plan-checked", "weight": 1, "done": false, "evidence": null},
+      {"id": "j1", "title": "J1 simulator passes acceptance", "weight": 3, "done": false, "evidence": null},
+      {"id": "j2", "title": "J2 viewer shows certified sequences", "weight": 2, "done": false, "evidence": null},
+      {"id": "j3", "title": "J3 first theory generation and verification", "weight": 2, "done": false, "evidence": null},
+      {"id": "j4", "title": "J4 orbit data for candidate menus", "weight": 1, "done": false, "evidence": null},
+      {"id": "renderer-packet", "title": "Renderer packet to owner", "weight": 1, "done": false, "evidence": null}
      ]}
   ]
 }
