@@ -1,6 +1,6 @@
 # Initial impact assessment: adding rigid jumbling to the 1.0 program
 
-Status: **initial assessment for the owner, plan step 3 (`README.md`).** This page proposes nothing binding. Adding jumbling to 1.0 in any form is an owner decision on scope and model identity (`AGENTS.md` "Ask the owner").
+Status: **initial assessment for the owner, plan step 3 (`README.md`), written after the exact witness.** This page proposes nothing binding. Adding jumbling to 1.0 in any form is an owner decision on scope and model identity (`AGENTS.md` "Ask the owner").
 
 Inputs:
 - the plan-checked state contract (`state-contract.md`);
@@ -8,6 +8,13 @@ Inputs:
 - the stage 2 charter (`docs/progress/1.0/charter-2.0-draft.md`);
 - the schedule (`docs/progress/1.0/stage-2-experiment-protocol.md` section 5);
 - the solving workflow (`docs/progress/1.0/solving-workflow.md`).
+
+What the witness established:
+- the retained geometry admits genuine rigid jumbling with certified legality;
+- after a 10° jumble twist of cap 0, its face neighbour stays turnable while 54 other grips are blocked;
+- after the neighbour's third-turn, cap 0 itself is blocked until the neighbour is undone.
+
+The exact computation over 4,375 piece regions took about 3 minutes on four cloud cores. That shows exact certification is practical for research. It is not evidence about interactive performance.
 
 No performance, Windows or DirectX evidence exists for any jumbling feature. Any statement about cost below is a structural observation, not a measurement.
 

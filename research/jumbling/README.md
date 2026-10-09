@@ -1,6 +1,6 @@
 # Jumbling study of the 600-cell-Full puzzle
 
-Status: **exploratory computation with one senior plan check and one scoped re-check (9 October 2026). All findings adopted; the Q5 revision awaits the second and last scoped re-check.** No model identity, product scope or rule changes here.
+Status: **plan-checked study (9 October 2026): one plan check and two scoped re-checks, all findings adopted, last re-check passed. Exact witness E0–E4 and the initial impact assessment are done; the code awaits its review.** No model identity, product scope or rule changes here.
 
 Owner decision, 9 October 2026: **no fudged variant is pursued.** The study covers rigid, unfudged jumbling of the retained cut geometry only. `state-contract.md` defines that model.
 
@@ -72,9 +72,43 @@ Scoped re-check 20261009T163617Z-bc992d63 found C4-Q1 and Q4 resolved. It also f
 | --- | --- | --- | --- |
 | Q5 (re-check) | major | adopt | `state-contract.md` section 3: exact one-sided containment with no tolerance; exact Q(√5) certificates (complete exact vertex sets for inside and outside, two exact witness points for straddling); uncertain means rejected. Section 6: an exact witness rotation and E0 controls for shallow crossings and exact contact |
 
+The second scoped re-check passed with no findings (9 October 2026).
+
+## Exact witness (state contract section 6)
+
+```text
+python research/jumbling/witness.py              # about 3 minutes on four cores
+python research/jumbling/witness_float_check.py  # optional float consistency check
+```
+
+The run writes `witness-results.json`. Classifications are exact in Q(√5); floating point appears only in the comparison with the retained floating-point slot centres. Poles: c = 0 and its face neighbour d = 13 (15.52° apart).
+
+- **E0 controls.**
+  - The shallow-crossing values (−5·10⁻¹⁰, 10⁻³) and (−10⁻³, 5·10⁻¹⁰) classify as straddling.
+  - All 3,097 pieces of cap c lie exactly inside its cut, and each touches the cut exactly.
+  - All 12 retained twists of c are admissible from solved under the exact rule.
+- **E1 regions.**
+  - All 4,375 pieces of caps c and d were reconstructed exactly from their signatures, and all are full-dimensional.
+  - For every piece, the computed three-dimensional facet patches equal the retained host set.
+  - All 6,499 retained slot centres of these pieces lie in their own piece's chamber (float margin at least 3.1·10⁻⁴) and on exactly one host facet.
+  - The exact rotations of retained generators 0 and 1 (cap c) carry the region of every source piece onto the region of its destination piece (3,097 of 3,097 each).
+- **E2 jumble twist.**
+  - g fixes n_c and n_d. It is built with s = 15/961, which gives a 9.99987° rotation, and it is exactly not in A4_c.
+  - (c, g) is admissible from solved and moves 3,097 pieces.
+  - Afterwards 546 of the 600 grips are admissible. The 54 blocked grips are all of c's interacting poles except d and pole 108. Pole 108 is the third pole on the great circle through c and d, so g fixes it.
+- **Negative control.** Grip 1 is certified blocked: the centre piece of c reaches h = −0.0149 and +0.0134 on its cut. Twisting grip 1 is rejected, and the configuration is unchanged.
+- **E3 turn at the neighbour.**
+  - T_d is a third-turn of d that sends c to pole 5 and does not commute with g. It is admissible and moves 3,097 pieces.
+  - Afterwards 535 grips are admissible and 65 are blocked. The blocked set now includes c itself and ten further poles, so cap c cannot turn again until d is turned back.
+  - The third-turns about the axis through the shared face fix c and commute with g, so they would make this step degenerate.
+- **E4 reverse.** (d, T_d⁻¹) and then (c, g⁻¹) are admissible, and every pose returns exactly to the identity.
+- **Float cross-check.** `witness_float_check.py` reproduces both blocked sets (54 and 65 grips).
+
+What this shows: the retained 600-cell geometry admits genuine rigid jumbling, with certified legality under the reviewed contract. A ten-degree jumble twist of one cell cap leaves the neighbouring cap free to turn. That turn then blocks the first cap until it is undone. What it does not show: anything about reachable configurations in general, solving strategy, rendering or performance.
+
 ## Plan
 
-1. State contract (`state-contract.md`). Drafted; awaiting the scoped re-check.
-2. Minimal geometric witness E0–E4 from the contract: controls, exact piece regions for two neighbouring caps, an exact jumble twist of about 10° fixing both poles, a turn at the neighbour, certified blocked and unblocked grips, and the reverse sequence.
-3. Initial impact assessment on stages 2.3 to 2.5 for the owner.
-4. Stop. A simulator against the contract, one realignment-circle atlas, rendering of certified witnesses and blocking reasons, and the four-dimensional Jambler port remain optional and need a separate go-ahead.
+1. State contract (`state-contract.md`). Done; plan check passed after two scoped re-checks.
+2. Minimal geometric witness E0–E4. Done, see above.
+3. Initial impact assessment (`impact-assessment.md`). Done.
+4. Stop here. A simulator against the contract, one realignment-circle atlas, rendering of certified witnesses and blocking reasons, and the four-dimensional Jambler port remain optional and need a separate go-ahead.

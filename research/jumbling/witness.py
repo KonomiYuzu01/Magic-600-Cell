@@ -419,7 +419,9 @@ def main():
     res['E2'] = {'angle_deg': round(angle, 6), 'parameter_s': f'{s.a}/{s.d}', 'g_in_A4_c': g_in_a4,
                  'g': [[to_json_q5(x) for x in row] for row in g]}
     ginv = transpose(g)
-    t_d = next(a for a in a4(d) if sum((a[i][i] for i in range(4)), ZERO) == ONE)  # order 3: trace 1
+    # a third-turn of d (trace 1) that moves c: the third-turns about the axis through the
+    # face shared with c fix c and commute with g, which would make E3 degenerate
+    t_d = next(a for a in a4(d) if sum((a[i][i] for i in range(4)), ZERO) == ONE and pole_perm(a)[c] != c)
     t_d_inv = transpose(t_d)
 
     def bounds_for(cfg_):
@@ -470,7 +472,8 @@ def main():
     # E3 turn at the neighbour
     ok, n_in = cfg.apply(d, t_d, retained=True)
     after_gt = survey(cfg)
-    res['E3'] = {'turn_at_d_admissible': ok, 'moved_pieces': n_in,
+    res['E3'] = {'turn_at_d_admissible': ok, 'moved_pieces': n_in, 't_d_maps_c_to': pole_perm(t_d)[c],
+                 'g_commutes_with_t_d': matmul(g, t_d) == matmul(t_d, g),
                  'off_lattice_pieces': sum(1 for p in cfg.pose if not cfg.lattice[p]),
                  'admissible_after_g_then_t': sum(r['status'] == 'admissible' for r in after_gt.values()),
                  'c_after_g_then_t': after_gt[c]['status'],
