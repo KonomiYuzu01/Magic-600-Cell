@@ -123,7 +123,10 @@ async function loadScene() {
   const header = await hRes.json();
   const bRes = await fetch(header.bin.file);
   if (!bRes.ok) throw new Error(`${header.bin.file} could not be loaded (HTTP ${bRes.status})`);
-  const buf = await bRes.arrayBuffer();
+  // hosts that serve no binary type get the same bytes as base64 text (header.bin.encoding)
+  const buf = header.bin.encoding === 'base64'
+    ? Uint8Array.from(atob((await bRes.text()).trim()), (ch) => ch.charCodeAt(0)).buffer
+    : await bRes.arrayBuffer();
   if (buf.byteLength !== header.bin.bytes) throw new Error('scene.bin does not match scene.json');
   const A = {};
   for (const [name, d] of Object.entries(header.bin.arrays)) A[name] = new TYPED[d.dtype](buf, d.offset, d.length);

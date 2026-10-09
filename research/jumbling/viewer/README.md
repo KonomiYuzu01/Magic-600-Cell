@@ -153,3 +153,7 @@ Legality is never decided in the browser. Certificates are displayed with float 
    - From an eye at 3 facet distances between c and d, all 67 patch cells face the eye, so culling removes nothing by default.
    - Global perspective cannot show on which side of a cut a piece lies. The Local orthographic frame, which keeps h exact on one axis, was the clearest view of a blocking reason that this prototype found.
 10. **Picking** needs a triangle → sticker → piece map, must skip hidden or culled stickers, and gives grip markers priority within a pixel radius.
+
+## Publishing on hosts without a binary type
+
+Some page hosts serve no binary media type. For them, publish the bytes of `scene.bin` as base64 text, and in the published copy of `scene.json` set `bin.file` to that text file and `bin.encoding` to `"base64"`. `viewer.js` decodes it, and the byte count is checked as before.
