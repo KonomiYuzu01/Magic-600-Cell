@@ -13,8 +13,10 @@
 
 version: 1
 # Minimum image-to-term similarity (same embedding model) for a search result to be
-# kept; 0 keeps everything the source returns.
-relevance_min: 0.20
+# kept; 0 keeps everything the source returns. Measured on 10 October 2026 over 118
+# class A candidates: median 0.088, 90th percentile 0.153; 0.20 kept 5 of them and
+# 0.10 keeps 44.
+relevance_min: 0.10
 
 sources:            # approved adapters; set one to false to stop using it
   wikimedia: true
