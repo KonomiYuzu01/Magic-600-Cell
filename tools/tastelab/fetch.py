@@ -125,43 +125,94 @@ class Pipeline:
 
 
 def run(store, embedder, screen, client, plan, *, limit=None, sources=None, categories=None, phrase=None, log=print):
+    """Fetch the selected categories up to their targets.
+
+    The terms of a category share its target, and no single category, term or source fills the library: the run visits
+    every (category, term, source) in turn, interleaved across categories, and each visit stores at most one image.
+    A first pass fills every term up to its share of its category's target; a second pass lets the remaining terms
+    fill what exhausted terms left. A visit keeps the rest of its search page in memory for its next visit, and each
+    entry walks the pages from its own position within the run, starting where the stored cursor stood when the run
+    first looked it up. The stored cursor advances only when an entry has fully handled the page it points at, so an
+    interrupted run resumes on that page and the seen filter skips what was handled. When several entries share a
+    cursor key, the stored cursor follows the furthest of them."""
     selected = set(sources if sources is not None else (name for name, a in globals()["sources"].ADAPTERS.items() if a.tier == "A"))
     pipeline = Pipeline(store, embedder, screen, client, relevance_min=plan.relevance_min, phrase=phrase)
     counts = Counter()
-    for category in plan.categories.values():
-        if categories is not None and category.name not in categories:
-            continue
-        for term in category.terms:
-            for name in plan.active_sources(category.name):
-                if name not in selected:
+    failed = set()      # (source, cursor key) that raised a network error; not retried within this run
+    pages = {}          # slot -> [cursor, next cursor, unhandled candidates] of the entry's current page
+    positions = {}      # slot -> (cursor, done) of the entry's next page within this run
+    starts = {}         # (source, cursor key) -> the stored (cursor, done) when this run first looked it up
+
+    def stopped():
+        return store.is_full() or limit is not None and counts["stored"] >= limit
+
+    def held(entry, cap):
+        category, term, _ = entry
+        return (store.category_counts().get(category.name, 0) >= category.target
+                or store.query_counts().get((category.name, term.text), 0) >= cap)
+
+    def visit(entry, cap):
+        """Store at most one image for `entry`: "more", "exhausted" or "stop"."""
+        category, term, name = entry
+        adapter = globals()["sources"].ADAPTERS[name]
+        query, key = term.query(name), adapter.cursor_key(term.query(name))
+        slot = (category.name, term.text, name, query)
+        if slot not in pages:
+            if (name, key) not in starts:
+                starts[(name, key)] = store.cursor(name, key)
+            cursor, done = positions.get(slot, starts[(name, key)])
+            if done or (name, key) in failed:
+                return "exhausted"
+            try:
+                candidates, next_cursor = adapter.search(client, query, cursor, seen=lambda ident: store.has_seen(name, ident))
+            except net.NetError:
+                counts["error"] += 1
+                failed.add((name, key))
+                return "exhausted"
+            pages[slot] = [cursor, next_cursor, list(candidates)]
+        cursor, next_cursor, pending = pages[slot]
+        while pending:
+            if stopped():
+                return "stop"
+            if held(entry, cap):
+                return "more"
+            result = pipeline.ingest_candidate(pending.pop(0), category=category.name, query=term.text,
+                                               tier=plan.tier_for(category.name, name), adapter=adapter)
+            counts[result.kind] += 1
+            if result.kind == "full":
+                return "stop"
+            if result.kind == "stored":
+                break
+        if pending:
+            return "more"
+        del pages[slot]
+        done = next_cursor is None or next_cursor == cursor
+        positions[slot] = (next_cursor, done)
+        if store.cursor(name, key) == (cursor, False):   # unless another entry with this cursor key moved it
+            store.set_cursor(name, key, next_cursor, done)
+        return "exhausted" if done else "more"
+
+    chosen = [category for category in plan.categories.values()
+              if (categories is None or category.name in categories) and category.terms]
+    lists = [[(category, term, name) for term in category.terms
+              for name in plan.active_sources(category.name) if name in selected] for category in chosen]
+    order = [entries[i] for i in range(max(map(len, lists), default=0)) for entries in lists if i < len(entries)]
+    caps = {category.name: (math.ceil(category.target / len(category.terms)), category.target) for category in chosen}
+    for phase in (0, 1):
+        active = list(order)
+        while active:
+            for entry in list(active):
+                if stopped():
+                    return dict(counts)
+                cap = caps[entry[0].name][phase]
+                if held(entry, cap):
+                    active.remove(entry)
                     continue
-                adapter = globals()["sources"].ADAPTERS[name]
-                query, key = term.query(name), adapter.cursor_key(term.query(name))
-                cursor, done = store.cursor(name, key)
-                while not done and store.category_counts().get(category.name, 0) < category.target:
-                    if store.is_full() or limit is not None and counts["stored"] >= limit:
-                        return dict(counts)
-                    try:
-                        candidates, next_cursor = adapter.search(client, query, cursor, seen=lambda ident: store.has_seen(name, ident))
-                    except net.NetError:
-                        counts["error"] += 1
-                        break
-                    completed = True
-                    for candidate in candidates:
-                        if (store.category_counts().get(category.name, 0) >= category.target or store.is_full()
-                                or limit is not None and counts["stored"] >= limit):
-                            completed = False
-                            break
-                        result = pipeline.ingest_candidate(candidate, category=category.name, query=term.text,
-                                                           tier=plan.tier_for(category.name, name), adapter=adapter)
-                        counts[result.kind] += 1
-                        if result.kind == "full":
-                            return dict(counts)
-                    if not completed:
-                        break
-                    done = next_cursor is None or next_cursor == cursor
-                    store.set_cursor(name, key, next_cursor, done)
-                    cursor = next_cursor
+                outcome = visit(entry, cap)
+                if outcome == "stop":
+                    return dict(counts)
+                if outcome == "exhausted":
+                    active.remove(entry)
     log("Fetch counts: " + json.dumps(dict(counts), sort_keys=True))
     return dict(counts)
 

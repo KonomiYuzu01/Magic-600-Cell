@@ -824,6 +824,133 @@ class PipelineTests(test_store.TempDir):
         self.assertEqual(self.library.count_images(), 2)
         self.assertEqual(self.library.cursor("met", "instrument"), ("20", False))
 
+    def share_run(self, plan, pages, *, relevant=lambda query, ident: True, same_items=False, **kwargs):
+        """Run `plan` against synthetic met and aic searches. `pages[(source, query)]` lists the number of items on each
+        page; the searches honour the seen filter. Ingestion is counted per (category, query) and per source instead of
+        stored, and only `relevant(query, ident)` items are stored. With `same_items`, every query's page n holds the same
+        items. Returns the counts, the search calls as
+        (source, query, page), the stored counts and the stored count per source."""
+        from collections import Counter
+        calls, stored, per_source = [], Counter(), Counter()
+
+        def search_for(name):
+            def search(client, query, cursor, seen):
+                index = int(cursor or 0)
+                calls.append((name, query, index))
+                rows = pages.get((name, query), [])
+                if index >= len(rows):
+                    return [], None
+                prefix = f"{name}-{index}" if same_items else f"{name}-{query}-{index}"
+                items = [candidate(name=name, ident=f"{prefix}-{i}") for i in range(rows[index])]
+                return [item for item in items if not seen(item.source_id)], str(index + 1) if index + 1 < len(rows) else None
+            return search
+
+        def ingest(item, *, category, query, tier, adapter):
+            if self.library.has_seen(item.source, item.source_id):
+                return fetch.Outcome("duplicate")
+            if not relevant(query, item.source_id):
+                return fetch.Outcome("irrelevant")
+            self.library.mark_seen(item.source, item.source_id)
+            stored[(category, query)] += 1
+            per_source[item.source] += 1
+            return fetch.Outcome("stored")
+
+        def by_category():
+            totals = Counter()
+            for (category, _), number in stored.items():
+                totals[category] += number
+            return dict(totals)
+
+        with mock.patch.object(sources.ADAPTERS["met"], "search", side_effect=search_for("met")), \
+                mock.patch.object(sources.ADAPTERS["aic"], "search", side_effect=search_for("aic")), \
+                mock.patch.object(fetch.Pipeline, "ingest_candidate", side_effect=ingest), \
+                mock.patch.object(self.library, "query_counts", side_effect=lambda: dict(stored)), \
+                mock.patch.object(self.library, "category_counts", side_effect=by_category):
+            counts = fetch.run(self.library, self.fake, self.content_screen, None, plan, log=lambda _: None, **kwargs)
+        return counts, calls, dict(stored), dict(per_source)
+
+    def test_terms_share_the_target_and_sources_take_turns_within_a_page(self):
+        # FSP-001: pages larger than a term's share must not let the first source fill it.
+        plan = seeds.parse({"version": 1, "sources": {"met": True, "aic": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met", "aic"], "terms": ["alpha", "beta"]}}})
+        pages = {(name, term): [20, 20] for name in ("met", "aic") for term in ("alpha", "beta")}
+        counts, calls, stored, per_source = self.share_run(plan, pages)
+        self.assertEqual(calls, [("met", "alpha", 0), ("aic", "alpha", 0), ("met", "beta", 0), ("aic", "beta", 0)])
+        self.assertEqual((counts, stored, per_source), ({"stored": 4}, {("synthetic", "alpha"): 2, ("synthetic", "beta"): 2},
+                                                        {"met": 2, "aic": 2}))
+        self.assertEqual(self.library.cursor("met", "alpha"), (None, False))   # the page was not fully handled
+
+    def test_an_exhausted_term_leaves_its_share_to_the_others(self):
+        plan = seeds.parse({"version": 1, "sources": {"met": True, "aic": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met", "aic"], "terms": ["alpha", "beta"]}}})
+        counts, calls, stored, per_source = self.share_run(plan, {("met", "beta"): [3, 3]})
+        self.assertEqual((stored, per_source), ({("synthetic", "beta"): 4}, {"met": 4}))
+        self.assertEqual([call for call in calls if call[:2] == ("met", "beta")], [("met", "beta", 0), ("met", "beta", 1)])
+        self.assertEqual(self.library.cursor("met", "alpha"), (None, True))
+        self.assertEqual(self.library.cursor("met", "beta"), ("1", False))
+
+    def test_an_early_stop_has_drawn_from_every_category(self):
+        # FSP-002: entries interleave across categories, so a limit of one image per category reaches all of them.
+        plan = seeds.parse({"version": 1, "sources": {"met": True, "aic": True}, "categories": {
+            "first": {"kind": "focus", "target": 40, "sources": ["met", "aic"], "terms": ["alpha", "gamma"]},
+            "second": {"kind": "focus", "target": 40, "sources": ["aic"], "terms": ["beta"]}}})
+        pages = {("met", "alpha"): [20], ("aic", "alpha"): [20], ("met", "gamma"): [20], ("aic", "gamma"): [20],
+                 ("aic", "beta"): [20]}
+        counts, calls, stored, _ = self.share_run(plan, pages, limit=2)
+        self.assertEqual((counts, stored), ({"stored": 2}, {("first", "alpha"): 1, ("second", "beta"): 1}))
+
+    def test_a_shared_cursor_key_keeps_a_paused_page(self):
+        # FSP-003: two terms share met's cursor key; beta finds nothing relevant and finishes the shared page while alpha
+        # is paused at its share. Alpha still fills the category from the page it holds.
+        plan = seeds.parse({"version": 1, "sources": {"met": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met"], "terms": ["alpha", "beta"]}}})
+        shared = {("met", "alpha"): [4], ("met", "beta"): [4]}
+        with mock.patch.object(sources.ADAPTERS["met"], "cursor_key", return_value="shared"):
+            counts, calls, stored, _ = self.share_run(plan, shared, relevant=lambda query, ident: query == "alpha",
+                                                      same_items=True)
+        self.assertEqual(stored, {("synthetic", "alpha"): 4})
+        self.assertEqual(self.library.cursor("met", "shared"), (None, True))
+
+    def shared_cursor_run(self, terms, page_sizes, target):
+        """`terms` share met's cursor key and its pages; only alpha finds its items relevant."""
+        plan = seeds.parse({"version": 1, "sources": {"met": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": target, "sources": ["met"], "terms": terms}}})
+        with mock.patch.object(sources.ADAPTERS["met"], "cursor_key", return_value="shared"):
+            return self.share_run(plan, {("met", term): page_sizes for term in terms},
+                                  relevant=lambda query, ident: query == "alpha", same_items=True)
+
+    def test_a_shared_cursor_key_does_not_skip_pages_another_term_still_needs(self):
+        # FSR-001: beta finds nothing relevant and walks the shared pages ahead of alpha; alpha still visits every page.
+        counts, calls, stored, _ = self.shared_cursor_run(["alpha", "beta"], [2, 4], 6)
+        self.assertEqual(stored, {("synthetic", "alpha"): 6})
+        self.assertEqual([call for call in calls if call[1] == "alpha"], [("met", "alpha", 0), ("met", "alpha", 1)])
+        self.assertEqual(self.library.cursor("met", "shared"), (None, True))
+
+    def test_a_term_visited_later_starts_where_the_run_found_the_shared_cursor(self):
+        # FSV-001: beta comes first and moves the shared cursor before alpha's first visit.
+        counts, calls, stored, _ = self.shared_cursor_run(["beta", "alpha"], [2, 4], 6)
+        self.assertEqual(stored, {("synthetic", "alpha"): 6})
+        self.assertEqual([call for call in calls if call[1] == "alpha"], [("met", "alpha", 0), ("met", "alpha", 1)])
+        self.assertEqual(self.library.cursor("met", "shared"), (None, True))
+
+    def test_a_term_visited_later_searches_a_shared_page_another_term_finished(self):
+        # FSV-001: beta marks the single shared page done before alpha's first visit.
+        counts, calls, stored, _ = self.shared_cursor_run(["beta", "alpha"], [4], 4)
+        self.assertEqual(stored, {("synthetic", "alpha"): 4})
+        self.assertEqual(calls, [("met", "beta", 0), ("met", "alpha", 0)])
+        self.assertEqual(self.library.cursor("met", "shared"), (None, True))
+
+    def test_terms_with_the_same_text_search_each_of_their_queries(self):
+        # FSR-002: two terms share their text but not their met query; each query keeps its own page and cursor.
+        plan = seeds.parse({"version": 1, "sources": {"met": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met"],
+                          "terms": [{"text": "alpha", "met": "first"}, {"text": "alpha", "met": "second"}]}}})
+        counts, calls, stored, _ = self.share_run(plan, {("met", "first"): [2], ("met", "second"): [20]})
+        self.assertEqual(stored, {("synthetic", "alpha"): 4})
+        self.assertEqual(calls, [("met", "first", 0), ("met", "second", 0)])
+        self.assertEqual(self.library.cursor("met", "first"), (None, True))
+        self.assertEqual(self.library.cursor("met", "second"), (None, False))
+
     def test_runner_missing_interpreter_requires_actual_execution(self):
         output = io.StringIO()
         from contextlib import redirect_stdout
