@@ -217,7 +217,7 @@ Checks and refusal codes. The interval `[a, b)` is on the QPC clock of `native.j
 | `presentmon` | run, short | `presentmon.csv` is missing, its last row is incomplete, or it lacks `ProcessID`, `SwapChainAddress`, `QPCTime`, `msBetweenPresents`, `Dropped`, `SyncInterval`, `PresentMode` or `AllowsTearing`; or no row of the launched PID falls in `[T0, stop)` |
 | `swap-chain` | run, short | the PID's rows in `[T0, stop)` have more than one `SwapChainAddress` |
 | `sync-interval` | run, short | a row of the chain in `[T0, stop)` has `SyncInterval` other than 0 |
-| `blind-seconds` | run, short | a second of the checked interval has no row of the chain with `Dropped` 0. Run: `[T0 + 10 s, min(T0 + 190 s, stop))`, as S-B's runner. Short: `[T0 + 1 s, stop - 1 s)` |
+| `blind-seconds` | run, short | a whole second of the checked interval has no row of the chain with `Dropped` 0; seconds count from the interval start, and a trailing fraction of a second is not checked. Run: `[T0 + 10 s, min(T0 + 190 s, stop))`, as S-B's runner (exactly 180 s in a complete run). Short: `[T0 + 1 s, stop - 1 s)` |
 | `trace-steps` | run, short | some step between two consecutive presents of the chain (`QPCTime`) within `[T0 + 1 s, stop - 1 s]` does not hold exactly one trace entry |
 | `operator` | run | neither `--overlays` nor `--fault-injection` was given |
 | `validation` | validation | `options.gpu_validation` is not true, `debug.debug_layer` is not 1, `debug.counts` is missing, or `error`, `corruption` or `mentioning_sa2` is not 0 |

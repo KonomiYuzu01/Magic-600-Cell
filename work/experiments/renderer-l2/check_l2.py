@@ -528,6 +528,18 @@ def extra_cases(root):
     invoke(directory, mode='short', expected=5)
     expect(read_json(directory / 'refusal.json')['reasons'] == ['trace-steps'], 'last included step was missed')
     REFUSALS['trace-steps'] += 1
+    # A trailing 0.5 ms of the short interval without a present is not a blind second; the last whole second is checked.
+    def trailing_fraction(directory):
+        edit(directory, 'native.json',
+             lambda n: n['markers'].update(trace_stop_qpc=START + 30 * FREQUENCY + FREQUENCY // 2000))
+    directory = fixture(root, 'blind-seconds-trailing-fraction', mode='short')
+    trailing_fraction(directory)
+    invoke(directory, mode='short')
+    refusal(root, 'blind-seconds-last-whole-second', 'blind-seconds',
+            lambda d: (trailing_fraction(d),
+                       csv_edit(d, lambda rows: [r.update(Dropped='1') for r in rows
+                                                 if START + 28 * FREQUENCY <= int(r['QPCTime']) < START + 29 * FREQUENCY])),
+            mode='short')
     # Several independent defects produce a sorted refusal, without a partial run.
     directory = fixture(root, 'multiple-reasons')
     edit(directory, 'harness.json', lambda h: (h['environment'].update(adapter='wrong'),

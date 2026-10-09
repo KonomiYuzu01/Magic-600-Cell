@@ -368,7 +368,9 @@ def check_blind_seconds(rows, n, mode):
     end = min(start + 190 * frequency, stop) if mode == 'run' else stop - frequency
     if end <= begin:
         return
-    seconds = (end - begin + frequency - 1) // frequency
+    # Whole seconds only: a trailing fraction of a second can be shorter than one frame.
+    seconds = (end - begin) // frequency
+    end = begin + seconds * frequency
     shown = {(row['qpc'] - begin) // frequency for row in rows
              if begin <= row['qpc'] < end and row['dropped'] == 0}
     require(len(shown) == seconds)
