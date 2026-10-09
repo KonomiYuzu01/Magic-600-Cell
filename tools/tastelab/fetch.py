@@ -3,6 +3,9 @@
 Candidates and bytes stay in memory through rights, decoding, embedding,
 screening, relevance and deduplication. Only admitted images are committed;
 discarded cases leave aggregate counts only. No owner-folder or URL ingestion.
+`--calibrate --diagnose` also writes reports/calibration-cases.json: the group,
+query, source, id, title, keywords and score of each missed or discarded
+calibration case, never its image or a URL (owner choice, 9 October 2026).
 """
 from __future__ import annotations
 
@@ -13,6 +16,7 @@ import math
 import os
 import re
 import sys
+import unicodedata
 from collections import Counter
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -30,6 +34,7 @@ DOWNLOAD_MAX_BYTES = 20 * 1024 * 1024
 IMAGE_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif")
 NEAR_DUPLICATE = 0.97
 CALIBRATION_REPORT = "calibration.json"
+CALIBRATION_CASES = "calibration-cases.json"
 
 
 @dataclass
@@ -165,11 +170,23 @@ def _adult_subject(candidate, *, positive):
     return bool(adult) if positive or people else True
 
 
-def calibrate(embedder, client, *, log=print):
+# After NFKC normalization, a word of a title or keyword with a slash, a backslash, an "@" or a colon, or with a dot
+# followed by more text, is replaced by "[link]": every URL, scheme, domain, address and path has one. Over-redacting
+# words such as "Study:", "and/or" or "c.1890" is accepted.
+_LINK = re.compile(r"[/\\@:／＼＠：∕⁄]|[.．。｡](?=\S)")
+
+
+def _plain(text, limit=200):
+    words = unicodedata.normalize("NFKC", (text or "")[:4 * limit]).split()
+    return " ".join("[link]" if _LINK.search(word) else word for word in words)[:limit]
+
+
+def calibrate(embedder, client, *, log=print, cases=None):
+    """With a `cases` list, each case's metadata (never its image or URL) is appended to it for --diagnose."""
     content_screen = screen.Screen(embedder)
     groups, negatives, known = {}, [], set()
 
-    def collect(queries, target, match=None):
+    def collect(queries, target, match=None, group_name="negative"):
         values = []
         for name, query in queries:
             adapter, cursor, cursors = sources.ADAPTERS[name], None, set()
@@ -203,6 +220,10 @@ def calibrate(embedder, client, *, log=print):
                         if decoded is not None:
                             decoded.image.close()
                     values.append(score)
+                    if cases is not None:
+                        cases.append({"group": group_name, "query": query, "source": name, "id": _plain(candidate.source_id, 100),
+                                      "title": _plain(candidate.title), "keywords": [_plain(k, 60) for k in candidate.keywords[:20]],
+                                      "score": score if math.isfinite(score) and 0 <= score <= 1 else None})
                 if next_cursor is None or next_cursor in cursors:
                     break
                 cursors.add(next_cursor)
@@ -210,7 +231,7 @@ def calibrate(embedder, client, *, log=print):
         return values
 
     for name, group in screen.CALIBRATION_GROUPS.items():
-        groups[name] = collect(group["queries"], screen.GROUP_SIZE, group["match"])
+        groups[name] = collect(group["queries"], screen.GROUP_SIZE, group["match"], name)
     for query in screen.NEGATIVE_QUERIES:
         negatives.extend(collect((query,), screen.NEGATIVE_SIZE))
     result = screen.gate(groups, negatives)
@@ -223,10 +244,24 @@ def calibrate(embedder, client, *, log=print):
     return report
 
 
-def write_calibration(store_root, report):
+def diagnostic_cases(cases):
+    """Positives under the approved threshold or unscorable, and negatives at or over the lowest strict threshold:
+    the cases that any threshold of the gate counts as missed or discarded, lowest score first per group."""
+    lowest = min(screen.STRICT_THRESHOLD, screen.LOWERED[1])
+
+    def kept(case):
+        if case["group"] == "negative":
+            return case["score"] is not None and case["score"] >= lowest
+        return case["score"] is None or case["score"] < screen.THRESHOLD
+
+    return sorted((case for case in cases if kept(case)),
+                  key=lambda case: (case["group"], -1.0 if case["score"] is None else case["score"]))
+
+
+def write_calibration(store_root, report, name=CALIBRATION_REPORT):
     root = common.data_root(store_root)
     folder = common.check_input(root / "reports", kind="calibration report")
-    path = common.check_input(folder / CALIBRATION_REPORT, kind="calibration report")
+    path = common.check_input(folder / name, kind="calibration report")
     folder.mkdir(parents=True, exist_ok=True)
     temporary = folder / (".part-" + uuid4().hex)
     try:
@@ -342,9 +377,13 @@ def main(argv=None):
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--calibrate", action="store_true")
     modes.add_argument("--import-ratings", type=Path)
+    parser.add_argument("--diagnose", action="store_true",
+                        help="with --calibrate: also write the metadata of missed and discarded cases")
     args = parser.parse_args(argv)
     if args.limit is not None and args.limit <= 0:
         parser.error("--limit must be positive")
+    if args.diagnose and not args.calibrate:
+        parser.error("--diagnose needs --calibrate")
     try:
         root = common.data_root(args.data)
         if args.import_ratings:
@@ -359,8 +398,11 @@ def main(argv=None):
         model = embed.load_embedder()
         client = net.Client()
         if args.calibrate:
-            report = calibrate(model, client)
+            cases = [] if args.diagnose else None
+            report = calibrate(model, client, cases=cases)
             print(write_calibration(root, report))
+            if cases is not None:
+                print(write_calibration(root, {"time": report["time"], "cases": diagnostic_cases(cases)}, CALIBRATION_CASES))
             return 0 if report["passed"] else 1
         content_screen = load_screen(model, root)
         with store.Store(root) as library:

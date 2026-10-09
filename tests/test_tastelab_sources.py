@@ -425,7 +425,7 @@ class CalibrationTests(test_store.TempDir):
                     for i in range(screen.GROUP_SIZE)], None
         return search
 
-    def calibrate(self, score):
+    def calibrate(self, score, cases=None):
         patches = [mock.patch.object(sources.ADAPTERS[name], "search", side_effect=self.searches(name)) for name in self.prototypes]
         for patch in patches:
             patch.start()
@@ -435,7 +435,7 @@ class CalibrationTests(test_store.TempDir):
         scorer = mock.Mock()
         scorer.unsafe_score.return_value = [score]
         with mock.patch.object(screen, "Screen", return_value=scorer):
-            result = fetch.calibrate(self.fake, client, log=lambda _: None)
+            result = fetch.calibrate(self.fake, client, log=lambda _: None, cases=cases)
         return result
 
     def test_calibration_all_nan_counts_unscorable_fails_and_writes_counts_only(self):
@@ -499,6 +499,83 @@ class CalibrationTests(test_store.TempDir):
             self.assertEqual(fetch.main(["--calibrate"]), 1)
         files = [p for p in self.tmp.rglob("*") if p.is_file()]
         self.assertEqual([p.name for p in files], ["calibration.json"])
+
+    def test_diagnose_keeps_metadata_of_missed_and_discarded_cases_only(self):
+        # A positive is missed below the approved threshold; a negative is discarded at or over the lowest strict one.
+        # A score the gate cannot use (non-finite or outside [0, 1]) is recorded as None: a missed positive, never a
+        # discarded negative.
+        for score, keeps in ((0.10, "both"), (screen.THRESHOLD, "negatives"), (screen.LOWERED[1], "both"),
+                             (screen.LOWERED[1] - 1e-9, "positives"), (np.nan, "positives"), (np.inf, "positives"),
+                             (1.01, "positives"), (-0.01, "positives")):
+            with self.subTest(score=score):
+                cases = []
+                report = self.calibrate(score, cases=cases)
+                positives = sum(group["n"] for group in report["groups"].values())
+                negatives = report["negatives"]["n"]
+                self.assertEqual((positives, len(cases)), (screen.GROUP_SIZE * len(screen.CALIBRATION_GROUPS), positives + negatives))
+                self.assertGreater(negatives, 0)
+                kept = fetch.diagnostic_cases(cases)
+                expected = {"both": positives + negatives, "negatives": negatives, "positives": positives}[keeps]
+                self.assertEqual(len(kept), expected)
+                self.assertEqual(sum(case["group"] == "negative" for case in kept), 0 if keeps == "positives" else negatives)
+                for case in kept:
+                    self.assertEqual(set(case), {"group", "query", "source", "id", "title", "keywords", "score"})
+                    self.assertEqual(case["score"] is None, not 0 <= score <= 1)
+                text = json.dumps(kept, allow_nan=False)
+                self.assertNotIn("https://", text)
+                self.assertNotIn("image_url", text)
+                self.assertNotIn("synthetic-", json.dumps(report))
+
+    def test_diagnose_replaces_link_like_text_in_titles_and_keywords(self):
+        links = ("https://images.metmuseum.org/synthetic/901.png", "www.example.org/item", "metmuseum.org/art/collection/9",
+                 "data:image/png;base64,AAAA", "data:image/svg+xml,%3Csvg%2F%3E", "C:\\Users\\someone\\picture.png",
+                 "ftp://example.org/x", "mailto:someone@example.org", "javascript:alert(1)", "metmuseum.org",
+                 "192.168.0.1", "/home/someone/picture.png", "\\\\server\\share\\picture.png", "//cdn.example.org/x.png",
+                 "//cdn.example.co.uk", "//cdn.example.co.uk?case=901", "example．org", "someone＠example", "[::1]:8080",
+                 "localhost:8080")
+        self.labels["nudity"] = "adult nude study " + " ".join(links)
+        self.prototypes = {name: replace(item, keywords=(*links, "oil on canvas")) for name, item in self.prototypes.items()}
+        cases = []
+        self.calibrate(0.10, cases=cases)
+        kept = fetch.diagnostic_cases(cases)
+        nudity = [case for case in kept if case["group"] == "nudity"]
+        self.assertEqual(len(nudity), screen.GROUP_SIZE)
+        self.assertEqual(nudity[0]["title"], "adult nude study " + " ".join(["[link]"] * len(links)))
+        self.assertEqual(nudity[0]["keywords"], (["[link]"] * len(links) + ["oil on canvas"])[:20])
+        text = json.dumps(kept)
+        for fragment in (":/", "www.", "metmuseum", "example", "base64", "svg", "Users", "picture", "someone", "alert",
+                         "192.168", "server", "cdn", "localhost", "::1"):
+            self.assertNotIn(fragment, text)
+        for ordinary in ("Kneeling Nude Woman with Drapery, 1890; plate 3 of 5", "St. Jerome, oil on canvas", "Venus (after Titian)"):
+            self.assertEqual(fetch._plain(ordinary), ordinary)
+        # Decomposed accents, a scheme followed by a space and over-redacted ordinary words.
+        self.assertEqual(fetch._plain("café.com data: ,DIAG javascript: alert(1) Study: nude"),
+                         "[link] [link] ,DIAG [link] alert(1) [link] nude")
+        self.assertEqual(fetch._plain("x" * 1000 + " https://example.org/a"), "x" * 200)
+        self.assertEqual(fetch._plain("nude " + "https://example.org/" + "a" * 2000), "nude [link]")
+
+    def test_diagnose_cli_writes_case_metadata_beside_the_report(self):
+        with self.assertRaises(SystemExit), mock.patch("sys.stderr", io.StringIO()):
+            fetch.main(["--diagnose"])
+        collected = []
+        report = self.calibrate(0.10, cases=collected)
+
+        def run(model, client, *, cases=None, **kwargs):
+            cases.extend(collected)
+            return report
+
+        with mock.patch.object(embed, "load_embedder", return_value=self.fake), \
+                mock.patch.object(net, "Client"), mock.patch.object(fetch, "calibrate", side_effect=run), \
+                mock.patch.object(store, "Store", side_effect=AssertionError("calibration must not open a store")), \
+                mock.patch("sys.stdout", io.StringIO()):
+            self.assertEqual(fetch.main(["--calibrate", "--diagnose"]), 0 if report["passed"] else 1)
+        files = sorted(p.name for p in self.tmp.rglob("*") if p.is_file())
+        self.assertEqual(files, ["calibration-cases.json", "calibration.json"])
+        reports = common.default_data_root() / "reports"
+        written = json.loads((reports / fetch.CALIBRATION_CASES).read_text(encoding="utf-8"))
+        self.assertEqual(written["cases"], fetch.diagnostic_cases(collected))
+        self.assertNotIn("https://", (reports / fetch.CALIBRATION_CASES).read_text(encoding="utf-8"))
+        self.assertNotIn("synthetic-", (reports / fetch.CALIBRATION_REPORT).read_text(encoding="utf-8"))
 
 
 class PipelineTests(test_store.TempDir):
