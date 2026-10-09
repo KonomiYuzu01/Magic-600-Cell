@@ -1,5 +1,7 @@
 # Packet: scoped verification of the J4 review fixes (senior reviewer, review kind)
 
+Round 2 (the last allowed) checks only J4V001 from round 1 (`20261009T224938Z-57acbf5c`): `--table` labelled an exactly disproved closure as closed. Fix: `result_label()` in `explore.py` applies `verdict()`'s invalidation rule to the table's Result column, and `--selftest` checks the label of both controls (`invalid (exact check failed)` and `closed`). The README tables are unchanged because no stored run is invalid. Report whether J4V001 is fixed and whether the fix adds a new `blocker` or `major`; nothing else.
+
 Run read-only as a review by the senior reviewer, with effort `max` and speed tier `fast`. Review only; do not perform follow-up work.
 
 ## 1. Goal and acceptance
@@ -25,7 +27,7 @@ Reproduce from the repository root:
 - `NODE_PATH=$(npm root -g) PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node research/jumbling/explorer/check_page.mjs [--vendor DIR]` (passed in the integrator's Linux session).
 
 ## 3. Environment and versions
-- Branch `claude/jumbling-1-0`, working tree (the fixes are not yet committed: a Codex implementation call is running, during which nobody commits). Python 3 with NumPy, Node 22. Evidence kind: synthetic geometry.
+- Branch `claude/jumbling-1-0`, commit `3be8ffb`. Python 3 with NumPy, Node 22. Evidence kind: synthetic geometry.
 
 ## 4. Necessary source and evidence
 - `work/reviews/20261009T221306Z-30522c58/review.json` (the findings).
@@ -36,10 +38,12 @@ Reproduce from the repository root:
 |---|---|---|
 | 1 | Full review `20261009T221306Z-30522c58` | four majors, all adopted |
 | 2 | Fixes above | self-test and page check pass |
+| 3 | Scoped verification round 1 `20261009T224938Z-57acbf5c` | J4R002–J4R004 fixed; J4V001 (table label) open, adopted |
+| 4 | `result_label()` (commit `3be8ffb`) | self-test controls `ok` |
 
 ## 6. Constraints and owned files
 - Read-only review; no files may change.
 
 ## 7. Required return format
-- JSON matching `schemas/review-result.schema.json`. Finding IDs use the prefix `J4V`.
+- JSON matching `schemas/review-result.schema.json`. Finding IDs use the prefix `J4V2`.
 - Review only; do not perform follow-up work.

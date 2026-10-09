@@ -4,6 +4,65 @@ Status: **research prototype, 9 October 2026.** It is the rendering and observat
 
 Evidence kind: source, fixture and synthetic geometry in a headless browser. Nothing here is Windows, Direct3D 12, input, long-session or performance evidence.
 
+## Full-state page (W-J)
+
+[`full.html`](full.html) is a separate research page. It draws **all 259,800 stickers of all 177,120 pieces**, rather than the small moved-piece patches of the witness and S4 sequence pages. Its menus are S4₀, I_a and I_b, with a shared solved state, each fixture's end state, and the state before its swept twist. It reads only the [render data contract](../render-contract.md), fixture overlays exported from J1, and the unchanged retained sticker assets. This is a reference picture for the Direct3D 12 [E-2.4-0J path](../../../docs/progress/1.0/packets/renderer/E-2.4-0J-jumbling.md), not a renderer candidate.
+
+```text
+python research/jumbling/viewer/export_full.py                                  # all menus and stages
+python research/jumbling/viewer/export_full.py --scratch --menus S4 --stages end # sandbox acceptance; leaves no data
+python research/jumbling/viewer/export_full.py --out /tmp/j2-full --menus S4      # retained output outside the repository
+node --check research/jumbling/viewer/full.js
+node research/jumbling/viewer/check_full.mjs --serve                    # http://127.0.0.1:8601/full.html
+```
+
+The exporter needs Python and NumPy. `--menus S4 I_a I_b` and `--stages solved end sweep-before` limit the export. The cheap shared solved state is always written once; an overlay always verifies its sweep-before and sweep-after references, even when `--stages end` omits the before state's files. A partial export disables unavailable menus, states and sweep controls. Each run writes a catalog of only its requested data; it does not merge earlier partial catalogs.
+
+Generated data defaults to `full/`, whose `.gitignore` ignores everything except itself. `--out <dir>` writes the same tree elsewhere. `--scratch` runs the same geometry, state and overlay checks in a fresh system temporary directory outside the repository and deletes it on success or failure; it writes no repository files or Python bytecode. It cannot be combined with `--out` or `--b64`, so a scratch check cannot accidentally retain generated output. Use `--scratch` during implementation; only the six packet-owned source files may remain in the worktree.
+
+The output tree contains:
+
+- `geometry.json` and six unchanged asset files: `mesh_vertices.f32`, `mesh_sticker.u32`, `mesh_centers.f32`, `cell_frames.f32`, `mesh.json`, `slot_piece.u32`. Their digests are checked against `assets/manifest.json`; triangle ranges, shapes, slot coverage and the J1 frame are checked too.
+- `solved/header.json` and the three state arrays; `<menu>/end/` and `<menu>/sweep-before/` use the same layout. These are written by `fixtures/wj.py export`, with the fixture's digest and all three array hashes checked. The shared solved header retains the first selected menu's source identity; its identical start arrays are checked against every selected menu.
+- `<menu>/overlay.json` carries the menu identity and contract revision, the end-state grip status and exact certificates with float points, and the swept grip, plane, angle in radians, revisions and samples. `moving.i32` contains sorted piece ids from J1's classification on a fresh sweep-before replay; its SHA-256 must equal `moved_sha256`. `sweep_pieces.i32` and `sweep_home.f32` hold 16 sampled ids and their home region centroids, converted from J1 for the GPU check. Both sweep endpoint digests and array hashes, all three sampled poses, and the certificates' exact signs and float copies are checked.
+
+`full.js` verifies every binary array's type, shape and SHA-256 with Web Crypto **before any GPU upload**. State arrays are adopted together. Any mismatch clears the drawing, including a previously loaded state; any header dimension other than 4 is refused. Serve over HTTPS or localhost HTTP so Web Crypto is available.
+
+For text-only hosts, either write `.b64` siblings or export a separate text tree:
+
+```text
+python research/jumbling/viewer/export_full.py --out /tmp/j2-full --b64 /tmp/j2-full
+python research/jumbling/viewer/export_full.py --out /tmp/j2-full --b64 /tmp/j2-text
+```
+
+The latter directory contains the same headers and binary names suffixed with `.b64`; serve it as the page's `full/` data directory. Open `full.html?b64#I_b-end` to request base64 explicitly. An HTTP or transport failure loading a binary also tries its `.b64` sibling. A digest failure stops immediately, without an encoding fallback. Every decoded byte is checked against the original binary digest.
+
+The drawing uses one instanced triangle draw, 30,480 vertices × 600 facets. It applies shrink in the home frame, then the column-major facet frame, the row-major piece pose, swept rotation, camera rotation Q, perspective (`d4 = 1.18`) or stereographic projection from a named pole, and the S-B three-dimensional camera with orbit controls. Colour is the S-B HSV colour of the sticker's **home** facet label, with flat shading. The shader inputs are packed into textures of width `min(1024, MAX_TEXTURE_SIZE)` and enough rows, padded only at the end:
+
+| Texture | Layout |
+| --- | --- |
+| Base vertices and sticker centres | RGBA32F, one 4-vector per texel |
+| Facet frames | RGBA32F, four column texels per facet |
+| Piece poses | RGBA32F, four row texels per pose |
+| Base sticker indices, slot → piece | R32UI, one unsigned integer per texel |
+| Piece → pose, pose lattice index | R32I, one signed integer per texel |
+| Moving-piece mask | R32I, one flag per piece, derived from the verified moving ids |
+| Probe home centroids and piece ids | RGBA32F and R32I, 16 samples; used only by the check |
+
+There are no per-vertex copies of state. The base position attribute only supplies Three's draw count; the shader fetches its vertex from the data texture. Facet/sticker shrink, off-lattice tint, all/off/on/isolate filters, Q rotation, named stereographic pole and orbit controls affect only the view. Play and scrub alternate the swept twist with its exact inverse family while retaining the sweep-before arrays. Lattice counts and filters during this float preview refer to those base arrays, not a newly certified state.
+
+The blocked-grip list is available only for the end state, the state the fixture surveyed. Selecting one highlights its straddling piece and draws two engine certificate points, labelled below and above. These are already posed points: the CPU divides by R and uses the same Q, projection and camera3 chain, without shrink or another piece pose. The isolate control fits these points and draws only that piece. No end-state certificate is reused in a solved or swept view. Deep links are bare anchors such as `#S4-end` and `#I_b-sweep-before`.
+
+After exporting **all** menus, the integrator runs the browser check outside the implementation sandbox:
+
+```text
+PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node research/jumbling/viewer/check_full.mjs --vendor <DIR>
+```
+
+`--vendor` takes `three.module.js` and `OrbitControls.js` with the same pinned 0.160.0 SHA-256 values as `check_viewer.mjs`. Without it the check verifies the downloaded modules against those pins. Playwright Chromium uses SwiftShader. The check covers desktop light, desktop dark and 390 px phone layouts; actual instanced draw counts; each menu's array, panel and fixture lattice counts; both projections' non-background `readPixels`; every blocked grip and its highlighted certificate piece; fixed certificate positions under shrink; filters; solved and before states; play, pause and scrub; and deep links. At start, half, end, inverse half and inverse end, it reads back all 16 moving samples from an RGBA32F target using the **same vertex program** as the mesh, and compares their composed world positions and Q/projection/camera3 outputs with the fixture. It also tests explicit base64, binary-load fallback, corrupt binary and base64 arrays, a dimension-5 header, clearing an old drawing after a failed adoption, and the request allowlist.
+
+The browser check is supplied for the integrator; its presence is not a passing browser result. The page decides **no legality**, carries **no performance claim**, and shows “uncertified float drawing of an exact J1 state”. Colour, shrink, tint, projection and motion values are provisional and belong to the design track. Nothing here establishes actual Windows/DirectX rendering or performance. The existing witness and short S4 scene pages and their exporter/check remain separate and unchanged.
+
 ## What it shows
 
 The scene selector offers **Witness E2–E4** and **J1: S4 sequence**. Both have five exact states and four applied twists, plus a certified rejected attempt.
