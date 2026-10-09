@@ -109,7 +109,7 @@ The run writes `witness-results.json`. Classifications are exact in Q(√5); flo
 
 What this shows: the retained 600-cell geometry admits genuine rigid jumbling, with certified legality under the reviewed contract. A ten-degree jumble twist of one cell cap leaves the neighbouring cap free to turn. That turn then blocks the first cap; undoing it, or re-turning the neighbour by g·T_d⁻¹, frees it again. What it does not show: anything about reachable configurations in general, solving strategy, rendering or performance.
 
-## Code review dispositions (review of 35d28af)
+## Code review dispositions (call 20261009T181906Z-93114bda, review of 35d28af)
 
 The routine code review returned three minor findings and no blocker or major. All were fixed in the same pass, so no verification round is needed. The rerun reproduces every earlier E1–E4 result exactly.
 
