@@ -1,0 +1,6791 @@
+{
+ "generated_by": "python research/jumbling/explorer/explore.py --preset",
+ "evidence_kind": "synthetic geometry: float search with exact Q(sqrt5) confirmation of sampled coincidences and of the closest pair; leads, not proofs",
+ "parameters": {
+  "threshold_deg": 46.8,
+  "preset": {
+   "lattice": {
+    "depth": 8,
+    "budget": 150000,
+    "time_limit": 600
+   },
+   "all": {
+    "depth": 3,
+    "budget": 60000,
+    "time_limit": 300
+   }
+  },
+  "pos_tol_chord": 1e-09,
+  "frame_tol": 1e-08,
+  "tie_eps": 1e-09,
+  "hash_cell": 1e-06,
+  "separation_max_representatives": 50000,
+  "exact_cap_per_run": 2000,
+  "seed": 20261009,
+  "workers": 4,
+  "wall_seconds": 1199.8
+ },
+ "menus": [
+  {
+   "name": "a4",
+   "label": "A4 only (control)",
+   "family": "control",
+   "exact_q_sqrt5": true,
+   "size": 12,
+   "jumble_elements": 0
+  },
+  {
+   "name": "class-00",
+   "label": "class 00: 90.00\u00b0, 24 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 18,
+   "jumble_elements": 6,
+   "class_index": 0,
+   "min_rotation_angle_deg": 90.0,
+   "aligned_poles": 24,
+   "aligned_per_shell": [
+    0,
+    0,
+    24,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 47.7211,
+   "generator_angle_deg": 90.0,
+   "exact_aligned_pairs_checked": 24
+  },
+  {
+   "name": "class-01",
+   "label": "class 01: 44.48\u00b0, 20 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 20,
+   "jumble_elements": 8,
+   "class_index": 1,
+   "min_rotation_angle_deg": 44.4775,
+   "aligned_poles": 20,
+   "aligned_per_shell": [
+    1,
+    3,
+    12,
+    3,
+    1
+   ],
+   "max_landing_error_deg": 28.9553,
+   "generator_angle_deg": 44.477512,
+   "exact_aligned_pairs_checked": 20
+  },
+  {
+   "name": "class-02",
+   "label": "class 02: 44.48\u00b0, 20 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 20,
+   "jumble_elements": 8,
+   "class_index": 2,
+   "min_rotation_angle_deg": 44.4775,
+   "aligned_poles": 20,
+   "aligned_per_shell": [
+    1,
+    3,
+    12,
+    3,
+    1
+   ],
+   "max_landing_error_deg": 28.9553,
+   "generator_angle_deg": 44.477512,
+   "exact_aligned_pairs_checked": 20
+  },
+  {
+   "name": "class-03",
+   "label": "class 03: 72.00\u00b0, 12 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 24,
+   "jumble_elements": 12,
+   "class_index": 3,
+   "min_rotation_angle_deg": 72.0,
+   "aligned_poles": 12,
+   "aligned_per_shell": [
+    0,
+    0,
+    12,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 47.7211,
+   "generator_angle_deg": 72.0,
+   "exact_aligned_pairs_checked": 12
+  },
+  {
+   "name": "class-04",
+   "label": "class 04: 72.00\u00b0, 12 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 24,
+   "jumble_elements": 12,
+   "class_index": 4,
+   "min_rotation_angle_deg": 72.0,
+   "aligned_poles": 12,
+   "aligned_per_shell": [
+    0,
+    0,
+    12,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 47.7211,
+   "generator_angle_deg": 72.0,
+   "exact_aligned_pairs_checked": 12
+  },
+  {
+   "name": "class-05",
+   "label": "class 05: 63.43\u00b0, 8 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 18,
+   "jumble_elements": 6,
+   "class_index": 5,
+   "min_rotation_angle_deg": 63.4349,
+   "aligned_poles": 8,
+   "aligned_per_shell": [
+    0,
+    4,
+    4,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 35.0057,
+   "generator_angle_deg": 63.434949,
+   "exact_aligned_pairs_checked": 8
+  },
+  {
+   "name": "class-06",
+   "label": "class 06: 63.98\u00b0, 8 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 6,
+   "min_rotation_angle_deg": 63.9759,
+   "aligned_poles": 8,
+   "aligned_per_shell": [
+    0,
+    2,
+    4,
+    2,
+    0
+   ],
+   "max_landing_error_deg": 37.8065,
+   "generator_angle_deg": 63.975917,
+   "exact_aligned_pairs_checked": 8
+  },
+  {
+   "name": "class-07",
+   "label": "class 07: 65.34\u00b0, 6 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 7,
+   "min_rotation_angle_deg": 65.3365,
+   "aligned_poles": 6,
+   "aligned_per_shell": [
+    0,
+    0,
+    4,
+    2,
+    0
+   ],
+   "max_landing_error_deg": 44.2307,
+   "generator_angle_deg": 65.336503,
+   "exact_aligned_pairs_checked": 6
+  },
+  {
+   "name": "class-08",
+   "label": "class 08: 26.57\u00b0, 4 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 18,
+   "jumble_elements": 6,
+   "class_index": 8,
+   "min_rotation_angle_deg": 26.5651,
+   "aligned_poles": 4,
+   "aligned_per_shell": [
+    0,
+    0,
+    4,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 16.1762,
+   "generator_angle_deg": 26.565051,
+   "exact_aligned_pairs_checked": 4
+  },
+  {
+   "name": "class-09",
+   "label": "class 09: 41.81\u00b0, 4 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 18,
+   "jumble_elements": 6,
+   "class_index": 9,
+   "min_rotation_angle_deg": 41.8103,
+   "aligned_poles": 4,
+   "aligned_per_shell": [
+    0,
+    0,
+    0,
+    4,
+    0
+   ],
+   "max_landing_error_deg": 25.243,
+   "generator_angle_deg": 41.810315,
+   "exact_aligned_pairs_checked": 4
+  },
+  {
+   "name": "class-10",
+   "label": "class 10: 47.21\u00b0, 4 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 24,
+   "jumble_elements": 12,
+   "class_index": 10,
+   "min_rotation_angle_deg": 47.2122,
+   "aligned_poles": 4,
+   "aligned_per_shell": [
+    0,
+    0,
+    4,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 32.5881,
+   "generator_angle_deg": 47.212198,
+   "exact_aligned_pairs_checked": 4
+  },
+  {
+   "name": "class-11",
+   "label": "class 11: 61.73\u00b0, 4 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 11,
+   "min_rotation_angle_deg": 61.7313,
+   "aligned_poles": 4,
+   "aligned_per_shell": [
+    0,
+    2,
+    2,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 40.2535,
+   "generator_angle_deg": 61.731323,
+   "exact_aligned_pairs_checked": 4
+  },
+  {
+   "name": "class-12",
+   "label": "class 12: 61.73\u00b0, 4 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 12,
+   "min_rotation_angle_deg": 61.7313,
+   "aligned_poles": 4,
+   "aligned_per_shell": [
+    0,
+    2,
+    2,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 40.2535,
+   "generator_angle_deg": 61.731323,
+   "exact_aligned_pairs_checked": 4
+  },
+  {
+   "name": "class-13",
+   "label": "class 13: 61.04\u00b0, 4 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 13,
+   "min_rotation_angle_deg": 61.0397,
+   "aligned_poles": 4,
+   "aligned_per_shell": [
+    0,
+    0,
+    4,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 40.5063,
+   "generator_angle_deg": 61.039702,
+   "exact_aligned_pairs_checked": 4
+  },
+  {
+   "name": "class-14",
+   "label": "class 14: 27.95\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 14,
+   "min_rotation_angle_deg": 27.9512,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    1,
+    2,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 18.6443,
+   "generator_angle_deg": 27.951245,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-15",
+   "label": "class 15: 27.95\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 15,
+   "min_rotation_angle_deg": 27.9512,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    1,
+    2,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 18.6443,
+   "generator_angle_deg": 27.951245,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-16",
+   "label": "class 16: 31.21\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 16,
+   "min_rotation_angle_deg": 31.2122,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    0,
+    2,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 21.6997,
+   "generator_angle_deg": 31.212159,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-17",
+   "label": "class 17: 31.21\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 17,
+   "min_rotation_angle_deg": 31.2122,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    0,
+    2,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 21.6997,
+   "generator_angle_deg": 31.212159,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-18",
+   "label": "class 18: 51.61\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 18,
+   "min_rotation_angle_deg": 51.6071,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    0,
+    2,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 35.4649,
+   "generator_angle_deg": 51.607085,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-19",
+   "label": "class 19: 51.61\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 19,
+   "min_rotation_angle_deg": 51.6071,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    0,
+    2,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 35.4649,
+   "generator_angle_deg": 51.607085,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-20",
+   "label": "class 20: 56.01\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 20,
+   "min_rotation_angle_deg": 56.0122,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    0,
+    2,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 37.8065,
+   "generator_angle_deg": 56.012156,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-21",
+   "label": "class 21: 56.01\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 21,
+   "min_rotation_angle_deg": 56.0122,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    0,
+    2,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 37.8065,
+   "generator_angle_deg": 56.012156,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-22",
+   "label": "class 22: 56.01\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 22,
+   "min_rotation_angle_deg": 56.0122,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    0,
+    2,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 37.8065,
+   "generator_angle_deg": 56.012156,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-23",
+   "label": "class 23: 56.01\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 23,
+   "min_rotation_angle_deg": 56.0122,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    0,
+    2,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 37.8065,
+   "generator_angle_deg": 56.012156,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-24",
+   "label": "class 24: 68.04\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 24,
+   "min_rotation_angle_deg": 68.0447,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    1,
+    2,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 42.472,
+   "generator_angle_deg": 68.044711,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-25",
+   "label": "class 25: 68.04\u00b0, 3 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 25,
+   "min_rotation_angle_deg": 68.0447,
+   "aligned_poles": 3,
+   "aligned_per_shell": [
+    0,
+    1,
+    2,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 42.472,
+   "generator_angle_deg": 68.044711,
+   "exact_aligned_pairs_checked": 3
+  },
+  {
+   "name": "class-26",
+   "label": "class 26: 38.72\u00b0, 2 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 26,
+   "min_rotation_angle_deg": 38.7249,
+   "aligned_poles": 2,
+   "aligned_per_shell": [
+    0,
+    1,
+    0,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 25.6969,
+   "generator_angle_deg": 38.724862,
+   "exact_aligned_pairs_checked": 2
+  },
+  {
+   "name": "class-27",
+   "label": "class 27: 38.72\u00b0, 2 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 27,
+   "min_rotation_angle_deg": 38.7249,
+   "aligned_poles": 2,
+   "aligned_per_shell": [
+    0,
+    1,
+    0,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 25.6969,
+   "generator_angle_deg": 38.724862,
+   "exact_aligned_pairs_checked": 2
+  },
+  {
+   "name": "class-28",
+   "label": "class 28: 39.00\u00b0, 2 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 28,
+   "min_rotation_angle_deg": 38.9963,
+   "aligned_poles": 2,
+   "aligned_per_shell": [
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "max_landing_error_deg": 27.0118,
+   "generator_angle_deg": 38.99631,
+   "exact_aligned_pairs_checked": 2
+  },
+  {
+   "name": "class-29",
+   "label": "class 29: 39.00\u00b0, 2 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 29,
+   "min_rotation_angle_deg": 38.9963,
+   "aligned_poles": 2,
+   "aligned_per_shell": [
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "max_landing_error_deg": 27.0118,
+   "generator_angle_deg": 38.99631,
+   "exact_aligned_pairs_checked": 2
+  },
+  {
+   "name": "class-30",
+   "label": "class 30: 50.49\u00b0, 2 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 30,
+   "min_rotation_angle_deg": 50.4857,
+   "aligned_poles": 2,
+   "aligned_per_shell": [
+    0,
+    1,
+    0,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 33.2412,
+   "generator_angle_deg": 50.485666,
+   "exact_aligned_pairs_checked": 2
+  },
+  {
+   "name": "class-31",
+   "label": "class 31: 50.49\u00b0, 2 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 31,
+   "min_rotation_angle_deg": 50.4857,
+   "aligned_poles": 2,
+   "aligned_per_shell": [
+    0,
+    1,
+    0,
+    1,
+    0
+   ],
+   "max_landing_error_deg": 33.2412,
+   "generator_angle_deg": 50.485666,
+   "exact_aligned_pairs_checked": 2
+  },
+  {
+   "name": "class-32",
+   "label": "class 32: 71.22\u00b0, 2 aligned",
+   "family": "realignment",
+   "exact_q_sqrt5": true,
+   "size": 36,
+   "jumble_elements": 24,
+   "class_index": 32,
+   "min_rotation_angle_deg": 71.216,
+   "aligned_poles": 2,
+   "aligned_per_shell": [
+    0,
+    2,
+    0,
+    0,
+    0
+   ],
+   "max_landing_error_deg": 39.9153,
+   "generator_angle_deg": 71.215972,
+   "exact_aligned_pairs_checked": 2
+  },
+  {
+   "name": "plane-10",
+   "label": "plane 10\u00b0 (exact Cayley, 9.99960\u00b0)",
+   "family": "plane",
+   "exact_q_sqrt5": true,
+   "size": 20,
+   "jumble_elements": 8,
+   "cayley_s": [
+    15,
+    629
+   ],
+   "realised_angle_deg": 9.999596,
+   "requested_angle_deg": 10,
+   "fixed_plane": "span(n_0, n_1) (face neighbour)",
+   "generator_angle_deg": 9.999596
+  },
+  {
+   "name": "plane-36",
+   "label": "plane 36\u00b0 (exact Cayley, 35.99975\u00b0)",
+   "family": "plane",
+   "exact_q_sqrt5": true,
+   "size": 20,
+   "jumble_elements": 8,
+   "cayley_s": [
+    86,
+    971
+   ],
+   "realised_angle_deg": 35.999747,
+   "requested_angle_deg": 36,
+   "fixed_plane": "span(n_0, n_1) (face neighbour)",
+   "generator_angle_deg": 35.999747
+  },
+  {
+   "name": "plane-72",
+   "label": "plane 72\u00b0 (exact Cayley, 72.00021\u00b0)",
+   "family": "plane",
+   "exact_q_sqrt5": true,
+   "size": 20,
+   "jumble_elements": 8,
+   "cayley_s": [
+    142,
+    717
+   ],
+   "realised_angle_deg": 72.000213,
+   "requested_angle_deg": 72,
+   "fixed_plane": "span(n_0, n_1) (face neighbour)",
+   "generator_angle_deg": 72.000213
+  },
+  {
+   "name": "plane-36-float",
+   "label": "plane 36\u00b0 (float, exact angle)",
+   "family": "plane",
+   "exact_q_sqrt5": false,
+   "size": 20,
+   "jumble_elements": 8,
+   "realised_angle_deg": 36.0,
+   "requested_angle_deg": 36,
+   "fixed_plane": "span(n_0, n_1) (face neighbour)",
+   "generator_angle_deg": 36.0
+  }
+ ],
+ "runs": [
+  {
+   "id": "a4__lattice",
+   "menu": "a4",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "closed",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 0,
+     "new_grips": 0,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 0,
+    "checked": 0,
+    "confirmed": 0
+   },
+   "search_seconds": 0.0,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "finite: closed"
+  },
+  {
+   "id": "class-00__lattice",
+   "menu": "class-00",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 2,
+     "new_grips": 9600,
+     "cumulative_representatives": 3,
+     "cumulative_grips": 10200,
+     "cumulative_positions": 10200,
+     "images_computed": 342,
+     "images_coinciding": 340,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 22,
+     "new_grips": 153600,
+     "cumulative_representatives": 25,
+     "cumulative_grips": 163800,
+     "cumulative_positions": 163800,
+     "images_computed": 702,
+     "images_coinciding": 680,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.913301224,
+      "median_nearest_neighbour_deg_approx": 2.089951,
+      "positions_compared": 300,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": true,
+     "new_representatives": 342,
+     "new_grips": 2457600,
+     "cumulative_representatives": 367,
+     "cumulative_grips": 2621400,
+     "cumulative_positions": 2621400,
+     "images_computed": 8004,
+     "images_coinciding": 7662,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.282222897,
+      "median_nearest_neighbour_deg_approx": 0.645798,
+      "positions_compared": 4404,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 4,
+     "complete": true,
+     "new_representatives": 5462,
+     "new_grips": 39321600,
+     "cumulative_representatives": 5829,
+     "cumulative_grips": 41943000,
+     "cumulative_positions": 41943000,
+     "images_computed": 124626,
+     "images_coinciding": 119164,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.26841,
+      "positions_compared": 69948,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 5,
+     "complete": true,
+     "new_representatives": 87382,
+     "new_grips": 629145600,
+     "cumulative_representatives": 93211,
+     "cumulative_grips": 671088600,
+     "cumulative_positions": 671088600,
+     "images_computed": 1988844,
+     "images_coinciding": 1901462,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 6,
+     "complete": false,
+     "new_representatives": 58849,
+     "new_grips": 423712800,
+     "cumulative_representatives": 152060,
+     "cumulative_grips": 1094801400,
+     "cumulative_positions": 1094801400,
+     "images_computed": 548868,
+     "images_coinciding": 490019,
+     "fraction_of_level_processed": 0.01725
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 2519327,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 49.5,
+   "separation_seconds": 7.3,
+   "growth_ratios": [
+    16.0,
+    16.0,
+    16.0,
+    16.0
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-01__lattice",
+   "menu": "class-01",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 2,
+     "new_grips": 9600,
+     "cumulative_representatives": 3,
+     "cumulative_grips": 10200,
+     "cumulative_positions": 10200,
+     "images_computed": 456,
+     "images_coinciding": 454,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 22,
+     "new_grips": 153600,
+     "cumulative_representatives": 25,
+     "cumulative_grips": 163800,
+     "cumulative_positions": 163800,
+     "images_computed": 936,
+     "images_coinciding": 914,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.913301224,
+      "median_nearest_neighbour_deg_approx": 2.089951,
+      "positions_compared": 300,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": true,
+     "new_representatives": 342,
+     "new_grips": 2457600,
+     "cumulative_representatives": 367,
+     "cumulative_grips": 2621400,
+     "cumulative_positions": 2621400,
+     "images_computed": 10672,
+     "images_coinciding": 10330,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.282222897,
+      "median_nearest_neighbour_deg_approx": 0.645798,
+      "positions_compared": 4404,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 4,
+     "complete": true,
+     "new_representatives": 5462,
+     "new_grips": 39321600,
+     "cumulative_representatives": 5829,
+     "cumulative_grips": 41943000,
+     "cumulative_positions": 41943000,
+     "images_computed": 166168,
+     "images_coinciding": 160706,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.26841,
+      "positions_compared": 69948,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 5,
+     "complete": true,
+     "new_representatives": 87382,
+     "new_grips": 629145600,
+     "cumulative_representatives": 93211,
+     "cumulative_grips": 671088600,
+     "cumulative_positions": 671088600,
+     "images_computed": 2651792,
+     "images_coinciding": 2564410,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 6,
+     "complete": false,
+     "new_representatives": 74226,
+     "new_grips": 534427200,
+     "cumulative_representatives": 167437,
+     "cumulative_grips": 1205515800,
+     "cumulative_positions": 1205515800,
+     "images_computed": 131072,
+     "images_coinciding": 56846,
+     "fraction_of_level_processed": 0.00309
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 2793660,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 64.1,
+   "separation_seconds": 5.0,
+   "growth_ratios": [
+    16.0,
+    16.0,
+    16.0,
+    16.0
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-02__lattice",
+   "menu": "class-02",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 2,
+     "new_grips": 9600,
+     "cumulative_representatives": 3,
+     "cumulative_grips": 10200,
+     "cumulative_positions": 10200,
+     "images_computed": 456,
+     "images_coinciding": 454,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 22,
+     "new_grips": 153600,
+     "cumulative_representatives": 25,
+     "cumulative_grips": 163800,
+     "cumulative_positions": 163800,
+     "images_computed": 936,
+     "images_coinciding": 914,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.913301224,
+      "median_nearest_neighbour_deg_approx": 2.089951,
+      "positions_compared": 300,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": true,
+     "new_representatives": 342,
+     "new_grips": 2457600,
+     "cumulative_representatives": 367,
+     "cumulative_grips": 2621400,
+     "cumulative_positions": 2621400,
+     "images_computed": 10672,
+     "images_coinciding": 10330,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.282222897,
+      "median_nearest_neighbour_deg_approx": 0.645798,
+      "positions_compared": 4404,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 4,
+     "complete": true,
+     "new_representatives": 5462,
+     "new_grips": 39321600,
+     "cumulative_representatives": 5829,
+     "cumulative_grips": 41943000,
+     "cumulative_positions": 41943000,
+     "images_computed": 166168,
+     "images_coinciding": 160706,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.26841,
+      "positions_compared": 69948,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 5,
+     "complete": true,
+     "new_representatives": 87382,
+     "new_grips": 629145600,
+     "cumulative_representatives": 93211,
+     "cumulative_grips": 671088600,
+     "cumulative_positions": 671088600,
+     "images_computed": 2651792,
+     "images_coinciding": 2564410,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 6,
+     "complete": false,
+     "new_representatives": 74214,
+     "new_grips": 534340800,
+     "cumulative_representatives": 167425,
+     "cumulative_grips": 1205429400,
+     "cumulative_positions": 1205429400,
+     "images_computed": 131072,
+     "images_coinciding": 56858,
+     "fraction_of_level_processed": 0.00309
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 2793672,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 64.2,
+   "separation_seconds": 4.7,
+   "growth_ratios": [
+    16.0,
+    16.0,
+    16.0,
+    16.0
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-03__lattice",
+   "menu": "class-03",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 2,
+     "new_grips": 9600,
+     "cumulative_representatives": 3,
+     "cumulative_grips": 10200,
+     "cumulative_positions": 10200,
+     "images_computed": 684,
+     "images_coinciding": 682,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 22,
+     "new_grips": 153600,
+     "cumulative_representatives": 25,
+     "cumulative_grips": 163800,
+     "cumulative_positions": 163800,
+     "images_computed": 1404,
+     "images_coinciding": 1382,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.913301224,
+      "median_nearest_neighbour_deg_approx": 2.089951,
+      "positions_compared": 300,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": true,
+     "new_representatives": 342,
+     "new_grips": 2457600,
+     "cumulative_representatives": 367,
+     "cumulative_grips": 2621400,
+     "cumulative_positions": 2621400,
+     "images_computed": 16008,
+     "images_coinciding": 15666,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.282222897,
+      "median_nearest_neighbour_deg_approx": 0.645798,
+      "positions_compared": 4404,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 4,
+     "complete": true,
+     "new_representatives": 5462,
+     "new_grips": 39321600,
+     "cumulative_representatives": 5829,
+     "cumulative_grips": 41943000,
+     "cumulative_positions": 41943000,
+     "images_computed": 249252,
+     "images_coinciding": 243790,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.26841,
+      "positions_compared": 69948,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 5,
+     "complete": true,
+     "new_representatives": 87382,
+     "new_grips": 629145600,
+     "cumulative_representatives": 93211,
+     "cumulative_grips": 671088600,
+     "cumulative_positions": 671088600,
+     "images_computed": 3977688,
+     "images_coinciding": 3890306,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 6,
+     "complete": false,
+     "new_representatives": 59700,
+     "new_grips": 429840000,
+     "cumulative_representatives": 152911,
+     "cumulative_grips": 1100928600,
+     "cumulative_positions": 1100928600,
+     "images_computed": 344064,
+     "images_coinciding": 284364,
+     "fraction_of_level_processed": 0.005407
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 4436190,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 79.3,
+   "separation_seconds": 5.4,
+   "growth_ratios": [
+    16.0,
+    16.0,
+    16.0,
+    16.0
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-04__lattice",
+   "menu": "class-04",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 2,
+     "new_grips": 9600,
+     "cumulative_representatives": 3,
+     "cumulative_grips": 10200,
+     "cumulative_positions": 10200,
+     "images_computed": 684,
+     "images_coinciding": 682,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 22,
+     "new_grips": 153600,
+     "cumulative_representatives": 25,
+     "cumulative_grips": 163800,
+     "cumulative_positions": 163800,
+     "images_computed": 1404,
+     "images_coinciding": 1382,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.913301224,
+      "median_nearest_neighbour_deg_approx": 2.089951,
+      "positions_compared": 300,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": true,
+     "new_representatives": 342,
+     "new_grips": 2457600,
+     "cumulative_representatives": 367,
+     "cumulative_grips": 2621400,
+     "cumulative_positions": 2621400,
+     "images_computed": 16008,
+     "images_coinciding": 15666,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.282222897,
+      "median_nearest_neighbour_deg_approx": 0.645798,
+      "positions_compared": 4404,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 4,
+     "complete": true,
+     "new_representatives": 5462,
+     "new_grips": 39321600,
+     "cumulative_representatives": 5829,
+     "cumulative_grips": 41943000,
+     "cumulative_positions": 41943000,
+     "images_computed": 249252,
+     "images_coinciding": 243790,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.26841,
+      "positions_compared": 69948,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 5,
+     "complete": true,
+     "new_representatives": 87382,
+     "new_grips": 629145600,
+     "cumulative_representatives": 93211,
+     "cumulative_grips": 671088600,
+     "cumulative_positions": 671088600,
+     "images_computed": 3977688,
+     "images_coinciding": 3890306,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 6,
+     "complete": false,
+     "new_representatives": 63656,
+     "new_grips": 458323200,
+     "cumulative_representatives": 156867,
+     "cumulative_grips": 1129411800,
+     "cumulative_positions": 1129411800,
+     "images_computed": 344064,
+     "images_coinciding": 280408,
+     "fraction_of_level_processed": 0.005407
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 4432234,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 71.7,
+   "separation_seconds": 4.4,
+   "growth_ratios": [
+    16.0,
+    16.0,
+    16.0,
+    16.0
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-05__lattice",
+   "menu": "class-05",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 3,
+     "new_grips": 18000,
+     "cumulative_representatives": 4,
+     "cumulative_grips": 18600,
+     "cumulative_positions": 18600,
+     "images_computed": 342,
+     "images_coinciding": 339,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.278195303,
+      "median_nearest_neighbour_deg_approx": 5.164787,
+      "positions_compared": 48,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 63,
+     "new_grips": 450000,
+     "cumulative_representatives": 67,
+     "cumulative_grips": 468600,
+     "cumulative_positions": 468600,
+     "images_computed": 1050,
+     "images_coinciding": 987,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.730638195,
+      "median_nearest_neighbour_deg_approx": 1.389781,
+      "positions_compared": 804,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": true,
+     "new_representatives": 1563,
+     "new_grips": 11250000,
+     "cumulative_representatives": 1630,
+     "cumulative_grips": 11718600,
+     "cumulative_positions": 11718600,
+     "images_computed": 23184,
+     "images_coinciding": 21621,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.124807083,
+      "median_nearest_neighbour_deg_approx": 0.384117,
+      "positions_compared": 19560,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 4,
+     "complete": true,
+     "new_representatives": 39063,
+     "new_grips": 281250000,
+     "cumulative_representatives": 40693,
+     "cumulative_grips": 292968600,
+     "cumulative_positions": 292968600,
+     "images_computed": 568854,
+     "images_coinciding": 529791,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.034495823,
+      "median_nearest_neighbour_deg_approx": 0.124807,
+      "positions_compared": 488316,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 5,
+     "complete": false,
+     "new_representatives": 121150,
+     "new_grips": 872280000,
+     "cumulative_representatives": 161843,
+     "cumulative_grips": 1165248600,
+     "cumulative_positions": 1165248600,
+     "images_computed": 172032,
+     "images_coinciding": 50882,
+     "fraction_of_level_processed": 0.012093
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 603620,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 16.6,
+   "separation_seconds": 33.3,
+   "growth_ratios": [
+    25.0,
+    25.0,
+    25.0
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-06__lattice",
+   "menu": "class-06",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 8,
+     "new_grips": 57600,
+     "cumulative_representatives": 9,
+     "cumulative_grips": 58200,
+     "cumulative_positions": 58200,
+     "images_computed": 1368,
+     "images_coinciding": 1360,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 1.53372268,
+      "median_nearest_neighbour_deg_approx": 1.533723,
+      "positions_compared": 108,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 837,
+     "new_grips": 6026400,
+     "cumulative_representatives": 846,
+     "cumulative_grips": 6084600,
+     "cumulative_positions": 6084600,
+     "images_computed": 11712,
+     "images_coinciding": 10875,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.151997176,
+      "median_nearest_neighbour_deg_approx": 0.491875,
+      "positions_compared": 10152,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": true,
+     "new_representatives": 85714,
+     "new_grips": 617140800,
+     "cumulative_representatives": 86560,
+     "cumulative_grips": 623225400,
+     "cumulative_positions": 623225400,
+     "images_computed": 1219896,
+     "images_coinciding": 1134182,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 4,
+     "complete": false,
+     "new_representatives": 89719,
+     "new_grips": 645976800,
+     "cumulative_representatives": 176279,
+     "cumulative_grips": 1269202200,
+     "cumulative_positions": 1269202200,
+     "images_computed": 196608,
+     "images_coinciding": 106889,
+     "fraction_of_level_processed": 0.001575
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1253306,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 23.1,
+   "separation_seconds": 0.2,
+   "growth_ratios": [
+    104.625,
+    102.4062
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-07__lattice",
+   "menu": "class-07",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 11,
+     "new_grips": 79200,
+     "cumulative_representatives": 12,
+     "cumulative_grips": 79800,
+     "cumulative_positions": 79800,
+     "images_computed": 1368,
+     "images_coinciding": 1357,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 2.071148481,
+      "median_nearest_neighbour_deg_approx": 2.50016,
+      "positions_compared": 144,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 1311,
+     "new_grips": 9439200,
+     "cumulative_representatives": 1323,
+     "cumulative_grips": 9519000,
+     "cumulative_positions": 9519000,
+     "images_computed": 16248,
+     "images_coinciding": 14937,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.171299204,
+      "median_nearest_neighbour_deg_approx": 0.427771,
+      "positions_compared": 15876,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 148854,
+     "new_grips": 1071748800,
+     "cumulative_representatives": 150177,
+     "cumulative_grips": 1081267800,
+     "cumulative_positions": 1081267800,
+     "images_computed": 1005864,
+     "images_coinciding": 857010,
+     "fraction_of_level_processed": 0.527302
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 873304,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 15.0,
+   "separation_seconds": 0.7,
+   "growth_ratios": [
+    119.1818
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-08__lattice",
+   "menu": "class-08",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 18,
+     "new_grips": 126000,
+     "cumulative_representatives": 19,
+     "cumulative_grips": 126600,
+     "cumulative_positions": 126600,
+     "images_computed": 342,
+     "images_coinciding": 324,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.816879719,
+      "median_nearest_neighbour_deg_approx": 1.869289,
+      "positions_compared": 228,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 3872,
+     "new_grips": 27865200,
+     "cumulative_representatives": 3891,
+     "cumulative_grips": 27991800,
+     "cumulative_positions": 27991800,
+     "images_computed": 6516,
+     "images_coinciding": 2644,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.043119779,
+      "median_nearest_neighbour_deg_approx": 0.267574,
+      "positions_compared": 46692,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 149569,
+     "new_grips": 1076888400,
+     "cumulative_representatives": 153460,
+     "cumulative_grips": 1104880200,
+     "cumulative_positions": 1104880200,
+     "images_computed": 185856,
+     "images_coinciding": 36287,
+     "fraction_of_level_processed": 0.131424
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 39255,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 4.8,
+   "separation_seconds": 2.5,
+   "growth_ratios": [
+    221.1524
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-09__lattice",
+   "menu": "class-09",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 8,
+     "new_grips": 54000,
+     "cumulative_representatives": 9,
+     "cumulative_grips": 54600,
+     "cumulative_positions": 54600,
+     "images_computed": 342,
+     "images_coinciding": 334,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 1.970412802,
+      "median_nearest_neighbour_deg_approx": 1.970413,
+      "positions_compared": 108,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 608,
+     "new_grips": 4374000,
+     "cumulative_representatives": 617,
+     "cumulative_grips": 4428600,
+     "cumulative_positions": 4428600,
+     "images_computed": 2982,
+     "images_coinciding": 2374,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.250864744,
+      "median_nearest_neighbour_deg_approx": 0.574042,
+      "positions_compared": 7404,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": true,
+     "new_representatives": 49016,
+     "new_grips": 352911600,
+     "cumulative_representatives": 49633,
+     "cumulative_grips": 357340200,
+     "cumulative_positions": 357340200,
+     "images_computed": 221472,
+     "images_coinciding": 172456,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.019740362,
+      "median_nearest_neighbour_deg_approx": 0.122496,
+      "positions_compared": 595596,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 4,
+     "complete": false,
+     "new_representatives": 100883,
+     "new_grips": 726357600,
+     "cumulative_representatives": 150516,
+     "cumulative_grips": 1083697800,
+     "cumulative_positions": 1083697800,
+     "images_computed": 122880,
+     "images_coinciding": 21997,
+     "fraction_of_level_processed": 0.006883
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 197161,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 9.3,
+   "separation_seconds": 37.6,
+   "growth_ratios": [
+    81.0,
+    80.684
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-10__lattice",
+   "menu": "class-10",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 36,
+     "new_grips": 259200,
+     "cumulative_representatives": 37,
+     "cumulative_grips": 259800,
+     "cumulative_positions": 259800,
+     "images_computed": 684,
+     "images_coinciding": 648,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 444,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 19905,
+     "new_grips": 143306400,
+     "cumulative_representatives": 19942,
+     "cumulative_grips": 143566200,
+     "cumulative_positions": 143566200,
+     "images_computed": 26520,
+     "images_coinciding": 6615,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.008970414,
+      "median_nearest_neighbour_deg_approx": 0.151997,
+      "positions_compared": 239304,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 141492,
+     "new_grips": 1018742400,
+     "cumulative_representatives": 161434,
+     "cumulative_grips": 1162308600,
+     "cumulative_positions": 1162308600,
+     "images_computed": 147456,
+     "images_coinciding": 5964,
+     "fraction_of_level_processed": 0.010153
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 13227,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 7.1,
+   "separation_seconds": 11.9,
+   "growth_ratios": [
+    552.8796
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-11__lattice",
+   "menu": "class-11",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 34,
+     "new_grips": 236400,
+     "cumulative_representatives": 35,
+     "cumulative_grips": 237000,
+     "cumulative_positions": 237000,
+     "images_computed": 1368,
+     "images_coinciding": 1334,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.816879719,
+      "median_nearest_neighbour_deg_approx": 1.869289,
+      "positions_compared": 420,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 9970,
+     "new_grips": 71775600,
+     "cumulative_representatives": 10005,
+     "cumulative_grips": 72012600,
+     "cumulative_positions": 72012600,
+     "images_computed": 49152,
+     "images_coinciding": 39182,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.043119779,
+      "median_nearest_neighbour_deg_approx": 0.19553,
+      "positions_compared": 120060,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 153479,
+     "new_grips": 1105048800,
+     "cumulative_representatives": 163484,
+     "cumulative_grips": 1177061400,
+     "cumulative_positions": 1177061400,
+     "images_computed": 196608,
+     "images_coinciding": 43129,
+     "fraction_of_level_processed": 0.013522
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 83645,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 7.1,
+   "separation_seconds": 8.3,
+   "growth_ratios": [
+    303.6193
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-12__lattice",
+   "menu": "class-12",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 34,
+     "new_grips": 236400,
+     "cumulative_representatives": 35,
+     "cumulative_grips": 237000,
+     "cumulative_positions": 237000,
+     "images_computed": 1368,
+     "images_coinciding": 1334,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.816879719,
+      "median_nearest_neighbour_deg_approx": 1.869289,
+      "positions_compared": 420,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 9970,
+     "new_grips": 71775600,
+     "cumulative_representatives": 10005,
+     "cumulative_grips": 72012600,
+     "cumulative_positions": 72012600,
+     "images_computed": 49152,
+     "images_coinciding": 39182,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.043119779,
+      "median_nearest_neighbour_deg_approx": 0.19553,
+      "positions_compared": 120060,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 153496,
+     "new_grips": 1105171200,
+     "cumulative_representatives": 163501,
+     "cumulative_grips": 1177183800,
+     "cumulative_positions": 1177183800,
+     "images_computed": 196608,
+     "images_coinciding": 43112,
+     "fraction_of_level_processed": 0.013522
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 83628,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 9.8,
+   "separation_seconds": 7.8,
+   "growth_ratios": [
+    303.6193
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-13__lattice",
+   "menu": "class-13",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 39,
+     "new_grips": 280800,
+     "cumulative_representatives": 40,
+     "cumulative_grips": 281400,
+     "cumulative_positions": 281400,
+     "images_computed": 1368,
+     "images_coinciding": 1329,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 1.162926,
+      "positions_compared": 480,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 22088,
+     "new_grips": 159028800,
+     "cumulative_representatives": 22128,
+     "cumulative_grips": 159310200,
+     "cumulative_positions": 159310200,
+     "images_computed": 57072,
+     "images_coinciding": 34984,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.01010956,
+      "median_nearest_neighbour_deg_approx": 0.151577,
+      "positions_compared": 265536,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 141830,
+     "new_grips": 1021176000,
+     "cumulative_representatives": 163958,
+     "cumulative_grips": 1180486200,
+     "cumulative_positions": 1180486200,
+     "images_computed": 294912,
+     "images_coinciding": 153082,
+     "fraction_of_level_processed": 0.009165
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 189395,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 8.5,
+   "separation_seconds": 13.8,
+   "growth_ratios": [
+    566.3419
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-14__lattice",
+   "menu": "class-14",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 52,
+     "new_grips": 369600,
+     "cumulative_representatives": 53,
+     "cumulative_grips": 370200,
+     "cumulative_positions": 370200,
+     "images_computed": 1368,
+     "images_coinciding": 1316,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 636,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 36429,
+     "new_grips": 262284000,
+     "cumulative_representatives": 36482,
+     "cumulative_grips": 262654200,
+     "cumulative_positions": 262654200,
+     "images_computed": 76824,
+     "images_coinciding": 40395,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.008970414,
+      "median_nearest_neighbour_deg_approx": 0.126029,
+      "positions_compared": 437784,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 184769,
+     "new_grips": 1330336800,
+     "cumulative_representatives": 221251,
+     "cumulative_grips": 1592991000,
+     "cumulative_positions": 1592991000,
+     "images_computed": 196608,
+     "images_coinciding": 11839,
+     "fraction_of_level_processed": 0.003699
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 53550,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 7.2,
+   "separation_seconds": 27.3,
+   "growth_ratios": [
+    709.6429
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-15__lattice",
+   "menu": "class-15",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 52,
+     "new_grips": 369600,
+     "cumulative_representatives": 53,
+     "cumulative_grips": 370200,
+     "cumulative_positions": 370200,
+     "images_computed": 1368,
+     "images_coinciding": 1316,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 636,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 36429,
+     "new_grips": 262284000,
+     "cumulative_representatives": 36482,
+     "cumulative_grips": 262654200,
+     "cumulative_positions": 262654200,
+     "images_computed": 76824,
+     "images_coinciding": 40395,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.008970414,
+      "median_nearest_neighbour_deg_approx": 0.126029,
+      "positions_compared": 437784,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 184784,
+     "new_grips": 1330444800,
+     "cumulative_representatives": 221266,
+     "cumulative_grips": 1593099000,
+     "cumulative_positions": 1593099000,
+     "images_computed": 196608,
+     "images_coinciding": 11824,
+     "fraction_of_level_processed": 0.003699
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 53535,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 7.9,
+   "separation_seconds": 26.4,
+   "growth_ratios": [
+    709.6429
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-16__lattice",
+   "menu": "class-16",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 64,
+     "new_grips": 456000,
+     "cumulative_representatives": 65,
+     "cumulative_grips": 456600,
+     "cumulative_positions": 456600,
+     "images_computed": 1368,
+     "images_coinciding": 1304,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 0.905085,
+      "positions_compared": 780,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 50385,
+     "new_grips": 362767200,
+     "cumulative_representatives": 50450,
+     "cumulative_grips": 363223800,
+     "cumulative_positions": 363223800,
+     "images_computed": 94176,
+     "images_coinciding": 43791,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 183285,
+     "new_grips": 1319652000,
+     "cumulative_representatives": 233735,
+     "cumulative_grips": 1682875800,
+     "cumulative_positions": 1682875800,
+     "images_computed": 196608,
+     "images_coinciding": 13323,
+     "fraction_of_level_processed": 0.002678
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 58418,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 11.3,
+   "separation_seconds": 0.0,
+   "growth_ratios": [
+    795.5421
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-17__lattice",
+   "menu": "class-17",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 64,
+     "new_grips": 456000,
+     "cumulative_representatives": 65,
+     "cumulative_grips": 456600,
+     "cumulative_positions": 456600,
+     "images_computed": 1368,
+     "images_coinciding": 1304,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 0.905085,
+      "positions_compared": 780,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 50385,
+     "new_grips": 362767200,
+     "cumulative_representatives": 50450,
+     "cumulative_grips": 363223800,
+     "cumulative_positions": 363223800,
+     "images_computed": 94176,
+     "images_coinciding": 43791,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 183274,
+     "new_grips": 1319572800,
+     "cumulative_representatives": 233724,
+     "cumulative_grips": 1682796600,
+     "cumulative_positions": 1682796600,
+     "images_computed": 196608,
+     "images_coinciding": 13334,
+     "fraction_of_level_processed": 0.002678
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 58429,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 11.8,
+   "separation_seconds": 0.1,
+   "growth_ratios": [
+    795.5421
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-18__lattice",
+   "menu": "class-18",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 62,
+     "new_grips": 446400,
+     "cumulative_representatives": 63,
+     "cumulative_grips": 447000,
+     "cumulative_positions": 447000,
+     "images_computed": 1368,
+     "images_coinciding": 1306,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 1.035532,
+      "positions_compared": 756,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 49677,
+     "new_grips": 357664800,
+     "cumulative_representatives": 49740,
+     "cumulative_grips": 358111800,
+     "cumulative_positions": 358111800,
+     "images_computed": 90648,
+     "images_coinciding": 40971,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.01010956,
+      "median_nearest_neighbour_deg_approx": 0.113754,
+      "positions_compared": 596880,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 185214,
+     "new_grips": 1333540800,
+     "cumulative_representatives": 234954,
+     "cumulative_grips": 1691652600,
+     "cumulative_positions": 1691652600,
+     "images_computed": 196608,
+     "images_coinciding": 11394,
+     "fraction_of_level_processed": 0.002715
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 53671,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 7.0,
+   "separation_seconds": 35.4,
+   "growth_ratios": [
+    801.2204
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-19__lattice",
+   "menu": "class-19",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 62,
+     "new_grips": 446400,
+     "cumulative_representatives": 63,
+     "cumulative_grips": 447000,
+     "cumulative_positions": 447000,
+     "images_computed": 1368,
+     "images_coinciding": 1306,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 1.035532,
+      "positions_compared": 756,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 49677,
+     "new_grips": 357664800,
+     "cumulative_representatives": 49740,
+     "cumulative_grips": 358111800,
+     "cumulative_positions": 358111800,
+     "images_computed": 90648,
+     "images_coinciding": 40971,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.01010956,
+      "median_nearest_neighbour_deg_approx": 0.113754,
+      "positions_compared": 596880,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 185213,
+     "new_grips": 1333533600,
+     "cumulative_representatives": 234953,
+     "cumulative_grips": 1691645400,
+     "cumulative_positions": 1691645400,
+     "images_computed": 196608,
+     "images_coinciding": 11395,
+     "fraction_of_level_processed": 0.002715
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 53672,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 7.0,
+   "separation_seconds": 44.7,
+   "growth_ratios": [
+    801.2204
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-20__lattice",
+   "menu": "class-20",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 60,
+     "new_grips": 427200,
+     "cumulative_representatives": 61,
+     "cumulative_grips": 427800,
+     "cumulative_positions": 427800,
+     "images_computed": 1368,
+     "images_coinciding": 1308,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 732,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 47218,
+     "new_grips": 339964800,
+     "cumulative_representatives": 47279,
+     "cumulative_grips": 340392600,
+     "cumulative_positions": 340392600,
+     "images_computed": 88368,
+     "images_coinciding": 41150,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.008970414,
+      "median_nearest_neighbour_deg_approx": 0.117293,
+      "positions_compared": 567348,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 182461,
+     "new_grips": 1313719200,
+     "cumulative_representatives": 229740,
+     "cumulative_grips": 1654111800,
+     "cumulative_positions": 1654111800,
+     "images_computed": 196608,
+     "images_coinciding": 14147,
+     "fraction_of_level_processed": 0.002855
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 56605,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 6.5,
+   "separation_seconds": 40.0,
+   "growth_ratios": [
+    795.7978
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-21__lattice",
+   "menu": "class-21",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 60,
+     "new_grips": 427200,
+     "cumulative_representatives": 61,
+     "cumulative_grips": 427800,
+     "cumulative_positions": 427800,
+     "images_computed": 1368,
+     "images_coinciding": 1308,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 732,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 47232,
+     "new_grips": 340065600,
+     "cumulative_representatives": 47293,
+     "cumulative_grips": 340493400,
+     "cumulative_positions": 340493400,
+     "images_computed": 87768,
+     "images_coinciding": 40536,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.008970414,
+      "median_nearest_neighbour_deg_approx": 0.117293,
+      "positions_compared": 567516,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 185426,
+     "new_grips": 1335067200,
+     "cumulative_representatives": 232719,
+     "cumulative_grips": 1675560600,
+     "cumulative_positions": 1675560600,
+     "images_computed": 196608,
+     "images_coinciding": 11182,
+     "fraction_of_level_processed": 0.002854
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 53026,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 6.9,
+   "separation_seconds": 45.8,
+   "growth_ratios": [
+    796.0337
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-22__lattice",
+   "menu": "class-22",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 60,
+     "new_grips": 427200,
+     "cumulative_representatives": 61,
+     "cumulative_grips": 427800,
+     "cumulative_positions": 427800,
+     "images_computed": 1368,
+     "images_coinciding": 1308,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 732,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 47232,
+     "new_grips": 340065600,
+     "cumulative_representatives": 47293,
+     "cumulative_grips": 340493400,
+     "cumulative_positions": 340493400,
+     "images_computed": 87768,
+     "images_coinciding": 40536,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.008970414,
+      "median_nearest_neighbour_deg_approx": 0.117293,
+      "positions_compared": 567516,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 185402,
+     "new_grips": 1334894400,
+     "cumulative_representatives": 232695,
+     "cumulative_grips": 1675387800,
+     "cumulative_positions": 1675387800,
+     "images_computed": 196608,
+     "images_coinciding": 11206,
+     "fraction_of_level_processed": 0.002854
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 53050,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 12.9,
+   "separation_seconds": 41.4,
+   "growth_ratios": [
+    796.0337
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-23__lattice",
+   "menu": "class-23",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 60,
+     "new_grips": 427200,
+     "cumulative_representatives": 61,
+     "cumulative_grips": 427800,
+     "cumulative_positions": 427800,
+     "images_computed": 1368,
+     "images_coinciding": 1308,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 732,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 47218,
+     "new_grips": 339964800,
+     "cumulative_representatives": 47279,
+     "cumulative_grips": 340392600,
+     "cumulative_positions": 340392600,
+     "images_computed": 88368,
+     "images_coinciding": 41150,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.008970414,
+      "median_nearest_neighbour_deg_approx": 0.117293,
+      "positions_compared": 567348,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 182461,
+     "new_grips": 1313719200,
+     "cumulative_representatives": 229740,
+     "cumulative_grips": 1654111800,
+     "cumulative_positions": 1654111800,
+     "images_computed": 196608,
+     "images_coinciding": 14147,
+     "fraction_of_level_processed": 0.002855
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 56605,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 9.5,
+   "separation_seconds": 43.0,
+   "growth_ratios": [
+    795.7978
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-24__lattice",
+   "menu": "class-24",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 53,
+     "new_grips": 376800,
+     "cumulative_representatives": 54,
+     "cumulative_grips": 377400,
+     "cumulative_positions": 377400,
+     "images_computed": 1368,
+     "images_coinciding": 1315,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 648,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 36679,
+     "new_grips": 264084000,
+     "cumulative_representatives": 36733,
+     "cumulative_grips": 264461400,
+     "cumulative_positions": 264461400,
+     "images_computed": 77856,
+     "images_coinciding": 41177,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.008970414,
+      "median_nearest_neighbour_deg_approx": 0.125512,
+      "positions_compared": 440796,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 186266,
+     "new_grips": 1341115200,
+     "cumulative_representatives": 222999,
+     "cumulative_grips": 1605576600,
+     "cumulative_positions": 1605576600,
+     "images_computed": 196608,
+     "images_coinciding": 10342,
+     "fraction_of_level_processed": 0.003675
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 52834,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 5.9,
+   "separation_seconds": 34.1,
+   "growth_ratios": [
+    700.8599
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-25__lattice",
+   "menu": "class-25",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 53,
+     "new_grips": 376800,
+     "cumulative_representatives": 54,
+     "cumulative_grips": 377400,
+     "cumulative_positions": 377400,
+     "images_computed": 1368,
+     "images_coinciding": 1315,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 648,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 36679,
+     "new_grips": 264084000,
+     "cumulative_representatives": 36733,
+     "cumulative_grips": 264461400,
+     "cumulative_positions": 264461400,
+     "images_computed": 77856,
+     "images_coinciding": 41177,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.008970414,
+      "median_nearest_neighbour_deg_approx": 0.125512,
+      "positions_compared": 440796,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 186278,
+     "new_grips": 1341201600,
+     "cumulative_representatives": 223011,
+     "cumulative_grips": 1605663000,
+     "cumulative_positions": 1605663000,
+     "images_computed": 196608,
+     "images_coinciding": 10330,
+     "fraction_of_level_processed": 0.003675
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 52822,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 11.7,
+   "separation_seconds": 32.8,
+   "growth_ratios": [
+    700.8599
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-26__lattice",
+   "menu": "class-26",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 57,
+     "new_grips": 406800,
+     "cumulative_representatives": 58,
+     "cumulative_grips": 407400,
+     "cumulative_positions": 407400,
+     "images_computed": 1368,
+     "images_coinciding": 1311,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.552003866,
+      "median_nearest_neighbour_deg_approx": 1.263141,
+      "positions_compared": 696,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 38084,
+     "new_grips": 274201200,
+     "cumulative_representatives": 38142,
+     "cumulative_grips": 274608600,
+     "cumulative_positions": 274608600,
+     "images_computed": 83736,
+     "images_coinciding": 45652,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.019690127,
+      "median_nearest_neighbour_deg_approx": 0.12873,
+      "positions_compared": 457704,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 188239,
+     "new_grips": 1355320800,
+     "cumulative_representatives": 226381,
+     "cumulative_grips": 1629929400,
+     "cumulative_positions": 1629929400,
+     "images_computed": 196608,
+     "images_coinciding": 8369,
+     "fraction_of_level_processed": 0.003543
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 55332,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 8.9,
+   "separation_seconds": 29.9,
+   "growth_ratios": [
+    674.0442
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-27__lattice",
+   "menu": "class-27",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 57,
+     "new_grips": 406800,
+     "cumulative_representatives": 58,
+     "cumulative_grips": 407400,
+     "cumulative_positions": 407400,
+     "images_computed": 1368,
+     "images_coinciding": 1311,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.552003866,
+      "median_nearest_neighbour_deg_approx": 1.263141,
+      "positions_compared": 696,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 38084,
+     "new_grips": 274201200,
+     "cumulative_representatives": 38142,
+     "cumulative_grips": 274608600,
+     "cumulative_positions": 274608600,
+     "images_computed": 83736,
+     "images_coinciding": 45652,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.019690127,
+      "median_nearest_neighbour_deg_approx": 0.12873,
+      "positions_compared": 457704,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 188227,
+     "new_grips": 1355234400,
+     "cumulative_representatives": 226369,
+     "cumulative_grips": 1629843000,
+     "cumulative_positions": 1629843000,
+     "images_computed": 196608,
+     "images_coinciding": 8381,
+     "fraction_of_level_processed": 0.003543
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 55344,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 7.3,
+   "separation_seconds": 31.0,
+   "growth_ratios": [
+    674.0442
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-28__lattice",
+   "menu": "class-28",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 44,
+     "new_grips": 313200,
+     "cumulative_representatives": 45,
+     "cumulative_grips": 313800,
+     "cumulative_positions": 313800,
+     "images_computed": 1368,
+     "images_coinciding": 1324,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.608863902,
+      "median_nearest_neighbour_deg_approx": 1.393258,
+      "positions_compared": 540,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 22601,
+     "new_grips": 162714000,
+     "cumulative_representatives": 22646,
+     "cumulative_grips": 163027800,
+     "cumulative_positions": 163027800,
+     "images_computed": 64320,
+     "images_coinciding": 41719,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.014805271,
+      "median_nearest_neighbour_deg_approx": 0.153623,
+      "positions_compared": 271752,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 174912,
+     "new_grips": 1259366400,
+     "cumulative_representatives": 197558,
+     "cumulative_grips": 1422394200,
+     "cumulative_positions": 1422394200,
+     "images_computed": 196608,
+     "images_coinciding": 21696,
+     "fraction_of_level_processed": 0.005973
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 64739,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 5.3,
+   "separation_seconds": 22.5,
+   "growth_ratios": [
+    519.5211
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-29__lattice",
+   "menu": "class-29",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 44,
+     "new_grips": 313200,
+     "cumulative_representatives": 45,
+     "cumulative_grips": 313800,
+     "cumulative_positions": 313800,
+     "images_computed": 1368,
+     "images_coinciding": 1324,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.608863902,
+      "median_nearest_neighbour_deg_approx": 1.393258,
+      "positions_compared": 540,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 22601,
+     "new_grips": 162714000,
+     "cumulative_representatives": 22646,
+     "cumulative_grips": 163027800,
+     "cumulative_positions": 163027800,
+     "images_computed": 64320,
+     "images_coinciding": 41719,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.014805271,
+      "median_nearest_neighbour_deg_approx": 0.153623,
+      "positions_compared": 271752,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 174869,
+     "new_grips": 1259056800,
+     "cumulative_representatives": 197515,
+     "cumulative_grips": 1422084600,
+     "cumulative_positions": 1422084600,
+     "images_computed": 196608,
+     "images_coinciding": 21739,
+     "fraction_of_level_processed": 0.005973
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 64782,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 6.1,
+   "separation_seconds": 21.2,
+   "growth_ratios": [
+    519.5211
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-30__lattice",
+   "menu": "class-30",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 24,
+     "new_grips": 163200,
+     "cumulative_representatives": 25,
+     "cumulative_grips": 163800,
+     "cumulative_positions": 163800,
+     "images_computed": 1368,
+     "images_coinciding": 1344,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.913301224,
+      "median_nearest_neighbour_deg_approx": 2.089951,
+      "positions_compared": 300,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 5615,
+     "new_grips": 40418400,
+     "cumulative_representatives": 5640,
+     "cumulative_grips": 40582200,
+     "cumulative_positions": 40582200,
+     "images_computed": 34824,
+     "images_coinciding": 29209,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.26841,
+      "positions_compared": 67680,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 177553,
+     "new_grips": 1278381600,
+     "cumulative_representatives": 183193,
+     "cumulative_grips": 1318963800,
+     "cumulative_positions": 1318963800,
+     "images_computed": 233064,
+     "images_coinciding": 55511,
+     "fraction_of_level_processed": 0.028493
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 86064,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 5.8,
+   "separation_seconds": 3.2,
+   "growth_ratios": [
+    247.6618
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-31__lattice",
+   "menu": "class-31",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 24,
+     "new_grips": 163200,
+     "cumulative_representatives": 25,
+     "cumulative_grips": 163800,
+     "cumulative_positions": 163800,
+     "images_computed": 1368,
+     "images_coinciding": 1344,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.913301224,
+      "median_nearest_neighbour_deg_approx": 2.089951,
+      "positions_compared": 300,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 5615,
+     "new_grips": 40418400,
+     "cumulative_representatives": 5640,
+     "cumulative_grips": 40582200,
+     "cumulative_positions": 40582200,
+     "images_computed": 34824,
+     "images_coinciding": 29209,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.26841,
+      "positions_compared": 67680,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 177568,
+     "new_grips": 1278489600,
+     "cumulative_representatives": 183208,
+     "cumulative_grips": 1319071800,
+     "cumulative_positions": 1319071800,
+     "images_computed": 233064,
+     "images_coinciding": 55496,
+     "fraction_of_level_processed": 0.028493
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 86049,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 5.0,
+   "separation_seconds": 2.2,
+   "growth_ratios": [
+    247.6618
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-32__lattice",
+   "menu": "class-32",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 23,
+     "new_grips": 156000,
+     "cumulative_representatives": 24,
+     "cumulative_grips": 156600,
+     "cumulative_positions": 156600,
+     "images_computed": 1368,
+     "images_coinciding": 1345,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 1.052152796,
+      "median_nearest_neighbour_deg_approx": 2.001387,
+      "positions_compared": 288,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 5445,
+     "new_grips": 39194400,
+     "cumulative_representatives": 5469,
+     "cumulative_grips": 39351000,
+     "cumulative_positions": 39351000,
+     "images_computed": 33408,
+     "images_coinciding": 27963,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.044210501,
+      "median_nearest_neighbour_deg_approx": 0.248731,
+      "positions_compared": 65628,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 159014,
+     "new_grips": 1144891200,
+     "cumulative_representatives": 164483,
+     "cumulative_grips": 1184242200,
+     "cumulative_positions": 1184242200,
+     "images_computed": 359664,
+     "images_coinciding": 200650,
+     "fraction_of_level_processed": 0.045279
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 229958,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 8.4,
+   "separation_seconds": 4.1,
+   "growth_ratios": [
+    251.2462
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "plane-10__lattice",
+   "menu": "plane-10",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 15,
+     "new_grips": 108000,
+     "cumulative_representatives": 16,
+     "cumulative_grips": 108600,
+     "cumulative_positions": 108600,
+     "images_computed": 456,
+     "images_coinciding": 441,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.410302677,
+      "median_nearest_neighbour_deg_approx": 0.958831,
+      "positions_compared": 192,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 2801,
+     "new_grips": 20167200,
+     "cumulative_representatives": 2817,
+     "cumulative_grips": 20275800,
+     "cumulative_positions": 20275800,
+     "images_computed": 7376,
+     "images_coinciding": 4575,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.001719834,
+      "median_nearest_neighbour_deg_approx": 0.237623,
+      "positions_compared": 33804,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 147485,
+     "new_grips": 1061887200,
+     "cumulative_representatives": 150302,
+     "cumulative_grips": 1082163000,
+     "cumulative_positions": 1082163000,
+     "images_computed": 224080,
+     "images_coinciding": 76595,
+     "fraction_of_level_processed": 0.163599
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 81611,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 5.1,
+   "separation_seconds": 1.3,
+   "growth_ratios": [
+    186.7333
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "plane-36__lattice",
+   "menu": "plane-36",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 15,
+     "new_grips": 108000,
+     "cumulative_representatives": 16,
+     "cumulative_grips": 108600,
+     "cumulative_positions": 108600,
+     "images_computed": 456,
+     "images_coinciding": 441,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.365010159,
+      "median_nearest_neighbour_deg_approx": 1.256909,
+      "positions_compared": 192,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 2813,
+     "new_grips": 20253600,
+     "cumulative_representatives": 2829,
+     "cumulative_grips": 20362200,
+     "cumulative_positions": 20362200,
+     "images_computed": 7248,
+     "images_coinciding": 4435,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.004172898,
+      "median_nearest_neighbour_deg_approx": 0.292808,
+      "positions_compared": 33948,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 148345,
+     "new_grips": 1068084000,
+     "cumulative_representatives": 151174,
+     "cumulative_grips": 1088446200,
+     "cumulative_positions": 1088446200,
+     "images_computed": 225040,
+     "images_coinciding": 76695,
+     "fraction_of_level_processed": 0.165043
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 81571,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 6.2,
+   "separation_seconds": 1.1,
+   "growth_ratios": [
+    187.5333
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "plane-72__lattice",
+   "menu": "plane-72",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 15,
+     "new_grips": 108000,
+     "cumulative_representatives": 16,
+     "cumulative_grips": 108600,
+     "cumulative_positions": 108600,
+     "images_computed": 456,
+     "images_coinciding": 441,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.102042426,
+      "median_nearest_neighbour_deg_approx": 1.31835,
+      "positions_compared": 192,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 2747,
+     "new_grips": 19778400,
+     "cumulative_representatives": 2763,
+     "cumulative_grips": 19887000,
+     "cumulative_positions": 19887000,
+     "images_computed": 7040,
+     "images_coinciding": 4293,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.007100694,
+      "median_nearest_neighbour_deg_approx": 0.268144,
+      "positions_compared": 33156,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 155401,
+     "new_grips": 1118882400,
+     "cumulative_representatives": 158164,
+     "cumulative_grips": 1138769400,
+     "cumulative_positions": 1138769400,
+     "images_computed": 241736,
+     "images_coinciding": 86335,
+     "fraction_of_level_processed": 0.182847
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 91069,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 6.5,
+   "separation_seconds": 1.1,
+   "growth_ratios": [
+    183.1333
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "plane-36-float__lattice",
+   "menu": "plane-36-float",
+   "twisting": "lattice",
+   "threshold_deg": 46.8,
+   "depth_limit": 8,
+   "budget_representatives": 150000,
+   "time_limit_s": 600,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 15,
+     "new_grips": 108000,
+     "cumulative_representatives": 16,
+     "cumulative_grips": 108600,
+     "cumulative_positions": 108600,
+     "images_computed": 456,
+     "images_coinciding": 441,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.364777965,
+      "median_nearest_neighbour_deg_approx": 1.256729,
+      "positions_compared": 192
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 2813,
+     "new_grips": 20253600,
+     "cumulative_representatives": 2829,
+     "cumulative_grips": 20362200,
+     "cumulative_positions": 20362200,
+     "images_computed": 7248,
+     "images_coinciding": 4435,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.004395305,
+      "median_nearest_neighbour_deg_approx": 0.292842,
+      "positions_compared": 33948
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 148326,
+     "new_grips": 1067947200,
+     "cumulative_representatives": 151155,
+     "cumulative_grips": 1088309400,
+     "cumulative_positions": 1088309400,
+     "images_computed": 225040,
+     "images_coinciding": 76714,
+     "fraction_of_level_processed": 0.165036
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": false,
+    "coincidences_total": 81590,
+    "checked": 0,
+    "confirmed": 0
+   },
+   "search_seconds": 4.3,
+   "separation_seconds": 0.8,
+   "growth_ratios": [
+    187.5333
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "a4__all",
+   "menu": "a4",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "closed",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 0,
+     "new_grips": 0,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 0,
+    "checked": 0,
+    "confirmed": 0
+   },
+   "search_seconds": 0.0,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "finite: closed"
+  },
+  {
+   "id": "class-00__all",
+   "menu": "class-00",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "time limit reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 5,
+     "new_grips": 15000,
+     "cumulative_representatives": 6,
+     "cumulative_grips": 15600,
+     "cumulative_positions": 10200,
+     "images_computed": 4104,
+     "images_coinciding": 4099,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 5670,
+     "new_grips": 40728000,
+     "cumulative_representatives": 5676,
+     "cumulative_grips": 40743600,
+     "cumulative_positions": 21823800,
+     "images_computed": 398034,
+     "images_coinciding": 392364,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.282223,
+      "positions_compared": 36408,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 15848,
+     "new_grips": 114048000,
+     "cumulative_representatives": 21524,
+     "cumulative_grips": 154791600,
+     "cumulative_positions": 86940600,
+     "images_computed": 4608000,
+     "images_coinciding": 4592152,
+     "fraction_of_level_processed": 1.1e-05
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 4988615,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 303.5,
+   "separation_seconds": 1.1,
+   "growth_ratios": [
+    2715.2
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-01__all",
+   "menu": "class-01",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "time limit reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 5,
+     "new_grips": 15000,
+     "cumulative_representatives": 6,
+     "cumulative_grips": 15600,
+     "cumulative_positions": 10200,
+     "images_computed": 5472,
+     "images_coinciding": 5467,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 3916,
+     "new_grips": 28099200,
+     "cumulative_representatives": 3922,
+     "cumulative_grips": 28114800,
+     "cumulative_positions": 13983000,
+     "images_computed": 446868,
+     "images_coinciding": 442952,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.322898,
+      "positions_compared": 23340,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 7021,
+     "new_grips": 50522400,
+     "cumulative_representatives": 10943,
+     "cumulative_grips": 78637200,
+     "cumulative_positions": 34963800,
+     "images_computed": 2990080,
+     "images_coinciding": 2983059,
+     "fraction_of_level_processed": 1.3e-05
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 3431478,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 304.2,
+   "separation_seconds": 0.6,
+   "growth_ratios": [
+    1873.28
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-02__all",
+   "menu": "class-02",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "time limit reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 5,
+     "new_grips": 15000,
+     "cumulative_representatives": 6,
+     "cumulative_grips": 15600,
+     "cumulative_positions": 10200,
+     "images_computed": 5472,
+     "images_coinciding": 5467,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 3916,
+     "new_grips": 28099200,
+     "cumulative_representatives": 3922,
+     "cumulative_grips": 28114800,
+     "cumulative_positions": 13983000,
+     "images_computed": 446868,
+     "images_coinciding": 442952,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.322898,
+      "positions_compared": 23340,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 6969,
+     "new_grips": 50148000,
+     "cumulative_representatives": 10891,
+     "cumulative_grips": 78262800,
+     "cumulative_positions": 34963800,
+     "images_computed": 2916352,
+     "images_coinciding": 2909383,
+     "fraction_of_level_processed": 1.3e-05
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 3357802,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 302.8,
+   "separation_seconds": 0.5,
+   "growth_ratios": [
+    1873.28
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-03__all",
+   "menu": "class-03",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "time limit reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 3,
+     "new_grips": 12000,
+     "cumulative_representatives": 4,
+     "cumulative_grips": 12600,
+     "cumulative_positions": 10200,
+     "images_computed": 8208,
+     "images_coinciding": 8205,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 1656,
+     "new_grips": 11904000,
+     "cumulative_representatives": 1660,
+     "cumulative_grips": 11916600,
+     "cumulative_positions": 9533400,
+     "images_computed": 229176,
+     "images_coinciding": 227520,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.41989,
+      "positions_compared": 15924,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 17478,
+     "new_grips": 125836800,
+     "cumulative_representatives": 19138,
+     "cumulative_grips": 137753400,
+     "cumulative_positions": 105149400,
+     "images_computed": 10371072,
+     "images_coinciding": 10353594,
+     "fraction_of_level_processed": 0.000216
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 10589319,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 303.3,
+   "separation_seconds": 0.4,
+   "growth_ratios": [
+    992.0
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-04__all",
+   "menu": "class-04",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "time limit reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 3,
+     "new_grips": 12000,
+     "cumulative_representatives": 4,
+     "cumulative_grips": 12600,
+     "cumulative_positions": 10200,
+     "images_computed": 8208,
+     "images_coinciding": 8205,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.78344575,
+      "median_nearest_neighbour_deg_approx": 9.105592,
+      "positions_compared": 36,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 1656,
+     "new_grips": 11904000,
+     "cumulative_representatives": 1660,
+     "cumulative_grips": 11916600,
+     "cumulative_positions": 9533400,
+     "images_computed": 229176,
+     "images_coinciding": 227520,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.087211592,
+      "median_nearest_neighbour_deg_approx": 0.41989,
+      "positions_compared": 15924,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 17142,
+     "new_grips": 123412800,
+     "cumulative_representatives": 18802,
+     "cumulative_grips": 135329400,
+     "cumulative_positions": 97195800,
+     "images_computed": 10014720,
+     "images_coinciding": 9997578,
+     "fraction_of_level_processed": 0.000209
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 10233303,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 302.9,
+   "separation_seconds": 0.4,
+   "growth_ratios": [
+    992.0
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-05__all",
+   "menu": "class-05",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "time limit reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 4,
+     "new_grips": 21600,
+     "cumulative_representatives": 5,
+     "cumulative_grips": 22200,
+     "cumulative_positions": 18600,
+     "images_computed": 4104,
+     "images_coinciding": 4100,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 4.278195303,
+      "median_nearest_neighbour_deg_approx": 5.164787,
+      "positions_compared": 48,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": true,
+     "new_representatives": 13476,
+     "new_grips": 96966000,
+     "cumulative_representatives": 13481,
+     "cumulative_grips": 96988200,
+     "cumulative_positions": 66172200,
+     "images_computed": 272952,
+     "images_coinciding": 259476,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.034495823,
+      "median_nearest_neighbour_deg_approx": 0.201942,
+      "positions_compared": 110316,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 3,
+     "complete": false,
+     "new_representatives": 38786,
+     "new_grips": 279252000,
+     "cumulative_representatives": 52267,
+     "cumulative_grips": 376240200,
+     "cumulative_positions": 127789800,
+     "images_computed": 6684672,
+     "images_coinciding": 6645886,
+     "fraction_of_level_processed": 3e-06
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 6909462,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 304.1,
+   "separation_seconds": 5.8,
+   "growth_ratios": [
+    4489.1667
+   ],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-06__all",
+   "menu": "class-06",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 9,
+     "new_grips": 64800,
+     "cumulative_representatives": 10,
+     "cumulative_grips": 65400,
+     "cumulative_positions": 58200,
+     "images_computed": 16416,
+     "images_coinciding": 16407,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 1.53372268,
+      "median_nearest_neighbour_deg_approx": 1.533723,
+      "positions_compared": 108,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 66050,
+     "new_grips": 475560000,
+     "cumulative_representatives": 66060,
+     "cumulative_grips": 475625400,
+     "cumulative_positions": 322963800,
+     "images_computed": 267552,
+     "images_coinciding": 201502,
+     "fraction_of_level_processed": 0.106211
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 217909,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 21.4,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-07__all",
+   "menu": "class-07",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 12,
+     "new_grips": 86400,
+     "cumulative_representatives": 13,
+     "cumulative_grips": 87000,
+     "cumulative_positions": 79800,
+     "images_computed": 16416,
+     "images_coinciding": 16404,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 2.071148481,
+      "median_nearest_neighbour_deg_approx": 2.50016,
+      "positions_compared": 144,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 69998,
+     "new_grips": 503985600,
+     "cumulative_representatives": 70011,
+     "cumulative_grips": 504072600,
+     "cumulative_positions": 340495800,
+     "images_computed": 321984,
+     "images_coinciding": 251986,
+     "fraction_of_level_processed": 0.074734
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 268390,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 21.1,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-08__all",
+   "menu": "class-08",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 29,
+     "new_grips": 205200,
+     "cumulative_representatives": 30,
+     "cumulative_grips": 205800,
+     "cumulative_positions": 126600,
+     "images_computed": 4104,
+     "images_coinciding": 4075,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.816879719,
+      "median_nearest_neighbour_deg_approx": 1.869289,
+      "positions_compared": 228,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60733,
+     "new_grips": 437215200,
+     "cumulative_representatives": 60763,
+     "cumulative_grips": 437421000,
+     "cumulative_positions": 206454600,
+     "images_computed": 455832,
+     "images_coinciding": 395099,
+     "fraction_of_level_processed": 0.039659
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 399174,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 36.9,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-09__all",
+   "menu": "class-09",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 9,
+     "new_grips": 57600,
+     "cumulative_representatives": 10,
+     "cumulative_grips": 58200,
+     "cumulative_positions": 54600,
+     "images_computed": 4104,
+     "images_coinciding": 4095,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 1.970412802,
+      "median_nearest_neighbour_deg_approx": 1.970413,
+      "positions_compared": 108,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 64843,
+     "new_grips": 466832400,
+     "cumulative_representatives": 64853,
+     "cumulative_grips": 466890600,
+     "cumulative_positions": 386158200,
+     "images_computed": 282456,
+     "images_coinciding": 217613,
+     "fraction_of_level_processed": 0.230291
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 221708,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 19.3,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-10__all",
+   "menu": "class-10",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 57,
+     "new_grips": 410400,
+     "cumulative_representatives": 58,
+     "cumulative_grips": 411000,
+     "cumulative_positions": 259800,
+     "images_computed": 8208,
+     "images_coinciding": 8151,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 444,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 62262,
+     "new_grips": 448257600,
+     "cumulative_representatives": 62320,
+     "cumulative_grips": 448668600,
+     "cumulative_positions": 232738200,
+     "images_computed": 548976,
+     "images_coinciding": 486714,
+     "fraction_of_level_processed": 0.009402
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 494865,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 45.3,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-11__all",
+   "menu": "class-11",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 52,
+     "new_grips": 370800,
+     "cumulative_representatives": 53,
+     "cumulative_grips": 371400,
+     "cumulative_positions": 237000,
+     "images_computed": 16416,
+     "images_coinciding": 16364,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.816879719,
+      "median_nearest_neighbour_deg_approx": 1.869289,
+      "positions_compared": 420,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 73605,
+     "new_grips": 529896000,
+     "cumulative_representatives": 73658,
+     "cumulative_grips": 530267400,
+     "cumulative_positions": 223939800,
+     "images_computed": 1000224,
+     "images_coinciding": 926619,
+     "fraction_of_level_processed": 0.013712
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 942983,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 77.9,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-12__all",
+   "menu": "class-12",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 52,
+     "new_grips": 370800,
+     "cumulative_representatives": 53,
+     "cumulative_grips": 371400,
+     "cumulative_positions": 237000,
+     "images_computed": 16416,
+     "images_coinciding": 16364,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.816879719,
+      "median_nearest_neighbour_deg_approx": 1.869289,
+      "positions_compared": 420,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 74026,
+     "new_grips": 532927200,
+     "cumulative_representatives": 74079,
+     "cumulative_grips": 533298600,
+     "cumulative_positions": 215911800,
+     "images_computed": 1000224,
+     "images_coinciding": 926198,
+     "fraction_of_level_processed": 0.013712
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 942562,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 90.1,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-13__all",
+   "menu": "class-13",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 57,
+     "new_grips": 410400,
+     "cumulative_representatives": 58,
+     "cumulative_grips": 411000,
+     "cumulative_positions": 281400,
+     "images_computed": 16416,
+     "images_coinciding": 16359,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 1.217347,
+      "positions_compared": 480,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 77908,
+     "new_grips": 560908800,
+     "cumulative_representatives": 77966,
+     "cumulative_grips": 561319800,
+     "cumulative_positions": 305175000,
+     "images_computed": 1072800,
+     "images_coinciding": 994892,
+     "fraction_of_level_processed": 0.012229
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1011251,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 70.9,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-14__all",
+   "menu": "class-14",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 77,
+     "new_grips": 554400,
+     "cumulative_representatives": 78,
+     "cumulative_grips": 555000,
+     "cumulative_positions": 370200,
+     "images_computed": 16416,
+     "images_coinciding": 16339,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 636,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60906,
+     "new_grips": 438484800,
+     "cumulative_representatives": 60984,
+     "cumulative_grips": 439039800,
+     "cumulative_positions": 236208600,
+     "images_computed": 1253376,
+     "images_coinciding": 1192470,
+     "fraction_of_level_processed": 0.007873
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1208809,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 78.8,
+   "separation_seconds": 0.1,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-15__all",
+   "menu": "class-15",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 77,
+     "new_grips": 554400,
+     "cumulative_representatives": 78,
+     "cumulative_grips": 555000,
+     "cumulative_positions": 370200,
+     "images_computed": 16416,
+     "images_coinciding": 16339,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 636,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60893,
+     "new_grips": 438391200,
+     "cumulative_representatives": 60971,
+     "cumulative_grips": 438946200,
+     "cumulative_positions": 236165400,
+     "images_computed": 1253376,
+     "images_coinciding": 1192483,
+     "fraction_of_level_processed": 0.007873
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1208822,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 76.1,
+   "separation_seconds": 0.1,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-16__all",
+   "menu": "class-16",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 91,
+     "new_grips": 655200,
+     "cumulative_representatives": 92,
+     "cumulative_grips": 655800,
+     "cumulative_positions": 456600,
+     "images_computed": 16416,
+     "images_coinciding": 16325,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 0.905085,
+      "positions_compared": 780,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60029,
+     "new_grips": 432170400,
+     "cumulative_representatives": 60121,
+     "cumulative_grips": 432826200,
+     "cumulative_positions": 274750200,
+     "images_computed": 1056768,
+     "images_coinciding": 996739,
+     "fraction_of_level_processed": 0.004774
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1013064,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 56.4,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-17__all",
+   "menu": "class-17",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 91,
+     "new_grips": 655200,
+     "cumulative_representatives": 92,
+     "cumulative_grips": 655800,
+     "cumulative_positions": 456600,
+     "images_computed": 16416,
+     "images_coinciding": 16325,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 0.905085,
+      "positions_compared": 780,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60064,
+     "new_grips": 432422400,
+     "cumulative_representatives": 60156,
+     "cumulative_grips": 433078200,
+     "cumulative_positions": 237454200,
+     "images_computed": 1056768,
+     "images_coinciding": 996704,
+     "fraction_of_level_processed": 0.004774
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1013029,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 51.7,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-18__all",
+   "menu": "class-18",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 91,
+     "new_grips": 655200,
+     "cumulative_representatives": 92,
+     "cumulative_grips": 655800,
+     "cumulative_positions": 447000,
+     "images_computed": 16416,
+     "images_coinciding": 16325,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 1.035532,
+      "positions_compared": 756,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 59919,
+     "new_grips": 431378400,
+     "cumulative_representatives": 60011,
+     "cumulative_grips": 432034200,
+     "cumulative_positions": 270437400,
+     "images_computed": 1056768,
+     "images_coinciding": 996849,
+     "fraction_of_level_processed": 0.004778
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1013174,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 46.6,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-19__all",
+   "menu": "class-19",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 91,
+     "new_grips": 655200,
+     "cumulative_representatives": 92,
+     "cumulative_grips": 655800,
+     "cumulative_positions": 447000,
+     "images_computed": 16416,
+     "images_coinciding": 16325,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.395533411,
+      "median_nearest_neighbour_deg_approx": 1.035532,
+      "positions_compared": 756,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 61077,
+     "new_grips": 439716000,
+     "cumulative_representatives": 61169,
+     "cumulative_grips": 440371800,
+     "cumulative_positions": 248290200,
+     "images_computed": 1081344,
+     "images_coinciding": 1020267,
+     "fraction_of_level_processed": 0.004889
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1036592,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 48.6,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-20__all",
+   "menu": "class-20",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 91,
+     "new_grips": 655200,
+     "cumulative_representatives": 92,
+     "cumulative_grips": 655800,
+     "cumulative_positions": 427800,
+     "images_computed": 16416,
+     "images_coinciding": 16325,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 732,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60679,
+     "new_grips": 436850400,
+     "cumulative_representatives": 60771,
+     "cumulative_grips": 437506200,
+     "cumulative_positions": 247483800,
+     "images_computed": 1056768,
+     "images_coinciding": 996089,
+     "fraction_of_level_processed": 0.004772
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1012414,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 55.2,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-21__all",
+   "menu": "class-21",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 91,
+     "new_grips": 655200,
+     "cumulative_representatives": 92,
+     "cumulative_grips": 655800,
+     "cumulative_positions": 427800,
+     "images_computed": 16416,
+     "images_coinciding": 16325,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 732,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60398,
+     "new_grips": 434827200,
+     "cumulative_representatives": 60490,
+     "cumulative_grips": 435483000,
+     "cumulative_positions": 245748600,
+     "images_computed": 1056768,
+     "images_coinciding": 996370,
+     "fraction_of_level_processed": 0.004775
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1012695,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 51.9,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-22__all",
+   "menu": "class-22",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 91,
+     "new_grips": 655200,
+     "cumulative_representatives": 92,
+     "cumulative_grips": 655800,
+     "cumulative_positions": 427800,
+     "images_computed": 16416,
+     "images_coinciding": 16325,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 732,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60329,
+     "new_grips": 434330400,
+     "cumulative_representatives": 60421,
+     "cumulative_grips": 434986200,
+     "cumulative_positions": 215544600,
+     "images_computed": 1056768,
+     "images_coinciding": 996439,
+     "fraction_of_level_processed": 0.004775
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1012764,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 65.6,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-23__all",
+   "menu": "class-23",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 91,
+     "new_grips": 655200,
+     "cumulative_representatives": 92,
+     "cumulative_grips": 655800,
+     "cumulative_positions": 427800,
+     "images_computed": 16416,
+     "images_coinciding": 16325,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 732,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60698,
+     "new_grips": 436987200,
+     "cumulative_representatives": 60790,
+     "cumulative_grips": 437643000,
+     "cumulative_positions": 219922200,
+     "images_computed": 1056768,
+     "images_coinciding": 996070,
+     "fraction_of_level_processed": 0.004772
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1012395,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 64.0,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-24__all",
+   "menu": "class-24",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 77,
+     "new_grips": 554400,
+     "cumulative_representatives": 78,
+     "cumulative_grips": 555000,
+     "cumulative_positions": 377400,
+     "images_computed": 16416,
+     "images_coinciding": 16339,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 648,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60741,
+     "new_grips": 437296800,
+     "cumulative_representatives": 60819,
+     "cumulative_grips": 437851800,
+     "cumulative_positions": 241342200,
+     "images_computed": 1253376,
+     "images_coinciding": 1192635,
+     "fraction_of_level_processed": 0.007879
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1208974,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 61.5,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-25__all",
+   "menu": "class-25",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 77,
+     "new_grips": 554400,
+     "cumulative_representatives": 78,
+     "cumulative_grips": 555000,
+     "cumulative_positions": 377400,
+     "images_computed": 16416,
+     "images_coinciding": 16339,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.473933574,
+      "median_nearest_neighbour_deg_approx": 1.08449,
+      "positions_compared": 648,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60770,
+     "new_grips": 437505600,
+     "cumulative_representatives": 60848,
+     "cumulative_grips": 438060600,
+     "cumulative_positions": 244135800,
+     "images_computed": 1253376,
+     "images_coinciding": 1192606,
+     "fraction_of_level_processed": 0.007879
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1208945,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 62.7,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-26__all",
+   "menu": "class-26",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 59,
+     "new_grips": 421200,
+     "cumulative_representatives": 60,
+     "cumulative_grips": 421800,
+     "cumulative_positions": 407400,
+     "images_computed": 16416,
+     "images_coinciding": 16357,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.552003866,
+      "median_nearest_neighbour_deg_approx": 1.263141,
+      "positions_compared": 696,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 85660,
+     "new_grips": 616741200,
+     "cumulative_representatives": 85720,
+     "cumulative_grips": 617163000,
+     "cumulative_positions": 283162200,
+     "images_computed": 1111392,
+     "images_coinciding": 1025732,
+     "fraction_of_level_processed": 0.011836
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1042089,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 55.0,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-27__all",
+   "menu": "class-27",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 59,
+     "new_grips": 421200,
+     "cumulative_representatives": 60,
+     "cumulative_grips": 421800,
+     "cumulative_positions": 407400,
+     "images_computed": 16416,
+     "images_coinciding": 16357,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.552003866,
+      "median_nearest_neighbour_deg_approx": 1.263141,
+      "positions_compared": 696,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 85660,
+     "new_grips": 616741200,
+     "cumulative_representatives": 85720,
+     "cumulative_grips": 617163000,
+     "cumulative_positions": 283162200,
+     "images_computed": 1111392,
+     "images_coinciding": 1025732,
+     "fraction_of_level_processed": 0.011836
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1042089,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 54.9,
+   "separation_seconds": 0.1,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-28__all",
+   "menu": "class-28",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 61,
+     "new_grips": 435600,
+     "cumulative_representatives": 62,
+     "cumulative_grips": 436200,
+     "cumulative_positions": 313800,
+     "images_computed": 16416,
+     "images_coinciding": 16355,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.608863902,
+      "median_nearest_neighbour_deg_approx": 1.393258,
+      "positions_compared": 540,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 72623,
+     "new_grips": 522832800,
+     "cumulative_representatives": 72685,
+     "cumulative_grips": 523269000,
+     "cumulative_positions": 168946200,
+     "images_computed": 1145952,
+     "images_coinciding": 1073329,
+     "fraction_of_level_processed": 0.011428
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1089684,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 59.8,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-29__all",
+   "menu": "class-29",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 61,
+     "new_grips": 435600,
+     "cumulative_representatives": 62,
+     "cumulative_grips": 436200,
+     "cumulative_positions": 313800,
+     "images_computed": 16416,
+     "images_coinciding": 16355,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.608863902,
+      "median_nearest_neighbour_deg_approx": 1.393258,
+      "positions_compared": 540,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 72623,
+     "new_grips": 522832800,
+     "cumulative_representatives": 72685,
+     "cumulative_grips": 523269000,
+     "cumulative_positions": 168946200,
+     "images_computed": 1145952,
+     "images_coinciding": 1073329,
+     "fraction_of_level_processed": 0.011428
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 1089684,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 51.0,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-30__all",
+   "menu": "class-30",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 34,
+     "new_grips": 235200,
+     "cumulative_representatives": 35,
+     "cumulative_grips": 235800,
+     "cumulative_positions": 163800,
+     "images_computed": 16416,
+     "images_coinciding": 16382,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.913301224,
+      "median_nearest_neighbour_deg_approx": 2.089951,
+      "positions_compared": 300,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 61831,
+     "new_grips": 445072800,
+     "cumulative_representatives": 61866,
+     "cumulative_grips": 445308600,
+     "cumulative_positions": 233268600,
+     "images_computed": 733536,
+     "images_coinciding": 671705,
+     "fraction_of_level_processed": 0.023127
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 688087,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 47.9,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-31__all",
+   "menu": "class-31",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 34,
+     "new_grips": 235200,
+     "cumulative_representatives": 35,
+     "cumulative_grips": 235800,
+     "cumulative_positions": 163800,
+     "images_computed": 16416,
+     "images_coinciding": 16382,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.913301224,
+      "median_nearest_neighbour_deg_approx": 2.089951,
+      "positions_compared": 300,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 61917,
+     "new_grips": 445687200,
+     "cumulative_representatives": 61952,
+     "cumulative_grips": 445923000,
+     "cumulative_positions": 235457400,
+     "images_computed": 733536,
+     "images_coinciding": 671619,
+     "fraction_of_level_processed": 0.023127
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 688001,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 46.7,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "class-32__all",
+   "menu": "class-32",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 24,
+     "new_grips": 163200,
+     "cumulative_representatives": 25,
+     "cumulative_grips": 163800,
+     "cumulative_positions": 156600,
+     "images_computed": 16416,
+     "images_coinciding": 16392,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 1.052152796,
+      "median_nearest_neighbour_deg_approx": 2.001387,
+      "positions_compared": 288,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 76419,
+     "new_grips": 550188000,
+     "cumulative_representatives": 76444,
+     "cumulative_grips": 550351800,
+     "cumulative_positions": 395412600,
+     "images_computed": 527904,
+     "images_coinciding": 451485,
+     "fraction_of_level_processed": 0.032657
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 467877,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 26.1,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "plane-10__all",
+   "menu": "plane-10",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 17,
+     "new_grips": 112800,
+     "cumulative_representatives": 18,
+     "cumulative_grips": 113400,
+     "cumulative_positions": 108600,
+     "images_computed": 5472,
+     "images_coinciding": 5455,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.410302677,
+      "median_nearest_neighbour_deg_approx": 0.958831,
+      "positions_compared": 192,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 60103,
+     "new_grips": 432732000,
+     "cumulative_representatives": 60121,
+     "cumulative_grips": 432845400,
+     "cumulative_positions": 406217400,
+     "images_computed": 546096,
+     "images_coinciding": 485993,
+     "fraction_of_level_processed": 0.119105
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 491448,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 26.7,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "plane-36__all",
+   "menu": "plane-36",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 17,
+     "new_grips": 112800,
+     "cumulative_representatives": 18,
+     "cumulative_grips": 113400,
+     "cumulative_positions": 108600,
+     "images_computed": 5472,
+     "images_coinciding": 5455,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.365010159,
+      "median_nearest_neighbour_deg_approx": 1.256909,
+      "positions_compared": 192,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 62599,
+     "new_grips": 450703200,
+     "cumulative_representatives": 62617,
+     "cumulative_grips": 450816600,
+     "cumulative_positions": 423943800,
+     "images_computed": 561200,
+     "images_coinciding": 498601,
+     "fraction_of_level_processed": 0.123617
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 504056,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 25.3,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "plane-72__all",
+   "menu": "plane-72",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 17,
+     "new_grips": 112800,
+     "cumulative_representatives": 18,
+     "cumulative_grips": 113400,
+     "cumulative_positions": 108600,
+     "images_computed": 5472,
+     "images_coinciding": 5455,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.102042426,
+      "median_nearest_neighbour_deg_approx": 1.31835,
+      "positions_compared": 192,
+      "closest_pair_exactly_distinct": true
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 61604,
+     "new_grips": 443539200,
+     "cumulative_representatives": 61622,
+     "cumulative_grips": 443652600,
+     "cumulative_positions": 416556600,
+     "images_computed": 552464,
+     "images_coinciding": 490860,
+     "fraction_of_level_processed": 0.123383
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": true,
+    "coincidences_total": 496315,
+    "checked": 2000,
+    "confirmed": 2000
+   },
+   "search_seconds": 25.2,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  },
+  {
+   "id": "plane-36-float__all",
+   "menu": "plane-36-float",
+   "twisting": "all",
+   "threshold_deg": 46.8,
+   "depth_limit": 3,
+   "budget_representatives": 60000,
+   "time_limit_s": 300,
+   "status": "size budget reached",
+   "levels": [
+    {
+     "depth": 0,
+     "complete": true,
+     "new_representatives": 1,
+     "new_grips": 600,
+     "cumulative_representatives": 1,
+     "cumulative_grips": 600,
+     "cumulative_positions": 600,
+     "images_computed": 0,
+     "images_coinciding": 0,
+     "fraction_of_level_processed": 1.0
+    },
+    {
+     "depth": 1,
+     "complete": true,
+     "new_representatives": 17,
+     "new_grips": 112800,
+     "cumulative_representatives": 18,
+     "cumulative_grips": 113400,
+     "cumulative_positions": 108600,
+     "images_computed": 5472,
+     "images_coinciding": 5455,
+     "fraction_of_level_processed": 1.0,
+     "separation": {
+      "min_separation_deg": 0.364777965,
+      "median_nearest_neighbour_deg_approx": 1.256729,
+      "positions_compared": 192
+     }
+    },
+    {
+     "depth": 2,
+     "complete": false,
+     "new_representatives": 62599,
+     "new_grips": 450703200,
+     "cumulative_representatives": 62617,
+     "cumulative_grips": 450816600,
+     "cumulative_positions": 423943800,
+     "images_computed": 561200,
+     "images_coinciding": 498601,
+     "fraction_of_level_processed": 0.123612
+    }
+   ],
+   "exact_coincidence_check": {
+    "menu_exact": false,
+    "coincidences_total": 504056,
+    "checked": 0,
+    "confirmed": 0
+   },
+   "search_seconds": 18.7,
+   "separation_seconds": 0.0,
+   "growth_ratios": [],
+   "verdict": "growing: not closed within the budget"
+  }
+ ]
+}

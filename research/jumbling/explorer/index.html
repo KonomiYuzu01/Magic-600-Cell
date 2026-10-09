@@ -1,0 +1,248 @@
+<title>600-Cell Grip Orbits</title>
+<meta name="description" content="Grip orbits of rigid jumbling menus on the 600-cell, by stereographic projection of S^3.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one control bar over a workspace of the 3D projection beside the run facts;
+   the growth chart and the per-depth table follow. Depth is ordinal, so it uses one blue
+   ramp whose contrast falls with depth; lattice poles are neutral rings. */
+:root {
+  --bg: #eef1f5;
+  --panel: #fafbfc;
+  --ink: #121821;
+  --ink-2: #445063;
+  --muted: #687384;
+  --rule: #d3d9e2;
+  --accent: #1c5cab;
+  --viz-bg: #fafbfc;
+  --ctx: #b4bdc9;
+  --lattice: #8a919c;
+  --base: #c4501c;
+  --d1: #0d366b; --d2: #1c5cab; --d3: #2a78d6; --d4: #3987e5;
+  --d5: #5598e7; --d6: #6da7ec; --d7: #86b6ef; --d8: #86b6ef;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1218; --panel: #151a22; --ink: #e6ebf2; --ink-2: #aeb8c6; --muted: #8692a3;
+    --rule: #2a3240; --accent: #6da7ec; --viz-bg: #121720; --ctx: #3b4554; --lattice: #7c8696;
+    --base: #ee7a45;
+    --d1: #cde2fb; --d2: #9ec5f4; --d3: #6da7ec; --d4: #5598e7;
+    --d5: #3987e5; --d6: #2a78d6; --d7: #256abf; --d8: #1c5cab;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1218; --panel: #151a22; --ink: #e6ebf2; --ink-2: #aeb8c6; --muted: #8692a3;
+  --rule: #2a3240; --accent: #6da7ec; --viz-bg: #121720; --ctx: #3b4554; --lattice: #7c8696;
+  --base: #ee7a45;
+  --d1: #cde2fb; --d2: #9ec5f4; --d3: #6da7ec; --d4: #5598e7;
+  --d5: #3987e5; --d6: #2a78d6; --d7: #256abf; --d8: #1c5cab;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 20px 40px;
+}
+.page { max-width: 1180px; margin: 0 auto; display: grid; gap: 20px; }
+h1, h2 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 1.85rem; line-height: 1.15; letter-spacing: 0.005em; }
+h2 { font-size: 1.15rem; }
+p { margin: 0; }
+.lede { color: var(--ink-2); max-width: 68ch; }
+.eyebrow {
+  font-family: var(--font-display); font-weight: 500; font-size: 0.78rem;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+}
+header { display: grid; gap: 8px; }
+.evidence { font-size: 0.85rem; color: var(--muted); }
+
+.controls {
+  display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: end;
+  padding: 14px 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius);
+}
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label, .field .label {
+  font-family: var(--font-display); font-weight: 500; font-size: 0.78rem;
+  text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted);
+}
+select, input[type="range"] { font: inherit; color: var(--ink); }
+select {
+  background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px;
+  max-width: 100%; min-width: 0;
+}
+.menu-field { flex: 1 1 280px; }
+.menu-field select { width: 100%; }
+.segmented { display: inline-flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.segmented input { position: absolute; opacity: 0; pointer-events: none; }
+.segmented label {
+  padding: 6px 12px; cursor: pointer; font-size: 0.9rem; color: var(--ink-2);
+  text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-weight: 500;
+}
+.segmented input:checked + label { background: var(--accent); color: var(--panel); }
+.segmented input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -4px; }
+.depth-field { flex: 0 1 220px; }
+.depth-field output { font-family: var(--font-data); color: var(--ink); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.toggles { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.9rem; color: var(--ink-2); }
+.toggles label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+input[type="checkbox"] { accent-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.workspace { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.view { display: grid; gap: 8px; min-width: 0; }
+.stage {
+  position: relative; width: 100%; max-width: 100%; aspect-ratio: 4 / 3;
+  background: var(--viz-bg); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden;
+}
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.stage .note {
+  position: absolute; left: 8px; bottom: 8px; max-width: calc(100% - 16px); font-size: 0.75rem;
+  color: var(--ink-2); font-family: var(--font-data); pointer-events: none;
+  background: var(--viz-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 8px;
+}
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.82rem; color: var(--ink-2); align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.ring { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--lattice); display: inline-block; }
+.ring.base { border-color: var(--base); }
+.caption { font-size: 0.85rem; color: var(--muted); max-width: 70ch; }
+
+.facts { display: grid; gap: 14px; padding: 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); min-width: 0; }
+.status { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px;
+  font-size: 0.85rem; font-weight: 600; border: 1px solid currentColor;
+}
+.pill.closed { color: var(--accent); }
+.pill.growing { color: var(--ink-2); }
+.facts dl { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 0.9rem; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; font-family: var(--font-data); font-size: 0.86rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.facts h2 { font-size: 1.05rem; }
+
+.panel { padding: 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); display: grid; gap: 10px; min-width: 0; }
+.chart-wrap { position: relative; min-width: 0; }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart-wrap .axis text { fill: var(--muted); font-family: var(--font-data); font-size: 11px; }
+.chart-wrap .grid line { stroke: var(--rule); stroke-width: 1; }
+.chart-wrap .ctx { fill: none; stroke: var(--ctx); stroke-width: 1.25; }
+.chart-wrap .ctx-hit { fill: none; stroke: transparent; stroke-width: 10; cursor: pointer; }
+.chart-wrap .ctx-hit:hover + .ctx, .chart-wrap .ctx.hover { stroke: var(--ink-2); }
+.chart-wrap .sel { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.chart-wrap .sel.partial { stroke-dasharray: 5 4; }
+.chart-wrap .mark { fill: var(--accent); stroke: var(--panel); stroke-width: 2; }
+.chart-wrap .mark.open { fill: var(--panel); stroke: var(--accent); }
+.chart-wrap .end-label { fill: var(--ink); font-family: var(--font-data); font-size: 11.5px; }
+.chart-wrap .axis-title { fill: var(--muted); font-family: var(--font-body); font-size: 11.5px; }
+.tooltip {
+  position: absolute; pointer-events: none; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 6px 9px; font-size: 0.8rem;
+  font-family: var(--font-data); white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-family: var(--font-display); font-weight: 500; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td { font-family: var(--font-data); }
+.notes { gap: 8px; font-size: 0.88rem; color: var(--ink-2); }
+.notes p { max-width: 82ch; }
+.notes p strong { color: var(--ink); font-weight: 600; }
+.error { color: var(--base); font-family: var(--font-data); font-size: 0.85rem; }
+
+@media (max-width: 860px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 1.5rem; }
+}
+@media (max-width: 480px) {
+  .facts dl { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .facts dt { font-size: 0.8rem; margin-top: 6px; }
+}
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">Rigid jumbling · 600-cell · workstream J4</div>
+    <h1>600-Cell Grip Orbits</h1>
+    <p class="lede">Grips are cell caps with a frame. A twist of a cap by a menu rotation moves every grip within the interaction angle, and the moved grips are added. This page shows how that grip set grows for each candidate twist menu, depth by depth.</p>
+    <p class="evidence">Synthetic geometry. Float search with exact Q(√5) checks of sampled coincidences and of the closest pair. Leads for the theory work, not proofs.</p>
+  </header>
+
+  <section class="controls" aria-label="Run selection">
+    <div class="field menu-field">
+      <label for="menu">Twist menu</label>
+      <select id="menu"></select>
+    </div>
+    <div class="field">
+      <span class="label" id="kind-label">Which grips twist</span>
+      <div class="segmented" role="radiogroup" aria-labelledby="kind-label">
+        <input type="radio" name="kind" id="kind-lattice" value="lattice" checked>
+        <label for="kind-lattice">600 lattice grips</label>
+        <input type="radio" name="kind" id="kind-all" value="all">
+        <label for="kind-all">Every grip</label>
+      </div>
+    </div>
+    <div class="field depth-field">
+      <label for="depth">Show depth <span id="depth-op">≤</span> <output id="depth-out" for="depth">1</output></label>
+      <input type="range" id="depth" min="0" max="1" step="1" value="1">
+    </div>
+    <div class="toggles">
+      <label><input type="checkbox" id="only-depth"> Only this depth</label>
+      <label><input type="checkbox" id="show-lattice" checked> Lattice poles</label>
+      <label><input type="checkbox" id="show-ball" checked> Interaction ball</label>
+      <label><input type="checkbox" id="spin"> Rotate</label>
+    </div>
+  </section>
+
+  <section class="workspace">
+    <div class="view">
+      <div class="stage" id="stage">
+        <canvas id="scene" aria-label="Stereographic projection of the grip orbit around the base pole"></canvas>
+        <div class="note" id="stage-note"></div>
+      </div>
+      <div class="legend" id="legend" aria-label="Legend"></div>
+      <p class="caption">Stereographic projection of S³ from −n₀ into R³: the base pole n₀ is at the centre, and spheres about n₀ stay spheres. The faint sphere is the 46.8° interaction ball of n₀. Orbit points are a sample of the grips within 50° of n₀, coloured by BFS depth; lattice poles are drawn out to 120°. Drag to rotate, scroll or pinch to zoom.</p>
+    </div>
+    <aside class="facts" id="facts" aria-live="polite"></aside>
+  </section>
+
+  <section class="panel" aria-labelledby="growth-title">
+    <h2 id="growth-title">Growth by depth</h2>
+    <p class="caption">Cumulative grips on S³ (log scale) for the selected menu, against every other menu with the same closure in grey. Click a grey line to select its menu. A dashed last segment and an open marker mean the level was cut off by the size or time budget, so its count is a lower bound.</p>
+    <div class="chart-wrap" id="chart"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="table-title">
+    <h2 id="table-title">Levels of the selected run</h2>
+    <p class="caption">Grips, positions and orbit reps are cumulative; new grips, images and coinciding count that level only. Orbit reps are the K⁺-orbit representatives the search keeps; images are the twist images it computed, and coinciding images matched a known grip. Separation is the smallest angle between two distinct grip positions; it is left out for cut levels and for levels above 50,000 representatives.</p>
+    <div class="table-wrap"><table id="levels"></table></div>
+  </section>
+
+  <section class="panel notes" aria-labelledby="def-title">
+    <h2 id="def-title">Definitions and limits</h2>
+    <p><strong>Grip.</strong> A rotation P in SO(4) that carries the base pole n₀ and its frame to the grip's position P n₀. Frames are compared modulo the cap group A4, so the 600 lattice grips are the 600 poles.</p>
+    <p><strong>Menu.</strong> A finite set of rotations fixing n₀, closed under inverses and A4-conjugation; it always contains A4. Grip P twists by P m P⁻¹. The realignment menus take one exact Q(√5) generator per class of the jumbling study; the plane menus rotate about the plane of n₀ and a face neighbour.</p>
+    <p><strong>Closure.</strong> A twist of grip c moves every grip whose position lies within 46.8° of c (a ball standing in for the cap geometry, between the 44.48° and 49.12° shells). With "600 lattice grips" only the world-fixed lattice grips twist, as in the state contract; with "Every grip" each grip in the set twists by its own frame-conjugated menu.</p>
+    <p><strong>Limits.</strong> The ball replaces the exact cap and piece geometry, and moved pieces change the outer shape, which this closure ignores. Growth within a budget does not prove a set infinite, and a closed run is checked exactly only on the sampled coincidences.</p>
+  </section>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="explorer.js"></script>
