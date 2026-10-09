@@ -1,6 +1,6 @@
 # Jumbling study of the 600-cell-Full puzzle
 
-Status: **exploratory computation with one senior plan check (9 October 2026; all eight findings adopted, revisions below awaiting a scoped re-check).** No model identity, product scope or rule changes here.
+Status: **exploratory computation with one senior plan check and one scoped re-check (9 October 2026). All findings adopted; the Q5 revision awaits the second and last scoped re-check.** No model identity, product scope or rule changes here.
 
 Owner decision, 9 October 2026: **no fudged variant is pursued.** The study covers rigid, unfudged jumbling of the retained cut geometry only. `state-contract.md` defines that model.
 
@@ -65,6 +65,12 @@ Evidence kind: synthetic geometry and model data only. Nothing here is Windows, 
 | Q3 | minor | adopt | `state-contract.md` section 4: reachable configurations and first-order legality strata |
 | Q4 | major | adopt | `state-contract.md` section 5: handoff only from a witnessed retained-state checkpoint |
 | Q5 | major | adopt | Plan reordered as below; contract first, one minimal witness, impact assessment, then stop |
+
+Scoped re-check 20261009T163617Z-bc992d63 found C4-Q1 and Q4 resolved. It also found that Q5 remained open, because the contract's tie band accepted shallow crossings of up to 1e-9.
+
+| Finding | Severity | Reply | Change |
+| --- | --- | --- | --- |
+| Q5 (re-check) | major | adopt | `state-contract.md` section 3: exact one-sided containment with no tolerance; exact Q(√5) certificates (complete exact vertex sets for inside and outside, two exact witness points for straddling); uncertain means rejected. Section 6: an exact witness rotation and E0 controls for shallow crossings and exact contact |
 
 ## Plan
 

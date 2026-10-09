@@ -1,6 +1,6 @@
 # State contract for rigid jumbling of the 600-cell-Full geometry
 
-Status: **draft for the senior reviewer's scoped re-check.** This contract defines what the first geometric witness and any later simulator must compute. It answers plan-check findings Q3, Q4 and Q5. It is not accepted theory and changes nothing in the retained model.
+Status: **draft, revised after scoped re-check 20261009T163617Z-bc992d63 (Q5: exact containment and certificates).** This contract defines what the first geometric witness and any later simulator must compute. It answers plan-check findings Q3, Q4 and Q5. It is not accepted theory and changes nothing in the retained model.
 
 Scope: the rigid, unfudged jumbling extension of the retained cut geometry (α = 121/125). Owner decision, 9 October 2026: no fudged variant is pursued. The extension is studied as a separate puzzle concept. 600-cell-Full, its 1,200 legal generators, its 259,800 labelled slots and `assets/manifest.json` are unchanged.
 
@@ -27,14 +27,21 @@ Terms follow `research/theory/RETHLAS_BLUEPRINT.md`: pole n_c, cap U_c, polytope
 
 ## 3. Admissibility
 
-For a twist (c, g) in configuration X, let h_A^min and h_A^max be the minimum and maximum of (n_c · x)/‖n_c‖² − α over the vertices of g_A(Ā₀). This is the signed offset from the cut as a fraction of the facet distance. Each piece is classified with a numerical tie band τ = 1e-9 and a certified separation margin δ = 1e-6:
+For a twist (c, g) in configuration X, write h_A(x) = (n_c · x)/‖n_c‖² − α for x in the posed region g_A(Ā₀). This is the signed offset from the cut as a fraction of the facet distance. The classes are defined by exact one-sided containment in real arithmetic, with no tolerance band:
 
-| Class | Condition |
+| Class | Definition |
 | --- | --- |
-| inside | h_A^min ≥ −τ |
-| outside | h_A^max ≤ τ |
-| straddling | h_A^min ≤ −δ and h_A^max ≥ δ |
-| uncertain | anything else |
+| inside | h_A(x) ≥ 0 for every x in g_A(Ā₀) |
+| outside | h_A(x) ≤ 0 for every x in g_A(Ā₀) |
+| straddling | h_A takes both signs strictly on g_A(Ā₀) |
+
+A full-dimensional region is exactly one of these. Contact, h_A = 0 on a face, is allowed in the inside and outside classes.
+
+**Certificates.** A classification counts only with a certificate:
+- **Arithmetic.** Everything is computed exactly in Q(√5): the poles, cut offsets, region vertices, retained twists and the witness rotation of section 6. Signs of elements of Q(√5) are decided exactly. Floating point may only propose candidates, such as active constraint sets for vertices; every proposal is re-solved and checked exactly.
+- **Inside or outside.** The certificate is an exact bound h_A ≥ 0 (or ≤ 0) over the complete exact vertex set of a bounded region proven to contain g_A(Ā₀). The vertex set is computed by exact double description, with no floating-point pruning. Either the exact region or a superset built from a subset of its constraints may be used, because dropping constraints only enlarges the region.
+- **Straddling.** The certificate is two exact points of the closed region g_A(Ā₀), each checked against every constraint, with h_A < 0 at one and h_A > 0 at the other.
+- **Uncertain.** A piece with no certificate is uncertain. That includes a twist whose rotation has no exact representation, which the later simulator must handle by rigorous interval bounds or else reject.
 
 - **Outcome.**
   - The twist is admissible when every piece is inside or outside.
@@ -82,15 +89,22 @@ Stop after this experiment and the initial impact assessment. A general simulato
    - Check that each region is non-empty and full-dimensional.
    - Check that its patches on the facets in Host(A) contain the retained slot centres `slot_centers` of exactly its stickers.
    - Check that no slot centre lies in two regions.
-2. **E2 Jumble twist.** Let g be the rotation by 10° that fixes span(n_c, n_d) pointwise.
-   - Verify g ∉ A4_c.
-   - Apply (c, g) from solved, with every piece classified with margins.
+2. **E2 Jumble twist.** Let g fix span(n_c, n_d) pointwise and rotate its orthogonal plane by an angle near 10°, with all entries in Q(√5).
+   - Construction: g = P + C·(I − P) + t·J, where:
+     - P is the exact projector onto span(n_c, n_d);
+     - J is the Hodge dual of n_c ∧ n_d, with J² = −m(I − P);
+     - C = (1 − m s²)/(1 + m s²) and t = 2s/(1 + m s²) for a chosen s ∈ Q(√5).
+   - Verify exactly that gᵀg = I, det g = 1, g n_c = n_c, g n_d = n_d and g ∉ A4_c.
+   - Apply (c, g) from solved, with every piece certified as in section 3.
 3. **E3 Turn at the neighbour.** Apply (d, T_d), with T_d a third-turn in A4_d. It must be certified admissible.
    - Record, with certificates, which of c and its 56 interacting poles are admissible, blocked or uncertain after (c, g) alone and after (c, g), (d, T_d).
    - At least one certified blocked grip is required as a negative control. Applying it must be rejected with the configuration unchanged.
-4. **E4 Reverse.** Apply (d, T_d⁻¹) and then (c, g⁻¹). Both must be certified admissible, and every pose must return to the identity within 1e-12.
+4. **E4 Reverse.** Apply (d, T_d⁻¹) and then (c, g⁻¹). Both must be certified admissible, and every pose must return exactly to the identity.
+5. **E0 Controls**, run before E1:
+   - **Shallow-crossing negative controls.** Exact values with h_min = −5·10⁻¹⁰, h_max = 10⁻³, and the mirror case h_min = −10⁻³, h_max = 5·10⁻¹⁰, must classify as straddling. A twist they block must be rejected with the configuration unchanged.
+   - **Exact-contact positive control.** In the solved configuration, every retained twist (c, a) with a ∈ A4_c must be admissible. Its inside pieces touch the cut exactly, with h_A^min = 0 at some vertex.
 
-Round trips alone are not sufficient acceptance (Q5). E1's agreement with retained data and E3's certified blocked and unblocked cases carry the evidence.
+Round trips alone are not sufficient acceptance (Q5). E0's controls, E1's agreement with retained data and E3's certified blocked and unblocked cases carry the evidence.
 
 Acceptance for a later simulator, not for this experiment:
 - full labelled sticker and frame agreement with `rotperms`, `move_src` and `move_dst` for all 1,200 retained generators;
