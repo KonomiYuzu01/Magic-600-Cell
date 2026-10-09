@@ -1,10 +1,10 @@
-# Look Lab core (LL1)
+# Look Lab app and core (LL1–LL2)
 
 `LookLab.Core` is the framework-neutral, net8.0 core of the local Look Lab.
 It has no Godot, engine or NuGet dependency. It loads verified full-model
 geometry, projects it in double precision, and owns the parameter, preset,
-colour, turn, layout, flow and cost rules. The later Godot app consumes these
-rules. LL1 contains no UI, shaders or renderer evidence.
+colour, turn, layout, flow and cost rules. The staged Godot .NET app consumes
+these rules. The core checks supply no renderer evidence.
 
 Run from the repository root:
 
@@ -15,18 +15,116 @@ python tools/looklab/check.py
 The standard-library harness restores and builds both projects offline, runs
 the console tests, removes its unique temporary folder, and compares all
 checkout files and directories before and after, including ignored files.
-Build products, .NET CLI state and NuGet caches stay in that folder. Extra
-arguments exit 2. A failing step prints its last 60 lines and returns its exit
-code; a cleanup failure prints the folder. No installation is performed.
+Build products, .NET CLI state and NuGet caches stay in that folder. Unknown
+arguments exit 2. A failing step prints its diagnostics and exits 1;
+a cleanup failure also fails the check. No installation is performed.
 The recipe needs a .NET SDK with the net8.0 targeting pack and runtime already
 installed. Node is optional: tests that call the original Taste Lab JavaScript
 report a skip when it is absent. All other tests always run.
 
-The test runner has 38 named tests, including six Python harness cases. It
+The test runner has 52 named tests, including 28 Python harness cases. It
 prints a line for each named test and a summary, and exits nonzero on failure.
 It reads the repository and committed fixtures only, and creates its own
 temporary folders with mkdir under the system temporary directory. It opens
 no real Taste Lab export, personal session or database.
+
+## Staged Godot app and lanes (LL2)
+
+```text
+python tools/looklab/check.py --godot
+python tools/looklab/check.py --godot-gpu
+python tools/looklab/check.py --run
+```
+
+The CPU lane (`--godot`) first runs the core check, then builds a source-only
+temporary copy of `app/` and `core/`, imports it headless, runs the minimal
+scene's CPU probe, then runs the app smoke test and three negative controls.
+The smoke test loads geometry with digest checks, builds 600 instances,
+changes all 42 parameters once through the panels' validated setter, and saves
+and reloads canonical preset bytes in the run's temporary folder. A skipped
+parameter, wrong instance count and changed byte must each fail. Headless
+Godot's dummy renderer provides no rendering evidence. The graphics lane
+(`--godot-gpu`) uses a visible 640 x 360 window,
+requires the Windows display server, Vulkan or Direct3D 12, and a non-empty
+adapter name. Its stage-0 shader writes four known values into an RGBA32F
+target; the exact readback must pass, and an injected shader offset must fail.
+It then checks the drawing shader's geometry for all nine S-B cases (cameras
+c0–c2, start/middle/end), comparing 2,700 `(ndc_x, ndc_y, w)` outputs against
+both the core and the fixture. The cells-only frame must report 6,096,000
+primitives and 600 visible instances. A shader-transposed Q and a missing
+instance must each fail; an unrelated error cannot satisfy a negative control.
+Only the graphics lane supplies rendering evidence. It is run by the integrator
+outside other renderer sessions' measurement windows. `--run` stages, builds
+and imports, then opens the app with the checkout root as its argument; it
+does not run the core tests and is not a check.
+
+Exit codes are **0** passed (or interactive run ended), **1** failed, **2**
+usage, and **3** graphics lane not run because a window or real rendering driver
+could not start. Exit 3 is never a pass. A headless display, dummy driver or
+empty adapter fails with exit 1, as does missing graphics evidence.
+
+`LOOKLAB_GODOT` may name the console executable. Otherwise the harness requires
+exactly one `Godot_v4.7.2-stable_mono_win64_console.exe` recursively under
+`%LOCALAPPDATA%/Microsoft/WinGet/Packages/GodotEngine.GodotEngine.Mono_*/`.
+It checks for `4.7.2.stable.mono` before building. The staged `nuget.config`
+clears inherited sources and uses only `GodotSharp/Tools/nupkgs/` next to that
+executable. The private cache is checked for the 4.7.2 Godot packages, their
+recorded source, and bytes matching the local archives. No machine path is
+committed, and no network source or installation is used.
+
+All children receive the parent environment without names containing `KEY`,
+`SECRET` or `TOKEN`, case-insensitively; test-runner children inherit that
+environment and also apply the same filter. `APPDATA`, `LOCALAPPDATA`, `TEMP`
+and `TMP` point inside the run's temporary folder. A unique project name and
+directory handshake protect both editor import and scene runs: each reports
+its user, config, data and cache directories and waits for validation before
+proceeding. The harness checks that real Godot AppData top-level names and
+modification times are unchanged and that no real user-data directory has the
+run's name. It removes the staging folder and verifies the checkout, including
+ignored files. Build/core processes have 180-second limits, Godot imports and
+probes 120 seconds, version probes 15 seconds, and the directory handshake
+20 seconds. Interactive runs have a two-hour limit. Expiry ends the process
+tree with `taskkill /T /F` on Windows and fails the run.
+
+The viewport is always full detail: an unindexed base triangle list of 30,480
+vertices is instanced 600 times. Three rows of each 4D cell frame occupy the
+instance transform, and its fourth row occupies `INSTANCE_CUSTOM`. Vertex XYZ
+and UV hold the verified 4D position and sticker index. The vertex shader
+performs shrink/R, cell frame, moving-slot turn, Q, 4D projection, zoom and
+aspect in the core's order. Labels use an R32F texture (u32 values up to
+259,799 are exact in f32); all 259,800 entries are uploaded for each bound
+revision. A core `TurnClock` drives the generator/inverse and those snapshots.
+Colours follow `label / 433` and the core's proper ring colouring. Visibility
+discards geometry without changing slots or labels. Drag in the viewport to
+rotate Q in two 4D planes; inertia, damping and the settling curve affect the
+camera response. Costs remain **not measured**.
+
+There is one panel section per schema group. Number/integer sliders and fields,
+enums, booleans, OKLCH components and Bezier control points update the look
+immediately. Editing one colour or curve component preserves the exact values
+of the other components. The fibration highlight uses ring 0, and the orbit
+highlight uses vertex orbit 34: these fixed reference sets avoid adding
+selection controls beyond LL2. The frame/layout controls adjust instrument
+spacing, type size and the stage/panel split; greybox commands and flows remain
+for LL4. Load and Save use the core's strict canonical preset format. Dialogs
+and the file boundary both limit access to `work/loop-memory/looklab/presets/`
+of the supplied checkout; links and paths escaping that directory are refused.
+The directory is created on first Save, never during startup or a CPU check.
+
+The RGBA32F checks use an explicit RenderingDevice framebuffer, because an
+ordinary HDR SubViewport is half precision. Shaders are authored in Godot
+shading language; the float check supplies minimal GLSL stage entry points for
+the device's SPIR-V compiler. The geometry adapter takes both function bodies
+directly from `cells.gdshader`, unchanged, supplies the Godot builtins from the
+actual mesh/instance data and binds copies of the actual uploaded textures.
+It contains no separate projection implementation. GPU comparisons use
+`abs(actual - expected) <= 1e-4 + 1e-4 * abs(expected)`, the S-B GPU probe's
+tolerance for single-precision matrices, trigonometry and division against the
+core's double precision. The stage-0 powers-of-two values use exact equality.
+CPU tests prove source-body reuse, parameter packing, shader fault binding and
+the accessors' agreement with all 2,700 core projections; they cannot prove a
+shader draw or readback. Graphics and interactive runs are reserved for the
+integrator and must pass on the matching build before claiming rendering evidence.
 
 ## Core entry points
 
@@ -53,7 +151,7 @@ and orthographic uses world.xyz. All then use the same 3D zoom/aspect projection
 No clipping, sampling or visibility parameter changes a slot, label or cell id.
 
 `Geometry` reads only mesh.json, mesh_vertices.f32, mesh_sticker.u32,
-mesh_centers.f32, cell_frames.f32 and model.npz. Each file is SHA-256 checked
+mesh_centers.f32, cell_frames.f32, model.npz and slot_piece.u32. Each file is SHA-256 checked
 against the `files` map of assets/manifest.json before its bytes are used;
 the manifest is the trust root. Missing files, missing manifest entries and
 mismatches name the file. The .npz reader uses System.IO.Compression. Its small

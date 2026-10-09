@@ -22,8 +22,17 @@ public sealed class Geometry
     private readonly double[] frames;
     private readonly double[] normal;
     private readonly double radius;
+    private readonly int[] slotOrbits;
     public string ModelId { get; }
     public CellStructure CellStructure { get; }
+    // Verified immutable input views for renderer upload, in the original order.
+    public ReadOnlyMemory<double> BaseVertexData => vertices;
+    public ReadOnlyMemory<int> BaseStickerIds => stickers;
+    public ReadOnlyMemory<double> StickerCenters => centers;
+    public ReadOnlyMemory<double> CellFrames => frames;
+    public ReadOnlyMemory<double> BaseNormal => normal;
+    public double Radius => radius;
+    public ReadOnlyMemory<int> SlotOrbits => slotOrbits;
 
     public Geometry(string repositoryRoot)
     {
@@ -53,6 +62,15 @@ public sealed class Geometry
             stickers[vi] = local;
         }
         CellStructure = CellStructure.Load(assets.ReadVerified("model.npz"));
+        byte[] pieces = assets.ReadVerified("slot_piece.u32");
+        if (pieces.Length != Slots * 4) throw Json.Error("slot_piece.u32", "invalid length");
+        slotOrbits = new int[Slots];
+        for (int slot = 0; slot < Slots; slot++)
+        {
+            uint piece = BinaryPrimitives.ReadUInt32LittleEndian(pieces.AsSpan(slot * 4, 4));
+            if (piece >= CellStructure.OrbitIds.Length) throw Json.Error("slot_piece.u32", "invalid piece");
+            slotOrbits[slot] = CellStructure.OrbitIds.Span[(int)piece];
+        }
     }
 
     private static double[] Floats(byte[] bytes, int count, string name)

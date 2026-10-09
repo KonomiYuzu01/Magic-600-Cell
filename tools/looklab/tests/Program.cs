@@ -45,6 +45,11 @@ internal static partial class Program
             ("ManifestMissingFileEntryAndMismatch", ManifestFailures),
             ("NpyDtypeShapeAndOrderRefusals", NpyRefusals),
             ("SbReferenceAll2700Samples", SbReference),
+            ("VerifiedUploadInputsReproduce2700Projections", UploadInputs),
+            ("LookStateValidatedSetterAndTransactionalLoad", LookStateValidation),
+            ("PresetPrivatePathBoundaryAndFirstSave", PresetPathBoundary),
+            ("DrawingShaderBodiesAndBindingPacking", ShaderAdapter),
+            ("DrawingShaderAdapterRefusals", ShaderAdapterRefusals),
             ("FixtureProvenanceAndTurnDigest", FixtureProvenance),
             ("SbFixtureRequiredInputAndPortableOutput", SbFixturePortable),
             ("ProjectionKindsAndCameraOrder", ProjectionKinds),
@@ -118,9 +123,13 @@ internal static partial class Program
 
     private static (int Code, string Out, string Error) Run(string executable, IEnumerable<string> args, string input = "", string? workingDirectory = null)
     {
+        if (executable == "python") executable = Environment.GetEnvironmentVariable("LOOKLAB_PYTHON") ?? executable;
         var info = new ProcessStartInfo(executable) { WorkingDirectory = workingDirectory ?? Root, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (string arg in args) info.ArgumentList.Add(arg);
+        foreach (string key in info.Environment.Keys.ToArray())
+            if (System.Text.RegularExpressions.Regex.IsMatch(key, "KEY|SECRET|TOKEN", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                info.Environment.Remove(key);
         using Process process = Process.Start(info) ?? throw new Exception("could not start " + executable);
         Task<string> output = process.StandardOutput.ReadToEndAsync(), error = process.StandardError.ReadToEndAsync();
         process.StandardInput.Write(input); process.StandardInput.Close();

@@ -19,10 +19,12 @@ public sealed class CellStructure
     public int[][] RingChains { get; }
     public int[] RingOf { get; }
     public (int A, int B)[] RingGraph { get; }
+    public ReadOnlyMemory<int> OrbitIds { get; }
 
-    private CellStructure(double[] normals, int[] positions, int[][] vertexCells, int[][] cellVertices)
+    private CellStructure(double[] normals, int[] positions, int[][] vertexCells, int[][] cellVertices, int[] orbitIds)
     {
         Normals = normals;
+        OrbitIds = orbitIds;
         VertexPositions = positions;
         VertexCells = vertexCells;
         CellVertices = cellVertices;
@@ -85,7 +87,7 @@ public sealed class CellStructure
             foreach (int c in cells) cellVertices[c].Add(v);
         }
         if (cellVertices.Any(v => v.Count != 4)) throw Json.Error("cell_vertices", "each cell must meet four vertices");
-        return new CellStructure(normals, positions, vertexCells, cellVertices.Select(v => v.ToArray()).ToArray());
+        return new CellStructure(normals, positions, vertexCells, cellVertices.Select(v => v.ToArray()).ToArray(), orbits);
     }
 
     private double[][] DeriveVertices()

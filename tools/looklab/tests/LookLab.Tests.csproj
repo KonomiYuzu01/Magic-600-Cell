@@ -6,5 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../core/LookLab.Core.csproj" />
+    <Compile Include="../app/Platform/PresetFiles.cs" Link="PresetFiles.cs" />
+    <Compile Include="../app/ShaderSource.cs" Link="ShaderSource.cs" />
   </ItemGroup>
 </Project>
