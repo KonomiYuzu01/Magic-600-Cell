@@ -352,6 +352,11 @@ class TokenizerTests(unittest.TestCase):
         self.assertEqual(values[0, :4].tolist(), [49406, 515, 49407, 0])
         self.assertEqual(values[2, -1], 49407)
         np.testing.assert_array_equal(values[1], tokenizer.tokenize(["é 中文 🧭"])[0])
+        # Literal special-token text is the special token where the scan reaches its "<", as in OpenCLIP.
+        self.assertEqual(tokenizer.encode("<start_of_text>"), [49406])
+        self.assertEqual(tokenizer.encode("hello<END_OF_TEXT> hello"), [515, 49407, 515])
+        self.assertEqual(tokenizer.tokenize(["<end_of_text>"])[0, :4].tolist(), [49406, 49407, 49407, 0])
+        self.assertNotIn(49406, tokenizer.encode("!<start_of_text>"))
 
 
 if __name__ == "__main__":

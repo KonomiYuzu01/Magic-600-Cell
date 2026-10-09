@@ -8,7 +8,8 @@ PyTorch DLLs on the owner's machine. The computation is OpenCLIP's ViT-B-16
   image  bicubic resize of the shorter side to 224, centre crop, RGB, OpenAI mean and std;
          16 x 16 patches (conv1 without bias) + class token + positional embedding, ln_pre,
          12 pre-norm residual blocks, ln_post on the class token, @ visual.proj
-  text   CLIP byte-pair tokens (77: start token, text, end token, zero padding), token and
+  text   CLIP byte-pair tokens (77: start token, text, end token, zero padding; literal
+         "<start_of_text>" and "<end_of_text>" text is that token, as upstream), token and
          positional embedding, 12 causal pre-norm blocks, ln_final, the end token's row,
          @ text_projection
   block  x + attn(ln_1(x)), then x + c_proj(gelu(c_fc(ln_2(x)))); heads 64 wide; exact
@@ -44,8 +45,11 @@ EPS = 1e-5
 MERGES = 49152 - 256 - 2        # merges used by CLIP (lines 1..48894 of merges.txt)
 MAX_HEADER = 16 * 1024 * 1024   # safetensors header bytes
 
-# Special tokens are not matched in the text: a caption that contains them is tokenized as plain text.
-_PATTERN = regex.compile(r"""'s|'t|'re|'ve|'m|'ll|'d|[\p{L}]+|[\p{N}]|[^\s\p{L}\p{N}]+""", regex.IGNORECASE)
+_SPECIAL = ("<start_of_text>", "<end_of_text>")
+# As in OpenCLIP: special-token text that the scan reaches at its "<" is that special token
+# (after punctuation, "[^\s\p{L}\p{N}]+" takes the "<" first and the text stays plain).
+_PATTERN = regex.compile("|".join(_SPECIAL) + r"""|'s|'t|'re|'ve|'m|'ll|'d|[\p{L}]+|[\p{N}]|[^\s\p{L}\p{N}]+""",
+                         regex.IGNORECASE)
 
 
 @functools.lru_cache(maxsize=None)
@@ -75,12 +79,12 @@ class Tokenizer:
         if len(merges) != MERGES or any(len(m) != 2 for m in merges):
             raise ValueError(f"{merges_path}: not a CLIP merges file")
         chars = list(bytes_to_unicode().values())
-        vocab = chars + [c + "</w>" for c in chars] + ["".join(m) for m in merges] + ["<start_of_text>", "<end_of_text>"]
+        vocab = chars + [c + "</w>" for c in chars] + ["".join(m) for m in merges] + list(_SPECIAL)
         self.encoder = dict(zip(vocab, range(len(vocab))))
         self.ranks = dict(zip(merges, range(len(merges))))
         self.sot = self.encoder["<start_of_text>"]
         self.eot = self.encoder["<end_of_text>"]
-        self._cache: dict = {}
+        self._cache: dict = {token: [self.encoder[token]] for token in _SPECIAL}
 
     def _bpe(self, token: str) -> list:
         cached = self._cache.get(token)
