@@ -1,0 +1,33 @@
+{
+  "format": "magic600-look-flow",
+  "version": 1,
+  "id": "protect-recover",
+  "name": "Protect completed work, save and recover",
+  "draft": true,
+  "steps": [
+    {
+      "command": "protection.policy.set",
+      "context": "any"
+    },
+    {
+      "command": "protection.position.protect",
+      "context": "any"
+    },
+    {
+      "command": "session.checkpoint.save",
+      "context": "any"
+    },
+    {
+      "command": "session.undo",
+      "context": "any"
+    },
+    {
+      "command": "session.redo",
+      "context": "any"
+    },
+    {
+      "command": "session.checkpoint.restore",
+      "context": "any"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "format": "magic600-look-preset",
+  "version": 1,
+  "name": "S-B geometry default",
+  "family": null,
+  "scene": null,
+  "params": {
+    "hueRotation": 0,
+    "hueSpread": 360,
+    "lightness": 0.7,
+    "lightnessAlt": 0.05,
+    "chroma": 0.12,
+    "classes": 6,
+    "bgLightness": 0.26208135203457433,
+    "bgHue": 248.1740890656654,
+    "bgTint": 0.009079176564054185,
+    "gap": 0.24,
+    "edgeWeight": 0,
+    "edgeBrightness": 0,
+    "gloss": 0,
+    "glow": 0,
+    "fog": 0,
+    "turnMs": 190,
+    "easeA": 0.3333333333333333,
+    "easeB": 0.3333333333333333,
+    "projection": "perspective",
+    "d4": 1.18,
+    "stickerShrink": 0.82,
+    "highlight": "none",
+    "cellsVisible": true,
+    "sliceVisible": false,
+    "sliceMin": -1,
+    "sliceMax": 1,
+    "accentPrimary": {
+      "L": 0.75,
+      "C": 0.09,
+      "h": 220
+    },
+    "accentSecondary": {
+      "L": 0.75,
+      "C": 0.09,
+      "h": 40
+    },
+    "finish": "matte",
+    "keyLight": 0.5,
+    "fillLight": 0.5,
+    "depthOfField": 0,
+    "ambientOcclusion": 0,
+    "inertia": 0,
+    "settle": {
+      "a": 0.3333333333333333,
+      "b": 0.3333333333333333
+    },
+    "cameraDamping": 0,
+    "fieldOfView": 1.4314871793377604,
+    "panelDensity": 1,
+    "typeScale": 1,
+    "layoutId": "central-stage",
+    "viewportShare": 0.7,
+    "panelPlacement": "overlay"
+  }
+}

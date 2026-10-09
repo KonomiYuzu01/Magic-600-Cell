@@ -1,0 +1,45 @@
+{
+  "format": "magic600-look-flow",
+  "version": 1,
+  "id": "endgame",
+  "name": "Inspect a residual, choose a correction and review exact completion",
+  "draft": true,
+  "steps": [
+    {
+      "command": "view.residuals",
+      "context": "any"
+    },
+    {
+      "command": "endgame.configure",
+      "context": "any"
+    },
+    {
+      "command": "macro.select",
+      "context": "solve"
+    },
+    {
+      "command": "operation.check",
+      "context": "operation"
+    },
+    {
+      "command": "operation.preview",
+      "context": "operation"
+    },
+    {
+      "command": "operation.execute",
+      "context": "operation"
+    },
+    {
+      "command": "view.residuals",
+      "context": "any"
+    },
+    {
+      "command": "view.findings",
+      "context": "any"
+    },
+    {
+      "command": "session.report",
+      "context": "any"
+    }
+  ]
+}

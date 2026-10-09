@@ -37,6 +37,16 @@ class Decoded:
     animated: bool
 
 
+def to_rgb(im: Image.Image) -> Image.Image:
+    """The RGB image Taste Lab keeps and embeds: any transparency is flattened onto white."""
+    if im.mode in ("RGBA", "LA", "P", "PA") or "transparency" in im.info:
+        rgba = im.convert("RGBA")
+        flat = Image.new("RGB", rgba.size, (255, 255, 255))
+        flat.paste(rgba, mask=rgba.getchannel("A"))
+        return flat
+    return im.convert("RGB")
+
+
 def decode(data: bytes) -> Decoded:
     if not data:
         raise BadImage("empty")
@@ -55,14 +65,7 @@ def decode(data: bytes) -> Decoded:
             animated = bool(getattr(im, "is_animated", False)) or getattr(im, "n_frames", 1) > 1
             im.seek(0)
             im.load()
-            im = ImageOps.exif_transpose(im)
-            if im.mode in ("RGBA", "LA", "P", "PA") or "transparency" in im.info:
-                rgba = im.convert("RGBA")
-                flat = Image.new("RGB", rgba.size, (255, 255, 255))
-                flat.paste(rgba, mask=rgba.getchannel("A"))
-                im = flat
-            else:
-                im = im.convert("RGB")
+            im = to_rgb(ImageOps.exif_transpose(im))
     except BadImage:
         raise
     except (OSError, ValueError, SyntaxError, EOFError, MemoryError, Image.DecompressionBombError,

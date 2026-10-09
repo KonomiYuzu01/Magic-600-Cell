@@ -92,7 +92,7 @@ The data root is the private folder of the checkout the tool runs in. The owner 
   - the preprocessed tensors of odd sizes, extreme aspect ratios and transparency;
   - the image and text embeddings of a fixed synthetic set.
 - Tolerances: cosine similarity at least 0.9999 per embedding, and an absolute error of at most 1e-4 per preprocessed value.
-- The fixture is bound to the weights checksum. How it is produced is an owner decision (section 9).
+- The fixture is bound to the weights checksum. It is produced as the owner chose on 9 October 2026 (section 9, option (a)).
 
 ### 5.3 Content screen
 
@@ -241,17 +241,17 @@ Every major finding is adopted, with the fix shown in sections 4 to 6. Each mino
   - It refuses requirement lines that are not exact pins with a well-formed hash (A-004).
 - **Install gate.** Installation runs only after the review and the owner's `python tools/toolchain/bootstrap.py approve`.
 
-## 9. Owner decision needed
+## 9. Owner decision: option (a), 9 October 2026
 
-How the reference outputs of section 5.2 are produced. Smart App Control blocks PyTorch's unsigned DLLs on the owner's computer.
+How the reference outputs of section 5.2 are produced. Smart App Control blocks PyTorch's unsigned DLLs on the owner's computer. The owner chose option (a) on 9 October 2026.
 
-- **(a) Recommended.** A Linux cloud session runs the upstream OpenCLIP implementation once on the CPU.
+- **(a) Chosen.** A Linux cloud session runs the upstream OpenCLIP implementation once on the CPU.
   - It uses the same pinned weights and a fixed synthetic test set: generated images and captions, no owner data.
   - The outputs become a committed test fixture of about 100 KB.
   - Nothing private leaves the computer.
 - **(b)** No upstream comparison. Rely on the checksum, the calibration gate and a synthetic zero-shot test. C-02 then stays open and needs an owner exception.
 
-Until the owner decides, everything else proceeds. The bulk fetch waits for section 5.
+The bulk fetch waits for the fixture and for its comparison to pass. The owner starts the cloud session; Claude then runs the comparison locally.
 
 ## 10. Process and packets
 
@@ -278,4 +278,4 @@ No unreviewed code is committed (TLPLAN-05). The parked snapshot in `work/review
 7. The owner runs `approve`. Then come the install, the model checks, the calibration gate, the first class A fetch and the first bundle.
 8. Publish the page after the owner's go-ahead, then the functional pass.
 9. **Wave 2, phase 2,** from the merged phase 1b. One packet, K4: `learn.py`, `rate.py`, `qml/Rate.qml`, `mapping.py`, `tastemap.py`, `explore.py` and their tests (TL-B01, TL-B04, TL-B05, TLPLAN-02, C-05, C-06, TL-B07, TL-B08). The same review rules apply. Then the class B fetch, the rating window and the taste map run, all locally.
-10. C-02: the reference fixture of section 5.2 is added once the owner has chosen how it is produced (section 9). The bulk fetch waits for it.
+10. C-02: the reference fixture of section 5.2, produced under option (a) of section 9. A Codex packet writes the comparison, the cloud script and their tests; the owner's cloud session adds the fixture. The bulk fetch waits for it.

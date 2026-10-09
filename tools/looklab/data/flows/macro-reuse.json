@@ -1,0 +1,41 @@
+{
+  "format": "magic600-look-flow",
+  "version": 1,
+  "id": "macro-reuse",
+  "name": "Save and reuse the solver's macro with a fresh review",
+  "draft": true,
+  "steps": [
+    {
+      "command": "worksheet.save",
+      "context": "any"
+    },
+    {
+      "command": "macro.save",
+      "context": "any"
+    },
+    {
+      "command": "macro.base.open",
+      "context": "any"
+    },
+    {
+      "command": "macro.select",
+      "context": "macro_base"
+    },
+    {
+      "command": "operation.reuse",
+      "context": "any"
+    },
+    {
+      "command": "operation.check",
+      "context": "operation"
+    },
+    {
+      "command": "operation.preview",
+      "context": "operation"
+    },
+    {
+      "command": "operation.execute",
+      "context": "operation"
+    }
+  ]
+}
