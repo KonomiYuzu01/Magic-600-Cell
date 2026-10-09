@@ -1,6 +1,6 @@
 // Jumble witness viewer (workstream J2). Research prototype; look, colour and motion values are
-// provisional. Legality, grip status and certificates are read from scene.json / scene.bin, which
-// export_scene.py writes from the exact Q(sqrt 5) witness. Nothing here decides legality: poses
+// provisional. Legality, grip status and certificates are read from the selected scene, which
+// export_scene.py writes from the exact Q(sqrt 5) witness or J1 simulator. Nothing here decides legality: poses
 // between exact states are an uncertified float preview along the twist's one-parameter family.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -10,6 +10,14 @@ const TYPED = { float32: Float32Array, uint8: Uint8Array, uint16: Uint16Array, u
 const ALPHA = 121 / 125;
 const SCALE = 3;                       // 3D units per facet distance in the Global view
 const F_OFF = 1, F_DIM = 2, F_EMPH = 4, F_FOCUS = 8, F_HIDE = 16;
+const SCENES = { witness: 'scene.json', s4: 'scene-s4.json' };
+
+function hashSelection() {
+  const m = /^#(s4-)?s(\d+)(?:-g(\d+))?(?:-p(\d+))?$/.exec(location.hash || '');
+  return m ? { scene: m[1] ? 's4' : 'witness', state: Number(m[2]),
+    grip: m[3] == null ? null : Number(m[3]), piece: m[4] == null ? null : Number(m[4]) } : null;
+}
+const sceneId = hashSelection()?.scene || 'witness';
 
 THREE.ColorManagement.enabled = false;   // CSS token colours go to the shaders unchanged
 const app = { ready: false, errors: [] };
@@ -118,8 +126,9 @@ function jacobiEigen3(a) {
 // scene data
 
 async function loadScene() {
-  const hRes = await fetch('scene.json');
-  if (!hRes.ok) throw new Error(`scene.json could not be loaded (HTTP ${hRes.status})`);
+  const file = SCENES[sceneId];
+  const hRes = await fetch(file);
+  if (!hRes.ok) throw new Error(`${file} could not be loaded (HTTP ${hRes.status})`);
   const header = await hRes.json();
   const bRes = await fetch(header.bin.file);
   if (!bRes.ok) throw new Error(`${header.bin.file} could not be loaded (HTTP ${bRes.status})`);
@@ -127,10 +136,10 @@ async function loadScene() {
   const buf = header.bin.encoding === 'base64'
     ? Uint8Array.from(atob((await bRes.text()).trim()), (ch) => ch.charCodeAt(0)).buffer
     : await bRes.arrayBuffer();
-  if (buf.byteLength !== header.bin.bytes) throw new Error('scene.bin does not match scene.json');
+  if (buf.byteLength !== header.bin.bytes) throw new Error(`${header.bin.file} does not match ${file}`);
   const hash = await crypto.subtle.digest('SHA-256', buf);
   const digest = Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, '0')).join('');
-  if (digest !== header.bin.sha256) throw new Error('Scene data SHA-256 digest does not match scene.json');
+  if (digest !== header.bin.sha256) throw new Error(`Scene data SHA-256 digest does not match ${file}`);
   const A = {};
   for (const [name, d] of Object.entries(header.bin.arrays)) A[name] = new TYPED[d.dtype](buf, d.offset, d.length);
   return buildModel(header, A);
@@ -1184,19 +1193,18 @@ function updatePanels() {
 function writeHash() {
   const { k, f } = stateAt(view.t);
   if (f !== 0) return;
-  let h = `s${k}`;
+  let h = `${sceneId === 's4' ? 's4-' : ''}s${k}`;
   if (view.grip != null) h += `-g${view.grip}`;
   if (view.piece != null) h += `-p${M.A.piece_ids[view.piece]}`;
   try { history.replaceState(null, '', `#${h}`); } catch (err) { /* ignore: hash is a convenience */ }
 }
 
 function readHash() {
-  const m = /^#s(\d)(?:-g(\d+))?(?:-p(\d+))?$/.exec(location.hash || '');
-  if (!m) return false;
-  view.t = Math.min(M.K - 1, Number(m[1]));
-  const grip = m[2] != null ? Number(m[2]) : null;
-  view.grip = M.grips.includes(grip) ? grip : null;
-  view.piece = m[3] != null && M.pieceById.has(Number(m[3])) ? M.pieceById.get(Number(m[3])) : null;
+  const selected = hashSelection();
+  if (!selected || selected.scene !== sceneId) return false;
+  view.t = Math.min(M.K - 1, selected.state);
+  view.grip = M.grips.includes(selected.grip) ? selected.grip : null;
+  view.piece = M.pieceById.get(selected.piece) ?? null;
   if (view.grip != null && view.piece == null) {
     const recs = M.certs[view.t].get(view.grip);
     if (recs) view.piece = M.A.cert_piece[recs[0]];
@@ -1206,6 +1214,13 @@ function readHash() {
 }
 
 function wireControls() {
+  $('sceneSel').addEventListener('change', (e) => {
+    if (e.target.value === sceneId) return;
+    stopAnim();
+    // Each scene is loaded and digest-checked before its model and renderers are built.
+    location.hash = `#${e.target.value === 's4' ? 's4-' : ''}s${Math.round(view.t)}-g${M.c}`;
+    location.reload();
+  });
   $('scrub').addEventListener('input', (e) => setT(Number(e.target.value), true));
   $('bPlay').addEventListener('click', () => {
     if (anim.active) { stopAnim(); return; }
@@ -1347,6 +1362,10 @@ async function main() {
     const recs = M.certs[2].get(M.c);
     view.piece = recs ? M.A.cert_piece[recs[0]] : null;
   }
+  $('sceneSel').value = sceneId;
+  $('sceneMeta').textContent = `600-cell-Full geometry · cut depth 121/125 · caps of grips c = ${M.c} and d = ${M.d} · ${M.P.toLocaleString('en-US')} pieces`;
+  $('sceneSource').textContent = `Source: ${M.header.source} through export_scene.py.`;
+  $('scrub').max = M.K - 1;
   setupGlobal();
   setupLocal();
   applyThemeColours();
@@ -1362,6 +1381,7 @@ async function main() {
   dirty.home = dirty.pose = dirty.flags = dirty.local = dirty.panels = true;
   render();
   app.ready = true;
+  app.scene = sceneId;
   app.model = { pieces: M.P, stickers: M.S, states: M.K, triangles: M.nTris };
   app.goto = (t) => { stopAnim(); setT(t, true); render(); };
   app.selectGrip = (e) => { selectGrip(e); render(); };
@@ -1373,6 +1393,7 @@ async function main() {
   app.globalCertificate = () => G.certPts.visible ? {
     world: G.certWorld.map((x) => x.slice()), projected: Array.from(G.certPos),
   } : null;
+  app.localCertificate = () => L.certPts.visible ? Array.from(L.certPos) : null;
   app.gripScreen = (e) => {
     const i = M.grips.indexOf(e);
     const v = new THREE.Vector3(G.gripPos[i * 3], G.gripPos[i * 3 + 1], G.gripPos[i * 3 + 2]).project(G.camera);

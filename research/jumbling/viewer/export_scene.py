@@ -1,12 +1,13 @@
-"""Export the jumbling witness as a scene for the J2 viewer (research/jumbling/viewer/).
+"""Export exact jumbling scenes for the J2 viewer (research/jumbling/viewer/).
 
 Run from the repository root (about 2 to 3 minutes on four cores):
 
     python research/jumbling/viewer/export_scene.py
+    python research/jumbling/viewer/export_scene.py --source sim-s4
 
 Writes scene.json (header, poses, twists, grip surveys, certificates) and scene.bin (sticker
-meshes and per-state pose indices) next to this file. Reads assets/model.npz read-only through
-research/jumbling/witness.py.
+meshes and per-state pose indices) next to this file. The sim-s4 source writes scene-s4.json
+and scene-s4.bin instead. Reads assets/model.npz read-only through research/jumbling/witness.py.
 
 Exact and float parts:
 - Exact (Q(sqrt 5)): piece regions, sticker vertex sets and their faces and edges (from exact
@@ -17,8 +18,7 @@ Exact and float parts:
   for animation, nearest lattice poses (a float search over the 7,200 rotations of K+), the
   host-cell colouring, the cell cage and the outer-shape statistics.
 
-The only function that knows where exact data comes from is witness_source(). A later
-simulator (research/jumbling/sim/) can replace it by returning the same dictionary.
+The sources witness_source() and sim_s4_source() return the same exact-data dictionary.
 """
 import argparse
 import hashlib
@@ -36,7 +36,7 @@ HERE = Path(__file__).resolve().parent
 JUMBLING = HERE.parent
 sys.path.insert(0, str(JUMBLING))
 import witness as W  # noqa: E402
-from exact import ONE, ZERO, affine_rank, dot, rank, transpose  # noqa: E402
+from exact import ONE, ZERO, Q5, affine_rank, dot, rank, transpose  # noqa: E402
 
 
 # ---------------------------------------------------------------------------------------------
@@ -253,7 +253,163 @@ def witness_source(workers=4):
             'source': 'research/jumbling/witness.py (exact witness E2-E4)'}
 
 
-SOURCES = {'witness': witness_source}
+def sim_s4_source(workers=4):
+    """J1's certified S4 script: q at 0, a at d, a blocked attempt, a^-1, q^-1.
+
+    J1 owns every state, twist and survey. Geometry uses the existing exporter builder,
+    checked against J1 as exact vertex sets before remapping J1's certificate indices.
+    """
+    import sim
+
+    t0 = time.time()
+    ctx = sim.get_context()
+    data, reg = ctx.data, ctx.regions
+    c = 0
+    menu = sim.TwistMenu.s4(ctx)
+    cfg = sim.State(ctx, menu=menu)
+    q = sim.cayley(ctx, c, [ONE, ZERO, ZERO])
+    qinv = q.inverse()
+    cap0 = reg.cap_vertices
+    candidates = [e for e in range(600) if e != c
+                  and tuple(W.matvec(qinv.matrix, data.N[e])) in data.POLE
+                  and any(data.h(e, v).sign() > 0 for v in cap0)]
+    if not candidates:
+        raise AssertionError('S4 quarter-turn realigns no grip whose cap meets cap 0')
+    d = min(candidates, key=lambda e: (-dot(data.N[c], data.N[e]), e))
+    a_index, a = next((i, tw) for i in range(12)
+                      if sum(((tw := sim.a4_element(ctx, d, i)).matrix[j][j] for j in range(4)), ZERO) == ONE)
+    seq = [('(0, q)', q), ('(d, a)', a), ('(d, a^-1)', a.inverse()), ('(0, q^-1)', qinv)]
+    labels = ['solved', 'after (0, q)', 'after (0, q), (d, a)',
+              'after (d, a^-1)', 'after (0, q^-1): solved']
+    applied_inside, twists, attempts = [], [], []
+
+    def capture(label):
+        survey = cfg.survey()
+        if sorted(survey) != list(range(600)) or any(r['status'] not in ('admissible', 'blocked')
+                                                   for r in survey.values()):
+            raise AssertionError('J1 survey is incomplete or contains an uncertified grip')
+        for e, row in survey.items():
+            if row['status'] == 'blocked' and row.get('certificate', {}).get('grip') != e:
+                raise AssertionError(f'J1 blocked grip {e} has no straddle certificate')
+        changed = np.flatnonzero(cfg.pose_id).tolist()
+        lattice = cfg.lattice_flags()
+        result = {'label': label, 'pose': {p: cfg.pose(p) for p in changed},
+                  'lattice': {p: bool(lattice[p]) for p in changed}, 'digest': cfg.digest(),
+                  'survey': [dict(survey[e], straddling=([survey[e]['certificate']]
+                                                       if 'certificate' in survey[e] else []))
+                             for e in range(600)]}
+        print(f'survey of state {len(twists)}: {sum(r["status"] == "blocked" for r in survey.values())} '
+              f'blocked ({time.time() - t0:.0f} s)', flush=True)
+        return result
+
+    states = [capture(labels[0])]
+    for k, (label, tw) in enumerate(seq):
+        cl = cfg.classify(tw.grip)
+        if cl.status != 'admissible' or not menu.contains(tw):
+            raise AssertionError(f'twist {label} is not a certified S4 move: {cl.status}')
+        inside = cl.inside.tolist()
+        outcome = cfg.apply(tw)
+        if not outcome.applied or outcome.moved != len(inside):
+            raise AssertionError(f'J1 rejected twist {label}: {outcome}')
+        applied_inside.append(set(inside))
+        twists.append({'label': label, 'grip': tw.grip, 'matrix': tw.matrix, 'retained': tw.retained,
+                       'from': k, 'to': k + 1, 'moved': inside})
+        states.append(capture(labels[k + 1]))
+        if k == 1:
+            bad = next(e for e, row in enumerate(states[-1]['survey']) if row['status'] == 'blocked')
+            rejected = sim.a4_element(ctx, bad, 1)
+            before = cfg.snapshot()
+            out = cfg.apply(rejected)
+            unchanged = cfg.snapshot() == before
+            if out.status != 'blocked' or out.applied or not unchanged or out.straddle is None:
+                raise AssertionError('J1 negative control was not rejected without changing the full state')
+            attempts.append({'state': 2, 'grip': bad, 'twist': f'({bad}, a4[1])', 'applied': out.applied,
+                             'unchanged': unchanged, 'certificate': out.straddle,
+                             'outcome': out.as_dict(), 'exact_twist': rejected.record()})
+
+    in_play = sorted(set().union(*applied_inside))
+    sigs = {p: data.signature(p) for p in in_play}
+    if any(c not in sig and d not in sig for sig in sigs.values()):
+        raise AssertionError('the S4 script moves a piece outside the two home caps')
+    caps = {}
+    for x in (c, d):
+        f = ctx.kplus.matrix(int(ctx.kplus.frame_idx[x]))
+        verts = [W.matvec(f, v) for v in cap0]
+        out = W.implied(verts)
+        caps[x] = {'poles': [e for e in range(600) if e != x and e not in out],
+                   'facets': [e for e in range(600) if dot(data.N[e], data.N[x]) > Q5(3, 0, 5) * data.NN]}
+    jobs = [(p, caps[c if c in sigs[p] else d]['poles'], caps[c if c in sigs[p] else d]['facets'])
+            for p in in_play]
+    print(f'building {len(jobs)} exact regions on {workers} workers', flush=True)
+    pool_ctx = mp.get_context('fork') if 'fork' in mp.get_all_start_methods() else mp.get_context()
+    with pool_ctx.Pool(workers) as pool:
+        built = pool.map(_piece_geometry, jobs, chunksize=16)
+    pieces, vertex_maps = {}, {}
+    for p, verts, edges, stickers in built:
+        home = reg.vertices(p)
+        lookup = {tuple(v): i for i, v in enumerate(verts)}
+        if set(lookup) != {tuple(v) for v in home}:
+            raise AssertionError(f'piece {p}: exporter vertex set differs from J1')
+        vertex_maps[p] = [lookup[tuple(v)] for v in home]
+        pieces[p] = {'signature': sigs[p], 'hosts': data.hosts(p), 'verts': verts,
+                     'edges': edges, 'stickers': stickers}
+    print(f'regions and exact J1 comparisons done in {time.time() - t0:.0f} s', flush=True)
+
+    def mapped_certificate(cert, state):
+        p = cert['piece']
+        if p not in pieces:
+            raise AssertionError(f'J1 certificate piece {p} is outside the applied inside sets')
+        mapped = dict(cert, vertex_below=vertex_maps[p][cert['vertex_below']],
+                      vertex_above=vertex_maps[p][cert['vertex_above']],
+                      j1_vertex_below=cert['vertex_below'], j1_vertex_above=cert['vertex_above'],
+                      h_below_exact=cert['h_below'], h_above_exact=cert['h_above'],
+                      h_below=cert['h_below_float'], h_above=cert['h_above_float'])
+        for side, sign in (('below', -1), ('above', 1)):
+            point = W.matvec(state['pose'][p], pieces[p]['verts'][mapped[f'vertex_{side}']])
+            exact_point = [[x.a, x.b, x.d] for x in point]
+            h = data.h(cert['grip'], point)
+            if (exact_point != cert[f'point_{side}'] or [h.a, h.b, h.d] != cert[f'h_{side}']
+                    or h.sign() != sign or not cert['points_checked_against_all_constraints']):
+                raise AssertionError(f'piece {p}: mapped certificate differs from J1')
+        return mapped
+
+    for state in states:
+        for row in state['survey']:
+            row['straddling'] = [mapped_certificate(cert, state) for cert in row['straddling']]
+    for att in attempts:
+        att['certificate'] = mapped_certificate(att['certificate'], states[att['state']])
+    journal = json.loads(cfg.journal_json())
+    checks = {
+        's4_menu_has_24_elements': len(menu) == 24,
+        'every_applied_twist_is_in_s4': all(menu.contains(tw) for _, tw in seq),
+        'every_applied_twist_is_certified_admissible': len(twists) == 4,
+        'd_is_exactly_realigned': tuple(W.matvec(qinv.matrix, data.N[d])) in data.POLE,
+        'caps_meet_exactly': any(data.h(d, v).sign() > 0 for v in cap0),
+        'surveys_are_complete_and_certified': all(len(st['survey']) == 600 for st in states),
+        'negative_control_is_certified_blocked': attempts[0]['outcome']['status'] == 'blocked',
+        'negative_control_leaves_full_state_unchanged': attempts[0]['unchanged'],
+        'state_3_digest_equals_state_1': states[3]['digest'] == states[1]['digest'],
+        'final_digest_equals_solved': states[-1]['digest'] == states[0]['digest'],
+        'exported_pieces_equal_union_of_inside_sets': set(pieces) == set().union(*applied_inside),
+        'exported_vertices_equal_j1_exactly': len(vertex_maps) == len(pieces),
+        'certificate_vertices_and_signs_match_j1_exactly': True,  # checked above for every record
+        'journal_has_model_menu_contract_identities': (journal['model_identity'] == data.identity
+                                                      and journal['menu_identity'] == menu.identity
+                                                      and bool(journal['contract_revision'])),
+        'journal_replay_matches_final_digest': sim.State.replay(journal, ctx, menu=menu).digest() == cfg.digest(),
+    }
+    if not all(value is True for value in checks.values()):
+        raise AssertionError(f'S4 source checks failed: {checks}')
+    return {'alpha': data.ALPHA, 'c': c, 'd': d, 'norm2': data.NN, 'normals': data.N, 'pieces': pieces,
+            'states': states, 'twists': twists, 'attempts': attempts, 'checks': checks,
+            'source': 'research/jumbling/sim/ (J1 exact S4 sequence)', 'source_key': 'sim-s4',
+            'journal': journal, 'menu': menu.record(),
+            'script': {'q_omega': [[1, 0, 1], [0, 0, 1], [0, 0, 1]], 'd': d, 'a4_index': a_index,
+                       'realigned_from_pole': data.POLE[tuple(W.matvec(qinv.matrix, data.N[d]))],
+                       'applied': [tw.record() for _, tw in seq], 'blocked_grip': attempts[0]['grip']}}
+
+
+SOURCES = {'witness': witness_source, 'sim-s4': sim_s4_source}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -350,7 +506,7 @@ def tetra_vertices(units, e):
 # ---------------------------------------------------------------------------------------------
 # export
 
-def export(src, out_dir):
+def export(src, out_dir, stem='scene'):
     t0 = time.time()
     c, d = src['c'], src['d']
     nf = np.array([[float(x) for x in n] for n in src['normals']])
@@ -456,6 +612,8 @@ def export(src, out_dir):
             'off_lattice_pieces': int((state_lat[k] == 0).sum()),
             'pieces_per_pose': counts, 'straddling_records': cert_start[-1] - cert_start[-2],
         })
+        if 'digest' in st:
+            states_json[-1].update(digest=st['digest'], survey=st['survey'])
 
     # outer shape (float statistics of posed sticker vertices against the 600 facets)
     st_vert_ids = []
@@ -513,7 +671,8 @@ def export(src, out_dir):
             blob.append(0)
         layout[name] = {'dtype': str(arr.dtype), 'offset': len(blob), 'length': int(arr.size)}
         blob += arr.tobytes()
-    (out_dir / 'scene.bin').write_bytes(bytes(blob))
+    bin_file, json_file = f'{stem}.bin', f'{stem}.json'
+    (out_dir / bin_file).write_bytes(bytes(blob))
 
     header = {
         'format': 'magic600-jumbling-scene/1',
@@ -524,7 +683,7 @@ def export(src, out_dir):
         'counts': {'pieces': npieces, 'stickers': len(st_piece), 'vertices': int(len(verts)),
                    'triangles': len(tris) // 3, 'edges': len(edges) // 2, 'host_cells': len(hosts),
                    'patch_grips': len(patch_grips), 'poses': len(pose_mats)},
-        'bin': {'file': 'scene.bin', 'bytes': len(blob), 'sha256': hashlib.sha256(bytes(blob)).hexdigest(),
+        'bin': {'file': bin_file, 'bytes': len(blob), 'sha256': hashlib.sha256(bytes(blob)).hexdigest(),
                 'arrays': layout},
         'grips': {'patch': patch_grips, 'units': {str(e): units[e].tolist() for e in patch_grips}},
         'cells': cells,
@@ -542,9 +701,16 @@ def export(src, out_dir):
                      for a in src['attempts']],
         'checks': src['checks'],
     }
-    (out_dir / 'scene.json').write_text(json.dumps(header, separators=(',', ':')) + '\n')
-    print(f'export done in {time.time() - t0:.0f} s: scene.json {(out_dir / "scene.json").stat().st_size} B, '
-          f'scene.bin {len(blob)} B', flush=True)
+    if 'journal' in src:
+        for key in ('journal', 'menu', 'script'):
+            header[key] = src[key]
+        for dest, att in zip(header['attempts'], src['attempts']):
+            dest['certificate'].update(att['certificate'], piece=index[att['certificate']['piece']],
+                                       piece_id=att['certificate']['piece'])
+            dest.update(outcome=att['outcome'], exact_twist=att['exact_twist'])
+    (out_dir / json_file).write_text(json.dumps(header, separators=(',', ':')) + '\n')
+    print(f'export done in {time.time() - t0:.0f} s: {json_file} {(out_dir / json_file).stat().st_size} B, '
+          f'{bin_file} {len(blob)} B', flush=True)
     return header
 
 
@@ -557,11 +723,13 @@ def main():
     args = ap.parse_args()
     if args.cache and args.cache.exists():
         src = pickle.loads(args.cache.read_bytes())
+        if src.get('source_key', 'witness') != args.source:
+            ap.error('the cache belongs to a different source; use a separate cache for each scene')
     else:
         src = SOURCES[args.source](workers=args.workers)
         if args.cache:
             args.cache.write_bytes(pickle.dumps(src))
-    header = export(src, HERE)
+    header = export(src, HERE, stem='scene-s4' if args.source == 'sim-s4' else 'scene')
     print(json.dumps({'counts': header['counts'], 'checks': header['checks'],
                       'states': [{k: s[k] for k in ('label', 'admissible', 'blocked', 'off_lattice_pieces',
                                                     'pieces_per_pose', 'outer_shape_float')}

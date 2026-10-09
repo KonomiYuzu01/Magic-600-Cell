@@ -6,7 +6,9 @@ Evidence kind: source, fixture and synthetic geometry in a headless browser. Not
 
 ## What it shows
 
-The exact witness of [`witness.py`](../witness.py), as a local patch: the 4,375 pieces of the caps of grips c = 0 and d = 13, with their 6,499 stickers on 67 host cells. The sequence has five exact states and four twists:
+The scene selector offers **Witness E2–E4** and **J1: S4 sequence**. Both have five exact states and four applied twists, plus a certified rejected attempt.
+
+The witness comes from [`witness.py`](../witness.py), as a local patch: the 4,375 pieces of the caps of grips c = 0 and d = 13, with their 6,499 stickers on 67 host cells:
 
 | State | Reached by | Admissible / blocked grips (of 600) | Off-lattice pieces | Distinct poses |
 | --- | --- | --- | --- | --- |
@@ -16,6 +18,20 @@ The exact witness of [`witness.py`](../witness.py), as a local patch: the 4,375 
 | S3 | (d, T_d⁻¹) | 546 / 54 | 3,097 | 2 |
 | S4 | (c, g⁻¹), solved again | 600 / 0 | 0 | 1 |
 
+The second scene comes from the [J1 simulator](../sim/README.md), with its exact 24-element `TwistMenu.s4`. From solved, q is the Cayley quarter-turn with ω = (1, 0, 0) in pole 0's cap frame. Among grips whose caps meet cap 0 and whose poles q realigns, the exporter selects the largest exact n₀ · n_d, with ties to the smaller index. This gives d = 2, with q⁻¹n₂ = n₃₉. The first third-turn of A4₂ is element 2 (retained word [6]).
+
+| State | Reached by | Admissible / blocked grips (of 600) | Off-lattice pieces | Distinct poses |
+| --- | --- | --- | --- | --- |
+| S0 | solved | 600 / 0 | 0 | 1 |
+| S1 | (0, q), exact 90° quarter-turn | 584 / 16 | 3,097 | 2 |
+| S2 | (2, a), retained 120° third-turn | 582 / 18 | 3,097 | 3 |
+| S3 | (2, a⁻¹) | 584 / 16 | 3,097 | 2 |
+| S4 | (0, q⁻¹), solved again by J1 digest | 600 / 0 | 0 | 1 |
+
+At S2, the first blocked grip is 1. J1 rejects A4₁ element 1 (a retained half-turn, word [3]) and its full snapshot stays unchanged, including its journal. The recorded certificate uses piece 0, with h = −0.07061465 and +0.07061465. The exported patch is the union of the inside sets of all four applied twists: 5,799 pieces with 8,618 stickers on 87 host cells.
+
+Every S4 pose, twist, lattice flag, grip status and straddle certificate comes from J1. Every exact state calls `State.survey()` for all 600 grips. J1 surveys return one certified straddling piece per blocked grip; the witness records all its straddling pieces. Highlights and the pager show the certificates the selected scene supplies.
+
 The page has two views, visible together and linked, as the owner decided on 2 October 2026 (Global and Local only):
 
 - **Global**: the patch projected from four dimensions. The 4D eye is outside the polytope along a chosen pole direction: between c and d, c, or d. You can set its distance. A stereographic option projects from the antipode of the same direction. Cell shrink pulls each sticker toward its host cell centre, and sticker shrink pulls it toward its own centroid; both are applied in the piece's home frame before the pose. Certificate markers use the posed region vertices before either shrink, in both projections. Grip markers sit at the projected poles: a ring means admissible, a diamond means blocked. A hatch pattern marks off-lattice pieces and moving preview pieces. A faint world-fixed cage of the host cells serves as the lattice reference.
@@ -24,19 +40,20 @@ The page has two views, visible together and linked, as the owner decided on 2 O
   - Without a grip, the anchor is the facet of the piece's nearest lattice slot. The slot is drawn dashed as a realignment cue, and anything above the plane lies outside the 600-cell.
 - **Linking**: clicking a grip marker or a piece in Global sets the Local focus. Clicking a neighbouring straddling piece in Local, or using the pager, moves the focus and its outline in Global. The selected grip's straddling pieces stay bright in Global while the others dim.
 - **Timeline**: play or pause, step, and scrub along the sequence. Integer positions are the exact states. Between them, every moving piece follows the twist's own one-parameter family R(φ) = I + (cos φ − 1)(uuᵀ + vvᵀ) + sin φ (vuᵀ − uvᵀ), a rotation in the twist's plane {u, v} with the fixed plane unchanged. There is no matrix interpolation. The views are labelled "float preview, uncertified" there, and grip markers lose their status. A moving piece is described as "moving (float preview)", including retained turns with lattice poses at both endpoints. Lattice status is shown only at exact states.
-- **Deep links**: `#s2-g0` opens S2 with grip 0 selected; `#s1-g1-p0` also focuses piece 0. A grip is accepted only if its pole is exported in this patch; other grip IDs are ignored.
+- **Deep links**: all existing links, including `#s2-g0` and `#s1-g1-p7`, open the witness scene. The S4 scene adds the token `s4`: `#s4-s2-g1-p0` opens its rejected attempt and focuses its certificate piece. Links remain bare anchors of letters, digits and hyphens. A grip is accepted only if its pole is exported in the selected patch; other grip IDs are ignored.
 
 ## Regenerate and open
 
 ```text
 python research/jumbling/viewer/export_scene.py          # about 3 minutes on four cores
+python research/jumbling/viewer/export_scene.py --source sim-s4
 node research/jumbling/viewer/check_viewer.mjs --serve   # then open http://127.0.0.1:8600/
 ```
 
-- **Export.** `export_scene.py` needs the standard library and NumPy. It reads `assets/model.npz` read-only through `witness.py`, and writes `scene.json` and `scene.bin` next to itself.
+- **Export.** `export_scene.py` needs the standard library and NumPy. Without arguments it writes the witness to `scene.json` and `scene.bin`. `--source sim-s4` writes `scene-s4.json` and `scene-s4.bin` beside them. Both sources read the retained model read-only; J1 also reads `assets/primitives.npz` to record its model identity.
   - `--workers N` sets the region pool.
-  - `--cache FILE` (development only; keep the file outside the repository) pickles the exact source, so changes to the export step rerun in a second.
-- **Swapping the source.** The exact source sits behind one function, `witness_source()`. A later simulator (`research/jumbling/sim/`) replaces it by returning the same dictionary, registered in `SOURCES`.
+  - `--cache FILE` (development only; keep the file outside the repository) pickles the exact source, so changes to the export step rerun in a second. Use a separate cache for each source; a source mismatch is refused.
+- **Sources and checks.** `witness_source()` and `sim_s4_source()` return the same exact-data dictionary. S4 geometry uses the existing exact region/sticker builder. Every exported piece's vertex set must equal J1's `regions.vertices(p)` as an exact set, or export stops. Certificates are remapped from J1's vertex order to the builder's order and checked against their exact posed points and signed h. All 15 S4 header checks must be true: menu membership, exact realignment and cap intersection, certified surveys and applied moves, rejection without change, equality of the piece union and vertex sets, certificate agreement, reverse-state digests, journal identities and journal replay. The header records J1's full journal document, exact menu and deterministic script.
 - **Serving.** The page needs HTTP, because it fetches its data; `file://` does not work. Use HTTPS or localhost HTTP so Web Crypto can verify the scene digest. `index.html` is written in the private-page format, without its own document skeleton. `--serve` wraps it in the same minimal skeleton that the host adds at publish time. A static server also works in that secure context, but then the page renders in quirks mode.
 - **Libraries.** three.js 0.160.0 loads from cdn.jsdelivr.net through an import map. The fonts come from Google Fonts, with system fallbacks.
 
@@ -46,27 +63,32 @@ node research/jumbling/viewer/check_viewer.mjs --serve   # then open http://127.
 PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node research/jumbling/viewer/check_viewer.mjs --shots [--vendor DIR]
 ```
 
-It uses the Node Playwright package and Chromium with SwiftShader WebGL (`--use-angle=swiftshader`). It asserts:
+It uses the Node Playwright package and Chromium with SwiftShader WebGL (`--use-angle=swiftshader`). The integrator runs it outside the implementation sandbox. It runs the following assertions for **both scenes**:
 
 - no console errors and no page errors, on desktop light, desktop dark and phone width;
-- the model counts match `scene.json`;
-- every animated twist family ends on the exported pose (float deviation 9·10⁻¹⁶);
-- for every exact state, the panel counts match `scene.json` and the views are labelled exact; in between, they are labelled as an uncertified preview;
-- piece 1035 is described as moving at S1.5, with lattice status restored at the exact endpoints of the retained turn;
+- the model counts match the selected header, and its binary matches the byte count and digest;
+- the S4 header checks pass, its journal names its exact menu and its state counts match J1's saved surveys;
+- every animated twist family ends on the exported pose;
+- for every exact state, the panel counts match the selected scene and the views are labelled exact; in between, they are labelled as an uncertified preview;
+- a retained-turn piece is described as moving at S1.5, with lattice status restored at the exact endpoints (the witness keeps its piece-1035 regression);
 - both views draw non-background pixels (read back with `readPixels`), in perspective and stereographic projection;
-- the Certificate row matches both vertex identities and signed h values of the negative control from `witness.py` (grip 1, piece 0, h = −0.01487 and +0.01344), and reversing either sign fails the assertion;
-- Global certificate markers for S1, grip 1, piece 7 keep their posed vertex positions and signed h at default shrink in both projections, and stay fixed when shrink changes;
-- the two certificate points are labelled in Local;
-- clicking a grip marker in Global drives Local, and the pager moves the focus;
+- all binary certificate rows have negative below h and positive above h;
+- the Certificate row matches both vertex identities and signed h values of the selected source's rejected attempt, and reversing either sign fails the assertion;
+- Global certificate markers keep their posed vertex positions and signed h at default shrink in both projections, and stay fixed when shrink changes (the witness keeps S1, grip 1, piece 7; S4 checks its rejected attempt);
+- the two certificate points are labelled in Local and their marker heights keep the sign of h;
+- clicking a grip marker in Global drives Local, and the pager cycles through the exported certificates;
+- the scene selector loads the other scene's model and writes a bare anchor;
 - play advances and pause holds;
 - the dark theme applies;
-- the deep link `#s2-g0` works;
-- the deep links `#s2-g47` and `#s2-g600` ignore grips without exported poles and load without errors;
+- state/grip/piece deep links restore the correct scene, including the legacy `#s1-g1-p7` and the S4 token;
+- deep links ignore grips without exported poles and load without errors;
 - the binary and base64 paths verify the SHA-256 of the decoded scene bytes, and digest mismatches show a load error without building a model;
 - there is no horizontal scroll at 390 px;
 - no request goes to a host outside the allowlist.
 
 `--vendor DIR` serves `three.module.js` and `OrbitControls.js` from a local directory when the browser cannot reach the CDN, as in a cloud session behind a TLS-inspecting proxy. The files must match the pinned SHA-256 digests in the script. Font requests get an empty stylesheet, so the screenshots use fallback fonts.
+
+The S4 export acceptance and JavaScript syntax checks passed in the implementation sandbox. The expanded browser assertions still need the integrator's run; no browser result for S4 is recorded here. `--shots` adds S4 captures with the prefix `s4-`.
 
 Recorded run before the certificate, preview, digest and deep-link fixes: 32 of 32 checks passed in a Linux cloud session. That result does not cover the added regression assertions. Screenshots in `shots/` are from that run:
 
@@ -80,6 +102,8 @@ Recorded run before the certificate, preview, digest and deep-link fixes: 32 of 
 ## Data
 
 `scene.json` (45 KB) is the header. `scene.bin` (1.66 MB) holds little-endian typed arrays at the offsets the header lists. With `index.html` and `viewer.js`, the page and its data come to about 1.8 MB.
+
+`scene-s4.json` (about 523 KB) and `scene-s4.bin` (about 1.08 MB) use the same layout. The S4 header additionally keeps each J1 survey (certificate counts, exact evaluations and exact straddle fields), each state digest, the journal with model/menu/contract identities, the exact menu and the script. Mapped straddle records preserve J1's orbit, transport, original vertex indices, exact points and exact h triples alongside the display indices and float h values.
 
 The loader checks the decoded byte count and SHA-256 against the header before constructing any arrays or building the model. A mismatch stops loading with an error.
 
@@ -102,7 +126,7 @@ The loader checks the decoded byte count and SHA-256 against the header before c
 
 ## Exact and float
 
-| Exact (Q(√5), from `witness.py`) | Float (display only) |
+| Exact (Q(√5), from `witness.py` or J1) | Float (display only) |
 | --- | --- |
 | piece regions, by double description | exported coordinates (float32 of exact vertices) |
 | sticker vertex sets: region vertices exactly on a host facet | pose and twist matrices (float64 of exact matrices) |
@@ -110,13 +134,14 @@ The loader checks the decoded byte count and SHA-256 against the header before c
 | poses, twists and the pose of every piece at every state | nearest lattice pose, by a float search over the 7,200 elements of K⁺ |
 | grip status and every straddling certificate (exact signs) | host-cell colouring, cell cage, projections and shrink |
 | agreement with `witness-results.json` (blocked sets and negative control) | outer-shape statistics; h ranges in the focus panel |
+| S4 vertex-set agreement with J1, signed certificate points, unchanged rejected attempt and state/journal digests | |
 
 Legality is never decided in the browser. Certificates are displayed with float h values; their signs are exact.
 
 ## Limits
 
-- **Patch only.** Only the pieces of caps 0 and 13 are drawn; the other 172,745 pieces are not in the data. Grip counts cover all 600 grips, but markers are drawn only for the 67 grips that the patch's signatures use.
-- **Witness only.** The sequence is the witness, not scripted scrambles; those come from J1. There is no interactive jumble twist with a live preview.
+- **Patch only.** The witness draws 4,375 pieces of caps 0 and 13, and S4 draws the 5,799 pieces in its applied inside sets. Grip counts cover all 600 grips; markers cover the selected patch's 67 or 87 signature grips.
+- **Two fixed sequences.** The witness and the certified J1 S4 script are available. There is no interactive jumble twist with a live preview.
 - **Lossy projection.** The Local view drops one direction of the anchor hyperplane. Heights against the anchor are exact; the two other axes are a principal-axis projection of the focus piece.
 - **Untested surfaces.** The page was exercised only in headless Chromium with software WebGL. Input on touch devices and timing were not assessed.
 
@@ -162,7 +187,7 @@ Legality is never decided in the browser. Certificates are displayed with float 
 
 ## Publishing on hosts without a binary type
 
-Some page hosts serve no binary media type. For them, publish the bytes of `scene.bin` as base64 text, and in the published copy of `scene.json` set `bin.file` to that text file and `bin.encoding` to `"base64"`. `viewer.js` decodes it, then checks the byte count and SHA-256 of the decoded bytes against the same exported header values.
+Some page hosts serve no binary media type. For them, publish each scene's binary bytes as base64 text, and in the corresponding published header set `bin.file` to that text file and `bin.encoding` to `"base64"`. `viewer.js` decodes it, then checks the byte count and SHA-256 of the decoded bytes against that scene's exported header values.
 
 ## Review
 

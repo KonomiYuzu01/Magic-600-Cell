@@ -145,10 +145,14 @@ dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 </script>
 
 <header class="top">
-  <h1>Jumble Witness Viewer</h1>
-  <span class="meta">600-cell-Full geometry · cut depth 121/125 · caps of grips <span class="math">c</span> = 0 and <span class="math">d</span> = 13 · 4,375 pieces</span>
+  <h1>Jumble Viewer</h1>
+  <label>Scene <select id="sceneSel" aria-label="Scene">
+    <option value="witness">Witness E2–E4</option>
+    <option value="s4">J1: S4 sequence</option>
+  </select></label>
+  <span class="meta" id="sceneMeta">600-cell-Full geometry · cut depth 121/125</span>
 </header>
-<p class="legend"><b>Legality is exact.</b> Grip status, blocking and certificates come from the Q(√5) computation of the witness. Motion between states is an uncertified float preview.</p>
+<p class="legend"><b>Legality is exact.</b> Grip status, blocking and certificates come from the selected scene's Q(√5) computation. Motion between states is an uncertified float preview.</p>
 <div id="error" class="err" hidden></div>
 
 <main class="views">
@@ -237,6 +241,6 @@ dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
   </div>
 </section>
 
-<p class="foot">Research prototype for the jumbling program (workstream J2), not a renderer candidate. Look, colour and motion values are provisional. Source: research/jumbling/witness.py through export_scene.py.</p>
+<p class="foot">Research prototype for the jumbling program (workstream J2), not a renderer candidate. Look, colour and motion values are provisional. <span id="sceneSource"></span></p>
 
 <script type="module" src="viewer.js"></script>
