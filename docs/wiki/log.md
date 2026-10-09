@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-09] update | Level 2 framework results
+Added [level-2-framework-results](evidence/level-2-framework-results.md). Godot 4.7.2 and Qt 6.10.3 both meet the W3 selection gate in the owner's attended runs of 4 October; Qt's 60 fps is Qt's vblank-paced update, so the frame rates are not a like-for-like comparison; the blind-seconds and tearing finalizer defects are fixed; the build identities rest on preparation records until L2-V-002 is fixed.
+
 ## [2026-10-07] update | Engine language question recorded
 [engine-language-rust](questions/engine-language-rust.md) records the proposal to write the platform-independent 1.0 layers in Rust and the deferred spike that would decide it; nothing is started.
 

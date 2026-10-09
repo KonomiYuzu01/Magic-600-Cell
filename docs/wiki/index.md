@@ -32,6 +32,7 @@ Start here. Each entry: link, one-line summary, status. Rules for pages and oper
 ## Evidence
 - [s-b-probe-results](evidence/s-b-probe-results.md) — The bare Direct3D 12 probe meets the selection gate in the W3 scene (778 fps average, 1.55 ms p99, three attended runs) on the owner's RTX 4070 Laptop GPU; its label check catches injected faults; its fenced resource handoff works on the same device, to a second device and to D3D11; PresentMon 2.6 capture lessons. `verified`
 - [interop-smoke-results](evidence/interop-smoke-results.md) — Level-1 interop smoke tests on the owner's GPU: Godot 4.7.2 (.NET, editor build) and Qt 6.10.3 show a texture written by our own Direct3D 12 code, through resizes and teardown, with 0 validation errors; Godot needs the layout its tracker holds, Qt no RENDER_TARGET handover; Qt Quick keeps our device and queue through `fromRhi`, and `fromDeviceAndContext` works as a fallback; PR #43 section 7 answers for both. `verified`
+- [level-2-framework-results](evidence/level-2-framework-results.md) — Level 2 on the owner's RTX 4070 Laptop GPU: Godot 4.7.2 (670.71 fps, p99 1.887 ms) and Qt 6.10.3 (60.00 fps, p99 17.380 ms) both meet the W3 gate; Qt's 60 fps is a vblank cap in Qt, not GPU headroom; two finalizer defects fixed; loaded-file binding of the identities still open (L2-V-002). `verified`
 
 ## Questions
 - [engine-language-rust](questions/engine-language-rust.md) — Open for the 2.5 freeze: Rust for the engine, session store and command layer, GUI language following the renderer; spike deferred. `draft`
