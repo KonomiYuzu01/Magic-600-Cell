@@ -19,7 +19,7 @@ Run read-only as a review by the senior reviewer, with effort `max` and speed ti
 - The explorer's exact relations: `python research/jumbling/explorer/explore.py --list-menus` prints each exact menu's J1 identity and its relation to S4₀, I_a and I_b (`j1_relation` in `research/jumbling/explorer/explorer-results.json`).
 
 ## 3. Environment and versions
-- Branch `claude/jumbling-1-0`, working tree (the fixes may not be committed yet: a Codex implementation call runs, during which nobody commits). Python 3 with NumPy. Contract revision `state-contract 2026-10-09 A1-A4`. Evidence kind: source and synthetic geometry.
+- Branch `claude/jumbling-1-0`, current head (the fixes are in `3be8ffb`, the replay evidence in the commit after it). Python 3 with NumPy. Contract revision `state-contract 2026-10-09 A1-A4`. Evidence kind: source and synthetic geometry.
 
 ## 4. Necessary source and evidence
 - `work/reviews/20261009T221306Z-4784adf6/review.json` (the findings).
