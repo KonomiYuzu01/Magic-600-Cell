@@ -484,7 +484,10 @@ def finalize(directory, candidate, mode, pid, app_exit, overlays=None, fault_inj
                     name = 'short-check.json'
                 else:
                     environment = copy.deepcopy(h['environment'])
-                    environment['tearing'] = all(row['tearing'] == 1 for row in rows)
+                    # PresentMon sets AllowsTearing only from a flip or blit event (FRAMEWORK-FACTS P1), so a
+                    # present dropped before one shows 0 whatever its flags; dropped rows do not decide tearing.
+                    shown = [row for row in rows if row['dropped'] == 0]
+                    environment['tearing'] = bool(shown) and all(row['tearing'] == 1 for row in shown)
                     environment['declared']['overlays'] = ('fault-injection run; not gate evidence'
                                                            if fault_injection else overlays)
                     rotating = h['scene'] in ('w2', 'w3')

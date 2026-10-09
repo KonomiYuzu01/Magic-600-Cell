@@ -231,7 +231,7 @@ Outputs:
   - `injected_fault` when set;
   - `presentmon`: `{"process_id": <launched PID>, "swap_chain": <the chain>}`;
   - `build`: `{"build_identity", "parts": [{"name", "sha256"}] sorted by name, "dll_identity"}`;
-  - `environment`: `harness.json`'s, with `tearing` (true only when every row of the chain in `[T0, stop)` has `AllowsTearing` 1) and `declared.overlays`. That is the `--overlays` text, or S-B's `fault-injection run; not gate evidence`;
+  - `environment`: `harness.json`'s, with `tearing` (true only when the chain has at least one displayed row, `Dropped` 0, in `[T0, stop)` and every such row has `AllowsTearing` 1; dropped rows do not count, because PresentMon reports `AllowsTearing` 0 for a present it drops before any flip or blit event, whatever its flags, `FRAMEWORK-FACTS.md` P1) and `declared.overlays`. That is the `--overlays` text, or S-B's `fault-injection run; not gate evidence`;
   - `window`: `harness.json`'s;
   - `l2`: `sizes`, `scaling`, `options`, `configuration`, `native` (`target`, `viewport`, `queue_mode`, `barrier_api`, `vram_samples`), `presentmon` (`rows`, `present_modes`, `sync_intervals`, `allows_tearing`, all in `[T0, stop)`), `expected_adapter`, `condition_reasons`, and `checks` (every code above with `pass`).
 - `short-check.json` (`short`): format `magic600-l2-short-check-v1`, with `run_id`, `candidate`, `scene`, `build`, `l2.presentmon`, `presentmon`, `sizes`, `vram_peak_mb`, `window` and `checks`. Debug switches are allowed in this mode, so their effect is refused by its own check: half target gives `size-mismatch` only, and no VRAM gives `vram-missing` only.

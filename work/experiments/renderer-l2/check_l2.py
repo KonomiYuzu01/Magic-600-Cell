@@ -518,7 +518,12 @@ def extra_cases(root):
     directory = fixture(root, 'presentmon-no-tearing')
     csv_edit(directory, lambda rows: rows[800].update(AllowsTearing='0'))
     invoke(directory)
-    expect(read_json(directory / 'run.json')['environment']['tearing'] is False, 'tearing must use every row')
+    expect(read_json(directory / 'run.json')['environment']['tearing'] is False, 'tearing must use every displayed row')
+    # A present dropped before any flip or blit event shows AllowsTearing 0 in PresentMon; dropped rows do not decide tearing.
+    directory = fixture(root, 'presentmon-dropped-no-tearing')
+    csv_edit(directory, lambda rows: rows[800].update(AllowsTearing='0', Dropped='1'))
+    invoke(directory)
+    expect(read_json(directory / 'run.json')['environment']['tearing'] is True, 'a dropped row decided tearing')
     directory = fixture(root, 'trace-present-boundary')
     trace_edit(directory, lambda entries: [entry.update(qpc=entry['qpc'] + FREQUENCY // 1000) for entry in entries])
     invoke(directory)
