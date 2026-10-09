@@ -1,7 +1,6 @@
 """Offline transport, adapter and in-memory pipeline checks; invented fixtures only."""
 from __future__ import annotations
 
-import copy
 import hashlib
 import io
 import json
@@ -455,23 +454,25 @@ class CalibrationTests(test_store.TempDir):
         self.assertNotIn("https://", text)
         self.assertNotIn("NaN", text)
         self.assertEqual([p for p in self.tmp.rglob("*") if p.is_file()], [path])
-        with self.assertRaisesRegex(common.Refused, "passing --calibrate"):
-            fetch.load_screen(self.fake, common.default_data_root())
 
-    def test_passing_report_bound_to_model_weights_probes_and_approved_thresholds(self):
+    def test_passing_report_records_model_weights_probes_and_approved_thresholds(self):
         report = self.calibrate(1.0)
         self.assertTrue(report["passed"])
         self.assertEqual((report["threshold"], report["strict_threshold"]), (screen.THRESHOLD, screen.STRICT_THRESHOLD))
-        path = fetch.write_calibration(common.default_data_root(), report)
-        got = fetch.load_screen(self.fake, common.default_data_root())
-        self.assertEqual(got.threshold, screen.THRESHOLD)
-        for field, value in (("model", "other"), ("weightsSha256", "f" * 64), ("probesSha256", "f" * 64),
-                             ("passed", False), ("threshold", 0.5)):
-            broken = copy.deepcopy(report)
-            broken[field] = value
-            path.write_text(json.dumps(broken), encoding="utf-8")
-            with self.subTest(field=field), self.assertRaises(common.Refused):
-                fetch.load_screen(self.fake, common.default_data_root())
+        self.assertEqual((report["model"], report["weightsSha256"], report["probesSha256"]),
+                         (self.fake.model_id, getattr(self.fake, "weights_sha256", ""), fetch._probe_sha()))
+
+    def test_fetch_needs_no_calibration_report(self):
+        # Owner decision, 9 October 2026: the fetch applies the guard; a missing or failed report changes nothing.
+        for report in (None, self.calibrate(np.nan)):
+            if report is not None:
+                fetch.write_calibration(common.default_data_root(), report)
+            with self.subTest(report=report is not None), \
+                    mock.patch.object(embed, "load_embedder", return_value=self.fake), mock.patch.object(net, "Client"), \
+                    mock.patch.object(fetch, "calibrate", side_effect=AssertionError("the fetch must not calibrate")), \
+                    mock.patch.object(fetch, "run", return_value={}) as run, mock.patch("sys.stdout", io.StringIO()):
+                self.assertEqual(fetch.main([]), 0)
+                self.assertIsInstance(run.call_args.args[2], screen.Screen)
 
     def test_calibration_labels_require_adults_and_public_domain(self):
         self.assertFalse(fetch._adult_subject(candidate(title="nude child portrait"), positive=True))
@@ -615,7 +616,7 @@ class PipelineTests(test_store.TempDir):
         self.addCleanup(self.library.close)
         self.fake = embed.FakeEmbedder()
         self.content_screen = mock.Mock()
-        self.content_screen.check.return_value = [False]
+        self.content_screen.guard.return_value = [False]
 
     def pipeline(self, item=None, data=None, **kwargs):
         item, data = item or candidate(), data or png()
@@ -639,7 +640,7 @@ class PipelineTests(test_store.TempDir):
         self.assertTrue(self.library.has_seen("met", "901"))
 
     def test_discard_keeps_counts_only_no_seen_hash_metadata_or_files(self):
-        self.content_screen.check.return_value = [True]
+        self.content_screen.guard.return_value = [True]
         pipeline, item, _ = self.pipeline()
         before = set(self.library.root.rglob("*"))
         outcome = self.ingest(pipeline, item)
@@ -671,14 +672,40 @@ class PipelineTests(test_store.TempDir):
             self.assertEqual(self.ingest(pipeline, item).kind, "blocked")
             embeddings.assert_not_called()
 
-    def test_animations_no_original_and_tier_b_is_always_strict(self):
+    def test_animations_no_original_and_tier_b_gets_the_minor_checks_only(self):
         pipeline, item, _ = self.pipeline(data=png(animated=True))
         outcome = self.ingest(pipeline, item, tier="B")
         self.assertEqual(outcome.kind, "stored")
         self.assertIsNone(self.library.original_path(outcome.sha256))
-        self.content_screen.check.assert_called_once()
-        self.assertTrue(self.content_screen.check.call_args.kwargs["strict"])
+        self.content_screen.guard.assert_called_once()
+        self.assertFalse(self.content_screen.guard.call_args.kwargs["explicit"])
         self.assertEqual(self.library.image(outcome.sha256).tier, "B")
+
+    def test_guard_reads_title_and_keywords_and_class_a_gets_the_explicit_check(self):
+        pipeline, item, _ = self.pipeline(item=replace(candidate(title="Invented study"), keywords=("nude_teen", "1girl")))
+        self.assertEqual(self.ingest(pipeline, item).kind, "stored")
+        kwargs = self.content_screen.guard.call_args.kwargs
+        self.assertEqual((kwargs["labels"], kwargs["explicit"]), (["Invented study nude_teen 1girl"], True))
+
+    def test_real_guard_reads_source_tags(self):
+        # Every probe points away from the image except "a landscape", so only the labels can discard.
+        unit = np.eye(16, dtype=np.float32)
+        texts = {t: -unit[0] for t in screen.UNSAFE_PROBES + screen.SAFE_PROBES}
+        texts["a landscape"] = unit[0]
+        fake = embed.FakeEmbedder(texts=texts)
+        fake.logit_scale = 5.0
+        content_screen = screen.Screen(fake)
+        cases = ((("nude_teen",), "discarded"), (("1girl", "erotic"), "discarded"), (("1girl", "landscape"), "stored"),
+                 (("nude", "adult"), "stored"), (("bathing_suit", "children"), "discarded"),
+                 (("1girl", "masturbation"), "discarded"), (("Nude preteen study",), "discarded"),
+                 (("schoolgirl", "ejaculation"), "discarded"), (("Nude 12-year-olds",), "discarded"))
+        for number, (keywords, kind) in enumerate(cases, start=1):
+            item = replace(candidate(ident=str(910 + number)), keywords=keywords)
+            replay = net.ReplayTransport({item.image_url: (200, {"content-type": "image/png"}, png((20 * number, 130, 170)))})
+            pipeline = fetch.Pipeline(self.library, fake, content_screen, net.Client(replay, sleep=lambda _: None, clock=lambda: 0))
+            vector = embed.normalise(unit[0] + 0.3 * unit[number])[np.newaxis]   # distinct images, "a landscape" on top
+            with self.subTest(keywords=keywords), mock.patch.object(fake, "embed_images", return_value=vector):
+                self.assertEqual(self.ingest(pipeline, item).kind, kind)
 
     def test_relevance_and_near_duplicate_checks_before_commit(self):
         pipeline, item, _ = self.pipeline(relevance_min=1)

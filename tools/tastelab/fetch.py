@@ -3,6 +3,10 @@
 Candidates and bytes stay in memory through rights, decoding, embedding,
 screening, relevance and deduplication. Only admitted images are committed;
 discarded cases leave aggregate counts only. No owner-folder or URL ingestion.
+The fetch applies `screen.Screen.guard` (owner decisions, 9 October 2026): class A
+keeps nudity, swimwear, suggestive content and gore, and both classes discard what
+the minor-protection checks flag. `--calibrate` measures the full screen; its
+report is not a precondition of the fetch.
 `--calibrate --diagnose` also writes reports/calibration-cases.json: the group,
 query, source, id, title, keywords and score of each missed or discarded
 calibration case, never its image or a URL (owner choice, 9 October 2026).
@@ -69,10 +73,10 @@ class Pipeline:
         return self.ingest_bytes(response.body, source=candidate.source, source_id=candidate.source_id,
                                  image_url=candidate.image_url, page_url=candidate.page_url, licence=candidate.licence,
                                  licence_url=candidate.licence_url, attribution=candidate.attribution, title=candidate.title,
-                                 tier=tier, category=category, query=query, strict=tier == "B" or candidate.anime)
+                                 keywords=candidate.keywords, tier=tier, category=category, query=query)
 
-    def ingest_bytes(self, data, *, source, licence, attribution, tier, category, strict, source_id=None, page_url=None,
-                     image_url=None, licence_url=None, title=None, query=None):
+    def ingest_bytes(self, data, *, source, licence, attribution, tier, category, source_id=None, page_url=None,
+                     image_url=None, licence_url=None, title=None, keywords=(), query=None):
         candidate = sources.Candidate(source, source_id, image_url, page_url, licence, licence_url, attribution, title)
         if not sources.admit(candidate, tier):
             return Outcome("rejected")
@@ -91,7 +95,8 @@ class Pipeline:
                 vectors = np.asarray(self.embedder.embed_images([decoded.image]), dtype=np.float32)
                 invalid = (vectors.shape != (1, self.embedder.dim) or not np.isfinite(vectors).all()
                            or abs(float(np.linalg.norm(vectors)) - 1) > 1e-3)
-                discard = invalid or self.screen.check(vectors, strict=strict or tier == "B")[0]
+                label = " ".join([title or "", *keywords])
+                discard = invalid or self.screen.guard(vectors, labels=[label], explicit=tier == "A")[0]
             except Exception:
                 discard = True
             self.store.add_screen_counts(source, 1, int(discard))
@@ -294,25 +299,6 @@ def write_calibration(store_root, report, name=CALIBRATION_REPORT):
     return path
 
 
-def load_screen(embedder, store_root):
-    path = common.check_input(common.data_root(store_root) / "reports" / CALIBRATION_REPORT)
-    try:
-        report = json.loads(path.read_text(encoding="utf-8"))
-        thresholds = (report["threshold"], report["strict_threshold"])
-        valid = (report["passed"] is True and report["model"] == embedder.model_id
-                 and report["weightsSha256"] == getattr(embedder, "weights_sha256", "")
-                 and report["probesSha256"] == _probe_sha()
-                 and thresholds in ((screen.THRESHOLD, screen.STRICT_THRESHOLD), screen.LOWERED)
-                 and all(report["groups"][name]["scorable"] >= screen.MIN_GROUP
-                         and report["groups"][name]["missed_normal"] <= 1
-                         and report["groups"][name]["missed_strict"] == 0 for name in screen.CALIBRATION_GROUPS))
-    except (OSError, ValueError, KeyError, TypeError):
-        valid = False
-    if not valid:
-        raise common.Refused("content screen needs a passing --calibrate report for this model and these probes")
-    return screen.Screen(embedder, threshold=thresholds[0], strict_threshold=thresholds[1])
-
-
 def _timestamp(value, field):
     if not isinstance(value, str) or not re.fullmatch(
             r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})", value):
@@ -426,7 +412,7 @@ def main(argv=None):
             if cases is not None:
                 print(write_calibration(root, {"time": report["time"], "cases": diagnostic_cases(cases)}, CALIBRATION_CASES))
             return 0 if report["passed"] else 1
-        content_screen = load_screen(model, root)
+        content_screen = screen.Screen(model)   # the guard needs no calibration report (owner decision, 9 October 2026)
         with store.Store(root) as library:
             plan = seeds.load(seeds.ensure(root))
             if args.category and any(name not in plan.categories for name in args.category):

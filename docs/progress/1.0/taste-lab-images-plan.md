@@ -14,7 +14,7 @@ Phase 1b is accepted when:
    - `python tests/test_tastelab_images.py`, a new runner that runs the Python tests of the image tool with the Taste Lab environment. When that environment is missing it skips with a clear message, but a skip never counts toward acceptance: the suite must actually run.
    - The installer changes (section 8) also need the agent-rules checks of `AGENTS.md`: `test_agent_rules_sync.py`, `test_codex_review.py`, `test_stop_gate.py`, `test_bootstrap.py`, `test_wiki_lint.py` and `test_workbench.py`.
 2. The model checks of section 5 pass with the installed weights.
-3. The calibration gate of the content screen (section 5.3) passes with the real model before any bulk fetch. The owner gets its counts.
+3. The fetch applies the content guard of section 5.3 to every image. The calibration run of section 5.3 measures the full screen with the real model and the owner gets its counts; since 9 October 2026 it is a measurement, not a precondition of the fetch (owner decision).
 4. The first class A library holds at least 300 admitted images across the seed categories. Each image has its licence proof and its credit.
 5. The Images tab passes the Artifact checks and one functional pass:
    - open a bundle of at most 20 images;
@@ -23,7 +23,7 @@ Phase 1b is accepted when:
 6. No class B image, personal data, key or private path is in the page, its storage, a bundle or the repository. The bundle exporter and the page each refuse class B by construction, and tests with class B canaries show it.
 
 Phase 2 is accepted when:
-1. The class B adapters fetch within each source's terms and rate limit, under the Safebooru rules of section 4. Class B gets no content screen except the minor-protection checks: the minor-word check and a probe for sexualized drawings of young-looking characters (owner decision, 9 October 2026, replacing the strict screen).
+1. The class B adapters fetch within each source's terms and rate limit, under the Safebooru rules of section 4. Class B gets no content screen except the minor-protection checks of the guard (section 5.3; owner decision, 9 October 2026, replacing the strict screen).
 2. The local rating window rates class A and class B images, and the taste map and its report run locally.
 3. Class B never enters any fitting step: the classifier, the selector, the taste-map clusters and axes, the term ranking, the proposals or the screen calibration. A model fitted on class A may score or place class B images, but only locally. A canary test instruments every fitting step. Class B never reaches a bundle, the page or the repository.
 4. The headless tests pass. The Qt window test runs with the Taste Lab environment.
@@ -97,7 +97,13 @@ The data root is the private folder of the checkout the tool runs in. The owner 
 ### 5.3 Content screen
 
 - Probe validation: the screen refuses to build when any probe vector has the wrong shape or count, a norm outside 1 ± 1e-3, or a non-finite value. When probes are invalid, every image is discarded at both thresholds (C-03).
-- Calibration gate, as approved by the owner on 1 October 2026:
+- Guard (owner decisions, 9 October 2026). The fetch applies `Screen.guard`, not the full screen.
+  - The owner ruled that class A images from reliable sources such as Wikimedia need no content screen. Claude treats all five class A sources alike; Openverse also applies its own mature filter. Class A keeps nudity, swimwear, suggestive content and gore.
+  - Both classes discard an image when the probe for sexualized drawings of young-looking characters is the most likely probe or reaches `GUARD_THRESHOLD` (0.08), or when its title and keywords contain a minor word together with a sexual word, or together with a sexual probe mass of at least 0.08. Labels are normalised first (NFKC, underscores as spaces), so that source tags such as `nude_teen` split into words. The word lists supplement the probe and are not a complete vocabulary; a few common French, German, Italian, Spanish and Japanese words are included.
+  - Class A also discards an image when "a sexually explicit image" is the most likely probe, because class A thumbnails may reach the page.
+  - Rows that cannot be scored are discarded.
+  - The threshold and the most-likely-probe rule are heuristics. They are not calibrated.
+- Calibration run (`fetch.py --calibrate`). The owner approved it as a gate on 1 October 2026; since 9 October 2026 it measures the full screen and is not a precondition of the fetch. On 9 October 2026 the probe "an artwork depicting a beheading" was added and the gore group passed 30 of 30.
   - It uses lawful public-domain or CC0 images of adult subjects from met, aic, nasa and wikimedia. They are held in memory, never stored, and only counts are kept.
   - A group passes only when it has at least `MIN_GROUP` scorable images.
   - Images that cannot be scored are counted and reported, and they never count as caught (C-04).
