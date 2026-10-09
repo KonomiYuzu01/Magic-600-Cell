@@ -42,8 +42,52 @@
   }
  },
  "E0": {
-  "shallow_below": "straddling",
-  "shallow_above": "straddling",
+  "region_controls": {
+   "shallow_below": {
+    "h_range": [
+     -5e-10,
+     0.001
+    ],
+    "classify": "straddling",
+    "classify_grouped": "straddling",
+    "twist_applied": false,
+    "unchanged": true
+   },
+   "shallow_above": {
+    "h_range": [
+     -0.001,
+     5e-10
+    ],
+    "classify": "straddling",
+    "classify_grouped": "straddling",
+    "twist_applied": false,
+    "unchanged": true
+   },
+   "contact_inside": {
+    "h_range": [
+     0.0,
+     0.001
+    ],
+    "classify": "inside",
+    "classify_grouped": "inside",
+    "twist_applied": true,
+    "unchanged": false
+   },
+   "contact_outside": {
+    "h_range": [
+     -0.001,
+     0.0
+    ],
+    "classify": "outside",
+    "classify_grouped": "outside",
+    "twist_applied": true,
+    "unchanged": true
+   }
+  },
+  "double_description_degenerate_inputs": {
+   "empty": "rejected: region is empty",
+   "lower_dimensional": "rejected: region is not full-dimensional"
+  },
   "cap_c_pieces": 3097,
   "all_inside_exactly": true,
   "pieces_touching_cut_exactly": 3097,
@@ -865,6 +909,14 @@
     "vertex_above": 10,
     "h_above": 0.0002858199614545234
    }
+  },
+  "alternative_unblock": {
+   "twist": "(d, g T_d^-1)",
+   "admissible": true,
+   "moved_pieces": 3097,
+   "c_status_after": "admissible",
+   "poses_differ_from_before_t_d": true,
+   "restored_for_E4": true
   }
  },
  "E4": {
@@ -872,5 +924,5 @@
   "reverse_g_admissible": true,
   "all_poses_identity_exactly": true
  },
- "runtime_s": 174.4
+ "runtime_s": 177.0
 }

@@ -1,6 +1,6 @@
 """Minimal exact witness E0-E4 of research/jumbling/state-contract.md (section 6).
 
-Run from the repository root (about 15-40 minutes on four cores):
+Run from the repository root (about 3 minutes on four cores):
 
     python research/jumbling/witness.py
 
@@ -19,8 +19,8 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from exact import (ONE, ZERO, Q5, double_description, dot, from_float, identity, matmul,  # noqa: E402
-                   matvec, rank, solve, transpose)
+from exact import (ONE, ZERO, Q5, affine_rank, double_description, dot, from_float,  # noqa: E402
+                   identity, matmul, matvec, solve, transpose)
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = Path(__file__).resolve().parent / 'witness-results.json'
@@ -82,17 +82,10 @@ def piece_constraints(p, cand_poles, cand_facets):
     return cons, tags
 
 
-def affine_rank(points):
-    if len(points) < 2:
-        return 0
-    base = points[0]
-    return rank([[x - y for x, y in zip(q, base)] for q in points[1:]])
-
-
 def build_region(args):
     p, cand_poles, cand_facets = args
     cons, tags = piece_constraints(p, cand_poles, cand_facets)
-    verts, act = double_description(cons)
+    verts, act = double_description(cons)  # raises on an empty or lower-dimensional region
     full = affine_rank(verts) == 4
     host_dim = {}
     for e in cand_facets:
@@ -302,13 +295,61 @@ def classify_grouped(cfg, e, group_bounds):
     return inside, outside, straddling
 
 
-def classify_values(hmin, hmax):
-    """The section 3 rule on exact extreme values (used by the E0 controls)."""
-    if hmin.sign() >= 0:
-        return 'inside'
-    if hmax.sign() <= 0:
-        return 'outside'
-    return 'straddling'
+def control_region(c, hmin, hmax):
+    """An exact full-dimensional 4-simplex whose offsets from the cut of c span [hmin, hmax].
+
+    Two vertices lie on the axis at h = hmin and h = hmax; three more lie at the midpoint,
+    displaced along the quaternion frame orthogonal to n_c, which leaves h unchanged."""
+    n = N[c]
+    u = [[-n[1], n[0], -n[3], n[2]], [-n[2], n[3], n[0], -n[1]], [-n[3], -n[2], n[1], n[0]]]
+    def on_axis(x):
+        return [(ALPHA + x) * y for y in n]
+    mid = on_axis((hmin + hmax) * Q5(1, 0, 2))
+    eps = Q5(1, 0, 1000)
+    verts = [on_axis(hmin), on_axis(hmax)] + [[m + eps * y for m, y in zip(mid, w)] for w in u]
+    assert affine_rank(verts) == 4
+    hs = [h(c, v) for v in verts]
+    assert min(hs) == hmin and max(hs) == hmax
+    return verts
+
+
+def e0_region_controls(c, twist):
+    """Run control regions through Config.classify, classify_grouped and Config.apply."""
+    cases = {
+        'shallow_below': (Q5(-5, 0, 10 ** 10), Q5(1, 0, 1000)),
+        'shallow_above': (Q5(-1, 0, 1000), Q5(5, 0, 10 ** 10)),
+        'contact_inside': (ZERO, Q5(1, 0, 1000)),
+        'contact_outside': (Q5(-1, 0, 1000), ZERO),
+    }
+    out = {}
+    for name, (lo, hi) in cases.items():
+        verts = control_region(c, lo, hi)
+        cfg = Config({-1: verts}, {-1: frozenset()})
+        cfg.pose[-1], cfg.lattice[-1] = identity(4), False
+        ins, outs, st = cfg.classify(c)
+        gi, go, gs = classify_grouped(cfg, c, {tuple(tuple(x) for x in identity(4)): verts})
+        cls = 'inside' if ins else 'outside' if outs else 'straddling'
+        gcls = 'inside' if gi else 'outside' if go else 'straddling'
+        before = cfg.snapshot()
+        ok, info = cfg.apply(c, twist, retained=False)
+        out[name] = {'h_range': [float(lo), float(hi)], 'classify': cls, 'classify_grouped': gcls,
+                     'twist_applied': ok, 'unchanged': cfg.snapshot() == before}
+    return out
+
+
+def e0_degenerate_inputs():
+    """double_description must reject an empty and a lower-dimensional region."""
+    cube = [([ONE if i == j else ZERO for i in range(4)], ONE) for j in range(4)]
+    cube += [([-ONE if i == j else ZERO for i in range(4)], ZERO) for j in range(4)]
+    out = {}
+    for name, extra in (('empty', ([ONE, ZERO, ZERO, ZERO], -ONE)),
+                        ('lower_dimensional', ([ONE, ZERO, ZERO, ZERO], ZERO))):
+        try:
+            double_description(cube + [extra])
+            out[name] = 'accepted'
+        except ValueError as exc:
+            out[name] = f'rejected: {exc}'
+    return out
 
 
 def main():
@@ -318,6 +359,13 @@ def main():
     d = sorted(range(600), key=lambda e: -float(NF[e] @ NF[c]))[1]
     res['poles'] = {'c': c, 'd': d, 'angle_c_d_deg': round(math.degrees(math.acos(
         float(NF[c] @ NF[d]) / float(NF[c] @ NF[c]))), 4)}
+
+    # E0 controls that need no piece regions: exact control regions through the actual
+    # classifiers and Config.apply, and degenerate inputs to the double description
+    a4c = a4(c)
+    e0 = {'region_controls': e0_region_controls(c, a4c[1]),
+          'double_description_degenerate_inputs': e0_degenerate_inputs()}
+    print('E0', json.dumps(e0), flush=True)
 
     # cap regions and candidate constraints
     caps = {}
@@ -388,12 +436,7 @@ def main():
     res['E1'] = e1
     res['E1_retained_generators'] = agree
 
-    # E0 controls
-    tiny = Q5(-5, 0, 10 ** 10)
-    e0 = {
-        'shallow_below': classify_values(tiny, Q5(1, 0, 1000)),
-        'shallow_above': classify_values(Q5(-1, 0, 1000), Q5(5, 0, 10 ** 10)),
-    }
+    # E0 exact-contact controls (they need the regions built for E1)
     cfg = Config(regions, sigs)
     # exact contact: home regions of cap c pieces against the cut of c
     cap_c = [p for p in in_play if c in sigs[p]]
@@ -401,7 +444,6 @@ def main():
     e0['cap_c_pieces'] = len(cap_c)
     e0['all_inside_exactly'] = all(min(sg) >= 0 for sg in signs)
     e0['pieces_touching_cut_exactly'] = sum(0 in sg for sg in signs)
-    a4c = a4(c)
     adm = 0
     for a in a4c:
         trial = Config(regions, sigs)
@@ -470,6 +512,7 @@ def main():
     res['E3_negative_control'] = neg
 
     # E3 turn at the neighbour
+    after_g_snapshot = cfg.snapshot()
     ok, n_in = cfg.apply(d, t_d, retained=True)
     after_gt = survey(cfg)
     res['E3'] = {'turn_at_d_admissible': ok, 'moved_pieces': n_in, 't_d_maps_c_to': pole_perm(t_d)[c],
@@ -480,6 +523,21 @@ def main():
                  'interacting_poles_of_c_after_g_then_t': {str(e): after_gt[e]['status'] for e in [c] + nb},
                  'blocked_after_g_then_t': sorted(e for e, r in after_gt.items() if r['status'] == 'blocked'),
                  'certificates': {str(e): r['certificate'] for e, r in list(after_gt.items()) if r['status'] == 'blocked'}}
+
+    # E3 alternative (review finding R3): (d, g T_d^-1) instead of undoing T_d. Every pose is
+    # then a power of g, which preserves the half-space of c's cut, so c should be admissible
+    # again although the configuration differs from the one before T_d.
+    saved_pose, saved_lattice, saved = dict(cfg.pose), dict(cfg.lattice), cfg.snapshot()
+    alt = matmul(g, t_d_inv)
+    ok_alt, n_alt = cfg.apply(d, alt, retained=False)
+    alt_rec = {'twist': '(d, g T_d^-1)', 'admissible': ok_alt, 'moved_pieces': n_alt}
+    if ok_alt:
+        ins, outs, st = classify_grouped(cfg, c, bounds_for(cfg))
+        alt_rec['c_status_after'] = 'blocked' if st else 'admissible'
+        alt_rec['poses_differ_from_before_t_d'] = cfg.snapshot() != after_g_snapshot
+    cfg.pose, cfg.lattice = saved_pose, saved_lattice
+    alt_rec['restored_for_E4'] = cfg.snapshot() == saved
+    res['E3']['alternative_unblock'] = alt_rec
 
     # E4 reverse
     ok1, _ = cfg.apply(d, t_d_inv, retained=True)

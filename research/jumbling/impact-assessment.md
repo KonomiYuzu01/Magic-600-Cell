@@ -12,7 +12,7 @@ Inputs:
 What the witness established:
 - the retained geometry admits genuine rigid jumbling with certified legality;
 - after a 10° jumble twist of cap 0, its face neighbour stays turnable while 54 other grips are blocked;
-- after the neighbour's third-turn, cap 0 itself is blocked until the neighbour is undone.
+- after the neighbour's third-turn, cap 0 itself is blocked; undoing the third-turn frees it, and so does one other certified neighbour twist.
 
 The exact computation over 4,375 piece regions took about 3 minutes on four cloud cores. That shows exact certification is practical for research. It is not evidence about interactive performance.
 

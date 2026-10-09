@@ -191,7 +191,8 @@ def double_description(constraints, dim=4):
     """Exact vertices of {x : a.x <= b for (a, b) in constraints}, which must be bounded and
     full-dimensional. Works on the homogenised cone {(t, x) : t >= 0, b t - a.x >= 0} in
     dimension dim + 1 with the combinatorial adjacency test. Returns (vertices, active sets);
-    each active set lists the constraint indices tight at that vertex.
+    each active set lists the constraint indices tight at that vertex. Raises ValueError for an
+    empty, unbounded or lower-dimensional region instead of returning a partial answer.
     """
     rows = [[Q5.of(b)] + [-Q5.of(x) for x in a] for a, b in constraints]
     rows.append([ONE] + [ZERO] * dim)  # t >= 0, index len(constraints)
@@ -243,4 +244,14 @@ def double_description(constraints, dim=4):
             raise ValueError('region is unbounded')
         verts.append(r[1:])
         act.append(sorted(j for j in z if j < len(constraints)))
+    if not verts:
+        raise ValueError('region is empty')
+    if affine_rank(verts) < dim:
+        raise ValueError('region is not full-dimensional')
     return verts, act
+
+
+def affine_rank(points):
+    """Dimension of the affine hull of a nonempty list of exact points."""
+    base = points[0]
+    return rank([[x - y for x, y in zip(q, base)] for q in points[1:]])

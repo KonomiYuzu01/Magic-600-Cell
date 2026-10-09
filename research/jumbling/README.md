@@ -1,6 +1,6 @@
 # Jumbling study of the 600-cell-Full puzzle
 
-Status: **plan-checked study (9 October 2026): one plan check and two scoped re-checks, all findings adopted, last re-check passed. Exact witness E0–E4 and the initial impact assessment are done; the code awaits its review.** No model identity, product scope or rule changes here.
+Status: **plan-checked study (9 October 2026): one plan check and two scoped re-checks, all findings adopted, last re-check passed. Exact witness E0–E4 and the initial impact assessment are done; the code review found three minor findings, all adopted below.** No model identity, product scope or rule changes here.
 
 Owner decision, 9 October 2026: **no fudged variant is pursued.** The study covers rigid, unfudged jumbling of the retained cut geometry only. `state-contract.md` defines that model.
 
@@ -84,7 +84,9 @@ python research/jumbling/witness_float_check.py  # optional float consistency ch
 The run writes `witness-results.json`. Classifications are exact in Q(√5); floating point appears only in the comparison with the retained floating-point slot centres. Poles: c = 0 and its face neighbour d = 13 (15.52° apart).
 
 - **E0 controls.**
-  - The shallow-crossing values (−5·10⁻¹⁰, 10⁻³) and (−10⁻³, 5·10⁻¹⁰) classify as straddling.
+  - Exact full-dimensional control simplices with h ranges (−5·10⁻¹⁰, 10⁻³) and (−10⁻³, 5·10⁻¹⁰) classify as straddling in both `Config.classify` and `classify_grouped`. A retained twist of c is rejected, and the snapshot is unchanged.
+  - Control simplices with ranges [0, 10⁻³] and [−10⁻³, 0] classify as inside and outside, and the twist is applied.
+  - The double description rejects an empty and a lower-dimensional input.
   - All 3,097 pieces of cap c lie exactly inside its cut, and each touches the cut exactly.
   - All 12 retained twists of c are admissible from solved under the exact rule.
 - **E1 regions.**
@@ -99,12 +101,23 @@ The run writes `witness-results.json`. Classifications are exact in Q(√5); flo
 - **Negative control.** Grip 1 is certified blocked: the centre piece of c reaches h = −0.0149 and +0.0134 on its cut. Twisting grip 1 is rejected, and the configuration is unchanged.
 - **E3 turn at the neighbour.**
   - T_d is a third-turn of d that sends c to pole 5 and does not commute with g. It is admissible and moves 3,097 pieces.
-  - Afterwards 535 grips are admissible and 65 are blocked. The blocked set now includes c itself and ten further poles, so cap c cannot turn again until d is turned back.
+  - Afterwards 535 grips are admissible and 65 are blocked. The blocked set now includes c itself and ten further poles.
+  - Undoing T_d is not the only way to free c. The twist (d, g·T_d⁻¹) is admissible and leaves c admissible, although the configuration differs from the one before T_d. Every pose is then a power of g, and g preserves both half-spaces of c's cut (review finding R3). The run checks this on a copy and restores the configuration before E4.
   - The third-turns about the axis through the shared face fix c and commute with g, so they would make this step degenerate.
 - **E4 reverse.** (d, T_d⁻¹) and then (c, g⁻¹) are admissible, and every pose returns exactly to the identity.
 - **Float cross-check.** `witness_float_check.py` reproduces both blocked sets (54 and 65 grips).
 
-What this shows: the retained 600-cell geometry admits genuine rigid jumbling, with certified legality under the reviewed contract. A ten-degree jumble twist of one cell cap leaves the neighbouring cap free to turn. That turn then blocks the first cap until it is undone. What it does not show: anything about reachable configurations in general, solving strategy, rendering or performance.
+What this shows: the retained 600-cell geometry admits genuine rigid jumbling, with certified legality under the reviewed contract. A ten-degree jumble twist of one cell cap leaves the neighbouring cap free to turn. That turn then blocks the first cap; undoing it, or re-turning the neighbour by g·T_d⁻¹, frees it again. What it does not show: anything about reachable configurations in general, solving strategy, rendering or performance.
+
+## Code review dispositions (review of 35d28af)
+
+The routine code review returned three minor findings and no blocker or major. All were fixed in the same pass, so no verification round is needed. The rerun reproduces every earlier E1–E4 result exactly.
+
+| Finding | Severity | Reply | Change |
+| --- | --- | --- | --- |
+| R1 | minor | adopt | `double_description` raises on an empty or lower-dimensional region instead of returning a partial vertex list; E0 checks both cases |
+| R2 | minor | adopt | E0 shallow controls now run exact control regions through `Config.classify`, `classify_grouped` and `Config.apply`, with snapshot equality |
+| R3 | minor | adopt | "Cannot turn again until d is turned back" withdrawn; the alternative (d, g·T_d⁻¹) is certified to free c |
 
 ## Plan
 
