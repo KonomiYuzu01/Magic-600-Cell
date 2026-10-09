@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "updated": "2026-10-03",
+  "updated": "2026-10-09",
   "current": "2.3",
   "paid_api_ceiling_usd": 100,
   "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}],
@@ -57,7 +57,10 @@
       {"id": "vertical-slice", "title": "Vertical slice passes the selection gate", "weight": 1, "done": false, "evidence": null},
       {"id": "living-test", "title": "Living test, five days", "weight": 1, "done": false, "evidence": null},
       {"id": "sa2-smoke", "title": "S-A2 Godot interop smoke test (level 1)", "weight": 1, "done": true, "evidence": "e346adf"},
-      {"id": "sd-smoke", "title": "S-D Qt interop smoke test (level 1)", "weight": 1, "done": true, "evidence": "docs/wiki/evidence/interop-smoke-results.md"}
+      {"id": "sd-smoke", "title": "S-D Qt interop smoke test (level 1)", "weight": 1, "done": true, "evidence": "docs/wiki/evidence/interop-smoke-results.md"},
+      {"id": "sa2-level2", "title": "S-A2 Godot level 2 scenes measured (W3 gate met; identity binding open, L2-V-002)", "weight": 1, "done": true, "evidence": "docs/wiki/evidence/level-2-framework-results.md"},
+      {"id": "sd-level2", "title": "S-D Qt level 2 scenes measured (W3 gate met at the vblank cap; identity binding open, L2-V-002)", "weight": 1, "done": true, "evidence": "docs/wiki/evidence/level-2-framework-results.md"},
+      {"id": "l2-binding", "title": "Level 2 build identity bound to the loaded files (L2-V-002 fix)", "weight": 1, "done": false, "evidence": null}
      ]},
     {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": "Stage 2 closes with the 2.5 freeze gates; target: working day 20, counting only the owner's working days; exit days are targets and no gate is relaxed.", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-02.md", "blocker": null,
      "items": [
