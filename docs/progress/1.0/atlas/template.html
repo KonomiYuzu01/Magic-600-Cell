@@ -235,17 +235,24 @@ for (const u of U) {
   for (const p of u.parts) parts.push(p.purpose, p.reason, ...p.req);
   for (const r of u.rows) parts.push(r.name || "", r.behaviour || "", r.engine_call || "", ...(r.evidence || []), r.notes || "");
   u._idx = parts.join(" \u0001 ").toLowerCase();
-  u._flows = u.flows.length ? u.flows : ["none"];
+  // Each decision stays paired with the flows of its own part, so a split unit's
+  // deleted part never shows under the flows its surviving part serves.
+  u._pairs = (u.parts.length ? u.parts : [{ d: u.d, flows: u.flows }]).map(p => ({ d: p.d, flows: p.flows.length ? p.flows : ["none"] }));
+  u._flows = [...new Set(u._pairs.flatMap(p => p.flows))];
   u.dset.sort((a, b) => PRIORITY.indexOf(a) - PRIORITY.indexOf(b));
 }
 
 const state = { tab: "flows", q: "", ds: new Set(D_ORDER), area: "all", flow: "all", sel: null, group: "area", open: new Set(), cmdKind: "all" };
 try { const t = localStorage.getItem("atlas.tab"); if (t && TABS.some(x => x[0] === t)) state.tab = t; } catch (e) {}
 
+// Decisions of the parts that serve flow g (or any flow) and pass the decision filter.
+function decisionsIn(u, g) {
+  const ds = new Set(u._pairs.filter(p => state.ds.has(p.d) && (g === "all" || p.flows.includes(g))).map(p => p.d));
+  return [...ds].sort((a, b) => PRIORITY.indexOf(a) - PRIORITY.indexOf(b));
+}
 function match(u) {
-  if (!u.dset.some(d => state.ds.has(d))) return false;
   if (state.area !== "all" && u.shard !== state.area) return false;
-  if (state.flow !== "all" && !u._flows.includes(state.flow)) return false;
+  if (!decisionsIn(u, state.flow).length) return false;
   if (state.q) {
     for (const term of state.q.toLowerCase().split(/\s+/).filter(Boolean)) if (!u._idx.includes(term)) return false;
   }
@@ -284,10 +291,11 @@ function controls() {
   document.getElementById("q").value = state.q;
 }
 
-function chip(u) {
-  const multi = u.dset.length > 1 ? " multi" : "";
+function chip(u, ds) {
+  ds = ds || u.dset;
+  const multi = ds.length > 1 ? " multi" : "";
   const sel = state.sel === u.id ? " sel" : "";
-  return `<button type="button" class="chip d-${u.dset[0]}${multi}${sel}" data-u="${u.id}" title="${esc(u.name)} · ${D_LABEL[u.d]}"><span class="dot"></span><span class="cid">${u.id}</span><span class="cn">${esc(u.name)}</span></button>`;
+  return `<button type="button" class="chip d-${ds[0]}${multi}${sel}" data-u="${u.id}" title="${esc(u.name)} · ${D_LABEL[u.d]}"><span class="dot"></span><span class="cid">${u.id}</span><span class="cn">${esc(u.name)}</span></button>`;
 }
 function dpill(d) { return `<span class="pill d-${d}"><span class="dot"></span>${D_LABEL[d]}</span>`; }
 function unitPills(u) {
@@ -300,21 +308,21 @@ function renderFlows(el) {
   const list = matching();
   const groups = [...FLOWS.map(f => f.id), "none"];
   const dRank = d => D_ORDER.indexOf(d);
-  let html = `<p class="note">Flows follow the solving workflow, from opening a session to the endgame, then learning, migration and the platform. Status: ${esc(DATA.flowStatus)}. A unit appears under every flow it serves. A ringed dot marks a split unit whose parts got different decisions.</p><div class="flowlist">`;
+  let html = `<p class="note">Flows follow the solving workflow, from opening a session to the endgame, then learning, migration and the platform. Status: ${esc(DATA.flowStatus)}. A unit appears under every flow it serves, coloured by the decision of the part that serves that flow. A ringed dot marks a unit with more than one decision in the same flow.</p><div class="flowlist">`;
   for (const g of groups) {
-    const us = list.filter(u => u._flows.includes(g)).sort((a, b) => dRank(a.dset[0]) - dRank(b.dset[0]) || a.id.localeCompare(b.id));
+    const dsOf = new Map(list.map(u => [u.id, decisionsIn(u, g)]));
+    const us = list.filter(u => dsOf.get(u.id).length).sort((a, b) => dRank(dsOf.get(a.id)[0]) - dRank(dsOf.get(b.id)[0]) || a.id.localeCompare(b.id));
     if (!us.length) continue;
     const f = FLOW.get(g);
     const c = {};
-    for (const u of us) for (const d of u.dset) c[d] = (c[d] || 0) + 1;
-    const tot = Object.values(c).reduce((a, b) => a + b, 0);
+    for (const u of us) for (const d of dsOf.get(u.id)) c[d] = (c[d] || 0) + 1;
     const limit = state.open.has(g) ? us.length : 30;
     html += `<section class="flow" id="flow-${g}">
       <div class="flowhead"><span class="fid">${g === "none" ? "—" : g}</span><h3>${f ? esc(f.title) : "Serves no 1.0 flow"}</h3>
       <span class="cnt">${us.length} units · ${D_ORDER.filter(d => c[d]).map(d => `${c[d]} ${d}`).join(" · ")}</span></div>
-      ${f ? `<p class="src">Source: ${esc(f.source)}</p>` : `<p class="src">Units whose only purpose is 0.4 infrastructure that 1.0 does not inherit.</p>`}
+      ${f ? `<p class="src">Source: ${esc(f.source)}</p>` : `<p class="src">Units, or parts of split units, that no 1.0 flow needs.</p>`}
       <div class="bar" role="img" aria-label="Decision mix">${D_ORDER.filter(d => c[d]).map(d => `<span class="d-${d}" style="flex:${c[d]}"></span>`).join("")}</div>
-      <div class="chips">${us.slice(0, limit).map(chip).join("")}</div>
+      <div class="chips">${us.slice(0, limit).map(u => chip(u, dsOf.get(u.id))).join("")}</div>
       ${us.length > 30 ? `<div><button type="button" class="linkbtn" data-more="${g}">${state.open.has(g) ? "Show fewer" : `Show all ${us.length}`}</button></div>` : ""}
     </section>`;
   }
@@ -326,7 +334,7 @@ function renderFlows(el) {
 function renderMatrix(el) {
   const list = matching();
   const rows = [...FLOWS.map(f => f.id), "none"];
-  const cnt = (f, a) => list.filter(u => u._flows.includes(f) && (a === "all" || u.shard === a)).length;
+  const cnt = (f, a) => list.filter(u => decisionsIn(u, f).length && (a === "all" || u.shard === a)).length;
   let max = 1;
   for (const f of rows) for (const a of AREAS) max = Math.max(max, cnt(f, a));
   let html = `<p class="note">Rows are flows, columns are the six source areas of the 0.4 code. Each cell counts the units that serve the flow from that area; select a cell to list them. It shows where each part of the solver's work lives in 0.4 today.</p>
@@ -537,7 +545,8 @@ function rowCard(r) {
     <span>${esc(r.behaviour)}</span>
     <span class="kv">Reads <b>${esc((r.reads || []).join(", ") || "none")}</b> · writes <b>${esc((r.writes || []).join(", ") || "none")}</b>${r.engine_call ? ` · call <b class="mono">${esc(r.engine_call)}</b>` : ""} · evidence <b>${esc(r.kind || "")}</b></span>
     ${r.notes ? `<span class="reason">${esc(r.notes)}</span>` : ""}
-    <span class="evid">${(r.evidence || []).map(esc).join("  ")}${r.evidence_more ? `  +${r.evidence_more} more` : ""}</span></div>`;
+    <span class="evid">${(r.evidence || []).slice(0, 8).map(esc).join("  ")}</span>
+    ${(r.evidence || []).length > 8 ? `<details><summary>${r.evidence.length - 8} more evidence references</summary><span class="evid">${r.evidence.slice(8).map(esc).join("  ")}</span></details>` : ""}</div>`;
 }
 function renderDrawer() {
   const dr = document.getElementById("drawer"), shell = document.getElementById("shell");
