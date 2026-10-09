@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-09] decision | Jumbling as an optional puzzle state
+Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 7): jumbling is an optional state of a puzzle session, not a separate kind of session; the engineering packet proposes how a session enters and leaves it.
+
 ## [2026-10-09] decision | Jumbling: four dimensions, open interfaces
 Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 6): 1.0 implements and accepts four dimensions only, the data contracts and interfaces do not fix the dimension, the renderer packet carries the rendering acceptance, and the integrator builds the rendering framework.
 

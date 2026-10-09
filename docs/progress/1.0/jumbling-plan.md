@@ -147,7 +147,7 @@ File: `packets/engineering/ENG-0J-jumbling-backend.md`, in the seven-part format
 - **Session store.**
   - A versioned format for pose states, the pose table and the jumbling journal, with exact numbers stored losslessly.
   - Transactional writes and recovery as for 600-cell-Full.
-  - Jumbling sessions are separate from 600-cell-Full sessions. Path B migration (the 0.4 importer) is unchanged, because 0.4 has no jumbling state.
+  - Jumbling is an optional state of a puzzle session (owner decision 7, 9 October 2026), not a separate kind of session: Jumble is off by default; it turns on by replaying the session's retained word into exact poses and turns off only at a witnessed retained-state checkpoint. A session in which Jumble was never on stores what it would without jumbling support. Path B migration (the 0.4 importer) is unchanged, because 0.4 has no jumbling state.
 - **Command layer.**
   - New command-table rows: jumble twist with angle and axis input, grip survey, blocked-grip and certificate inspection, preview scrubbing, checkpoint and handoff to the retained solver.
   - The human-solve boundary applies unchanged: the program never chooses or executes a twist by itself, and a handoff needs a witnessed checkpoint.
