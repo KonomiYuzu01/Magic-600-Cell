@@ -75,23 +75,22 @@ def replay(centres):
     for name in wj.MENUS:
         fixture, menu = wj.load(ctx, name)
         st = sim.State(ctx, menu=menu)
-        ok_pose = {0}                                 # pose ids known to fix the pole of their centre
-        checked, rotated_max, t0 = 0, 0, time.time()
+        # No cache by pose id: J1 renumbers its pose table after every twist (State._compact), so an
+        # id can name another matrix later. Every rotated centre is checked after every twist.
+        checks, distinct, rotated_max, t0 = 0, set(), 0, time.time()
         cpieces = np.array(centres, np.int64)
         for i, record in enumerate(fixture['journal']['records']):
             out_i = st.apply(sim.Twist.from_record(ctx, record))
             assert out_i.applied, f'{name} record {i}: {out_i.status}'
-            for piece in cpieces[st.pose_id[cpieces] != 0]:
-                pid = int(st.pose_id[piece])
+            rotated = cpieces[st.pose_id[cpieces] != 0]
+            for piece in rotated:
                 c = home[int(piece)]
-                if (pid, c) in ok_pose:
-                    continue
-                m = st.pose(int(piece))
-                assert matvec(m, N[c]) == list(N[c]), f'{name} record {i}: centre {c} left its pole'
-                ok_pose.add((pid, c))
-                checked += 1
-            rotated_max = max(rotated_max, int((st.pose_id[cpieces] != 0).sum()))
-        out[name] = {'records': len(fixture['journal']['records']), 'distinct_centre_poses_checked': checked,
+                assert matvec(st.pose(int(piece)), N[c]) == list(N[c]), f'{name} record {i}: centre {c} left its pole'
+                distinct.add((st._poses[int(st.pose_id[piece])].key, c))
+                checks += 1
+            rotated_max = max(rotated_max, len(rotated))
+        out[name] = {'records': len(fixture['journal']['records']), 'centre_checks': checks,
+                     'distinct_exact_centre_poses': len(distinct),
                      'centres_rotated_in_place_at_end': int((st.pose_id[cpieces] != 0).sum()),
                      'most_centres_rotated_at_once': rotated_max, 'seconds': round(time.time() - t0, 1)}
         print(name, out[name], flush=True)

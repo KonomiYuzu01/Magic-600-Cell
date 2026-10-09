@@ -1,5 +1,9 @@
 # Packet: scoped verification of the J3 theory fixes (senior reviewer, review kind)
 
+Round 2 (the last allowed) checks only the two findings of round 1 (`20261009T225939Z-05de315d`) and whether their fixes add a new `blocker` or `major`:
+- **J3W-1** (the replay cached centre checks by pose id, which J1 renumbers after every twist): `invariants.py --replay` no longer caches; it checks every rotated centre after every applied twist, and counts distinct exact pose keys separately. The evidence in `results/invariants.json` and the numbers in Proposition 4.1 come from this rerun.
+- **J3W-2** (the finiteness summaries dropped Corollary 3.4's containment hypothesis): the summaries now follow the new **Proposition 3.5** (a menu reaches what its generated group reaches, because admissibility depends only on the cut and same-cap twists compose by Proposition 2.2; no group lies strictly between A4₀ and S4₀, I_a or I_b). The classification is: A4₀ finite; a menu generating S4₀, I_a or I_b reaches what that group reaches (open); a menu contained in none of the three groups is infinite. Check that proof and every summary of it (theory draft items 3 and 7, `docs/progress/1.0/jumbling-midstage.md`, `research/jumbling/explorer/README.md`).
+
 Run read-only as a review by the senior reviewer, with effort `max` and speed tier `fast`. Review only; do not perform follow-up work.
 
 ## 1. Goal and acceptance
@@ -31,11 +35,12 @@ Run read-only as a review by the senior reviewer, with effort `max` and speed ti
 | # | Step | Result |
 |---|---|---|
 | 1 | Verification `20261009T221306Z-4784adf6` | three majors and two minors, all adopted |
-| 2 | Fixes above and `invariants.py` | this candidate |
+| 2 | Fixes above and `invariants.py` | scoped round 1 `20261009T225939Z-05de315d`: J3V-1 to J3V-5 fixed; new majors J3W-1 and J3W-2, adopted |
+| 3 | Uncached replay and Proposition 3.5 | this candidate |
 
 ## 6. Constraints and owned files
 - Read-only review; no files may change.
 
 ## 7. Required return format
-- JSON matching `schemas/review-result.schema.json`. Finding IDs use the prefix `J3W`.
+- JSON matching `schemas/review-result.schema.json`. Finding IDs use the prefix `J3W2`.
 - Review only; do not perform follow-up work.

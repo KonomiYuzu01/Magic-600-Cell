@@ -217,7 +217,7 @@ How to read the columns:
 
 These are leads for J3 and the menu decision, not proofs.
 
-- **Groups.** In the lattice closure S4₀, I_a and I_b grow exactly like class-00, class-03 and class-04, the classes they contain: 40·(16^(d+1) − 1) grips after depth d through depth 5, and ×16 per level. With every grip twisting they reach 66,896,400 (S4₀) and 33,996,600 (I_a and I_b) grips at depth 2. These are ball-model leads: by the theory draft's Corollary 3.4 every menu outside the three groups has infinite R, and finiteness for the three groups themselves stays open.
+- **Groups.** In the lattice closure S4₀, I_a and I_b grow exactly like class-00, class-03 and class-04, the classes they contain: 40·(16^(d+1) − 1) grips after depth d through depth 5, and ×16 per level. With every grip twisting they reach 66,896,400 (S4₀) and 33,996,600 (I_a and I_b) grips at depth 2. These are ball-model leads: the theory draft proves that a menu reaches what its generated group reaches (Proposition 3.5), so class-00, class-03 and class-04 reach exactly what S4₀, I_a and I_b reach, and every menu contained in none of the three groups has infinite R (Corollary 3.4); finiteness for the three groups stays open.
 - **The control closes.** With A4 alone, no grips are added in either closure: the orbit stays at the 600 lattice grips.
 - **Every jumble menu grows.** In both closures, none of the 33 realignment classes and none of the plane menus closes before the size budget or the time limit. Every sampled coincidence was confirmed exactly, and every closest pair with a separation figure is exactly distinct. So the growth is not an effect of the float tolerance.
 - **Exact geometric growth for the classes with many aligned poles** (lattice closure, all complete levels):

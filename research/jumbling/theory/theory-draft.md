@@ -110,10 +110,19 @@ Proof.
 - So the group strictly contains K⁺. K⁺ is a maximal finite subgroup of SO(4): a finite overgroup lifts to a finite subgroup of SU(2) × SU(2) whose two projections contain the binary icosahedral group 2I, which is maximal finite in SU(2).
 - This alone does not make R(Λ) infinite, because admissibility restricts which products occur.
 
-**Corollary 3.4 (proved): every menu outside the three groups is infinite.** If the base-cap menu Λ₀ is not contained in S4₀, I_a or I_b, then R(Λ) is infinite already at cap 0. ⟨Λ₀⟩ contains A4₀, so by Proposition 3.1 it is finite only when it is one of A4₀ ⊂ S4₀, S4₀, I_a or I_b, and ⟨Λ₀⟩ ⊆ G exactly when Λ₀ ⊆ G.
+**Corollary 3.4 (proved): a menu contained in none of the three groups is infinite.** If the base-cap menu Λ₀ is not contained in S4₀, I_a or I_b, then R(Λ) is infinite already at cap 0. ⟨Λ₀⟩ contains A4₀, so by Proposition 3.1 it is finite only when it is one of A4₀ ⊂ S4₀, S4₀, I_a or I_b, and ⟨Λ₀⟩ ⊆ G exactly when Λ₀ ⊆ G.
 - **Computed (exact), the E2 witness** (`invariants.py`, `results/invariants.json`): the plane rotation g of witness E2 (fixing n₀ and n₁₃, 9.99987°) has tr g = (3426525189964 − 4987013400√5)/860378847541, whose field trace to Q, 6853050379928/860378847541, is not an integer. So tr g is not an algebraic integer, g has infinite order, and every menu containing g gives infinite R at cap 0 (review finding J3V-3).
 - **Computed (exact), the explorer menus** (`research/jumbling/explorer/`, field `j1_relation`, exact matrix sets in J1's frame): class-00 ⊂ S4₀, class-03 ⊂ I_a and class-04 ⊂ I_b. Every other exact realignment menu (class-01, class-02 and class-05 to class-32) and the exact plane menus (plane-10, plane-36, plane-72) lie in none of the three groups, so each of them gives infinite R.
-- A menu Λ ⊆ Λ′ has R(Λ) ⊆ R(Λ′), because every twist sequence of Λ is one of Λ′. Finiteness for S4₀, I_a or I_b would therefore carry over to every menu contained in that group.
+**Proposition 3.5 (proved): a menu reaches what its generated group reaches.** For every menu Λ, R(Λ) = R(Λ̄), where Λ̄ is the menu whose base-cap set is the group ⟨Λ₀⟩.
+- Λ₀ ⊆ ⟨Λ₀⟩, so R(Λ) ⊆ R(Λ̄).
+- Conversely, let (c, h) with h ∈ ⟨Λ_c⟩ be admissible from X. Admissibility depends only on the cut: (c, g) is admissible when every piece is inside or outside H_c (state contract, line 47), whatever g is. Λ_c is closed under inverses, so h = g_k ⋯ g_1 with every g_i ∈ Λ_c. (c, g_1) is admissible from X; by Proposition 2.2 each further (c, g_i) is admissible and the sequence composes to (c, h). So every step of a Λ̄ sequence is reproduced by Λ twists, and R(Λ̄) ⊆ R(Λ).
+- The transported menus agree: K⁺-conjugation is a group homomorphism, so the transport of ⟨Λ₀⟩ to cap c is ⟨Λ_c⟩.
+- **Which groups occur.** A4₀ has index 2 in S4₀, so no group lies strictly between them. A4 is a maximal subgroup of the icosahedral rotation group (A5), so every group strictly between A4₀ and I_a is I_a, and likewise for I_b. S4₀ ∩ I_a = S4₀ ∩ I_b = I_a ∩ I_b = A4₀, because each intersection is a group containing A4₀ and contained in two different groups of the list. Hence, for A4₀ ⊊ Λ₀ ⊆ G with G one of S4₀, I_a, I_b, ⟨Λ₀⟩ = G and R(Λ) = R(G).
+- **Classification (review finding J3W-2).** Every menu containing A4₀ falls in exactly one case:
+  - Λ₀ = A4₀: finite. Every reachable pose stays in K⁺, so there are at most 7200^177120 configurations.
+  - ⟨Λ₀⟩ = S4₀, I_a or I_b: R(Λ) = R(S4₀), R(I_a) or R(I_b). For the explorer's menus, class-00 gives R(S4₀), class-03 gives R(I_a) and class-04 gives R(I_b). Finiteness is open for these three.
+  - Λ₀ contained in none of S4₀, I_a and I_b: infinite (Corollary 3.4).
+- The explorer's ball-model counts are consistent with this: the lattice closures of class-00, class-03 and class-04 agree with those of S4₀, I_a and I_b through depth 5. They are leads, not part of the proof.
 
 **Leads (randomised, exact states).** Exact random walks of J(S4₀), J(I_a) and J(I_b), with uniformly random caps and jumble elements (`walk.py`, seeds 1–3, logged every five applied twists; summaries in `results/walk-*.json`, and the journals of the three longest runs are the W-J fixtures in `research/jumbling/fixtures/`):
 - In the long runs (seeds 2 and 3), 93–96% of attempted jumble twists are blocked.
@@ -123,7 +132,7 @@ Proof.
   - the largest logged coefficient or denominator of a non-K⁺ pose is 16 for I_a, 32 for S4₀ in both long runs, and 32 at one logged step of one I_b run.
 - Slowly growing heights would be consistent with infinite R. Bounded heights would imply finitely many poses. The data decide neither.
 
-**Open (item 3).** Finiteness of R(Λ) for S4₀, I_a and I_b, the only menus containing A4₀ not settled by Corollary 3.4, and a multi-cap criterion for them.
+**Open (item 3).** Finiteness of R(S4₀), R(I_a) and R(I_b). By Proposition 3.5 these three decide every menu containing A4₀ that Corollary 3.4 does not settle. A multi-cap criterion for them is also open.
 
 ## Item 4. Lattice states reached through jumbling
 
@@ -168,5 +177,5 @@ Proof.
 
 ## Item 7. Scope
 
-- Not settled: the finiteness and size of R(Λ) for S4₀, I_a and I_b (every other menu containing A4₀ is infinite by Corollary 3.4), worst-case distances, the membership question of item 4 for any menu, and items 5 and 6 beyond the remarks above.
+- Not settled: the finiteness and size of R(S4₀), R(I_a) and R(I_b), which decide every remaining menu (Proposition 3.5: A4₀ is finite, a menu contained in none of the three groups is infinite, every other menu reaches what one of the three groups reaches), worst-case distances, the membership question of item 4 for any menu, and items 5 and 6 beyond the remarks above.
 - No performance, rendering or Windows claims.
