@@ -1,6 +1,6 @@
 # Rigid jumbling of the cell-cap 600-cell: puzzle theory and solving theory
 
-Status: **problem statement for workstream J3** (`docs/progress/1.0/jumbling-plan.md`). It is written for a separate generation invocation and a separate verification invocation by the senior reviewer, following the route of `research/theory/` (`review-problem.md`, `RETHLAS_BLUEPRINT.md`). Nothing below is proved yet.
+Status: **problem statement for workstream J3** (`docs/progress/1.0/jumbling-plan.md`), revised after the Astra plan check `20261009T201801Z-28fb9085` (findings J-Q3, J-Q4, J-Q7 and J-Q7-SCOPE). It is written for a separate generation invocation and a separate verification invocation by the senior reviewer, following the route of `research/theory/` (`review-problem.md`, `RETHLAS_BLUEPRINT.md`). Nothing below is proved yet.
 
 Prove, disprove with a counterexample, or state as a clearly labelled conjecture with the evidence that would settle it, each item of the following theory package. Keep three things separate:
 - unconditional geometry;
@@ -19,8 +19,17 @@ Computations from this repository (`research/jumbling/`) may be cited as leads. 
 - **Configuration.** A configuration assigns each piece A a pose g_A ∈ SO(4). The piece then occupies g_A(Ā₀), where Ā₀ is its home region. The solved configuration has every pose equal to the identity.
 - **Twist.** A twist (c, g) has g ∈ SO(3)_c, the rotations of R⁴ fixing n_c. It is a jumble twist when g ∉ A4_c.
 - **Admissibility** is that of `research/jumbling/state-contract.md` section 3. A twist is admissible when every piece lies in one closed half-space of the cut hyperplane H_c = {n_c · x = α ‖n_c‖²}. It then replaces g_A by g ∘ g_A for the pieces on the cap side.
-- **Menu.** A menu Λ assigns to cap 0 a finite subset of SO(3)_0 containing A4_0, transported to every cap by K⁺. The puzzle J(Λ) allows the twists (c, g) with g in the transported menu of c. R(Λ) is the set of configurations reachable from solved by admissible twists of J(Λ).
-- **Lattice.** A configuration is a lattice configuration when every pose lies in K⁺ and the pieces tile P as in the retained cut arrangement. L denotes the set of lattice configurations.
+- **Menu** (amendment A4 of the plan). A menu is a finite list Λ₀ ⊂ SO(3)₀ of exact rotations with A4₀ ⊆ Λ₀, Λ₀ = Λ₀⁻¹ and aΛ₀a⁻¹ = Λ₀ for every a ∈ A4₀. It is transported to cap c as Λ_c = tΛ₀t⁻¹ for any t ∈ K⁺ with t(n₀) = n_c, which A4-invariance makes independent of t.
+  - The puzzle J(Λ) allows the twists (c, g) with g ∈ Λ_c.
+  - R(Λ) is the set of configurations reachable from solved by admissible twists of J(Λ).
+  - A finite angle set with free axes is not a menu.
+- **Lattice.** The retained pieces are surface chambers. Every piece has a non-empty cap signature, so their union is not P: a central region, which contains the origin, is never occupied.
+  - A configuration is a lattice configuration when every pose lies in K⁺. Every piece then occupies a retained surface chamber, and the solved configuration belongs to L.
+  - L denotes the set of lattice configurations.
+- **Labelled projection** (amendment A3). A sticker is (A, f), a piece with a home host facet. On L, the sticker with pose k sits in slot(k(A), k(f)), with orientation F_{k(f)}⁻¹ k F_f ∈ A4₀ from the coherent transported frames.
+  - This gives the projection π from L to the retained labelled states.
+  - π is not injective on poses: a centre piece can change pose with equal labels.
+  - Configuration equality, checkpoints and protection use exact poses.
 
 ## Items
 
@@ -31,16 +40,28 @@ Computations from this repository (`research/jumbling/`) may be cited as leads. 
    - Describe the full unblocking locus beyond the realignment circles, including the open sets where a cut misses every moved region.
    - Explain the witness facts: 54 blocked grips after a 9.99987° twist of cap 0 fixing poles 0 and 13; 65 after a third-turn of pole 13 that does not commute with it, with cap 0 blocked. Explain why (13, g ∘ T⁻¹) unblocks cap 0 again without restoring the earlier configuration.
 3. **Finiteness of R(Λ).**
-   - If Λ contains an element of infinite order, R(Λ) is infinite, because repeated twists of one cap stay admissible.
-   - For menus of finite-order elements, decide whether R(Λ) is finite. Give a criterion or a counterexample. The candidate menus are:
-     - the plane rotations by 2π/n fixing n_0 and a face-neighbour pole;
-     - representatives of the 33 realignment classes of `research/jumbling/README.md`.
-   - Relate this to grip closure. Unrestricted grip closure is infinite because K⁺ is maximal finite in SO(4), but admissibility restricts reachability.
-4. **Lattice states reached through jumbling.** Is R(Λ) ∩ L contained in the orbit of solved under the retained group G? If not, describe the new lattice states and which retained invariants they break: orientation sums, positional parity, the 2⁴³ · 5² certificate quotient. A positive answer means that orbit-first block building and its certificates apply unchanged at every lattice checkpoint. A negative answer means that the retained solving theory needs an extension, and that extension should be given.
-5. **Jumble defect and return to a lattice configuration.**
+   - **Same cap.** Repeated twists of one cap stay admissible, so the configurations reached at one cap realise the group ⟨A4₀, Λ₀⟩. That group is finite exactly when it lies in a finite subgroup of SO(3) containing A4₀: A4, S4 = N(A4₀) or an icosahedral group.
+   - **Exact negative control.** Let P₀,₁₃ project onto span(n₀, n₁₃), and let g = 2P₀,₁₃ − I.
+     - g is a half-turn and g ∉ A4₀.
+     - tr(H₀g) = 4/3 is not an algebraic integer, so H₀g has infinite order.
+     - The menu generated by A4₀ and g, closed under inverses and A4 conjugation, has finite-order entries only, but R is infinite.
+   - **Questions.** Decide which of the following menus give a finite R(Λ):
+     - S4₀;
+     - the icosahedral groups containing A4₀ (where exactly representable);
+     - the closures of the realignment rotations of `research/jumbling/README.md`.
+
+     Twists at several caps interact, so same-cap finiteness is necessary but may not be sufficient. Give a criterion, a proof or a counterexample.
+   - **Grip closure.** Relate R(Λ) to grip closure. Unrestricted grip closure is infinite because K⁺ is maximal finite in SO(4). The explorer `research/jumbling/explorer/` finds growth without bound for every candidate menu in a ball approximation. Admissibility restricts reachability.
+4. **Lattice states reached through jumbling.** Is π(R(Λ) ∩ L) contained in the orbit of solved under the retained group G? This decides whether the retained solving theory transfers.
+   - If not, describe the new labelled states, and say which retained invariants they break (orientation sums, positional parity, the 2⁴³ · 5² certificate quotient), if any. Those invariants are necessary only: a state outside G·solved need not break one.
+   - Separately, describe R(Λ) ∩ L at the level of exact poses. Pose states with the same labels can differ, as with centre rotations, and a configuration rotated globally by K⁺ is in L but not in G.
+   - A positive abstract answer does not supply the witnessed checkpoint that contract section 5 requires for a handoff. Say what a checkpoint witness needs.
+5. **Jumble defect and return to a lattice configuration.** Reversing the scramble always returns, because menus are inverse-closed. The question is what more can be achieved:
    - Define a defect of a configuration that vanishes exactly on L. Examples: the set of off-lattice pieces with their poses modulo K⁺, or a per-cap angle invariant where one exists.
    - Give twist families that reduce it, including alternatives to undoing a blocked neighbour, as in item 2.
-   - Prove or refute: from every configuration in R(Λ), for the candidate menus of item 3, a lattice configuration is reachable by menu twists whose number is bounded in terms of the defect.
+   - Prove or refute: from every configuration in R(Λ), for the candidate menus of item 3, a lattice configuration is reachable by menu twists whose number is bounded by a function of a measurable defect.
+     - The bounded off-lattice piece count alone cannot bound the return distance when R(Λ) is infinite under a finite reversible menu.
+     - Give a constructive procedure that uses visible information only, or a complexity statement.
    - Describe methods a human solver can carry out from what is visible, without the history.
 6. **Solving theory.** Extend orbit-first block building (`docs/progress/1.0/solving-workflow.md`) to scrambles of J(Λ):
    - "return to lattice, then block-build", with its correctness argument;
