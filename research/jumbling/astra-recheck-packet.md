@@ -24,10 +24,10 @@ Run read-only as a scoped plan re-check by the senior Codex reviewer (Astra), ef
 ## 4. Necessary source and evidence
 - `research/jumbling/README.md`, sections "Claims after the plan check", "Plan-check dispositions" and "Plan". C4-Q1 is answered by the narrowed fixed-slot theorem plus the owner decision.
 - `research/jumbling/state-contract.md`:
-  - sections 1–3 answer Q5's request for definitions: world-fixed grips, piece regions from complete signatures, poses, admissibility with margins, rejection without state change;
+  - sections 1–3 answer Q5's request for definitions: world-fixed grips, piece regions from complete signatures, poses, exact admissibility with certificates, rejection without state change;
   - section 4 answers Q3;
   - section 5 answers Q4;
-  - section 6 is the minimal witness E1–E4 and the stop point.
+  - section 6 is the minimal witness E0–E4 and the stop point.
 - `research/jumbling/jumble_study.py`: `shells_section` (C1) and `snapping_section` with `max_matching` (C3), for context only.
 - The previous findings are summarized in the README dispositions table.
 
