@@ -1,6 +1,6 @@
 # J1 general simulator (exact reference engine for rigid jumbling)
 
-Status: **candidate for review (9 October 2026).** It implements J1 acceptance items 1–9 of [`docs/progress/1.0/jumbling-plan.md`](../../../docs/progress/1.0/jumbling-plan.md) against the plan-checked [state contract](../state-contract.md), revision `state-contract 2026-10-09 A1-A4`. A2 filtering is off by default. Nothing here changes 600-cell-Full, `assets/` or any root module.
+Status: **accepted (9 October 2026).** The senior reviewer's full review ran as two shards (`20261009T210942Z-04ccee5c`, `20261009T210943Z-d2ec15dd`; six major findings, all adopted and fixed in `0fb5494`), and its scoped verification (`20261009T213956Z-8426390f`) found all six fixed with no new finding. It implements J1 acceptance items 1–9 of [`docs/progress/1.0/jumbling-plan.md`](../../../docs/progress/1.0/jumbling-plan.md) against the plan-checked [state contract](../state-contract.md), revision `state-contract 2026-10-09 A1-A4`. A2 filtering is off by default. Nothing here changes 600-cell-Full, `assets/` or any root module.
 
 Evidence kind: source and synthetic geometry from a headless cloud session. Nothing here is Windows, Direct3D, input or performance evidence.
 
