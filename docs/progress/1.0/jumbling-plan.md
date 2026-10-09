@@ -95,6 +95,8 @@ Code: `research/jumbling/explorer/`. It is written here from the published forma
    - **J4:** orbit data for the candidate menus.
    - **J3:** lists which conclusions are verified, which are conjectural and which are open, after one Astra verification. Running an invocation is not by itself an acceptance result.
 
+   The table is [jumbling-midstage.md](jumbling-midstage.md).
+
    Then the integrator writes the two mid-stage packets and gives them to the owner (owner, 9 October 2026: the jumbling work affects both the renderer line and the engineering line):
    - the renderer packet (section 3);
    - the engineering packet for the backend boundaries (section 3b).
@@ -208,7 +210,8 @@ File: `packets/engineering/ENG-0J-jumbling-backend.md`, in the seven-part format
 ## 5. Owned files and boundaries
 
 - **New files:**
-  - `research/jumbling/sim/`, `viewer/`, `explorer/`, `theory-problem.md`;
+  - `research/jumbling/sim/`, `viewer/`, `explorer/`, `theory/`, `fixtures/`, `theory-problem.md`;
+  - `jumbling-midstage.md` and the packets under `packets/jumbling/`;
   - this plan;
   - `packets/renderer/E-2.4-0J-jumbling.md` and `packets/engineering/ENG-0J-jumbling-backend.md` (at mid-stage);
   - tests under `tests/test_jumbling_*.py`.

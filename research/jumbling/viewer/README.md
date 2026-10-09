@@ -88,7 +88,7 @@ It uses the Node Playwright package and Chromium with SwiftShader WebGL (`--use-
 
 `--vendor DIR` serves `three.module.js` and `OrbitControls.js` from a local directory when the browser cannot reach the CDN, as in a cloud session behind a TLS-inspecting proxy. The files must match the pinned SHA-256 digests in the script. Font requests get an empty stylesheet, so the screenshots use fallback fonts.
 
-The S4 export acceptance and JavaScript syntax checks passed in the implementation sandbox. The expanded browser assertions still need the integrator's run; no browser result for S4 is recorded here. `--shots` adds S4 captures with the prefix `s4-`.
+The S4 export acceptance and JavaScript syntax checks passed in the implementation sandbox. The integrator's run of the expanded browser assertions on 9 October 2026 (Linux cloud session, `--vendor` with the pinned three.js files, the committed scene files) passed 105 of 105 for both scenes. `--shots` adds S4 captures with the prefix `s4-`; that run took none.
 
 Recorded run before the certificate, preview, digest and deep-link fixes: 32 of 32 checks passed in a Linux cloud session. That result does not cover the added regression assertions. Screenshots in `shots/` are from that run:
 

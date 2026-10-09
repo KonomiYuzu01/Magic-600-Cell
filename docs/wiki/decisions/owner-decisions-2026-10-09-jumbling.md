@@ -3,7 +3,7 @@ id: owner-decisions-2026-10-09-jumbling
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 9 October 2026 - no fudged variant; rigid jumbling enters 1.0 as an independent puzzle and a Jumble feature; simulator, rendering and observation, solving theory and a four-dimensional grip-orbit explorer start now; a renderer packet and an engineering packet follow at mid-stage.
+summary: Owner decisions of 9 October 2026 - no fudged variant; rigid jumbling enters 1.0 as an independent puzzle and a Jumble feature; simulator, rendering and observation, solving theory and a four-dimensional grip-orbit explorer start now; a renderer packet and an engineering packet follow at mid-stage; 1.0 implements four dimensions only, with interfaces that do not fix the dimension, and the renderer packet carries the rendering acceptance.
 related: [owner-decisions-2026-10-02-scope, renderer-candidates]
 supersedes: []
 claims:
@@ -11,6 +11,7 @@ claims:
   - {id: jumbling-in-1-0, evidence_kind: decision, checked_at: 2026-10-09}
   - {id: renderer-packet-at-mid-stage, evidence_kind: decision, checked_at: 2026-10-09}
   - {id: engineering-packet-at-mid-stage, evidence_kind: decision, checked_at: 2026-10-09}
+  - {id: dimension-open-interfaces, evidence_kind: decision, checked_at: 2026-10-09}
 ---
 
 # Owner decisions, 9 October 2026: jumbling
@@ -28,6 +29,7 @@ The owner gave these decisions in chat messages in Chinese. This page records th
    - a four-dimensional Jambler-style grip-orbit explorer.
 4. **Renderer packet at mid-stage.** When the workstreams reach mid-stage, the integrator gives the owner a packet to submit to the renderer route. Only changes such as geometry may need the renderer acceptance to be run again.
 5. **Engineering packet at mid-stage.** The jumbling work affects both the renderer line and the engineering line, so the integrator also gives the owner a mid-stage packet for the engineering line: the backend boundaries (engine, session store, command layer, view model).
+6. **Four dimensions now, interfaces open to more.** Asked whether "4D+" means a dimension-general framework in 1.0, the owner chose the second option offered: 1.0 implements and accepts the four-dimensional puzzle only, and the data contracts and interfaces do not fix the dimension (a pose is a d × d matrix, every header names d, and the projection chain is a sequence of stages). The rendering acceptance is left to the renderer packet. The integrator builds the rendering framework: the shared data contract and a full-state research viewer.
 
 ## Scope and limits
 

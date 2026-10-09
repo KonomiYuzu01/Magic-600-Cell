@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-09] decision | Jumbling: four dimensions, open interfaces
+Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 6): 1.0 implements and accepts four dimensions only, the data contracts and interfaces do not fix the dimension, the renderer packet carries the rendering acceptance, and the integrator builds the rendering framework.
+
 ## [2026-10-09] decision | Jumbling: engineering packet too
 Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 5): the jumbling work affects the renderer line and the engineering line, so mid-stage gives the owner two packets; the engineering packet's outline is in [jumbling-plan](../progress/1.0/jumbling-plan.md) section 3b.
 

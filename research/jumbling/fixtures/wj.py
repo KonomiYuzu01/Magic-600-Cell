@@ -8,7 +8,7 @@ positions, converted from exact values at the end.
 
     python research/jumbling/fixtures/wj.py build <menu> <source.json>   # S4, I_a or I_b
     python research/jumbling/fixtures/wj.py check [<menu> ...]          # replay and compare
-    python research/jumbling/fixtures/wj.py export <menu> <stage> <dir> # renderer arrays
+    python research/jumbling/fixtures/wj.py export <menu> <stage> <dir> # render-contract arrays
 
 Stages: start, mid, end, and sweep-before and sweep-after around the swept twist.
 
@@ -38,6 +38,8 @@ from sim.kernel import q5_float  # noqa: E402
 from sim.twists import TwistMenu, Twist  # noqa: E402
 
 FORMAT = 'magic600-jumbling-wj/1'
+RENDER_FORMAT = 'magic600-jumbling-render/1'
+DIMENSION = 4
 MENUS = ('S4', 'I_a', 'I_b')
 STAGES = ('start', 'mid', 'end', 'sweep-before', 'sweep-after')
 SAMPLES = 48          # sampled pieces with posed centroids at every stage
@@ -85,12 +87,13 @@ def centroid(ctx, p):
 
 
 def arrays(st):
-    """Renderer arrays: per-piece pose index, float32 pose matrices (x' = M x, row-major) and
-    the K+ index of each pose (-1 off the lattice)."""
+    """State arrays of the render data contract (research/jumbling/render-contract.md): per-piece
+    pose index, float32 pose matrices (x' = M x, row-major) and the K+ index of each pose (-1 off
+    the lattice)."""
     pose_index = st.pose_id.astype('<i4')
     poses = np.stack([pose_float(st, i) for i in range(len(st._poses))]).astype('<f4')
     kplus = np.array([p.kidx for p in st._poses], '<i4')
-    return {'pose_index.i32': pose_index, 'poses.f32': poses, 'pose_kplus.i32': kplus}
+    return {'pose_index.i32': pose_index, 'poses.f32': poses, 'pose_lattice.i32': kplus}
 
 
 def sha(a):
@@ -240,7 +243,7 @@ def build(name, source):
                'coordinates': 'the frame of assets/model.npz: facets n_e . x = |n|^2 with |n|^2 = 12 + 4 sqrt5',
                'evidence': 'source and synthetic geometry; legality and digests exact in Q(sqrt 5); arrays and positions float',
                **{k: refs[k] for k in ('samples', 'stages', 'sweep', 'end_survey')}}
-    fixture_path(name).write_text(json.dumps(fixture, indent=1, sort_keys=True) + '\n')
+    fixture_path(name).write_text(json.dumps(fixture, sort_keys=True, separators=(',', ':')) + '\n')
     e = refs['stages']['end']
     print(f'{name}: {len(records)} records, {e["off_lattice"]} off the lattice, {e["poses"]} poses, '
           f'height {e["max_entry_height"]}, {refs["end_survey"]["blocked"]} blocked grips at the end, '
@@ -305,16 +308,20 @@ def export(name, stage, out):
         raise AssertionError('replayed digest differs from the fixture')
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
-    header = {'format': FORMAT, 'menu': name, 'stage': stage, 'records': n, 'digest': st.digest(),
-              'pieces': int(len(st.pose_id)), 'convention': "x' = M x; M row-major float32; pose 0 is the identity",
-              'files': {}}
+    journal = fixture['journal']
+    header = {'format': RENDER_FORMAT, 'dimension': DIMENSION, 'pieces': int(len(st.pose_id)),
+              'poses': len(st._poses), 'revision': n, 'digest': st.digest(),
+              'model_identity': journal['model_identity'], 'menu_identity': journal['menu_identity'],
+              'contract_revision': journal['contract_revision'],
+              'fixture': {'format': FORMAT, 'menu': name, 'stage': stage, 'records': n},
+              'convention': "x' = M x; M row-major float32; pose 0 is the identity", 'files': {}}
     for fname, a in arrays(st).items():
         if sha(a) != ref['arrays'][fname]['sha256']:
             raise AssertionError(f'{fname} differs from the fixture hash')
         (out / fname).write_bytes(np.ascontiguousarray(a).tobytes())
         header['files'][fname] = {'sha256': sha(a), 'shape': list(a.shape), 'dtype': a.dtype.str}
     (out / 'header.json').write_text(json.dumps(header, indent=1) + '\n')
-    print(f'wrote {out} ({stage}: {header["records"]} records)')
+    print(f'wrote {out} ({stage}: {n} records)')
 
 
 def main(argv=None):
