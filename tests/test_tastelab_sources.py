@@ -554,6 +554,36 @@ class CalibrationTests(test_store.TempDir):
         self.assertEqual(fetch._plain("x" * 1000 + " https://example.org/a"), "x" * 200)
         self.assertEqual(fetch._plain("nude " + "https://example.org/" + "a" * 2000), "nude [link]")
 
+    def test_calibration_skips_document_files_and_labelled_negatives(self):
+        self.assertIn("a vintage photo of women in bathing costumes", screen.UNSAFE_PROBES)
+        base = replace(self.prototypes["wikimedia"], licence="CC0-1.0", licence_url=sources.CC0_URL, keywords=())
+
+        def item(ident, title, suffix=".jpg", keywords=()):
+            return replace(base, source_id=ident, title=title, keywords=keywords,
+                           page_url=f"https://commons.wikimedia.org/wiki/File:Invented_{ident}{suffix}")
+
+        pages = {"nude painting": [item("1", "adult nude study", ".pdf"), item("2", "adult nude study", ".DjVu"),
+                                   item("3", "adult nude study", keywords=("Books with Wikidata item",))],
+                 "botanical illustration": [item("4", "Bloodroot botanical illustration"),
+                                            item("5", "Invented allegory", keywords=("Female Nudes",)),
+                                            item("6", "Invented herbal", ".pdf")]}
+        lines, cases = [], []
+        client = mock.Mock()
+        client.get.return_value = net.Response("synthetic", 200, {}, png())
+        scorer = mock.Mock()
+        scorer.unsafe_score.return_value = [0.5]
+        empty = mock.Mock(return_value=([], None))
+        with mock.patch.object(sources.ADAPTERS["wikimedia"], "search",
+                               side_effect=lambda client, query, cursor, **kwargs: (pages.get(query, []), None)), \
+                mock.patch.object(sources.ADAPTERS["met"], "search", empty), \
+                mock.patch.object(sources.ADAPTERS["aic"], "search", empty), \
+                mock.patch.object(sources.ADAPTERS["nasa"], "search", empty), \
+                mock.patch.object(screen, "Screen", return_value=scorer):
+            report = fetch.calibrate(self.fake, client, log=lines.append, cases=cases)
+        self.assertEqual([(case["group"], case["id"]) for case in cases], [("nudity", "3"), ("negative", "4")])
+        self.assertEqual((report["groups"]["nudity"]["n"], report["negatives"]["n"]), (1, 1))
+        self.assertIn('Calibration skipped: {"document": 3, "labelled_negative": 1}', lines)
+
     def test_diagnose_cli_writes_case_metadata_beside_the_report(self):
         with self.assertRaises(SystemExit), mock.patch("sys.stderr", io.StringIO()):
             fetch.main(["--diagnose"])

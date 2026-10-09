@@ -53,7 +53,8 @@ class ScreenTests(unittest.TestCase):
     def test_mass_rule_and_strict_threshold(self):
         got = self.mass_screen()
         score = got.unsafe_score(self.unit[:1])
-        expected = 20 / (20 + np.exp(5) + 19 * np.exp(-5))
+        unsafe, safe = len(screen.UNSAFE_PROBES), len(screen.SAFE_PROBES)
+        expected = unsafe / (unsafe + np.exp(5) + (safe - 1) * np.exp(-5))
         self.assertEqual(score.dtype, np.float64)
         self.assertAlmostEqual(score[0], expected)
         self.assertEqual(got.check(self.unit[:1], strict=False), [False])
@@ -92,7 +93,7 @@ class ScreenTests(unittest.TestCase):
     def test_invalid_probe_shape_count_norm_or_value_refuses_build(self):
         fake = embed.FakeEmbedder()
         valid = fake.embed_texts(screen.UNSAFE_PROBES + screen.SAFE_PROBES)
-        cases = [valid[:-1], np.zeros((len(valid), 15)), valid.reshape(2, 20, 16), valid * 1.002,
+        cases = [valid[:-1], np.zeros((len(valid), 15)), valid[np.newaxis], valid * 1.002,
                  np.zeros_like(valid), np.full_like(valid, np.nan), np.full_like(valid, np.inf)]
         for values in cases:
             with self.subTest(shape=values.shape), mock.patch.object(fake, "embed_texts", return_value=values):

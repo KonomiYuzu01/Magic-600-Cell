@@ -45,6 +45,7 @@ UNSAFE_PROBES: tuple = (
     "a person in underwear",
     "a person in lingerie",
     "a person in a bikini or a swimsuit",
+    "a vintage photo of women in bathing costumes",    # owner decision, 9 October 2026: period swimwear is caught too
     "a sexually suggestive pose",
     "a pin-up photo",
     "an erotic illustration",

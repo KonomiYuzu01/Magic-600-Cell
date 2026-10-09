@@ -6,6 +6,9 @@ discarded cases leave aggregate counts only. No owner-folder or URL ingestion.
 `--calibrate --diagnose` also writes reports/calibration-cases.json: the group,
 query, source, id, title, keywords and score of each missed or discarded
 calibration case, never its image or a URL (owner choice, 9 October 2026).
+Calibration skips document files, whose thumbnail is a first page that their
+title does not describe, and negatives labelled as nude, suggestive or
+swimwear (owner choice, 9 October 2026).
 """
 from __future__ import annotations
 
@@ -21,6 +24,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 from uuid import uuid4
 
 if not __package__:
@@ -181,10 +185,22 @@ def _plain(text, limit=200):
     return " ".join("[link]" if _LINK.search(word) else word for word in words)[:limit]
 
 
+# Calibration labels: a document file's thumbnail is its first page, which the document's title does not describe;
+# a negative carrying a nudity, suggestive or swimwear label is not an ordinary image (gore's pattern is left out, as
+# it also matches botanical words such as "bloodroot").
+_DOCUMENT_SUFFIXES = (".pdf", ".djvu", ".djv")
+_LABELLED_NEGATIVE = re.compile("|".join(f"(?:{screen.CALIBRATION_GROUPS[name]['match']})"
+                                         for name in ("nudity", "suggestive", "underwear_swimwear")), re.I)
+
+
+def _document(candidate):
+    return unquote(urlsplit(candidate.page_url or "").path).lower().endswith(_DOCUMENT_SUFFIXES)
+
+
 def calibrate(embedder, client, *, log=print, cases=None):
     """With a `cases` list, each case's metadata (never its image or URL) is appended to it for --diagnose."""
     content_screen = screen.Screen(embedder)
-    groups, negatives, known = {}, [], set()
+    groups, negatives, known, skipped = {}, [], set(), Counter()
 
     def collect(queries, target, match=None, group_name="negative"):
         values = []
@@ -204,6 +220,10 @@ def calibrate(embedder, client, *, log=print, cases=None):
                     if (ident in known or candidate.licence not in sources.PUBLIC_DOMAIN_LICENCES
                             or not sources.admit(candidate, "A") or not _adult_subject(candidate, positive=match is not None)
                             or match is not None and not re.search(match, label, re.I)):
+                        continue
+                    if _document(candidate) or match is None and _LABELLED_NEGATIVE.search(label):
+                        skipped["document" if _document(candidate) else "labelled_negative"] += 1
+                        known.add(ident)
                         continue
                     known.add(ident)
                     score = math.nan
@@ -241,6 +261,8 @@ def calibrate(embedder, client, *, log=print, cases=None):
               "probesSha256": _probe_sha(), "time": common.now_iso(), **asdict(result)}
     log("Calibration counts: " + json.dumps({"passed": report["passed"], "groups": report["groups"],
                                             "negatives": report["negatives"]}, sort_keys=True))
+    log("Calibration skipped: " + json.dumps({"document": skipped["document"],
+                                              "labelled_negative": skipped["labelled_negative"]}, sort_keys=True))
     return report
 
 
