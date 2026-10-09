@@ -23,7 +23,7 @@ Phase 1b is accepted when:
 6. No class B image, personal data, key or private path is in the page, its storage, a bundle or the repository. The bundle exporter and the page each refuse class B by construction, and tests with class B canaries show it.
 
 Phase 2 is accepted when:
-1. The class B adapters fetch within each source's terms and rate limit, under the Safebooru rules of section 4. Class B gets the strict content screen.
+1. The class B adapters fetch within each source's terms and rate limit, under the Safebooru rules of section 4. Class B gets no content screen except the minor-protection checks: the minor-word check and a probe for sexualized drawings of young-looking characters (owner decision, 9 October 2026, replacing the strict screen).
 2. The local rating window rates class A and class B images, and the taste map and its report run locally.
 3. Class B never enters any fitting step: the classifier, the selector, the taste-map clusters and axes, the term ranking, the proposals or the screen calibration. A model fitted on class A may score or place class B images, but only locally. A canary test instruments every fitting step. Class B never reaches a bundle, the page or the repository.
 4. The headless tests pass. The Qt window test runs with the Taste Lab environment.
