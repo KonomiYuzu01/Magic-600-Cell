@@ -75,6 +75,6 @@ Scoped re-check 20261009T163617Z-bc992d63 found C4-Q1 and Q4 resolved. It also f
 ## Plan
 
 1. State contract (`state-contract.md`). Drafted; awaiting the scoped re-check.
-2. Minimal geometric witness E1–E4 from the contract: exact piece regions for two neighbouring caps, a 10° jumble twist fixing both poles, a turn at the neighbour, certified blocked and unblocked grips, and the reverse sequence.
+2. Minimal geometric witness E0–E4 from the contract: controls, exact piece regions for two neighbouring caps, an exact jumble twist of about 10° fixing both poles, a turn at the neighbour, certified blocked and unblocked grips, and the reverse sequence.
 3. Initial impact assessment on stages 2.3 to 2.5 for the owner.
 4. Stop. A simulator against the contract, one realignment-circle atlas, rendering of certified witnesses and blocking reasons, and the four-dimensional Jambler port remain optional and need a separate go-ahead.
