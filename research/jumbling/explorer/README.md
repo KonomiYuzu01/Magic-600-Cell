@@ -4,7 +4,7 @@ Status: **research code for workstream J4 of the [jumbling plan](../../../docs/p
 
 Evidence kind: synthetic geometry, computed in a Linux cloud session. Nothing here is Windows, Direct3D, input or performance evidence.
 
-Sources: the published formal definition of grip theory ([hypercubing.xyz, jumbling](https://hypercubing.xyz/theory/grip-theory/formal/#jumbling)) and this repository (`h4.py`, `exact.py`, `results.json`, `state-contract.md`). HactarCE's Jambler has no licence file, so none of its code was read, copied or translated.
+Sources: the published formal definition of grip theory ([hypercubing.xyz, jumbling](https://hypercubing.xyz/theory/grip-theory/formal/#jumbling)) and this repository (`h4.py`, `exact.py`, `results.json`, `state-contract.md`, `theory/groups.py` and `sim/`). J1 comparisons use `sim.get_context()`, which reads the retained model assets without changing them. No session is read. HactarCE's Jambler has no licence file, so none of its code was read, copied or translated.
 
 ## Files
 
@@ -40,21 +40,29 @@ Sources: the published formal definition of grip theory ([hypercubing.xyz, jumbl
 - Grips are counted as Σ 7200 / |Stab|; positions are counted the same way.
 - In the lattice closure the A4 twists are skipped: P_c a P_c⁻¹ lies in K⁺, so its images stay in the same K⁺-orbit.
 - `--selftest` compares this with a direct search without reduction, over all 600 twisting grips and every menu element. They agree:
-  - lattice closure: class-00 and class-05 up to depth 2, plane-10 at depth 1;
+  - lattice closure: s4, class-00 and class-05 up to depth 2, plane-10 at depth 1;
   - all-grips closure at depth 1, grips and positions: class-00 and plane-10.
 
 **Menus.**
 - `a4` is the control.
+- `s4`, `i_a` and `i_b` are the full groups S4₀ (24 elements), I_a and I_b (60 each), family `group`. These are the finite same-cap groups containing A4₀ of [Proposition 3.1](../theory/theory-draft.md). Their exact matrices come from `theory.groups.build()` and `lift()` in J1's pole-0 frame, then are transported to J4's n₀ as described below. Every mapped matrix is checked exactly to be a rotation fixing n₀, and each set is checked exactly for multiplication, inverses and inclusion of J4's A4. Passing all elements through `Menu` must leave exactly the same set and size.
 - `class-00` … `class-32` have one generator per realignment class of `../results.json`.
   - The float `R_perp` of the study is made exact from two aligned poles w₁ → u₁ and w₂ → u₂ with independent components: R = [n₀, p_u₁, p_u₂, ×(n₀, p_u₁, p_u₂)] · [n₀, p_w₁, p_w₂, ×(n₀, p_w₁, p_w₂)]⁻¹, where × is the four-dimensional cross product.
   - Exact checks: Rᵀ R = I, det R = 1 and R n₀ = n₀; every pole the float rotation aligns maps exactly onto its target pole; the float and exact rotations agree to 10⁻⁹.
   - All 33 classes are exact over Q(√5).
+  - `class-00` contains A4 and the six conjugates/inverses of a quarter-turn: 18 elements. It is strictly contained in S4₀; it is not the 24-element group menu `s4`.
 - `plane-10`, `plane-36` and `plane-72` rotate the plane orthogonal to span(n₀, n₁) by about 10°, 36° and 72°. They use the Cayley form of `witness.py`, with a rational parameter s of denominator at most 1,000:
   - plane-10: s = 15/629, 9.999596°;
   - plane-36: s = 86/971, 35.999747°;
   - plane-72: s = 142/717, 72.000213°.
 
   Exact 36° and 72° plane rotations are not in Q(√5) here, because tan(θ/2)/√m is not. `plane-36-float` is the exact angle in floating point.
+
+**J1 frame map and identities.** J1 and J4 share coordinates in R⁴ but choose different base poles and exact pole lengths. The code finds the unique J1 pole whose direction equals J4's n₀ by a positive exact Q(√5) scale, rather than a float tolerance. For the current source data this is J1 pole 599, with J4's unnormalised pole equal to `(1 + √5)/4` times J1's pole. The transporter F is its retained J1 frame: K⁺ index 6587, exactly equal to J4 K⁺ index 955 (quaternion pair `(7, 115)`). Exact checks confirm K⁺ membership, all J1 pole images, F n₀(J1) = n₅₉₉(J1), and transport of J1's A4 onto J4's A4. Group matrices are mapped by F g Fᵀ. The computed transporter, indices and scale are recorded as `j1_frame_map` in the results.
+
+For every exact menu M, `j1_menu_identity` is computed by mapping its matrices back as Fᵀ m F and taking `sim.TwistMenu(ctx, name, items, close=False).identity`. J1 validates the exact rotation and fixed-pole conditions, inclusion of A4, inverses and A4-conjugation closure. Its identity is SHA-256 over sorted canonical exact matrix JSON, independent of labels and input order. Another K⁺ transporter to the same pole gives the same set and identity because M is A4-conjugation invariant. No identity is assigned to `plane-36-float`.
+
+`j1_relation` is an object with keys `s4`, `i_a`, `i_b`. Each value is `equal`, `contained` (a strict subset) or `not-contained`, decided by exact matrix sets in J1's frame. S4 is compared with `sim.TwistMenu.s4(ctx)`; I_a and I_b with the groups lifted directly from `groups.py`. The viewer groups these menus in its picker with their sizes, and shows the shortened J1 identity (full hash on hover) and all three relations in the detail panel. `--list-menus` also prints the computed identities and relations. The self-test checks the A4 and S4 identities against J1's constructors and I_a/I_b against menus built directly from the theory groups without the frame map, plus `class-00`'s strict inclusion in S4.
 
 ## Exact and float
 
@@ -79,12 +87,15 @@ python research/jumbling/explorer/explore.py --selftest
 python research/jumbling/explorer/explore.py --menu class-05 --depth 4                 # one run, JSON to stdout
 python research/jumbling/explorer/explore.py --menu plane-10 --twisting all --depth 2 --time-limit 120
 python research/jumbling/explorer/explore.py --preset --workers 4                      # all runs, writes the result files
+python research/jumbling/explorer/explore.py --preset --menus s4,i_a,i_b --workers 4    # merge only these six runs
 python research/jumbling/explorer/explore.py --table                                    # the tables below
 ```
 
 Options: `--threshold` (degrees, default 46.8), `--budget` (orbit representatives, default 150,000), `--time-limit` (seconds), `--exact-cap` (coincidences checked exactly per run, default 2,000).
 
 The preset uses depth limit 8, a budget of 150,000 representatives and a time limit of 600 s for the lattice closure. For the all-grips closure it uses depth limit 3, 60,000 representatives and 300 s. Separations are computed for complete levels of at most 50,000 representatives.
+
+`--menus` is available only with `--preset`. It selects named menus for both closures and merges their run records into an existing `explorer-results.json`, replacing a selected run with the same ID or appending a new one. Other run records retain their JSON bytes, and other point files, including an existing `points/lattice.json`, are not rewritten. Existing menu descriptions gain only the computed J1 identity and relation fields. The original preset parameters and duration stay in place; each merge records its own command, parameters, duration and run IDs in `preset_merges`. A merge with different search parameters is refused before running or writing. Without an existing results file, a filtered preset creates results for its selected menus. Unknown or empty menu selections are refused. The self-test checks that merging preserves other runs and parameters and replaces selected IDs without duplication.
 
 Page check (Chromium is preinstalled; no `playwright install`):
 
@@ -94,6 +105,8 @@ NODE_PATH=$(npm root -g) PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers \
 ```
 
 `--vendor` answers the three.js and Google Fonts requests from local copies, for sandboxes without direct CDN access.
+
+The integrator runs the filtered three-group preset and the page check outside the implementation sandbox. The page check covers the three group selections, family/size labels, identities and relations as well as the original desktop/phone cases. Group orbit results are not included in the older tables below until that preset has been run.
 
 ## Results
 
@@ -203,7 +216,7 @@ These are leads for J3 and the menu decision, not proofs.
 - **Exact geometric growth for the classes with many aligned poles** (lattice closure, all complete levels):
   - class-00 to class-04 have 40·(16^(d+1) − 1) grips after depth d, for d = 0 to 5: each level adds exactly 16 times as many grips as the level before.
   - class-05 has 150·(5^(2d+1) − 1) grips after depth d, for d = 0 to 4: each level adds 25 times as many.
-  - Agreeing counts do not mean agreeing sets. The depth-1 position sets of class-00 to class-03 coincide, and class-04 differs. From depth 2 on, all five sets differ, although the counts agree.
+  - Agreeing counts alone do not mean agreeing sets. The original sample comparison found equal depth-1 position sets for class-00 to class-03, with class-04 different, and reported differences from depth 2. The computed J1 identities establish that class-01 and class-02 have the same exact menu, so their closures must agree; the earlier difference for that pair needs rechecking.
 - **Fewer aligned poles, faster growth.**
   - class-06 to class-32 have 2 to 8 aligned poles. They add about 80 to 800 times as many grips at their last complete level as at the level before.
   - Most of them pass about 10⁹ grips by depth 3.

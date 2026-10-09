@@ -22,6 +22,29 @@ const { chromium } = require('playwright');
 const here = path.dirname(fileURLToPath(import.meta.url));
 const vendorArg = process.argv.indexOf('--vendor');
 const vendor = vendorArg > 0 ? process.argv[vendorArg + 1] : null;
+const results = JSON.parse(fs.readFileSync(path.join(here, 'explorer-results.json'), 'utf8'));
+const menus = new Map(results.menus.map((m) => [m.name, m]));
+for (const [name, size] of [['s4', 24], ['i_a', 60], ['i_b', 60]]) {
+  const m = menus.get(name);
+  if (!m || m.family !== 'group' || m.size !== size || !m.exact_q_sqrt5) {
+    throw new Error(`run --preset --menus s4,i_a,i_b first: missing exact group ${name} (${size})`);
+  }
+  if (m.j1_relation?.[name] !== 'equal') throw new Error(`${name}: expected exact J1 group equality`);
+  for (const kind of ['lattice', 'all']) {
+    if (!results.runs.some((r) => r.menu === name && r.twisting === kind)) {
+      throw new Error(`${name}: missing ${kind} preset run`);
+    }
+  }
+}
+for (const m of results.menus.filter((m) => m.exact_q_sqrt5)) {
+  if (!/^[0-9a-f]{64}$/.test(m.j1_menu_identity)
+      || !['s4', 'i_a', 'i_b'].every((name) => ['equal', 'contained', 'not-contained'].includes(m.j1_relation?.[name]))) {
+    throw new Error(`${m.name}: missing J1 identity or relation`);
+  }
+}
+if (menus.get('class-00')?.j1_relation?.s4 !== 'contained') {
+  throw new Error('class-00 must be reported as strictly contained in S4');
+}
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
 const SKELETON = '<!doctype html><html><head><meta charset="utf-8">'
@@ -66,6 +89,9 @@ const shots = [
   { name: 'desktop-light', viewport: { width: 1280, height: 900 }, scheme: 'light', hash: '#class-00' },
   { name: 'desktop-dark-all', viewport: { width: 1280, height: 900 }, scheme: 'dark', hash: '#plane-10', kind: 'all' },
   { name: 'phone-light', viewport: { width: 390, height: 844 }, scheme: 'light', hash: '#class-05', mobile: true },
+  { name: 'desktop-s4', viewport: { width: 1280, height: 900 }, scheme: 'light', hash: '#s4' },
+  { name: 'desktop-i_a-all', viewport: { width: 1280, height: 900 }, scheme: 'dark', hash: '#i_a', kind: 'all' },
+  { name: 'phone-i_b', viewport: { width: 390, height: 844 }, scheme: 'light', hash: '#i_b', mobile: true },
 ];
 fs.mkdirSync(path.join(here, 'shots'), { recursive: true });
 const problems = [];
@@ -102,10 +128,33 @@ for (const s of shots) {
       colours: seen.size,
       note: document.getElementById('stage-note').textContent,
       rows: document.querySelectorAll('#levels tbody tr').length,
+      identity: document.querySelector('#facts [data-j1-identity]')?.getAttribute('data-j1-identity'),
+      identityTitle: document.querySelector('#facts [data-j1-identity]')?.title,
+      identityText: document.querySelector('#facts [data-j1-identity]')?.textContent,
+      relation: Array.from(document.querySelectorAll('#facts dt'))
+        .find((dt) => dt.textContent === 'J1 relation')?.nextElementSibling.textContent,
+      groups: Array.from(document.querySelectorAll('#menu optgroup[label="Groups"] option'))
+        .map((o) => ({ name: o.value, text: o.textContent })),
     };
   });
   if (check.scrollWidth > check.innerWidth) problems.push(`${s.name}: horizontal scroll ${check.scrollWidth} > ${check.innerWidth}`);
   if (check.colours < 4) problems.push(`${s.name}: WebGL canvas looks blank (${check.colours} colours)`);
+  const menu = menus.get(s.hash.slice(1));
+  if (check.identity !== menu.j1_menu_identity || check.identityTitle !== menu.j1_menu_identity
+      || check.identityText !== `${menu.j1_menu_identity.slice(0, 16)}…`) {
+    problems.push(`${s.name}: missing or incorrect shortened J1 identity and full hover value`);
+  }
+  const groupNames = { s4: 'S4₀', i_a: 'I_a', i_b: 'I_b' };
+  const relations = { equal: 'equals', contained: 'contained in', 'not-contained': 'not contained in' };
+  const relation = Object.entries(menu.j1_relation)
+    .map(([name, value]) => `${relations[value]} ${groupNames[name]}`).join('; ');
+  if (check.relation !== relation) problems.push(`${s.name}: missing or incorrect J1 relation`);
+  for (const name of ['s4', 'i_a', 'i_b']) {
+    const option = check.groups.find((g) => g.name === name);
+    if (!option || !option.text.includes(`group · ${menus.get(name).size} elements`)) {
+      problems.push(`${s.name}: group picker lacks ${name}'s family and size`);
+    }
+  }
   console.log(`${s.name}: ${check.note}; ${check.rows} table rows; ${check.colours} canvas colours`);
   await page.screenshot({ path: path.join(here, 'shots', `${s.name}.png`), fullPage: true });
   await context.close();

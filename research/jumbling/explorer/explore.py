@@ -2,7 +2,8 @@
 
 Research code, written from the published formal definition of grip theory
 (https://hypercubing.xyz/theory/grip-theory/formal/#jumbling) and from this repository only.
-It needs the Python standard library and NumPy. It never reads assets/ or a session.
+It needs the Python standard library and NumPy. J1 menu comparisons read the model assets
+through sim's read-only context; it never reads a session.
 
 A grip is a rotation P in SO(4): P maps the base pole n_0 and its base frame to the grip's
 position P n_0 and frame. A menu M is a finite set of rotations fixing n_0, given in the base
@@ -30,8 +31,9 @@ Examples (from the repository root):
     python research/jumbling/explorer/explore.py --list-menus
     python research/jumbling/explorer/explore.py --menu class-05 --depth 3 --budget 200000
     python research/jumbling/explorer/explore.py --preset   # every menu, both closures
+    python research/jumbling/explorer/explore.py --preset --menus s4,i_a,i_b  # merge these runs
 
-The preset writes explorer-results.json (numbers) and orbit-points.json (viewer samples) next
+The preset writes explorer-results.json (numbers) and points/ (viewer samples) next
 to this file.
 """
 import argparse
@@ -262,21 +264,27 @@ class Menu:
         self.exact = gens_x is not None
         els_f = list(geo.A4)
         els_x = list(geo.A4_x) if self.exact else None
-        seen = {tuple(np.round(m, 8).ravel()) for m in els_f}
+        seen = ({key_x(m) for m in els_x} if self.exact
+                else {tuple(np.round(m, 8).ravel()) for m in els_f})
         for gi, g in enumerate(gens_f):
             for inv in (False, True):
+                gf = g.T if inv else g
+                if self.exact:
+                    gx = transpose(gens_x[gi]) if inv else gens_x[gi]
                 for ai, a in enumerate(geo.A4):
-                    gf = g.T if inv else g
                     m = a @ gf @ a.T
-                    k = tuple(np.round(m, 8).ravel())
+                    if self.exact:
+                        ax = geo.A4_x[ai]
+                        mx = matmul(matmul(ax, gx), transpose(ax))
+                        k = key_x(mx)
+                    else:
+                        k = tuple(np.round(m, 8).ravel())
                     if k in seen:
                         continue
                     seen.add(k)
                     els_f.append(m)
                     if self.exact:
-                        gx = transpose(gens_x[gi]) if inv else gens_x[gi]
-                        ax = geo.A4_x[ai]
-                        els_x.append(matmul(matmul(ax, gx), transpose(ax)))
+                        els_x.append(mx)
         self.f = np.array(els_f)
         self.x = els_x
         self.size = len(els_f)
@@ -286,12 +294,108 @@ class Menu:
             for mf, mx in zip(self.f, self.x):
                 assert np.abs(to_float(mx) - mf).max() < 1e-12
             assert len({key_x(m) for m in self.x}) == self.size
+            if not hasattr(geo, 'j1'):
+                geo.j1 = J1Menus(geo)
+            geo.j1.identify(self)
 
     def describe(self):
         d = {'name': self.name, 'label': self.label, 'family': self.family,
              'exact_q_sqrt5': self.exact, 'size': self.size, 'jumble_elements': len(self.jumble)}
         d.update(self.info)
+        if self.exact:
+            d.update({'j1_menu_identity': self.j1_menu_identity, 'j1_relation': self.j1_relation})
         return d
+
+
+class J1Menus:
+    """Exact transport between J1's pole 0 and J4's n_0, and J1 reference groups."""
+
+    def __init__(self, geo):
+        import sim
+        from theory import groups
+
+        self.ctx = sim.get_context()
+        self.twist_menu = sim.TwistMenu
+        # Compare oriented directions, allowing the two pole sets' different exact lengths.
+        k = next(i for i, x in enumerate(geo.p0_x) if not x.is_zero())
+        matches = []
+        for c, n in enumerate(self.ctx.data.N):
+            if n[k].is_zero():
+                continue
+            scale = geo.p0_x[k] / n[k]
+            if scale.sign() > 0 and [scale * x for x in n] == geo.p0_x:
+                matches.append((c, scale))
+        assert len(matches) == 1, 'J4 n_0 must match exactly one oriented J1 pole'
+        self.pole, self.scale = matches[0]
+        kp = self.ctx.kplus
+        self.kplus_index = int(kp.frame_idx[self.pole])
+        self.forward = kp.matrix(self.kplus_index)
+        self.backward = transpose(self.forward)
+        assert is_rotation_x(self.forward) and kp.pole_images_ok(self.kplus_index)
+        assert matvec(self.forward, self.ctx.data.N[0]) == self.ctx.data.N[self.pole]
+        assert [self.scale * x for x in matvec(self.forward, self.ctx.data.N[0])] == geo.p0_x
+        # Floats propose a J4 K+ index; equality of exact matrices certifies membership.
+        errors = np.abs(geo.kplus - to_float(self.forward)).reshape(7200, 16).max(1)
+        self.j4_kplus_index = int(np.argmin(errors))
+        assert key_x(geo.kx(self.j4_kplus_index)) == key_x(self.forward)
+        self.j4_pair = geo.kplus_pairs[self.j4_kplus_index]
+
+        self.a4 = sim.TwistMenu.a4(self.ctx)
+        assert {key_x(self.to_j4(m)) for _, m in self.a4.items} == {key_x(m) for m in geo.A4_x}
+        self.groups = {name.lower(): [groups.lift(m) for m in elements]
+                       for name, elements in groups.build().items()}
+        self.references = {'s4': sim.TwistMenu.s4(self.ctx)}
+        assert {key_x(m) for m in self.groups['s4']} == {
+            key_x(m) for _, m in self.references['s4'].items}
+        for name in ('i_a', 'i_b'):
+            self.references[name] = sim.TwistMenu(self.ctx, name, self.items(self.groups[name]), close=False)
+        self.reference_keys = {name: {key_x(m) for _, m in menu.items}
+                               for name, menu in self.references.items()}
+
+    @staticmethod
+    def items(matrices):
+        return [(f'element[{i}]', m) for i, m in enumerate(matrices)]
+
+    def to_j4(self, m):
+        return matmul(matmul(self.forward, m), self.backward)
+
+    def to_j1(self, m):
+        return matmul(matmul(self.backward, m), self.forward)
+
+    def identify(self, menu):
+        if not menu.exact:
+            return
+        matrices = [self.to_j1(m) for m in menu.x]
+        # close=False verifies rotation, fixed pole, inverses, A4 and A4-conjugation closure.
+        j1 = self.twist_menu(self.ctx, menu.name, self.items(matrices), close=False)
+        menu.j1_menu_identity = j1.identity
+        keys = {key_x(m) for m in matrices}
+        menu.j1_relation = {name: ('equal' if keys == ref else 'contained' if keys < ref else 'not-contained')
+                            for name, ref in self.reference_keys.items()}
+
+    def describe(self):
+        return {'j1_pole': self.pole, 'j1_kplus_index': self.kplus_index,
+                'j4_kplus_index': self.j4_kplus_index, 'j4_quaternion_pair': list(self.j4_pair),
+                'j4_pole_scale_q_sqrt5': q5_json(self.scale),
+                'j1_to_j4_matrix_q_sqrt5': [[q5_json(x) for x in row] for row in self.forward]}
+
+
+def group_menus(geo, j1):
+    out = []
+    for name, label, size in (('s4', 'S4₀ (octahedral group)', 24),
+                              ('i_a', 'I_a (icosahedral group)', 60),
+                              ('i_b', 'I_b (icosahedral group)', 60)):
+        matrices = [j1.to_j4(m) for m in j1.groups[name]]
+        keys = {key_x(m) for m in matrices}
+        assert len(keys) == size, f'{name}: wrong group size'
+        assert all(is_rotation_x(m) and matvec(m, geo.p0_x) == geo.p0_x for m in matrices)
+        assert {key_x(m) for m in geo.A4_x} <= keys, f'{name}: missing J4 A4'
+        assert all(key_x(transpose(m)) in keys for m in matrices), f'{name}: missing inverse'
+        assert all(key_x(matmul(a, b)) in keys for a in matrices for b in matrices), f'{name}: not closed'
+        menu = Menu(geo, name, label, 'group', [to_float(m) for m in matrices], matrices, {})
+        assert menu.size == size and {key_x(m) for m in menu.x} == keys
+        out.append(menu)
+    return out
 
 
 def rotation_angle(m4, n0):
@@ -400,8 +504,10 @@ def plane_menus(geo):
 
 
 def all_menus(geo):
+    if not hasattr(geo, 'j1'):
+        geo.j1 = J1Menus(geo)
     a4 = Menu(geo, 'a4', 'A4 only (control)', 'control', [], [], {})
-    return [a4] + realignment_menus(geo) + plane_menus(geo)
+    return [a4] + group_menus(geo, geo.j1) + realignment_menus(geo) + plane_menus(geo)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1071,7 +1177,21 @@ def brute_all_depth1(geo, canon, menu, threshold):
 
 def selftest(geo, canon, menus, threshold):
     ok = True
-    for name, depth in (('class-00', 2), ('class-05', 2), ('plane-10', 1)):
+    for name, reference in [('a4', geo.j1.a4)] + list(geo.j1.references.items()):
+        matches = menus[name].describe()['j1_menu_identity'] == reference.identity
+        print(f'selftest J1 identity {name}: {menus[name].j1_menu_identity}', 'ok' if matches else 'MISMATCH')
+        ok &= matches
+    relation = menus['class-00'].describe()['j1_relation']['s4']
+    matches = relation == 'contained' and menus['class-00'].size < menus['s4'].size
+    print(f'selftest class-00 relation to S4: {relation}, sizes '
+          f'{menus["class-00"].size} < {menus["s4"].size}', 'ok' if matches else 'MISMATCH')
+    ok &= matches
+    identities = all(len(m.describe()['j1_menu_identity']) == 64 and len(m.j1_relation) == 3
+                     for m in menus.values() if m.exact)
+    identities &= 'j1_menu_identity' not in menus['plane-36-float'].describe()
+    print('selftest identities and relations for every exact menu:', 'ok' if identities else 'MISMATCH')
+    ok &= identities
+    for name, depth in (('s4', 2), ('class-00', 2), ('class-05', 2), ('plane-10', 1)):
         m = menus[name]
         ex = Explorer(geo, canon, m, 'lattice', threshold, max_depth=depth, log=lambda s: None)
         red = [lv['cumulative_grips'] for lv in ex.run()['levels']]
@@ -1087,6 +1207,23 @@ def selftest(geo, canon, menus, threshold):
         print(f'selftest all-grips {name} depth 1: reduced (grips, positions) {red}, direct {bru}',
               'ok' if red == bru else 'MISMATCH')
         ok &= red == bru
+    # Exercise the merge without writing result or point files in the implementation sandbox.
+    previous = json.loads(OUT_RESULTS.read_text())
+    snapshot = json.dumps(previous, sort_keys=True)
+    new_runs = [{'id': f'{name}__{kind}', 'menu': name, 'twisting': kind}
+                for name in ('s4', 'i_a', 'i_b') for kind in ('lattice', 'all')]
+    current = {'menus': [m.describe() for m in menus.values()], 'runs': new_runs,
+               'parameters': dict(previous['parameters']), 'generated_by': 'selftest',
+               'j1_frame_map': geo.j1.describe()}
+    merged = merge_preset_documents(previous, current)
+    untouched = [r for r in previous['runs'] if r['menu'] not in ('s4', 'i_a', 'i_b')]
+    merged_runs = {r['id']: r for r in merged['runs']}
+    preserved = all(json.dumps(r, indent=1) == json.dumps(merged_runs[r['id']], indent=1) for r in untouched)
+    preserved &= all(merged_runs[r['id']] == r for r in new_runs)
+    preserved &= merged['parameters'] == previous['parameters'] and json.dumps(previous, sort_keys=True) == snapshot
+    preserved &= merge_preset_documents(merged, current)['runs'] == merged['runs']
+    print('selftest filtered preset merge preserves other runs and parameters:', 'ok' if preserved else 'MISMATCH')
+    ok &= preserved
     return ok
 
 
@@ -1131,14 +1268,66 @@ PRESET = {'lattice': {'depth': 8, 'budget': 150000, 'time_limit': 600},
           'all': {'depth': 3, 'budget': 60000, 'time_limit': 300}}
 
 
-def preset(threshold, workers, exact_cap):
+def select_menus(menus, names):
+    if names is None:
+        return menus
+    unknown = set(names) - {m.name for m in menus}
+    if not names or any(not name for name in names) or unknown:
+        raise ValueError(f'--menus must name known menus; unknown: {", ".join(sorted(unknown))}')
+    return [m for m in menus if m.name in names]
+
+
+def validate_merge_parameters(previous, current):
+    # Workers and duration describe a batch, not the mathematical search parameters.
+    for key, value in current.items():
+        if key not in ('workers', 'wall_seconds') and previous.get(key) != value:
+            raise ValueError(f'cannot merge preset with different {key}; use the existing parameters')
+
+
+def merge_preset_documents(previous, current):
+    """Replace only selected run records; keep old menu metadata except J1 identity fields."""
+    validate_merge_parameters(previous['parameters'], current['parameters'])
+    doc = dict(previous)
+    fresh_menus = {m['name']: m for m in current['menus']}
+    old_names = {m['name'] for m in previous['menus']}
+    doc['menus'] = []
+    for old in previous['menus']:
+        m = dict(old)
+        fresh = fresh_menus.get(m['name'], {})
+        for field in ('j1_menu_identity', 'j1_relation'):
+            if field in fresh:
+                m[field] = fresh[field]
+        doc['menus'].append(m)
+    # Do not offer an unrun new menu in the viewer.
+    run_names = {r['menu'] for r in current['runs']}
+    doc['menus'].extend(m for m in current['menus'] if m['name'] not in old_names and m['name'] in run_names)
+    fresh_runs = {r['id']: r for r in current['runs']}
+    old_ids = {r['id'] for r in previous['runs']}
+    doc['runs'] = [fresh_runs.get(r['id'], r) for r in previous['runs']]
+    doc['runs'].extend(r for r in current['runs'] if r['id'] not in old_ids)
+    doc['j1_frame_map'] = current['j1_frame_map']
+    doc['preset_merges'] = list(previous.get('preset_merges', [])) + [{
+        'generated_by': current['generated_by'], 'parameters': current['parameters'],
+        'run_ids': [r['id'] for r in current['runs']]}]
+    return doc
+
+
+def preset(threshold, workers, exact_cap, names=None):
     from multiprocessing import Pool
     geo = Geometry()
     menus = all_menus(geo)
+    selected = select_menus(menus, names)
+    previous = json.loads(OUT_RESULTS.read_text()) if names is not None and OUT_RESULTS.exists() else None
+    parameters = {'threshold_deg': threshold, 'preset': PRESET, 'pos_tol_chord': POS_TOL,
+                  'frame_tol': FRAME_TOL, 'tie_eps': TIE_EPS, 'hash_cell': HASH_CELL,
+                  'separation_max_representatives': SEPARATION_MAX_REPS,
+                  'exact_cap_per_run': exact_cap, 'seed': SEED, 'workers': workers}
+    if previous is not None:
+        validate_merge_parameters(previous['parameters'], parameters)
     jobs = []
     for twisting in ('lattice', 'all'):
         cfg = PRESET[twisting]
-        for m in menus:
+        for m in selected:
             jobs.append((m.name, twisting, threshold, cfg['depth'], cfg['budget'], cfg['time_limit'],
                          exact_cap))
     t0 = time.time()
@@ -1154,21 +1343,23 @@ def preset(threshold, workers, exact_cap):
     lat = geo.poles[geo.poles @ geo.n0 > math.cos(math.radians(120))]
     lat = lat[np.argsort(-(lat @ geo.n0))]
     ang = np.degrees(np.arccos(np.clip(lat @ geo.n0, -1, 1)))
-    (pdir / 'lattice.json').write_text(json.dumps({
-        'scale': 1e4, 'count': int(len(lat)), 'b64': encode_points(geo.stereo(lat)),
-        'angle_deg': [round(float(a), 3) for a in ang]}) + '\n')
+    if names is None or not (pdir / 'lattice.json').exists():
+        (pdir / 'lattice.json').write_text(json.dumps({
+            'scale': 1e4, 'count': int(len(lat)), 'b64': encode_points(geo.stereo(lat)),
+            'angle_deg': [round(float(a), 3) for a in ang]}) + '\n')
+    parameters['wall_seconds'] = round(time.time() - t0, 1)
     doc = {
-        'generated_by': 'python research/jumbling/explorer/explore.py --preset',
+        'generated_by': ('python research/jumbling/explorer/explore.py --preset'
+                         + (f' --menus {",".join(m.name for m in selected)}' if names is not None else '')),
         'evidence_kind': ('synthetic geometry: float search with exact Q(sqrt5) confirmation of '
                           'sampled coincidences and of the closest pair; leads, not proofs'),
-        'parameters': {'threshold_deg': threshold, 'preset': PRESET, 'pos_tol_chord': POS_TOL,
-                       'frame_tol': FRAME_TOL, 'tie_eps': TIE_EPS, 'hash_cell': HASH_CELL,
-                       'separation_max_representatives': SEPARATION_MAX_REPS,
-                       'exact_cap_per_run': exact_cap, 'seed': SEED, 'workers': workers,
-                       'wall_seconds': round(time.time() - t0, 1)},
-        'menus': [m.describe() for m in menus],
+        'parameters': parameters,
+        'menus': [m.describe() for m in (menus if previous is not None else selected)],
+        'j1_frame_map': geo.j1.describe(),
         'runs': runs,
     }
+    if previous is not None:
+        doc = merge_preset_documents(previous, doc)
     OUT_RESULTS.write_text(json.dumps(doc, indent=1) + '\n')
     print(f'wrote {OUT_RESULTS} and {pdir} ({time.time() - t0:.0f} s)')
 
@@ -1229,17 +1420,24 @@ def main(argv=None):
     ap.add_argument('--list-menus', action='store_true')
     ap.add_argument('--preset', action='store_true',
                     help='run every menu with both closures and write the result files')
+    ap.add_argument('--menus', help='comma-separated menu names for --preset; merge only these runs')
     ap.add_argument('--workers', type=int, default=4)
     ap.add_argument('--selftest', action='store_true',
                     help='compare the reduced search with a direct search on small cases')
     ap.add_argument('--table', action='store_true',
                     help='print the Markdown results tables from explorer-results.json')
     args = ap.parse_args(argv)
+    if args.menus is not None and not args.preset:
+        ap.error('--menus requires --preset')
     if args.table:
         table()
         return 0
     if args.preset:
-        preset(args.threshold, args.workers, args.exact_cap)
+        names = [name.strip() for name in args.menus.split(',')] if args.menus is not None else None
+        try:
+            preset(args.threshold, args.workers, args.exact_cap, names)
+        except ValueError as exc:
+            ap.error(str(exc))
         return 0
     geo = Geometry()
     canon = Canon(geo)
@@ -1247,7 +1445,9 @@ def main(argv=None):
     if args.list_menus:
         for m in menus.values():
             print(f'{m.name:16s} {m.size:3d} elements ({len(m.jumble)} jumble), '
-                  f'{"exact" if m.exact else "float"}: {m.label}')
+                  f'{m.family}, {"exact" if m.exact else "float"}: {m.label}')
+            if m.exact:
+                print(f'  J1 {m.j1_menu_identity}; relation {json.dumps(m.j1_relation)}')
         return 0
     if args.selftest:
         return 0 if selftest(geo, canon, menus, args.threshold) else 1
@@ -1264,4 +1464,3 @@ def main(argv=None):
 
 if __name__ == '__main__':
     sys.exit(main())
-

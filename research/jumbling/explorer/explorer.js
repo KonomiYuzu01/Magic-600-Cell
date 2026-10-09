@@ -8,7 +8,7 @@ const $ = (id) => document.getElementById(id);
 const THRESHOLD_DEG = 46.8;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const KIND_TEXT = { lattice: '600 lattice grips twist', all: 'every grip twists' };
-const FAMILY_TEXT = { control: 'Control', realignment: 'Realignment classes', plane: 'Plane rotations' };
+const FAMILY_TEXT = { control: 'Control', group: 'Groups', realignment: 'Realignment classes', plane: 'Plane rotations' };
 
 const state = {
   doc: null, menus: new Map(), runs: new Map(), kind: 'lattice', menu: null,
@@ -257,6 +257,14 @@ function renderFacts() {
   const rows = [];
   rows.push(['Closure', KIND_TEXT[run.twisting]]);
   rows.push(['Menu', `${menu.size} rotations: A4 and ${menu.jumble_elements} jumble twists, ${menu.exact_q_sqrt5 ? 'exact in Q(√5)' : 'float only'}`]);
+  if (menu.j1_menu_identity) {
+    rows.push(['J1 menu identity', el('span', { title: menu.j1_menu_identity, 'data-j1-identity': menu.j1_menu_identity },
+      `${menu.j1_menu_identity.slice(0, 16)}…`)]);
+    const names = { s4: 'S4₀', i_a: 'I_a', i_b: 'I_b' };
+    const relations = { equal: 'equals', contained: 'contained in', 'not-contained': 'not contained in' };
+    rows.push(['J1 relation', Object.entries(menu.j1_relation)
+      .map(([name, relation]) => `${relations[relation]} ${names[name]}`).join('; ')]);
+  }
   if (menu.generator_angle_deg !== undefined) rows.push(['Generator angle', `${menu.generator_angle_deg.toFixed(4)}°`]);
   if (menu.family === 'realignment') {
     rows.push(['Aligned poles', `${menu.aligned_poles} of 56 (by shell ${menu.aligned_per_shell.join(', ')})`]);
@@ -442,7 +450,8 @@ function populateMenus() {
   const groups = new Map();
   for (const m of state.menus.values()) {
     if (!groups.has(m.family)) groups.set(m.family, el('optgroup', { label: FAMILY_TEXT[m.family] || m.family }));
-    groups.get(m.family).append(el('option', { value: m.name }, m.label));
+    const label = m.family === 'group' ? `${m.label} · group · ${m.size} elements` : m.label;
+    groups.get(m.family).append(el('option', { value: m.name }, label));
   }
   for (const g of groups.values()) sel.append(g);
 }
@@ -454,7 +463,8 @@ async function main() {
   populateMenus();
   buildLattice(await loadJSON('points/lattice.json'));
   const fromHash = location.hash.slice(1);
-  state.menu = state.menus.has(fromHash) ? fromHash : 'class-00';
+  state.menu = state.menus.has(fromHash) ? fromHash
+    : state.menus.has('class-00') ? 'class-00' : state.menus.keys().next().value;
   $('menu').value = state.menu;
   state.depth = 2;
   $('menu').addEventListener('change', (e) => selectMenu(e.target.value));
