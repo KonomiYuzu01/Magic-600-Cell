@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-09] decision | Jumbling enters 1.0
+Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md): no fudged variant; rigid jumbling of the retained geometry becomes an independent 1.0 puzzle and a Jumble feature, with simulator, viewer, solving theory and grip-orbit explorer started and a renderer packet at mid-stage. Plan: [jumbling-plan](../progress/1.0/jumbling-plan.md).
+
 ## [2026-10-09] update | 0.4 function atlas
 [atlas](../progress/1.0/atlas/README.md) builds one interactive page from the 2.1 inventories and the signed 2.2 dispositions: flows, dependency map, flow-by-area matrix, units, the H-08 command table and the screening findings, with each unit's 0.4 behaviour and 1.0 decision. The build fails when its decision counts differ from dispositions.md.
 
