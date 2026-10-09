@@ -60,7 +60,7 @@ Source: [jumbling plan](../../jumbling-plan.md) section 3b, made standalone at m
   - `regions.py`: one exact region per K⁺-orbit, transported by K⁺;
   - `model.py`: model identity (SHA-256 of the asset bytes as read) and `CONTRACT_REVISION`.
 - **Fixtures:** `research/jumbling/fixtures/wj-<menu>.json` (menus S4, I_a, I_b): exact menu record, journal with identities, digests and array hashes at start, mid and end, the swept twist and the end survey with certificates. `research/jumbling/sim/acceptance.json` holds further replayable journals (the witness, seeded mixed sequences, the negative control).
-- **Theory used by the engine:** `research/jumbling/theory/theory-draft.md` (draft, verified once by Astra; its findings are adopted and a scoped verification is pending):
+- **Theory used by the engine:** `research/jumbling/theory/theory-draft.md` (draft; Astra verification and two scoped rounds, the last passed with no findings, `20261009T232508Z-5e6b0f1d`):
   - Proposition 1.2: the inverse of an admissible twist is admissible with the same inside set, so undo is always legal;
   - Theorem 2.1: after one twist from a valid lattice configuration (every reachable lattice configuration is valid), the blocked grips follow from the cap polytope alone, which gives an exact fast path for that common case;
   - Proposition 4.1: in every reachable state each centre piece's pose fixes its own pole, so a centre never leaves its place; the engine can assert this after every committed twist, and a global rotation of the puzzle is never a reachable state;
