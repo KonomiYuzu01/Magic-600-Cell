@@ -1,0 +1,472 @@
+{
+  "format": "magic600-look-parameters",
+  "version": 1,
+  "parameters": [
+    {
+      "id": "hueRotation",
+      "group": "Colour",
+      "kind": "number",
+      "min": 0,
+      "max": 360,
+      "step": 1,
+      "default": 0,
+      "costFeature": null,
+      "description": "Sticker palette starting hue in degrees."
+    },
+    {
+      "id": "hueSpread",
+      "group": "Colour",
+      "kind": "number",
+      "min": 60,
+      "max": 360,
+      "step": 1,
+      "default": 360,
+      "costFeature": null,
+      "description": "Hue span distributed over the ring colour classes."
+    },
+    {
+      "id": "lightness",
+      "group": "Colour",
+      "kind": "number",
+      "min": 0.45,
+      "max": 0.85,
+      "step": 0.01,
+      "default": 0.7,
+      "costFeature": null,
+      "description": "Sticker OKLab lightness before alternating offsets."
+    },
+    {
+      "id": "lightnessAlt",
+      "group": "Colour",
+      "kind": "number",
+      "min": 0,
+      "max": 0.2,
+      "step": 0.01,
+      "default": 0.05,
+      "costFeature": null,
+      "description": "Alternating negative and positive sticker lightness offset."
+    },
+    {
+      "id": "chroma",
+      "group": "Colour",
+      "kind": "number",
+      "min": 0.04,
+      "max": 0.2,
+      "step": 0.01,
+      "default": 0.12,
+      "costFeature": null,
+      "description": "Requested OKLCH sticker chroma, mapped into sRGB gamut."
+    },
+    {
+      "id": "classes",
+      "group": "Colour",
+      "kind": "integer",
+      "min": 4,
+      "max": 8,
+      "step": 1,
+      "default": 6,
+      "costFeature": null,
+      "description": "Number of proper ring colour classes."
+    },
+    {
+      "id": "bgLightness",
+      "group": "Colour",
+      "kind": "number",
+      "min": 0.05,
+      "max": 0.95,
+      "step": 0.01,
+      "default": 0.26208135203457433,
+      "costFeature": null,
+      "description": "Background OKLab lightness."
+    },
+    {
+      "id": "bgHue",
+      "group": "Colour",
+      "kind": "number",
+      "min": 0,
+      "max": 360,
+      "step": 1,
+      "default": 248.1740890656654,
+      "costFeature": null,
+      "description": "Background OKLCH hue in degrees."
+    },
+    {
+      "id": "bgTint",
+      "group": "Colour",
+      "kind": "number",
+      "min": 0,
+      "max": 0.05,
+      "step": 0.001,
+      "default": 0.009079176564054185,
+      "costFeature": null,
+      "description": "Background OKLCH chroma."
+    },
+    {
+      "id": "gap",
+      "group": "Structure",
+      "kind": "number",
+      "min": 0,
+      "max": 0.3,
+      "step": 0.01,
+      "default": 0.24,
+      "costFeature": null,
+      "description": "Cell shrink amount: S-B cs equals one minus gap."
+    },
+    {
+      "id": "edgeWeight",
+      "group": "Material",
+      "kind": "number",
+      "min": 0,
+      "max": 3,
+      "step": 0.05,
+      "default": 0,
+      "costFeature": "edgeWeight",
+      "description": "Barycentric edge treatment weight."
+    },
+    {
+      "id": "edgeBrightness",
+      "group": "Material",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0,
+      "costFeature": null,
+      "description": "Linear black to white edge brightness."
+    },
+    {
+      "id": "gloss",
+      "group": "Material",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0,
+      "costFeature": "gloss",
+      "description": "Specular gloss amount; retains the Taste Lab meaning."
+    },
+    {
+      "id": "glow",
+      "group": "Material",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0,
+      "costFeature": "glow",
+      "description": "Rim glow amount."
+    },
+    {
+      "id": "fog",
+      "group": "Light and depth",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0,
+      "costFeature": "fog",
+      "description": "Depth fog amount."
+    },
+    {
+      "id": "turnMs",
+      "group": "Motion",
+      "kind": "number",
+      "min": 150,
+      "max": 900,
+      "step": 1,
+      "default": 190,
+      "costFeature": null,
+      "description": "Duration in milliseconds of each generator or inverse turn."
+    },
+    {
+      "id": "easeA",
+      "group": "Motion",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0.3333333333333333,
+      "costFeature": null,
+      "description": "First easing control x at (a,0)."
+    },
+    {
+      "id": "easeB",
+      "group": "Motion",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0.3333333333333333,
+      "costFeature": null,
+      "description": "Second easing control x at (1-b,1)."
+    },
+    {
+      "id": "projection",
+      "group": "Structure",
+      "kind": "enum",
+      "values": [
+        "perspective",
+        "stereographic",
+        "orthographic"
+      ],
+      "default": "perspective",
+      "costFeature": null,
+      "description": "4D projection kind; stereographic fixes d4 to one."
+    },
+    {
+      "id": "d4",
+      "group": "Structure",
+      "kind": "number",
+      "min": 1.01,
+      "max": 4,
+      "step": 0.01,
+      "default": 1.18,
+      "costFeature": null,
+      "description": "4D perspective eye parameter used before the 3D camera."
+    },
+    {
+      "id": "stickerShrink",
+      "group": "Structure",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0.82,
+      "costFeature": null,
+      "description": "S-B ss: sticker shrink around each sticker centre."
+    },
+    {
+      "id": "highlight",
+      "group": "Structure",
+      "kind": "enum",
+      "values": [
+        "none",
+        "fibration",
+        "orbit"
+      ],
+      "default": "none",
+      "costFeature": "highlight",
+      "description": "Structure highlighting mode."
+    },
+    {
+      "id": "cellsVisible",
+      "group": "Structure",
+      "kind": "boolean",
+      "default": true,
+      "costFeature": null,
+      "description": "Show the cell geometry; labels and slots are unaffected."
+    },
+    {
+      "id": "sliceVisible",
+      "group": "Structure",
+      "kind": "boolean",
+      "default": false,
+      "costFeature": null,
+      "description": "Restrict the visible geometry to the selected normalized 4D w band."
+    },
+    {
+      "id": "sliceMin",
+      "group": "Structure",
+      "kind": "number",
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "default": -1,
+      "costFeature": null,
+      "description": "Lower normalized 4D w bound of the visibility band."
+    },
+    {
+      "id": "sliceMax",
+      "group": "Structure",
+      "kind": "number",
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "default": 1,
+      "costFeature": null,
+      "description": "Upper normalized 4D w bound of the visibility band."
+    },
+    {
+      "id": "accentPrimary",
+      "group": "Colour",
+      "kind": "colour",
+      "default": {
+        "L": 0.75,
+        "C": 0.09,
+        "h": 220
+      },
+      "costFeature": null,
+      "description": "Primary instrument accent in OKLCH."
+    },
+    {
+      "id": "accentSecondary",
+      "group": "Colour",
+      "kind": "colour",
+      "default": {
+        "L": 0.75,
+        "C": 0.09,
+        "h": 40
+      },
+      "costFeature": null,
+      "description": "Secondary instrument accent in OKLCH."
+    },
+    {
+      "id": "finish",
+      "group": "Material",
+      "kind": "enum",
+      "values": [
+        "matte",
+        "gloss",
+        "glass"
+      ],
+      "default": "matte",
+      "costFeature": "finish",
+      "description": "Surface finish, with gloss controlled independently."
+    },
+    {
+      "id": "keyLight",
+      "group": "Light and depth",
+      "kind": "number",
+      "min": 0,
+      "max": 2,
+      "step": 0.01,
+      "default": 0.5,
+      "costFeature": "keyLight",
+      "description": "Directional key-light gain; default matches S-B shading."
+    },
+    {
+      "id": "fillLight",
+      "group": "Light and depth",
+      "kind": "number",
+      "min": 0,
+      "max": 2,
+      "step": 0.01,
+      "default": 0.5,
+      "costFeature": "fillLight",
+      "description": "Ambient fill-light gain; default matches S-B shading."
+    },
+    {
+      "id": "depthOfField",
+      "group": "Light and depth",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0,
+      "costFeature": "depthOfField",
+      "description": "Depth-of-field amount, disabled by default."
+    },
+    {
+      "id": "ambientOcclusion",
+      "group": "Light and depth",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0,
+      "costFeature": "ambientOcclusion",
+      "description": "Ambient-occlusion amount, disabled by default."
+    },
+    {
+      "id": "inertia",
+      "group": "Motion",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0,
+      "costFeature": null,
+      "description": "Camera inertia amount."
+    },
+    {
+      "id": "settle",
+      "group": "Motion",
+      "kind": "curve",
+      "default": {
+        "a": 0.3333333333333333,
+        "b": 0.3333333333333333
+      },
+      "costFeature": null,
+      "description": "Normalized settling response with controls (a,0) and (1-b,1)."
+    },
+    {
+      "id": "cameraDamping",
+      "group": "Motion",
+      "kind": "number",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "default": 0,
+      "costFeature": null,
+      "description": "Camera damping amount."
+    },
+    {
+      "id": "fieldOfView",
+      "group": "Structure",
+      "kind": "number",
+      "min": 0.2,
+      "max": 2.8,
+      "step": 0.01,
+      "default": 1.4314871793377604,
+      "costFeature": null,
+      "description": "Vertical field of view in radians; zoom is one over tan(fov/2)."
+    },
+    {
+      "id": "panelDensity",
+      "group": "Frame",
+      "kind": "number",
+      "min": 0.5,
+      "max": 2,
+      "step": 0.05,
+      "default": 1,
+      "costFeature": null,
+      "description": "Instrument spacing and row density scale."
+    },
+    {
+      "id": "typeScale",
+      "group": "Frame",
+      "kind": "number",
+      "min": 0.75,
+      "max": 2,
+      "step": 0.05,
+      "default": 1,
+      "costFeature": null,
+      "description": "Typography scale relative to the app's base type sample."
+    },
+    {
+      "id": "layoutId",
+      "group": "Layout",
+      "kind": "enum",
+      "values": [
+        "central-stage",
+        "docked-workbench"
+      ],
+      "default": "central-stage",
+      "costFeature": null,
+      "description": "Greybox layout structure id."
+    },
+    {
+      "id": "viewportShare",
+      "group": "Layout",
+      "kind": "number",
+      "min": 0.3,
+      "max": 0.9,
+      "step": 0.01,
+      "default": 0.7,
+      "costFeature": null,
+      "description": "Requested fraction of the window devoted to the stage."
+    },
+    {
+      "id": "panelPlacement",
+      "group": "Layout",
+      "kind": "enum",
+      "values": [
+        "docked",
+        "overlay"
+      ],
+      "default": "overlay",
+      "costFeature": null,
+      "description": "Instrument panel placement mode."
+    }
+  ]
+}

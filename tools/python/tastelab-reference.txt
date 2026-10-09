@@ -1,0 +1,12 @@
+# Linux cloud reference only. From the repository root:
+# python3 -m venv /tmp/tastelab-reference
+# /tmp/tastelab-reference/bin/python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# /tmp/tastelab-reference/bin/python -m pip install -r tools/python/tastelab-reference.txt
+# PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=tools /tmp/tastelab-reference/bin/python -m tastelab.openclip_reference
+# torch/torchvision CPU versions are recorded in producer; never install here on Windows.
+open_clip_torch==3.3.0
+pillow==12.3.0
+numpy==2.5.3
+scipy==1.18.1
+ftfy==6.3.1
+regex==2026.9.10

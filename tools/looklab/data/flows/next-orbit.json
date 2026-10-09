@@ -1,0 +1,29 @@
+{
+  "format": "magic600-look-flow",
+  "version": 1,
+  "id": "next-orbit",
+  "name": "Continue with locked Next or select the next orbit",
+  "draft": true,
+  "steps": [
+    {
+      "command": "view.residuals",
+      "context": "any"
+    },
+    {
+      "command": "target.next.activate",
+      "context": "any"
+    },
+    {
+      "command": "orbit.switch",
+      "context": "any"
+    },
+    {
+      "command": "view.recommendations",
+      "context": "any"
+    },
+    {
+      "command": "view.global",
+      "context": "any"
+    }
+  ]
+}

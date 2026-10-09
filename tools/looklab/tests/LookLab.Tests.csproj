@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Allow named, invariant cultures in the cross-culture writer tests. -->
+    <PredefinedCulturesOnly>false</PredefinedCulturesOnly>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../core/LookLab.Core.csproj" />
+    <Compile Include="../app/Platform/PresetFiles.cs" Link="PresetFiles.cs" />
+    <Compile Include="../app/ShaderSource.cs" Link="ShaderSource.cs" />
+    <Compile Include="../app/LL3/ModeModel.cs" Link="LL3ModeModel.cs" />
+    <Compile Include="../app/LL3/CaptureEncoding.cs" Link="LL3CaptureEncoding.cs" />
+    <Compile Include="../app/LL4/FlowRunner.cs" Link="LL4/FlowRunner.cs" />
+    <Compile Include="../app/LL4/FlowReportFiles.cs" Link="LL4/FlowReportFiles.cs" />
+    <Compile Include="../app/LL5/CvdTransform.cs" Link="LL5CvdTransform.cs" />
+    <Compile Include="../app/LL5/CvdCheckData.cs" Link="LL5CvdCheckData.cs" />
+    <Compile Include="../app/LL5/CvdProbeSource.cs" Link="LL5CvdProbeSource.cs" />
+    <Compile Include="../app/LL5/PaletteDisplay.cs" Link="LL5PaletteDisplay.cs" />
+    <Compile Include="../app/LL5/CostDisplay.cs" Link="LL5CostDisplay.cs" />
+  </ItemGroup>
+</Project>
