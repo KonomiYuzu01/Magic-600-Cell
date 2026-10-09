@@ -5,6 +5,9 @@ for the retained slot moves used only in comparisons, `assets/primitives.npz`. E
 recovered with `exact.from_float`, which rejects any entry that is not a unique
 (p + q sqrt5)/2 value.
 """
+import hashlib
+from io import BytesIO
+
 import numpy as np
 
 import witness as W
@@ -13,12 +16,21 @@ from exact import Q5
 NP = 177120          # pieces, cell centres included
 NS = 259800          # labelled sticker slots
 CELL_SLOTS = 433     # slots per cell; slot s lies on facet s // 433
+CONTRACT_REVISION = 'state-contract 2026-10-09 A1-A4'
 
 
 class ModelData:
     def __init__(self):
-        m = W.M
         self.root = W.ROOT
+        model_bytes = (self.root / 'assets' / 'model.npz').read_bytes()
+        self._primitive_bytes = (self.root / 'assets' / 'primitives.npz').read_bytes()
+        self.identity = {'assets/model.npz': hashlib.sha256(model_bytes).hexdigest(),
+                         'assets/primitives.npz': hashlib.sha256(self._primitive_bytes).hexdigest()}
+        m = np.load(BytesIO(model_bytes))
+        # The region builder uses witness's read-only model. It must describe the same bytes.
+        for key in ('normals', 'mask_offsets', 'mask_values', 'face_offsets', 'face_values'):
+            if not np.array_equal(m[key], W.M[key]):
+                raise ValueError('model changed after witness loaded it')
         self.NF = W.NF
         self.N = W.N                               # exact poles, lists of Q5
         assert len(set(W.NN)) == 1, 'poles must share one length'
@@ -33,6 +45,11 @@ class ModelData:
         self.face_values = m['face_values'].astype(np.int64)
         self.slot_piece = m['slot_piece'].astype(np.int64)
         self.orbit_id = m['orbit_id'].astype(np.int64)
+        self.centre_pieces = np.flatnonzero(self.orbit_id == -1)
+        self.centre_poles = self.mask_values[self.mask_offsets[self.centre_pieces]]
+        assert len(self.centre_pieces) == 600 and np.all(np.diff(self.mask_offsets)[self.centre_pieces] == 1)
+        self.centre_slots = np.flatnonzero(self.orbit_id[self.slot_piece] == -1)
+        assert len(self.centre_slots) == 600
         self.rotperms = m['rotperms'].astype(np.int64)
         self.move_src = m['move_src'].astype(np.int64)
         self.move_dst = m['move_dst'].astype(np.int64)
@@ -67,6 +84,7 @@ class ModelData:
         self.slot_key_order = np.argsort(keys, kind='stable')
         self.slot_keys_sorted = keys[self.slot_key_order]
         assert np.all(np.diff(self.slot_keys_sorted) > 0), 'a piece has two slots on one facet'
+        m.close()
 
     # ------------------------------------------------------------------------------------
     def signature(self, p):
@@ -106,5 +124,5 @@ class ModelData:
 
     def primitives(self):
         """Retained slot moves (src, dst, offsets) from assets/primitives.npz, read-only."""
-        z = np.load(self.root / 'assets' / 'primitives.npz')
-        return z['src'].astype(np.int64), z['dst'].astype(np.int64), z['offsets'].astype(np.int64)
+        with np.load(BytesIO(self._primitive_bytes)) as z:
+            return z['src'].astype(np.int64), z['dst'].astype(np.int64), z['offsets'].astype(np.int64)

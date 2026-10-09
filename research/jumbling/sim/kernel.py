@@ -49,6 +49,8 @@ FILTER_REL = 2.0 ** -48
 FILTER_ABS = 2.0 ** -1000
 WINDOW_LO = 2.0 ** -500
 WINDOW_HI = 2.0 ** 500
+ARITHMETIC_VERSION = 'Q5-integer-sign-1 / binary64'
+ERROR_BOUND_VERSION = 'Q5-forward-error-1 (2^-48 magnitude + 2^-1000)'
 
 
 def lcm(a, b):
@@ -213,9 +215,11 @@ def _in_window(m):
     return bool(np.all(np.isfinite(m)) and (nz.size == 0 or (nz.min() >= WINDOW_LO and nz.max() <= WINDOW_HI)))
 
 
-def filtered_signs(ev, vform, frows, budget=None):
+def filtered_signs(ev, vform, frows, budget=None, record=None):
     """Signs of y . v - kappa for every vertex: float where the bound decides, exact elsewhere.
 
+    With a list in `record`, append each vertex's enclosure and accepted sign or exact
+    fallback. State.classify supplies the pose, identities and coverage of those inputs.
     Returns (signs list, number decided by the filter, number decided exactly), or None when
     more than `budget` exact evaluations would be needed (the caller treats that as uncertain)."""
     ff = ev.float_form()
@@ -223,16 +227,36 @@ def filtered_signs(ev, vform, frows, budget=None):
     if ff is None or frows is None or not _in_window(frows[1]):
         if budget is not None and len(rows) > budget:
             return None
-        return [ev.sign_row(e, r) for r in rows], 0, len(rows)
+        out = [ev.sign_row(e, r) for r in rows]
+        if record is not None:
+            for j, sign in enumerate(out):
+                record.append({'vertex': j, 'method': 'exact_fallback', 'enclosure': None,
+                               'accepted_sign': sign, 'fallback_reason': 'input_outside_filter_window',
+                               'arithmetic_version': ARITHMETIC_VERSION,
+                               'error_bound_version': ERROR_BOUND_VERSION})
+        return out, 0, len(rows)
     yf, my = ff
     xf, mx = frows
-    s = xf @ yf - KAPPA_FLOAT
-    bound = (mx @ my + KAPPA_MAG) * FILTER_REL + FILTER_ABS
-    decided = np.abs(s) > bound
+    with np.errstate(over='ignore', invalid='ignore'):
+        s = xf @ yf - KAPPA_FLOAT
+        bound = (mx @ my + KAPPA_MAG) * FILTER_REL + FILTER_ABS
+        lo = np.nextafter(s - bound, -np.inf)
+        hi = np.nextafter(s + bound, np.inf)
+    finite = np.isfinite(s) & np.isfinite(bound) & np.isfinite(lo) & np.isfinite(hi)
+    decided = finite & ((lo > 0) | (hi < 0))
     exact_n = int((~decided).sum())
     if budget is not None and exact_n > budget:
         return None
     out = [(1 if s[j] > 0 else -1) if decided[j] else ev.sign_row(e, row) for j, row in enumerate(rows)]
+    if record is not None:
+        for j, sign in enumerate(out):
+            rec = {'vertex': j, 'method': 'filtered' if decided[j] else 'exact_fallback',
+                   'enclosure': [float(lo[j]), float(hi[j])] if finite[j] else None,
+                   'accepted_sign': sign, 'arithmetic_version': ARITHMETIC_VERSION,
+                   'error_bound_version': ERROR_BOUND_VERSION}
+            if not decided[j]:
+                rec['fallback_reason'] = 'enclosure_contains_zero' if finite[j] else 'non_finite_evaluation'
+            record.append(rec)
     return out, len(rows) - exact_n, exact_n
 
 

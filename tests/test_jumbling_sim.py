@@ -8,6 +8,7 @@ The full acceptance run over all 1,200 generators is research/jumbling/sim/accep
 tests read assets/model.npz and assets/primitives.npz read-only and write nothing.
 """
 import json
+import itertools
 import math
 import random
 import sys
@@ -21,11 +22,12 @@ sys.path.insert(0, str(ROOT / 'research' / 'jumbling'))
 
 import sim  # noqa: E402
 import witness as W  # noqa: E402
-from exact import ONE, ZERO, Q5, dot, matmul, matvec, transpose  # noqa: E402
+from exact import ONE, ZERO, Q5, dot, identity, matmul, matvec, transpose  # noqa: E402
 from sim.kernel import (Evaluator, classify_signs, filtered_signs, float_rows, pullback_form,  # noqa: E402
                         rows_form, sign5, sign5_vec)
-from sim.kplus import generator_word_matrix, q5_from_json, to_tuple  # noqa: E402
-from sim.model import CELL_SLOTS, NS  # noqa: E402
+from sim.kplus import generator_word_matrix, matrix_from_json, q5_from_json, to_tuple  # noqa: E402
+from sim.model import CELL_SLOTS, CONTRACT_REVISION, NS  # noqa: E402
+from sim.twists import nearest_parameter  # noqa: E402
 
 CTX = None
 PRIM = None
@@ -57,6 +59,36 @@ def witness_twists():
     g = sim.plane(CTX, c, d, degrees=10)
     td = next(a for a in W.a4(d) if sum((a[i][i] for i in range(4)), ZERO) == ONE and W.pole_perm(a)[c] != c)
     return c, d, g, sim.Twist(CTX, d, td)
+
+
+def negative_control():
+    axis = [dot(u, CTX.data.N[13]) / CTX.data.NN for u in sim.cap_frame(CTX.data.N[0])]
+    return sim.half_turn(CTX, 0, axis)
+
+
+def brute_input_map(axis, degrees, n, dmax):
+    """Independent exhaustive 3x3-matrix search, including every denominator."""
+    axis = np.array(axis, float)
+    axis /= np.linalg.norm(axis)
+    x, y, z = axis
+    cross = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
+    theta = math.radians(degrees)
+    target = np.eye(3) + math.sin(theta) * cross + (1 - math.cos(theta)) * (cross @ cross)
+    rows = []
+    for nums in itertools.product(range(-n, n + 1), repeat=3):
+        p = np.array(nums, float)
+        for d in range(1, dmax + 1):
+            x, y, z = p / d
+            w = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
+            r = np.eye(3) + 2 * (w + w @ w) / (1 + (p @ p) / (d * d))
+            rows.append((float(np.linalg.norm(r - target)), d, nums, 'cayley'))
+        canonical_angle = abs(math.remainder(degrees, 360))
+        if abs(canonical_angle - 180) <= 1 and np.any(p):
+            r = 2 * np.outer(p, p) / (p @ p) - np.eye(3)
+            rows.append((float(np.linalg.norm(r - target)), 1, nums, 'half_turn'))
+    best = min(row[0] for row in rows)
+    choice = min((d, nums, family) for dist, d, nums, family in rows if dist <= best + 1e-12)
+    return best, choice
 
 
 class KernelTest(unittest.TestCase):
@@ -110,6 +142,26 @@ class KernelTest(unittest.TestCase):
                     decided += nd
         self.assertGreater(decided, 1000)
 
+    def test_filter_records_exact_fallbacks(self):
+        ev = Evaluator(pullback_form(CTX.kplus.matrix(0), CTX.data.N[0]))
+        vf = rows_form(W.control_region(0, ZERO, Q5(1, 0, 1000)))
+        records = []
+        signs, _, exact = filtered_signs(ev, vf, float_rows(vf), record=records)
+        self.assertGreater(exact, 0)
+        self.assertEqual(signs, [r['accepted_sign'] for r in records])
+        self.assertTrue(any(r['method'] == 'exact_fallback' and r['accepted_sign'] == 0 for r in records))
+        records = []
+        signs, filtered, exact = filtered_signs(ev, vf, None, record=records)
+        self.assertEqual(filtered, 0)
+        self.assertEqual(exact, len(vf[1]))
+        self.assertTrue(all(r['method'] == 'exact_fallback' and r['enclosure'] is None for r in records))
+        huge = Evaluator(((10 ** 400, 0, 0, 0), (0, 0, 0, 0), 1))
+        records = []
+        signs, filtered, exact = filtered_signs(huge, vf, float_rows(vf), record=records)
+        self.assertEqual(filtered, 0)
+        self.assertEqual(signs, [huge.sign_row(vf[0], row) for row in vf[1]])
+        self.assertTrue(all(r['method'] == 'exact_fallback' for r in records))
+
 
 class ModelTest(unittest.TestCase):
     def test_kplus(self):
@@ -146,6 +198,15 @@ class GeneratorTest(unittest.TestCase):
             lab = st.lattice_stickers()
             self.assertTrue(np.array_equal(lab['labels'], ref_labels([k + 1])))
             self.assertTrue(lab['frame_agrees'].all())
+            self.assertTrue(np.array_equal(np.sort(lab['slot']), np.arange(NS)))
+            self.assertTrue(np.array_equal(np.sort(lab['labels']), np.arange(NS)))
+            self.assertTrue(((0 <= lab['orientation']) & (lab['orientation'] < 12)).all())
+            centres = CTX.data.centre_slots
+            self.assertEqual(len(centres), 600)
+            self.assertTrue(np.array_equal(lab['slot'][centres], centres))
+            centre = int(CTX.data.centre_pieces[CTX.data.centre_poles == k // 2][0])
+            self.assertEqual(st.pose(centre), sim.generator(CTX, k).matrix)
+            self.assertNotEqual(st.pose(centre), CTX.kplus.matrix(0))
             st.undo()
             self.assertEqual(st.snapshot(), solved)
 
@@ -171,8 +232,75 @@ class GeneratorTest(unittest.TestCase):
                 st.undo()
         self.assertEqual(st.moved_count(), 0)
 
+    def test_solved_projection(self):
+        lab = sim.State(CTX).lattice_stickers()
+        self.assertTrue(np.array_equal(lab['slot'], np.arange(NS)))
+        self.assertTrue(np.array_equal(lab['labels'], np.arange(NS)))
+        self.assertTrue((lab['orientation'] == 0).all())
+        self.assertTrue(lab['frame_agrees'].all())
+
 
 class WitnessTest(unittest.TestCase):
+    def test_grouped_equals_per_piece(self):
+        _, _, g, t = witness_twists()
+        e2 = sim.State(CTX)
+        e2.apply(g)
+        e3 = sim.State.replay(e2.journal, CTX)
+        e3.apply(t)
+        states = [e2, e3]
+        # Two independently seeded states, both with retained and jumble twists.
+        for seed in (202610091, 202610092):
+            rng = random.Random(seed)
+            st = sim.State(CTX)
+            c = rng.randrange(600)
+            for tw in (sim.a4_element(CTX, c, rng.randrange(1, 12)),
+                       sim.cayley(CTX, c, [Q5(rng.randrange(1, 4), 0, 17), ZERO, ZERO])):
+                self.assertTrue(st.apply(tw).applied)
+            states.append(st)
+        for st in states:
+            grips = [0, 1, 13, 108] + random.Random(20261009).sample(range(600), 4)
+            for e in grips:
+                a = st.classify(e)
+                b = st.classify_per_piece(e)
+                self.assertEqual(a.status, b.status)
+                self.assertEqual(b.counts['group_superset'], 0)
+                self.assertEqual(b.filtered_evaluations, 0)
+                self.assertEqual(b.counts['piece_vertices'], st.off_lattice_count())
+                if a.status == 'admissible':
+                    self.assertTrue(np.array_equal(a.inside, b.inside))
+
+    def test_filter_certificate_fields(self):
+        _, _, g, t = witness_twists()
+        st = sim.State(CTX, filtered=True)
+        st.apply(g)
+        for e, next_twist in ((13, t), (0, None)):
+            cl = st.classify(e, record=True)
+            self.assertGreater(cl.filtered_evaluations, 0)
+            self.assertEqual(len(cl.decisions), cl.filtered_evaluations + cl.exact_evaluations)
+            self.assertEqual(sum(r['method'] == 'filtered' for r in cl.decisions), cl.filtered_evaluations)
+            for rec in cl.decisions:
+                self.assertEqual(rec['state_digest'], st.digest())
+                self.assertEqual(rec['model_identity'], CTX.data.identity)
+                self.assertIn('arithmetic_version', rec)
+                self.assertIn('error_bound_version', rec)
+                key = rec['pose_key']
+                pose = CTX.kplus.matrix(key[1]) if key[0] == 'K' else matrix_from_json(key[1])
+                vf = CTX.regions.cap_vform(rec['anchor']) if 'anchor' in rec else CTX.regions.vform(rec['piece'])
+                self.assertEqual(rec['vertex_form'], {'denominator': vf[0], 'row': list(vf[1][rec['vertex']])})
+                ev = Evaluator(pullback_form(pose, CTX.data.N[e]))
+                self.assertEqual(rec['accepted_sign'], ev.sign_row(vf[0], vf[1][rec['vertex']]))
+                self.assertEqual(rec['coverage']['vertex_count'], len(vf[1]))
+                if rec['coverage']['kind'] == 'constraint_superset':
+                    self.assertTrue(rec['coverage']['all_member_signatures_contain_anchor'])
+                    self.assertEqual(rec['coverage']['constraint_subset']['inside_cuts'], [rec['anchor']])
+                if rec['method'] == 'filtered':
+                    lo, hi = rec['enclosure']
+                    self.assertTrue(0 < lo <= hi or lo <= hi < 0)
+                    self.assertEqual(1 if lo > 0 else -1, rec['accepted_sign'])
+                else:
+                    self.assertIn('fallback_reason', rec)
+            if next_twist is not None:
+                st.apply(next_twist)
     def test_e2_e3_e4(self):
         c, d, g, T = witness_twists()
         gw, _, _ = W.witness_rotation(c, d)
@@ -258,7 +386,7 @@ class RuleTest(unittest.TestCase):
         with self.assertRaises(sim.TwistError):
             sim.Twist.from_record(CTX, rec)
         with self.assertRaises(sim.TwistError):
-            sim.cayley_axis_angle(CTX, 3, [0, 1, 0], 180)
+            sim.half_turn(CTX, 3, [ZERO, ZERO, ZERO])
 
     def test_shallow_crossing_is_blocked(self):
         st = sim.State(CTX)
@@ -319,6 +447,69 @@ class RuleTest(unittest.TestCase):
 
 
 class TwistTest(unittest.TestCase):
+    def test_input_map_is_exhaustive_minimum(self):
+        for axis, deg, n, d in (([1, 2, 3], 67, 2, 5), ([0.2, -0.8, 0.3], 137, 3, 4),
+                                ([1, 3, 2], 179.6, 2, 4), ([1, 2, -3], -179.7, 2, 3),
+                                ([1, 0, 0], 180, 2, 7), ([1, 2, 3], 0, 2, 4),
+                                ([1, 0, 0], 10, 0, 4)):
+            expected, choice = brute_input_map(axis, deg, n, d)
+            num, den, report = nearest_parameter(axis, deg, d, n)
+            self.assertAlmostEqual(report['minimum_distance'], expected, places=13)
+            self.assertEqual((den, tuple(num), report['family']), choice)
+            self.assertLessEqual(report['distance'], expected + 1e-12)
+            tw, _ = sim.cayley_axis_angle(CTX, 9, axis, deg, max_num=n, max_den=d)
+            self.assertEqual(sim.Twist.from_record(CTX, tw.record()).matrix, tw.matrix)
+            self.assertEqual(tw.params['requested']['N'], n)
+            self.assertEqual(tw.params['requested']['D'], d)
+            self.assertEqual(tw.params['requested']['distance'], report['distance'])
+        for kwargs in ({'max_num': -1}, {'max_den': 0}, {'max_den': 1.5}):
+            with self.assertRaises(sim.TwistError):
+                sim.cayley_axis_angle(CTX, 0, [1, 0, 0], 10, **kwargs)
+
+    def test_half_turn_and_negative_control(self):
+        generic = sim.half_turn(CTX, 37, [Q5(1, 1, 7), Q5(-2, 1, 9), Q5(0, 1, 11)])
+        self.assertEqual(matmul(generic.matrix, generic.matrix), identity(4))
+        self.assertEqual(generic.inverse().matrix, generic.matrix)
+        self.assertEqual(sim.Twist.from_record(CTX, generic.record()).matrix, generic.matrix)
+        g = negative_control()
+        self.assertEqual(g.family, 'half_turn')
+        self.assertFalse(g.retained)
+        self.assertEqual(matvec(g.matrix, CTX.data.N[13]), CTX.data.N[13])
+        self.assertEqual(matmul(g.matrix, g.matrix), identity(4))
+        self.assertEqual(g.inverse().matrix, g.matrix)
+        product = matmul(sim.generator(CTX, 0).matrix, g.matrix)
+        self.assertEqual(sum((product[i][i] for i in range(4)), ZERO), Q5(4, 0, 3))
+        self.assertEqual(sim.Twist.from_record(CTX, g.record()).matrix, g.matrix)
+        bad = json.loads(json.dumps(g.record()))
+        bad['params']['axis'] = [[1, 0, 1], [0, 0, 1], [0, 0, 1]]
+        with self.assertRaises(sim.TwistError):
+            sim.Twist.from_record(CTX, bad)
+        menu = sim.TwistMenu(CTX, 'NC', [('g', g.matrix)])
+        st = sim.State(CTX, menu=menu)
+        digests = [st.digest()]
+        heights = []
+        centre = int(CTX.data.centre_pieces[CTX.data.centre_poles == 0][0])
+        for _ in range(12):
+            for tw in (sim.generator(CTX, 0), g):
+                self.assertTrue(st.apply(tw).applied)
+                digests.append(st.digest())
+            heights.append(max(max(abs(x.a), abs(x.b), x.d) for row in st.pose(centre) for x in row))
+        self.assertEqual(len(set(digests)), 25)
+        self.assertGreater(heights[-1], heights[0])
+        self.assertEqual(sim.State.replay(st.journal_json(), CTX, menu=menu).digest(), st.digest())
+        while st.journal:
+            st.undo()
+        self.assertEqual(st.moved_count(), 0)
+
+    def test_unrepresentable_seventh_turn(self):
+        st = sim.State(CTX)
+        before = st.snapshot()
+        angle = 2 * math.pi / 7
+        r = np.eye(4)
+        r[2:, 2:] = [[math.cos(angle), -math.sin(angle)], [math.sin(angle), math.cos(angle)]]
+        out = st.apply(sim.UnrepresentableTwist(0, r, 'trace of a seventh turn is outside Q(sqrt5)'))
+        self.assertEqual(out.status, 'uncertain')
+        self.assertEqual(st.snapshot(), before)
     def test_plane_is_cayley(self):
         for c, d, s in ((0, 13, Q5(15, 0, 961)), (77, int(np.argsort(-(CTX.data.NF @ CTX.data.NF[77]))[3]), Q5(3, -1, 40))):
             om = [-s * dot(u, CTX.data.N[d]) for u in sim.cap_frame(CTX.data.N[c])]
@@ -335,10 +526,10 @@ class TwistTest(unittest.TestCase):
 
     def test_menus(self):
         menu = sim.TwistMenu.a4(CTX)
-        self.assertEqual(len(menu), 11)
+        self.assertEqual(len(menu), 12)
         self.assertTrue(menu.invariant)
         for c in (0, 13, 333):
-            self.assertEqual({t.matrix for t in menu.for_cap(c)}, {sim.a4_element(CTX, c, i).matrix for i in range(1, 12)})
+            self.assertEqual({t.matrix for t in menu.for_cap(c)}, {sim.a4_element(CTX, c, i).matrix for i in range(12)})
         st = sim.State(CTX, menu=menu)
         before = st.snapshot()
         self.assertEqual(st.apply(sim.plane(CTX, 0, 13, degrees=10)).status, 'invalid')
@@ -348,8 +539,78 @@ class TwistTest(unittest.TestCase):
         self.assertTrue(all(cm.contains(t) for t in cm.for_cap(42)))
         self.assertFalse(cm.contains(sim.cayley(CTX, 42, [Q5(1, 0, 5), ZERO, ZERO])))
 
+    def test_menu_closure_validation_identity_and_transport(self):
+        a4 = sim.TwistMenu.a4(CTX)
+        s4 = sim.TwistMenu.s4(CTX)
+        nc = sim.TwistMenu(CTX, 'NC', [('g', negative_control().matrix)])
+        self.assertEqual(len(s4), 24)
+        for menu in (a4, s4, nc):
+            rec = menu.record()
+            self.assertTrue(all(rec[k] for k in ('inverse_closed', 'a4_invariant', 'contains_a4')))
+            self.assertEqual(len(rec['identity']), 64)
+            self.assertEqual(sim.TwistMenu.from_record(CTX, rec).identity, menu.identity)
+            reordered = sim.TwistMenu(CTX, 'renamed', list(reversed(menu.items)), close=False)
+            self.assertEqual(menu.identity, reordered.identity)
+            for cap in (0, 13, 599):
+                twists = {t.matrix for t in menu.for_cap(cap)}
+                for a in CTX.kplus.stab0:
+                    t = CTX.kplus.compose(int(CTX.kplus.frame_idx[cap]), a)
+                    self.assertEqual(twists, {tw.matrix for tw in menu.for_cap(cap, transporter=t)})
+            rec['identity'] = '0' * 64
+            with self.assertRaises(sim.TwistError):
+                sim.TwistMenu.from_record(CTX, rec)
+        g = sim.cayley(CTX, 0, [Q5(1, 0, 7), Q5(2, 0, 7), Q5(3, 0, 7)]).matrix
+        conjugates = [(str(i), to_tuple(matmul(matmul(CTX.kplus.matrix(a), g), transpose(CTX.kplus.matrix(a)))))
+                      for i, a in enumerate(CTX.kplus.stab0)]
+        for base in ([('identity', CTX.kplus.matrix(0))],
+                     a4.items + [('g', g), ('inverse', to_tuple(transpose(g)))],
+                     a4.items + conjugates):
+            with self.assertRaises(sim.TwistError):
+                sim.TwistMenu(CTX, 'invalid', base, close=False)
+        # A nearby float request cannot be rounded into a menu element, even if the
+        # bounded search's best candidate is retained.
+        tw, _ = sim.cayley_axis_angle(CTX, 0, [1, 1, 1], 119, max_num=1, max_den=1)
+        self.assertTrue(tw.retained)
+        self.assertEqual(sim.State(CTX, menu=a4).apply(tw).status, 'invalid')
+        with self.assertRaises(sim.TwistError):
+            sim.cayley_axis_angle(CTX, 0, [1, 1, 1], 119, max_num=1, max_den=1, menu=a4)
+
 
 class CheckpointTest(unittest.TestCase):
+    def test_global_rotation_control(self):
+        kp = CTX.kplus
+        solved = sim.State(CTX).digest()
+        moving_pole = int(np.flatnonzero(kp.perms[:, 0] != 0)[0])
+        for k in (kp.stab0[1], moving_pole):
+            st = sim.State.from_global_rotation(CTX, k)
+            self.assertTrue(st.is_lattice())
+            self.assertNotEqual(st.digest(), solved)
+            self.assertTrue(all(st.pose(p) == kp.matrix(k) for p in (0, 599, 177119)))
+            lab = st.lattice_stickers()
+            self.assertTrue(np.array_equal(np.sort(lab['slot']), np.arange(NS)))
+            self.assertTrue(lab['frame_agrees'].all())
+            for witness in (None, [], [1, 2, -1]):
+                self.assertFalse(st.checkpoint(witness)['checkpoint'])
+                with self.assertRaises(ValueError):
+                    st.export_retained(witness)
+
+    def test_journal_identities_and_legacy_replay(self):
+        menu = sim.TwistMenu.a4(CTX)
+        st = sim.State(CTX, menu=menu)
+        st.apply(sim.generator(CTX, 0))
+        doc = json.loads(st.journal_json())
+        self.assertEqual(doc['model_identity'], CTX.data.identity)
+        self.assertEqual(doc['menu_identity'], menu.identity)
+        self.assertEqual(doc['contract_revision'], CONTRACT_REVISION)
+        self.assertEqual(sim.State.replay(doc, CTX, menu=menu).snapshot(), st.snapshot())
+        for key in ('model_identity', 'menu_identity', 'contract_revision'):
+            altered = dict(doc, **{key: 'wrong'})
+            with self.assertRaises(ValueError):
+                sim.State.replay(altered, CTX, menu=menu)
+        with self.assertRaises(ValueError):
+            sim.State.replay(doc, CTX)
+        legacy = {'format': doc['format'], 'records': doc['records']}
+        self.assertEqual(sim.State.replay(json.dumps(legacy), CTX).snapshot(), st.snapshot())
     def test_checkpoints_and_export(self):
         rng = random.Random(8)
         word = [rng.choice([1, -1]) * rng.randrange(1, 1201) for _ in range(12)]

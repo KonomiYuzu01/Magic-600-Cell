@@ -31,8 +31,8 @@ from exact import matmul, matvec, transpose
 
 from .kernel import Evaluator, KAPPA_FORM, classify_signs, filtered_signs, pullback_form, rows_form, sign5
 from .kplus import matrix_json, q5_json, to_tuple
-from .model import CELL_SLOTS, NP, NS
-from .twists import Twist, UnrepresentableTwist, primitive
+from .model import CELL_SLOTS, CONTRACT_REVISION, NP, NS
+from .twists import INPUT_TIE, Twist, UnrepresentableTwist, primitive
 
 
 class Pose:
@@ -53,6 +53,7 @@ class Classification:
         self.counts = {'signature': 0, 'group_superset': 0, 'piece_vertices': 0}
         self.exact_evaluations = 0
         self.filtered_evaluations = 0
+        self.decisions = []
 
     @property
     def status(self):
@@ -104,6 +105,17 @@ class State:
         self._lookup = {('K', 0): 0}
         self.journal = []
         self._anchor_cache = {}
+
+    @classmethod
+    def from_global_rotation(cls, ctx, kidx):
+        """A lattice configuration with every piece in the same K+ pose, without a witness.
+
+        This is a configuration constructor, not a claim that a twist path reaches it."""
+        if not 0 <= int(kidx) < len(ctx.kplus.perms):
+            raise ValueError('global rotation must be a K+ index')
+        st = cls(ctx)
+        st.pose_id.fill(st._intern_k(int(kidx)))
+        return st
 
     # ---------------------------------------------------------------------------- poses
     def _intern_k(self, k):
@@ -173,25 +185,37 @@ class State:
             self._anchor_cache[key] = out
         return out
 
-    def _eval(self, ev, vform, frows_fn, cl, budget):
+    def _eval(self, ev, vform, frows_fn, cl, budget, inputs=None):
         left = None if budget is None else max(0, budget - cl.exact_evaluations)
         if self.filtered:
-            r = filtered_signs(ev, vform, frows_fn(), left)
+            records = [] if inputs is not None else None
+            r = filtered_signs(ev, vform, frows_fn(), left, record=records)
             if r is None:
                 return ('uncertain', 0)
             signs, nf, ne = r
             cl.filtered_evaluations += nf
             cl.exact_evaluations += ne
+            if records is not None:
+                e, rows = vform
+                normal = {'a': list(ev.yform[0]), 'b': list(ev.yform[1]), 'denominator': ev.yform[2]}
+                for rec in records:
+                    rec.update(inputs)
+                    rec['normal_form'] = normal
+                    rec['vertex_form'] = {'denominator': e, 'row': list(rows[rec['vertex']])}
+                    rec['cut_offset'] = list(KAPPA_FORM)
+                    rec['quantity'] = 'h_times_pole_norm_squared'
+                cl.decisions.extend(records)
             return classify_signs(signs)
         r = ev.classify(vform, left)
         cl.exact_evaluations += r[1]
         return r
 
-    def classify(self, e, need_inside=True, stop_at_straddle=True, budget=None):
+    def classify(self, e, need_inside=True, stop_at_straddle=True, budget=None, record=False):
         """Exact classification of every piece for the cut of pole e, with certificates."""
         ctx = self.ctx
         data, kp, reg = ctx.data, ctx.kplus, ctx.regions
         cl = Classification(int(e))
+        identity = {'state_digest': self.digest(), 'model_identity': dict(data.identity), 'grip': int(e)} if record and self.filtered else None
         kpose = self._kpose()
         K = kpose[self.pose_id]
         lat = K >= 0
@@ -209,7 +233,15 @@ class State:
                 if budget is not None and cl.exact_evaluations >= budget:
                     cl.uncertain += len(sub)
                     continue
-                r = self._eval(ev, reg.cap_vform(anchor), lambda a=anchor: reg.cap_frows(a), cl, budget)
+                inputs = None
+                if identity is not None:
+                    inputs = dict(identity, pose_key=self._pose_record_key(pid), anchor=int(anchor),
+                                  vertex_set={'kind': 'cap', 'anchor': int(anchor), 'transport': int(kp.frame_idx[anchor])},
+                                  coverage={'kind': 'constraint_superset', 'members': sub.tolist(),
+                                            'vertex_count': len(reg.cap_vform(anchor)[1]),
+                                            'constraint_subset': {'inside_cuts': [int(anchor)], 'facets': list(range(600))},
+                                            'all_member_signatures_contain_anchor': bool(data.in_sig(sub, np.full(len(sub), anchor)).all())})
+                r = self._eval(ev, reg.cap_vform(anchor), lambda a=anchor: reg.cap_frows(a), cl, budget, inputs)
                 if r[0] == 'uncertain':
                     cl.uncertain += len(sub)
                     continue
@@ -220,7 +252,15 @@ class State:
                     continue
                 ins = []
                 for p in sub.tolist():
-                    r = self._eval(ev, reg.vform(p), lambda q=p: reg.frows(q), cl, budget)
+                    inputs = None
+                    if identity is not None:
+                        o, k = reg.rep_of(p)
+                        inputs = dict(identity, pose_key=self._pose_record_key(pid), piece=int(p),
+                                      vertex_set={'kind': 'piece', 'piece': int(p), 'orbit': o, 'transport': k},
+                                      coverage={'kind': 'complete_vertex_set', 'piece': int(p),
+                                                'vertex_count': len(reg.vform(p)[1]),
+                                                'construction': 'exact_double_description_and_Kplus_transport'})
+                    r = self._eval(ev, reg.vform(p), lambda q=p: reg.frows(q), cl, budget, inputs)
                     if r[0] == 'uncertain':
                         cl.uncertain += 1
                         continue
@@ -238,6 +278,45 @@ class State:
                     parts.append(np.array(ins, np.int64))
         if need_inside:
             cl.inside = np.sort(np.concatenate(parts)) if parts else np.zeros(0, np.int64)
+        return cl
+
+    def _pose_record_key(self, pid):
+        p = self._poses[pid]
+        return ['K', p.kidx] if p.kidx >= 0 else ['M', matrix_json(p.matrix)]
+
+    def classify_per_piece(self, e, need_inside=True, stop_at_straddle=False):
+        """Reference classifier: every off-lattice piece individually, exact and unfiltered.
+
+        No grouping, anchor caps or supersets. Pulled-back normals may be reused, but every
+        piece gets its own complete vertex evaluation. Lattice pieces use defining signatures."""
+        data, kp, reg = self.ctx.data, self.ctx.kplus, self.ctx.regions
+        cl = Classification(int(e))
+        k = self._kpose()[self.pose_id]
+        lattice = k >= 0
+        cl.counts['signature'] = int(lattice.sum())
+        inside = []
+        if need_inside:
+            ps = np.flatnonzero(lattice)
+            inside.extend(ps[data.in_sig(ps, kp.perms[kp.inv[k[ps]], int(e)])].tolist())
+        evaluators = {}
+        for p in np.flatnonzero(~lattice).tolist():
+            pid = int(self.pose_id[p])
+            ev = evaluators.get(pid)
+            if ev is None:
+                ev = Evaluator(pullback_form(self._pose_matrix(pid), data.N[e]))
+                evaluators[pid] = ev
+            r = ev.classify(reg.vform(p))
+            cl.exact_evaluations += r[1]
+            cl.counts['piece_vertices'] += 1
+            if r[0] == 'straddle':
+                if cl.straddle is None:
+                    cl.straddle = self._straddle_certificate(p, pid, int(e), r[2], r[3])
+                if stop_at_straddle:
+                    return cl
+            elif r[0] == 'in' and need_inside:
+                inside.append(p)
+        if need_inside:
+            cl.inside = np.array(sorted(inside), np.int64)
         return cl
 
     def _straddle_certificate(self, p, pid, e, jneg, jpos):
@@ -267,6 +346,8 @@ class State:
             raise TypeError('apply needs a Twist')
         if self.menu is not None and not self.menu.contains(twist):
             return Outcome('invalid', twist.grip, reason=f'twist is not in menu {self.menu.name}')
+        if self.menu is not None and twist.params.get('requested', {}).get('distance', 0) > INPUT_TIE:
+            return Outcome('invalid', twist.grip, reason='requested rotation is not an exact menu element')
         cl = self.classify(twist.grip, need_inside=True, stop_at_straddle=True, budget=budget)
         if cl.straddle is not None:
             return Outcome('blocked', twist.grip, cls=cl, twist=twist)
@@ -355,17 +436,26 @@ class State:
         return Outcome('admissible', tw.grip, applied=True, moved=int(cl.inside.size), cls=cl, twist=tw)
 
     def journal_json(self):
-        return json.dumps({'format': 'jumbling-journal-1', 'records': self.journal}, sort_keys=True)
+        return json.dumps({'format': 'jumbling-journal-1', 'records': self.journal,
+                           'model_identity': self.ctx.data.identity,
+                           'menu_identity': self.menu.identity if self.menu is not None else None,
+                           'contract_revision': CONTRACT_REVISION}, sort_keys=True)
 
     @classmethod
     def replay(cls, records, ctx=None, filtered=False, menu=None):
         """Rebuild a configuration from journal records; every record must apply as recorded."""
-        if isinstance(records, str):
-            doc = json.loads(records)
+        doc = json.loads(records) if isinstance(records, str) else records if isinstance(records, dict) else None
+        st = cls(ctx, filtered=filtered, menu=menu)
+        if doc is not None:
             if doc.get('format') != 'jumbling-journal-1':
                 raise ValueError('unknown journal format')
+            expected = {'model_identity': st.ctx.data.identity,
+                        'menu_identity': menu.identity if menu is not None else None,
+                        'contract_revision': CONTRACT_REVISION}
+            for field, value in expected.items():
+                if field in doc and doc[field] != value:
+                    raise ValueError(f'journal {field} differs from replay context')
             records = doc['records']
-        st = cls(ctx, filtered=filtered, menu=menu)
         for i, rec in enumerate(records):
             out = st.apply(Twist.from_record(st.ctx, rec))
             if not out.applied or out.moved != rec.get('moved', out.moved):
@@ -427,6 +517,10 @@ class State:
         if not self.is_lattice():
             return {'checkpoint': False, 'lattice': False, 'off_lattice': self.off_lattice_count(),
                     'reason': 'some piece is off the lattice'}
+        data, kp = self.ctx.data, self.ctx.kplus
+        k = self._kpose()[self.pose_id[data.centre_pieces]]
+        if np.any(kp.perms[k, data.centre_poles] != data.centre_poles):
+            return {'checkpoint': False, 'lattice': True, 'reason': 'a centre has moved to another chamber'}
         if witness is None:
             word, why = self._journal_witness()
             source = 'journal'

@@ -13,12 +13,18 @@ docs/progress/1.0/jumbling-plan.md:
   2. independently certified blocked and unblocked cases, at least the witness E2 and E3 sets;
   3. conservative handling of uncertain contacts;
   4. rejection without state change;
-  5. exact round trips of random admissible sequences that include jumble twists.
+  5. grouped and filtered classification against the individual exact reference;
+  6. exact replay, inverse round trips and undo of seeded mixed sequences;
+  7. same-cap checkpoint excursions and global K+ checkpoint obstructions;
+  8. inverse/conjugacy closure and frame-independent menu transport;
+  9. the exact infinite-order negative control, plus A1 input-map and A2 certificate checks.
 Every classification is exact in Q(sqrt5). Floating point appears only in the float
 cross-check of section 4c, in the optional A2 filter (whose float decisions are compared with
 exact signs) and in displayed angles and h values.
 """
 import json
+import hashlib
+import itertools
 import math
 import os
 import platform
@@ -36,15 +42,17 @@ sys.path.insert(0, str(HERE.parent))
 import sim  # noqa: E402
 import witness as W  # noqa: E402
 from exact import ONE, ZERO, Q5, dot, matmul, matvec, transpose  # noqa: E402
-from sim.kernel import Evaluator, filtered_signs, pullback_form  # noqa: E402
-from sim.kplus import generator_word_matrix, q5_from_json, to_tuple  # noqa: E402
-from sim.model import CELL_SLOTS, NP, NS  # noqa: E402
+from sim.kernel import Evaluator, filtered_signs, int_form, lcm, pullback_form  # noqa: E402
+from sim.kplus import generator_word_matrix, matrix_from_json, matrix_json, q5_from_json, to_tuple  # noqa: E402
+from sim.model import CELL_SLOTS, CONTRACT_REVISION, NP, NS  # noqa: E402
 
 OUT = HERE / 'acceptance.json'
 WORKERS = 4
 SEED = 20261009
 PRIM = None          # retained slot moves (src, dst, offsets), loaded before the pools fork
 INDEP = None         # shared input of the independent recomputation workers
+COMPARE_STATE = None
+MENU_CONTROLS = None
 
 
 def timed(fn, *a):
@@ -186,8 +194,19 @@ def section_generators(ctx):
     a4 = {'caps': 600, 'nonidentity_elements_admissible_from_solved_and_moving_3097': f'{sum(r[1] for r in a4rows)}/6600',
           'word_matrix_equal': f'{sum(r[2] for r in a4rows)}/6600',
           'undo_restores_bytes': f'{sum(r[3] for r in a4rows)}/600'}
+    solved = sim.State(ctx).lattice_stickers()
+    projection = {'solved_bijection': bool(np.array_equal(solved['slot'], np.arange(NS))
+                                          and np.array_equal(solved['labels'], np.arange(NS))),
+                  'solved_orientations_in_a4': bool(((0 <= solved['orientation']) & (solved['orientation'] < 12)).all()),
+                  'generator_bijections': f'{sum(r[9] for r in rows)}/1200',
+                  'generator_orientations_in_a4': f'{sum(r[10] for r in rows)}/1200',
+                  'centre_pose_changes_with_fixed_labels': f'{sum(r[11] for r in rows)}/1200',
+                  'centre_stickers_per_configuration': len(data.centre_slots),
+                  'centre_stickers_checked': len(data.centre_slots) * (1 + len(rows)),
+                  'labelled_stickers_per_configuration': NS}
     return {'combinatorial_all_1200': combinatorial, 'state_api_all_1200': state_level,
             'retained_a4_twists_from_solved': a4,
+            'projection_bijection_and_centres': projection,
             'proof_note': ('Labelled agreement is proved combinatorially: each generator matrix is an exact K+ '
                            'element whose pole permutation is rotperms[k]; a K+ element maps the chamber of '
                            'signature M onto the chamber of signature r(M) and each host facet patch onto the patch '
@@ -204,13 +223,20 @@ def _gen_worker(k):
     lab = st.lattice_stickers()
     labels_ok = bool(np.array_equal(lab['labels'], ref_labels([k + 1])))
     frames_ok = bool(lab['frame_agrees'].all())
+    bijection = bool(np.array_equal(np.sort(lab['slot']), np.arange(NS))
+                     and np.array_equal(np.sort(lab['labels']), np.arange(NS)))
+    orientations = bool(((0 <= lab['orientation']) & (lab['orientation'] < 12)).all())
+    centre = int(ctx.data.centre_pieces[ctx.data.centre_poles == k // 2][0])
+    centre_ok = (st.pose(centre) == sim.generator(ctx, k).matrix and st.pose(centre) != ctx.kplus.matrix(0)
+                 and np.array_equal(lab['slot'][ctx.data.centre_slots], ctx.data.centre_slots)
+                 and np.array_equal(lab['labels'][ctx.data.centre_slots], ctx.data.centre_slots))
     cp = st.checkpoint()['checkpoint']
     st.undo()
     undo_ok = st.snapshot() == before
     out2 = st.apply(sim.primitive(ctx, -(k + 1)))
     inv_ok = out2.applied and bool(np.array_equal(st.lattice_stickers()['labels'], ref_labels([-(k + 1)])))
     return (k, out.applied, out.moved == 3097, out.certificates['signature'] == NP, labels_ok, frames_ok, cp,
-            undo_ok, inv_ok)
+            undo_ok, inv_ok, bijection, orientations, centre_ok)
 
 
 def _a4_worker(c):
@@ -629,6 +655,57 @@ def section_round_trips(ctx):
             'total_rejections': dict(sum((Counter(r['rejections']) for r in rows), Counter()))}
 
 
+def _compare_grip(e):
+    st = COMPARE_STATE
+    grouped = st.classify(e)
+    per_piece = st.classify_per_piece(e)
+    inside_checked = grouped.status == per_piece.status == 'admissible'
+    return {'status_equal': grouped.status == per_piece.status,
+            'admissible': inside_checked,
+            'inside_equal': inside_checked and bool(np.array_equal(grouped.inside, per_piece.inside)),
+            'reference_pieces': per_piece.counts['piece_vertices'],
+            'reference_has_no_superset_or_filter': per_piece.counts['group_superset'] == per_piece.filtered_evaluations == 0,
+            'uncertain': grouped.status == 'uncertain' or per_piece.status == 'uncertain'}
+
+
+def section_grouped_per_piece(ctx, e2_state, e3_state):
+    """G2: all off-lattice pieces, with no group bound, anchor or filter in the reference."""
+    global COMPARE_STATE
+    rng = random.Random(SEED + 17)
+    near = [list(np.argsort(-(ctx.data.NF @ ctx.data.NF[c]))[:57]) for c in range(600)]
+    states = [('E2', e2_state, list(range(600))), ('E3', e3_state, list(range(600)))]
+    for i in range(2):
+        st = sim.State(ctx)
+        recent = []
+        attempts = 0
+        while len(st.journal) < 5 or not any(r['family'] == 'retained' for r in st.journal) or not any(r['family'] != 'retained' for r in st.journal):
+            attempts += 1
+            if attempts > 400:
+                raise AssertionError('seeded mixed-state fixture failed to finish')
+            tw = random_twist(ctx, rng, recent, near)
+            if st.apply(tw).applied:
+                recent.append(tw.grip)
+        grips = sorted(rng.sample(range(600), 60))
+        states.append((f'random_{i}', st, grips))
+    res = {'seed': SEED + 17, 'method': 'State.classify_per_piece; every off-lattice piece individually; exact integer Q(sqrt5) signs; no superset, anchor or filter'}
+    for name, st, grips in states:
+        COMPARE_STATE = st
+        with Pool(WORKERS) as pool:
+            rows = pool.map(_compare_grip, grips, chunksize=10)
+        admissible = sum(r['admissible'] for r in rows)
+        res[name] = {'grips': grips, 'off_lattice_pieces': st.off_lattice_count(),
+                     'statuses_equal': f'{sum(r["status_equal"] for r in rows)}/{len(rows)}',
+                     'admissible_inside_sets_equal': f'{sum(r["inside_equal"] for r in rows)}/{admissible}',
+                     'reference_piece_evaluations': sum(r['reference_pieces'] for r in rows),
+                     'every_off_lattice_piece_evaluated': all(r['reference_pieces'] == st.off_lattice_count() for r in rows),
+                     'reference_has_no_superset_or_filter': all(r['reference_has_no_superset_or_filter'] for r in rows),
+                     'no_uncertain': not any(r['uncertain'] for r in rows),
+                     'families': dict(Counter(r['family'] for r in st.journal)),
+                     'journal': json.loads(st.journal_json())}
+    COMPARE_STATE = None
+    return res
+
+
 # ---------------------------------------------------------------------------------------------
 # 6. checkpoints and handoff (contract section 5)
 
@@ -657,6 +734,39 @@ def section_checkpoints(ctx):
     res['merged_jumble_excursion'] = {'applied': o1.applied and o2.applied, 'lattice': st2.is_lattice(),
                                       'checkpoint_from_journal': cp2['checkpoint'],
                                       'export_equals_primitives_replay': lab2 is not None and bool(np.array_equal(lab2, ref_labels(cp2['witness_word'])))}
+    excursion = sim.State(ctx)
+    applied = excursion.apply(g).applied
+    was_off_lattice = not excursion.is_lattice()
+    applied &= excursion.apply(sim.Twist(ctx, c, matmul(a.matrix, transpose(g.matrix)))).applied
+    retained = sim.State(ctx)
+    retained.apply(a)
+    cp_exc = excursion.checkpoint()
+    res['same_cap_excursion'] = {'applied': applied, 'was_off_lattice': was_off_lattice,
+                                  'lattice': excursion.is_lattice(), 'checkpoint': cp_exc['checkpoint'],
+                                  'nonidentity_retained_pose': excursion.digest() == retained.digest() != sim.State(ctx).digest(),
+                                  'witness_word': cp_exc.get('witness_word'),
+                                  'export_equals_primitives_replay': bool(np.array_equal(excursion.export_retained()[0], ref_labels(cp_exc['witness_word'])))}
+    # Global rotations are lattice configurations whose centres occupy other chambers.
+    kp, data = ctx.kplus, ctx.data
+    moving_pole = int(np.flatnonzero(kp.perms[:, 0] != 0)[0])
+    global_rows = []
+    for k in (kp.stab0[1], moving_pole):
+        rotated = sim.State.from_global_rotation(ctx, k)
+        supplied = [1, 2, -1]
+        refused = []
+        for witness in (None, supplied):
+            try:
+                rotated.export_retained(witness)
+                refused.append(False)
+            except ValueError:
+                refused.append(True)
+        global_rows.append({'kplus_index': k, 'fixes_pole_0': int(kp.perms[k, 0]) == 0,
+                            'lattice': rotated.is_lattice(), 'digest_differs_from_solved': rotated.digest() != sim.State(ctx).digest(),
+                            'centres_in_other_chambers': int((kp.perms[k, data.centre_poles] != data.centre_poles).sum()),
+                            'checkpoint': rotated.checkpoint()['checkpoint'],
+                            'checkpoint_with_supplied_word': rotated.checkpoint(supplied)['checkpoint'],
+                            'export_refused': all(refused)})
+    res['global_rotation_control'] = global_rows
     # lattice configuration reached through jumble twists that do not cancel: no witness unless supplied
     far = int(np.argmin(ctx.data.NF @ ctx.data.NF[0]))
     st3 = sim.State(ctx)
@@ -698,6 +808,7 @@ def section_filter(ctx, e2_state, e3_state, sv2, sv3):
         res[name] = {'statuses_and_certificate_counts_equal': all(fv[e]['status'] == sv[e]['status'] and fv[e]['certificates'] == sv[e]['certificates'] for e in range(600)),
                      'filter_decided': sum(r['filtered_evaluations'] for r in fv.values()),
                      'exact_fallback': sum(r['exact_evaluations'] for r in fv.values())}
+        res[name]['certificate_fields'] = check_filter_records(stf, 13 if name == 'E2' else 0)
     # sign agreement over many vertices of random jumbled states and of a 1e-9 twist
     rng = random.Random(SEED + 5)
     states = []
@@ -734,6 +845,53 @@ def section_filter(ctx, e2_state, e3_state, sv2, sv3):
     return res
 
 
+def check_filter_records(st, grip):
+    """Rebuild every recorded evaluation's exact inputs; check signs independently in Q5."""
+    cl = st.classify(grip, record=True)
+    ctx, data, reg = st.ctx, st.ctx.data, st.ctx.regions
+    digest = st.digest()
+    required = {'pose_key', 'vertex_set', 'vertex', 'vertex_form', 'normal_form', 'cut_offset',
+                'state_digest', 'model_identity', 'coverage', 'arithmetic_version',
+                'error_bound_version', 'enclosure', 'accepted_sign', 'method', 'grip'}
+    fields_ok = signs_ok = bounds_ok = coverage_ok = 0
+    float_n = fallback_n = 0
+    for rec in cl.decisions:
+        fields_ok += required <= rec.keys() and rec['state_digest'] == digest and rec['model_identity'] == data.identity
+        key = rec['pose_key']
+        pose = ctx.kplus.matrix(key[1]) if key[0] == 'K' else matrix_from_json(key[1])
+        if 'anchor' in rec:
+            vf = reg.cap_vform(rec['anchor'])
+            members = np.array(rec['coverage']['members'], np.int64)
+            covered = (rec['coverage']['kind'] == 'constraint_superset'
+                       and rec['coverage']['constraint_subset'] == {'inside_cuts': [rec['anchor']], 'facets': list(range(600))}
+                       and data.in_sig(members, np.full(len(members), rec['anchor'])).all()
+                       and all(st.pose(p) == pose for p in members.tolist()))
+        else:
+            vf = reg.vform(rec['piece'])
+            covered = rec['coverage']['kind'] == 'complete_vertex_set' and st.pose(rec['piece']) == pose
+        row = vf[1][rec['vertex']]
+        v = [Q5(row[i], row[i + 4], vf[0]) for i in range(4)]
+        exact = data.h(grip, matvec(pose, v)).sign()
+        signs_ok += exact == rec['accepted_sign']
+        coverage_ok += (covered and rec['coverage']['vertex_count'] == len(vf[1])
+                        and rec['vertex_form'] == {'denominator': vf[0], 'row': list(row)})
+        if rec['method'] == 'filtered':
+            float_n += 1
+            lo, hi = rec['enclosure']
+            bounds_ok += (math.isfinite(lo) and math.isfinite(hi) and lo <= hi
+                          and (lo > 0 and exact == 1 or hi < 0 and exact == -1))
+        else:
+            fallback_n += 1
+            if 'fallback_reason' not in rec:
+                fields_ok -= 1
+    return {'grip': grip, 'float_decisions': float_n, 'exact_fallbacks': fallback_n,
+            'all_evaluations_recorded': len(cl.decisions) == cl.filtered_evaluations + cl.exact_evaluations,
+            'fields_complete': f'{fields_ok}/{len(cl.decisions)}',
+            'coverage_verified': f'{coverage_ok}/{len(cl.decisions)}',
+            'accepted_signs_equal_exact': f'{signs_ok}/{len(cl.decisions)}',
+            'float_enclosures_exclude_zero_with_exact_sign': f'{bounds_ok}/{float_n}'}
+
+
 # ---------------------------------------------------------------------------------------------
 # 8. twists (A1), menus (A4) and sticker frames off the lattice (A3)
 
@@ -760,16 +918,17 @@ def section_twists(ctx):
         tw, rep = sim.cayley_axis_angle(ctx, 7, axis, deg, max_den=den)
         reqs.append({'axis': axis, 'requested_deg': deg, 'max_den': den, 'omega': tw.params['omega'],
                      'realised_deg': rep['realised_angle_deg'], 'axis_error_deg': rep['axis_error_deg'],
-                     'rotation_error_deg': rep['rotation_error_deg'], 'retained': tw.retained})
+                     'rotation_error_deg': rep['rotation_error_deg'], 'retained': tw.retained,
+                     'N': rep['N'], 'D': rep['D'], 'distance': rep['distance'], 'realised_axis': rep['realised_axis']})
     res['axis_angle_requests'] = reqs
     try:
-        sim.cayley_axis_angle(ctx, 7, [1, 0, 0], 180)
-        res['half_turn_request'] = 'accepted'
+        ht, report = sim.cayley_axis_angle(ctx, 7, [1, 0, 0], 180)
+        res['half_turn_request'] = 'accepted' if ht.family == 'half_turn' else 'wrong family'
     except sim.TwistError as exc:
         res['half_turn_request'] = f'rejected: {exc}'
     # A4: menus
     menu = sim.TwistMenu.a4(ctx)
-    same = sum({tw.matrix for tw in menu.for_cap(c)} == {sim.a4_element(ctx, c, i).matrix for i in range(1, 12)} for c in range(600))
+    same = sum({tw.matrix for tw in menu.for_cap(c)} == {sim.a4_element(ctx, c, i).matrix for i in range(12)} for c in range(600))
     st = sim.State(ctx, menu=menu)
     before = st.snapshot()
     oj = st.apply(sim.plane(ctx, 0, 13, degrees=10))
@@ -800,6 +959,168 @@ def section_twists(ctx):
     return res
 
 
+def negative_control_twist(ctx):
+    """The half-turn fixing n_0 and n_13, built through A1's exact axis branch."""
+    axis = [dot(u, ctx.data.N[13]) / ctx.data.NN for u in sim.cap_frame(ctx.data.N[0])]
+    return sim.half_turn(ctx, 0, axis)
+
+
+def section_negative_control(ctx):
+    g = negative_control_twist(ctx)
+    h = sim.generator(ctx, 0)
+    product = matmul(h.matrix, g.matrix)
+    trace = sum((product[i][i] for i in range(4)), ZERO)
+    menu = sim.TwistMenu(ctx, 'NC', [('g', g.matrix)])
+    st = sim.State(ctx, menu=menu)
+    centre = int(ctx.data.centre_pieces[ctx.data.centre_poles == 0][0])
+    digests, heights, outcomes = [st.digest()], [], []
+    for _ in range(12):
+        for tw in (h, g):
+            outcome = st.apply(tw)
+            outcomes.append(outcome.status)
+            digests.append(st.digest())
+        heights.append(max(max(abs(x.a), abs(x.b), x.d) for row in st.pose(centre) for x in row))
+    return {'g': g.record(), 'g_not_in_a4': not g.retained,
+            'g_squared_is_identity': to_tuple(matmul(g.matrix, g.matrix)) == ctx.kplus.matrix(0),
+            'g_fixes_pole_13': matvec(g.matrix, ctx.data.N[13]) == ctx.data.N[13],
+            'trace_H0_g': [trace.a, trace.b, trace.d], 'trace_is_four_thirds': trace == Q5(4, 0, 3),
+            'infinite_order_argument': 'A finite-order rotation has algebraic-integer trace; the rational 4/3 is not an algebraic integer.',
+            'menu': menu.record(), 'rounds': 12, 'outcomes': outcomes,
+            'all_twists_admissible': all(s == 'admissible' for s in outcomes),
+            'digests': digests, 'digests_pairwise_distinct': len(set(digests)) == len(digests),
+            'cap_0_pose_entry_heights': heights, 'entry_height_grows': heights[-1] > heights[0],
+            'replay_equal': sim.State.replay(st.journal_json(), ctx, menu=menu).digest() == st.digest(),
+            'journal': json.loads(st.journal_json())}
+
+
+def _matrix_int_key(m):
+    a, b, d = int_form([x for row in m for x in row])
+    common = math.gcd(d, *a, *b)
+    return tuple(x // common for x in a + b) + (d // common,)
+
+
+def _transport_keys(ctx, menu_forms, t):
+    """Exact batched conjugation in integer Q5 form. Object dtype prevents overflow."""
+    a, b, e = menu_forms
+    x, y, d = ctx.kplus.int_matrix(t)
+    x, y = x.astype(object), y.astype(object)
+    p, q = x @ a + 5 * (y @ b), x @ b + y @ a
+    r, s = p @ x.T + 5 * (q @ y.T), p @ y.T + q @ x.T
+    denominator = int(d) * int(d) * e
+    keys = set()
+    for rr, ss in zip(r, s):
+        values = tuple(rr.ravel()) + tuple(ss.ravel())
+        common = math.gcd(denominator, *values)
+        keys.add(tuple(v // common for v in values) + (denominator // common,))
+    return keys
+
+
+def _menu_control_cap(c):
+    ctx = sim.get_context()
+    f = int(ctx.kplus.frame_idx[c])
+    rows = []
+    for menu, forms in MENU_CONTROLS:
+        canonical = _transport_keys(ctx, forms, f)
+        production = {_matrix_int_key(tw.matrix) for tw in menu.for_cap(c)}
+        independent = production == canonical
+        for a in ctx.kplus.stab0:
+            fa = ctx.kplus.compose(f, a)
+            independent &= _transport_keys(ctx, forms, fa) == canonical
+        rows.append(independent)
+    return rows
+
+
+def section_menu_controls(ctx):
+    global MENU_CONTROLS
+    menus = [sim.TwistMenu.a4(ctx), sim.TwistMenu.s4(ctx),
+             sim.TwistMenu(ctx, 'NC', [('g', negative_control_twist(ctx).matrix)])]
+    MENU_CONTROLS = []
+    for menu in menus:
+        forms = [int_form([x for row in m for x in row]) for _, m in menu.items]
+        e = 1
+        for _, _, d in forms:
+            e = lcm(e, d)
+        a = np.array([[x * (e // d) for x in aa] for aa, _, d in forms], dtype=object).reshape(-1, 4, 4)
+        b = np.array([[x * (e // d) for x in bb] for _, bb, d in forms], dtype=object).reshape(-1, 4, 4)
+        MENU_CONTROLS.append((menu, (a, b, e)))
+    with Pool(WORKERS) as pool:
+        rows = pool.map(_menu_control_cap, range(600), chunksize=10)
+    res = {'transporters_per_cap': 12, 'method': 'exact Q(sqrt5) conjugation by F_c and each K+ product F_c a; integer object arrays, no floats'}
+    for i, menu in enumerate(menus):
+        res[menu.name] = {'size': len(menu), 'identity': menu.identity,
+                          'inverse_closed': menu.inverse_closed, 'a4_invariant': menu.a4_invariant,
+                          'contains_a4': menu.contains_a4,
+                          'all_transports_equal': f'{sum(row[i] for row in rows)}/600',
+                          'record_round_trip': sim.TwistMenu.from_record(ctx, menu.record()).identity == menu.identity}
+    MENU_CONTROLS = None
+    return res
+
+
+def section_input_map(ctx):
+    """Exhaustive independent small-box checks of A1's minimum and tie order."""
+    rows = []
+    for axis, deg, n, dmax in (([1, 2, 3], 67, 2, 5), ([1, 3, 2], 179.6, 2, 4),
+                               ([1, 2, -3], -179.7, 2, 3), ([1, 0, 0], 180, 2, 7),
+                               ([1, 2, 3], 0, 2, 4)):
+        unit = np.array(axis, float) / np.linalg.norm(axis)
+        x, y, z = unit
+        w = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
+        theta = math.radians(deg)
+        target = np.eye(3) + math.sin(theta) * w + (1 - math.cos(theta)) * (w @ w)
+        candidates = []
+        for nums in itertools.product(range(-n, n + 1), repeat=3):
+            p = np.array(nums, float)
+            for den in range(1, dmax + 1):
+                x, y, z = p / den
+                w = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
+                rotation = np.eye(3) + 2 * (w + w @ w) / (1 + (p @ p) / (den * den))
+                candidates.append((float(np.linalg.norm(rotation - target)), den, nums, 'cayley'))
+            if abs(abs(math.remainder(deg, 360)) - 180) <= 1 and np.any(p):
+                rotation = 2 * np.outer(p, p) / (p @ p) - np.eye(3)
+                candidates.append((float(np.linalg.norm(rotation - target)), 1, nums, 'half_turn'))
+        minimum = min(r[0] for r in candidates)
+        chosen = min((den, nums, fam) for dist, den, nums, fam in candidates if dist <= minimum + 1e-12)
+        tw, report = sim.cayley_axis_angle(ctx, 7, axis, deg, max_num=n, max_den=dmax)
+        rows.append({'axis': axis, 'angle_deg': deg, 'N': n, 'D': dmax,
+                     'global_minimum_equal': abs(report['minimum_distance'] - minimum) < 1e-12,
+                     'tie_order_equal': (report['denominator'], tuple(report['numerators']), report['family']) == chosen,
+                     'journal_records_bounds_and_distance': all(tw.params['requested'][k] == report[k] for k in ('N', 'D', 'distance')),
+                     'exact_record_round_trip': sim.Twist.from_record(ctx, tw.record()).matrix == tw.matrix,
+                     'report': report})
+    # The field-valued API does not turn an explicitly unrepresentable rotation into a twist.
+    angle = 2 * math.pi / 7
+    r = np.eye(4)
+    r[2:, 2:] = [[math.cos(angle), -math.sin(angle)], [math.sin(angle), math.cos(angle)]]
+    st = sim.State(ctx)
+    before = st.snapshot()
+    out = st.apply(sim.UnrepresentableTwist(0, r, 'seventh-turn trace is outside Q(sqrt5)'))
+    menu = sim.TwistMenu.a4(ctx)
+    mapped, _ = sim.cayley_axis_angle(ctx, 0, [1, 1, 1], 119, max_num=1, max_den=1)
+    return {'exhaustive_cases': rows, 'nonrepresentable_rejected_unchanged': out.status == 'uncertain' and st.snapshot() == before,
+            'menu_request_never_approximated': sim.State(ctx, menu=menu).apply(mapped).status == 'invalid'}
+
+
+def section_journal_identity(ctx):
+    menu = sim.TwistMenu.a4(ctx)
+    st = sim.State(ctx, menu=menu)
+    st.apply(sim.generator(ctx, 0))
+    doc = json.loads(st.journal_json())
+    refused = {}
+    for field in ('model_identity', 'menu_identity', 'contract_revision'):
+        wrong = dict(doc, **{field: 'wrong'})
+        try:
+            sim.State.replay(wrong, ctx, menu=menu)
+            refused[field] = False
+        except ValueError:
+            refused[field] = True
+    legacy = {'format': doc['format'], 'records': doc['records']}
+    return {'model_identity': ctx.data.identity, 'menu_identity': menu.identity, 'contract_revision': CONTRACT_REVISION,
+            'model_hashes_match_assets': all(hashlib.sha256((ctx.data.root / path).read_bytes()).hexdigest() == sha for path, sha in ctx.data.identity.items()),
+            'identity_fields_recorded': all(field in doc for field in refused), 'mismatches_refused': refused,
+            'matching_identities_replay': sim.State.replay(st.journal_json(), ctx, menu=menu).snapshot() == st.snapshot(),
+            'legacy_document_replays': sim.State.replay(legacy, ctx).snapshot() == st.snapshot()}
+
+
 # ---------------------------------------------------------------------------------------------
 
 def main():
@@ -809,7 +1130,8 @@ def main():
     ctx = sim.get_context()
     PRIM = ctx.data.primitives()
     t_ctx = round(time.time() - t0, 1)
-    res = {'contract': 'research/jumbling/state-contract.md sections 2, 3, 5, 6; plan J1 items 1-5',
+    res = {'contract': CONTRACT_REVISION + '; sections 2, 3, 5, 6, 7; plan J1 items 1-9',
+           'model_identity': ctx.data.identity,
            'evidence_kind': 'source and synthetic geometry (cloud, headless); not Windows, Direct3D or performance evidence',
            'machine': {'python': platform.python_version(), 'numpy': np.__version__, 'cpus': os.cpu_count(), 'workers': WORKERS},
            'context_build_s': t_ctx}
@@ -828,12 +1150,22 @@ def main():
     res['uncertain_and_rejection'] = timed(section_controls, ctx)
     print('section round trips', flush=True)
     res['round_trips'] = timed(section_round_trips, ctx)
+    print('section grouped against per-piece', flush=True)
+    res['grouped_per_piece'] = timed(section_grouped_per_piece, ctx, e2_state, e3_state)
     print('section checkpoints', flush=True)
     res['checkpoints'] = timed(section_checkpoints, ctx)
     print('section filter', flush=True)
     res['filter_A2'] = timed(section_filter, ctx, e2_state, e3_state, sv2, sv3)
     print('section twists', flush=True)
     res['twists_menus_frames'] = timed(section_twists, ctx)
+    print('section menu controls', flush=True)
+    res['menu_controls'] = timed(section_menu_controls, ctx)
+    print('section negative control', flush=True)
+    res['negative_control'] = timed(section_negative_control, ctx)
+    print('section input map', flush=True)
+    res['input_map_A1'] = timed(section_input_map, ctx)
+    print('section journal identity', flush=True)
+    res['journal_identity'] = timed(section_journal_identity, ctx)
     res['summary'] = summarise(res)
     res['runtime_s'] = round(time.time() - t0, 1)
     OUT.write_text(json.dumps(res, indent=1, default=_json_default) + '\n')
@@ -863,6 +1195,8 @@ def summarise(r):
                                          r['uncertain_and_rejection'], r['round_trips'], r['checkpoints'], r['filter_A2'],
                                          r['twists_menus_frames'])
     reg = b['regions']
+    proj = g['projection_bijection_and_centres']
+    nc, im, ji = r['negative_control'], r['input_map_A1'], r['journal_identity']
     return {
         'build_kplus_exact': b['kplus']['order'] == 7200 and b['kplus']['non_rotations'] == 0 and b['kplus']['pole_image_failures'] == 0,
         'build_kplus_orbits_are_unions_of_g_orbits': b['orbits']['g_class_in_one_kplus_orbit'] and b['orbits']['kplus_orbits'] == 36,
@@ -902,12 +1236,43 @@ def summarise(r):
                                   and not cp['off_lattice_state']['checkpoint'] and cp['witness_excursion_back_to_solved']['checkpoint']),
         'A2_filter_off_by_default_and_never_disagrees': (fl['default_off'] and fl['sign_agreement']['piece_evaluations_with_disagreement'] == 0
                                                          and fl['E2']['statuses_and_certificate_counts_equal'] and fl['E3']['statuses_and_certificate_counts_equal']),
-        'A1_cayley_twists': _full(tw['plane_equals_cayley_and_inverse']) and tw['half_turn_request'].startswith('rejected'),
+        'A1_cayley_twists': _full(tw['plane_equals_cayley_and_inverse']) and tw['half_turn_request'] == 'accepted',
         'A4_menus': (tw['menus']['a4_menu_invariant'] and _full(tw['menus']['a4_menu_equals_A4_c_for_all_caps'])
                      and tw['menus']['a4_menu_state_rejects_jumble'] == 'invalid' and tw['menus']['rejection_unchanged']
                      and tw['menus']['a4_menu_state_accepts_retained'] == 'admissible' and tw['menus']['cayley_menu_invariant']
                      and _full(tw['menus']['cayley_menu_transported_members_recognised']) and tw['menus']['cayley_menu_rejects_other_angle']),
         'A3_off_lattice_frames': tw['off_lattice_sticker_frames']['stickers_checked'] == tw['off_lattice_sticker_frames']['frame_equals_pose_times_cell_frame'],
+        '1_projection_bijection_and_centres': (proj['solved_bijection'] and proj['solved_orientations_in_a4']
+                                               and _full(proj['generator_bijections']) and _full(proj['generator_orientations_in_a4'])
+                                               and _full(proj['centre_pose_changes_with_fixed_labels'])
+                                               and proj['centre_stickers_checked'] == 600 * 1201
+                                               and g['state_api_all_1200']['labels_equal_primitives'] == '1200/1200'),
+        '5_grouped_equals_per_piece': all(_full(row['statuses_equal']) and _full(row['admissible_inside_sets_equal'])
+                                         and row['every_off_lattice_piece_evaluated'] and row['reference_has_no_superset_or_filter'] and row['no_uncertain']
+                                         and len(row['grips']) >= (600 if name in ('E2', 'E3') else 60)
+                                         for name, row in r['grouped_per_piece'].items() if isinstance(row, dict)),
+        '7_global_rotation_control': (len(cp['global_rotation_control']) == 2
+                                       and [row['fixes_pole_0'] for row in cp['global_rotation_control']] == [True, False]
+                                       and all(row['lattice'] and row['digest_differs_from_solved'] and row['centres_in_other_chambers'] > 0
+                                               and not row['checkpoint'] and not row['checkpoint_with_supplied_word'] and row['export_refused']
+                                               for row in cp['global_rotation_control'])),
+        '7_same_cap_excursion': all(cp['same_cap_excursion'][k] for k in ('applied', 'was_off_lattice', 'lattice', 'checkpoint',
+                                                                          'nonidentity_retained_pose', 'export_equals_primitives_replay')),
+        '8_menu_controls': (r['menu_controls']['A4']['size'] == 12 and r['menu_controls']['S4']['size'] == 24
+                              and all(row['inverse_closed'] and row['a4_invariant'] and row['contains_a4'] and _full(row['all_transports_equal'])
+                                      and row['record_round_trip'] for row in (r['menu_controls'][name] for name in ('A4', 'S4', 'NC')))),
+        '9_negative_control': all(nc[k] for k in ('g_not_in_a4', 'g_squared_is_identity', 'g_fixes_pole_13', 'trace_is_four_thirds',
+                                                  'all_twists_admissible', 'digests_pairwise_distinct', 'entry_height_grows', 'replay_equal')) and nc['rounds'] >= 12,
+        'A1_input_map_and_half_turns': (tw['half_turn_request'] == 'accepted' and im['nonrepresentable_rejected_unchanged']
+                                       and im['menu_request_never_approximated']
+                                       and all(all(row[k] for k in ('global_minimum_equal', 'tie_order_equal', 'journal_records_bounds_and_distance',
+                                                                      'exact_record_round_trip')) for row in im['exhaustive_cases'])),
+        'A2_certificate_fields': all(row['float_decisions'] > 0 and row['all_evaluations_recorded']
+                                     and all(_full(row[k]) for k in ('fields_complete', 'coverage_verified', 'accepted_signs_equal_exact',
+                                                                     'float_enclosures_exclude_zero_with_exact_sign'))
+                                     for row in (fl[name]['certificate_fields'] for name in ('E2', 'E3'))),
+        'identity_in_journal': (ji['identity_fields_recorded'] and ji['model_hashes_match_assets']
+                                and all(ji['mismatches_refused'].values()) and ji['matching_identities_replay'] and ji['legacy_document_replays']),
     }
 
 

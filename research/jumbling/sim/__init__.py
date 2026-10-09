@@ -58,4 +58,4 @@ def get_context():
 
 from .state import Outcome, State, posed_point_check  # noqa: E402,F401
 from .twists import (Twist, TwistError, TwistMenu, UnrepresentableTwist, a4_element,  # noqa: E402,F401
-                     cap_frame, cayley, cayley_axis_angle, generator, plane, primitive)
+                     cap_frame, cayley, cayley_axis_angle, generator, half_turn, plane, primitive)

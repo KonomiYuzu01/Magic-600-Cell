@@ -1,6 +1,6 @@
 # J1 general simulator (exact reference engine for rigid jumbling)
 
-Status: **candidate for review (9 October 2026).** It implements workstream J1 of [`docs/progress/1.0/jumbling-plan.md`](../../../docs/progress/1.0/jumbling-plan.md) against the plan-checked [state contract](../state-contract.md) (sections 2, 3, 5 and 6), with amendments A1 and A3, A2 behind a flag that is off by default, and A4 as a per-cap twist menu. Nothing here changes 600-cell-Full, `assets/` or any root module.
+Status: **candidate for review (9 October 2026).** It implements J1 acceptance items 1–9 of [`docs/progress/1.0/jumbling-plan.md`](../../../docs/progress/1.0/jumbling-plan.md) against the plan-checked [state contract](../state-contract.md), revision `state-contract 2026-10-09 A1-A4`. A2 filtering is off by default. Nothing here changes 600-cell-Full, `assets/` or any root module.
 
 Evidence kind: source and synthetic geometry from a headless cloud session. Nothing here is Windows, Direct3D, input or performance evidence.
 
@@ -9,11 +9,11 @@ Evidence kind: source and synthetic geometry from a headless cloud session. Noth
 From the repository root, with Python 3 and NumPy only:
 
 ```text
-python tests/test_jumbling_sim.py        # 22 unit tests, about 13 s
+python tests/test_jumbling_sim.py        # focused headless tests; target under 60 s
 python research/jumbling/sim/accept.py   # full acceptance, writes acceptance.json
 ```
 
-The acceptance run took 218 s and 293 s on four cloud cores. The second run shared the machine with another four-worker job (load average about 9). Building the shared context (exact poles, K⁺, regions, tables) takes about 4 s.
+The full run uses four workers. Its measured duration, model hashes, exact menu identities, replayable journals and all acceptance flags are written to `acceptance.json`.
 
 ```python
 import sys; sys.path.insert(0, 'research/jumbling')
@@ -29,11 +29,11 @@ st.undo()                                             # exact inverse
 
 | File | Content |
 | --- | --- |
-| `model.py` | Read-only model data: exact poles (via `witness.py`, which uses `exact.from_float`), signatures, hosts, cap membership, signature bitsets, the (piece, facet) to slot map |
+| `model.py` | Read-only model data and SHA-256 identities for the asset bytes as read; exact poles, signatures, hosts, centres and the (piece, facet) to slot map |
 | `kplus.py` | K⁺ (order 7200) as pole permutations, with exact matrices on demand; composition, inverses, A4_c, generator words, exact membership test |
 | `regions.py` | K⁺-orbits of pieces; exact regions of the 36 representatives (double description from `witness.build_region`); lazy, cached exact transport to any piece |
 | `kernel.py` | Exact integer sign kernel over Q(√5); the optional filtered sign test (A2) with its error bound |
-| `twists.py` | Twists: retained generators and A4 elements, plane rotations (witness construction), Cayley rotations (A1), axis/angle mapping, `TwistMenu` (A4) |
+| `twists.py` | Retained, plane, Cayley and half-turn twists; globally minimising bounded input map (A1); validated exact menus (A4) |
 | `state.py` | Configurations: poses, admissibility, apply, survey, journal, undo, replay, snapshots, checkpoints, labelled stickers and frames (A3) |
 | `accept.py` | The acceptance run; `acceptance.json` is its output |
 
@@ -45,37 +45,72 @@ st.undo()                                             # exact inverse
   - A lattice piece is classified by its transported signature. Its region is the retained chamber with that signature, which the constraint n_c · x ≥ κ (or ≤ κ) itself cuts out. This is the **signature certificate**.
   - Off-lattice pieces with one pose form a pose group. The group is split by anchor caps a, where a lies in the signature of every piece of the subgroup. The posed cap region g(Ū_a ∩ P̃) contains every posed region of the subgroup. An exact one-sided bound over its 40 exact vertices certifies the whole subgroup (**group superset**).
   - Otherwise each piece is bounded over the complete exact vertex set of its posed region (**piece vertices**).
+  - `classify_per_piece` is the reference path: every off-lattice piece is evaluated individually over its complete vertices, with exact signs, no group bounds, no anchors and no filter. Lattice pieces keep their defining signature certificate. The reference defaults to evaluating every piece even after a straddle is found.
   - A straddling piece gives two exact vertices, one with h < 0 and one with h > 0. Each vertex is re-checked against all 600 cut and 600 facet constraints of the posed region before the certificate is issued.
   - A piece without a certificate makes the twist uncertain. That happens only for a rotation with no exact representation (`UnrepresentableTwist`) or an exhausted exact work budget. Blocked and uncertain twists change nothing. A commit is all-or-nothing.
 - **Twists.**
   - Retained twists are the 1,200 generators and every A4_c element, with generator words.
   - Plane rotations use the witness construction for any s ∈ Q(√5).
   - Cayley rotations (A1) use R = I + 2(W + W²)/(1 + |ω|²) in the exact frame u₁ = (−n₁, n₀, −n₃, n₂), u₂ = (−n₂, n₃, n₀, −n₁), u₃ = (−n₃, −n₂, n₁, n₀). As quaternions these are i·n, j·n and k·n.
-  - `cayley_axis_angle` maps a requested axis and angle to the nearest parameter with common denominator ≤ `max_den` and reports the realised angle, the axis error and the rotation error. Half-turns have no Cayley parameter and are refused.
+  - Half-turns use `half_turn(ctx, c, axis)`, with three exact cap-frame coordinates, and H_u = 2(P_c + P_u) − I. The axis must be nonzero. The result is its own inverse; journal family `half_turn` records its exact axis.
+  - `cayley_axis_angle` maps a numerical axis and angle request to the global Frobenius minimum with numerator bound `max_num` (N, default 16) and common denominator bound `max_den` (D, default 1000). Within 1° of a half-turn it also searches exact half-turn axes. It reports the realised cap-frame axis, angle and distance. Ties within 10⁻¹² go to the smaller denominator, then the lexicographically smaller numerator triple. The identity may be the minimum for small requests. See the pruning proof below.
   - A plane rotation with parameter s about pole d is exactly the Cayley rotation with ω = −s(uᵢ · n_d). The tests check this.
-  - `TwistMenu` (A4) transports a base-cap menu by the retained frames, Λ_c = F_c Λ₀ F_c⁻¹. With `close=True` it closes Λ₀ under A4₀ conjugation, which makes it K⁺-invariant. A `State(menu=...)` rejects twists outside the menu as `invalid`. The A4 menu gives 600-cell-Full.
-- **Journal.** Records hold the grip, the exact matrix (Q5 entries as `[a, b, d]`), the family parameters and the moved count. Replay rebuilds twists from records; for retained, plane and Cayley records the parameters must reproduce the matrix exactly. Undo applies the exact inverse, after checking that it is admissible with the recorded inside set.
+  - `TwistMenu` transports a base-cap menu by the retained frames, Λ_c = F_c Λ₀ F_c⁻¹. `close=True` adds all A4₀ elements, inverses and A4₀ conjugates. `close=False`, including record loading, refuses any missing requirement. Records carry `inverse_closed`, `a4_invariant`, `contains_a4` and a SHA-256 identity over the sorted canonical exact matrices, independent of labels and input order. `a4(ctx)` has 12 elements including identity; `s4(ctx)` has 24, generated exactly by A4₀ and the six Cayley parameters (±1,0,0), (0,±1,0), (0,0,±1) and their products.
+  - A `State(menu=...)` rejects twists outside the exact menu as `invalid`. A mapped numerical request with nonzero approximation distance (above 10⁻¹² for float input comparisons) is also refused, even if its nearest candidate belongs to the menu. Passing `menu` to the input map refuses it at construction. Menu matrices themselves are never approximated.
+- **Journal.** Records hold the grip, exact matrix (Q5 entries as `[a, b, d]`), family parameters and moved count. Mapped requests also record N, D and the distance. Replay checks that retained, plane, Cayley and half-turn parameters rebuild the recorded matrix exactly; it never repeats the numerical search. The document carries the model identity (SHA-256 of both asset files as read), menu identity (or null in free mode) and contract revision. Replay requires these to match the supplied context and menu. Legacy documents without identity fields and bare record lists still replay. Undo applies the exact inverse after checking the recorded inside count.
 - **Checkpoints** (contract section 5). `checkpoint()` requires a lattice configuration and a witness word in the 1,200 generators. Without a supplied word, it derives one from the journal by exact identities only:
   - consecutive twists of one grip merge, (c, g₁)(c, g₂) = (c, g₂g₁), since g₁ keeps every piece on its side of the cut;
   - identity twists drop.
 
   The word is always replayed from solved and compared pose by pose. `export_retained()` returns the labelled slot permutation (`labels[slot] = home slot`, the `core.Model.word_net` convention), and only at a checkpoint.
-- **Labelled stickers and frames** (A3). A sticker is (piece, host facet), labelled by its home slot. On a lattice configuration with pose k it sits in slot(k(A), k(f)). Its frame k·F_f equals F_{k(f)}·L with L ∈ A4₀, and the slot layout puts it at base-region index L(j). `lattice_stickers()` returns slots, labels, orientation indices and the frame-agreement flag. Off the lattice, `sticker_frame(s)` is the exact pose times the cell frame.
+  `State.from_global_rotation(ctx, kidx)` builds a configuration with every piece in one K⁺ pose. Non-identity global rotations move centres to other chambers and cannot be retained checkpoints; a supplied word cannot bypass that exact obstruction. This constructor asserts no path from solved.
+- **Labelled stickers and frames** (A3). A sticker is (piece, home host facet), labelled by its home slot. On a lattice configuration with pose k it sits in slot(k(A), k(f)). Its frame k·F_f equals F_{k(f)}·L with L ∈ A4₀, and the slot layout puts it at base-region index L(j). `lattice_stickers()` returns slots, labels, orientation indices and the frame-agreement flag, and refuses a non-bijective map or a frame outside A4₀. All 600 centre stickers are included: retained turns change the centre's pose while its label stays in place. Off the lattice, `sticker_frame(s)` is the exact pose times the cell frame.
+
+## A1 input-search proof
+
+Write the requested unit quaternion as (c,v). For a bounded integer numerator triple p and denominator d, the Cayley quaternion is (d,p)/√(d²+C), where B = v·p and C = p·p. The squared Frobenius distance is
+
+```text
+8 (1 − (c d + B)² / (d² + C)).
+```
+
+The input map enumerates every p ∈ [−N,N]³. For each p it maximises f(d) = (c d + B)²/(d²+C) on the integers 1…D. Its derivative is
+
+```text
+f'(d) = 2 (c d + B) (c C − B d) / (d² + C)².
+```
+
+The zero c d + B = 0 is a minimum of f, so cannot improve the rotation distance. The only possible interior maximum is d = c C/B. Consequently the endpoints and the floor/ceiling of that stationary point, clipped to 1…D, contain a minimum for every p. B = 0 and p = 0 give monotone or constant cases covered by the endpoints. This eliminates denominators without eliminating any possible improvement; it does not round the desired Cayley parameter independently in each coordinate.
+
+A second pass uses the global minimum plus 10⁻¹² and finds the smallest acceptable denominator for every tied p. It checks d = 1 first, then binary-searches between 1 and a minimising denominator. If the first endpoint is unacceptable, this interval has a single false-to-true crossing: at positive d the distance has either its sole interior minimum, or a maximum where the quaternion dot product vanishes, followed by a decreasing branch. The final comparison is (denominator, numerator triple). An identical key across the two families uses Cayley first for determinism.
+
+For half-turns the quaternion is (0,p)/√C. Scaling an axis does not change its rotation, so every p/d has the same candidate at denominator 1; all nonzero bounded p are enumerated. These candidates are included only when the requested rotation angle is within 1° of π, modulo a full turn. The stable float distance √2‖q−q_target‖‖q+q_target‖ avoids cancellation near identical rotations. Independent tests enumerate **every** denominator and compare 3×3 Frobenius distances with the selected minimum and tie order.
+
+This numerical input map chooses a nearby exact rotation. It does not claim that an arbitrary float matrix is field-valued. An exact request without a Q(√5) representation, such as a seventh turn, is represented by `UnrepresentableTwist` and rejected without changing state. Exact menu members are supplied as exact twists; a menu request is never rounded to another member.
+
+## A2 recorded certificates
+
+`State(ctx, filtered=True).classify(grip, record=True)` returns a `Classification` with `decisions`, one record per evaluated vertex. Each records the exact pose key, piece or anchor, vertex set and index, integer vertex and pulled-back normal forms, cut offset, state digest and model hashes, arithmetic/error-bound versions, an outward-rounded enclosure and the accepted sign. The enclosure measures ‖n‖² h, which has exactly the sign of h. A float decision is accepted only when the finite enclosure excludes zero.
+
+Coverage is either the piece's complete exact vertex set (with its representative and transport identity), or the complete cap-superset vertex set, with the covered piece identities and the constraint subset: all outer facets and the anchor's inside cut. Every covered piece's signature contains that anchor. Uncertain or non-finite evaluations fall back to exact Q(√5) signs; those records say `exact_fallback`, include the accepted exact sign and the fallback reason, and use null for an unavailable float enclosure. Recording is opt-in and does not change legality.
 
 ## Acceptance results (`acceptance.json`)
 
-| Item | Result |
+The JSON carries the measured counts and pass flags for the current run. The original 22 flags remain, with these nine additional flags covering the amended contract:
+
+| Flag | Coverage |
 | --- | --- |
-| Build | K⁺: 7200 exact rotations, all pole images exact. 36 K⁺-orbits. Representative regions: 36/36 full-dimensional, host patches equal the retained hosts, no vertex violates any of the 1,200 constraints, every vertex has a rank-4 tight set, and every representative touches every cut of its signature exactly. Transported signatures and hosts match for all 177,120 pieces. Frames are exact K⁺ elements, with a largest float deviation of 1.8·10⁻¹⁵, and the slot layout is frame-covariant for 259,800/259,800 slots |
-| 1. Stickers and frames, all 1,200 generators | Combinatorial proof, with no failures. For each generator k: the exact matrix maps the poles as `rotperms[k]`; r_k = F_c r_t F_c⁻¹; the inside set equals `move_src[k]`; perm_k(signature(src)) = signature(dst) for all 3,097 moves; every sticker move equals `primitives.npz`; and the destination region index equals L(source index). Through the `State` API, 1200/1200 generators are admissible, move 3,097 pieces, match the primitive labels and frames, pass the checkpoint, undo to identical bytes, and their inverses match. 6600/6600 non-identity A4 twists are admissible from solved, and their generator words reproduce their matrices |
-| 2. Certified blocked and unblocked cases | Witness reproduced exactly: g = witness rotation (s = 15/961). E2 has 54 blocked grips and E3 has 65, both sets equal to `witness-results.json`. The negative control is blocked with the witness certificate (piece 0, h = −0.01487 / +0.01344), with bytes unchanged. The alternative unblock (d, g·T_d⁻¹) frees c. E4 returns to solved bytes |
-| 2. Independent checks | 54/54 and 65/65 blocked certificates verified literally from their JSON in plain Q5. All 600 statuses of the E2 and E3 states recomputed from fresh double descriptions of every off-lattice piece (no K⁺ transport, no integer kernel): 600/600 each. Float cross-check with a 10⁻⁹ band: 600/600 each. Signature against geometry on lattice states: 541,392 pieces, 0 disagreements |
-| 3. Uncertain contacts | The E0 control simplices are classified correctly, exact and filtered (shallow crossings straddle; contact is inside or outside). A real 6.4·10⁻⁷° jumble twist blocks 54 of the first 120 grips with certificates, the smallest certified \|h\| being 1.5·10⁻¹⁷. An unrepresentable float rotation is rejected as uncertain. An exhausted budget is uncertain, and the same twist without a budget is admissible. Invalid matrices and tampered records are refused |
-| 4. Rejection without change | Byte-identical snapshots after every rejection: the controls, the witness negative control, the menu rejections and 385 blocked attempts in the round trips |
-| 5. Round trips | 20 seeded sequences (seed 20261009) of 8 to 13 admissible twists: 84 retained, 59 plane and 65 Cayley. 181 of the 208 twists needed geometric certificates, and up to 21,324 pieces were off the lattice. All 20 pass replay from JSON (equal bytes), the explicit inverse sequence (exact identity) and undo (solved bytes) |
-| Checkpoints | A retained word of 40 moves: export equals the `primitives.npz` replay. A jumble excursion that merges into a retained twist is a checkpoint, and its export equals the replay of the derived word. A lattice state through non-cancelling jumble twists is not a checkpoint until a witness is supplied, a wrong witness is refused, and export is refused. Off-lattice states are refused |
-| A2 filter | Off by default. Its surveys equal the exact surveys. 2,115,832 vertex signs were decided by the filter and 1,148 left to exact, with 0 disagreements |
-| A1, A4, A3 | Plane equals Cayley in 20/20 cases. The A4 menu is K⁺-invariant and equals A4_c for 600/600 caps. A Cayley menu closes to 6 elements and recognises its transported members. Off-lattice sticker frames equal pose × cell frame |
+| `1_projection_bijection_and_centres` | Solved and all 1,200 generators: 259,800 stickers form a bijection, orientations lie in A4₀ and labels equal the retained primitives. All 600 centre stickers are checked in each configuration (720,600 checks); each generator changes its own centre's pose with labels fixed |
+| `5_grouped_equals_per_piece` | E2 and E3 over all 600 grips, plus two seeded mixed states over 60 grips each. The reference evaluates every off-lattice piece individually; statuses and every admissible inside set must match |
+| `7_global_rotation_control` | Two global K⁺ rotations, one nonidentity A4₀ and one moving pole 0: lattice, distinct from solved, centres moved, checkpoint and export refused with and without a supplied word |
+| `7_same_cap_excursion` | (c,g), (c,a·g⁻¹) goes off-lattice, then returns to the same nonidentity retained pose as a. Its journal witnesses a checkpoint and its export equals the primitive replay |
+| `8_menu_controls` | A4 (12), S4 (24) and NC (16): exact inverse closure, A4 conjugacy invariance, containment and record round trips. Transport by F_c and F_c·a agrees for all 600 caps and all 12 a ∈ A4₀; production transport also agrees with independent integer conjugation |
+| `9_negative_control` | g = 2P₀,₁₃ − I constructed as a half-turn; g ∉ A4₀, g² = I, tr(H₀g) = 4/3. Twelve rounds of alternating H₀ and g are admissible with 25 distinct digests including solved, growing cap-0 pose heights and exact replay |
+| `A1_input_map_and_half_turns` | Independent exhaustive small-box minimum and tie-order checks, half-turn record reconstruction, recorded N/D/distance, explicit nonrepresentable rejection and refusal of approximated menu requests |
+| `A2_certificate_fields` | Every recorded float decision on E2 grip 13 and E3 grip 0 has the required exact inputs, identities, coverage and versions; each finite enclosure excludes zero and agrees with the exact sign. Fallbacks are also recorded and checked |
+| `identity_in_journal` | Asset byte hashes, menu hash and contract revision recorded; mismatches refused; matching and legacy journals replay |
+
+The retained flags still cover the exact K⁺/region/frame build, all generator actions and inverses, E0–E4, fresh independent double descriptions and literal certificate checks, conservative rejection, 20 seeded mixed-sequence replay/inverse/undo trials, supplied checkpoint witnesses, and the unfiltered/filtered sign comparison. The `A1_cayley_twists` flag now requires half-turn acceptance, as amended by A1.
 
 ## Exact versus floating point
 
@@ -94,9 +129,9 @@ st.undo()                                             # exact inverse
 ## Limits and open points
 
 - **Signature certificate.** Lattice pieces are certified by their defining constraint, as in `witness.py`, rather than by a vertex bound. This is exact. The acceptance also compares it with vertex classification (0 disagreements). A reviewer should confirm that it meets section 3's wording.
-- **Survey certificates.** For admissible grips, the survey records the number of pieces certified by each kind, not the vertex lists. These are reproducible from the state. Blocked grips carry exact points.
+- **Survey certificates.** Surveys report certificate counts and exact straddle points. Detailed A2 vertex decisions are available through the opt-in `classify(..., record=True)` path.
 - **Undo and menus.** Undo is a journal operation and is not restricted by a twist menu.
 - **No witness search.** Witness words come only from exact journal identities or from the caller. Nothing searches for a word, consistent with the human-solve boundary.
 - **Excursion audit.** The audit of contract section 5, which asks whether off-lattice excursions create new lattice actions, is not part of J1 and is not implemented.
-- **Non-exact rotations.** These are rejected, not handled by interval bounds; the contract allows either. There is no constructor for half-turns outside A4, but `Twist` accepts any exact rotation matrix.
+- **Non-exact rotations.** These are rejected, not handled by interval bounds; the contract allows either. All exact half-turn axes and Cayley parameters may use Q(√5), while the bounded numerical input map searches the rational subset specified by A1.
 - **Timings.** Runtimes are cloud timings for this research code, not performance evidence for any product path.
