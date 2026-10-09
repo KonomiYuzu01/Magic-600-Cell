@@ -86,7 +86,7 @@
       {"id": "plan-check", "title": "Program plan and amendments A1-A4 plan-checked", "weight": 1, "done": true, "evidence": "2f23e22"},
       {"id": "j1", "title": "J1 simulator passes acceptance", "weight": 3, "done": true, "evidence": "research/jumbling/sim/acceptance.json"},
       {"id": "j2", "title": "J2 viewer shows certified sequences", "weight": 2, "done": true, "evidence": "82a8ab2"},
-      {"id": "j3", "title": "J3 first theory generation and verification", "weight": 2, "done": false, "evidence": null},
+      {"id": "j3", "title": "J3 first theory generation and verification", "weight": 2, "done": true, "evidence": "research/jumbling/theory/theory-draft.md"},
       {"id": "j4", "title": "J4 orbit data for candidate menus", "weight": 1, "done": true, "evidence": "research/jumbling/explorer/explorer-results.json"},
       {"id": "renderer-packet", "title": "Renderer packet to owner", "weight": 1, "done": false, "evidence": null},
       {"id": "engineering-packet", "title": "Engineering packet to owner", "weight": 1, "done": false, "evidence": null}
