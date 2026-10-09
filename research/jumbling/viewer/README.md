@@ -18,13 +18,13 @@ The exact witness of [`witness.py`](../witness.py), as a local patch: the 4,375 
 
 The page has two views, visible together and linked, as the owner decided on 2 October 2026 (Global and Local only):
 
-- **Global**: the patch projected from four dimensions. The 4D eye is outside the polytope along a chosen pole direction: between c and d, c, or d. You can set its distance. A stereographic option projects from the antipode of the same direction. Cell shrink pulls each sticker toward its host cell centre, and sticker shrink pulls it toward its own centroid; both are applied in the piece's home frame before the pose. Grip markers sit at the projected poles: a ring means admissible, a diamond means blocked. A hatch pattern marks off-lattice pieces. A faint world-fixed cage of the host cells serves as the lattice reference.
+- **Global**: the patch projected from four dimensions. The 4D eye is outside the polytope along a chosen pole direction: between c and d, c, or d. You can set its distance. A stereographic option projects from the antipode of the same direction. Cell shrink pulls each sticker toward its host cell centre, and sticker shrink pulls it toward its own centroid; both are applied in the piece's home frame before the pose. Certificate markers use the posed region vertices before either shrink, in both projections. Grip markers sit at the projected poles: a ring means admissible, a diamond means blocked. A hatch pattern marks off-lattice pieces and moving preview pieces. A faint world-fixed cage of the host cells serves as the lattice reference.
 - **Local**: the focus piece against one anchor hyperplane, in an orthographic projection along one direction inside that hyperplane. The vertical axis is therefore the exact offset from the hyperplane.
   - With a grip selected, the anchor is the grip's cut, and the vertical axis is h of the state contract. A straddling piece crosses the plane, and its two certificate points carry their h values.
   - Without a grip, the anchor is the facet of the piece's nearest lattice slot. The slot is drawn dashed as a realignment cue, and anything above the plane lies outside the 600-cell.
 - **Linking**: clicking a grip marker or a piece in Global sets the Local focus. Clicking a neighbouring straddling piece in Local, or using the pager, moves the focus and its outline in Global. The selected grip's straddling pieces stay bright in Global while the others dim.
-- **Timeline**: play or pause, step, and scrub along the sequence. Integer positions are the exact states. Between them, every moving piece follows the twist's own one-parameter family R(φ) = I + (cos φ − 1)(uuᵀ + vvᵀ) + sin φ (vuᵀ − uvᵀ), a rotation in the twist's plane {u, v} with the fixed plane unchanged. There is no matrix interpolation. The views are labelled "float preview, uncertified" there, and grip markers lose their status.
-- **Deep links**: `#s2-g0` opens S2 with grip 0 selected; `#s1-g1-p0` also focuses piece 0.
+- **Timeline**: play or pause, step, and scrub along the sequence. Integer positions are the exact states. Between them, every moving piece follows the twist's own one-parameter family R(φ) = I + (cos φ − 1)(uuᵀ + vvᵀ) + sin φ (vuᵀ − uvᵀ), a rotation in the twist's plane {u, v} with the fixed plane unchanged. There is no matrix interpolation. The views are labelled "float preview, uncertified" there, and grip markers lose their status. A moving piece is described as "moving (float preview)", including retained turns with lattice poses at both endpoints. Lattice status is shown only at exact states.
+- **Deep links**: `#s2-g0` opens S2 with grip 0 selected; `#s1-g1-p0` also focuses piece 0. A grip is accepted only if its pole is exported in this patch; other grip IDs are ignored.
 
 ## Regenerate and open
 
@@ -37,7 +37,7 @@ node research/jumbling/viewer/check_viewer.mjs --serve   # then open http://127.
   - `--workers N` sets the region pool.
   - `--cache FILE` (development only; keep the file outside the repository) pickles the exact source, so changes to the export step rerun in a second.
 - **Swapping the source.** The exact source sits behind one function, `witness_source()`. A later simulator (`research/jumbling/sim/`) replaces it by returning the same dictionary, registered in `SOURCES`.
-- **Serving.** The page needs HTTP, because it fetches its data; `file://` does not work. `index.html` is written in the private-page format, without its own document skeleton. `--serve` wraps it in the same minimal skeleton that the host adds at publish time. Any static server also works, but then the page renders in quirks mode.
+- **Serving.** The page needs HTTP, because it fetches its data; `file://` does not work. Use HTTPS or localhost HTTP so Web Crypto can verify the scene digest. `index.html` is written in the private-page format, without its own document skeleton. `--serve` wraps it in the same minimal skeleton that the host adds at publish time. A static server also works in that secure context, but then the page renders in quirks mode.
 - **Libraries.** three.js 0.160.0 loads from cdn.jsdelivr.net through an import map. The fonts come from Google Fonts, with system fallbacks.
 
 ## Headless check
@@ -52,19 +52,23 @@ It uses the Node Playwright package and Chromium with SwiftShader WebGL (`--use-
 - the model counts match `scene.json`;
 - every animated twist family ends on the exported pose (float deviation 9·10⁻¹⁶);
 - for every exact state, the panel counts match `scene.json` and the views are labelled exact; in between, they are labelled as an uncertified preview;
+- piece 1035 is described as moving at S1.5, with lattice status restored at the exact endpoints of the retained turn;
 - both views draw non-background pixels (read back with `readPixels`), in perspective and stereographic projection;
-- the negative-control certificate of `witness.py` (grip 1, piece 0, h = −0.01487 and +0.01344) appears;
+- the Certificate row matches both vertex identities and signed h values of the negative control from `witness.py` (grip 1, piece 0, h = −0.01487 and +0.01344), and reversing either sign fails the assertion;
+- Global certificate markers for S1, grip 1, piece 7 keep their posed vertex positions and signed h at default shrink in both projections, and stay fixed when shrink changes;
 - the two certificate points are labelled in Local;
 - clicking a grip marker in Global drives Local, and the pager moves the focus;
 - play advances and pause holds;
 - the dark theme applies;
 - the deep link `#s2-g0` works;
+- the deep links `#s2-g47` and `#s2-g600` ignore grips without exported poles and load without errors;
+- the binary and base64 paths verify the SHA-256 of the decoded scene bytes, and digest mismatches show a load error without building a model;
 - there is no horizontal scroll at 390 px;
 - no request goes to a host outside the allowlist.
 
 `--vendor DIR` serves `three.module.js` and `OrbitControls.js` from a local directory when the browser cannot reach the CDN, as in a cloud session behind a TLS-inspecting proxy. The files must match the pinned SHA-256 digests in the script. Font requests get an empty stylesheet, so the screenshots use fallback fonts.
 
-Last run in a Linux cloud session: 32 of 32 checks passed. Screenshots in `shots/`:
+Recorded run before the certificate, preview, digest and deep-link fixes: 32 of 32 checks passed in a Linux cloud session. That result does not cover the added regression assertions. Screenshots in `shots/` are from that run:
 
 | File | Content |
 | --- | --- |
@@ -76,6 +80,8 @@ Last run in a Linux cloud session: 32 of 32 checks passed. Screenshots in `shots
 ## Data
 
 `scene.json` (45 KB) is the header. `scene.bin` (1.66 MB) holds little-endian typed arrays at the offsets the header lists. With `index.html` and `viewer.js`, the page and its data come to about 1.8 MB.
+
+The loader checks the decoded byte count and SHA-256 against the header before constructing any arrays or building the model. A mismatch stops loading with an error.
 
 - **Header** (`scene.json`):
   - counts, the layout of `scene.bin` and its SHA-256;
@@ -156,4 +162,4 @@ Legality is never decided in the browser. Certificates are displayed with float 
 
 ## Publishing on hosts without a binary type
 
-Some page hosts serve no binary media type. For them, publish the bytes of `scene.bin` as base64 text, and in the published copy of `scene.json` set `bin.file` to that text file and `bin.encoding` to `"base64"`. `viewer.js` decodes it, and the byte count is checked as before.
+Some page hosts serve no binary media type. For them, publish the bytes of `scene.bin` as base64 text, and in the published copy of `scene.json` set `bin.file` to that text file and `bin.encoding` to `"base64"`. `viewer.js` decodes it, then checks the byte count and SHA-256 of the decoded bytes against the same exported header values.

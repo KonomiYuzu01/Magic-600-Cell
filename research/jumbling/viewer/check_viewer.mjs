@@ -82,6 +82,12 @@ function vendorFiles(dir) {
 const failures = [];
 const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if (!ok) failures.push(what); };
 
+function certificateMatches(text, cert) {
+  if (!(cert.h_below < 0 && cert.h_above > 0)) return false;
+  return text.trim() === `vertex ${cert.vertex_below}: h = −${Math.abs(cert.h_below).toFixed(5)}; `
+    + `vertex ${cert.vertex_above}: h = +${cert.h_above.toFixed(5)} (exact signs)`;
+}
+
 async function main() {
   const port = Number(opt('--port') || 8600);
   const server = await serve(port);
@@ -89,11 +95,15 @@ async function main() {
   if (has('--serve')) { console.log(`serving the viewer at ${base} (Ctrl+C to stop)`); return; }
   const vendor = opt('--vendor') ? vendorFiles(opt('--vendor')) : null;
   const scene = JSON.parse(readFileSync(join(HERE, 'scene.json'), 'utf8'));
+  const sceneBytes = readFileSync(join(HERE, scene.bin.file));
+  const buffer = Uint8Array.from(sceneBytes).buffer;
+  const typed = { float32: Float32Array, uint8: Uint8Array, uint16: Uint16Array, uint32: Uint32Array, int32: Int32Array };
+  const A = Object.fromEntries(Object.entries(scene.bin.arrays).map(([name, d]) => [name, new typed[d.dtype](buffer, d.offset, d.length)]));
   const { chromium } = await loadPlaywright();
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const refused = [];
 
-  async function openPage(viewport, colorScheme, hash = '') {
+  async function openPage(viewport, colorScheme, hash = '', data = null) {
     const context = await browser.newContext({ viewport, colorScheme, deviceScaleFactor: 1 });
     const page = await context.newPage();
     const errors = [];
@@ -101,6 +111,9 @@ async function main() {
     page.on('pageerror', (e) => errors.push(String(e)));
     await page.route('**/*', (route) => {
       const u = route.request().url();
+      if (data && u === base + 'scene.json') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data.header) });
+      if (data && u === base + data.header.bin.file) return route.fulfill({ status: 200,
+        contentType: data.header.bin.encoding === 'base64' ? 'text/plain' : 'application/octet-stream', body: data.body });
       if (u.startsWith(base)) return route.continue();
       if (vendor && vendor[u]) return route.fulfill({ status: 200, contentType: 'text/javascript', body: vendor[u] });
       if (u.startsWith(CDN)) return route.continue();
@@ -147,6 +160,20 @@ async function main() {
   const pbadge = await page.locator('#gBadge').innerText();
   check(pbadge.includes('uncertified'), 'between states the views are labelled as an uncertified float preview');
 
+  // A retained turn moves piece 1035 between two lattice poses; the intermediate pose is a preview.
+  await page.evaluate(() => { window.jumbleViewer.goto(1); window.jumbleViewer.clearGrip(); window.jumbleViewer.selectPiece(1035); });
+  const latticeBefore = (await page.locator('#lHint').innerText()).includes('On the lattice');
+  await page.evaluate(() => window.jumbleViewer.goto(1.5));
+  const movingInfo = await page.locator('#pieceInfo').innerText();
+  const movingHint = await page.locator('#lHint').innerText();
+  const movingCaption = await page.locator('#lWhat').innerText();
+  check(movingInfo.includes('moving (float preview)') && movingHint.includes('Moving (float preview)')
+    && !/on the lattice|sits in a slot|at its lattice slot/i.test([movingInfo, movingHint, movingCaption].join(' ')),
+    'S1.5, piece 1035: retained-turn motion is a float preview without a lattice or slot claim');
+  await page.evaluate(() => window.jumbleViewer.goto(2));
+  check(latticeBefore && (await page.locator('#lHint').innerText()).includes('On the lattice'),
+    'piece 1035 keeps its lattice status at both exact endpoints of the retained turn');
+
   // shot 1: solved
   await page.evaluate(() => { window.jumbleViewer.goto(0); window.jumbleViewer.clearGrip(); });
   let cov = await page.evaluate(() => window.jumbleViewer.coverage());
@@ -158,10 +185,43 @@ async function main() {
     scene.attempts[0].certificate.piece_id);
   cov = await page.evaluate(() => window.jumbleViewer.coverage());
   check(cov.global > 0.02 && cov.local > 0.01, `S1, grip 1: both views draw (${(cov.global * 100).toFixed(1)}%, ${(cov.local * 100).toFixed(1)}%)`);
-  const cert1 = await page.locator('#pieceInfo').innerText();
+  const cert1 = await page.locator('#pieceInfo dt:has-text("Certificate") + dd').innerText();
   const att = scene.attempts[0].certificate;
-  check(cert1.includes(Math.abs(att.h_below).toFixed(5)) && cert1.includes(Math.abs(att.h_above).toFixed(5)),
-    'S1, grip 1: the panel shows the negative-control certificate of witness.py');
+  check(certificateMatches(cert1, att),
+    'S1, grip 1: the Certificate row matches both vertex identities and signed h values of witness.py');
+  check(!certificateMatches(cert1.replace('h = −', 'h = +'), att)
+    && !certificateMatches(cert1.replace('h = +', 'h = −'), att),
+    'the certificate assertion rejects a reversed below sign or above sign');
+
+  // Piece 7's above-cut vertex was moved below the cut by the default sticker shrink.
+  const p7 = A.piece_ids.indexOf(7);
+  let r7 = -1;
+  for (let r = A.cert_start[1]; r < A.cert_start[2]; r++) {
+    if (A.cert_grip[r] === 1 && A.cert_piece[r] === p7) { r7 = r; break; }
+  }
+  check(r7 >= 0, 'scene exports the S1, grip 1, piece 7 regression certificate');
+  if (r7 >= 0) {
+    const mat = scene.poses[A.state_pose[A.piece_ids.length + p7]].m;
+    const expectedWorld = [A.cert_vertex_below[r7], A.cert_vertex_above[r7]].map((j) => {
+      const o = (A.vert_start[p7] + j) * 4;
+      return [0, 1, 2, 3].map((row) => [0, 1, 2, 3].reduce((sum, col) => sum + mat[row * 4 + col] * A.verts[o + col], 0));
+    });
+    const pole = scene.grips.units['1'];
+    await page.evaluate(() => window.jumbleViewer.selectPiece(7));
+    for (const proj of ['persp', 'stereo']) {
+      await page.evaluate((proj) => window.jumbleViewer.set({ proj, cell: 0.78, sticker: 0.86 }), proj);
+      const markers = await page.evaluate(() => window.jumbleViewer.globalCertificate());
+      await page.evaluate(() => window.jumbleViewer.set({ cell: 1, sticker: 1 }));
+      const unshrunk = await page.evaluate(() => window.jumbleViewer.globalCertificate());
+      const h = markers ? markers.world.map((x) => x.reduce((sum, v, i) => sum + v * pole[i], 0) - 121 / 125) : [];
+      check(markers && unshrunk && h[0] < 0 && h[1] > 0
+        && Math.abs(h[0] - A.cert_h_below[r7]) < 1e-6 && Math.abs(h[1] - A.cert_h_above[r7]) < 1e-6
+        && markers.world.every((x, i) => x.every((v, j) => Math.abs(v - expectedWorld[i][j]) < 1e-9))
+        && markers.projected.every((v, i) => Math.abs(v - unshrunk.projected[i]) < 1e-6),
+        `S1, grip 1, piece 7 (${proj}): Global certificate markers keep their signed h and posed vertex positions at default shrink`);
+    }
+    await page.evaluate((id) => { window.jumbleViewer.set({ proj: 'persp', cell: 0.78, sticker: 0.86 }); window.jumbleViewer.selectPiece(id); }, att.piece_id);
+  }
   if (shots) await page.screenshot({ path: join(HERE, 'shots', '2-after-g.png'), fullPage: true, clip: await clipOf(['main.views', '.rail']) });
 
   // shot 4: Local view after T_d, grip c blocked, with its certificate points
@@ -239,6 +299,35 @@ async function main() {
   check(pcov.global > 0.02 && pcov.local > 0.01, 'both views draw at phone width');
   check(phone.errors.length === 0, `no console errors at phone width (${phone.errors.length})`);
   await phone.context.close();
+
+  for (const hash of ['#s2-g47', '#s2-g600']) {
+    const linked = await openPage({ width: 1280, height: 860 }, 'light', hash);
+    const state = await linked.page.evaluate(() => ({ ready: window.jumbleViewer.ready,
+      t: window.jumbleViewer.view && window.jumbleViewer.view.t, grip: window.jumbleViewer.view && window.jumbleViewer.view.grip,
+      errors: window.jumbleViewer.errors }));
+    check(state.ready && state.t === 2 && state.grip === null && state.errors.length === 0 && linked.errors.length === 0,
+      `deep link ${hash} ignores a grip without an exported patch pole and loads without errors`);
+    await linked.context.close();
+  }
+
+  const base64Header = { ...scene, bin: { ...scene.bin, file: 'scene-base64.txt', encoding: 'base64' } };
+  const encoded = await openPage({ width: 1280, height: 860 }, 'light', '', { header: base64Header, body: sceneBytes.toString('base64') });
+  check(await encoded.page.evaluate(() => window.jumbleViewer.ready && window.jumbleViewer.errors.length === 0)
+    && encoded.errors.length === 0, 'the base64 scene path verifies the decoded bytes and loads the model');
+  await encoded.context.close();
+  const corrupt = Buffer.from(sceneBytes);
+  corrupt[0] ^= 1;   // same byte count, different SHA-256
+  for (const encoding of ['binary', 'base64']) {
+    const bad = await openPage({ width: 1280, height: 860 }, 'light', '', {
+      header: encoding === 'base64' ? base64Header : scene,
+      body: encoding === 'base64' ? corrupt.toString('base64') : corrupt,
+    });
+    const state = await bad.page.evaluate(() => ({ ready: window.jumbleViewer.ready, model: window.jumbleViewer.model,
+      error: document.getElementById('error').textContent, badge: document.getElementById('gBadge').textContent }));
+    check(!state.ready && !state.model && state.badge === 'no data' && state.error.includes('SHA-256 digest does not match'),
+      `the ${encoding} scene path rejects a digest mismatch before building a model`);
+    await bad.context.close();
+  }
 
   check(refused.length === 0, `no requests to hosts outside the allowlist${refused.length ? ': ' + refused.join(', ') : ''}`);
   await browser.close();

@@ -128,6 +128,9 @@ async function loadScene() {
     ? Uint8Array.from(atob((await bRes.text()).trim()), (ch) => ch.charCodeAt(0)).buffer
     : await bRes.arrayBuffer();
   if (buf.byteLength !== header.bin.bytes) throw new Error('scene.bin does not match scene.json');
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  const digest = Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, '0')).join('');
+  if (digest !== header.bin.sha256) throw new Error('Scene data SHA-256 digest does not match scene.json');
   const A = {};
   for (const [name, d] of Object.entries(header.bin.arrays)) A[name] = new TYPED[d.dtype](buf, d.offset, d.length);
   return buildModel(header, A);
@@ -232,8 +235,8 @@ function computeFrame(t) {
 }
 
 function isOff(p) {
-  // off the lattice at the source state, or moving towards an off-lattice pose
-  return !M.onLattice(frame.k, p) || (frame.moving[p] === 1 && !M.onLattice(frame.k + 1, p));
+  // Every moving piece has an uncertified intermediate pose, including retained turns.
+  return frame.moving[p] === 1 || !M.onLattice(frame.k, p);
 }
 
 function straddleSet(k, grip) {
@@ -531,19 +534,6 @@ function refreshHome() {
   }
 }
 
-function shrunkVertex(p, j) {
-  // the displayed (shrunk) home position of local vertex j of piece p, if it is on a sticker
-  for (const s of M.pieceStickers[p]) {
-    const st = M.stickers[s];
-    const i = st.map.get(j);
-    if (i !== undefined) {
-      const o = (st.gv0 + i) * 4;
-      return [G.home[o], G.home[o + 1], G.home[o + 2], G.home[o + 3]];
-    }
-  }
-  return M.vert(p, j);
-}
-
 function updateGlobalGeometry() {
   const P = makeProjector();
   G.projector = P;
@@ -620,8 +610,9 @@ function updateFocusLines() {
   G.certPts.visible = !!cert;
   if (cert) {
     const m = frame.mats[p];
-    G.projector.fn(matVec(m, shrunkVertex(p, cert.vb)), G.certPos, 0);
-    G.projector.fn(matVec(m, shrunkVertex(p, cert.va)), G.certPos, 3);
+    // Certificates belong to region vertices; sticker shrink must never move their points.
+    G.certWorld = [matVec(m, M.vert(p, cert.vb)), matVec(m, M.vert(p, cert.va))];
+    G.certWorld.forEach((x, i) => G.projector.fn(x, G.certPos, i * 3));
     G.certPts.geometry.attributes.position.needsUpdate = true;
   }
 }
@@ -893,14 +884,17 @@ function buildLocal() {
       : status === 'b' ? (cert ? 'Exact certificate: one vertex below the cut, one above.' : 'This piece does not straddle; pick a highlighted piece.')
         : 'Grip admissible here: no piece straddles its cut.';
   } else {
-    $('lWhat').innerHTML = `piece ${M.A.piece_ids[p]} against the facet of cell ${F.host} at its lattice slot`;
+    $('lWhat').innerHTML = `piece ${M.A.piece_ids[p]} against the facet of cell ${F.host}`
+      + (frame.exact ? ' at its lattice slot' : ' · float preview');
     const lat = M.latticePoses[M.statePose(frame.k, p)];
     if (view.ghost && !M.onLattice(frame.k, p)) {
       L.group.add(pieceMeshLocal(F, p, lat, L.ghostFill, null));
       L.group.add(regionEdgesLocal(F, p, lat, L.ghostMat));
     }
-    hint.textContent = M.onLattice(frame.k, p) ? 'On the lattice: the piece sits in a slot.'
-      : 'Dashed: nearest lattice slot. Above the plane: outside the 600-cell.';
+    hint.textContent = !frame.exact
+      ? `${frame.moving[p] ? 'Moving' : 'Stationary'} (float preview): lattice status is available only at exact states.`
+      : M.onLattice(frame.k, p) ? 'On the lattice: the piece sits in a slot.'
+        : 'Dashed: nearest lattice slot. Above the plane: outside the 600-cell.';
   }
 
   if (refit) {
@@ -1157,7 +1151,9 @@ function updatePanels() {
     const onLat = M.onLattice(k, p);
     let html = `<dt>Piece</dt><dd class="mono">${M.A.piece_ids[p]}</dd>`;
     html += `<dt>Caps</dt><dd>${caps}</dd><dt>Host cells</dt><dd class="mono">${hosts.join(', ')}</dd>`;
-    html += `<dt>Pose at S${k}</dt><dd>${onLat ? 'on the lattice' : `off-lattice, ${pose.residual_deg[0].toFixed(3)}° from the nearest lattice pose (float)`}</dd>`;
+    const poseText = !exact ? `${frame.moving[p] ? 'moving' : 'stationary'} (float preview)`
+      : onLat ? 'on the lattice' : `off-lattice, ${pose.residual_deg[0].toFixed(3)}° from the nearest lattice pose (float)`;
+    html += `<dt>${exact ? `Pose at S${k}` : 'Pose'}</dt><dd>${poseText}</dd>`;
     if (view.grip != null) {
       const cert = exact ? certFor(k, view.grip, p) : null;
       const hs = posedRegion(p, frame.mats[p]).map((x) => dot4(M.gripUnit(view.grip), x) - ALPHA);
@@ -1198,7 +1194,8 @@ function readHash() {
   const m = /^#s(\d)(?:-g(\d+))?(?:-p(\d+))?$/.exec(location.hash || '');
   if (!m) return false;
   view.t = Math.min(M.K - 1, Number(m[1]));
-  view.grip = m[2] != null ? Number(m[2]) : null;
+  const grip = m[2] != null ? Number(m[2]) : null;
+  view.grip = M.grips.includes(grip) ? grip : null;
   view.piece = m[3] != null && M.pieceById.has(Number(m[3])) ? M.pieceById.get(Number(m[3])) : null;
   if (view.grip != null && view.piece == null) {
     const recs = M.certs[view.t].get(view.grip);
@@ -1372,6 +1369,10 @@ async function main() {
   app.clearGrip = () => { clearGrip(); render(); };
   app.set = (opts) => { Object.assign(view, opts); dirty.home = dirty.pose = dirty.flags = dirty.local = dirty.panels = true; render(); };
   app.view = view;
+  // The actual 4D inputs and projected buffer of the Global certificate markers, for checks.
+  app.globalCertificate = () => G.certPts.visible ? {
+    world: G.certWorld.map((x) => x.slice()), projected: Array.from(G.certPos),
+  } : null;
   app.gripScreen = (e) => {
     const i = M.grips.indexOf(e);
     const v = new THREE.Vector3(G.gripPos[i * 3], G.gripPos[i * 3 + 1], G.gripPos[i * 3 + 2]).project(G.camera);
