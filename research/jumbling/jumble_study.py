@@ -11,11 +11,12 @@ Sections (keys of results.json):
   realignments    discrete jumble twists: rotations about the cell axis, outside A4, that
                   carry at least two independent interacting poles onto poles; classified
                   up to A4 x A4 double cosets
-  snapping        for each class: does nearest-pole snapping give a bijection of the
-                  interacting poles, and how many cap signatures map onto cap signatures
+  snapping        for one representative per class: nearest-pole snapping as implemented
+                  (argmin, tie-breaking dependent) and a tie-aware maximum matching
   automorphisms   all permutations of the interacting poles that fix the cap pole and map
                   the set of cap signatures onto itself, compared with the geometric T_d
-  approx_profile  smallest worst-case landing error of a rotation at a given distance from A4
+  approx_profile  sampled upper bound on the smallest worst-case same-shell landing error of
+                  a rotation at distance at least d from A4 (not a lower bound)
   sun_cube        the same landing error for the Sun Cube 45-degree face twist, as a baseline
 """
 import collections
@@ -92,13 +93,21 @@ def shells_section(poly, cells, v):
     rows = []
     for s in sorted(set(np.round(ang, 3)))[1:9]:
         members = np.where(np.abs(ang - s) < 1e-3)[0]
+        th = [max_min(cells[i]) / rin for i in members]
         rows.append({
             'angle_deg': float(s),
             'poles': int(len(members)),
-            'interacts_iff_depth_below': round(max_min(cells[members[0]]) / rin, 5),
+            # every member is evaluated: one angular shell can hold poles with different thresholds
+            'interacts_iff_depth_below_min': round(min(th), 11),
+            'interacts_iff_depth_below_max': round(max(th), 11),
         })
+    # the 49.118-degree shell joins at exactly 3 / (2 phi); checked numerically here
+    phi = (1 + 5 ** 0.5) / 2
+    next_shell = rows[5]
+    assert abs(next_shell['interacts_iff_depth_below_min'] - 3 / (2 * phi)) < 1e-9
+    assert abs(next_shell['interacts_iff_depth_below_max'] - 3 / (2 * phi)) < 1e-9
     return {'inradius': rin, 'depth_unit': 'cut offset / facet distance', 'retained_depth': 121 / 125,
-            'shells': rows}
+            'next_shell_threshold_exact': '3/(2 phi)', 'shells': rows}
 
 
 class Local:
@@ -191,16 +200,40 @@ def cap_signatures(m, v_m):
     return caps, sigs
 
 
-def snapping_section(classes, v, q, normals, sigs, orbit_of):
+def max_matching(cands):
+    """Maximum bipartite matching (Kuhn) of left items onto candidate targets."""
+    owner = {}
+
+    def augment(i, seen):
+        for t in cands[i]:
+            if t in seen:
+                continue
+            seen.add(t)
+            if t not in owner or augment(owner[t], seen):
+                owner[t] = i
+                return True
+        return False
+
+    return sum(augment(i, set()) for i in range(len(cands)))
+
+
+def snapping_section(classes, v, q, normals, sigs, orbit_of, tie=1e-9):
+    """Nearest-pole snapping of one representative per class.
+
+    The argmin counts depend on how floating point breaks geometric ties, so they describe this
+    implementation only. The tie-aware part treats every pole within `tie` (chord) of the nearest
+    distance as a candidate and asks for the largest matching onto the 57 interacting poles and
+    onto all 600 poles; a fudging that closes on the 57 poles would need a perfect matching.
+    """
     sigset = set(sigs)
     poles = sorted(set().union(*sigs))
+    pole_set = set(poles)
     out = []
     for row in classes:
         r4 = q @ rot_about(v, np.array(row['R_perp'])) @ q.T
         dist = np.linalg.norm((normals[poles] @ r4.T)[:, None, :] - normals[None], axis=2)
         tgt = dist.argmin(1).tolist()
         sigma = dict(zip(poles, tgt))
-        bijective = sorted(tgt) == poles
         ok, failing = 0, collections.Counter()
         for k, x in enumerate(sigs):
             y = frozenset(sigma[p] for p in x)
@@ -208,13 +241,18 @@ def snapping_section(classes, v, q, normals, sigs, orbit_of):
                 ok += 1
             else:
                 failing[orbit_of[k]] += 1
+        near = [np.where(d <= d.min() + tie)[0].tolist() for d in dist]
         out.append({
             'min_rotation_angle_deg': row['min_rotation_angle_deg'],
-            'pole_bijection': bool(bijective),
-            'cap_signatures_mapped_to_signatures': ok,
+            'argmin_pole_bijection': sorted(tgt) == poles,
+            'argmin_cap_signatures_mapped_to_signatures': ok,
             'cap_signatures': len(sigs),
+            'argmin_orbits_with_failures': len(failing),
+            'nearest_ties': int(sum(len(c) > 1 for c in near)),
+            'max_matching_onto_interacting_poles': max_matching([[t for t in c if t in pole_set] for c in near]),
+            'max_matching_onto_all_poles': max_matching(near),
+            'interacting_poles': len(poles),
             'max_error_to_any_pole_deg': round(float(chord_to_deg(dist.min(1)).max()), 3),
-            'orbits_with_failures': len(failing),
         })
     return out
 
@@ -355,8 +393,9 @@ def main():
     OUT.write_text(json.dumps(res, indent=1) + '\n')
     a = res['automorphisms']
     print(f"cap pieces {len(caps)}; interacting poles {loc.n}; realignment classes "
-          f"{len(res['realignments']['classes'])}; bijective snappings "
-          f"{sum(s['pole_bijection'] for s in res['snapping'])}; automorphisms {a['automorphisms_fixing_cap_pole']} "
+          f"{len(res['realignments']['classes'])}; perfect tie-aware matchings onto the interacting poles "
+          f"{sum(s['max_matching_onto_interacting_poles'] == s['interacting_poles'] for s in res['snapping'])} "
+          f"(largest {max(s['max_matching_onto_interacting_poles'] for s in res['snapping'])}); automorphisms {a['automorphisms_fixing_cap_pole']} "
           f"(geometric {a['geometric_symmetries_fixing_cap_pole']}, equal {a['automorphisms_equal_geometric_symmetries']})")
 
 

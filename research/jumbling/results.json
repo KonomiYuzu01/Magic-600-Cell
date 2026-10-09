@@ -5,46 +5,55 @@
   "inradius": 0.9256147934109991,
   "depth_unit": "cut offset / facet distance",
   "retained_depth": 0.968,
+  "next_shell_threshold_exact": "3/(2 phi)",
   "shells": [
    {
     "angle_deg": 15.522,
     "poles": 4,
-    "interacts_iff_depth_below": 1.0
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
    },
    {
     "angle_deg": 25.243,
     "poles": 12,
-    "interacts_iff_depth_below": 1.0
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
    },
    {
     "angle_deg": 36.0,
     "poles": 24,
-    "interacts_iff_depth_below": 1.0
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
    },
    {
     "angle_deg": 41.41,
     "poles": 12,
-    "interacts_iff_depth_below": 1.0
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
    },
    {
     "angle_deg": 44.478,
     "poles": 4,
-    "interacts_iff_depth_below": 1.0
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
    },
    {
     "angle_deg": 49.118,
     "poles": 24,
-    "interacts_iff_depth_below": 0.92705
+    "interacts_iff_depth_below_min": 0.92705098312,
+    "interacts_iff_depth_below_max": 0.92705098312
    },
    {
     "angle_deg": 56.012,
     "poles": 24,
-    "interacts_iff_depth_below": 0.90983
+    "interacts_iff_depth_below_min": 0.90983005625,
+    "interacts_iff_depth_below_max": 0.90983005625
    },
    {
     "angle_deg": 60.0,
     "poles": 32,
-    "interacts_iff_depth_below": 0.89443
+    "interacts_iff_depth_below_min": 0.88196601125,
+    "interacts_iff_depth_below_max": 0.894427191
    }
   ]
  },
@@ -1014,267 +1023,399 @@
  "snapping": [
   {
    "min_rotation_angle_deg": 90.0,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 1,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 1,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 15.522,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 24,
+   "max_matching_onto_interacting_poles": 37,
+   "max_matching_onto_all_poles": 53,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
   },
   {
    "min_rotation_angle_deg": 44.4775,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 54,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 54,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 15.522,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 27,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
   },
   {
    "min_rotation_angle_deg": 44.4775,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 54,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 54,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 15.522,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 27,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
   },
   {
    "min_rotation_angle_deg": 72.0,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 10,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 10,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 15.522,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 33,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
   },
   {
    "min_rotation_angle_deg": 72.0,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 14,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 14,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 15.522,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 33,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
   },
   {
    "min_rotation_angle_deg": 63.4349,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 112,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 112,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 13.193,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 8,
+   "max_matching_onto_interacting_poles": 49,
+   "max_matching_onto_all_poles": 57,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 13.193
   },
   {
    "min_rotation_angle_deg": 63.9759,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 11,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 11,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.434,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 25,
+   "max_matching_onto_interacting_poles": 37,
+   "max_matching_onto_all_poles": 43,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
   },
   {
    "min_rotation_angle_deg": 65.3365,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 19,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 19,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 15.522,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 6,
+   "max_matching_onto_interacting_poles": 42,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
   },
   {
    "min_rotation_angle_deg": 26.5651,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 299,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 299,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 13.193,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 8,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 41,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 13.193
   },
   {
    "min_rotation_angle_deg": 41.8103,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 148,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 148,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 19.291,
-   "orbits_with_failures": 33
+   "argmin_orbits_with_failures": 33,
+   "nearest_ties": 16,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 49,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 19.291
   },
   {
    "min_rotation_angle_deg": 47.2122,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 26,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 26,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.085,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 13,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.085
   },
   {
    "min_rotation_angle_deg": 61.7313,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 44,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 44,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 18.699,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 9,
+   "max_matching_onto_interacting_poles": 40,
+   "max_matching_onto_all_poles": 46,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.699
   },
   {
    "min_rotation_angle_deg": 61.7313,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 44,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 44,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 18.699,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 9,
+   "max_matching_onto_interacting_poles": 40,
+   "max_matching_onto_all_poles": 46,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.699
   },
   {
    "min_rotation_angle_deg": 61.0397,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 2,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 2,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 18.503,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 6,
+   "max_matching_onto_interacting_poles": 38,
+   "max_matching_onto_all_poles": 44,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.503
   },
   {
    "min_rotation_angle_deg": 27.9512,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 218,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 218,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 15.522,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 11,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 43,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
   },
   {
    "min_rotation_angle_deg": 27.9512,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 284,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 284,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 15.522,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 11,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 43,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
   },
   {
    "min_rotation_angle_deg": 31.2122,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 158,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 158,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.777,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 3,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 42,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.777
   },
   {
    "min_rotation_angle_deg": 31.2122,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 158,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 158,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.777,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 3,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 42,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.777
   },
   {
    "min_rotation_angle_deg": 51.6071,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 9,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 9,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 18.058,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 5,
+   "max_matching_onto_interacting_poles": 37,
+   "max_matching_onto_all_poles": 42,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.058
   },
   {
    "min_rotation_angle_deg": 51.6071,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 10,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 10,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 18.058,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 5,
+   "max_matching_onto_interacting_poles": 37,
+   "max_matching_onto_all_poles": 42,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.058
   },
   {
    "min_rotation_angle_deg": 56.0122,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 30,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 30,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.434,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 12,
+   "max_matching_onto_interacting_poles": 42,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
   },
   {
    "min_rotation_angle_deg": 56.0122,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 28,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 28,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.434,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 14,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 50,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
   },
   {
    "min_rotation_angle_deg": 56.0122,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 12,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 12,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.434,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 14,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 50,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
   },
   {
    "min_rotation_angle_deg": 56.0122,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 35,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 35,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.434,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 12,
+   "max_matching_onto_interacting_poles": 42,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
   },
   {
    "min_rotation_angle_deg": 68.0447,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 13,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 13,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.434,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 13,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
   },
   {
    "min_rotation_angle_deg": 68.0447,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 13,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 13,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 17.434,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 13,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
   },
   {
    "min_rotation_angle_deg": 38.7249,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 113,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 113,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 20.484,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 5,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 44,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 20.484
   },
   {
    "min_rotation_angle_deg": 38.7249,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 113,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 113,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 20.484,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 5,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 44,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 20.484
   },
   {
    "min_rotation_angle_deg": 38.9963,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 86,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 86,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 19.291,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 12,
+   "max_matching_onto_interacting_poles": 44,
+   "max_matching_onto_all_poles": 46,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 19.291
   },
   {
    "min_rotation_angle_deg": 38.9963,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 79,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 79,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 19.291,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 12,
+   "max_matching_onto_interacting_poles": 44,
+   "max_matching_onto_all_poles": 46,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 19.291
   },
   {
    "min_rotation_angle_deg": 50.4857,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 77,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 77,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 16.687,
-   "orbits_with_failures": 34
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 22,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 53,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 16.687
   },
   {
    "min_rotation_angle_deg": 50.4857,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 58,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 58,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 16.687,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 22,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 53,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 16.687
   },
   {
    "min_rotation_angle_deg": 71.216,
-   "pole_bijection": false,
-   "cap_signatures_mapped_to_signatures": 15,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 15,
    "cap_signatures": 3097,
-   "max_error_to_any_pole_deg": 18.376,
-   "orbits_with_failures": 35
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 10,
+   "max_matching_onto_interacting_poles": 40,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.376
   }
  ],
  "automorphisms": {
