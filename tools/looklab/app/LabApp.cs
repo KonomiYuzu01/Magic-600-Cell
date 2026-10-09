@@ -44,6 +44,7 @@ internal sealed partial class LabApp : Control
         var loadButton = new Button { Text = "Load preset", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         var saveButton = new Button { Text = "Save preset", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         buttons.AddChild(loadButton); buttons.AddChild(saveButton);
+        LL3.ModeControls.Attach(this, root, column);
         var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         column.AddChild(scroll);
         Panels = new ParameterPanels(State) { SizeFlagsHorizontal = SizeFlags.ExpandFill }; scroll.AddChild(Panels);
@@ -62,10 +63,12 @@ internal sealed partial class LabApp : Control
         });
         load.FileSelected += path => Guard(() => { State.Load(files.Load(path)); name.Text = State.Preset.Name; status.Text = "Preset loaded."; });
         save.FileSelected += path => Guard(() => { files.Save(path, State.Preset); status.Text = "Preset saved."; });
-        View.Status = text => status.Text = text;
+        var diagnostics = LL5.LabControls.Attach(root, State, View, Panels, status);
+        View.Status = diagnostics.UpdateStatus;
         State.Changed += Change;
         Resized += Layout;
         ApplyStyle(); Layout();
+        LL4.GreyboxControls.Attach(this, stage, panel, Panels, root);
     }
 
     private FileDialog Dialog(FileDialog.FileModeEnum mode) => new()

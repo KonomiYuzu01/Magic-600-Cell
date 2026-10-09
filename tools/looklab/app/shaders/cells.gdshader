@@ -35,6 +35,11 @@ uniform int finish_kind = 0;
 uniform int highlight_kind = 0;
 uniform vec4 accent;
 uniform vec4 background;
+// LL5: linear-light CVD, off for normal vision and geometry probes.
+uniform bool cvd_enabled = false;
+uniform vec4 cvd_r0 = vec4(1.0, 0.0, 0.0, 0.0);
+uniform vec4 cvd_r1 = vec4(0.0, 1.0, 0.0, 0.0);
+uniform vec4 cvd_r2 = vec4(0.0, 0.0, 1.0, 0.0);
 // Test modes use these same vertex and fragment functions in an RGBA32F
 // framebuffer. Normal viewport draws keep geometry_check and transpose_q off.
 uniform bool geometry_check = false;
@@ -118,5 +123,8 @@ void fragment() {
     }
     float depth_fog = 1.0 - exp(-fog * 0.6 * max(5.0 - projected.z - 1.5, 0.0));
     ALBEDO = clamp(mix(colour, background.rgb, clamp(depth_fog, 0.0, 1.0)), vec3(0.0), vec3(1.0));
+    if (cvd_enabled) {
+        ALBEDO = clamp(vec3(dot(cvd_r0.xyz, ALBEDO), dot(cvd_r1.xyz, ALBEDO), dot(cvd_r2.xyz, ALBEDO)), vec3(0.0), vec3(1.0));
+    }
     }
 }

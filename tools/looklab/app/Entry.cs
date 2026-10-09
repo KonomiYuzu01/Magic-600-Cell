@@ -24,6 +24,9 @@ public partial class Entry : Node
                 if (args.Length < 2) throw new Exception("expected checkout root and scratch folder from harness");
                 var app = new LabApp(args[0]); AddChild(app);
                 if (mode == "smoke") { AppSmoke.Run(app, args[1], fault); GetTree().Quit(); }
+                else if (LL4.LL4Checks.Handles(mode)) { LL4.LL4Checks.Run(app, args[0], mode, fault); GetTree().Quit(); }
+                else if (await LL3.ModeChecks.Dispatch(this, app, args[0], args[1], mode, fault)) return;
+                if (LL5.CheckModes.Handles(mode)) { await LL5.CheckModes.Run(this, app, mode, fault); }
                 return;
             }
             if (mode == "stage0-gpu") AddChild(new Label { Text = "Look Lab staged probe", Position = new Vector2(24, 24) });

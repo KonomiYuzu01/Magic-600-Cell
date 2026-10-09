@@ -554,3 +554,154 @@ fixtures belong here. Committing an imported preset remains the owner's choice.
 LL1 is complete when check.py exits 0, every required core feature and test is
 present, the check leaves the checkout unchanged, and only tools/looklab/ was
 changed. Rendering, graphics checks, UI, capture and swipe are later packets.
+
+## LL3 swipe, compare and capture
+
+The editor's Swipe, Compare and Capture buttons open the corresponding controls.
+Swipe shows the current best on the left and one candidate on the right. Better
+promotes the candidate; worse keeps the best. Use best in editor returns the best
+to the existing preset editor, where it can be saved. The displayed seed and
+initial canonical preset plus the answer sequence reproduce the candidate run.
+Restart starts from the current best with the chosen seed; it writes nothing.
+
+Candidates use a fixed unsigned 32-bit LCG (1664525*x + 1013904223, modulo 2^32),
+changing one to three distinct schema ids. Numbers and integers move one schema
+step, enums move to a neighbouring option, booleans flip, and colours and curves
+move one component by 0.01 (one degree for hue). Changes clamp to their schema
+ranges and reverse direction at a bound. Preset metadata is preserved. Each
+answer appends one UTF-8, LF-terminated JSON line to a seed-named run file under
+work/loop-memory/looklab/swipe/. Its five fields are time (UTC ISO 8601),
+best_sha256 and candidate_sha256 (SHA-256 of canonical preset bytes before the
+answer), verdict (better or worse), and changed_parameter_ids in schema order.
+The answer writes no preset, capture or other record.
+
+Compare selects two to four presets from tools/looklab/presets/ and the same
+work/loop-memory/looklab/presets/ folder as the editor. Presets may be repeated
+when only one exists. Each pane has its own full-detail viewport. One shared 4D
+camera object supplies Q to every pane; local Godot 3D cameras only provide the
+viewport's culling and per-preset effects. Dragging any pane updates all panes.
+One shared TurnClock, using the first selected preset's timing and easing,
+supplies a single sampled frame to all panes. Swipe uses each preset's own turn
+timing so motion candidates remain visible.
+
+Save PNG captures the viewport at its native pixel size. Save clip captures one
+to ten seconds at a fixed 24 fps, streaming native RGBA frames into a locally
+installed FFmpeg with libx264 and writing MP4/H.264. Odd clip dimensions are padded
+to the next even pixel for yuv420p compatibility; stills are never resized.
+LOOKLAB_FFMPEG can select an existing local executable; otherwise PATH is used.
+The graphics harness also discovers an existing WinGet FFmpeg before redirecting
+AppData. No encoder is installed or downloaded. Without FFmpeg the clip control
+is disabled with that reason; stills work. The editor captures its stage; compare
+offers a capture-pane selector, and swipe captures the best pane.
+
+Captures stay under work/loop-memory/looklab/captures/ and byte-identical copies
+go under work/gallery/looklab/ for the workbench's existing bounded GalleryScanner
+(.png images and .mp4 videos). These private outputs must not be committed.
+The --run checkout accounting permits changes only under work/loop-memory/looklab/
+and this gallery mirror.
+
+The CPU acceptance command remains python tools/looklab/check.py --godot. It adds
+scripted better/worse answers with exactly two valid records and compare runs
+with two, three and four panes sharing one camera and clock at five turn times.
+Disabling the answer handler or shared clock must fail its own check. Core tests
+also exercise seeded replay, bounds, PNG CRC/decoded size validation, fixed clip
+frame timing, gallery-copy rules and the gallery's own scanner on prepared files.
+The graphics lane captures a native PNG and, when local FFmpeg exists, a one-second
+clip, decodes every clip frame to check dimensions and timing, runs the gallery's
+own scanner, and requires a disabled capture handler to fail. Only the integrator
+runs that lane; headless checks and prepared fixtures provide no graphics evidence.
+
+## LL4: greybox and flow runner
+
+Enable **Greybox and flows** at the top of the parameter panels to put grey
+regions beside the existing full-detail view. The two existing structures are
+**central-stage** (contextual overlays) and **docked-workbench** (docked panels).
+The plan allows two; no third layout or new command is introduced. Select a
+layout and a catalogue context to see its command ids in the assigned regions.
+Each region has a scrollable command list; clicking an id highlights it.
+`any` remains a named context. It is not expanded into a wildcard. Commands
+listed as hidden by a layout are omitted.
+
+Choose one of the six draft flows, set the model window width and height in
+pixels, and use **Run flow** and **Next step**. The runner highlights each
+command in its own context and region. It previews the script and executes no
+puzzle command. It resolves the complete flow before publishing its report;
+an unreachable command is refused by id and context with no partial or previous
+report. Changing the layout, flow, context or model dimensions clears the report.
+Model dimensions describe the window being compared; the greybox scales its
+fractional regions to the available display area.
+
+The report preserves every number from `FlowMetrics`: each step's command,
+context, region, centre-to-centre travel, target width and estimated seconds,
+plus total travel and seconds. It displays the Shannon-form model and its
+constants **a = 0.1 s**, **b = 0.15 s/bit**. Target width is the destination
+region's smaller pixel dimension. These are estimates of region acquisition,
+not measured task times or performance results.
+
+**Save report** creates a unique `flow-<id>.json` only under
+`work/loop-memory/looklab/flows/` of the supplied checkout. No output directory
+is created during startup or headless checks. Saved reports use
+`magic600-look-flow-report` version 1, with camelCase keys: `format`, `version`,
+`layout`, `flow`, `name`, `draft`, `windowWidthPixels`, `windowHeightPixels` and
+`report`. The nested report retains the core's `steps`, `travelPixels`,
+`estimatedSeconds`, `aSeconds` and `bSecondsPerBit`. UTF-8 JSON uses a two-space
+indent, LF and a final newline; numeric values round trip without precision
+loss. Generated filenames avoid using flow metadata as paths, existing reports
+are retained, and paths through links are refused.
+
+`python tools/looklab/check.py --godot` adds three headless result lines: exact
+metrics for the fixed docked layout and 14-step piece-operation flow, refusal
+of an unreachable final command, and exact catalogue coverage in all eight
+contexts on both layouts. The harness also requires the refusal-handler and
+catalogue-filter faults to fail their own checks. Core tests cover all six
+flows on both layouts, progression, refusal/reset, JSON precision and scoped
+output writes; Python tests cover missing/repeated results and negative-control
+requirements. These CPU checks supply no rendering or performance evidence.
+The integrator runs the graphics and interactive lanes.
+
+## Colour vision, palette panel and cost meter (LL5)
+
+The scrollable instrument panel starts with a colour vision selector (normal
+by default, protan, deutan and tritan), the current preset's palette report,
+and its full-detail cost entries. The selector is preview state, not a preset
+parameter. CVD runs after the drawing shader's lighting, edges and fog, on its
+clamped linear RGB, with the core's Machado severity-one coefficients and the
+same final clamp. The clear background uses the same uploaded coefficients.
+The step defaults off and is bypassed by the existing geometry probe. No
+mechanical state, labels, geometry or core results change.
+
+The palette panel shows all four modes' minimum OKLab distance and minimum
+background lightness distance, the zero-based class pairs, the same-ring face
+adjacency count, and every gamut failure's class (or background) and reason.
+Unavailable distances stay unavailable. `PalettePanel` accepts optional
+`PaletteThresholds` from its caller and passes them to the core; without that
+input it displays values and no pass/fail marks, including for gamut failures.
+Preset edits and loads refresh these controls while retaining the CVD mode.
+
+The meter loads `data/cost.json` through `CostTable` and follows the schema's
+`costFeature` mappings for the preset's settings. It includes zero/disabled
+settings, because the table gives feature entries and has no activation or
+parameter-value rule. Each null entry reads **not measured**; a measured entry
+shows its stored milliseconds and source verbatim. An unmapped table feature
+is not shown. The status line uses the meter's summary. Values are never
+measured, estimated, scaled, added or extrapolated by the meter.
+
+`check.py --godot` adds three result lines: CVD (52 fixed colours across four
+modes, plus five background checks), cost (ten null entries and one synthetic
+measured entry with its source and a live setting/status update), and palette
+(caller thresholds and live structured gamut failures). Disabling the CVD
+transform or the meter's null-text branch must fail its own check. The managed
+runner has 56 named tests; the harness test includes all 29 LL2 assertions and
+seven LL5 schedule/result/fault cases. Its LL2 schedule fixture mocks only the
+extension, and the combined schedule is checked separately.
+
+The graphics lane adds a readback of the same 52 known linear colours through
+the actual drawing fragment body into RGBA32F; a wrong uploaded matrix must
+fail. Its procedural vertex input supplies the known colours with unit
+diffuse and no material effects, rather than authoring another CVD shader.
+The CPU checks cover the coefficients, fragment-body reuse, matching varyings
+and uniform/fault packing. Both CVD checks require an absolute error of at
+most **2e-6 per linear RGB component**: three single-precision products and
+additions plus clamping are compared with the double-precision core. RGBA32F
+avoids 8-bit and half-float quantization. CPU checks supply no GPU evidence;
+the integrator runs the graphics lane and its wrong-matrix fault.

@@ -39,6 +39,11 @@ internal sealed partial class LookViewport : Node3D
         Material = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/cells.gdshader") };
         Material.SetShaderParameter("geometry_check", false);
         Material.SetShaderParameter("transpose_q", false);
+        // The colour vision preview is off until LL5's controls select a mode; the geometry check reads these too.
+        Material.SetShaderParameter("cvd_enabled", false);
+        Material.SetShaderParameter("cvd_r0", new Godot.Vector4(1, 0, 0, 0));
+        Material.SetShaderParameter("cvd_r1", new Godot.Vector4(0, 1, 0, 0));
+        Material.SetShaderParameter("cvd_r2", new Godot.Vector4(0, 0, 1, 0));
         Material.SetShaderParameter("geometry_width", 300);
         Material.SetShaderParameter("q", Matrix(Q));
         Material.SetShaderParameter("aspect", 1.6f);

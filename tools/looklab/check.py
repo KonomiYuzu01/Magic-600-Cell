@@ -32,12 +32,15 @@ class GraphicsUnavailable(CheckFailure):
     pass
 
 
-APP_OUTPUT = "work/loop-memory/looklab/"
+# The app's own outputs, and the gallery mirror of its captures.
+APP_OUTPUTS = ("work/loop-memory/looklab/", "work/gallery/looklab/")
 
 
-def app_output(key):
-    """A snapshot key inside the app's output folder, or a folder above it."""
-    return key.startswith(APP_OUTPUT) or (key.endswith("/") and APP_OUTPUT.startswith(key))
+def app_output(key, before):
+    """A snapshot key inside one of the app's output folders, or a folder above one that the run created."""
+    if any(key.startswith(folder) for folder in APP_OUTPUTS):
+        return True
+    return key.endswith("/") and key not in before and any(folder.startswith(key) for folder in APP_OUTPUTS)
 
 
 def snapshot(root):
@@ -360,6 +363,9 @@ def godot_lane(mode, temporary, env, parent):
                 raise CheckFailure("app smoke result missing or counts wrong")
             for fault in ("skip-parameter", "wrong-instance-count", "changed-preset-byte"):
                 godot_run(godot, stage, temporary, env, ["--headless", *common, "smoke", fault], expected_failure=fault)
+            __import__("runpy").run_path(str(ROOT / LAB / "lane_ll3.py"))["headless"](globals(), godot, stage, temporary, env, common)
+            __import__("runpy").run_path(str(ROOT / LAB / "lane_ll4.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
+            __import__("runpy").run_path(str(ROOT / LAB / "lane_ll5.py"))["headless"](godot, stage, temporary, env, common, godot_run, CheckFailure)
         elif mode == "--godot-gpu":
             run = godot_run(godot, stage, temporary, env, [*common, "stage0-gpu"], graphics=True)
             if "LOOKLAB_STAGE0_GPU_PASS" not in run.stdout:
@@ -370,6 +376,8 @@ def godot_lane(mode, temporary, env, parent):
                 raise CheckFailure("shader geometry or full draw-count result missing")
             for fault in ("transpose-q", "missing-instance"):
                 godot_run(godot, stage, temporary, env, [*common, "geometry", fault], graphics=True, expected_failure=fault)
+            __import__("runpy").run_path(str(ROOT / LAB / "lane_ll3.py"))["graphics"](globals(), godot, stage, temporary, env, common)
+            __import__("runpy").run_path(str(ROOT / LAB / "lane_ll5.py"))["graphics"](godot, stage, temporary, env, common, godot_run, CheckFailure)
         else:
             godot_run(godot, stage, temporary, env, common, timeout=7200)
     finally:
@@ -407,15 +415,16 @@ def main(argv=None):
             result = 1
         after = snapshot(ROOT) if before is not None else None
         if before is not None and args == ["--run"]:
-            # The interactive app may write its own outputs, such as saved presets.
-            before, after = ({key: value for key, value in state.items() if not app_output(key)}
+            # The interactive app may write its own outputs, such as saved presets and captures.
+            original = before
+            before, after = ({key: value for key, value in state.items() if not app_output(key, original)}
                              for state in (before, after))
         if before is not None and after != before:
             changed = sorted(key for key in before.keys() | after.keys() if before.get(key) != after.get(key))
             print("looklab check: checkout changed: " + ", ".join(changed))
             result = 1
         elif before is not None:
-            outside = " outside " + APP_OUTPUT if args == ["--run"] else ""
+            outside = " outside " + " and ".join(APP_OUTPUTS) if args == ["--run"] else ""
             print(f"looklab check: checkout unchanged{outside} (including ignored files)")
     return result
 

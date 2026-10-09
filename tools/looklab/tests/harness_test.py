@@ -84,11 +84,19 @@ class HarnessTests(unittest.TestCase):
         before = {"./": "directory", "work/": "directory", "tools/a.txt": "x"}
         saved = dict(before, **{"work/loop-memory/": "directory", "work/loop-memory/looklab/": "directory",
                                 "work/loop-memory/looklab/presets/": "directory",
-                                "work/loop-memory/looklab/presets/look.json": "y"})
+                                "work/loop-memory/looklab/presets/look.json": "y",
+                                "work/gallery/": "directory", "work/gallery/looklab/": "directory",
+                                "work/gallery/looklab/capture.png": "c"})
         stray = dict(saved, **{"work/other.txt": "z"})
-        for args, after, expected in ((["--run"], saved, 0), (["--run"], stray, 1), (["--godot"], saved, 1)):
-            with patch.object(check, "core_check"), patch.object(check, "godot_lane"), patch.object(check, "snapshot", side_effect=[before, after]), contextlib.redirect_stdout(io.StringIO()):
-                self.assertEqual(check.main(args), expected, args)
+        other_gallery = dict(saved, **{"work/gallery/other/": "directory", "work/gallery/other/x.png": "z"})
+        # An existing folder above an output folder must stay; only the run's own new ancestors are exempt.
+        with_gallery = dict(before, **{"work/gallery/": "directory"})
+        gallery_removed = {key: value for key, value in saved.items() if not key.startswith("work/gallery/")}
+        for args, start, after, expected in ((["--run"], before, saved, 0), (["--run"], with_gallery, saved, 0),
+                                             (["--run"], before, stray, 1), (["--run"], before, other_gallery, 1),
+                                             (["--run"], with_gallery, gallery_removed, 1), (["--godot"], before, saved, 1)):
+            with patch.object(check, "core_check"), patch.object(check, "godot_lane"), patch.object(check, "snapshot", side_effect=[start, after]), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(check.main(args), expected, (args, sorted(start.keys() ^ after.keys())))
 
     def test_launch_error_is_reported(self):
         with patch.object(check.subprocess, "Popen", side_effect=OSError("exact sandbox error")), contextlib.redirect_stdout(io.StringIO()):
@@ -334,12 +342,22 @@ class HarnessTests(unittest.TestCase):
                       "LOOKLAB_DRAW_COUNT_PASS instances=600 visible=600 primitives=6096000\n")
             return subprocess.CompletedProcess(arguments, 0, output)
 
-        with patch.object(check, "find_godot", return_value=godot), patch.object(check, "stage_project", return_value=self.folder), patch.object(check, "audit_packages"), patch.object(check, "run_process", side_effect=process), patch.object(check, "godot_run", side_effect=godot_run), contextlib.redirect_stdout(io.StringIO()):
+        # The later packets' lanes have their own schedule tests; here each is
+        # only required to be called once in its lane.
+        lanes = []
+
+        def lane(path):
+            name = Path(path).name
+            return {key: (lambda *args, key=key: lanes.append((name, key))) for key in ("headless", "graphics", "run")}
+
+        with patch.object(check, "find_godot", return_value=godot), patch.object(check, "stage_project", return_value=self.folder), patch.object(check, "audit_packages"), patch.object(check, "run_process", side_effect=process), patch.object(check, "godot_run", side_effect=godot_run), patch("runpy.run_path", side_effect=lane), contextlib.redirect_stdout(io.StringIO()):
             check.godot_lane("--godot", self.folder, {"NUGET_PACKAGES": str(self.folder)}, {})
             self.assertTrue(all("--headless" in args for args, _ in runs))
             self.assertEqual([kwargs.get("expected_failure") for _, kwargs in runs if "expected_failure" in kwargs], ["skip-parameter", "wrong-instance-count", "changed-preset-byte"])
-            runs.clear()
+            self.assertEqual(lanes, [("lane_ll3.py", "headless"), ("lane_ll4.py", "run"), ("lane_ll5.py", "headless")])
+            runs.clear(); lanes.clear()
             check.godot_lane("--godot-gpu", self.folder, {"NUGET_PACKAGES": str(self.folder)}, {})
+        self.assertEqual(lanes, [("lane_ll3.py", "graphics"), ("lane_ll5.py", "graphics")])
         self.assertEqual(len(runs), 6)
         self.assertEqual(runs[0][0], ["--headless", "--import"])
         self.assertTrue(all("--headless" not in args and kwargs["graphics"] for args, kwargs in runs[1:]))
