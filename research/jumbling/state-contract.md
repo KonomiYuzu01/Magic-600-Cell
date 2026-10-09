@@ -1,6 +1,6 @@
 # State contract for rigid jumbling of the 600-cell-Full geometry
 
-Status: **draft, revised after scoped re-check 20261009T163617Z-bc992d63 (Q5: exact containment and certificates).** This contract defines what the first geometric witness and any later simulator must compute. It answers plan-check findings Q3, Q4 and Q5. It is not accepted theory and changes nothing in the retained model.
+Status: **draft, revised after scoped re-check 20261009T163617Z-bc992d63 (Q5: exact containment and certificates), with amendments A1–A4 (section 7) from the jumbling plan, plan-checked in `20261009T201801Z-28fb9085` and its scoped re-checks `20261009T202958Z-6200127b` and `20261009T203802Z-cb46d0be`.** This contract defines what the geometric witness, the simulator (J1) and any later engine must compute. It answers plan-check findings Q3, Q4 and Q5. It is not accepted theory and changes nothing in the retained model.
 
 Scope: the rigid, unfudged jumbling extension of the retained cut geometry (α = 121/125). Owner decision, 9 October 2026: no fudged variant is pursued. The extension is studied as a separate puzzle concept. 600-cell-Full, its 1,200 legal generators, its 259,800 labelled slots and `assets/manifest.json` are unchanged.
 
@@ -12,7 +12,7 @@ Terms follow `research/theory/RETHLAS_BLUEPRINT.md`: pole n_c, cap U_c, polytope
 - **Twist.** A twist is a pair (c, g) with g ∈ SO(3)_c, the rotations of four-space that fix n_c. A retained twist has g ∈ A4_c; a jumble twist has g ∉ A4_c.
 - **Twist alphabets.**
   - The continuous model allows every g ∈ SO(3)_c and is used for theory only.
-  - Computations use explicit finite menus. Every result names its menu.
+  - Computations use explicit finite menus. Every result names its menu. Menus, their transport and the three alphabets are defined in amendment A4 (section 7); the exact rotation domain and the input map in A1.
 
 ## 2. Pieces and their regions
 
@@ -23,7 +23,7 @@ Terms follow `research/theory/RETHLAS_BLUEPRINT.md`: pole n_c, cap U_c, polytope
   - The reconstruction is accepted only where its facet patches agree with the retained sticker data. Section 6 states that check.
 - **Pose.** A configuration assigns every piece a pose g_A ∈ SO(4). The posed region is g_A(Ā₀). The solved configuration has every pose equal to the identity.
 - **Equality.** Two configurations are equal when every labelled piece has the same pose. No symmetry quotient is taken.
-- **Lattice configuration.** A configuration is on the lattice when every g_A ∈ K⁺ and every g_A(Ā₀) is a retained chamber closure (a slot position).
+- **Lattice configuration.** A configuration is on the lattice when every g_A ∈ K⁺; every g_A(Ā₀) is then a retained chamber closure (a slot position). The retained pieces are surface chambers: every piece has a non-empty cap signature, so a central region containing the origin is never occupied. The solved configuration is a lattice configuration. Lattice pose states map to retained labelled states by the labelled projection π of amendment A3; label equality is weaker than pose equality.
 
 ## 3. Admissibility
 
@@ -83,7 +83,7 @@ Neither condition below is a definition of admissibility. Admissibility is alway
 
 ## 6. First acceptance experiment: a minimal witness (Q5)
 
-Stop after this experiment and the initial impact assessment. A general simulator and rendering wait for a separate go-ahead.
+This experiment ran first (`witness.py`, `witness-results.json`). The owner's go-ahead of 9 October 2026 then started the simulator and rendering (`docs/progress/1.0/jumbling-plan.md`).
 
 1. **E1 Regions.** Build Ā₀ for every piece whose signature contains c or d, where d is a face-neighbour pole of c.
    - Check that each region is non-empty and full-dimensional.
@@ -111,3 +111,55 @@ Acceptance for a later simulator, not for this experiment:
 - independently certified blocked and unblocked cases;
 - conservative handling of uncertain contacts;
 - rejection without any state change.
+
+## 7. Amendments of 9 October 2026
+
+Written from section 4 of `docs/progress/1.0/jumbling-plan.md` after its plan check and scoped re-checks. Where an amendment and an earlier section differ, the amendment holds.
+
+### A1 Exact rotation domain and input map
+- **Domain.**
+  - Exact rotations of SO(3)_c with entries in Q(√5). Every non-half-turn is a Cayley rotation R(ω) with ω ∈ Q(√5)³, in the frame u₁ = i·n_c, u₂ = j·n_c, u₃ = k·n_c (left quaternion multiplication, coordinates (−n₁, n₀, −n₃, n₂), (−n₂, n₃, n₀, −n₁), (−n₃, −n₂, n₁, n₀)). Its Gram matrix is ‖n_c‖² I, so no square root is needed.
+  - Half-turns use an exact branch, H_u = 2(P_c + P_u) − I, with P_u = uuᵀ/‖u‖² for an exact axis u ⊥ n_c.
+- **Not representable.** Rotations whose trace is not in Q(√5), such as 2π/7, are not representable and are rejected.
+- **Input map.** A requested float axis and angle maps to the exact rotation that minimises the Frobenius distance to the requested rotation. The search ranges over:
+  - Cayley parameters ω ∈ Q³ with |numerators| ≤ N and common denominator ≤ D;
+  - half-turn axes with the same bounds, for angles within 1° of π.
+
+  Ties go to the smaller denominator, then the lexicographically smaller numerators. The realised axis, angle and distance are reported. N, D and the distance are recorded in the journal, and replay uses the recorded exact rotation.
+- **Menu elements.** They are exact and are never approximated. A request that is not a menu element is refused in menu mode.
+
+### A2 Filtered sign test
+- **Rule.** A float evaluation of h_A at an exact vertex, or at an exact superset vertex, decides the sign only when its absolute value exceeds a proven forward error bound. Otherwise exact Q(√5) evaluation decides. Non-finite values fall back to exact.
+- **The bound** covers conversion of the exact inputs, pose evaluation, cancellation and rounding.
+- **The certificate records:**
+  - the exact inputs (pose and vertex identities);
+  - the state and model identity;
+  - the coverage proof (complete vertex set or a superset);
+  - the arithmetic and error-bound version;
+  - the computed enclosure;
+  - the accepted sign or the exact fallback result.
+
+### A3 Labelled projection
+- **Sticker identity.** A sticker's identity is (A, f): the piece and its home host facet.
+- **Projection.** In a configuration where every pose lies in K⁺, the sticker (A, f) with pose k = g_A sits in slot(k(A), k(f)), where k transports both the complete signature and the host facet. Its orientation is the A4₀ element F_{k(f)}⁻¹ k F_f given by the coherent transported frames.
+- **π.** This defines the projection π from lattice pose states to retained labelled states.
+- **π is not injective on poses.** A centre piece, or a piece with a non-trivial stabiliser, can change pose with equal labels; for example, generator 1 rotates centre piece 0 in place. Contract equality and checkpoints use exact pose equality; label equality is weaker. Protection is pose-based.
+
+### A4 Menus and the puzzle J(Λ)
+- **Menu.** A menu is a finite list Λ₀ ⊂ SO(3)₀ of exact rotations with:
+  - A4₀ ⊆ Λ₀;
+  - Λ₀ = Λ₀⁻¹;
+  - aΛ₀a⁻¹ = Λ₀ for every a ∈ A4₀.
+- **Transport.** Λ_c = tΛ₀t⁻¹ for any t ∈ K⁺ with t(n₀) = n_c. A4-invariance makes this independent of t.
+- **Alphabets.** Three are distinguished:
+  - a finite menu, which defines the puzzle J(Λ);
+  - the infinite field-valued alphabet, the simulator's free mode under A1;
+  - the continuous theory alphabet SO(3)_c.
+
+  A finite angle set with free axes is not a finite menu.
+- **Candidate menus for the owner** (each identified exactly, with its inverse and conjugacy closure):
+  - A4₀, the control, which gives 600-cell-Full;
+  - S4₀ = N(A4₀), which adds the 90° rotations and edge half-turns, if it is exactly representable;
+  - the icosahedral groups containing A4₀, if they are exactly representable;
+  - closures of the exact witness rotation and of reconstructed realignment rotations.
+- **Same-cap finiteness.** For one cap, ⟨A4₀, Λ₀⟩ is finite exactly when it lies in a finite subgroup of SO(3) containing A4₀: A4, S4 or A5. Multi-cap reachability is the J3 question.

@@ -1,6 +1,6 @@
 # Jumbling puzzle and Jumble feature: program plan
 
-Status: **revised after the Astra plan check of 9 October 2026 (call `20261009T201801Z-28fb9085`; all eight findings adopted, section 6). Its scoped re-check (`20261009T202958Z-6200127b`) found all eight resolved and raised one new finding, JR1, adopted in section 6; the owner then added the engineering packet (section 3b). Both changes await a second scoped re-check.** An earlier run of the same packet on the owner's machine (`20261009T185506Z-1a2654f2`) raised the same areas, but its text was not transcribed. This plan implements the [owner decisions of 9 October 2026](../../wiki/decisions/owner-decisions-2026-10-09-jumbling.md): rigid jumbling enters 1.0 as an independent puzzle and a Jumble feature. Nothing here changes 600-cell-Full, its model identity or its contract.
+Status: **revised after the Astra plan check of 9 October 2026 (call `20261009T201801Z-28fb9085`; all eight findings adopted, section 6). Its scoped re-check (`20261009T202958Z-6200127b`) found all eight resolved and raised one new finding, JR1, adopted in section 6; the owner then added the engineering packet (section 3b). The second scoped re-check (`20261009T203802Z-cb46d0be`) passed with no findings, and amendments A1–A4 are now in the state contract (section 7).** An earlier run of the same packet on the owner's machine (`20261009T185506Z-1a2654f2`) raised the same areas, but its text was not transcribed. This plan implements the [owner decisions of 9 October 2026](../../wiki/decisions/owner-decisions-2026-10-09-jumbling.md): rigid jumbling enters 1.0 as an independent puzzle and a Jumble feature. Nothing here changes 600-cell-Full, its model identity or its contract.
 
 Inputs:
 - the jumbling study (`research/jumbling/README.md`);
@@ -155,7 +155,7 @@ File: `packets/engineering/ENG-0J-jumbling-backend.md`, in the seven-part format
 - **Re-acceptance.** A change to geometry, a menu or the contract re-runs the differential evidence for every affected fixture.
 - **Platform.** The engine, session store, command layer and view model stay free of Windows-only code (briefing section 2); their checks run headless.
 
-## 4. Contract amendments (to be written into the contract after the re-check)
+## 4. Contract amendments (written into `research/jumbling/state-contract.md` section 7)
 
 ### A1 Exact rotation domain and input map
 - **Domain.**
@@ -237,7 +237,7 @@ Finding Q2 holds: a filtered sign test with exact fallback keeps the containment
 | J-Q7-SCOPE | minor | adopt | J1 acceptance item 9 and J3 item 3 use the exact negative control; J3 items 4 and 5 sharpened |
 | J-Q8 | major | adopt | J1 review assigned to Astra; mid-stage defined by an audited acceptance table |
 
-Scoped re-check `20261009T202958Z-6200127b`: the eight findings above are resolved.
+Scoped re-check `20261009T202958Z-6200127b`: the eight findings above are resolved. Second scoped re-check `20261009T203802Z-cb46d0be`: JR1 resolved; section 3b raises no finding.
 
 | Finding | Severity | Reply | Change |
 | --- | --- | --- | --- |
