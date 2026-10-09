@@ -1,0 +1,152 @@
+{
+ "menu": "S4",
+ "seed": 1,
+ "log": [
+  {
+   "step": 1,
+   "tries": 1,
+   "blocked": 0,
+   "poses": 2,
+   "off": 3097,
+   "height": 8,
+   "t": 0.0
+  },
+  {
+   "step": 2,
+   "tries": 2,
+   "blocked": 0,
+   "poses": 3,
+   "off": 6194,
+   "height": 8,
+   "t": 0.0
+  },
+  {
+   "step": 3,
+   "tries": 3,
+   "blocked": 0,
+   "poses": 4,
+   "off": 9291,
+   "height": 8,
+   "t": 0.0
+  },
+  {
+   "step": 4,
+   "tries": 4,
+   "blocked": 0,
+   "poses": 5,
+   "off": 12388,
+   "height": 8,
+   "t": 0.1
+  },
+  {
+   "step": 5,
+   "tries": 5,
+   "blocked": 0,
+   "poses": 6,
+   "off": 15485,
+   "height": 8,
+   "t": 0.1
+  },
+  {
+   "step": 10,
+   "tries": 12,
+   "blocked": 2,
+   "poses": 13,
+   "off": 30180,
+   "height": 8,
+   "t": 0.4
+  },
+  {
+   "step": 15,
+   "tries": 25,
+   "blocked": 10,
+   "poses": 20,
+   "off": 44205,
+   "height": 8,
+   "t": 0.9
+  },
+  {
+   "step": 20,
+   "tries": 37,
+   "blocked": 17,
+   "poses": 29,
+   "off": 57440,
+   "height": 8,
+   "t": 1.6
+  },
+  {
+   "step": 25,
+   "tries": 50,
+   "blocked": 25,
+   "poses": 42,
+   "off": 69309,
+   "height": 8,
+   "t": 2.8
+  },
+  {
+   "step": 30,
+   "tries": 67,
+   "blocked": 37,
+   "poses": 54,
+   "off": 76823,
+   "height": 8,
+   "t": 3.9
+  },
+  {
+   "step": 35,
+   "tries": 83,
+   "blocked": 48,
+   "poses": 66,
+   "off": 87915,
+   "height": 8,
+   "t": 4.6
+  },
+  {
+   "step": 40,
+   "tries": 98,
+   "blocked": 58,
+   "poses": 80,
+   "off": 93985,
+   "height": 16,
+   "t": 5.8
+  },
+  {
+   "step": 45,
+   "tries": 108,
+   "blocked": 63,
+   "poses": 98,
+   "off": 99756,
+   "height": 16,
+   "t": 6.8
+  },
+  {
+   "step": 50,
+   "tries": 131,
+   "blocked": 81,
+   "poses": 111,
+   "off": 103635,
+   "height": 16,
+   "t": 8.2
+  },
+  {
+   "step": 55,
+   "tries": 161,
+   "blocked": 106,
+   "poses": 125,
+   "off": 103138,
+   "height": 16,
+   "t": 9.8
+  },
+  {
+   "step": 60,
+   "tries": 176,
+   "blocked": 116,
+   "poses": 142,
+   "off": 104932,
+   "height": 16,
+   "t": 11.3
+  }
+ ],
+ "journal_records": 60,
+ "note": "walk.py output without its journal; the journals of the three longest runs are the W-J fixtures"
+}
