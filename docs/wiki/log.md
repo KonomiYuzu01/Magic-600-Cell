@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] update | Level 2 binding review fixes
+Updated [level-2-framework-results](evidence/level-2-framework-results.md): the four blocking findings of the binding's two-shard Astra review are fixed, and the fixed Qt build passed the synthetic experiments (9 passed, 1 not run); the scoped verification round is pending. The Qt observer's limit for subst, junction, UNC and outside hard-link spellings is stated in the harness contract.
+
 ## [2026-10-10] update | Level 2 binding built
 Updated [level-2-framework-results](evidence/level-2-framework-results.md): the L2-V-002 guard binding is built and passed its source checks and synthetic experiments on the owner's machine; its Astra review and any gate run under it are pending, so the 4 October identities keep their qualification.
 

@@ -100,6 +100,19 @@ def module_static_checks(sources, cmake, build):
     require('state.upcase(backslash(name.Buffer[i])) != state.upcase(state.scope[i])' in scope
             and 'state.scopeLength' in scope and 'backslash(' in scope,
             "case-insensitive directory prefix with a backslash boundary")
+    # L2-V-002-B01: the same directories under an extended-length, NT or 8.3 spelling are in scope too.
+    alias = cpp_body(observer, "aliasInScope")
+    component = cpp_body(observer, "scopeComponent")
+    require('return state.drive && aliasInScope(name.Buffer, length);' in scope
+            and 'devicePrefix(path, length)' in alias and 'scopeComponent(state.components[k]' in alias
+            and 'return at < length;' in alias and 'component.longName' in component and 'component.shortName' in component,
+            "other spellings of the scope directories are in scope")
+    require("path[2] == L'?' || path[2] == L'.'" in cpp_body(observer, "devicePrefix"), "\\\\?\\, \\??\\ and \\\\.\\ prefixes")
+    components = cpp_body(observer, "readComponents")
+    require('FindFirstFileW(state.scope, &data)' in components and 'cAlternateFileName' in components
+            and 'state.drive = true' in components, "8.3 and long names read for each scope directory")
+    require(start.index('readComponents()') < start.index('registerNotification(0, notify'),
+            "scope spellings are read before registration, outside the loader lock")
     callback = cpp_body(observer, "notify")
     require(callback.index('state.count.fetch_add(1, std::memory_order_seq_cst)')
             < callback.index('state.sealed.load(std::memory_order_seq_cst)'), "reserve before reading seal")
@@ -107,8 +120,9 @@ def module_static_checks(sources, cmake, build):
                   'index >= SlotCount', 'length >= PathCapacity', 'state.overflow.store(true, std::memory_order_seq_cst)',
                   'slot.complete.store(true, std::memory_order_seq_cst)'):
         require(token in callback, "callback records or refuses: " + token)
-    for body in (callback, scope, cpp_body(observer, "backslash")):
-        require(not re.search(r'\b(new|malloc|calloc|realloc|free|printf|fopen|fwrite|CreateFile\w*|WriteFile|LoadLibrary\w*|FreeLibrary|towlower|towupper)\b|std::(?:vector|string|wstring|cout|cerr)|\bQ\w+', body),
+    for body in (callback, scope, cpp_body(observer, "backslash"), alias, component,
+                 cpp_body(observer, "scopeText"), cpp_body(observer, "devicePrefix")):
+        require(not re.search(r'\b(new|malloc|calloc|realloc|free|printf|fopen|fwrite|CreateFile\w*|WriteFile|LoadLibrary\w*|FreeLibrary|towlower|towupper|Find\w*File\w*|Get\w*PathName\w*)\b|std::(?:vector|string|wstring|cout|cerr)|\bQ\w+', body),
                 "no allocation, I/O, Qt or CRT locale calls under the loader lock")
     seal = cpp_body(observer, "seal")
     require(seal.index('state.sealed.store(true, std::memory_order_seq_cst)')
@@ -170,7 +184,8 @@ def module_static_checks(sources, cmake, build):
     for token in ('CreateProcessW', 'WaitForSingleObject', 'GetExitCodeProcess', 'CopyFileW', 'DeleteFileW',
                   'BeforeMain beforeMain', 'module_probe', 'modules::start()', 'modules::seal()', 'modules::loadedPaths',
                   'case 1:', 'case 2:', 'case 3:', 'case 4:', 'case 5:', 'case 6:', 'case 7:', '200', 'SlotCount',
-                  'CreateThread', 'raceReady', 'raceGo'):
+                  'CreateThread', 'raceReady', 'raceGo', 'case 8:', 'case 9:', 'case 10:', 'L"\\\\\\\\?\\\\" + path',
+                  'GetShortPathNameW', 'number == 5 || number == 9 ? code == 3', 'number <= 10'):
         require(token in test, "observer child test: " + token)
     require('Qt' not in test and 'd3d' not in test.lower(), "observer test has no Qt window or GPU")
     require('extern "C" __declspec(dllexport) int sd_module_probe(void)' in sources["module_probe.cpp"], "one probe export")
@@ -188,6 +203,9 @@ def planted_module_checks(sources, cmake, build):
         ("module_observer.cpp", 'result.overflow = state.overflow.load(std::memory_order_seq_cst)', 'result.overflow = false'),
         ("l2.cpp", 'native.loadedPath()', 'options.dll.toStdWString()'),
         ("l2.cpp", 'options.inject.clear();', ''),
+        ("module_observer.cpp", 'return state.drive && aliasInScope(name.Buffer, length);', 'return false;'),
+        ("module_observer.cpp", '    if (!readComponents()) { fail(Failure::Register); return; }\n', ''),
+        ("module_observer.cpp", "path[2] == L'?' || path[2] == L'.'", "path[2] == L'?'"),
     )
     for name, good, bad in defects:
         require(good in sources[name], "module defect target missing: " + good)

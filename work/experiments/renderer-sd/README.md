@@ -471,6 +471,15 @@ seals and records it in every `harness.json`, including usage errors with a usab
 compared case-insensitively with a backslash boundary. Event paths retain the
 loader's spelling. The observer has no Qt dependency.
 
+The same directories under another spelling are in scope too (L2-V-002-B01): a
+`\\?\`, `\??\` or `\\.\` prefix before the drive letter, and any directory under
+its long or 8.3 name. Before registration, outside the loader lock, the observer
+reads each scope directory's long and 8.3 names with `FindFirstFileW`; the
+callback compares against these fixed copies only. Such a load is recorded under
+its own spelling, which G4 refuses, and after the seal it exits 3. Subst drives,
+junctions or symbolic links outside scope, UNC shares and hard links outside
+scope are not recognised (`HARNESS.md`, section 6).
+
 Startup registers `LdrRegisterDllNotification`, reads `RtlGetUnloadEventTraceEx`,
 then takes one `EnumProcessModules` snapshot. It holds the loader lock across
 these steps: otherwise a pre-main import could unload after the history read and
@@ -569,8 +578,13 @@ only that child's process handles and the parent's owned probe copy. Cases:
    union or exits 3, and the case line reports how many exited 3. A test child that aborts
    exits 2, so a crash never counts as the seal's exit 3.
 7. Repeated real load/unload calls overflow the event buffer and must refuse.
+8. A load by the `\\?\` extended-length spelling enters the union under that
+   spelling.
+9. The same load after the seal exits 3.
+10. A load by the directory's 8.3 spelling enters the union once. Where the path
+    has no 8.3 name the case is reported as not run (child exit 4).
 
-Output is one line per case and a final count (7 cases, 207 children). Exit 0
+Output is one line per case and a final count (10 cases, 210 children). Exit 0
 requires every expected result. No observer success is claimed until this test
 and the real Qt usage-path stop point run on the owner's machine.
 
@@ -604,7 +618,7 @@ These facts remain **assumed**, pending the owner's build and runtime checks:
 | `RtlUpcaseUnicodeChar` performs allocation-free ntdll case mapping, and `CompareStringOrdinal` supplies matching Windows path equality outside callbacks | Missing mapping API refuses at `register`; case 2 uses an uppercase directory request and verifies union membership; owner debugger breakpoints on heap allocation inside the callback must confirm allocation-free loader-lock safety |
 | `EnumProcessModules` and `GetModuleFileNameW` report this process's imports and actual module paths | Failed/truncated/oversized snapshot refuses; case 2 requires the executable snapshot; loaded DLL query errors give `framework-modules`; the separate redirection experiment compares requested and recorded paths |
 | Win32 events/thread creation and sequentially consistent lock-free atomics preserve reserve/seal/completion ordering; exit 3 reaches the parent | Compile-time lock-free assertions; cases 5 and 6, with 200 race repetitions |
-| `CreateProcessW`/wait/exit APIs report child termination, `GetTempFileNameW` reserves fresh local copy names, and absolute `LoadLibraryW`/`GetProcAddress`/`FreeLibrary` load, call and unload the probe | Child creation/wait/export/copy/delete errors fail the test; cases 1–7 require their literal union/history/exit results; the app returns `framework-modules` on probe failures |
+| `CreateProcessW`/wait/exit APIs report child termination, `GetTempFileNameW` reserves fresh local copy names, and absolute `LoadLibraryW`/`GetProcAddress`/`FreeLibrary` load, call and unload the probe | Child creation/wait/export/copy/delete errors fail the test; cases 1–10 require their literal union/history/exit results (case 10 may report not run); the app returns `framework-modules` on probe failures |
 | Qt's app-context `QTimer` callback runs on the GUI thread, while `beginTrace` follows the native trace-begin call on the render thread | Explicit thread-ID check; owner W3/W4 experiments must show each late/transient/reload probe in `modules.events` and the final guarded identity |
 
 The Python acceptance suite adds observer/static checks and plants all six plan

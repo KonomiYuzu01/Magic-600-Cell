@@ -172,12 +172,36 @@ int runCase(int number, int repetition) {
             "event overflow was accepted");
         break;
     }
+    case 8: {
+        const auto extended = L"\\\\?\\" + path; // The loader keeps this spelling.
+        loadProbe(extended);
+        const auto record = sd::modules::seal();
+        check(acceptable(record) && unionCount(record, extended) == 1 && eventCount(record, Kind::Load, extended) == 1,
+            "extended-length load missing from union");
+        break;
+    }
+    case 9:
+        check(acceptable(sd::modules::seal()), "post-seal extended-length control refused");
+        loadProbe(L"\\\\?\\" + path);
+        throw std::runtime_error("post-seal extended-length load survived");
+    case 10: {
+        wchar_t shortDirectory[32768]{};
+        const auto length = GetShortPathNameW(directory().c_str(), shortDirectory, DWORD(std::size(shortDirectory)));
+        check(length && length < std::size(shortDirectory), "short path unavailable");
+        const std::wstring shortPath = std::wstring(shortDirectory, length) + L"sd_module_probe.dll";
+        if (samePath(shortPath, path)) return 4; // No 8.3 name on this path: not run.
+        loadProbe(shortPath);
+        const auto record = sd::modules::seal();
+        check(acceptable(record) && unionCount(record, shortPath) + unionCount(record, path) == 1,
+            "8.3 load missing from union");
+        break;
+    }
     default: throw std::runtime_error("unknown observer case");
     }
     return 0;
 }
 
-unsigned raceSealed = 0;
+unsigned raceSealed = 0, notRun = 0;
 
 // MSVC abort() exits 3, the seal's code; a test child crash must not look like it.
 void abortExit(int) { _exit(2); }
@@ -201,8 +225,10 @@ bool child(int number, int repetition, const wchar_t* variant = L"keep") {
             }
             DWORD code = 1;
             if (wait == WAIT_OBJECT_0 && GetExitCodeProcess(process.hProcess, &code))
-                passed = number == 5 ? code == 3 : number == 6 ? code == 0 || code == 3 : code == 0;
+                passed = number == 5 || number == 9 ? code == 3 : number == 6 ? code == 0 || code == 3
+                    : number == 10 ? code == 0 || code == 4 : code == 0;
             raceSealed += number == 6 && passed && code == 3;
+            notRun += number == 10 && passed && code == 4;
             CloseHandle(process.hThread); CloseHandle(process.hProcess);
         }
     } catch (...) {
@@ -225,7 +251,7 @@ int wmain(int argc, wchar_t** argv) {
         }
         check(argc == 1, "test takes no arguments except its internal --case");
         unsigned cases = 0, children = 0;
-        for (int number = 1; number <= 7; ++number) {
+        for (int number = 1; number <= 10; ++number) {
             const int repetitions = number == 6 ? 200 : number == 1 ? 2 : 1;
             bool passed = true;
             for (int repetition = 0; repetition < repetitions; ++repetition) {
@@ -235,9 +261,10 @@ int wmain(int argc, wchar_t** argv) {
             cases += passed;
             std::cout << "case " << number << ": " << (passed ? "pass" : "FAIL") << " (" << repetitions << " children";
             if (number == 6) std::cout << "; " << raceSealed << " exited 3 at the seal";
+            if (number == 10 && notRun) std::cout << "; not run: no 8.3 name on this path";
             std::cout << ")\n";
         }
-        std::cout << "sd_module_observer_test: " << cases << "/7 cases, " << children << " children\n";
-        return cases == 7 ? 0 : 1;
+        std::cout << "sd_module_observer_test: " << cases << "/10 cases, " << children << " children\n";
+        return cases == 10 ? 0 : 1;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

@@ -9,9 +9,9 @@ supersedes: []
 claims:
   - {id: qt-w3-gate-met, evidence_kind: performance, path: work/experiments/renderer-l2/results/sd-w3-20261004T135157249Z-summary.json, sha256: 3eabbce21a5afc2c6fca3c18a5863adfe5996ee74e159b1b27eb61991406505b, checked_at: 2026-10-09}
   - {id: godot-w3-gate-met, evidence_kind: performance, path: work/experiments/renderer-l2/results/sa2-w3-20261004T150202105Z-summary.json, sha256: 6f1a7576cbe83da9e9f80e2d232a0b6d18fe42ffbaec1f0788f1a3477843ef34, checked_at: 2026-10-09}
-  - {id: level-2-result-card, evidence_kind: actual_windows_directx, path: work/experiments/renderer-l2/RESULT.md, sha256: 51701d941cf01f2ad6867c117fe2f68b0602f03654e7c37c828147afa1f68e9d, checked_at: 2026-10-10}
+  - {id: level-2-result-card, evidence_kind: actual_windows_directx, path: work/experiments/renderer-l2/RESULT.md, sha256: 5a969144243a07c49447f7d79ddf23658eab96dac3168ba629ab57f60b90d0a8, checked_at: 2026-10-10}
   - {id: qt-vblank-cap, evidence_kind: source, path: work/experiments/renderer-l2-packets/FRAMEWORK-FACTS.md, sha256: a16abed2b6ad187adbf2e2942c94a281f853fb8ba7fdd0954f009c3aa27825cc, checked_at: 2026-10-09}
-  - {id: finalizer-fixes, evidence_kind: fixture, path: work/experiments/renderer-l2/finalize_run.py, sha256: 0e6d1ba273bfc5850f432a8eb713c2bfb8e9fc23d846a6fb1104c726c57cdaed, checked_at: 2026-10-10}
+  - {id: finalizer-fixes, evidence_kind: fixture, path: work/experiments/renderer-l2/finalize_run.py, sha256: 6dd01b63b586cd94a80107b310dd3190dfe29a6af2340c95a5b6eee8fb34e5f8, checked_at: 2026-10-10}
 ---
 
 # Level 2 framework results
@@ -27,7 +27,7 @@ The results hold only on the owner's machine, under the recorded conditions, for
 An Astra escalation ruling (9 October) found that the finalizer hashes the recorded framework files and shaders after the run. It does not bind those hashes to the bytes the app loaded.
 - Each build was prepared offline at a committed head with `matches_head` true, and the owner reports no rebuild during the runs.
 - Complete loaded-file binding was not enforced, so these identity assignments rest on the preparation records and on the owner's account.
-- The fix was built on 10 October: a guard process holds every identity file before the app starts and keeps it until the finalizer is done. It has passed its source checks and synthetic experiments on the owner's machine (no window, GPU or PresentMon), and its Astra review is pending. No gate run has used it, so the 4 October records keep this qualification.
+- The fix was built on 10 October: a guard process holds every identity file before the app starts and keeps it until the finalizer is done. Its two-shard Astra review found four blocking findings, which were fixed the same day; the fixed build passed its source checks and synthetic experiments on the owner's machine (no window, GPU or PresentMon), and the scoped verification round is pending. No gate run has used it, so the 4 October records keep this qualification.
 
 ## W3 gate scene
 

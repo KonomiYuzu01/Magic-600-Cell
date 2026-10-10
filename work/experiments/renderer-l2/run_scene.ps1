@@ -155,11 +155,19 @@ function Start-Guard([string]$Directory) {
     $info.RedirectStandardOutput = $true
     $guard = New-Object Diagnostics.Process
     $guard.StartInfo = $info
-    if (-not $guard.Start()) { throw 'The file guard did not start; no gate evidence.' }
-    $null = $guard.Handle
-    $line = $guard.StandardOutput.ReadLineAsync()
-    if (-not $line.Wait(60000)) { throw 'The file guard was not ready within 60 s; no gate evidence.' }
-    if ($line.Result -cne 'ready') { throw 'The file guard refused to protect the build; see its message above. No gate evidence.' }
+    if (-not $guard.Start()) { $guard.Dispose(); throw 'The file guard did not start; no gate evidence.' }
+    try {
+        $null = $guard.Handle
+        $line = $guard.StandardOutput.ReadLineAsync()
+        if (-not $line.Wait(60000)) { throw 'The file guard was not ready within 60 s; no gate evidence.' }
+        if ($line.Result -cne 'ready') { throw 'The file guard refused to protect the build; see its message above. No gate evidence.' }
+    } catch {
+        $failure = $_
+        # The caller never receives a guard that did not become ready, so stop it here: it may already hold files.
+        try { if (-not $guard.HasExited) { $guard.Kill(); $null = $guard.WaitForExit(5000) } } catch { Write-Warning "Stopping the file guard failed: $($_.Exception.Message)" }
+        $guard.Dispose()
+        throw $failure
+    }
     return $guard
 }
 function Stop-Guard($Guard) {

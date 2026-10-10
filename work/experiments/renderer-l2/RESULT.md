@@ -15,7 +15,7 @@ The owner ran the attended level 2 steps 4 to 7 of `HARNESS.md` section 11 on 4 
 - Qt 6.10.3 (S-D): build identity `64f08369f2098418fa28d82abcf89a00fd6b08da6d1d2772e7428837e6dc4fc8`, prepared from commit `a52dd1c`.
 - Godot 4.7.2 .NET (S-A2): build identity `709a24ebdf753535bda56e4c8f5744820ca85f444f2497cc9cf71be75627b93f`, prepared from commit `2e1868e`.
 - Each identity covers the native DLL, its shaders, the framework files the app recorded, and the settings. Each build was prepared offline at a committed head with `matches_head` true, and the owner reports no rebuild during the runs.
-- L2-V-002 is open (Astra escalation `20261009T155501Z-a2cb4438`). The finalizer did not bind the recorded framework files, or the shaders, to the bytes the process loaded, so these identity assignments rest on the preparation records and on the operator's account. The gate figures below remain attended observations with that qualification. The fix, a guard taken before launch, was built on 10 October 2026. It has passed its source checks and the synthetic experiments below, and its Astra review is pending. No gate run has used it yet, and it does not change these 4 October records.
+- L2-V-002 is open (Astra escalation `20261009T155501Z-a2cb4438`). The finalizer did not bind the recorded framework files, or the shaders, to the bytes the process loaded, so these identity assignments rest on the preparation records and on the operator's account. The gate figures below remain attended observations with that qualification. The fix, a guard taken before launch, was built on 10 October 2026. Its two-shard Astra review found four blocking findings (L2-A-001 to L2-A-003, L2-V-002-B01); they were fixed the same day, and the fixed build passed its source checks and the synthetic experiments below. The scoped verification round is pending. No gate run has used it yet, and it does not change these 4 October records.
 
 ## Results
 
@@ -55,7 +55,7 @@ The owner ran the attended level 2 steps 4 to 7 of `HARNESS.md` section 11 on 4 
 
 ## L2-V-002 binding: synthetic experiments, 10 October 2026
 
-Claude ran `guard_experiments.py` (plan `PLAN-L2-V-002.md` section 7, item 1) on the owner's machine against Qt build `20261010T024533Z`. There was no window, GPU work or PresentMon. These are actual Windows file-system and loader results for this machine and this build, not gate evidence. Result: 8 passed, 1 not run, 0 failed.
+Claude ran `guard_experiments.py` (plan `PLAN-L2-V-002.md` section 7, item 1) on the owner's machine against Qt build `20261010T042228Z`, which carries the review fixes. There was no window, GPU work or PresentMon. These are actual Windows file-system and loader results for this machine and this build, not gate evidence. Result: 9 passed, 1 not run, 0 failed. The first run, on build `20261010T024533Z` before the fixes, gave 8 passed, 1 not run, 0 failed, with the same results in the shared rows.
 
 | Experiment | Result |
 |---|---|
@@ -64,10 +64,11 @@ Claude ran `guard_experiments.py` (plan `PLAN-L2-V-002.md` section 7, item 1) on
 | `\\localhost\` administrative share | the share was readable; the guard refused the UNC form at the path-form check |
 | Hard link to a held file | the link could be created. A write through it failed with a sharing violation. The guarded name could not be removed (error 32); the second link could. The release check passed. A load through the second link has another path, and a replacement at the guarded name has another file ID; the finalizer refuses both (G4 checks 2 and 4). |
 | Renaming an ancestor folder of a held deployment copy | 33 files and 20 folders held; renaming the deployment folder and `platforms/` both failed (error 32) |
-| Guard timing, 33 files | start to `ready` 222 ms; `release` to exit 7 ms, including the write probe |
+| Guard timing, 33 files | start to `ready` 247 ms; `release` to exit 9 ms, including the write probe |
 | Qt usage path under the guard | with all 33 files of a deployment copy held, `sd_smoke.exe` loaded its imports and exited 1 (`usage`, no window or GPU work). It recorded 11 in-scope modules, all of them guarded. Every file was still held afterwards, and the release check passed. |
 | DLL redirection through a `.local` folder | none: with a `.local` copy present, a load by absolute path reported the requested path |
-| Qt module observer test program | 7 of 7 cases, 207 child processes; in case 6, 27 of 200 children exited 3 at the seal and the rest recorded the probe |
+| Qt module observer test program | 10 of 10 cases, 210 child processes; in case 6, 30 of 200 children exited 3 at the seal and the rest recorded the probe. Cases 8 to 10 (L2-V-002-B01): a `\\?\` load entered the union under that spelling, the same load after the seal exited 3, and a load by the directory's 8.3 spelling entered the union once (this path has 8.3 names, so case 10 ran). |
+| A guard that never becomes ready (L2-A-001) | a test guard held a synthetic file and either gave no line or gave another line; `Start-Guard`, taken from `run_scene.ps1` with the runner's own `python` resolution, threw in both cases, and afterwards the guard process was gone and the file writable. The runner as committed before the fix failed this check (the guard outlived `Start-Guard`). |
 
 Not run yet:
 - the attended experiments of plan section 7, items 2 and 3 (a replacement helper during a W3 run, and the Qt `module-*` injections), which need a window, the GPU and the owner;
@@ -78,4 +79,5 @@ Not run yet:
 - That either candidate is selected. The selection gate needs the day-7 go/no-go ruling (`docs/wiki/decisions/renderer-candidates.md`).
 - Any uncapped Qt figure, or any GPU-headroom comparison between Qt and Godot.
 - Loaded-build binding for these identities (L2-V-002).
+- That the Qt observer records a load through a subst drive, a junction or symbolic link outside the build directory, a UNC share or a hard link outside it. It does not; `HARNESS.md` section 6 states this limit.
 - Results on other hardware, at other resolutions or refresh rates, with frame generation, or over long sessions.

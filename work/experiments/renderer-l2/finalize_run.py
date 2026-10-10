@@ -292,6 +292,11 @@ def read_guard(directory, launched_created):
     return guard, files, binding
 
 
+def final_guard_check(directory, launched_created, binding):
+    """The same guard must still hold the build when the finalizer accepts its output."""
+    require(read_guard(directory, launched_created)[2] == binding)
+
+
 def guarded_digest(path, files, assembly=False):
     entry = files[path_key(str(path))]
     with file_guard.open_identity(str(path)) as handle:
@@ -397,12 +402,12 @@ def check_modules(h, guarded):
         require(event['kind'] in ('snapshot', 'load', 'unload'))
         key = path_key(event['path'])
         require(key.startswith(scope + '\\'))
+        # A folded lookup can name a different NTFS file. Bind each event path itself, an unload
+        # included, even if another event or files entry has the same Python case folding.
+        guarded_digest(event['path'], guarded)
         if event['kind'] == 'unload':
             require(key in loaded)
         else:
-            # A folded lookup can name a different NTFS file. Bind each load path itself,
-            # even if another event or files entry has the same Python case folding.
-            guarded_digest(event['path'], guarded)
             loaded[key] = event['path']
     excluded = {path_key(files['qt:exe']), path_key(files['dll'])}
     expected = {}
@@ -612,7 +617,7 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
 
     h = check('harness', lambda: read_harness(directory, candidate, mode, pid))
     run_id = h['run_id'] if h is not None else None
-    output = None
+    output = binding = None
     if h is not None:
         check('app-exit', lambda: require(app_exit == h['exit_code'] and app_exit in (0, 2)))
         check('adapter', lambda: require(h['environment']['adapter'] == adapter))
@@ -704,6 +709,10 @@ def finalize(directory, candidate, mode, pid, app_exit, launched_created, overla
                     check('gate-shape', lambda: gate.validate_run(output))
                     name = 'run.json'
             output['binding'] = binding
+    if binding is not None:
+        # Last check before the output, so a guard that failed during the later checks
+        # cannot leave an accepted record (L2-V-002).
+        check('identity', lambda: final_guard_check(directory, launched_created, binding))
     if reasons:
         output = {'format': 'magic600-l2-refusal-v1', 'candidate': candidate, 'mode': mode,
                   'run_id': run_id, 'reasons': sorted(reasons),

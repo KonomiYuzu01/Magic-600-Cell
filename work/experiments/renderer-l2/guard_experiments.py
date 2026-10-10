@@ -323,10 +323,96 @@ def observer_test(build):
     expect(program.is_file(), 'app/sd_module_observer_test.exe is missing')
     result = subprocess.run([str(program)], capture_output=True, text=True, timeout=1800)
     lines = result.stdout.splitlines()
-    expect(result.returncode == 0 and lines and lines[-1].startswith('sd_module_observer_test: 7/7 cases'),
+    expect(result.returncode == 0 and lines and lines[-1].startswith('sd_module_observer_test: 10/10 cases'),
            f'observer test exited {result.returncode}')
-    race = next((line for line in lines if line.startswith('case 6:')), '')
-    return lines[-1].removeprefix('sd_module_observer_test: ') + '; ' + race
+    cases = [next((line for line in lines if line.startswith(f'case {number}:')), '') for number in (6, 10)]
+    return '; '.join([lines[-1].removeprefix('sd_module_observer_test: '), *cases])
+
+
+# Holds the file the way the guard does, then never reports ready (or reports something else).
+FAKE_GUARD = r'''import os, sys, time
+import file_guard as guard  # the copy beside this script
+out = sys.argv[sys.argv.index('--out') + 1]
+held = guard.acquire([os.path.join(out, 'part.dll')])
+with open(os.path.join(out, 'held.txt'), 'w', encoding='ascii') as stream:
+    stream.write(f'{os.getpid()} {guard.process_created(os.getpid())}')
+if os.environ.get('L2_FAKE_LINE'):
+    deadline = time.monotonic() + 50
+    while not os.path.exists(os.path.join(out, 'go.txt')) and time.monotonic() < deadline:
+        time.sleep(0.05)
+    print(os.environ['L2_FAKE_LINE'], flush=True)
+time.sleep(600)
+'''
+# Start-Guard and what it uses, taken from the runner itself; single quotes only on this command line.
+START_GUARD = r'''$ErrorActionPreference = 'Stop'
+$text = [IO.File]::ReadAllText($env:L2_RUNNER)
+$line = [regex]::Match($text, '(?m)^\$python = .*$').Value
+$native = $text.Substring($text.IndexOf('function Native-Arguments'))
+$native = $native.Substring(0, $native.IndexOf('function Number-Argument'))
+$start = $text.Substring($text.IndexOf('function Start-Guard'))
+$start = $start.Substring(0, $start.IndexOf('function Stop-Guard'))
+. ([scriptblock]::Create($line + [Environment]::NewLine + $native + $start))
+$guardScript = $env:L2_FAKE_SCRIPT
+$buildDirectory = $env:L2_FAKE_OUT
+$Candidate = 'sd'
+try { $null = Start-Guard $env:L2_FAKE_OUT; 'returned' } catch { 'threw: ' + $_.Exception.Message }
+'''
+
+
+def guard_cleanup(root, runner=HERE / 'run_scene.ps1'):
+    # L2-A-001: a guard that holds files but never becomes ready must be gone when Start-Guard throws.
+    facts = []
+    for case, line, message in (('no ready line', '', 'was not ready within 60 s'),
+                                ('another line', 'refused', 'refused to protect the build')):
+        with fresh(root) as directory:
+            part = directory / 'part.dll'
+            part.write_bytes(b'held by a guard that is never ready')
+            # The runner starts '<python> -B <script> --launch ... --out <dir>'; the script imports file_guard beside it.
+            script = directory / 'fake_guard.py'
+            script.write_text(FAKE_GUARD, encoding='ascii', newline='\n')
+            shutil.copyfile(HERE / 'file_guard.py', directory / 'file_guard.py')
+            environment = {**os.environ, 'L2_RUNNER': str(runner), 'L2_FAKE_SCRIPT': str(script),
+                           'L2_FAKE_OUT': str(directory), 'L2_FAKE_LINE': line}
+            environment.pop('GITHUB_PERSONAL_ACCESS_TOKEN', None)
+            # A file, not a pipe: a surviving guard inherits the shell's output handle and would hold a pipe open.
+            output = open(directory / 'shell.txt', 'wb')
+            shell = subprocess.Popen(['powershell', '-NoProfile', '-NonInteractive', '-Command', START_GUARD],
+                                     env=environment, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
+                                     creationflags=subprocess.CREATE_NO_WINDOW)
+            pid = created = None
+            try:
+                deadline = time.monotonic() + 30
+                while not (directory / 'held.txt').is_file() and time.monotonic() < deadline:
+                    time.sleep(0.1)
+                time.sleep(0.2)
+                expect((directory / 'held.txt').is_file(), f'{case}: the fake guard never held the file')
+                pid, created = (int(value) for value in (directory / 'held.txt').read_text(encoding='ascii').split())
+                held = guard.write_probe(str(part))
+                (directory / 'go.txt').write_bytes(b'')  # Only now may the fake guard print its line.
+                shell.wait(timeout=180)
+                deadline = time.monotonic() + 10
+                while guard.process_created(pid) == created and time.monotonic() < deadline:
+                    time.sleep(0.1)
+                alive = guard.process_created(pid) == created
+                released = guard.write_probe(str(part))
+            finally:
+                if shell.poll() is None:
+                    shell.kill()
+                    shell.wait(timeout=15)
+                if pid is not None and guard.process_created(pid) == created:
+                    os.kill(pid, 9)  # TerminateProcess; only the fake guard this experiment started.
+                    deadline = time.monotonic() + 10
+                    while guard.process_created(pid) == created and time.monotonic() < deadline:
+                        time.sleep(0.1)
+                output.close()
+            text = (directory / 'shell.txt').read_bytes().decode('utf-8', 'replace')
+            result = text.strip().splitlines()[-1:] or ['']
+            expect(held == 'sharing-violation', f'{case}: the fake guard did not hold the file ({held})')
+            expect(result[0].startswith('threw: ') and message in result[0], f'{case}: Start-Guard did not throw as expected')
+            expect(not alive, f'{case}: the guard process outlived Start-Guard')
+            expect(released == 'opened', f'{case}: the file was still held after Start-Guard threw ({released})')
+            facts.append(f'{case}: Start-Guard threw, the guard process was gone and the file writable')
+    return '; '.join(facts)
 
 
 def main():
@@ -348,6 +434,7 @@ def main():
         report('Qt usage path under the guard', lambda: loads_under_guard(root, build))
         report('DLL redirection through a .local folder', lambda: dll_redirection(root, build))
         report('Qt module observer test', lambda: observer_test(build))
+        report('guard that never becomes ready', lambda: guard_cleanup(root))
     finally:
         expect(root.parent == build, 'experiment cleanup boundary')
         shutil.rmtree(root)

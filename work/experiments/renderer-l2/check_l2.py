@@ -777,6 +777,21 @@ def binding_cases(root):
             expect(not any((directory / name).exists() for name in finalizer.OUTPUTS), 'usage wrote an output')
             CASES += 1
 
+    # The guard dies after the identity checks, while the finalizer checks the rest (L2-A-003).
+    original_identity = finalizer.build_identity
+    for candidate in ('sa2', 'sd'):
+        for mode in ('run', 'short', 'geometry', 'validation'):
+            directory = fixture(root, f'binding-{candidate}-{mode}-dies-late', candidate=candidate, mode=mode)
+            def dies_late(*args, directory=directory):
+                result = original_identity(*args)
+                stop_guard(directory, kill=True)
+                return result
+            with patch.object(finalizer, 'build_identity', dies_late):
+                invoke(directory, candidate=candidate, mode=mode, expected=5)
+            expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'],
+                   'a guard that died after the identity checks was accepted')
+            REFUSALS['identity'] += 1
+
     def guard_edit(action):
         return lambda d: edit(d, 'guard.json', action)
 
@@ -962,6 +977,17 @@ def binding_cases(root):
     invoke(directory, candidate='sd', expected=5)
     expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'load event bypassed FileIdInfo')
     REFUSALS['identity'] += 1
+    alias.unlink()
+    directory = fixture(root, 'binding-casefold-unload-id', candidate='sd', parts=folded)
+    alias.write_bytes(b'same bytes')
+    def unload_alias(h):
+        guarded = str(folded / 'stra\u00dfe.dll')
+        h['modules']['events'].extend([{'kind': 'load', 'path': guarded}, {'kind': 'unload', 'path': str(alias)}])
+        h['files']['qt:stra\u00dfe.dll'] = guarded
+    edit(directory, 'harness.json', unload_alias)
+    invoke(directory, candidate='sd', expected=5)
+    expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'unload event bypassed FileIdInfo')
+    REFUSALS['identity'] += 1
 
     for injection in ('module-late', 'module-transient', 'module-reload'):
         for candidate in ('sa2', 'sd'):
@@ -1016,6 +1042,9 @@ def static_runner():
     expect(attempt < text.index('$process = Start-App $arguments'), 'the guard must be ready before the app starts')
     expect(text.index('& python @finalArguments') < text.index('Stop-Guard $guard') < text.index('$finalExit -eq 5'),
            'the guard is released after the finalizer and before its result is judged')
+    start = text[text.index('function Start-Guard'):text.index('function Stop-Guard')]
+    expect('} catch {' in start and start.index('} catch {') < start.index('$guard.Kill()') < start.rindex('throw'),
+           'Start-Guard must stop a guard that did not become ready before it throws')
     cleanup = text[text.index('} finally {', attempt):]
     expect('$guard.Kill()' in cleanup, 'the finally block must stop a guard that is still running')
     powershell = shutil.which('powershell.exe')

@@ -3,6 +3,7 @@
 #include <psapi.h>
 #include <algorithm>
 #include <atomic>
+#include <cwchar>
 #include <iterator>
 
 namespace sd::modules {
@@ -37,6 +38,12 @@ struct HistoryEntry {
     ULONG sequence = 0;
     wchar_t name[32]{};
 };
+// One directory of the scope: its spelling in State::scope and its NTFS long and 8.3 names.
+struct Component {
+    std::size_t offset = 0, length = 0, longLength = 0, shortLength = 0;
+    wchar_t longName[MAX_PATH]{}, shortName[14]{};
+};
+constexpr std::size_t ComponentCapacity = 128;
 struct Slot {
     std::atomic<bool> complete{false};
     Kind kind = Kind::Ignored;
@@ -52,6 +59,10 @@ struct State {
     void* cookie = nullptr;
     wchar_t scope[32768]{};
     std::size_t scopeLength = 0;
+    // Read before registration. Only a drive-letter scope gets its other spellings resolved.
+    Component components[ComponentCapacity];
+    std::size_t componentCount = 0;
+    bool drive = false;
     Slot slots[SlotCount];
     Slot snapshot[SlotCount];
     std::size_t snapshotCount = 0, historyCount = 0;
@@ -65,12 +76,44 @@ static_assert(std::atomic<std::size_t>::is_always_lock_free && std::atomic<bool>
 State state;
 void fail(Failure failure) { if (state.failure == Failure::None) state.failure = failure; }
 wchar_t backslash(wchar_t value) noexcept { return value == L'/' ? L'\\' : value; }
+bool scopeText(const wchar_t* text, const wchar_t* expected, std::size_t length) noexcept {
+    for (std::size_t i = 0; i < length; ++i)
+        if (state.upcase(backslash(text[i])) != state.upcase(backslash(expected[i]))) return false;
+    return true;
+}
+// Length of a \\?\, \??\ or \\.\ prefix before a drive letter; the loader keeps such spellings.
+std::size_t devicePrefix(const wchar_t* path, std::size_t length) noexcept {
+    return length >= 7 && backslash(path[0]) == L'\\' && (backslash(path[1]) == L'\\' || path[1] == L'?')
+        && (path[2] == L'?' || path[2] == L'.') && backslash(path[3]) == L'\\' && path[5] == L':' ? 4 : 0;
+}
+bool scopeComponent(const Component& component, const wchar_t* text, std::size_t length) noexcept {
+    return (length == component.length && scopeText(text, state.scope + component.offset, length))
+        || (component.longLength && length == component.longLength && scopeText(text, component.longName, length))
+        || (component.shortLength && length == component.shortLength && scopeText(text, component.shortName, length));
+}
+// The same directories under another spelling: an extended-length or NT prefix, or 8.3 names.
+// Such a load is recorded under its own spelling, which the finalizer refuses, or ends a sealed run.
+bool aliasInScope(const wchar_t* path, std::size_t length) noexcept {
+    auto at = devicePrefix(path, length);
+    if (length < at + 3 || !scopeText(path + at, state.scope, 3)) return false;
+    at += 3;
+    for (std::size_t k = 0; k < state.componentCount; ++k) {
+        auto end = at;
+        while (end < length && backslash(path[end]) != L'\\') ++end;
+        if (end == length || !scopeComponent(state.components[k], path + at, end - at)) return false;
+        at = end + 1;
+    }
+    return at < length;
+}
 bool inScope(const CountedName& name) noexcept {
     const auto length = name.Length / sizeof(wchar_t);
-    if (length <= state.scopeLength) return false;
-    for (std::size_t i = 0; i < state.scopeLength; ++i)
-        if (state.upcase(backslash(name.Buffer[i])) != state.upcase(state.scope[i])) return false;
-    return true; // scope includes its final backslash, so sibling directory prefixes never match.
+    if (length > state.scopeLength) {
+        bool prefix = true;
+        for (std::size_t i = 0; i < state.scopeLength && prefix; ++i)
+            if (state.upcase(backslash(name.Buffer[i])) != state.upcase(state.scope[i])) prefix = false;
+        if (prefix) return true; // scope includes its final backslash, so sibling directory prefixes never match.
+    }
+    return state.drive && aliasInScope(name.Buffer, length);
 }
 void CALLBACK notify(ULONG reason, const NotificationData* data, void*) noexcept {
     const auto* name = data ? (reason == loaded ? data->Loaded.FullDllName : data->Unloaded.FullDllName) : nullptr;
@@ -130,6 +173,32 @@ bool readUnloadHistory(GetUnloadTrace getUnloadTrace) noexcept {
         return true;
     } __except (EXCEPTION_EXECUTE_HANDLER) { return false; }
 }
+// Outside the loader lock and before registration: the only file system reads of the observer.
+bool readComponents() noexcept {
+    if (state.scopeLength < 3 || state.scope[1] != L':' || state.scope[2] != L'\\') return true;
+    std::size_t begin = 3;
+    for (std::size_t i = 3; i < state.scopeLength; ++i) {
+        if (state.scope[i] != L'\\') continue;
+        if (i == begin || state.componentCount == ComponentCapacity) return false;
+        auto& component = state.components[state.componentCount++];
+        component.offset = begin;
+        component.length = i - begin;
+        state.scope[i] = L'\0'; // No callback is registered yet, so the scope may change briefly.
+        WIN32_FIND_DATAW data{};
+        const auto find = FindFirstFileW(state.scope, &data);
+        state.scope[i] = L'\\';
+        if (find == INVALID_HANDLE_VALUE) return false;
+        FindClose(find);
+        component.longLength = wcsnlen(data.cFileName, std::size(data.cFileName));
+        component.shortLength = wcsnlen(data.cAlternateFileName, std::size(data.cAlternateFileName));
+        if (component.longLength >= MAX_PATH || component.shortLength >= 14) return false;
+        std::copy_n(data.cFileName, component.longLength, component.longName);
+        std::copy_n(data.cAlternateFileName, component.shortLength, component.shortName);
+        begin = i + 1;
+    }
+    state.drive = true;
+    return true;
+}
 bool takeSnapshot() noexcept {
     HMODULE handles[SlotCount]{};
     DWORD required = 0;
@@ -171,6 +240,7 @@ void start() noexcept {
     }
     if (!state.scopeLength) { fail(Failure::Register); return; }
     state.scope[state.scopeLength] = L'\0';
+    if (!readComponents()) { fail(Failure::Register); return; }
     // Register outside the loader lock, so the lock order is never loader lock then notification lock.
     // A load or unload between registration and the lock is an event, and an unload also enters the history.
     if (registerNotification(0, notify, nullptr, &state.cookie) < 0 || !state.cookie) {
