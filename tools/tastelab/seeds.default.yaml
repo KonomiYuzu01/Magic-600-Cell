@@ -29,9 +29,10 @@ sources:            # approved adapters; set one to false to stop using it
   safebooru: true
 
 categories:
-  # Terms checked against the live sources on 10 October 2026: terms whose results were
-  # mostly unrelated (tutorials, diagrams, other meanings of a word) were dropped or given
-  # quoted per-source queries.
+  # Terms checked against the live sources on 10 October 2026, and later that day against
+  # a visual audit of the fetched images: terms whose results were mostly unrelated
+  # (tutorials, diagrams, other meanings of a word) were dropped or given quoted
+  # per-source queries.
   gaming:
     kind: focus
     target: 300
@@ -44,7 +45,7 @@ categories:
       - Dreamcast
       - {text: GameCube console, wikimedia: '"GameCube" console', openverse: GameCube console}
       - Game Boy
-      - sprite sheet
+      - {text: sprite sheet, wikimedia: '"pixel art" sprite -logo -icon', openverse: pixel art sprites}
       - {text: isometric pixel art, wikimedia: '"isometric" "pixel art" -tutorial -example -shading -camera -"low-res"'}
       - {text: Sega Saturn console, wikimedia: '"Sega Saturn" -logo', openverse: Sega Saturn console}
       - CRT scanlines
@@ -152,14 +153,14 @@ categories:
       - op art
       - data visualization art
       - {text: pen plotter drawing machine, wikimedia: '"pen plotter"', openverse: pen plotter art}
-      - cellular automaton
+      - {text: cellular automaton, wikimedia: '"cellular automaton" -diagram -neighborhood', openverse: cellular automata art}
       - fractal
-      - Lissajous figure
+      - {text: Lissajous figure, wikimedia: Lissajous -plot -diagram -graph -matlab}
       - ASCII art
       - procedural pattern
       - {text: Vera Molnar, wikimedia: '"Vera Molnár"', openverse: '"Vera Molnar"'}
       - {text: algorithmic art, wikimedia: '"algorithmic art"', openverse: algorithmic art}
-      - {text: moiré pattern, wikimedia: '"moiré pattern"', openverse: moire pattern}
+      - {text: moiré pattern, wikimedia: '"moiré" interference pattern -camera -dress', openverse: moire pattern}
     adjacent: [Spirograph, Islamic geometric pattern, kinetic sculpture, string art]
 
   idm_edm:
@@ -202,11 +203,11 @@ categories:
       - Frutiger Aero
       - oscilloscope music
       - Ryoji Ikeda
-      - light installation
+      - {text: light installation, wikimedia: '"light installation" -construction -workers'}
       - {text: audiovisual installation, wikimedia: '"audiovisual installation" OR "media art installation"'}
       - {text: teamLab digital art, wikimedia: teamLab -logo, openverse: teamLab Borderless}
       - {text: projection mapping, wikimedia: '"projection mapping"', openverse: '"projection mapping"'}
-      - {text: Ars Electronica, wikimedia: '"Ars Electronica" -logo', openverse: Ars Electronica}
+      - {text: Ars Electronica, wikimedia: '"Ars Electronica" installation -logo', openverse: Ars Electronica}
       - {text: synthwave, wikimedia: synthwave -map, openverse: synthwave}
       - {text: 3D wireframe render, wikimedia: '"wire-frame model" OR "wireframe render" -website -mockup', openverse: 3d wireframe render}
     adjacent: [laser installation, neon art installation, immersive digital art, LED light sculpture]
