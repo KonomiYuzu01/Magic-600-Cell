@@ -4,6 +4,8 @@ Status: **plan-checked study (9 October 2026): one plan check and two scoped re-
 
 Owner decision, 9 October 2026: **no fudged variant is pursued.** The study covers rigid, unfudged jumbling of the retained cut geometry only. `state-contract.md` defines that model.
 
+Theory and restoration: [`theory/README.md`](theory/README.md) indexes the documents, scripts and results; [`theory/open-problems.md`](theory/open-problems.md) lists every open problem with its status.
+
 ## Question
 
 The owner asked whether the facet-turning (cell-cap) 600-cell can be a jumbling puzzle, in the sense of the Hypercubing wiki's [formal grip theory](https://hypercubing.xyz/theory/grip-theory/formal/#jumbling) and HactarCE's [Jambler](https://github.com/HactarCE/Jambler). Jumbling here means extra twists of a cap by rotations about the cell axis that are not cap symmetries. This page records what the retained model (cut depth α = 121/125, `assets/model.npz`) says about that question. The external definitions are summarized from the linked pages; no primary-source text is captured in this repository.
