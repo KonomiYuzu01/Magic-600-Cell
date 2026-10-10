@@ -1,0 +1,50 @@
+{
+ "plane10_0_13": {
+  "angle": 9.999870618055192,
+  "blocked_J1": 54,
+  "agree": 600,
+  "realigned_poles": 12
+ },
+ "S4_q90_u1": {
+  "angle": 90.00000000000001,
+  "blocked_J1": 16,
+  "agree": 600,
+  "realigned_poles": 216
+ },
+ "I_a_72": {
+  "angle": 72.0,
+  "blocked_J1": 25,
+  "agree": 600,
+  "realigned_poles": 120
+ },
+ "I_b_72": {
+  "angle": 72.0,
+  "blocked_J1": 25,
+  "agree": 600,
+  "realigned_poles": 120
+ },
+ "cayley_rand0": {
+  "angle": 144.42592307646504,
+  "blocked_J1": 44,
+  "agree": 600,
+  "realigned_poles": 2
+ },
+ "cayley_rand1": {
+  "angle": 167.62371503729298,
+  "blocked_J1": 48,
+  "agree": 600,
+  "realigned_poles": 2
+ },
+ "cayley_rand2": {
+  "angle": 154.41001497998374,
+  "blocked_J1": 41,
+  "agree": 600,
+  "realigned_poles": 2
+ },
+ "cayley_rand3": {
+  "angle": 161.29222009821854,
+  "blocked_J1": 36,
+  "agree": 600,
+  "realigned_poles": 2
+ }
+}
