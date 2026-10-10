@@ -10,6 +10,9 @@ It never reads a journal. Each step applies the first rule that finds something:
   total misalignment N ends lower than before; the first such macro is taken, opening grips in
   order of decreasing N_c and only grips with a misaligned neighbour.
 - improve (U5): the single twist that lowers some N_c the most without closing it.
+- shift (U5, second form): open a misaligned grip c by any non-identity twist, one that leaves N_c
+  unchanged included, then make the single twist of a grip near c that lowers its N_d the most; the
+  two are kept if N drops. Closing twists in lock and shift use the same landing rule as close.
 N is the total misalignment, over every rotated cut hyperplane (rim.Domains.total_misalignment);
 N_c, and the grip sum reported as grip_N, count only seams on a grip's own cut, which a twist of
 that grip can address. By restoration.md M2 every step lowers N, so the procedure cannot cycle.
@@ -89,7 +92,7 @@ def scramble(M, k, seed, retained_mix=0.0):
 
 
 class Restorer:
-    def __init__(self, st, M, order=('close', 'lock', 'improve')):
+    def __init__(self, st, M, order=('close', 'lock', 'improve', 'shift')):
         self.st, self.M = st, M
         self.order = order
         self.n_items = len(M.items)
@@ -252,17 +255,48 @@ class Restorer:
                     continue
                 d_open = after_c[i] - now_c
                 for n_d, d, its in self.closing(self.survey(nbrs))[:2]:
-                    self.apply(d, its[0])
+                    j = self.landing(d, its)
+                    self.apply(d, j)
                     reach = sorted((near_c | {int(x) for x in NEAR[d]}) & (mset | {c}))
                     cl = self.closing(self.survey(reach))
                     if d_open - n_d - (cl[0][0] if cl else 0) < 0:
                         if not cl:
-                            return [(c, i), (d, its[0])]
+                            return [(c, i), (d, j)]
                         _, e, its2 = cl[0]
                         k = self.landing(e, its2)
                         self.apply(e, k)
-                        return [(c, i), (d, its[0]), (e, k)]
+                        return [(c, i), (d, j), (e, k)]
                     self.undo()
+                self.undo()
+        return None
+
+    def shift(self):
+        """When nothing closes, locks or improves: open a misaligned grip c by any menu twist other
+        than the identity (one that leaves N_c unchanged included), then make the single twist of a
+        grip d whose cap can meet c's that lowers N_d the most. Keep the two twists when the two
+        own-cut changes sum to less than zero, so N drops (M2). Grips in order of decreasing N_c."""
+        sv = self.survey()
+        for c in sorted(sv, key=lambda c: (-sv[c][0], c)):
+            now_c, after_c = sv[c]
+            near = sorted({int(x) for x in NEAR[c]} - {c})
+            for i in range(self.n_items):
+                if self.g(c, i) == I4:
+                    continue
+                try:
+                    self.apply(c, i)
+                except RuntimeError:
+                    continue
+                d_open = after_c[i] - now_c
+                best = None
+                for d, (n_d, a_d) in self.survey(near).items():
+                    low = min(a_d.values())
+                    if d_open - (n_d - low) < 0 and (best is None or n_d - low > best[0]):
+                        best = (n_d - low, d, [j for j, v in a_d.items() if v == low])
+                if best:
+                    _, d, its = best
+                    j = self.landing(d, its)
+                    self.apply(d, j)
+                    return [(c, i), (d, j)]
                 self.undo()
         return None
 
@@ -274,7 +308,7 @@ class Restorer:
                 if not self.st.is_lattice():
                     raise AssertionError('N = 0 off the lattice contradicts M3')
                 return 'lattice', steps
-            rules = {'close': self.level1, 'improve': self.improve, 'lock': self.level2}
+            rules = {'close': self.level1, 'improve': self.improve, 'lock': self.level2, 'shift': self.shift}
             done = None
             for rule in self.order:
                 done = rules[rule]()
@@ -314,6 +348,7 @@ def _report(label, st, M, t0, extra=None):
     out = {'run': label, 'result': res, 'N_start': N0, 'grip_N_start': G0, 'H_start': H0,
            'twists': len(R.moves), 'improvements': sum(1 for s in steps if s['rule'] == 'improve'),
            'lock_macros': sum(1 for s in steps if s['rule'] == 'lock'),
+           'shifts': sum(1 for s in steps if s['rule'] == 'shift'),
            'N_end': R.misalignment(), 'grip_N_end': R.grip_misalignment(), 'H_end': R.height(),
            'moves': R.moves, 'seconds': round(time.time() - t0, 1)}
     if res == 'lattice':
