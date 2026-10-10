@@ -89,7 +89,8 @@ class NetTests(unittest.TestCase):
     def test_only_adapter_https_hosts_and_safe_headers(self):
         client, replay = self.client({})
         for url in ("http://api.example.invalid/", "https://api.example.invalid.evil/", "https://user@api.example.invalid/",
-                    "https://api.example.invalid:443/", "https://api.example.invalid/a\n", "file:///tmp/image"):
+                    "https://api.example.invalid:443/", "https://api.example.invalid/a\n", "file:///tmp/image",
+                    "https://api.example.invalid/a–b.jpg", "https://api.example.invalid/a\x7f"):
             with self.subTest(url=url), self.assertRaises(net.NetError):
                 self.get(client, url)
         self.assertEqual(replay.calls, [])
@@ -109,10 +110,12 @@ class NetTests(unittest.TestCase):
         self.assertEqual(replay.calls[0][1], {"User-Agent": common.USER_AGENT, "Accept": "*/*"})
 
     def test_unapproved_redirect_is_never_requested(self):
-        client, replay = self.client({"https://api.example.invalid/start": (302, {"location": "https://outside.invalid/"}, b"")})
-        with self.assertRaises(net.NetError):
-            self.get(client)
-        self.assertEqual(len(replay.calls), 1)
+        for location in ("https://outside.invalid/", "https://image.example.invalid/a–b.jpg",
+                         "https://image.example.invalid℀.invalid/x.jpg"):
+            client, replay = self.client({"https://api.example.invalid/start": (302, {"location": location}, b"")})
+            with self.subTest(location=location), self.assertRaises(net.NetError):
+                self.get(client)
+            self.assertEqual(len(replay.calls), 1)
 
     def test_redirect_limit_size_caps_and_unrecorded_replay_fail(self):
         a = "https://api.example.invalid/start"
@@ -650,6 +653,18 @@ class PipelineTests(test_store.TempDir):
                                                                                             clock=lambda: 0))
         self.assertEqual(self.ingest(pipeline, other).kind, "invalid")
         self.assertEqual(self.library.count_images(), 1)
+
+    def test_a_non_ascii_image_url_is_refused_without_a_request(self):
+        # 10 October 2026: a raw en dash in a source's image URL ended a whole fetch run with a UnicodeEncodeError.
+        item = sources.Candidate("met", "903", "https://images.metmuseum.org/synthetic/a–b.png",
+                                 "https://www.metmuseum.org/art/collection/search/903", "CC0-1.0", sources.CC0_URL,
+                                 "Invented Artist", "Invented object")
+        self.assertFalse(sources.admit(item, "A"))
+        pipeline, item, replay = self.pipeline(item=item)
+        self.assertEqual(self.ingest(pipeline, item).kind, "rejected")
+        self.assertEqual(replay.calls, [])
+        self.assertEqual(self.library.count_images(), 0)
+        self.assertEqual(self.ingest(*self.pipeline()[:2]).kind, "stored")
 
     def test_discard_keeps_counts_only_no_seen_hash_metadata_or_files(self):
         self.content_screen.guard.return_value = [True]
