@@ -157,7 +157,7 @@ Mirror of the design side in [stage-2-experiment-protocol](stage-2-experiment-pr
 | ID | Item | Due | From | Used by the design track for | Status |
 |---|---|---|---|---|---|
 | H-06 | Cost table: frame time per visual feature at full detail | day 5 | S-B | the Look Lab cost meter | open |
-| H-07 | Day-7 go/no-go result and remaining candidates | day 9 | Astra ruling | Look Lab framework risk; where G6 is built | open |
+| H-07 | Day-7 go/no-go result and remaining candidates | day 9 | Astra ruling | Look Lab framework risk; where G6 is built | delivered 10 October 2026: S-B, S-A2 and S-D all go ([day7-go-no-go-ruling](../../wiki/decisions/day7-go-no-go-ruling.md)) |
 | H-08 | Command table and layer boundaries | day 4 | 2.1 and 2.2 | greybox layouts, keyboard model, flow scripts | first version 1 October: [command-table](command-table.md); final after the 2.2 dispositions |
 | H-09 | Renderer constraints (overlay layers, text in the 3D view, transparency and sorting limits) | day 8 | S-A2 and S-D | which features stay in the feature list | open |
 | H-10 | Selected renderer | day 14 | selection | vertical slice; rebuild of framework-neutral outputs if not Godot | open |

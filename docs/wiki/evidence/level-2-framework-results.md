@@ -11,7 +11,7 @@ claims:
   - {id: godot-w3-gate-met, evidence_kind: performance, path: work/experiments/renderer-l2/results/sa2-w3-20261004T150202105Z-summary.json, sha256: 6f1a7576cbe83da9e9f80e2d232a0b6d18fe42ffbaec1f0788f1a3477843ef34, checked_at: 2026-10-09}
   - {id: qt-w3-reaccepted, evidence_kind: performance, path: work/experiments/renderer-l2/results/sd-w3-20261010T172910231Z-summary.json, sha256: e990333279f6fe70ecc122059d247036945933b5f3f8ce7b98c6c921909ce52e, checked_at: 2026-10-10}
   - {id: godot-w3-reaccepted, evidence_kind: performance, path: work/experiments/renderer-l2/results/sa2-w3-20261010T175043422Z-summary.json, sha256: 339f629cc1197f5cd35a17337a3166f69f6c5769523e073f8af718bec07d43ed, checked_at: 2026-10-10}
-  - {id: level-2-result-card, evidence_kind: actual_windows_directx, path: work/experiments/renderer-l2/RESULT.md, sha256: d1daec5bfc7f1c649be47aae013fbb901ac8f93fa3c218b4958ee6894c05cb7e, checked_at: 2026-10-10}
+  - {id: level-2-result-card, evidence_kind: actual_windows_directx, path: work/experiments/renderer-l2/RESULT.md, sha256: 530df439e46a53a81455703e607a34149553e0cbbe9a8d11760cabdfa1cdfe2d, checked_at: 2026-10-10}
   - {id: qt-vblank-cap, evidence_kind: source, path: work/experiments/renderer-l2-packets/FRAMEWORK-FACTS.md, sha256: a16abed2b6ad187adbf2e2942c94a281f853fb8ba7fdd0954f009c3aa27825cc, checked_at: 2026-10-09}
   - {id: finalizer-fixes, evidence_kind: fixture, path: work/experiments/renderer-l2/finalize_run.py, sha256: 6dd01b63b586cd94a80107b310dd3190dfe29a6af2340c95a5b6eee8fb34e5f8, checked_at: 2026-10-10}
 ---
