@@ -305,11 +305,13 @@ class SeamRestorer(restore.Restorer):
                 self.undo()
         return None
 
-    def run(self, max_steps=600, log=None):
+    def run(self, max_twists=3000, log=None):
+        """Descend until N = 0 or no rule lowers N; at most max_twists twists in this run (start moves not counted)."""
         rules = {'seam': self.seam, 'cover': self.cover, 'close': self.level1, 'lock': self.level2,
                  'improve': self.improve, 'shift': self.shift, 'conj': self.conj, 'reopen': self.reopen}
         steps = []
-        while len(self.moves) < max_steps:
+        n0 = len(self.moves)
+        while len(self.moves) - n0 < max_twists:
             N = self.misalignment()
             if N == 0:
                 if not self.st.is_lattice():

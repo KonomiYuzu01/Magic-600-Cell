@@ -1,0 +1,229 @@
+{
+ "run": "S4 k=10 seed=1",
+ "order": [
+  "seam",
+  "cover",
+  "close",
+  "lock",
+  "improve",
+  "shift",
+  "conj",
+  "reopen"
+ ],
+ "result": "lattice",
+ "start_moves": 0,
+ "N_start": 15660,
+ "twists": 10,
+ "steps": {
+  "seam": 10,
+  "cover": 0,
+  "close": 0,
+  "lock": 0,
+  "improve": 0,
+  "shift": 0,
+  "conj": 0,
+  "reopen": 0
+ },
+ "N_end": 0,
+ "grip_N_end": 0,
+ "moves": [
+  [
+   9,
+   18
+  ],
+  [
+   22,
+   20
+  ],
+  [
+   96,
+   18
+  ],
+  [
+   104,
+   13
+  ],
+  [
+   137,
+   12
+  ],
+  [
+   221,
+   23
+  ],
+  [
+   261,
+   19
+  ],
+  [
+   443,
+   13
+  ],
+  [
+   456,
+   14
+  ],
+  [
+   483,
+   14
+  ]
+ ],
+ "step_log": [
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     9,
+     18
+    ]
+   ],
+   "N_before": 15660,
+   "sec": 22
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     22,
+     20
+    ]
+   ],
+   "N_before": 14094,
+   "sec": 26
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     96,
+     18
+    ]
+   ],
+   "N_before": 12528,
+   "sec": 28
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     104,
+     13
+    ]
+   ],
+   "N_before": 10962,
+   "sec": 31
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     137,
+     12
+    ]
+   ],
+   "N_before": 9396,
+   "sec": 34
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     221,
+     23
+    ]
+   ],
+   "N_before": 7830,
+   "sec": 36
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     261,
+     19
+    ]
+   ],
+   "N_before": 6264,
+   "sec": 39
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     443,
+     13
+    ]
+   ],
+   "N_before": 4698,
+   "sec": 41
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     456,
+     14
+    ]
+   ],
+   "N_before": 3132,
+   "sec": 44
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     483,
+     14
+    ]
+   ],
+   "N_before": 1566,
+   "sec": 46
+  }
+ ],
+ "seconds": 49.3,
+ "v_end": [],
+ "v_end_in_vG": true,
+ "solved": true,
+ "history": [
+  [
+   137,
+   13
+  ],
+  [
+   261,
+   19
+  ],
+  [
+   483,
+   15
+  ],
+  [
+   96,
+   18
+  ],
+  [
+   443,
+   12
+  ],
+  [
+   456,
+   15
+  ],
+  [
+   104,
+   12
+  ],
+  [
+   22,
+   20
+  ],
+  [
+   9,
+   18
+  ],
+  [
+   221,
+   23
+  ]
+ ]
+}
