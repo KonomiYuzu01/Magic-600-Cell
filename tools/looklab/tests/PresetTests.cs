@@ -238,11 +238,16 @@ internal static partial class Program
     private static void ImportRefusals()
     {
         JsonNode node = Export();
-        foreach (int version in new[] { 1, 4 }) { node["version"] = version; Refuse(() => TasteImport.Parse(node.ToJsonString(), Schema), "version"); }
-        node = Export(); node["version"] = 3;
-        node["images"] = new JsonObject { ["bundles"] = new JsonArray(), ["ratings"] = new JsonArray(), ["pairs"] = new JsonArray() };
-        Sequence(TasteImport.Parse(node.ToJsonString(), Schema).Presets.Select(p => Presets.CanonicalBytes(p, Schema)).SelectMany(b => b).ToArray(),
-            TasteImport.Parse(Export().ToJsonString(), Schema).Presets.Select(p => Presets.CanonicalBytes(p, Schema)).SelectMany(b => b).ToArray());
+        foreach (int version in new[] { 1, 5 }) { node["version"] = version; Refuse(() => TasteImport.Parse(node.ToJsonString(), Schema), "version"); }
+        foreach (int version in new[] { 3, 4 })
+        {
+            node = Export(); node["version"] = version;
+            var rating = new JsonObject { ["imageId"] = new string('a', 64), ["verdict"] = "like", ["note"] = null, ["ratedAt"] = "2026-10-10T20:00:00.000Z" };
+            if (version == 4) rating["love"] = true;
+            node["images"] = new JsonObject { ["bundles"] = new JsonArray(), ["ratings"] = new JsonArray(rating), ["pairs"] = new JsonArray() };
+            Sequence(TasteImport.Parse(node.ToJsonString(), Schema).Presets.Select(p => Presets.CanonicalBytes(p, Schema)).SelectMany(b => b).ToArray(),
+                TasteImport.Parse(Export().ToJsonString(), Schema).Presets.Select(p => Presets.CanonicalBytes(p, Schema)).SelectMany(b => b).ToArray());
+        }
         node = Export();
         node = Export(); node["presets"]![0]!["look"]!["gap"] = .9;
         Refuse(() => TasteImport.Parse(node.ToJsonString(), Schema), "f1/solving"); Refuse(() => TasteImport.Parse(node.ToJsonString(), Schema), "gap");

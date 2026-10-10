@@ -348,7 +348,7 @@ also committed as presets/default.json:
 Structure-group difference across the two families and three scenes. It
 does not silently choose a common projection or modify presets.
 
-## Taste Lab import (`tastelab-export`, versions 2 and 3)
+## Taste Lab import (`tastelab-export`, versions 2 to 4)
 
 ```json
 {
@@ -362,8 +362,9 @@ does not silently choose a common projection or modify presets.
 
 `TasteImport.Parse` maps each populated family/scene/name/look entry, requiring
 all 18 Taste Lab ids and using schema defaults only for new Look Lab ids.
-Version 3 adds `images` (the Images tab's ratings), which the Look Lab
-ignores; `presets` is the same in both. Other export versions are refused. A null look is skipped and reported with
+Version 3 adds `images` (the Images tab's ratings) and version 4 a love
+flag on those ratings; the Look Lab ignores `images`, and `presets` is the
+same in all three. Other export versions are refused. A null look is skipped and reported with
 family, scene and reason. It produces no default preset. A malformed non-null
 look fails the entire import and names the entry and parameter. Other export
 metadata is ignored. `TasteImport.Write(text, schema, outputFolder)` validates
