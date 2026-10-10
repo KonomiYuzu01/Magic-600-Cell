@@ -51,7 +51,7 @@
     {"id": "2.4", "track": "stage-2", "title": "Experiments (12-day renderer window, days 3-14, day-7 go/no-go)", "status": "in_progress", "acceptance": "A renderer is selected only if it renders all 259,800 sticker slots at full detail with the most complex animation at an average of at least 30 fps and a 99th-percentile frame time of at most 33.3 ms on the owner's machine.", "acceptance_source": "docs/wiki/decisions/renderer-candidates.md", "blocker": null,
      "items": [
       {"id": "d3d12-probe", "title": "Bare Direct3D 12 interop probe", "weight": 1, "done": true, "evidence": "d5b8db60f12866fdfa22f4458360ec8d772b56fa"},
-      {"id": "day-7", "title": "Day-7 go/no-go ruling", "weight": 1, "done": false, "evidence": null},
+      {"id": "day-7", "title": "Day-7 go/no-go ruling", "weight": 1, "done": true, "evidence": "docs/wiki/decisions/day7-go-no-go-ruling.md"},
       {"id": "experiments", "title": "12-day renderer window (days 3 to 14)", "weight": 1, "done": false, "evidence": null},
       {"id": "renderer-gate", "title": "Renderer selection gate met (renderer-candidates.md)", "weight": 1, "done": false, "evidence": null},
       {"id": "vertical-slice", "title": "Vertical slice passes the selection gate", "weight": 1, "done": false, "evidence": null},
