@@ -3,24 +3,26 @@ from their seams, and repair a misread.
 
 The rules read only the configuration: poses, and through them domains, seams and admissibility.
 They never read a journal. On top of restore.py's close, lock, improve and shift, each step applies
-the first rule that finds something, in this order:
+the first rule that finds something, by default in this order (--order changes it):
 - seam (U1a, face match): undo a cap c that some single twist aligns on every misaligned inside cut
   cell (N_c drops by at least 2 (In_c - A_c) > 0), the largest drop first;
 - cover (U1b): undo a cap that no misaligned cap covers and that covers some misaligned cap, the
   largest drop first. Cap d covers c when every face piece of c's cut inside d's half-space (at
   least ten on each side) sits on an aligned cut cell;
-- close, lock, improve, shift: restore.py (U2, U4, U5, U5');
+- close: restore.py (U2);
 - conj (U5''): (c, x)(d, y)(c, z) with x any non-identity twist, y the best single twist of a
   misaligned cap d meeting c, z the best single twist of c; kept if N drops (M2 sum);
+- lock, improve, shift: restore.py (U4, U5, U5');
 - reopen (U7): the inverse of one of the solver's own earlier twists, most recent first, then up to
   six single-twist steps (seam, cover, close, improve), the first on another cap; kept if N ends
   lower. The solver's own moves are the solver's record, not the scramble's journal.
-Every kept step lowers N (M2), so a run cannot cycle. It ends on the lattice (N = 0, M3) or 'stuck'.
+Every kept step lowers N (M2), so a run cannot cycle. It ends on the lattice (N = 0, M3), 'stuck', or
+'step-limit' after max_twists twists of its own.
 
 Run from the repository root:
     python research/jumbling/theory/seams.py fixture <menu> <t> [--start <moves.json>] [--order <r1,r2,...>]
-    python research/jumbling/theory/seams.py random <menu> <k> <seeds> [mix]
-    python research/jumbling/theory/seams.py batch [--jobs N] <job> ...
+    python research/jumbling/theory/seams.py random <menu> <k> <seeds> [mix] [--start ...] [--order ...]
+    python research/jumbling/theory/seams.py batch [--jobs N] <job> ... [--start ...] [--order ...]
     python research/jumbling/theory/seams.py facecheck <menu> <t1,t2,...>
 A job is fixture:<menu>:<t> or random:<menu>:<k>:<seed>[:<mix>]; batch runs the jobs in parallel
 processes (default: the number of CPUs) and writes one file per job. Results go to
@@ -90,7 +92,7 @@ def positions(st):
 
 
 class SeamRestorer(restore.Restorer):
-    ORDER = ('seam', 'cover', 'close', 'lock', 'improve', 'shift', 'conj', 'reopen')
+    ORDER = ('seam', 'cover', 'close', 'conj', 'lock', 'improve', 'shift', 'reopen')
 
     def __init__(self, st, M, order=ORDER):
         super().__init__(st, M, order=order)
@@ -311,12 +313,14 @@ class SeamRestorer(restore.Restorer):
                  'improve': self.improve, 'shift': self.shift, 'conj': self.conj, 'reopen': self.reopen}
         steps = []
         n0 = len(self.moves)
-        while len(self.moves) - n0 < max_twists:
+        while True:
             N = self.misalignment()
             if N == 0:
                 if not self.st.is_lattice():
                     raise AssertionError('N = 0 off the lattice contradicts M3')
                 return 'lattice', steps
+            if len(self.moves) - n0 >= max_twists:
+                return 'step-limit', steps
             done = None
             for rule in self.order:
                 done = rules[rule]()
@@ -394,6 +398,7 @@ def job(spec, start=None, order=None):
 
 def facecheck(name, ts):
     """Face match against top-record labels at the true scramble states X_t (journal used for labels only)."""
+    ts = sorted(set(ts))        # the states X_t are built incrementally
     fixture, M = wj.load(ctx, name)
     tw = [sim.Twist.from_record(ctx, r) for r in fixture['journal']['records'][:max(ts)]]
     st = sim.State(ctx, menu=M)
@@ -443,14 +448,18 @@ def main(argv):
         k = argv.index('--order')
         ORDER[:] = argv[k + 1].split(',')
         argv = argv[:k] + argv[k + 2:]
+    start = None
+    if '--start' in argv:
+        k = argv.index('--start')
+        start = argv[k + 1]
+        argv = argv[:k] + argv[k + 2:]
     mode = argv[0]
     if mode == 'fixture':
-        start = argv[argv.index('--start') + 1] if '--start' in argv else None
         job(f'fixture:{argv[1]}:{argv[2]}', start)
     elif mode == 'random':
         mix = argv[4] if len(argv) > 4 else None
         for seed in argv[3].split(','):
-            job(f'random:{argv[1]}:{argv[2]}:{seed}' + (f':{mix}' if mix else ''))
+            job(f'random:{argv[1]}:{argv[2]}:{seed}' + (f':{mix}' if mix else ''), start)
     elif mode == 'batch':
         jobs = argv[1:]
         n = os.cpu_count() or 1
@@ -458,7 +467,7 @@ def main(argv):
             n, jobs = int(jobs[1]), jobs[2:]
         home_centroids()        # fill the cache once before the workers start
         with Pool(min(n, len(jobs))) as pool:
-            for summary in pool.imap_unordered(partial(job, order=tuple(ORDER)), jobs):
+            for summary in pool.imap_unordered(partial(job, start=start, order=tuple(ORDER)), jobs):
                 print('done', json.dumps(summary), flush=True)
     elif mode == 'facecheck':
         facecheck(argv[1], [int(x) for x in argv[2].split(',')])

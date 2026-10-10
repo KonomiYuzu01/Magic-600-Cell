@@ -4,10 +4,10 @@
   "seam",
   "cover",
   "close",
+  "conj",
   "lock",
   "improve",
   "shift",
-  "conj",
   "reopen"
  ],
  "result": "lattice",
@@ -18,10 +18,10 @@
   "seam": 10,
   "cover": 0,
   "close": 0,
+  "conj": 0,
   "lock": 0,
   "improve": 0,
   "shift": 0,
-  "conj": 0,
   "reopen": 0
  },
  "N_end": 0,
@@ -78,7 +78,7 @@
     ]
    ],
    "N_before": 15660,
-   "sec": 22
+   "sec": 25
   },
   {
    "rule": "seam",
@@ -89,7 +89,7 @@
     ]
    ],
    "N_before": 14094,
-   "sec": 26
+   "sec": 28
   },
   {
    "rule": "seam",
@@ -100,7 +100,7 @@
     ]
    ],
    "N_before": 12528,
-   "sec": 28
+   "sec": 31
   },
   {
    "rule": "seam",
@@ -111,7 +111,7 @@
     ]
    ],
    "N_before": 10962,
-   "sec": 31
+   "sec": 34
   },
   {
    "rule": "seam",
@@ -122,7 +122,7 @@
     ]
    ],
    "N_before": 9396,
-   "sec": 34
+   "sec": 37
   },
   {
    "rule": "seam",
@@ -133,7 +133,7 @@
     ]
    ],
    "N_before": 7830,
-   "sec": 36
+   "sec": 40
   },
   {
    "rule": "seam",
@@ -144,7 +144,7 @@
     ]
    ],
    "N_before": 6264,
-   "sec": 39
+   "sec": 42
   },
   {
    "rule": "seam",
@@ -155,7 +155,7 @@
     ]
    ],
    "N_before": 4698,
-   "sec": 41
+   "sec": 45
   },
   {
    "rule": "seam",
@@ -166,7 +166,7 @@
     ]
    ],
    "N_before": 3132,
-   "sec": 44
+   "sec": 47
   },
   {
    "rule": "seam",
@@ -177,10 +177,10 @@
     ]
    ],
    "N_before": 1566,
-   "sec": 46
+   "sec": 50
   }
  ],
- "seconds": 49.3,
+ "seconds": 53.5,
  "v_end": [],
  "v_end_in_vG": true,
  "solved": true,
