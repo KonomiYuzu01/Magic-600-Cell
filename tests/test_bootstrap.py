@@ -527,7 +527,9 @@ class RefusalTests(unittest.TestCase):
                     return subprocess.CompletedProcess(cmd, 0, out + "\n", "")
 
                 # Every package probe passes and nothing conflicts: only the interpreter differs.
+                # tastelab-numerics is a Windows entry; pin the platform so the interpreter check runs on any host.
                 with self.subTest(facts=facts, home=home), \
+                        mock.patch.object(bootstrap, "PLATFORM", "windows"), \
                         mock.patch.object(bootstrap, "run_probe", return_value=(True, "packages present")), \
                         mock.patch.object(bootstrap, "venv_conflicts", return_value=[]), \
                         mock.patch.object(bootstrap, "safe_dest", return_value=venv_dir), \
@@ -1711,7 +1713,11 @@ class ArchiveTransportTests(unittest.TestCase):
         # whole reply; without a proxy, it never answers the TLS handshake.
         reply = b"HTTP/1.1 407 Proxy Authentication Required\r\nContent-Length: 0\r\n\r\n"
         for proxy in (None, "http://proxy.example.org:8080"):
-            client, peer = socket.socketpair()
+            # A loopback TCP pair: socket.socketpair() is AF_UNIX on Linux, where http.client's TCP_NODELAY
+            # fails with EOPNOTSUPP before the deadline is reached (Windows emulates it over TCP already).
+            with socket.create_server(("127.0.0.1", 0)) as listener:
+                client = socket.create_connection(listener.getsockname())
+                peer, _ = listener.accept()
             received, connected, stop = bytearray(), [], threading.Event()
 
             def serve():
