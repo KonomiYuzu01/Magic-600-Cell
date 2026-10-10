@@ -14,11 +14,12 @@ sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / 'work/experiments/renderer-sb'))
-from reference_geometry import binary, matvec, camera_matrix, turn_vertex, project, PARAMETERS, ASPECT
+from reference_geometry import binary, matvec, camera_matrix, turn_vertex, project, PARAMETERS, ASPECT, sticker_anchors
 
-NAMES = ('mesh.json', 'mesh_vertices.f32', 'mesh_sticker.u32', 'mesh_centers.f32',
+NAMES = ('mesh.json', 'mesh_vertices.f32', 'mesh_sticker.u32',
          'cell_frames.f32', 'slot_piece.u32')
 MENUS = ('S4', 'I_a', 'I_b')
+ANCHOR_SHA256 = '0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6'
 
 
 def digest(raw):
@@ -32,9 +33,13 @@ def geometry():
         if digest(data) != manifest['files'][f'assets/{name}']:
             raise ValueError(f'{name}: manifest hash mismatch')
     mesh = json.loads(raw['mesh.json'])
-    return (mesh, binary(raw['mesh_vertices.f32'], 'f', 30480 * 4, 'vertices'),
+    vertices = binary(raw['mesh_vertices.f32'], 'f', 30480 * 4, 'vertices')
+    centers = sticker_anchors(mesh['offsets'], vertices)
+    if digest(struct.pack(f'<{len(centers)}f', *centers)) != ANCHOR_SHA256:
+        raise ValueError('shrink anchors: SPEC SHA-256 mismatch')
+    return (mesh, vertices,
             binary(raw['mesh_sticker.u32'], 'I', 30480, 'stickers'),
-            binary(raw['mesh_centers.f32'], 'f', 433 * 4, 'centers'),
+            centers,
             binary(raw['cell_frames.f32'], 'f', 600 * 16, 'frames'),
             binary(raw['slot_piece.u32'], 'I', 259800, 'slot_piece'),
             {f'assets/{n}': digest(b) for n, b in raw.items()})
@@ -127,6 +132,8 @@ def build_reference(exports, name):
     inputs[f'research/jumbling/fixtures/wj-{name}.json'] = digest(fixture_raw)
     inputs['work/experiments/renderer-sb/cameras.json'] = digest(camera_raw)
     index = {'format': 'magic600-wj-reference/1', 'dimension': 4, 'menu': name,
+             'anchors': {'rule': 'area-weighted triangle centroid, SPEC.md section 3',
+                         'sha256': ANCHOR_SHA256},
              'parameters': {**PARAMETERS, 'R': radius}, 'aspect': ASPECT,
              'samples': len(samples), 'sample_stride': 4099, 'outputs': outputs,
              'inputs': inputs, 'stage_arrays': {s: reference_arrays(fixture, s) for s in stages},

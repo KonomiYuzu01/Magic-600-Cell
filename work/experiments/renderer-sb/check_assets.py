@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import math
+import struct
 import subprocess
 import sys
 from array import array
@@ -85,6 +86,69 @@ def check_turn():
             'orthonormal plane; even/odd label digests; inverse restores solved)')
 
 
+def check_anchors():
+    mesh = json.loads((reference.ROOT / 'assets/mesh.json').read_bytes())
+    offsets = mesh['offsets']
+    vertices = reference.binary((reference.ROOT / 'assets/mesh_vertices.f32').read_bytes(),
+                                'f', reference.BASE_VERTICES * 4, 'mesh_vertices.f32')
+    frames = reference.binary((reference.ROOT / 'assets/cell_frames.f32').read_bytes(),
+                              'f', reference.CELLS * 16, 'cell_frames.f32')
+    anchors = reference.sticker_anchors(offsets, vertices)
+    digest = hashlib.sha256(struct.pack(f'<{reference.BASE_STICKERS * 4}f',
+                                        *anchors)).hexdigest()
+    if digest != reference.ANCHOR_SHA256:
+        raise ValueError('S-B anchors: SHA-256 mismatch with SPEC section 3')
+    turn = json.loads((reference.HERE / 'workload/turn.json').read_bytes())
+    pairs = list(zip(turn['move_src'], turn['move_dst']))
+    pairs.extend((slot, slot) for slot in sorted(set(turn['moving_slots'])
+                                               - set(turn['move_src'])))
+    normal, radius = mesh['normal'], mesh['normal_length']
+    cs, ss = reference.PARAMETERS['cs'], reference.PARAMETERS['ss']
+    u, v, angle = turn['plane_u'], turn['plane_v'], turn['angle']
+
+    def continuity(centers):
+        shrunk = []
+        for local, (begin, end) in enumerate(zip(offsets, offsets[1:])):
+            center = centers[local * 4:local * 4 + 4]
+            for vi in range(begin, end):
+                shrunk.append(tuple((normal[i] + cs * (center[i] - normal[i])
+                                     + cs * ss * (vertices[vi * 4 + i] - center[i]))
+                                    / radius for i in range(4)))
+
+        def bounds(slot, theta):
+            cell, local = divmod(slot, reference.BASE_STICKERS)
+            frame = frames[cell * 16:cell * 16 + 16]
+            low, high = [math.inf] * 4, [-math.inf] * 4
+            for vi in range(offsets[local], offsets[local + 1]):
+                world = reference.turn_vertex(reference.matvec(frame, shrunk[vi]),
+                                              u, v, theta)
+                for i in range(4):
+                    low[i] = min(low[i], world[i])
+                    high[i] = max(high[i], world[i])
+            return (*low, *high)
+
+        maximum = 0.0
+        for src, dst in pairs:
+            error = max(abs(left - right) for left, right
+                        in zip(bounds(src, angle), bounds(dst, 0.0)))
+            if not math.isfinite(error):
+                raise ValueError(f'S-B anchors: non-finite bounds error for {src} -> {dst}')
+            maximum = max(maximum, error)
+        return maximum
+
+    maximum = continuity(anchors)
+    if maximum > 2e-6:
+        raise ValueError(f'S-B anchors: W3 turn-end bounds error {maximum:.9g} exceeds 2e-6')
+    centers = reference.binary((reference.ROOT / 'assets/mesh_centers.f32').read_bytes(),
+                               'f', reference.BASE_STICKERS * 4, 'mesh_centers.f32')
+    control = continuity(centers)
+    if control <= 2e-6:
+        raise ValueError('S-B anchors: mesh_centers control did not fail continuity')
+    return (f'S-B shrink anchors SHA-256: ok ({digest})\n'
+            f'S-B W3 turn-end continuity: ok ({len(pairs):,} animated slots; '
+            f'maximum {maximum:.9g}; mesh_centers control maximum {control:.9g} > 2e-6)')
+
+
 def check_reference():
     expected = reference.build_reference()
     directory = reference.HERE / 'reference'
@@ -103,7 +167,7 @@ def check_reference():
 
 def main(argv=None):
     argparse.ArgumentParser(description=__doc__).parse_args(argv)
-    for check in (check_workload_assets, check_turn, check_reference):
+    for check in (check_workload_assets, check_turn, check_anchors, check_reference):
         try:
             summary = check()
         except (OSError, ValueError, KeyError, TypeError) as exc:

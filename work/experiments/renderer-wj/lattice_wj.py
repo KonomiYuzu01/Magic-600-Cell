@@ -7,6 +7,8 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 from fixture_data import ROOT, snapshot, write_state, wj, np
+sys.path.insert(0, str(ROOT / 'work/experiments/renderer-sb'))
+from reference_geometry import sticker_anchors
 
 
 def check_frame(ctx):
@@ -33,7 +35,7 @@ def controls(ctx, out=None, *, require_agreement=True):
     mesh = json.loads((ROOT / 'assets/mesh.json').read_bytes())
     frames = np.frombuffer((ROOT / 'assets/cell_frames.f32').read_bytes(), '<f4').astype(float).reshape(600, 4, 4).transpose(0, 2, 1)
     verts = np.frombuffer((ROOT / 'assets/mesh_vertices.f32').read_bytes(), '<f4').astype(float).reshape(-1, 4)
-    centers = np.frombuffer((ROOT / 'assets/mesh_centers.f32').read_bytes(), '<f4').astype(float).reshape(433, 4)
+    centers = np.array(sticker_anchors(mesh['offsets'], verts.ravel().tolist()), dtype=np.float64).reshape(433, 4)
     local = np.frombuffer((ROOT / 'assets/mesh_sticker.u32').read_bytes(), '<u4')
     normal, radius = np.array(mesh['normal']), mesh['normal_length']
     shrunk = (normal + .76 * (centers[local] - normal) + .76 * .82 * (verts - centers[local])) / radius
@@ -81,7 +83,7 @@ def controls(ctx, out=None, *, require_agreement=True):
                 import hashlib
                 header['files'][file] = {'sha256': hashlib.sha256(raw).hexdigest(), 'shape': [259800], 'dtype': '<u4'}
             (directory / 'header.json').write_text(json.dumps(header, indent=2) + '\n', encoding='utf-8')
-        status = 'fail' if max_error > 2e-6 else 'pass'
+        status = 'fail' if max_error > 2e-6 or center_error.max() > 2e-6 else 'pass'
         print(f'{name}: all 259800 labels pass; geometry bounds {status}; '
               f'max bound error {max_error:.9g}; max center error {center_error.max():.9g}', flush=True)
         if require_agreement and status == 'fail':

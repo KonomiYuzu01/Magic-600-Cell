@@ -41,6 +41,7 @@ struct PoseState {
 };
 struct OverlayPoint {std::array<float,4> world,colour;};
 struct Assets {
+    // centers holds the SPEC section 3 float32 shrink anchors.
     std::vector<float> vertices,centers,frames;
     std::vector<uint32_t> local,offsets,flags,moving,src,dst,invSrc,invDst,slotPiece,straddle;
     std::vector<OverlayPoint> grips,certificates;

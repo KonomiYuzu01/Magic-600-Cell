@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] decision | Shrink anchor (area centroid)
+Recorded in [owner-decisions-2026-10-10-anchor](decisions/owner-decisions-2026-10-10-anchor.md): the sticker shrink anchor is the area-weighted centroid of each sticker's triangles, computed from the unchanged meshes, which removes the W3 turn-end jump and the W-J lattice disagreement at source level; no asset or model identity changes. Updated [s-b-probe-results](evidence/s-b-probe-results.md): the changed probes need GPU re-acceptance, including W3.
+
 ## [2026-10-10] update | Level 2 binding review fixes
 Updated [level-2-framework-results](evidence/level-2-framework-results.md): the four blocking findings of the binding's two-shard Astra review are fixed, and the fixed Qt build passed the synthetic experiments (9 passed, 1 not run), and the scoped verification round passed on both shards. The Qt observer's limit for subst, junction, UNC and outside hard-link spellings is stated in the harness contract.
 

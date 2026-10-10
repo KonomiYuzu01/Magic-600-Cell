@@ -15,6 +15,16 @@ This is the experiment card ([protocol section 2](../../../docs/progress/1.0/sta
 | Result | W3 meets the gate: three valid runs; pooled average 778.37 fps, pooled p99 1.546 ms, peak VRAM 81.7 MB. The fenced resource handoff works on the same device, to a second device in a child process and to a D3D11 consumer, with every frame verified. The label check caught each of the four injected faults on the GPU. |
 | Decision | Open. The day-7 go/no-go is an Astra gate ruling, and it also needs the S-A2 and S-D results. |
 
+## Shrink anchor change, 10 October 2026
+
+- The owner changed the shrink anchor (`docs/wiki/decisions/owner-decisions-2026-10-10-anchor.md`). [SPEC.md](SPEC.md) section 3 now anchors each sticker's shrink at the area-weighted centroid of its triangles, computed from the unchanged mesh, instead of at `assets/mesh_centers.f32`. No asset and no model identity changed.
+- **What was wrong.** The old anchors do not move with the stickers. In the measured W3 scene, the end of every turn moved 4,120 of the 4,600 moved slots by up to 0.0118 world units. `check_assets.py` now checks turn-end continuity over all 4,605 animated slots:
+  - with the new anchors, the maximum is 7.09e-8;
+  - with the old anchors, as a control, it is 0.0144.
+- **The reference changed.** It was regenerated as format `magic600-sb-reference-v2`, with the anchor digest recorded. Sampled projections moved by up to 0.0074 in normalised device coordinates. A probe built before the change therefore fails the geometry check against the new reference.
+- **The W3 result above still stands for its build.** It belongs to build identity `2b5bf5e6…` with the old anchors, and its figures are unchanged.
+- **The changed probe is not yet measured.** It has a new build identity. Its re-acceptance has not run: the GPU geometry check against the new reference, then three cold W3 runs judged the same way (E-2.4-0J item 6). The CPU self-test, including the anchor digest, passes (source and compilation evidence only).
+
 ## Build and tools
 
 - Probe source: commit `4d5da1a`, unchanged through `c6f7730`.

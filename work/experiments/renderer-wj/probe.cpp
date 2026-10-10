@@ -57,10 +57,32 @@ Assets::Assets(const Options& options):opt(options){
     require(offsets.size()==Stickers+1&&offsets.front()==0&&offsets.back()==Vertices&&radius>0,"bad mesh ranges");
     vertices=arrayFile<float>(root/"assets/mesh_vertices.f32",Vertices*4);
     local=arrayFile<uint32_t>(root/"assets/mesh_sticker.u32",Vertices);
-    centers=arrayFile<float>(root/"assets/mesh_centers.f32",Stickers*4);
+    centers.resize(Stickers*4);
     frames=arrayFile<float>(root/"assets/cell_frames.f32",Cells*16);
     for(uint32_t l=0;l<Stickers;++l){require(offsets[l]<offsets[l+1]&&(offsets[l+1]-offsets[l])%3==0,"bad triangle range");for(uint32_t vi=offsets[l];vi<offsets[l+1];++vi)require(local[vi]==l,"sticker/range mismatch");}
-    for(const auto* values:{&vertices,&centers,&frames})for(float f:*values)require(std::isfinite(f),"nonfinite geometry asset");
+    for(const auto* values:{&vertices,&frames})for(float f:*values)require(std::isfinite(f),"nonfinite geometry asset");
+    // SPEC section 3: widen f32, sum in file order, round each anchor once.
+    for(uint32_t l=0;l<Stickers;++l){
+        double total=0;std::array<double,4> weighted{};
+        for(uint32_t vi=offsets[l];vi<offsets[l+1];vi+=3){
+            std::array<double,4> a{},b{},c{},e1{},e2{};
+            for(uint32_t i=0;i<4;++i){
+                a[i]=vertices[vi*4+i];b[i]=vertices[(vi+1)*4+i];c[i]=vertices[(vi+2)*4+i];
+                e1[i]=b[i]-a[i];e2[i]=c[i]-a[i];
+            }
+            double d11=e1[0]*e1[0]+e1[1]*e1[1]+e1[2]*e1[2]+e1[3]*e1[3];
+            double d22=e2[0]*e2[0]+e2[1]*e2[1]+e2[2]*e2[2]+e2[3]*e2[3];
+            double d12=e1[0]*e2[0]+e1[1]*e2[1]+e1[2]*e2[2]+e1[3]*e2[3];
+            double area=0.5*std::sqrt(std::max(d11*d22-d12*d12,0.0));
+            total+=area;
+            for(uint32_t i=0;i<4;++i)weighted[i]+=area*((a[i]+b[i]+c[i])/3.0);
+        }
+        require(std::isfinite(total)&&total>0,"sticker "+std::to_string(l)+": no finite positive triangle area");
+        for(uint32_t i=0;i<4;++i){
+            centers[l*4+i]=float(weighted[i]/total);
+            require(std::isfinite(centers[l*4+i]),"nonfinite shrink anchor");
+        }
+    }
     auto turn=readJson(root/"work/experiments/renderer-sb/workload/turn.json");
     require(turn.at("format").string()=="magic600-sb-turn-v1"&&turn.at("model_id").string()==manifest.at("model_id").string(),"wrong turn identity");
     planeU=vector4(turn.at("plane_u"));planeV=vector4(turn.at("plane_v"));angle=turn.at("angle").number();
@@ -256,6 +278,8 @@ Json runJson(const Options& opt,int64_t frequency,int64_t start,int64_t stop,con
 }
 void selftest(const Assets& a){
     require(sha256(std::span<const uint8_t>())=="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","SHA-256 empty input");
+    require(sha256(std::span(reinterpret_cast<const uint8_t*>(a.centers.data()),a.centers.size()*sizeof(float)))=="0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6","shrink anchors SHA-256 mismatch");
+    std::cout<<"selftest: shrink anchors SHA-256: ok\n";
     constexpr int64_t freq=10000000,start=123456000000;auto duration=turnTicks(190,freq);
     for(uint64_t t=0;t<30;++t){auto first=turnAt(start+int64_t(t)*duration,start,duration,a.angle);auto mid=turnAt(start+int64_t(t)*duration+duration/2,start,duration,a.angle);
         require(first.index==t&&first.phase==0&&first.theta==0&&mid.phase==.5,"turn arithmetic");require(std::abs(mid.theta-(t%2?-1:1)*a.angle*.5)<1e-12,"smoothstep/inverse");}

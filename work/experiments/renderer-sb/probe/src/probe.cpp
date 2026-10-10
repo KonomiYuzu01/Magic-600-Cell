@@ -58,10 +58,31 @@ Assets::Assets(){
     require(offsets.size()==Stickers+1&&offsets.front()==0&&offsets.back()==Vertices&&radius>0,"bad mesh ranges");
     vertices=arrayFile<float>(root/"assets/mesh_vertices.f32",Vertices*4);
     local=arrayFile<uint32_t>(root/"assets/mesh_sticker.u32",Vertices);
-    centers=arrayFile<float>(root/"assets/mesh_centers.f32",Stickers*4);
     frames=arrayFile<float>(root/"assets/cell_frames.f32",Cells*16);
     for(uint32_t l=0;l<Stickers;++l){require(offsets[l]<offsets[l+1]&&(offsets[l+1]-offsets[l])%3==0,"bad triangle range");for(uint32_t vi=offsets[l];vi<offsets[l+1];++vi)require(local[vi]==l,"sticker/range mismatch");}
-    for(const auto* values:{&vertices,&centers,&frames})for(float f:*values)require(std::isfinite(f),"nonfinite geometry asset");
+    for(const auto* values:{&vertices,&frames})for(float f:*values)require(std::isfinite(f),"nonfinite geometry asset");
+    centers.resize(Stickers*4);
+    for(uint32_t l=0;l<Stickers;++l){
+        double total=0;std::array<double,4> weighted{};
+        for(uint32_t t=offsets[l];t<offsets[l+1];t+=3){
+            std::array<double,4> a{},b{},c{},e1{},e2{};
+            for(int i=0;i<4;++i){
+                a[i]=vertices[t*4+i];b[i]=vertices[(t+1)*4+i];c[i]=vertices[(t+2)*4+i];
+                e1[i]=b[i]-a[i];e2[i]=c[i]-a[i];
+            }
+            double d11=e1[0]*e1[0]+e1[1]*e1[1]+e1[2]*e1[2]+e1[3]*e1[3];
+            double d22=e2[0]*e2[0]+e2[1]*e2[1]+e2[2]*e2[2]+e2[3]*e2[3];
+            double d12=e1[0]*e2[0]+e1[1]*e2[1]+e1[2]*e2[2]+e1[3]*e2[3];
+            double area=0.5*std::sqrt(std::max(d11*d22-d12*d12,0.0));
+            total+=area;
+            for(int i=0;i<4;++i)weighted[i]+=area*((a[i]+b[i]+c[i])/3.0);
+        }
+        require(std::isfinite(total)&&total>0,"sticker "+std::to_string(l)+": no finite positive triangle area");
+        for(int i=0;i<4;++i){
+            centers[l*4+i]=float(weighted[i]/total);
+            require(std::isfinite(centers[l*4+i]),"nonfinite shrink anchor");
+        }
+    }
     auto turn=readJson(root/"work/experiments/renderer-sb/workload/turn.json");
     require(turn.at("format").string()=="magic600-sb-turn-v1"&&turn.at("model_id").string()==manifest.at("model_id").string(),"wrong turn identity");
     planeU=vector4(turn.at("plane_u"));planeV=vector4(turn.at("plane_v"));angle=turn.at("angle").number();
@@ -191,6 +212,8 @@ Json runJson(const Options& opt,int64_t frequency,int64_t start,int64_t stop,con
     return run;
 }
 void selftest(const Assets& a){
+    require(a.centers.size()==Stickers*4&&sha256(std::span(reinterpret_cast<const uint8_t*>(a.centers.data()),a.centers.size()*sizeof(float)))==AnchorSha256,"shrink anchors SHA-256 mismatch with SPEC section 3");
+    std::cout<<"selftest: shrink anchors SHA-256: ok\n";
     auto edges=edgeMasks(a);
     std::cout<<"selftest: edge counts: features="<<edges.featureEdges<<", diagonals="<<edges.diagonals<<", open="<<edges.openEdges<<", multiple="<<edges.multipleEdges<<", degenerate="<<edges.degenerate<<", duplicates="<<edges.duplicates<<'\n';
     require(edges.featureEdges==3277&&edges.diagonals==5546&&edges.openEdges==819&&edges.multipleEdges==31&&edges.degenerate==3948&&edges.duplicates==761&&edges.nearZero==562,"real-asset feature edges and diagonals");

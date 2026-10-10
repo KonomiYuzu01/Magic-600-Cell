@@ -1,6 +1,6 @@
 # W-J Direct3D 12 probe (E-2.4-0J)
 
-The pose probe builds and its source/fixture checks run headlessly. **Lattice agreement fails with the packet's unchanged assets and home shrink.** This is a measured source counterexample, not a GPU or performance result. Do not mark W-J accepted or the Jumble switch invisible on the strength of `check_wj.py`.
+The pose probe builds and its source/fixture checks run headlessly. **CPU lattice agreement passes with the SPEC section 3 area-centroid shrink anchors and unchanged assets.** This is source/fixture evidence, not a GPU or performance result. Do not mark W-J accepted or the Jumble switch invisible on the strength of `check_wj.py`.
 
 This directory starts from the S-B C++20/HLSL probe. Only this copy changes. It draws all 600 instances of the 30,480-vertex mesh, all 259,800 labelled stickers and all 177,120 pieces. A piece index selects four row-major matrix rows. Home cell/sticker shrink precedes the pose; the certified moving pieces then receive the swept rotation; S-B projection and colour follow. The renderer consumes J1's data and decides no legality.
 
@@ -30,13 +30,13 @@ work/experiments/renderer-wj/build.cmd
 
 The no-GPU `check_wj.py` runs the shared renderer asset check, checks pole length and all 600 frames (including float32 pole transports within 1e-8), and captures each fixture stage before the next journal record applies. One comparison checks the exact `State.digest()`, all three array hashes, shapes/types and the off-lattice count. Without replaying again, it rejects five copies with a changed stage digest and one with a changed array hash. Sampled exact centroids and the sweep plane/moving set are also checked. All exports and all recomputed reference files go into a fresh plain-mkdir temporary directory outside the repository, deleted in `finally`, including on failure. Imports disable bytecode writes. `--menu S4` is the focused development check; the default checks all three menus.
 
-`reference_wj.py` uses only the standard library and the immutable S-B reference's math helpers. It consumes checked exports; its output includes the six states `start`, `mid`, `end`, `sweep0`, `sweep05`, `sweep1`, at cameras c0/c1/c2. Samples include every 4,099th global vertex, one vertex per moving sticker and one per sticker of a sampled fixture piece. Each `ref_<menu>_index.json` fixes asset/fixture/camera digests, all five stage array descriptions, sample order, output hashes and the 1e-4 + 1e-4*abs(reference) GPU tolerance. Regeneration is explicit:
+`reference_wj.py` uses only the standard library and the immutable S-B reference's math helpers. It consumes checked exports; its output includes the six states `start`, `mid`, `end`, `sweep0`, `sweep05`, `sweep1`, at cameras c0/c1/c2. Samples include every 4,099th global vertex, one vertex per moving sticker and one per sticker of a sampled fixture piece. Each `ref_<menu>_index.json` fixes asset/fixture/camera digests, all five stage array descriptions, sample order, output hashes and the 1e-4 + 1e-4*abs(reference) GPU tolerance. The anchors come from `sticker_anchors`: the area-weighted triangle centroid in SPEC section 3, computed in float64 in file order and rounded once to float32. Each index records their rule and little-endian SHA-256 `0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6`; `mesh_centers.f32` is no longer an input. Regeneration is explicit:
 
 ```powershell
 python work/experiments/renderer-wj/reference_wj.py --exports $wjData --menu S4 --out <new-reference-directory>
 ```
 
-## Geometry and the lattice failure
+## Geometry and lattice agreement
 
 After building, run these untimed checks on the owner's GPU. Geometry output is refused if any reference is absent or has the wrong digest. The draw-counter check requires 30,480 vertex-shader invocations for each of the 600 cells.
 
@@ -49,11 +49,11 @@ work/experiments/renderer-wj/build/wj_probe.exe --scene wj --menu S4 --data $wjD
 python work/experiments/renderer-wj/check_lattice.py
 ```
 
-The separate CPU lattice check exits 1. Solved labels/geometry agree. For J1's retained generator 1, all 259,800 projected labels and transported frames agree, but 4,125 sticker shrink centres differ (maximum 0.0801202387 world units), and transformed shrunken sticker bounds differ by up to 0.0144216457. Bounds are computed from every vertex of each moved sticker, after the exact required home shrink. Equal geometry must have equal bounds, irrespective of triangle order or different interior tessellation. This counterexample therefore does not rely on matching triangulation vertices.
+The separate CPU lattice check exits 0. For both the solved control and J1's retained generator 1, all 259,800 projected labels and transported frames agree, and shrink centres and transformed shrunken sticker bounds agree within 2e-6 world units. Bounds are computed from every vertex of each moved sticker, after the exact required home shrink. Equal geometry must have equal bounds, irrespective of triangle order or different interior tessellation. The bounds comparison therefore does not rely on matching triangulation vertices.
 
-The GPU lattice check reads J1's label/destination controls and compares every home sticker against its destination: exact identity/label, shrink centre, all-vertex bounds for moved stickers and lattice flag. It writes `lattice_check.json` and returns 1 on any mismatch. The CPU counterexample predicts failure for the retained control; no GPU result is claimed here. Identity stickers have identical vertex streams. Bounds agreement is a necessary condition, not a proof of complete surface agreement.
+The GPU lattice check reads J1's label/destination controls and compares every home sticker against its destination: exact identity/label, shrink centre, all-vertex bounds for moved stickers and lattice flag. It writes `lattice_check.json` and returns 1 on any mismatch. The GPU lattice check has not been run with the new anchors; no GPU result is claimed here. Identity stickers have identical vertex streams. Bounds agreement is a necessary condition, not a proof of complete surface agreement.
 
-`check_wj.py` is deliberately the packet's asset/replay/reference acceptance command; it does not silently weaken or declare acceptance item 2 passed. `check_lattice.py` carries the failing item separately. The packet forbids changing the assets, S-B source or steps 1–3. Correcting this disagreement needs an integrator/owner scope decision before an invisible lattice handoff can be claimed.
+`check_wj.py` is deliberately the packet's asset/replay/reference acceptance command; it does not silently weaken or declare acceptance item 2 passed. `check_lattice.py` checks item 2 separately and must pass both controls with bound and centre errors at most 2e-6. The owner chose the SPEC anchor rule on 10 October 2026; the assets and model identity are unchanged. The passing CPU check closes item 2 at source level; an invisible lattice handoff still needs the GPU check.
 
 ## Timed trace and exact checks
 

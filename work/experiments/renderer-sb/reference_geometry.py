@@ -14,12 +14,13 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 PREFIX = 'work/experiments/renderer-sb'
 ASSET_NAMES = ('mesh.json', 'mesh_vertices.f32', 'mesh_sticker.u32',
-               'mesh_centers.f32', 'cell_frames.f32')
+               'cell_frames.f32')
 BASE_VERTICES, BASE_STICKERS, CELLS = 30480, 433, 600
 SLOTS = CELLS * BASE_STICKERS
 SAMPLE_STRIDE = 4099
 ASPECT = 1.6
 PARAMETERS = {'cs': 0.76, 'ss': 0.82, 'd4': 1.18, 'zoom': 1.15}
+ANCHOR_SHA256 = '0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6'
 
 
 def binary(raw, code, count, name):
@@ -131,8 +132,11 @@ def build_reference():
                       'mesh_vertices.f32')
     stickers = binary(inputs['assets/mesh_sticker.u32'], 'I', BASE_VERTICES,
                       'mesh_sticker.u32')
-    centers = binary(inputs['assets/mesh_centers.f32'], 'f', BASE_STICKERS * 4,
-                     'mesh_centers.f32')
+    centers = sticker_anchors(offsets, vertices)
+    anchor_digest = hashlib.sha256(struct.pack(f'<{BASE_STICKERS * 4}f',
+                                               *centers)).hexdigest()
+    if anchor_digest != ANCHOR_SHA256:
+        raise ValueError('shrink anchors: SHA-256 mismatch with SPEC section 3')
     frames = binary(inputs['assets/cell_frames.f32'], 'f', CELLS * 16,
                     'cell_frames.f32')
     if any(stickers[vi] != local
@@ -185,7 +189,9 @@ def build_reference():
                 struct.pack('<3f', *project(world, q, ASPECT)) for world in worlds)
 
     index = {
-        'format': 'magic600-sb-reference-v1',
+        'format': 'magic600-sb-reference-v2',
+        'anchors': {'rule': 'area-weighted triangle centroid, SPEC.md section 3',
+                    'sha256': anchor_digest},
         'parameters': {**PARAMETERS, 'R': radius, 'near': 0.05, 'far': 100.0},
         'aspect': ASPECT,
         'sample_stride': SAMPLE_STRIDE,
