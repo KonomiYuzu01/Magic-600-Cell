@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] update | Jumbling theory index and open problems
+[theory README](../../research/jumbling/theory/README.md) indexes the jumbling theory scripts and result files, and [open-problems](../../research/jumbling/theory/open-problems.md) gathers every open problem of the theory draft, the restoration page and the deferred-problems decision with its status and next step. The I_a@40 stopping configuration is recorded with an analysis of its off-grip seams.
+
 ## [2026-10-10] update | Jumbling restoration: deep inputs
 [restoration](../../research/jumbling/theory/restoration.md) section 3 adds readings of the twist order from the seams (face match, cover order) and a three-twist repair word for misreads (`seams.py`). Phase U reaches the lattice on every tested input of up to 20 twists. On 40- and 60-record fixtures the repair passes every earlier stopping point but slows as N falls; no run has reached the lattice yet (the nearest, I_a@40, found no step below N = 1,192 of 51,348 for 50 minutes), so completeness on deep inputs stays open.
 
