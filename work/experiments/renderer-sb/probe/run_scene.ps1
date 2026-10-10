@@ -169,6 +169,9 @@ try {
             # 20261003T033021Z-274f20af). The summary publishes it as declared.overlays.
             if ($Inject) { $overlay = 'fault-injection run; not gate evidence' }
             else {
+                # Discard keys typed or pasted while the run was on screen (a right-click pastes), so only an answer
+                # typed at this prompt counts. A host without a console input buffer keeps the old behaviour.
+                try { $Host.UI.RawUI.FlushInputBuffer() } catch { }
                 $answer = Read-Host "$runId`: did you watch the whole run, with nothing covering any part of the probe window? Type yes to keep it"
                 if ("$answer".Trim() -ne 'yes') { throw "$runId was not confirmed by the operator; no gate evidence." }
                 $overlay = "$Overlays; operator-declared after the run: watched throughout, no visible obstruction; automatic checks sample visibility every 100 ms and do not prove continuous full-area visibility"
