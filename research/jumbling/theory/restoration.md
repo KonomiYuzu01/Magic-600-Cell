@@ -126,9 +126,13 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 **Deep inputs: reading the order, and repairing a misread.** With the rules above, phase U reaches the lattice on every input of up to 20 twists in section 5. On deeper inputs it leaves the reverse path and stops at a configuration from which no rule lowers N (S4@60: N = 7,472). Two more readings of the seams choose the cap to undo, and a repair word recovers when the reading is wrong. The journal is used only to label moves after a run, never to choose them.
 
 - **U1a. Face match.** For a misaligned cap c, let In_c, Out_c and A_c count the cut cells of H_c covered inside, covered outside, and covered on both sides by one domain (the aligned cells). Cap c passes the face match when some single twist of c aligns every misaligned inside cell, that is, lowers N_c by at least 2(In_c − A_c) > 0. Undo the cap that passes with the largest drop first.
-  - Computed (exact; `seams.py facecheck <menu> <t,...>`, `results/seams-facecheck-<menu>.json`). At the true scramble state X_t of each W-J fixture, call a misaligned cap a top cap when undoing its latest record gives the configuration of the scramble replayed without that record. The table counts top caps that pass (true positives), other caps that pass (false positives) and top caps that fail (misses).
+  - Computed (exact; `seams.py facecheck <menu> <t,...>`, `results/seams-facecheck-<menu>.json`). At the true scramble state X_t of each W-J fixture, call a misaligned cap a top cap when undoing its latest record gives the configuration of the scramble replayed without that record. The table counts top caps that pass (true positives), other caps that pass (false positives) and top caps that fail (misses), in that order.
 
-<!-- FACE -->
+  | Menu | t = 20 | t = 40 | t = 60 | t = 100 |
+  |---|---|---|---|---|
+  | S4 | 11/0/0 | 7/0/2 | 9/0/2 | 5/1/5 |
+  | I_a | 10/0/1 | 13/1/2 | 6/0/6 | – |
+  | I_b | 10/0/0 | 9/0/2 | 7/0/4 | – |
 
   - So the face match is rarely wrong, and it misses more as the scramble deepens.
 - **U1b. Cover order.** Cap d covers cap c when, inside d's half-space, every face piece of c's cut sits on an aligned cell, with at least ten on each side: a later twist of d has erased c's seam there. When no cap passes the face match, undo a cap that no cap covers and that covers some cap, the largest drop first. (`seams.py` decides "inside d's half-space" by a floating-point test on piece centroids. It is used only to choose a cap; every N is exact.)
