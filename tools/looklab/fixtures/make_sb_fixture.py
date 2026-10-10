@@ -25,6 +25,9 @@ def main():
     inputs = {name: (source / name).read_bytes() for name in names}
     digests = {name: hashlib.sha256(raw).hexdigest() for name, raw in inputs.items()}
     index = json.loads(inputs["reference/index.json"])
+    anchors = index.get("anchors")
+    if not isinstance(anchors, dict) or not isinstance(anchors.get("rule"), str) or not isinstance(anchors.get("sha256"), str):
+        raise ValueError("reference/index.json: anchors (rule and SHA-256 of the shrink anchors) missing")
     for name, expected in index["files"].items():
         if digests[f"reference/{name}"] != expected:
             raise ValueError(f"reference/{name}: digest mismatch with index.json")
@@ -47,8 +50,9 @@ def main():
                           "pose": pose, "theta": index["poses"][pose],
                           "samples": [{"vertex": sample[i], "reference": list(struct.unpack_from("<3f", data, i * 12))}
                                       for i in positions]})
-    fixture = {"format": "magic600-look-sb-reference", "version": 1,
-               "sourceBranch": "claude/renderer-sb", "sourceCommit": inputs["SOURCE_COMMIT"].decode().strip(),
+    fixture = {"format": "magic600-look-sb-reference", "version": 2,
+               "sourceBranch": "main", "sourceCommit": inputs["SOURCE_COMMIT"].decode().strip(),
+               "anchors": {"rule": anchors["rule"], "sha256": anchors["sha256"]},
                "inputDigests": digests, "referenceInputs": index["inputs"],
                "sourceSampleCount": count, "samplePositions": positions,
                "parameters": index["parameters"], "aspect": index["aspect"], "cases": cases}
@@ -68,8 +72,10 @@ def main():
              "inverse_src": move_dst, "inverse_dst": move_src, "labels": labels}
     cycle_bytes = (json.dumps(cycle, indent=2, allow_nan=False) + "\n").encode("utf-8")
     (HERE / "three-cycle-turn.json").write_bytes(cycle_bytes)
-    lines = ["# Fixture provenance", "", "The S-B source branch is `claude/renderer-sb`, at commit",
+    lines = ["# Fixture provenance", "", "The S-B source branch is `main`, at commit",
              f"`{fixture['sourceCommit']}`. These are synthetic model/probe inputs, not session data.", "",
+             f"Shrink anchors: {anchors['rule']}. SHA-256 of the 433 x 4 little-endian float32 anchors:",
+             f"`{anchors['sha256']}`.", "",
              "`sb-reference.json` retains 300 samples per camera/pose, at source positions",
              "`floor(i * (9066 - 1) / 299)` for i = 0..299. Both endpoints are included.",
              "`w3-turn.json` is the original turn file, copied byte for byte.", "",

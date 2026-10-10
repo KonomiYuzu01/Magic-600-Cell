@@ -60,6 +60,7 @@ internal static partial class Program
             ("LL3CaptureBoundsEncodingAndGalleryCopy", LL3CaptureRules),
             ("LL3CaptureValidationAndGalleryScanner", LL3PythonChecks),
             ("FixtureProvenanceAndTurnDigest", FixtureProvenance),
+            ("StickerAnchorsAreaCentroidAndPin", StickerAnchorRule),
             ("SbFixtureRequiredInputAndPortableOutput", SbFixturePortable),
             ("ProjectionKindsAndCameraOrder", ProjectionKinds),
             ("FullCellAdjacencyAndVertexIncidence", CellIncidence),
