@@ -1,0 +1,995 @@
+{
+ "run": "S4@60",
+ "note": "Partial step log from X_t with the default order; the run was still descending when this snapshot was taken (not a stuck result). sec is the elapsed time at the end of each step (cloud timings of research code). Reproduce: seams.py fixture S4 60",
+ "order": [
+  "seam",
+  "cover",
+  "close",
+  "conj",
+  "lock",
+  "improve",
+  "shift",
+  "reopen"
+ ],
+ "result": "running",
+ "N_first": 67230,
+ "N_last_before_step": 8154,
+ "steps": 66,
+ "twists_in_run": 128,
+ "step_log": [
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     539,
+     20
+    ]
+   ],
+   "N_before": 67230,
+   "sec": 35
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     254,
+     15
+    ]
+   ],
+   "N_before": 65534,
+   "sec": 40
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     492,
+     13
+    ]
+   ],
+   "N_before": 63968,
+   "sec": 45
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     428,
+     14
+    ]
+   ],
+   "N_before": 62536,
+   "sec": 50
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     125,
+     20
+    ]
+   ],
+   "N_before": 61168,
+   "sec": 55
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     31,
+     15
+    ]
+   ],
+   "N_before": 59808,
+   "sec": 60
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     561,
+     17
+    ]
+   ],
+   "N_before": 58242,
+   "sec": 66
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     87,
+     16
+    ]
+   ],
+   "N_before": 56974,
+   "sec": 72
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     515,
+     15
+    ]
+   ],
+   "N_before": 55708,
+   "sec": 77
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     429,
+     16
+    ]
+   ],
+   "N_before": 54504,
+   "sec": 82
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     298,
+     20
+    ]
+   ],
+   "N_before": 53350,
+   "sec": 87
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     488,
+     16
+    ]
+   ],
+   "N_before": 51998,
+   "sec": 92
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     441,
+     1
+    ]
+   ],
+   "N_before": 51074,
+   "sec": 97
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     572,
+     19
+    ]
+   ],
+   "N_before": 50356,
+   "sec": 102
+  },
+  {
+   "rule": "cover",
+   "twists": [
+    [
+     340,
+     14
+    ]
+   ],
+   "N_before": 49022,
+   "sec": 108
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     532,
+     21
+    ]
+   ],
+   "N_before": 47662,
+   "sec": 112
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     585,
+     16
+    ]
+   ],
+   "N_before": 46312,
+   "sec": 116
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     557,
+     22
+    ]
+   ],
+   "N_before": 44952,
+   "sec": 120
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     587,
+     9
+    ]
+   ],
+   "N_before": 43386,
+   "sec": 124
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     594,
+     19
+    ]
+   ],
+   "N_before": 43088,
+   "sec": 128
+  },
+  {
+   "rule": "cover",
+   "twists": [
+    [
+     173,
+     19
+    ]
+   ],
+   "N_before": 41728,
+   "sec": 132
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     399,
+     13
+    ]
+   ],
+   "N_before": 40460,
+   "sec": 138
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     481,
+     20
+    ]
+   ],
+   "N_before": 38894,
+   "sec": 141
+  },
+  {
+   "rule": "cover",
+   "twists": [
+    [
+     131,
+     12
+    ]
+   ],
+   "N_before": 37328,
+   "sec": 145
+  },
+  {
+   "rule": "cover",
+   "twists": [
+    [
+     65,
+     22
+    ]
+   ],
+   "N_before": 36082,
+   "sec": 151
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     239,
+     23
+    ]
+   ],
+   "N_before": 34928,
+   "sec": 155
+  },
+  {
+   "rule": "cover",
+   "twists": [
+    [
+     229,
+     7
+    ]
+   ],
+   "N_before": 33362,
+   "sec": 160
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     141,
+     21
+    ]
+   ],
+   "N_before": 32864,
+   "sec": 163
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     334,
+     20
+    ]
+   ],
+   "N_before": 31298,
+   "sec": 167
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     327,
+     22
+    ]
+   ],
+   "N_before": 29732,
+   "sec": 170
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     15,
+     1
+    ],
+    [
+     13,
+     18
+    ],
+    [
+     15,
+     12
+    ]
+   ],
+   "N_before": 28272,
+   "sec": 175
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     155,
+     2
+    ],
+    [
+     265,
+     20
+    ],
+    [
+     155,
+     15
+    ]
+   ],
+   "N_before": 26438,
+   "sec": 184
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     232,
+     1
+    ],
+    [
+     154,
+     23
+    ],
+    [
+     232,
+     13
+    ]
+   ],
+   "N_before": 24474,
+   "sec": 197
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     204,
+     1
+    ],
+    [
+     46,
+     21
+    ],
+    [
+     204,
+     18
+    ]
+   ],
+   "N_before": 22826,
+   "sec": 213
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     354,
+     18
+    ]
+   ],
+   "N_before": 21326,
+   "sec": 222
+  },
+  {
+   "rule": "seam",
+   "twists": [
+    [
+     378,
+     16
+    ]
+   ],
+   "N_before": 19966,
+   "sec": 225
+  },
+  {
+   "rule": "cover",
+   "twists": [
+    [
+     216,
+     18
+    ]
+   ],
+   "N_before": 18400,
+   "sec": 229
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     396,
+     1
+    ],
+    [
+     446,
+     18
+    ],
+    [
+     396,
+     19
+    ]
+   ],
+   "N_before": 17058,
+   "sec": 234
+  },
+  {
+   "rule": "cover",
+   "twists": [
+    [
+     485,
+     18
+    ]
+   ],
+   "N_before": 14592,
+   "sec": 240
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     546,
+     10
+    ],
+    [
+     519,
+     8
+    ],
+    [
+     546,
+     17
+    ]
+   ],
+   "N_before": 13140,
+   "sec": 250
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     46,
+     1
+    ],
+    [
+     13,
+     7
+    ],
+    [
+     46,
+     1
+    ]
+   ],
+   "N_before": 11892,
+   "sec": 277
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     46,
+     16
+    ],
+    [
+     75,
+     7
+    ],
+    [
+     46,
+     17
+    ]
+   ],
+   "N_before": 11762,
+   "sec": 341
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     232,
+     2
+    ],
+    [
+     229,
+     3
+    ],
+    [
+     232,
+     0
+    ]
+   ],
+   "N_before": 11530,
+   "sec": 350
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     46,
+     21
+    ],
+    [
+     43,
+     8
+    ],
+    [
+     46,
+     21
+    ]
+   ],
+   "N_before": 11502,
+   "sec": 477
+  },
+  {
+   "rule": "cover",
+   "twists": [
+    [
+     139,
+     14
+    ]
+   ],
+   "N_before": 11434,
+   "sec": 491
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     216,
+     1
+    ],
+    [
+     46,
+     2
+    ],
+    [
+     216,
+     0
+    ]
+   ],
+   "N_before": 10280,
+   "sec": 848
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     46,
+     1
+    ],
+    [
+     43,
+     4
+    ],
+    [
+     46,
+     1
+    ]
+   ],
+   "N_before": 10278,
+   "sec": 932
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     13,
+     1
+    ],
+    [
+     75,
+     6
+    ],
+    [
+     13,
+     1
+    ]
+   ],
+   "N_before": 10210,
+   "sec": 1049
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     43,
+     7
+    ],
+    [
+     75,
+     10
+    ],
+    [
+     43,
+     6
+    ]
+   ],
+   "N_before": 10174,
+   "sec": 1304
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     13,
+     1
+    ],
+    [
+     75,
+     10
+    ],
+    [
+     13,
+     1
+    ]
+   ],
+   "N_before": 10156,
+   "sec": 1404
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     43,
+     19
+    ],
+    [
+     75,
+     10
+    ],
+    [
+     43,
+     19
+    ]
+   ],
+   "N_before": 10146,
+   "sec": 1674
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     13,
+     1
+    ],
+    [
+     75,
+     10
+    ],
+    [
+     13,
+     1
+    ]
+   ],
+   "N_before": 9926,
+   "sec": 1784
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     13,
+     16
+    ],
+    [
+     43,
+     2
+    ],
+    [
+     13,
+     12
+    ]
+   ],
+   "N_before": 9900,
+   "sec": 1902
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     446,
+     18
+    ],
+    [
+     519,
+     1
+    ],
+    [
+     446,
+     12
+    ]
+   ],
+   "N_before": 9818,
+   "sec": 2156
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     546,
+     17
+    ],
+    [
+     519,
+     1
+    ],
+    [
+     546,
+     12
+    ]
+   ],
+   "N_before": 9464,
+   "sec": 2436
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     154,
+     23
+    ],
+    [
+     232,
+     5
+    ],
+    [
+     154,
+     13
+    ]
+   ],
+   "N_before": 9352,
+   "sec": 2770
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     359,
+     1
+    ],
+    [
+     232,
+     1
+    ],
+    [
+     359,
+     17
+    ]
+   ],
+   "N_before": 9232,
+   "sec": 2791
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     229,
+     1
+    ],
+    [
+     154,
+     2
+    ],
+    [
+     229,
+     8
+    ]
+   ],
+   "N_before": 8434,
+   "sec": 2842
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     13,
+     12
+    ],
+    [
+     56,
+     6
+    ],
+    [
+     13,
+     15
+    ]
+   ],
+   "N_before": 8322,
+   "sec": 2904
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     13,
+     2
+    ],
+    [
+     43,
+     10
+    ],
+    [
+     13,
+     5
+    ]
+   ],
+   "N_before": 8298,
+   "sec": 2935
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     35,
+     3
+    ],
+    [
+     46,
+     4
+    ],
+    [
+     35,
+     9
+    ]
+   ],
+   "N_before": 8282,
+   "sec": 3029
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     46,
+     9
+    ],
+    [
+     43,
+     9
+    ],
+    [
+     46,
+     10
+    ]
+   ],
+   "N_before": 8234,
+   "sec": 3078
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     359,
+     3
+    ],
+    [
+     341,
+     3
+    ],
+    [
+     359,
+     9
+    ]
+   ],
+   "N_before": 8222,
+   "sec": 3303
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     229,
+     2
+    ],
+    [
+     232,
+     3
+    ],
+    [
+     229,
+     10
+    ]
+   ],
+   "N_before": 8212,
+   "sec": 3434
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     232,
+     19
+    ],
+    [
+     190,
+     4
+    ],
+    [
+     232,
+     16
+    ]
+   ],
+   "N_before": 8164,
+   "sec": 3848
+  },
+  {
+   "rule": "conj",
+   "twists": [
+    [
+     311,
+     1
+    ],
+    [
+     121,
+     4
+    ],
+    [
+     311,
+     0
+    ]
+   ],
+   "N_before": 8154,
+   "sec": 4142
+  }
+ ]
+}
