@@ -43,3 +43,127 @@ Notation: B is the quaternion algebra over F = Q(√5) with coordinates x = x₀
 **T7 (proved): lower bounds.** Under S4 a piece at heights (d_L, d_R) must still be moved by at least max(d_L, d_R) odd twists before it is on the lattice; under I_a by at least d_L/2 jumble twists. The total height H(X) = Σ_P (d_L + d_R) is 0 exactly on the lattice L, and a single jumble twist changes it by at most 2 per piece it moves.
 
 **Lead (exact states): heights stay small.** Along the W-J fixtures (`trees.py --fixtures`, results in `results/trees-fixtures.json`), almost every off-lattice piece is one jumble twist deep: under S4 at t = 640, 81,229 of the 117,498 off-lattice pieces are at (1, 1), and the largest heights are (2, 4) and (3, 1); under I_a at t = 150, 118,803 of 120,214 are at height 2 and the rest at 4.
+
+**Lead (exact states): H is not a safe guide for choosing undos.** Undoing whichever admissible twist lowers H the most (with one- or two-step lookahead) stalls on random scrambles of only ten jumble twists. On I_a, 3 of 5 runs stall; one example is seed 2, where every history cap was undone once and H = 1,580 remained. The residue is always made of lenses, regions K_c ∩ K_d of two overlapping caps (395 pieces for caps across a shared triangle, 335 across an edge). It arises when two overlapping caps are undone in the wrong order. Once the later twist has realigned the earlier cap, both caps are admissible, and the buried one can show the larger drop in H. Overlapping twists on the same branch partly cancel on the tree, which makes the true last twist look worse. Section 2 replaces H with a quantity that tells the caps apart.
+
+## 2. Misalignment and the rim test
+
+**Cut cells.** For a pole e, a cut cell of H_e is a pair of chambers with signatures s and s ∪ {e}, where e ∉ s. The pair shares a 3-face on H_e: two cells of a hyperplane arrangement whose sign vectors differ in one hyperplane share a facet in it. The signature s = ∅ stands for the fixed core, the region of P̃ in no cap. The core never moves and belongs to the lattice domain.
+
+**Rim sets.** Let X be a valid configuration, c an admissible grip and D = γK⁺ a domain. If γ⁻¹n_c is not a pole, no piece of D has a 3-face on H_c. Its pieces then meet H_c at most in lower-dimensional faces, because a face of a posed chamber lies on a rotated cut hyperplane or on a rotated facet hyperplane, and the facet hyperplanes lie at distance ‖n‖ ≠ κ/‖n‖ from the origin. If γ⁻¹n_c = n_e is a pole, H_c is the lattice cut H_e in D's frame, and:
+- In_D(c) is the set of cut cells (s, s ∪ {e}) of H_e whose upper chamber is occupied by a piece of D (such a piece is inside c);
+- Out_D(c) is the set of those whose lower chamber is occupied by a piece of D outside c, or by the core when D = K⁺ and s = ∅.
+
+**Definition.** The misalignment of c is N_c(X) = Σ_D |In_D(c) △ Out_D(c)|. The rim of c is closed when N_c(X) = 0. The total misalignment N(X) is the same count over every rotated cut hyperplane, that is, the number of pairs (domain, cut cell) covered on one side and not covered by the same domain on the other.
+
+**M1 (proved): what a closed rim means.** N_c(X) = 0 if and only if every 3-dimensional contact across H_c joins two pieces of one domain, and no 3-face on H_c is exposed (no hole and no overhang).
+- If In_D = Out_D for every D, the face γ(cell) of an inside piece of D is covered across H_c by the piece of D in the lower chamber of that cell, over exactly that face.
+- Conversely, if every face on H_c is covered across by a piece of the same domain D, that piece occupies the unique chamber of D's tiling on the other side of the cell, so In_D ⊆ Out_D. The same holds the other way round.
+
+**M2 (proved): locality.** For an admissible twist (c, g), N((c, g)X) − N(X) = N_c((c, g)X) − N_c(X).
+- Inside pieces lie in H_c⁺ and outside pieces in H_c⁻, so an inside piece and an outside piece can touch only on H_c.
+- A contact or an exposed face off H_c lies between two inside pieces, between two outside pieces, or on one side only. The twist carries the inside ones rigidly by g and leaves the outside ones in place, so each keeps its same/different status and its exposure.
+
+**M3 (proved): zero misalignment is the lattice.** N(X) = 0 if and only if X ∈ L.
+- On L every chamber is occupied by a piece of K⁺ (Lemma 1.2a of the theory draft), so every cell is covered on both sides by K⁺.
+- If N(X) = 0, the set of chambers occupied by K⁺ (with the core) is closed under crossing a cut cell. The adjacency graph of the chambers and the core is connected, because a generic segment inside the convex P̃ crosses the cut hyperplanes one at a time through cut cells. So every chamber is occupied by a piece of K⁺. There are as many pieces as chambers, so every piece is in K⁺.
+
+**M4 (proved): rim-closing undos never cycle.** Call (c, g) a rim-closing undo of X if c is admissible, N_c(X) > 0 and N_c((c, g)X) = 0. By M2 it lowers N by N_c(X) ≥ 1. So any sequence of rim-closing undos from X has at most N(X) steps, and it ends either on L (by M3) or at a configuration from which no single twist closes any rim.
+
+**M5 (proved): the true last twist closes its rim.** If X = (c, h)X′ with N_c(X′) = 0, then (c, h⁻¹) is a rim-closing undo of X, because it returns X′ (Proposition 1.2). N_c(X′) > 0 only when the cut H_c already carried a seam before the last twist. A merged earlier twist of the same cap is not such a case, since consecutive twists of one cap compose (Proposition 2.2). A seam carried onto H_c by a realigning twist is.
+
+**Computed (exact): the rim test.** `rim.py` decides N_c for every grip and every menu twist, exactly. Domains are cosets tested in Q(√5), poles are looked up exactly, and cut cells are found by signature arithmetic. No sampling is involved. On I_a seed 2 (ten jumble twists):
+- the two caps twisted last (168 and 236) each close with exactly one of their 60 menu twists, so the landing is determined;
+- the isolated caps 389 and 36 close with all twelve twists of one coset A4_c h⁻¹, because their interior holds no inner seam, and any of these landings serves;
+- the buried caps 173 and 455 close with none, and their best twists leave 103 and 206 misaligned cells.
+
+**Proposition S (proved): the shape decides.** Call the shape of a configuration the set of its posed regions, without labels. Whether (c, g) is admissible, its inside set as a set of regions, and the shape of (c, g)X all depend only on the shape of X.
+- Blocking is a test on posed regions (Proposition 2.4 of the theory draft), and the inside set is the set of regions in H_c⁺.
+- The twist rotates exactly those regions by g and leaves the others in place.
+- All valid lattice configurations have one shape, the chamber tiling (Lemma 1.2a). So a word admissible from solved is admissible from every valid lattice configuration and passes through the same shapes. If it ends on the lattice, it acts on every lattice configuration by one fixed relabelling.
+- Misalignment depends on domains as well as shape. A domain is fixed by the poses, so it is visible too.
+
+## 3. Phase U: rim descent
+
+**The solver's view.** The human-solve boundary lets tools track, analyse, check and aid the view. Here they show three things, all functions of the visible poses:
+- the misaligned cuts (grips with N_c > 0), for example as a highlighted seam along each cap boundary;
+- the domain of each piece, for example as a tint;
+- on request, whether a twist the solver has chosen would close its cut.
+
+The tools never choose a cap or a twist. On a physical or rendered puzzle without tools, a closed cut is one where every cut line on the cap boundary continues across it.
+
+**Procedure.**
+- **U1. Read the seams.** List the misaligned cuts.
+- **U2. Close a cut.** Pick a misaligned cap. Look for a twist of its menu after which its cut closes (M1: every contact across the cut joins one domain, nothing sticks out, nothing is left open).
+  - The twist must carry the domain just inside the cut onto the domain just outside it. At most 12 menu twists do that: one coset of A4_c in the menu group.
+  - When the cap holds an inner seam, the inner seams select one of them (the landing).
+  - If several twists close the cut, they differ by a retained twist of an all-lattice interior, and any of them serves.
+  - If several cuts can close, take the most misaligned first.
+- **U3. Repeat** U1 and U2. Each closing lowers N (M4), so the solver never returns to an earlier configuration.
+- **U4. Lock: open, close, close.** When no cut can close, the last twist on each misaligned cut was made over a seam that an earlier, overlapping twist had moved onto it, so M5 does not apply.
+  - Open: twist a misaligned cap c without closing it.
+  - Look for another misaligned cap d that now closes, and close it. Then close a cut, typically c's.
+  - Keep the three twists if N is now lower than before. By M2 the check is the sum of three rim counts: N changes only on the cut being twisted. Otherwise undo them and try another opening.
+- **U5. Done.** When no cut is misaligned, the configuration is on the lattice (M3). Go to phase L.
+
+**Theorem U (proved): descent on N is complete.** Call a word an N-lowering word of X if it is admissible from X and ends at a configuration with smaller N.
+- Every reachable X off L has one. If X = w·solved, the reverse of w is admissible from X (theory draft, Proposition 1.2) and ends on solved, where N = 0 < N(X) (M3).
+- So the rule "find a shortest N-lowering word and make it" reaches L from every reachable X in at most N(X) rounds, and each round is a finite search, because the menu is finite.
+- U2 is the case of length 1 and U4 a restricted search of length 3. Nothing proved here bounds the length a solver may need. Section 5 gives the lengths measured so far.
+- The search belongs to the solver. A tool may check a word the solver proposes ("does this lower N?"); a tool that searched for any lowering word would be choosing solving moves, which the human-solve boundary excludes unless the owner decides otherwise.
+
+**Why this reverse-engineers the scramble.** By M5 the top twist of the scramble closes its own cut unless its cut already carried a seam. The rim test reads the seam that a twist leaves on its own cut: which cap was turned, and through the domain match, by which element. Undoing that twist exposes the twist underneath. A lock (U4) is the case where a later twist re-covered most of an earlier seam on the same cut. Opening that cut exposes the twist underneath, as in the three-twist words of item 4: (0, q)(d, a)(0, q⁻¹) is undone as (0, q), then d's undo, then the closing of 0.
+
+`restore.py` runs U1 to U5 on the J1 reference, with the tools' choices replaced by fixed rules (most misaligned cut first; among its closing twists the one that brings the most pieces home, which a solver sees from the labels; the best level-2 macro by final N). It reads only the configuration.
+
+## 4. Phase L: the lattice
+
+- After phase U the configuration Y is a lattice configuration. Its labels are scrambled by two things:
+  - the retained twists of the scramble;
+  - the landings chosen in U2. A landing that differs from the scramble's by a ∈ A4_c leaves the retained twist (c, a), conjugated by the twists undone after it.
+- If Y lies in G·solved, the retained solving method finishes it: orbit-first block building, `docs/progress/1.0/solving-workflow.md`.
+- **Lens macros.** The words W = (0, q)(d, a)(0, q⁻¹) of item 4 that end on the lattice without being one retained twist, and their transports to every cap pair. By Proposition S each is admissible from every valid lattice configuration and acts on labels by one fixed relabelling, so it is always available as an extra move. On I_a and S4 these are 8 words for cap 0 (d ∈ {24, 42, 74, 108}, two third-turns each), each moving 2,808 pieces: cap d turned by a third-turn except the lens it shares with cap 0.
+- **Computed (exact, `lens.py`, `results/lens-invariants.json`): no known invariant separates the lens words from G.**
+  - Let v send a lattice configuration that keeps every retained orbit (the 35 moving orbits and the centres) to, for every orbit, the parity of its permutation of that orbit and the sum of its piece frames in the abelianised K⁺ stabiliser of the orbit. By the wreath-product argument v is a homomorphism there, so v(G) is spanned by the values of the 1,200 generators.
+  - The 600 half-turn generators have v = 0. The 600 third-turn generators share one value V. V is zero in every parity, and nonzero only in the C₃ frame component of the four one-sticker orbits of 2,400 pieces (O02, O15, O29, O33) and of the centres. Those components turn a one-sticker piece about its own sticker, which no labelled sticker shows; the one-sticker orbit O01 has a C₂ component of the same kind.
+  - On every other orbit the abelianised stabiliser equals the abelianised frame group of the retained theory (`research/Full_600cell_Puzzle_Theory.tex`, orbit table). So v restricted to what the stickers show is the invariant of its Lemma 8 (positional parity and frame sum per orbit), and v(G) is 0 there.
+  - The 16 lens configurations (8 words for each of S4 and I_a) keep every retained orbit and have v = V or 2V, which lies in v(G).
+- **Proposition C (proved): conjugated third-turns have the Lemma 8 invariants.** Let u(d, a)u⁻¹ be a word that ends on the lattice, with u a word, d a cap and a ∈ A4_d of order 3. Every lens word is of this form.
+  - By Proposition S, u carries the tiling to one shape s, and u⁻¹ carries the shape before it back. Both shapes are therefore s, so (d, a) maps s to itself.
+  - As a relabelling of the tiling, the word is the conjugate of the permutation that (d, a) makes on the pieces of s. Its cube is (d, a³) = (d, 1) conjugated, the identity, including the poses.
+  - So every cycle has length 1 or 3, which makes the permutation of every orbit even. The frame sum s in each abelianised frame group satisfies 3s = 0, and these groups are C₂ and C₅ (O06's D₅ abelianises to C₂), so s = 0.
+  - Conjugated half-turns are not covered: an element of order 2 can be odd.
+- **Reduction (proved): when phase L is complete.** Consider two statements.
+  - (a) Retained: G contains every labelled-sticker configuration with the Lemma 8 invariants. The retained theory leaves this open: Lemma 8 is its upper bound, and Lemma 9 proves alternating actions on nine of the 35 orbits only.
+  - (b) Jumbling: every lattice configuration reachable through jumbling has the Lemma 8 invariants. Proposition C proves this for conjugated third-turns; section 5 gives the computed end configurations of phase U.
+  - If (a) and (b) hold, every end configuration Y of phase U lies in G, and the retained method finishes it.
+  - If (b) fails for some Y, a jumbling word changes an invariant that no retained word can change. That word is then a necessary extra move for phase L, and the computed end configurations are the place to look for one.
+- **Open.** Statements (a) and (b). Until both are settled, phase L is the retained method with the lens macros as extra moves. Deciding whether a single lens configuration lies in G needs a retained witness word (contract section 5).
+
+## 5. Completeness: what is proved, computed and open
+
+**The method.**
+- Phase U (section 3): read the misaligned cuts. Close the most misaligned cut, with the landing that brings the most pieces home. When nothing closes, open, close and close. In general, make a shortest N-lowering word.
+- Phase L (section 4): the retained method, with the lens macros as extra moves.
+
+**Proved.**
+- The tree model: the lattice criterion (T3), domains (T6) and lower bounds (T7).
+- The rim: M1 to M5 and Proposition S. Rim-closing undos never cycle, and N = 0 exactly on the lattice.
+- Theorem U: descent on N reaches the lattice from every reachable configuration, in at most N(X) rounds of finite search.
+- Proposition C, and the reduction of phase L to statements (a) and (b).
+
+**Computed (exact; `restore.py`, `results/restore-*.json`).** Phase U with levels 1 and 2 only and the fixed rules of section 3. Solved means every labelled sticker is home at the end of phase U, so phase L had nothing to do. End in v(G) means the end configuration keeps every retained orbit and has v in v(G) (section 4). Seconds are cloud timings of research code, not performance evidence.
+
+<!-- TABLE -->
+
+**Lead: what the table suggests.** These are exact runs on a few dozen inputs. They suggest, and prove nothing.
+<!-- LEADS -->
+
+**Open.**
+1. A bound on the length of the shortest N-lowering word, or a proof that levels 1 and 2 always suffice. Theorem U makes phase U complete without it; the bound would make it practical for every input.
+2. Statements (a) and (b) of section 4, which decide whether phase L needs the lens macros or any other jumbling word.
+
+**What 1.0 takes from this.** Everything below is a function of the visible configuration, so it stays within the human-solve boundary:
+- the misaligned cuts and N (U1), and the domain of each piece, for example as a tint;
+- a check whether a twist or a word the solver has chosen closes its cut (U2) or lowers N (U4, Theorem U);
+- the lens macros as stored macros, admissible from every lattice configuration (Proposition S).
