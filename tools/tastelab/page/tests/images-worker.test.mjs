@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
 import { handleMessage } from "../images-worker.js";
 import { nextImage, fitLogistic, isReady, suggestPairs } from "../images.js";
 
@@ -59,6 +61,63 @@ test("closed bundles' ratings do not make a model ready without their vectors", 
     ratings, skips: new Map(), ratedCount: 10, notedPairs: new Set() };
   assert.deepEqual(handleMessage(message), direct(message));
   assert.deepEqual(handleMessage(message), { type: "suggestions", id: 3, ready: false, next: "next", pairs: [] });
+});
+
+test("love changes only pair order, preserving readiness, next selection and the actual fitted model", () => {
+  const vectors = new Map(), ratings = new Map();
+  for (let i = 0; i < 10; i++) {
+    vectors.set("r" + i, i < 5 ? vector(1, 0) : vector(0, 1));
+    ratings.set("r" + i, i < 5 ? "like" : "dislike");
+  }
+  vectors.set("uncertain", vector(Math.SQRT1_2, Math.SQRT1_2));
+  vectors.set("far", vector(-1, 0));
+  ratings.set("closed", "like");
+  const notedPairs = new Set();
+  for (let i = 0; i < 5; i++) for (let j = 5; j < 10; j++) {
+    if (!([0, 4].includes(i) && [5, 6].includes(j))) notedPairs.add("r" + i + "|r" + j);
+  }
+  const message = { id: 6, order: [...vectors.keys()], vectors, ratings, skips: new Map(), ratedCount: 10, notedPairs };
+  const fits = [], forwarded = [];
+  // Observe real dependency calls from the worker source; its private model is
+  // deliberately absent from the public message contract.
+  const source = readFileSync(new URL("../images-worker.js", import.meta.url), "utf8")
+    .replace(/^import .*;\r?\n/u, "").replace("export function handleMessage", "function handleMessage");
+  const observed = runInNewContext(source + "\nhandleMessage;", {
+    nextImage, isReady,
+    fitLogistic(X, y, options) {
+      const model = fitLogistic(X, y, options);
+      fits.push({ X: structuredClone(X), y: structuredClone(y), options: structuredClone(options), model });
+      return model;
+    },
+    suggestPairs(options) {
+      forwarded.push(new Set(options.loved ?? []));
+      return suggestPairs(options);
+    },
+  });
+  for (const ready of [true, false]) {
+    if (!ready) ratings.delete("r1");
+    for (const ratedCount of [10, 12]) {
+      message.ratedCount = ratedCount;
+      const withLove = { ...message, loved: new Set(["r4", "closed", "uncertain"]) }, before = structuredClone(withLove);
+      const plain = handleMessage(message), loved = handleMessage(withLove);
+      assert.equal(plain.ready, ready);
+      assert.equal(loved.ready, plain.ready);
+      assert.equal(plain.next, ready && ratedCount % 3 !== 0 ? "uncertain" : "far");
+      assert.equal(loved.next, plain.next);
+      assert.deepEqual(plain.pairs.map((p) => [p.likedImageId, p.dislikedImageId]), [
+        ["r0", "r5"], ["r0", "r6"], ["r4", "r5"], ["r4", "r6"],
+      ]);
+      assert.deepEqual(loved.pairs, [plain.pairs[2], plain.pairs[3], plain.pairs[0], plain.pairs[1]]);
+      assert.deepEqual(handleMessage({ ...message, loved: new Set() }), plain);
+      fits.length = forwarded.length = 0;
+      assert.deepEqual(structuredClone(observed(message)), plain);
+      assert.deepEqual(structuredClone(observed(withLove)), loved);
+      assert.deepEqual(forwarded, [new Set(), new Set(["r4"])]);
+      assert.equal(fits.length, ready ? 2 : 0);
+      if (ready) assert.deepEqual(fits[1], fits[0], "training rows, binary labels and fitted model are identical");
+      assert.deepEqual(withLove, before);
+    }
+  }
 });
 
 test("empty and exhausted libraries return no image or pairs", () => {

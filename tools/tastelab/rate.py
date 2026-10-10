@@ -3,10 +3,10 @@
   python tools/tastelab/rate.py [--data DIR]
 
 A large image with its source, licence and tier in small type. Keys:
-  Right like, Left dislike, Down skip,
+  Right like, Up love, Left dislike, Down skip,
   N note (one sentence; Enter keeps it for the next verdict, Escape drops it),
   Backspace undo, Delete twice removes the image for good (files deleted, sha256 blocked).
-Header: ratings today and in total, the AUC ("n/a" until the model is ready),
+Header: ratings today and in total, loved images, the AUC ("n/a" until the model is ready),
 "stable" with the stop suggestion (the owner may continue), and a hint when the
 plateau is weak. After every 100 ratings the proposed search terms appear as
 checkboxes; ticked terms become accepted proposals that `fetch.py --proposals`
@@ -110,7 +110,7 @@ class RateController(QObject):
 
     @Property(str, notify=headerChanged)
     def headerText(self):
-        text = f"Today {self.today} · Total {self.total} · AUC {self.aucText}"
+        text = f"Today {self.today} · Total {self.total} · Loved {self._counts['love']} · AUC {self.aucText}"
         if self.stable:
             text += " · stable: you can stop for today (or continue)"
         if self.weak:
@@ -265,7 +265,7 @@ class RateController(QObject):
     @Slot(int, int, result=bool)
     @Slot(int, int, bool, result=bool)
     def key(self, key, modifiers, auto_repeat=False):
-        if self._closed or auto_repeat and key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Down, Qt.Key_Delete, Qt.Key_Backspace):
+        if self._closed or auto_repeat and key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down, Qt.Key_Delete, Qt.Key_Backspace):
             return True
         if key != Qt.Key_Delete:
             self.disarmRemoval()
@@ -278,10 +278,10 @@ class RateController(QObject):
             return False
         if modifiers & (Qt.ControlModifier.value | Qt.AltModifier.value | Qt.MetaModifier.value):
             return False
-        verdict = {Qt.Key_Right: "like", Qt.Key_Left: "dislike", Qt.Key_Down: "skip"}.get(key)
+        verdict = {Qt.Key_Right: "like", Qt.Key_Up: "like", Qt.Key_Left: "dislike", Qt.Key_Down: "skip"}.get(key)
         if verdict:
             if self._available(self._current):
-                self.store.add_rating(self._current, verdict, self.session, self._note)
+                self.store.add_rating(self._current, verdict, self.session, self._note, love=key == Qt.Key_Up)
                 self._clear_note()
                 self._advance()
                 self._changed_ratings()

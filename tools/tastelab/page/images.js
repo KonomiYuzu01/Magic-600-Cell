@@ -94,7 +94,7 @@ export function fitLogistic(X, y, { lambda = 1, maxSteps = 50, tol = 1e-6, init 
   }
 }
 
-export function suggestPairs({ vectors, ratings, notedPairs, limit = 10 }) {
+export function suggestPairs({ vectors, ratings, notedPairs, loved = new Set(), limit = 10 }) {
   if (limit <= 0) return [];
   const liked = [], disliked = [];
   for (const id of vectors.keys()) {
@@ -107,6 +107,6 @@ export function suggestPairs({ vectors, ratings, notedPairs, limit = 10 }) {
       if (!notedPairs.has(likedImageId + "|" + dislikedImageId)) pairs.push({ likedImageId, dislikedImageId, similarity: dot(vectors.get(likedImageId), vectors.get(dislikedImageId)) });
     }
   }
-  // Stable sort retains liked order, then disliked order, for equal scores.
-  return pairs.sort((a, b) => b.similarity - a.similarity).slice(0, limit);
+  // Stable sort retains liked order, then disliked order, within each love group for equal scores.
+  return pairs.sort((a, b) => (Number(loved.has(b.likedImageId)) - Number(loved.has(a.likedImageId))) || (b.similarity - a.similarity)).slice(0, limit);
 }

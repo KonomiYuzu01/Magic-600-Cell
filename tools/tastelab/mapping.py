@@ -36,7 +36,7 @@ BOOTSTRAP = 200
 LEVEL = 0.9
 SHEET_TILE = 160
 SHEET_COLUMNS = 8
-BORDER = {"like": (46, 125, 50), "dislike": (198, 40, 40), "skip": (120, 120, 120), None: (60, 60, 60)}
+BORDER = {"like": (46, 125, 50), "love": (212, 160, 23), "dislike": (198, 40, 40), "skip": (120, 120, 120), None: (60, 60, 60)}
 PRIVATE = ("Private: this report stays under work/loop-memory/tastelab/. It may show tier B images; "
            "never commit, publish or upload it.")
 
@@ -243,15 +243,27 @@ def build_report(store, probes, model_id: str, model, *, day: str, seed: int = 0
         "liked_themes": [], "anti_goal_themes": [], "metaphor_material": [], "anti_goals": [],
         "categories": category_rates((category.get(r.sha256, "?"), r.verdict) for r in ratings),
         "notes": {"like": [], "dislike": [], "skip": []},
+        "loved": [], "private_loved": 0,
         "screen": {s: {"checked": c, "discarded": d} for s, (c, d) in sorted(store.screen_counts().items())},
         "model_runs": [{k: run[k] for k in ("ts", "ratings", "likes", "dislikes", "auc", "auc_delta", "stable")}
                        for run in store.model_runs() if run["model"] == model_id][-20:],
         "insufficient": None,
     }
+    private_loved = []
     for r in ratings[::-1]:
         if r.note and len(report["notes"][r.verdict]) < 50:
             report["notes"][r.verdict].append({"sha256": r.sha256, "note": r.note, "ts": r.ts})
+        if r.love:
+            if images[r.sha256].tier == "A" and len(report["loved"]) < 50:
+                report["loved"].append({"sha256": r.sha256, "note": r.note, "ts": r.ts})
+            elif images[r.sha256].tier == "B":
+                private_loved.append(r.sha256)
+    report["private_loved"] = len(private_loved)
     sheets = {}
+    for name, candidates in (("loved", [r["sha256"] for r in report["loved"]]), ("private-loved", private_loved)):
+        if candidates:
+            sheets[name] = [[(sha, "love") for sha in candidates[i:i + SHEET_COLUMNS]]
+                            for i in range(0, len(candidates), SHEET_COLUMNS)]
     kept_directions = []
     likes, dislikes = int(y.sum()), int(len(y) - y.sum())
     if min(likes, dislikes) < MIN_PER_CLASS:
@@ -329,9 +341,18 @@ def markdown(report: dict) -> str:
     c = report["counts"]
     auc_text = f"{m['auc']:.2f}" if m["auc"] is not None else "n/a"
     state = "stable" if m["stable"] else ("plateau with a weak AUC" if m["weak"] else "still learning")
-    lines += [f"Ratings: {c['total']} ({c['like']} like, {c['dislike']} dislike, {c['skip']} skip). "
+    lines += [f"Ratings: {c['total']} ({c['like']} like, {c['dislike']} dislike, {c['skip']} skip, {c['love']} loved). "
               f"Class A model `{report['model_id']}`: AUC {auc_text}, {state}.", "",
-              "Classifier, axes, themes and terms are fitted on class A only. Class B references are placed locally.", ""]
+              "## Loved images (candidates for annotated references and nexus cards)", ""]
+    if report["loved"]:
+        lines += [f"- {r['sha256'][:12]}: {_cell(r['note'] or 'No note.')}" for r in report["loved"]]
+        lines += ["", f"![loved images]({stem}-loved.jpg)"]
+    else:
+        lines.append("None yet.")
+    if report["private_loved"]:
+        lines += ["", f"Private loved images: {report['private_loved']}.",
+                  f"![private loved images]({stem}-private-loved.jpg)"]
+    lines += ["", "Classifier, axes, themes and terms are fitted on class A only. Class B references are placed locally.", ""]
     if report["missing_probe_vectors"]:
         lines += [f"{report['missing_probe_vectors']} probe texts have no vector yet; run embed.py.", ""]
     lines += ["## Axes", ""]

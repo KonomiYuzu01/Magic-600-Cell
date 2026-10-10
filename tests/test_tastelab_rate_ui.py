@@ -178,9 +178,11 @@ class Proposals:
 @unittest.skipUnless(HAVE_QT and HAVE_PIL, "PySide6 and Pillow are required")
 class RateUiTests(unittest.TestCase):
     def test_rating_keys_ignore_auto_repeat_in_qml_and_controller(self):
-        for key in (Qt.Key_Right, Qt.Key_Left, Qt.Key_Down):
+        for key in (Qt.Key_Right, Qt.Key_Up, Qt.Key_Left, Qt.Key_Down):
             with self.subTest(key=key):
+                before = self.controller.total
                 self.key(key)
+                self.assertEqual(self.controller.total, before + 1)
                 current, total = self.controller.image, self.controller.total
                 repeated = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier, "", True)
                 self.app.sendEvent(self.window, repeated)
@@ -381,7 +383,7 @@ class RateUiTests(unittest.TestCase):
         self.assertEqual(self.selector.calls[0], (3, []))
         self.assertEqual(c.caption, "synthetic · CC0-1.0 · tier A · Image 0")
         self.assertEqual(self.item("caption").property("text"), c.caption)
-        self.assertEqual(c.headerText, "Today 0 · Total 0 · AUC n/a")
+        self.assertEqual(c.headerText, "Today 0 · Total 0 · Loved 0 · AUC n/a")
         main = self.item("mainImage")
         self.until(lambda: self.value(main, "Number(status)") == 1)
         for i in range(2):
@@ -405,6 +407,52 @@ class RateUiTests(unittest.TestCase):
         self.assertEqual(c.preload, [self.url(s) for s in self.fx.shas[4:6]])
         self.assertEqual(self.selector.calls[-1], (1, self.fx.shas[3:5]))
         self.assertEqual(self.item("header").property("text"), c.headerText)
+
+    def test_up_loves_clears_note_advances_trains_proposes_and_undoes(self):
+        c = self.controller
+        self.model.enabled = self.proposer.enabled = True
+        self.key(Qt.Key_N)
+        self.text("warm gold")
+        self.key(Qt.Key_Return)
+        self.key(Qt.Key_Up)
+        rating, = self.fx.store.ratings()
+        self.assertEqual((rating.sha256, rating.verdict, rating.note, rating.love),
+                         (self.fx.shas[0], "like", "warm gold", True))
+        self.assertEqual(c.note, "")
+        self.assertEqual(c.image, self.url(self.fx.shas[1]))
+        self.assertEqual((c.today, c.total), (1, 1))
+        self.assertEqual(c.headerText, "Today 1 · Total 1 · Loved 1 · AUC n/a")
+        self.assertEqual(self.item("header").property("text"), c.headerText)
+        self.assertEqual(len(self.model.snapshots), 1)
+        self.assertEqual(len(self.proposer.calls), 1)
+        self.key(Qt.Key_Up)  # the proposal overlay blocks love too.
+        self.assertTrue(c.key(Qt.Key_Up, Qt.NoModifier.value))
+        self.assertEqual(c.total, 1)
+        self.assertEqual(c.image, self.url(self.fx.shas[1]))
+        self.click("rejectProposals")
+        self.proposer.enabled = False
+        self.key(Qt.Key_Backspace)
+        self.assertEqual(c.image, self.url(self.fx.shas[0]))
+        self.assertEqual(c.headerText, "Today 0 · Total 0 · Loved 0 · AUC n/a")
+        self.assertEqual(len(self.model.snapshots), 2)
+        self.key(Qt.Key_Right)
+        self.assertIs(self.fx.store.ratings()[0].love, False)
+
+    def test_up_in_note_field_edits_without_rating(self):
+        c = self.controller
+        self.key(Qt.Key_N)
+        self.text("warm gold")
+        self.assertTrue(self.item("noteField").hasActiveFocus())
+        self.assertFalse(c.key(Qt.Key_Up, Qt.NoModifier.value))
+        self.key(Qt.Key_Up)
+        repeated = QKeyEvent(QEvent.KeyPress, Qt.Key_Up, Qt.NoModifier, "", True)
+        self.app.sendEvent(self.window, repeated)
+        self.pump()
+        self.assertEqual(self.fx.store.ratings(), [])
+        self.assertEqual(c.total, 0)
+        self.assertEqual(c.image, self.url(self.fx.shas[0]))
+        self.assertEqual(c.note, "warm gold")
+        self.assertTrue(self.item("noteField").hasActiveFocus())
 
     def test_note_focus_edit_keys_limit_keep_and_escape(self):
         c = self.controller
@@ -480,7 +528,7 @@ class RateUiTests(unittest.TestCase):
         self.key(Qt.Key_Delete)
         self.assertTrue(c.removeArmed)
         self.assertEqual(c.message, self.rate.REMOVE_TEXT)
-        self.key(Qt.Key_Up)  # even an unbound key disarms
+        self.key(Qt.Key_Space)  # even an unbound key disarms
         self.assertFalse(c.removeArmed)
         self.key(Qt.Key_Delete)
         repeated = QKeyEvent(QEvent.KeyPress, Qt.Key_Delete, Qt.NoModifier, "", True)
@@ -509,7 +557,7 @@ class RateUiTests(unittest.TestCase):
         self.assertEqual(self.value(self.item("proposal-0"), "Number(contentItem.textFormat)"), 0)
         self.assertEqual(self.proposer.calls, [("fake plan", {"quiet": (1.0, 0.0)})])
         image = c.image
-        for key in (Qt.Key_Right, Qt.Key_Left, Qt.Key_Down, Qt.Key_N, Qt.Key_Backspace, Qt.Key_Delete, Qt.Key_Escape):
+        for key in (Qt.Key_Right, Qt.Key_Up, Qt.Key_Left, Qt.Key_Down, Qt.Key_N, Qt.Key_Backspace, Qt.Key_Delete, Qt.Key_Escape):
             self.key(key)
         self.assertEqual(c.image, image)
         self.assertEqual(c.total, 1)

@@ -273,6 +273,52 @@ class ModelTests(TempStore):
         self.assertIsNone(empty.apply(self.plateau_fit(300, 0.8)).auc_delta)
 
 
+class LoveTests(TempStore):
+    def test_love_flags_leave_state_fit_selection_and_proposals_identical(self):
+        for _ in range(8):
+            self.add("like", category="alpha")
+            self.add("dislike", category="beta")
+        for _ in range(84):
+            self.add("skip", embedded=False)
+        for i in range(12):
+            self.add(category="alpha" if i % 2 else "beta", vector=self.rng.normal(size=16))
+        terms = plan(adjacent={"alpha": ["brass structure"], "beta": ["quiet geometry"]})
+        probes = {"warm gold": np.eye(16)[0], "cool blue": np.eye(16)[1]}
+        before_model = learn.TasteModel(self.store, self.fake.model_id, record=False)
+        before_state = before_model.refresh()
+        self.assertTrue(before_state.ready)
+        before_data = before_model._fit.data
+        before_probabilities = before_model.predict(before_data.shas)
+        cold = learn.TasteModel(self.store, self.fake.model_id, record=False)
+        before_orders = [learn.Selector(self.store, m, terms, seed=7).next(12) for m in (cold, before_model)]
+        before_due = learn.proposals_due(self.store)
+        self.assertTrue(before_due)
+        before_proposals = learn.propose_terms(self.store, before_model, terms, probes)
+        self.assertTrue(before_proposals)
+        with self.store.db:
+            self.store.db.execute("DELETE FROM proposals")
+            self.store.db.execute("DELETE FROM meta WHERE key='proposal_round'")
+            self.store.db.execute("UPDATE ratings SET love=1 WHERE verdict='like'")
+        self.assertEqual(self.store.counts()["love"], 8)
+        self.assertFalse(before_model.due())  # changing only the flag never invalidates a fit.
+        after_model = learn.TasteModel(self.store, self.fake.model_id, record=False)
+        self.assertEqual(after_model.refresh(), before_state)
+        after_data = after_model._fit.data
+        self.assertEqual((after_data.shas, after_data.ratings), (before_data.shas, before_data.ratings))
+        np.testing.assert_array_equal(after_data.X, before_data.X)
+        np.testing.assert_array_equal(after_data.y, before_data.y)
+        np.testing.assert_array_equal(after_model._fit.classifier.coef_, before_model._fit.classifier.coef_)
+        np.testing.assert_array_equal(after_model.predict(after_data.shas), before_probabilities)
+        np.testing.assert_array_equal(after_model.direction(), before_model.direction())
+        cold = learn.TasteModel(self.store, self.fake.model_id, record=False)
+        after_orders = [learn.Selector(self.store, m, terms, seed=7).next(12) for m in (cold, after_model)]
+        self.assertEqual(after_orders, before_orders)
+        self.assertEqual(learn.proposals_due(self.store), before_due)
+        self.assertEqual(learn.propose_terms(self.store, after_model, terms, probes), before_proposals)
+        self.assertEqual(self.store.last_proposal_rating(), 100)
+        self.assertEqual(self.store.model_runs(), [])
+
+
 class SelectorTests(TempStore):
     def test_embedding_backfill_becomes_selectable_without_count_change(self):
         sha = self.add(embedded=False)
