@@ -1,15 +1,19 @@
 """J3-R restoration procedure, phase U (restoration.md, section 3): rim descent.
 
 The procedure reads only the configuration: poses, and through them domains and admissibility.
-It never reads a journal.
-- Level 1: among the grips whose cut is misaligned (N_c > 0), take one that a single menu twist
+It never reads a journal. Each step applies the first rule that finds something:
+- close (U2): among the grips whose cut is misaligned (N_c > 0), take one that a single menu twist
   closes (N_c = 0 afterwards), and make that twist. The largest misalignment goes first; among the
   closing twists of a grip, the one that brings the most pieces home.
-- Level 2, only when level 1 finds nothing: open a misaligned grip c by one menu twist, close
-  another misaligned grip that this makes closable, then close any grip that can close. The three
-  twists are kept only if the total misalignment N ends lower than before.
-By restoration.md M2 every kept step lowers N, so the procedure cannot cycle. It ends on the
-lattice (N = 0, M3) or reports 'stuck'.
+- lock (U4): open a misaligned grip c by one menu twist, close another misaligned grip that this
+  makes closable, then close any grip that can close. The two or three twists are kept if the
+  total misalignment N ends lower than before; the first such macro is taken, opening grips in
+  order of decreasing N_c and only grips with a misaligned neighbour.
+- improve (U5): the single twist that lowers some N_c the most without closing it.
+N is the total misalignment, over every rotated cut hyperplane (rim.Domains.total_misalignment);
+N_c, and the grip sum reported as grip_N, count only seams on a grip's own cut, which a twist of
+that grip can address. By restoration.md M2 every step lowers N, so the procedure cannot cycle.
+It ends on the lattice (N = 0, M3) or reports 'stuck'.
 
 Run from the repository root (results go to results/restore-<mode>-<menu>.json):
     python research/jumbling/theory/restore.py random <menu> <k> <seeds> [mix]  # k random twists
@@ -18,7 +22,7 @@ Run from the repository root (results go to results/restore-<mode>-<menu>.json):
 Menus: S4, I_a, I_b. Seeds: comma-separated integers. mix: probability that a scramble twist is
 drawn from the whole menu (retained elements included) instead of the jumble elements only.
 A run that ends on the lattice also reports the invariant v of the end configuration (lens.py) and
-whether it lies in v(G) = {0, V, 2V}, V the common value of the retained generators.
+whether it lies in v(G) = {0, V, 2V}, V the value of the third-turn generators.
 
 Evidence kind: source and exact synthetic geometry. Timings are cloud timings of research code.
 """
@@ -44,6 +48,7 @@ from sim.kplus import to_tuple  # noqa: E402
 from sim.model import NS  # noqa: E402
 
 ctx = rim.ctx
+I4 = to_tuple(identity(4))
 _NF = np.array([[float(v) for v in row] for row in ctx.data.N])
 _ANG = np.degrees(np.arccos(np.clip(_NF @ _NF.T / float(ctx.data.NN), -1, 1)))
 NEAR = [np.nonzero(_ANG[d] < 55.7)[0] for d in range(600)]   # caps can meet below 2 theta = 52.67 deg
@@ -84,8 +89,9 @@ def scramble(M, k, seed, retained_mix=0.0):
 
 
 class Restorer:
-    def __init__(self, st, M):
+    def __init__(self, st, M, order=('close', 'lock', 'improve')):
         self.st, self.M = st, M
+        self.order = order
         self.n_items = len(M.items)
         self._cls = {}
         self._sv = {}
@@ -157,8 +163,13 @@ class Restorer:
                 out[int(c)] = r
         return out
 
-    def misalignment(self):
+    def grip_misalignment(self):
+        """Sum of N_c over the grips: the seams a single twist can address."""
         return sum(v[0] for v in self.survey().values())
+
+    def misalignment(self):
+        """The total misalignment N (restoration.md section 2), seams off the grip cuts included."""
+        return self.domains().total_misalignment()
 
     def height(self):
         """H = sum over pieces of d_L + d_R (reporting only)."""
@@ -186,7 +197,6 @@ class Restorer:
         solver can follow; it matters when the interior is all lattice and every landing closes."""
         ins = self.inside(c)
         pids, counts = np.unique(self.st.pose_id[ins], return_counts=True)
-        I4 = to_tuple(identity(4))
         mats = [self.st._pose_matrix(int(p)) for p in pids]
 
         def home(i):
@@ -203,54 +213,76 @@ class Restorer:
         self.apply(c, i)
         return [(c, i)]
 
+    def improve(self):
+        """When no cut closes: the single twist that lowers some N_c the most (by M2 it lowers N by
+        as much), largest drop first; among equal drops, the landing rule."""
+        best = None
+        for c, (now, after) in self.survey().items():
+            low = min(after.values())
+            if low < now and (best is None or now - low > best[0] or (now - low == best[0] and c < best[1])):
+                best = (now - low, c, [i for i, v in after.items() if v == low])
+        if best is None:
+            return None
+        _, c, its = best
+        i = self.landing(c, its)
+        self.apply(c, i)
+        return [(c, i)]
+
     def level2(self):
         """Open a misaligned grip c, close a misaligned grip d that this makes closable, then close
-        a grip e. By M2 the total misalignment changes only on the cut being twisted, so the end
-        value is N0 + (N_c after the opening - N_c) - N_d - N_e, without a full survey."""
+        a grip e if one can close; keep the first such macro (two or three twists) that lowers N. Only grips whose caps can meet c's
+        (NEAR) change when c turns, so c needs a misaligned neighbour, and d and e are looked for
+        among the neighbours. By M2 N changes only on the cut being twisted, so the macro lowers N
+        exactly when (N_c after the opening - N_c) - N_d - N_e < 0, without a full count."""
         sv = self.survey()
-        N0 = sum(v[0] for v in sv.values())
-        mis = sorted(sv)
-        best = None
+        mis = sorted(sv, key=lambda c: (-sv[c][0], c))
+        mset = set(mis)
         for c in mis:
+            near_c = {int(x) for x in NEAR[c]}
+            nbrs = sorted((near_c & mset) - {c})
+            if not nbrs:
+                continue
             now_c, after_c = sv[c]
             for i in range(self.n_items):
-                if after_c[i] == now_c:
-                    continue                      # leaves the cut as it is: not an opening
+                if self.g(c, i) == I4:
+                    continue
                 try:
                     self.apply(c, i)
                 except RuntimeError:
                     continue
                 d_open = after_c[i] - now_c
-                for n_d, d, its in self.closing(self.survey([x for x in mis if x != c]))[:2]:
+                for n_d, d, its in self.closing(self.survey(nbrs))[:2]:
                     self.apply(d, its[0])
-                    cl = self.closing(self.survey(sorted(set(mis) | {c})))
-                    if cl:
-                        n_e, e, its2 = cl[0]
-                        N = N0 + d_open - n_d - n_e
-                        if N < N0 and (best is None or N < best[0]):
-                            best = (N, [(c, i), (d, its[0]), (e, self.landing(e, its2))])
+                    reach = sorted((near_c | {int(x) for x in NEAR[d]}) & (mset | {c}))
+                    cl = self.closing(self.survey(reach))
+                    if d_open - n_d - (cl[0][0] if cl else 0) < 0:
+                        if not cl:
+                            return [(c, i), (d, its[0])]
+                        _, e, its2 = cl[0]
+                        k = self.landing(e, its2)
+                        self.apply(e, k)
+                        return [(c, i), (d, its[0]), (e, k)]
                     self.undo()
                 self.undo()
-        if best is None:
-            return None
-        for c, i in best[1]:
-            self.apply(c, i)
-        return best[1]
+        return None
 
     def run(self, max_steps=400, log=None):
         steps = []
         while len(self.moves) < max_steps:
             N = self.misalignment()
             if N == 0:
-                return ('lattice' if self.st.is_lattice() else 'closed-off-lattice'), steps
-            done = self.level1()
-            level = 1
-            if done is None:
-                done = self.level2()
-                level = 2
+                if not self.st.is_lattice():
+                    raise AssertionError('N = 0 off the lattice contradicts M3')
+                return 'lattice', steps
+            rules = {'close': self.level1, 'improve': self.improve, 'lock': self.level2}
+            done = None
+            for rule in self.order:
+                done = rules[rule]()
+                if done is not None:
+                    break
             if done is None:
                 return 'stuck', steps
-            steps.append({'level': level, 'twists': done, 'N_before': N})
+            steps.append({'rule': rule, 'twists': done, 'N_before': N})
             if log:
                 log(steps[-1])
         return 'step-limit', steps
@@ -277,11 +309,13 @@ def end_invariant(st):
 
 def _report(label, st, M, t0, extra=None):
     R = Restorer(st, M)
-    N0, H0 = R.misalignment(), R.height()
-    res, steps = R.run()
-    out = {'run': label, 'result': res, 'N_start': N0, 'H_start': H0, 'twists': len(R.moves),
-           'level2_macros': sum(1 for s in steps if s['level'] == 2), 'N_end': R.misalignment(),
-           'H_end': R.height(), 'moves': R.moves, 'seconds': round(time.time() - t0, 1)}
+    N0, G0, H0 = R.misalignment(), R.grip_misalignment(), R.height()
+    res, steps = R.run(log=lambda step: print(label, json.dumps(step), file=sys.stderr, flush=True))
+    out = {'run': label, 'result': res, 'N_start': N0, 'grip_N_start': G0, 'H_start': H0,
+           'twists': len(R.moves), 'improvements': sum(1 for s in steps if s['rule'] == 'improve'),
+           'lock_macros': sum(1 for s in steps if s['rule'] == 'lock'),
+           'N_end': R.misalignment(), 'grip_N_end': R.grip_misalignment(), 'H_end': R.height(),
+           'moves': R.moves, 'seconds': round(time.time() - t0, 1)}
     if res == 'lattice':
         out['v_end'], out['v_end_in_vG'] = end_invariant(st)
         out['solved'] = bool(np.array_equal(st.lattice_stickers()['labels'], np.arange(NS)))
@@ -325,7 +359,6 @@ def main(argv):
             return round(float(np.degrees(np.arccos(max(-1, min(1, (tr - 2) / 2))))))
         qi = next(i for i in J if angle(element(M, 0, i)) == target)
         qinv = to_tuple(transpose(element(M, 0, qi)))
-        I4 = to_tuple(identity(4))
         n = 0
         for d in range(1, 600):
             for a in A4:

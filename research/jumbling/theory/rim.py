@@ -64,6 +64,26 @@ def partner(Q, e, add):
     return out
 
 
+_PAIRS = None
+
+
+def cell_pairs():
+    """(lower, upper) chambers of every cut cell of every pole: upper has e in its signature,
+    lower is its signature minus e (CORE when that is empty). Built once, about 1 s."""
+    global _PAIRS
+    if _PAIRS is None:
+        lo, up = [], []
+        for s0 in range(0, NP, 8192):
+            q, e = np.nonzero(np.unpackbits(data.sigbits[s0:s0 + 8192], axis=1)[:, :600])
+            q = q + s0
+            p = partner(q, e, add=False)
+            ok = p >= 0
+            lo.append(p[ok])
+            up.append(q[ok])
+        _PAIRS = (np.concatenate(lo), np.concatenate(up))
+    return _PAIRS
+
+
 def chamber_image(k, Q):
     """Images of chambers Q (CORE allowed) under k in K+."""
     Q = np.asarray(Q, np.int64)
@@ -152,6 +172,20 @@ class Domains:
                 cells_out.add(CORE)
             out[d] = (e, cells_in, cells_out)
         return out
+
+    def total_misalignment(self):
+        """N: the pairs (domain, cut cell) covered by the domain on exactly one side, over every
+        pole of every domain's frame, so also on rotated cut hyperplanes that are no grip's cut
+        (the core counts as a piece of the lattice domain)."""
+        lo, up = cell_pairs()
+        tot = 0
+        for d, mem in enumerate(self.members):
+            held = np.zeros(NP + 1, bool)
+            held[self.cham[mem]] = True
+            if d == 0:
+                held[CORE] = True
+            tot += int(np.count_nonzero(held[lo] != held[up]))
+        return tot
 
     def misalignment(self, c, inside, gkey='I', g=None, rs=None):
         """N_c after the twist (c, g) of the inside set (g = None: the current N_c)."""
