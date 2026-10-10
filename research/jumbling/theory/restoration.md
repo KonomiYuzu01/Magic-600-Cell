@@ -98,8 +98,8 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 - **U1. Read the seams.** List the misaligned cuts.
 - **U2. Close a cut.** Pick a misaligned cap. Look for a twist of its menu after which its cut closes (M1: every contact across the cut joins one domain, nothing sticks out, nothing is left open).
   - The twist must carry the domain just inside the cut onto the domain just outside it. At most 12 menu twists do that: one coset of A4_c in the menu group.
-  - When the cap holds an inner seam, the inner seams select one of them (the landing).
-  - If several twists close the cut, they differ by elements of A4_c that map the interior's seams onto themselves, as for an all-lattice interior. Take the one that brings the most pieces home; the labels show it.
+  - Seams inside the cap that reach its cut select among them (the landing). Seams buried deeper do not: the rim test sees only the cut.
+  - If several twists close the cut, they differ by elements of A4_c. Take the one that brings the most pieces home; the labels show it. On S4@60 a run whose landings were forced to the scramble's own undo, wherever that undo was among the closing twists, gave the same N at every step (section 5).
   - If several cuts can close, take the most misaligned first.
 - **U3. Repeat** U1 and U2. Each closing lowers N (M4), so the solver never returns to an earlier configuration.
 - **U4. Lock: open, close (and close).** When no cut can close, M5 says that every word from solved to X ends with a twist made on a cut that already carried a seam, which an earlier, overlapping twist had put there.
@@ -109,17 +109,19 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 - **U5. Improve a cut.** When neither U2 nor U4 finds anything, make the single twist that lowers some N_c the most without closing it. By M2 it lowers N by as much.
   - A buried cap usually has such a twist: undoing its last twist leaves only the seams that overlapping twists carried onto its cut, for example 1,463 down to 103.
   - U5 comes last on purpose. Taken before U4, an improvement can leave the reverse path: on one mixed S4 scramble it led to a configuration where nothing lowers N by one or a few twists, while U4 first solved it.
+- **U5′. Shift: open, then improve.** When U2, U4 and U5 find nothing, open a misaligned cap c by any twist other than the identity, one that leaves N_c unchanged included, then make the single twist of a cap d that meets c which lowers N_d the most. Keep the two twists if N is now lower (by M2, if the change of N_c plus the change of N_d is negative); otherwise undo and try another opening.
+  - Equal N can hide a useful move of seams. On S4@60, where U2 to U5 found nothing at N = 7,472, the retained twist (46, 4) leaves N unchanged and the retained twist (43, 2) then lowers it to 7,440; a lock and an improvement follow.
 - **U6. Done** when no seam is left anywhere (N = 0): the configuration is on the lattice (M3). Go to phase L. If seams remain only off the grip cuts, no cut is misaligned and U2 to U5 have nothing to work on; that case falls under Theorem U (section 5 says whether it was seen).
 
 **Theorem U (proved): descent on N is complete.** Call a word an N-lowering word of X if it is admissible from X and ends at a configuration with smaller N.
 - Every reachable X off L has one. If X = w·solved, the reverse of w is admissible from X (theory draft, Proposition 1.2) and ends on solved, where N = 0 < N(X) (M3).
 - So the rule "find a shortest N-lowering word and make it" reaches L from every reachable X in at most N(X) rounds, and each round is a finite search, because the menu is finite.
-- U2 and U5 are cases of length 1 and U4 a restricted search of length 2 or 3. Nothing proved here bounds the length a solver may need. Section 5 gives the lengths measured so far.
+- U2 and U5 are cases of length 1, U4 and U5′ restricted searches of length 2 or 3. Nothing proved here bounds the length a solver may need. Section 5 gives the lengths measured so far.
 - The search belongs to the solver. A tool may check a word the solver proposes ("does this lower N?"); a tool that searched for any lowering word would be choosing solving moves, which the human-solve boundary excludes unless the owner decides otherwise.
 
 **Why this reverse-engineers the scramble.** By M5 the top twist of the scramble closes its own cut unless its cut already carried a seam. The rim test reads the seam that a twist leaves on its own cut: which cap was turned, and through the domain match, by which element. Undoing that twist exposes the twist underneath. A lock (U4) is the case where a later twist re-covered most of an earlier seam on the same cut. Opening that cut exposes the twist underneath, as in the three-twist words of item 4: (0, q)(d, a)(0, q⁻¹) is undone as (0, q), then d's undo, then the closing of 0.
 
-`restore.py` runs U1 to U6 on the J1 reference, with the tools' choices replaced by fixed rules (most misaligned cut first; among its closing twists the one that brings the most pieces home, which a solver sees from the labels; for U4, the first macro that lowers N, opening caps in order of decreasing N_c; for U5, the largest drop). It reads only the configuration.
+`restore.py` runs U1 to U6 on the J1 reference, with the tools' choices replaced by fixed rules (most misaligned cut first; among its closing twists the one that brings the most pieces home, which a solver sees from the labels; for U4 and U5′, the first macro that lowers N, opening caps in order of decreasing N_c; for U5, the largest drop). It reads only the configuration.
 
 ## 4. Phase L: the lattice
 
