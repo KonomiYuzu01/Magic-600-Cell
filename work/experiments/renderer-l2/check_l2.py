@@ -613,6 +613,21 @@ def static_runner():
            'run mode must require the two gate declarations')
     expect('WriteAllText' not in text and 'Set-Content' not in text and 'Import-Csv' not in text,
            'runner must delegate records and CSV interpretation to the finalizer')
+    # L2-V-002: the guard protects the build from before the launch until the finalizer has finished.
+    for token in ("$guardScript = Join-Path $PSScriptRoot 'file_guard.py'", "'--launch',(Join-Path $buildDirectory 'launch.json')",
+                  'RedirectStandardInput = $true', 'RedirectStandardOutput = $true', 'ReadLineAsync()', '.Wait(60000)',
+                  "-cne 'ready'", 'ASCII.GetBytes("release`n")', 'BaseStream.Write($release, 0, $release.Length)', 'WaitForExit(30000)', '$Guard.ExitCode -ne 0',
+                  '$launchedCreated = $process.StartTime.ToFileTimeUtc()', """'--launched-created',"$launchedCreated\"""",
+                  "'module-late','module-transient','module-reload'", "$Inject -like 'module-*' -and $Candidate -ne 'sd'"):
+        expect(token in text, 'runner binding step missing: ' + token)
+    attempt = text.index('$guard = Start-Guard $directory')
+    expect(attempt < text.index('Start-Sleep -Milliseconds 100', attempt) < text.index('$process = Start-App $arguments'),
+           'the runner must pause between the guard and the app')
+    expect(attempt < text.index('$process = Start-App $arguments'), 'the guard must be ready before the app starts')
+    expect(text.index('& python @finalArguments') < text.index('Stop-Guard $guard') < text.index('$finalExit -eq 5'),
+           'the guard is released after the finalizer and before its result is judged')
+    cleanup = text[text.index('} finally {', attempt):]
+    expect('$guard.Kill()' in cleanup, 'the finally block must stop a guard that is still running')
     powershell = shutil.which('powershell.exe')
     if powershell:
         escaped = str(path).replace("'", "''")

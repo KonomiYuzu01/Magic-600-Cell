@@ -75,6 +75,135 @@ def cpp_body(source, name):
     return source[start:end]
 
 
+def module_static_checks(sources, cmake, build):
+    main, l2 = sources["main.cpp"], sources["l2.cpp"]
+    entry = cpp_body(main, "main")
+    require(re.match(r"\{\s*sd::modules::start\(\);", entry), "module observer is the first statement of main")
+    observer = sources["module_observer.cpp"]
+    require(not re.search(r"#\s*include\s*[<\"][^>\"]*Qt", observer), "observer has no Qt dependency")
+    start = cpp_body(observer, "start")
+    ordered = ('registerNotification(0, notify', 'readUnloadHistory(', 'takeSnapshot(')
+    positions = [start.index(token) for token in ordered]
+    require(positions == sorted(positions), "register, unload history, snapshot order")
+    require(positions[0] < start.index('lockLoader(0, &disposition, &loaderCookie)') < positions[1]
+            and start.rindex('unlockLoader(0, loaderCookie)') > positions[-1],
+            "registration precedes the loader lock; startup history and snapshot share it")
+    for token in ('"LdrRegisterDllNotification"', '"LdrUnregisterDllNotification"', '"RtlGetUnloadEventTraceEx"',
+                  '"RtlUpcaseUnicodeChar"', '"LdrLockLoaderLock"', '"LdrUnlockLoaderLock"', 'FullDllName', 'Length / sizeof(wchar_t)', 'std::atomic',
+                  'is_always_lock_free', 'Failure::Register', 'Failure::UnloadHistory', 'Failure::Snapshot', 'Failure::Seal'):
+        require(token in observer, "observer contract: " + token)
+    history = cpp_body(observer, "readUnloadHistory")
+    for token in ('elementSize', 'elementCount', 'traceAddress', 'BaseAddress', 'ImageName', '32', '__except',
+                  'state.historyReadable = true'):
+        require(token in history, "counted unload history: " + token)
+    scope = cpp_body(observer, "inScope")
+    require('state.upcase(backslash(name.Buffer[i])) != state.upcase(state.scope[i])' in scope
+            and 'state.scopeLength' in scope and 'backslash(' in scope,
+            "case-insensitive directory prefix with a backslash boundary")
+    callback = cpp_body(observer, "notify")
+    require(callback.index('state.count.fetch_add(1, std::memory_order_seq_cst)')
+            < callback.index('state.sealed.load(std::memory_order_seq_cst)'), "reserve before reading seal")
+    for token in ('reason == loaded && sealed', 'TerminateProcess(GetCurrentProcess(), 3)',
+                  'index >= SlotCount', 'length >= PathCapacity', 'state.overflow.store(true, std::memory_order_seq_cst)',
+                  'slot.complete.store(true, std::memory_order_seq_cst)'):
+        require(token in callback, "callback records or refuses: " + token)
+    for body in (callback, scope, cpp_body(observer, "backslash")):
+        require(not re.search(r'\b(new|malloc|calloc|realloc|free|printf|fopen|fwrite|CreateFile\w*|WriteFile|LoadLibrary\w*|FreeLibrary|towlower|towupper)\b|std::(?:vector|string|wstring|cout|cerr)|\bQ\w+', body),
+                "no allocation, I/O, Qt or CRT locale calls under the loader lock")
+    seal = cpp_body(observer, "seal")
+    require(seal.index('state.sealed.store(true, std::memory_order_seq_cst)')
+            < seal.index('state.count.load(std::memory_order_seq_cst)')
+            < seal.index('slot.complete.load(std::memory_order_seq_cst)'), "seal, count, completed slots order")
+    require('result.overflow = state.overflow.load(std::memory_order_seq_cst)' in seal, "overflow is recorded, never ignored")
+    require('result.overflow = true' not in seal and 'state.overflowComplete.load(std::memory_order_seq_cst)' in seal,
+            "post-seal unload reservations cannot create overflow; wait for a real capacity failure")
+    require('GetTickCount64() - began >= 5000' in seal, "seal fails closed on an incomplete slot")
+    require('result.sealed = result.failure == Failure::None' in seal, "successful steps required for sealed state")
+    require('LdrUnregisterDllNotification(' not in observer, "notification stays active through process exit")
+    union = cpp_body(observer, "loadedPaths")
+    require('event.kind == Kind::Snapshot || event.kind == Kind::Load' in union and 'CompareStringOrdinal' in union,
+            "snapshot/load union deduplicates paths case-insensitively")
+    snapshot = cpp_body(observer, "takeSnapshot")
+    require('EnumProcessModules' in snapshot and 'GetModuleFileNameW' in snapshot and 'inScope(' in snapshot,
+            "one in-scope startup snapshot")
+    files = cpp_body(l2, "L2::files")
+    require('modules::loadedPaths(observed)' in files and 'EnumProcessModules' not in l2, "file identity uses the event union")
+    require('files["dll"].toString()' in files and 'file.compare(dll, Qt::CaseInsensitive)' in files
+            and 'file.compare(exe, Qt::CaseInsensitive)' in files and 'duplicate module basename' in files,
+            "exclude actual DLL/exe and reject duplicate basenames")
+    writer = cpp_body(l2, "L2::write")
+    require(writer.index('modules::seal()') < writer.index('moduleRecord(observed)') < writer.index('files(observed)'),
+            "seal and record before file union and every output")
+    record = cpp_body(l2, "moduleRecord")
+    for key in ('modules', 'observer', 'failure', 'scope', 'unload_history', 'overflow', 'events', 'kind', 'path'):
+        require('"' + key + '"' in (writer if key == 'modules' else record), "modules field: " + key)
+    require('observed.sealed ? "sealed" : "failed"' in record and 'observed.unloadHistory' in record
+            and 'observed.overflow' in record and 'failure(' not in record, "observer refusals stay in modules, not exit/reason")
+    require('{"dll", unknown}' in cpp_body(l2, "L2::L2"), "DLL path is null until loaded")
+    loaded = cpp_body(sources["native_loader.cpp"], "Native::loadedPath")
+    require('GetModuleFileNameW(module,' in loaded and '!length || length >= std::size(path)' in loaded,
+            "DLL path comes from the actual module handle")
+    dll_record = cpp_body(l2, "L2::loadedDll")
+    require('native.loadedPath()' in dll_record and 'failure("framework-modules")' in dll_record
+            and 'options.dll' not in dll_record, "module path query fails closed")
+    require('result.loadedDll(harness.native)' in cpp_body(main, "level2Main"), "record path even after a binding failure")
+    for token in ('"module-late"', '"module-transient"', '"module-reload"'):
+        require(token in cpp_body(l2, "parseL2") and token in l2, "probe option: " + token)
+    ctor = cpp_body(l2, "L2::L2")
+    require(ctor.index('optionalText(options.inject)') < ctor.index('moduleInjection_ = options.inject') < ctor.index('options.inject.clear()'),
+            "record app probe but clear DLL-facing injection before any scene load")
+    require('l2->options.inject.toUtf8()' in cpp_body(sources["smoke.cpp"], "Harness::renderScene"), "DLL consumes only cleared scene injection")
+    probe = cpp_body(l2, "L2::injectModuleProbe")
+    for token in ('traceStarted_.load(std::memory_order_seq_cst)', 'GetCurrentThreadId() != guiThread_',
+                  '"sd_module_probe.dll"', 'LoadLibraryW(', 'GetProcAddress(', 'FreeLibrary(', 'return false'):
+        require(token in probe, "GUI-thread probe: " + token)
+    begin = cpp_body(l2, "L2::beginTrace")
+    require('traceStarted_.store(true, std::memory_order_seq_cst)' in begin, "probe waits for render-thread trace begin")
+    require('result.injectModuleProbe()' in cpp_body(main, "level2Main") and 'harness.fail("framework-modules")' in main,
+            "GUI timer injects or fails framework-modules")
+    for token in ('src/module_observer.cpp', 'add_executable(sd_module_observer_test ', 'add_library(sd_module_probe SHARED ',
+                  'target_link_libraries(sd_module_observer_test PRIVATE psapi)', 'add_dependencies(sd_module_observer_test sd_module_probe)'):
+        require(token in cmake, "build observer and probe: " + token)
+    require(b'--target sd_smoke sd_code_layout_test sd_module_observer_test sd_module_probe' in build,
+            "build.cmd builds observer test and probe")
+    test = sources["module_observer_test.cpp"]
+    for token in ('CreateProcessW', 'WaitForSingleObject', 'GetExitCodeProcess', 'CopyFileW', 'DeleteFileW',
+                  'BeforeMain beforeMain', 'module_probe', 'modules::start()', 'modules::seal()', 'modules::loadedPaths',
+                  'case 1:', 'case 2:', 'case 3:', 'case 4:', 'case 5:', 'case 6:', 'case 7:', '200', 'SlotCount',
+                  'CreateThread', 'raceReady', 'raceGo'):
+        require(token in test, "observer child test: " + token)
+    require('Qt' not in test and 'd3d' not in test.lower(), "observer test has no Qt window or GPU")
+    require('extern "C" __declspec(dllexport) int sd_module_probe(void)' in sources["module_probe.cpp"], "one probe export")
+
+
+def planted_module_checks(sources, cmake, build):
+    defects = (
+        ("main.cpp", '    sd::modules::start();\n', ''),
+        ("module_observer.cpp", '    if (!readUnloadHistory(getUnloadTrace))', '    if (false)'),
+        ("module_observer.cpp", '    state.sealed.store(true, std::memory_order_seq_cst);\n'
+                                '    const auto count = state.count.load(std::memory_order_seq_cst);',
+                                '    const auto count = state.count.load(std::memory_order_seq_cst);\n'
+                                '    state.sealed.store(true, std::memory_order_seq_cst);'),
+        ("l2.cpp", 'modules::loadedPaths(observed)', 'EnumProcessModules(observed)'),
+        ("module_observer.cpp", 'result.overflow = state.overflow.load(std::memory_order_seq_cst)', 'result.overflow = false'),
+        ("l2.cpp", 'native.loadedPath()', 'options.dll.toStdWString()'),
+        ("l2.cpp", 'options.inject.clear();', ''),
+    )
+    for name, good, bad in defects:
+        require(good in sources[name], "module defect target missing: " + good)
+        broken = dict(sources)
+        broken[name] = sources[name].replace(good, bad, 1)
+        if name == "main.cpp":
+            broken[name] = broken[name].replace('    QGuiApplication app(argc, argv);',
+                                                '    QGuiApplication app(argc, argv);\n    sd::modules::start();')
+        try:
+            module_static_checks(broken, cmake, build)
+        except (AssertionError, ValueError):
+            pass
+        else:
+            raise AssertionError("planted module defect accepted: " + good)
+
+
 def l2_static_checks(sources):
     main, smoke, l2 = (sources[name] for name in ("main.cpp", "smoke.cpp", "l2.cpp"))
     parser = cpp_body(l2, "parseL2")
@@ -173,7 +302,7 @@ def l2_static_checks(sources):
                   'ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED', 'PowerRegisterForEffectivePowerModeNotifications',
                   'PowerUnregisterFromEffectivePowerModeNotifications', 'rhi->driverInfo().deviceName', 'EnumDisplayDevicesW',
                   'MONITOR_DEFAULTTOPRIMARY', 'EnumDisplaySettingsW', 'ENUM_CURRENT_SETTINGS', 'GetClientRect', 'currentPixelSize()',
-                  'itemSize_.width() * ratio', 'itemSize_.height() * ratio', 'EnumProcessModules', '"qt:exe"', 'file.startsWith(directory',
+                  'itemSize_.width() * ratio', 'itemSize_.height() * ratio', '"qt:exe"',
                   '"qt:" + QFileInfo(file).fileName()', 'name != "QSG_RHI_DEBUG_LAYER"', 'name.startsWith("QSG_")', 'name.startsWith("QT_")'):
         require(token in l2, "runtime fact recorded: " + token)
     sampler = cpp_body(l2, "L2::sample")
@@ -230,7 +359,7 @@ def planted_static_checks(header, loader, structs, sources):
         ("l2.cpp", '{"qpc_frequency", unknown}', '{"clock", unknown}'),
         ("l2.cpp", 'MOVEFILE_WRITE_THROUGH)', 'MOVEFILE_WRITE_THROUGH | MOVEFILE_REPLACE_EXISTING)'),
         ("l2.cpp", 'QIODevice::WriteOnly | QIODevice::NewOnly', 'QIODevice::WriteOnly'),
-        ("l2.cpp", 'file.startsWith(directory', 'file.endsWith(directory'),
+        ("module_observer.cpp", 'backslash(name.Buffer[i])) != state.upcase(state.scope[i])', 'backslash(name.Buffer[i])) == state.upcase(state.scope[i])'),
         ("l2.cpp", 'name != "QSG_RHI_DEBUG_LAYER"', 'name != "other"'),
         ("l2.cpp", 'exitCode = 2', 'exitCode = 1'),
         ("main.cpp", 'surface.setSwapInterval(0)', 'surface.setSwapInterval(1)'),
@@ -261,6 +390,7 @@ def planted_static_checks(header, loader, structs, sources):
         broken[name] = sources[name].replace(good, bad, 1)
         try:
             l2_static_checks(broken)
+            module_static_checks(broken, sources["CMakeLists.txt"], sources["build.cmd"])
         except (AssertionError, ValueError):
             pass
         else:
@@ -292,6 +422,9 @@ def static_checks():
     structs = (HERE / "app/src/native_loader.h").read_text(encoding="utf-8")
     abi_checks(header, loader, structs)
     sources = {path.name: path.read_text(encoding="utf-8") for path in (HERE / "app/src").glob("*") if path.suffix in (".h", ".cpp")}
+    sources.update({"CMakeLists.txt": cmake, "build.cmd": build})
+    module_static_checks(sources, cmake, build)
+    planted_module_checks(sources, cmake, build)
     l2_static_checks(sources)
     planted_static_checks(header, loader, structs, sources)
     defines = dict(re.findall(r"^#define\s+(SA2_\w+)\s+(\d+)u?\b", header, re.M))

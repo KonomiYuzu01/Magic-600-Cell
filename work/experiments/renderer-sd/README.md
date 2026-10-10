@@ -336,7 +336,8 @@ external termination and framework aborts cannot execute the final writer; the
 finalizer refuses a missing harness. No successful evidence is claimed for
 those exits. Exit 0 means outputs written, 1 means usage/setup/DLL/framework/I/O
 failure, 2 means an output-bearing label or geometry failure, and 3 means an
-enforced foreground/visibility failure. `reason` is null only on success.
+enforced foreground/visibility failure or a post-seal module load. `reason` is
+null only on success; post-seal termination may leave no harness record.
 
 The options implement HARNESS section 3. Required are `--l2-mode`, `--l2-out`
 (existing directory), `--l2-run-id`, `--l2-dll` (absolute existing
@@ -344,7 +345,7 @@ The options implement HARNESS section 3. Required are `--l2-mode`, `--l2-out`
 Defaults/ranges: trace 192000 ms (1000 to 3600000), preroll 4000 ms (0 to 60000),
 W3 turn 190 ms (finite, greater than 0, at most 10000), GPU validation 0 (0 or 1),
 conditions `enforce` (`enforce` or `record`). `--l2-inject` accepts the four named
-faults only for W3/W4. Repeated `--l2-declare key=value` converts `true`/`false`
+faults and the three module probes below, only for W3/W4. Repeated `--l2-declare key=value` converts `true`/`false`
 to booleans; `overlays` and repeated declaration keys are refused.
 `--l2-no-vram` and `--l2-debug-half-target` are flags. Half target rounds down.
 Unknown, repeated, malformed and inappropriate options exit 1 before window
@@ -461,3 +462,156 @@ in a plain fixture; actual Git pathspec execution is not evidence from this
 sandbox. C++ parsing, Qt rendering, Windows window behavior, DLL/GPU execution,
 deployment and every owner command above remain unverified, as do all performance
 claims. The static pass is source/fixture evidence only.
+
+## G2 module observer (L2-V-002)
+
+The first statement of `main` starts a Win32 observer in both levels. Level 2
+seals and records it in every `harness.json`, including usage errors with a usable
+`--l2-out`. Its scope is the executable's directory and every subdirectory,
+compared case-insensitively with a backslash boundary. Event paths retain the
+loader's spelling. The observer has no Qt dependency.
+
+Startup registers `LdrRegisterDllNotification`, reads `RtlGetUnloadEventTraceEx`,
+then takes one `EnumProcessModules` snapshot. It holds the loader lock across
+these steps: otherwise a pre-main import could unload after the history read and
+before the snapshot. Unload history keeps only base names (at most 32 UTF-16
+characters), so **any nonempty startup history refuses the identity**, including
+out-of-scope names and files deleted before `main`. A null, unallocated trace
+buffer means empty history; unreadable or incompatible trace metadata gives
+`unload_history: null` and failure `unload-history`. Names are recorded in loader
+sequence order, including truncated names, without filtering.
+
+Callbacks reserve slots before reading the seal flag, then copy the counted
+`FullDllName` and reason and publish completion. They use fixed process-lifetime
+storage, lock-free atomics and ntdll Unicode uppercase comparison; they allocate
+nothing and perform no file I/O, Qt calls or CRT locale calls. There are 4,096
+callback slots, 4,096 snapshot slots and 2,048 UTF-16 characters per path slot
+(2,047 plus terminator). A full callback buffer or an overlong in-scope path sets
+`overflow`. Snapshot enumeration exceeding its capacity fails at `snapshot`.
+Invalid notification data also refuses through overflow, or exit 3 after seal.
+
+`write()` seals before reading the reserved count, waits up to five seconds for
+those slots to complete, then writes snapshot events first and callback events
+in reservation order. Reservation, seal, completion and overflow atomics use
+`memory_order_seq_cst`, including publication of the first excess reservation.
+This keeps post-seal unloads from creating a spurious overflow refusal. An
+in-scope load seeing the seal calls
+`TerminateProcess(GetCurrentProcess(), 3)`; a post-seal unload has no effect on
+the union. Registration remains active until process exit, with no unregister
+or callback-state destructor. This also covers Qt/CRT shutdown after the writer.
+
+The new top-level `modules` object has exactly `observer`, `failure`, `scope`,
+`unload_history`, `overflow` and `events`. Successful observation and sealing give
+`observer: "sealed"`, `failure: null`; otherwise `observer: "failed"` names the
+first failed step (`register`, `unload-history`, `snapshot`, `seal`). A failure to
+find the executable directory is `register`, with an empty scope. Each event has
+`kind` (`snapshot`, `load`, `unload`) and its full `path`. An unavailable history
+is null; a readable empty history is `[]`. A readable nonempty history is retained
+as-is. Overflow can coexist with `observer: "sealed"`: sealing succeeded but the
+record is insufficient. Observer/history/overflow state never changes the app's
+exit code or reason; **G4 must refuse failed observation, null/nonempty history
+or overflow in every mode**. Post-seal exit 3 is refused as `app-exit`.
+
+The `qt:` file map uses the case-insensitive union of all snapshot and load paths,
+including late, transient and reloaded modules. It excludes the executable and
+the actual producer DLL. Distinct paths with the same basename (case-insensitive)
+retain `framework-modules` failure. The end-of-run enumeration is removed.
+`files.dll` starts null and is queried with `GetModuleFileNameW` on the handle
+loaded by `Native::load`, even after a later binding failure. A failed or
+truncated query gives `framework-modules`, never the requested `--l2-dll` path.
+G4 must normalize paths, compare the event union with the file map and guard
+every identity part, using this actual DLL path for the DLL and its shaders.
+
+### Owner-machine stop point and test program
+
+After Claude's first G2 build, on an idle machine with no implementation or
+capture active, run the deployed app's usage path **before further experiments**:
+
+```powershell
+# $out must be a fresh, existing empty folder.
+& "$build/deploy/sd_smoke.exe" --l2-out $out --l2-scene x
+$modules = (Get-Content "$out/harness.json" -Raw | ConvertFrom-Json).modules
+$modules
+```
+
+Expected app exit: 1, reason `usage`, with `modules` present and `files.dll: null`.
+This starts no Qt window or GPU work; static Qt imports still load. **If
+`modules.unload_history` is nonempty, stop the work and return the plan to Astra.**
+Never filter the history or relax its refusal. Failed observation or null history
+also needs investigation before proceeding.
+
+`build.cmd` builds `sd_module_observer_test.exe` and `sd_module_probe.dll` in
+`<build>/app/`, alongside the existing app and code-layout test. Neither new
+artifact is copied by deployment or added to the unchanged runner's artifact
+manifest. Run the freshly built standalone test manually:
+
+```powershell
+& "$build/app/sd_module_observer_test.exe"
+```
+
+It links the production observer without Qt, a window or a GPU. `CreateProcessW`
+starts a separate child for each case, with a 30-second timeout and cleanup of
+only that child's process handles and the parent's owned probe copy. Cases:
+
+1. A global constructor copies, loads, calls and unloads the probe before `main`;
+   both a retained-copy variant and a deleted-before-main variant must refuse
+   through the recorded nonempty history. The parent reserves fresh probe copy
+   names with `GetTempFileNameW` in the program directory and removes the copies
+   after each child, including a failed or timed-out child.
+2. A persistent load (requested with an uppercase ASCII directory spelling)
+   enters the union; the executable is in the startup snapshot.
+3. Load, export call and unload enter the union and retain load/unload order.
+4. Load, unload and reload give two loads, one unload and one union path.
+5. A post-seal load exits 3.
+6. A second thread, released by Win32 events, races the seal in **200** child
+   repetitions; every child either records the probe in the union or exits 3,
+   and the case line reports how many exited 3. A test child that aborts
+   exits 2, so a crash never counts as the seal's exit 3.
+7. Repeated real load/unload calls overflow the event buffer and must refuse.
+
+Output is one line per case and a final count (7 cases, 207 children). Exit 0
+requires every expected result. No observer success is claimed until this test
+and the real Qt usage-path stop point run on the owner's machine.
+
+### App-side Qt probe
+
+For W3/W4 only, `--l2-inject module-late` loads and keeps the probe,
+`module-transient` loads, calls `sd_module_probe()` (expected value 600) and
+unloads it, and `module-reload` loads, unloads and loads again, keeping it until
+process exit. A GUI timer waits for a sequentially consistent publication after
+the render thread's trace-begin call, then uses the absolute path
+`<executable directory>\sd_module_probe.dll`. It checks the GUI thread ID. A
+missing probe, failed load/export/unload or wrong thread gives
+`framework-modules`. The requested injection stays in the recorded
+`options.inject`; it is cleared from the DLL-facing scene option before the
+first scene load. No producer ABI or DLL change is involved.
+
+Claude copies the probe from `app/` to `deploy/` explicitly for experiment 3,
+**before the guard is ready**, then runs each mode through the integrated runner.
+Each probe must enter the guarded identity. A probe created only after `ready`
+must be refused by G4. The normal deployment never includes the probe.
+
+### G2 assumptions and evidence limits
+
+These facts remain **assumed**, pending the owner's build and runtime checks:
+
+| Assumed fact | Runtime check that catches a mismatch |
+| --- | --- |
+| ntdll exports the register/unregister APIs with the declared signatures, notifications cover load/unload under the loader lock, and `FullDllName` is a counted UTF-16 string | Missing APIs/status/cookie fail at `register`; invalid notification data refuses; standalone cases 2–7 check persistent/transient/reload/order/overflow and termination |
+| `RtlGetUnloadEventTraceEx` returns element size/count addresses and the address of the trace-pointer variable; null trace means no allocated history, null base means an empty entry, and the declared entry prefix has a 32-character name | Metadata bounds and SEH fail at `unload-history`; both case-1 variants require the copied probe's actual basename in the history; real Qt usage path is the mandatory stop point |
+| `LdrLockLoaderLock`/`LdrUnlockLoaderLock` support this startup critical section, including the register/history/snapshot calls | Missing APIs, status/disposition/cookie or unlock failure refuse; all standalone positive cases and the Qt usage path must complete without timeout |
+| `RtlUpcaseUnicodeChar` performs allocation-free ntdll case mapping, and `CompareStringOrdinal` supplies matching Windows path equality outside callbacks | Missing mapping API refuses at `register`; case 2 uses an uppercase directory request and verifies union membership; owner debugger breakpoints on heap allocation inside the callback must confirm allocation-free loader-lock safety |
+| `EnumProcessModules` and `GetModuleFileNameW` report this process's imports and actual module paths | Failed/truncated/oversized snapshot refuses; case 2 requires the executable snapshot; loaded DLL query errors give `framework-modules`; the separate redirection experiment compares requested and recorded paths |
+| Win32 events/thread creation and sequentially consistent lock-free atomics preserve reserve/seal/completion ordering; exit 3 reaches the parent | Compile-time lock-free assertions; cases 5 and 6, with 200 race repetitions |
+| `CreateProcessW`/wait/exit APIs report child termination, `GetTempFileNameW` reserves fresh local copy names, and absolute `LoadLibraryW`/`GetProcAddress`/`FreeLibrary` load, call and unload the probe | Child creation/wait/export/copy/delete errors fail the test; cases 1–7 require their literal union/history/exit results; the app returns `framework-modules` on probe failures |
+| Qt's app-context `QTimer` callback runs on the GUI thread, while `beginTrace` follows the native trace-begin call on the render thread | Explicit thread-ID check; owner W3/W4 experiments must show each late/transient/reload probe in `modules.events` and the final guarded identity |
+
+The Python acceptance suite adds observer/static checks and plants all six plan
+defects (late registration, missing history, count before seal, end-run
+enumeration, ignored overflow, requested DLL path), plus passing app probes to
+the producer. It keeps the level 1 and all other level 2 checks. In the sandbox,
+no CMake/MSVC compilation, standalone child, Windows loader exercise, Qt startup,
+deployment, DLL redirection, guard/finalizer integration or GPU experiment was
+run. This change establishes source/fixture evidence only, with no performance
+claim. The G4 fields above are the packet's fixed interface, not finalizer
+validation already performed here.

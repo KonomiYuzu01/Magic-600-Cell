@@ -20,5 +20,5 @@ cl 2>&1 | findstr /c:"Compiler Version"
 "%CMAKE%" --version || exit /b 1
 "%NINJA%" --version || exit /b 1
 "%CMAKE%" -S "%HERE%app" -B "%BUILD%" -G Ninja -DCMAKE_MAKE_PROGRAM="%NINJA%" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%QT%" -DCMAKE_TRY_COMPILE_CONFIGURATION=Release || exit /b 1
-"%CMAKE%" --build "%BUILD%" || exit /b 1
-echo Built sd_smoke.exe and sd_code_layout_test.exe
+"%CMAKE%" --build "%BUILD%" --target sd_smoke sd_code_layout_test sd_module_observer_test sd_module_probe || exit /b 1
+echo Built sd_smoke.exe, sd_code_layout_test.exe, sd_module_observer_test.exe and sd_module_probe.dll

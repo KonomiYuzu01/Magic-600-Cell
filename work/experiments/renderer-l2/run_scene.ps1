@@ -163,7 +163,10 @@ function Start-Guard([string]$Directory) {
     return $guard
 }
 function Stop-Guard($Guard) {
-    $Guard.StandardInput.WriteLine('release')
+    # Raw ASCII bytes; the guard also accepts the byte-order mark that the writer may send first.
+    $release = [Text.Encoding]::ASCII.GetBytes("release`n")
+    $Guard.StandardInput.BaseStream.Write($release, 0, $release.Length)
+    $Guard.StandardInput.BaseStream.Flush()
     $Guard.StandardInput.Close()
     if (-not $Guard.WaitForExit(30000)) { throw 'The file guard did not release within 30 s; the series is stopped.' }
     if ($Guard.ExitCode -ne 0) { throw "The file guard exited $($Guard.ExitCode) at release: a protected file changed identity. The series is stopped." }

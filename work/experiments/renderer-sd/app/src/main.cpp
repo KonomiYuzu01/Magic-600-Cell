@@ -1,5 +1,6 @@
 #include "smoke.h"
 #include "l2.h"
+#include "module_observer.h"
 #include <QtCore/QFileInfo>
 #include <QtCore/QTimer>
 #include <QtGui/QGuiApplication>
@@ -195,6 +196,7 @@ int level2Main(int argc, char** argv) {
         }, Qt::QueuedConnection);
         QTimer timer;
         QObject::connect(&timer, &QTimer::timeout, &app, [&] {
+            if (!stopping && !result.injectModuleProbe()) harness.fail("framework-modules");
             const auto action = harness.guiAction();
             if (!stopping && (action.close || action.renderDone)) {
                 stopping = true; window->close(); window->releaseResources();
@@ -215,12 +217,14 @@ int level2Main(int argc, char** argv) {
     if (harness.native.fn_sa2_abi_version) result.abi(harness.native.fn_sa2_abi_version());
     const auto stats = harness.snapshot();
     if (!stats.reasons.empty()) result.failure(QString::fromStdString(*stats.reasons.begin()));
+    result.loadedDll(harness.native);
     const bool written = result.write();
     std::cout << "sd l2: exit " << (written ? result.exitCode : 1) << '\n';
     return written ? result.exitCode : 1;
 }
 
 int main(int argc, char** argv) {
+    sd::modules::start();
     for (int i = 1; i < argc; ++i) if (std::string_view(argv[i]).starts_with("--l2-")) return level2Main(argc, argv);
     sd::Options options;
     try { options = arguments(argc, argv); }
