@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "updated": "2026-10-09",
+  "updated": "2026-10-10",
   "current": "2.3",
   "paid_api_ceiling_usd": 100,
   "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}],
@@ -88,8 +88,8 @@
       {"id": "j2", "title": "J2 viewer shows certified sequences", "weight": 2, "done": true, "evidence": "82a8ab2"},
       {"id": "j3", "title": "J3 first theory generation and verification", "weight": 2, "done": true, "evidence": "research/jumbling/theory/theory-draft.md"},
       {"id": "j4", "title": "J4 orbit data for candidate menus", "weight": 1, "done": true, "evidence": "research/jumbling/explorer/explorer-results.json"},
-      {"id": "renderer-packet", "title": "Renderer packet to owner", "weight": 1, "done": false, "evidence": null},
-      {"id": "engineering-packet", "title": "Engineering packet to owner", "weight": 1, "done": false, "evidence": null}
+      {"id": "renderer-packet", "title": "Renderer packet to owner", "weight": 1, "done": true, "evidence": "docs/progress/1.0/packets/renderer/E-2.4-0J-jumbling.md"},
+      {"id": "engineering-packet", "title": "Engineering packet to owner", "weight": 1, "done": true, "evidence": "docs/progress/1.0/packets/engineering/ENG-0J-jumbling-backend.md"}
      ]}
   ]
 }
