@@ -9,7 +9,6 @@
 #include <QtCore/QRegularExpression>
 #include <dwmapi.h>
 #include <dxgi1_6.h>
-#include <psapi.h>
 #include <wrl/client.h>
 #include <algorithm>
 #include <charconv>
@@ -25,6 +24,30 @@ QJsonValue number(std::uint64_t value) { return QJsonValue(static_cast<qint64>(v
 QJsonObject dimensions(QSize size) {
     if (size.isEmpty()) return {{"width", unknown}, {"height", unknown}};
     return {{"width", size.width()}, {"height", size.height()}};
+}
+QJsonObject moduleRecord(const modules::Record& observed) {
+    QJsonValue failedStep = unknown;
+    switch (observed.failure) {
+    case modules::Failure::None: break;
+    case modules::Failure::Register: failedStep = "register"; break;
+    case modules::Failure::UnloadHistory: failedStep = "unload-history"; break;
+    case modules::Failure::Snapshot: failedStep = "snapshot"; break;
+    case modules::Failure::Seal: failedStep = "seal"; break;
+    }
+    QJsonValue history = unknown;
+    if (observed.unloadHistory) {
+        QJsonArray names;
+        for (const auto& name : *observed.unloadHistory) names.append(QString::fromStdWString(name));
+        history = names;
+    }
+    QJsonArray events;
+    for (const auto& event : observed.events) {
+        const auto kind = event.kind == modules::Kind::Snapshot ? "snapshot" : event.kind == modules::Kind::Load ? "load" : "unload";
+        events.append(QJsonObject{{"kind", kind}, {"path", QString::fromStdWString(event.path)}});
+    }
+    return {{"observer", observed.sealed ? "sealed" : "failed"}, {"failure", failedStep},
+        {"scope", QString::fromStdWString(observed.scope)}, {"unload_history", history},
+        {"overflow", observed.overflow}, {"events", events}};
 }
 QString executablePath() {
     wchar_t path[32768]{};
@@ -113,7 +136,8 @@ void parseL2(int argc, char** argv, L2Options& options) {
             if (parsed.ec != std::errc() || parsed.ptr != value.data() + value.size() || !std::isfinite(result) || result <= 0 || result > 10000) usage();
             options.turnMs = result;
         }
-        else if (key == "--l2-inject") options.inject = QString::fromStdString(choice({"corrupt-label", "swap-same-colour", "delay-adoption", "stale-binding"}));
+        else if (key == "--l2-inject") options.inject = QString::fromStdString(choice({"corrupt-label", "swap-same-colour", "delay-adoption", "stale-binding",
+            "module-late", "module-transient", "module-reload"}));
         else if (key == "--l2-gpu-validation") options.gpuValidation = integer(0, 1) == 1;
         else if (key == "--l2-conditions") options.enforce = choice({"enforce", "record"}) == "enforce";
         else if (key == "--l2-declare") {
@@ -204,7 +228,7 @@ L2::L2(L2Options value) : options(std::move(value)) {
         {"options", QJsonObject{{"trace_ms", int(options.traceMs)}, {"preroll_ms", int(options.prerollMs)}, {"turn_ms", options.turnMs},
             {"inject", optionalText(options.inject)}, {"declared", options.declared}, {"gpu_validation", options.gpuValidation},
             {"conditions", options.enforce ? "enforce" : "record"}, {"no_vram", options.noVram}, {"debug_half_target", options.halfTarget}}},
-        {"configuration", QJsonObject{}}, {"files", QJsonObject{{"dll", optionalText(options.dll)}}},
+        {"configuration", QJsonObject{}}, {"files", QJsonObject{{"dll", unknown}}},
         {"dll_identity", QJsonObject{{"dll", QJsonObject{{"file", unknown}, {"sha256", unknown}}}, {"shaders", unknown}}},
         {"dll_status", QJsonObject{{"abi_version", unknown}, {"last_status", unknown}, {"last_error", unknown}}}, {"qpc_frequency", unknown},
         {"sizes", QJsonObject{{"display", dimensions({})}, {"window", dimensions({})}, {"backbuffer", dimensions({})},
@@ -220,6 +244,10 @@ L2::L2(L2Options value) : options(std::move(value)) {
             {"samples", 0}, {"samples_not_visible", 0}, {"samples_covered", 0}, {"samples_not_foreground", 0},
             {"visible_throughout", unknown}, {"foreground_throughout", unknown}, {"presents", 0}}},
         {"debug", QJsonObject{{"enabled", options.gpuValidation}, {"debug_layer", unknown}, {"counts", unknown}, {"messages", unknown}}}};
+    if (options.inject == "module-late" || options.inject == "module-transient" || options.inject == "module-reload") {
+        moduleInjection_ = options.inject;
+        options.inject.clear(); // Harness::renderScene reads this field for the DLL's scene config.
+    }
     configuration();
 }
 
@@ -257,6 +285,37 @@ void L2::identity(const QByteArray& json) {
     if (error.error != QJsonParseError::NoError || !document.isObject() || !document.object()["dll"].isObject()
         || !document.object()["shaders"].isArray()) throw std::runtime_error("DLL identity malformed or truncated");
     record_.insert("dll_identity", document.object());
+}
+void L2::loadedDll(const Native& native) {
+    if (!native.module) return;
+    try {
+        auto files = record_["files"].toObject();
+        files.insert("dll", QDir::cleanPath(QString::fromStdWString(native.loadedPath())));
+        record_.insert("files", files);
+    } catch (const std::exception&) { failure("framework-modules"); }
+}
+bool L2::injectModuleProbe() {
+    if (moduleInjection_.isEmpty() || moduleInjected_ || !traceStarted_.load(std::memory_order_seq_cst)) return true;
+    moduleInjected_ = true;
+    if (GetCurrentThreadId() != guiThread_) return false;
+    try {
+        const auto path = QDir::toNativeSeparators(QDir(QFileInfo(executablePath()).absolutePath()).filePath("sd_module_probe.dll"));
+        auto module = LoadLibraryW(reinterpret_cast<LPCWSTR>(path.utf16()));
+        if (!module) return false;
+        if (moduleInjection_ == "module-transient") {
+            const auto function = reinterpret_cast<int (*)(void)>(GetProcAddress(module, "sd_module_probe"));
+            const bool called = function && function() == 600;
+            const bool freed = FreeLibrary(module) != 0;
+            return called && freed;
+        }
+        if (moduleInjection_ == "module-reload") {
+            if (!FreeLibrary(module)) return false;
+            module = LoadLibraryW(reinterpret_cast<LPCWSTR>(path.utf16()));
+            if (!module) return false;
+        }
+        // Retain the LoadLibrary reference until process exit for the persistent/reload modes.
+        return true;
+    } catch (const std::exception&) { return false; }
 }
 qint64 L2::qpc() {
     LARGE_INTEGER time{};
@@ -343,6 +402,7 @@ void L2::beginTrace(QQuickWindow* window, QSize target) {
     traceActive = true; traceStart = qpc(); nextSample_ = traceStart;
     captureSizes(window, target);
     auto facts = record_["window"].toObject(); facts.insert("foreground_at_trace_start", GetForegroundWindow() == hwnd); record_.insert("window", facts);
+    traceStarted_.store(true, std::memory_order_seq_cst);
 }
 void L2::captureSizes(QQuickWindow* window, QSize target) {
     initialSizes_ = sizes(window, target);
@@ -404,36 +464,26 @@ void L2::releaseConditions() {
     if (powerRegistration_) { PowerUnregisterFromEffectivePowerModeNotifications(powerRegistration_); powerRegistration_ = nullptr; }
     if (displayRequired_) { SetThreadExecutionState(ES_CONTINUOUS); displayRequired_ = false; }
 }
-void L2::files() {
+void L2::files(const modules::Record& observed) {
     const auto exe = executablePath();
-    const auto directory = QFileInfo(exe).absolutePath() + '/';
     auto files = record_["files"].toObject(); files.insert("qt:exe", exe);
-    std::vector<HMODULE> modules(256);
-    DWORD required = 0;
-    if (!EnumProcessModules(GetCurrentProcess(), modules.data(), DWORD(modules.size() * sizeof(HMODULE)), &required)) throw std::runtime_error("module enumeration failed");
-    if (required > modules.size() * sizeof(HMODULE)) {
-        modules.resize(required / sizeof(HMODULE));
-        if (!EnumProcessModules(GetCurrentProcess(), modules.data(), required, &required) || required > modules.size() * sizeof(HMODULE))
-            throw std::runtime_error("module enumeration changed");
-    }
-    modules.resize(required / sizeof(HMODULE));
-    for (const auto module : modules) {
-        wchar_t path[32768]{};
-        const auto length = GetModuleFileNameW(module, path, DWORD(std::size(path)));
-        if (!length || length >= std::size(path)) throw std::runtime_error("module path unavailable");
-        const auto file = QDir::cleanPath(QString::fromWCharArray(path));
-        if (file.compare(options.dll, Qt::CaseInsensitive) == 0 || file.compare(exe, Qt::CaseInsensitive) == 0) continue;
-        if (file.startsWith(directory, Qt::CaseInsensitive)) {
-            const auto key = "qt:" + QFileInfo(file).fileName();
-            if (files.contains(key) && files[key].toString().compare(file, Qt::CaseInsensitive) != 0) throw std::runtime_error("duplicate module basename");
-            files.insert(key, file);
-        }
+    const auto dll = files["dll"].toString();
+    for (const auto& path : modules::loadedPaths(observed)) {
+        const auto file = QDir::cleanPath(QString::fromStdWString(path));
+        if (file.compare(dll, Qt::CaseInsensitive) == 0 || file.compare(exe, Qt::CaseInsensitive) == 0) continue;
+        const auto key = "qt:" + QFileInfo(file).fileName();
+        for (auto entry = files.constBegin(); entry != files.constEnd(); ++entry)
+            if (entry.key().compare(key, Qt::CaseInsensitive) == 0 && entry.value().toString().compare(file, Qt::CaseInsensitive) != 0)
+                throw std::runtime_error("duplicate module basename");
+        files.insert(key, file);
     }
     record_.insert("files", files);
 }
 bool L2::write() {
+    const auto observed = modules::seal();
+    record_.insert("modules", moduleRecord(observed));
     if (!outputDirectory(options.out, false)) return false;
-    try { files(); } catch (const std::exception&) { failure("framework-modules"); }
+    try { files(observed); } catch (const std::exception&) { failure("framework-modules"); }
     if (samples_ || presents_) updateConditions();
     if (lastStatus_) {
         auto status = record_["dll_status"].toObject(); status.insert("last_status", *lastStatus_); status.insert("last_error", lastError_);

@@ -8,6 +8,18 @@ Recorded in [owner-decisions-2026-10-10-jumbling-deferred](decisions/owner-decis
 ## [2026-10-10] update | Jumbling restoration theory (J3-R)
 [restoration](../../research/jumbling/theory/restoration.md) gives a human method back from a jumbled configuration without a journal: phase U closes misaligned cuts (exact rim test, descent on the misalignment N, proved to reach the lattice) and phase L hands the lattice configuration to the retained method with lens macros as extra moves. Proved, computed, lead and open items are separated in its section 5; whether levels 1 and 2 always suffice, and whether jumbling reaches lattice configurations outside the retained group, stay open.
 
+## [2026-10-10] decision | Shrink anchor (area centroid)
+Recorded in [owner-decisions-2026-10-10-anchor](decisions/owner-decisions-2026-10-10-anchor.md): the sticker shrink anchor is the area-weighted centroid of each sticker's triangles, computed from the unchanged meshes, which removes the W3 turn-end jump and the W-J lattice disagreement at source level; no asset or model identity changes. Updated [s-b-probe-results](evidence/s-b-probe-results.md): the changed probes need GPU re-acceptance, including W3.
+
+## [2026-10-10] update | Level 2 binding review fixes
+Updated [level-2-framework-results](evidence/level-2-framework-results.md): the four blocking findings of the binding's two-shard Astra review are fixed, and the fixed Qt build passed the synthetic experiments (9 passed, 1 not run), and the scoped verification round passed on both shards. The Qt observer's limit for subst, junction, UNC and outside hard-link spellings is stated in the harness contract.
+
+## [2026-10-10] update | Level 2 binding built
+Updated [level-2-framework-results](evidence/level-2-framework-results.md): the L2-V-002 guard binding is built and passed its source checks and synthetic experiments on the owner's machine; its Astra review and any gate run under it are pending, so the 4 October identities keep their qualification.
+
+## [2026-10-09] update | Level 2 framework results
+Added [level-2-framework-results](evidence/level-2-framework-results.md). Godot 4.7.2 and Qt 6.10.3 both meet the W3 selection gate in the owner's attended runs of 4 October; Qt's 60 fps is Qt's vblank-paced update, so the frame rates are not a like-for-like comparison; the blind-seconds and tearing finalizer defects are fixed; the build identities rest on preparation records until L2-V-002 is fixed.
+
 ## [2026-10-09] decision | Jumbling as an optional puzzle state
 Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 7): jumbling is an optional state of a puzzle session, not a separate kind of session; the engineering packet proposes how a session enters and leaves it.
 

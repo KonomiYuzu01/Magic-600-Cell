@@ -85,7 +85,7 @@ ApplicationWindow {
                     anchors.centerIn: parent
                     width: Math.min(parent.width, 560)
                     visible: rate.empty
-                    text: "No images to rate. Run fetch.py and embed.py, or the tastelab-fetch run in the workbench."
+                    text: "No images to rate. Run fetch.py and embed.py first."
                     textFormat: Text.PlainText
                     wrapMode: Text.WordWrap
                     horizontalAlignment: Text.AlignHCenter

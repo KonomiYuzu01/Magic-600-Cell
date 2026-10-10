@@ -45,12 +45,20 @@ owner builds use `cmake --build` and Ninja's usual scheduling.
 
 The baseline method is `DrawInstanced(30480, 600, 0, 0)`, with full detail.
 Transparency uses a sorted index list with the same vertices; no feature filters
-geometry or adds LOD. The vertex shader fetches the vertex, sticker centre, cell frame, animation
+geometry or adds LOD. The vertex shader fetches the vertex, shrink anchor, cell frame, animation
 flag and integer label through structured-buffer root SRVs. Static inputs reside
 in default heaps. All 259,800 labels are uploaded on each adopted revision into
 one of three default-heap buffers from a two-entry upload ring. Two frame contexts
 carry their own allocator, constants, upload memory and fence. Reusing them limits
 submissions to two frames in flight; no per-frame GPU drain is used.
+
+The shrink anchors are the area-weighted triangle centroids defined in
+[SPEC section 3](../SPEC.md), computed from the unchanged mesh in double precision
+and rounded once to float32. The retained `centers` buffer stores these 433
+anchors. Loading the assets refuses anchors whose SHA-256 differs from the SPEC pin,
+so every consumer of `Assets` (this probe, S-A2 and the S-D scene) uploads only the
+pinned bytes. The CPU self-test also recomputes them under upward rounding and requires
+them to be refused or byte-identical (on the owner's machine they are refused).
 
 The borderless window uses the primary monitor's current display mode. It is
 topmost and asks for the foreground. A flip-model `Present` never

@@ -14,12 +14,13 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 PREFIX = 'work/experiments/renderer-sb'
 ASSET_NAMES = ('mesh.json', 'mesh_vertices.f32', 'mesh_sticker.u32',
-               'mesh_centers.f32', 'cell_frames.f32')
+               'cell_frames.f32')
 BASE_VERTICES, BASE_STICKERS, CELLS = 30480, 433, 600
 SLOTS = CELLS * BASE_STICKERS
 SAMPLE_STRIDE = 4099
 ASPECT = 1.6
 PARAMETERS = {'cs': 0.76, 'ss': 0.82, 'd4': 1.18, 'zoom': 1.15}
+ANCHOR_SHA256 = '0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6'
 
 
 def binary(raw, code, count, name):
@@ -32,6 +33,33 @@ def binary(raw, code, count, name):
     if code == 'f' and not all(math.isfinite(value) for value in values):
         raise ValueError(f'{name}: non-finite float32 value')
     return values
+
+
+def sticker_anchors(offsets, vertices):
+    """Return the SPEC section 3 step 1 anchors: 433 x 4 float32 values in an array('f').
+
+    Each anchor is the area-weighted centroid of its sticker's triangles, in float64,
+    summed in file order and rounded once to float32.
+    """
+    anchors = array('f')
+    for local, (begin, end) in enumerate(zip(offsets, offsets[1:])):
+        total, weighted = 0.0, [0.0, 0.0, 0.0, 0.0]
+        for t in range(begin, end, 3):
+            a, b, c = (vertices[k * 4:k * 4 + 4] for k in (t, t + 1, t + 2))
+            e1 = [b[i] - a[i] for i in range(4)]
+            e2 = [c[i] - a[i] for i in range(4)]
+            d11 = e1[0] * e1[0] + e1[1] * e1[1] + e1[2] * e1[2] + e1[3] * e1[3]
+            d22 = e2[0] * e2[0] + e2[1] * e2[1] + e2[2] * e2[2] + e2[3] * e2[3]
+            d12 = e1[0] * e2[0] + e1[1] * e2[1] + e1[2] * e2[2] + e1[3] * e2[3]
+            area = 0.5 * math.sqrt(max(d11 * d22 - d12 * d12, 0.0))
+            total += area
+            for i in range(4):
+                weighted[i] += area * ((a[i] + b[i] + c[i]) / 3.0)
+        anchor = [value / total for value in weighted] if total > 0 else []
+        if not math.isfinite(total) or total <= 0 or not all(map(math.isfinite, anchor)):
+            raise ValueError(f'sticker {local}: no finite positive triangle area')
+        anchors.extend(anchor)
+    return anchors
 
 
 def matvec(matrix, vector):
@@ -104,8 +132,11 @@ def build_reference():
                       'mesh_vertices.f32')
     stickers = binary(inputs['assets/mesh_sticker.u32'], 'I', BASE_VERTICES,
                       'mesh_sticker.u32')
-    centers = binary(inputs['assets/mesh_centers.f32'], 'f', BASE_STICKERS * 4,
-                     'mesh_centers.f32')
+    centers = sticker_anchors(offsets, vertices)
+    anchor_digest = hashlib.sha256(struct.pack(f'<{BASE_STICKERS * 4}f',
+                                               *centers)).hexdigest()
+    if anchor_digest != ANCHOR_SHA256:
+        raise ValueError('shrink anchors: SHA-256 mismatch with SPEC section 3')
     frames = binary(inputs['assets/cell_frames.f32'], 'f', CELLS * 16,
                     'cell_frames.f32')
     if any(stickers[vi] != local
@@ -158,7 +189,9 @@ def build_reference():
                 struct.pack('<3f', *project(world, q, ASPECT)) for world in worlds)
 
     index = {
-        'format': 'magic600-sb-reference-v1',
+        'format': 'magic600-sb-reference-v2',
+        'anchors': {'rule': 'area-weighted triangle centroid, SPEC.md section 3',
+                    'sha256': anchor_digest},
         'parameters': {**PARAMETERS, 'R': radius, 'near': 0.05, 'far': 100.0},
         'aspect': ASPECT,
         'sample_stride': SAMPLE_STRIDE,

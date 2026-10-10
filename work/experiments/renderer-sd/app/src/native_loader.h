@@ -1,6 +1,7 @@
 #pragma once
 #include "sa2_interop.h"
 #include <windows.h>
+#include <string>
 
 namespace sd {
 struct Native {
@@ -35,6 +36,7 @@ struct Native {
     SD_FUNCTION(sa2_scene_unload)
 #undef SD_FUNCTION
     void load(const wchar_t* absolutePath);
+    std::wstring loadedPath() const;
     ~Native();
 };
 static_assert(sizeof(sa2_device_info) == 48);

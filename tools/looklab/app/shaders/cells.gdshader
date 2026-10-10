@@ -1,7 +1,7 @@
 shader_type spatial;
 render_mode unshaded, cull_disabled, shadows_disabled, fog_disabled;
 
-uniform sampler2D centers : filter_nearest, repeat_disable;
+uniform sampler2D anchors : filter_nearest, repeat_disable;
 uniform sampler2D labels : filter_nearest, repeat_disable;
 uniform sampler2D moving_slots : filter_nearest, repeat_disable;
 uniform sampler2D cell_classes : filter_nearest, repeat_disable;
@@ -58,8 +58,8 @@ void vertex() {
     int slot = INSTANCE_ID * 433 + local;
     ivec2 slot_texel = ivec2(slot % 1024, slot / 1024);
     vec4 base = vec4(VERTEX, UV.x);
-    vec4 center = texelFetch(centers, ivec2(local, 0), 0);
-    vec4 shrunk = (base_normal + cs * (center - base_normal) + cs * ss * (base - center)) / radius;
+    vec4 anchor = texelFetch(anchors, ivec2(local, 0), 0);
+    vec4 shrunk = (base_normal + cs * (anchor - base_normal) + cs * ss * (base - anchor)) / radius;
     mat4 frame = mat4(vec4(MODEL_MATRIX[0].xyz, INSTANCE_CUSTOM.r),
                       vec4(MODEL_MATRIX[1].xyz, INSTANCE_CUSTOM.g),
                       vec4(MODEL_MATRIX[2].xyz, INSTANCE_CUSTOM.b),

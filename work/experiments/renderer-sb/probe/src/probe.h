@@ -9,6 +9,7 @@ namespace sb {
 namespace fs = std::filesystem;
 constexpr uint32_t Vertices=30480, Stickers=433, Cells=600, Slots=259800;
 constexpr uint64_t LabelBytes=uint64_t(Slots)*4;
+constexpr char AnchorSha256[]="0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6";
 using Matrix=std::array<float,16>;
 void require(bool ok, const std::string& reason);
 std::vector<uint8_t> bytes(const fs::path& path);

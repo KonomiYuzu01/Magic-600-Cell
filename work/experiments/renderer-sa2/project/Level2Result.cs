@@ -27,6 +27,7 @@ public sealed class Level2Result
     public string format = "magic600-l2-harness-v1", candidate = "sa2", mode, run_id, scene;
     public int process_id = Environment.ProcessId, exit_code = 1;
     public string reason = "not-finished";
+    public string assembly_mvid;
     public Dictionary<string, object> options, configuration;
     public Dictionary<string, object> files = new() {
         ["dll"] = null, ["godot:exe"] = null, ["godot:assembly"] = null,
@@ -67,7 +68,6 @@ public sealed class Level2Result
         };
         environment["declared"] = a.declared;
         debug["enabled"] = a.gpu_validation;
-        files["dll"] = a.dll_path;
     }
 
     public static string PowerSource(long samples, long mains, long battery) =>

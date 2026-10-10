@@ -21,16 +21,24 @@ All little-endian. Verify the SHA-256 of every file against `assets/manifest.jso
 | `assets/mesh.json` | `base_vertices` 30480, `base_stickers` 433, `cells` 600, `slots` 259800, `offsets` (434 ints, vertex range of each base sticker), `normal` N0 (4 floats), `normal_length` (float) |
 | `assets/mesh_vertices.f32` | 30,480 x 4 f32: the 4D vertices of base cell 0, an unindexed triangle list (10,160 triangles) |
 | `assets/mesh_sticker.u32` | 30,480 u32: base sticker index (`local`, 0..432) of each vertex |
-| `assets/mesh_centers.f32` | 433 x 4 f32: base sticker centres (4D) |
+| `assets/mesh_centers.f32` | 433 x 4 f32: the retained toolkit's sticker numbering centres (4D). Digest-checked with the others, but since 10 October 2026 no step of the pipeline uses them: they do not move with the sticker under the puzzle's symmetries |
 | `assets/cell_frames.f32` | 600 x 16 f32: cell frame F[c]; the 16 floats of cell c are F[c] in column-major order (float `c*16 + col*4 + row` is F[c][row][col]) |
 
 Slot of a vertex: `slot = cell * 433 + local`. A label is the original slot id of the sticker in that slot; its colour class is `label / 433` (integer division). Solved labels: `label[slot] = slot`.
 
-## 3. Geometry pipeline (port of `web/renderer.js:21-34`, mesh mode, not wireframe)
+## 3. Geometry pipeline (port of `web/renderer.js:21-34`, mesh mode, not wireframe, except the anchor of step 1)
+
+Shrink anchors (owner decision, 10 October 2026: [owner-decisions-2026-10-10-anchor](../../../docs/wiki/decisions/owner-decisions-2026-10-10-anchor.md)). The anchor `A[local]` of base sticker `local` is the area-weighted centroid of its triangles, computed from `mesh_vertices.f32` and `offsets`. It replaces the sticker centre of `renderer.js`.
+- **Triangles.** The triangles of sticker `local` are the consecutive vertex triples `(a, b, c)` in `[offsets[local], offsets[local+1])`, in file order. Each f32 component is widened to float64, and all arithmetic up to the final rounding is in float64.
+- **Area.** For each triangle, `e1 = b - a` and `e2 = c - a`. Each dot product sums its four component products in the order 0, 1, 2, 3. Then `area = 0.5 * sqrt(max(dot(e1,e1)*dot(e2,e2) - dot(e1,e2)^2, 0))`.
+- **Centroid.** `total` is the sum of `area`, and `weighted[i]` is the sum of `area * ((a[i] + b[i] + c[i]) / 3)`, both summed in triangle order. Then `A[local][i] = weighted[i] / total`, rounded once to f32 (round to nearest even).
+- **Refusal.** A sticker whose `total` is not finite and positive, or whose anchor is not finite, refuses the assets.
+- **Use.** Every consumer uses the f32 anchors: the GPU reads them, and the float64 references widen them again.
+- **Pin.** For the current assets, the 433 x 4 anchors as f32 little-endian have SHA-256 `0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6`. `reference_geometry.py` (`sticker_anchors`) is the stdlib definition. An implementation that computes other bytes from these assets is wrong.
 
 Per vertex `vi` (0..30479) of cell `c` (0..599):
 
-1. `v` = vertex `vi`; `local` = sticker of `vi`; `center` = sticker centre `local`; `slot = c*433 + local`.
+1. `v` = vertex `vi`; `local` = sticker of `vi`; `center` = anchor `A[local]`; `slot = c*433 + local`.
 2. `v = (N0 + cs*(center - N0) + cs*ss*(v - center)) / R`, with `R` = `normal_length`.
 3. `world = F[c] * v` (column vector).
 4. Turn: if `slot` is in the animated set and the turn angle `theta != 0`: `x = dot(world, u)`, `y = dot(world, v4)`, `world += ((cos(theta)-1)*x - sin(theta)*y) * u + (sin(theta)*x + (cos(theta)-1)*y) * v4`, where `u`, `v4` are `plane_u`, `plane_v` of `turn.json`.
