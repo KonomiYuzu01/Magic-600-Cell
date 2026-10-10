@@ -564,8 +564,9 @@ only that child's process handles and the parent's owned probe copy. Cases:
 4. Load, unload and reload give two loads, one unload and one union path.
 5. A post-seal load exits 3.
 6. A second thread, released by Win32 events, races the seal in **200** child
-   repetitions; every child either records the probe in the union or exits 3,
-   and the case line reports how many exited 3. A test child that aborts
+   repetitions, with the seal delayed by 0 to 3.98 ms in 20 µs steps so that it
+   lands on both sides of the load; every child either records the probe in the
+   union or exits 3, and the case line reports how many exited 3. A test child that aborts
    exits 2, so a crash never counts as the seal's exit 3.
 7. Repeated real load/unload calls overflow the event buffer and must refuse.
 

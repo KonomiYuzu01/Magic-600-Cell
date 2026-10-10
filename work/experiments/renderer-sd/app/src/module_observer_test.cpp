@@ -150,7 +150,12 @@ int runCase(int number, int repetition) {
         const auto thread = CreateThread(nullptr, 0, racingLoad, &race, 0, nullptr);
         check(thread && WaitForSingleObject(race.raceReady, 10000) == WAIT_OBJECT_0, "race worker unavailable");
         check(SetEvent(race.raceGo) != 0, "race start failed");
-        if (repetition % 2 == 0) SwitchToThread();
+        // Delay the seal by 0 to 3.98 ms in 20 us steps, so the race lands on both sides of the load.
+        LARGE_INTEGER frequency{}, start{}, now{};
+        QueryPerformanceFrequency(&frequency);
+        QueryPerformanceCounter(&start);
+        const auto delay = frequency.QuadPart * 20 * repetition / 1000000;
+        do QueryPerformanceCounter(&now); while (now.QuadPart - start.QuadPart < delay);
         const auto record = sd::modules::seal();
         check(WaitForSingleObject(thread, 10000) == WAIT_OBJECT_0, "race worker timeout");
         DWORD code = 1;

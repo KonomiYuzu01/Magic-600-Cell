@@ -60,7 +60,9 @@ struct State {
 };
 static_assert(std::atomic<std::size_t>::is_always_lock_free && std::atomic<bool>::is_always_lock_free);
 // No destructor or dynamically owned buffer: callbacks remain valid during CRT/loader shutdown.
-constinit State state;
+// Not constinit: its 32 MB of slots exceed MSVC's constant-evaluation limit (C2127). Any
+// initialization finishes before main, and the callback is registered only from main.
+State state;
 void fail(Failure failure) { if (state.failure == Failure::None) state.failure = failure; }
 wchar_t backslash(wchar_t value) noexcept { return value == L'/' ? L'\\' : value; }
 bool inScope(const CountedName& name) noexcept {

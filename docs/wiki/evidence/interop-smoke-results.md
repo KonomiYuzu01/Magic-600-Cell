@@ -13,7 +13,7 @@ claims:
   - {id: godot-tracker-source-facts, evidence_kind: source, path: work/experiments/renderer-sa2/README.md, sha256: a06bae8b6504b893fd8f876d5c8e11e1eed294e6c3a1708701b7f27fe048d22c, checked_at: 2026-10-10}
   - {id: qt-level-1-passed, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sd/results/sd-smoke-summary.json, sha256: 56d5040f4b6c7b5142e56dd8017cfd8017991f44662baefa7288dcb9ba4c3f88, checked_at: 2026-10-03}
   - {id: qt-pr43-answers, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sd/RESULT.md, sha256: 0e06faab5792171b8ed7526ab93457cd73e09bd91c83c013f27e8acb16f852f7, checked_at: 2026-10-03}
-  - {id: qt-source-facts, evidence_kind: source, path: work/experiments/renderer-sd/README.md, sha256: f0628c728f3faec397780f69276ae7bbb60daebb1a9c00bf42c4db43cfaf882f, checked_at: 2026-10-10}
+  - {id: qt-source-facts, evidence_kind: source, path: work/experiments/renderer-sd/README.md, sha256: 67cdd92a371de4d1832c121ead0882e6d21b5730b46bf0dba9056129b6beba54, checked_at: 2026-10-10}
 ---
 
 # Interop smoke test results
