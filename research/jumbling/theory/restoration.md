@@ -1,6 +1,6 @@
 # Restoring a jumbled state: theory and method (J3-R)
 
-Status: **integrator's draft, 10 October 2026; not yet reviewed.** It extends the J3 theory draft ([`theory-draft.md`](theory-draft.md), items 5 and 6) with a model in which the jumbling of every piece is visible, and with a restoration method built on it. Labels follow the draft: **Proved**, **Computed** (exact, by the script named), **Lead** (sampled; suggests, proves nothing), **Open**. Scripts run from the repository root on top of the J1 reference (`research/jumbling/sim/`).
+Status: **integrator's draft, 10 October 2026; reviewed in two Codex shards, with the blocking findings fixed and verified. Phase U reaches the lattice on every tested input of up to 20 twists; on deep inputs it is open (section 5).** It extends the J3 theory draft ([`theory-draft.md`](theory-draft.md), items 5 and 6) with a model in which the jumbling of every piece is visible, and with a restoration method built on it. Labels follow the draft: **Proved**, **Computed** (exact, by the script named), **Lead** (sampled; suggests, proves nothing), **Open**. Scripts run from the repository root on top of the J1 reference (`research/jumbling/sim/`).
 
 ## 0. Problem
 
@@ -141,7 +141,16 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 - **U7. Reopen a bookmark.** When nothing else lowers N, take one of the solver's own earlier twists, most recent first, and make its inverse. Then make single-twist steps of U1a, U1b, U2 and U5, the first on a cap other than the reopened one, until N is lower than before the reopening (keep them all) or six steps pass (undo them all). The solver's own twists are the solver's record, not the scramble's journal, so the human-solve boundary allows this.
 - **Order.** `seams.py` makes the first lowering step it finds, trying the rules in this order by default: U1a, U1b, U2, U5″, U4, U5, U5′, U7 (`seam,cover,close,conj,lock,improve,shift,reopen`; `--order` changes it). Trying the conjugate repair before the lock and shift searches matters in practice. Where nothing simpler applies, a lowering conjugate word was found in one to three minutes, while the lock and shift searches took about 25 minutes per step (cloud timings of research code, not performance evidence).
 
-<!-- RESULT -->
+**Result on deep inputs (computed, exact; `seams.py`, `results/seams-*.json`).** No run on a 60-record fixture has reached the lattice yet.
+- From the S4@60 stopping configuration (N = 6,294, `results/seams-S4-60-stop.json`), the repair word passes every earlier stopping point (7,472 with the rules of `restore.py`, 6,294 with U1a and U1b added). In 32 steps, 31 conjugate repairs and one cover step (94 twists), N fell below 4,240 (`results/seams-fixture-S4-60-continued-partial.json`).
+- The descent slows. The first 16 steps took 11 minutes and lowered N from 6,294 to 4,890. The 32nd took 16 minutes and lowered it by a few cells. The run was stopped there, during the search for step 33. It was not stuck: whether it reaches the lattice, and how long that takes, is open.
+- From scratch with the default order, the descents stand at the following N (the S4 and I_a runs were still running when this was written):
+
+| Fixture | N at X_60 | Steps | N reached | Minutes |
+|---|---:|---:|---:|---:|
+<!-- RUN60 -->
+
+<!-- D40 -->
 
 ## 4. Phase L: the lattice
 
@@ -170,7 +179,7 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 ## 5. Completeness: what is proved, computed and open
 
 **The method.**
-- Phase U (section 3): read the misaligned cuts. Close the most misaligned cut, with the landing that brings the most pieces home. When nothing closes, open, close and close. In general, make a shortest N-lowering word.
+- Phase U (section 3): read the misaligned cuts. Undo first a cap that passes the face match (U1a), else the top of the cover order (U1b), else close the most misaligned cut with the landing that brings the most pieces home (U2). When none of these applies, repair: open a cap, improve a neighbour, re-twist (U5″); then lock, improve and shift (U4, U5, U5′), and reopen one of the solver's own twists (U7). In general, make a shortest N-lowering word (Theorem U).
 - Phase L (section 4): the retained method, with the lens macros as extra moves.
 
 **Proved.**
@@ -198,16 +207,20 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 | S4 random, k = 20 | 4 | 4 | 4 | 4 | 20.0, 20 | 0 | 0 | 61 |
 | S4 random, k = 20, mix 0.3 | 4 | 4 | 2 | 4 | 18.2, 20 | 1 | 0 | 58 |
 
-<!-- DEEP -->
+Inputs of 40 and 60 records use the deep-input rules (`seams.py`); their results are in section 3 ("Result on deep inputs"), with the face match counts under U1a.
 
-**Lead: what the table suggests.** These are exact runs on a few dozen inputs. They suggest, and prove nothing.
-<!-- LEADS -->
+**Lead: what the runs suggest.** These are exact runs on a few dozen inputs. They suggest, and prove nothing.
+- Up to 20 twists the method is complete in practice: every run reaches the lattice with closings, a few locks and no repair, and every end configuration has v in v(G), so the invariant v gives phase L nothing the retained method cannot reach.
+<!-- LEAD40 -->
+- At 60 records the reading of the order fails now and then (the invisible order of section 3), and the repair word recovers from it. Every repair found has three twists. But the search for one takes longer as N falls, and no 60-record run has reached the lattice yet.
 
 **Open.**
-1. A bound on the length of the shortest N-lowering word, or a proof that levels 1 and 2 always suffice. Theorem U makes phase U complete without it; the bound would make it practical for every input.
+1. Whether the rules of section 3 (single twists, words of two or three twists, and reopening) reach the lattice from every reachable configuration, and in how many steps; or a bound on the length of the shortest N-lowering word. Theorem U guarantees a lowering word but bounds neither its length nor the solver's search for it. The 60-record fixtures are the test cases: the runs above lower N steadily but ever more slowly.
 2. Statements (a) and (b) of section 4, which decide whether phase L needs the lens macros or any other jumbling word.
 
 **What 1.0 takes from this.** Everything below is a function of the visible configuration, so it stays within the human-solve boundary:
 - the misaligned cuts and N (U1), and the domain of each piece, for example as a tint;
 - a check whether a twist or a word the solver has chosen closes its cut (U2) or lowers N (U4, Theorem U);
-- the lens macros as stored macros, admissible from every lattice configuration (Proposition S).
+- the lens macros as stored macros, admissible from every lattice configuration (Proposition S);
+- the solver's own twist record, for reopening (U7).
+The depth up to which the method has been shown to work (section 5) is an input to the twist menu sign-off at the 2.5 freeze.

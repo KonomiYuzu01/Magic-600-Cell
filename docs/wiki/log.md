@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] update | Jumbling restoration: deep inputs
+[restoration](../../research/jumbling/theory/restoration.md) section 3 adds readings of the twist order from the seams (face match, cover order) and a three-twist repair word for misreads (`seams.py`). Phase U reaches the lattice on every tested input of up to 20 twists. On 60-record fixtures the repair passes every earlier stopping point but slows as N falls, and no run has reached the lattice yet, so completeness on deep inputs stays open.
+
 ## [2026-10-10] decision | Jumbling: deferred problems, restoration first
 Recorded in [owner-decisions-2026-10-10-jumbling-deferred](decisions/owner-decisions-2026-10-10-jumbling-deferred.md): the state count and worst-case distance, a finiteness proof, a proved bound on N-lowering words and a restoration rule without trial twists are not pursued for now; a working restoration method has top priority.
 
