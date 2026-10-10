@@ -10,7 +10,7 @@ Last updated: 10 October 2026.
 
 | ID | Problem | Source | Status | Latest evidence | Next step |
 | --- | --- | --- | --- | --- | --- |
-| R1 | Do the phase U rules reach the lattice from deep configurations (40 records and more), and in how many steps? | restoration section 5, open 1 | **in progress** | No 40- or 60-record run has reached the lattice. I_a@40 stops at N = 1,192 (`results/seams-I_a-40-stop.json`). See "R1 in detail" below. | Rules that open a cap holding off-grip seams; failing that, a joint attack on the I_a@40 stop. |
+| R1 | Do the phase U rules reach the lattice from deep configurations (40 records and more), and in how many steps? | restoration section 5, open 1 | **in progress** | No 40- or 60-record run has reached the lattice. I_a@40 stops at N = 1,192 (`results/seams-I_a-40-stop.json`). See "R1 in detail" below. | Joint attack on the I_a@40 stop: rules that open a cap holding off-grip seams failed in two- and three-twist words. |
 | R2 | A proved bound on the length of the shortest N-lowering word. | restoration section 5, open 1 | deferred | Along true scramble paths the shortest lowering prefix reaches 36 (an upper bound) under S4₀ at 640 records (`results/paths-S4-640.json`). | Not needed for completeness (Theorem U). |
 | R3 | A restoration rule that reads the configuration and never needs a trial twist. | restoration section 3 | deferred | A visible reading of the twist order is fallible (the invisible order, restoration section 3). | Reopens if a visible test is proved exact. |
 
@@ -23,13 +23,17 @@ What is settled:
 
 The I_a@40 stop (N = 1,192, grip N = 1,057, 15 misaligned caps):
 - No single twist lowers any N_c.
-- Each rule of section 3 was run on its own from this configuration. Reopen, conjugate repair and lock found no lowering step. The shift search had not finished when this page was written.
+- Each rule of section 3 was run on its own from this configuration. Reopen, conjugate repair, lock and shift each found no lowering step (shift: 33 minutes, cloud timing of research code).
 - 135 of the misaligned cells lie on rotated cut hyperplanes that are no grip's cut (off-grip seams). They form four groups, by domain, of 59, 37, 25 and 14 cells.
 - The pieces of each group lie in the common part of about six caps, and about half of those caps have a closed cut. For example, the group of 59 lies in caps 30, 34 and 145 (misaligned) and 31, 73 and 89 (closed).
 - By M2 a twist changes N only on its own cut. An off-grip seam therefore has to be carried onto a grip's cut before any twist can close it.
 - Every repair rule of section 3 opens with a misaligned cap. None opens a closed cap that holds an off-grip seam.
 
-Lead: the missing step is likely a word that opens such a cap to carry its off-grip seam onto a cut, then closes or improves that cut. An experiment with these words on the I_a@40 stop is running.
+- Of the caps that hold off-grip seams, several are blocked (no admissible twist), among them 31, 73, 96, 152, 153, 295 and 302. Others are free and aligned, among them 64, 89, 183, 283, 290, 301 and 319.
+
+Experiment (scratch script, not kept; exact N): the words (c, x)(d, y) and (c, x)(d, y)(c, z), where c is any of the 20 caps that hold off-grip seams (aligned caps allowed), x any admissible twist of c, d a misaligned cap meeting c, y the twist of d that lowers N_d most and z the twist of c that lowers N_c most. Result: no word lowers N. After almost every opening (c, x), no neighbouring cap has a twist that lowers its own N_d (one candidate in all 20 caps, and it did not lower N).
+
+So two- and three-twist words around these caps are not enough. Next step: a joint attack on this stop (two independent analyses of the same packet, then an experiment decides).
 
 ## Lattice phase
 
