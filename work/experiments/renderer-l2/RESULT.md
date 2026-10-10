@@ -15,7 +15,7 @@ The owner ran the attended level 2 steps 4 to 7 of `HARNESS.md` section 11 on 4 
 - Qt 6.10.3 (S-D): build identity `64f08369f2098418fa28d82abcf89a00fd6b08da6d1d2772e7428837e6dc4fc8`, prepared from commit `a52dd1c`.
 - Godot 4.7.2 .NET (S-A2): build identity `709a24ebdf753535bda56e4c8f5744820ca85f444f2497cc9cf71be75627b93f`, prepared from commit `2e1868e`.
 - Each identity covers the native DLL, its shaders, the framework files the app recorded, and the settings. Each build was prepared offline at a committed head with `matches_head` true, and the owner reports no rebuild during the runs.
-- L2-V-002 is open (Astra escalation `20261009T155501Z-a2cb4438`). The finalizer did not bind the recorded framework files, or the shaders, to the bytes the process loaded, so these identity assignments rest on the preparation records and on the operator's account. The gate figures below remain attended observations with that qualification. The fix (a guard taken before launch) is planned, not built.
+- L2-V-002 is open (Astra escalation `20261009T155501Z-a2cb4438`). The finalizer did not bind the recorded framework files, or the shaders, to the bytes the process loaded, so these identity assignments rest on the preparation records and on the operator's account. The gate figures below remain attended observations with that qualification. The fix, a guard taken before launch, was built on 10 October 2026. It has passed its source checks and the synthetic experiments below, and its Astra review is pending. No gate run has used it yet, and it does not change these 4 October records.
 
 ## Results
 
@@ -52,6 +52,26 @@ The owner ran the attended level 2 steps 4 to 7 of `HARNESS.md` section 11 on 4 
    - In each, one present 6.8 to 6.9 s after trace start was dropped. That is in the warm-up, before the gate interval. It carried `DXGI_PRESENT_ALLOW_TEARING` in `PresentFlags`.
    - PresentMon reports `AllowsTearing` 0 for a present it drops before any flip or blit event, whatever its flags (`FRAMEWORK-FACTS.md` P1). Every displayed present in these runs allowed tearing.
    - `tearing` is metadata; the gate verdict does not use it. The finalizer's rule now uses displayed presents only (under review). The published summaries keep the values recorded on 4 October.
+
+## L2-V-002 binding: synthetic experiments, 10 October 2026
+
+Claude ran `guard_experiments.py` (plan `PLAN-L2-V-002.md` section 7, item 1) on the owner's machine against Qt build `20261010T024533Z`. There was no window, GPU work or PresentMon. These are actual Windows file-system and loader results for this machine and this build, not gate evidence. Result: 8 passed, 1 not run, 0 failed.
+
+| Experiment | Result |
+|---|---|
+| `subst` drive alias | refused at the spelling check |
+| Symbolic link as the leaf | not run: creating a link needs a privilege this account lacks (Windows error 1314). `check_guard.py` tests the reparse refusal with a junction. |
+| `\\localhost\` administrative share | the share was readable; the guard refused the UNC form at the path-form check |
+| Hard link to a held file | the link could be created. A write through it failed with a sharing violation. The guarded name could not be removed (error 32); the second link could. The release check passed. A load through the second link has another path, and a replacement at the guarded name has another file ID; the finalizer refuses both (G4 checks 2 and 4). |
+| Renaming an ancestor folder of a held deployment copy | 33 files and 20 folders held; renaming the deployment folder and `platforms/` both failed (error 32) |
+| Guard timing, 33 files | start to `ready` 222 ms; `release` to exit 7 ms, including the write probe |
+| Qt usage path under the guard | with all 33 files of a deployment copy held, `sd_smoke.exe` loaded its imports and exited 1 (`usage`, no window or GPU work). It recorded 11 in-scope modules, all of them guarded. Every file was still held afterwards, and the release check passed. |
+| DLL redirection through a `.local` folder | none: with a `.local` copy present, a load by absolute path reported the requested path |
+| Qt module observer test program | 7 of 7 cases, 207 child processes; in case 6, 27 of 200 children exited 3 at the seal and the rest recorded the probe |
+
+Not run yet:
+- the attended experiments of plan section 7, items 2 and 3 (a replacement helper during a W3 run, and the Qt `module-*` injections), which need a window, the GPU and the owner;
+- any gate run under the guard.
 
 ## Not claimed
 

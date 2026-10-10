@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] update | Level 2 binding built
+Updated [level-2-framework-results](evidence/level-2-framework-results.md): the L2-V-002 guard binding is built and passed its source checks and synthetic experiments on the owner's machine; its Astra review and any gate run under it are pending, so the 4 October identities keep their qualification.
+
 ## [2026-10-09] update | Level 2 framework results
 Added [level-2-framework-results](evidence/level-2-framework-results.md). Godot 4.7.2 and Qt 6.10.3 both meet the W3 selection gate in the owner's attended runs of 4 October; Qt's 60 fps is Qt's vblank-paced update, so the frame rates are not a like-for-like comparison; the blind-seconds and tearing finalizer defects are fixed; the build identities rest on preparation records until L2-V-002 is fixed.
 

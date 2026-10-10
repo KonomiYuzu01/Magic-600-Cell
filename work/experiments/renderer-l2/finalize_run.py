@@ -12,9 +12,15 @@ import csv
 import hashlib
 import json
 import math
+import ntpath
 import os
 import re
+import struct
+import uuid
 from pathlib import Path
+
+import file_guard
+from file_guard import SHADERS
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPOSITORY / 'tools' / 'perf'))
@@ -48,7 +54,6 @@ CHECKS = {
 }
 CSV_COLUMNS = ('ProcessID', 'SwapChainAddress', 'QPCTime', 'msBetweenPresents',
                'Dropped', 'SyncInterval', 'PresentMode', 'AllowsTearing')
-SHADERS = {'count_vs.dxil', 'draw_ps.dxil', 'draw_vs.dxil', 'geometry_cs.dxil'}
 # The DLL checks its geometry against S-B's reference set and verifies the files' digests in this index.
 REFERENCE_INDEX = REPOSITORY / 'work' / 'experiments' / 'renderer-sb' / 'reference' / 'index.json'
 LABEL_COUNTERS = ('mismatches', 'binding_mismatches', 'late_adoptions', 'missing')
@@ -238,22 +243,196 @@ def read_native(directory, h, mode):
     return n, entries
 
 
-def file_digest(path):
-    with path.open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
+def path_key(path):
+    """Change separators only; never hide a dot component or a directory alias."""
+    require(isinstance(path, str))
+    path = path.replace('/', '\\')
+    require(re.match(r'^[A-Za-z]:\\', path) is not None)
+    components = path[3:].split('\\') if path[3:] else []
+    require(all(component and component not in ('.', '..')
+                and not any(ord(char) < 32 or char in '<>:"|?*' for char in component)
+                for component in components))
+    return path.casefold()
 
 
-def build_identity(h, n, mode):
+def check_guard_live(guard):
+    require(file_guard.process_created(guard['pid']) == guard['created'])
+    require(all(file_guard.write_probe(entry['path']) == 'sharing-violation' for entry in guard['files']))
+
+
+def read_guard(directory, launched_created):
+    raw = (directory / 'guard.json').read_bytes()
+    guard = json.loads(raw, parse_constant=reject_constant, object_pairs_hook=object_pairs)
+    canonical(guard)
+    fields(guard, ('format', 'pid', 'created', 'ready', 'files', 'directories'))
+    require(guard['format'] == 'magic600-l2-guard-v1')
+    require(integer(guard['pid']) and 0 < guard['pid'] < 2**32)
+    require(all(integer(guard[key]) and 0 < guard[key] < 2**64 for key in ('created', 'ready')))
+    require(guard['created'] <= guard['ready'])
+    require(integer(launched_created) and guard['ready'] < launched_created < 2**64)
+    seen, files = set(), {}
+    for kind in ('files', 'directories'):
+        require(isinstance(guard[kind], list) and guard[kind])
+        for entry in guard[kind]:
+            fields(entry, ('path', 'volume_serial', 'file_id'))
+            key = path_key(entry['path'])
+            require(key not in seen)
+            seen.add(key)
+            require(integer(entry['volume_serial']) and 0 <= entry['volume_serial'] < 2**64)
+            require(isinstance(entry['file_id'], str) and re.fullmatch(r'[0-9a-f]{32}', entry['file_id']) is not None)
+            if kind == 'files':
+                fields(entry, ('final_path', 'size', 'sha256'))
+                require(path_key(entry['final_path']) == key)
+                require(integer(entry['size']) and 0 <= entry['size'] < 2**63)
+                require(isinstance(entry['sha256'], str) and re.fullmatch(r'[0-9a-f]{64}', entry['sha256']) is not None)
+                files[key] = entry
+    check_guard_live(guard)
+    binding = {'format': guard['format'], 'files': len(guard['files']), 'directories': len(guard['directories']),
+               'guard_sha256': hashlib.sha256(raw).hexdigest(), 'rule': 'guard-before-launch'}
+    return guard, files, binding
+
+
+def guarded_digest(path, files, assembly=False):
+    entry = files[path_key(str(path))]
+    with file_guard.open_identity(str(path)) as handle:
+        require(file_guard.file_id(handle) == (entry['volume_serial'], entry['file_id']))
+        size, digest = file_guard.sha256_handle(handle)
+        require(size == entry['size'] and digest == entry['sha256'])
+        data = None
+        if assembly:
+            import msvcrt
+            # Transfer the same Win32 handle to a CRT stream, without opening the path again.
+            descriptor = msvcrt.open_osfhandle(handle.value, os.O_RDONLY | os.O_BINARY)
+            handle.value = None  # The stream now owns and closes this handle.
+            with os.fdopen(descriptor, 'rb') as stream:
+                stream.seek(0)
+                data = stream.read()
+            require(len(data) == size and hashlib.sha256(data).hexdigest() == digest)
+    return entry['sha256'], data
+
+
+def assembly_mvid(data):
+    """ECMA-335 II.24.2/22.30: CLI metadata, Module row 1 and the 1-based GUID heap."""
+    def take(buffer, offset, length):
+        require(0 <= offset <= len(buffer) and 0 <= length <= len(buffer) - offset)
+        return buffer[offset:offset + length]
+
+    def number(buffer, offset, code='I'):
+        return struct.unpack('<' + code, take(buffer, offset, struct.calcsize('<' + code)))[0]
+
+    require(take(data, 0, 2) == b'MZ')
+    pe = number(data, 0x3C)
+    require(take(data, pe, 4) == b'PE\0\0')
+    section_count, optional_size = number(data, pe + 6, 'H'), number(data, pe + 20, 'H')
+    optional = take(data, pe + 24, optional_size)
+    magic = number(optional, 0, 'H')
+    require(magic in (0x10B, 0x20B))
+    directories = 96 if magic == 0x10B else 112
+    require(number(optional, directories - 4) > 14)
+    cli_rva, cli_size = number(optional, directories + 14 * 8), number(optional, directories + 14 * 8 + 4)
+    sections = take(data, pe + 24 + optional_size, section_count * 40)
+
+    def rva_bytes(rva, length):
+        require(rva > 0)
+        headers = number(optional, 60)
+        if rva < headers:
+            require(length <= headers - rva)
+            return take(data, rva, length)
+        for offset in range(0, len(sections), 40):
+            address = number(sections, offset + 12)
+            raw_size, raw_offset = number(sections, offset + 16), number(sections, offset + 20)
+            delta = rva - address
+            if 0 <= delta < raw_size:
+                require(length <= raw_size - delta)
+                return take(data, raw_offset + delta, length)
+        raise ValueError('unmapped CLI RVA')
+
+    require(cli_size >= 72)
+    cli = rva_bytes(cli_rva, cli_size)
+    require(72 <= number(cli, 0) <= cli_size)
+    metadata = rva_bytes(number(cli, 8), number(cli, 12))
+    require(take(metadata, 0, 4) == b'BSJB')
+    version_size = number(metadata, 12)
+    require(version_size > 0 and version_size % 4 == 0)
+    position = 16 + version_size
+    take(metadata, 16, version_size)
+    stream_count = number(metadata, position + 2, 'H')
+    position += 4
+    streams = {}
+    for _ in range(stream_count):
+        offset, length = number(metadata, position), number(metadata, position + 4)
+        position += 8
+        end = metadata.find(b'\0', position, min(position + 32, len(metadata)))
+        require(end >= position)
+        name = take(metadata, position, end - position).decode('ascii')
+        require(name not in streams)
+        streams[name] = (offset, length)
+        position = (end + 4) & ~3
+    require(all(offset >= position for offset, _ in streams.values()))
+    tables = take(metadata, *streams['#~'])
+    guids = take(metadata, *streams['#GUID'])
+    heaps = number(tables, 6, 'B')
+    valid = number(tables, 8, 'Q')
+    require(valid & 1 and number(tables, 24) == 1)
+    row = 24 + valid.bit_count() * 4
+    take(tables, 24, valid.bit_count() * 4)
+    string_size, guid_size = (4 if heaps & 1 else 2), (4 if heaps & 4 else 2)
+    take(tables, row, 2 + string_size + 3 * guid_size)
+    index = number(tables, row + 2 + string_size, 'I' if guid_size == 4 else 'H')
+    require(index > 0)
+    return str(uuid.UUID(bytes_le=take(guids, (index - 1) * 16, 16)))
+
+
+def check_modules(h, guarded):
+    modules, files = h['modules'], h['files']
+    fields(modules, ('observer', 'failure', 'scope', 'unload_history', 'overflow', 'events'))
+    require(modules['observer'] == 'sealed' and modules['failure'] is None
+            and modules['unload_history'] == [] and modules['overflow'] is False)
+    scope = path_key(modules['scope'])
+    require(scope == path_key(ntpath.dirname(files['qt:exe'])))
+    require(isinstance(modules['events'], list))
+    loaded = {}
+    for event in modules['events']:
+        fields(event, ('kind', 'path'))
+        require(event['kind'] in ('snapshot', 'load', 'unload'))
+        key = path_key(event['path'])
+        require(key.startswith(scope + '\\'))
+        if event['kind'] == 'unload':
+            require(key in loaded)
+        else:
+            # A folded lookup can name a different NTFS file. Bind each load path itself,
+            # even if another event or files entry has the same Python case folding.
+            guarded_digest(event['path'], guarded)
+            loaded[key] = event['path']
+    excluded = {path_key(files['qt:exe']), path_key(files['dll'])}
+    expected = {}
+    for key, path in loaded.items():
+        if key not in excluded:
+            name = ('qt:' + ntpath.basename(path)).casefold()
+            require(name not in expected)
+            expected[name] = key
+    actual = {}
+    for name, path in files.items():
+        if name not in ('dll', 'qt:exe'):
+            require(name.startswith('qt:') and name.casefold() not in actual)
+            actual[name.casefold()] = path_key(path)
+    require(actual == expected)
+
+
+def build_identity(h, n, mode, directory, launched_created):
+    guard, guarded, binding = read_guard(directory, launched_created)
     files, identity = h['files'], h['dll_identity']
     required = ({'godot:exe', 'godot:assembly', 'godot:project.godot', 'godot:Main.tscn'}
                 if h['candidate'] == 'sa2' else {'qt:exe'})
     require(required <= files.keys() and 'dll' in files)
     if h['candidate'] == 'sd':
-        require(any(name.startswith('qt:Qt6') for name in files))
+        require(any(name.casefold().startswith('qt:qt6') for name in files))
+        check_modules(h, guarded)
     require(all(isinstance(path, str) and Path(path).is_absolute() for path in files.values()))
     dll = Path(files['dll'])
     fields(identity, ('dll', 'shaders'))
     require(isinstance(identity['shaders'], list))
+    require(all(isinstance(part, dict) for part in identity['shaders']))
     require({part['file'] for part in identity['shaders']} == SHADERS
             and len(identity['shaders']) == len(SHADERS))
     parts = []
@@ -262,8 +441,8 @@ def build_identity(h, n, mode):
         name = part['file']
         require(isinstance(name, str) and name not in ('', '.', '..')
                 and '/' not in name and '\\' not in name and ':' not in name)
-        require(prefix != 'dll' or name == dll.name)
-        digest = file_digest(dll if prefix == 'dll' else dll.parent / name)
+        require(prefix != 'dll' or name.casefold() == dll.name.casefold())
+        digest, _ = guarded_digest(dll if prefix == 'dll' else dll.parent / name, guarded)
         require(digest == part['sha256'])
         parts.append({'name': f'{prefix}:{name}', 'sha256': digest})
     if n is not None and mode == 'geometry':
@@ -275,7 +454,14 @@ def build_identity(h, n, mode):
     for name, path in files.items():
         if name != 'dll':
             require(name.startswith('godot:' if h['candidate'] == 'sa2' else 'qt:'))
-            parts.append({'name': name, 'sha256': file_digest(Path(path))})
+            is_assembly = h['candidate'] == 'sa2' and name == 'godot:assembly'
+            digest, data = guarded_digest(Path(path), guarded, assembly=is_assembly)
+            if is_assembly:
+                mvid = h['assembly_mvid']
+                require(isinstance(mvid, str)
+                        and re.fullmatch(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', mvid) is not None)
+                require(mvid == assembly_mvid(data))
+            parts.append({'name': name, 'sha256': digest})
     configuration = h['configuration']
     require(configuration and all(type(value) in (str, bool) or finite(value)
                                   for value in configuration.values()))
@@ -283,8 +469,10 @@ def build_identity(h, n, mode):
     parts.sort(key=lambda part: part['name'])
     require(len({part['name'] for part in parts}) == len(parts))
     text = ''.join(f"{part['name']}={part['sha256']}\n" for part in parts).encode('utf-8')
-    return {'build_identity': hashlib.sha256(text).hexdigest(), 'parts': parts,
-            'dll_identity': identity}
+    # The finalizer's own handles are closed before probing, so they cannot mask a dead guard.
+    check_guard_live(guard)
+    return ({'build_identity': hashlib.sha256(text).hexdigest(), 'parts': parts,
+             'dll_identity': identity}, binding)
 
 
 def check_sizes(h, n):
@@ -407,7 +595,7 @@ def check_validation(h):
                 for key in ('error', 'corruption', 'mentioning_sa2')))
 
 
-def finalize(directory, candidate, mode, pid, app_exit, overlays=None, fault_injection=False,
+def finalize(directory, candidate, mode, pid, app_exit, launched_created, overlays=None, fault_injection=False,
              adapter=DEFAULT_ADAPTER):
     """Return an exit code; the only output is one exclusively created record."""
     if any(os.path.lexists(directory / name) for name in OUTPUTS):
@@ -418,7 +606,7 @@ def finalize(directory, candidate, mode, pid, app_exit, overlays=None, fault_inj
     def check(code, action):
         try:
             return action()
-        except (OSError, ValueError, TypeError, KeyError, OverflowError, csv.Error):
+        except (OSError, ValueError, TypeError, KeyError, OverflowError, csv.Error, file_guard.GuardRefused):
             reasons.add(code)
             return None
 
@@ -430,7 +618,8 @@ def finalize(directory, candidate, mode, pid, app_exit, overlays=None, fault_inj
         check('adapter', lambda: require(h['environment']['adapter'] == adapter))
         native_result = check('native', lambda: read_native(directory, h, mode))
         n, entries = native_result if native_result is not None else (None, None)
-        build = check('identity', lambda: build_identity(h, n, mode))
+        identity_result = check('identity', lambda: build_identity(h, n, mode, directory, launched_created))
+        build, binding = identity_result if identity_result is not None else (None, None)
         checks = {code: 'pass' for code in sorted(CHECKS)}
         if mode != 'geometry':
             check('size-mismatch', lambda: check_sizes(h, n))
@@ -455,6 +644,10 @@ def finalize(directory, candidate, mode, pid, app_exit, overlays=None, fault_inj
                   for key in ('gpu_validation', 'no_vram', 'debug_half_target'))
                   and integer(h['debug']['debug_layer']) and h['debug']['debug_layer'] == 0))
             check('operator', lambda: require(fault_injection or isinstance(overlays, str) and bool(overlays.strip())))
+        injection = h['options']['inject']
+        if isinstance(injection, str) and injection.startswith('module-'):
+            check('operator', lambda: require(candidate == 'sd' and mode == 'run' and fault_injection
+                  and injection in ('module-late', 'module-transient', 'module-reload')))
         if mode == 'validation':
             check('validation', lambda: check_validation(h))
         if not reasons:
@@ -510,6 +703,7 @@ def finalize(directory, candidate, mode, pid, app_exit, overlays=None, fault_inj
                         output['injected_fault'] = h['options']['inject']
                     check('gate-shape', lambda: gate.validate_run(output))
                     name = 'run.json'
+            output['binding'] = binding
     if reasons:
         output = {'format': 'magic600-l2-refusal-v1', 'candidate': candidate, 'mode': mode,
                   'run_id': run_id, 'reasons': sorted(reasons),
@@ -543,6 +737,7 @@ def main(argv=None):
     parser.add_argument('--candidate', choices=('sa2', 'sd'), required=True)
     parser.add_argument('--mode', choices=('run', 'short', 'geometry', 'validation'), required=True)
     parser.add_argument('--launched-pid', type=int, required=True)
+    parser.add_argument('--launched-created', type=int, required=True)
     parser.add_argument('--app-exit', type=int, required=True)
     operator = parser.add_mutually_exclusive_group()
     operator.add_argument('--overlays')
@@ -552,7 +747,7 @@ def main(argv=None):
     if not args.directory.is_dir() or args.launched_pid <= 0 or not args.adapter.strip():
         parser.error('An existing run directory, positive PID and nonempty adapter are required.')
     return finalize(args.directory, args.candidate, args.mode, args.launched_pid,
-                    args.app_exit, args.overlays, args.fault_injection, args.adapter)
+                    args.app_exit, args.launched_created, args.overlays, args.fault_injection, args.adapter)
 
 
 if __name__ == '__main__':
