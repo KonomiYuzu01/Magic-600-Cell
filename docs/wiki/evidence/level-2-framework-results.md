@@ -22,6 +22,13 @@ The results hold only on the owner's machine, under the recorded conditions, for
 - Qt identity `64f08369...`, prepared from `a52dd1c`;
 - Godot identity `709a24eb...`, prepared from `2e1868e`.
 
+## Anchor change (10 October)
+
+The owner changed the sticker shrink anchor to the area-weighted centroid of each sticker's triangles ([decision](../decisions/owner-decisions-2026-10-10-anchor.md)).
+- The S-A2 native library compiles the S-B probe source, and the Qt app loads the same library, so both candidates get new build identities.
+- The 4 October results describe the old anchor (the retained numbering centres). They hold for the two identities above and say nothing about the changed builds.
+- Re-acceptance is three attended cold W3 runs per candidate under the guard, prepared again from `c4b31b0`. They have not run yet.
+
 ## Qualification: the build identities are not yet bound to the loaded files (L2-V-002)
 
 An Astra escalation ruling (9 October) found that the finalizer hashes the recorded framework files and shaders after the run. It does not bind those hashes to the bytes the app loaded.
