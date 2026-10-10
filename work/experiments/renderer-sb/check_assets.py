@@ -139,8 +139,12 @@ def check_anchors():
     maximum = continuity(anchors)
     if maximum > 2e-6:
         raise ValueError(f'S-B anchors: W3 turn-end bounds error {maximum:.9g} exceeds 2e-6')
-    centers = reference.binary((reference.ROOT / 'assets/mesh_centers.f32').read_bytes(),
-                               'f', reference.BASE_STICKERS * 4, 'mesh_centers.f32')
+    # The control is the retained numbering centres, so verify them like every asset.
+    manifest = json.loads((reference.ROOT / 'assets/manifest.json').read_bytes())
+    raw_centers = (reference.ROOT / 'assets/mesh_centers.f32').read_bytes()
+    if hashlib.sha256(raw_centers).hexdigest() != manifest['files'].get('assets/mesh_centers.f32'):
+        raise ValueError('assets/mesh_centers.f32: SHA-256 digest mismatch with manifest.json')
+    centers = reference.binary(raw_centers, 'f', reference.BASE_STICKERS * 4, 'mesh_centers.f32')
     control = continuity(centers)
     if control <= 2e-6:
         raise ValueError('S-B anchors: mesh_centers control did not fail continuity')

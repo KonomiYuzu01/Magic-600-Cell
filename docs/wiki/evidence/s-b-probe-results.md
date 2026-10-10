@@ -8,7 +8,7 @@ related: [renderer-candidates]
 supersedes: []
 claims:
   - {id: w3-gate-met, evidence_kind: performance, path: work/experiments/renderer-sb/results/w3-20261003T045605948Z-summary.json, sha256: 93bd53efcdd70f20ac26d5554bb8238aeb4a12fdbb10f99ef710177cf3331cf0, checked_at: 2026-10-03}
-  - {id: w3-label-check, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/RESULT.md, sha256: 715ba25001ba14f978ec3de8d89d67fbb9132c73053e97720db8dc1065df2429, checked_at: 2026-10-10}
+  - {id: w3-label-check, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/RESULT.md, sha256: 8f7ebf75ccd8a1fd614777a0959b787464f005d9a7cbca1d54bdc0f3bc6afa10, checked_at: 2026-10-10}
   - {id: label-faults-caught, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/results/neg-20261003T060641Z-summary.json, sha256: f5332574599b1692cb6d6276ab272c9e452eb226eec537e61ab5a1ebe89bd4e3, checked_at: 2026-10-03}
   - {id: presentmon-named-stop, evidence_kind: source, path: work/experiments/renderer-sb/probe/run_scene.ps1, sha256: bb65a943faec9856b55562278a811710caf8ef0a1d05074e8daff8c2bfa1b70a, checked_at: 2026-10-03}
   - {id: handoff-works, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/results/handoff-20261003T063841Z-summary.json, sha256: f906f0686421f7bb0b193acfb4b3700e81e2a87eaf714183f66b37b9e50414ed, checked_at: 2026-10-03}

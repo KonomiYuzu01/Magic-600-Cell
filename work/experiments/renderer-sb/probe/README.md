@@ -55,7 +55,10 @@ submissions to two frames in flight; no per-frame GPU drain is used.
 The shrink anchors are the area-weighted triangle centroids defined in
 [SPEC section 3](../SPEC.md), computed from the unchanged mesh in double precision
 and rounded once to float32. The retained `centers` buffer stores these 433
-anchors, and the CPU self-test checks their pinned SHA-256 digest.
+anchors. Loading the assets refuses anchors whose SHA-256 differs from the SPEC pin,
+so every consumer of `Assets` (this probe, S-A2 and the S-D scene) uploads only the
+pinned bytes. The CPU self-test also recomputes them under upward rounding and requires
+them to be refused or byte-identical (on the owner's machine they are refused).
 
 The borderless window uses the primary monitor's current display mode. It is
 topmost and asks for the foreground. A flip-model `Present` never

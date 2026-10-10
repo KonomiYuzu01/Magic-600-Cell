@@ -23,7 +23,7 @@ This is the experiment card ([protocol section 2](../../../docs/progress/1.0/sta
   - with the old anchors, as a control, it is 0.0144.
 - **The reference changed.** It was regenerated as format `magic600-sb-reference-v2`, with the anchor digest recorded. Sampled projections moved by up to 0.0074 in normalised device coordinates. A probe built before the change therefore fails the geometry check against the new reference.
 - **The W3 result above still stands for its build.** It belongs to build identity `2b5bf5e6…` with the old anchors, and its figures are unchanged.
-- **The changed probe is not yet measured.** It has a new build identity. Its re-acceptance has not run: the GPU geometry check against the new reference, then three cold W3 runs judged the same way (E-2.4-0J item 6). The CPU self-test, including the anchor digest, passes (source and compilation evidence only).
+- **The changed probe is not yet measured.** It has a new build identity. Its re-acceptance has not run: the GPU geometry check against the new reference, then three cold W3 runs judged the same way (E-2.4-0J item 6). Loading the assets refuses anchors other than the pinned ones, so neither this probe nor S-A2 nor the S-D scene can upload others. The CPU self-test passes: it checks the anchor digest, and under upward rounding the recomputed anchors are refused (source and compilation evidence only).
 
 ## Build and tools
 

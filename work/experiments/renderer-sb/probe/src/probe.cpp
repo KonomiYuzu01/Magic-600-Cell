@@ -3,6 +3,7 @@
 #include <bcrypt.h>
 #include <algorithm>
 #include <cstring>
+#include <float.h>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -47,21 +48,10 @@ std::vector<uint32_t> uints(const Json& j,uint32_t limit){std::vector<uint32_t> 
 std::array<float,4> vector4(const Json& j){require(j.array().size()==4,"expected four components");std::array<float,4> out{};for(int i=0;i<4;++i)out[i]=float(j.array()[i].number());return out;}
 Matrix identity(){Matrix q{};for(int i=0;i<4;++i)q[i*5]=1;return q;}
 void rotate(Matrix& q,int a,int b,double theta){require(a>=0&&a<4&&b>=0&&b<4&&a!=b,"bad camera rotation plane");double c=std::cos(theta),s=std::sin(theta);for(int j=0;j<4;++j){float x=q[a*4+j],y=q[b*4+j];q[a*4+j]=float(c*x-s*y);q[b*4+j]=float(s*x+c*y);}}
-Assets::Assets(){
-    auto root=repoRoot();auto manifest=readJson(root/"assets/manifest.json");
-    require(manifest.at("puzzle").string()=="600-cell-Full","wrong model profile");
-    for(const auto& [name,digest]:manifest.at("files").object())
-        require(sha256(bytes(root/name))==digest.string(),"asset SHA-256 mismatch: "+fs::path(name).filename().string());
-    auto mesh=readJson(root/"assets/mesh.json");
-    require(mesh.at("base_vertices").integer()==Vertices&&mesh.at("base_stickers").integer()==Stickers&&mesh.at("cells").integer()==Cells&&mesh.at("slots").integer()==Slots,"not the full-detail mesh");
-    offsets=uints(mesh.at("offsets"),Vertices+1);normal=vector4(mesh.at("normal"));radius=float(mesh.at("normal_length").number());
-    require(offsets.size()==Stickers+1&&offsets.front()==0&&offsets.back()==Vertices&&radius>0,"bad mesh ranges");
-    vertices=arrayFile<float>(root/"assets/mesh_vertices.f32",Vertices*4);
-    local=arrayFile<uint32_t>(root/"assets/mesh_sticker.u32",Vertices);
-    frames=arrayFile<float>(root/"assets/cell_frames.f32",Cells*16);
-    for(uint32_t l=0;l<Stickers;++l){require(offsets[l]<offsets[l+1]&&(offsets[l+1]-offsets[l])%3==0,"bad triangle range");for(uint32_t vi=offsets[l];vi<offsets[l+1];++vi)require(local[vi]==l,"sticker/range mismatch");}
-    for(const auto* values:{&vertices,&frames})for(float f:*values)require(std::isfinite(f),"nonfinite geometry asset");
-    centers.resize(Stickers*4);
+// SPEC section 3: area-weighted triangle centroids in double, one float rounding, pinned bytes.
+// Every consumer constructs Assets, so none can upload anchors other than the pinned ones.
+std::vector<float> shrinkAnchors(const std::vector<uint32_t>& offsets,const std::vector<float>& vertices){
+    std::vector<float> centers(Stickers*4);
     for(uint32_t l=0;l<Stickers;++l){
         double total=0;std::array<double,4> weighted{};
         for(uint32_t t=offsets[l];t<offsets[l+1];t+=3){
@@ -83,6 +73,24 @@ Assets::Assets(){
             require(std::isfinite(centers[l*4+i]),"nonfinite shrink anchor");
         }
     }
+    require(sha256(std::span(reinterpret_cast<const uint8_t*>(centers.data()),centers.size()*sizeof(float)))==AnchorSha256,"shrink anchors SHA-256 mismatch with SPEC section 3");
+    return centers;
+}
+Assets::Assets(){
+    auto root=repoRoot();auto manifest=readJson(root/"assets/manifest.json");
+    require(manifest.at("puzzle").string()=="600-cell-Full","wrong model profile");
+    for(const auto& [name,digest]:manifest.at("files").object())
+        require(sha256(bytes(root/name))==digest.string(),"asset SHA-256 mismatch: "+fs::path(name).filename().string());
+    auto mesh=readJson(root/"assets/mesh.json");
+    require(mesh.at("base_vertices").integer()==Vertices&&mesh.at("base_stickers").integer()==Stickers&&mesh.at("cells").integer()==Cells&&mesh.at("slots").integer()==Slots,"not the full-detail mesh");
+    offsets=uints(mesh.at("offsets"),Vertices+1);normal=vector4(mesh.at("normal"));radius=float(mesh.at("normal_length").number());
+    require(offsets.size()==Stickers+1&&offsets.front()==0&&offsets.back()==Vertices&&radius>0,"bad mesh ranges");
+    vertices=arrayFile<float>(root/"assets/mesh_vertices.f32",Vertices*4);
+    local=arrayFile<uint32_t>(root/"assets/mesh_sticker.u32",Vertices);
+    frames=arrayFile<float>(root/"assets/cell_frames.f32",Cells*16);
+    for(uint32_t l=0;l<Stickers;++l){require(offsets[l]<offsets[l+1]&&(offsets[l+1]-offsets[l])%3==0,"bad triangle range");for(uint32_t vi=offsets[l];vi<offsets[l+1];++vi)require(local[vi]==l,"sticker/range mismatch");}
+    for(const auto* values:{&vertices,&frames})for(float f:*values)require(std::isfinite(f),"nonfinite geometry asset");
+    centers=shrinkAnchors(offsets,vertices);
     auto turn=readJson(root/"work/experiments/renderer-sb/workload/turn.json");
     require(turn.at("format").string()=="magic600-sb-turn-v1"&&turn.at("model_id").string()==manifest.at("model_id").string(),"wrong turn identity");
     planeU=vector4(turn.at("plane_u"));planeV=vector4(turn.at("plane_v"));angle=turn.at("angle").number();
@@ -214,6 +222,16 @@ Json runJson(const Options& opt,int64_t frequency,int64_t start,int64_t stop,con
 void selftest(const Assets& a){
     require(a.centers.size()==Stickers*4&&sha256(std::span(reinterpret_cast<const uint8_t*>(a.centers.data()),a.centers.size()*sizeof(float)))==AnchorSha256,"shrink anchors SHA-256 mismatch with SPEC section 3");
     std::cout<<"selftest: shrink anchors SHA-256: ok\n";
+    {   // A non-default rounding mode changes the anchor bytes; the computation must refuse them.
+        unsigned int old=0,ignored=0;require(_controlfp_s(&old,0,0)==0,"cannot read the floating-point control word");
+        require(_controlfp_s(&ignored,_RC_UP,_MCW_RC)==0,"cannot set upward rounding");
+        bool refused=false,canonical=false;
+        try{auto up=shrinkAnchors(a.offsets,a.vertices);canonical=std::memcmp(up.data(),a.centers.data(),up.size()*sizeof(float))==0;}
+        catch(const std::exception& e){refused=std::string(e.what())=="shrink anchors SHA-256 mismatch with SPEC section 3";}
+        require(_controlfp_s(&ignored,old&_MCW_RC,_MCW_RC)==0,"cannot restore the rounding mode");
+        require(refused||canonical,"anchors under upward rounding were neither refused nor canonical");
+        std::cout<<"selftest: shrink anchors under upward rounding: "<<(refused?"refused":"canonical")<<'\n';
+    }
     auto edges=edgeMasks(a);
     std::cout<<"selftest: edge counts: features="<<edges.featureEdges<<", diagonals="<<edges.diagonals<<", open="<<edges.openEdges<<", multiple="<<edges.multipleEdges<<", degenerate="<<edges.degenerate<<", duplicates="<<edges.duplicates<<'\n';
     require(edges.featureEdges==3277&&edges.diagonals==5546&&edges.openEdges==819&&edges.multipleEdges==31&&edges.degenerate==3948&&edges.duplicates==761&&edges.nearZero==562,"real-asset feature edges and diagonals");
