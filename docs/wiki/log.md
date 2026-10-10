@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] update | W3 re-accepted after the anchor change
+The owner's attended GPU session re-accepted W3 for all four builds with the area-centroid anchor: S-B, Qt and Godot (both under the loaded-file guard), and the W-J probe. Updated [s-b-probe-results](evidence/s-b-probe-results.md) and [level-2-framework-results](evidence/level-2-framework-results.md), and added [w-j-probe-results](evidence/w-j-probe-results.md): the W-J GPU checks and its three fixtures meet the gate, and its overlay costs are unmeasured.
+
 ## [2026-10-10] decision | Taste Lab rating levels
 Recorded in [owner-decisions-2026-10-10-tastelab-rating](decisions/owner-decisions-2026-10-10-tastelab-rating.md): look tuning stays pairwise; image ratings gain love (Up) next to like and dislike. Existing ratings and exports stay valid, every fitting step treats love as like, love puts candidates first for annotated references, nexus cards and pair notes, and class B rules are unchanged.
 
