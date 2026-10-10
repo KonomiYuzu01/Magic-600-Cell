@@ -684,6 +684,39 @@ class PipelineTests(test_store.TempDir):
             self.assertEqual(self.ingest(pipeline, item).kind, "blocked")
             embeddings.assert_not_called()
 
+    def test_class_a_skips_documents_and_caps_a_series_before_download(self):
+        # Owner delegation, 10 October 2026: class A keeps no document pages and, from Wikimedia and Openverse, at most
+        # `series_max` images of one credit per (category, term); the Met, AIC and NASA adapters credit their own
+        # institution on every record and are not capped. Both checks run before the download; class B is unchanged.
+        items = [sources.Candidate("wikimedia", str(910 + i), f"https://upload.wikimedia.org/synthetic/{910 + i}.png",
+                                   f"https://commons.wikimedia.org/wiki/File:Invented_{910 + i}.png", "CC0-1.0",
+                                   sources.CC0_URL, "Invented Artist", "Invented work") for i in range(6)]
+        items += [candidate(ident=str(930 + i)) for i in range(3)]
+        scan = sources.Candidate("wikimedia", "8001", "https://upload.wikimedia.org/synthetic/page1-scan.pdf.jpg",
+                                 "https://commons.wikimedia.org/wiki/File:Invented_scan.pdf", "CC0-1.0", sources.CC0_URL,
+                                 "Invented Maker", "Invented scan")
+        responses = {item.image_url: (200, {"content-type": "image/png"}, png((25 * i, 90, 160))) for i, item in enumerate(items)}
+        responses[scan.image_url] = (200, {"content-type": "image/png"}, png((250, 250, 250)))
+        replay = net.ReplayTransport(responses)
+        client = net.Client(replay, sleep=lambda _: None, clock=lambda: 0)
+        pipeline = fetch.Pipeline(self.library, self.fake, self.content_screen, client, near_duplicate=1.01, series_max=2)
+        attributions = ["Invented Artist", " invented ARTIST ", "Invented Artist", "Other Artist"]
+        kinds = [self.ingest(pipeline, replace(item, attribution=name)).kind for item, name in zip(items, attributions)]
+        self.assertEqual(kinds, ["stored", "stored", "series", "stored"])
+        self.assertEqual(self.ingest(pipeline, scan).kind, "document")
+        self.assertEqual(len(replay.calls), 3)
+        self.assertFalse(self.library.has_seen("wikimedia", "912"))
+        self.assertFalse(self.library.has_seen("wikimedia", "8001"))
+        other_term = pipeline.ingest_candidate(replace(items[4], attribution="Invented Artist"), category="synthetic",
+                                               query="other", tier="A", adapter=sources.ADAPTERS["wikimedia"])
+        self.assertEqual(other_term.kind, "stored")
+        self.assertEqual(self.ingest(pipeline, replace(items[5], attribution="Invented Artist"), tier="B").kind, "stored")
+        self.assertEqual(self.ingest(pipeline, scan, tier="B").kind, "stored")
+        self.assertEqual(self.library.series_count("synthetic", "instrument", "wikimedia", "INVENTED ARTIST"), 2)
+        institutional = [self.ingest(pipeline, replace(item, attribution="Invented Artist")).kind for item in items[6:]]
+        self.assertEqual(institutional, ["stored"] * 3)
+        self.assertEqual(self.library.series_count("synthetic", "instrument", "met", "Invented Artist"), 3)
+
     def test_animations_no_original_and_tier_b_gets_the_minor_checks_only(self):
         pipeline, item, _ = self.pipeline(data=png(animated=True))
         outcome = self.ingest(pipeline, item, tier="B")
@@ -836,20 +869,25 @@ class PipelineTests(test_store.TempDir):
         self.assertEqual(self.library.count_images(), 2)
         self.assertEqual(self.library.cursor("met", "instrument"), ("20", False))
 
-    def share_run(self, plan, pages, *, relevant=lambda query, ident: True, same_items=False, **kwargs):
-        """Run `plan` against synthetic met and aic searches. `pages[(source, query)]` lists the number of items on each
-        page; the searches honour the seen filter. Ingestion is counted per (category, query) and per source instead of
-        stored, and only `relevant(query, ident)` items are stored. With `same_items`, every query's page n holds the same
-        items. Returns the counts, the search calls as
+    def share_run(self, plan, pages, *, relevant=lambda query, ident: True, same_items=False, entry=None, stored=None,
+                  **kwargs):
+        """Run `plan` (through `entry`, by default fetch.run) against synthetic met and aic searches. `pages[(source, query)]` lists the number of items on each
+        page, or is an exception the search raises; the searches honour the seen filter. Ingestion is counted per
+        (category, query) and per source instead of stored, into `stored` when given, and only `relevant(query, ident)`
+        items are stored; a relevance of "error" stands for a failed download. With `same_items`, every query's page n
+        holds the same items. Returns the counts, the search calls as
         (source, query, page), the stored counts and the stored count per source."""
         from collections import Counter
-        calls, stored, per_source = [], Counter(), Counter()
+        calls, per_source = [], Counter()
+        stored = Counter() if stored is None else stored
 
         def search_for(name):
             def search(client, query, cursor, seen):
                 index = int(cursor or 0)
                 calls.append((name, query, index))
                 rows = pages.get((name, query), [])
+                if isinstance(rows, Exception):
+                    raise rows
                 if index >= len(rows):
                     return [], None
                 prefix = f"{name}-{index}" if same_items else f"{name}-{query}-{index}"
@@ -860,7 +898,10 @@ class PipelineTests(test_store.TempDir):
         def ingest(item, *, category, query, tier, adapter):
             if self.library.has_seen(item.source, item.source_id):
                 return fetch.Outcome("duplicate")
-            if not relevant(query, item.source_id):
+            verdict = relevant(query, item.source_id)
+            if verdict == "error":
+                return fetch.Outcome("error")
+            if not verdict:
                 return fetch.Outcome("irrelevant")
             self.library.mark_seen(item.source, item.source_id)
             stored[(category, query)] += 1
@@ -878,7 +919,8 @@ class PipelineTests(test_store.TempDir):
                 mock.patch.object(fetch.Pipeline, "ingest_candidate", side_effect=ingest), \
                 mock.patch.object(self.library, "query_counts", side_effect=lambda: dict(stored)), \
                 mock.patch.object(self.library, "category_counts", side_effect=by_category):
-            counts = fetch.run(self.library, self.fake, self.content_screen, None, plan, log=lambda _: None, **kwargs)
+            counts = (entry or fetch.run)(self.library, self.fake, self.content_screen, None, plan, log=lambda _: None,
+                                          **kwargs)
         return counts, calls, dict(stored), dict(per_source)
 
     def test_terms_share_the_target_and_sources_take_turns_within_a_page(self):
@@ -962,6 +1004,137 @@ class PipelineTests(test_store.TempDir):
         self.assertEqual(calls, [("met", "first", 0), ("met", "second", 0)])
         self.assertEqual(self.library.cursor("met", "first"), (None, True))
         self.assertEqual(self.library.cursor("met", "second"), (None, False))
+
+    def accept(self, *items):
+        self.library.add_proposals(items, 100)
+        for term, _, _ in items:
+            self.library.set_proposal_status(term, "accepted")
+
+    def proposal_plan_of(self, terms=("alpha",)):
+        return seeds.parse({"version": 1, "sources": {"met": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met"], "terms": list(terms)}}})
+
+    def test_accepted_proposals_fetch_their_own_terms_and_are_marked_fetched(self):
+        self.accept(("beta", "synthetic", "adjacent"), ("gamma", "synthetic", "adjacent"))
+        self.library.add_proposals([("delta", "synthetic", "adjacent")], 100)     # proposed, not ticked
+        pages = {("met", "alpha"): [20], ("met", "beta"): [9], ("met", "gamma"): [1], ("met", "delta"): [20]}
+        with mock.patch.object(fetch, "PROPOSAL_IMAGES", 2):
+            counts, calls, stored, _ = self.share_run(self.proposal_plan_of(), pages, entry=fetch.fetch_proposals)
+        # Each proposal holds at most 2 images: beta does not take what gamma left. The seed term is not searched.
+        self.assertEqual(stored, {("synthetic", "beta"): 2, ("synthetic", "gamma"): 1})
+        self.assertEqual({call[1] for call in calls}, {"beta", "gamma"})
+        self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()},
+                         {"beta": "fetched", "gamma": "fetched", "delta": "proposed"})
+
+    def test_a_proposal_cap_counts_every_image_of_its_term_across_runs_and_categories(self):
+        from collections import Counter
+        self.accept(("beta", "synthetic", "adjacent"), ("gamma", "synthetic", "adjacent"))
+        # 30 seed images fill the category; gamma already holds 2 images, filed under another category.
+        stored = Counter({("synthetic", "alpha"): 30, ("other", "gamma"): 2})
+        pages = {("met", "beta"): [9], ("met", "gamma"): [9]}
+        with mock.patch.object(fetch, "PROPOSAL_IMAGES", 2):
+            self.assertEqual(self.share_run(self.proposal_plan_of(), pages, entry=fetch.fetch_proposals, limit=1,
+                                            stored=stored)[0], {"stored": 1})
+            # gamma already holds its 2 images, so it is complete without a search.
+            self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()},
+                             {"beta": "accepted", "gamma": "fetched"})
+            _, calls, _, _ = self.share_run(self.proposal_plan_of(), pages, entry=fetch.fetch_proposals, stored=stored)
+        # The retry fills only what the first run left.
+        self.assertEqual(stored, {("synthetic", "alpha"): 30, ("other", "gamma"): 2, ("synthetic", "beta"): 2})
+        self.assertEqual({call[1] for call in calls}, {"beta"})
+        self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()}, {"beta": "fetched", "gamma": "fetched"})
+
+    def test_a_proposal_keeps_its_place_when_another_finishes_a_shared_listing(self):
+        from collections import Counter
+        self.accept(("alpha", "synthetic", "adjacent"), ("beta", "synthetic", "adjacent"))
+        stored, pages = Counter(), {("met", "alpha"): [40], ("met", "beta"): [40]}
+        relevant = lambda query, ident: query == "alpha"         # noqa: E731
+        # Like Demozoo, the source serves every query from one listing.
+        with mock.patch.object(sources.ADAPTERS["met"], "cursor_key", return_value="listing"):
+            self.share_run(self.proposal_plan_of(("seed",)), pages, entry=fetch.fetch_proposals, same_items=True,
+                           relevant=relevant, limit=2, stored=stored)
+            # beta has seen the whole listing; alpha stopped at the limit with most of the page left.
+            self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()},
+                             {"alpha": "accepted", "beta": "fetched"})
+            self.share_run(self.proposal_plan_of(("seed",)), pages, entry=fetch.fetch_proposals, same_items=True,
+                           relevant=relevant, stored=stored)
+        self.assertEqual(stored, {("synthetic", "alpha"): fetch.PROPOSAL_IMAGES})
+        self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()}, {"alpha": "fetched", "beta": "fetched"})
+
+    def test_an_interrupted_proposal_fetch_keeps_the_proposals_accepted(self):
+        from collections import Counter
+        self.accept(("beta", "synthetic", "adjacent"))
+        stored = Counter()
+        # A failed search leaves the proposal accepted, and the next run resumes it.
+        self.assertEqual(self.share_run(self.proposal_plan_of(), {("met", "beta"): net.NetError("down")},
+                                        entry=fetch.fetch_proposals, stored=stored)[0], {"error": 1})
+        self.assertEqual([p["status"] for p in self.library.proposals()], ["accepted"])
+        self.assertEqual(self.share_run(self.proposal_plan_of(), {("met", "beta"): [20]}, entry=fetch.fetch_proposals,
+                                        limit=1, stored=stored)[0], {"stored": 1})
+        self.assertEqual([p["status"] for p in self.library.proposals()], ["accepted"])
+        self.share_run(self.proposal_plan_of(), {("met", "beta"): [20]}, entry=fetch.fetch_proposals, stored=stored)
+        self.assertEqual((stored, [p["status"] for p in self.library.proposals()]),
+                         ({("synthetic", "beta"): 20}, ["fetched"]))     # the search ended below the cap
+        # A download that still fails after the client's retries is passed over: the finished search completes gamma.
+        self.accept(("gamma", "synthetic", "adjacent"))
+        self.assertEqual(self.share_run(self.proposal_plan_of(), {("met", "gamma"): [1]}, entry=fetch.fetch_proposals,
+                                        relevant=lambda query, ident: "error")[0], {"error": 1})
+        self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()}, {"beta": "fetched", "gamma": "fetched"})
+        with mock.patch.object(fetch, "run", side_effect=AssertionError("nothing is accepted")):
+            self.assertIsNone(fetch.fetch_proposals(self.library, self.fake, self.content_screen, None,
+                                                    self.proposal_plan_of(), log=lambda _: None))
+
+    def test_a_probe_proposal_joins_the_nearest_class_a_category(self):
+        axes = np.eye(16, dtype=np.float32)
+        fake = embed.FakeEmbedder(texts={"neon haze": axes[1] + 0.2 * axes[0]})
+        number = iter(range(1, 100))
+
+        def put(category, vector, tier="A", count=1):
+            for _ in range(count):
+                sha = f"{next(number):064x}"
+                self.library.add_image(test_store.meta(sha, category=category, tier=tier), b"t")
+                self.library.put_embeddings(fake.model_id, fake.dim, [(sha, embed.to_blob(embed.normalise(vector)))])
+
+        put("steampunk", axes[0], count=2)
+        put("cyberpunk", axes[1] + 0.5 * axes[0])
+        put("canary", axes[1], tier="B", count=5)           # class B never places a proposal
+        put("forced", axes[1], count=3)                     # class A images kept from before the category forced tier B
+        plan = seeds.parse({"version": 1, "sources": {"met": True, "aic": True, "safebooru": True}, "categories": {
+            "steampunk": {"kind": "focus", "target": 9, "sources": ["met"], "terms": ["orrery"]},
+            "cyberpunk": {"kind": "focus", "target": 9, "sources": ["aic"], "terms": ["neon"]},
+            "canary": {"kind": "focus", "target": 9, "sources": ["met"], "terms": ["dark"]},
+            "forced": {"kind": "focus", "target": 9, "tier": "B", "sources": ["met"], "terms": ["mist"]},
+            "private": {"kind": "focus", "target": 9, "tier": "B", "sources": ["safebooru"], "terms": ["sky"],
+                        "adjacent": ["anime sky"]}}})
+        proposals = [{"term": "brass dial", "category": "steampunk"}, {"term": "neon haze", "category": None},
+                     {"term": "gone", "category": "removed"}, {"term": "anime sky", "category": "private"},
+                     {"term": "forced mist", "category": "forced"}]
+        narrowed, covered = fetch.proposal_plan(self.library, fake, plan, proposals)
+        self.assertEqual(covered, ["brass dial", "neon haze"])
+        self.assertEqual({name: ([t.text for t in c.terms], c.target, c.adjacent) for name, c in narrowed.categories.items()},
+                         {"steampunk": (["brass dial"], 2 + fetch.PROPOSAL_IMAGES, ()),
+                          "cyberpunk": (["neon haze"], 1 + fetch.PROPOSAL_IMAGES, ())})
+        self.assertEqual(narrowed.relevance_min, plan.relevance_min)
+        # A category that forces tier B opens only when the caller names the sources, and never takes a probe proposal.
+        narrowed, covered = fetch.proposal_plan(self.library, fake, plan, proposals, sources=["met", "safebooru"])
+        self.assertEqual(covered, ["brass dial", "neon haze", "anime sky", "forced mist"])
+        self.assertEqual({name: [t.text for t in c.terms] for name, c in narrowed.categories.items()},
+                         {"steampunk": ["brass dial", "neon haze"], "private": ["anime sky"], "forced": ["forced mist"]})
+
+    def test_the_fetch_stores_missing_probe_texts_and_reports_no_proposals(self):
+        fake = embed.FakeEmbedder()
+        with mock.patch.object(embed, "load_embedder", return_value=fake), mock.patch.object(net, "Client"), \
+                mock.patch.object(fetch, "run", side_effect=AssertionError("--proposals runs no seed fetch")), \
+                mock.patch("sys.stdout", io.StringIO()) as out:
+            self.assertEqual(fetch.main(["--proposals"]), 0)
+        self.assertIn("No accepted proposals.", out.getvalue())
+        root = common.default_data_root()
+        probes = seeds.load_probes(root / seeds.PROBES_FILE)
+        texts = [probes.phrase(t) for t in probes.texts()]
+        with store.Store(root) as library:
+            self.assertEqual(set(library.text_embeddings(fake.model_id, texts)), set(texts))
+        with mock.patch("sys.stderr", io.StringIO()), self.assertRaises(SystemExit):
+            fetch.main(["--proposals", "--category", "gaming"])
 
     def test_runner_missing_interpreter_requires_actual_execution(self):
         output = io.StringIO()

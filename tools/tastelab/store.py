@@ -435,6 +435,13 @@ class Store:
         rows = self.db.execute("SELECT category, COALESCE(query, ''), COUNT(*) FROM images GROUP BY category, query")
         return {(r[0], r[1]): r[2] for r in rows}
 
+    def series_count(self, category: str, query: str | None, source: str, attribution: str) -> int:
+        """Class A images of one (category, query) and source whose attribution matches, ignoring case and outer spaces."""
+        key = (attribution or "").strip().casefold()
+        rows = self.db.execute("SELECT attribution FROM images WHERE tier='A' AND category=? AND COALESCE(query, '')=? "
+                               "AND source=?", (category, query or "", source))
+        return sum(1 for (value,) in rows if value.strip().casefold() == key)
+
     # -- ratings -----------------------------------------------------------
 
     def add_rating(self, sha: str, verdict: str, session: str, note: str | None = None) -> int:

@@ -173,9 +173,27 @@ def load_embedder(batch: int = 16) -> Embedder:
     return ClipEmbedder(batch=batch)
 
 
+def embed_probe_texts(source, embedder, root) -> int:
+    """Store the text vectors of the probes in `root`'s probe file that `source` lacks for `embedder`; returns how many.
+
+    The rating window's taste map and its term proposals read these vectors."""
+    from tastelab import seeds
+
+    probes = seeds.load_probes(seeds.ensure(root, seeds.PROBES_FILE, seeds.PROBES_DEFAULT))
+    texts = [probes.phrase(t) for t in probes.texts()]
+    known = source.text_embeddings(embedder.model_id, texts)
+    texts = [text for text in texts if text not in known]
+    for start in range(0, len(texts), 64):
+        batch = texts[start:start + 64]
+        vectors = embedder.embed_texts(batch)
+        source.put_text_embeddings(embedder.model_id, embedder.dim,
+                                   [(text, to_blob(v)) for text, v in zip(batch, vectors)])
+    return len(texts)
+
+
 def main(argv=None) -> int:
     from PIL import Image
-    from tastelab import seeds, store
+    from tastelab import store
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data")
@@ -210,16 +228,8 @@ def main(argv=None) -> int:
                     while count >= progress:
                         print(f"embedded {progress} images")
                         progress += 500
-            probes = seeds.load_probes(seeds.ensure(root, seeds.PROBES_FILE, seeds.PROBES_DEFAULT))
-            texts = [probes.phrase(t) for t in probes.texts()]
-            known = source.text_embeddings(embedder.model_id, texts)
-            texts = [text for text in texts if text not in known]
-            for start in range(0, len(texts), 64):
-                batch = texts[start:start + 64]
-                vectors = embedder.embed_texts(batch)
-                source.put_text_embeddings(embedder.model_id, embedder.dim,
-                                           [(text, to_blob(v)) for text, v in zip(batch, vectors)])
-        print(f"embedded {count} images and {len(texts)} probe texts")
+            texts = embed_probe_texts(source, embedder, root)
+        print(f"embedded {count} images and {texts} probe texts")
         return 0
     except common.Refused as exc:
         print("refused: " + " ".join(str(exc).split()), file=sys.stderr)
