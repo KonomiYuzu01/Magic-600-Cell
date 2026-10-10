@@ -1,6 +1,6 @@
 # W-J result card
 
-Status: source/fixture implementation; **W-J is not accepted**. GPU geometry, exact GPU revision checks, GPU negative controls, W-J/W3 gate captures and overlay costs remain unmeasured. Since the anchor change of 10 October 2026 the separate lattice check passes at source level; its GPU run has not happened.
+Status: measured in the owner's attended GPU session of 10 October 2026, build identity `74b22fec1a969f8d595c2a5a6b3158cd632a12b8556e02ffbe65e83cd43e9daa`. Acceptance items 1 to 6 are met for that build. Item 7, the overlay costs, is unmeasured, so **W-J is not yet accepted as a whole**. The figures below are actual Windows/Direct3D 12 results on one machine, for that build identity only.
 
 Transform method: one per-piece int32 pose index and a table of row-major 4 x 4 float32 matrices, applied after home shrink. Upload rule: the whole index, logical matrix table and lattice table together on each revision; after-draw first-use readback, SHA-256 and exact 32-bit element comparison. No NVIDIA features, geometry changes, mechanical changes or relabelling.
 
@@ -23,21 +23,40 @@ Anchor change, 10 October 2026 (owner decision: `docs/wiki/decisions/owner-decis
 - The geometry references (`ref_*.f32` and the three indexes) were regenerated with the new anchors. The changed probe has a new build identity; none of its GPU runs has happened.
 - This is source evidence. The GPU lattice check, the W-J runs and three cold W3 runs of the changed W-J executable (`run_scene.ps1 -Scene w3 -Runs 3`) wait for the owner's GPU session.
 
-Fill the following only after the owner's runs, using the matching build identity, actual judge summaries and exact-check JSON. A passing timing gate cannot close the failed lattice item.
+GPU session, 10 October 2026 (owner attended, build `74b22fec…`):
+- Conditions:
+  - RTX 4070 Laptop GPU, NVIDIA driver 32.0.16.1692, driving the window's display;
+  - mains power, Windows power mode `max_performance`;
+  - 2560 x 1600 at 60 Hz, exclusive full screen, swap interval 0, no MSAA, no WARP;
+  - declared: no frame generation, no upscaling, no overlays.
+- The owner watched every timed run and confirmed it afterwards. The judge is `tools/perf/renderer_gate.py`, and its summaries are in [results/](results/). Raw PresentMon output, traces and exact-check records stay private.
+- GPU geometry check against the regenerated references: S4, I_a and I_b pass 18 of 18 comparisons each (six states, three cameras), and W3 passes 9 of 9. The maximum error is 1.91e-6. Every one of the 600 cells ran 30,480 vertex invocations, with no count failure.
+- GPU lattice check: lattice-start and lattice-retained both pass, each with 259,800 slots and 0 label, centre, bound or lattice failures.
+- The first attempt at the timed series stopped after run 1 of each series because of a runner defect: the confirmation text went to the `-Overlay` parameter. Those four runs, and one I_a series whose run 2 the runner refused because stray console input reached the prompt, are private records. They count for nothing. The runner was fixed, and every series below ran again from run 1.
 
-| Fixture | Build identity | Three-run / pooled fps | p99 ms | Peak local VRAM MiB | Exact pose check every run | W-J verdict |
+Filled from those runs, using the build identity, the judge summaries and the exact-check records. A passing timing gate cannot close a failed lattice item; the lattice item passed separately.
+
+| Fixture | Build identity | Three-run / pooled fps | p99 ms (three runs / pooled) | Peak VRAM MB (`vram_peak_mb`) | Exact pose check every run | W-J verdict |
 |---|---|---|---|---|---|---|
-| wj-s4 | unmeasured | unmeasured | unmeasured | unmeasured | GPU not run | not run |
-| wj-i-a | unmeasured | unmeasured | unmeasured | unmeasured | GPU not run | not run |
-| wj-i-b | unmeasured | unmeasured | unmeasured | unmeasured | GPU not run | not run |
+| wj-s4 | `74b22fec…` | 615.33, 614.23, 615.31 / 614.96 | 1.928, 1.932, 1.916 / 1.926 | 86.85 | pass, every drawn revision | `met` |
+| wj-i-a | `74b22fec…` | 615.31, 613.45, 611.07 / 613.28 | 1.906, 1.904, 1.922 / 1.911 | 86.80 | pass, every drawn revision | `met` |
+| wj-i-b | `74b22fec…` | 612.85, 611.18, 611.72 / 611.92 | 1.921, 1.913, 1.928 / 1.920 | 86.79 | pass, every drawn revision | `met` |
+
+- W3 on the same executable (item 6), three cold runs:
+  - fps 610.48, 610.40 and 609.95, pooled 610.28;
+  - p99 1.874, 1.853 and 1.855 ms, pooled 1.861 ms;
+  - maximum frame time 3.244 ms; peak VRAM 86.52 MB;
+  - labels exact in every run; verdict `met`.
+- Every timed run had 0 label mismatches, hash failures, late adoptions, binding mismatches or missing revisions. The judge's 180 s interval had no dropped present and no second without a displayed frame.
 
 | GPU fault (turn 20; README: clean control first, injection applied, the fault's own failure) | Expected result | Actual result |
 |---|---|---|
-| corrupt-index | fail / exit 2 | not run |
-| swap-same-colour | fail / exit 2 | not run |
-| stale-pose | fail / exit 2 | not run |
-| delay-adoption | fail / exit 2 | not run |
-| stale-binding (capture only) | fail / exit 2 | not run |
+| clean control (S4, 10 s) | pass / exit 0 | pass, 53 revisions, all exact |
+| corrupt-index | fail / exit 2 | fail / exit 2, injection applied; 1 element mismatch, 1 hash failure |
+| swap-same-colour | fail / exit 2 | fail / exit 2, injection applied; 2 element mismatches, 1 hash failure |
+| stale-pose | fail / exit 2 | fail / exit 2, injection applied; 15 element mismatches in the matrix table, 1 hash failure |
+| delay-adoption | fail / exit 2 | fail / exit 2, injection applied; 1 late adoption, 2 binding mismatches, 0 element mismatches |
+| stale-binding (capture only) | fail / exit 2 | fail / exit 2, injection applied; 3 binding mismatches, 1 late adoption, 1 missing revision, 0 element mismatches |
 
 | Overlay alone | S4 mean / p99 cost ms | I_a mean / p99 cost ms | I_b mean / p99 cost ms |
 |---|---|---|---|
@@ -48,12 +67,12 @@ Fill the following only after the owner's runs, using the matching build identit
 
 | Acceptance item | Status |
 |---|---|
-| 1, stdlib geometry reference | three fixtures, six states, three cameras committed; GPU comparison not run |
-| 2, lattice agreement | source check passes with the area-centroid anchors (retained bound error 8.17e-8); GPU not run |
-| 3, exact revision check every timed run | implemented; CPU functions checked; GPU not run |
-| 4, five negative tests | implemented, rejected by CPU self-test; GPU not run |
-| 5, three cold W-J runs per fixture | not run; separate W-J judge packet must land |
-| 6, W3 re-acceptance on changed build | required for the anchor change too (three cold W3 runs of the changed W-J executable); not run |
+| 1, stdlib geometry reference | three fixtures, six states, three cameras committed; GPU comparison passes (maximum error 1.91e-6) |
+| 2, lattice agreement | source check passes with the area-centroid anchors (retained bound error 8.17e-8); GPU lattice check passes for both states |
+| 3, exact revision check every timed run | passes in all nine timed W-J runs; W3's three runs pass the label check |
+| 4, five negative tests | all five fail with exit 2 and their own failure, after a passing clean control |
+| 5, three cold W-J runs per fixture | `met` for S4, I_a and I_b |
+| 6, W3 re-acceptance on changed build | `met` (pooled 610.28 fps, p99 1.861 ms) |
 | 7, overlays and measured costs | drawings implemented; all costs unmeasured |
 
 The mandatory sandbox acceptance command is `python work/experiments/renderer-wj/check_wj.py`: it proves assets/frame identity, one replay per fixture with exact stage/array digests, six altered-fixture refusals per menu and byte-identical reference outputs. Its pass is source/fixture evidence only. The independent candidate review belongs to the integrator; no review finding or passing review is fabricated here.

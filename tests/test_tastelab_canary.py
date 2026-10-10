@@ -60,7 +60,7 @@ class CanaryTests(unittest.TestCase):
                            for i, t in enumerate(self.probes.terms)})
         self.db.put_text_embeddings(MODEL, DIM, [(t, embed.to_blob(v)) for t, v in self.texts.items()])
 
-    def add(self, tier, verdict=None):
+    def add(self, tier, verdict=None, *, love=False):
         self.number += 1
         sha = f"{self.number:064x}"
         v = self.rng.normal(0, 0.03, DIM)
@@ -74,12 +74,15 @@ class CanaryTests(unittest.TestCase):
                                "Synthetic fixture", tier, "b_only" if tier == "B" else "a_only", 64, 64)
         self.assertEqual(self.db.add_image(meta, out.getvalue(), embedding=(MODEL, DIM, embed.to_blob(v))), "stored")
         if verdict:
-            self.db.add_rating(sha, verdict, "test")
+            if love:
+                self.db.add_rating(sha, verdict, "test", love=True)
+            else:
+                self.db.add_rating(sha, verdict, "test")
         return sha
 
-    def mixed(self):
-        a = [self.add("A", verdict) for verdict in ("like", "dislike") for _ in range(30)]
-        b = [self.add("B", verdict) for verdict in ("like", "dislike") for _ in range(8)]
+    def mixed(self, *, love=False):
+        a = [self.add("A", verdict, love=love and verdict == "like") for verdict in ("like", "dislike") for _ in range(30)]
+        b = [self.add("B", verdict, love=love and verdict == "like") for verdict in ("like", "dislike") for _ in range(8)]
         self.add("A")
         b.append(self.add("B"))
         return a, b
@@ -101,7 +104,13 @@ class CanaryTests(unittest.TestCase):
         self.assertEqual(self.db.model_runs(), [])
 
     def test_every_learning_and_map_fit_receives_only_class_a(self):
-        a, b = self.mixed()
+        self.check_every_fit()
+
+    def test_loved_ratings_at_every_learning_and_map_fit_stay_class_a_only(self):
+        self.check_every_fit(love=True)
+
+    def check_every_fit(self, *, love=False):
+        a, b = self.mixed(love=love)
         calls = Counter()
         stage = "classifier"
         original_fit = learn.LogisticRegression.fit
@@ -166,6 +175,10 @@ class CanaryTests(unittest.TestCase):
         self.assertEqual((report["model"]["likes"], report["model"]["dislikes"]), (30, 30))
         self.assertEqual(set(model._fit.data.shas), set(a))
         self.assertEqual({r["sha256"] for r in report["placements"]}, set(b))
+        if love:
+            self.assertEqual(report["private_loved"], 8)
+            self.assertTrue({r["sha256"] for r in report["loved"]} <= set(a))
+            self.assertEqual(len(report["loved"]), 30)
 
     def test_class_b_ratings_never_advance_proposal_cadence_or_rank_categories(self):
         for _ in range(100):
@@ -175,6 +188,50 @@ class CanaryTests(unittest.TestCase):
         proposed = learn.propose_terms(self.db, model, self.plan, self.texts)
         self.assertEqual(proposed, [])
         self.assertEqual(self.db.last_proposal_rating(), 0)
+
+    def test_class_b_loves_never_make_ready_advance_cadence_or_rank_proposal_categories(self):
+        a = [self.add("A", "dislike") for _ in range(5)]
+        b = [self.add("B", "like", love=True) for _ in range(100)]
+        model = learn.TasteModel(self.db, MODEL, record=False)
+        with mock.patch.object(learn.LogisticRegression, "fit", side_effect=AssertionError("unready fit")), \
+                mock.patch.object(learn.KMeans, "fit", side_effect=AssertionError("class B proposal fit")):
+            state = model.refresh()
+            self.assertEqual((state.ratings, state.likes, state.dislikes, state.ready), (5, 0, 5, False))
+            self.assertFalse(learn.proposals_due(self.db))
+            proposed = learn.propose_terms(self.db, model, self.plan, self.texts)
+        self.assertEqual(set(model._fit.data.shas), set(a))
+        self.assertEqual(proposed, [("adjacent A", "a_only", "adjacent")])
+        self.assertEqual(self.db.last_proposal_rating(), 5)
+        self.assertEqual(self.db.counts()["love"], len(b))
+
+    def test_only_class_b_loves_fit_nothing_and_stay_private(self):
+        b = [self.add("B", "like", love=True) for _ in range(20)]
+        model = learn.TasteModel(self.db, MODEL, record=False)
+        with mock.patch.object(learn.LogisticRegression, "fit", side_effect=AssertionError("class B classifier")), \
+                mock.patch.object(learn.KMeans, "fit", side_effect=AssertionError("class B clusters")), \
+                mock.patch.object(mapping, "rank_axes", side_effect=AssertionError("class B axes")), \
+                mock.patch.object(mapping, "themes", side_effect=AssertionError("class B themes")):
+            model.refresh()
+            selector = learn.Selector(self.db, model, self.plan, seed=0)
+            report, sheets = mapping.build_report(self.db, self.probes, MODEL, model, day="2026-10-10")
+            self.assertEqual(learn.propose_terms(self.db, model, self.plan, self.texts), [])
+        self.assertFalse(report["model"]["ready"])
+        self.assertEqual(model._fit.data.shas, [])
+        self.assertEqual(selector.next(10), [])
+        self.assertEqual(report["loved"], [])
+        self.assertEqual(report["private_loved"], len(b))
+        self.assertEqual([sha for row in sheets["private-loved"] for sha, _ in row], b[::-1])
+
+    def test_version_four_export_with_a_class_b_love_is_refused_without_writes(self):
+        a, b = self.add("A"), self.add("B")
+        data = {"kind": "tastelab-export", "version": 4, "images": {"pairs": [], "ratings": [
+            {"imageId": sha, "verdict": "like", "love": True, "note": None, "ratedAt": "2027-01-01T00:00:00Z"}
+            for sha in (a, b)]}}
+        before = self.db.db.total_changes
+        with self.assertRaisesRegex(common.Refused, b):
+            fetch.import_ratings(self.db, data)
+        self.assertEqual(self.db.db.total_changes, before)
+        self.assertEqual(self.db.ratings(), [])
 
     def test_only_class_b_images_do_not_fit_selector_or_map(self):
         shas = [self.add("B", verdict) for verdict in ("like", "dislike") for _ in range(12)]

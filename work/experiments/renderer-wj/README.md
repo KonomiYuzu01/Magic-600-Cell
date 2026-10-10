@@ -2,6 +2,10 @@
 
 The pose probe builds and its source/fixture checks run headlessly. **CPU lattice agreement passes with the SPEC section 3 area-centroid shrink anchors and unchanged assets.** This is source/fixture evidence, not a GPU or performance result. Do not mark W-J accepted or the Jumble switch invisible on the strength of `check_wj.py`.
 
+GPU results for build `74b22fec…` (owner's session, 10 October 2026) are on the [result card](RESULT.md):
+- the GPU geometry and lattice checks, the five negative tests, three cold runs per fixture and three cold W3 runs pass;
+- the overlay costs (item 7) are unmeasured, so W-J is not yet accepted as a whole.
+
 This directory starts from the S-B C++20/HLSL probe. Only this copy changes. It draws all 600 instances of the 30,480-vertex mesh, all 259,800 labelled stickers and all 177,120 pieces. A piece index selects four row-major matrix rows. Home cell/sticker shrink precedes the pose; the certified moving pieces then receive the swept rotation; S-B projection and colour follow. The renderer consumes J1's data and decides no legality.
 
 The implementation plan is one matrix-table method, whole-state uploads, an independent stdlib reference, exact first-use readbacks and owner-run measurements. No second transform method or optimisation is justified before those measurements. The packet assigns integration and review of this Codex-authored candidate to Claude; this sandbox invocation makes no nested model calls, network calls or Git mutations.

@@ -91,8 +91,8 @@ class BundleTests(test_store.TempDir):
     def manifest(self, folder):
         return json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
 
-    def page_export(self, ratings=(), pairs=()):
-        return {"kind": "tastelab-export", "version": 3, "ignored": {"unrelated": True}, "images": {
+    def page_export(self, ratings=(), pairs=(), *, version=3):
+        return {"kind": "tastelab-export", "version": version, "ignored": {"unrelated": True}, "images": {
             "bundles": [], "ratings": list(ratings), "pairs": list(pairs)}}
 
     def rating(self, sha, verdict="like", ts="2027-01-01T00:00:00Z", note=None):
@@ -284,6 +284,54 @@ class BundleTests(test_store.TempDir):
         self.assertIn('"ratings": 1', output.getvalue())
         self.assertEqual([(r.sha256, r.verdict, r.note) for r in self.library.ratings()], [(sha, "like", "Invented preference")])
         self.assertFalse(self.library.has_image(item["thumbSha256"]))
+
+    def test_version_three_ignores_stray_love_keys(self):
+        a, b = self.add(), self.add()
+        data = self.page_export([dict(self.rating(a), love=True), dict(self.rating(b, "dislike"), love="stray")])
+        self.assertEqual(fetch.import_ratings(self.library, data), {"ratings": 2, "pairs": 0, "unknown": []})
+        self.assertEqual([(r.verdict, r.love) for r in self.library.ratings()], [("like", False), ("dislike", False)])
+
+    def test_version_four_love_round_trip_and_newest_timestamp(self):
+        a, b = self.add(), self.add()
+        data = self.page_export([
+            dict(self.rating(a, ts="2027-01-02T00:00:00Z", note="Warm gold"), love=True),
+            dict(self.rating(a), love=False), dict(self.rating(b, "dislike"), love=False),
+            dict(self.rating("f" * 64), love=True)], [self.pair(a, b)], version=4)
+        path = self.tmp / "version-four.json"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        with mock.patch.object(embed, "load_embedder", side_effect=AssertionError("import needs no model")), \
+                redirect_stdout(io.StringIO()) as output, redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(fetch.main(["--data", str(self.library.root), "--import-ratings", str(path)]), 0)
+        self.assertEqual(errors.getvalue(), "")
+        self.assertIn('"ratings": 2', output.getvalue())
+        self.assertEqual([(r.sha256, r.verdict, r.love, r.note) for r in self.library.ratings()],
+                         [(a, "like", True, "Warm gold"), (b, "dislike", False, None)])
+        self.assertEqual(self.library.db.execute("SELECT note FROM pair_notes").fetchone()[0], "Invented comparison")
+        self.assertEqual(fetch.import_ratings(self.library, data), {"ratings": 0, "pairs": 0, "unknown": ["f" * 64]})
+        newer = dict(self.rating(a, ts="2027-01-02T02:00:00+01:00"), love=False)
+        self.assertEqual(fetch.import_ratings(self.library, self.page_export([newer], version=4))["ratings"], 1)
+        self.assertIs(self.library.ratings()[-1].love, False)
+
+    def test_version_four_validates_every_love_before_any_write(self):
+        a, b = self.add(), self.add()
+        self.library.add_rating(a, "skip", "fixture")
+        before = [tuple(r) for r in self.library.db.execute("SELECT * FROM ratings ORDER BY id")]
+        invalid = [self.rating(b)]  # love is required even when it would be false.
+        invalid += [dict(self.rating(b), love=value) for value in (None, 0, 1, "true", [], {})]
+        invalid.append(dict(self.rating(b, "dislike"), love=True))
+        for bad in invalid:
+            data = self.page_export([dict(self.rating(a), love=True), bad], [self.pair(a, b)], version=4)
+            with self.subTest(bad=bad), self.assertRaisesRegex(common.Refused, "love"):
+                fetch.import_ratings(self.library, data)
+            self.assertEqual([tuple(r) for r in self.library.db.execute("SELECT * FROM ratings ORDER BY id")], before)
+            self.assertEqual(self.library.db.execute("SELECT COUNT(*) FROM pair_notes").fetchone()[0], 0)
+
+    def test_export_version_refusal_names_both_supported_versions(self):
+        for version in (1, 2, 5, True, 4.0, "4"):
+            with self.subTest(version=version), self.assertRaisesRegex(
+                    common.Refused, "expected tastelab-export version 3 or 4 with images"):
+                fetch.import_ratings(self.library, self.page_export(version=version))
+            self.assertEqual(self.library.ratings(), [])
 
     def test_import_refuses_whole_file_for_tier_b_rating_or_pair(self):
         a, b = self.add(), self.add(tier="B")

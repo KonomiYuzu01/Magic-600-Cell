@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { assembleImageExport, createRatingState, reduceRating, keyAction, validateNote, cleanNote, pairKey,
   ratingDocument, pairDocument, loadImageDocuments, createImagesUI } from "../images-ui.js";
 import { handleMessage } from "../images-worker.js";
@@ -8,10 +9,10 @@ import { handleMessage } from "../images-worker.js";
 const digest = (value) => createHash("sha256").update(value).digest("hex");
 const a = digest("original A"), b = digest("original B"), c = digest("original C");
 const time = "2026-10-04T12:00:00Z";
-const rating = (imageId = a, verdict = "like", note = null) => ({ imageId, verdict, note, ratedAt: time });
+const rating = (imageId = a, verdict = "like", note = null, love = false) => ({ imageId, verdict, love, note, ratedAt: time });
 const pair = (likedImageId = a, dislikedImageId = b, note = "Different contrast") => ({ likedImageId, dislikedImageId, note, notedAt: time });
 
-test("version 3 preserves every version 2 field and exports exactly the image contract", () => {
+test("version 4 preserves every version 2 field and exports exactly the image contract", () => {
   const base = { kind: "tastelab-export", version: 2, space: { params: [] }, families: ["f1"], comparisons: [{ answer: "A" }],
     sessions: [{ settled: {} }], presets: [{ look: {} }], shared: [], costHeavy: { params: ["gloss"], note: "cost" } };
   const input = { bundles: [{ id: "bundle-id", items: [{ imageId: a, thumbSha256: digest("thumb"), filename: "secret.jpg" }],
@@ -19,20 +20,35 @@ test("version 3 preserves every version 2 field and exports exactly the image co
     ratings: [{ ...rating(), vectors: [1], thumbnail: "private", filename: "private.jpg" }],
     pairs: [{ ...pair(), similarity: 0.8, files: ["private"] }] };
   const before = structuredClone({ base, input }), result = assembleImageExport(base, input);
-  assert.deepEqual(result, { ...base, version: 3, images: { bundles: [{ bundleId: "bundle-id", items: 1 }], ratings: [rating()], pairs: [pair()] } });
+  assert.deepEqual(result, { ...base, version: 4, images: { bundles: [{ bundleId: "bundle-id", items: 1 }], ratings: [rating()], pairs: [pair()] } });
   for (const key of Object.keys(base).filter((key) => key !== "version")) assert.deepEqual(result[key], base[key]);
   assert.deepEqual({ base, input }, before);
   const json = JSON.stringify(result);
   for (const forbidden of ["thumbnail", "thumbSha256", "vectors", "filename", "private", "embeddings"]) assert.equal(json.includes(forbidden), false, forbidden);
 });
 
+test("legacy and malformed stored love flags load and export as false", () => {
+  const records = [
+    { imageId: a, verdict: "like", note: null, ratedAt: time },
+    { ...rating(b), love: "true" },
+    rating(c, "dislike", null, true),
+  ];
+  const before = structuredClone(records), expected = [rating(a), rating(b), rating(c, "dislike")];
+  assert.deepEqual([...createRatingState(records).ratings.values()], expected);
+  const result = assembleImageExport({ version: 2 }, { bundles: [], ratings: records, pairs: [] });
+  assert.equal(result.version, 4);
+  assert.deepEqual(result.images.ratings, expected);
+  assert.ok(result.images.ratings.every((record) => typeof record.love === "boolean"));
+  assert.deepEqual(records, before);
+});
+
 test("export merges unsaved notes, ratings and pairs, and honours unsuccessful undo deletions", () => {
   const result = assembleImageExport({ version: 2 }, {
     bundles: [], ratings: [rating(a), rating(b, "dislike")], pairs: [pair()],
-    ratingChanges: new Map([[a, null], [b, rating(b, "dislike", "local note")], [c, rating(c)]]),
+    ratingChanges: new Map([[a, null], [b, rating(b, "dislike", "local note")], [c, rating(c, "like", null, true)]]),
     pairChanges: new Map([[pairKey(a, b), pair(a, b, "local pair note")], [pairKey(c, b), pair(c, b)]]),
   });
-  assert.deepEqual(result.images, { bundles: [], ratings: [rating(b, "dislike", "local note"), rating(c)],
+  assert.deepEqual(result.images, { bundles: [], ratings: [rating(b, "dislike", "local note"), rating(c, "like", null, true)],
     pairs: [pair(a, b, "local pair note"), pair(c, b)] });
   assert.deepEqual(assembleImageExport({ version: 2 }, { bundles: [], ratings: [], pairs: [] }).images, { bundles: [], ratings: [], pairs: [] });
 });
@@ -68,6 +84,37 @@ test("rating and note reducers are pure, skip stays local, and undo deletes only
   state = reduceRating(state, { type: "rate", ...rating(c) });
   state = reduceRating(state, { type: "note", imageId: c, note: "", ratedAt: time });
   assert.equal(state.ratings.get(c).note, null, "a cleared note is null");
+});
+
+test("love stays a like through note edits and undo removes the whole rating", () => {
+  const initial = createRatingState(), before = structuredClone(initial), loved = rating(a, "like", null, true);
+  const rated = reduceRating(initial, { type: "rate", ...loved });
+  assert.deepEqual(rated.ratings.get(a), loved);
+  assert.deepEqual(rated.changes.get(a), loved);
+  assert.deepEqual(rated.history, [a]);
+  const noted = reduceRating(rated, { type: "note", imageId: a, note: "The light", ratedAt: time });
+  assert.deepEqual(noted.ratings.get(a), { ...loved, note: "The light", ratedAt: "2026-10-04T12:00:00.001Z" });
+  const undone = reduceRating(noted, { type: "undo" });
+  assert.equal(undone.ratings.has(a), false);
+  assert.equal(undone.changes.get(a), null);
+  assert.deepEqual(undone.history, []);
+  assert.deepEqual(initial, before);
+  assert.deepEqual(rated.ratings.get(a), loved);
+});
+
+test("love is boolean and true requires a like verdict", () => {
+  const initial = createRatingState();
+  const invalid = { name: "RangeError", message: "Invalid image rating." };
+  assert.throws(() => reduceRating(initial, { type: "rate", ...rating(a, "dislike", null, true) }), invalid);
+  for (const love of [null, 0, 1, "true", "false", [], {}]) {
+    assert.throws(() => reduceRating(initial, { type: "rate", ...rating(), love }), invalid);
+  }
+  const legacy = { type: "rate", imageId: a, verdict: "like", ratedAt: time };
+  assert.deepEqual(reduceRating(initial, legacy).ratings.get(a), rating());
+  for (const verdict of ["like", "dislike"]) {
+    assert.deepEqual(reduceRating(initial, { type: "rate", ...rating(a, verdict) }).ratings.get(a), rating(a, verdict));
+  }
+  assert.equal(initial.ratings.size, 0);
 });
 
 for (const clock of ["later", "unchanged", "backwards"]) test(`adding, replacing and clearing a note advance ratedAt with a ${clock} clock`, () => {
@@ -127,7 +174,7 @@ test("the document key uses original image ids in liked-disliked order, with exa
 const event = (key, extra = {}) => ({ key, repeat: false, target: { closest: () => null }, ...extra });
 test("key mappings are isolated by tab, retain Looks keys, and ignore repeat and input editing", () => {
   const looks = { A: "A", b: "B", s: "same", x: "bad", z: "undo", W: "note", f: "family", 1: "scene-1", 2: "scene-2", 3: "scene-3" };
-  const images = { ArrowRight: "like", ArrowLeft: "dislike", ArrowDown: "skip", w: "note", Z: "undo" };
+  const images = { ArrowRight: "like", ArrowUp: "love", ArrowLeft: "dislike", ArrowDown: "skip", w: "note", Z: "undo" };
   for (const [tab, mapping] of [["looks", looks], ["images", images]]) for (const [key, action] of Object.entries(mapping)) {
     assert.equal(keyAction(event(key), tab), action);
     assert.equal(keyAction(event(key, { repeat: true }), tab), null);
@@ -140,7 +187,7 @@ test("key mappings are isolated by tab, retain Looks keys, and ignore repeat and
     assert.equal(keyAction(event(key, { shiftKey: true }), tab), action);
   }
   for (const key of ["A", "B", "S", "X", "F", "1", "2", "3"]) assert.equal(keyAction(event(key), "images"), null);
-  for (const key of ["ArrowRight", "ArrowLeft", "ArrowDown"]) assert.equal(keyAction(event(key), "looks"), null);
+  for (const key of ["ArrowRight", "ArrowUp", "ArrowLeft", "ArrowDown"]) assert.equal(keyAction(event(key), "looks"), null);
   assert.equal(keyAction(event("q"), "images"), null);
   assert.equal(keyAction(event("A", { target: { closest: (value) => value.includes("[role='tablist']") ? {} : null } }), "looks"), "A");
 });
@@ -225,7 +272,8 @@ function fixture(indices = [0, 1, 2]) {
 async function withUI(db, run) {
   const keys = ["document", "Worker", "indexedDB", "URL"], saved = keys.map((key) => Object.getOwnPropertyDescriptor(globalThis, key));
   const elements = new Map(), status = [], workers = [], created = [], revoked = [], NativeURL = globalThis.URL;
-  const $ = (id) => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
+  const ids = new Set([...readFileSync(new URL("../../index.html", import.meta.url), "utf8").matchAll(/id="([^"]+)"/g)].map((match) => match[1]));
+  const $ = (id) => { assert.ok(ids.has(id), "Missing page element: " + id); if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
   for (const id of ["imageCacheNote", "imageNoteForm", "imagePairDetail", "imageAnswersRetry"]) $(id).hidden = true;
   globalThis.document = { getElementById: $, createElement: (tag) => new Element(tag) };
   globalThis.indexedDB = { open() { throw new Error("Cache blocked"); } };
@@ -271,8 +319,79 @@ test("opening without a cache renders attribution from object URLs, refuses inva
     await $("openBundles").children[0].children[1].fire("click");
     assert.equal($("imageView").children.length, 0);
     assert.equal($("imageLike").disabled, true);
+    assert.equal($("imageLove").disabled, true);
     assert.deepEqual((await ui.exportData({ version: 2 })).images.bundles, []);
     assert.deepEqual(revoked, created);
+  });
+});
+
+for (const input of ["button", "ArrowUp"]) test("Love through " + input + " saves a like with love and reaches counts, worker and export", async () => {
+  const db = fakeDB();
+  await withUI(db, async ({ ui, $, open, worker }) => {
+    assert.equal($("imageLove").disabled, $("imageLike").disabled);
+    assert.equal($("imageLove").disabled, true);
+    await open();
+    assert.equal($("imageLove").disabled, false);
+    worker.paused = true;
+    if (input === "button") await $("imageLove").fire("click");
+    else ui.handleKey(event("ArrowUp", { preventDefault() {} }));
+    await tick();
+    assert.equal(db.writes.length, 1);
+    const saved = db.values.get("imageRatings/" + a);
+    assert.deepEqual(saved, { ...rating(a, "like", null, true), ratedAt: saved.ratedAt });
+    assert.equal($("imageLikes").textContent, "1");
+    assert.equal($("imageLoved").textContent, "1");
+    assert.equal($("imageDislikes").textContent, "0");
+    assert.equal($("imageLove").disabled, true);
+    assert.equal($("imageLove").disabled, $("imageLike").disabled);
+    const message = worker.messages.at(-1);
+    assert.deepEqual(message.ratings, new Map([[a, "like"]]));
+    assert.deepEqual(message.loved, new Set([a]));
+    worker.reply(message);
+    worker.paused = false;
+    assert.equal($("imageLove").disabled, false);
+    await $("imageNoteButton").fire("click");
+    $("imageNote").value = "The light";
+    await $("imageNoteForm").fire("submit");
+    const data = await ui.exportData({ version: 2 });
+    assert.equal(data.version, 4);
+    assert.equal(data.images.ratings[0].love, true);
+    assert.equal(data.images.ratings[0].note, "The light");
+    assert.equal(db.values.get("imageRatings/" + a).love, true);
+    await $("imageUndo").fire("click"); await tick();
+    assert.equal(db.values.has("imageRatings/" + a), false);
+    assert.equal($("imageLoved").textContent, "0");
+    assert.equal($("imageLikes").textContent, "0");
+    assert.deepEqual(worker.messages.at(-1).loved, new Set());
+  });
+});
+
+test("stored legacy ratings load and export with love false without rewriting storage", async () => {
+  const legacy = { imageId: a, verdict: "like", note: "Old note", ratedAt: time }, db = fakeDB();
+  db.values.set("imageRatings/" + a, legacy);
+  await withUI(db, async ({ ui, $, open, worker }) => {
+    await open();
+    assert.equal($("imageLikes").textContent, "1");
+    assert.equal($("imageLoved").textContent, "0");
+    assert.deepEqual(worker.messages.at(-1).loved, new Set());
+    assert.deepEqual((await ui.exportData({ version: 2 })).images.ratings, [{ ...legacy, love: false }]);
+    assert.deepEqual(db.values.get("imageRatings/" + a), legacy);
+    assert.equal(db.writes.length, 0);
+  });
+});
+
+test("Loved counts only open-bundle ratings while loved closed images stay in the export", async () => {
+  const closed = digest("closed image");
+  await withUI(fakeDB([rating(a, "like", null, true), rating(b), rating(closed, "like", null, true)]), async ({ ui, $, open }) => {
+    await open();
+    assert.equal($("imageLikes").textContent, "2");
+    assert.equal($("imageLoved").textContent, "1");
+    const data = await ui.exportData({ version: 2 });
+    assert.equal(data.images.ratings.filter((record) => record.love).length, 2);
+    await $("openBundles").children[0].children[1].fire("click");
+    assert.equal($("imageLikes").textContent, "0");
+    assert.equal($("imageLoved").textContent, "0");
+    assert.equal($("imageLove").disabled, true);
   });
 });
 
@@ -349,6 +468,7 @@ test("late worker replies after a close cannot restore an image or enable rating
     worker.reply(message);
     assert.equal($("imageView").children.length, 0);
     assert.equal($("imageLike").disabled, true);
+    assert.equal($("imageLove").disabled, true);
   });
 });
 
@@ -363,13 +483,13 @@ for (const collection of ["imageRatings", "imagePairs"]) test(`a failed initial 
     await open();
     assert.equal($("imageView").children.length, 1, "viewing remains available");
     assert.equal($("bundleFolder").disabled, false);
-    for (const id of ["imageLike", "imageDislike", "imageUndo", "imageNoteButton", "imageNote", "imagePairNote", "imagePairSave"]) {
+    for (const id of ["imageLike", "imageLove", "imageDislike", "imageUndo", "imageNoteButton", "imageNote", "imagePairNote", "imagePairSave"]) {
       assert.equal($(id).disabled, true, id);
     }
     assert.equal($("imageAnswersRetry").hidden, false);
     unavailable = false; // Writes would now succeed, but the baseline is still unknown.
-    for (const id of ["imageLike", "imageDislike", "imageUndo", "imageNoteButton"]) await $(id).fire("click");
-    for (const key of ["ArrowRight", "ArrowLeft", "z", "w"]) ui.handleKey(event(key, { preventDefault() {} }));
+    for (const id of ["imageLike", "imageLove", "imageDislike", "imageUndo", "imageNoteButton"]) await $(id).fire("click");
+    for (const key of ["ArrowRight", "ArrowUp", "ArrowLeft", "z", "w"]) ui.handleKey(event(key, { preventDefault() {} }));
     $("imageNote").value = "Overwritten";
     await $("imageNoteForm").fire("submit");
     $("imagePairNote").value = "Overwritten pair";
