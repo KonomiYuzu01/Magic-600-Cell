@@ -289,12 +289,13 @@ def ordered(source, tokens, message):
 
 def l2_sources():
     return {name: (PROJECT / (name + ".cs")).read_text(encoding="utf-8")
-            for name in ("Level2", "Level2Arguments", "Level2Result", "Level2Windows")}
+            for name in ("Level2", "Level2Arguments", "Level2Result", "Level2Windows", "Native")}
 
 
 def check_l2_source(sources=None):
     sources = l2_sources() if sources is None else sources
     app, args, result, windows = (sources[name] for name in ("Level2", "Level2Arguments", "Level2Result", "Level2Windows"))
+    native = sources["Native"]
     smoke = (PROJECT / "Smoke.cs").read_text(encoding="utf-8")
     ready = between(smoke, "public override void _Ready()", "private void Update(")
     ordered(ready, ("Level2Arguments.Requested(userArgs)", "new Level2()", "AddChild(_level2)", "return;", "Arguments.Parse(userArgs)"), "level 2 dispatch before level 1 parsing")
@@ -336,7 +337,7 @@ def check_l2_source(sources=None):
         require(token in output, "l2-out refuses only reserved names")
     require("GetFiles" not in output and "Enumerate" not in output, "logs/PresentMon accepted in output directory")
 
-    for field in ("format", "candidate", "mode", "run_id", "scene", "process_id", "exit_code", "reason", "options", "configuration",
+    for field in ("format", "candidate", "mode", "run_id", "scene", "process_id", "exit_code", "reason", "assembly_mvid", "options", "configuration",
                   "files", "dll_identity", "dll_status", "qpc_frequency", "sizes", "scaling", "dpi_awareness", "environment", "window", "debug"):
         require(re.search(r"public (?:string|int|long\?|object|Level2Sizes|Dictionary<string, object>)[^;]*\b" + field + r"\b", result),
                 f"harness top-level field {field}")
@@ -392,6 +393,31 @@ def check_l2_source(sources=None):
     require(not any(token in app + windows for token in ("AttachThreadInput", "SendInput", "mouse_event", "keybd_event", "OS.GetCmdlineArgs()")), "no foreground workaround or consumed-argument identity")
     # Godot loads the project assembly from memory, so its Location is empty (FRAMEWORK-FACTS G9).
     require("Assembly.Location" not in app, "the project assembly path comes from its load context")
+    require("public string assembly_mvid;" in result, "assembly MVID defaults to null")
+    usage = between(app, "Level2Result usage =", "usage.Write(output);")
+    require("assembly_mvid" not in usage, "usage record keeps the unknown assembly MVID null")
+    app_ready = between(app, "public override void _Ready()", "// Godot loads the project assembly")
+    ordered(app_ready, ('_result.files["godot:assembly"] = ProjectAssemblyPath(typeof(Smoke).Assembly);',
+                        '_result.assembly_mvid = typeof(Smoke).Assembly.ManifestModule.ModuleVersionId.ToString("D");'),
+            "loaded project MVID recorded beside its assembly path")
+    require(app.count("_result.assembly_mvid =") == 1, "loaded assembly MVID recorded once")
+    require('["dll"] = null' in result and not re.search(r'\bfiles\["dll"\]\s*=', result),
+            "DLL path stays null until native construction returns")
+    require(re.findall(r'\b_result\.files\["dll"\]\s*=\s*([^;]+);', app) == ["_native.ModulePath"],
+            "files.dll records only the loaded module path")
+    require('[DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]' in native
+            and "private static extern uint GetModuleFileNameW(nint module, char* path, uint size);" in native,
+            "loaded module path uses the Unicode Win32 signature")
+    constructor = between(native, "public Native(string absolutePath)", "private nint Export(")
+    require("_library = NativeLibrary.Load(absolutePath);" in constructor, "retain the actual native load handle")
+    module_path = between(native, "public string ModulePath", "public Native(")
+    ordered(module_path, ("get", "const int capacity = 32768;", "char* path = stackalloc char[capacity];",
+                          "uint length = GetModuleFileNameW(_library, path, capacity);",
+                          'if (length == 0 || length >= capacity)\n                throw new InvalidOperationException("framework-modules");',
+                          "return new string(path, 0, (int)length);"), "loaded handle lookup fails on zero or truncated paths")
+    require("set" not in module_path, "loaded module path is read-only")
+    queue = between(app, "private void Queue(", "private Level2Sizes ReadSizes(")
+    ordered(queue, ("try { action(); }", "catch (Exception e)", "Fail(1, e.Message);"), "module lookup failures preserve framework-modules")
     covered = between(windows, "private bool Covered()", "public bool Sample(")
     require(covered.count("new(r.") == 5 and "GetAncestor(hit, 2) != _window" in covered, "five-point root-window covered test")
     sample = between(windows, "public bool Sample(", "private static string PowerModeName(")
@@ -405,7 +431,8 @@ def check_l2_source(sources=None):
     ordered(settle, ("if (_initializing) return;", "ReadSizes(displayed)", "current.WindowSettled()", "if (_settled < 2)", "_initializing = true", "Initialize("), "ring only after final fullscreen extent")
     require("_windows.Frequency * 5" in settle, "bounded fullscreen settle")
     initialize = between(app, "private unsafe void Initialize(", "private Rid MakeTexture(")
-    ordered(initialize, ("new Native(_args.dll_path)", "_native.sa2_probe", "_native.sa2_attach", "BuildRing()"), "probe/attach/ring order")
+    ordered(initialize, ("_native = new Native(_args.dll_path);", '_result.files["dll"] = _native.ModulePath;',
+                         "_native.sa2_probe", "_native.sa2_attach", "BuildRing()"), "load/module-path/probe/attach/ring order")
     require('_args.debug_half_target ? width / 2 : width' in initialize and '_args.debug_half_target ? height / 2 : height' in initialize, "half target uses physical floor")
     require(app.count("BuildRing();") == 1 and "_width =" not in between(app, "private unsafe void Frame(", "private unsafe void EndTrace()"), "ring never rebuilt during trace")
     require('_native.sa2_register_slot' in between(app, "private unsafe void BuildRing()", "private void CopyDisplay(") and
@@ -455,8 +482,21 @@ def check_l2_defects():
         ("Level2Result", 'battery == samples ? "battery"', 'battery == samples ? "mains"'),
         ("Level2Result", 'FileMode.CreateNew', 'FileMode.Create'),
         ("Level2Result", 'File.Move(temporary, destination, false)', 'File.Move(temporary, destination, true)'),
+        ("Level2Result", 'public string assembly_mvid;', ''),
+        ("Level2Result", 'public string assembly_mvid;', 'public string assembly_mvid = "unknown";'),
+        ("Level2Result", 'debug["enabled"] = a.gpu_validation;', 'debug["enabled"] = a.gpu_validation;\n        files["dll"] = a.dll_path;'),
         ("Level2", 'ProjectAssemblyPath(typeof(Smoke).Assembly)', 'Path.GetFullPath(typeof(Smoke).Assembly.Location)'),
         ("Level2", 'AssemblyName.GetAssemblyName(path).FullName == assembly.FullName', 'AssemblyName.GetAssemblyName(path).FullName != null'),
+        ("Level2", '_result.assembly_mvid = typeof(Smoke).Assembly.ManifestModule.ModuleVersionId.ToString("D");', ''),
+        ("Level2", 'typeof(Smoke).Assembly.ManifestModule.ModuleVersionId', 'typeof(Godot.Node).Assembly.ManifestModule.ModuleVersionId'),
+        ("Level2", 'ModuleVersionId.ToString("D")', 'ModuleVersionId.ToString("N")'),
+        ("Level2", '_result.files["dll"] = _native.ModulePath;', '_result.files["dll"] = _args.dll_path;'),
+        ("Level2", '_native = new Native(_args.dll_path);\n        _result.files["dll"] = _native.ModulePath;',
+         '_result.files["dll"] = _native.ModulePath;\n        _native = new Native(_args.dll_path);'),
+        ("Native", 'GetModuleFileNameW(_library, path, capacity)', 'GetModuleFileNameW(0, path, capacity)'),
+        ("Native", 'length == 0 || length >= capacity', 'length >= capacity'),
+        ("Native", 'length == 0 || length >= capacity', 'length == 0'),
+        ("Native", 'throw new InvalidOperationException("framework-modules");', 'throw new InvalidOperationException("native-path");'),
         ("Level2", 'WindowMode.ExclusiveFullscreen', 'WindowMode.Fullscreen'),
         ("Level2", 'ContentScaleFactor = 1.0f', 'ContentScaleFactor = 0.5f'),
         ("Level2", 'WindowGetVsyncMode() == DisplayServer.VSyncMode.Disabled', 'true'),
