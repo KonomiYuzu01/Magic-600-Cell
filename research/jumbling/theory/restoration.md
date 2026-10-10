@@ -123,7 +123,7 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 
 `restore.py` runs U1 to U6 on the J1 reference, with the tools' choices replaced by fixed rules (most misaligned cut first; among its closing twists the one that brings the most pieces home, which a solver sees from the labels; for U4 and U5′, the first macro that lowers N, opening caps in order of decreasing N_c; for U5, the largest drop). It reads only the configuration.
 
-**Deep inputs: reading the order, and repairing a misread.** With the rules above, phase U reaches the lattice on every input of up to 20 twists in section 5. On deeper inputs it leaves the reverse path and stops at a configuration from which no rule lowers N (S4@60: N = 7,472). Two more readings of the seams choose the cap to undo, and a repair word recovers when the reading is wrong. The journal is used only to label moves after a run, never to choose them.
+**Deep inputs: reading the order, and repairing a misread.** With the rules above, phase U reaches the lattice on every input of up to 20 twists in section 5. On deeper inputs it leaves the reverse path and stops at a configuration from which no rule lowers N (S4@60: N = 7,472, `results/restore-fixture-S4.json`). Two more readings of the seams choose the cap to undo, and a repair word recovers when the reading is wrong. The journal is used only to label moves after a run, never to choose them.
 
 - **U1a. Face match.** For a misaligned cap c, let In_c, Out_c and A_c count the cut cells of H_c covered inside, covered outside, and covered on both sides by one domain (the aligned cells). Cap c passes the face match when some single twist of c aligns every misaligned inside cell, that is, lowers N_c by at least 2(In_c − A_c) > 0. Undo the cap that passes with the largest drop first.
   - Computed (exact; `seams.py facecheck <menu> <t,...>`, `results/seams-facecheck-<menu>.json`). At the true scramble state X_t of each W-J fixture, call a misaligned cap a top cap when undoing its latest record gives the configuration of the scramble replayed without that record. The table counts top caps that pass (true positives), other caps that pass (false positives) and top caps that fail (misses), in that order.
@@ -148,13 +148,19 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 **Result on deep inputs (computed, exact; `seams.py`, `results/seams-*.json`).** No run on a 60-record fixture has reached the lattice yet.
 - From the S4@60 stopping configuration (N = 6,294, `results/seams-S4-60-stop.json`), the repair word passes every earlier stopping point (7,472 with the rules of `restore.py`, 6,294 with U1a and U1b added). In 32 steps, 31 conjugate repairs and one cover step (94 twists), N fell below 4,240 (`results/seams-fixture-S4-60-continued-partial.json`).
 - The descent slows. The first 16 steps took 11 minutes and lowered N from 6,294 to 4,890. The 32nd took 16 minutes and lowered it by a few cells. The run was stopped there, during the search for step 33. It was not stuck: whether it reaches the lattice, and how long that takes, is open.
-- From scratch with the default order, the descents stand at the following N (the S4 and I_a runs were still running when this was written):
+- From scratch with the default order, the 40- and 60-record fixtures stood as follows when this was written (step logs: `results/seams-fixture-<menu>-<t>-partial.json`). "Below n" means after a step that began at N = n. Minutes count to the last step.
 
-| Fixture | N at X_60 | Steps | N reached | Minutes |
-|---|---:|---:|---:|---:|
-<!-- RUN60 -->
+| Fixture | N at X_t | Steps | N reached | Minutes | State |
+|---|---:|---:|---:|---:|---|
+| S4@40 | 46,394 | 47 | below 6,856 | 46 | still descending |
+| I_a@40 | 51,348 | 42 | 1,192 (15 misaligned caps) | 6 | no further step found in the next 50 minutes |
+| I_b@40 | | | | | not run (queued) |
+| S4@60 | 67,230 | 66 | below 8,154 | 69 | still descending |
+| I_a@60 | 60,062 | 69 | below 15,682 | 79 | still descending |
+| I_b@60 | 59,564 | 36 | below 21,722 | 20 | stopped to free a processor |
 
-<!-- D40 -->
+- In every run the face match and the cover order carry the first part of the descent, until N is between about 8,000 and 45,000. From there the repair word does most of the work, with face-match and cover steps in between.
+- I_a@40 came nearest to the lattice. Whether it is stuck there (no rule of section 3 lowers N) is not known: its search had not finished.
 
 ## 4. Phase L: the lattice
 
@@ -215,11 +221,11 @@ Inputs of 40 and 60 records use the deep-input rules (`seams.py`); their results
 
 **Lead: what the runs suggest.** These are exact runs on a few dozen inputs. They suggest, and prove nothing.
 - Up to 20 twists the method is complete in practice: every run reaches the lattice with closings, a few locks and no repair, and every end configuration has v in v(G), so the invariant v gives phase L nothing the retained method cannot reach.
-<!-- LEAD40 -->
-- At 60 records the reading of the order fails now and then (the invisible order of section 3), and the repair word recovers from it. Every repair found has three twists. But the search for one takes longer as N falls, and no 60-record run has reached the lattice yet.
+- At 40 and 60 records the reading of the order fails now and then (the invisible order of section 3), and the repair word recovers from it. Every repair found has three twists.
+- But the search for a repair takes longer as N falls, and no 40- or 60-record run has reached the lattice yet. The nearest, I_a@40 at N = 1,192, found no further step for 50 minutes.
 
 **Open.**
-1. Whether the rules of section 3 (single twists, words of two or three twists, and reopening) reach the lattice from every reachable configuration, and in how many steps; or a bound on the length of the shortest N-lowering word. Theorem U guarantees a lowering word but bounds neither its length nor the solver's search for it. The 60-record fixtures are the test cases: the runs above lower N steadily but ever more slowly.
+1. Whether the rules of section 3 (single twists, words of two or three twists, and reopening) reach the lattice from every reachable configuration, and in how many steps; or a bound on the length of the shortest N-lowering word. Theorem U guarantees a lowering word but bounds neither its length nor the solver's search for it. The 40- and 60-record fixtures are the test cases: the runs of section 3 lower N steadily but ever more slowly.
 2. Statements (a) and (b) of section 4, which decide whether phase L needs the lens macros or any other jumbling word.
 
 **What 1.0 takes from this.** Everything below is a function of the visible configuration, so it stays within the human-solve boundary:
