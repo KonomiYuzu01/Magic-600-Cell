@@ -1,0 +1,29 @@
+{
+  "format": "magic600-look-flow",
+  "version": 1,
+  "id": "read-session",
+  "name": "Open a session and inspect its orbit state",
+  "draft": true,
+  "steps": [
+    {
+      "command": "session.resume",
+      "context": "any"
+    },
+    {
+      "command": "view.residuals",
+      "context": "any"
+    },
+    {
+      "command": "orbit.switch",
+      "context": "any"
+    },
+    {
+      "command": "view.local",
+      "context": "any"
+    },
+    {
+      "command": "view.global",
+      "context": "any"
+    }
+  ]
+}

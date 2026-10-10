@@ -1,0 +1,226 @@
+{
+  "format": "magic600-look-layout",
+  "version": 1,
+  "id": "central-stage",
+  "grid": {
+    "columns": 12,
+    "rows": 12
+  },
+  "regions": [
+    {
+      "id": "stage",
+      "kind": "stage",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "placement": "docked",
+      "contexts": [
+        "any",
+        "editor",
+        "filter",
+        "keyboard",
+        "macro_base",
+        "operation",
+        "puzzle",
+        "solve"
+      ]
+    },
+    {
+      "id": "instruments",
+      "kind": "overlay",
+      "rect": {
+        "x": 0.02,
+        "y": 0.08,
+        "width": 0.23,
+        "height": 0.84
+      },
+      "placement": "overlay",
+      "contexts": [
+        "any",
+        "editor",
+        "filter",
+        "keyboard",
+        "macro_base",
+        "operation",
+        "puzzle",
+        "solve"
+      ]
+    },
+    {
+      "id": "review",
+      "kind": "overlay",
+      "rect": {
+        "x": 0.75,
+        "y": 0.08,
+        "width": 0.23,
+        "height": 0.84
+      },
+      "placement": "overlay",
+      "contexts": [
+        "any",
+        "editor",
+        "filter",
+        "keyboard",
+        "macro_base",
+        "operation",
+        "puzzle",
+        "solve"
+      ]
+    },
+    {
+      "id": "commands",
+      "kind": "overlay",
+      "rect": {
+        "x": 0.28,
+        "y": 0.9,
+        "width": 0.44,
+        "height": 0.08
+      },
+      "placement": "overlay",
+      "contexts": [
+        "any",
+        "editor",
+        "filter",
+        "keyboard",
+        "macro_base",
+        "operation",
+        "puzzle",
+        "solve"
+      ]
+    }
+  ],
+  "contexts": {
+    "any": {
+      "placed": {
+        "session.new": "commands",
+        "session.resume": "commands",
+        "session.timer.start": "commands",
+        "session.timer.stop": "commands",
+        "session.scramble": "commands",
+        "session.reset": "commands",
+        "session.undo": "commands",
+        "session.redo": "commands",
+        "session.checkpoint.save": "commands",
+        "session.checkpoint.restore": "commands",
+        "session.report": "commands",
+        "file.log.export": "commands",
+        "file.log.check": "commands",
+        "file.log.import": "commands",
+        "file.keymap.export": "commands",
+        "file.keymap.check": "commands",
+        "file.keymap.apply": "commands",
+        "solve.open": "commands",
+        "job.stop": "commands",
+        "operation.new": "review",
+        "operation.reuse": "review",
+        "view.local": "instruments",
+        "view.global": "instruments",
+        "target.next.activate": "instruments",
+        "target.next.set": "instruments",
+        "object.inspect": "stage",
+        "object.actions": "commands",
+        "object.inspect.clear": "commands",
+        "block.add_current": "instruments",
+        "block.add_home": "instruments",
+        "view.residuals": "instruments",
+        "view.findings": "review",
+        "orbit.switch": "instruments",
+        "view.recommendations": "instruments",
+        "view.names": "instruments",
+        "macro.base.open": "instruments",
+        "macro.add": "instruments",
+        "worksheet.save": "review",
+        "worksheet.load": "review",
+        "macro.compare": "instruments",
+        "endgame.configure": "instruments",
+        "macro.save": "instruments",
+        "macro.variant.create": "instruments",
+        "protection.policy.set": "review",
+        "protection.position.protect": "review",
+        "protection.position.release": "review",
+        "protection.orbit.unlock": "review",
+        "keyboard.toggle": "commands",
+        "input.destination.set": "commands",
+        "bank.select": "commands",
+        "grip.capture": "commands",
+        "bank.functions.toggle": "commands",
+        "keymap.edit": "commands",
+        "command.find": "commands",
+        "filter.open": "instruments",
+        "display.frame.toggle": "commands",
+        "display.adaptive.toggle": "commands",
+        "display.adjust": "commands",
+        "view.reset": "instruments",
+        "structure.find": "instruments",
+        "structure.compare": "instruments",
+        "view.cell_views": "instruments",
+        "camera.center": "commands",
+        "set.save": "commands"
+      },
+      "hidden": []
+    },
+    "editor": {
+      "placed": {},
+      "hidden": []
+    },
+    "filter": {
+      "placed": {
+        "filter.preview": "instruments",
+        "filter.apply": "instruments",
+        "structure.layer": "instruments"
+      },
+      "hidden": []
+    },
+    "keyboard": {
+      "placed": {
+        "grip.select": "stage",
+        "twist.apply": "stage",
+        "twist.inverse.toggle": "commands"
+      },
+      "hidden": []
+    },
+    "macro_base": {
+      "placed": {
+        "macro.select": "instruments"
+      },
+      "hidden": []
+    },
+    "operation": {
+      "placed": {
+        "operation.check": "review",
+        "operation.preview": "review",
+        "operation.execute": "review",
+        "operation.preview.cancel": "review"
+      },
+      "hidden": []
+    },
+    "puzzle": {
+      "placed": {
+        "grip.select": "stage",
+        "twist.apply": "stage",
+        "camera.rotate": "stage"
+      },
+      "hidden": []
+    },
+    "solve": {
+      "placed": {
+        "operation.phase.select": "review",
+        "operation.phase.edit": "review",
+        "operation.cleanup.from_prepare": "review",
+        "operation.check": "review",
+        "view.forecast.select": "instruments",
+        "view.cycle.mode": "instruments",
+        "view.effect.scope": "instruments",
+        "view.entry_slots": "instruments",
+        "buffer.assign": "instruments",
+        "buffer.analyse": "instruments",
+        "intent.set": "instruments",
+        "macro.select": "instruments"
+      },
+      "hidden": []
+    }
+  }
+}

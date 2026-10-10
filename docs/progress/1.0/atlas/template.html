@@ -1,0 +1,649 @@
+<title>Magic 600 Cell 0.4 Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: survey atlas. Masthead with a ledger line, a tab strip of six views, a filter bar shared by all views,
+   and a specimen drawer on the right that opens on any unit. */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --sunk: #e4e8ee;
+  --ink: #18202c;
+  --muted: #5a6575;
+  --line: #d3d9e2;
+  --accent: #2c46c9;
+  --accent-ink: #ffffff;
+  --keep: #1d8560;
+  --redesign: #5d77a6;
+  --automate: #8547c4;
+  --delete: #c13f2b;
+  --warn: #a86a00;
+  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-ui: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.5rem;
+  --step-3: 2.25rem;
+  --radius: 6px;
+  --drawer: 460px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131b; --surface: #151c27; --sunk: #1b2432; --ink: #e5eaf2; --muted: #96a1b2; --line: #273142;
+    --accent: #8197ff; --accent-ink: #0e131b; --keep: #45bd8c; --redesign: #8099c6; --automate: #b788ef; --delete: #ee6a54; --warn: #e0a640;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131b; --surface: #151c27; --sunk: #1b2432; --ink: #e5eaf2; --muted: #96a1b2; --line: #273142;
+  --accent: #8197ff; --accent-ink: #0e131b; --keep: #45bd8c; --redesign: #8099c6; --automate: #b788ef; --delete: #ee6a54; --warn: #e0a640;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { color: var(--ink); font-family: var(--font-ui); font-size: var(--step-0); line-height: 1.5; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-size: 0.86em; }
+
+.wrap { padding-inline: 16px; padding-block: 20px 40px; max-width: 1480px; margin-inline: auto; }
+.shell { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.shell.has-drawer { grid-template-columns: minmax(0, 1fr) var(--drawer); }
+
+header.mast { display: grid; gap: 10px; padding-block: 8px 18px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-size: var(--step--1); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: var(--step-3); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lede { margin: 0; max-width: 72ch; color: var(--muted); }
+.ledger { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--step--1); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ledger b { color: var(--ink); font-weight: 600; }
+.ledger .stamp { font-family: var(--font-mono); }
+
+nav.tabs { display: flex; gap: 2px; overflow-x: auto; margin-top: 14px; border-bottom: 1px solid var(--line); }
+nav.tabs button { background: none; border: 0; padding: 10px 14px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; font-weight: 500; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs button:hover { color: var(--ink); }
+nav.tabs .n { font-family: var(--font-mono); font-size: 0.78em; color: var(--muted); margin-left: 6px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding-block: 12px; }
+.filters input[type="search"] { flex: 1 1 220px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.filters select { padding: 7px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); max-width: 100%; }
+.dtoggle { display: flex; flex-wrap: wrap; gap: 6px; }
+.dtoggle button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: var(--step--1); }
+.dtoggle button[aria-pressed="false"] { opacity: 0.45; background: transparent; }
+.dtoggle .n { font-family: var(--font-mono); color: var(--muted); }
+.result { font-size: var(--step--1); color: var(--muted); font-variant-numeric: tabular-nums; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; font-size: var(--step--1); }
+
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c, var(--muted)); display: inline-block; }
+.d-keep { --c: var(--keep); } .d-redesign { --c: var(--redesign); } .d-automate { --c: var(--automate); } .d-delete { --c: var(--delete); }
+.d-split { --c: var(--redesign); }
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 999px; font-size: var(--step--1); font-weight: 500; color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: color-mix(in srgb, var(--c) 10%, transparent); white-space: nowrap; }
+
+.view { min-width: 0; }
+.note { font-size: var(--step--1); color: var(--muted); max-width: 80ch; margin: 0 0 14px; }
+.banner { border: 1px solid color-mix(in srgb, var(--warn) 50%, var(--line)); background: color-mix(in srgb, var(--warn) 9%, var(--surface)); padding: 10px 14px; border-radius: var(--radius); font-size: var(--step--1); margin-bottom: 14px; max-width: 90ch; }
+
+/* Flows */
+.flowlist { display: grid; gap: 14px; }
+.flow { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+.flowhead { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.flowhead .fid { font-family: var(--font-mono); font-size: var(--step--1); color: var(--accent); }
+.flowhead h3 { margin: 0; font-size: var(--step-1); font-weight: 600; text-wrap: balance; }
+.flowhead .cnt { margin-left: auto; font-size: var(--step--1); color: var(--muted); font-variant-numeric: tabular-nums; }
+.src { font-size: var(--step--1); color: var(--muted); margin: 0; }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--sunk); }
+.bar span { background: var(--c); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px 9px 4px 7px; border-radius: 5px; border: 1px solid var(--line); background: var(--bg); cursor: pointer; text-align: left; font-size: var(--step--1); line-height: 1.3; }
+.chip:hover { border-color: var(--c); }
+.chip .cid { font-family: var(--font-mono); font-size: 0.92em; color: var(--muted); flex: none; }
+.chip .cn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; max-width: 34ch; }
+.chip.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.chip.multi .dot { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--ink); }
+
+/* Map */
+.mapbox { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); height: min(74vh, 760px); min-height: 420px; overflow: hidden; touch-action: none; }
+.mapbox canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.mapbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 10px; font-size: var(--step--1); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 5px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: var(--step--1); padding: 4px 8px; border-radius: 4px; max-width: 280px; }
+
+/* Tables */
+.tablebox { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: var(--step--1); }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--muted); font-size: 0.78rem; letter-spacing: 0.05em; text-transform: uppercase; position: sticky; top: 0; background: var(--surface); white-space: nowrap; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--sunk); }
+tbody tr.sel { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+td.num { font-variant-numeric: tabular-nums; text-align: right; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-family: var(--font-mono); font-size: 0.74rem; padding: 0 5px; border-radius: 3px; background: var(--sunk); color: var(--muted); white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+.cmds tbody tr { cursor: default; }
+
+/* Matrix */
+.matrix td.cell { text-align: center; font-variant-numeric: tabular-nums; cursor: pointer; min-width: 64px; }
+.matrix td.cell.z { color: var(--muted); cursor: default; }
+.matrix td.cell:not(.z):hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+.matrix th.area { white-space: normal; min-width: 110px; text-transform: none; letter-spacing: 0; font-size: var(--step--1); }
+
+/* Screening */
+.scrlist { display: grid; gap: 10px; }
+.scr { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+.scr.flash { box-shadow: 0 0 0 2px var(--accent); }
+.scrhead { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.scrhead b { font-family: var(--font-mono); }
+.scr p { margin: 0; max-width: 90ch; }
+.st-open { --c: var(--delete); } .st-needs { --c: var(--warn); } .st-fixed { --c: var(--keep); } .st-rejected { --c: var(--muted); }
+.sev-major { --c: var(--delete); } .sev-minor { --c: var(--muted); }
+
+/* Drawer */
+aside.drawer { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; }
+.dhead { position: sticky; top: 0; background: var(--surface); padding: 14px 16px 10px; border-bottom: 1px solid var(--line); display: grid; gap: 6px; z-index: 1; }
+.dhead .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.dhead .uid { font-family: var(--font-mono); color: var(--muted); }
+.dhead h2 { margin: 0; font-size: var(--step-1); font-weight: 600; line-height: 1.3; text-wrap: balance; }
+.close { margin-left: auto; background: var(--sunk); border: 0; border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+.dbody { padding: 6px 16px 18px; display: grid; gap: 4px; }
+.dbody h4 { margin: 12px 0 4px; font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.dbody p { margin: 0; }
+.dbody ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.reason { color: var(--muted); font-size: var(--step--1); }
+.part { border-left: 3px solid var(--c); padding: 4px 0 4px 10px; display: grid; gap: 4px; margin-top: 6px; }
+.row04 { background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 8px 10px; display: grid; gap: 4px; margin-top: 6px; font-size: var(--step--1); }
+.row04 .who { font-family: var(--font-mono); color: var(--accent); font-size: 0.78rem; }
+.row04 .name { font-weight: 600; }
+.kv { color: var(--muted); }
+.kv b { color: var(--ink); font-weight: 500; }
+.evid { font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); word-break: break-all; }
+details summary { cursor: pointer; color: var(--muted); font-size: var(--step--1); }
+.empty { color: var(--muted); font-size: var(--step--1); }
+
+@media (max-width: 980px) {
+  .shell.has-drawer { grid-template-columns: minmax(0, 1fr); }
+  aside.drawer { position: fixed; inset: 0; top: 0; max-height: none; height: 100%; border-radius: 0; z-index: 20; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
+@media (max-width: 520px) {
+  h1 { font-size: 1.75rem; }
+  .chip .cn { max-width: 22ch; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">Magic 600 Cell · reverse engineering of 0.4 for the 1.0 redesign</div>
+    <h1>Everything 0.4 does, and what 1.0 does with it</h1>
+    <p class="lede">Two independent inventories (Claude and Codex) read every 0.4 source file and listed each function a user or a tool can reach. Stage 2.1 merged them into units; stage 2.2 gave each unit a 1.0 decision, signed by the owner on 3 October 2026. Pick any unit for its 0.4 behaviour, evidence, dependencies and 1.0 requirements.</p>
+    <div class="ledger" id="ledger"></div>
+  </header>
+
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <div class="filters" id="filters">
+    <input type="search" id="q" placeholder="Search names, purposes, behaviour, files…" aria-label="Search units">
+    <div class="dtoggle" id="dtoggle"></div>
+    <select id="area" aria-label="Source area"></select>
+    <select id="flow" aria-label="Flow"></select>
+    <span class="result" id="result"></span>
+    <button class="linkbtn" id="reset" type="button">Clear filters</button>
+  </div>
+
+  <div class="shell" id="shell">
+    <main class="view" id="view"></main>
+    <aside class="drawer" id="drawer" hidden aria-label="Unit details"></aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+const DATA = /*__DATA__*/null;
+const U = DATA.units;
+const byId = new Map(U.map(u => [u.id, u]));
+const FLOWS = DATA.flows;
+const FLOW = new Map(FLOWS.map(f => [f.id, f]));
+const D_ORDER = ["keep", "redesign", "automate", "delete"];
+const PRIORITY = ["delete", "automate", "keep", "redesign"];
+const D_LABEL = { keep: "Keep", redesign: "Redesign", automate: "Automate", delete: "Delete", split: "Split" };
+const AREA = {
+  s1: "Engine and HTTP API",
+  s2: "Experiment engine and packaging",
+  s3: "Workbench adapter and key map",
+  s4: "Retained native host",
+  s5: "Browser UI",
+  s6: "Experiment native host",
+};
+const AREAS = Object.keys(AREA);
+const flowShort = id => id === "none" ? "No flow" : id.slice(2).charAt(0) + id.slice(3).toLowerCase();
+const TABS = [
+  ["flows", "Flows"], ["map", "Dependency map"], ["matrix", "Flow × area"],
+  ["units", "Units"], ["commands", "Commands"], ["screening", "Screening"],
+];
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Search index
+for (const u of U) {
+  const parts = [u.id, ...u.names, u.purpose, u.reason, ...u.req, ...(u.entry || []), u.notes || "", ...u.scr];
+  for (const p of u.parts) parts.push(p.purpose, p.reason, ...p.req);
+  for (const r of u.rows) parts.push(r.name || "", r.behaviour || "", r.engine_call || "", ...(r.evidence || []), r.notes || "");
+  u._idx = parts.join(" \u0001 ").toLowerCase();
+  // Each decision stays paired with the flows of its own part, so a split unit's
+  // deleted part never shows under the flows its surviving part serves.
+  u._pairs = (u.parts.length ? u.parts : [{ d: u.d, flows: u.flows }]).map(p => ({ d: p.d, flows: p.flows.length ? p.flows : ["none"] }));
+  u._flows = [...new Set(u._pairs.flatMap(p => p.flows))];
+  u.dset.sort((a, b) => PRIORITY.indexOf(a) - PRIORITY.indexOf(b));
+}
+
+const state = { tab: "flows", q: "", ds: new Set(D_ORDER), area: "all", flow: "all", sel: null, group: "area", open: new Set(), cmdKind: "all" };
+try { const t = localStorage.getItem("atlas.tab"); if (t && TABS.some(x => x[0] === t)) state.tab = t; } catch (e) {}
+
+// Decisions of the parts that serve flow g (or any flow) and pass the decision filter.
+function decisionsIn(u, g) {
+  const ds = new Set(u._pairs.filter(p => state.ds.has(p.d) && (g === "all" || p.flows.includes(g))).map(p => p.d));
+  return [...ds].sort((a, b) => PRIORITY.indexOf(a) - PRIORITY.indexOf(b));
+}
+function match(u) {
+  if (state.area !== "all" && u.shard !== state.area) return false;
+  if (!decisionsIn(u, state.flow).length) return false;
+  if (state.q) {
+    for (const term of state.q.toLowerCase().split(/\s+/).filter(Boolean)) if (!u._idx.includes(term)) return false;
+  }
+  return true;
+}
+const matching = () => U.filter(match);
+
+// Header and controls
+function ledger() {
+  const d = DATA.decisions;
+  const total = Object.values(d).reduce((a, b) => a + b, 0);
+  document.getElementById("ledger").innerHTML =
+    `<span><b>${U.length}</b> units</span>` +
+    `<span><b>${total}</b> decisions: ${D_ORDER.map(k => `${d[k] || 0} ${k}`).join(", ")} (a split unit counts once per part)</span>` +
+    `<span><b>${FLOWS.length}</b> flows (provisional)</span>` +
+    `<span><b>${DATA.commands.length}</b> commands (H-08 draft)</span>` +
+    `<span><b>${DATA.screening.length}</b> screening findings</span>` +
+    `<span class="stamp">main @ ${esc(DATA.stamp.commit)} · ${esc(DATA.stamp.date)}</span>`;
+}
+
+function controls() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = TABS.map(([id, label]) => {
+    const n = id === "commands" ? DATA.commands.length : id === "screening" ? DATA.screening.length : "";
+    return `<button role="tab" type="button" id="tab-${id}" data-tab="${id}" aria-selected="${state.tab === id}">${label}${n ? `<span class="n">${n}</span>` : ""}</button>`;
+  }).join("");
+  const counts = {};
+  for (const u of U) for (const d of u.dset) counts[d] = (counts[d] || 0) + 1;
+  document.getElementById("dtoggle").innerHTML = D_ORDER.map(d =>
+    `<button type="button" class="d-${d}" data-d="${d}" aria-pressed="${state.ds.has(d)}"><span class="dot"></span>${D_LABEL[d]} <span class="n">${counts[d] || 0}</span></button>`).join("");
+  document.getElementById("area").innerHTML = `<option value="all">All source areas</option>` +
+    AREAS.map(a => `<option value="${a}"${state.area === a ? " selected" : ""}>${a} · ${AREA[a]}</option>`).join("");
+  document.getElementById("flow").innerHTML = `<option value="all">All flows</option>` +
+    FLOWS.map(f => `<option value="${f.id}"${state.flow === f.id ? " selected" : ""}>${flowShort(f.id)} · ${esc(f.title)}</option>`).join("") +
+    `<option value="none"${state.flow === "none" ? " selected" : ""}>No flow</option>`;
+  document.getElementById("q").value = state.q;
+}
+
+function chip(u, ds) {
+  ds = ds || u.dset;
+  const multi = ds.length > 1 ? " multi" : "";
+  const sel = state.sel === u.id ? " sel" : "";
+  return `<button type="button" class="chip d-${ds[0]}${multi}${sel}" data-u="${u.id}" title="${esc(u.name)} · ${D_LABEL[u.d]}"><span class="dot"></span><span class="cid">${u.id}</span><span class="cn">${esc(u.name)}</span></button>`;
+}
+function dpill(d) { return `<span class="pill d-${d}"><span class="dot"></span>${D_LABEL[d]}</span>`; }
+function unitPills(u) {
+  if (u.d !== "split") return dpill(u.d);
+  return `<span class="pill d-split">Split into ${u.parts.length}</span> ` + u.dset.map(dpill).join(" ");
+}
+
+// Views
+function renderFlows(el) {
+  const list = matching();
+  const groups = [...FLOWS.map(f => f.id), "none"];
+  const dRank = d => D_ORDER.indexOf(d);
+  let html = `<p class="note">Flows follow the solving workflow, from opening a session to the endgame, then learning, migration and the platform. Status: ${esc(DATA.flowStatus)}. A unit appears under every flow it serves, coloured by the decision of the part that serves that flow. A ringed dot marks a unit with more than one decision in the same flow.</p><div class="flowlist">`;
+  for (const g of groups) {
+    const dsOf = new Map(list.map(u => [u.id, decisionsIn(u, g)]));
+    const us = list.filter(u => dsOf.get(u.id).length).sort((a, b) => dRank(dsOf.get(a.id)[0]) - dRank(dsOf.get(b.id)[0]) || a.id.localeCompare(b.id));
+    if (!us.length) continue;
+    const f = FLOW.get(g);
+    const c = {};
+    for (const u of us) for (const d of dsOf.get(u.id)) c[d] = (c[d] || 0) + 1;
+    const limit = state.open.has(g) ? us.length : 30;
+    html += `<section class="flow" id="flow-${g}">
+      <div class="flowhead"><span class="fid">${g === "none" ? "—" : g}</span><h3>${f ? esc(f.title) : "Serves no 1.0 flow"}</h3>
+      <span class="cnt">${us.length} units · ${D_ORDER.filter(d => c[d]).map(d => `${c[d]} ${d}`).join(" · ")}</span></div>
+      ${f ? `<p class="src">Source: ${esc(f.source)}</p>` : `<p class="src">Units, or parts of split units, that no 1.0 flow needs.</p>`}
+      <div class="bar" role="img" aria-label="Decision mix">${D_ORDER.filter(d => c[d]).map(d => `<span class="d-${d}" style="flex:${c[d]}"></span>`).join("")}</div>
+      <div class="chips">${us.slice(0, limit).map(u => chip(u, dsOf.get(u.id))).join("")}</div>
+      ${us.length > 30 ? `<div><button type="button" class="linkbtn" data-more="${g}">${state.open.has(g) ? "Show fewer" : `Show all ${us.length}`}</button></div>` : ""}
+    </section>`;
+  }
+  html += `</div>`;
+  if (!list.length) html = `<p class="empty">No unit matches the filters.</p>`;
+  el.innerHTML = html;
+}
+
+function renderMatrix(el) {
+  const list = matching();
+  const rows = [...FLOWS.map(f => f.id), "none"];
+  const cnt = (f, a) => list.filter(u => decisionsIn(u, f).length && (a === "all" || u.shard === a)).length;
+  let max = 1;
+  for (const f of rows) for (const a of AREAS) max = Math.max(max, cnt(f, a));
+  let html = `<p class="note">Rows are flows, columns are the six source areas of the 0.4 code. Each cell counts the units that serve the flow from that area; select a cell to list them. It shows where each part of the solver's work lives in 0.4 today.</p>
+  <div class="tablebox"><table class="matrix"><thead><tr><th>Flow</th>${AREAS.map(a => `<th class="area"><span class="mono">${a}</span><br>${AREA[a]}</th>`).join("")}<th class="area">All</th></tr></thead><tbody>`;
+  for (const f of rows) {
+    const fl = FLOW.get(f);
+    html += `<tr><th style="text-transform:none;letter-spacing:0;font-size:var(--step--1);white-space:normal;min-width:180px"><span class="mono" style="color:var(--accent)">${flowShort(f)}</span><br><span style="font-weight:400;color:var(--ink)">${fl ? esc(fl.title) : "Serves no 1.0 flow"}</span></th>`;
+    for (const a of [...AREAS, "all"]) {
+      const n = cnt(f, a);
+      const pct = a === "all" ? 0 : Math.round(8 + 62 * n / max);
+      html += n ? `<td class="cell" data-cell="${f}|${a}" style="background:color-mix(in srgb, var(--accent) ${pct}%, var(--surface));${pct > 45 ? "color:var(--accent-ink)" : ""}">${n}</td>` : `<td class="cell z">·</td>`;
+    }
+    html += `</tr>`;
+  }
+  html += `</tbody></table></div>`;
+  el.innerHTML = html;
+}
+
+function renderUnits(el) {
+  const list = matching();
+  const head = `<p class="note">One row per unit. Select a row for its full record.</p>`;
+  if (!list.length) { el.innerHTML = head + `<p class="empty">No unit matches the filters.</p>`; return; }
+  el.innerHTML = head + `<div class="tablebox"><table><thead><tr><th>Unit</th><th>Function</th><th>1.0 decision</th><th>Flows</th><th>Area</th><th>Screening</th><th class="num">Uses</th><th class="num">Used by</th></tr></thead><tbody>` +
+    list.map(u => `<tr data-u="${u.id}" class="${state.sel === u.id ? "sel" : ""}"><td class="mono nowrap">${u.id}</td><td>${esc(u.name)}</td><td><div class="tags">${unitPills(u)}</div></td>
+      <td><div class="tags">${u.flows.map(f => `<span class="tag">${flowShort(f)}</span>`).join("") || `<span class="tag">none</span>`}</div></td>
+      <td class="mono nowrap">${u.shard}</td><td><div class="tags">${u.scr.map(s => `<span class="tag">${s}</span>`).join("")}</div></td>
+      <td class="num">${u.dep.length || ""}</td><td class="num">${u.used.length || ""}</td></tr>`).join("") +
+    `</tbody></table></div>`;
+}
+
+function renderCommands(el) {
+  const q = state.q.toLowerCase();
+  const kinds = DATA.cmdVocab.kind;
+  const list = DATA.commands.filter(c => (state.cmdKind === "all" || c.kind === state.cmdKind) &&
+    (!q || [c.id, c.label, c.note || "", c.key || "", ...c.inv.map(i => i.name || "")].join(" ").toLowerCase().includes(q)));
+  const pending = DATA.commands.filter(c => c.disp === "pending-2.2").length;
+  el.innerHTML = `<div class="banner">This is the H-08 command table, first version (1 October 2026). ${pending} of ${DATA.commands.length} commands still read <span class="mono">pending-2.2</span>: the table has not yet been reconciled with the dispositions signed on 3 October. Commands link to the top-down inventory, not to units, so the unit filters do not apply here; the search box does.</div>
+  <div class="mapbar"><span>Kind</span><div class="seg" id="kindseg">${["all", ...kinds].map(k => `<button type="button" data-kind="${k}" aria-pressed="${state.cmdKind === k}">${k}</button>`).join("")}</div><span class="result">${list.length} shown</span></div>
+  <div class="tablebox"><table class="cmds"><thead><tr><th>Command</th><th>Kind</th><th>Gates</th><th>Preview</th><th>Undo</th><th>Contexts</th><th>0.4 key</th><th>From 0.4 functions</th></tr></thead><tbody>` +
+    list.map(c => `<tr><td><span class="mono">${esc(c.id)}</span><br>${esc(c.label)}${c.note ? `<br><span class="reason">${esc(c.note)}</span>` : ""}</td>
+      <td><span class="tag">${c.kind}</span>${c.job ? ` <span class="tag">job</span>` : ""}${c.repeat ? ` <span class="tag">repeat</span>` : ""}</td>
+      <td><div class="tags">${c.gates.map(g => `<span class="tag">${g}</span>`).join("")}</div></td>
+      <td class="mono">${esc(c.preview)}</td><td class="mono">${esc(c.undo)}</td>
+      <td><div class="tags">${c.contexts.map(g => `<span class="tag">${g}</span>`).join("")}</div></td>
+      <td class="mono">${esc(c.key || "")}</td>
+      <td>${c.inv.map(i => `<span class="mono">${i.id}</span> ${esc(i.name || "")}`).join("<br>")}</td></tr>`).join("") +
+    `</tbody></table></div>`;
+}
+
+function renderScreening(el) {
+  const order = ["open", "needs verification", "fixed", "rejected"];
+  const cls = s => s === "needs verification" ? "st-needs" : `st-${s}`;
+  const list = [...DATA.screening].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status) || a.id.localeCompare(b.id));
+  el.innerHTML = `<p class="note">The 0.4.1 screening findings (docs/progress/0.4.1/screening-findings.md), which are now 1.0 requirements and tests. Linked units carry the finding in their record.</p><div class="scrlist">` +
+    list.map(f => `<article class="scr" id="scr-${f.id}"><div class="scrhead"><b>${f.id}</b>
+      <span class="pill ${cls(f.status)}">${esc(f.status)}</span>${f.sev ? `<span class="pill sev-${f.sev}">${f.sev}</span>` : ""}<span class="reason">${esc(f.area)}</span></div>
+      <p>${esc(f.summary)}</p>
+      ${f.where.length ? `<div class="evid">${f.where.map(esc).join("<br>")}</div>` : ""}
+      ${f.units.length ? `<div class="chips">${f.units.map(id => chip(byId.get(id))).join("")}</div>` : `<div class="empty">No unit linked.</div>`}
+    </article>`).join("") + `</div>`;
+}
+
+// Dependency map
+const MAP = { built: false };
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function renderMap(el) {
+  el.innerHTML = `<div class="mapbar"><span>Group by</span><div class="seg"><button type="button" data-group="area" aria-pressed="${state.group === "area"}">Source area</button><button type="button" data-group="flow" aria-pressed="${state.group === "flow"}">First flow</button></div>
+    <div class="legend">${D_ORDER.map(d => `<span class="d-${d}"><span class="dot"></span>${D_LABEL[d]}</span>`).join("")}<span>Size: number of links</span><span>Line: one unit uses another</span></div></div>
+    <div class="mapbox" id="mapbox"><canvas id="cv" aria-label="Dependency map of the 0.4 units"></canvas><div class="tip" id="tip" hidden></div></div>
+    <p class="note" style="margin-top:10px">Drag to pan, scroll or pinch to zoom, select a dot for its record. When a unit is selected, the units it uses are drawn in the accent colour and the units that use it in the decision colour of the selected unit. ${U.filter(u => !u.dep.length && !u.used.length).length} units have no link to another unit.</p>`;
+  if (typeof d3 === "undefined") { document.getElementById("mapbox").innerHTML = `<p class="empty" style="padding:16px">The map needs the d3 library, which did not load. The other views work without it.</p>`; return; }
+  buildMap(false);
+}
+function groupOf(u) { return state.group === "area" ? u.shard : u._flows[0]; }
+function buildMap(regroup) {
+  const box = document.getElementById("mapbox"), cv = document.getElementById("cv"), tip = document.getElementById("tip");
+  const ctx = cv.getContext("2d");
+  if (!MAP.nodes) {
+    MAP.nodes = U.map(u => ({ id: u.id, u, r: 2.6 + Math.sqrt(u.dep.length + u.used.length) * 1.25 }));
+    MAP.nid = new Map(MAP.nodes.map(n => [n.id, n]));
+    MAP.links = [];
+    for (const u of U) for (const t of u.dep) if (MAP.nid.has(t)) MAP.links.push({ source: u.id, target: t });
+    MAP.transform = null;
+  }
+  const W = 1200, H = 800;
+  const groups = state.group === "area" ? AREAS : [...FLOWS.map(f => f.id), "none"];
+  const cols = Math.ceil(Math.sqrt(groups.length * 1.5)), rowsN = Math.ceil(groups.length / cols);
+  const centre = new Map(groups.map((g, i) => [g, { x: (i % cols + 0.5) * W / cols, y: (Math.floor(i / cols) + 0.5) * H / rowsN }]));
+  const sim = d3.forceSimulation(MAP.nodes)
+    .force("link", d3.forceLink(MAP.links).id(d => d.id).distance(22).strength(0.15))
+    .force("charge", d3.forceManyBody().strength(-14).distanceMax(160))
+    .force("collide", d3.forceCollide(d => d.r + 1.4))
+    .force("x", d3.forceX(d => centre.get(groupOf(d.u)).x).strength(0.16))
+    .force("y", d3.forceY(d => centre.get(groupOf(d.u)).y).strength(0.16))
+    .stop();
+  if (MAP.sim) MAP.sim.stop();
+  MAP.sim = sim;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const animate = MAP.laidOut && regroup && !reduce;
+  if (!MAP.laidOut || (regroup && reduce)) for (let i = 0; i < 320; i++) sim.tick();
+  MAP.laidOut = true;
+
+  function size() {
+    const r = box.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    MAP.w = r.width; MAP.h = r.height;
+  }
+  function fit() {
+    const xs = MAP.nodes.map(n => n.x), ys = MAP.nodes.map(n => n.y);
+    const x0 = Math.min(...xs) - 30, x1 = Math.max(...xs) + 30, y0 = Math.min(...ys) - 40, y1 = Math.max(...ys) + 30;
+    const k = Math.min(MAP.w / (x1 - x0), MAP.h / (y1 - y0));
+    return d3.zoomIdentity.translate((MAP.w - k * (x1 + x0)) / 2, (MAP.h - k * (y1 + y0)) / 2).scale(k);
+  }
+  function draw() {
+    const t = MAP.transform || d3.zoomIdentity;
+    const col = { line: cssVar("--line"), accent: cssVar("--accent"), ink: cssVar("--ink"), muted: cssVar("--muted"), surface: cssVar("--surface") };
+    for (const d of D_ORDER) col[d] = cssVar("--" + d);
+    ctx.clearRect(0, 0, MAP.w, MAP.h);
+    ctx.save(); ctx.translate(t.x, t.y); ctx.scale(t.k, t.k);
+    const sel = state.sel && MAP.nid.get(state.sel);
+    const near = new Set();
+    if (sel) { near.add(sel.id); for (const x of sel.u.dep) near.add(x); for (const x of sel.u.used) near.add(x); }
+    ctx.lineWidth = 0.8 / t.k;
+    ctx.strokeStyle = col.line; ctx.globalAlpha = sel ? 0.35 : 0.9;
+    ctx.beginPath();
+    for (const l of MAP.links) { ctx.moveTo(l.source.x, l.source.y); ctx.lineTo(l.target.x, l.target.y); }
+    ctx.stroke();
+    if (sel) {
+      ctx.globalAlpha = 1; ctx.lineWidth = 1.6 / t.k;
+      for (const l of MAP.links) {
+        if (l.source.id === sel.id) ctx.strokeStyle = col.accent;
+        else if (l.target.id === sel.id) ctx.strokeStyle = col[sel.u.dset[0]];
+        else continue;
+        ctx.beginPath(); ctx.moveTo(l.source.x, l.source.y); ctx.lineTo(l.target.x, l.target.y); ctx.stroke();
+      }
+    }
+    for (const n of MAP.nodes) {
+      const on = match(n.u);
+      ctx.globalAlpha = !on ? 0.1 : (sel && !near.has(n.id) ? 0.3 : 1);
+      ctx.fillStyle = col[n.u.dset[0]];
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
+      if (n.u.dset.length > 1) { ctx.strokeStyle = col.ink; ctx.lineWidth = 1.2 / t.k; ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 1.6, 0, Math.PI * 2); ctx.stroke(); }
+      if (sel && n.id === sel.id) { ctx.globalAlpha = 1; ctx.strokeStyle = col.ink; ctx.lineWidth = 2 / t.k; ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 3, 0, Math.PI * 2); ctx.stroke(); }
+    }
+    ctx.globalAlpha = 1;
+    // group labels at the top of each cluster
+    ctx.fillStyle = col.muted; ctx.textAlign = "center";
+    ctx.font = `600 ${12 / t.k}px ${cssVar("--font-ui")}`;
+    for (const g of groups) {
+      const ns = MAP.nodes.filter(n => groupOf(n.u) === g);
+      if (!ns.length) continue;
+      const cx = ns.reduce((a, n) => a + n.x, 0) / ns.length, top = Math.min(...ns.map(n => n.y - n.r));
+      const label = state.group === "area" ? `${g} · ${AREA[g]}` : (g === "none" ? "No flow" : flowShort(g));
+      ctx.fillText(`${label} (${ns.length})`, cx, top - 8 / t.k);
+    }
+    ctx.restore();
+  }
+  MAP.draw = draw; MAP.size = size;
+  size();
+  if (!MAP.zoom) {
+    MAP.zoom = d3.zoom().scaleExtent([0.2, 8]).on("zoom", e => { MAP.transform = e.transform; MAP.draw(); });
+  }
+  d3.select(cv).call(MAP.zoom);
+  if (!animate) { MAP.transform = fit(); d3.select(cv).call(MAP.zoom.transform, MAP.transform); }
+  draw();
+  if (animate) { sim.alpha(0.9).on("tick", draw).restart(); }
+
+  let down = null;
+  cv.onpointerdown = e => { down = [e.clientX, e.clientY]; };
+  function hit(e) {
+    const r = cv.getBoundingClientRect();
+    const [x, y] = MAP.transform.invert([e.clientX - r.left, e.clientY - r.top]);
+    return sim.find(x, y, 14 / MAP.transform.k);
+  }
+  cv.onclick = e => {
+    if (down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+    const n = hit(e);
+    if (n) openUnit(n.id); else closeUnit();
+  };
+  cv.onpointermove = e => {
+    const n = hit(e);
+    if (!n) { tip.hidden = true; cv.style.cursor = "grab"; return; }
+    cv.style.cursor = "pointer";
+    const r = box.getBoundingClientRect();
+    tip.textContent = `${n.id} · ${n.u.name} · ${D_LABEL[n.u.d]}`;
+    tip.hidden = false;
+    tip.style.left = Math.min(e.clientX - r.left + 12, r.width - 290) + "px";
+    tip.style.top = (e.clientY - r.top + 12) + "px";
+  };
+  cv.onpointerleave = () => { tip.hidden = true; };
+  if (!MAP.ro) {
+    MAP.ro = new ResizeObserver(() => { if (document.getElementById("cv")) { MAP.size(); MAP.draw(); } });
+  }
+  MAP.ro.disconnect(); MAP.ro.observe(box);
+}
+
+// Drawer
+function list(items, cls) { return items.length ? `<ul class="${cls || ""}">${items.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="empty">None.</p>`; }
+function chipsFor(ids) {
+  return ids.length ? `<div class="chips">${ids.map(id => byId.has(id) ? chip(byId.get(id)) : `<span class="tag">${esc(id)}</span>`).join("")}</div>` : `<p class="empty">None.</p>`;
+}
+function flowTags(fl) { return fl.length ? `<div class="tags">${fl.map(f => `<span class="tag" title="${esc(FLOW.get(f)?.title || "")}">${flowShort(f)}</span>`).join("")}</div>` : `<p class="empty">No 1.0 flow.</p>`; }
+function rowCard(r) {
+  if (r.missing) return `<div class="row04"><span class="who">${esc(r.id)}</span><span class="empty">Row not found.</span></div>`;
+  const who = r.id.startsWith("claude:") ? "Claude inventory" : "Codex inventory";
+  return `<div class="row04"><span class="who">${who} · ${esc(r.id.split(":")[1])}</span><span class="name">${esc(r.name)}</span>
+    <span>${esc(r.behaviour)}</span>
+    <span class="kv">Reads <b>${esc((r.reads || []).join(", ") || "none")}</b> · writes <b>${esc((r.writes || []).join(", ") || "none")}</b>${r.engine_call ? ` · call <b class="mono">${esc(r.engine_call)}</b>` : ""} · evidence <b>${esc(r.kind || "")}</b></span>
+    ${r.notes ? `<span class="reason">${esc(r.notes)}</span>` : ""}
+    <span class="evid">${(r.evidence || []).slice(0, 8).map(esc).join("  ")}</span>
+    ${(r.evidence || []).length > 8 ? `<details><summary>${r.evidence.length - 8} more evidence references</summary><span class="evid">${r.evidence.slice(8).map(esc).join("  ")}</span></details>` : ""}</div>`;
+}
+function renderDrawer() {
+  const dr = document.getElementById("drawer"), shell = document.getElementById("shell");
+  const u = state.sel && byId.get(state.sel);
+  if (!u) { dr.hidden = true; dr.innerHTML = ""; shell.classList.remove("has-drawer"); return; }
+  shell.classList.add("has-drawer"); dr.hidden = false;
+  const parts = u.parts.map(p => `<div class="part d-${p.d}"><div>${dpill(p.d)} <span class="reason">part ${p.n} · rows ${esc(p.rows.join(", "))}</span></div>
+      <p>${esc(p.purpose)}</p><p class="reason">${esc(p.reason)}</p>${flowTags(p.flows)}${p.req.length ? list(p.req) : ""}</div>`).join("");
+  dr.innerHTML = `<div class="dhead"><div class="row"><span class="uid">${u.id}</span><span class="tag">${u.shard} · ${AREA[u.shard]}</span><button type="button" class="close" data-close="1" aria-label="Close details">Close</button></div>
+    <h2>${esc(u.name)}</h2><div class="tags">${unitPills(u)}</div></div>
+    <div class="dbody">
+      <h4>Purpose in 1.0</h4><p>${esc(u.purpose)}</p>
+      <h4>Why this decision</h4><p class="reason">${esc(u.reason)}</p>
+      ${u.parts.length ? `<h4>Parts</h4>${parts}` : `<h4>Flows</h4>${flowTags(u.flows)}<h4>1.0 requirements</h4>${list(u.req)}`}
+      ${u.notes ? `<h4>Notes</h4><p class="reason">${esc(u.notes)}</p>` : ""}
+      <h4>What 0.4 does (${u.rows.length} inventory rows)</h4>${u.rows.map(rowCard).join("")}
+      ${u.names.length > 1 ? `<h4>Also called</h4>${list(u.names.slice(1))}` : ""}
+      <h4>Entry points</h4>${u.entry.length ? `<div class="evid">${u.entry.map(esc).join("<br>")}</div>` : `<p class="empty">None recorded.</p>`}
+      <h4>Uses (${u.dep.length})</h4>${chipsFor(u.dep)}
+      <h4>Used by (${u.used.length})</h4>${chipsFor(u.used)}
+      <h4>Same purpose as</h4>${chipsFor(u.same)}
+      <h4>Screening findings</h4>${u.scr.length ? `<div class="tags">${u.scr.map(s => `<button type="button" class="linkbtn mono" data-scr="${s}">${s}</button>`).join(" ")}</div>` : `<p class="empty">None.</p>`}
+      ${u.unres.length ? `<details><summary>${u.unres.length} internal calls not mapped to a unit</summary><div class="evid">${u.unres.map(esc).join("<br>")}</div></details>` : ""}
+    </div>`;
+  dr.scrollTop = 0;
+}
+function openUnit(id) {
+  if (!byId.has(id)) return;
+  state.sel = id;
+  try { history.replaceState(null, "", "#" + id); } catch (e) {}
+  renderDrawer(); refreshSelection();
+}
+function closeUnit() {
+  state.sel = null;
+  try { history.replaceState(null, "", "#" + state.tab); } catch (e) {}
+  renderDrawer(); refreshSelection();
+}
+function refreshSelection() {
+  document.querySelectorAll("#view [data-u]").forEach(el => el.classList.toggle("sel", el.dataset.u === state.sel));
+  if (state.tab === "map" && MAP.draw && document.getElementById("cv")) MAP.draw();
+}
+
+// Render loop
+function render() {
+  const n = matching().length;
+  document.getElementById("result").textContent = state.tab === "commands" || state.tab === "screening" ? "" : `${n} of ${U.length} units`;
+  document.getElementById("filters").querySelectorAll("#dtoggle, #area, #flow, #reset").forEach(el => { el.style.visibility = state.tab === "commands" || state.tab === "screening" ? "hidden" : ""; });
+  document.querySelectorAll("#tabs [data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === state.tab));
+  const v = document.getElementById("view");
+  if (state.tab !== "map" && MAP.sim) MAP.sim.stop();
+  if (state.tab === "map" && document.getElementById("cv") && MAP.draw) { MAP.draw(); return; }
+  ({ flows: renderFlows, map: renderMap, matrix: renderMatrix, units: renderUnits, commands: renderCommands, screening: renderScreening })[state.tab](v);
+}
+function setTab(t) {
+  state.tab = t;
+  try { localStorage.setItem("atlas.tab", t); } catch (e) {}
+  if (!state.sel) { try { history.replaceState(null, "", "#" + t); } catch (e) {} }
+  render();
+}
+
+// Events
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-tab],[data-u],[data-d],[data-more],[data-cell],[data-close],[data-scr],[data-group],[data-kind]");
+  if (!t) return;
+  if (t.dataset.tab) return setTab(t.dataset.tab);
+  if (t.dataset.u) return openUnit(t.dataset.u);
+  if (t.dataset.close) return closeUnit();
+  if (t.dataset.d) {
+    const d = t.dataset.d;
+    if (state.ds.has(d) && state.ds.size === 1) state.ds = new Set(D_ORDER);
+    else if (state.ds.size === D_ORDER.length) state.ds = new Set([d]);
+    else state.ds.has(d) ? state.ds.delete(d) : state.ds.add(d);
+    controls(); return render();
+  }
+  if (t.dataset.more) { const g = t.dataset.more; state.open.has(g) ? state.open.delete(g) : state.open.add(g); return render(); }
+  if (t.dataset.cell) { const [f, a] = t.dataset.cell.split("|"); state.flow = f; state.area = a; controls(); return setTab("units"); }
+  if (t.dataset.group) { state.group = t.dataset.group; t.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.group === state.group)); return buildMap(true); }
+  if (t.dataset.kind) { state.cmdKind = t.dataset.kind; return render(); }
+  if (t.dataset.scr) {
+    setTab("screening");
+    const el = document.getElementById("scr-" + t.dataset.scr);
+    if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1600); }
+  }
+});
+let qTimer;
+document.getElementById("q").addEventListener("input", e => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value.trim(); render(); }, 120); });
+document.getElementById("area").addEventListener("change", e => { state.area = e.target.value; render(); });
+document.getElementById("flow").addEventListener("change", e => { state.flow = e.target.value; render(); });
+document.getElementById("reset").addEventListener("click", () => { state.q = ""; state.ds = new Set(D_ORDER); state.area = "all"; state.flow = "all"; controls(); render(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && state.sel) closeUnit(); });
+const redrawMap = () => { if (state.tab === "map" && MAP.draw && document.getElementById("cv")) MAP.draw(); };
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redrawMap); } catch (e) {}
+new MutationObserver(redrawMap).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+// Start
+const h = decodeURIComponent((location.hash || "").slice(1));
+if (TABS.some(x => x[0] === h)) state.tab = h;
+ledger(); controls(); render();
+if (byId.has(h)) openUnit(h);
+</script>

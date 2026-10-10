@@ -1,0 +1,1160 @@
+{
+ "menu": "S4",
+ "seed": 2,
+ "log": [
+  {
+   "step": 1,
+   "tries": 1,
+   "blocked": 0,
+   "poses": 2,
+   "off": 3097,
+   "height": 8,
+   "t": 0.0
+  },
+  {
+   "step": 2,
+   "tries": 2,
+   "blocked": 0,
+   "poses": 4,
+   "off": 5799,
+   "height": 8,
+   "t": 0.3
+  },
+  {
+   "step": 3,
+   "tries": 3,
+   "blocked": 0,
+   "poses": 6,
+   "off": 8501,
+   "height": 8,
+   "t": 0.3
+  },
+  {
+   "step": 4,
+   "tries": 4,
+   "blocked": 0,
+   "poses": 7,
+   "off": 11598,
+   "height": 8,
+   "t": 0.3
+  },
+  {
+   "step": 5,
+   "tries": 5,
+   "blocked": 0,
+   "poses": 8,
+   "off": 14695,
+   "height": 8,
+   "t": 0.4
+  },
+  {
+   "step": 10,
+   "tries": 10,
+   "blocked": 0,
+   "poses": 14,
+   "off": 29450,
+   "height": 8,
+   "t": 0.8
+  },
+  {
+   "step": 15,
+   "tries": 16,
+   "blocked": 1,
+   "poses": 21,
+   "off": 36765,
+   "height": 8,
+   "t": 1.8
+  },
+  {
+   "step": 20,
+   "tries": 23,
+   "blocked": 3,
+   "poses": 29,
+   "off": 51125,
+   "height": 8,
+   "t": 2.6
+  },
+  {
+   "step": 25,
+   "tries": 31,
+   "blocked": 6,
+   "poses": 35,
+   "off": 58607,
+   "height": 8,
+   "t": 3.1
+  },
+  {
+   "step": 30,
+   "tries": 49,
+   "blocked": 19,
+   "poses": 48,
+   "off": 71585,
+   "height": 8,
+   "t": 4.4
+  },
+  {
+   "step": 35,
+   "tries": 54,
+   "blocked": 19,
+   "poses": 59,
+   "off": 78566,
+   "height": 8,
+   "t": 5.3
+  },
+  {
+   "step": 40,
+   "tries": 70,
+   "blocked": 30,
+   "poses": 77,
+   "off": 89238,
+   "height": 8,
+   "t": 7.3
+  },
+  {
+   "step": 45,
+   "tries": 104,
+   "blocked": 59,
+   "poses": 101,
+   "off": 98764,
+   "height": 8,
+   "t": 9.3
+  },
+  {
+   "step": 50,
+   "tries": 120,
+   "blocked": 70,
+   "poses": 122,
+   "off": 107835,
+   "height": 8,
+   "t": 11.2
+  },
+  {
+   "step": 55,
+   "tries": 152,
+   "blocked": 97,
+   "poses": 138,
+   "off": 114252,
+   "height": 8,
+   "t": 14.7
+  },
+  {
+   "step": 60,
+   "tries": 180,
+   "blocked": 120,
+   "poses": 158,
+   "off": 115630,
+   "height": 8,
+   "t": 16.7
+  },
+  {
+   "step": 65,
+   "tries": 211,
+   "blocked": 146,
+   "poses": 173,
+   "off": 111167,
+   "height": 16,
+   "t": 19.8
+  },
+  {
+   "step": 70,
+   "tries": 245,
+   "blocked": 175,
+   "poses": 185,
+   "off": 108881,
+   "height": 16,
+   "t": 23.3
+  },
+  {
+   "step": 75,
+   "tries": 269,
+   "blocked": 194,
+   "poses": 202,
+   "off": 110459,
+   "height": 16,
+   "t": 26.4
+  },
+  {
+   "step": 80,
+   "tries": 310,
+   "blocked": 230,
+   "poses": 219,
+   "off": 112540,
+   "height": 16,
+   "t": 29.1
+  },
+  {
+   "step": 85,
+   "tries": 398,
+   "blocked": 313,
+   "poses": 236,
+   "off": 112301,
+   "height": 16,
+   "t": 36.9
+  },
+  {
+   "step": 90,
+   "tries": 442,
+   "blocked": 352,
+   "poses": 251,
+   "off": 107737,
+   "height": 16,
+   "t": 40.0
+  },
+  {
+   "step": 95,
+   "tries": 467,
+   "blocked": 372,
+   "poses": 265,
+   "off": 106086,
+   "height": 16,
+   "t": 42.3
+  },
+  {
+   "step": 100,
+   "tries": 526,
+   "blocked": 426,
+   "poses": 287,
+   "off": 110972,
+   "height": 16,
+   "t": 46.9
+  },
+  {
+   "step": 105,
+   "tries": 603,
+   "blocked": 498,
+   "poses": 308,
+   "off": 108324,
+   "height": 16,
+   "t": 53.0
+  },
+  {
+   "step": 110,
+   "tries": 680,
+   "blocked": 570,
+   "poses": 320,
+   "off": 104347,
+   "height": 16,
+   "t": 60.9
+  },
+  {
+   "step": 115,
+   "tries": 711,
+   "blocked": 596,
+   "poses": 349,
+   "off": 103083,
+   "height": 16,
+   "t": 65.6
+  },
+  {
+   "step": 120,
+   "tries": 738,
+   "blocked": 618,
+   "poses": 355,
+   "off": 102971,
+   "height": 16,
+   "t": 69.3
+  },
+  {
+   "step": 125,
+   "tries": 766,
+   "blocked": 641,
+   "poses": 389,
+   "off": 100195,
+   "height": 16,
+   "t": 73.1
+  },
+  {
+   "step": 130,
+   "tries": 815,
+   "blocked": 685,
+   "poses": 420,
+   "off": 105320,
+   "height": 16,
+   "t": 78.7
+  },
+  {
+   "step": 135,
+   "tries": 883,
+   "blocked": 748,
+   "poses": 450,
+   "off": 107146,
+   "height": 16,
+   "t": 86.0
+  },
+  {
+   "step": 140,
+   "tries": 963,
+   "blocked": 823,
+   "poses": 482,
+   "off": 114299,
+   "height": 16,
+   "t": 92.8
+  },
+  {
+   "step": 145,
+   "tries": 1052,
+   "blocked": 907,
+   "poses": 494,
+   "off": 113695,
+   "height": 16,
+   "t": 101.6
+  },
+  {
+   "step": 150,
+   "tries": 1092,
+   "blocked": 942,
+   "poses": 507,
+   "off": 111013,
+   "height": 16,
+   "t": 106.0
+  },
+  {
+   "step": 155,
+   "tries": 1144,
+   "blocked": 989,
+   "poses": 508,
+   "off": 109617,
+   "height": 16,
+   "t": 111.0
+  },
+  {
+   "step": 160,
+   "tries": 1214,
+   "blocked": 1054,
+   "poses": 522,
+   "off": 108075,
+   "height": 16,
+   "t": 118.1
+  },
+  {
+   "step": 165,
+   "tries": 1270,
+   "blocked": 1105,
+   "poses": 535,
+   "off": 105799,
+   "height": 16,
+   "t": 123.3
+  },
+  {
+   "step": 170,
+   "tries": 1332,
+   "blocked": 1162,
+   "poses": 585,
+   "off": 111667,
+   "height": 16,
+   "t": 129.7
+  },
+  {
+   "step": 175,
+   "tries": 1463,
+   "blocked": 1288,
+   "poses": 601,
+   "off": 110703,
+   "height": 16,
+   "t": 140.9
+  },
+  {
+   "step": 180,
+   "tries": 1553,
+   "blocked": 1373,
+   "poses": 601,
+   "off": 108958,
+   "height": 16,
+   "t": 149.0
+  },
+  {
+   "step": 185,
+   "tries": 1652,
+   "blocked": 1467,
+   "poses": 627,
+   "off": 107999,
+   "height": 16,
+   "t": 159.0
+  },
+  {
+   "step": 190,
+   "tries": 1802,
+   "blocked": 1612,
+   "poses": 645,
+   "off": 108538,
+   "height": 16,
+   "t": 172.2
+  },
+  {
+   "step": 195,
+   "tries": 1869,
+   "blocked": 1674,
+   "poses": 658,
+   "off": 107618,
+   "height": 16,
+   "t": 179.1
+  },
+  {
+   "step": 200,
+   "tries": 1908,
+   "blocked": 1708,
+   "poses": 697,
+   "off": 109228,
+   "height": 16,
+   "t": 184.3
+  },
+  {
+   "step": 205,
+   "tries": 2005,
+   "blocked": 1800,
+   "poses": 708,
+   "off": 105592,
+   "height": 16,
+   "t": 195.8
+  },
+  {
+   "step": 210,
+   "tries": 2125,
+   "blocked": 1915,
+   "poses": 714,
+   "off": 107100,
+   "height": 16,
+   "t": 209.1
+  },
+  {
+   "step": 215,
+   "tries": 2409,
+   "blocked": 2194,
+   "poses": 735,
+   "off": 110024,
+   "height": 16,
+   "t": 231.3
+  },
+  {
+   "step": 220,
+   "tries": 2469,
+   "blocked": 2249,
+   "poses": 766,
+   "off": 112470,
+   "height": 32,
+   "t": 237.3
+  },
+  {
+   "step": 225,
+   "tries": 2589,
+   "blocked": 2364,
+   "poses": 800,
+   "off": 112706,
+   "height": 32,
+   "t": 246.9
+  },
+  {
+   "step": 230,
+   "tries": 2714,
+   "blocked": 2484,
+   "poses": 807,
+   "off": 113758,
+   "height": 32,
+   "t": 256.7
+  },
+  {
+   "step": 235,
+   "tries": 3010,
+   "blocked": 2775,
+   "poses": 816,
+   "off": 111631,
+   "height": 32,
+   "t": 278.1
+  },
+  {
+   "step": 240,
+   "tries": 3150,
+   "blocked": 2910,
+   "poses": 853,
+   "off": 115635,
+   "height": 32,
+   "t": 287.8
+  },
+  {
+   "step": 245,
+   "tries": 3235,
+   "blocked": 2990,
+   "poses": 884,
+   "off": 116870,
+   "height": 32,
+   "t": 298.1
+  },
+  {
+   "step": 250,
+   "tries": 3348,
+   "blocked": 3098,
+   "poses": 897,
+   "off": 114757,
+   "height": 32,
+   "t": 309.5
+  },
+  {
+   "step": 255,
+   "tries": 3487,
+   "blocked": 3232,
+   "poses": 888,
+   "off": 112925,
+   "height": 32,
+   "t": 320.4
+  },
+  {
+   "step": 260,
+   "tries": 3829,
+   "blocked": 3569,
+   "poses": 910,
+   "off": 111572,
+   "height": 16,
+   "t": 344.8
+  },
+  {
+   "step": 265,
+   "tries": 4051,
+   "blocked": 3786,
+   "poses": 913,
+   "off": 118500,
+   "height": 16,
+   "t": 362.1
+  },
+  {
+   "step": 270,
+   "tries": 4242,
+   "blocked": 3972,
+   "poses": 919,
+   "off": 114142,
+   "height": 16,
+   "t": 378.0
+  },
+  {
+   "step": 275,
+   "tries": 4355,
+   "blocked": 4080,
+   "poses": 923,
+   "off": 111456,
+   "height": 32,
+   "t": 388.6
+  },
+  {
+   "step": 280,
+   "tries": 4481,
+   "blocked": 4201,
+   "poses": 923,
+   "off": 109991,
+   "height": 32,
+   "t": 399.9
+  },
+  {
+   "step": 285,
+   "tries": 4524,
+   "blocked": 4239,
+   "poses": 922,
+   "off": 107547,
+   "height": 32,
+   "t": 404.3
+  },
+  {
+   "step": 290,
+   "tries": 4773,
+   "blocked": 4483,
+   "poses": 927,
+   "off": 111227,
+   "height": 32,
+   "t": 422.1
+  },
+  {
+   "step": 295,
+   "tries": 4911,
+   "blocked": 4616,
+   "poses": 934,
+   "off": 108782,
+   "height": 32,
+   "t": 432.7
+  },
+  {
+   "step": 300,
+   "tries": 4987,
+   "blocked": 4687,
+   "poses": 948,
+   "off": 107630,
+   "height": 32,
+   "t": 440.5
+  },
+  {
+   "step": 305,
+   "tries": 5088,
+   "blocked": 4783,
+   "poses": 978,
+   "off": 111355,
+   "height": 32,
+   "t": 450.9
+  },
+  {
+   "step": 310,
+   "tries": 5273,
+   "blocked": 4963,
+   "poses": 989,
+   "off": 107145,
+   "height": 32,
+   "t": 464.3
+  },
+  {
+   "step": 315,
+   "tries": 5381,
+   "blocked": 5066,
+   "poses": 1001,
+   "off": 111196,
+   "height": 32,
+   "t": 474.6
+  },
+  {
+   "step": 320,
+   "tries": 5472,
+   "blocked": 5152,
+   "poses": 996,
+   "off": 107837,
+   "height": 32,
+   "t": 483.1
+  },
+  {
+   "step": 325,
+   "tries": 5654,
+   "blocked": 5329,
+   "poses": 1002,
+   "off": 109442,
+   "height": 32,
+   "t": 496.8
+  },
+  {
+   "step": 330,
+   "tries": 5936,
+   "blocked": 5606,
+   "poses": 1012,
+   "off": 110206,
+   "height": 32,
+   "t": 518.8
+  },
+  {
+   "step": 335,
+   "tries": 6109,
+   "blocked": 5774,
+   "poses": 1013,
+   "off": 111264,
+   "height": 32,
+   "t": 533.2
+  },
+  {
+   "step": 340,
+   "tries": 6200,
+   "blocked": 5860,
+   "poses": 1025,
+   "off": 112155,
+   "height": 32,
+   "t": 542.4
+  },
+  {
+   "step": 345,
+   "tries": 6391,
+   "blocked": 6046,
+   "poses": 1033,
+   "off": 113770,
+   "height": 32,
+   "t": 558.7
+  },
+  {
+   "step": 350,
+   "tries": 6590,
+   "blocked": 6240,
+   "poses": 1030,
+   "off": 111616,
+   "height": 32,
+   "t": 573.3
+  },
+  {
+   "step": 355,
+   "tries": 6791,
+   "blocked": 6436,
+   "poses": 1040,
+   "off": 112439,
+   "height": 32,
+   "t": 589.7
+  },
+  {
+   "step": 360,
+   "tries": 6903,
+   "blocked": 6543,
+   "poses": 1040,
+   "off": 116421,
+   "height": 32,
+   "t": 601.8
+  },
+  {
+   "step": 365,
+   "tries": 7079,
+   "blocked": 6714,
+   "poses": 1040,
+   "off": 114676,
+   "height": 32,
+   "t": 619.8
+  },
+  {
+   "step": 370,
+   "tries": 7240,
+   "blocked": 6870,
+   "poses": 1082,
+   "off": 113869,
+   "height": 32,
+   "t": 635.0
+  },
+  {
+   "step": 375,
+   "tries": 7349,
+   "blocked": 6974,
+   "poses": 1087,
+   "off": 112307,
+   "height": 32,
+   "t": 649.5
+  },
+  {
+   "step": 380,
+   "tries": 7485,
+   "blocked": 7105,
+   "poses": 1111,
+   "off": 109062,
+   "height": 32,
+   "t": 664.1
+  },
+  {
+   "step": 385,
+   "tries": 7572,
+   "blocked": 7187,
+   "poses": 1106,
+   "off": 110273,
+   "height": 32,
+   "t": 672.2
+  },
+  {
+   "step": 390,
+   "tries": 7639,
+   "blocked": 7249,
+   "poses": 1124,
+   "off": 110832,
+   "height": 32,
+   "t": 681.3
+  },
+  {
+   "step": 395,
+   "tries": 7739,
+   "blocked": 7344,
+   "poses": 1128,
+   "off": 110366,
+   "height": 32,
+   "t": 690.4
+  },
+  {
+   "step": 400,
+   "tries": 7903,
+   "blocked": 7503,
+   "poses": 1136,
+   "off": 111567,
+   "height": 32,
+   "t": 703.9
+  },
+  {
+   "step": 405,
+   "tries": 8035,
+   "blocked": 7630,
+   "poses": 1148,
+   "off": 113560,
+   "height": 32,
+   "t": 715.2
+  },
+  {
+   "step": 410,
+   "tries": 8301,
+   "blocked": 7891,
+   "poses": 1151,
+   "off": 114288,
+   "height": 32,
+   "t": 732.9
+  },
+  {
+   "step": 415,
+   "tries": 8498,
+   "blocked": 8083,
+   "poses": 1172,
+   "off": 115890,
+   "height": 32,
+   "t": 747.4
+  },
+  {
+   "step": 420,
+   "tries": 8687,
+   "blocked": 8267,
+   "poses": 1178,
+   "off": 113028,
+   "height": 16,
+   "t": 761.6
+  },
+  {
+   "step": 425,
+   "tries": 8758,
+   "blocked": 8333,
+   "poses": 1171,
+   "off": 111280,
+   "height": 16,
+   "t": 768.9
+  },
+  {
+   "step": 430,
+   "tries": 8825,
+   "blocked": 8395,
+   "poses": 1178,
+   "off": 112148,
+   "height": 16,
+   "t": 776.3
+  },
+  {
+   "step": 435,
+   "tries": 9090,
+   "blocked": 8655,
+   "poses": 1168,
+   "off": 108397,
+   "height": 32,
+   "t": 796.1
+  },
+  {
+   "step": 440,
+   "tries": 9190,
+   "blocked": 8750,
+   "poses": 1177,
+   "off": 111193,
+   "height": 16,
+   "t": 802.7
+  },
+  {
+   "step": 445,
+   "tries": 9344,
+   "blocked": 8899,
+   "poses": 1178,
+   "off": 112686,
+   "height": 32,
+   "t": 814.5
+  },
+  {
+   "step": 450,
+   "tries": 9616,
+   "blocked": 9166,
+   "poses": 1157,
+   "off": 114182,
+   "height": 32,
+   "t": 833.4
+  },
+  {
+   "step": 455,
+   "tries": 9933,
+   "blocked": 9478,
+   "poses": 1173,
+   "off": 112908,
+   "height": 16,
+   "t": 866.9
+  },
+  {
+   "step": 460,
+   "tries": 10140,
+   "blocked": 9680,
+   "poses": 1177,
+   "off": 111972,
+   "height": 16,
+   "t": 885.8
+  },
+  {
+   "step": 465,
+   "tries": 10267,
+   "blocked": 9802,
+   "poses": 1186,
+   "off": 115780,
+   "height": 16,
+   "t": 898.7
+  },
+  {
+   "step": 470,
+   "tries": 10372,
+   "blocked": 9902,
+   "poses": 1185,
+   "off": 113395,
+   "height": 16,
+   "t": 907.3
+  },
+  {
+   "step": 475,
+   "tries": 10511,
+   "blocked": 10036,
+   "poses": 1184,
+   "off": 110635,
+   "height": 16,
+   "t": 919.3
+  },
+  {
+   "step": 480,
+   "tries": 10636,
+   "blocked": 10156,
+   "poses": 1195,
+   "off": 110988,
+   "height": 16,
+   "t": 939.5
+  },
+  {
+   "step": 485,
+   "tries": 10828,
+   "blocked": 10343,
+   "poses": 1194,
+   "off": 110214,
+   "height": 32,
+   "t": 987.6
+  },
+  {
+   "step": 490,
+   "tries": 11107,
+   "blocked": 10617,
+   "poses": 1191,
+   "off": 110692,
+   "height": 32,
+   "t": 1065.0
+  },
+  {
+   "step": 495,
+   "tries": 11218,
+   "blocked": 10723,
+   "poses": 1176,
+   "off": 107806,
+   "height": 32,
+   "t": 1098.8
+  },
+  {
+   "step": 500,
+   "tries": 11359,
+   "blocked": 10859,
+   "poses": 1204,
+   "off": 108298,
+   "height": 32,
+   "t": 1138.6
+  },
+  {
+   "step": 505,
+   "tries": 11443,
+   "blocked": 10938,
+   "poses": 1205,
+   "off": 108655,
+   "height": 32,
+   "t": 1165.2
+  },
+  {
+   "step": 510,
+   "tries": 11524,
+   "blocked": 11014,
+   "poses": 1219,
+   "off": 111246,
+   "height": 32,
+   "t": 1189.4
+  },
+  {
+   "step": 515,
+   "tries": 11634,
+   "blocked": 11119,
+   "poses": 1226,
+   "off": 111671,
+   "height": 32,
+   "t": 1225.0
+  },
+  {
+   "step": 520,
+   "tries": 11819,
+   "blocked": 11299,
+   "poses": 1256,
+   "off": 112311,
+   "height": 32,
+   "t": 1276.7
+  },
+  {
+   "step": 525,
+   "tries": 12112,
+   "blocked": 11587,
+   "poses": 1271,
+   "off": 111472,
+   "height": 32,
+   "t": 1358.3
+  },
+  {
+   "step": 530,
+   "tries": 12211,
+   "blocked": 11681,
+   "poses": 1280,
+   "off": 110653,
+   "height": 32,
+   "t": 1391.8
+  },
+  {
+   "step": 535,
+   "tries": 12409,
+   "blocked": 11874,
+   "poses": 1294,
+   "off": 108076,
+   "height": 32,
+   "t": 1433.9
+  },
+  {
+   "step": 540,
+   "tries": 12473,
+   "blocked": 11933,
+   "poses": 1304,
+   "off": 107450,
+   "height": 32,
+   "t": 1451.8
+  },
+  {
+   "step": 545,
+   "tries": 12582,
+   "blocked": 12037,
+   "poses": 1298,
+   "off": 106864,
+   "height": 32,
+   "t": 1474.8
+  },
+  {
+   "step": 550,
+   "tries": 12660,
+   "blocked": 12110,
+   "poses": 1300,
+   "off": 108007,
+   "height": 32,
+   "t": 1499.6
+  },
+  {
+   "step": 555,
+   "tries": 12841,
+   "blocked": 12286,
+   "poses": 1316,
+   "off": 106243,
+   "height": 32,
+   "t": 1533.1
+  },
+  {
+   "step": 560,
+   "tries": 12915,
+   "blocked": 12355,
+   "poses": 1334,
+   "off": 109792,
+   "height": 32,
+   "t": 1550.8
+  },
+  {
+   "step": 565,
+   "tries": 13123,
+   "blocked": 12558,
+   "poses": 1343,
+   "off": 109922,
+   "height": 32,
+   "t": 1597.3
+  },
+  {
+   "step": 570,
+   "tries": 13191,
+   "blocked": 12621,
+   "poses": 1371,
+   "off": 109511,
+   "height": 32,
+   "t": 1613.6
+  },
+  {
+   "step": 575,
+   "tries": 13253,
+   "blocked": 12678,
+   "poses": 1381,
+   "off": 109715,
+   "height": 32,
+   "t": 1630.8
+  },
+  {
+   "step": 580,
+   "tries": 13502,
+   "blocked": 12922,
+   "poses": 1385,
+   "off": 106747,
+   "height": 32,
+   "t": 1683.3
+  },
+  {
+   "step": 585,
+   "tries": 13762,
+   "blocked": 13177,
+   "poses": 1390,
+   "off": 107912,
+   "height": 32,
+   "t": 1728.7
+  },
+  {
+   "step": 590,
+   "tries": 14054,
+   "blocked": 13464,
+   "poses": 1407,
+   "off": 108708,
+   "height": 32,
+   "t": 1784.5
+  },
+  {
+   "step": 595,
+   "tries": 14228,
+   "blocked": 13633,
+   "poses": 1402,
+   "off": 105850,
+   "height": 32,
+   "t": 1826.6
+  },
+  {
+   "step": 600,
+   "tries": 14384,
+   "blocked": 13784,
+   "poses": 1413,
+   "off": 108161,
+   "height": 32,
+   "t": 1862.3
+  },
+  {
+   "step": 605,
+   "tries": 14679,
+   "blocked": 14074,
+   "poses": 1424,
+   "off": 110943,
+   "height": 32,
+   "t": 1912.6
+  },
+  {
+   "step": 610,
+   "tries": 14787,
+   "blocked": 14177,
+   "poses": 1430,
+   "off": 110427,
+   "height": 32,
+   "t": 1938.6
+  },
+  {
+   "step": 615,
+   "tries": 15154,
+   "blocked": 14539,
+   "poses": 1436,
+   "off": 110525,
+   "height": 32,
+   "t": 2003.2
+  },
+  {
+   "step": 620,
+   "tries": 15322,
+   "blocked": 14702,
+   "poses": 1445,
+   "off": 110435,
+   "height": 32,
+   "t": 2049.7
+  }
+ ],
+ "journal_records": 624,
+ "note": "walk.py output without its journal; the journals of the three longest runs are the W-J fixtures"
+}

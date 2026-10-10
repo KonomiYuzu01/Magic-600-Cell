@@ -1,0 +1,46 @@
+{
+  "format": "magic600-sb-turn-v1",
+  "model_id": "synthetic-three-cycle-test-only",
+  "angle": 2.0943951023931953,
+  "plane_u": [
+    1,
+    0,
+    0,
+    0
+  ],
+  "plane_v": [
+    0,
+    1,
+    0,
+    0
+  ],
+  "moving_slots": [
+    0,
+    1,
+    2
+  ],
+  "move_src": [
+    0,
+    1,
+    2
+  ],
+  "move_dst": [
+    1,
+    2,
+    0
+  ],
+  "inverse_src": [
+    1,
+    2,
+    0
+  ],
+  "inverse_dst": [
+    0,
+    1,
+    2
+  ],
+  "labels": {
+    "revision_even_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+    "revision_odd_sha256": "9ca93cc22eb14ab832639c9f589a1255051f54b611a81fff819c283ccd8e16b6"
+  }
+}

@@ -5,6 +5,21 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-10-09] update | Level 2 framework results
 Added [level-2-framework-results](evidence/level-2-framework-results.md). Godot 4.7.2 and Qt 6.10.3 both meet the W3 selection gate in the owner's attended runs of 4 October; Qt's 60 fps is Qt's vblank-paced update, so the frame rates are not a like-for-like comparison; the blind-seconds and tearing finalizer defects are fixed; the build identities rest on preparation records until L2-V-002 is fixed.
 
+## [2026-10-09] decision | Jumbling as an optional puzzle state
+Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 7): jumbling is an optional state of a puzzle session, not a separate kind of session; the engineering packet proposes how a session enters and leaves it.
+
+## [2026-10-09] decision | Jumbling: four dimensions, open interfaces
+Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 6): 1.0 implements and accepts four dimensions only, the data contracts and interfaces do not fix the dimension, the renderer packet carries the rendering acceptance, and the integrator builds the rendering framework.
+
+## [2026-10-09] decision | Jumbling: engineering packet too
+Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 5): the jumbling work affects the renderer line and the engineering line, so mid-stage gives the owner two packets; the engineering packet's outline is in [jumbling-plan](../progress/1.0/jumbling-plan.md) section 3b.
+
+## [2026-10-09] decision | Jumbling enters 1.0
+Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md): no fudged variant; rigid jumbling of the retained geometry becomes an independent 1.0 puzzle and a Jumble feature, with simulator, viewer, solving theory and grip-orbit explorer started and a renderer packet at mid-stage. Plan: [jumbling-plan](../progress/1.0/jumbling-plan.md).
+
+## [2026-10-09] update | 0.4 function atlas
+[atlas](../progress/1.0/atlas/README.md) builds one interactive page from the 2.1 inventories and the signed 2.2 dispositions: flows, dependency map, flow-by-area matrix, units, the H-08 command table and the screening findings, with each unit's 0.4 behaviour and 1.0 decision. The build fails when its decision counts differ from dispositions.md.
+
 ## [2026-10-07] update | Engine language question recorded
 [engine-language-rust](questions/engine-language-rust.md) records the proposal to write the platform-independent 1.0 layers in Rust and the deferred spike that would decide it; nothing is started.
 

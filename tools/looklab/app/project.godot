@@ -1,0 +1,25 @@
+; The harness builds and runs a temporary copy of this project.
+config_version=5
+
+[application]
+config/name="LookLab"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+
+[autoload]
+DirectoryGuard="*res://Platform/runtime_guard.gd"
+
+[display]
+window/size/viewport_width=640
+window/size/viewport_height=360
+window/size/window_width_override=640
+window/size/window_height_override=360
+
+[dotnet]
+project/assembly_name="LookLab"
+
+[editor_plugins]
+enabled=PackedStringArray("res://addons/directory_guard/plugin.cfg")
+
+[rendering]
+renderer/rendering_method="forward_plus"

@@ -1,0 +1,37 @@
+{
+ "centre_pieces": 600,
+ "centre_point_failures": 0,
+ "e2": {
+  "trace_q_sqrt5": "(3426525189964 + -4987013400 sqrt5) / 860378847541",
+  "field_trace": "6853050379928/860378847541",
+  "field_norm": "13646256599056/860378847541",
+  "algebraic_integer": false,
+  "fixes_poles_0_and_13": true
+ },
+ "replay": {
+  "S4": {
+   "records": 640,
+   "centre_checks": 53795,
+   "distinct_exact_centre_poses": 509,
+   "centres_rotated_in_place_at_end": 97,
+   "most_centres_rotated_at_once": 99,
+   "seconds": 178.3
+  },
+  "I_a": {
+   "records": 841,
+   "centre_checks": 56659,
+   "distinct_exact_centre_poses": 743,
+   "centres_rotated_in_place_at_end": 79,
+   "most_centres_rotated_at_once": 79,
+   "seconds": 223.8
+  },
+  "I_b": {
+   "records": 885,
+   "centre_checks": 65632,
+   "distinct_exact_centre_poses": 769,
+   "centres_rotated_in_place_at_end": 86,
+   "most_centres_rotated_at_once": 86,
+   "seconds": 293.3
+  }
+ }
+}

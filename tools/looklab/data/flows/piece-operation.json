@@ -1,0 +1,65 @@
+{
+  "format": "magic600-look-flow",
+  "version": 1,
+  "id": "piece-operation",
+  "name": "Target, compose, check, preview, execute and review",
+  "draft": true,
+  "steps": [
+    {
+      "command": "target.next.set",
+      "context": "any"
+    },
+    {
+      "command": "object.inspect",
+      "context": "any"
+    },
+    {
+      "command": "buffer.analyse",
+      "context": "solve"
+    },
+    {
+      "command": "view.local",
+      "context": "any"
+    },
+    {
+      "command": "view.global",
+      "context": "any"
+    },
+    {
+      "command": "macro.select",
+      "context": "solve"
+    },
+    {
+      "command": "operation.phase.select",
+      "context": "solve"
+    },
+    {
+      "command": "operation.phase.edit",
+      "context": "solve"
+    },
+    {
+      "command": "operation.cleanup.from_prepare",
+      "context": "solve"
+    },
+    {
+      "command": "operation.check",
+      "context": "operation"
+    },
+    {
+      "command": "operation.preview",
+      "context": "operation"
+    },
+    {
+      "command": "operation.execute",
+      "context": "operation"
+    },
+    {
+      "command": "view.residuals",
+      "context": "any"
+    },
+    {
+      "command": "target.next.activate",
+      "context": "any"
+    }
+  ]
+}
