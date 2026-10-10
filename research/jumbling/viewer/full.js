@@ -102,7 +102,40 @@ async function loadGeometry() {
   }
   const pieces = new Set(A['slot_piece.u32']);
   requireValue(pieces.size === 177120 && [...pieces].every(validId), 'slot_piece.u32: must cover all 177120 pieces');
-  return { header: h, mesh: m, A };
+  const anchors = stickerAnchors(m.offsets, A['mesh_vertices.f32']);
+  const anchorHash = await crypto.subtle.digest('SHA-256', anchors.buffer);
+  requireValue(Array.from(new Uint8Array(anchorHash), (b) => b.toString(16).padStart(2, '0')).join('') === ANCHOR_SHA256,
+    'shrink anchors: SHA-256 differs from SPEC.md section 3');
+  return { header: h, mesh: m, A, anchors };
+}
+
+// The shrink anchors of work/experiments/renderer-sb/SPEC.md section 3 (owner decision, 10 October
+// 2026), not mesh_centers.f32: the area-weighted centroid of each base sticker's triangles, in doubles
+// in the SPEC order, rounded once to float32 by the Float32Array store.
+const ANCHOR_SHA256 = '0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6';
+function stickerAnchors(offsets, v) {
+  const anchors = new Float32Array(433 * 4);
+  for (let local = 0; local < 433; local++) {
+    let total = 0;
+    const weighted = [0, 0, 0, 0];
+    for (let t = offsets[local]; t < offsets[local + 1]; t += 3) {
+      const a = t * 4, b = a + 4, c = a + 8;
+      const e1 = [0, 1, 2, 3].map((i) => v[b + i] - v[a + i]);
+      const e2 = [0, 1, 2, 3].map((i) => v[c + i] - v[a + i]);
+      const d11 = e1[0] * e1[0] + e1[1] * e1[1] + e1[2] * e1[2] + e1[3] * e1[3];
+      const d22 = e2[0] * e2[0] + e2[1] * e2[1] + e2[2] * e2[2] + e2[3] * e2[3];
+      const d12 = e1[0] * e2[0] + e1[1] * e2[1] + e1[2] * e2[2] + e1[3] * e2[3];
+      const area = 0.5 * Math.sqrt(Math.max(d11 * d22 - d12 * d12, 0));
+      total += area;
+      for (let i = 0; i < 4; i++) weighted[i] += area * ((v[a + i] + v[b + i] + v[c + i]) / 3);
+    }
+    requireValue(Number.isFinite(total) && total > 0, `sticker ${local}: no finite positive triangle area`);
+    for (let i = 0; i < 4; i++) {
+      anchors[local * 4 + i] = weighted[i] / total;
+      requireValue(Number.isFinite(anchors[local * 4 + i]), `sticker ${local}: non-finite shrink anchor`);
+    }
+  }
+  return anchors;
 }
 
 async function loadOverlay(menu) {
@@ -315,9 +348,9 @@ function makeRenderer() {
   controls.addEventListener('change', () => { dirty = true; });
   const uniforms = {};
   const names = { uVertices: 'mesh_vertices.f32', uStickers: 'mesh_sticker.u32',
-    uCenters: 'mesh_centers.f32', uFrames: 'cell_frames.f32', uSlotPiece: 'slot_piece.u32' };
+    uCenters: 'anchors.f32', uFrames: 'cell_frames.f32', uSlotPiece: 'slot_piece.u32' };
   for (const [uniform, name] of Object.entries(names)) {
-    const a = geometry.A[name];
+    const a = name === 'anchors.f32' ? geometry.anchors : geometry.A[name];
     const texture = dataTexture(a, name.endsWith('.f32') ? 4 : 1, name.endsWith('.u32'));
     staticTextures.push(texture);
     uniforms[uniform] = { value: texture };

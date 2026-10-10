@@ -34,6 +34,33 @@ def binary(raw, code, count, name):
     return values
 
 
+def sticker_anchors(offsets, vertices):
+    """Return the SPEC section 3 step 1 anchors: 433 x 4 float32 values in an array('f').
+
+    Each anchor is the area-weighted centroid of its sticker's triangles, in float64,
+    summed in file order and rounded once to float32.
+    """
+    anchors = array('f')
+    for local, (begin, end) in enumerate(zip(offsets, offsets[1:])):
+        total, weighted = 0.0, [0.0, 0.0, 0.0, 0.0]
+        for t in range(begin, end, 3):
+            a, b, c = (vertices[k * 4:k * 4 + 4] for k in (t, t + 1, t + 2))
+            e1 = [b[i] - a[i] for i in range(4)]
+            e2 = [c[i] - a[i] for i in range(4)]
+            d11 = e1[0] * e1[0] + e1[1] * e1[1] + e1[2] * e1[2] + e1[3] * e1[3]
+            d22 = e2[0] * e2[0] + e2[1] * e2[1] + e2[2] * e2[2] + e2[3] * e2[3]
+            d12 = e1[0] * e2[0] + e1[1] * e2[1] + e1[2] * e2[2] + e1[3] * e2[3]
+            area = 0.5 * math.sqrt(max(d11 * d22 - d12 * d12, 0.0))
+            total += area
+            for i in range(4):
+                weighted[i] += area * ((a[i] + b[i] + c[i]) / 3.0)
+        anchor = [value / total for value in weighted] if total > 0 else []
+        if not math.isfinite(total) or total <= 0 or not all(map(math.isfinite, anchor)):
+            raise ValueError(f'sticker {local}: no finite positive triangle area')
+        anchors.extend(anchor)
+    return anchors
+
+
 def matvec(matrix, vector):
     return tuple(sum(matrix[col * 4 + row] * vector[col] for col in range(4))
                  for row in range(4))

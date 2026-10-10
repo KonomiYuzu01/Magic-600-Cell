@@ -22,11 +22,15 @@ The sticker geometry of the retained model, unchanged for the jumbling puzzle (`
 |---|---|---|
 | facets F | 600 | boundary cells; a facet frame is a d × d matrix (`cell_frames.f32`, column-major) |
 | base mesh | `mesh_vertices.f32`, `mesh.json` | the stickers of one facet as triangle lists, d-vectors in the base facet's frame |
-| stickers per facet | 433 (`mesh_sticker.u32`, `mesh_centers.f32`) | a sticker slot is `facet * 433 + local` |
+| stickers per facet | 433 (`mesh_sticker.u32`, `mesh.json` `offsets`) | a sticker slot is `facet * 433 + local` |
 | sticker to piece | `slot_piece.u32` | 259,800 slots onto 177,120 pieces; all stickers of a piece move together |
 | facet normal and length | `mesh.json` (`normal`, `normal_length` R) | world coordinates are the asset frame divided by R |
 
 Shrink (facet shrink `cs`, sticker shrink `ss`) is applied in the home frame of the sticker, before its piece's pose, so a piece stays rigid (`work/experiments/renderer-sb/SPEC.md` section 3, steps 1–3).
+
+The shrink anchor of each base sticker is the area-weighted centroid of its triangles, computed from the mesh as SPEC.md section 3 defines it (owner decision, 10 October 2026: `docs/wiki/decisions/owner-decisions-2026-10-10-anchor.md`).
+- This anchor moves with the sticker, so a piece's shrunk stickers land exactly on the shrunk stickers of the slots it reaches.
+- `mesh_centers.f32` is not the anchor. Those numbering centres do not move with the sticker: under J1 generator 1 they put the shrunk geometry up to 0.0144 world units off the destination slot's.
 
 ## 3. State (per revision)
 
