@@ -103,7 +103,7 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
   - If several cuts can close, take the most misaligned first.
 - **U3. Repeat** U1 and U2. Each closing lowers N (M4), so the solver never returns to an earlier configuration.
 - **U4. Lock: open, close (and close).** When no cut can close, M5 says that every word from solved to X ends with a twist made on a cut that already carried a seam, which an earlier, overlapping twist had put there.
-  - Open: twist a misaligned cap c by any menu twist other than the identity. The opening can leave N_c unchanged: a cap twisted twice by symmetric twists shows the same count after its later twist is undone (I_a, k = 10, mix 0.3, seed 11 in section 5).
+  - Open: twist a misaligned cap c by any menu twist other than the identity. The opening can leave N_c unchanged: a cap twisted twice by symmetric twists shows the same count after its later twist is undone (I_a, k = 20, mix 0.3, seed 11 in section 5).
   - Look for another misaligned cap d that now closes, and close it. Only a cap that meets c can have changed, so c needs a misaligned neighbour. Then close a further cut if one can close, typically c's.
   - Keep the two or three twists if N is now lower than before. By M2 the check is a sum of rim counts: N changes only on the cut being twisted. Otherwise undo them and try another opening.
 - **U5. Improve a cut.** When neither U2 nor U4 finds anything, make the single twist that lowers some N_c the most without closing it. By M2 it lowers N by as much.
@@ -122,6 +122,26 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 **Why this reverse-engineers the scramble.** By M5 the top twist of the scramble closes its own cut unless its cut already carried a seam. The rim test reads the seam that a twist leaves on its own cut: which cap was turned, and through the domain match, by which element. Undoing that twist exposes the twist underneath. A lock (U4) is the case where a later twist re-covered most of an earlier seam on the same cut. Opening that cut exposes the twist underneath, as in the three-twist words of item 4: (0, q)(d, a)(0, q⁻¹) is undone as (0, q), then d's undo, then the closing of 0.
 
 `restore.py` runs U1 to U6 on the J1 reference, with the tools' choices replaced by fixed rules (most misaligned cut first; among its closing twists the one that brings the most pieces home, which a solver sees from the labels; for U4 and U5′, the first macro that lowers N, opening caps in order of decreasing N_c; for U5, the largest drop). It reads only the configuration.
+
+**Deep inputs: reading the order, and repairing a misread.** With the rules above, phase U reaches the lattice on every input of up to 20 twists in section 5. On deeper inputs it leaves the reverse path and stops at a configuration from which no rule lowers N (S4@60: N = 7,472). Two more readings of the seams choose the cap to undo, and a repair word recovers when the reading is wrong. The journal is used only to label moves after a run, never to choose them.
+
+- **U1a. Face match.** For a misaligned cap c, let In_c, Out_c and A_c count the cut cells of H_c covered inside, covered outside, and covered on both sides by one domain (the aligned cells). Cap c passes the face match when some single twist of c aligns every misaligned inside cell, that is, lowers N_c by at least 2(In_c − A_c) > 0. Undo the cap that passes with the largest drop first.
+  - Computed (exact; `seams.py facecheck <menu> <t,...>`, `results/seams-facecheck-<menu>.json`). At the true scramble state X_t of each W-J fixture, call a misaligned cap a top cap when undoing its latest record gives the configuration of the scramble replayed without that record. The table counts top caps that pass (true positives), other caps that pass (false positives) and top caps that fail (misses).
+
+<!-- FACE -->
+
+  - So the face match is rarely wrong, and it misses more as the scramble deepens.
+- **U1b. Cover order.** Cap d covers cap c when, inside d's half-space, every face piece of c's cut sits on an aligned cell, with at least ten on each side: a later twist of d has erased c's seam there. When no cap passes the face match, undo a cap that no cap covers and that covers some cap, the largest drop first. (`seams.py` decides "inside d's half-space" by a floating-point test on piece centroids. It is used only to choose a cap; every N is exact.)
+- **The invisible order (lead; exploratory runs whose scripts were not kept).** On S4@60 the cover order twice picked a cap whose latest record is not a top record: cap 65 (record 13, beneath record 27 on cap 46) and cap 173 (record 42, beneath record 47 on cap 204 and record 53 on cap 131).
+  - In both cases the cap of the later twist no longer holds any face piece of the earlier cap's cut, and a test on pose classes found no relation either. The overlap that ordered the two twists had since been moved away by other twists.
+  - Forcing the true choice at both decisions did not change the end: from N = 11,930 the run made the same moves as the unforced one and stopped at N = 6,294, with 21 misaligned caps, no single twist lowering any N_c, and no lock or shift lowering N.
+  - So a method that reads only the configuration will sometimes undo a twist too early. A complete method needs a word that repairs such a misread.
+- **U5″. Conjugate repair: open, improve a neighbour, re-twist.** Twist a misaligned cap c by any menu twist x other than the identity. Then make the single twist y of a misaligned cap d meeting c that lowers N_d the most, then the single twist z of c that lowers N_c the most. Keep the three twists if N is now lower (by M2, if the three own-cut changes sum to less than zero); otherwise undo them and try another (c, x).
+  - This is the lock of U4 without the requirement that d and c close. The word (0, q)(d, a)(0, q⁻¹) of item 4 is the special case z = x⁻¹.
+- **U7. Reopen a bookmark.** When nothing else lowers N, take one of the solver's own earlier twists, most recent first, and make its inverse. Then make single-twist steps of U1a, U1b, U2 and U5, the first on a cap other than the reopened one, until N is lower than before the reopening (keep them all) or six steps pass (undo them all). The solver's own twists are the solver's record, not the scramble's journal, so the human-solve boundary allows this.
+- **Order.** `seams.py` makes the first lowering step it finds, trying the rules in this order: U1a, U1b, U2, U5″, U4, U5, U5′, U7 (`--order seam,cover,close,conj,lock,improve,shift,reopen`). Trying the conjugate repair before the lock and shift searches matters in practice. Where nothing simpler applies, a lowering conjugate word was found in one to three minutes, while the lock and shift searches took about 25 minutes per step (cloud timings of research code, not performance evidence).
+
+<!-- RESULT -->
 
 ## 4. Phase L: the lattice
 
@@ -161,7 +181,24 @@ The tools never choose a cap or a twist. On a physical or rendered puzzle withou
 
 **Computed (exact; `restore.py`, `results/restore-*.json`).** Phase U with levels 1 and 2 only and the fixed rules of section 3. Solved means every labelled sticker is home at the end of phase U, so phase L had nothing to do. End in v(G) means the end configuration keeps every retained orbit and has v in v(G) (section 4). Seconds are cloud timings of research code, not performance evidence.
 
-<!-- TABLE -->
+| Input | Runs | Lattice | Solved | End in v(G) | Twists (mean, max) | Locks | Improves | Seconds (max) |
+|---|---:|---:|---:|---:|---|---:|---:|---:|
+| I_a fixture, first 20 records | 1 | 1 | 1 | 1 | 19.0, 19 | 0 | 0 | 48 |
+| I_b fixture, first 20 records | 1 | 1 | 0 | 1 | 18.0, 18 | 0 | 0 | 44 |
+| S4 fixture, first 20 records | 1 | 1 | 1 | 1 | 20.0, 20 | 0 | 0 | 63 |
+| I_a lens words W (off the lattice) | 40 | 40 | 40 | 40 | 3.0, 3 | 40 | 0 | 51 |
+| S4 lens words W (off the lattice) | 40 | 40 | 40 | 40 | 3.0, 3 | 40 | 0 | 26 |
+| I_a random, k = 10 | 8 | 8 | 8 | 8 | 9.9, 10 | 0 | 0 | 28 |
+| I_a random, k = 20 | 4 | 4 | 3 | 4 | 20.0, 20 | 0 | 0 | 52 |
+| I_a random, k = 20, mix 0.3 | 4 | 4 | 2 | 4 | 18.8, 20 | 1 | 0 | 65 |
+| I_b random, k = 10 | 8 | 8 | 8 | 8 | 9.9, 10 | 0 | 0 | 27 |
+| I_b random, k = 20 | 4 | 4 | 4 | 4 | 19.8, 20 | 0 | 0 | 50 |
+| I_b random, k = 20, mix 0.3 | 4 | 4 | 2 | 4 | 18.2, 20 | 0 | 0 | 49 |
+| S4 random, k = 10 | 8 | 8 | 8 | 8 | 9.8, 10 | 0 | 0 | 34 |
+| S4 random, k = 20 | 4 | 4 | 4 | 4 | 20.0, 20 | 0 | 0 | 61 |
+| S4 random, k = 20, mix 0.3 | 4 | 4 | 2 | 4 | 18.2, 20 | 1 | 0 | 58 |
+
+<!-- DEEP -->
 
 **Lead: what the table suggests.** These are exact runs on a few dozen inputs. They suggest, and prove nothing.
 <!-- LEADS -->
