@@ -267,6 +267,115 @@ class ReportTests(unittest.TestCase):
         written = sorted(p.name for p in (self.root / "reports").iterdir())
         self.assertTrue(all(n.startswith("tastemap-2026-10-02") for n in written), written)
 
+    def test_loved_candidates_use_effective_ratings_public_only_newest_first_and_gold_frames(self):
+        first, second, replaced, undone, blocked = [f"{i:064x}" for i in (1, 3, 5, 7, 9)]
+        self.store.add_rating(first, "like", "loves", "warm gold", love=True)
+        self.store.add_rating(second, "like", "loves", love=True)
+        self.store.add_rating(replaced, "like", "loves", "superseded", love=True)
+        self.store.add_rating(replaced, "dislike", "loves")
+        self.store.add_rating(undone, "like", "undo", "undone love", love=True)
+        self.store.undo_last("undo")
+        self.store.add_rating(blocked, "like", "loves", "blocked love", love=True)
+        with self.store.db:
+            self.store.db.execute("INSERT INTO blocked VALUES (?, ?)", (blocked, common.now_iso()))
+        private = "b" * 64
+        self.store.add_image(ImageMeta(private, "archive", "private-reference", "Synthetic private", "B",
+                                       "private", 64, 64), self.store.thumb_path(first).read_bytes())
+        self.store.add_rating(private, "like", "private", "private loved note", love=True)
+        report, sheets = mapping.build_report(self.store, self.probes, MODEL, FakeModel(None), day="2026-10-10")
+        expected = [{"sha256": r.sha256, "note": r.note, "ts": r.ts}
+                    for r in self.store.ratings()[::-1] if r.sha256 in (first, second)]
+        self.assertEqual(report["loved"], expected)
+        self.assertEqual([r["sha256"] for r in report["loved"]], [second, first])
+        self.assertEqual(report["private_loved"], 1)
+        self.assertNotIn(private, json.dumps(report["loved"]))
+        self.assertEqual(sheets["loved"], [[(second, "love"), (first, "love")]])
+        self.assertEqual(sheets["private-loved"], [[(private, "love")]])  # no embedding is needed.
+        self.assertIn("private loved note", [n["note"] for n in report["notes"]["like"]])
+        self.assertIn("warm gold", [n["note"] for n in report["notes"]["like"]])
+        path = mapping.write_report(self.root / "reports", report, sheets, self.store.thumb_path)
+        text = path.read_text(encoding="utf-8")
+        heading = "## Loved images (candidates for annotated references and nexus cards)"
+        self.assertLess(text.index("Ratings:"), text.index(heading))
+        self.assertLess(text.index(heading), text.index("## Axes"))
+        section = text.split(heading)[1].split("## Axes")[0]
+        self.assertIn(first[:12], section)
+        self.assertIn("warm gold", section)
+        self.assertNotIn(private[:12], section)
+        self.assertNotIn("private loved note", section)
+        self.assertIn(", 4 loved", text)
+        with Image.open(self.root / "reports" / "tastemap-2026-10-10-loved.jpg") as image:
+            pixel = image.getpixel((0, image.height // 2))  # avoid JPEG ringing at the corner.
+            self.assertTrue(all(abs(a - b) < 10 for a, b in zip(pixel, (212, 160, 23))))
+        self.assertTrue((self.root / "reports" / "tastemap-2026-10-10-private-loved.jpg").is_file())
+
+    def test_loved_candidates_cap_fifty_and_tile_by_sheet_columns(self):
+        public = []
+        for i in range(60):
+            sha = f"{100 + i:064x}"
+            self.store.add_image(ImageMeta(sha, "met", "CC0-1.0", "Synthetic fixture", "A", "public", 64, 64),
+                                 self.store.thumb_path(f"{1:064x}").read_bytes())
+            self.store.add_rating(sha, "like", "loves", love=True)
+            public.append(sha)
+        report, sheets = mapping.build_report(self.store, self.probes, MODEL, FakeModel(None), day="2026-10-10")
+        self.assertEqual([r["sha256"] for r in report["loved"]], public[::-1][:50])
+        self.assertEqual([len(row) for row in sheets["loved"]], [mapping.SHEET_COLUMNS] * 6 + [2])
+        self.assertTrue(all(verdict == "love" for row in sheets["loved"] for _, verdict in row))
+
+    def test_no_loved_candidates_yet(self):
+        report, _ = mapping.build_report(self.store, self.probes, MODEL, FakeModel(None), day="2026-10-10")
+        self.assertEqual((report["loved"], report["private_loved"]), ([], 0))
+        text = mapping.markdown(report)
+        self.assertIn("## Loved images (candidates for annotated references and nexus cards)", text)
+        self.assertIn("None yet.", text)
+
+    def test_love_flags_preserve_fitting_inputs_and_existing_private_report_fields(self):
+        from tastelab import learn
+        from threadpoolctl import threadpool_limits
+        rng = np.random.default_rng(42)
+        for i in range(24):
+            sha = f"{200 + i:064x}"
+            self.store.add_image(ImageMeta(sha, "archive", "private-reference", "Synthetic private", "B",
+                                           "private", 64, 64), self.store.thumb_path(f"{1:064x}").read_bytes())
+            v = rng.normal(size=DIM)
+            self.store.put_embeddings(MODEL, DIM, [(sha, embed.to_blob(unit(v)))])
+            self.store.add_rating(sha, "like" if i % 2 else "dislike", "private", f"private note {i}")
+        plan = seeds.parse({"version": 1, "categories": {
+            name: {"kind": "focus", "target": 0, "terms": ["known " + name], "adjacent": ["adjacent " + name]}
+            for name in ("private", "y2k", "gaming", "control")}})
+        with threadpool_limits(limits=1), \
+                mock.patch.object(mapping, "rank_axes", wraps=mapping.rank_axes) as axes, \
+                mock.patch.object(mapping, "themes", wraps=mapping.themes) as themes:
+            before_model = learn.TasteModel(self.store, MODEL, record=False)
+            before, before_sheets = mapping.build_report(self.store, self.probes, MODEL, before_model, day="2026-10-10")
+            proposals = learn.propose_terms(self.store, before_model, plan, {})
+            self.assertTrue(proposals)
+            self.assertNotIn("adjacent private", [t for t, _, _ in proposals])
+            with self.store.db:
+                self.store.db.execute("DELETE FROM proposals")
+                self.store.db.execute("DELETE FROM meta WHERE key='proposal_round'")
+                self.store.db.execute("UPDATE ratings SET love=1 WHERE verdict='like'")
+            after_model = learn.TasteModel(self.store, MODEL, record=False)
+            after, after_sheets = mapping.build_report(self.store, self.probes, MODEL, after_model, day="2026-10-10")
+            self.assertEqual(learn.propose_terms(self.store, after_model, plan, {}), proposals)
+        for field in before.keys() - {"counts", "loved", "private_loved"}:
+            self.assertEqual(after[field], before[field], field)
+        self.assertEqual(after_sheets["private-references"], before_sheets["private-references"])
+        self.assertEqual(after["private_loved"], 12)
+        public = {m.sha256 for m in self.store.images(tier="A")}
+        self.assertTrue({r["sha256"] for r in after["loved"]} <= public)
+        self.assertEqual(set(after_model._fit.data.shas), public)
+        self.assertEqual(axes.call_count, 2)
+        for call in axes.call_args_list:
+            np.testing.assert_array_equal(call.args[0], before_model._fit.data.X)
+        self.assertEqual(themes.call_count, 4)
+        for call in themes.call_args_list:
+            self.assertTrue(set(call.args[1]) <= public)
+        self.assertEqual(after["notes"], before["notes"])
+        private_rate = next(r for r in after["categories"] if r["category"] == "private")
+        self.assertEqual((private_rate["likes"], private_rate["dislikes"], private_rate["like_rate"]), (12, 12, 0.5))
+        self.assertEqual(after["placements"], before["placements"])
+
     def test_few_ratings_report_insufficient_without_axes(self):
         for r in self.store.ratings()[4:]:
             self.store.undo_last("s1")

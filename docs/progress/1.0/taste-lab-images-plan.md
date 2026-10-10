@@ -177,9 +177,10 @@ The data root is the private folder of the checkout the tool runs in. The owner 
 
 - One image at a time. Under the image: title, creator or credit, the source linked to the page URL, and the licence linked to the licence URL.
 - Keys:
-  - → like, ← dislike, ↓ skip; a skipped image returns after 50 further ratings;
+  - → like, ↑ love, ← dislike, ↓ skip; a skipped image returns after 50 further ratings;
   - W opens a one-line note of at most 140 characters, as in phase 1a;
   - Z undoes the session's last rating.
+- **Love** (owner decision, 10 October 2026: `docs/wiki/decisions/owner-decisions-2026-10-10-tastelab-rating.md`). A loved image is stored as a like with a `love` flag; a Love button sits next to Like, and the stats line shows the loved count next to the likes. Every fitting step reads only the verdict, so love counts as like. The local rating window (`rate.py`) uses the same key and shows the loved count in its header. Class B loves enter no fitting step.
 
 ### 6.4 Suggestions (`page/images.js`, deterministic, node tests)
 
@@ -188,15 +189,16 @@ The data root is the private folder of the checkout the tool runs in. The owner 
   - Fit an L2-regularised logistic regression on the likes and dislikes: λ = 1, balanced class weights, a bias term, and Newton steps until the gradient norm is below 1e-6 or 50 steps have run. It runs in the worker.
   - Every third pick is the farthest-point pick. The others are the unrated image whose predicted probability is closest to 0.5.
   - The model refits after every answer.
-- **Pairs.** Up to 10 pairs of one liked and one disliked image with the highest cosine similarity whose pair has no note yet. The owner opens a pair, sees both images with their attribution, and writes what differs in at most 280 characters. This is raw material for the annotated references (4A).
+- **Pairs.** Up to 10 pairs of one liked and one disliked image with the highest cosine similarity whose pair has no note yet; pairs whose liked image is loved come first, each group in similarity order. The owner opens a pair, sees both images with their attribution, and writes what differs in at most 280 characters. This is raw material for the annotated references (4A).
 
 ### 6.5 Storage, capabilities and export
 
 - **Collections:** `imageRatings`, `imagePairs`. The owner-only rules of phase 1a apply. Bundles live only in the browser's cache (section 6.2).
 - **Capabilities:** unchanged: `db`, `user` and `downloads`. No `assets`.
 - **Republishing.** The page is republished only after the owner says so.
-- **Export:** adds the bundles open in this browser (bundle id and item count), the ratings and the pair notes; no thumbnails and no embeddings.
-- **Ratings back to the store.** `python tools/tastelab/fetch.py --import-ratings <export>` imports class A ratings and pair notes into the store by image id and reports unknown ids. It refuses a rating for an image the store holds as class B.
+- **Export:** adds the bundles open in this browser (bundle id and item count), the ratings and the pair notes; no thumbnails and no embeddings. Since the love level the export is version 4, and every rating record carries a boolean `love`. A stored rating without `love`, written before that change, reads as `love: false`.
+- **Ratings back to the store.** `python tools/tastelab/fetch.py --import-ratings <export>` imports class A ratings and pair notes into the store by image id and reports unknown ids. It refuses a rating for an image the store holds as class B. It reads version 3 exports as before (no love) and version 4 exports with their love flags, and refuses a love with a dislike.
+- **Library schema 3.** The store keeps love in a new `ratings.love` column. A schema 2 library is not migrated automatically: `python tools/tastelab/fetch.py --upgrade-library` first writes a backup under `backups/`, then adds the column in one transaction that checks every existing rating row is unchanged. The taste-map report lists the class A loved images as candidates for annotated references and nexus cards; class B loved images appear only as a count and on a private contact sheet.
 
 ## 7. Screening findings
 

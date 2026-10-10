@@ -174,6 +174,23 @@ test("pairs rank highest cosine similarity first, then liked and disliked import
     [["l1", "d1"], ["l2", "d3"], ["l1", "d2"], ["l2", "d2"], ["l1", "d3"], ["l2", "d1"]]);
   close(pairs[0].similarity, 1); close(pairs[1].similarity, 1);
   close(pairs[2].similarity, vector(0.8)[0]);
+  assert.deepEqual(suggestPairs({ vectors, ratings, notedPairs: new Set(), loved: new Set() }), pairs);
+});
+
+test("loved liked images come first, then similarity and stable import order within each group", () => {
+  const vectors = new Map([["l1", vector(1, 0)], ["d1", vector(1, 0)], ["l2", vector(0, 1)],
+    ["d2", vector(0.8, 0.6)], ["l3", vector(0, 1)], ["d3", vector(0, 1)]]);
+  const ratings = new Map([["l3", "like"], ["d3", "dislike"], ["l2", "like"], ["d2", "dislike"], ["d1", "dislike"], ["l1", "like"]]);
+  const options = { vectors, ratings, notedPairs: new Set(), loved: new Set(["l3", "l2", "d1", "closed"]) };
+  const before = structuredClone(options), pairs = suggestPairs(options);
+  assert.deepEqual(pairs.map((p) => [p.likedImageId, p.dislikedImageId]), [
+    ["l2", "d3"], ["l3", "d3"], ["l2", "d2"], ["l3", "d2"], ["l2", "d1"], ["l3", "d1"],
+    ["l1", "d1"], ["l1", "d2"], ["l1", "d3"],
+  ]);
+  close(pairs[0].similarity, 1); close(pairs[2].similarity, vector(0.6)[0]);
+  close(pairs[4].similarity, 0); close(pairs[6].similarity, 1);
+  assert.deepEqual(suggestPairs({ ...options, limit: 4 }), pairs.slice(0, 4));
+  assert.deepEqual(options, before);
 });
 
 test("pair ties, noted pair exclusion, defaults and limits are deterministic and pure", () => {
@@ -188,6 +205,7 @@ test("pair ties, noted pair exclusion, defaults and limits are deterministic and
   assert.deepEqual(suggestPairs({ ...options, limit: 2 }), pairs.slice(0, 2));
   assert.deepEqual(suggestPairs({ ...options, limit: 0 }), []);
   assert.deepEqual(suggestPairs(options), pairs);
+  assert.deepEqual(suggestPairs({ ...options, loved: new Set() }), pairs);
   assert.deepEqual(options, before);
   for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) notedPairs.add(`l${i}|d${j}`);
   assert.deepEqual(suggestPairs(options), []);

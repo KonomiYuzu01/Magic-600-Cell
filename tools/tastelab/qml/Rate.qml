@@ -20,7 +20,7 @@ ApplicationWindow {
         focus: true
         Keys.onPressed: function(event) {
             if (event.isAutoRepeat && (event.key === Qt.Key_Delete || event.key === Qt.Key_Left ||
-                                       event.key === Qt.Key_Right || event.key === Qt.Key_Down ||
+                                       event.key === Qt.Key_Right || event.key === Qt.Key_Up || event.key === Qt.Key_Down ||
                                        event.key === Qt.Key_Backspace)) {
                 event.accepted = true
                 return
@@ -131,7 +131,7 @@ ApplicationWindow {
 
             Label {
                 Layout.fillWidth: true
-                text: "Right like, Left dislike, Down skip, N note, Backspace undo · Delete twice removes"
+                text: "Right like, Up love, Left dislike, Down skip, N note, Backspace undo · Delete twice removes"
                 textFormat: Text.PlainText
                 color: "#aaaaaa"
                 font.pixelSize: 12

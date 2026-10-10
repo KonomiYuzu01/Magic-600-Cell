@@ -1,10 +1,11 @@
 import { nextImage, isReady, fitLogistic, suggestPairs } from "./images.js";
 
 export function handleMessage(message) {
-  const { id, order, vectors, ratings, skips, ratedCount, notedPairs } = message;
+  const { id, order, vectors, ratings, skips, ratedCount, notedPairs, loved = new Set() } = message;
   try {
     // Ratings of closed bundles stay in storage, but cannot train without vectors.
     const available = new Map(order.filter((imageId) => ratings.has(imageId)).map((imageId) => [imageId, ratings.get(imageId)]));
+    const availableLoved = new Set([...loved].filter((imageId) => available.has(imageId)));
     const ready = isReady(available);
     let model = null;
     if (ready) {
@@ -14,7 +15,7 @@ export function handleMessage(message) {
     return {
       type: "suggestions", id, ready,
       next: nextImage({ order, vectors, ratings: available, skips, ratedCount, model }),
-      pairs: suggestPairs({ vectors, ratings: available, notedPairs, limit: 10 }),
+      pairs: suggestPairs({ vectors, ratings: available, notedPairs, loved: availableLoved, limit: 10 }),
     };
   } catch (error) {
     return { type: "error", id, message: error.message };
