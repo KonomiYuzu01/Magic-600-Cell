@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] decision | Day-7 go/no-go: all three candidates go
+Astra's gate ruling, recorded in [day7-go-no-go-ruling](decisions/day7-go-no-go-ruling.md): S-B, S-A2 and S-D go on their 10 October W3 results with the area-centroid anchor. Three minor risks are recorded (Qt's capped headroom, the open H-06 and H-09, the guard's residual limits); H-07 is delivered in the protocol and the plan, and [renderer-candidates](decisions/renderer-candidates.md) links the ruling.
+
 ## [2026-10-10] update | W3 re-accepted after the anchor change
 The owner's attended GPU session re-accepted W3 for all four builds with the area-centroid anchor: S-B, Qt and Godot (both under the loaded-file guard), and the W-J probe. Updated [s-b-probe-results](evidence/s-b-probe-results.md) and [level-2-framework-results](evidence/level-2-framework-results.md), and added [w-j-probe-results](evidence/w-j-probe-results.md): the W-J GPU checks and its three fixtures meet the gate, and its overlay costs are unmeasured.
 
