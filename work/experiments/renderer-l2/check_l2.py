@@ -913,7 +913,13 @@ def binding_cases(root):
             ('events-outside', lambda h: h['modules']['events'].append(
                 {'kind': 'load', 'path': h['modules']['scope'] + '2\\x.dll'})),
             ('basename-collision', lambda h: h['modules']['events'].append(
-                {'kind': 'load', 'path': h['modules']['scope'] + '\\sub\\Qt6Core.dll'}))):
+                {'kind': 'load', 'path': h['modules']['scope'] + '\\sub\\Qt6Core.dll'})),
+            # L2-V-002-B01: the observer records other spellings of the scope verbatim; each must refuse.
+            ('events-extended', lambda h: h['modules']['events'].append(
+                {'kind': 'load', 'path': '\\\\?\\' + h['files']['qt:Qt6Core.dll']})),
+            ('events-short-name', lambda h: h['modules']['events'].append(
+                {'kind': 'load', 'path': str(Path(h['modules']['scope']).parent
+                                             / (Path(h['modules']['scope']).name[:6].upper() + '~1') / 'Qt6Core.dll')}))):
         refusal(root, 'binding-modules-' + name, 'identity', h_edit(action), candidate='sd')
 
     def module_events(h, kind, recorded=True, path=None):
