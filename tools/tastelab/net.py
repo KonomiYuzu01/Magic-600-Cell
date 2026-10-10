@@ -37,7 +37,8 @@ def host_allowed(host, patterns) -> bool:
 
 
 def _host(url, hosts):
-    if not isinstance(url, str) or any(c.isspace() or ord(c) < 32 or 127 <= ord(c) <= 159 for c in url):
+    # http.client sends only ASCII; a raw non-ASCII URL from a source must fail as one request, not the run.
+    if not isinstance(url, str) or not url.isascii() or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in url):
         raise NetError("invalid URL")
     try:
         parts = urlsplit(url)
@@ -163,7 +164,10 @@ class Client:
             if response.status in (301, 302, 303, 307, 308):
                 if redirects >= MAX_REDIRECTS or not response.headers.get("location"):
                     raise NetError("redirect limit or missing Location")
-                url = urljoin(url, response.headers["location"])
+                try:
+                    url = urljoin(url, response.headers["location"])
+                except ValueError:
+                    raise NetError("invalid redirect Location") from None
                 _host(url, hosts)
                 redirects += 1
                 continue
