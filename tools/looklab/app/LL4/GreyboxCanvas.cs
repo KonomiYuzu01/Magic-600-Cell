@@ -35,7 +35,7 @@ internal sealed partial class GreyboxCanvas : Control
             .OrderBy(r => r.Placement == "overlay" ? 1 : 0))
         {
             var box = new PanelContainer { ClipContents = true };
-            var style = new StyleBoxFlat { BgColor = region.Kind == "stage" ? new Color(.19f, .19f, .19f) : new Color(.30f, .30f, .30f),
+            var style = new StyleBoxFlat { BgColor = IsStage(region) ? new Color(.19f, .19f, .19f) : new Color(.30f, .30f, .30f),
                 BorderColor = new Color(.6f, .6f, .6f) };
             style.SetBorderWidthAll(1); box.AddThemeStyleboxOverride("panel", style);
             AddChild(box); regions.Add(region.Id, box);
@@ -43,8 +43,9 @@ internal sealed partial class GreyboxCanvas : Control
             box.AddChild(scroll);
             var column = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
             scroll.AddChild(column); columns.Add(region.Id, column);
-            column.AddChild(new Label { Text = region.Id + " (" + region.Placement + ")", TooltipText = region.Kind,
-                HorizontalAlignment = region.Kind == "stage" ? HorizontalAlignment.Center : HorizontalAlignment.Left });
+            string label = region.Kind == "global" ? "Global" : region.Kind == "local" ? "Local" : region.Id;
+            column.AddChild(new Label { Text = label + " (" + region.Placement + ")", TooltipText = region.Kind,
+                HorizontalAlignment = IsStage(region) ? HorizontalAlignment.Center : HorizontalAlignment.Left });
         }
         var candidates = catalogue.Commands.Values.Where(c => !CatalogueFilterEnabled || c.Contexts.Contains(context));
         foreach (CommandDefinition command in candidates)
@@ -52,10 +53,10 @@ internal sealed partial class GreyboxCanvas : Control
             if (!spec.Contexts[context].Placed.TryGetValue(command.Id, out string? region))
             {
                 if (CatalogueFilterEnabled) continue; // A layout's hidden commands stay hidden.
-                region = spec.Regions.Values.First(r => r.Kind == "stage" && r.Contexts.Contains(context)).Id;
+                region = spec.Regions.Values.First(r => IsStage(r) && r.Contexts.Contains(context)).Id;
             }
             var button = new Button { Text = command.Id, TooltipText = command.Id + " in " + context,
-                Alignment = spec.Regions[region].Kind == "stage" ? HorizontalAlignment.Center : HorizontalAlignment.Left };
+                Alignment = IsStage(spec.Regions[region]) ? HorizontalAlignment.Center : HorizontalAlignment.Left };
             button.SetMeta("ll4_command", command.Id); button.SetMeta("ll4_region", region);
             columns[region].AddChild(button); commands.Add(command.Id, button);
             button.Pressed += () => Highlight(command.Id);
@@ -74,6 +75,8 @@ internal sealed partial class GreyboxCanvas : Control
             scroll.EnsureControlVisible(target);
         }
     }
+
+    private static bool IsStage(LayoutRegion region) => region.Kind is "stage" or "global" or "local";
 
     private void Arrange()
     {

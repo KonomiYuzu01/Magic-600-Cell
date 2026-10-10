@@ -98,7 +98,7 @@ class LL5HarnessTests(harness_test.HarnessTests):
             calls.append((arguments, kwargs))
             output = ("LOOKLAB_STAGE0_CPU_PASS\nLOOKLAB_STAGE0_GPU_PASS\n"
                 "LOOKLAB_SMOKE_PASS instances=600 vertices=30480 slots=259800 parameters=42 bytes=123\n"
-                "LOOKLAB_GEOMETRY_PASS cases=9 samples=2700 target=RGBA32F\n"
+                "LOOKLAB_GEOMETRY_PASS cases=10 samples=3000 framed=1 target=RGBA32F\n"
                 "LOOKLAB_DRAW_COUNT_PASS instances=600 visible=600 primitives=6096000\n" + "".join(RESULTS.values()))
             return subprocess.CompletedProcess(arguments, 0, output)
 
@@ -121,10 +121,10 @@ class LL5HarnessTests(harness_test.HarnessTests):
                 ["skip-parameter", "wrong-instance-count", "changed-preset-byte", "ll5-disable-cvd", "ll5-disable-null-cost"])
             calls.clear()
             check.godot_lane("--godot-gpu", self.folder, {"NUGET_PACKAGES": str(self.folder)}, {})
-            self.assertEqual(len(calls), 8)
+            self.assertEqual(len(calls), 9)
             self.assertTrue(all("--headless" not in args and kwargs["graphics"] for args, kwargs in calls[1:]))
             self.assertEqual([kwargs["expected_failure"] for _, kwargs in calls if "expected_failure" in kwargs],
-                ["float-offset", "transpose-q", "missing-instance", "ll5-wrong-matrix"])
+                ["float-offset", "transpose-q", "missing-instance", "missing-view-frame", "ll5-wrong-matrix"])
 
 
 if __name__ == "__main__":

@@ -12,9 +12,11 @@ LAB = HERE.parent
 
 
 def write(path, data):
+    text = json.dumps(data, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+    if path.exists() and path.read_bytes() == text.encode("utf-8"):
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
-                    encoding="utf-8", newline="\n")
+    path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def main():
@@ -79,7 +81,7 @@ def main():
     number("fieldOfView", "Structure", .2, 2.8, .01, 2 * math.atan(1 / 1.15), "Vertical field of view in radians; zoom is one over tan(fov/2).")
     number("panelDensity", "Frame", .5, 2, .05, 1, "Instrument spacing and row density scale.")
     number("typeScale", "Frame", .75, 2, .05, 1, "Typography scale relative to the app's base type sample.")
-    add("layoutId", "Layout", "enum", "central-stage", "Greybox layout structure id.", values=["central-stage", "docked-workbench"])
+    add("layoutId", "Layout", "enum", "central-stage", "Greybox layout structure id.", values=["central-stage", "docked-workbench", "split-views", "focus-inset"])
     number("viewportShare", "Layout", .3, .9, .01, .7, "Requested fraction of the window devoted to the stage.")
     add("panelPlacement", "Layout", "enum", "overlay", "Instrument panel placement mode.", values=["docked", "overlay"])
     write(HERE / "parameters.json", {"format": "magic600-look-parameters", "version": 1, "parameters": parameters})
@@ -94,17 +96,28 @@ def main():
         return {"id": id, "kind": kind, "rect": {"x": x, "y": y, "width": width, "height": height},
                 "placement": placement, "contexts": contexts}
 
-    for id, central in [("central-stage", True), ("docked-workbench", False)]:
+    for id, central in [("central-stage", True), ("docked-workbench", False), ("split-views", False), ("focus-inset", False)]:
         regions = ([region("stage", "stage", 0, 0, 1, 1), region("instruments", "overlay", .02, .08, .23, .84, "overlay"),
                     region("review", "overlay", .75, .08, .23, .84, "overlay"), region("commands", "overlay", .28, .9, .44, .08, "overlay")]
                    if central else [region("stage", "stage", .25, 0, .5, .75), region("instruments", "panel", 0, 0, .25, 1),
                                     region("review", "panel", .75, 0, .25, 1), region("commands", "panel", .25, .75, .5, .25)])
+        if id == "split-views":
+            regions = [region("global", "global", 0, 0, .5, .78), region("local", "local", .5, 0, .5, .78),
+                       region("instruments", "panel", 0, .78, .36, .22), region("commands", "panel", .36, .78, .28, .22),
+                       region("review", "panel", .64, .78, .36, .22)]
+        elif id == "focus-inset":
+            regions = [region("global", "global", 0, 0, 1, 1), region("local", "local", .66, .52, .32, .40, "overlay"),
+                       region("instruments", "overlay", .02, .08, .23, .84, "overlay"),
+                       region("review", "overlay", .66, .08, .32, .40, "overlay"),
+                       region("commands", "overlay", .28, .90, .36, .08, "overlay")]
         placements = {context: {"placed": {}, "hidden": []} for context in contexts}
         for command in commands["commands"]:
             name = command["id"]
             target = ("stage" if name in ("camera.rotate", "object.inspect", "grip.select", "twist.apply") else
                       "review" if name.startswith(("operation.", "protection.", "worksheet.")) or name == "view.findings" else
                       "instruments" if name.startswith(("view.", "target.", "buffer.", "macro.", "endgame.", "filter.", "block.", "orbit.", "structure.", "intent.")) else "commands")
+            if target == "stage" and id in ("split-views", "focus-inset"):
+                target = "global"
             for context in command["contexts"]:
                 placements[context]["placed"][name] = target
         write(HERE / f"layouts/{id}.json", {"format": "magic600-look-layout", "version": 1, "id": id,
@@ -120,7 +133,7 @@ def main():
     for id, name, steps in flows:
         write(HERE / f"flows/{id}.json", {"format": "magic600-look-flow", "version": 1, "id": id, "name": name, "draft": True,
                                           "steps": [{"command": command, "context": context} for command, context in steps]})
-    print(f"Defaults: {len(parameters)} parameters, two greyboxes, six draft flows, all costs null")
+    print(f"Defaults: {len(parameters)} parameters, four greyboxes, six draft flows, all costs null")
 
 
 if __name__ == "__main__":

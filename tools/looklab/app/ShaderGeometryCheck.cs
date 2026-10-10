@@ -33,7 +33,10 @@ internal static class ShaderGeometryCheck
         if (view.Instances.InstanceCount != Geometry.Cells || view.Instances.VisibleInstanceCount != Geometry.Cells || primitives != ExpectedPrimitives)
             throw new Exception($"missing-instance: instances={view.Instances.InstanceCount} visible={view.Instances.VisibleInstanceCount} primitives={primitives}; expected 600,600,{ExpectedPrimitives}");
         GD.Print($"LOOKLAB_DRAW_COUNT_PASS instances=600 visible=600 primitives={primitives}");
-        var source = new ShaderSource(FileAccess.GetFileAsString("res://shaders/cells.gdshader"));
+        string drawing = FileAccess.GetFileAsString("res://shaders/cells.gdshader");
+        const string framingStatement = "clip.xy = (clip.xy - view_frame.xy * clip.w) * view_frame.z;";
+        if (!drawing.Contains(framingStatement, StringComparison.Ordinal)) throw new Exception("geometry: production framing statement missing");
+        var source = new ShaderSource(fault == "missing-view-frame" ? drawing.Replace(framingStatement, "", StringComparison.Ordinal) : drawing);
         using var fixture = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "tools/looklab/fixtures/sb-reference.json")));
         JsonElement f = fixture.RootElement, parameters = f.GetProperty("parameters");
         var structure = new StructureValues(parameters.GetProperty("cs").GetDouble(), parameters.GetProperty("ss").GetDouble(),
@@ -66,7 +69,32 @@ internal static class ShaderGeometryCheck
             samples += points.Length; cases++;
         }
         if (cases != 9 || samples != 2700) throw new Exception("geometry: expected nine camera/pose cases and 2700 vertices");
-        GD.Print($"LOOKLAB_GEOMETRY_PASS cases={cases} samples={samples} target=RGBA32F tolerance=1e-4+1e-4*abs(expected)");
+        // A non-neutral probe reads the clip vector used by production drawing.
+        JsonElement framedData = f.GetProperty("cases").EnumerateArray().Last();
+        JsonElement[] framedPoints = framedData.GetProperty("samples").EnumerateArray().ToArray();
+        double[] framedQ = Geometry.Identity();
+        foreach (JsonElement r in framedData.GetProperty("rotations").EnumerateArray()) Geometry.Rotate(framedQ, r[0].GetInt32(), r[1].GetInt32(), r[2].GetDouble());
+        double framedTheta = framedData.GetProperty("theta").GetDouble();
+        var frame = new FocusFrame(.125, -.25, 2.5);
+        SetCase(view, structure, framedQ, framedTheta, framedPoints.Length, false); view.SetViewFrame(frame);
+        using (var target = new FloatTarget())
+        {
+            byte[] result = target.Draw(source.Vertex(), source.Fragment(), framedPoints.Length, (uint)framedPoints.Length * 3,
+                Bindings(target, view, source, framedPoints));
+            for (int index = 0; index < framedPoints.Length; index++)
+            {
+                int vertex = framedPoints[index].GetProperty("vertex").GetInt32();
+                LookLab.Core.Projection expected = ViewFraming.Apply(view.Geometry.Project(vertex, structure, framedQ, view.Turn, framedTheta), frame);
+                double[] core = { expected.NdcX, expected.NdcY, expected.W };
+                for (int component = 0; component < 3; component++)
+                {
+                    float actual = BinaryPrimitives.ReadSingleLittleEndian(result.AsSpan(index * 16 + component * 4, 4));
+                    if (!Near(actual, core[component])) throw new Exception($"{(fault == "missing-view-frame" ? fault : "geometry-framing")}: vertex={vertex} component={component} actual={actual:R} core={core[component]:R}; tolerance=1e-4+1e-4*abs(expected)");
+                }
+            }
+        }
+        cases++; samples += framedPoints.Length;
+        GD.Print($"LOOKLAB_GEOMETRY_PASS cases={cases} samples={samples} framed=1 target=RGBA32F tolerance=1e-4+1e-4*abs(expected)");
         host.GetTree().Quit();
     }
 

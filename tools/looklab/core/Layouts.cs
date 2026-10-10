@@ -75,8 +75,9 @@ public sealed class LayoutSpec
             Json.Keys(r, "id", "kind", "rect", "placement", "contexts");
             string rid = Json.Text(r, "id"), kind = Json.Text(r, "kind"), placement = Json.Text(r, "placement");
             if (string.IsNullOrWhiteSpace(rid) || regions.ContainsKey(rid)) throw Json.Error(rid, "empty or duplicate region id");
-            if (kind != "stage" && kind != "panel" && kind != "overlay") throw Json.Error(rid, "unknown region kind");
+            if (kind != "stage" && kind != "global" && kind != "local" && kind != "panel" && kind != "overlay") throw Json.Error(rid, "unknown region kind");
             if ((placement != "docked" && placement != "overlay") || (kind == "overlay" && placement != "overlay")) throw Json.Error(rid, "invalid region placement");
+            if (kind == "global" && placement != "docked") throw Json.Error(rid, "global must be docked");
             var rect = Json.Get(r, "rect"); Json.Keys(rect, "x", "y", "width", "height");
             var bounds = new RegionRect(Json.Number(Json.Get(rect, "x"), rid), Json.Number(Json.Get(rect, "y"), rid),
                 Json.Number(Json.Get(rect, "width"), rid), Json.Number(Json.Get(rect, "height"), rid));
@@ -87,7 +88,21 @@ public sealed class LayoutSpec
                 throw Json.Error(rid, "unknown or duplicate context");
             regions.Add(rid, new LayoutRegion(rid, kind, bounds, placement, Array.AsReadOnly(contexts)));
         }
-        if (regions.Count == 0 || !regions.Values.Any(r => r.Kind == "stage")) throw Json.Error("regions", "a stage region is required");
+        LayoutRegion[] globals = regions.Values.Where(r => r.Kind == "global").ToArray();
+        LayoutRegion[] locals = regions.Values.Where(r => r.Kind == "local").ToArray();
+        bool hasStage = regions.Values.Any(r => r.Kind == "stage");
+        if (globals.Length != 0 || locals.Length != 0)
+        {
+            if (hasStage || globals.Length != 1 || locals.Length != 1)
+                throw Json.Error("regions", "exactly one global and one local, with no stage, required");
+            LayoutRegion global = globals[0], local = locals[0];
+            if (!global.Contexts.SequenceEqual(local.Contexts)) throw Json.Error("contexts", "global and local must have identical contexts");
+            if (local.Placement == "overlay" && (local.Rect.X < global.Rect.X || local.Rect.Y < global.Rect.Y ||
+                local.Rect.X + local.Rect.Width > global.Rect.X + global.Rect.Width + 1e-12 ||
+                local.Rect.Y + local.Rect.Height > global.Rect.Y + global.Rect.Height + 1e-12))
+                throw Json.Error(local.Id, "overlay local must lie inside global");
+        }
+        else if (!hasStage) throw Json.Error("regions", "a stage region is required");
         var result = new Dictionary<string, ContextPlacement>(StringComparer.Ordinal);
         JsonElement all = Json.Get(root, "contexts");
         Json.Keys(all, commands.Contexts.ToArray());
