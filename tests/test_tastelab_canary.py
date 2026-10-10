@@ -229,8 +229,9 @@ class CanaryTests(unittest.TestCase):
                 image_url = ("https://images.metmuseum.org/" if source == "met" else "https://archive.org/download/synthetic/") + ident + ".png"
                 page_url = "https://www.metmuseum.org/art/collection/search/1" if source == "met" else "https://archive.org/details/synthetic"
                 licence_url = sources.ADAPTERS["archive"].terms_url if licence == "private-reference" else sources.CC0_URL
+                # Negatives carry no positive label: calibration skips a negative labelled nude.
                 rows.append(sources.Candidate(source, query + ident, image_url, page_url, licence, licence_url,
-                                               "Synthetic credit", title="adult woman nude"))
+                                               "Synthetic credit", title="adult woman " + ("nude" if query == "positive" else "portrait")))
             return rows, None
 
         def get(url, **kwargs):

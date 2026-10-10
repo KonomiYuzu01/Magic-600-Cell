@@ -1,7 +1,6 @@
 """Offline transport, adapter and in-memory pipeline checks; invented fixtures only."""
 from __future__ import annotations
 
-import copy
 import hashlib
 import io
 import json
@@ -425,7 +424,7 @@ class CalibrationTests(test_store.TempDir):
                     for i in range(screen.GROUP_SIZE)], None
         return search
 
-    def calibrate(self, score):
+    def calibrate(self, score, cases=None):
         patches = [mock.patch.object(sources.ADAPTERS[name], "search", side_effect=self.searches(name)) for name in self.prototypes]
         for patch in patches:
             patch.start()
@@ -435,7 +434,7 @@ class CalibrationTests(test_store.TempDir):
         scorer = mock.Mock()
         scorer.unsafe_score.return_value = [score]
         with mock.patch.object(screen, "Screen", return_value=scorer):
-            result = fetch.calibrate(self.fake, client, log=lambda _: None)
+            result = fetch.calibrate(self.fake, client, log=lambda _: None, cases=cases)
         return result
 
     def test_calibration_all_nan_counts_unscorable_fails_and_writes_counts_only(self):
@@ -455,23 +454,25 @@ class CalibrationTests(test_store.TempDir):
         self.assertNotIn("https://", text)
         self.assertNotIn("NaN", text)
         self.assertEqual([p for p in self.tmp.rglob("*") if p.is_file()], [path])
-        with self.assertRaisesRegex(common.Refused, "passing --calibrate"):
-            fetch.load_screen(self.fake, common.default_data_root())
 
-    def test_passing_report_bound_to_model_weights_probes_and_approved_thresholds(self):
+    def test_passing_report_records_model_weights_probes_and_approved_thresholds(self):
         report = self.calibrate(1.0)
         self.assertTrue(report["passed"])
         self.assertEqual((report["threshold"], report["strict_threshold"]), (screen.THRESHOLD, screen.STRICT_THRESHOLD))
-        path = fetch.write_calibration(common.default_data_root(), report)
-        got = fetch.load_screen(self.fake, common.default_data_root())
-        self.assertEqual(got.threshold, screen.THRESHOLD)
-        for field, value in (("model", "other"), ("weightsSha256", "f" * 64), ("probesSha256", "f" * 64),
-                             ("passed", False), ("threshold", 0.5)):
-            broken = copy.deepcopy(report)
-            broken[field] = value
-            path.write_text(json.dumps(broken), encoding="utf-8")
-            with self.subTest(field=field), self.assertRaises(common.Refused):
-                fetch.load_screen(self.fake, common.default_data_root())
+        self.assertEqual((report["model"], report["weightsSha256"], report["probesSha256"]),
+                         (self.fake.model_id, getattr(self.fake, "weights_sha256", ""), fetch._probe_sha()))
+
+    def test_fetch_needs_no_calibration_report(self):
+        # Owner decision, 9 October 2026: the fetch applies the guard; a missing or failed report changes nothing.
+        for report in (None, self.calibrate(np.nan)):
+            if report is not None:
+                fetch.write_calibration(common.default_data_root(), report)
+            with self.subTest(report=report is not None), \
+                    mock.patch.object(embed, "load_embedder", return_value=self.fake), mock.patch.object(net, "Client"), \
+                    mock.patch.object(fetch, "calibrate", side_effect=AssertionError("the fetch must not calibrate")), \
+                    mock.patch.object(fetch, "run", return_value={}) as run, mock.patch("sys.stdout", io.StringIO()):
+                self.assertEqual(fetch.main([]), 0)
+                self.assertIsInstance(run.call_args.args[2], screen.Screen)
 
     def test_calibration_labels_require_adults_and_public_domain(self):
         self.assertFalse(fetch._adult_subject(candidate(title="nude child portrait"), positive=True))
@@ -500,6 +501,113 @@ class CalibrationTests(test_store.TempDir):
         files = [p for p in self.tmp.rglob("*") if p.is_file()]
         self.assertEqual([p.name for p in files], ["calibration.json"])
 
+    def test_diagnose_keeps_metadata_of_missed_and_discarded_cases_only(self):
+        # A positive is missed below the approved threshold; a negative is discarded at or over the lowest strict one.
+        # A score the gate cannot use (non-finite or outside [0, 1]) is recorded as None: a missed positive, never a
+        # discarded negative.
+        for score, keeps in ((0.10, "both"), (screen.THRESHOLD, "negatives"), (screen.LOWERED[1], "both"),
+                             (screen.LOWERED[1] - 1e-9, "positives"), (np.nan, "positives"), (np.inf, "positives"),
+                             (1.01, "positives"), (-0.01, "positives")):
+            with self.subTest(score=score):
+                cases = []
+                report = self.calibrate(score, cases=cases)
+                positives = sum(group["n"] for group in report["groups"].values())
+                negatives = report["negatives"]["n"]
+                self.assertEqual((positives, len(cases)), (screen.GROUP_SIZE * len(screen.CALIBRATION_GROUPS), positives + negatives))
+                self.assertGreater(negatives, 0)
+                kept = fetch.diagnostic_cases(cases)
+                expected = {"both": positives + negatives, "negatives": negatives, "positives": positives}[keeps]
+                self.assertEqual(len(kept), expected)
+                self.assertEqual(sum(case["group"] == "negative" for case in kept), 0 if keeps == "positives" else negatives)
+                for case in kept:
+                    self.assertEqual(set(case), {"group", "query", "source", "id", "title", "keywords", "score"})
+                    self.assertEqual(case["score"] is None, not 0 <= score <= 1)
+                text = json.dumps(kept, allow_nan=False)
+                self.assertNotIn("https://", text)
+                self.assertNotIn("image_url", text)
+                self.assertNotIn("synthetic-", json.dumps(report))
+
+    def test_diagnose_replaces_link_like_text_in_titles_and_keywords(self):
+        links = ("https://images.metmuseum.org/synthetic/901.png", "www.example.org/item", "metmuseum.org/art/collection/9",
+                 "data:image/png;base64,AAAA", "data:image/svg+xml,%3Csvg%2F%3E", "C:\\Users\\someone\\picture.png",
+                 "ftp://example.org/x", "mailto:someone@example.org", "javascript:alert(1)", "metmuseum.org",
+                 "192.168.0.1", "/home/someone/picture.png", "\\\\server\\share\\picture.png", "//cdn.example.org/x.png",
+                 "//cdn.example.co.uk", "//cdn.example.co.uk?case=901", "example．org", "someone＠example", "[::1]:8080",
+                 "localhost:8080")
+        self.labels["nudity"] = "adult nude study " + " ".join(links)
+        self.prototypes = {name: replace(item, keywords=(*links, "oil on canvas")) for name, item in self.prototypes.items()}
+        cases = []
+        self.calibrate(0.10, cases=cases)
+        kept = fetch.diagnostic_cases(cases)
+        nudity = [case for case in kept if case["group"] == "nudity"]
+        self.assertEqual(len(nudity), screen.GROUP_SIZE)
+        self.assertEqual(nudity[0]["title"], "adult nude study " + " ".join(["[link]"] * len(links)))
+        self.assertEqual(nudity[0]["keywords"], (["[link]"] * len(links) + ["oil on canvas"])[:20])
+        text = json.dumps(kept)
+        for fragment in (":/", "www.", "metmuseum", "example", "base64", "svg", "Users", "picture", "someone", "alert",
+                         "192.168", "server", "cdn", "localhost", "::1"):
+            self.assertNotIn(fragment, text)
+        for ordinary in ("Kneeling Nude Woman with Drapery, 1890; plate 3 of 5", "St. Jerome, oil on canvas", "Venus (after Titian)"):
+            self.assertEqual(fetch._plain(ordinary), ordinary)
+        # Decomposed accents, a scheme followed by a space and over-redacted ordinary words.
+        self.assertEqual(fetch._plain("café.com data: ,DIAG javascript: alert(1) Study: nude"),
+                         "[link] [link] ,DIAG [link] alert(1) [link] nude")
+        self.assertEqual(fetch._plain("x" * 1000 + " https://example.org/a"), "x" * 200)
+        self.assertEqual(fetch._plain("nude " + "https://example.org/" + "a" * 2000), "nude [link]")
+
+    def test_calibration_skips_document_files_and_labelled_negatives(self):
+        self.assertIn("a vintage photo of women in bathing costumes", screen.UNSAFE_PROBES)
+        base = replace(self.prototypes["wikimedia"], licence="CC0-1.0", licence_url=sources.CC0_URL, keywords=())
+
+        def item(ident, title, suffix=".jpg", keywords=()):
+            return replace(base, source_id=ident, title=title, keywords=keywords,
+                           page_url=f"https://commons.wikimedia.org/wiki/File:Invented_{ident}{suffix}")
+
+        pages = {"nude painting": [item("1", "adult nude study", ".pdf"), item("2", "adult nude study", ".DjVu"),
+                                   item("3", "adult nude study", keywords=("Books with Wikidata item",))],
+                 "botanical illustration": [item("4", "Bloodroot botanical illustration"),
+                                            item("5", "Invented allegory", keywords=("Female Nudes",)),
+                                            item("6", "Invented herbal", ".pdf")]}
+        lines, cases = [], []
+        client = mock.Mock()
+        client.get.return_value = net.Response("synthetic", 200, {}, png())
+        scorer = mock.Mock()
+        scorer.unsafe_score.return_value = [0.5]
+        empty = mock.Mock(return_value=([], None))
+        with mock.patch.object(sources.ADAPTERS["wikimedia"], "search",
+                               side_effect=lambda client, query, cursor, **kwargs: (pages.get(query, []), None)), \
+                mock.patch.object(sources.ADAPTERS["met"], "search", empty), \
+                mock.patch.object(sources.ADAPTERS["aic"], "search", empty), \
+                mock.patch.object(sources.ADAPTERS["nasa"], "search", empty), \
+                mock.patch.object(screen, "Screen", return_value=scorer):
+            report = fetch.calibrate(self.fake, client, log=lines.append, cases=cases)
+        self.assertEqual([(case["group"], case["id"]) for case in cases], [("nudity", "3"), ("negative", "4")])
+        self.assertEqual((report["groups"]["nudity"]["n"], report["negatives"]["n"]), (1, 1))
+        self.assertIn('Calibration skipped: {"document": 3, "labelled_negative": 1}', lines)
+
+    def test_diagnose_cli_writes_case_metadata_beside_the_report(self):
+        with self.assertRaises(SystemExit), mock.patch("sys.stderr", io.StringIO()):
+            fetch.main(["--diagnose"])
+        collected = []
+        report = self.calibrate(0.10, cases=collected)
+
+        def run(model, client, *, cases=None, **kwargs):
+            cases.extend(collected)
+            return report
+
+        with mock.patch.object(embed, "load_embedder", return_value=self.fake), \
+                mock.patch.object(net, "Client"), mock.patch.object(fetch, "calibrate", side_effect=run), \
+                mock.patch.object(store, "Store", side_effect=AssertionError("calibration must not open a store")), \
+                mock.patch("sys.stdout", io.StringIO()):
+            self.assertEqual(fetch.main(["--calibrate", "--diagnose"]), 0 if report["passed"] else 1)
+        files = sorted(p.name for p in self.tmp.rglob("*") if p.is_file())
+        self.assertEqual(files, ["calibration-cases.json", "calibration.json"])
+        reports = common.default_data_root() / "reports"
+        written = json.loads((reports / fetch.CALIBRATION_CASES).read_text(encoding="utf-8"))
+        self.assertEqual(written["cases"], fetch.diagnostic_cases(collected))
+        self.assertNotIn("https://", (reports / fetch.CALIBRATION_CASES).read_text(encoding="utf-8"))
+        self.assertNotIn("synthetic-", (reports / fetch.CALIBRATION_REPORT).read_text(encoding="utf-8"))
+
 
 class PipelineTests(test_store.TempDir):
     def setUp(self):
@@ -508,7 +616,7 @@ class PipelineTests(test_store.TempDir):
         self.addCleanup(self.library.close)
         self.fake = embed.FakeEmbedder()
         self.content_screen = mock.Mock()
-        self.content_screen.check.return_value = [False]
+        self.content_screen.guard.return_value = [False]
 
     def pipeline(self, item=None, data=None, **kwargs):
         item, data = item or candidate(), data or png()
@@ -531,8 +639,20 @@ class PipelineTests(test_store.TempDir):
         self.assertIn(sha, self.library.embeddings(self.fake.model_id))
         self.assertTrue(self.library.has_seen("met", "901"))
 
+    def test_image_downloads_prefer_image_types_and_still_refuse_other_content(self):
+        # Openverse's thumbnail endpoint answers 406 unless the Accept header allows any type.
+        pipeline, item, replay = self.pipeline()
+        self.assertEqual(self.ingest(pipeline, item).kind, "stored")
+        self.assertEqual(replay.calls[0][1]["Accept"], "image/jpeg, image/png, image/webp, image/gif, */*;q=0.1")
+        other = candidate(ident="902")
+        replay = net.ReplayTransport({other.image_url: (200, {"content-type": "text/html"}, png())})
+        pipeline = fetch.Pipeline(self.library, self.fake, self.content_screen, net.Client(replay, sleep=lambda _: None,
+                                                                                            clock=lambda: 0))
+        self.assertEqual(self.ingest(pipeline, other).kind, "invalid")
+        self.assertEqual(self.library.count_images(), 1)
+
     def test_discard_keeps_counts_only_no_seen_hash_metadata_or_files(self):
-        self.content_screen.check.return_value = [True]
+        self.content_screen.guard.return_value = [True]
         pipeline, item, _ = self.pipeline()
         before = set(self.library.root.rglob("*"))
         outcome = self.ingest(pipeline, item)
@@ -564,14 +684,73 @@ class PipelineTests(test_store.TempDir):
             self.assertEqual(self.ingest(pipeline, item).kind, "blocked")
             embeddings.assert_not_called()
 
-    def test_animations_no_original_and_tier_b_is_always_strict(self):
+    def test_class_a_skips_documents_and_caps_a_series_before_download(self):
+        # Owner delegation, 10 October 2026: class A keeps no document pages and, from Wikimedia and Openverse, at most
+        # `series_max` images of one credit per (category, term); the Met, AIC and NASA adapters credit their own
+        # institution on every record and are not capped. Both checks run before the download; class B is unchanged.
+        items = [sources.Candidate("wikimedia", str(910 + i), f"https://upload.wikimedia.org/synthetic/{910 + i}.png",
+                                   f"https://commons.wikimedia.org/wiki/File:Invented_{910 + i}.png", "CC0-1.0",
+                                   sources.CC0_URL, "Invented Artist", "Invented work") for i in range(6)]
+        items += [candidate(ident=str(930 + i)) for i in range(3)]
+        scan = sources.Candidate("wikimedia", "8001", "https://upload.wikimedia.org/synthetic/page1-scan.pdf.jpg",
+                                 "https://commons.wikimedia.org/wiki/File:Invented_scan.pdf", "CC0-1.0", sources.CC0_URL,
+                                 "Invented Maker", "Invented scan")
+        responses = {item.image_url: (200, {"content-type": "image/png"}, png((25 * i, 90, 160))) for i, item in enumerate(items)}
+        responses[scan.image_url] = (200, {"content-type": "image/png"}, png((250, 250, 250)))
+        replay = net.ReplayTransport(responses)
+        client = net.Client(replay, sleep=lambda _: None, clock=lambda: 0)
+        pipeline = fetch.Pipeline(self.library, self.fake, self.content_screen, client, near_duplicate=1.01, series_max=2)
+        attributions = ["Invented Artist", " invented ARTIST ", "Invented Artist", "Other Artist"]
+        kinds = [self.ingest(pipeline, replace(item, attribution=name)).kind for item, name in zip(items, attributions)]
+        self.assertEqual(kinds, ["stored", "stored", "series", "stored"])
+        self.assertEqual(self.ingest(pipeline, scan).kind, "document")
+        self.assertEqual(len(replay.calls), 3)
+        self.assertFalse(self.library.has_seen("wikimedia", "912"))
+        self.assertFalse(self.library.has_seen("wikimedia", "8001"))
+        other_term = pipeline.ingest_candidate(replace(items[4], attribution="Invented Artist"), category="synthetic",
+                                               query="other", tier="A", adapter=sources.ADAPTERS["wikimedia"])
+        self.assertEqual(other_term.kind, "stored")
+        self.assertEqual(self.ingest(pipeline, replace(items[5], attribution="Invented Artist"), tier="B").kind, "stored")
+        self.assertEqual(self.ingest(pipeline, scan, tier="B").kind, "stored")
+        self.assertEqual(self.library.series_count("synthetic", "instrument", "wikimedia", "INVENTED ARTIST"), 2)
+        institutional = [self.ingest(pipeline, replace(item, attribution="Invented Artist")).kind for item in items[6:]]
+        self.assertEqual(institutional, ["stored"] * 3)
+        self.assertEqual(self.library.series_count("synthetic", "instrument", "met", "Invented Artist"), 3)
+
+    def test_animations_no_original_and_tier_b_gets_the_minor_checks_only(self):
         pipeline, item, _ = self.pipeline(data=png(animated=True))
         outcome = self.ingest(pipeline, item, tier="B")
         self.assertEqual(outcome.kind, "stored")
         self.assertIsNone(self.library.original_path(outcome.sha256))
-        self.content_screen.check.assert_called_once()
-        self.assertTrue(self.content_screen.check.call_args.kwargs["strict"])
+        self.content_screen.guard.assert_called_once()
+        self.assertFalse(self.content_screen.guard.call_args.kwargs["explicit"])
         self.assertEqual(self.library.image(outcome.sha256).tier, "B")
+
+    def test_guard_reads_title_and_keywords_and_class_a_gets_the_explicit_check(self):
+        pipeline, item, _ = self.pipeline(item=replace(candidate(title="Invented study"), keywords=("nude_teen", "1girl")))
+        self.assertEqual(self.ingest(pipeline, item).kind, "stored")
+        kwargs = self.content_screen.guard.call_args.kwargs
+        self.assertEqual((kwargs["labels"], kwargs["explicit"]), (["Invented study nude_teen 1girl"], True))
+
+    def test_real_guard_reads_source_tags(self):
+        # Every probe points away from the image except "a landscape", so only the labels can discard.
+        unit = np.eye(16, dtype=np.float32)
+        texts = {t: -unit[0] for t in screen.UNSAFE_PROBES + screen.SAFE_PROBES}
+        texts["a landscape"] = unit[0]
+        fake = embed.FakeEmbedder(texts=texts)
+        fake.logit_scale = 5.0
+        content_screen = screen.Screen(fake)
+        cases = ((("nude_teen",), "discarded"), (("1girl", "erotic"), "discarded"), (("1girl", "landscape"), "stored"),
+                 (("nude", "adult"), "stored"), (("bathing_suit", "children"), "discarded"),
+                 (("1girl", "masturbation"), "discarded"), (("Nude preteen study",), "discarded"),
+                 (("schoolgirl", "ejaculation"), "discarded"), (("Nude 12-year-olds",), "discarded"))
+        for number, (keywords, kind) in enumerate(cases, start=1):
+            item = replace(candidate(ident=str(910 + number)), keywords=keywords)
+            replay = net.ReplayTransport({item.image_url: (200, {"content-type": "image/png"}, png((20 * number, 130, 170)))})
+            pipeline = fetch.Pipeline(self.library, fake, content_screen, net.Client(replay, sleep=lambda _: None, clock=lambda: 0))
+            vector = embed.normalise(unit[0] + 0.3 * unit[number])[np.newaxis]   # distinct images, "a landscape" on top
+            with self.subTest(keywords=keywords), mock.patch.object(fake, "embed_images", return_value=vector):
+                self.assertEqual(self.ingest(pipeline, item).kind, kind)
 
     def test_relevance_and_near_duplicate_checks_before_commit(self):
         pipeline, item, _ = self.pipeline(relevance_min=1)
@@ -689,6 +868,273 @@ class PipelineTests(test_store.TempDir):
         self.assertEqual(second["stored"], 1)
         self.assertEqual(self.library.count_images(), 2)
         self.assertEqual(self.library.cursor("met", "instrument"), ("20", False))
+
+    def share_run(self, plan, pages, *, relevant=lambda query, ident: True, same_items=False, entry=None, stored=None,
+                  **kwargs):
+        """Run `plan` (through `entry`, by default fetch.run) against synthetic met and aic searches. `pages[(source, query)]` lists the number of items on each
+        page, or is an exception the search raises; the searches honour the seen filter. Ingestion is counted per
+        (category, query) and per source instead of stored, into `stored` when given, and only `relevant(query, ident)`
+        items are stored; a relevance of "error" stands for a failed download. With `same_items`, every query's page n
+        holds the same items. Returns the counts, the search calls as
+        (source, query, page), the stored counts and the stored count per source."""
+        from collections import Counter
+        calls, per_source = [], Counter()
+        stored = Counter() if stored is None else stored
+
+        def search_for(name):
+            def search(client, query, cursor, seen):
+                index = int(cursor or 0)
+                calls.append((name, query, index))
+                rows = pages.get((name, query), [])
+                if isinstance(rows, Exception):
+                    raise rows
+                if index >= len(rows):
+                    return [], None
+                prefix = f"{name}-{index}" if same_items else f"{name}-{query}-{index}"
+                items = [candidate(name=name, ident=f"{prefix}-{i}") for i in range(rows[index])]
+                return [item for item in items if not seen(item.source_id)], str(index + 1) if index + 1 < len(rows) else None
+            return search
+
+        def ingest(item, *, category, query, tier, adapter):
+            if self.library.has_seen(item.source, item.source_id):
+                return fetch.Outcome("duplicate")
+            verdict = relevant(query, item.source_id)
+            if verdict == "error":
+                return fetch.Outcome("error")
+            if not verdict:
+                return fetch.Outcome("irrelevant")
+            self.library.mark_seen(item.source, item.source_id)
+            stored[(category, query)] += 1
+            per_source[item.source] += 1
+            return fetch.Outcome("stored")
+
+        def by_category():
+            totals = Counter()
+            for (category, _), number in stored.items():
+                totals[category] += number
+            return dict(totals)
+
+        with mock.patch.object(sources.ADAPTERS["met"], "search", side_effect=search_for("met")), \
+                mock.patch.object(sources.ADAPTERS["aic"], "search", side_effect=search_for("aic")), \
+                mock.patch.object(fetch.Pipeline, "ingest_candidate", side_effect=ingest), \
+                mock.patch.object(self.library, "query_counts", side_effect=lambda: dict(stored)), \
+                mock.patch.object(self.library, "category_counts", side_effect=by_category):
+            counts = (entry or fetch.run)(self.library, self.fake, self.content_screen, None, plan, log=lambda _: None,
+                                          **kwargs)
+        return counts, calls, dict(stored), dict(per_source)
+
+    def test_terms_share_the_target_and_sources_take_turns_within_a_page(self):
+        # FSP-001: pages larger than a term's share must not let the first source fill it.
+        plan = seeds.parse({"version": 1, "sources": {"met": True, "aic": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met", "aic"], "terms": ["alpha", "beta"]}}})
+        pages = {(name, term): [20, 20] for name in ("met", "aic") for term in ("alpha", "beta")}
+        counts, calls, stored, per_source = self.share_run(plan, pages)
+        self.assertEqual(calls, [("met", "alpha", 0), ("aic", "alpha", 0), ("met", "beta", 0), ("aic", "beta", 0)])
+        self.assertEqual((counts, stored, per_source), ({"stored": 4}, {("synthetic", "alpha"): 2, ("synthetic", "beta"): 2},
+                                                        {"met": 2, "aic": 2}))
+        self.assertEqual(self.library.cursor("met", "alpha"), (None, False))   # the page was not fully handled
+
+    def test_an_exhausted_term_leaves_its_share_to_the_others(self):
+        plan = seeds.parse({"version": 1, "sources": {"met": True, "aic": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met", "aic"], "terms": ["alpha", "beta"]}}})
+        counts, calls, stored, per_source = self.share_run(plan, {("met", "beta"): [3, 3]})
+        self.assertEqual((stored, per_source), ({("synthetic", "beta"): 4}, {"met": 4}))
+        self.assertEqual([call for call in calls if call[:2] == ("met", "beta")], [("met", "beta", 0), ("met", "beta", 1)])
+        self.assertEqual(self.library.cursor("met", "alpha"), (None, True))
+        self.assertEqual(self.library.cursor("met", "beta"), ("1", False))
+
+    def test_an_early_stop_has_drawn_from_every_category(self):
+        # FSP-002: entries interleave across categories, so a limit of one image per category reaches all of them.
+        plan = seeds.parse({"version": 1, "sources": {"met": True, "aic": True}, "categories": {
+            "first": {"kind": "focus", "target": 40, "sources": ["met", "aic"], "terms": ["alpha", "gamma"]},
+            "second": {"kind": "focus", "target": 40, "sources": ["aic"], "terms": ["beta"]}}})
+        pages = {("met", "alpha"): [20], ("aic", "alpha"): [20], ("met", "gamma"): [20], ("aic", "gamma"): [20],
+                 ("aic", "beta"): [20]}
+        counts, calls, stored, _ = self.share_run(plan, pages, limit=2)
+        self.assertEqual((counts, stored), ({"stored": 2}, {("first", "alpha"): 1, ("second", "beta"): 1}))
+
+    def test_a_shared_cursor_key_keeps_a_paused_page(self):
+        # FSP-003: two terms share met's cursor key; beta finds nothing relevant and finishes the shared page while alpha
+        # is paused at its share. Alpha still fills the category from the page it holds.
+        plan = seeds.parse({"version": 1, "sources": {"met": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met"], "terms": ["alpha", "beta"]}}})
+        shared = {("met", "alpha"): [4], ("met", "beta"): [4]}
+        with mock.patch.object(sources.ADAPTERS["met"], "cursor_key", return_value="shared"):
+            counts, calls, stored, _ = self.share_run(plan, shared, relevant=lambda query, ident: query == "alpha",
+                                                      same_items=True)
+        self.assertEqual(stored, {("synthetic", "alpha"): 4})
+        self.assertEqual(self.library.cursor("met", "shared"), (None, True))
+
+    def shared_cursor_run(self, terms, page_sizes, target):
+        """`terms` share met's cursor key and its pages; only alpha finds its items relevant."""
+        plan = seeds.parse({"version": 1, "sources": {"met": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": target, "sources": ["met"], "terms": terms}}})
+        with mock.patch.object(sources.ADAPTERS["met"], "cursor_key", return_value="shared"):
+            return self.share_run(plan, {("met", term): page_sizes for term in terms},
+                                  relevant=lambda query, ident: query == "alpha", same_items=True)
+
+    def test_a_shared_cursor_key_does_not_skip_pages_another_term_still_needs(self):
+        # FSR-001: beta finds nothing relevant and walks the shared pages ahead of alpha; alpha still visits every page.
+        counts, calls, stored, _ = self.shared_cursor_run(["alpha", "beta"], [2, 4], 6)
+        self.assertEqual(stored, {("synthetic", "alpha"): 6})
+        self.assertEqual([call for call in calls if call[1] == "alpha"], [("met", "alpha", 0), ("met", "alpha", 1)])
+        self.assertEqual(self.library.cursor("met", "shared"), (None, True))
+
+    def test_a_term_visited_later_starts_where_the_run_found_the_shared_cursor(self):
+        # FSV-001: beta comes first and moves the shared cursor before alpha's first visit.
+        counts, calls, stored, _ = self.shared_cursor_run(["beta", "alpha"], [2, 4], 6)
+        self.assertEqual(stored, {("synthetic", "alpha"): 6})
+        self.assertEqual([call for call in calls if call[1] == "alpha"], [("met", "alpha", 0), ("met", "alpha", 1)])
+        self.assertEqual(self.library.cursor("met", "shared"), (None, True))
+
+    def test_a_term_visited_later_searches_a_shared_page_another_term_finished(self):
+        # FSV-001: beta marks the single shared page done before alpha's first visit.
+        counts, calls, stored, _ = self.shared_cursor_run(["beta", "alpha"], [4], 4)
+        self.assertEqual(stored, {("synthetic", "alpha"): 4})
+        self.assertEqual(calls, [("met", "beta", 0), ("met", "alpha", 0)])
+        self.assertEqual(self.library.cursor("met", "shared"), (None, True))
+
+    def test_terms_with_the_same_text_search_each_of_their_queries(self):
+        # FSR-002: two terms share their text but not their met query; each query keeps its own page and cursor.
+        plan = seeds.parse({"version": 1, "sources": {"met": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met"],
+                          "terms": [{"text": "alpha", "met": "first"}, {"text": "alpha", "met": "second"}]}}})
+        counts, calls, stored, _ = self.share_run(plan, {("met", "first"): [2], ("met", "second"): [20]})
+        self.assertEqual(stored, {("synthetic", "alpha"): 4})
+        self.assertEqual(calls, [("met", "first", 0), ("met", "second", 0)])
+        self.assertEqual(self.library.cursor("met", "first"), (None, True))
+        self.assertEqual(self.library.cursor("met", "second"), (None, False))
+
+    def accept(self, *items):
+        self.library.add_proposals(items, 100)
+        for term, _, _ in items:
+            self.library.set_proposal_status(term, "accepted")
+
+    def proposal_plan_of(self, terms=("alpha",)):
+        return seeds.parse({"version": 1, "sources": {"met": True}, "categories": {
+            "synthetic": {"kind": "focus", "target": 4, "sources": ["met"], "terms": list(terms)}}})
+
+    def test_accepted_proposals_fetch_their_own_terms_and_are_marked_fetched(self):
+        self.accept(("beta", "synthetic", "adjacent"), ("gamma", "synthetic", "adjacent"))
+        self.library.add_proposals([("delta", "synthetic", "adjacent")], 100)     # proposed, not ticked
+        pages = {("met", "alpha"): [20], ("met", "beta"): [9], ("met", "gamma"): [1], ("met", "delta"): [20]}
+        with mock.patch.object(fetch, "PROPOSAL_IMAGES", 2):
+            counts, calls, stored, _ = self.share_run(self.proposal_plan_of(), pages, entry=fetch.fetch_proposals)
+        # Each proposal holds at most 2 images: beta does not take what gamma left. The seed term is not searched.
+        self.assertEqual(stored, {("synthetic", "beta"): 2, ("synthetic", "gamma"): 1})
+        self.assertEqual({call[1] for call in calls}, {"beta", "gamma"})
+        self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()},
+                         {"beta": "fetched", "gamma": "fetched", "delta": "proposed"})
+
+    def test_a_proposal_cap_counts_every_image_of_its_term_across_runs_and_categories(self):
+        from collections import Counter
+        self.accept(("beta", "synthetic", "adjacent"), ("gamma", "synthetic", "adjacent"))
+        # 30 seed images fill the category; gamma already holds 2 images, filed under another category.
+        stored = Counter({("synthetic", "alpha"): 30, ("other", "gamma"): 2})
+        pages = {("met", "beta"): [9], ("met", "gamma"): [9]}
+        with mock.patch.object(fetch, "PROPOSAL_IMAGES", 2):
+            self.assertEqual(self.share_run(self.proposal_plan_of(), pages, entry=fetch.fetch_proposals, limit=1,
+                                            stored=stored)[0], {"stored": 1})
+            # gamma already holds its 2 images, so it is complete without a search.
+            self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()},
+                             {"beta": "accepted", "gamma": "fetched"})
+            _, calls, _, _ = self.share_run(self.proposal_plan_of(), pages, entry=fetch.fetch_proposals, stored=stored)
+        # The retry fills only what the first run left.
+        self.assertEqual(stored, {("synthetic", "alpha"): 30, ("other", "gamma"): 2, ("synthetic", "beta"): 2})
+        self.assertEqual({call[1] for call in calls}, {"beta"})
+        self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()}, {"beta": "fetched", "gamma": "fetched"})
+
+    def test_a_proposal_keeps_its_place_when_another_finishes_a_shared_listing(self):
+        from collections import Counter
+        self.accept(("alpha", "synthetic", "adjacent"), ("beta", "synthetic", "adjacent"))
+        stored, pages = Counter(), {("met", "alpha"): [40], ("met", "beta"): [40]}
+        relevant = lambda query, ident: query == "alpha"         # noqa: E731
+        # Like Demozoo, the source serves every query from one listing.
+        with mock.patch.object(sources.ADAPTERS["met"], "cursor_key", return_value="listing"):
+            self.share_run(self.proposal_plan_of(("seed",)), pages, entry=fetch.fetch_proposals, same_items=True,
+                           relevant=relevant, limit=2, stored=stored)
+            # beta has seen the whole listing; alpha stopped at the limit with most of the page left.
+            self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()},
+                             {"alpha": "accepted", "beta": "fetched"})
+            self.share_run(self.proposal_plan_of(("seed",)), pages, entry=fetch.fetch_proposals, same_items=True,
+                           relevant=relevant, stored=stored)
+        self.assertEqual(stored, {("synthetic", "alpha"): fetch.PROPOSAL_IMAGES})
+        self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()}, {"alpha": "fetched", "beta": "fetched"})
+
+    def test_an_interrupted_proposal_fetch_keeps_the_proposals_accepted(self):
+        from collections import Counter
+        self.accept(("beta", "synthetic", "adjacent"))
+        stored = Counter()
+        # A failed search leaves the proposal accepted, and the next run resumes it.
+        self.assertEqual(self.share_run(self.proposal_plan_of(), {("met", "beta"): net.NetError("down")},
+                                        entry=fetch.fetch_proposals, stored=stored)[0], {"error": 1})
+        self.assertEqual([p["status"] for p in self.library.proposals()], ["accepted"])
+        self.assertEqual(self.share_run(self.proposal_plan_of(), {("met", "beta"): [20]}, entry=fetch.fetch_proposals,
+                                        limit=1, stored=stored)[0], {"stored": 1})
+        self.assertEqual([p["status"] for p in self.library.proposals()], ["accepted"])
+        self.share_run(self.proposal_plan_of(), {("met", "beta"): [20]}, entry=fetch.fetch_proposals, stored=stored)
+        self.assertEqual((stored, [p["status"] for p in self.library.proposals()]),
+                         ({("synthetic", "beta"): 20}, ["fetched"]))     # the search ended below the cap
+        # A download that still fails after the client's retries is passed over: the finished search completes gamma.
+        self.accept(("gamma", "synthetic", "adjacent"))
+        self.assertEqual(self.share_run(self.proposal_plan_of(), {("met", "gamma"): [1]}, entry=fetch.fetch_proposals,
+                                        relevant=lambda query, ident: "error")[0], {"error": 1})
+        self.assertEqual({p["term"]: p["status"] for p in self.library.proposals()}, {"beta": "fetched", "gamma": "fetched"})
+        with mock.patch.object(fetch, "run", side_effect=AssertionError("nothing is accepted")):
+            self.assertIsNone(fetch.fetch_proposals(self.library, self.fake, self.content_screen, None,
+                                                    self.proposal_plan_of(), log=lambda _: None))
+
+    def test_a_probe_proposal_joins_the_nearest_class_a_category(self):
+        axes = np.eye(16, dtype=np.float32)
+        fake = embed.FakeEmbedder(texts={"neon haze": axes[1] + 0.2 * axes[0]})
+        number = iter(range(1, 100))
+
+        def put(category, vector, tier="A", count=1):
+            for _ in range(count):
+                sha = f"{next(number):064x}"
+                self.library.add_image(test_store.meta(sha, category=category, tier=tier), b"t")
+                self.library.put_embeddings(fake.model_id, fake.dim, [(sha, embed.to_blob(embed.normalise(vector)))])
+
+        put("steampunk", axes[0], count=2)
+        put("cyberpunk", axes[1] + 0.5 * axes[0])
+        put("canary", axes[1], tier="B", count=5)           # class B never places a proposal
+        put("forced", axes[1], count=3)                     # class A images kept from before the category forced tier B
+        plan = seeds.parse({"version": 1, "sources": {"met": True, "aic": True, "safebooru": True}, "categories": {
+            "steampunk": {"kind": "focus", "target": 9, "sources": ["met"], "terms": ["orrery"]},
+            "cyberpunk": {"kind": "focus", "target": 9, "sources": ["aic"], "terms": ["neon"]},
+            "canary": {"kind": "focus", "target": 9, "sources": ["met"], "terms": ["dark"]},
+            "forced": {"kind": "focus", "target": 9, "tier": "B", "sources": ["met"], "terms": ["mist"]},
+            "private": {"kind": "focus", "target": 9, "tier": "B", "sources": ["safebooru"], "terms": ["sky"],
+                        "adjacent": ["anime sky"]}}})
+        proposals = [{"term": "brass dial", "category": "steampunk"}, {"term": "neon haze", "category": None},
+                     {"term": "gone", "category": "removed"}, {"term": "anime sky", "category": "private"},
+                     {"term": "forced mist", "category": "forced"}]
+        narrowed, covered = fetch.proposal_plan(self.library, fake, plan, proposals)
+        self.assertEqual(covered, ["brass dial", "neon haze"])
+        self.assertEqual({name: ([t.text for t in c.terms], c.target, c.adjacent) for name, c in narrowed.categories.items()},
+                         {"steampunk": (["brass dial"], 2 + fetch.PROPOSAL_IMAGES, ()),
+                          "cyberpunk": (["neon haze"], 1 + fetch.PROPOSAL_IMAGES, ())})
+        self.assertEqual(narrowed.relevance_min, plan.relevance_min)
+        # A category that forces tier B opens only when the caller names the sources, and never takes a probe proposal.
+        narrowed, covered = fetch.proposal_plan(self.library, fake, plan, proposals, sources=["met", "safebooru"])
+        self.assertEqual(covered, ["brass dial", "neon haze", "anime sky", "forced mist"])
+        self.assertEqual({name: [t.text for t in c.terms] for name, c in narrowed.categories.items()},
+                         {"steampunk": ["brass dial", "neon haze"], "private": ["anime sky"], "forced": ["forced mist"]})
+
+    def test_the_fetch_stores_missing_probe_texts_and_reports_no_proposals(self):
+        fake = embed.FakeEmbedder()
+        with mock.patch.object(embed, "load_embedder", return_value=fake), mock.patch.object(net, "Client"), \
+                mock.patch.object(fetch, "run", side_effect=AssertionError("--proposals runs no seed fetch")), \
+                mock.patch("sys.stdout", io.StringIO()) as out:
+            self.assertEqual(fetch.main(["--proposals"]), 0)
+        self.assertIn("No accepted proposals.", out.getvalue())
+        root = common.default_data_root()
+        probes = seeds.load_probes(root / seeds.PROBES_FILE)
+        texts = [probes.phrase(t) for t in probes.texts()]
+        with store.Store(root) as library:
+            self.assertEqual(set(library.text_embeddings(fake.model_id, texts)), set(texts))
+        with mock.patch("sys.stderr", io.StringIO()), self.assertRaises(SystemExit):
+            fetch.main(["--proposals", "--category", "gaming"])
 
     def test_runner_missing_interpreter_requires_actual_execution(self):
         output = io.StringIO()

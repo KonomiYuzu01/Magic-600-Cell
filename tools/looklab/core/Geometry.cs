@@ -16,9 +16,11 @@ public sealed class Geometry
     public const int StickersPerCell = 433;
     public const int Cells = 600;
     public const int Slots = Cells * StickersPerCell;
+    // S-B SPEC section 3 pin: SHA-256 of the 433 x 4 little-endian float32 shrink anchors.
+    public const string AnchorSha256 = "0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6";
     private readonly double[] vertices;
     private readonly int[] stickers;
-    private readonly double[] centers;
+    private readonly double[] anchors;
     private readonly double[] frames;
     private readonly double[] normal;
     private readonly double radius;
@@ -28,7 +30,7 @@ public sealed class Geometry
     // Verified immutable input views for renderer upload, in the original order.
     public ReadOnlyMemory<double> BaseVertexData => vertices;
     public ReadOnlyMemory<int> BaseStickerIds => stickers;
-    public ReadOnlyMemory<double> StickerCenters => centers;
+    public ReadOnlyMemory<double> StickerAnchors => anchors;
     public ReadOnlyMemory<double> CellFrames => frames;
     public ReadOnlyMemory<double> BaseNormal => normal;
     public double Radius => radius;
@@ -50,7 +52,8 @@ public sealed class Geometry
         radius = Json.Number(Json.Get(root, "normal_length"), "normal_length");
         if (normal.Length != 4 || radius <= 0) throw Json.Error("mesh.json", "invalid normal or radius");
         vertices = Floats(assets.ReadVerified("mesh_vertices.f32"), BaseVertices * 4, "mesh_vertices.f32");
-        centers = Floats(assets.ReadVerified("mesh_centers.f32"), StickersPerCell * 4, "mesh_centers.f32");
+        anchors = Anchors(offsets, vertices);
+        if (AnchorDigest(anchors) != AnchorSha256) throw Json.Error("anchors", "SHA-256 differs from the S-B SPEC section 3 pin");
         frames = Floats(assets.ReadVerified("cell_frames.f32"), Cells * 16, "cell_frames.f32");
         byte[] stickerBytes = assets.ReadVerified("mesh_sticker.u32");
         if (stickerBytes.Length != BaseVertices * 4) throw Json.Error("mesh_sticker.u32", "invalid length");
@@ -85,6 +88,48 @@ public sealed class Geometry
         return result;
     }
 
+    // S-B SPEC section 3: each sticker shrinks towards the area-weighted centroid of its triangles (consecutive
+    // vertex triples), computed in float64 in file order and rounded once to float32.
+    public static double[] Anchors(int[] offsets, double[] vertices)
+    {
+        if (offsets.Length < 2 || offsets[0] != 0 || (long)offsets[^1] * 4 != vertices.Length ||
+            offsets.Zip(offsets.Skip(1)).Any(p => p.Second <= p.First || (p.Second - p.First) % 3 != 0))
+            throw Json.Error("anchors", "expected complete triangle lists");
+        var result = new double[(offsets.Length - 1) * 4];
+        for (int local = 0; local + 1 < offsets.Length; local++)
+        {
+            double total = 0;
+            var weighted = new double[4];
+            for (int t = offsets[local]; t < offsets[local + 1]; t += 3)
+            {
+                int a = t * 4, b = a + 4, c = b + 4;
+                double d11 = 0, d22 = 0, d12 = 0;
+                for (int i = 0; i < 4; i++)
+                {
+                    double e1 = vertices[b + i] - vertices[a + i], e2 = vertices[c + i] - vertices[a + i];
+                    d11 += e1 * e1; d22 += e2 * e2; d12 += e1 * e2;
+                }
+                double area = 0.5 * Math.Sqrt(Math.Max(d11 * d22 - d12 * d12, 0.0));
+                total += area;
+                for (int i = 0; i < 4; i++) weighted[i] += area * ((vertices[a + i] + vertices[b + i] + vertices[c + i]) / 3.0);
+            }
+            if (!double.IsFinite(total) || total <= 0) throw Json.Error("anchors", $"sticker {local} has no finite positive triangle area");
+            for (int i = 0; i < 4; i++)
+            {
+                result[local * 4 + i] = (float)(weighted[i] / total);
+                if (!double.IsFinite(result[local * 4 + i])) throw Json.Error("anchors", $"sticker {local} has a non-finite anchor");
+            }
+        }
+        return result;
+    }
+
+    public static string AnchorDigest(ReadOnlySpan<double> anchors)
+    {
+        var bytes = new byte[anchors.Length * 4];
+        for (int i = 0; i < anchors.Length; i++) BinaryPrimitives.WriteSingleLittleEndian(bytes.AsSpan(i * 4, 4), (float)anchors[i]);
+        return AssetCatalogue.Digest(bytes);
+    }
+
     public static int CellOfSlot(int slot)
     {
         if (slot < 0 || slot >= Slots) throw new ArgumentOutOfRangeException(nameof(slot));
@@ -101,8 +146,8 @@ public sealed class Geometry
             !double.IsFinite(values.Aspect) || values.Aspect <= 0) throw Json.Error("structure", "invalid projection values");
         int cell = globalVertex / BaseVertices, vi = globalVertex % BaseVertices, local = stickers[vi];
         var vertex = new double[4];
-        for (int i = 0; i < 4; i++) vertex[i] = (normal[i] + values.Cs * (centers[local * 4 + i] - normal[i])
-            + values.Cs * values.Ss * (vertices[vi * 4 + i] - centers[local * 4 + i])) / radius;
+        for (int i = 0; i < 4; i++) vertex[i] = (normal[i] + values.Cs * (anchors[local * 4 + i] - normal[i])
+            + values.Cs * values.Ss * (vertices[vi * 4 + i] - anchors[local * 4 + i])) / radius;
         double[] world = Multiply(frames.AsSpan(cell * 16, 16), vertex);
         if (theta != 0 && turn.IsMoving(cell * StickersPerCell + local))
         {

@@ -92,7 +92,8 @@ internal static partial class Program
     private static void FixtureProvenance()
     {
         using var document = JsonDocument.Parse(Read("fixtures/sb-reference.json")); var f = document.RootElement;
-        Equal(f.GetProperty("sourceBranch").GetString(), "claude/renderer-sb"); Check(f.GetProperty("sourceCommit").GetString()!.Length == 40, "source commit missing");
+        Equal(f.GetProperty("version").GetInt32(), 2);
+        Equal(f.GetProperty("sourceBranch").GetString(), "main"); Check(f.GetProperty("sourceCommit").GetString()!.Length == 40, "source commit missing");
         Equal(f.GetProperty("sourceSampleCount").GetInt32(), 9066);
         int[] positions = f.GetProperty("samplePositions").EnumerateArray().Select(x => x.GetInt32()).ToArray();
         Sequence(positions, Enumerable.Range(0, 300).Select(i => i * 9065 / 299));
@@ -103,6 +104,20 @@ internal static partial class Program
             Equal(AssetCatalogue.Digest(File.ReadAllBytes(Path.Combine(Root, p.Name))), p.Value.GetString(), p.Name);
         Equal(f.GetProperty("inputDigests").EnumerateObject().Count(), 16);
         foreach (var digestEntry in f.GetProperty("inputDigests").EnumerateObject()) Check(Read("fixtures/PROVENANCE.md").Contains(digestEntry.Value.GetString()!, StringComparison.Ordinal), "provenance digest absent");
+    }
+
+    private static void StickerAnchorRule()
+    {
+        Equal(Mesh.StickerAnchors.Length, Geometry.StickersPerCell * 4);
+        Equal(Geometry.AnchorDigest(Mesh.StickerAnchors.Span), Geometry.AnchorSha256);
+        using var document = JsonDocument.Parse(Read("fixtures/sb-reference.json"));
+        Equal(document.RootElement.GetProperty("anchors").GetProperty("sha256").GetString(), Geometry.AnchorSha256);
+        // Areas 1/2 and 1 with centroids (1/3, 1/3, 0, 0) and (8/3, 1/3, 0, 1) give the anchor (17/9, 1/3, 0, 2/3).
+        double[] anchor = Geometry.Anchors(new[] { 0, 6 }, new double[] { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 1, 4, 0, 0, 1, 2, 1, 0, 1 });
+        Equal(anchor.Length, 4);
+        foreach (var (actual, expected) in anchor.Zip(new[] { 17.0 / 9, 1.0 / 3, 0, 2.0 / 3 })) Near(actual, (float)expected, 1e-7);
+        Refuse(() => Geometry.Anchors(new[] { 0, 3 }, new double[] { 0, 0, 0, 0, 1, 1, 0, 0, 2, 2, 0, 0 }), "anchors");
+        Refuse(() => Geometry.Anchors(new[] { 0, 4 }, new double[16]), "anchors");
     }
 
     private static void SbFixturePortable()
@@ -150,10 +165,16 @@ internal static partial class Program
             ["parameters"] = new JsonObject { ["cs"] = .76, ["ss"] = .82, ["d4"] = 1.18, ["zoom"] = 1.15 }, ["aspect"] = 1.6
         };
         Input("reference/index.json", Encoding.UTF8.GetBytes(index.ToJsonString()));
+        var noAnchors = Run("python", new[] { "-B", script, "inputs" }, workingDirectory: temp.Path);
+        Check(noAnchors.Code != 0 && noAnchors.Error.Contains("anchors", StringComparison.Ordinal), "an index without anchors was accepted");
+        Equal(Directory.GetFiles(fixtures).Length, 1, "an index without anchors wrote fixtures");
+        index["anchors"] = new JsonObject { ["rule"] = "synthetic rule", ["sha256"] = new string('2', 64) };
+        Input("reference/index.json", Encoding.UTF8.GetBytes(index.ToJsonString()));
         var run = Run("python", new[] { "-B", script, "inputs" }, workingDirectory: temp.Path);
         Check(run.Code == 0, "portable fixture generation failed: " + run.Out + run.Error);
         using var result = JsonDocument.Parse(File.ReadAllText(Path.Combine(fixtures, "sb-reference.json")));
         Equal(result.RootElement.GetProperty("sourceCommit").GetString(), new string('1', 40));
+        Equal(result.RootElement.GetProperty("anchors").GetProperty("sha256").GetString(), new string('2', 64));
         Equal(result.RootElement.GetProperty("cases").GetArrayLength(), 9);
         foreach (var data in result.RootElement.GetProperty("cases").EnumerateArray())
         {
