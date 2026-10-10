@@ -1,4 +1,5 @@
 #include "native_loader.h"
+#include <iterator>
 #include <stdexcept>
 
 namespace sd {
@@ -40,6 +41,13 @@ void Native::load(const wchar_t* absolutePath) {
     SD_BIND(sa2_identity)
     SD_BIND(sa2_scene_unload)
 #undef SD_BIND
+}
+std::wstring Native::loadedPath() const {
+    if (!module) return {};
+    wchar_t path[32768]{};
+    const auto length = GetModuleFileNameW(module, path, DWORD(std::size(path)));
+    if (!length || length >= std::size(path)) throw std::runtime_error("loaded DLL path unavailable");
+    return {path, length};
 }
 Native::~Native() { if (module) FreeLibrary(module); }
 }

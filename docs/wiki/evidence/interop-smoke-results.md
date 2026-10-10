@@ -9,11 +9,11 @@ supersedes: []
 claims:
   - {id: godot-level-1-passed, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sa2/results/sa2-smoke-summary.json, sha256: 6d432bfbd5f84da8f0b0db8ed9c61fd8c37238dc629fe4d67fc9c8238154ef8b, checked_at: 2026-10-03}
   - {id: godot-finalize-line-is-godot, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sa2/results/sa2-blank-control-summary.json, sha256: 99cafdd19a9144d8ae78ed025cb09f0fa86d83bfcc9c1a30e2a804f9fa6770f1, checked_at: 2026-10-03}
-  - {id: godot-pr43-answers, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sa2/RESULT.md, sha256: 1171a131ca3bff1e3132720bcff593ba4625ea5c08d5a55fbb39848e52281c3f, checked_at: 2026-10-03}
-  - {id: godot-tracker-source-facts, evidence_kind: source, path: work/experiments/renderer-sa2/README.md, sha256: 2b8b4eda292e8d2a7a7cdc9454f5c975cff4bf662ac03fab163e0abd1c8c7836, checked_at: 2026-10-05}
+  - {id: godot-pr43-answers, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sa2/RESULT.md, sha256: 2e8b58aef9173a1d95e850f75324c218af98cc904216d56ad2fa77dd09997652, checked_at: 2026-10-10}
+  - {id: godot-tracker-source-facts, evidence_kind: source, path: work/experiments/renderer-sa2/README.md, sha256: a06bae8b6504b893fd8f876d5c8e11e1eed294e6c3a1708701b7f27fe048d22c, checked_at: 2026-10-10}
   - {id: qt-level-1-passed, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sd/results/sd-smoke-summary.json, sha256: 56d5040f4b6c7b5142e56dd8017cfd8017991f44662baefa7288dcb9ba4c3f88, checked_at: 2026-10-03}
-  - {id: qt-pr43-answers, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sd/RESULT.md, sha256: 0e06faab5792171b8ed7526ab93457cd73e09bd91c83c013f27e8acb16f852f7, checked_at: 2026-10-03}
-  - {id: qt-source-facts, evidence_kind: source, path: work/experiments/renderer-sd/README.md, sha256: 13917a821f4eb3d0077cb58bf86de9200653e3c774cf4578b68489c3a233e39f, checked_at: 2026-10-05}
+  - {id: qt-pr43-answers, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sd/RESULT.md, sha256: 6d81bfb3cbfbd48fb58c3c7e4644146b64be4167f5886678f61257554a081e5b, checked_at: 2026-10-10}
+  - {id: qt-source-facts, evidence_kind: source, path: work/experiments/renderer-sd/README.md, sha256: 10e284853df46c23700f062d72b13e46246bb41e152bcc364b67909cdfc6ab91, checked_at: 2026-10-10}
 ---
 
 # Interop smoke test results

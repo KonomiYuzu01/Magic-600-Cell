@@ -96,6 +96,22 @@ public unsafe sealed class Native : IDisposable
     public readonly delegate* unmanaged[Cdecl]<nint, int> sa2_scene_unload;
     private readonly nint _library;
 
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    private static extern uint GetModuleFileNameW(nint module, char* path, uint size);
+
+    public string ModulePath
+    {
+        get
+        {
+            const int capacity = 32768;
+            char* path = stackalloc char[capacity];
+            uint length = GetModuleFileNameW(_library, path, capacity);
+            if (length == 0 || length >= capacity)
+                throw new InvalidOperationException("framework-modules");
+            return new string(path, 0, (int)length);
+        }
+    }
+
     public Native(string absolutePath)
     {
         if (sizeof(Sa2DeviceInfo) != DeviceInfoSize || sizeof(Sa2Config) != ConfigSize

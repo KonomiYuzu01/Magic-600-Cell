@@ -5,7 +5,9 @@ and `sd` (Qt). The binding interface is
 [`HARNESS.md`](../renderer-l2-packets/HARNESS.md), with the L2-F packet's adapter
 and Qt scaling amendments. Only `finalize_run.py` writes the final records.
 The runner starts a prepared app directly, captures that process with PresentMon
-when required, and passes its PID and exit code to the finalizer.
+when required, and passes its PID, creation time and exit code to the finalizer.
+Before each launch it starts `file_guard.py`, which holds every identity file and
+its folders until the finalizer has finished (L2-V-002, `PLAN-L2-V-002.md`).
 
 ## Owner commands, in contract order
 
@@ -112,22 +114,26 @@ validation runs each scene once. `-Runs` controls ordinary captures only.
 
 ## Records and identity
 
-For an already completed run, the finalizer can also be called directly:
+The runner calls the finalizer while the run's guard is still holding the files:
 
 ```powershell
-python -B work/experiments/renderer-l2/finalize_run.py '<run directory>' --candidate sa2 --mode run --launched-pid 4242 --app-exit 0 --overlays '<operator confirmation>'
+python -B work/experiments/renderer-l2/finalize_run.py '<run directory>' --candidate sa2 --mode run --launched-pid 4242 --launched-created <FILETIME> --app-exit 0 --overlays '<operator confirmation>'
 ```
 
-Use the actual launched PID and exit code, and a confirmation obtained after
-the run. Modes `run`, `short` and `validation` expect app mode `run`; mode
+Use the actual launched PID, creation time and exit code, and a confirmation
+obtained after the run. A run whose guard has released can no longer be
+finalized: the binding checks need the live guard and its held files, so a
+direct call after the run gives `identity`. Modes `run`, `short` and `validation` expect app mode `run`; mode
 `geometry` expects app mode `geometry` and only `geometry.json` from the DLL.
 Exit 0 means a passing record, 2 a recorded label/geometry failure, 5 a refusal
 and 1 a usage or output-I/O error. Existing finalizer outputs give exit 5 with
 `output-exists` on stderr and no writes. Records use exclusive create, UTF-8,
 LF and finite JSON numbers. Input files are preserved.
 
-The composite identity recomputes every required framework part, the DLL and
-its four shader blobs, plus canonical JSON of the flat framework configuration.
+The composite identity covers every required framework part, the DLL and its
+four shader blobs, plus canonical JSON of the flat framework configuration.
+Each digest is the guard's, checked through the finalizer's own handle on the
+same file (`HARNESS.md` section 7); the encoding is unchanged.
 It hashes sorted `name=sha256` lines, each ending in LF. Paths and run options
 do not enter the identity; changing only the DLL bytes changes it. Geometry,
 validation, short and gate captures of unchanged parts/settings share it.
@@ -170,13 +176,24 @@ Compatibility details inherited from S-B and the gate:
 python work/experiments/renderer-l2/check_l2.py
 ```
 
-This uses standard-library Python fixtures under `check-<pid>` beside the
-scripts and removes them on success or failure. It checks every refusal code,
+This uses standard-library Python fixtures in a unique folder under the system
+temp directory, each held by a real `file_guard.py`, and removes them on
+success or failure. It checks every refusal code,
 both candidates and every mode, condition consistency, debug negative checks,
 failed labels/geometry, exclusive outputs and composite identity. Three
 synthetic 192-second W3 runs per candidate give the gate's `met` verdict.
 It statically checks the runner and uses only the PowerShell language parser
 when available; no runner script is executed.
+
+```powershell
+python -B work/experiments/renderer-l2/check_guard.py
+python -B work/experiments/renderer-l2/guard_experiments.py --build work/sdb/<stamp>
+```
+
+`check_guard.py` tests the guard's protection, alias refusals and release.
+`guard_experiments.py` runs the synthetic experiments of `PLAN-L2-V-002.md`
+section 7, item 1, against a Qt build of `renderer-sd/build.cmd` (no window,
+GPU or PresentMon); `RESULT.md` records them.
 
 These are source/fixture results. Preparing real builds, framework startup,
 foreground/window/DPI behavior, GPU validation, geometry readback, process

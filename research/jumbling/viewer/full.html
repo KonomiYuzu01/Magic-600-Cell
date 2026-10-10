@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jumble full-state viewer</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f1f3f5; --surface: #fbfcfd; --view-bg: #e3e7eb;
+  --fg: #1a1f25; --muted: #59636e; --line: #cdd3da;
+  --accent: #c76a12; --block: #c62f3a; --below: #2f6fd6; --above: #b0359f;
+  --tint: #c76a12; --highlight: #fcde57;
+  --font-ui: "Segoe UI", system-ui, sans-serif;
+  --font-data: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #12161b; --surface: #191e25; --view-bg: #0c0f13;
+    --fg: #e4e8ed; --muted: #97a2ae; --line: #2b323b;
+    --accent: #f0a04b; --block: #ef5b66; --below: #6aa2ff; --above: #e07ad2;
+    --tint: #f0a04b; --highlight: #ffdf68;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0 auto; padding: 16px; max-width: 1500px; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--font-ui); }
+h1 { font-size: 1.35rem; margin: 0; }
+h2 { font-size: .85rem; margin: 0 0 8px; color: var(--muted); }
+p { margin: 6px 0 12px; }
+.top, .row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.top { justify-content: space-between; }
+.note, .foot { color: var(--muted); font-size: .85rem; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); gap: 12px; align-items: start; }
+.panel, .view { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; min-width: 0; }
+.panel { padding: 12px; margin-bottom: 12px; }
+.view { overflow: hidden; }
+.stage { position: relative; height: clamp(360px, 70vh, 800px); background: var(--view-bg); touch-action: none; }
+canvas { display: block; width: 100%; height: 100%; outline: none; }
+#markers { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.marker { position: absolute; transform: translate(-50%, -130%); padding: 2px 5px; border-radius: 3px; background: var(--surface); border: 1px solid currentColor; font: 12px var(--font-data); }
+.marker.below { color: var(--below); } .marker.above { color: var(--above); }
+.badge { position: absolute; top: 8px; left: 8px; max-width: calc(100% - 16px); padding: 3px 6px; background: var(--surface); color: var(--muted); font-size: .8rem; border: 1px solid var(--line); border-radius: 3px; }
+.hint { padding: 6px 10px; color: var(--muted); font-size: .8rem; }
+.transport { padding: 10px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; border-top: 1px solid var(--line); }
+.transport output { grid-column: 1 / -1; font-size: .85rem; color: var(--muted); }
+button, select, input { font: inherit; color: var(--fg); }
+button, select, input[type=number] { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 5px 7px; max-width: 100%; }
+button, select { cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+input[type=range] { width: 100%; min-width: 0; margin: 0; accent-color: var(--accent); }
+.control { display: grid; grid-template-columns: 7.8em minmax(0, 1fr); gap: 8px; align-items: center; margin: 8px 0; font-size: .85rem; }
+.control select { width: 100%; min-width: 0; }
+.control .range { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.range output { font: 12px var(--font-data); min-width: 3em; text-align: right; }
+dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 10px; font-size: .85rem; margin: 0; }
+dt { color: var(--muted); } dd { margin: 0; min-width: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-data); }
+#blocked { width: 100%; min-width: 0; margin: 8px 0; }
+#piece { width: 8em; }
+#certificate { overflow-wrap: anywhere; font-size: .85rem; }
+.error { border: 1px solid var(--block); color: var(--block); padding: 10px; margin: 10px 0; border-radius: 4px; overflow-wrap: anywhere; }
+.foot { max-width: 95ch; margin-top: 12px; }
+@media (max-width: 800px) {
+  main { grid-template-columns: minmax(0, 1fr); }
+  .stage { height: min(90vw, 65vh); min-height: 300px; }
+  body { padding: 10px; }
+}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header class="top">
+  <h1>Jumble · full state</h1>
+  <div class="row">
+    <label>Menu <select id="menu"><option value="S4">S4₀</option><option value="I_a">I_a</option><option value="I_b">I_b</option></select></label>
+    <label>State <select id="state"><option value="solved">Solved</option><option value="end" selected>End</option><option value="sweep-before">Before the swept twist</option></select></label>
+  </div>
+</header>
+<p class="note">uncertified float drawing of an exact J1 state · all 259,800 stickers of 177,120 pieces</p>
+<div id="error" class="error" role="alert" hidden></div>
+<main>
+  <section class="view" aria-label="Full state">
+    <div id="stage" class="stage">
+      <canvas id="canvas" tabindex="0" aria-label="Every sticker of the selected four-dimensional fixture state"></canvas>
+      <div id="markers"></div>
+      <div id="badge" class="badge">Loading verified arrays…</div>
+    </div>
+    <div class="hint">Drag to orbit · wheel or pinch to zoom · filters change only the drawing</div>
+    <div class="transport">
+      <button id="play" type="button" disabled aria-pressed="false">Play sweep</button>
+      <input id="scrub" type="range" min="0" max="2" step="0.001" value="0" disabled aria-label="Swept twist followed by its exact inverse">
+      <output id="motion">Sweep: twist → inverse. The base arrays remain at the before state.</output>
+    </div>
+  </section>
+  <aside>
+    <section class="panel" aria-label="State data">
+      <h2>State data</h2>
+      <dl>
+        <dt>Menu identity</dt><dd id="menuIdentity" class="mono">—</dd>
+        <dt>Contract revision</dt><dd id="contract">—</dd>
+        <dt>State revision</dt><dd id="revision">—</dd>
+        <dt>State digest</dt><dd id="digest" class="mono">—</dd>
+        <dt>Pieces off lattice</dt><dd id="offLattice">—</dd>
+        <dt>Sticker slots</dt><dd id="slots">—</dd>
+        <dt>Blocked grips</dt><dd id="blockedCount">—</dd>
+      </dl>
+    </section>
+    <section class="panel" aria-label="View controls">
+      <h2>View</h2>
+      <div class="control"><label for="projection">Projection</label><select id="projection"><option value="perspective">Perspective</option><option value="stereographic">Stereographic</option></select></div>
+      <div class="control"><label for="pole">Stereo pole</label><select id="pole"><option value="positive-w">+w pole</option><option value="negative-w">−w pole</option><option value="facet-0">Facet 0 pole</option></select></div>
+      <div class="control"><label for="facetShrink">Facet shrink</label><div class="range"><input id="facetShrink" type="range" min="0.4" max="1" step="0.01" value="0.76"><output id="facetValue">0.76</output></div></div>
+      <div class="control"><label for="stickerShrink">Sticker shrink</label><div class="range"><input id="stickerShrink" type="range" min="0.4" max="1" step="0.01" value="0.82"><output id="stickerValue">0.82</output></div></div>
+      <div class="control"><label for="rotateX">4D xw rotation</label><div class="range"><input id="rotateX" type="range" min="-180" max="180" step="1" value="0"><output id="rotateXValue">0°</output></div></div>
+      <div class="control"><label for="rotateY">4D yw rotation</label><div class="range"><input id="rotateY" type="range" min="-180" max="180" step="1" value="0"><output id="rotateYValue">0°</output></div></div>
+      <label><input id="tint" type="checkbox"> Off-lattice tint</label>
+      <div class="control"><label for="filter">Pieces</label><select id="filter"><option value="all">All pieces</option><option value="off">Off lattice only</option><option value="on">On lattice only</option><option value="isolate">Isolate one piece</option></select></div>
+      <div class="row"><label for="piece">Piece ID</label><input id="piece" type="number" min="0" max="177119" step="1" value="0"><button id="resetView" type="button">Reset view</button></div>
+    </section>
+    <section class="panel" aria-label="Blocked grips and certificates">
+      <h2>Blocked grips · end-state certificates</h2>
+      <select id="blocked" size="6" aria-label="Blocked grips" disabled></select>
+      <div id="certificate">Select a blocked grip to highlight its straddling piece and its two certificate points.</div>
+      <div class="row"><button id="isolate" type="button" disabled>Isolate certificate piece</button><button id="clear" type="button" disabled>Clear selection</button></div>
+    </section>
+  </aside>
+</main>
+<p class="foot">Research page for J2 and a reference picture for the shared jumbling render contract. The page reads engine data and decides no legality. Look, colour and motion are provisional and belong to the design track. This page carries no performance claim.</p>
+<script type="module" src="full.js"></script>
+</body>
+</html>

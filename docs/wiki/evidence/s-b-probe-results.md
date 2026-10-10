@@ -8,7 +8,7 @@ related: [renderer-candidates]
 supersedes: []
 claims:
   - {id: w3-gate-met, evidence_kind: performance, path: work/experiments/renderer-sb/results/w3-20261003T045605948Z-summary.json, sha256: 93bd53efcdd70f20ac26d5554bb8238aeb4a12fdbb10f99ef710177cf3331cf0, checked_at: 2026-10-03}
-  - {id: w3-label-check, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/RESULT.md, sha256: 99c436a2da8692030d13b183b7014008762c0b5e5aa72eb1acb4889f094470c9, checked_at: 2026-10-03}
+  - {id: w3-label-check, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/RESULT.md, sha256: 8f7ebf75ccd8a1fd614777a0959b787464f005d9a7cbca1d54bdc0f3bc6afa10, checked_at: 2026-10-10}
   - {id: label-faults-caught, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/results/neg-20261003T060641Z-summary.json, sha256: f5332574599b1692cb6d6276ab272c9e452eb226eec537e61ab5a1ebe89bd4e3, checked_at: 2026-10-03}
   - {id: presentmon-named-stop, evidence_kind: source, path: work/experiments/renderer-sb/probe/run_scene.ps1, sha256: bb65a943faec9856b55562278a811710caf8ef0a1d05074e8daff8c2bfa1b70a, checked_at: 2026-10-03}
   - {id: handoff-works, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/results/handoff-20261003T063841Z-summary.json, sha256: f906f0686421f7bb0b193acfb4b3700e81e2a87eaf714183f66b37b9e50414ed, checked_at: 2026-10-03}
@@ -42,6 +42,13 @@ What it changes:
 - The S-B condition for the S-A2 and S-D geometry ports is now met.
 - Each port still waits for its framework's interop smoke test. The S-B resource handoff now exists, so those tests may start; the owner decides when.
 - The day-7 go/no-go is not decided here: it is an Astra gate ruling across all candidates.
+
+## Shrink anchor changed, 10 October 2026
+
+- The W3 result above is for build `2b5bf5e6...`. That build anchored the sticker shrink at `assets/mesh_centers.f32`.
+- Those anchors do not move with the stickers, so the end of every turn moved 4,120 of the 4,600 moved slots by up to 0.0118 world units. This is source evidence from the unchanged assets; nobody had seen it on screen.
+- The owner changed the anchor to the area-weighted centroid of each sticker's triangles ([owner-decisions-2026-10-10-anchor](../decisions/owner-decisions-2026-10-10-anchor.md)). The turn-end error is now at most 7.09e-8.
+- The changed probe has a new build identity, and its GPU re-acceptance (geometry check and three cold W3 runs) has not run yet.
 
 ## Injected label faults, 3 October 2026
 

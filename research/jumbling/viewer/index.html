@@ -1,0 +1,246 @@
+<title>Jumble Witness Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@1,500&display=swap">
+<style>
+/* Layout: an instrument bench. Two linked views side by side (stacked on phones), one timeline
+   rail under them, three compact readout panels below. Colours and motion are provisional. */
+:root {
+  --bg: #f1f3f5;
+  --surface: #fbfcfd;
+  --view-bg: #e3e7eb;
+  --fg: #1a1f25;
+  --muted: #59636e;
+  --line: #cdd3da;
+  --ink: #232a33;
+  --accent: #c76a12;
+  --accent-ink: #8f4a08;
+  --ok: #0f8a7e;
+  --block: #c62f3a;
+  --below: #2f6fd6;
+  --above: #b0359f;
+  --ghost: #5d6b7a;
+  --plane: #3d7fb3;
+  --cage: #8b96a2;
+  --cell-0: #4e79a7; --cell-1: #e8913a; --cell-2: #59a14f; --cell-3: #b07aa1;
+  --cell-4: #d9b43c; --cell-5: #6fb2ad; --cell-6: #e98f9b; --cell-7: #9c755f;
+  --font-ui: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-math: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161b; --surface: #191e25; --view-bg: #0c0f13; --fg: #e4e8ed; --muted: #97a2ae;
+    --line: #2b323b; --ink: #d6dce3; --accent: #f0a04b; --accent-ink: #f5b56d; --ok: #3cc4b4;
+    --block: #ef5b66; --below: #6aa2ff; --above: #e07ad2; --ghost: #a5b1be; --plane: #6fb0e6;
+    --cage: #56616d;
+    --cell-0: #5b8cc0; --cell-1: #ec9c4a; --cell-2: #69b45d; --cell-3: #be8bb0;
+    --cell-4: #e2c04e; --cell-5: #7cc0bb; --cell-6: #f09da8; --cell-7: #ae8670;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161b; --surface: #191e25; --view-bg: #0c0f13; --fg: #e4e8ed; --muted: #97a2ae;
+  --line: #2b323b; --ink: #d6dce3; --accent: #f0a04b; --accent-ink: #f5b56d; --ok: #3cc4b4;
+  --block: #ef5b66; --below: #6aa2ff; --above: #e07ad2; --ghost: #a5b1be; --plane: #6fb0e6;
+  --cage: #56616d;
+  --cell-0: #5b8cc0; --cell-1: #ec9c4a; --cell-2: #69b45d; --cell-3: #be8bb0;
+  --cell-4: #e2c04e; --cell-5: #7cc0bb; --cell-6: #f09da8; --cell-7: #ae8670;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font: 14px/1.45 var(--font-ui);
+  padding-inline: 16px; padding-block: 14px 28px; max-width: 1480px; margin-inline: auto;
+}
+h1, h2 { margin: 0; text-wrap: balance; font-weight: 600; }
+h1 { font-size: 1.32rem; letter-spacing: -0.01em; }
+h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.math { font-family: var(--font-math); font-style: italic; font-weight: 500; }
+.num, .mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; padding-block-end: 10px; }
+.top .meta { color: var(--muted); font-size: 0.85rem; }
+.legend { margin: 0 0 12px; max-width: 72ch; color: var(--fg); font-size: 0.92rem; }
+.legend b { font-weight: 600; }
+.views { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 12px; }
+.view { min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); overflow: hidden; }
+.view-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+.view-head .name { font-weight: 600; font-size: 0.95rem; }
+.view-head .what { color: var(--muted); font-size: 0.8rem; min-width: 0; }
+.stage { position: relative; height: clamp(320px, 58vh, 640px); background: var(--view-bg); touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; outline: none; }
+.overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.tag { position: absolute; transform: translate(-50%, -135%); font: 500 11px/1 var(--font-data); padding: 2px 4px; border-radius: 3px; background: var(--surface); color: var(--fg); border: 1px solid var(--line); white-space: nowrap; }
+.tag.sel { border-color: var(--accent); color: var(--accent-ink); }
+.tag.below { border-color: var(--below); color: var(--below); }
+.tag.above { border-color: var(--above); color: var(--above); }
+.tag.axis { transform: translate(-50%, -50%); background: transparent; border: 0; color: var(--muted); }
+.badge { position: absolute; left: 8px; top: 8px; font: 500 11px/1.2 var(--font-data); padding: 3px 6px; border-radius: 3px; border: 1px solid currentColor; background: var(--surface); }
+.badge.exact { color: var(--ok); }
+.badge.preview { color: var(--accent-ink); border-style: dashed; }
+.hint { position: absolute; inset: auto 8px 8px 8px; color: var(--muted); font-size: 0.8rem; pointer-events: none; }
+.rail { margin-block: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 10px 12px 8px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 14px; align-items: center; }
+.transport { display: flex; gap: 6px; }
+button, select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 4px 9px; cursor: pointer; }
+button:hover, select:hover { border-color: var(--muted); }
+button:focus-visible, select:focus-visible, input:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.track { position: relative; min-width: 0; padding-block: 2px 30px; }
+.track input[type=range] { width: 100%; margin: 0; accent-color: var(--accent); }
+.stops { position: absolute; left: 8px; right: 8px; top: 26px; height: 30px; }
+.stop { position: absolute; transform: translateX(-50%); font: 500 11px/1.25 var(--font-data); color: var(--muted); text-align: center; white-space: nowrap; background: none; border: 0; padding: 0 2px; }
+.stop.state { color: var(--fg); }
+.stop.state[aria-current="true"] { color: var(--accent-ink); font-weight: 600; }
+.stop.twist { top: 13px; font-family: var(--font-math); font-style: italic; font-size: 11.5px; cursor: default; }
+.now { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.85rem; color: var(--muted); }
+.now b { color: var(--fg); font-weight: 600; }
+.panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.panel { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 0; font-size: 0.86rem; }
+dt { color: var(--muted); }
+dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.counts { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.86rem; }
+.key { display: inline-flex; align-items: center; gap: 5px; }
+.sym { width: 12px; height: 12px; display: inline-block; }
+.sym.ring { border: 2px solid var(--ok); border-radius: 50%; }
+.sym.diamond { background: var(--block); transform: rotate(45deg) scale(0.8); outline: 1px solid var(--ink); }
+.sym.stripe { background: repeating-linear-gradient(45deg, var(--cell-0) 0 3px, color-mix(in srgb, var(--cell-0) 55%, #000) 3px 6px); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; max-height: 128px; overflow-y: auto; }
+.chip { font: 500 11.5px/1 var(--font-data); padding: 4px 6px; border-radius: 3px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+.chip.blocked { border-color: color-mix(in srgb, var(--block) 55%, var(--line)); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.ctl { display: grid; grid-template-columns: 7.5em minmax(0, 1fr) 3.2em; gap: 4px 8px; align-items: center; font-size: 0.85rem; }
+.ctl input[type=range], .ctl select { width: 100%; min-width: 0; }
+.ctl input[type=range] { accent-color: var(--accent); }
+.ctl .seg { min-width: 0; }
+.ctl .seg button { padding-inline: 7px; }
+.ctl output { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
+.checks { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.85rem; }
+.checks label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; }
+.seg button:first-child { border-radius: 4px 0 0 4px; }
+.seg button:last-child { border-radius: 0 4px 4px 0; border-left: 0; }
+.err { border: 1px solid var(--block); color: var(--block); border-radius: 6px; padding: 8px 10px; margin-block: 8px; }
+.foot { margin-top: 14px; color: var(--muted); font-size: 0.8rem; max-width: 90ch; }
+@media (max-width: 980px) {
+  .panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .panels .panel:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  .views { grid-template-columns: minmax(0, 1fr); }
+  .stage { height: min(86vw, 62vh); }
+  .panels { grid-template-columns: minmax(0, 1fr); }
+  .rail { grid-template-columns: minmax(0, 1fr); }
+  .stop.twist { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<header class="top">
+  <h1>Jumble Viewer</h1>
+  <label>Scene <select id="sceneSel" aria-label="Scene">
+    <option value="witness">Witness E2–E4</option>
+    <option value="s4">J1: S4 sequence</option>
+  </select></label>
+  <span class="meta" id="sceneMeta">600-cell-Full geometry · cut depth 121/125</span>
+</header>
+<p class="legend"><b>Legality is exact.</b> Grip status, blocking and certificates come from the selected scene's Q(√5) computation. Motion between states is an uncertified float preview.</p>
+<div id="error" class="err" hidden></div>
+
+<main class="views">
+  <section class="view" aria-label="Global view">
+    <div class="view-head"><span class="name">Global</span><span class="what" id="gWhat">4D perspective, eye outside the polytope</span></div>
+    <div class="stage" id="gStage">
+      <canvas id="gCanvas" tabindex="0" aria-label="Global view: the patch of caps c and d, projected from four dimensions"></canvas>
+      <div class="overlay" id="gOverlay"></div>
+      <div class="badge" id="gBadge">loading</div>
+      <div class="hint" id="gHint">Drag to orbit · click a grip marker or a piece</div>
+    </div>
+  </section>
+  <section class="view" aria-label="Local view">
+    <div class="view-head"><span class="name">Local</span><span class="what" id="lWhat">focus piece against its anchor plane</span></div>
+    <div class="stage" id="lStage">
+      <canvas id="lCanvas" tabindex="0" aria-label="Local view: the focus piece against the cut or facet that anchors it"></canvas>
+      <div class="overlay" id="lOverlay"></div>
+      <div class="badge" id="lBadge">loading</div>
+      <div class="hint" id="lHint"></div>
+    </div>
+  </section>
+</main>
+
+<section class="rail" aria-label="Twist sequence">
+  <div class="transport">
+    <button id="bBack" type="button" title="Previous state (Left arrow)" aria-label="Previous state">◀︎</button>
+    <button id="bPlay" type="button" title="Play or pause (Space)" aria-label="Play">▶︎</button>
+    <button id="bFwd" type="button" title="Next state (Right arrow)" aria-label="Next state">▶︎▏</button>
+  </div>
+  <div class="track">
+    <input id="scrub" type="range" min="0" max="4" step="0.001" value="2" aria-label="Sequence position">
+    <div class="stops" id="stops"></div>
+  </div>
+  <div class="now" id="now"></div>
+</section>
+
+<section class="panels">
+  <div class="panel" id="gripPanel">
+    <h2 id="gripTitle">Grips</h2>
+    <div class="counts" id="gripCounts"></div>
+    <div class="row">
+      <span class="key"><span class="sym ring"></span>admissible</span>
+      <span class="key"><span class="sym diamond"></span>blocked</span>
+      <span class="key"><span class="sym stripe"></span>off-lattice piece</span>
+    </div>
+    <div class="chips" id="gripChips" aria-label="Blocked grips at this state"></div>
+    <dl id="gripInfo"></dl>
+  </div>
+  <div class="panel" id="piecePanel">
+    <h2>Focus piece</h2>
+    <dl id="pieceInfo"></dl>
+    <div class="row" id="pager"></div>
+  </div>
+  <div class="panel" id="viewPanel">
+    <h2>Projection</h2>
+    <div class="ctl"><span>Projection</span>
+      <div class="seg" role="group" aria-label="Projection">
+        <button type="button" id="pPersp" aria-pressed="true">Perspective</button>
+        <button type="button" id="pStereo" aria-pressed="false">Stereographic</button>
+      </div><span></span>
+    </div>
+    <div class="ctl"><label for="eyeSel">Eye pole</label>
+      <select id="eyeSel">
+        <option value="mid">between c and d</option>
+        <option value="c">c (0)</option>
+        <option value="d">d (13)</option>
+      </select><span></span>
+    </div>
+    <div class="ctl"><label for="showSel">Show</label>
+      <select id="showSel">
+        <option value="all">all patch stickers</option>
+        <option value="cd">cells c and d</option>
+        <option value="straddle">straddling pieces</option>
+      </select><span></span>
+    </div>
+    <div class="ctl"><label for="rDist">4D eye distance</label><input id="rDist" type="range" min="1.5" max="8" step="0.05" value="3"><output id="oDist">3.00</output></div>
+    <div class="ctl"><label for="rCell">Cell shrink</label><input id="rCell" type="range" min="0.4" max="1" step="0.01" value="0.78"><output id="oCell">0.78</output></div>
+    <div class="ctl"><label for="rSticker">Sticker shrink</label><input id="rSticker" type="range" min="0.4" max="1" step="0.01" value="0.86"><output id="oSticker">0.86</output></div>
+    <div class="checks">
+      <label><input type="checkbox" id="cGrips" checked>grip markers</label>
+      <label><input type="checkbox" id="cCage" checked>lattice cage</label>
+      <label><input type="checkbox" id="cGhost" checked>lattice ghost</label>
+      <label><input type="checkbox" id="cDim" checked>dim others</label>
+      <label><input type="checkbox" id="cCull" checked>hide 4D back faces</label>
+    </div>
+  </div>
+</section>
+
+<p class="foot">Research prototype for the jumbling program (workstream J2), not a renderer candidate. Look, colour and motion values are provisional. <span id="sceneSource"></span></p>
+
+<script type="module" src="viewer.js"></script>

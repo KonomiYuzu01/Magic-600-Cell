@@ -1,6 +1,6 @@
 # Level 2 harness contract (packets L2-F, L2-G and L2-Q)
 
-Status: binding for L2-F, L2-G and L2-Q (stage day 4, 4 October 2026). Claude owns this file; the packets read it and never change it. It turns plan section 3 (`PLAN.md`) into exact behaviour. "Verify at the pinned version" marks a framework fact (Godot 4.7.2 .NET, Qt 6.10.3) the code relies on. The Codex sandbox has no framework source, so a packet lists each such fact as assumed, names the runtime check of this file that catches it if it is wrong, and keeps the code fail-closed. The integrator verifies the assumed facts against the pinned source before the owner's runs and records the result in `FRAMEWORK-FACTS.md`. Where the pinned version contradicts this file, follow the facts, keep the check and say so.
+Status: binding for L2-F, L2-G and L2-Q (stage day 4, 4 October 2026), with the L2-V-002 guard binding follow-up (9 October 2026, G1 to G5). Claude owns this file; G4 updates the binding contract within its assigned scope. It turns plan section 3 (`PLAN.md`) and the binding plan (`PLAN-L2-V-002.md`) into exact behaviour. "Verify at the pinned version" marks a framework fact (Godot 4.7.2 .NET, Qt 6.10.3) the code relies on. The Codex sandbox has no framework source, so a packet lists each such fact as assumed, names the runtime check of this file that catches it if it is wrong, and keeps the code fail-closed. The integrator verifies the assumed facts against the pinned source before the owner's runs and records the result in `FRAMEWORK-FACTS.md`. Where the pinned version contradicts this file, follow the facts, keep the check and say so.
 
 ## 1. Parts
 
@@ -11,6 +11,7 @@ Status: binding for L2-F, L2-G and L2-Q (stage day 4, 4 October 2026). Claude ow
 | Qt app, candidate `sd` | L2-Q | `work/experiments/renderer-sd/`: `app/`, `build.cmd`, `prepare_l2.py`, `check_project.py`, `README.md` | `harness.json` |
 | Finalizer | L2-F | `work/experiments/renderer-l2/finalize_run.py` | `run.json`, `short-check.json`, `geometry-record.json`, `validation-record.json` or `refusal.json` |
 | Runner | L2-F | `work/experiments/renderer-l2/run_scene.ps1` | run directories, `presentmon.csv` |
+| File guard | G1 | `work/experiments/renderer-l2/file_guard.py` | `guard.json` |
 
 - One finalizer and one runner serve both candidates, so both are judged by the same code.
 - The app writes only `harness.json`, plus the files the DLL writes for it. It never writes `run.json`.
@@ -58,7 +59,7 @@ Godot takes these after `--`, as user arguments. Qt takes them as ordinary argum
 | `--l2-trace-ms` | 1000 to 3600000 | 192000 |
 | `--l2-preroll-ms` | 0 to 60000 | 4000 |
 | `--l2-turn-ms` | W3 only: 0 < value <= 10000 | 190 |
-| `--l2-inject` | `corrupt-label`, `swap-same-colour`, `delay-adoption`, `stale-binding`; W3 and W4 only | none |
+| `--l2-inject` | `corrupt-label`, `swap-same-colour`, `delay-adoption`, `stale-binding`; sd also accepts `module-late`, `module-transient`, `module-reload`; W3 and W4 only | none |
 | `--l2-declare` | `key=value`, repeatable. `true` and `false` become booleans (S-B's rule). The key `overlays` is refused. | none |
 | `--l2-gpu-validation` | `0`, `1` | `0` |
 | `--l2-conditions` | `enforce`, `record` | `enforce` |
@@ -72,6 +73,8 @@ Framework options keep their level 1 names and values. Their defaults are the le
 Level 2 is a new mode of each app, selected by `--l2-mode`; the level 1 smoke mode stays as it is, so `run_smoke.py` and the level 1 checks keep working with the ABI 2 DLL. In level 2 mode, the level 1 options with no meaning there are refused: frame counts, resize, verify, device loss, drain injection.
 
 `--l2-gpu-validation 1` turns on the framework's GPU validation (Godot: also pass `--gpu-validation` to the engine; Qt: `QQuickGraphicsConfiguration::setDebugLayer(true)` before the window is exposed) and attaches with `debug_callback = 1`.
+
+The sd `module-*` injections load `<executable directory>\sd_module_probe.dll` after trace begin: `module-late` keeps it loaded, `module-transient` loads, calls and unloads it, and `module-reload` loads, unloads and loads it again. They are recorded in `options.inject` and `injected_fault`, and never passed to the producer DLL. The probe must exist before guard acquisition. The finalizer accepts these values only for sd in run mode with `--fault-injection`; every other use gives `operator`.
 
 ## 4. Call order and exit codes
 
@@ -137,7 +140,8 @@ Format `magic600-l2-harness-v1`. UTF-8, written to a temporary name in `--l2-out
                     "render_thread": "safe", "warmup_frames": 3},
   "files": {"dll": "C:\\...\\sa2_interop.dll", "godot:exe": "C:\\...\\Godot_v4.7.2-stable_mono_win64.exe",
             "godot:assembly": "C:\\...\\SA2Smoke.dll", "godot:project.godot": "C:\\...\\project.godot",
-            "godot:Main.tscn": "C:\\...\\Main.tscn"},
+            "godot:Main.tscn": "C:\\...\\Main.tscn", "godot:Smoke.cs": "C:\\...\\Smoke.cs"},
+  "assembly_mvid": "00112233-4455-6677-8899-aabbccddeeff",
   "dll_identity": {"dll": {"file": "sa2_interop.dll", "sha256": "..."}, "shaders": [{"file": "...", "sha256": "..."}]},
   "dll_status": {"abi_version": 2, "last_status": 0, "last_error": ""},
   "qpc_frequency": 10000000,
@@ -164,9 +168,20 @@ Format `magic600-l2-harness-v1`. UTF-8, written to a temporary name in `--l2-out
 - `configuration` holds every setting that can change what is drawn or how it is presented, as flat strings, numbers or booleans. It never holds run options or paths (section 8). The validation switches are run options (`options.gpu_validation`), so they stay out of it: Godot's `--gpu-validation` and `--gpu-abort`, Qt's debug layer and `QSG_RHI_DEBUG_LAYER`.
   - Godot: the framework version string, the rendering driver, window mode, vsync mode, the render thread, the level 1 options, and the engine arguments. These come from the process command line (`GetCommandLineW`, split with `CommandLineToArgvW`), without the executable, `--path`, `--log-file`, their values, the validation switches and everything from `--` on. `OS.GetCmdlineArgs()` cannot serve: at 4.7.2 it leaves out every argument the engine consumes (`FRAMEWORK-FACTS.md`, G4).
   - Qt: `qVersion()`, the graphics API, the render loop, swap interval, the level 1 options, and every environment variable named `QSG_*` or `QT_*` that affects the scene graph or the RHI, by name and value, except the validation switch.
-- `files` maps part names to absolute paths. `dll` is the DLL the app loaded.
+- `files` maps part names to absolute paths. `dll` is the actual loaded DLL path, obtained by `GetModuleFileNameW` on the handle returned by `NativeLibrary.Load` (Godot) or the native loader (Qt), never copied from `--l2-dll`. A missing or truncated path is the app's `framework-modules` failure. It is `null` until the load completes.
   - Godot: also `godot:exe` (the running executable), `godot:assembly` (the project's C# assembly as loaded), and `godot:<name>` for every project file the run reads (`project.godot`, `Main.tscn`, every other resource it loads).
-  - Qt: also `qt:exe` and `qt:<basename>` for every module loaded from the executable's directory or its subdirectories (`EnumProcessModules`), except the DLL.
+  - Qt: also `qt:exe` and `qt:<basename>` for the union of every `snapshot` and `load` event under the executable's directory, except the executable and the DLL. This includes late loads, transient load-call-unload modules and unload/reload paths once each. Two different paths with the same basename are refused.
+- Godot's top-level `assembly_mvid` is `typeof(Smoke).Assembly.ManifestModule.ModuleVersionId.ToString("D")`: 36 lowercase characters, or `null` until `godot:assembly` is recorded. The app retains its assembly `FullName` check; the finalizer also compares this MVID with the guarded assembly metadata.
+- Qt's top-level `modules` object is written after the observer seals:
+  ```json
+  {"observer": "sealed", "failure": null, "scope": "C:\\...\\deploy", "unload_history": [],
+   "overflow": false, "events": [{"kind": "snapshot", "path": "C:\\...\\deploy\\Qt6Core.dll"},
+                                 {"kind": "load", "path": "C:\\...\\deploy\\platforms\\qwindows.dll"},
+                                 {"kind": "unload", "path": "C:\\...\\deploy\\platforms\\qwindows.dll"}]}
+  ```
+  Registration is the first statement of `main`, before `QGuiApplication`, followed by the loader unload-history read and a module snapshot. Events contain the in-scope snapshot first, then loads and unloads in reservation order. Failed registration, history read, snapshot or seal gives `observer: "failed"` and a named `failure`. An unreadable history is `null`; any nonempty history is refused because a basename cannot prove a pre-registration unload was out of scope. A full event buffer sets `overflow`. An in-scope load after the seal terminates the process with exit 3. The finalizer requires a sealed observer, null failure, empty history, false overflow, and the exact recorded union; an unload must have an earlier snapshot or load of its path.
+  `scope` equals the directory of `files["qt:exe"]`, case-insensitively. An event is under scope only when its path starts with scope plus a backslash; `deploy2` is outside `deploy`. Modules outside `scope` (system DLLs and the GPU driver) are neither recorded nor bound: the Qt module identity covers only the build directory.
+  The observer also treats the scope directories under another spelling as in scope (L2-V-002-B01): a `\\?\`, `\??\` or `\\.\` prefix before the drive letter, and each directory under its long or 8.3 name, both read with `FindFirstFileW` before registration, outside the loader lock. It records such a load under the spelling the loader reports. The finalizer refuses that path as `identity`, because it is not in the `X:\` form under scope, and after the seal the load ends the process with exit 3. A load through a subst drive, a junction or symbolic link outside scope, a UNC share or a hard link outside scope is not recognised and stays unrecorded, like a system DLL. The guard holds every guarded file with read sharing only, so no alias can change guarded bytes; the remaining gap is a file added to the build directory after `ready` and loaded only through such an alias. This is a stated limit of the level 2 evidence.
 - `dll_identity` is the parsed output of `sa2_identity`.
 - `scaling` holds the raw facts:
   - Godot: `content_scale_mode`, `content_scale_factor` and `texture_stretch` (how the display node maps the texture to its rectangle);
@@ -182,14 +197,16 @@ Format `magic600-l2-harness-v1`. UTF-8, written to a temporary name in `--l2-out
 
 ## 7. Finalizer (`finalize_run.py`)
 
-`python -B finalize_run.py <dir> --candidate sa2|sd --mode run|short|geometry|validation --launched-pid <pid> --app-exit <code> [--adapter <name>] [--overlays <text> | --fault-injection]`
+`python -B finalize_run.py <dir> --candidate sa2|sd --mode run|short|geometry|validation --launched-pid <pid> --launched-created <FILETIME> --app-exit <code> [--adapter <name>] [--overlays <text> | --fault-injection]`
 
 - `--adapter` names the adapter the run must use. Its default is the gate's GPU, `NVIDIA GeForce RTX 4070 Laptop GPU`.
+- `--launched-created` is required in all four modes. The runner reads the app's process creation time from its live process handle (UTC FILETIME, 100 ns units since 1601); it must be strictly later than `guard.json.ready`.
 
 - Its mode selects the app mode it expects in `harness.json`: `run`, `short` and `validation` expect `run`, and `geometry` expects `geometry`.
 - It reads `harness.json`, the DLL outputs of that mode and `presentmon.csv` (`run` and `short` modes) in `<dir>`:
   - `run`, `short` and `validation`: `native.json` and `trace.jsonl`;
   - `geometry`: `geometry.json`, and neither `native.json` nor `trace.jsonl`.
+- `guard.json` is an input in every mode. The finalizer never writes, removes or replaces it. The guard must still be live with the recorded process creation time; every guarded file's write probe must return exactly a sharing violation. Access denied, a missing file or a successful write open fails binding. Each identity path is looked up case-insensitively, opened with `file_guard.open_identity`, checked against the guard's volume serial and 128-bit file ID, and hashed through that handle. The size and digest must match the guard. Case folding is only a lookup: distinct NTFS files such as `stra\u00dfe.dll` and `strasse.dll` cannot pass the file-ID check. The guard refuses both spellings in one protected set. Godot's MVID is parsed from the same handle's hashed bytes (PE CLI header, metadata `#~` Module row 1 and 1-based `#GUID` heap); a mismatch or parse failure is `identity`. Every Qt event path, an unload included, is bound the same way by its own spelling, so an unload of a distinct file with the same case folding as a loaded one is `identity` (L2-A-002). Liveness and write probes are checked again after the finalizer closes its own handles, and once more as the last check before any output is written: a guard that dies during the later checks leaves `identity`, never an accepted record (L2-A-003).
 - It writes exactly one of the outputs below with exclusive create, then exits:
   - 0: record written, all checks pass;
   - 2: record written, with a failed label or geometry check;
@@ -206,7 +223,7 @@ Checks and refusal codes. The interval `[a, b)` is on the QPC clock of `native.j
 | `harness` | all | `harness.json` is missing or malformed; `candidate` or `process_id` differ from the arguments (`process_id` must equal `--launched-pid`); or `mode` is not the app mode the finalizer's mode expects |
 | `app-exit` | all | `--app-exit` differs from `exit_code`, or is neither 0 nor 2 |
 | `native` | all | The mode's DLL outputs are missing or malformed. `run`, `short`, `validation`: `scene` differs from `harness.json`; `frames` differs from the number of `trace.jsonl` lines or from `window.presents`, or trace frames are not consecutive from 0; W3 `turn_ms` differs from the option. `geometry`: `geometry.json` lacks S-B's format `magic600-sb-geometry-check-v1`, or `native.json` or `trace.jsonl` exists |
-| `identity` | all | a part file is missing or unreadable; a recomputed DLL or shader digest differs from `dll_identity` or, in the modes that read it, from `native.json`'s `identity`; a required part is missing (`sa2`: `godot:exe`, `godot:assembly`, `godot:project.godot`, `godot:Main.tscn`; `sd`: `qt:exe` and at least one `qt:Qt6*` module) |
+| `identity` | all | guard input, liveness, launch ordering, protection, file ID, size or digest checks fail; an identity part (DLL, shader or `files` entry) is unguarded or missing; a guarded DLL or shader digest differs from `dll_identity` or the DLL output's identity; Godot's assembly MVID differs or cannot be parsed; Qt's observer or event union fails section 6; a required part is missing (`sa2`: `godot:exe`, `godot:assembly`, `godot:project.godot`, `godot:Main.tscn`; `sd`: `qt:exe` and at least one `qt:Qt6*` module) |
 | `adapter` | all | `environment.adapter` is not exactly the `--adapter` name |
 | `size-mismatch` | run, short, validation | the five sizes differ, `samples_changed` > 0, or `native.json` `target` or `viewport` differ from `sizes.target` |
 | `scaling` | run, short, validation | `sa2`: content scale mode not disabled, factor not 1, or `texture_stretch` not `none`. `sd`: displayed width or height in physical pixels differs from `item_width` or `item_height` times `device_pixel_ratio` by more than 0.000001 pixel, or `texture_stretch` not `none` |
@@ -217,9 +234,9 @@ Checks and refusal codes. The interval `[a, b)` is on the QPC clock of `native.j
 | `presentmon` | run, short | `presentmon.csv` is missing, its last row is incomplete, or it lacks `ProcessID`, `SwapChainAddress`, `QPCTime`, `msBetweenPresents`, `Dropped`, `SyncInterval`, `PresentMode` or `AllowsTearing`; or no row of the launched PID falls in `[T0, stop)` |
 | `swap-chain` | run, short | the PID's rows in `[T0, stop)` have more than one `SwapChainAddress` |
 | `sync-interval` | run, short | a row of the chain in `[T0, stop)` has `SyncInterval` other than 0 |
-| `blind-seconds` | run, short | a second of the checked interval has no row of the chain with `Dropped` 0. Run: `[T0 + 10 s, min(T0 + 190 s, stop))`, as S-B's runner. Short: `[T0 + 1 s, stop - 1 s)` |
+| `blind-seconds` | run, short | a whole second of the checked interval has no row of the chain with `Dropped` 0; seconds count from the interval start, and a trailing fraction of a second is not checked. Run: `[T0 + 10 s, min(T0 + 190 s, stop))`, as S-B's runner (exactly 180 s in a complete run). Short: `[T0 + 1 s, stop - 1 s)` |
 | `trace-steps` | run, short | some step between two consecutive presents of the chain (`QPCTime`) within `[T0 + 1 s, stop - 1 s]` does not hold exactly one trace entry |
-| `operator` | run | neither `--overlays` nor `--fault-injection` was given |
+| `operator` | run; all modes for `module-*` | neither `--overlays` nor `--fault-injection` was given in run mode; or a `module-*` injection is used outside sd run mode with `--fault-injection` |
 | `validation` | validation | `options.gpu_validation` is not true, `debug.debug_layer` is not 1, `debug.counts` is missing, or `error`, `corruption` or `mentioning_sa2` is not 0 |
 | `gate-shape` | run | `renderer_gate.validate_run` rejects the record |
 
@@ -231,22 +248,29 @@ Outputs:
   - `injected_fault` when set;
   - `presentmon`: `{"process_id": <launched PID>, "swap_chain": <the chain>}`;
   - `build`: `{"build_identity", "parts": [{"name", "sha256"}] sorted by name, "dll_identity"}`;
-  - `environment`: `harness.json`'s, with `tearing` (true only when every row of the chain in `[T0, stop)` has `AllowsTearing` 1) and `declared.overlays`. That is the `--overlays` text, or S-B's `fault-injection run; not gate evidence`;
+  - `environment`: `harness.json`'s, with `tearing` (true only when the chain has at least one displayed row, `Dropped` 0, in `[T0, stop)` and every such row has `AllowsTearing` 1; dropped rows do not count, because PresentMon reports `AllowsTearing` 0 for a present it drops before any flip or blit event, whatever its flags, `FRAMEWORK-FACTS.md` P1) and `declared.overlays`. That is the `--overlays` text, or S-B's `fault-injection run; not gate evidence`;
   - `window`: `harness.json`'s;
   - `l2`: `sizes`, `scaling`, `options`, `configuration`, `native` (`target`, `viewport`, `queue_mode`, `barrier_api`, `vram_samples`), `presentmon` (`rows`, `present_modes`, `sync_intervals`, `allows_tearing`, all in `[T0, stop)`), `expected_adapter`, `condition_reasons`, and `checks` (every code above with `pass`).
 - `short-check.json` (`short`): format `magic600-l2-short-check-v1`, with `run_id`, `candidate`, `scene`, `build`, `l2.presentmon`, `presentmon`, `sizes`, `vram_peak_mb`, `window` and `checks`. Debug switches are allowed in this mode, so their effect is refused by its own check: half target gives `size-mismatch` only, and no VRAM gives `vram-missing` only.
 - `geometry-record.json` (`geometry`): format `magic600-l2-geometry-record-v1`, with `candidate`, `run_id`, `status` (from `geometry.json`), `build` and the geometry summary. A failed geometry check gives exit 2.
 - `validation-record.json` (`validation`): format `magic600-l2-validation-record-v1`, with `candidate`, `run_id`, `scene`, `build`, `debug` and `label_check` (W3, W4). A failed label check gives exit 2.
+- Every output that carries `build` also carries a top-level `binding` object, outside the identity encoding:
+  ```json
+  {"format": "magic600-l2-guard-v1", "files": 12, "directories": 7,
+   "guard_sha256": "<sha256 of the exact guard.json input bytes>", "rule": "guard-before-launch"}
+  ```
+  Counts describe the whole protected set, which may be larger than the loaded identity subset. `renderer_gate.py` accepts this additional object unchanged.
 
 ## 8. Composite build identity
 
 - Parts:
-  - `dll:<file>` for the loaded DLL and `shader:<file>` for each shader in `dll_identity`: SHA-256 of the files, recomputed by the finalizer from `files.dll` and its directory;
+  - `dll:<file>` for the loaded DLL and `shader:<file>` for each shader in `dll_identity`: the guard's SHA-256 digests, verified by the finalizer through its own held handles at `files.dll` and next to that loaded DLL;
   - every other `files` entry under its own name;
   - `settings`: SHA-256 of `configuration` as canonical JSON (`json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)` encoded as UTF-8).
 - `build_identity` = SHA-256 of the UTF-8 text made of one line `<name>=<sha256>\n` per part, sorted by name.
 - Run options never enter the identity: scene, run ID, paths, trace, preroll and turn lengths, injection, declared conditions, condition mode, GPU validation, no-VRAM and half target. So validation, geometry, short and gate runs of one build share one identity.
 - Acceptance: a change to only the DLL bytes changes the identity; a change to only run options does not.
+- Binding evidence, guard paths and the MVID stay outside the encoding. The same names, settings and bytes give the pre-binding identity, including after relocating a build.
 
 ## 9. Runner (`run_scene.ps1`)
 
@@ -275,19 +299,26 @@ Changes:
   - Read `<Build>\launch.json`, format `magic600-l2-launch-v1`, written by the candidate's prepare step. It holds `candidate`, `executable`, `dll` (the absolute path for `--l2-dll`), `working_directory`, `arguments`, `run_arguments` (each `{out}` is replaced by the run directory; Godot: `--log-file {out}\godot.log`), `validation_arguments`, `separator` (`["--"]` for Godot, `[]` for Qt), `environment` and `validation_environment`. The command line is `arguments`, `run_arguments`, `validation_arguments` (validation runs only), `separator`, then the `--l2-` options.
   - `environment` and `validation_environment` map variable names to values; `null` removes the variable from the app's environment.
   - Start `executable` itself: the process that presents, never a console wrapper. That PID goes to PresentMon and to the finalizer.
+- Guard, before every app launch and outside the PresentMon capture:
+  - Start `python -B file_guard.py --launch <Build>\launch.json --candidate <candidate> --out <run directory>` with redirected stdin and stdout; wait at most 60 s for `ready`. No app may start before this line. If the guard gives no line within 60 s or another line, `Start-Guard` kills and disposes that guard itself before it throws, because the caller never receives it and it may already hold files (L2-A-001).
+  - The protected set includes the launch executable and DLL, every shader next to the DLL, and their ancestor directories to the drive root. Godot also protects `project.godot`, `Main.tscn`, `Smoke.cs` and every Debug assembly DLL; Qt protects every DLL and executable recursively under its executable directory.
+  - Acquisition fails closed on non-local/non-fixed paths, dot components, reparse points, case-sensitive directories, 8.3/subst aliases or existing write access. File handles allow read sharing only; directory handles omit delete sharing, preventing ancestor renames. Hashes come from the held handles.
+  - The guard atomically writes `guard.json`: `format: "magic600-l2-guard-v1"`, integer `pid`, `created` and `ready` FILETIMEs, `files` and `directories`. Files record absolute `path`, `final_path`, integer `volume_serial`, 32 lowercase hex `file_id`, integer `size` and 64 lowercase hex `sha256`; directories record `path`, `volume_serial` and `file_id`. Paths are unique case-insensitively. The drive root retains its trailing backslash (`C:\`); other directory paths gain or lose no separators. `ready` follows the last hash.
+  - Read `$process.StartTime.ToFileTimeUtc()` while the app handle is open and pass it as `--launched-created`. Keep the guard alive until the finalizer exits, in every mode.
+  - Then send exactly `release`, wait at most 30 s and require exit 0. The guard rechecks held IDs and reparse attributes, closes the handles and prints `released`. A failed release stops the series, even if the finalizer wrote a record. The runner's `finally` kills any remaining guard on every exit.
 - Sessions:
   - session and mutex name `magic600-<candidate>-capture`;
   - `Assert-NoSession` refuses while `PresentMon`, `magic600-sb-capture`, `magic600-sa2-capture` or `magic600-sd-capture` runs.
 - Before each run, refuse while any of these runs: another runner, a `codex_review.py --kind implement` process, a build (`cl`, `link`, `ninja`, `cmake`, `msbuild`, `dotnet`, `VBCSCompiler`), or Godot, Blender or FFmpeg other than this run's app. Name the process. Also refuse the PresentMon overlay (`PresentMon.exe`, `PresentMonUI.exe`) and another PresentMon console (`PresentMon-*.exe`), but not `PresentMonService.exe`, the always-on service of Intel's installer, which runs on the owner's machine.
-- Run directories: `work/loop-memory/perf/renderer/<candidate>/<stamp>-<scene>-<i>`. The runner creates each one and checks that it is empty before it starts the app; the framework's log and PresentMon's CSV then land beside the app's outputs. The run ID is the directory name.
-- After the app exits and the capture is stopped, call the finalizer with the app's PID and exit code. Pass `--overlays` (S-B's composed text) only after the operator typed `yes`, or `--fault-injection` with `-Inject`.
+- Run directories: `work/loop-memory/perf/renderer/<candidate>/<stamp>-<scene>-<i>`. The runner creates each one and checks that it is empty before starting the guard; `guard.json`, the framework's log and PresentMon's CSV then land beside the app's outputs. The run ID is the directory name.
+- After the app exits and the capture is stopped, call the finalizer with the app's PID, creation FILETIME and exit code, while the guard is still holding every handle. Pass `--overlays` (S-B's composed text) only after the operator typed `yes`, or `--fault-injection` with `-Inject`.
   - Finalizer exit 5: stop the series and print the reasons.
   - Exit 2 without `-Inject`: stop the series.
   - App exit 3: stop the series; this is no gate evidence.
 
 ## 10. Sandbox acceptance
 
-Nothing here starts Godot, .NET, Qt, PresentMon or a GPU process. Fixture folders never come from `mkdtemp` or `TemporaryDirectory`, whose access list the Codex sandbox refuses, and are removed on every exit. L2-F builds its fixtures under `work/experiments/renderer-l2/check-<pid>/`; L2-G and L2-Q keep their level 1 checks' folder, made with a plain `mkdir` under the system temp directory.
+Nothing here starts Godot, .NET, Qt, PresentMon or a GPU process. Fixture folders never come from `mkdtemp` or `TemporaryDirectory`, whose access list the Codex sandbox refuses. L2-F, L2-G and L2-Q use unique folders made with a plain `mkdir` under the system temp directory and remove them on every exit. L2-F starts a real Python file guard per fixture, samples a synthetic launch FILETIME after `ready`, and releases or kills every guard before cleanup. It starts no other process except the existing PowerShell parser call and writes nothing in the worktree.
 - L2-F, `python work/experiments/renderer-l2/check_l2.py`:
   - A valid synthetic W3 run passes. That covers `harness.json`, the DLL outputs, a 60 fps `presentmon.csv` on the trace clock and part files. Three such runs of one build give the verdict `met` in `renderer_gate.summarize_private`.
   - For each refusal code, a fixture with exactly that defect gives exit 5 and exactly that reason.
@@ -296,6 +327,7 @@ Nothing here starts Godot, .NET, Qt, PresentMon or a GPU process. Fixture folder
   - Short mode: half target gives exactly `size-mismatch`, and no VRAM gives exactly `vram-missing`.
   - A failed label check gives exit 2 with `label_check.status` `fail`.
   - The identity acceptance of section 8 holds.
+  - The binding cases of `PLAN-L2-V-002.md` section 7 hold: released/restored parts, malformed or dead guards, wrong IDs/digests, unheld listed files, missing shaders, redirected/unrecorded copies and launch ordering give exactly `identity`. Godot uses synthetic managed PE metadata to test same-name/different-MVID refusal and PE32/PE32+, GUID-index and heap-width positive controls. Qt checks observer state, history, scope, unload ordering, event-union completeness, late/transient/reloaded modules, unguarded new modules and case-fold collisions. Guarded transient modules enter the identity, and unchanged/relocated bytes retain the old encoding. `module-*` injections require sd run mode and `--fault-injection`.
   - `output-exists` holds.
   - Geometry and validation records pass and refuse.
   - `run_scene.ps1` is checked statically: it parses (PowerShell language parser, when `powershell.exe` is available), and it contains the pinned PresentMon path, the session names, the mutex, the operator question, the 20 s pause and the finalizer and gate calls.

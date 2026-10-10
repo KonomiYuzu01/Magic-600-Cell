@@ -185,7 +185,7 @@ class PacketTests(TemporaryFiles):
         self.assertEqual([call.args[0] for call in parse.call_args_list], [self.texts[number] for number in (1, 2, 3)])
 
     def test_real_repository_packets_pass(self):
-        self.assertEqual(capture(packets.main, []), (0, ['renderer packets: ok (6 packets)']))
+        self.assertEqual(capture(packets.main, []), (0, ['renderer packets: ok (7 packets)']))
 
     def test_seven_headings_are_required_in_order(self):
         original = self.texts[1]
