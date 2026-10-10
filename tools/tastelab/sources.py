@@ -80,6 +80,7 @@ class Adapter:
     image_hosts = ()
     min_interval = 1.0
     terms_url = ""
+    series = False      # credits vary by record (uploader, aggregator or institution), so one credit can form a series
 
     def headers(self):
         return {}
@@ -137,6 +138,7 @@ def admit(candidate, tier):
 
 class Wikimedia(Adapter):
     name = "wikimedia"
+    series = True
     hosts = ("commons.wikimedia.org", "upload.wikimedia.org", "thumb.wikimedia.org")
     image_hosts = ("upload.wikimedia.org", "thumb.wikimedia.org")
     min_interval = 0.5
@@ -242,6 +244,7 @@ class Aic(Adapter):
 
 class Openverse(Adapter):
     name = "openverse"
+    series = True
     hosts = image_hosts = ("api.openverse.org",)
     min_interval = 3.0
 

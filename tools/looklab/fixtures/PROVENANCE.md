@@ -1,7 +1,10 @@
 # Fixture provenance
 
-The S-B source branch is `claude/renderer-sb`, at commit
-`19341fd70913845bcf8624148979c3e065027f48`. These are synthetic model/probe inputs, not session data.
+The S-B source branch is `main`, at commit
+`c4b31b0a733cac04d1e514540a7a6ba04439d20e`. These are synthetic model/probe inputs, not session data.
+
+Shrink anchors: area-weighted triangle centroid, SPEC.md section 3. SHA-256 of the 433 x 4 little-endian float32 anchors:
+`0b6ead284d3f62719e3e6ec893d6c199d49698d246a59164bc362446e39faca6`.
 
 `sb-reference.json` retains 300 samples per camera/pose, at source positions
 `floor(i * (9066 - 1) / 299)` for i = 0..299. Both endpoints are included.
@@ -19,22 +22,22 @@ Inputs (paths relative to the S-B source copy):
 
 | File | SHA-256 |
 |---|---|
-| `SOURCE_COMMIT` | `91ad488905634fdba4463d53d6a5e12fb1ed317909849553c13e77776e9cddb9` |
-| `SPEC.md` | `1f426c167533eacd5d959d171fc2aace3c113a345c8869befabe4c71cdda675a` |
-| `reference_geometry.py` | `caba8d8b7daf2b253abaf2a87a60454432c606a4d5dda30e6c10c3d053e19837` |
+| `SOURCE_COMMIT` | `d062a04810589944c7b8b6f6ea3a99bd3b596e5353514a3beff3aec92dbdeb91` |
+| `SPEC.md` | `8f336c04b618dd7925cd4e8e531b96911840bf377a063d14a9f993015be50101` |
+| `reference_geometry.py` | `abadf064763a90cd8c8c890751f27e1038c09a799a22ee39a4a6087c76586efc` |
 | `cameras.json` | `6bb4288cc46e9ad4516b99d74322293dfe9eb076f12f58dc0a7d0e51b6403c50` |
 | `workload/turn.json` | `13811e74385b7a07e2e66d7177178b41fdac7921a6e2fd1287e6eac9504445e1` |
-| `reference/index.json` | `9f6596fc76d81c945af8f9c1d3321d877c3fe69bc91ed4af938529ce5fb8995c` |
+| `reference/index.json` | `9f7f3dedb3c8f22cbcc59a7002cbdf441d865390ae190188752d1b3c257c75c2` |
 | `reference/sample.u32` | `d05055c5114bd42592f5d019b7406bb88abd26aacdab0ce42a28df5ea0c605a0` |
-| `reference/c0_start.f32` | `8334baf9c516ea593cb161f8f15ef3bcc9817333ae8d5b6a5d9b1aeb1878b118` |
-| `reference/c0_mid.f32` | `795dbe2059577e2a7c4605b722666129c8b801783b73799c3f468b2a53ace1c1` |
-| `reference/c0_end.f32` | `3ffbfb05e99550068dad44ce5fe81a7d8e221a665c535d7651281b37b23a70f5` |
-| `reference/c1_start.f32` | `281dc158e263356c32d1114cf150ee7e937427e9bd380212e545001c1c240a54` |
-| `reference/c1_mid.f32` | `4841d6d5e9058e8fa4cf8cc6114cc6ee387408466ac9f12c382493819078e11b` |
-| `reference/c1_end.f32` | `51aa6d29c28e2b622c305198d53b2f0a2498aa500120396fe0139412ec910e0b` |
-| `reference/c2_start.f32` | `e0a7e1173709bd6fd25c8c47d50baa9074fd41a4741fccf2a109f73c5634b83e` |
-| `reference/c2_mid.f32` | `14d4b921c605fa8e071bc0231bbadb3e845427679da9b3ce45012436ae9f58fc` |
-| `reference/c2_end.f32` | `547135116accbca11b36004abd44d20d5a4e3137003a54b2b48e9c0fefae3e30` |
+| `reference/c0_start.f32` | `5debaba2ef94ffe15054ed1beffb2c3b0b79c67aaad7545829b78107e380b6cb` |
+| `reference/c0_mid.f32` | `3de7d99d2d2d709578ab36b6e9549b770d12da88cf576118ea2b4971f4c0ea0a` |
+| `reference/c0_end.f32` | `06056c46471e83ee80084bf70c4366ff098696850a1884e2fe1ebaa0b1a4b527` |
+| `reference/c1_start.f32` | `3e7e6916ce48c1603e71eabc2b8616c266b51f94aca479925b0392b66c1fa062` |
+| `reference/c1_mid.f32` | `0c83ef87b4bb1b0a343eee16b7f1a35792ca53194703cfb3386aba756c41ee07` |
+| `reference/c1_end.f32` | `e35cadc3c9133bd8ad7dc517c8bfa676e62c7862e4987729e323cedcd5917935` |
+| `reference/c2_start.f32` | `24a983360b8adad198be82c57633446ce2b5462f06953151d16a46442b7ffb86` |
+| `reference/c2_mid.f32` | `59828c55bf4f7d1d8f4f9d40a9a2871bb5a9783fe223419db2a77e26c9f333ba` |
+| `reference/c2_end.f32` | `32b82353c750c6d2cd6c8f4079f3d7dd946ab7d1b7f078d5cc0c8a85e76a7c41` |
 
 Asset input digests used by the original reference:
 
@@ -43,7 +46,6 @@ Asset input digests used by the original reference:
 | `assets/cell_frames.f32` | `2dfceb37625b3f37985ea94193eca79c6e50e6ad00563eb4ba13a54dd7d3001f` |
 | `assets/manifest.json` | `b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc` |
 | `assets/mesh.json` | `357fb767272d8e08caa8220903d4f3fc687be47c771b96b170f2cff4ac6ddb03` |
-| `assets/mesh_centers.f32` | `91ac80a0be89c3ec2f78ff8ecb214e9949266c8bbdbabf30d18b441c3cbe1cbb` |
 | `assets/mesh_sticker.u32` | `34d15cf938814957a40c360822889bc7f4e4c9ac65388d63242af31b170e26c7` |
 | `assets/mesh_vertices.f32` | `696f82b56ba7562126a6fc158936cdfe837c594ba666b9b342815bde66a7f4df` |
 

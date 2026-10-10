@@ -1,0 +1,1842 @@
+[
+ {
+  "run": "I_a lens d=2 a=1",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    1
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 21.7,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    1
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=2",
+  "result": "lattice",
+  "N_start": 596,
+  "grip_N_start": 596,
+  "H_start": 1184,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    5
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 50.6,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    2
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=3",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    9
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 22.0,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    3
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=4",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    8
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 20.3,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    4
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=5",
+  "result": "lattice",
+  "N_start": 664,
+  "grip_N_start": 664,
+  "H_start": 1184,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    2
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 26.5,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    5
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=6",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    7
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 20.8,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    6
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=7",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    6
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 20.5,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    7
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=8",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    4
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 21.2,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    8
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=9",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    3
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 22.0,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    9
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=10",
+  "result": "lattice",
+  "N_start": 938,
+  "grip_N_start": 938,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    10
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 28.0,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    10
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=2 a=11",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    11
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 19.9,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    2,
+    11
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=1",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    1
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 12.5,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    1
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=2",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1184,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    5
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 14.7,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    2
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=3",
+  "result": "lattice",
+  "N_start": 938,
+  "grip_N_start": 938,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    9
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 29.6,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    3
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=4",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    8
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 12.5,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    4
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=5",
+  "result": "lattice",
+  "N_start": 710,
+  "grip_N_start": 710,
+  "H_start": 1184,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    2
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 14.6,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    5
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=6",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    7
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 12.9,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    6
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=7",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    6
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 13.0,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    7
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=8",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    4
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 12.9,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    8
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=9",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    3
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 13.8,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    9
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=10",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    10
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 13.1,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    10
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=9 a=11",
+  "result": "lattice",
+  "N_start": 824,
+  "grip_N_start": 824,
+  "H_start": 1580,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    11
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 12.4,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    9,
+    11
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=1",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 206,
+  "H_start": 790,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    1
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.4,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    1
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=2",
+  "result": "lattice",
+  "N_start": 298,
+  "grip_N_start": 195,
+  "H_start": 394,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    5
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 12.4,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    2
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=3",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 790,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    9
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.5,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    3
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=4",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 790,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    8
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.3,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    4
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=5",
+  "result": "lattice",
+  "N_start": 298,
+  "grip_N_start": 195,
+  "H_start": 394,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    2
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.8,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    5
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=6",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 790,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    7
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.6,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    6
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=7",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 790,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    6
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.2,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    7
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=8",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 790,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    4
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.3,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    8
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=9",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 790,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    3
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.7,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    9
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=10",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 790,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    10
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.2,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    10
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=11 a=11",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 790,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    11
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.0,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    11,
+    11
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=16 a=1",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 670,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    1
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.6,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    1
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=16 a=2",
+  "result": "lattice",
+  "N_start": 266,
+  "grip_N_start": 187,
+  "H_start": 268,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    5
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 12.5,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    2
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=16 a=3",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 670,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    9
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.1,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    3
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=16 a=4",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 670,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    8
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.5,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    4
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=16 a=5",
+  "result": "lattice",
+  "N_start": 266,
+  "grip_N_start": 133,
+  "H_start": 268,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    2
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.5,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    5
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=16 a=6",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 670,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    7
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.1,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    6
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ },
+ {
+  "run": "I_a lens d=16 a=7",
+  "result": "lattice",
+  "N_start": 412,
+  "grip_N_start": 309,
+  "H_start": 670,
+  "twists": 3,
+  "improvements": 0,
+  "lock_macros": 1,
+  "N_end": 0,
+  "grip_N_end": 0,
+  "H_end": 0,
+  "moves": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    6
+   ],
+   [
+    0,
+    45
+   ]
+  ],
+  "seconds": 11.4,
+  "v_end": [],
+  "v_end_in_vG": true,
+  "solved": true,
+  "moved_end": 0,
+  "word": [
+   [
+    0,
+    12
+   ],
+   [
+    16,
+    7
+   ],
+   [
+    0,
+    "q^-1"
+   ]
+  ]
+ }
+]

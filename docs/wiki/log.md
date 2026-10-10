@@ -5,6 +5,15 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-10-10] update | W3 re-accepted after the anchor change
 The owner's attended GPU session re-accepted W3 for all four builds with the area-centroid anchor: S-B, Qt and Godot (both under the loaded-file guard), and the W-J probe. Updated [s-b-probe-results](evidence/s-b-probe-results.md) and [level-2-framework-results](evidence/level-2-framework-results.md), and added [w-j-probe-results](evidence/w-j-probe-results.md): the W-J GPU checks and its three fixtures meet the gate, and its overlay costs are unmeasured.
 
+## [2026-10-10] update | Jumbling restoration: deep inputs
+[restoration](../../research/jumbling/theory/restoration.md) section 3 adds readings of the twist order from the seams (face match, cover order) and a three-twist repair word for misreads (`seams.py`). Phase U reaches the lattice on every tested input of up to 20 twists. On 40- and 60-record fixtures the repair passes every earlier stopping point but slows as N falls; no run has reached the lattice yet (the nearest, I_a@40, found no step below N = 1,192 of 51,348 for 50 minutes), so completeness on deep inputs stays open.
+
+## [2026-10-10] decision | Jumbling: deferred problems, restoration first
+Recorded in [owner-decisions-2026-10-10-jumbling-deferred](decisions/owner-decisions-2026-10-10-jumbling-deferred.md): the state count and worst-case distance, a finiteness proof, a proved bound on N-lowering words and a restoration rule without trial twists are not pursued for now; a working restoration method has top priority.
+
+## [2026-10-10] update | Jumbling restoration theory (J3-R)
+[restoration](../../research/jumbling/theory/restoration.md) gives a human method back from a jumbled configuration without a journal: phase U closes misaligned cuts (exact rim test, descent on the misalignment N, proved to reach the lattice) and phase L hands the lattice configuration to the retained method with lens macros as extra moves. Proved, computed, lead and open items are separated in its section 5; whether levels 1 and 2 always suffice, and whether jumbling reaches lattice configurations outside the retained group, stay open.
+
 ## [2026-10-10] decision | Shrink anchor (area centroid)
 Recorded in [owner-decisions-2026-10-10-anchor](decisions/owner-decisions-2026-10-10-anchor.md): the sticker shrink anchor is the area-weighted centroid of each sticker's triangles, computed from the unchanged meshes, which removes the W3 turn-end jump and the W-J lattice disagreement at source level; no asset or model identity changes. Updated [s-b-probe-results](evidence/s-b-probe-results.md): the changed probes need GPU re-acceptance, including W3.
 

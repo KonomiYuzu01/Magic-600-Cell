@@ -522,7 +522,7 @@ class RateUiTests(unittest.TestCase):
         self.assertEqual(statuses, {"brass observatory": "accepted", "quiet geometry": "rejected"})
         self.assertEqual(c.proposals, [])
         self.assertIn("fetch.py --proposals", c.message)
-        self.assertIn("tastelab-fetch-proposals", c.message)
+        self.assertNotIn("workbench", c.message)
         self.proposer.items = [("blue mechanism", "test", "adjacent")]
         self.key(Qt.Key_Down)
         self.click("proposal-0")
@@ -589,7 +589,7 @@ class RateUiTests(unittest.TestCase):
         self.assertEqual(c.preload, [])
         self.assertTrue(self.item("emptyState").isVisible())
         self.assertEqual(self.item("emptyState").property("text"),
-                         "No images to rate. Run fetch.py and embed.py, or the tastelab-fetch run in the workbench.")
+                         "No images to rate. Run fetch.py and embed.py first.")
         for key in (Qt.Key_Right, Qt.Key_Left, Qt.Key_Down, Qt.Key_N, Qt.Key_Delete):
             self.key(key)
         self.assertEqual(c.total, len(self.fx.shas))

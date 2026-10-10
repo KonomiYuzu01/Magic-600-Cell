@@ -329,7 +329,7 @@ class RateController(QObject):
             self.store.set_proposal_status(item["term"], status)
         self._proposals, self._checked = [], set()
         self.proposalsChanged.emit()
-        self._say("Run fetch.py --proposals or the workbench run tastelab-fetch-proposals to fetch ticked terms.")
+        self._say("Run fetch.py --proposals to fetch the ticked terms.")
 
     @Slot()
     def acceptProposals(self):

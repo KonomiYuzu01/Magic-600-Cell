@@ -22,7 +22,7 @@ The recipe needs a .NET SDK with the net8.0 targeting pack and runtime already
 installed. Node is optional: tests that call the original Taste Lab JavaScript
 report a skip when it is absent. All other tests always run.
 
-The test runner has 52 named tests, including 28 Python harness cases. It
+The test runner has 66 named tests, including 28 Python harness cases. It
 prints a line for each named test and a summary, and exits nonzero on failure.
 It reads the repository and committed fixtures only, and creates its own
 temporary folders with mkdir under the system temporary directory. It opens
@@ -151,12 +151,17 @@ and orthographic uses world.xyz. All then use the same 3D zoom/aspect projection
 No clipping, sampling or visibility parameter changes a slot, label or cell id.
 
 `Geometry` reads only mesh.json, mesh_vertices.f32, mesh_sticker.u32,
-mesh_centers.f32, cell_frames.f32, model.npz and slot_piece.u32. Each file is SHA-256 checked
+cell_frames.f32, model.npz and slot_piece.u32. Each file is SHA-256 checked
 against the `files` map of assets/manifest.json before its bytes are used;
 the manifest is the trust root. Missing files, missing manifest entries and
 mismatches name the file. The .npz reader uses System.IO.Compression. Its small
 .npy reader refuses the wrong dtype, Fortran order, invalid shapes or lengths.
 Normals require `<f8`; incidence metadata requires the retained `<i2`/`<i4` types.
+Stickers shrink towards their anchors, as in the S-B specification (section 3):
+the area-weighted centroid of each sticker's triangles, computed in float64 in
+file order and rounded once to float32. `Geometry` refuses the assets unless
+the SHA-256 of the 433 x 4 little-endian float32 anchors equals the S-B pin;
+assets/mesh_centers.f32 is not read.
 
 `TurnData` keeps two verified 259,800-label u32 little-endian snapshots. A
 generator copies labels from source to destination using the entire previous
@@ -490,8 +495,8 @@ performance estimates or performance claims and does not assume costs add.
 
 ## Fixture provenance and port choices
 
-fixtures/PROVENANCE.md records the S-B source branch claude/renderer-sb, its
-immutable commit, input SHA-256 digests and production commands. sb-reference.json
+fixtures/PROVENANCE.md records the S-B source branch main, its immutable
+commit, the anchor rule and pin, input SHA-256 digests and production commands. sb-reference.json
 has nine cases, each with 300 samples evenly spread across 9,066 source indices.
 The tests compare all 2,700 results with absolute-plus-relative tolerance
 `1e-5 + 1e-5*abs(reference)`. w3-turn.json is copied byte for byte and checked

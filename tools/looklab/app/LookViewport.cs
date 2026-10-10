@@ -49,7 +49,7 @@ internal sealed partial class LookViewport : Node3D
         Material.SetShaderParameter("aspect", 1.6f);
         Material.SetShaderParameter("base_normal", Vector4(Geometry.BaseNormal.Span));
         Material.SetShaderParameter("radius", (float)Geometry.Radius);
-        Material.SetShaderParameter("centers", FloatTexture(Geometry.StickerCenters.Span, Geometry.StickersPerCell, 1, Image.Format.Rgbaf));
+        Material.SetShaderParameter("anchors", FloatTexture(Geometry.StickerAnchors.Span, Geometry.StickersPerCell, 1, Image.Format.Rgbaf));
         Material.SetShaderParameter("plane_u", Vector4(Turn.PlaneU.Span));
         Material.SetShaderParameter("plane_v", Vector4(Turn.PlaneV.Span));
         var moving = new double[LabelWidth * LabelHeight];

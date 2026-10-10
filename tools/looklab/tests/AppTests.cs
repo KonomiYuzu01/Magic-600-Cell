@@ -13,7 +13,7 @@ internal static partial class Program
     {
         Equal(Mesh.BaseVertexData.Length, Geometry.BaseVertices * 4);
         Equal(Mesh.BaseStickerIds.Length, Geometry.BaseVertices);
-        Equal(Mesh.StickerCenters.Length, Geometry.StickersPerCell * 4);
+        Equal(Mesh.StickerAnchors.Length, Geometry.StickersPerCell * 4);
         Equal(Mesh.CellFrames.Length, Geometry.Cells * 16);
         Equal(Mesh.SlotOrbits.Length, Geometry.Slots);
         using var document = JsonDocument.Parse(Read("fixtures/sb-reference.json"));
@@ -25,8 +25,8 @@ internal static partial class Program
             {
                 int global = sample.GetProperty("vertex").GetInt32(), cell = global / Geometry.BaseVertices, vi = global % Geometry.BaseVertices;
                 int local = Mesh.BaseStickerIds.Span[vi]; var basePoint = new double[4];
-                for (int i = 0; i < 4; i++) basePoint[i] = (Mesh.BaseNormal.Span[i] + p.Cs * (Mesh.StickerCenters.Span[local * 4 + i] - Mesh.BaseNormal.Span[i])
-                    + p.Cs * p.Ss * (Mesh.BaseVertexData.Span[vi * 4 + i] - Mesh.StickerCenters.Span[local * 4 + i])) / Mesh.Radius;
+                for (int i = 0; i < 4; i++) basePoint[i] = (Mesh.BaseNormal.Span[i] + p.Cs * (Mesh.StickerAnchors.Span[local * 4 + i] - Mesh.BaseNormal.Span[i])
+                    + p.Cs * p.Ss * (Mesh.BaseVertexData.Span[vi * 4 + i] - Mesh.StickerAnchors.Span[local * 4 + i])) / Mesh.Radius;
                 double[] world = Geometry.Multiply(Mesh.CellFrames.Span.Slice(cell * 16, 16), basePoint);
                 if (Turn.IsMoving(cell * Geometry.StickersPerCell + local))
                 {
