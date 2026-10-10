@@ -98,7 +98,7 @@ CAPTION_SPECS = (
     ("digits", "0123456789 9999999999 1234.5678"),
     ("punctuation", "!!!??? ... --- ___ () [] {} <> /\\ :; +*= @#$%"),
     ("contractions", "cat's can't we're they've I'm she'll you'd"),
-    # clip.py tokenizes special-token text as plain text; this row shows what upstream does.
+    # Upstream reads literal special-token text as the special token; clip.py does the same.
     ("literal-special", "<start_of_text>"),
     # 'a' is one text token in CLIP BPE, regardless of the merges table.
     ("tokens-75", " ".join(["a"] * 75)),
