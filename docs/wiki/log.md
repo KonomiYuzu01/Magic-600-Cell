@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] decision | Jumbling: deferred problems, restoration first
+Recorded in [owner-decisions-2026-10-10-jumbling-deferred](decisions/owner-decisions-2026-10-10-jumbling-deferred.md): the state count and worst-case distance, a finiteness proof, a proved bound on N-lowering words and a restoration rule without trial twists are not pursued for now; a working restoration method has top priority.
+
 ## [2026-10-10] update | Jumbling restoration theory (J3-R)
 [restoration](../../research/jumbling/theory/restoration.md) gives a human method back from a jumbled configuration without a journal: phase U closes misaligned cuts (exact rim test, descent on the misalignment N, proved to reach the lattice) and phase L hands the lattice configuration to the retained method with lens macros as extra moves. Proved, computed, lead and open items are separated in its section 5; whether levels 1 and 2 always suffice, and whether jumbling reaches lattice configurations outside the retained group, stay open.
 
