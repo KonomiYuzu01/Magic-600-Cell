@@ -172,17 +172,21 @@ try {
             # visibility, so a formal run also needs the operator's confirmation, given after the
             # run, that it was watched throughout with nothing covering the probe (Astra ruling
             # 20261003T033021Z-274f20af). The summary publishes it as declared.overlays.
-            if ($Inject) { $overlay = 'fault-injection run; not gate evidence' }
+            # Not $overlay: PowerShell names ignore case, and that is the ValidateSet parameter -Overlay.
+            if ($Inject) { $declaredOverlays = 'fault-injection run; not gate evidence' }
             else {
+                # Discard keys typed or pasted while the run was on screen (a right-click pastes), so only an answer
+                # typed at this prompt counts. A host without a console input buffer keeps the old behaviour.
+                try { $Host.UI.RawUI.FlushInputBuffer() } catch { }
                 $answer = Read-Host "$runId`: did you watch the whole run, with nothing covering any part of the probe window? Type yes to keep it"
                 if ("$answer".Trim() -ne 'yes') { throw "$runId was not confirmed by the operator; no gate evidence." }
-                $overlay = "$Overlays; operator-declared after the run: watched throughout, no visible obstruction; automatic checks sample visibility every 100 ms and do not prove continuous full-area visibility"
+                $declaredOverlays = "$Overlays; operator-declared after the run: watched throughout, no visible obstruction; automatic checks sample visibility every 100 ms and do not prove continuous full-area visibility"
             }
             # Replace the placeholders in the text: a ConvertFrom/ConvertTo-Json round trip in
             # Windows PowerShell 5.1 can change numbers in run.json.
             $text = [IO.File]::ReadAllText($runPath)
             if (-not $text.Contains('"FILL-FROM-CSV"') -or -not $text.Contains('"OPERATOR-CONFIRMATION-PENDING"')) { throw 'run.json lacks the swap-chain or operator-confirmation placeholder.' }
-            $text = $text.Replace('"FILL-FROM-CSV"', '"' + @($chains)[0].Name + '"').Replace('"OPERATOR-CONFIRMATION-PENDING"', (ConvertTo-Json -InputObject $overlay -Compress))
+            $text = $text.Replace('"FILL-FROM-CSV"', '"' + @($chains)[0].Name + '"').Replace('"OPERATOR-CONFIRMATION-PENDING"', (ConvertTo-Json -InputObject $declaredOverlays -Compress))
             [IO.File]::WriteAllText($runPath, $text, [Text.UTF8Encoding]::new($false))
             $run = $text | ConvertFrom-Json
             $runDirectories += $directory
