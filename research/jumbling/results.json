@@ -1,0 +1,1462 @@
+{
+ "model_cap_pole_index": 0,
+ "cap_pieces": 3097,
+ "shells": {
+  "inradius": 0.9256147934109991,
+  "depth_unit": "cut offset / facet distance",
+  "retained_depth": 0.968,
+  "next_shell_threshold_exact": "3/(2 phi)",
+  "shells": [
+   {
+    "angle_deg": 15.522,
+    "poles": 4,
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
+   },
+   {
+    "angle_deg": 25.243,
+    "poles": 12,
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
+   },
+   {
+    "angle_deg": 36.0,
+    "poles": 24,
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
+   },
+   {
+    "angle_deg": 41.41,
+    "poles": 12,
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
+   },
+   {
+    "angle_deg": 44.478,
+    "poles": 4,
+    "interacts_iff_depth_below_min": 1.0,
+    "interacts_iff_depth_below_max": 1.0
+   },
+   {
+    "angle_deg": 49.118,
+    "poles": 24,
+    "interacts_iff_depth_below_min": 0.92705098312,
+    "interacts_iff_depth_below_max": 0.92705098312
+   },
+   {
+    "angle_deg": 56.012,
+    "poles": 24,
+    "interacts_iff_depth_below_min": 0.90983005625,
+    "interacts_iff_depth_below_max": 0.90983005625
+   },
+   {
+    "angle_deg": 60.0,
+    "poles": 32,
+    "interacts_iff_depth_below_min": 0.88196601125,
+    "interacts_iff_depth_below_max": 0.894427191
+   }
+  ]
+ },
+ "realignments": {
+  "rotations_found": 1224,
+  "orbit_representatives": 6,
+  "classes": [
+   {
+    "min_rotation_angle_deg": 90.0,
+    "aligned_poles": 24,
+    "aligned_per_shell": [
+     0,
+     0,
+     24,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 47.7211,
+    "R_perp": [
+     [
+      0.3333333333334778,
+      0.4714045207910157,
+      0.8164965809276765
+     ],
+     [
+      -0.9428090415820124,
+      0.16666666666674645,
+      0.28867513459493355
+     ],
+     [
+      -4.585840874180351e-15,
+      -0.8660254037844319,
+      0.5000000000000117
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 44.4775,
+    "aligned_poles": 20,
+    "aligned_per_shell": [
+     1,
+     3,
+     12,
+     3,
+     1
+    ],
+    "max_landing_error_deg": 28.9553,
+    "R_perp": [
+     [
+      0.7453559924999547,
+      -0.5270462766947006,
+      0.4082482904638556
+     ],
+     [
+      0.6170765289406023,
+      0.7771864934374694,
+      -0.1232790000324005
+     ],
+     [
+      -0.25231131935572276,
+      0.34380717944892264,
+      0.9045084971874785
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 44.4775,
+    "aligned_poles": 20,
+    "aligned_per_shell": [
+     1,
+     3,
+     12,
+     3,
+     1
+    ],
+    "max_landing_error_deg": 28.9553,
+    "R_perp": [
+     [
+      0.7453559924999975,
+      -0.09003025224588267,
+      0.6605596098194972
+     ],
+     [
+      -0.09003025224588031,
+      0.9681694990625023,
+      0.23354308974064494
+     ],
+     [
+      -0.6605596098194974,
+      -0.23354308974064403,
+      0.7135254915624999
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 72.0,
+    "aligned_poles": 12,
+    "aligned_per_shell": [
+     0,
+     0,
+     12,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 47.7211,
+    "R_perp": [
+     [
+      0.7453559924999944,
+      0.6170765289406013,
+      0.2523113193556074
+     ],
+     [
+      -0.09003025224603073,
+      0.4681694990625223,
+      -0.8790403141085525
+     ],
+     [
+      -0.6605596098194805,
+      0.6324823140437729,
+      0.40450849718759907
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 72.0,
+    "aligned_poles": 12,
+    "aligned_per_shell": [
+     0,
+     0,
+     12,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 47.7211,
+    "R_perp": [
+     [
+      0.7453559924999855,
+      -0.0900302522458533,
+      0.6605596098195149
+     ],
+     [
+      -0.5270462766946873,
+      0.5271864934374669,
+      0.6665557916329098
+     ],
+     [
+      -0.40824829046381655,
+      -0.8449668365194316,
+      0.34549150281260965
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 63.4349,
+    "aligned_poles": 8,
+    "aligned_per_shell": [
+     0,
+     4,
+     4,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 35.0057,
+    "R_perp": [
+     [
+      0.6314757303333172,
+      -0.7627485370902339,
+      -0.1394742670413113
+     ],
+     [
+      0.5021625269771163,
+      0.539344662916658,
+      -0.6759734692155256
+     ],
+     [
+      0.5908224762988967,
+      0.3568220897730742,
+      0.7236067977500044
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 63.9759,
+    "aligned_poles": 8,
+    "aligned_per_shell": [
+     0,
+     2,
+     4,
+     2,
+     0
+    ],
+    "max_landing_error_deg": 37.8065,
+    "R_perp": [
+     [
+      0.44023830439400036,
+      0.7627485370902501,
+      0.4737139479801907
+     ],
+     [
+      -0.7916225816230625,
+      0.5786893258332548,
+      -0.1960927138653824
+     ],
+     [
+      -0.4237026358293436,
+      -0.28867513459481786,
+      0.8585701736363374
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 65.3365,
+    "aligned_poles": 6,
+    "aligned_per_shell": [
+     0,
+     0,
+     4,
+     2,
+     0
+    ],
+    "max_landing_error_deg": 44.2307,
+    "R_perp": [
+     [
+      0.4225536942425048,
+      0.5975811652284649,
+      0.6814287390814988
+     ],
+     [
+      -0.5103952482154634,
+      0.7781921178029912,
+      -0.3659422336768071
+     ],
+     [
+      -0.7489626600045471,
+      -0.19316774770516312,
+      0.6338305413637209
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 26.5651,
+    "aligned_poles": 4,
+    "aligned_per_shell": [
+     0,
+     0,
+     4,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 16.1762,
+    "R_perp": [
+     [
+      0.929618127333274,
+      -0.34111151573448945,
+      0.13947426704125798
+     ],
+     [
+      0.2913440162992598,
+      0.9120226591665925,
+      0.2886751345947792
+     ],
+     [
+      -0.22567410462876245,
+      -0.2277226448994839,
+      0.9472135954999749
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 41.8103,
+    "aligned_poles": 4,
+    "aligned_per_shell": [
+     0,
+     0,
+     0,
+     4,
+     0
+    ],
+    "max_landing_error_deg": 25.243,
+    "R_perp": [
+     [
+      0.830237328333365,
+      0.411384352626999,
+      0.37612350771460873
+     ],
+     [
+      -0.5314246889548593,
+      0.7877966604166586,
+      0.31139078632096895
+     ],
+     [
+      -0.16820754623710407,
+      -0.45840957259859344,
+      0.8726779962499727
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 47.2122,
+    "aligned_poles": 4,
+    "aligned_per_shell": [
+     0,
+     0,
+     4,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 32.5881,
+    "R_perp": [
+     [
+      0.8930950289393997,
+      0.4425304762582281,
+      0.0809200028818494
+     ],
+     [
+      -0.2913440162993033,
+      0.7060113295833332,
+      -0.6454972243678244
+     ],
+     [
+      -0.3427826329473594,
+      0.5529148036385351,
+      0.7594638151136868
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 61.7313,
+    "aligned_poles": 4,
+    "aligned_per_shell": [
+     0,
+     2,
+     2,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 40.2535,
+    "R_perp": [
+     [
+      0.5175954681667889,
+      0.1456720081495692,
+      0.8431337956545656
+     ],
+     [
+      0.14567200814957162,
+      0.9560113295833106,
+      -0.25460165700564874
+     ],
+     [
+      -0.843133795654565,
+      0.2546016570056501,
+      0.47360679775009956
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 61.7313,
+    "aligned_poles": 4,
+    "aligned_per_shell": [
+     0,
+     2,
+     2,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 40.2535,
+    "R_perp": [
+     [
+      0.5175954681666941,
+      -0.8030112899009113,
+      0.2954112381494222
+     ],
+     [
+      0.6573392817513514,
+      0.5942079307083035,
+      0.4634889467398046
+     ],
+     [
+      -0.5477225575050916,
+      -0.0457143672714582,
+      0.8354101966250184
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 61.0397,
+    "aligned_poles": 4,
+    "aligned_per_shell": [
+     0,
+     0,
+     4,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 40.5063,
+    "R_perp": [
+     [
+      0.5117740551515293,
+      0.03899072742426292,
+      0.8582348394517009
+     ],
+     [
+      -0.2672464215047871,
+      0.9566328396211418,
+      0.11590064862319199
+     ],
+     [
+      -0.816496580927713,
+      -0.2886751345947859,
+      0.5000000000000369
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 27.9512,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     1,
+     2,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 18.6443,
+    "R_perp": [
+     [
+      0.9591659346211832,
+      0.21234266767211246,
+      0.18684566183929277
+     ],
+     [
+      -0.26798442357580243,
+      0.8935552796116671,
+      0.36019898805918393
+     ],
+     [
+      -0.09047131359175375,
+      -0.39556232601703384,
+      0.9139723123010763
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 27.9512,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     1,
+     2,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 18.6443,
+    "R_perp": [
+     [
+      0.8930950289394142,
+      0.032282163180350494,
+      0.4487082919047792
+     ],
+     [
+      0.03228216318032469,
+      0.990251734327571,
+      -0.13549673280797922
+     ],
+     [
+      -0.448708291904781,
+      0.13549673280797328,
+      0.8833467632669849
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 31.2122,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     0,
+     2,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 21.6997,
+    "R_perp": [
+     [
+      0.8556384235606145,
+      0.4444625907638449,
+      0.2652091505551747
+     ],
+     [
+      -0.45190915707886137,
+      0.8913447033427153,
+      -0.03581527008358171
+     ],
+     [
+      -0.2523113193556312,
+      -0.08920552244327633,
+      0.9635254915624406
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 31.2122,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     0,
+     2,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 21.6997,
+    "R_perp": [
+     [
+      0.8556384235606602,
+      0.007446566315004621,
+      0.5175204699108475
+     ],
+     [
+      0.007446566314986073,
+      0.9996158856722728,
+      -0.026695126179772433
+     ],
+     [
+      -0.5175204699108479,
+      0.026695126179767346,
+      0.8552543092329331
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 51.6071,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     0,
+     2,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 35.4649,
+    "R_perp": [
+     [
+      0.7112768471212632,
+      0.6996602148714698,
+      -0.06753392092307338
+     ],
+     [
+      -0.656067256364957,
+      0.6263163793845459,
+      -0.4210742785309873
+     ],
+     [
+      -0.2523113193556581,
+      0.3438071794489499,
+      0.9045084971874862
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 51.6071,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     0,
+     2,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 35.4649,
+    "R_perp": [
+     [
+      0.6220564862121982,
+      0.019495363712197795,
+      0.7827296204661366
+     ],
+     [
+      0.019495363712169672,
+      0.99899437563444,
+      -0.04037534203552177
+     ],
+     [
+      -0.7827296204661374,
+      0.04037534203550824,
+      0.6210508618466385
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 56.0122,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     0,
+     2,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 37.8065,
+    "R_perp": [
+     [
+      0.5723801157575945,
+      0.14567200814950543,
+      0.8069452702178836
+     ],
+     [
+      -0.2913440162991314,
+      0.9560113295833207,
+      0.03407347758922286
+     ],
+     [
+      -0.7664852687769115,
+      -0.2546016570056493,
+      0.5896425434091095
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 56.0122,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     0,
+     2,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 37.8065,
+    "R_perp": [
+     [
+      0.679285086818207,
+      0.7071067811864906,
+      -0.19639697254912447
+     ],
+     [
+      -0.7071067811864992,
+      0.5590169943750234,
+      -0.4330127018922001
+     ],
+     [
+      -0.19639697254909344,
+      0.4330127018922142,
+      0.8797319075568166
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 56.0122,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     0,
+     2,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 37.8065,
+    "R_perp": [
+     [
+      0.5723801157575978,
+      0.07559322997952929,
+      0.8164965809276735
+     ],
+     [
+      0.07559322997949106,
+      0.9866368786174222,
+      -0.14433756729742256
+     ],
+     [
+      -0.8164965809276771,
+      0.14433756729740252,
+      0.55901699437502
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 56.0122,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     0,
+     2,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 37.8065,
+    "R_perp": [
+     [
+      0.7201191521969987,
+      -0.4658900689815803,
+      0.5141739494212189
+     ],
+     [
+      0.6782327366537321,
+      0.6289872063257308,
+      -0.37996769495542887
+     ],
+     [
+      -0.14638566039836326,
+      0.6223516191855623,
+      0.7689276302272172
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 68.0447,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     1,
+     2,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 42.472,
+    "R_perp": [
+     [
+      0.5723801157575434,
+      -0.8149821743463853,
+      0.09047131359176552
+     ],
+     [
+      0.6693101661967895,
+      0.40060919091853603,
+      -0.6257285174716126
+     ],
+     [
+      0.47371394798022043,
+      0.4187079311993442,
+      0.7747765896306872
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 68.0447,
+    "aligned_poles": 3,
+    "aligned_per_shell": [
+     0,
+     1,
+     2,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 42.472,
+    "R_perp": [
+     [
+      0.7201191521970789,
+      0.3112954903749798,
+      0.6200996083784936
+     ],
+     [
+      0.3112954903749582,
+      0.6537637959563839,
+      -0.6897013968152551
+     ],
+     [
+      -0.6200996083785044,
+      0.6897013968152452,
+      0.3738829481534629
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 38.7249,
+    "aligned_poles": 2,
+    "aligned_per_shell": [
+     0,
+     1,
+     0,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 25.6969,
+    "R_perp": [
+     [
+      0.9230454216666579,
+      0.26810599256103335,
+      0.2758737506416386
+     ],
+     [
+      -0.37296667257347005,
+      0.7993976720832842,
+      0.47101934463172535
+     ],
+     [
+      -0.09424972514387417,
+      -0.5376639644059189,
+      0.8378749612499556
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 38.7249,
+    "aligned_poles": 2,
+    "aligned_per_shell": [
+     0,
+     1,
+     0,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 25.6969,
+    "R_perp": [
+     [
+      0.798530298333378,
+      0.06083793597783144,
+      0.5988723638552405
+     ],
+     [
+      0.060837935977818225,
+      0.9816287291665996,
+      -0.18084187463285636
+     ],
+     [
+      -0.5988723638552419,
+      0.180841874632852,
+      0.7801590274999776
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 38.9963,
+    "aligned_poles": 2,
+    "aligned_per_shell": [
+     0,
+     0,
+     0,
+     2,
+     0
+    ],
+    "max_landing_error_deg": 27.0118,
+    "R_perp": [
+     [
+      0.8302373283333342,
+      -0.29572242855945324,
+      0.47249785596214766
+     ],
+     [
+      0.12004033632787778,
+      0.92263282614575,
+      0.366522831175079
+     ],
+     [
+      -0.5443310539517449,
+      -0.2475821345840699,
+      0.8015028323958551
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 38.9963,
+    "aligned_poles": 2,
+    "aligned_per_shell": [
+     0,
+     0,
+     0,
+     2,
+     0
+    ],
+    "max_landing_error_deg": 27.0118,
+    "R_perp": [
+     [
+      0.8302373283333087,
+      0.41138435262711187,
+      0.37612350771460906
+     ],
+     [
+      -0.26133393221729545,
+      0.8832881632291271,
+      -0.38923848290111396
+     ],
+     [
+      -0.49235206358236744,
+      0.22486648285791017,
+      0.8408474953124957
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 50.4857,
+    "aligned_poles": 2,
+    "aligned_per_shell": [
+     0,
+     1,
+     0,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 33.2412,
+    "R_perp": [
+     [
+      0.6666666666667329,
+      0.10065688202666406,
+      0.7385280953735867
+     ],
+     [
+      0.10065688202664988,
+      0.969604576302009,
+      -0.22301380610821997
+     ],
+     [
+      -0.7385280953735887,
+      0.22301380610821375,
+      0.6362712429687418
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 50.4857,
+    "aligned_poles": 2,
+    "aligned_per_shell": [
+     0,
+     1,
+     0,
+     1,
+     0
+    ],
+    "max_landing_error_deg": 33.2412,
+    "R_perp": [
+     [
+      0.8726779962500009,
+      0.3085382644702694,
+      0.37846697903351795
+     ],
+     [
+      -0.48203115057171114,
+      0.6681017439062079,
+      0.566820985557165
+     ],
+     [
+      -0.07796848555407225,
+      -0.6770850752654038,
+      0.7317627457812038
+     ]
+    ]
+   },
+   {
+    "min_rotation_angle_deg": 71.216,
+    "aligned_poles": 2,
+    "aligned_per_shell": [
+     0,
+     2,
+     0,
+     0,
+     0
+    ],
+    "max_landing_error_deg": 39.9153,
+    "R_perp": [
+     [
+      0.7626690518421932,
+      0.32339446399178673,
+      0.5601356425202689
+     ],
+     [
+      0.3233944639917508,
+      0.5593327370394894,
+      -0.7632580886799706
+     ],
+     [
+      -0.5601356425202896,
+      0.7632580886799553,
+      0.3220017888816829
+     ]
+    ]
+   }
+  ]
+ },
+ "snapping": [
+  {
+   "min_rotation_angle_deg": 90.0,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 1,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 24,
+   "max_matching_onto_interacting_poles": 37,
+   "max_matching_onto_all_poles": 53,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
+  },
+  {
+   "min_rotation_angle_deg": 44.4775,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 54,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 27,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
+  },
+  {
+   "min_rotation_angle_deg": 44.4775,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 54,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 27,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
+  },
+  {
+   "min_rotation_angle_deg": 72.0,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 10,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 33,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
+  },
+  {
+   "min_rotation_angle_deg": 72.0,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 14,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 33,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
+  },
+  {
+   "min_rotation_angle_deg": 63.4349,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 112,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 8,
+   "max_matching_onto_interacting_poles": 49,
+   "max_matching_onto_all_poles": 57,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 13.193
+  },
+  {
+   "min_rotation_angle_deg": 63.9759,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 11,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 25,
+   "max_matching_onto_interacting_poles": 37,
+   "max_matching_onto_all_poles": 43,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
+  },
+  {
+   "min_rotation_angle_deg": 65.3365,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 19,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 6,
+   "max_matching_onto_interacting_poles": 42,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
+  },
+  {
+   "min_rotation_angle_deg": 26.5651,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 299,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 8,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 41,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 13.193
+  },
+  {
+   "min_rotation_angle_deg": 41.8103,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 148,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 33,
+   "nearest_ties": 16,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 49,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 19.291
+  },
+  {
+   "min_rotation_angle_deg": 47.2122,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 26,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 13,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.085
+  },
+  {
+   "min_rotation_angle_deg": 61.7313,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 44,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 9,
+   "max_matching_onto_interacting_poles": 40,
+   "max_matching_onto_all_poles": 46,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.699
+  },
+  {
+   "min_rotation_angle_deg": 61.7313,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 44,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 9,
+   "max_matching_onto_interacting_poles": 40,
+   "max_matching_onto_all_poles": 46,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.699
+  },
+  {
+   "min_rotation_angle_deg": 61.0397,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 2,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 6,
+   "max_matching_onto_interacting_poles": 38,
+   "max_matching_onto_all_poles": 44,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.503
+  },
+  {
+   "min_rotation_angle_deg": 27.9512,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 218,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 11,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 43,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
+  },
+  {
+   "min_rotation_angle_deg": 27.9512,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 284,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 11,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 43,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 15.522
+  },
+  {
+   "min_rotation_angle_deg": 31.2122,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 158,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 3,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 42,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.777
+  },
+  {
+   "min_rotation_angle_deg": 31.2122,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 158,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 3,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 42,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.777
+  },
+  {
+   "min_rotation_angle_deg": 51.6071,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 9,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 5,
+   "max_matching_onto_interacting_poles": 37,
+   "max_matching_onto_all_poles": 42,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.058
+  },
+  {
+   "min_rotation_angle_deg": 51.6071,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 10,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 5,
+   "max_matching_onto_interacting_poles": 37,
+   "max_matching_onto_all_poles": 42,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.058
+  },
+  {
+   "min_rotation_angle_deg": 56.0122,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 30,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 12,
+   "max_matching_onto_interacting_poles": 42,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
+  },
+  {
+   "min_rotation_angle_deg": 56.0122,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 28,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 14,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 50,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
+  },
+  {
+   "min_rotation_angle_deg": 56.0122,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 12,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 14,
+   "max_matching_onto_interacting_poles": 43,
+   "max_matching_onto_all_poles": 50,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
+  },
+  {
+   "min_rotation_angle_deg": 56.0122,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 35,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 12,
+   "max_matching_onto_interacting_poles": 42,
+   "max_matching_onto_all_poles": 47,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
+  },
+  {
+   "min_rotation_angle_deg": 68.0447,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 13,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 13,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
+  },
+  {
+   "min_rotation_angle_deg": 68.0447,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 13,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 13,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 17.434
+  },
+  {
+   "min_rotation_angle_deg": 38.7249,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 113,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 5,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 44,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 20.484
+  },
+  {
+   "min_rotation_angle_deg": 38.7249,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 113,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 5,
+   "max_matching_onto_interacting_poles": 41,
+   "max_matching_onto_all_poles": 44,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 20.484
+  },
+  {
+   "min_rotation_angle_deg": 38.9963,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 86,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 12,
+   "max_matching_onto_interacting_poles": 44,
+   "max_matching_onto_all_poles": 46,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 19.291
+  },
+  {
+   "min_rotation_angle_deg": 38.9963,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 79,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 12,
+   "max_matching_onto_interacting_poles": 44,
+   "max_matching_onto_all_poles": 46,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 19.291
+  },
+  {
+   "min_rotation_angle_deg": 50.4857,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 77,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 34,
+   "nearest_ties": 22,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 53,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 16.687
+  },
+  {
+   "min_rotation_angle_deg": 50.4857,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 58,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 22,
+   "max_matching_onto_interacting_poles": 45,
+   "max_matching_onto_all_poles": 53,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 16.687
+  },
+  {
+   "min_rotation_angle_deg": 71.216,
+   "argmin_pole_bijection": false,
+   "argmin_cap_signatures_mapped_to_signatures": 15,
+   "cap_signatures": 3097,
+   "argmin_orbits_with_failures": 35,
+   "nearest_ties": 10,
+   "max_matching_onto_interacting_poles": 40,
+   "max_matching_onto_all_poles": 48,
+   "interacting_poles": 57,
+   "max_error_to_any_pole_deg": 18.376
+  }
+ ],
+ "automorphisms": {
+  "poles": 57,
+  "cap_signatures": 3097,
+  "refined_colour_class_sizes": [
+   1,
+   4,
+   4,
+   12,
+   12,
+   24
+  ],
+  "automorphisms_fixing_cap_pole": 24,
+  "geometric_symmetries_fixing_cap_pole": 24,
+  "geometric_rotations_fixing_cap_pole": 12,
+  "automorphisms_equal_geometric_symmetries": true
+ },
+ "approx_profile": {
+  "samples": 200000,
+  "seed": 20261009,
+  "best_max_landing_error_deg_by_min_distance_from_A4_deg": {
+   "5": 3.13,
+   "10": 6.53,
+   "15": 9.35,
+   "20": 12.33,
+   "25": 15.65,
+   "30": 18.74,
+   "40": 24.44,
+   "50": 29.12,
+   "60": 33.64
+  },
+  "nearest_pole_spacing_deg": 15.522
+ },
+ "sun_cube": {
+  "grips": {
+   "F": 6,
+   "E": 12,
+   "V": 8
+  },
+  "max_landing_error_deg": 9.736,
+  "nearest_grip_spacing_deg": 35.264
+ }
+}
