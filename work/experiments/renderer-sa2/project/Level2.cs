@@ -90,6 +90,7 @@ public partial class Level2 : Node
                 throw new ArgumentException("drain injection is inapplicable in level 2");
             _result.files["godot:exe"] = Path.GetFullPath(System.Environment.ProcessPath);
             _result.files["godot:assembly"] = ProjectAssemblyPath(typeof(Smoke).Assembly);
+            _result.assembly_mvid = typeof(Smoke).Assembly.ManifestModule.ModuleVersionId.ToString("D");
             foreach (string name in new[] { "project.godot", "Main.tscn", "Smoke.cs" })
                 _result.files["godot:" + name] = ProjectSettings.GlobalizePath("res://" + name);
             Window window = GetWindow();
@@ -136,7 +137,8 @@ public partial class Level2 : Node
     }
 
     // Godot loads the project assembly from memory, so its Location is empty (FRAMEWORK-FACTS G9).
-    // The load context keeps the path of the file it read; the name check ties that file to this assembly.
+    // The load context keeps the path of the file it read; FullName checks its name.
+    // The finalizer also compares the recorded MVID with that file's metadata.
     private static string ProjectAssemblyPath(System.Reflection.Assembly assembly)
     {
         try
@@ -292,6 +294,7 @@ public partial class Level2 : Node
         _height = _args.debug_half_target ? height / 2 : height;
         if (_width < 128 || _height < 128) throw new InvalidOperationException("target-too-small");
         _native = new Native(_args.dll_path);
+        _result.files["dll"] = _native.ModulePath;
         _result.dll_status["abi_version"] = _native.sa2_abi_version();
         _result.dll_status["last_status"] = 0; _result.dll_status["last_error"] = "";
         ulong device = _rd.GetDriverResource(RenderingDevice.DriverResource.LogicalDevice, default, 0);

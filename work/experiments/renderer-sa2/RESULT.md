@@ -82,15 +82,42 @@ These are smoke-test results for the build above. Statements marked "source" com
 5. to 8. Not tested by this smoke test: PIX and RenderDoc captures, package size (no export template was built), screen readers, high-DPI math rendering.
 9. Not tested: the smoke test has no timing; the gate with interop overhead needs the geometry port (level 2) and gate runs.
 
+## Renderer constraints (H-09), 10 October 2026
+
+What hosting the S-B drawing method in Godot constrains, for the design track (due on day 8). Our DLL draws the 3D view with Direct3D 12 on Godot's device into a texture Godot created, and Godot shows it in a full-window `TextureRect`; Godot never sees the DLL's geometry, depth buffer or shaders. "Source" means Godot 4.7.2's source ([FRAMEWORK-FACTS.md](../renderer-l2-packets/FRAMEWORK-FACTS.md), ID given), the DLL or the [level 2 plan](../renderer-l2-packets/PLAN.md). "Measured" means the owner's level 1 runs of 3 October or the level 2 runs of 4 October for build `709a24eb…`, whose loaded-build binding is still open (L2-V-002, [level 2 card](../renderer-l2/RESULT.md)). This list adds no measurement and says nothing about W5 or the final look.
+
+| Area | Constraint | Evidence |
+|---|---|---|
+| Overlay layers | The 3D view is one flat layer: Godot controls and effects go above or below it, never between stickers. | source (plan section 2) |
+| | With nothing over it, the composite showed the producer's texture correctly on every checked frame. | measured (level 1) |
+| | Level 2 drew nothing over the 3D view, so the cost and correctness of UI layers over it are not known. | not verified |
+| Text in the 3D view | The hosted method draws stickers only; it has no text pass. Godot text sits above the 3D view, so stickers cannot hide it. | source ([S-B SPEC](../renderer-sb/SPEC.md) section 3) |
+| | Text tied to a sticker needs that sticker's screen position every frame; no ABI 2 function returns one (`sa2_interop.h`). | source |
+| | Level 2 runs with content scaling disabled (the finalizer requires it). Scaled UI text beside a native-pixel 3D view was not tried. | source; not verified |
+| Transparency and sorting | Opaque only: depth test on, blending off, no MSAA. The DLL clears to an opaque background, so the 3D view hides anything below it. | source (S-B SPEC section 3, [DLL README](native/README.md) "Reuse and record choices") |
+| | Per-sticker transparency (alpha 0.6, all 259,800 centres sorted back to front on the GPU every frame) exists only in the S-B probe; the hosted path omits features. Its cost in Godot (H-06) is not measured. | source; not verified |
+| Shaders | S-B's unchanged HLSL, compiled offline by DXC to DXIL; no runtime compiler; the blob digests enter the build identity. Stated exception: no SPIR-V for RenderingDevice, because Godot never sees these shaders and one port serves both candidates. The Astra plan check found the exception admissible. Level 1's GLSL compute baseline is a diagnostic exception only. | source (plan section 2; [README](README.md) "Frame, ownership and shutdown protocol") |
+| Frame pacing | `--disable-vsync` presents with sync interval 0 and tearing allowed (G5). The level 2 W3 runs measured a pooled 670.71 fps with p99 1.887 ms, the opaque baseline without any H-06 feature. | source; measured (level 2) |
+| Resize | A size change needs a drain, a scene reload and a ring rebuild in the DLL; level 2 refuses one. Level 1 passed resizes without a scene, and no RID was invalidated. | source; measured (level 1) |
+| Full screen | Exclusive full screen gives the exact monitor rectangle; ordinary full screen overhangs it by 2 pixels (G1). | source |
+| DPI | The process is system DPI aware, not per-monitor aware (G10): on a monitor whose DPI differs from the system DPI, Windows scales the window and the native-pixel check fails. | source |
+| Colour format | RGBA8 UNORM, matching the textures Godot creates. | source (DLL README "States, references and fence protocol") |
+| Zero copy | Only for textures Godot creates (level 1 runs R2 and R3). In the editor build an imported texture is refused and can be shown only through a copy (R6). | measured (level 1) |
+| Measured setup | 2560 x 1600 at 60 Hz, the 3D view filling the window; peak VRAM 217.2 MB against a budget of about 7 GB. | measured (level 2) |
+
+The design track can rely on: the full-detail opaque baseline at native resolution meeting the W3 gate with wide headroom (with the L2-V-002 qualification); UI and text as layers above or below the 3D view, not inside it; one set of DXIL shaders shared with Qt; VRAM far below the budget.
+
+Not known yet: the cost and correctness of UI layers, translucent panels and text over the 3D view; sticker-anchored or depth-correct text; transparency with sorting and every other H-06 feature; a 3D view smaller than the window, resize with a scene, DPI-scaled UI or a per-monitor DPI change; HDR or 10-bit output; release export templates; picking (H-05).
+
 ## Acceptance items (packet section 1)
 
 | # | Item | Status |
 |---|---|---|
 | 1 | Interop smoke test | Done for the build stated: R1 to R5, R9 and R10 passed on the owner's GPU. |
-| 2 | Geometry port | Not started (needs item 1). |
-| 3 | Three cold W3 runs | Not started. |
+| 2 | Geometry port | Done: the level 2 app hosts the S-B method through the shared DLL ([level 2 card](../renderer-l2/RESULT.md)). |
+| 3 | Three cold W3 runs | Measured on 4 October for build `709a24eb…`: pooled 670.71 fps, p99 1.887 ms, verdict `met`; loaded-build binding open (L2-V-002). |
 | 4 | Layout specification and feature list | Not started. |
-| 5 | Renderer constraints (H-09) | Not started. |
+| 5 | Renderer constraints (H-09) | Delivered on 10 October (above). |
 
 ## Not claimed
 

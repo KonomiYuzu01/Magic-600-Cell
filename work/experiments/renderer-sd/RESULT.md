@@ -78,15 +78,41 @@ These are smoke-test results for Qt 6.10.3 and the build above. PR #43 asks abou
 7. and 8. Not tested: screen readers, high-DPI math rendering. Every run used a device pixel ratio of exactly 1.
 9. Not tested: the smoke test has no timing. The gate with interop overhead needs the geometry port (level 2) and gate runs.
 
+## Renderer constraints (H-09), 10 October 2026
+
+What hosting the S-B drawing method in Qt Quick constrains, for the design track (due on day 8). Our DLL draws the 3D view with Direct3D 12 on Qt's device into a texture, and Qt shows that texture through a texture node; Qt never sees the DLL's geometry, depth buffer or shaders. "Source" means Qt 6.10.3's source ([FRAMEWORK-FACTS.md](../renderer-l2-packets/FRAMEWORK-FACTS.md), ID given), the DLL or the [level 2 plan](../renderer-l2-packets/PLAN.md). "Measured" means the owner's level 1 runs of 3 October or the level 2 runs of 4 October for build `64f08369…`, whose loaded-build binding is still open (L2-V-002, [level 2 card](../renderer-l2/RESULT.md)). This list adds no measurement and says nothing about W5 or the final look.
+
+| Area | Constraint | Evidence |
+|---|---|---|
+| Overlay layers | The 3D view is one flat layer: Qt Quick items go above or below it, never between stickers. | source (plan section 2) |
+| | With nothing over it, the composite showed the producer's texture correctly on every checked frame. | measured (level 1) |
+| | Level 2 drew nothing over the 3D view, so the cost and correctness of UI layers over it are not known. | not verified |
+| Text in the 3D view | The hosted method draws stickers only; it has no text pass. Qt text sits above the 3D view, so stickers cannot hide it. | source ([S-B SPEC](../renderer-sb/SPEC.md) section 3) |
+| | Text tied to a sticker needs that sticker's screen position every frame; no ABI 2 function returns one (`sa2_interop.h`). | source |
+| | Level 2 runs with `QT_ENABLE_HIGHDPI_SCALING=0`, so the device pixel ratio is 1 (Q8). Scaled UI text beside a native-pixel 3D view was not tried. | source; not verified |
+| Transparency and sorting | Opaque only: depth test on, blending off, no MSAA. The DLL clears to an opaque background, so the 3D view hides anything below it. | source (S-B SPEC section 3, [DLL README](../renderer-sa2/native/README.md) "Reuse and record choices") |
+| | Per-sticker transparency (alpha 0.6, all 259,800 centres sorted back to front on the GPU every frame) exists only in the S-B probe; the hosted path omits features. Its cost in Qt (H-06) is not measured. | source; not verified |
+| Shaders | S-B's unchanged HLSL, compiled offline by DXC to DXIL; no runtime compiler; the blob digests enter the build identity. Stated exception: no Qt shader tools, because Qt never sees these shaders and one port serves both candidates. The Astra plan check found the exception admissible. | source (plan section 2) |
+| Frame pacing | Qt delivers each frame request after the display's vertical blank, whatever the swap interval (Q10). The level 2 W3 runs measured 60.00 fps with p99 17.380 ms at 60 Hz: a cap, not headroom. An uncapped run needs `QT_D3D_NO_VBLANK_THREAD=1` and `QT_QPA_UPDATE_IDLE_TIME=0`, a new build identity; it has not been run. | source; measured (level 2) |
+| Resize | A size change needs a drain, a scene reload and a ring rebuild in the DLL; level 2 refuses one. Level 1 passed resizes without a scene. | source; measured (level 1) |
+| Full screen | `showFullScreen()` gives a borderless window on the monitor rectangle (Q1). | source |
+| Colour format | RGBA8 UNORM. | source (DLL README) |
+| Zero copy | A native D3D12 texture is shown through a texture node without a copy (level 1 run Q5). | measured (level 1) |
+| Measured setup | 2560 x 1600 at 60 Hz, the 3D view filling the window; peak VRAM 229.6 MB against a budget of about 7 GB. | measured (level 2) |
+
+The design track can rely on: the full-detail opaque baseline at native resolution meeting the W3 gate (capped at the refresh rate, with the L2-V-002 qualification); UI and text as layers above or below the 3D view, not inside it; one set of DXIL shaders shared with Godot; VRAM far below the budget.
+
+Not known yet: the cost and correctness of UI layers, translucent panels and text over the 3D view; sticker-anchored or depth-correct text; transparency with sorting and every other H-06 feature; Qt's uncapped frame rate; a 3D view smaller than the window, resize with a scene, DPI-scaled UI; HDR or 10-bit output; picking (H-05).
+
 ## Acceptance items (packet section 1)
 
 | # | Item | Status |
 |---|---|---|
 | 1 | Interop smoke test | Done for the build stated: Q1 to Q9 and Q11 passed on the owner's GPU. |
-| 2 | Geometry port | Not started (needs item 1). |
-| 3 | Three cold W3 runs | Not started. |
+| 2 | Geometry port | Done: the level 2 app hosts the S-B method through the shared DLL ([level 2 card](../renderer-l2/RESULT.md)). |
+| 3 | Three cold W3 runs | Measured on 4 October for build `64f08369…`: pooled 60.00 fps, p99 17.380 ms, verdict `met`, a vertical-blank cap; loaded-build binding open (L2-V-002). |
 | 4 | Layout specification and feature list | Not started. |
-| 5 | Renderer constraints (H-09) | Not started. |
+| 5 | Renderer constraints (H-09) | Delivered on 10 October (above). |
 
 ## Not claimed
 

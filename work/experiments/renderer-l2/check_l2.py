@@ -10,11 +10,19 @@ import hashlib
 import io
 import json
 import os
+import queue
 import shutil
+import struct
 import subprocess
+import tempfile
+import threading
+import time
+import uuid
 from collections import Counter
 from pathlib import Path
+from unittest.mock import patch
 
+import file_guard
 import finalize_run as finalizer
 
 HERE = Path(__file__).resolve().parent
@@ -25,6 +33,9 @@ CHAIN = '0xABC'
 SIZE = {'width': 2560, 'height': 1600}
 REFUSALS = Counter()
 CASES = 0
+GUARDS = {}
+LAUNCHED = {}
+MVID = '00112233-4455-6677-8899-aabbccddeeff'
 
 
 def expect(condition, message):
@@ -45,12 +56,97 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def managed_pe(mvid=MVID, pe64=True, wide_guid=False, guid_index=1, wide_string=False):
+    """Minimal CLI DLL; both variants retain the same Assembly name/version metadata."""
+    strings = b'\0SA2Smoke.dll\0SA2Smoke\0'
+    string_format, guid_format = ('I' if wide_string else 'H'), ('I' if wide_guid else 'H')
+    module = struct.pack('<H' + string_format + guid_format * 3, 0, 1, guid_index, 0, 0)
+    assembly = struct.pack('<IHHHHIHHH', 0x8004, 1, 0, 0, 0, 0, 0, strings.index(b'SA2Smoke\0'), 0)
+    if wide_string:
+        assembly = struct.pack('<IHHHHIHII', 0x8004, 1, 0, 0, 0, 0,
+                               0, strings.index(b'SA2Smoke\0'), 0)
+    tables = (struct.pack('<IBBBBQQII', 0, 2, 0, (4 if wide_guid else 0) | int(wide_string),
+                          1, 1 | (1 << 32), 0, 1, 1) + module + assembly)
+    streams = [('#~', tables), ('#Strings', strings),
+               ('#GUID', b'\0' * (16 * (guid_index - 1)) + uuid.UUID(mvid).bytes_le), ('#Blob', b'\0')]
+    version = b'v4.0.30319\0\0'
+    header = struct.pack('<IHHII', 0x424A5342, 1, 1, 0, len(version)) + version + struct.pack('<HH', 0, len(streams))
+    offset = len(header) + sum(8 + ((len(name) + 4) & ~3) for name, _ in streams)
+    bodies = bytearray()
+    for name, data in streams:
+        label = name.encode() + b'\0'
+        label += b'\0' * (-len(label) % 4)
+        header += struct.pack('<II', offset + len(bodies), len(data)) + label
+        bodies.extend(data)
+        bodies.extend(b'\0' * (-len(bodies) % 4))
+    metadata = header + bodies
+    image = bytearray(0x600)
+    image[:2] = b'MZ'
+    struct.pack_into('<I', image, 0x3C, 0x80)
+    image[0x80:0x84] = b'PE\0\0'
+    optional_size = 240 if pe64 else 224
+    struct.pack_into('<HHIIIHH', image, 0x84, 0x8664 if pe64 else 0x14C, 1, 0, 0, 0, optional_size, 0x2022)
+    optional = 0x98
+    struct.pack_into('<H', image, optional, 0x20B if pe64 else 0x10B)
+    struct.pack_into('<I', image, optional + 60, 0x200)
+    struct.pack_into('<I', image, optional + (108 if pe64 else 92), 16)
+    struct.pack_into('<II', image, optional + (112 if pe64 else 96) + 14 * 8, 0x2000, 72)
+    section = optional + optional_size
+    image[section:section + 8] = b'.text\0\0\0'
+    struct.pack_into('<IIII', image, section + 8, 0x400, 0x2000, 0x400, 0x200)
+    struct.pack_into('<IHHII', image, 0x200, 72, 2, 5, 0x2080, len(metadata))
+    struct.pack_into('<I', image, 0x210, 1)
+    image[0x280:0x280 + len(metadata)] = metadata
+    return bytes(image)
+
+
+def stop_guard(directory, kill=False):
+    process = GUARDS.pop(directory, None)
+    if process is None:
+        return
+    try:
+        if kill:
+            process.kill()
+        stdout, stderr = process.communicate(None if kill else 'release\n', timeout=30)
+        if not kill:
+            expect(process.returncode == 0 and stdout == 'released\n',
+                   directory.name + ': guard release failed: ' + stderr)
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=30)
+        for stream in (process.stdin, process.stdout, process.stderr):
+            stream.close()
+
+
+def start_guard(directory, parts):
+    arguments = [sys.executable, '-B', str(HERE / 'file_guard.py'), '--out', str(directory)]
+    for path in sorted(parts.rglob('*')):
+        if path.is_file():
+            arguments.extend(('--file', str(path)))
+    process = subprocess.Popen(arguments, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, text=True, encoding='utf-8')
+    GUARDS[directory] = process
+    try:
+        ready = queue.Queue()
+        threading.Thread(target=lambda: ready.put(process.stdout.readline()), daemon=True).start()
+        expect(ready.get(timeout=30) == 'ready\n', directory.name + ': guard did not become ready')
+        # A synthetic app's creation FILETIME, sampled only after the real guard says ready.
+        LAUNCHED[directory] = time.time_ns() // 100 + 116444736000000000
+        expect(LAUNCHED[directory] > read_json(directory / 'guard.json')['ready'], 'fixture launch order')
+    except BaseException:
+        stop_guard(directory, kill=True)
+        raise
+
+
 def make_parts(root):
     parts = root / 'parts'
     parts.mkdir()
     for name in ('sa2_interop.dll', *sorted(finalizer.SHADERS), 'godot.exe', 'SA2Smoke.dll',
-                 'project.godot', 'Main.tscn', 'sd.exe', 'Qt6Core.dll', 'Qt6Quick.dll'):
+                 'project.godot', 'Main.tscn', 'Smoke.cs', 'sd.exe', 'Qt6Core.dll', 'Qt6Quick.dll',
+                 'qwindows.dll', 'sd_module_probe.dll'):
         (parts / name).write_bytes(('synthetic L2 part: ' + name + '\n').encode())
+    (parts / 'SA2Smoke.dll').write_bytes(managed_pe())
     return parts
 
 
@@ -58,6 +154,18 @@ def identity(parts):
     def part(name):
         return {'file': name, 'sha256': digest(parts / name)}
     return {'dll': part('sa2_interop.dll'), 'shaders': [part(name) for name in sorted(finalizer.SHADERS)]}
+
+
+def old_identity(h):
+    """Independent pre-binding encoding, using the fixture bytes rather than guard entries."""
+    dll = Path(h['files']['dll'])
+    parts = {'dll:' + dll.name: digest(dll)}
+    parts.update({'shader:' + name: digest(dll.parent / name) for name in file_guard.SHADERS})
+    parts.update({name: digest(Path(path)) for name, path in h['files'].items() if name != 'dll'})
+    settings = json.dumps(h['configuration'], sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+    parts['settings'] = hashlib.sha256(settings).hexdigest()
+    text = ''.join(name + '=' + parts[name] + '\n' for name in sorted(parts)).encode('utf-8')
+    return hashlib.sha256(text).hexdigest()
 
 
 def fixture(root, name, candidate='sa2', mode='run', scene='w3', seconds=30, parts=None):
@@ -69,7 +177,8 @@ def fixture(root, name, candidate='sa2', mode='run', scene='w3', seconds=30, par
     if candidate == 'sa2':
         files.update({key: str(parts / value) for key, value in
                       {'godot:exe': 'godot.exe', 'godot:assembly': 'SA2Smoke.dll',
-                       'godot:project.godot': 'project.godot', 'godot:Main.tscn': 'Main.tscn'}.items()})
+                       'godot:project.godot': 'project.godot', 'godot:Main.tscn': 'Main.tscn',
+                       'godot:Smoke.cs': 'Smoke.cs'}.items()})
         configuration = {'framework': 'godot', 'framework_version': '4.7.2.stable.mono.official',
                          'rendering_driver': 'd3d12', 'window_mode': 'exclusive_fullscreen',
                          'vsync': 'disabled', 'route': 'export', 'queue': 'same', 'handover': 'tracked',
@@ -77,7 +186,8 @@ def fixture(root, name, candidate='sa2', mode='run', scene='w3', seconds=30, par
         scaling = {'content_scale_mode': 'disabled', 'content_scale_factor': 1.0, 'texture_stretch': 'none'}
     else:
         files.update({key: str(parts / value) for key, value in
-                      {'qt:exe': 'sd.exe', 'qt:Qt6Core.dll': 'Qt6Core.dll', 'qt:Qt6Quick.dll': 'Qt6Quick.dll'}.items()})
+                      {'qt:exe': 'sd.exe', 'qt:Qt6Core.dll': 'Qt6Core.dll', 'qt:Qt6Quick.dll': 'Qt6Quick.dll',
+                       'qt:qwindows.dll': 'qwindows.dll'}.items()})
         configuration = {'framework': 'qt', 'framework_version': '6.10.3', 'graphics_api': 'd3d12',
                          'render_loop': 'threaded', 'swap_interval': 0, 'route': 'import-direct',
                          'device': 'qt', 'queue': 'same', 'handover': 'tracked', 'barriers': 'legacy'}
@@ -113,6 +223,12 @@ def fixture(root, name, candidate='sa2', mode='run', scene='w3', seconds=30, par
                   'counts': {'error': 0, 'corruption': 0, 'mentioning_sa2': 0} if mode == 'validation' else None,
                   'messages': '' if mode == 'validation' else None},
     }
+    if candidate == 'sa2':
+        h['assembly_mvid'] = MVID
+    else:
+        h['modules'] = {'observer': 'sealed', 'failure': None, 'scope': str(parts),
+                        'unload_history': [], 'overflow': False,
+                        'events': [{'kind': 'snapshot', 'path': path} for path in files.values()]}
     write_json(directory / 'harness.json', h)
     if mode == 'geometry':
         geometry = {'format': 'magic600-sb-geometry-check-v1', 'status': 'pass',
@@ -124,6 +240,7 @@ def fixture(root, name, candidate='sa2', mode='run', scene='w3', seconds=30, par
                     'per_cell_count': {'cells': 600, 'expected': 30480, 'failures': 0,
                                        'counts': [30480] * 600, 'status': 'pass'}}
         write_json(directory / 'geometry.json', geometry)
+        start_guard(directory, parts)
         return directory
     n = {'format': 'magic600-sa2-scene-native-v1', 'scene': scene, 'qpc_frequency': FREQUENCY,
          'markers': {'trace_start_qpc': START, 'trace_stop_qpc': START + seconds * FREQUENCY},
@@ -157,6 +274,7 @@ def fixture(root, name, candidate='sa2', mode='run', scene='w3', seconds=30, par
                                  'QPCTime': START + frame * (FREQUENCY // 60) + FREQUENCY // 1000,
                                  'msBetweenPresents': 1000 / 60, 'Dropped': 0, 'SyncInterval': 0,
                                  'PresentMode': 'Hardware: Independent Flip', 'AllowsTearing': 1})
+    start_guard(directory, parts)
     return directory
 
 
@@ -186,20 +304,25 @@ def trace_edit(directory, action):
 
 
 def invoke(directory, mode='run', candidate='sa2', app_exit=0, overlays='fixture: watched throughout',
-           extra=(), expected=0):
+           extra=(), expected=0, launched_created=None):
     global CASES
     inputs = {path.name: digest(path) for path in directory.iterdir() if path.name not in finalizer.OUTPUTS}
     arguments = [str(directory), '--candidate', candidate, '--mode', mode,
-                 '--launched-pid', str(PID), '--app-exit', str(app_exit), *extra]
+                 '--launched-pid', str(PID), '--launched-created', str(
+                     LAUNCHED[directory] if launched_created is None else launched_created),
+                 '--app-exit', str(app_exit), *extra]
     if overlays is not None:
         arguments.extend(('--overlays', overlays))
     error_text = io.StringIO()
     existing_output = any((directory / name).exists() for name in finalizer.OUTPUTS)
-    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(error_text):
-        try:
-            code = finalizer.main(arguments)
-        except SystemExit as error:
-            code = error.code
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(error_text):
+            try:
+                code = finalizer.main(arguments)
+            except SystemExit as error:
+                code = error.code
+    finally:
+        stop_guard(directory)
     expect(code == expected, f'{directory.name}: expected exit {expected}, got {code}')
     if existing_output:
         expect('output-exists:' in error_text.getvalue(), 'output-exists reason was not reported')
@@ -238,12 +361,20 @@ def valid_modes(root):
         for mode, name in zip(('run', 'short', 'geometry', 'validation'), finalizer.OUTPUTS):
             directory = fixture(root, f'valid-{candidate}-{mode}', candidate=candidate, mode=mode)
             if mode == 'geometry':
-                expect({p.name for p in directory.iterdir()} == {'harness.json', 'geometry.json'},
+                expect({p.name for p in directory.iterdir()} == {'harness.json', 'geometry.json', 'guard.json'},
                        'geometry inputs must not include native, trace or capture')
             invoke(directory, mode=mode, candidate=candidate)
             expect({p.name for p in directory.iterdir()} & set(finalizer.OUTPUTS) == {name},
                    'exactly one output per mode')
             record = read_json(directory / name)
+            expect(record['build']['build_identity'] == old_identity(read_json(directory / 'harness.json')),
+                   'binding changed the old identity encoding')
+            guard = read_json(directory / 'guard.json')
+            expect(record['binding'] == {'format': 'magic600-l2-guard-v1', 'files': len(guard['files']),
+                                        'directories': len(guard['directories']),
+                                        'guard_sha256': digest(directory / 'guard.json'), 'rule': 'guard-before-launch'},
+                   'binding record differs from the guard input')
+            expect(any(entry['path'] == root.anchor for entry in guard['directories']), 'drive root missing from the guard')
             identities.append(record['build']['build_identity'])
             expect(record['build']['parts'] == sorted(record['build']['parts'], key=lambda part: part['name']),
                    'unsorted build parts')
@@ -518,7 +649,12 @@ def extra_cases(root):
     directory = fixture(root, 'presentmon-no-tearing')
     csv_edit(directory, lambda rows: rows[800].update(AllowsTearing='0'))
     invoke(directory)
-    expect(read_json(directory / 'run.json')['environment']['tearing'] is False, 'tearing must use every row')
+    expect(read_json(directory / 'run.json')['environment']['tearing'] is False, 'tearing must use every displayed row')
+    # A present dropped before any flip or blit event shows AllowsTearing 0 in PresentMon; dropped rows do not decide tearing.
+    directory = fixture(root, 'presentmon-dropped-no-tearing')
+    csv_edit(directory, lambda rows: rows[800].update(AllowsTearing='0', Dropped='1'))
+    invoke(directory)
+    expect(read_json(directory / 'run.json')['environment']['tearing'] is True, 'a dropped row decided tearing')
     directory = fixture(root, 'trace-present-boundary')
     trace_edit(directory, lambda entries: [entry.update(qpc=entry['qpc'] + FREQUENCY // 1000) for entry in entries])
     invoke(directory)
@@ -528,6 +664,18 @@ def extra_cases(root):
     invoke(directory, mode='short', expected=5)
     expect(read_json(directory / 'refusal.json')['reasons'] == ['trace-steps'], 'last included step was missed')
     REFUSALS['trace-steps'] += 1
+    # A trailing 0.5 ms of the short interval without a present is not a blind second; the last whole second is checked.
+    def trailing_fraction(directory):
+        edit(directory, 'native.json',
+             lambda n: n['markers'].update(trace_stop_qpc=START + 30 * FREQUENCY + FREQUENCY // 2000))
+    directory = fixture(root, 'blind-seconds-trailing-fraction', mode='short')
+    trailing_fraction(directory)
+    invoke(directory, mode='short')
+    refusal(root, 'blind-seconds-last-whole-second', 'blind-seconds',
+            lambda d: (trailing_fraction(d),
+                       csv_edit(d, lambda rows: [r.update(Dropped='1') for r in rows
+                                                 if START + 28 * FREQUENCY <= int(r['QPCTime']) < START + 29 * FREQUENCY])),
+            mode='short')
     # Several independent defects produce a sorted refusal, without a partial run.
     directory = fixture(root, 'multiple-reasons')
     edit(directory, 'harness.json', lambda h: (h['environment'].update(adapter='wrong'),
@@ -572,6 +720,297 @@ def identity_cases(root):
     expect(read_json(directory / 'run.json')['build']['build_identity'] == baseline, 'object ordering changed identity')
 
 
+def binding_cases(root):
+    global CASES
+    # Released protection fails for every identity part.
+    replacements = [('sa2', name) for name in ('godot.exe', 'SA2Smoke.dll', 'project.godot', 'Main.tscn',
+                                              'Smoke.cs', 'sa2_interop.dll', *sorted(file_guard.SHADERS))]
+    replacements += [('sd', name) for name in ('sd.exe', 'Qt6Core.dll', 'qwindows.dll')]
+    for candidate, name in replacements:
+        path = root / 'parts' / name
+        original = path.read_bytes()
+        def replace(directory):
+            stop_guard(directory)
+            path.write_bytes(b'replaced after release\n')
+        try:
+            refusal(root, 'binding-released-' + name, 'identity', replace, candidate=candidate)
+        finally:
+            path.write_bytes(original)
+    def restored(directory):
+        stop_guard(directory)
+        path = root / 'parts' / 'sa2_interop.dll'
+        original = path.read_bytes()
+        try:
+            path.write_bytes(b'replaced then restored\n')
+        finally:
+            path.write_bytes(original)
+    refusal(root, 'binding-replaced-restored', 'identity', restored)
+
+    # Presence, ordering and liveness are required for both candidates in every mode.
+    for candidate in ('sa2', 'sd'):
+        for mode in ('run', 'short', 'geometry', 'validation'):
+            prefix = f'binding-{candidate}-{mode}'
+            refusal(root, prefix + '-missing', 'identity', lambda d: (d / 'guard.json').unlink(),
+                    candidate=candidate, mode=mode)
+            refusal(root, prefix + '-dead', 'identity', lambda d: stop_guard(d, kill=True),
+                    candidate=candidate, mode=mode)
+            directory = fixture(root, prefix + '-early', candidate=candidate, mode=mode)
+            invoke(directory, candidate=candidate, mode=mode, expected=5,
+                   launched_created=read_json(directory / 'guard.json')['ready'] - 1)
+            expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'launch before ready')
+            REFUSALS['identity'] += 1
+            directory = fixture(root, prefix + '-equal', candidate=candidate, mode=mode)
+            invoke(directory, candidate=candidate, mode=mode, expected=5,
+                   launched_created=read_json(directory / 'guard.json')['ready'])
+            expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'launch equal to ready')
+            REFUSALS['identity'] += 1
+            directory = fixture(root, prefix + '-required', candidate=candidate, mode=mode)
+            with contextlib.redirect_stderr(io.StringIO()):
+                try:
+                    finalizer.main([str(directory), '--candidate', candidate, '--mode', mode,
+                                    '--launched-pid', str(PID), '--app-exit', '0'])
+                except SystemExit as error:
+                    expect(error.code == 1, 'missing creation time is a usage error')
+                else:
+                    raise AssertionError('creation time was optional')
+            stop_guard(directory)
+            expect(not any((directory / name).exists() for name in finalizer.OUTPUTS), 'usage wrote an output')
+            CASES += 1
+
+    # The guard dies after the identity checks, while the finalizer checks the rest (L2-A-003).
+    original_identity = finalizer.build_identity
+    for candidate in ('sa2', 'sd'):
+        for mode in ('run', 'short', 'geometry', 'validation'):
+            directory = fixture(root, f'binding-{candidate}-{mode}-dies-late', candidate=candidate, mode=mode)
+            def dies_late(*args, directory=directory):
+                result = original_identity(*args)
+                stop_guard(directory, kill=True)
+                return result
+            with patch.object(finalizer, 'build_identity', dies_late):
+                invoke(directory, candidate=candidate, mode=mode, expected=5)
+            expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'],
+                   'a guard that died after the identity checks was accepted')
+            REFUSALS['identity'] += 1
+
+    def guard_edit(action):
+        return lambda d: edit(d, 'guard.json', action)
+
+    refusal(root, 'binding-malformed', 'identity', lambda d: (d / 'guard.json').write_bytes(b'{'))
+    refusal(root, 'binding-duplicate-json', 'identity',
+            lambda d: (d / 'guard.json').write_bytes(b'{"format":"x","format":"x"}'))
+    mutations = (
+        ('format', lambda g: g.update(format='other')),
+        ('pid-type', lambda g: g.update(pid=True)),
+        ('pid-range', lambda g: g.update(pid=2**32)),
+        ('pid-wrong', lambda g: g.update(pid=os.getpid())),
+        ('created', lambda g: g.update(created=g['created'] + 1)),
+        ('created-type', lambda g: g.update(created='FILETIME')),
+        ('ready-type', lambda g: g.update(ready=True)),
+        ('files-type', lambda g: g.update(files={})),
+        ('directories-type', lambda g: g.update(directories=None)),
+        ('file-fields', lambda g: g['files'][0].pop('file_id')),
+        ('file-type', lambda g: g['files'].__setitem__(0, None)),
+        ('file-relative', lambda g: g['files'][0].update(path='relative.dll')),
+        ('final-relative', lambda g: g['files'][0].update(final_path='relative.dll')),
+        ('final-different', lambda g: g['files'][0].update(final_path=g['files'][0]['path'] + '-other')),
+        ('file-duplicate', lambda g: g['files'].append({**g['files'][0], 'path': g['files'][0]['path'].swapcase()})),
+        ('directory-relative', lambda g: g['directories'][0].update(path='relative')),
+        ('directory-fields', lambda g: g['directories'][0].pop('volume_serial')),
+        ('directory-duplicate', lambda g: g['directories'].append(dict(g['directories'][0]))),
+        ('file-id-type', lambda g: g['files'][0].update(file_id=12)),
+        ('file-id-mismatch', lambda g: g['files'][0].update(file_id='0' * 32)),
+        ('volume-type', lambda g: g['files'][0].update(volume_serial=True)),
+        ('volume-range', lambda g: g['files'][0].update(volume_serial=2**64)),
+        ('volume-mismatch', lambda g: g['files'][0].update(volume_serial=g['files'][0]['volume_serial'] ^ 1)),
+        ('directory-id', lambda g: g['directories'][0].update(file_id='bad')),
+        ('size-type', lambda g: g['files'][0].update(size=True)),
+        ('size-mismatch', lambda g: g['files'][0].update(size=g['files'][0]['size'] + 1)),
+        ('digest-type', lambda g: g['files'][0].update(sha256=None)),
+        ('digest-mismatch', lambda g: g['files'][0].update(sha256='0' * 64)),
+        ('missing-shader', lambda g: g.update(files=[entry for entry in g['files']
+                                                   if Path(entry['path']).name != 'count_vs.dxil'])),
+    )
+    for name, action in mutations:
+        refusal(root, 'binding-schema-' + name, 'identity', guard_edit(action))
+
+    def unheld(directory):
+        path = root / 'parts' / 'unheld.dll'
+        path.write_bytes(b'not held\n')
+        with file_guard.open_identity(str(path)) as handle:
+            serial, file_id = file_guard.file_id(handle)
+        edit(directory, 'guard.json', lambda g: g['files'].append(
+            {'path': str(path), 'final_path': str(path), 'volume_serial': serial, 'file_id': file_id,
+             'size': path.stat().st_size, 'sha256': digest(path)}))
+        expect(file_guard.write_probe(str(path)) == 'opened', 'fixture file unexpectedly protected')
+    refusal(root, 'binding-listed-unheld', 'identity', unheld)
+    (root / 'parts' / 'unheld.dll').unlink()
+    for value in ('error:5', 'error:2', 'opened', None):
+        with patch.object(file_guard, 'write_probe', return_value=value):
+            refusal(root, 'binding-probe-' + str(value).replace(':', '-'), 'identity', lambda d: None)
+
+    def outside(directory, key):
+        h = read_json(directory / 'harness.json')
+        copy_path = directory / Path(h['files'][key]).name
+        shutil.copyfile(h['files'][key], copy_path)
+        edit(directory, 'harness.json', lambda h: h['files'].update({key: str(copy_path)}))
+    refusal(root, 'binding-redirected-dll', 'identity', lambda d: outside(d, 'dll'))
+    refusal(root, 'binding-unrecorded-copy', 'identity', lambda d: outside(d, 'godot:exe'))
+
+    for value in (None, MVID.upper(), 'bad', '11223344-5566-7788-99aa-bbccddeeff00'):
+        refusal(root, 'binding-mvid-' + str(value), 'identity', h_edit(lambda h, value=value: h.update(assembly_mvid=value)))
+    # Same name/version metadata, but the guarded Module MVID differs from the loaded report.
+    changed = root / 'mvid-parts'
+    shutil.copytree(root / 'parts', changed)
+    (changed / 'SA2Smoke.dll').write_bytes(managed_pe('11223344-5566-7788-99aa-bbccddeeff00'))
+    directory = fixture(root, 'binding-mvid-same-name', parts=changed)
+    invoke(directory, expected=5)
+    expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'MVID mismatch was accepted')
+    REFUSALS['identity'] += 1
+    (changed / 'SA2Smoke.dll').write_bytes(b'not a managed PE')
+    directory = fixture(root, 'binding-mvid-unparseable', parts=changed)
+    invoke(directory, expected=5)
+    expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'MVID parse failure was accepted')
+    REFUSALS['identity'] += 1
+    for index, options in enumerate(((False, False, 1, False), (True, True, 2, False),
+                                    (False, True, 2, True), (True, False, 2, True))):
+        (changed / 'SA2Smoke.dll').write_bytes(managed_pe(MVID, *options))
+        directory = fixture(root, f'binding-mvid-layout-{index}', parts=changed)
+        invoke(directory)
+    for length in (0x40, 0x90, 0x180, 0x240, 0x2B0):
+        (changed / 'SA2Smoke.dll').write_bytes(managed_pe()[:length])
+        directory = fixture(root, f'binding-mvid-truncated-{length}', parts=changed)
+        invoke(directory, expected=5)
+        expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'truncated metadata was accepted')
+        REFUSALS['identity'] += 1
+
+    # Deny Python path opens of identity parts; Win32 opens and reads through held handles still pass.
+    directory = fixture(root, 'binding-handle-only')
+    original_open = Path.open
+    def deny_parts(path, *args, **kwargs):
+        if path.is_relative_to(root / 'parts'):
+            raise PermissionError('identity bytes must be read through the Win32 handle')
+        return original_open(path, *args, **kwargs)
+    with patch.object(Path, 'open', deny_parts):
+        invoke(directory)
+
+    for name, action in (
+            ('missing', lambda h: h.pop('modules')),
+            ('failed', lambda h: h['modules'].update(observer='failed', failure='register')),
+            ('failure', lambda h: h['modules'].update(failure='seal')),
+            ('overflow', lambda h: h['modules'].update(overflow=True)),
+            ('overflow-type', lambda h: h['modules'].update(overflow=0)),
+            ('history', lambda h: h['modules'].update(unload_history=['early.dll'])),
+            ('history-null', lambda h: h['modules'].update(unload_history=None)),
+            ('scope', lambda h: h['modules'].update(scope=h['modules']['scope'] + '2')),
+            ('events-type', lambda h: h['modules'].update(events=None)),
+            ('unknown-kind', lambda h: h['modules']['events'][0].update(kind='other')),
+            ('event-relative', lambda h: h['modules']['events'][0].update(path='Qt6Core.dll')),
+            ('unload-unseen', lambda h: h['modules']['events'].insert(
+                0, {'kind': 'unload', 'path': h['files']['qt:Qt6Core.dll']})),
+            ('keys-extra', lambda h: h['files'].update({'qt:extra.dll': h['files']['qt:Qt6Core.dll']})),
+            ('keys-missing', lambda h: h['files'].pop('qt:qwindows.dll')),
+            ('keys-path', lambda h: h['files'].update({'qt:Qt6Core.dll': h['files']['qt:Qt6Quick.dll']})),
+            ('events-outside', lambda h: h['modules']['events'].append(
+                {'kind': 'load', 'path': h['modules']['scope'] + '2\\x.dll'})),
+            ('basename-collision', lambda h: h['modules']['events'].append(
+                {'kind': 'load', 'path': h['modules']['scope'] + '\\sub\\Qt6Core.dll'})),
+            # L2-V-002-B01: the observer records other spellings of the scope verbatim; each must refuse.
+            ('events-extended', lambda h: h['modules']['events'].append(
+                {'kind': 'load', 'path': '\\\\?\\' + h['files']['qt:Qt6Core.dll']})),
+            ('events-short-name', lambda h: h['modules']['events'].append(
+                {'kind': 'load', 'path': str(Path(h['modules']['scope']).parent
+                                             / (Path(h['modules']['scope']).name[:6].upper() + '~1') / 'Qt6Core.dll')}))):
+        refusal(root, 'binding-modules-' + name, 'identity', h_edit(action), candidate='sd')
+
+    def module_events(h, kind, recorded=True, path=None):
+        path = path or str(Path(h['files']['qt:exe']).parent / 'sd_module_probe.dll')
+        events = [{'kind': 'load', 'path': path}]
+        if kind in ('transient', 'reload'):
+            events.append({'kind': 'unload', 'path': path.swapcase()})
+        if kind == 'reload':
+            events.append({'kind': 'load', 'path': path})
+        h['modules']['events'].extend(events)
+        if recorded:
+            h['files']['qt:' + Path(path).name] = path
+    for kind in ('late', 'transient', 'reload'):
+        refusal(root, 'binding-module-unrecorded-' + kind, 'identity',
+                h_edit(lambda h, kind=kind: module_events(h, kind, False)), candidate='sd')
+        directory = fixture(root, 'binding-module-guarded-' + kind, candidate='sd')
+        edit(directory, 'harness.json', lambda h: module_events(h, kind))
+        invoke(directory, candidate='sd')
+        record = read_json(directory / 'run.json')
+        expect(record['build']['build_identity'] == old_identity(read_json(directory / 'harness.json')),
+               kind + ': old identity encoding differs')
+        probe = [p for p in record['build']['parts'] if p['name'] == 'qt:sd_module_probe.dll']
+        expect(len(probe) == 1 and probe[0]['sha256'] == digest(root / 'parts' / 'sd_module_probe.dll'),
+               kind + ': loaded module must enter identity exactly once')
+        directory = fixture(root, 'binding-module-new-' + kind, candidate='sd')
+        path = root / 'parts' / ('after-ready-' + kind + '.dll')
+        path.write_bytes(b'module created after ready')
+        edit(directory, 'harness.json', lambda h: module_events(h, kind, path=str(path)))
+        try:
+            invoke(directory, candidate='sd', expected=5)
+        finally:
+            path.unlink()
+        expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'new module was accepted')
+        REFUSALS['identity'] += 1
+
+    directory = fixture(root, 'binding-case-spelling', candidate='sd')
+    edit(directory, 'harness.json', lambda h: (
+        h.update(files={name: path.swapcase().replace('\\', '/') for name, path in h['files'].items()}),
+        h['modules'].update(scope=h['modules']['scope'].swapcase()),
+        [event.update(path=event['path'].swapcase()) for event in h['modules']['events']]))
+    invoke(directory, candidate='sd')
+    folded = root / 'folded-parts'
+    shutil.copytree(root / 'parts', folded)
+    (folded / 'stra\u00dfe.dll').write_bytes(b'same bytes')
+    directory = fixture(root, 'binding-casefold-file-id', candidate='sd', parts=folded)
+    alias = folded / 'strasse.dll'
+    alias.write_bytes(b'same bytes')
+    expect(not os.path.samefile(alias, folded / 'stra\u00dfe.dll'), 'casefold fixture must use distinct files')
+    edit(directory, 'harness.json', lambda h: module_events(h, 'late', path=str(alias)))
+    invoke(directory, candidate='sd', expected=5)
+    expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'casefold alias bypassed FileIdInfo')
+    REFUSALS['identity'] += 1
+    alias.unlink()
+    directory = fixture(root, 'binding-casefold-event-id', candidate='sd', parts=folded)
+    alias.write_bytes(b'same bytes')
+    def event_alias(h):
+        module_events(h, 'late', path=str(alias))
+        h['files'].pop('qt:strasse.dll')
+        h['files']['qt:stra\u00dfe.dll'] = str(folded / 'stra\u00dfe.dll')
+    edit(directory, 'harness.json', event_alias)
+    invoke(directory, candidate='sd', expected=5)
+    expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'load event bypassed FileIdInfo')
+    REFUSALS['identity'] += 1
+    alias.unlink()
+    directory = fixture(root, 'binding-casefold-unload-id', candidate='sd', parts=folded)
+    alias.write_bytes(b'same bytes')
+    def unload_alias(h):
+        guarded = str(folded / 'stra\u00dfe.dll')
+        h['modules']['events'].extend([{'kind': 'load', 'path': guarded}, {'kind': 'unload', 'path': str(alias)}])
+        h['files']['qt:stra\u00dfe.dll'] = guarded
+    edit(directory, 'harness.json', unload_alias)
+    invoke(directory, candidate='sd', expected=5)
+    expect(read_json(directory / 'refusal.json')['reasons'] == ['identity'], 'unload event bypassed FileIdInfo')
+    REFUSALS['identity'] += 1
+
+    for injection in ('module-late', 'module-transient', 'module-reload'):
+        for candidate in ('sa2', 'sd'):
+            for mode in ('run', 'short', 'geometry', 'validation'):
+                if candidate == 'sd' and mode == 'run':
+                    directory = fixture(root, 'binding-inject-' + injection, candidate=candidate)
+                    edit(directory, 'harness.json', lambda h: h['options'].update(inject=injection))
+                    invoke(directory, candidate=candidate, overlays=None, extra=('--fault-injection',))
+                    expect(read_json(directory / 'run.json')['injected_fault'] == injection, 'module injection lost')
+                    refusal(root, 'binding-inject-operator-' + injection, 'operator',
+                            h_edit(lambda h: h['options'].update(inject=injection)), candidate=candidate)
+                else:
+                    refusal(root, f'binding-inject-{injection}-{candidate}-{mode}', 'operator',
+                            h_edit(lambda h: h['options'].update(inject=injection)), candidate=candidate,
+                            mode=mode, overlays=None, extra=('--fault-injection',))
+
+
 def static_runner():
     path = HERE / 'run_scene.ps1'
     raw = path.read_bytes()
@@ -596,6 +1035,24 @@ def static_runner():
            'run mode must require the two gate declarations')
     expect('WriteAllText' not in text and 'Set-Content' not in text and 'Import-Csv' not in text,
            'runner must delegate records and CSV interpretation to the finalizer')
+    # L2-V-002: the guard protects the build from before the launch until the finalizer has finished.
+    for token in ("$guardScript = Join-Path $PSScriptRoot 'file_guard.py'", "'--launch',(Join-Path $buildDirectory 'launch.json')",
+                  'RedirectStandardInput = $true', 'RedirectStandardOutput = $true', 'ReadLineAsync()', '.Wait(60000)',
+                  "-cne 'ready'", 'ASCII.GetBytes("release`n")', 'BaseStream.Write($release, 0, $release.Length)', 'WaitForExit(30000)', '$Guard.ExitCode -ne 0',
+                  '$launchedCreated = $process.StartTime.ToFileTimeUtc()', """'--launched-created',"$launchedCreated\"""",
+                  "'module-late','module-transient','module-reload'", "$Inject -like 'module-*' -and $Candidate -ne 'sd'"):
+        expect(token in text, 'runner binding step missing: ' + token)
+    attempt = text.index('$guard = Start-Guard $directory')
+    expect(attempt < text.index('Start-Sleep -Milliseconds 100', attempt) < text.index('$process = Start-App $arguments'),
+           'the runner must pause between the guard and the app')
+    expect(attempt < text.index('$process = Start-App $arguments'), 'the guard must be ready before the app starts')
+    expect(text.index('& python @finalArguments') < text.index('Stop-Guard $guard') < text.index('$finalExit -eq 5'),
+           'the guard is released after the finalizer and before its result is judged')
+    start = text[text.index('function Start-Guard'):text.index('function Stop-Guard')]
+    expect('} catch {' in start and start.index('} catch {') < start.index('$guard.Kill()') < start.rindex('throw'),
+           'Start-Guard must stop a guard that did not become ready before it throws')
+    cleanup = text[text.index('} finally {', attempt):]
+    expect('$guard.Kill()' in cleanup, 'the finally block must stop a guard that is still running')
     powershell = shutil.which('powershell.exe')
     if powershell:
         escaped = str(path).replace("'", "''")
@@ -612,7 +1069,7 @@ def static_runner():
 
 
 def main():
-    root = HERE / f'check-{os.getpid()}'
+    root = Path(tempfile.gettempdir()) / f'magic600-l2-{os.getpid()}-{uuid.uuid4().hex}'
     # Never delete a pre-existing directory belonging to another invocation.
     root.mkdir()
     try:
@@ -622,6 +1079,7 @@ def main():
         refusal_cases(root)
         extra_cases(root)
         identity_cases(root)
+        binding_cases(root)
         directory = fixture(root, 'usage')
         before = {p.name: digest(p) for p in directory.iterdir()}
         invoke(directory, extra=('--unknown',), expected=1)
@@ -632,8 +1090,10 @@ def main():
         print(f'L2-F acceptance: {CASES} finalizer cases passed; source/fixture evidence only.')
         return 0
     finally:
-        # root is the exact newly created child of this script directory.
-        expect(root.resolve().parent == HERE and root.name == f'check-{os.getpid()}', 'cleanup boundary')
+        for directory in list(GUARDS):
+            stop_guard(directory, kill=True)
+        expect(root.resolve().parent == Path(tempfile.gettempdir()).resolve()
+               and root.name.startswith(f'magic600-l2-{os.getpid()}-'), 'cleanup boundary')
         shutil.rmtree(root)
 
 

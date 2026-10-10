@@ -2,6 +2,15 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] update | Level 2 binding review fixes
+Updated [level-2-framework-results](evidence/level-2-framework-results.md): the four blocking findings of the binding's two-shard Astra review are fixed, and the fixed Qt build passed the synthetic experiments (9 passed, 1 not run), and the scoped verification round passed on both shards. The Qt observer's limit for subst, junction, UNC and outside hard-link spellings is stated in the harness contract.
+
+## [2026-10-10] update | Level 2 binding built
+Updated [level-2-framework-results](evidence/level-2-framework-results.md): the L2-V-002 guard binding is built and passed its source checks and synthetic experiments on the owner's machine; its Astra review and any gate run under it are pending, so the 4 October identities keep their qualification.
+
+## [2026-10-09] update | Level 2 framework results
+Added [level-2-framework-results](evidence/level-2-framework-results.md). Godot 4.7.2 and Qt 6.10.3 both meet the W3 selection gate in the owner's attended runs of 4 October; Qt's 60 fps is Qt's vblank-paced update, so the frame rates are not a like-for-like comparison; the blind-seconds and tearing finalizer defects are fixed; the build identities rest on preparation records until L2-V-002 is fixed.
+
 ## [2026-10-09] decision | Jumbling as an optional puzzle state
 Recorded in [owner-decisions-2026-10-09-jumbling](decisions/owner-decisions-2026-10-09-jumbling.md) (decision 7): jumbling is an optional state of a puzzle session, not a separate kind of session; the engineering packet proposes how a session enters and leaves it.
 

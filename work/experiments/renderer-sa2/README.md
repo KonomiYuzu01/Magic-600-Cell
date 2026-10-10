@@ -194,6 +194,15 @@ values, `--gpu-validation`, `--gpu-abort` and all user arguments from `--` onwar
 Run options and paths therefore do not change the composite identity. `files`
 records the loaded DLL, actual running exe and loaded assembly, `project.godot`,
 `Main.tscn` and its external `Smoke.cs` resource. The DLL supplies shader digests.
+
+`assembly_mvid` records
+`typeof(Smoke).Assembly.ManifestModule.ModuleVersionId.ToString("D")` beside
+`godot:assembly`, for the finalizer to compare with the metadata of the assembly
+bytes it hashes. `files.dll` stays null until `new Native(...)` returns, then
+records the full `GetModuleFileNameW` path for the `NativeLibrary.Load` handle.
+A zero or truncated module path fails the run with `framework-modules`.
+Both facts stay null until recorded, including in usage records.
+
 The full-rectangle `TextureRect` maps the texture directly, with no fit/crop or
 aspect-preservation transform (`texture_stretch: none`); the raw enum is also
 recorded. Half-target injection keeps those framework settings and displayed

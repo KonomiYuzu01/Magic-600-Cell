@@ -1,0 +1,144 @@
+{
+  "format": "magic600-renderer-gate-v1",
+  "method": "every frame of the declared swap chain in [trace start + 10 s, + 190 s), with no missing rows; fps = frames x 1000 / total frame time; nearest-rank p99; no outlier removal; met only if every run and the pooled frames meet fps >= 30 and p99 <= 33.3 ms, with at least three valid runs of one build; optional vram_peak_mb must be positive and finite; vram_risk flags peaks above 7168 MB without changing the verdict; this input contract previously ignored vram_peak_mb (including 0); no committed run carried that key before this change. Runs of different features are judged separately; w3f is an attribution scene for H-06 costs and never gate evidence",
+  "interval_s": 180,
+  "warmup_s": 10,
+  "scenes": [
+    {
+      "candidate": "sd",
+      "scene": "w3",
+      "feature": "none",
+      "gate_scene": true,
+      "runs": [
+        {
+          "run_id": "20261004T135157249Z-w3-1",
+          "build_identity": "64f08369f2098418fa28d82abcf89a00fd6b08da6d1d2772e7428837e6dc4fc8",
+          "swap_chain": "0x000001CD0406E620",
+          "swap_chains_ignored": [],
+          "vram_peak_mb": 229.640625,
+          "vram_risk": false,
+          "n": 10800,
+          "fps": 59.99897551749304,
+          "p99_ms": 17.4045,
+          "max_ms": 17.8358,
+          "met": true
+        },
+        {
+          "run_id": "20261004T135157249Z-w3-2",
+          "build_identity": "64f08369f2098418fa28d82abcf89a00fd6b08da6d1d2772e7428837e6dc4fc8",
+          "swap_chain": "0x0000023686BDA7C0",
+          "swap_chains_ignored": [],
+          "vram_peak_mb": 229.640625,
+          "vram_risk": false,
+          "n": 10800,
+          "fps": 59.99882428970536,
+          "p99_ms": 17.3738,
+          "max_ms": 18.0046,
+          "met": true
+        },
+        {
+          "run_id": "20261004T135157249Z-w3-3",
+          "build_identity": "64f08369f2098418fa28d82abcf89a00fd6b08da6d1d2772e7428837e6dc4fc8",
+          "swap_chain": "0x00000270F3647ED0",
+          "swap_chains_ignored": [],
+          "vram_peak_mb": 229.640625,
+          "vram_risk": false,
+          "n": 10800,
+          "fps": 59.99895465154621,
+          "p99_ms": 17.3681,
+          "max_ms": 17.797,
+          "met": true
+        }
+      ],
+      "pooled": {
+        "n": 32400,
+        "fps": 59.99891815284025,
+        "p99_ms": 17.3802,
+        "max_ms": 18.0046,
+        "met": true
+      },
+      "verdict": "met",
+      "vram_peak_mb": 229.640625
+    }
+  ],
+  "invalid_runs": [],
+  "unreadable": [],
+  "environment": [
+    {
+      "run_id": "20261004T135157249Z-w3-1",
+      "presenting_adapter": "NVIDIA GeForce RTX 4070 Laptop GPU, driver 32.0.16.1692, drives the window's display",
+      "presentation_interval": 0,
+      "power_source": "mains",
+      "power_mode": "max_performance",
+      "msaa": 1,
+      "vsync": false,
+      "tearing": true,
+      "warp": false,
+      "display": {
+        "width": 2560,
+        "height": 1600,
+        "refresh_hz": 60
+      },
+      "backbuffer": {
+        "width": 2560,
+        "height": 1600
+      },
+      "declared": {
+        "frame_generation": false,
+        "upscaling": false,
+        "overlays": "none; operator-declared after the run: watched throughout, no visible obstruction; automatic checks sample visibility every 100 ms and do not prove continuous full-area visibility"
+      }
+    },
+    {
+      "run_id": "20261004T135157249Z-w3-2",
+      "presenting_adapter": "NVIDIA GeForce RTX 4070 Laptop GPU, driver 32.0.16.1692, drives the window's display",
+      "presentation_interval": 0,
+      "power_source": "mains",
+      "power_mode": "max_performance",
+      "msaa": 1,
+      "vsync": false,
+      "tearing": true,
+      "warp": false,
+      "display": {
+        "width": 2560,
+        "height": 1600,
+        "refresh_hz": 60
+      },
+      "backbuffer": {
+        "width": 2560,
+        "height": 1600
+      },
+      "declared": {
+        "frame_generation": false,
+        "upscaling": false,
+        "overlays": "none; operator-declared after the run: watched throughout, no visible obstruction; automatic checks sample visibility every 100 ms and do not prove continuous full-area visibility"
+      }
+    },
+    {
+      "run_id": "20261004T135157249Z-w3-3",
+      "presenting_adapter": "NVIDIA GeForce RTX 4070 Laptop GPU, driver 32.0.16.1692, drives the window's display",
+      "presentation_interval": 0,
+      "power_source": "mains",
+      "power_mode": "max_performance",
+      "msaa": 1,
+      "vsync": false,
+      "tearing": true,
+      "warp": false,
+      "display": {
+        "width": 2560,
+        "height": 1600,
+        "refresh_hz": 60
+      },
+      "backbuffer": {
+        "width": 2560,
+        "height": 1600
+      },
+      "declared": {
+        "frame_generation": false,
+        "upscaling": false,
+        "overlays": "none; operator-declared after the run: watched throughout, no visible obstruction; automatic checks sample visibility every 100 ms and do not prove continuous full-area visibility"
+      }
+    }
+  ],
+  "redactions": 0
+}

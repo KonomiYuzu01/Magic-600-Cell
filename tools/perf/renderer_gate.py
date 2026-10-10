@@ -11,16 +11,18 @@ every one of at least three valid runs of one build meets both thresholds, and t
 frames of those runs meet them as well.
 
 Every run must declare the gate conditions: mains power, no frame generation, no
-upscaling, and a backbuffer at the display's native size. Gate scenes (w3, w5) must also
+upscaling, and a backbuffer at the display's native size. Gate scenes (w3, w5, wj) must also
 show, in the probe's per-frame trace log, that the measured interval is one unbroken
-sequence of turns of the declared duration, with the label revision adopted after every
+sequence of turns of the declared duration, with the label or pose revision adopted after every
 turn. The probe writes one trace entry per frame, with a QPC time read after the previous
 Present returned and before this frame's Present, so each step between two presents holds
-exactly one entry. Its phase is the elapsed fraction of the current turn on the QPC clock. Label scenes (w3, w4, w5) must carry a passing exact label check.
+exactly one entry. Its phase is the elapsed fraction of the current turn on the QPC clock. Label scenes (w3, w4, w5, wj) must carry a passing exact label check.
+W-J (wj) also requires a fixture name and a passing pose check listing exactly every pose
+revision drawn between the inclusive trace-start and trace-stop markers, including warmup.
 
 The PresentMon parsing, the nearest-rank percentile and the output sanitizing come from
 b412_summary.py.
-Runs of different features are judged separately; w3f is an attribution scene for H-06
+Runs of different features and fixtures are judged separately; w3f is an attribution scene for H-06
 costs and never gate evidence.
 """
 from __future__ import annotations
@@ -40,9 +42,9 @@ from b412_summary import (PRESENTMON_COLUMNS, RunError, csv_integer, csv_interva
                           integer, nearest_rank, number, public_environment, read_json,
                           require, sanitize)
 
-SCENES = ('w1', 'w2', 'w3', 'w3f', 'w4', 'w5')
-GATE_SCENES = ('w3', 'w5')
-LABEL_SCENES = ('w3', 'w3f', 'w4', 'w5')
+SCENES = ('w1', 'w2', 'w3', 'w3f', 'w4', 'w5', 'wj')
+GATE_SCENES = ('w3', 'w5', 'wj')
+LABEL_SCENES = ('w3', 'w3f', 'w4', 'w5', 'wj')
 WARMUP_S = 10
 INTERVAL_S = 180
 EDGE_S = 0.5           # the first and last kept frame must lie this close to the interval edges
@@ -65,7 +67,10 @@ METHOD = ('every frame of the declared swap chain in [trace start + 10 s, + 190 
           'must be positive and finite; vram_risk flags peaks above 7168 MB without changing '
           'the verdict; this input contract previously ignored vram_peak_mb (including 0); '
           'no committed run carried that key before this change. Runs of different features '
-          'are judged separately; w3f is an attribution scene for H-06 costs and never gate evidence')
+          'and fixtures are judged separately; wj is a gate and label scene requiring a fixture, '
+          'immediate pose revision adoption and a passing pose check listing exactly all revisions '
+          'drawn in the inclusive trace-start to trace-stop capture; '
+          'w3f is an attribution scene for H-06 costs and never gate evidence')
 
 
 def validate_run(run):
@@ -76,6 +81,10 @@ def validate_run(run):
     require(isinstance(run.get('candidate'), str) and NAME.fullmatch(run['candidate']) is not None, 'bad-candidate')
     if 'feature' in run:
         require(isinstance(run['feature'], str) and NAME.fullmatch(run['feature']) is not None, 'bad-feature')
+    if run['scene'] == 'wj':
+        require(isinstance(run.get('fixture'), str) and NAME.fullmatch(run['fixture']) is not None, 'bad-fixture')
+    else:
+        require('fixture' not in run, 'bad-fixture')
     require(integer(run.get('qpc_frequency')) and run['qpc_frequency'] > 0)
     markers = run.get('markers')
     require(isinstance(markers, dict), 'missing-marker')
@@ -96,6 +105,12 @@ def validate_run(run):
     if run['scene'] in LABEL_SCENES:
         check = run.get('label_check')
         require(isinstance(check, dict) and check.get('status') in ('pass', 'fail'), 'missing-label-check')
+    if run['scene'] == 'wj':
+        check = run.get('pose_check')
+        require(isinstance(check, dict) and check.get('status') in ('pass', 'fail'), 'missing-pose-check')
+        revisions = check.get('revisions')
+        require(isinstance(revisions, list) and all(integer(revision) and revision >= 0 for revision in revisions)
+                and all(before < after for before, after in zip(revisions, revisions[1:])), 'missing-pose-check')
     if 'vram_peak_mb' in run:
         require(number(run['vram_peak_mb']) and run['vram_peak_mb'] > 0, 'bad-vram')
 
@@ -232,7 +247,7 @@ def trace_step_reasons(entries, run, frame_ticks):
 
 
 def trace_reasons(entries, run, frame_ticks):
-    """Check trace steps, continuous clock-driven turns and immediate label adoption."""
+    """Check trace steps, continuous clock-driven turns and immediate revision adoption."""
     reasons = set(trace_step_reasons(entries, run, frame_ticks))
     if 'trace-empty' in reasons:
         return sorted(reasons)
@@ -255,7 +270,7 @@ def trace_reasons(entries, run, frame_ticks):
             elif entry['turn'] == previous['turn'] and entry['phase'] < previous['phase']:
                 reasons.add('trace-phase-backwards')
         if entry['revision'] != entry['turn']:
-            reasons.add('label-adoption-missed')
+            reasons.add('pose-adoption-missed' if run['scene'] == 'wj' else 'label-adoption-missed')
         starts.setdefault(entry['turn'], []).append(entry['qpc'] - entry['phase'] * turn_ticks)
         previous = entry
     if any(max(values) - min(values) > tolerance for values in starts.values()):
@@ -307,7 +322,15 @@ def summarize_private(directories, columns=None, timing='presentmon'):
             values, ticks, ignored, reasons = run_frames(directory, run, columns, timing)
             reasons += condition_reasons(run.get('environment'))
             if run['scene'] in GATE_SCENES:
-                reasons += trace_reasons(read_trace(directory), run, ticks)
+                entries = read_trace(directory)
+                reasons += trace_reasons(entries, run, ticks)
+                if run['scene'] == 'wj':
+                    markers = run['markers']
+                    drawn = sorted({entry['revision'] for entry in entries
+                                    if markers['trace_start_qpc'] <= entry['qpc'] <= markers['trace_stop_qpc']})
+                    check = run['pose_check']
+                    if check['status'] != 'pass' or not drawn or check['revisions'] != drawn:
+                        reasons.append('pose-check-failed')
             elif run['scene'] == 'w3f':
                 reasons += trace_step_reasons(read_trace(directory), run, ticks)
             if timing == 'trace':
@@ -326,9 +349,10 @@ def summarize_private(directories, columns=None, timing='presentmon'):
             result['unreadable'].append({'reason': str(error)})
             continue
         feature = run.get('feature', 'none')
-        key = (run['candidate'], run['scene'], feature)
+        fixture = run.get('fixture', 'none')
+        key = (run['candidate'], run['scene'], feature, fixture)
         scene = scenes.setdefault(key, {'candidate': run['candidate'], 'scene': run['scene'],
-                                                  'feature': feature,
+                                                  'feature': feature, 'fixture': fixture,
                                                   'gate_scene': run['scene'] in GATE_SCENES,
                                                   'runs': [], 'pooled': None, 'verdict': 'no-data',
                                                   'vram_peak_mb': None})

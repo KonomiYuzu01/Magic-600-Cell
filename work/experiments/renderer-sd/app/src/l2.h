@@ -1,5 +1,6 @@
 #pragma once
 #include "smoke.h"
+#include "module_observer.h"
 #include <QtCore/QJsonObject>
 #include <atomic>
 #include <powersetting.h>
@@ -35,6 +36,8 @@ public:
     void status(int value, const QString& error);
     void abi(std::uint32_t version);
     void identity(const QByteArray& json);
+    void loadedDll(const Native& native);
+    bool injectModuleProbe(); // GUI timer only; waits for the render thread's trace-begin publication.
     void initialized(QRhi* rhi, const sa2_device_info& info);
     void layout(QSizeF size) { itemSize_ = size; }
     QSize displayed(QQuickWindow* window) const;
@@ -61,9 +64,13 @@ private:
     void* powerRegistration_ = nullptr;
     std::optional<int> lastStatus_;
     QString lastError_;
+    QString moduleInjection_;
+    std::atomic<bool> traceStarted_{false};
+    DWORD guiThread_ = GetCurrentThreadId();
+    bool moduleInjected_ = false;
     QJsonObject sizes(QQuickWindow* window, QSize target);
     void updateConditions();
-    void files();
+    void files(const modules::Record& observed);
     static VOID WINAPI onPowerMode(EFFECTIVE_POWER_MODE mode, VOID* context);
 };
 }

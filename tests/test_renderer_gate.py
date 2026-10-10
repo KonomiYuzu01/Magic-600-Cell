@@ -6,9 +6,11 @@ import io
 import json
 import math
 import os
+import shutil
 import sys
 import tempfile
 import unittest
+import uuid
 from pathlib import Path
 from unittest import mock
 
@@ -38,15 +40,9 @@ def steady(ms):
 
 class GateTests(unittest.TestCase):
     def setUp(self):
-        if os.name == 'nt':
-            # Same ACL workaround as test_b412_summary: inherit the workspace ACL.
-            mkdir = os.mkdir
-            with mock.patch.object(os, 'mkdir', side_effect=lambda path, mode: mkdir(path)):
-                temporary = tempfile.TemporaryDirectory(prefix='.gate-test-', dir=ROOT)
-        else:
-            temporary = tempfile.TemporaryDirectory(prefix='.gate-test-', dir=ROOT)
-        self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(tempfile.gettempdir()) / f'gate-test-{uuid.uuid4().hex}'
+        self.base.mkdir()
+        self.addCleanup(shutil.rmtree, self.base)
 
     def run_dir(self, run_id, frame_ms=steady(25), scene='w3', seconds=gate.WARMUP_S + gate.INTERVAL_S + 1,
                 stop=None, label='pass', build='b1', trace=None, candidate='sb', rows=None, edit=None, freq=FREQ):
@@ -85,6 +81,10 @@ class GateTests(unittest.TestCase):
                'environment': {'power_source': 'mains', 'display': {'width': 2560, 'height': 1600},
                                'backbuffer': {'width': 2560, 'height': 1600},
                                'declared': {'frame_generation': False, 'upscaling': False}}}
+        if scene == 'wj':
+            revisions = sorted({entry['revision'] for entry in entries
+                                if start <= entry['qpc'] <= run['markers']['trace_stop_qpc']})
+            run.update(fixture='wj-s4', pose_check={'status': 'pass', 'revisions': revisions})
         if edit:
             edit(run)
         (directory / 'run.json').write_text(json.dumps(run), encoding='utf-8')
@@ -543,6 +543,183 @@ class GateTests(unittest.TestCase):
             gate.main([str(self.base / 'unused'), '--out', str(self.base / 'unused.json'), '--timing', 'trace'])
         self.assertEqual(raised.exception.code, 2)
         self.assertIn('unrecognized arguments', stderr.getvalue())
+
+    def test_wj_runs_meet_the_same_gate_and_figures_as_w3(self):
+        result = self.three('wj', scene='wj')
+        scene = self.scene(result, 'sb/wj')
+        w3 = self.scene(self.three('w3'))
+        self.assertEqual(scene['verdict'], 'met')
+        self.assertTrue(scene['gate_scene'])
+        self.assertEqual(scene['fixture'], 'wj-s4')
+        self.assertEqual(w3['fixture'], 'none')
+        self.assertEqual(len(scene['runs']), 3)
+        self.assertEqual({run['build_identity'] for run in scene['runs']}, {'b1'})
+        self.assertEqual(scene['pooled'], w3['pooled'])
+        for actual, expected in zip(scene['runs'], w3['runs']):
+            for key in ('n', 'fps', 'p99_ms', 'max_ms', 'met'):
+                self.assertEqual(actual[key], expected[key])
+        self.assertEqual(result['invalid_runs'], [])
+        self.assertEqual(result['unreadable'], [])
+
+    def test_wj_fixture_is_required_and_must_match_name(self):
+        edits = [lambda run: run.pop('fixture')]
+        edits += [lambda run, v=value: run.update(fixture=v)
+                  for value in (None, True, 4, '', 'WJ-S4', '../wj-s4', 'wj_s4', 'a' * 33)]
+        for index, edit in enumerate(edits):
+            with self.subTest(index=index):
+                result = gate.summarize([self.run_dir(f'fixture{index}', scene='wj', edit=edit)])
+                self.assertEqual(result['unreadable'], [{'reason': 'bad-fixture'}])
+                self.assertEqual(result['scenes'], [])
+                self.assertEqual(result['invalid_runs'], [])
+
+    def test_other_scenes_refuse_any_fixture_field(self):
+        for scene in ('w1', 'w2', 'w3', 'w3f', 'w4', 'w5'):
+            for index, fixture in enumerate(('wj-s4', None)):
+                with self.subTest(scene=scene, fixture=fixture):
+                    directory = self.run_dir(f'{scene}{index}', scene=scene,
+                                             edit=lambda run: run.update(fixture=fixture))
+                    result = gate.summarize([directory])
+                    self.assertEqual(result['unreadable'], [{'reason': 'bad-fixture'}])
+                    self.assertEqual(result['scenes'], [])
+
+    def test_wj_accepts_any_fixture_matching_name(self):
+        for fixture in ('wj-s4', 'wj-i-a', 'wj-i-b', 'custom-fixture', 'a', 'a' * 32):
+            with self.subTest(fixture=fixture):
+                directory = self.run_dir(fixture, scene='wj', edit=lambda run: run.update(fixture=fixture))
+                result = gate.summarize([directory])
+                self.assertEqual(self.scene(result, 'sb/wj')['fixture'], fixture)
+                self.assertEqual(result['invalid_runs'], [])
+                self.assertEqual(result['unreadable'], [])
+
+    def test_wj_requires_a_well_formed_pose_check(self):
+        checks = (None, [], {}, {'status': 'unknown', 'revisions': [0]},
+                  {'status': True, 'revisions': [0]}, {'status': 'pass'},
+                  *({'status': 'pass', 'revisions': revisions}
+                    for revisions in (None, '0', {}, [-1], [1.5], ['0'], [True], [False], [1, 0], [0, 0])))
+        edits = [lambda run: run.pop('pose_check')]
+        edits += [lambda run, c=check: run.update(pose_check=c) for check in checks]
+        for index, edit in enumerate(edits):
+            with self.subTest(index=index):
+                directory = self.run_dir(f'pose{index}', scene='wj', edit=edit)
+                result = gate.summarize([directory])
+                self.assertEqual(result['unreadable'], [{'reason': 'missing-pose-check'}])
+                self.assertEqual(result['scenes'], [])
+                self.assertEqual(result['invalid_runs'], [])
+
+    def test_wj_pose_check_must_pass_and_match_every_drawn_revision(self):
+        edits = {
+            'fail': lambda run: run['pose_check'].update(status='fail'),
+            'empty': lambda run: run['pose_check'].update(revisions=[]),
+            'missing': lambda run: run['pose_check']['revisions'].remove(40),
+            'extra': lambda run: run['pose_check']['revisions'].append(128),
+            'first-only': lambda run: run['pose_check'].update(revisions=[0]),
+            'warmup-missing': lambda run: run['pose_check'].update(revisions=list(range(6, 128))),
+            'tail-missing': lambda run: run['pose_check']['revisions'].remove(127),
+        }
+        for name, edit in edits.items():
+            with self.subTest(name=name):
+                directory = self.run_dir(name, scene='wj', edit=edit)
+                result = gate.summarize([directory])
+                self.assertEqual(result['unreadable'], [])
+                self.assertEqual(self.reasons(result), ['pose-check-failed'])
+                self.assertEqual(self.scene(result, 'sb/wj')['verdict'], 'no-data')
+        directory = self.run_dir('complete', scene='wj')
+        self.assertEqual(gate.read_json(directory / 'run.json')['pose_check']['revisions'], list(range(128)))
+        self.assertEqual(gate.summarize([directory])['invalid_runs'], [])
+
+    def test_wj_pose_check_requires_a_nonempty_drawn_set(self):
+        directory = self.run_dir('empty', scene='wj', trace=lambda entry: None)
+        result = gate.summarize([directory])
+        self.assertEqual(result['unreadable'], [])
+        self.assertEqual(self.reasons(result), ['pose-check-failed', 'trace-empty'])
+
+    def test_wj_pose_check_uses_inclusive_capture_markers(self):
+        directory = self.run_dir('boundaries', scene='wj')
+        run = gate.read_json(directory / 'run.json')
+        start, stop = (run['markers'][key] for key in ('trace_start_qpc', 'trace_stop_qpc'))
+        # Boundary revisions are outside the measured interval; surrounding entries are
+        # outside the capture. Only the two boundary revisions belong in the check.
+        with (directory / 'trace.jsonl').open('a', encoding='utf-8') as stream:
+            for qpc, revision in ((start, 200), (start - 1, 201), (stop, 202), (stop + 1, 203)):
+                stream.write(json.dumps({'qpc': qpc, 'turn': revision, 'phase': 0, 'revision': revision}) + '\n')
+        revisions = [*range(128), 200, 202]
+        run['pose_check']['revisions'] = revisions
+        (directory / 'run.json').write_text(json.dumps(run), encoding='utf-8')
+        self.assertEqual(gate.summarize([directory])['invalid_runs'], [])
+        for reported in (list(range(128)), [*range(128), 200], [*range(128), 202],
+                         [*range(128), 200, 201, 202], [*range(128), 200, 202, 203]):
+            with self.subTest(reported=reported[-3:]):
+                run['pose_check']['revisions'] = reported
+                (directory / 'run.json').write_text(json.dumps(run), encoding='utf-8')
+                self.assertEqual(self.reasons(gate.summarize([directory])), ['pose-check-failed'])
+
+    def test_wj_requires_a_passing_label_check(self):
+        failed = self.run_dir('failed', scene='wj', label='fail')
+        self.assertEqual(self.reasons(gate.summarize([failed])), ['label-check-failed'])
+        missing = self.run_dir('missing', scene='wj', edit=lambda run: run.pop('label_check'))
+        self.assertEqual(gate.summarize([missing])['unreadable'], [{'reason': 'missing-label-check'}])
+
+    def test_wj_missed_adoption_is_reported_as_pose_adoption(self):
+        def late(entry):
+            return {**entry, 'revision': 39} if entry['turn'] == 40 and entry['phase'] == 0 else entry
+        wj = gate.summarize([self.run_dir('wj', scene='wj', trace=late)])
+        w3 = gate.summarize([self.run_dir('w3', trace=late)])
+        self.assertEqual(self.reasons(wj), ['pose-adoption-missed'])
+        self.assertEqual(self.reasons(w3), ['label-adoption-missed'])
+
+    def test_wj_fixtures_are_separate_sorted_gate_groups(self):
+        directories = [self.run_dir(f'{fixture}{i}', scene='wj', edit=lambda run, f=fixture: run.update(fixture=f))
+                       for fixture in ('wj-s4', 'wj-i-b', 'wj-i-a') for i in range(3)]
+        result = gate.summarize(directories)
+        self.assertEqual([(scene['fixture'], scene['verdict'], len(scene['runs']), scene['pooled']['n'])
+                          for scene in result['scenes']],
+                         [('wj-i-a', 'met', 3, 21600), ('wj-i-b', 'met', 3, 21600), ('wj-s4', 'met', 3, 21600)])
+        reversed_result = gate.summarize(list(reversed(directories)))
+        self.assertEqual([(scene['fixture'], scene['pooled']) for scene in result['scenes']],
+                         [(scene['fixture'], scene['pooled']) for scene in reversed_result['scenes']])
+
+    def test_wj_fixture_runs_do_not_pool_to_reach_three(self):
+        directories = [self.run_dir('s4a', scene='wj'), self.run_dir('s4b', scene='wj'),
+                       self.run_dir('ia', scene='wj', edit=lambda run: run.update(fixture='wj-i-a'))]
+        result = gate.summarize(directories)
+        self.assertEqual([(scene['fixture'], scene['verdict'], len(scene['runs']), scene['pooled']['n'])
+                          for scene in result['scenes']],
+                         [('wj-i-a', 'insufficient-runs', 1, 7200), ('wj-s4', 'insufficient-runs', 2, 14400)])
+
+    def test_wj_rejects_idle_gaps_skipped_turns_and_short_captures_as_w3(self):
+        def idle(entry):
+            return {**entry, 'turn': None, 'phase': None} if 60_000 <= entry['qpc'] - START < 62_000 else entry
+
+        def skip(entry):
+            turn = entry['turn'] + 1 if entry['turn'] >= 40 else entry['turn']
+            return {**entry, 'turn': turn, 'revision': turn}
+        cases = (('idle', {'trace': idle}, 'trace-idle'),
+                 ('skip', {'trace': skip}, 'trace-turn-gap'),
+                 ('short', {'seconds': gate.WARMUP_S + 60}, 'capture-not-covered'),
+                 ('stop', {'stop': START + (gate.WARMUP_S + 100) * FREQ}, 'capture-short'))
+        for name, options, reason in cases:
+            with self.subTest(name=name):
+                wj = gate.summarize([self.run_dir(f'wj-{name}', scene='wj', **options)])
+                w3 = gate.summarize([self.run_dir(f'w3-{name}', **options)])
+                self.assertIn(reason, self.reasons(wj))
+                self.assertEqual(self.reasons(wj), self.reasons(w3))
+
+    def test_wj_keeps_the_same_condition_rules_and_turn_duration(self):
+        battery = self.run_dir('battery', scene='wj', edit=lambda run: run['environment'].update(power_source='battery'))
+        self.assertEqual(self.reasons(gate.summarize([battery])), ['conditions-not-met'])
+        absent = self.run_dir('absent', scene='wj', edit=lambda run: run['environment']['declared'].pop('frame_generation'))
+        self.assertEqual(self.reasons(gate.summarize([absent])), ['conditions-missing'])
+        for index, value in enumerate((None, 0, True, '1500', gate.TURN_MS_MAX + 1)):
+            with self.subTest(turn_ms=value):
+                directory = self.run_dir(f'turn{index}', scene='wj', edit=lambda run: run.update(turn_ms=value))
+                self.assertEqual(gate.summarize([directory])['unreadable'], [{'reason': 'bad-turn-duration'}])
+
+    def test_wj_slow_or_spiky_frames_fail_the_unchanged_thresholds(self):
+        spiky = lambda elapsed, index: 40 if index % 50 == 0 else 20
+        for name, frames in (('slow', steady(50)), ('spiky', spiky)):
+            with self.subTest(name=name):
+                scene = self.scene(self.three(name, scene='wj', frame_ms=frames), 'sb/wj')
+                self.assertEqual(scene['verdict'], 'not-met')
 
 
 if __name__ == '__main__':
