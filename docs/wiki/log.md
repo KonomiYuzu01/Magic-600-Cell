@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] decision | Taste Lab rating levels
+Recorded in [owner-decisions-2026-10-10-tastelab-rating](decisions/owner-decisions-2026-10-10-tastelab-rating.md): look tuning stays pairwise; image ratings gain love (Up) next to like and dislike. Existing ratings and exports stay valid, every fitting step treats love as like, love puts candidates first for annotated references, nexus cards and pair notes, and class B rules are unchanged.
+
 ## [2026-10-10] decision | Shrink anchor (area centroid)
 Recorded in [owner-decisions-2026-10-10-anchor](decisions/owner-decisions-2026-10-10-anchor.md): the sticker shrink anchor is the area-weighted centroid of each sticker's triangles, computed from the unchanged meshes, which removes the W3 turn-end jump and the W-J lattice disagreement at source level; no asset or model identity changes. Updated [s-b-probe-results](evidence/s-b-probe-results.md): the changed probes need GPU re-acceptance, including W3.
 
