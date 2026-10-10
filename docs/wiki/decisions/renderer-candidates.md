@@ -28,6 +28,8 @@ All candidates render through Direct3D 12, the vendor-neutral main path. Renderi
 
 The window was 15 working days; the owner decision of [1 October 2026](owner-decisions-2026-10-01.md) shortens it to 12 days (stage days 3 to 14) with the go/no-go on window day 7 (final ruling by Codex Astra). Since [2 October 2026](owner-decisions-2026-10-02.md) these are the owner's working days, and target days may move; the gate does not. NVIDIA-specific work is at most an add-on experiment and is never on the day-7 critical path.
 
+Day-7 go/no-go, 10 October 2026: S-B, S-A2 and S-D all go on their W3 results with the area-centroid anchor ([day7-go-no-go-ruling](day7-go-no-go-ruling.md)). No renderer is selected yet.
+
 ## Selection gate: full detail at a stable 30 fps
 
 A renderer is selected only if it passes this gate on the owner's machine. The gate applies at the day-7 go/no-go and at final selection. It is separate from the 0.4.1 B4-12 formal measurement (3 x 100).

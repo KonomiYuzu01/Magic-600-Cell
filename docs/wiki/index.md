@@ -23,6 +23,7 @@ Start here. Each entry: link, one-line summary, status. Rules for pages and oper
 - [build-reproducibility-decisions](decisions/build-reproducibility-decisions.md) — 0.4.1 step 1: published harness and continuity record, CPython 3.14.7 with NumPy 2.3.5, byte-exact checkouts, optional desktop recorder. `verified`
 - [b4-12-measurement-decisions](decisions/b4-12-measurement-decisions.md) — 0.4.1 step 2: B4-12 sample plan, measurement conditions, tools, read-only performance board and harness method choices. `draft`
 - [renderer-candidates](decisions/renderer-candidates.md) — Stage 2.4 renderer candidates, the full-detail 30 fps selection gate on an RTX 4070 Laptop GPU (8 GB), and optional NVIDIA enhancements. `draft`
+- [day7-go-no-go-ruling](decisions/day7-go-no-go-ruling.md) — Astra's day-7 ruling, 10 October 2026: S-B, S-A2 (Godot) and S-D (Qt) all go on their area-centroid W3 results; no renderer selected; Qt headroom, H-06, H-09 and the guard's limits recorded as risks. `verified`
 
 ## Components
 - [workbench](components/workbench.md) — The 0.4.1 development workbench, phase 1: sessions board with briefs, live view with tool switching, owner notes, progress board, compact view and status line. `draft`
