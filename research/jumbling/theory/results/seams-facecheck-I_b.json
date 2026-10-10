@@ -1,0 +1,23 @@
+[
+ {
+  "t": 20,
+  "misaligned_caps": 15,
+  "true_positive": 10,
+  "false_positive": 0,
+  "miss": 0
+ },
+ {
+  "t": 40,
+  "misaligned_caps": 32,
+  "true_positive": 9,
+  "false_positive": 0,
+  "miss": 2
+ },
+ {
+  "t": 60,
+  "misaligned_caps": 42,
+  "true_positive": 7,
+  "false_positive": 0,
+  "miss": 4
+ }
+]
