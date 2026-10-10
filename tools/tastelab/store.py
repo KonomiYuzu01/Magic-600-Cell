@@ -17,17 +17,19 @@ worker thread (SQLite WAL lets them share the database).
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sqlite3
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from dataclasses import asdict, dataclass, fields
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
 from tastelab import common
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 DB_NAME = "tastelab.sqlite3"
 ORIGINAL_EXTS = ("jpg", "png", "webp", "gif")
 PROPOSAL_STATES = ("proposed", "accepted", "rejected", "fetched")
@@ -65,7 +67,8 @@ CREATE TABLE IF NOT EXISTS ratings (
   note TEXT,
   ts TEXT NOT NULL,
   session TEXT NOT NULL,
-  undone INTEGER NOT NULL DEFAULT 0
+  undone INTEGER NOT NULL DEFAULT 0,
+  love INTEGER NOT NULL DEFAULT 0 CHECK (love IN (0, 1) AND (love = 0 OR verdict = 'like'))
 );
 CREATE INDEX IF NOT EXISTS ratings_sha ON ratings(sha256);
 CREATE TABLE IF NOT EXISTS embeddings (
@@ -169,6 +172,7 @@ class Rating:
     note: str | None
     ts: str
     session: str
+    love: bool = False
 
 
 _IMAGE_COLUMNS = [f.name for f in fields(ImageMeta)]
@@ -179,6 +183,60 @@ def _clean_note(note) -> str | None:
         return None
     text = " ".join(str(note).split())[: common.NOTE_MAX]
     return text or None
+
+
+def upgrade_library(root) -> dict:
+    """Back up a schema-2 library including its WAL, then verify and commit schema 3."""
+    root = common.data_root(root)
+    database = root / DB_NAME
+    backups = root / "backups"
+    backup = backups / ("tastelab-schema2-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + ".sqlite3")
+    for path in (database, root / (DB_NAME + "-wal"), root / (DB_NAME + "-shm"), backups, backup):
+        common.check_input(path, kind="library upgrade")
+    if not database.is_file():
+        raise common.Refused("library upgrade needs an existing library")
+
+    def history(db):
+        rows = db.execute("SELECT id, sha256, verdict, note, ts, session, undone FROM ratings ORDER BY id").fetchall()
+        encoded = json.dumps(rows, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        return len(rows), hashlib.sha256(encoded).hexdigest()
+
+    try:
+        with closing(sqlite3.connect(database, timeout=30)) as src:
+            version = src.execute("PRAGMA user_version").fetchone()[0]
+            if version != 2:
+                raise common.Refused(f"{DB_NAME} has schema {version}; library upgrade requires schema 2")
+            if backup.exists():
+                raise common.Refused(f"library upgrade backup already exists: {backup.name}")
+            backups.mkdir(parents=True, exist_ok=True)
+            try:
+                with backup.open("xb"):
+                    pass
+            except FileExistsError:
+                raise common.Refused(f"library upgrade backup already exists: {backup.name}") from None
+            try:
+                with closing(sqlite3.connect(backup, timeout=30)) as dst:
+                    src.backup(dst)
+            except BaseException:
+                backup.unlink(missing_ok=True)  # never leave a partial copy that looks like a backup
+                raise
+            src.execute("BEGIN IMMEDIATE")
+            try:
+                before = history(src)
+                src.execute("ALTER TABLE ratings ADD COLUMN love INTEGER NOT NULL DEFAULT 0 "
+                            "CHECK (love IN (0, 1) AND (love = 0 OR verdict = 'like'))")
+                src.execute("PRAGMA user_version=3")
+                after = history(src)
+                nonzero = src.execute("SELECT COUNT(*) FROM ratings WHERE love != 0").fetchone()[0]
+                if before != after or nonzero != 0:
+                    raise common.Refused("library upgrade did not preserve ratings")
+                src.commit()
+            except BaseException:
+                src.rollback()
+                raise
+    except sqlite3.Error as exc:
+        raise common.Refused(f"library upgrade failed: {exc}") from exc
+    return {"ratings": before[0], "backup": backup.name}
 
 
 class Store:
@@ -196,6 +254,9 @@ class Store:
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
         if version != SCHEMA_VERSION and (existed or version != 0):
             self.db.close()
+            if version == 2:
+                raise common.Refused(f"{DB_NAME} has schema 2; run fetch.py --upgrade-library "
+                                     f"(this Taste Lab requires schema {SCHEMA_VERSION})")
             raise common.Refused(f"{DB_NAME} has schema {version}; this Taste Lab requires schema {SCHEMA_VERSION}; no automatic migration")
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("PRAGMA foreign_keys=ON")
@@ -444,14 +505,16 @@ class Store:
 
     # -- ratings -----------------------------------------------------------
 
-    def add_rating(self, sha: str, verdict: str, session: str, note: str | None = None) -> int:
+    def add_rating(self, sha: str, verdict: str, session: str, note: str | None = None, *, love=False) -> int:
         if verdict not in common.VERDICTS:
             raise ValueError("verdict must be like, dislike or skip")
+        if type(love) is not bool or love and verdict != "like":
+            raise ValueError("love must be a bool and true only with verdict like")
         if not session:
             raise ValueError("session is required")
         with self.db:
-            cur = self.db.execute("INSERT INTO ratings(sha256, verdict, note, ts, session) VALUES (?, ?, ?, ?, ?)",
-                                  (sha, verdict, _clean_note(note), common.now_iso(), session))
+            cur = self.db.execute("INSERT INTO ratings(sha256, verdict, note, ts, session, love) VALUES (?, ?, ?, ?, ?, ?)",
+                                  (sha, verdict, _clean_note(note), common.now_iso(), session, love))
         return cur.lastrowid
 
     def undo_last(self, session: str) -> str | None:
@@ -467,10 +530,10 @@ class Store:
     def ratings(self) -> list[Rating]:
         """The effective rating of every rated image (its latest one that was not undone), oldest first."""
         rows = self.db.execute("""
-            SELECT r.id, r.sha256, r.verdict, r.note, r.ts, r.session FROM ratings r
+            SELECT r.id, r.sha256, r.verdict, r.note, r.ts, r.session, r.love FROM ratings r
             JOIN (SELECT sha256, MAX(id) AS id FROM ratings WHERE undone=0 GROUP BY sha256) last ON last.id = r.id
             ORDER BY r.id""")
-        return [Rating(**dict(r)) for r in rows]
+        return [Rating(**dict(r, love=bool(r["love"]))) for r in rows]
 
     def rated(self) -> set[str]:
         return {r[0] for r in self.db.execute("SELECT DISTINCT sha256 FROM ratings WHERE undone=0")}
@@ -478,9 +541,10 @@ class Store:
     def counts(self, day: str | None = None) -> dict[str, int]:
         """Rating counts: effective likes, dislikes and skips, their total, and ratings given on `day` (local)."""
         day = day or common.local_day()
-        out = {"like": 0, "dislike": 0, "skip": 0}
+        out = {"like": 0, "dislike": 0, "skip": 0, "love": 0}
         for r in self.ratings():
             out[r.verdict] += 1
+            out["love"] += r.love
         out["total"] = out["like"] + out["dislike"] + out["skip"]
         out["today"] = sum(1 for (ts,) in self.db.execute("SELECT ts FROM ratings WHERE undone=0") if common.local_day(ts) == day)
         return out

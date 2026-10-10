@@ -488,8 +488,8 @@ def _note(value, maximum, field, *, nullable=False):
 def import_ratings(library, data):
     """Validate the complete page export before writing; apply newest answers atomically."""
     if (not isinstance(data, dict) or data.get("kind") != "tastelab-export" or type(data.get("version")) is not int
-            or data.get("version") != 3 or not isinstance(data.get("images"), dict)):
-        raise common.Refused("ratings export: expected tastelab-export version 3 with images")
+            or data.get("version") not in (3, 4) or not isinstance(data.get("images"), dict)):
+        raise common.Refused("ratings export: expected tastelab-export version 3 or 4 with images")
     ratings, pairs = {}, {}
     for name in ("ratings", "pairs"):
         if not isinstance(data["images"].get(name), list):
@@ -501,6 +501,11 @@ def import_ratings(library, data):
         sha = raw["imageId"]
         if not common.valid_sha(sha) or raw["verdict"] not in ("like", "dislike"):
             raise common.Refused(f"{field}: invalid imageId or verdict")
+        if data["version"] == 4:
+            if type(raw.get("love")) is not bool:
+                raise common.Refused(f"{field}.love: expected a bool")
+            if raw["love"] and raw["verdict"] != "like":
+                raise common.Refused(f"{field}.love: true requires verdict like")
         _note(raw["note"], 140, field + ".note", nullable=True)
         moment, ts = _timestamp(raw["ratedAt"], field + ".ratedAt")
         if sha not in ratings or moment > ratings[sha][0]:
@@ -530,8 +535,8 @@ def import_ratings(library, data):
             previous = library.db.execute("SELECT ts FROM ratings WHERE sha256=? AND undone=0", (sha,)).fetchall()
             if previous and moment <= max(_timestamp(row[0], "stored ratedAt")[0] for row in previous):
                 continue
-            library.db.execute("INSERT INTO ratings(sha256, verdict, note, ts, session) VALUES (?, ?, ?, ?, 'page-export')",
-                               (sha, raw["verdict"], raw["note"], ts))
+            library.db.execute("INSERT INTO ratings(sha256, verdict, love, note, ts, session) VALUES (?, ?, ?, ?, ?, 'page-export')",
+                               (sha, raw["verdict"], raw["love"] if data["version"] == 4 else False, raw["note"], ts))
             counts["ratings"] += 1
         for key, (moment, ts, raw) in pairs.items():
             if any(sha not in tiers for sha in key):
@@ -553,6 +558,7 @@ def main(argv=None):
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--calibrate", action="store_true")
     modes.add_argument("--import-ratings", type=Path)
+    modes.add_argument("--upgrade-library", action="store_true", help="back up and upgrade a schema-2 library to schema 3")
     modes.add_argument("--proposals", action="store_true", help="fetch the terms ticked in the rating window")
     parser.add_argument("--diagnose", action="store_true",
                         help="with --calibrate: also write the metadata of missed and discarded cases")
@@ -565,6 +571,10 @@ def main(argv=None):
         parser.error("--proposals takes the categories from the proposals")
     try:
         root = common.data_root(args.data)
+        if args.upgrade_library:
+            result = store.upgrade_library(root)
+            print(f"Upgraded the library to schema 3: {result['ratings']} ratings kept; backup backups/{result['backup']}")
+            return 0
         if args.import_ratings:
             # Parse first, and require an existing library; imports never create one.
             data = json.loads(common.check_input(args.import_ratings).read_text(encoding="utf-8"))

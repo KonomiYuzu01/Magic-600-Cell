@@ -17,6 +17,9 @@ from uuid import uuid4
 import unittest
 from pathlib import Path
 from unittest import mock
+from dataclasses import asdict
+from datetime import datetime, timezone
+from contextlib import closing, redirect_stderr, redirect_stdout
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode = True
@@ -36,6 +39,114 @@ try:
     HAVE_YAML = True
 except ImportError:
     HAVE_YAML = False
+
+# Frozen schema-2 DDL from the packet's base; never derive it from the current schema.
+SCHEMA_2 = """
+CREATE TABLE IF NOT EXISTS images (
+  sha256 TEXT PRIMARY KEY,
+  source TEXT NOT NULL,
+  source_id TEXT,
+  page_url TEXT,
+  image_url TEXT,
+  licence TEXT NOT NULL,
+  licence_url TEXT,
+  attribution TEXT NOT NULL,
+  title TEXT,
+  tier TEXT NOT NULL CHECK (tier IN ('A', 'B')),
+  category TEXT NOT NULL,
+  query TEXT,
+  width INTEGER NOT NULL CHECK (width > 0),
+  height INTEGER NOT NULL CHECK (height > 0),
+  bytes INTEGER NOT NULL CHECK (bytes >= 0),
+  original_ext TEXT,
+  added TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS images_category ON images(category);
+CREATE TABLE IF NOT EXISTS seen (
+  source TEXT NOT NULL,
+  source_id TEXT NOT NULL,
+  PRIMARY KEY (source, source_id)
+);
+CREATE TABLE IF NOT EXISTS ratings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sha256 TEXT NOT NULL REFERENCES images(sha256) ON DELETE CASCADE,
+  verdict TEXT NOT NULL CHECK (verdict IN ('like', 'dislike', 'skip')),
+  note TEXT,
+  ts TEXT NOT NULL,
+  session TEXT NOT NULL,
+  undone INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS ratings_sha ON ratings(sha256);
+CREATE TABLE IF NOT EXISTS embeddings (
+  sha256 TEXT NOT NULL REFERENCES images(sha256) ON DELETE CASCADE,
+  model TEXT NOT NULL,
+  dim INTEGER NOT NULL,
+  vector BLOB NOT NULL,
+  PRIMARY KEY (sha256, model)
+);
+CREATE TABLE IF NOT EXISTS text_embeddings (
+  text TEXT NOT NULL,
+  model TEXT NOT NULL,
+  dim INTEGER NOT NULL,
+  vector BLOB NOT NULL,
+  PRIMARY KEY (text, model)
+);
+CREATE TABLE IF NOT EXISTS model_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts TEXT NOT NULL,
+  model TEXT NOT NULL,
+  ratings INTEGER NOT NULL,
+  likes INTEGER NOT NULL,
+  dislikes INTEGER NOT NULL,
+  auc REAL,
+  auc_delta REAL,
+  stable INTEGER NOT NULL DEFAULT 0,
+  params TEXT NOT NULL DEFAULT '{}'
+);
+CREATE TABLE IF NOT EXISTS fetch_state (
+  source TEXT NOT NULL,
+  query TEXT NOT NULL,
+  cursor TEXT,
+  done INTEGER NOT NULL DEFAULT 0,
+  updated TEXT NOT NULL,
+  PRIMARY KEY (source, query)
+);
+CREATE TABLE IF NOT EXISTS proposals (
+  term TEXT PRIMARY KEY,
+  category TEXT,
+  origin TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('proposed', 'accepted', 'rejected', 'fetched')),
+  at_rating INTEGER NOT NULL,
+  ts TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS screen_counts (
+  source TEXT PRIMARY KEY,
+  checked INTEGER NOT NULL DEFAULT 0,
+  discarded INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS blocked (
+  sha256 TEXT PRIMARY KEY,
+  ts TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS file_ops (
+  id TEXT PRIMARY KEY,
+  sha256 TEXT NOT NULL,
+  op TEXT NOT NULL CHECK (op IN ('add', 'remove')),
+  files TEXT NOT NULL,
+  committed INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS pair_notes (
+  liked_sha256 TEXT NOT NULL REFERENCES images(sha256) ON DELETE CASCADE,
+  disliked_sha256 TEXT NOT NULL REFERENCES images(sha256) ON DELETE CASCADE,
+  note TEXT NOT NULL,
+  ts TEXT NOT NULL,
+  PRIMARY KEY (liked_sha256, disliked_sha256)
+);
+"""
 
 SHA_A = "a" * 64
 SHA_B = "b" * 64
@@ -98,6 +209,52 @@ class StoreTests(TempDir):
             self.assertTrue((self.tmp / "data" / sub).is_dir())
         self.assertEqual(self.store.db.execute("PRAGMA user_version").fetchone()[0], store.SCHEMA_VERSION)
         self.assertEqual(self.store.db.execute("PRAGMA journal_mode").fetchone()[0], "wal")
+
+    def test_schema_three_love_column_default_and_check(self):
+        self.assertEqual(store.SCHEMA_VERSION, 3)
+        self.assertEqual(self.store.db.execute("PRAGMA user_version").fetchone()[0], 3)
+        column = self.store.db.execute("PRAGMA table_info(ratings)").fetchall()[-1]
+        self.assertEqual((column["name"], column["type"], column["notnull"], column["dflt_value"]),
+                         ("love", "INTEGER", 1, "0"))
+        self.store.add_image(meta(SHA_A), b"t")
+        self.store.add_rating(SHA_A, "like", "test")
+        self.assertIs(self.store.ratings()[0].love, False)
+        for verdict, love in (("like", None), ("like", -1), ("like", 2), ("dislike", 1), ("skip", 1)):
+            with self.subTest(verdict=verdict, love=love), self.assertRaises(sqlite3.IntegrityError):
+                with self.store.db:
+                    self.store.db.execute("INSERT INTO ratings(sha256, verdict, ts, session, love) VALUES (?, ?, ?, ?, ?)",
+                                          (SHA_A, verdict, common.now_iso(), "test", love))
+
+    def test_love_validation_before_any_write(self):
+        self.store.add_image(meta(SHA_A), b"t")
+        for verdict, love in (("like", 1), ("like", 0), ("like", None), ("like", "true"),
+                              ("dislike", True), ("skip", True), ("love", True)):
+            before = self.store.db.total_changes
+            with self.subTest(verdict=verdict, love=love), self.assertRaises(ValueError):
+                self.store.add_rating(SHA_A, verdict, "test", love=love)
+            self.assertEqual(self.store.db.total_changes, before)
+
+    def test_effective_loves_count_as_likes_and_undo_restores_previous_flag(self):
+        for sha in (SHA_A, SHA_B, SHA_C):
+            self.store.add_image(meta(sha), b"t")
+        self.store.add_rating(SHA_A, "like", "old")
+        self.store.add_rating(SHA_A, "like", "love", "warm brass", love=True)
+        self.store.add_rating(SHA_B, "like", "plain", love=False)
+        self.store.add_rating(SHA_C, "dislike", "plain")
+        ratings = self.store.ratings()
+        self.assertEqual([r.sha256 for r in ratings], [SHA_A, SHA_B, SHA_C])
+        self.assertEqual([r.love for r in ratings], [True, False, False])
+        self.assertTrue(all(type(r.love) is bool for r in ratings))
+        self.assertEqual((ratings[0].verdict, ratings[0].note), ("like", "warm brass"))
+        self.assertEqual(self.store.counts(), dict(like=2, dislike=1, skip=0, love=1, total=3, today=4))
+        self.store.add_rating(SHA_A, "skip", "override")
+        self.assertEqual(self.store.counts()["love"], 0)
+        self.store.undo_last("override")
+        self.assertEqual(self.store.counts()["love"], 1)
+        self.assertEqual(self.store.undo_last("love"), SHA_A)
+        self.assertEqual(self.store.counts(), dict(like=2, dislike=1, skip=0, love=0, total=3, today=3))
+        self.assertIs(self.store.ratings()[0].love, False)
+        self.assertEqual(self.store.db.execute("SELECT love, undone FROM ratings WHERE session='love'").fetchone()[:], (1, 1))
 
     def test_newer_schema_is_refused(self):
         self.store.db.execute(f"PRAGMA user_version={store.SCHEMA_VERSION + 1}")
@@ -245,6 +402,215 @@ class StoreTests(TempDir):
         self.assertEqual(self.store.query_counts(), {("steampunk", "orrery"): 1, ("gaming", "pixel art"): 1})
         self.assertEqual([m.sha256 for m in self.store.images(category="gaming")], [SHA_B])
         self.assertEqual(self.store.images(tier="B"), [])
+
+
+class UpgradeTests(TempDir):
+    MOMENT = datetime(2026, 10, 10, 15, 0, 0, tzinfo=timezone.utc)
+    BACKUP_NAME = "tastelab-schema2-20261010T150000Z.sqlite3"
+
+    def setUp(self):
+        super().setUp()
+        clock = mock.patch.object(store, "datetime", create=True)
+        self.clock = clock.start()
+        self.clock.now.return_value = self.MOMENT
+        self.addCleanup(clock.stop)
+
+    def fixture(self, name="library"):
+        root = self.tmp / name
+        root.mkdir()
+        db = sqlite3.connect(root / store.DB_NAME)
+        self.addCleanup(db.close)
+        db.execute("PRAGMA journal_mode=WAL")
+        db.execute("PRAGMA wal_autocheckpoint=0")
+        db.execute("PRAGMA foreign_keys=ON")
+        db.executescript(SCHEMA_2)
+        db.execute("PRAGMA user_version=2")
+        for sha in (SHA_A, SHA_B):
+            row = asdict(meta(sha, added="2026-10-01T00:00:00Z"))
+            db.execute(f"INSERT INTO images({', '.join(row)}) VALUES ({', '.join('?' * len(row))})", list(row.values()))
+        db.execute("INSERT INTO ratings VALUES (1, ?, 'like', 'brass glow', ?, 'first', 0)",
+                   (SHA_A, "2026-10-01T01:00:00Z"))
+        db.commit()
+        db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        # All these records live in the WAL while the source connection remains open.
+        row = asdict(meta(SHA_C, tier="B", added="2026-10-02T00:00:00Z"))
+        db.execute(f"INSERT INTO images({', '.join(row)}) VALUES ({', '.join('?' * len(row))})", list(row.values()))
+        db.executemany("INSERT INTO ratings VALUES (?, ?, ?, ?, ?, ?, ?)", [
+            (2, SHA_A, "dislike", "undone", "2026-10-02T01:00:00Z", "second", 1),
+            (3, SHA_A, "like", 'warm "gold" \u2605', "2026-10-02T02:00:00Z", "second", 0),
+            (4, SHA_B, "skip", None, "2026-10-02T03:00:00Z", "second", 0),
+            (5, SHA_C, "like", "private fixture", "2026-10-02T04:00:00Z", "second", 0)])
+        db.execute("INSERT INTO pair_notes VALUES (?, ?, ?, ?)", (SHA_A, SHA_B, "calmer lines", "2026-10-02T05:00:00Z"))
+        db.execute("INSERT INTO seen VALUES ('met', '123')")
+        db.execute("INSERT INTO embeddings VALUES (?, 'fake', 2, ?)", (SHA_A, b"\0" * 8))
+        db.execute("INSERT INTO text_embeddings VALUES ('gold', 'fake', 2, ?)", (b"\1" * 8,))
+        db.execute("INSERT INTO model_runs VALUES (1, ?, 'fake', 2, 1, 1, 0.7, NULL, 0, '{}')", ("2026-10-02T06:00:00Z",))
+        db.execute("INSERT INTO fetch_state VALUES ('met', 'gold', 'next', 0, ?)", ("2026-10-02T07:00:00Z",))
+        db.execute("INSERT INTO proposals VALUES ('brass', 'steampunk', 'adjacent', 'accepted', 100, ?)",
+                   ("2026-10-02T08:00:00Z",))
+        db.execute("INSERT INTO screen_counts VALUES ('met', 10, 1)")
+        db.execute("INSERT INTO blocked VALUES (?, ?)", ("d" * 64, "2026-10-02T09:00:00Z"))
+        db.execute("INSERT INTO meta VALUES ('proposal_round', '100')")
+        db.execute("INSERT INTO file_ops VALUES ('pending', ?, 'add', '[]', 0)", (SHA_B,))
+        db.commit()
+        self.assertGreater((root / (store.DB_NAME + "-wal")).stat().st_size, 0)
+        return root, db, self.snapshot(db)
+
+    @staticmethod
+    def snapshot(db):
+        result = {}
+        for (table,) in db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"):
+            columns = [r[1] for r in db.execute(f"PRAGMA table_info({table})") if r[1] != "love"]
+            result[table] = db.execute(f"SELECT {', '.join(columns)} FROM {table} ORDER BY rowid").fetchall()
+        return result
+
+    def assert_schema_two_unchanged(self, root, expected):
+        with closing(sqlite3.connect(root / store.DB_NAME)) as db:
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 2)
+            self.assertNotIn("love", [r[1] for r in db.execute("PRAGMA table_info(ratings)")])
+            self.assertEqual(self.snapshot(db), expected)
+
+    def test_upgrade_preserves_every_old_column_and_backups_include_wal_commits(self):
+        root, db, expected = self.fixture()
+        main_only = self.tmp / "main-only.sqlite3"
+        shutil.copyfile(root / store.DB_NAME, main_only)
+        with closing(sqlite3.connect(main_only)) as checkpoint:
+            self.assertEqual(checkpoint.execute("SELECT COUNT(*) FROM ratings").fetchone()[0], 1)
+        self.assertEqual(store.upgrade_library(root), {"ratings": 5, "backup": self.BACKUP_NAME})
+        with closing(sqlite3.connect(root / store.DB_NAME)) as reopened:
+            self.assertEqual(reopened.execute("PRAGMA user_version").fetchone()[0], 3)
+            self.assertEqual(self.snapshot(reopened), expected)
+            self.assertEqual([r[0] for r in reopened.execute("SELECT love FROM ratings ORDER BY id")], [0] * 5)
+            with self.assertRaises(sqlite3.IntegrityError):
+                reopened.execute("UPDATE ratings SET love=1 WHERE verdict='skip'")
+            reopened.rollback()
+        # A standalone copy of only the backup file must recover every record.
+        backup = root / "backups" / self.BACKUP_NAME
+        self.assertFalse(Path(str(backup) + "-wal").exists())
+        standalone = self.tmp / "standalone.sqlite3"
+        shutil.copyfile(backup, standalone)
+        with closing(sqlite3.connect(standalone)) as copy:
+            self.assertEqual(copy.execute("PRAGMA user_version").fetchone()[0], 2)
+            self.assertNotIn("love", [r[1] for r in copy.execute("PRAGMA table_info(ratings)")])
+            self.assertEqual(self.snapshot(copy), expected)
+
+    def test_upgrade_rolls_back_alter_version_and_all_preservation_checks(self):
+        connect = sqlite3.connect
+        for fault in ("alter", "version", "count", "digest", "nonzero"):
+            root, db, expected = self.fixture(fault)
+
+            class FaultyConnection(sqlite3.Connection):
+                def execute(self, sql, *args):
+                    result = super().execute(sql, *args)
+                    if fault == "alter" and sql.startswith("ALTER TABLE ratings"):
+                        raise sqlite3.OperationalError("injected after ALTER")
+                    if sql == "PRAGMA user_version=3":
+                        if fault == "version":
+                            raise sqlite3.OperationalError("injected after version")
+                        if fault == "count":
+                            super().execute("DELETE FROM ratings WHERE id=5")
+                        if fault == "digest":
+                            super().execute("UPDATE ratings SET note='changed' WHERE id=3")
+                    if fault == "nonzero" and sql == "SELECT COUNT(*) FROM ratings WHERE love != 0":
+                        return mock.Mock(fetchone=lambda: (1,))
+                    return result
+
+            def opened(path, *args, **kwargs):
+                if Path(path) == root / store.DB_NAME:
+                    kwargs["factory"] = FaultyConnection
+                return connect(path, *args, **kwargs)
+
+            with self.subTest(fault=fault), mock.patch.object(sqlite3, "connect", side_effect=opened):
+                with self.assertRaises(common.Refused):
+                    store.upgrade_library(root)
+            self.assert_schema_two_unchanged(root, expected)
+            self.assertTrue((root / "backups" / self.BACKUP_NAME).is_file())
+
+    def test_failed_backup_leaves_source_unchanged(self):
+        root, db, expected = self.fixture()
+        connect = sqlite3.connect
+
+        class FailedBackup(sqlite3.Connection):
+            def backup(self, target, *args, **kwargs):
+                target.execute("CREATE TABLE partial(value TEXT)")
+                target.commit()
+                raise sqlite3.OperationalError("injected backup failure")
+
+        def opened(path, *args, **kwargs):
+            if Path(path) == root / store.DB_NAME:
+                kwargs["factory"] = FailedBackup
+            return connect(path, *args, **kwargs)
+
+        with mock.patch.object(sqlite3, "connect", side_effect=opened), self.assertRaises(common.Refused):
+            store.upgrade_library(root)
+        self.assert_schema_two_unchanged(root, expected)
+        self.assertFalse((root / "backups" / self.BACKUP_NAME).exists())
+
+    def test_all_upgrade_paths_guard_links_junctions_and_sessions_before_writes(self):
+        root, db, expected = self.fixture()
+        paths = (root / store.DB_NAME, root / (store.DB_NAME + "-wal"), root / (store.DB_NAME + "-shm"),
+                 root / "backups", root / "backups" / self.BACKUP_NAME)
+        exists = Path.exists
+        for component in paths:
+            for guard in ("is_symlink", "is_junction", "session"):
+                patch = (mock.patch.object(Path, "exists", autospec=True,
+                                           side_effect=lambda p: p == component / "session.sqlite3" or exists(p))
+                         if guard == "session" else
+                         mock.patch.object(Path, guard, autospec=True, side_effect=lambda p: p == component))
+                with self.subTest(path=component.name, guard=guard), patch, \
+                        mock.patch.object(Path, "mkdir") as mkdir, mock.patch.object(sqlite3, "connect") as connect:
+                    with self.assertRaises(common.Refused):
+                        store.upgrade_library(root)
+                    mkdir.assert_not_called()
+                    connect.assert_not_called()
+        self.assertFalse((root / "backups").exists())
+        self.assert_schema_two_unchanged(root, expected)
+
+    def test_store_schema_two_refusal_names_explicit_upgrade(self):
+        root, db, expected = self.fixture()
+        with self.assertRaisesRegex(common.Refused, r"has schema 2; run fetch.py --upgrade-library .*requires schema 3"):
+            with store.Store(root):
+                pass
+        self.assert_schema_two_unchanged(root, expected)
+
+    def test_upgrade_refuses_missing_schema_one_second_upgrade_and_existing_backup(self):
+        missing = self.tmp / "missing"
+        with self.assertRaises(common.Refused):
+            store.upgrade_library(missing)
+        self.assertFalse(missing.exists())
+        root, db, expected = self.fixture()
+        db.execute("PRAGMA user_version=1")
+        with self.assertRaisesRegex(common.Refused, "schema 1"):
+            store.upgrade_library(root)
+        self.assertFalse((root / "backups").exists())
+        db.execute("PRAGMA user_version=2")
+        backups = root / "backups"
+        backups.mkdir()
+        path = backups / self.BACKUP_NAME
+        path.write_bytes(b"existing backup canary")
+        with self.assertRaisesRegex(common.Refused, "exists"):
+            store.upgrade_library(root)
+        self.assertEqual(path.read_bytes(), b"existing backup canary")
+        self.assert_schema_two_unchanged(root, expected)
+        path.unlink()
+        store.upgrade_library(root)
+        with self.assertRaisesRegex(common.Refused, "schema 3"):
+            store.upgrade_library(root)
+        with closing(sqlite3.connect(root / store.DB_NAME)) as reopened:
+            self.assertEqual(self.snapshot(reopened), expected)
+
+    def test_upgrade_cli_needs_no_model_or_client_and_refusals_exit_two(self):
+        from tastelab import embed, fetch
+        root, db, expected = self.fixture()
+        with mock.patch.object(embed, "load_embedder", side_effect=AssertionError("upgrade needs no model")), \
+                mock.patch.object(fetch.net, "Client", side_effect=AssertionError("upgrade needs no client")), \
+                redirect_stdout(io.StringIO()) as output, redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(fetch.main(["--data", str(root), "--upgrade-library"]), 0)
+        self.assertEqual(errors.getvalue(), "")
+        self.assertEqual(output.getvalue(), f"Upgraded the library to schema 3: 5 ratings kept; backup backups/{self.BACKUP_NAME}\n")
+        with redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(fetch.main(["--data", str(root), "--upgrade-library"]), 2)
+        self.assertIn("schema 3", errors.getvalue())
 
 
 class GuardTests(TempDir):

@@ -14,7 +14,8 @@ export function validateNote(note, kind = "rating") {
 // An empty rating note is stored and exported as null.
 export function ratingDocument(record) {
   const { imageId, verdict, note, ratedAt } = record;
-  return { path: `imageRatings/${imageId}`, body: { imageId, verdict, note: note || null, ratedAt } };
+  const love = record.love === true && verdict === "like";
+  return { path: `imageRatings/${imageId}`, body: { imageId, verdict, love, note: note || null, ratedAt } };
 }
 
 export function pairDocument(record) {
@@ -32,7 +33,8 @@ export function createRatingState(records = []) {
 export function reduceRating(state, action) {
   const ratings = new Map(state.ratings), skips = new Map(state.skips), changes = new Map(state.changes), history = [...state.history];
   if (action.type === "rate") {
-    if (!["like", "dislike"].includes(action.verdict) || !validateNote(action.note ?? "")) throw new RangeError("Invalid image rating.");
+    if (!["like", "dislike"].includes(action.verdict) || (action.love !== undefined && typeof action.love !== "boolean")
+        || (action.love === true && action.verdict !== "like") || !validateNote(action.note ?? "")) throw new RangeError("Invalid image rating.");
     const record = ratingDocument(action).body;
     ratings.set(record.imageId, record);
     changes.set(record.imageId, record);
@@ -65,7 +67,7 @@ export function keyAction(event, tab) {
   const key = event.key.toLowerCase();
   const keys = tab === "looks"
     ? { a: "A", b: "B", s: "same", x: "bad", z: "undo", w: "note", f: "family", 1: "scene-1", 2: "scene-2", 3: "scene-3" }
-    : tab === "images" ? { arrowright: "like", arrowleft: "dislike", arrowdown: "skip", w: "note", z: "undo" } : {};
+    : tab === "images" ? { arrowright: "like", arrowup: "love", arrowleft: "dislike", arrowdown: "skip", w: "note", z: "undo" } : {};
   return Object.hasOwn(keys, key) ? keys[key] : null;
 }
 
@@ -80,7 +82,7 @@ function mergeRecords(records, changes, key, document) {
 
 export function assembleImageExport(base, { bundles, ratings, pairs, ratingChanges = new Map(), pairChanges = new Map() }) {
   return {
-    ...base, version: 3,
+    ...base, version: 4,
     images: {
       bundles: bundles.map((bundle) => ({ bundleId: bundle.id, items: bundle.items.length })),
       ratings: mergeRecords(ratings, ratingChanges, (record) => record.imageId, ratingDocument),
@@ -172,7 +174,7 @@ export function createImagesUI({ setStatus }) {
   }
 
   function controls() {
-    for (const id of ["imageLike", "imageDislike", "imageSkip"]) $(id).disabled = loading || !answersReady || opening || working || !current;
+    for (const id of ["imageLike", "imageLove", "imageDislike", "imageSkip"]) $(id).disabled = loading || !answersReady || opening || working || !current;
     $("imageUndo").disabled = loading || !answersReady || !ratingState.history.length;
     $("imageNoteButton").disabled = loading || !answersReady || !ratingState.history.length;
     for (const id of ["imageNote", "imagePairNote", "imagePairSave"]) $(id).disabled = loading || !answersReady;
@@ -191,6 +193,7 @@ export function createImagesUI({ setStatus }) {
   function progress() {
     const available = new Map(merged.order.filter((id) => ratingState.ratings.has(id)).map((id) => [id, ratingState.ratings.get(id).verdict]));
     $("imageLikes").textContent = String([...available.values()].filter((value) => value === "like").length);
+    $("imageLoved").textContent = String([...available.keys()].filter((id) => ratingState.ratings.get(id).love).length);
     $("imageDislikes").textContent = String([...available.values()].filter((value) => value === "dislike").length);
     $("imageSkipped").textContent = String(merged.order.filter((id) => ratingState.skips.has(id)).length);
     $("imageModel").textContent = isReady(available) ? "Model ready" : "Model needs 5 likes and 5 dislikes.";
@@ -257,6 +260,7 @@ export function createImagesUI({ setStatus }) {
       worker.postMessage({
         id: revision, order: merged.order, vectors: merged.vectors,
         ratings: new Map([...ratingState.ratings].map(([id, record]) => [id, record.verdict])),
+        loved: new Set([...ratingState.ratings].filter(([, record]) => record.love).map(([id]) => id)),
         skips: ratingState.skips, ratedCount: ratingState.ratings.size,
         notedPairs: new Set([...pairs.values()].map((pair) => pair.likedImageId + "|" + pair.dislikedImageId)),
       });
@@ -322,11 +326,12 @@ export function createImagesUI({ setStatus }) {
 
   function action(kind) {
     if (loading || refuseAnswerChange()) return;
-    if (["like", "dislike", "skip"].includes(kind)) {
+    if (["like", "love", "dislike", "skip"].includes(kind)) {
       if (working || opening || !current) return;
       closeNote();
       const imageId = current;
-      ratingState = reduceRating(ratingState, { type: kind === "skip" ? "skip" : "rate", imageId, verdict: kind, ratedAt: new Date().toISOString() });
+      ratingState = reduceRating(ratingState, { type: kind === "skip" ? "skip" : "rate", imageId,
+        verdict: kind === "love" ? "like" : kind, love: kind === "love", ratedAt: new Date().toISOString() });
       if (kind !== "skip") saveRating(imageId);
       refresh();
     } else if (kind === "undo") {
@@ -365,7 +370,7 @@ export function createImagesUI({ setStatus }) {
     finally { opening = false; input.value = ""; input.blur(); controls(); }
   }
 
-  for (const [id, kind] of [["imageLike", "like"], ["imageDislike", "dislike"], ["imageSkip", "skip"], ["imageUndo", "undo"], ["imageNoteButton", "note"]]) {
+  for (const [id, kind] of [["imageLike", "like"], ["imageLove", "love"], ["imageDislike", "dislike"], ["imageSkip", "skip"], ["imageUndo", "undo"], ["imageNoteButton", "note"]]) {
     $(id).addEventListener("click", () => action(kind));
   }
   for (const id of ["bundleFolder", "bundleFiles"]) $(id).addEventListener("change", () => openFiles($(id)));
