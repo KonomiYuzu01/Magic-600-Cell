@@ -6,6 +6,8 @@ import { palette, background, defaultSpace, validateSpace, familiesOf, SCENES } 
 import { Preview } from "./preview.js";
 import { COST_HEAVY } from "./presets.js";
 import { createImagesUI, keyAction } from "./images-ui.js";
+import { createLocalDb } from "./local-db.js";
+import { chooseStorage, saveFile } from "./platform.js";
 
 const $ = (id) => document.getElementById(id);
 const use = (name) => (window.claude && window.claude.use ? window.claude.use(name) : Promise.resolve(null));
@@ -19,7 +21,7 @@ const LABELS = {
 const geo = buildGeometry();
 const session = Math.random().toString(36).slice(2, 10);
 const PAGE = 500; // documents per read; the store answers at most 1000 per query
-const state = { scene: "solving", family: null, records: [], ids: [], sessions: [], models: {}, pair: null, busy: true, db: null, space: defaultSpace(), turnCell: 0 };
+const state = { scene: "solving", family: null, records: [], ids: [], sessions: [], models: {}, pair: null, busy: true, db: null, standalone: false, space: defaultSpace(), turnCell: 0 };
 const colourings = new Map();
 let activeTab = "looks", looksStatus = "Loading the model.", imagesStatus = "";
 function setLooksStatus(message) {
@@ -323,7 +325,7 @@ async function exportData() {
     else { imagesStatus = message; if (activeTab === "images") $("status").textContent = message; }
   };
   const downloads = await use("downloads");
-  if (!downloads) { status("Export is not available in this view."); return; }
+  if (!downloads && !state.standalone) { status("Export is not available in this view."); return; }
   state.exporting = true;
   status("Preparing the export.");
   try {
@@ -343,7 +345,7 @@ async function exportData() {
         note: "Parameters whose frame-time cost H-06 measures before a preset reaches G3. Taste Lab measures no performance; this export makes no performance claim.",
       },
     }, (warning) => { imageWarning = warning; }), null, 2);
-    await downloads.save({ filename: "tastelab-export.json", data });
+    await saveFile({ downloads, standalone: state.standalone, document, URL, Blob }, "tastelab-export.json", data);
     status(imageWarning ? "Exported. " + imageWarning : "Exported.");
   } catch (err) {
     if (err.code !== "declined") status(err.code ? `Export failed (${err.code}).` : `Export failed: ${err.message}`);
@@ -425,10 +427,18 @@ function usableSpace(space) {
 }
 
 async function boot() {
+  const storage = await chooseStorage({ claude: window.claude, openLocal: () => createLocalDb(globalThis.indexedDB) });
+  state.standalone = storage.standalone;
   setBusy(true);
-  const user = await use("user");
-  const db = await use("db");
-  const owner = user ? await user.isOwner() : null;
+  let db, owner;
+  if (storage.mode === "artifact") {
+    const user = await use("user");
+    db = await use("db");
+    owner = user ? await user.isOwner() : null;
+  } else {
+    db = storage.db || null;
+    owner = null;
+  }
   if (db && owner !== false) state.db = db;
   images.load(state.db, owner);
   try {
@@ -443,6 +453,10 @@ async function boot() {
     state.statusSticky = true;
   } else if (db) {
     state.db = db;
+    if (state.standalone) {
+      setLooksStatus("Answers are stored in this browser only. Clearing this site's data deletes them; export to keep a copy.");
+      state.statusSticky = true;
+    }
     try {
       const sp = await db.doc("space/current").get();
       if (sp.exists) {

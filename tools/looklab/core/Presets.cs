@@ -122,9 +122,10 @@ public static class TasteImport
         using var document = Json.Parse(text);
         JsonElement root = document.RootElement;
         if (Json.Text(root, "kind") != "tastelab-export") throw Json.Error("kind", "expected tastelab-export");
-        // Version 3 adds `images` (the Images tab's ratings), which the Look Lab does not read; `presets` is unchanged.
+        // Version 3 adds `images` (the Images tab's ratings) and version 4 a love flag on those ratings;
+        // the Look Lab does not read `images`, and `presets` is unchanged in all three.
         int version = Json.Integer(Json.Get(root, "version"), "version");
-        if (version is not (2 or 3)) throw Json.Error("version", "Taste Lab import supports versions 2 and 3");
+        if (version is not (2 or 3 or 4)) throw Json.Error("version", "Taste Lab import supports versions 2 to 4");
         var presets = new List<Preset>(); var skips = new List<ImportSkip>();
         int index = 0;
         foreach (JsonElement entry in Json.Array(Json.Get(root, "presets"), "presets"))
