@@ -3,14 +3,15 @@ id: s-b-probe-results
 type: evidence
 status: verified
 visibility: public
-summary: The bare Direct3D 12 probe (S-B) meets the selection gate in the W3 scene on the owner's RTX 4070 Laptop GPU, its label check catches injected faults, and its fenced resource handoff works on the same device, to a second device and to D3D11; capture lessons from PresentMon 2.6.
+summary: The bare Direct3D 12 probe (S-B) meets the selection gate in the W3 scene on the owner's RTX 4070 Laptop GPU, again after the area-centroid anchor change (10 October), its label check catches injected faults, and its fenced resource handoff works on the same device, to a second device and to D3D11; capture lessons from PresentMon 2.6.
 related: [renderer-candidates]
 supersedes: []
 claims:
   - {id: w3-gate-met, evidence_kind: performance, path: work/experiments/renderer-sb/results/w3-20261003T045605948Z-summary.json, sha256: 93bd53efcdd70f20ac26d5554bb8238aeb4a12fdbb10f99ef710177cf3331cf0, checked_at: 2026-10-03}
-  - {id: w3-label-check, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/RESULT.md, sha256: 8f7ebf75ccd8a1fd614777a0959b787464f005d9a7cbca1d54bdc0f3bc6afa10, checked_at: 2026-10-10}
+  - {id: w3-reaccepted, evidence_kind: performance, path: work/experiments/renderer-sb/results/w3-20261010T164807115Z-summary.json, sha256: 5d3752b3543b443ad29339ae16771bd56d8044876f503c65ae7d6650a39c2cac, checked_at: 2026-10-10}
+  - {id: w3-label-check, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/RESULT.md, sha256: 04b4a96443b9f503f10657ce0baf6b9f3ba28476f669576fb8c24bf3950bcbf0, checked_at: 2026-10-10}
   - {id: label-faults-caught, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/results/neg-20261003T060641Z-summary.json, sha256: f5332574599b1692cb6d6276ab272c9e452eb226eec537e61ab5a1ebe89bd4e3, checked_at: 2026-10-03}
-  - {id: presentmon-named-stop, evidence_kind: source, path: work/experiments/renderer-sb/probe/run_scene.ps1, sha256: bb65a943faec9856b55562278a811710caf8ef0a1d05074e8daff8c2bfa1b70a, checked_at: 2026-10-03}
+  - {id: presentmon-named-stop, evidence_kind: source, path: work/experiments/renderer-sb/probe/run_scene.ps1, sha256: a13630135c04223966d2a672dc6091219275a934e096f9ad42346456cfb5a9bb, checked_at: 2026-10-10}
   - {id: handoff-works, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb/results/handoff-20261003T063841Z-summary.json, sha256: f906f0686421f7bb0b193acfb4b3700e81e2a87eaf714183f66b37b9e50414ed, checked_at: 2026-10-03}
   - {id: killed-stop-helper, evidence_kind: actual_windows_directx, path: work/experiments/renderer-sb-packets/review-2-stop-adjudication.md, sha256: e152368554e4e4471a0056fee45d430f1d5da1acb6ff803dff396a634a8732ff, checked_at: 2026-10-03}
 ---
@@ -48,7 +49,12 @@ What it changes:
 - The W3 result above is for build `2b5bf5e6...`. That build anchored the sticker shrink at `assets/mesh_centers.f32`.
 - Those anchors do not move with the stickers, so the end of every turn moved 4,120 of the 4,600 moved slots by up to 0.0118 world units. This is source evidence from the unchanged assets; nobody had seen it on screen.
 - The owner changed the anchor to the area-weighted centroid of each sticker's triangles ([owner-decisions-2026-10-10-anchor](../decisions/owner-decisions-2026-10-10-anchor.md)). The turn-end error is now at most 7.09e-8.
-- The changed probe has a new build identity, and its GPU re-acceptance (geometry check and three cold W3 runs) has not run yet.
+- The changed probe has build identity `d41020f6...`. The owner ran its GPU re-acceptance on 10 October, and it met the gate again:
+  - the GPU geometry check against the new reference passed 9 of 9 comparisons, with a maximum error of 1.43e-6;
+  - three cold W3 runs gave `met`: pooled 788.16 fps, p99 1.493 ms, maximum 3.855 ms; the slowest run averaged 783.74 fps;
+  - the exact label check passed in every run, with 1,010 revisions each; peak VRAM was 81.7 MB;
+  - the conditions were the same as on 3 October.
+- These figures hold for build `d41020f6...` only. The 3 October figures above remain those of build `2b5bf5e6...`.
 
 ## Injected label faults, 3 October 2026
 

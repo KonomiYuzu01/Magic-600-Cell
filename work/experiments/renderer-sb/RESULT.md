@@ -23,7 +23,16 @@ This is the experiment card ([protocol section 2](../../../docs/progress/1.0/sta
   - with the old anchors, as a control, it is 0.0144.
 - **The reference changed.** It was regenerated as format `magic600-sb-reference-v2`, with the anchor digest recorded. Sampled projections moved by up to 0.0074 in normalised device coordinates. A probe built before the change therefore fails the geometry check against the new reference.
 - **The W3 result above still stands for its build.** It belongs to build identity `2b5bf5e6…` with the old anchors, and its figures are unchanged.
-- **The changed probe is not yet measured.** It has a new build identity. Its re-acceptance has not run: the GPU geometry check against the new reference, then three cold W3 runs judged the same way (E-2.4-0J item 6). Loading the assets refuses anchors other than the pinned ones, so neither this probe nor S-A2 nor the S-D scene can upload others. The CPU self-test passes: it checks the anchor digest, and under upward rounding the recomputed anchors are refused (source and compilation evidence only).
+- **The changed probe has a new build identity.** Loading the assets refuses anchors other than the pinned ones, so neither this probe nor S-A2 nor the S-D scene can upload others. The CPU self-test passes: it checks the anchor digest, and under upward rounding the recomputed anchors are refused (source and compilation evidence only).
+- **Re-acceptance, 10 October 2026: met.** The owner attended the session. Build identity: `d41020f63b69ddaa480286c81ac9cbe505df9a5ea7d7f9622a93421774aaf804`.
+  - GPU geometry check against the new reference: 9 of 9 comparisons pass, maximum error 1.43e-6. Every one of the 600 cells ran 30,480 vertex invocations.
+  - Three cold W3 runs, judged as above ([summary](results/w3-20261010T164807115Z-summary.json)):
+    - fps 791.42, 783.74 and 789.31, pooled 788.16;
+    - p99 1.492, 1.509 and 1.473 ms, pooled 1.493 ms;
+    - maximum frame time 3.855 ms; peak VRAM 81.7 MB.
+  - The exact label check passed in every run: 1,010 revisions each, 0 mismatches.
+  - Conditions as on 3 October: the same adapter and driver (32.0.16.1692, that is 616.92), mains power, `max_performance`, 2560 x 1600 at 60 Hz, swap interval 0 with tearing, no MSAA, no WARP, and no frame generation, upscaling or overlays. The operator declared the GPU in discrete (MUX) high-performance mode.
+  - These figures hold for this build identity only. They are the S-B part of the W3 re-acceptance that the anchor decision requires.
 
 ## Build and tools
 

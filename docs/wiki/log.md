@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] update | W3 re-accepted after the anchor change
+The owner's attended GPU session re-accepted W3 for all four builds with the area-centroid anchor: S-B, Qt and Godot (both under the loaded-file guard), and the W-J probe. Updated [s-b-probe-results](evidence/s-b-probe-results.md) and [level-2-framework-results](evidence/level-2-framework-results.md), and added [w-j-probe-results](evidence/w-j-probe-results.md): the W-J GPU checks and its three fixtures meet the gate, and its overlay costs are unmeasured.
+
 ## [2026-10-10] decision | Shrink anchor (area centroid)
 Recorded in [owner-decisions-2026-10-10-anchor](decisions/owner-decisions-2026-10-10-anchor.md): the sticker shrink anchor is the area-weighted centroid of each sticker's triangles, computed from the unchanged meshes, which removes the W3 turn-end jump and the W-J lattice disagreement at source level; no asset or model identity changes. Updated [s-b-probe-results](evidence/s-b-probe-results.md): the changed probes need GPU re-acceptance, including W3.
 
