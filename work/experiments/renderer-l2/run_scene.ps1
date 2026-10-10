@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory=$true)][string]$Build,
     [ValidateSet('w1','w2','w3','w4')][string]$Scene = 'w3',
     [ValidateRange(1,100)][int]$Runs = 3,
-    [ValidateSet('corrupt-label','swap-same-colour','delay-adoption','stale-binding')][string]$Inject,
+    [ValidateSet('corrupt-label','swap-same-colour','delay-adoption','stale-binding','module-late','module-transient','module-reload')][string]$Inject,
     [string[]]$Declare = @(),
     [string]$Overlays,
     [ValidateRange(1000,3600000)][int]$TraceMs = 192000,
@@ -21,6 +21,7 @@ if ((@($Short, $Geometry, $Validation) | Where-Object { $_ }).Count -gt 1) { thr
 if (($NoVram -or $DebugHalfTarget) -and -not $Short) { throw '-NoVram and -DebugHalfTarget require -Short.' }
 if ([double]::IsNaN($TurnMs) -or [double]::IsInfinity($TurnMs) -or $TurnMs -le 0 -or $TurnMs -gt 10000) { throw '-TurnMs must be finite and in (0,10000].' }
 if ($Inject -and ($Scene -notin @('w3','w4') -or $Geometry -or $Validation)) { throw 'Fault injection requires a W3 or W4 run or short capture.' }
+if ($Inject -like 'module-*' -and $Candidate -ne 'sd') { throw 'The module-* injections exist only for the Qt app (sd).' }
 if (@($Declare | Where-Object { $_ -like 'overlays=*' }).Count) { throw 'Give the overlay configuration with -Overlays, not -Declare.' }
 if ($PSBoundParameters.ContainsKey('Adapter') -and [string]::IsNullOrWhiteSpace($Adapter)) { throw '-Adapter must be nonempty.' }
 $captureMode = -not $Geometry -and -not $Validation
@@ -38,6 +39,8 @@ if ($captureMode) {
 }
 $repository = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../..')).Path
 $finalizer = Join-Path $PSScriptRoot 'finalize_run.py'
+$guardScript = Join-Path $PSScriptRoot 'file_guard.py'
+$python = (Get-Command python -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $buildDirectory = (Resolve-Path -LiteralPath $Build).Path
 $launch = Get-Content -LiteralPath (Join-Path $buildDirectory 'launch.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($launch.format -ne 'magic600-l2-launch-v1' -or $launch.candidate -ne $Candidate) { throw 'launch.json does not match this candidate and format.' }
@@ -142,6 +145,30 @@ function Start-App([string[]]$Values, [bool]$WithValidation) {
     return $app
 }
 
+function Start-Guard([string]$Directory) {
+    # The guard holds every identity file and its folders from before the launch until the finalizer has finished (L2-V-002).
+    $info = New-Object Diagnostics.ProcessStartInfo
+    $info.FileName = $python
+    $info.Arguments = Native-Arguments @('-B',$guardScript,'--launch',(Join-Path $buildDirectory 'launch.json'),'--candidate',$Candidate,'--out',$Directory)
+    $info.UseShellExecute = $false
+    $info.RedirectStandardInput = $true
+    $info.RedirectStandardOutput = $true
+    $guard = New-Object Diagnostics.Process
+    $guard.StartInfo = $info
+    if (-not $guard.Start()) { throw 'The file guard did not start; no gate evidence.' }
+    $null = $guard.Handle
+    $line = $guard.StandardOutput.ReadLineAsync()
+    if (-not $line.Wait(60000)) { throw 'The file guard was not ready within 60 s; no gate evidence.' }
+    if ($line.Result -cne 'ready') { throw 'The file guard refused to protect the build; see its message above. No gate evidence.' }
+    return $guard
+}
+function Stop-Guard($Guard) {
+    $Guard.StandardInput.WriteLine('release')
+    $Guard.StandardInput.Close()
+    if (-not $Guard.WaitForExit(30000)) { throw 'The file guard did not release within 30 s; the series is stopped.' }
+    if ($Guard.ExitCode -ne 0) { throw "The file guard exited $($Guard.ExitCode) at release: a protected file changed identity. The series is stopped." }
+}
+
 $ownership = New-Object Threading.Mutex($false, "Global\$session")
 try { $owned = $ownership.WaitOne(0) } catch [Threading.AbandonedMutexException] { $owned = $true }
 if (-not $owned) { $ownership.Dispose(); throw 'Another run_scene.ps1 invocation is running; start this one after it has ended.' }
@@ -179,9 +206,14 @@ try {
             if ($DebugHalfTarget) { $arguments += '--l2-debug-half-target' }
             $process = $null
             $capture = $null
+            $guard = $null
             try {
+                $guard = Start-Guard $directory
+                # Process creation times may come from the coarse system clock; the pause keeps the app's creation time after the guard's precise ready time.
+                Start-Sleep -Milliseconds 100
                 $process = Start-App $arguments ([bool]$Validation)
                 $launchedPid = $process.Id
+                $launchedCreated = $process.StartTime.ToFileTimeUtc()
                 $csv = Join-Path $directory 'presentmon.csv'
                 if ($captureMode) {
                     $captureArguments = @('--v1_metrics','--qpc_time','--process_id',"$launchedPid",'--output_file',$csv,'--session_name',$session)
@@ -204,7 +236,7 @@ try {
                     if (-not $complete) { throw 'The PresentMon CSV does not end with a complete row; no gate evidence.' }
                 }
                 if ($appExit -eq 3) { throw 'The app exited 3: the framework window left the foreground or a condition sample failed, or the DLL ended the process after an unconfirmed drain (then no harness.json exists). No gate evidence.' }
-                $finalArguments = @('-B',$finalizer,$directory,'--candidate',$Candidate,'--mode',$mode,'--launched-pid',"$launchedPid",'--app-exit',"$appExit")
+                $finalArguments = @('-B',$finalizer,$directory,'--candidate',$Candidate,'--mode',$mode,'--launched-pid',"$launchedPid",'--launched-created',"$launchedCreated",'--app-exit',"$appExit")
                 if ($PSBoundParameters.ContainsKey('Adapter')) { $finalArguments += @('--adapter',$Adapter) }
                 if ($mode -eq 'run' -and $appExit -in @(0,2)) {
                     if ($Inject) { $finalArguments += '--fault-injection' }
@@ -217,6 +249,7 @@ try {
                 }
                 & python @finalArguments
                 $finalExit = $LASTEXITCODE
+                Stop-Guard $guard
                 if ($finalExit -eq 5) {
                     $refusalPath = Join-Path $directory 'refusal.json'
                     if (Test-Path -LiteralPath $refusalPath -PathType Leaf) {
@@ -242,8 +275,10 @@ try {
                     try { if (-not $capture.HasExited) { $capture.Kill(); $null = $capture.WaitForExit(5000) } } catch { Write-Warning "Killing PresentMon failed: $($_.Exception.Message)" }
                     Remove-Session $session
                 }
+                try { if ($guard -and -not $guard.HasExited) { $guard.Kill(); $null = $guard.WaitForExit(5000) } } catch { Write-Warning "Stopping the file guard failed: $($_.Exception.Message)" }
                 if ($process) { $process.Dispose() }
                 if ($capture) { $capture.Dispose() }
+                if ($guard) { $guard.Dispose() }
             }
             $completed++
             if ($completed -lt $total) { Start-Sleep -Seconds 20 }
