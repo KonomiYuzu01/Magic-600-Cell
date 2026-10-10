@@ -27,7 +27,7 @@ Run read-only as a review with the default reviewer model, effort `max` and spee
 |---|---|---|
 | 1 | Full-state page (Codex implementation `20261009T223844Z-3048ea6b`) | page check passed in its sandbox |
 | 2 | All-menu export in the integrator's session, then `check_full.mjs` | 140/142; I_a sweep samples at t = 1 off by up to 1.2e-4 |
-| 3 | Angle terms computed on the CPU | CHECK_RESULT |
+| 3 | Angle terms computed on the CPU (commit `b42c8df`) | `check_full.mjs` 142/142 on all three menus, both projections and every scrub time |
 
 ## 6. Constraints and owned files
 - Read-only review; no files may change.
