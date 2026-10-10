@@ -203,7 +203,8 @@ uniform sampler2D uVertices, uCenters, uFrames, uPoses, uProbeHome;
 uniform usampler2D uStickers, uSlotPiece;
 uniform isampler2D uIndex, uLattice, uMoving, uProbePieces;
 uniform int uWidth, uFilter, uIsolate, uFocus, uProjection;
-uniform float uRadius, uFacetShrink, uStickerShrink, uAngle;
+uniform float uRadius, uFacetShrink, uStickerShrink;
+uniform vec2 uSweep; // (cos(angle) - 1, sin(angle)), computed in double precision on the CPU
 uniform vec4 uNormal, uPlaneU, uPlaneV, uPole, uBasis0, uBasis1, uBasis2;
 uniform mat4 uQ, viewMatrix, projectionMatrix;
 uniform bool uProbe;
@@ -221,7 +222,7 @@ vec4 posePoint(int pose, vec4 x) {
 }
 vec4 sweepPoint(vec4 x) {
   float a = dot(x, uPlaneU), b = dot(x, uPlaneV);
-  float c = cos(uAngle)-1.0, s = sin(uAngle);
+  float c = uSweep.x, s = uSweep.y;
   return x + (c*a-s*b)*uPlaneU + (s*a+c*b)*uPlaneV;
 }
 vec3 project4(vec4 x) {
@@ -253,7 +254,7 @@ void main() {
   bool hidden = (uFilter == 1 && vOff == 0) || (uFilter == 2 && vOff == 1)
              || (uFilter == 3 && piece != uIsolate);
   vec4 world = posePoint(pose, home);
-  if (intAt(uMoving, piece) != 0 && uAngle != 0.0) world = sweepPoint(world);
+  if (intAt(uMoving, piece) != 0 && uSweep != vec2(0.0)) world = sweepPoint(world);
   vWorld = world;
   vProjected = project4(uQ * world);
   vClip = projectionMatrix * viewMatrix * vec4(vProjected,1.0);
@@ -324,7 +325,7 @@ function makeRenderer() {
   Object.assign(uniforms, {
     uWidth: { value: width }, uRadius: { value: geometry.mesh.normal_length },
     uNormal: { value: new THREE.Vector4(...geometry.mesh.normal) },
-    uFacetShrink: { value: 0.76 }, uStickerShrink: { value: 0.82 }, uAngle: { value: 0 },
+    uFacetShrink: { value: 0.76 }, uStickerShrink: { value: 0.82 }, uSweep: { value: new THREE.Vector2(0, 0) },
     uPlaneU: { value: new THREE.Vector4() }, uPlaneV: { value: new THREE.Vector4() },
     uQ: { value: new THREE.Matrix4() }, uPole: { value: new THREE.Vector4(0, 0, 0, 1) },
     uBasis0: { value: new THREE.Vector4(1, 0, 0, 0) }, uBasis1: { value: new THREE.Vector4(0, 1, 0, 0) },
@@ -444,8 +445,10 @@ function syncView() {
   u.uIsolate.value = validId(id) ? id : -1;
   u.uFocus.value = selectedCertificate ? selectedCertificate.piece : ($('filter').value === 'isolate' ? u.uIsolate.value : -1);
   const progress = app.view.t <= 1 ? app.view.t : 2 - app.view.t;
-  u.uAngle.value = app.view.state === 'sweep-before' && overlay
+  const angle = app.view.state === 'sweep-before' && overlay
     ? overlay.header.sweep.angle * progress * progress * (3 - 2 * progress) : 0;
+  // GPU sin and cos are not accurate enough for the 1e-4 sweep check (SwiftShader missed it by up to 1.2e-4).
+  u.uSweep.value.set(-2 * Math.sin(angle / 2) ** 2, Math.sin(angle));
   $('facetValue').textContent = u.uFacetShrink.value.toFixed(2);
   $('stickerValue').textContent = u.uStickerShrink.value.toFixed(2);
   $('rotateXValue').textContent = `${$('rotateX').value}°`;
