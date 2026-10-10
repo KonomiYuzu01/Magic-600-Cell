@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-10] update | Jumbling theory index and open problems
+[theory README](../../research/jumbling/theory/README.md) indexes the jumbling theory scripts and result files, and [open-problems](../../research/jumbling/theory/open-problems.md) gathers every open problem of the theory draft, the restoration page and the deferred-problems decision with its status and next step. The I_a@40 stopping configuration is recorded with an analysis of its off-grip seams.
+
 ## [2026-10-10] update | W3 re-accepted after the anchor change
 The owner's attended GPU session re-accepted W3 for all four builds with the area-centroid anchor: S-B, Qt and Godot (both under the loaded-file guard), and the W-J probe. Updated [s-b-probe-results](evidence/s-b-probe-results.md) and [level-2-framework-results](evidence/level-2-framework-results.md), and added [w-j-probe-results](evidence/w-j-probe-results.md): the W-J GPU checks and its three fixtures meet the gate, and its overlay costs are unmeasured.
 
