@@ -1,4 +1,4 @@
-"""Separate, failing acceptance-item-2 check; never hides fixed-asset disagreement."""
+"""Acceptance-item-2 check: SPEC anchors must agree with the solved/retained lattice."""
 import sys
 sys.dont_write_bytecode = True
 from fixture_data import wj
