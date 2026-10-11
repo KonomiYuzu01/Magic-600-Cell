@@ -1,0 +1,727 @@
+{
+ "state": "E2 end of I_a@40 (seams-I_a-40-stop.json moves, then the E2 twists)",
+ "off_lattice": 690,
+ "vacant_chambers": 690,
+ "blocked_grips_by_class": [
+  5,
+  2,
+  3,
+  6,
+  10
+ ],
+ "fragments": [
+  {
+   "domain": 1,
+   "pieces": 424,
+   "class": 0,
+   "cells": 5,
+   "shared": [
+    {
+     "cell": [
+      369,
+      507
+     ],
+     "fragment_pieces": 86,
+     "lattice_pieces": 25,
+     "chambers": 86,
+     "vacant_chambers": 61
+    }
+   ]
+  },
+  {
+   "domain": 2,
+   "pieces": 50,
+   "class": 1,
+   "cells": 1,
+   "shared": []
+  },
+  {
+   "domain": 3,
+   "pieces": 63,
+   "class": 2,
+   "cells": 3,
+   "shared": [
+    {
+     "cell": [
+      162,
+      237
+     ],
+     "fragment_pieces": 3,
+     "lattice_pieces": 86,
+     "chambers": 86,
+     "vacant_chambers": 0
+    }
+   ]
+  },
+  {
+   "domain": 4,
+   "pieces": 93,
+   "class": 4,
+   "cells": 2,
+   "shared": [
+    {
+     "cell": [
+      39,
+      60
+     ],
+     "fragment_pieces": 45,
+     "lattice_pieces": 35,
+     "chambers": 86,
+     "vacant_chambers": 51
+    }
+   ]
+  },
+  {
+   "domain": 5,
+   "pieces": 12,
+   "class": 0,
+   "cells": 1,
+   "shared": [
+    {
+     "cell": [
+      154,
+      369
+     ],
+     "fragment_pieces": 12,
+     "lattice_pieces": 86,
+     "chambers": 86,
+     "vacant_chambers": 0
+    }
+   ]
+  },
+  {
+   "domain": 6,
+   "pieces": 48,
+   "class": 1,
+   "cells": 1,
+   "shared": []
+  }
+ ],
+ "outline": [
+  {
+   "pieces": 424,
+   "class": 0,
+   "pieces_inside_the_outline": 0
+  },
+  {
+   "pieces": 50,
+   "class": 1,
+   "pieces_inside_the_outline": 0
+  },
+  {
+   "pieces": 63,
+   "class": 2,
+   "pieces_inside_the_outline": 0
+  },
+  {
+   "pieces": 93,
+   "class": 4,
+   "pieces_inside_the_outline": 0
+  },
+  {
+   "pieces": 12,
+   "class": 0,
+   "pieces_inside_the_outline": 0
+  },
+  {
+   "pieces": 48,
+   "class": 1,
+   "pieces_inside_the_outline": 0
+  }
+ ],
+ "separating": [
+  {
+   "fragment": 424,
+   "class": 0,
+   "cell": [
+    369,
+    507
+   ],
+   "separating_cuts": [
+    {
+     "grip": 390,
+     "class": 1,
+     "admissible": true,
+     "side_of_the_cap": "lattice",
+     "vacant_chambers_in_its_cap": 0
+    }
+   ]
+  },
+  {
+   "fragment": 63,
+   "class": 2,
+   "cell": [
+    162,
+    237
+   ],
+   "separating_cuts": []
+  },
+  {
+   "fragment": 93,
+   "class": 4,
+   "cell": [
+    39,
+    60
+   ],
+   "separating_cuts": []
+  },
+  {
+   "fragment": 12,
+   "class": 0,
+   "cell": [
+    154,
+    369
+   ],
+   "separating_cuts": []
+  }
+ ],
+ "retained_twists_of_separating_grips": [
+  {
+   "twist": [
+    390,
+    1
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    2
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    3
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    4
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    5
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    6
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    7
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    8
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    9
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    10
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  },
+  {
+   "twist": [
+    390,
+    11
+   ],
+   "off_lattice_after": 690,
+   "shared_after": [
+    [
+     [
+      369,
+      507
+     ],
+     86,
+     25
+    ],
+    [
+     [
+      162,
+      237
+     ],
+     3,
+     86
+    ],
+    [
+     [
+      39,
+      60
+     ],
+     45,
+     35
+    ],
+    [
+     [
+      154,
+      369
+     ],
+     12,
+     86
+    ]
+   ]
+  }
+ ],
+ "shared_before": [
+  [
+   [
+    369,
+    507
+   ],
+   86,
+   25
+  ],
+  [
+   [
+    162,
+    237
+   ],
+   3,
+   86
+  ],
+  [
+   [
+    39,
+    60
+   ],
+   45,
+   35
+  ],
+  [
+   [
+    154,
+    369
+   ],
+   12,
+   86
+  ]
+ ],
+ "cell_types_class_1": {
+  "reachable_cells": 2641,
+  "poles_pairwise_nearest_neighbours": true,
+  "table": [
+   {
+    "cell_type": "edge",
+    "label_0_orbit_size": 1,
+    "chambers": 86,
+    "cells": 5
+   },
+   {
+    "cell_type": "edge",
+    "label_0_orbit_size": 5,
+    "chambers": 86,
+    "cells": 715
+   },
+   {
+    "cell_type": "tetrahedron",
+    "label_0_orbit_size": 1,
+    "chambers": 87,
+    "cells": 120
+   },
+   {
+    "cell_type": "tetrahedron",
+    "label_0_orbit_size": 4,
+    "chambers": 0,
+    "cells": 480
+   },
+   {
+    "cell_type": "triangle",
+    "label_0_orbit_size": 2,
+    "chambers": 111,
+    "cells": 480
+   },
+   {
+    "cell_type": "triangle",
+    "label_0_orbit_size": 3,
+    "chambers": 0,
+    "cells": 720
+   },
+   {
+    "cell_type": "vertex",
+    "label_0_orbit_size": 1,
+    "chambers": 385,
+    "cells": 6
+   },
+   {
+    "cell_type": "vertex",
+    "label_0_orbit_size": 5,
+    "chambers": 385,
+    "cells": 114
+   }
+  ]
+ },
+ "menus": [
+  {
+   "elements_mapping_P_onto_P": 3,
+   "of_them_retained": 3,
+   "pairs": 2400
+  }
+ ],
+ "seconds": 304
+}

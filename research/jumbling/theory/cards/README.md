@@ -7,5 +7,6 @@ Self-contained problem statements for a natural-language proof assistant (the ow
 | [card-1-retained-group.md](card-1-retained-group.md) | L1 | Finite certificates that would make the retained group equal to the kernel of its Lemma 8 invariants. | ready |
 | [card-2-jumbled-lattice-invariants.md](card-2-jumbled-lattice-invariants.md) | L2 | Do lattice states reached through jumbling keep the Lemma 8 invariants? | ready |
 | [card-3-hidden-puzzles.md](card-3-hidden-puzzles.md) | R1 | Each of the five inscribed 600-cells of the grips carries an ordinary puzzle that never blocks itself; when can a stop be restored one class at a time? | ready |
+| [card-4-class-puzzle-and-vacancies.md](card-4-class-puzzle-and-vacancies.md) | R1 | The structure E3 used to return two fragments of one class (stars, label orbits, counting, edge holonomy), and how to empty a cell that a fragment shares with lattice pieces (moving vacant chambers). | ready |
 
 The lattice-prefix rule ([open-problems](../open-problems.md), "Results of 11 October 2026") was checked separately and has no card.
