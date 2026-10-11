@@ -41,14 +41,17 @@ export async function readSelection(fileList) {
   } catch { return fail("Selected files could not be read as a UTF-8 bundle."); }
 }
 
+// Cache a validated bundle under its id; false when the cache refuses it.
+export async function storeBundle(id, selection, cache) {
+  try { await cache.put(id, { manifestText: selection.manifestText, files: [...selection.files] }); return true; }
+  catch { return false; }
+}
+
 export async function openBundle(selection, cache) {
   if (!selection || selection.ok === false) return selection || fail("No bundle selected.");
   const result = await validateBundle(selection.manifestText, selection.files);
   if (!result.ok) return result;
-  let cached = true;
-  try { await cache.put(result.bundle.id, { manifestText: selection.manifestText, files: [...selection.files] }); }
-  catch { cached = false; }
-  return { ok: true, bundle: result.bundle, cached };
+  return { ok: true, bundle: result.bundle, cached: await storeBundle(result.bundle.id, selection, cache) };
 }
 
 export async function loadCached(cache) {
