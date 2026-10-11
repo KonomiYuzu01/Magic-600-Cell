@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-11] decision | Class A bundles on the public Taste Lab page
+Recorded in [owner-decisions-2026-10-11-tastelab-public-bundles](decisions/owner-decisions-2026-10-11-tastelab-public-bundles.md): the class A image bundles are published with the public Taste Lab page, which loads them by itself; class B images and all answers stay private.
+
 ## [2026-10-10] decision | Look Lab Global and Local layouts
 Recorded in [owner-decisions-2026-10-10-looklab-views](decisions/owner-decisions-2026-10-10-looklab-views.md): the Look Lab gets two default greybox layouts that show Global and Local together and linked, a left-right split and a picture-in-picture inset, to be revised when the engineering and design tracks join.
 
