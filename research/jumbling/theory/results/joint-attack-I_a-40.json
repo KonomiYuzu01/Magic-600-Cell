@@ -1,5 +1,5 @@
 {
- "note": "Joint attack on the I_a@40 stop (open-problems.md, R1). Exact research runs; timings are cloud timings of research code. Logs marked partial were saved while the run continued.",
+ "note": "Joint attack on the I_a@40 stop (open-problems.md, R1). Exact research runs; timings are cloud timings of research code. Every run here has ended.",
  "saved": "2026-10-11",
  "aba_floor": {
   "script": "scratch (not kept)",
@@ -405,13 +405,381 @@
  },
  "e1_S4_40_from_scratch": {
   "script": "e1_carrier.py S4 40",
-  "status": "running (partial log)",
+  "start": {
+   "start": 0,
+   "N": 46394,
+   "off": 80455
+  },
+  "run": "S4@40",
+  "experiment": "E1 carrier",
+  "order": [
+   "seam",
+   "cover",
+   "close",
+   "carrier",
+   "lock",
+   "conj",
+   "improve",
+   "shift",
+   "reopen"
+  ],
+  "T": 1549,
+  "result": "stuck",
+  "start_moves": 0,
+  "N_end": 5666,
+  "off_end": 3754,
+  "twists": 87,
+  "moves": [
+   [
+    31,
+    15
+   ],
+   [
+    141,
+    21
+   ],
+   [
+    334,
+    20
+   ],
+   [
+    378,
+    16
+   ],
+   [
+    399,
+    13
+   ],
+   [
+    327,
+    22
+   ],
+   [
+    441,
+    18
+   ],
+   [
+    561,
+    17
+   ],
+   [
+    572,
+    19
+   ],
+   [
+    361,
+    6
+   ],
+   [
+    340,
+    14
+   ],
+   [
+    532,
+    21
+   ],
+   [
+    585,
+    16
+   ],
+   [
+    481,
+    20
+   ],
+   [
+    557,
+    22
+   ],
+   [
+    587,
+    9
+   ],
+   [
+    594,
+    19
+   ],
+   [
+    65,
+    22
+   ],
+   [
+    239,
+    23
+   ],
+   [
+    43,
+    3
+   ],
+   [
+    154,
+    12
+   ],
+   [
+    546,
+    12
+   ],
+   [
+    519,
+    6
+   ],
+   [
+    446,
+    18
+   ],
+   [
+    13,
+    12
+   ],
+   [
+    46,
+    12
+   ],
+   [
+    155,
+    20
+   ],
+   [
+    265,
+    20
+   ],
+   [
+    15,
+    12
+   ],
+   [
+    396,
+    1
+   ],
+   [
+    216,
+    18
+   ],
+   [
+    396,
+    19
+   ],
+   [
+    485,
+    18
+   ],
+   [
+    99,
+    3
+   ],
+   [
+    75,
+    10
+   ],
+   [
+    99,
+    18
+   ],
+   [
+    15,
+    13
+   ],
+   [
+    13,
+    10
+   ],
+   [
+    15,
+    18
+   ],
+   [
+    13,
+    19
+   ],
+   [
+    56,
+    10
+   ],
+   [
+    13,
+    18
+   ],
+   [
+    396,
+    14
+   ],
+   [
+    422,
+    1
+   ],
+   [
+    396,
+    12
+   ],
+   [
+    55,
+    1
+   ],
+   [
+    139,
+    14
+   ],
+   [
+    55,
+    0
+   ],
+   [
+    139,
+    12
+   ],
+   [
+    169,
+    4
+   ],
+   [
+    139,
+    13
+   ],
+   [
+    139,
+    15
+   ],
+   [
+    55,
+    1
+   ],
+   [
+    139,
+    14
+   ],
+   [
+    15,
+    18
+   ],
+   [
+    13,
+    11
+   ],
+   [
+    15,
+    16
+   ],
+   [
+    12,
+    15
+   ],
+   [
+    99,
+    11
+   ],
+   [
+    12,
+    14
+   ],
+   [
+    43,
+    21
+   ],
+   [
+    56,
+    6
+   ],
+   [
+    43,
+    23
+   ],
+   [
+    139,
+    15
+   ],
+   [
+    43,
+    5
+   ],
+   [
+    139,
+    12
+   ],
+   [
+    169,
+    12
+   ],
+   [
+    103,
+    11
+   ],
+   [
+    169,
+    23
+   ],
+   [
+    422,
+    15
+   ],
+   [
+    377,
+    4
+   ],
+   [
+    422,
+    13
+   ],
+   [
+    216,
+    16
+   ],
+   [
+    285,
+    3
+   ],
+   [
+    216,
+    17
+   ],
+   [
+    216,
+    12
+   ],
+   [
+    411,
+    4
+   ],
+   [
+    216,
+    21
+   ],
+   [
+    169,
+    12
+   ],
+   [
+    51,
+    4
+   ],
+   [
+    169,
+    13
+   ],
+   [
+    65,
+    12
+   ],
+   [
+    56,
+    7
+   ],
+   [
+    65,
+    13
+   ],
+   [
+    267,
+    12
+   ],
+   [
+    411,
+    8
+   ],
+   [
+    267,
+    12
+   ]
+  ],
   "step_log": [
-   {
-    "start": 0,
-    "N": 46394,
-    "off": 80455
-   },
    {
     "rule": "seam",
     "twists": [
@@ -1192,11 +1560,11 @@
     "off": 3754,
     "sec": 15829
    }
-  ]
+  ],
+  "seconds": 19331
  },
  "e2_stop_no_history": {
   "script": "e2_frag.py I_a 40 results/seams-I_a-40-stop.json <out> --order seam,cover,close,carrier,comm,lock,conj,improve,shift",
-  "status": "running (partial log)",
   "start": {
    "start": 62,
    "history": 0,
@@ -1205,6 +1573,124 @@
     1192
    ]
   },
+  "run": "I_a@40",
+  "experiment": "E2 fragment rule, potential (off, N)",
+  "order": [
+   "seam",
+   "cover",
+   "close",
+   "carrier",
+   "comm",
+   "lock",
+   "conj",
+   "improve",
+   "shift"
+  ],
+  "result": "stuck",
+  "start_moves": 62,
+  "history_kept": false,
+  "P_end": [
+   690,
+   1080
+  ],
+  "moves": [
+   [
+    30,
+    44
+   ],
+   [
+    145,
+    39
+   ],
+   [
+    30,
+    15
+   ],
+   [
+    145,
+    33
+   ],
+   [
+    5,
+    2
+   ],
+   [
+    74,
+    9
+   ],
+   [
+    5,
+    0
+   ],
+   [
+    5,
+    44
+   ],
+   [
+    38,
+    39
+   ],
+   [
+    5,
+    15
+   ],
+   [
+    38,
+    33
+   ],
+   [
+    5,
+    4
+   ],
+   [
+    17,
+    8
+   ],
+   [
+    5,
+    0
+   ],
+   [
+    38,
+    56
+   ],
+   [
+    5,
+    16
+   ],
+   [
+    38,
+    34
+   ],
+   [
+    5,
+    51
+   ],
+   [
+    38,
+    2
+   ],
+   [
+    74,
+    5
+   ],
+   [
+    38,
+    5
+   ],
+   [
+    74,
+    2
+   ],
+   [
+    5,
+    4
+   ],
+   [
+    74,
+    0
+   ]
+  ],
   "step_log": [
    {
     "rule": "comm",
@@ -1400,6 +1886,51 @@
     ],
     "sec": 10488
    }
-  ]
+  ],
+  "seconds": 16919
+ },
+ "e2_end_census": {
+  "script": "scratch (not kept), at the E2 end configuration (stop moves plus the 24 E2 twists)",
+  "what": "per off-lattice domain: admissible caps holding it whole, cap pairs (d, c) with the domain in their common part, and lens-commutator words the comm rule enumerates",
+  "domains": [
+   {
+    "size": 424,
+    "holders": 3,
+    "pairs": 6,
+    "words": 1416
+   },
+   {
+    "size": 93,
+    "holders": 2,
+    "pairs": 2,
+    "words": 708
+   },
+   {
+    "size": 63,
+    "holders": 5,
+    "pairs": 20,
+    "words": 5664
+   },
+   {
+    "size": 50,
+    "holders": 5,
+    "pairs": 20,
+    "words": 8496
+   },
+   {
+    "size": 48,
+    "holders": 4,
+    "pairs": 12,
+    "words": 4248
+   },
+   {
+    "size": 12,
+    "holders": 4,
+    "pairs": 12,
+    "words": 2124
+   }
+  ],
+  "words_total": 22656,
+  "admissible_in_random_sample": "87 of 300"
  }
 }

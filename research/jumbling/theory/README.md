@@ -9,6 +9,7 @@ Index of `research/jumbling/theory/`. Every script runs from the repository root
 | [theory-draft.md](theory-draft.md) | J3 theory draft: groupoid and validity (item 1), blocking (2), finiteness (3), lattice states (4), defect and return (5), solving theory (6), scope (7). |
 | [restoration.md](restoration.md) | J3-R restoration theory and method: tree model, misalignment N and the rim test, phase U (rim descent and the deep-input rules), phase L, and what is proved, computed, a lead or open. |
 | [open-problems.md](open-problems.md) | Every open jumbling problem with its status, latest evidence and next step. |
+| [cards/](cards/README.md) | Self-contained problem cards for an external prover (L1, L2, R1). |
 
 ## Scripts
 
@@ -30,6 +31,7 @@ Index of `research/jumbling/theory/`. Every script runs from the repository root
 | `isolate.py` | Each off-lattice domain: the caps that hold it whole and the smallest intersection of 1 to 4 of them. | `python research/jumbling/theory/isolate.py I_a 40 research/jumbling/theory/results/seams-I_a-40-stop.json` | open-problems.md, R1 joint attack |
 | `comm_anatomy.py` | One commutator piece by piece: which of its four twists move each piece, and which pieces leave or reach the lattice. | `python research/jumbling/theory/comm_anatomy.py I_a 40 research/jumbling/theory/results/seams-I_a-40-stop.json 30 44 145 39` | open-problems.md, R1 joint attack |
 | `deep_scramble.py` | The five inscribed 600-cells of the grip poles, their blocking, a scramble with most pieces off the lattice, and an exact check of the lattice-prefix rule. | `python research/jumbling/theory/deep_scramble.py I_a` | open-problems.md, structure results |
+| `classes.py` | Under I_a, exactly: the five classes of grip poles (n_c·2I) and K⁺ acting on them, the menu as a stabiliser in the rotation group of its class, compatible poles, the 20 frames and the cells of each class's cuts; with `--states`, the class of every off-lattice domain and the cells its fragments occupy at the deep scramble, the I_a@40 stop and the E2 end. | `python research/jumbling/theory/classes.py --states` | open-problems.md, structure results; card 3 |
 
 ## Results (`results/`)
 
@@ -53,3 +55,4 @@ Index of `research/jumbling/theory/`. Every script runs from the repository root
 | `isolate-I_a-40-stop.txt`, `comm-anatomy-I_a-40-stop.txt` | `isolate.py`, `comm_anatomy.py` | Fragment isolation and the anatomy of the first lowering commutator at the I_a@40 stop | open-problems.md, R1 joint attack |
 | `joint-attack-I_a-40.json` | `e1_carrier.py`, `e2_frag.py`, a scratch enumeration | Floor and complete three-twist enumeration on two cap pairs; E1 from S31; step logs of E1 on S4@40 and E2 at the stop (partial when marked) | open-problems.md, R1 joint attack |
 | `deep-scramble-I_a.json` | `deep_scramble.py` | Inscribed 600-cells and their coverage, blocking profile and set-neighbour blocking, the 360-twist scramble (moves, 93.5% off the lattice), lattice-prefix check | open-problems.md, structure results |
+| `classes-I_a.json` | `classes.py --states` | Class structure checks; fragments by class, cells and blocked grips at three configurations | open-problems.md, structure results; card 3 |
