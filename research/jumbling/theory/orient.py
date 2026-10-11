@@ -242,6 +242,9 @@ class Orient:
     # ------------------------------------------------------------------ generators
     def _generators(self, free):
         A = self.free_at_start if free is None else list(free)
+        not_free = sorted(set(A) - set(self.free_at_start))
+        if not_free:
+            raise AssertionError(f'grips {not_free} are not free at the start state; the model is exact only for free grips')
         self.free = A
         NI = len(self.M.items)
         NF = self.NF
