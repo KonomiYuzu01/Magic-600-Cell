@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createLocalDb } from "../local-db.js";
 import { loadImageDocuments } from "../images-ui.js";
+import { loadRecords } from "../records.js";
 
 // In-memory IDB requests, with writes committed only on transaction complete.
 // Both adapters share the same store; no browser data, filesystem or network.
@@ -288,29 +289,14 @@ for (const failure of ["error", "blocked", "throw"]) test(`local database open $
   }
 });
 
-test("documented Looks loadRecords limitation: 500 timestamp ties stop before the 501st comparison", async () => {
+test("Looks loadRecords reads beyond 500 timestamp ties to the 501st comparison", async () => {
   const fake = fakeIndexedDB(), db = await createLocalDb(fake.indexedDB);
   for (let n = 0; n < 501; n++) await db.doc(`comparisons/${numbered(n)}`).set({ t: n < 500 ? "same-time" : "z-later" });
-  // Copy of page/app.js loadRecords (base lines 378-397). Importing app.js
-  // starts DOM and worker code, so its loop stays here without changing the page.
-  const PAGE = 500, records = [], ids = [], seen = new Set();
-  let last = null;
-  for (;;) {
-    let query = db.collection("comparisons").orderBy("t").limit(PAGE);
-    if (last !== null) query = query.where("t", ">=", last);
-    const snap = await query.get();
-    let added = 0;
-    for (const d of snap.docs) {
-      if (seen.has(d.id)) continue;
-      seen.add(d.id);
-      records.push(d.data());
-      ids.push(d.id);
-      added++;
-    }
-    if (snap.size < PAGE || !added) break;
-    last = snap.docs[snap.docs.length - 1].data().t;
-  }
+  const { records, ids } = await loadRecords(db);
   assert.equal((await db.collection("comparisons").get()).size, 501);
-  assert.equal(records.length, 500);
-  assert.equal(ids.length, 500);
+  assert.equal(records.length, 501);
+  assert.equal(ids.length, 501);
+  assert.equal(new Set(ids).size, 501);
+  assert.equal(records.at(-1).t, "z-later");
+  assert.equal(ids.at(-1), numbered(500));
 });
