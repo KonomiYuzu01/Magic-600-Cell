@@ -24,8 +24,9 @@ Checks (each printed, and recorded in the results file):
   contents each leaves off label 0;
 - F48: all five labels of its cell E = {5, 38} lie in one orbit;
 - F50 search: commutator cubes [x, y]^3 of free twists at adjacent grips; P puts F50 on label 0 in Y,
-  then Q puts every other content back on label 0 (both in fixed search order);
-- F48 search: commutators [x, y] whose edge part twists two edge cells in place; the power n that clears
+  then Q puts every other content except F48 back on label 0 (both in fixed search order);
+- F48 search (the construction chosen, not the only possible one: a restoring word may also permute
+  lattice contents): commutators [x, y] whose edge part twists two edge cells in place; the power n that clears
   every other point gives a pure twist of the two cells; against one fixed 5-cycle per cell the twist is
   an exponent pair, and per pair of cells all such twists have one exponent ratio, so two of them never
   untwist one cell alone; the Z5 rank of the pair vectors shows that the unit vector at E is in their span;
@@ -365,7 +366,7 @@ def rank5(rows):
     return rk
 
 
-def search_f48(m, after50):
+def search_f48(m):
     """A cycle of pure two-edge twists through E whose exponents close on E alone."""
     X, Y, E = m.cell(X_POLES), m.cell(Y_POLES), m.cell(E_POLES)
     ptype = np.repeat(m.ncaps, 5)
@@ -532,8 +533,7 @@ def main():
     w50, info50 = search_f50(m)
     out['F50_search'] = {k: (list(map(list, v[:2])) + [v[2]] if k in 'PQ' else v) for k, v in info50.items()}
     log(f50=out['F50_search'])
-    after50 = m.run(w50, m.state)
-    w48, info48 = search_f48(m, after50)
+    w48, info48 = search_f48(m)
     out['F48_search'] = info48
     log(f48=info48)
     word = w50 + w48
@@ -545,7 +545,7 @@ def main():
     out['exact'] = verify(out['word'], members, cls)
     out['seconds'] = round(time.time() - T0)
     Path(a.out).write_text(json.dumps(out, indent=1) + '\n')
-    print('wrote', Path(a.out).resolve().relative_to(HERE.parent.parent.parent))
+    print('wrote', a.out)
 
 
 if __name__ == '__main__':
