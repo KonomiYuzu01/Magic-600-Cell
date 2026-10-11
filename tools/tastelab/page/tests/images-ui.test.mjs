@@ -251,7 +251,7 @@ class Element {
   }
 }
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
-function fixture(indices = [0, 1, 2]) {
+function fixture(indices = [0, 1, 2], id = "20261004T120000Z-0123abcd") {
   const files = [], data = Buffer.alloc(indices.length * 1024);
   const items = indices.map((index, row) => {
     const bytes = Uint8Array.of(0xff, 0xd8, 0xff, index), thumbSha256 = digest(bytes);
@@ -262,23 +262,24 @@ function fixture(indices = [0, 1, 2]) {
       pageUrl: "https://commons.wikimedia.org/wiki/File:Synthetic.jpg", licence: "CC0-1.0",
       licenceUrl: "https://creativecommons.org/publicdomain/zero/1.0/" };
   });
-  const manifest = { format: "tastelab-images", version: 1, id: "20261004T120000Z-0123abcd", createdAt: time,
+  const manifest = { format: "tastelab-images", version: 1, id, createdAt: time,
     model: { id: "synthetic", weightsSha256: "ab".repeat(32) }, items,
     embeddings: { dtype: "float16", dim: 512, count: items.length, data: data.toString("base64") } };
   files.push(["manifest.json", new TextEncoder().encode(JSON.stringify(manifest))]);
   return files.map(([name, bytes]) => ({ name, size: bytes.length, webkitRelativePath: "bundle/" + name, arrayBuffer: async () => bytes.slice().buffer }));
 }
 
-async function withUI(db, run) {
+async function withUI(db, run, { fetch, siteBase, indexedDB, hostedMaxBytes } = {}) {
   const keys = ["document", "Worker", "indexedDB", "URL"], saved = keys.map((key) => Object.getOwnPropertyDescriptor(globalThis, key));
-  const elements = new Map(), status = [], workers = [], created = [], revoked = [], NativeURL = globalThis.URL;
+  const elements = new Map(), status = [], workers = [], created = [], revoked = [], blobs = [], NativeURL = globalThis.URL;
   const ids = new Set([...readFileSync(new URL("../../index.html", import.meta.url), "utf8").matchAll(/id="([^"]+)"/g)].map((match) => match[1]));
   const $ = (id) => { assert.ok(ids.has(id), "Missing page element: " + id); if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
   for (const id of ["imageCacheNote", "imageNoteForm", "imagePairDetail", "imageAnswersRetry"]) $(id).hidden = true;
+  if (ids.has("imageHostedStatus")) $("imageHostedStatus").hidden = true;
   globalThis.document = { getElementById: $, createElement: (tag) => new Element(tag) };
-  globalThis.indexedDB = { open() { throw new Error("Cache blocked"); } };
+  globalThis.indexedDB = indexedDB || { open() { throw new Error("Cache blocked"); } };
   globalThis.URL = class extends NativeURL {
-    static createObjectURL() { const url = "blob:synthetic-" + created.length; created.push(url); return url; }
+    static createObjectURL(blob) { const url = "blob:synthetic-" + created.length; created.push(url); blobs.push(blob); return url; }
     static revokeObjectURL(url) { revoked.push(url); }
   };
   globalThis.Worker = class {
@@ -288,10 +289,10 @@ async function withUI(db, run) {
     reply(message) { this.onmessage({ data: handleMessage(message) }); }
   };
   try {
-    const ui = createImagesUI({ setStatus: (message) => status.push(message) });
+    const ui = createImagesUI({ setStatus: (message) => status.push(message), fetch, siteBase, hostedMaxBytes });
     await ui.load(db, true); await tick();
     const open = async (files = fixture()) => { $("bundleFolder").files = files; await $("bundleFolder").fire("change"); await tick(); };
-    await run({ ui, $, open, status, worker: workers[0], created, revoked });
+    await run({ ui, $, open, status, worker: workers[0], created, revoked, blobs });
     await tick();
   } finally {
     keys.forEach((key, i) => { if (saved[i]) Object.defineProperty(globalThis, key, saved[i]); else delete globalThis[key]; });
@@ -562,4 +563,301 @@ for (const action of ["undo", "rate"]) test(`export reflects a saved ${action} w
     if (action === "undo") assert.deepEqual(data.images.ratings, []);
     else assert.deepEqual(data.images.ratings.map((record) => record.imageId), [a, b]);
   });
+});
+
+const hostedId = "20261011T120000Z-0123abcd", siteBase = "https://site.invalid/taste/";
+function deferred() {
+  let resolve;
+  const promise = new Promise((done) => { resolve = done; });
+  return { promise, resolve };
+}
+async function hostedSite(selected = fixture([2], hostedId)) {
+  const files = new Map(await Promise.all(selected.map(async (file) => [file.name, new Uint8Array(await file.arrayBuffer())])));
+  const manifest = JSON.parse(new TextDecoder().decode(files.get("manifest.json"))), calls = [];
+  const fetch = async (url) => {
+    calls.push(url);
+    if (url === siteBase + "bundles/index.json") return Response.json({ format: "tastelab-bundle-index", version: 1, bundles: [manifest.id] });
+    const prefix = siteBase + `bundles/${manifest.id}/`;
+    assert.ok(url.startsWith(prefix));
+    const bytes = files.get(url.slice(prefix.length));
+    return bytes ? new Response(bytes) : new Response(null, { status: 404 });
+  };
+  return { fetch, siteBase, files, manifest, calls };
+}
+async function until(check) {
+  for (let i = 0; i < 40 && !check(); i++) await tick();
+  assert.ok(check(), "The expected asynchronous UI update occurred.");
+}
+const hostedFinished = async ($) => until(() => $("imageHostedStatus").textContent === "Image bundles from this site are open: 1.");
+
+// Let listing the cache succeed but reject its put, and count all thumbnail reads.
+function refusingCache() {
+  const state = { puts: 0, gets: 0 };
+  const indexedDB = { open() {
+    const request = { result: { close() {}, transaction() {
+      const transaction = { abort() {}, objectStore() { return {
+        getAllKeys() {
+          const result = { result: [] };
+          queueMicrotask(() => { result.onsuccess(); transaction.oncomplete(); });
+          return result;
+        },
+        put() { state.puts++; throw new Error("Cache put refused"); },
+        get() { state.gets++; throw new Error("Do not read thumbnails back"); },
+      }; } };
+      return transaction;
+    } } };
+    queueMicrotask(() => request.onsuccess());
+    return request;
+  } };
+  return { indexedDB, state };
+}
+
+test("hosted: an initially empty Images tab opens a site bundle and shows its image", async () => {
+  const site = await hostedSite();
+  await withUI(fakeDB(), async ({ ui, $, worker, status }) => {
+    await hostedFinished($); await until(() => $("imageView").children.length === 1);
+    assert.equal($("imageHostedStatus").hidden, false); assert.equal($("openBundles").children.length, 1);
+    assert.deepEqual(worker.messages.at(-1).order, [c]);
+    assert.deepEqual((await ui.exportData({})).images.bundles, [{ bundleId: hostedId, items: 1 }]);
+    assert.equal(status.some((message) => message.includes("from this site")), false);
+  }, site);
+});
+
+test("hosted THB-002: a refused cache put still renders downloaded bytes and allows rating", async () => {
+  const site = await hostedSite(), cache = refusingCache(), db = fakeDB();
+  await withUI(db, async ({ $, blobs, ui }) => {
+    await hostedFinished($); await until(() => blobs.length > 0);
+    assert.equal(cache.state.puts, 1); assert.equal(cache.state.gets, 0);
+    assert.deepEqual(new Uint8Array(await blobs[0].arrayBuffer()), site.files.get(site.manifest.items[0].thumbSha256 + ".jpg"));
+    assert.equal($("imageCacheNote").hidden, false); assert.equal($("imageLike").disabled, false);
+    await $("imageLike").fire("click"); await tick();
+    assert.equal(db.values.get("imageRatings/" + c).verdict, "like");
+    assert.equal((await ui.exportData({})).images.ratings[0].imageId, c);
+  }, { ...site, indexedDB: cache.indexedDB });
+});
+
+test("hosted: arrival preserves a shown image, its controls and worker revision until the next rating", async () => {
+  const site = await hostedSite(), gate = deferred();
+  await withUI(fakeDB(), async ({ $, open, worker }) => {
+    await open(fixture([0, 1])); worker.paused = true;
+    const image = $("imageView").children[0], previous = worker.messages.at(-1), messages = worker.messages.length;
+    const controls = ["imageLike", "imageLove", "imageDislike", "imageSkip"].map((id) => $(id).disabled);
+    gate.resolve(); await hostedFinished($);
+    assert.equal($("imageView").children[0], image); assert.equal(worker.messages.length, messages);
+    assert.equal(worker.messages.at(-1).id, previous.id); assert.equal($("openBundles").children.length, 2);
+    assert.deepEqual(["imageLike", "imageLove", "imageDislike", "imageSkip"].map((id) => $(id).disabled), controls);
+    assert.equal($("bundleFolder").disabled, false);
+    await $("imageLike").fire("click");
+    assert.deepEqual(worker.messages.at(-1).order, [a, b, c]);
+  }, { ...site, fetch: async (...args) => { await gate.promise; return site.fetch(...args); } });
+});
+
+test("hosted: arrival while choosing preserves the pending worker request and uses its nonempty answer", async () => {
+  const site = await hostedSite(), gate = deferred();
+  await withUI(fakeDB(), async ({ $, open, worker }) => {
+    worker.paused = true; await open(fixture([0, 1]));
+    const pending = worker.messages.at(-1), messages = worker.messages.length;
+    gate.resolve(); await hostedFinished($);
+    assert.equal(worker.messages.length, messages); assert.equal(worker.messages.at(-1).id, pending.id);
+    assert.equal($("imageLike").disabled, true); assert.equal($("openBundles").children.length, 2);
+    worker.reply(pending);
+    assert.equal($("imageView").children.length, 1); assert.equal($("imageLike").disabled, false);
+    assert.equal(worker.messages.length, messages);
+    await $("imageLike").fire("click"); assert.deepEqual(worker.messages.at(-1).order, [a, b, c]);
+  }, { ...site, fetch: async (...args) => { await gate.promise; return site.fetch(...args); } });
+});
+
+test("hosted THB-001: an old empty worker answer requests the newly arrived images automatically", async () => {
+  const site = await hostedSite(), gate = deferred();
+  await withUI(fakeDB(), async ({ $, open, worker }) => {
+    await open(fixture([0])); worker.paused = true;
+    await $("imageLike").fire("click");
+    const pending = worker.messages.at(-1), messages = worker.messages.length;
+    assert.equal(handleMessage(pending).next, null);
+    gate.resolve(); await hostedFinished($);
+    assert.equal(worker.messages.length, messages, "arrival leaves the old request pending");
+    worker.paused = false; worker.reply(pending);
+    assert.equal(worker.messages.length, messages + 1); assert.ok(worker.messages.at(-1).id > pending.id);
+    assert.deepEqual(worker.messages.at(-1).order, [a, c]);
+    await until(() => $("imageView").children.length === 1);
+    assert.equal($("imageView").children[0].children[0].alt, "Synthetic 2");
+    assert.equal($("imageLike").disabled, false);
+  }, { ...site, fetch: async (...args) => { await gate.promise; return site.fetch(...args); } });
+});
+
+test("hosted: a folder opened meanwhile wins over the same hosted id", async () => {
+  const site = await hostedSite(fixture([2])), gate = deferred();
+  await withUI(fakeDB(), async ({ $, open, worker }) => {
+    await open(fixture([0]));
+    const image = $("imageView").children[0], count = worker.messages.length;
+    gate.resolve(); await hostedFinished($);
+    assert.equal($("openBundles").children.length, 1); assert.equal($("imageView").children[0], image);
+    assert.equal(worker.messages.length, count); assert.deepEqual(worker.messages.at(-1).order, [a]);
+  }, { ...site, fetch: async (...args) => { await gate.promise; return site.fetch(...args); } });
+});
+
+test("hosted THR-001: a site bundle that arrives during a folder open that fails is suggested afterwards", async () => {
+  const site = await hostedSite(), siteGate = deferred(), fileGate = deferred();
+  await withUI(fakeDB(), async ({ $, worker }) => {
+    $("bundleFolder").files = [{ name: "manifest.json", size: 2, webkitRelativePath: "",
+      arrayBuffer: async () => { await fileGate.promise; return new TextEncoder().encode("{}").buffer; } }];
+    const opening = $("bundleFolder").fire("change");
+    siteGate.resolve(); await hostedFinished($);
+    assert.equal($("openBundles").children.length, 1); assert.equal($("imageView").children.length, 0);
+    assert.equal(worker.messages.some((message) => message.order.includes(c)), false);
+    fileGate.resolve(); await opening; await tick();
+    assert.ok($("imageRefusals").children.length > 0);
+    await until(() => $("imageView").children.length === 1);
+    assert.deepEqual(worker.messages.at(-1).order, [c]); assert.equal($("imageLike").disabled, false);
+  }, { ...site, fetch: async (...args) => { await siteGate.promise; return site.fetch(...args); } });
+});
+
+// An IndexedDB fake whose values outlive one page visit.
+function memoryCache() {
+  const values = new Map();
+  const indexedDB = { open() {
+    const request = { result: { close() {}, objectStoreNames: { contains: () => true }, transaction() {
+      const transaction = { abort() {} };
+      const operation = (run) => {
+        const result = {};
+        queueMicrotask(() => { result.result = run(); result.onsuccess(); transaction.oncomplete(); });
+        return result;
+      };
+      transaction.objectStore = () => ({
+        get: (key) => operation(() => structuredClone(values.get(key))),
+        put: (value, key) => operation(() => { values.set(key, structuredClone(value)); return key; }),
+        delete: (key) => operation(() => values.delete(key)),
+        getAllKeys: () => operation(() => [...values.keys()].sort()),
+      });
+      return transaction;
+    } } };
+    queueMicrotask(() => request.onsuccess());
+    return request;
+  } };
+  return { indexedDB, values };
+}
+async function siteOf(...selections) {
+  const bundles = new Map(), calls = [];
+  for (const selected of selections) {
+    const files = new Map(await Promise.all(selected.map(async (file) => [file.name, new Uint8Array(await file.arrayBuffer())])));
+    bundles.set(JSON.parse(new TextDecoder().decode(files.get("manifest.json"))).id, files);
+  }
+  const fetch = async (url) => {
+    calls.push(url);
+    if (url === siteBase + "bundles/index.json") return Response.json({ format: "tastelab-bundle-index", version: 1, bundles: [...bundles.keys()].sort() });
+    const [id, name] = url.slice((siteBase + "bundles/").length).split("/");
+    const bytes = bundles.get(id)?.get(name);
+    return bytes ? new Response(bytes) : new Response(null, { status: 404 });
+  };
+  const size = (id) => [...bundles.get(id).values()].reduce((total, bytes) => total + bytes.byteLength, 0);
+  return { fetch, siteBase, calls, size };
+}
+
+test("hosted THB-003: restored bundles count against the automatic download limit on a later visit", async () => {
+  const laterId = "20261011T130000Z-4567cdef", cache = memoryCache();
+  const first = await siteOf(fixture([2], hostedId)), later = await siteOf(fixture([2], hostedId), fixture([0, 1], laterId));
+  // Either bundle fits the limit alone; both together do not.
+  const hostedMaxBytes = later.size(hostedId) + later.size(laterId) - 1;
+  await withUI(fakeDB(), async ({ $ }) => { await hostedFinished($); }, { ...first, indexedDB: cache.indexedDB, hostedMaxBytes });
+  assert.deepEqual([...cache.values.keys()], [hostedId]);
+  await withUI(fakeDB(), async ({ $, worker }) => {
+    await until(() => $("imageHostedStatus").textContent.startsWith("Image bundles from this site are open"));
+    assert.equal($("imageHostedStatus").textContent, "Image bundles from this site are open: 0. 1 more were not opened:"
+      + " the automatic download limit was reached. Open them as folders.");
+    assert.equal($("imageHostedStatus").hidden, false); assert.equal($("openBundles").children.length, 1);
+    assert.deepEqual(worker.messages.at(-1).order, [c]);
+  }, { ...later, indexedDB: cache.indexedDB, hostedMaxBytes });
+  assert.deepEqual(later.calls, [siteBase + "bundles/index.json", siteBase + `bundles/${laterId}/manifest.json`]);
+  assert.deepEqual([...cache.values.keys()], [hostedId]);
+});
+
+const cachedImages = (cache, id) => JSON.parse(cache.values.get(id).manifestText).items.map((item) => item.imageId);
+const folderId = "20261004T120000Z-0123abcd";
+
+test("hosted THC-002: a folder that wins over the same hosted id keeps its cache on the next visit", async () => {
+  const cache = memoryCache(), site = await siteOf(fixture([2], folderId)), gate = deferred();
+  await withUI(fakeDB(), async ({ $, open }) => {
+    await open(fixture([0], folderId));
+    gate.resolve(); await until(() => $("imageHostedStatus").textContent.startsWith("Image bundles from this site are open"));
+    assert.equal($("imageView").children[0].children[0].alt, "Synthetic 0");
+    await tick();
+  }, { ...site, indexedDB: cache.indexedDB, fetch: async (...args) => { await gate.promise; return site.fetch(...args); } });
+  assert.deepEqual(cachedImages(cache, folderId), [a]);
+  await withUI(fakeDB(), async ({ $, worker }) => {
+    assert.deepEqual(worker.messages.at(-1).order, [a]); assert.equal($("openBundles").children.length, 1);
+  }, { indexedDB: cache.indexedDB });
+});
+
+test("hosted THC-002: a site bundle that arrives during a folder open of the same id is not cached over it", async () => {
+  const cache = memoryCache(), site = await siteOf(fixture([2], folderId)), siteGate = deferred(), fileGate = deferred();
+  const folder = fixture([0], folderId).map((file) => file.name !== "manifest.json" ? file
+    : { ...file, arrayBuffer: async () => { await fileGate.promise; return file.arrayBuffer(); } });
+  await withUI(fakeDB(), async ({ $ }) => {
+    $("bundleFolder").files = folder;
+    const opening = $("bundleFolder").fire("change");
+    siteGate.resolve(); await hostedFinished($);
+    assert.equal(cache.values.has(folderId), false, "the site bundle waits for the folder open");
+    fileGate.resolve(); await opening; await tick();
+    assert.equal($("openBundles").children.length, 1);
+    await until(() => $("imageView").children.length === 1);
+    assert.equal($("imageView").children[0].children[0].alt, "Synthetic 0");
+  }, { ...site, indexedDB: cache.indexedDB, fetch: async (...args) => { await siteGate.promise; return site.fetch(...args); } });
+  assert.deepEqual(cachedImages(cache, folderId), [a]);
+});
+
+test("hosted THC-002: a site bundle that arrives during a folder open of another id is cached after it", async () => {
+  const cache = memoryCache(), site = await siteOf(fixture([2], hostedId)), siteGate = deferred(), fileGate = deferred();
+  const folder = fixture([0], folderId).map((file) => file.name !== "manifest.json" ? file
+    : { ...file, arrayBuffer: async () => { await fileGate.promise; return file.arrayBuffer(); } });
+  await withUI(fakeDB(), async ({ $ }) => {
+    $("bundleFolder").files = folder;
+    const opening = $("bundleFolder").fire("change");
+    siteGate.resolve(); await hostedFinished($);
+    assert.equal(cache.values.size, 0);
+    fileGate.resolve(); await opening;
+    await until(() => cache.values.size === 2);
+    assert.equal($("openBundles").children.length, 2);
+  }, { ...site, indexedDB: cache.indexedDB, fetch: async (...args) => { await siteGate.promise; return site.fetch(...args); } });
+  assert.deepEqual(cachedImages(cache, hostedId), [c]); assert.deepEqual(cachedImages(cache, folderId), [a]);
+});
+
+test("hosted: refusal names its index id and does not overwrite answer status", async () => {
+  const site = await hostedSite(), gate = deferred(); site.manifest.items[0].thumbSha256 = "../bad";
+  site.files.set("manifest.json", new TextEncoder().encode(JSON.stringify(site.manifest)));
+  await withUI(fakeDB(), async ({ $, status }) => {
+    const previous = [...status]; gate.resolve();
+    await until(() => $("imageRefusals").children.length > 0);
+    assert.match($("imageRefusals").children[0].textContent, new RegExp(`^Bundle ${hostedId} from this site could not be opened: `));
+    assert.equal($("imageHostedStatus").hidden, false); assert.deepEqual(status, previous);
+    assert.equal(site.calls.length, 2, "the invalid manifest makes no thumbnail request");
+  }, { ...site, fetch: async (...args) => { await gate.promise; return site.fetch(...args); } });
+});
+
+test("hosted: load and export resolve while site fetch headers remain pending", async () => {
+  const site = await hostedSite(), gate = deferred(); let started = false;
+  await withUI(fakeDB(), async ({ ui, $ }) => {
+    try {
+      assert.equal(started, true, "hosted loading has started in the background");
+      assert.equal($("bundleFolder").disabled, false);
+      const exported = await ui.exportData({ version: 2 });
+      assert.deepEqual(exported.images.bundles, []);
+      assert.equal($("imageView").children.length, 0);
+    } finally { gate.resolve(); }
+    await hostedFinished($);
+  }, { ...site, fetch: async (...args) => { started = true; await gate.promise; return site.fetch(...args); } });
+});
+
+for (const [name, response, hidden] of [
+  ["absent", () => new Response(null, { status: 404 }), true],
+  ["unreachable", () => { throw new Error("Blocked"); }, true],
+  ["empty", () => Response.json({ format: "tastelab-bundle-index", version: 1, bundles: [] }), true],
+  ["unavailable", () => new Response(null, { status: 500 }), false],
+]) test(`hosted: ${name} status has the specified visibility and leaves answer messages alone`, async () => {
+  let requested = false;
+  await withUI(fakeDB(), async ({ $, status }) => {
+    assert.equal(requested, true); await tick();
+    assert.equal($("imageHostedStatus").hidden, hidden);
+    if (!hidden) assert.equal($("imageHostedStatus").textContent, "Image bundles from this site could not be read.");
+    assert.equal(status.some((message) => message.includes("from this site")), false);
+  }, { siteBase, fetch: async () => { requested = true; return response(); } });
 });

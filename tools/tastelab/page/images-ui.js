@@ -1,6 +1,7 @@
-import { readSelection, openBundle, loadCached, closeBundle, mergeBundles } from "./library.js";
+import { readSelection, openBundle, storeBundle, loadCached, closeBundle, mergeBundles } from "./library.js";
 import { isReady } from "./images.js";
 import { createIdbCache } from "./idb-cache.js";
+import { HOSTED_MAX_BYTES, loadHostedBundles } from "./hosted.js";
 
 export const pairKey = (likedImageId, dislikedImageId) => `${likedImageId}_${dislikedImageId}`;
 // The ratings importer (tools/tastelab/fetch.py) takes a rating note of 1 to 140
@@ -128,18 +129,20 @@ export async function loadImageDocuments(db, name) {
   }
 }
 
-export function createImagesUI({ setStatus }) {
+export function createImagesUI({ setStatus, fetch = globalThis.fetch?.bind(globalThis), siteBase = new URL("../", import.meta.url),
+  hostedMaxBytes = HOSTED_MAX_BYTES }) {
   const $ = (id) => document.getElementById(id);
   const cache = createIdbCache(), files = new Map(), writes = new Map();
   let bundles = [], merged = mergeBundles([]), thumbnails = new Map();
   let ratingState = createRatingState(), pairs = new Map(), pairChanges = new Map();
   let db = null, loading = true, answersReady = false, readingAnswers = false, opening = false, working = false, current = null, revision = 0;
   let ratingUrls = [], pairUrls = [], noteImageId = null, shownPair = null, worker = null;
+  let hostedPending = false, hostedDeferred = false, hostedUncached = [];
 
   const cacheUnavailable = () => { $("imageCacheNote").hidden = false; };
   const revoke = (urls) => { for (const url of urls) URL.revokeObjectURL(url); };
-  function refuse(errors) {
-    $("imageRefusals").replaceChildren();
+  function refuse(errors, append = false) {
+    if (!append) $("imageRefusals").replaceChildren();
     for (const error of errors) {
       const li = document.createElement("li");
       li.textContent = error;
@@ -225,7 +228,7 @@ export function createImagesUI({ setStatus }) {
     $("imagePairsHint").hidden = suggestions.length > 0;
   }
 
-  function refresh() {
+  function rebuild() {
     merged = mergeBundles(bundles);
     thumbnails = new Map();
     for (const bundle of bundles) for (const item of bundle.items) {
@@ -248,10 +251,14 @@ export function createImagesUI({ setStatus }) {
       li.append(label, button);
       $("openBundles").append(li);
     }
+    progress();
+  }
+
+  function suggest() {
     revoke(ratingUrls); ratingUrls = [];
     $("imageView").replaceChildren();
     current = null;
-    progress();
+    hostedPending = hostedDeferred = false;
     revision++;
     if (worker && merged.order.length && !loading) {
       working = true;
@@ -272,6 +279,7 @@ export function createImagesUI({ setStatus }) {
     $("imageEmpty").hidden = false;
     controls();
   }
+  function refresh() { rebuild(); suggest(); }
 
   try {
     worker = new Worker(new URL("./images-worker.js", import.meta.url), { type: "module" });
@@ -283,6 +291,8 @@ export function createImagesUI({ setStatus }) {
         $("imageEmpty").textContent = "The image model stopped.";
         setStatus("The image model stopped: " + message.message);
       } else {
+        if (!message.next && hostedPending) { refresh(); return; }
+        hostedPending = false;
         current = message.next;
         $("imageView").replaceChildren();
         revoke(ratingUrls); ratingUrls = [];
@@ -366,8 +376,67 @@ export function createImagesUI({ setStatus }) {
       closePair();
       refresh();
     } catch { refuse(["The bundle could not be opened. Select its folder again."]); }
-    // Release the input's focus, so the rating keys work at once.
-    finally { opening = false; input.value = ""; input.blur(); controls(); }
+    // Release the input's focus, so the rating keys work at once. A site bundle
+    // that arrived during an open that failed still needs a suggestion.
+    finally {
+      opening = false; input.value = ""; input.blur();
+      for (const entry of hostedUncached.splice(0)) void cacheHosted(entry);
+      if (hostedDeferred && !current && !working) refresh();
+      else controls();
+    }
+  }
+
+  // A folder of the same id opened meanwhile replaces a site bundle, and Close
+  // removes it; only a site bundle that is still open is cached.
+  async function cacheHosted({ bundle, manifestText, files: downloaded }) {
+    if (bundles.includes(bundle) && !(await storeBundle(bundle.id, { manifestText, files: downloaded }, cache))) cacheUnavailable();
+  }
+
+  async function openHosted() {
+    const status = $("imageHostedStatus");
+    // Restored and cached bundles share the automatic download limit.
+    let stored = 0;
+    for (const bundleFiles of files.values()) for (const bytes of bundleFiles.values()) stored += bytes.byteLength;
+    try {
+      const result = await loadHostedBundles({ fetch, base: siteBase, knownIds: new Set(bundles.map((bundle) => bundle.id)),
+        maxBytes: Math.max(0, hostedMaxBytes - stored),
+        onProgress({ done, total }) {
+          status.textContent = `Opening image bundles from this site: ${done} of ${total}.`;
+          status.hidden = false;
+        },
+        onBundle({ bundle, manifestText }, downloaded) {
+          if (bundles.some((open) => open.id === bundle.id)) return;
+          bundles.push(bundle);
+          files.set(bundle.id, downloaded);
+          // A folder open in progress caches first; this bundle waits for it.
+          const entry = { bundle, manifestText, files: downloaded };
+          if (opening) hostedUncached.push(entry);
+          else void cacheHosted(entry);
+          if (!current && !working && !opening) refresh();
+          else {
+            if (working) hostedPending = true;
+            else if (opening) hostedDeferred = true;
+            rebuild();
+          }
+        },
+      });
+      status.hidden = true;
+      if (result.status === "unavailable") {
+        status.textContent = "Image bundles from this site could not be read.";
+        status.hidden = false;
+      } else if (result.status === "loaded" && (result.imported.length || result.refused.length || result.stopped)) {
+        status.textContent = `Image bundles from this site are open: ${result.imported.length}.`;
+        if (result.refused.length) {
+          status.textContent += ` ${result.refused.length} could not be opened.`;
+          refuse(result.refused.map(({ id, error }) => `Bundle ${id} from this site could not be opened: ${error}`), true);
+        }
+        if (result.stopped === "budget") status.textContent += ` ${result.notAttempted.length} more were not opened: the automatic download limit was reached. Open them as folders.`;
+        status.hidden = false;
+      }
+    } catch {
+      status.textContent = "Image bundles from this site could not be read.";
+      status.hidden = false;
+    }
   }
 
   for (const [id, kind] of [["imageLike", "like"], ["imageLove", "love"], ["imageDislike", "dislike"], ["imageSkip", "skip"], ["imageUndo", "undo"], ["imageNoteButton", "note"]]) {
@@ -444,6 +513,7 @@ export function createImagesUI({ setStatus }) {
     refuse(refusals);
     // Storage reads may wait or fail; opening and viewing bundles remains available.
     loading = false;
+    void openHosted().catch(() => {});
     refresh();
     if (db) {
       await readAnswers();

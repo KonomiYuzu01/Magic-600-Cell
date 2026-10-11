@@ -18,6 +18,18 @@ function remoteResources(source) {
   return patterns.flatMap((pattern) => [...source.matchAll(pattern)].map((match) => match[0]));
 }
 
+const HOSTED_CALL = "fetch(url, { ...REQUEST, signal })";
+const HOSTED_REQUEST = '{ cache: "no-cache", credentials: "same-origin", redirect: "error" }';
+function hostedResources(source) {
+  const errors = remoteResources(source.replace(HOSTED_CALL, ""));
+  if (!source.includes(HOSTED_CALL) || /(?:\.\s*|[\w$])$/.test(source.split(HOSTED_CALL)[0])) errors.push("Invalid hosted fetch call.");
+  if (!/export async function loadHostedBundles\(\{\s*fetch,/.test(source)) errors.push("Hosted fetch must be injected.");
+  if (source.match(/export const REQUEST = (\{[^}]*\});/)?.[1] !== HOSTED_REQUEST) errors.push("Invalid hosted request options.");
+  // response.body is required for streaming. Request method/body fields are not.
+  if (/\b(?:method|body)\s*:|https?:\/\//i.test(source)) errors.push("Hosted requests must be same-site reads.");
+  return errors;
+}
+
 async function modules(folder) {
   const entries = await readdir(folder, { withFileTypes: true }), files = [];
   for (const entry of entries) {
@@ -28,12 +40,14 @@ async function modules(folder) {
   return files;
 }
 
-test("the page and all page modules declare no remote resources or network calls", async () => {
+test("the page permits only the injected same-site hosted loader request", async () => {
   // The page also imports the shared modules in core/.
   const page = new URL("../../index.html", import.meta.url), folder = new URL("../", import.meta.url);
   const core = new URL("../../core/", import.meta.url);
   for (const file of [page, ...await modules(folder), ...await modules(core)]) {
-    assert.deepEqual(remoteResources(await readFile(file, "utf8")), [], file.pathname);
+    const source = await readFile(file, "utf8");
+    const violations = file.href === new URL("../hosted.js", import.meta.url).href ? hostedResources(source) : remoteResources(source);
+    assert.deepEqual(violations, [], file.pathname);
   }
 });
 
@@ -60,4 +74,23 @@ test("validated attribution URLs may be used in noopener noreferrer anchors", ()
     link.rel = "noopener noreferrer";
     const validatedPrefix = "https://creativecommons.org/licenses/by/";
   `), []);
+});
+
+test("the hosted exception allows exactly its injected request and rejects any second call", () => {
+  const source = `export const REQUEST = ${HOSTED_REQUEST};
+    export async function loadHostedBundles({ fetch, base }) {
+      await ${HOSTED_CALL};
+    }`;
+  assert.deepEqual(hostedResources(source), []);
+  assert.ok(hostedResources(source + `\n${HOSTED_CALL};`).length, "a second hosted fetch is rejected");
+  assert.ok(remoteResources(HOSTED_CALL).length, "the same fetch in any other module is rejected");
+  for (const bad of [
+    source.replace("fetch, base", "base"), source.replace(HOSTED_CALL, "globalThis." + HOSTED_CALL),
+    source.replace('credentials: "same-origin"', 'credentials: "include"'),
+    source.replace('redirect: "error"', 'redirect: "follow"'), source.replace('cache: "no-cache"', 'cache: "default"'),
+    source + '\nconst options = { method: "POST" };', source + '\nconst options = { body: data };',
+    source + '\nconst url = "http://example.invalid/";', source + '\nconst url = "https://example.invalid/";',
+    source + '\nnew XMLHttpRequest();', source + '\nnew WebSocket("/socket");',
+    source + '\nnew EventSource("/events");', source + '\nnavigator.sendBeacon("/send", data);',
+  ]) assert.ok(hostedResources(bad).length, bad);
 });
