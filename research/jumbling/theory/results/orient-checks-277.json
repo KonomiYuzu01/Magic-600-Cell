@@ -1,0 +1,776 @@
+{
+ "start": "E2 end of I_a@40",
+ "words": [
+  "1-word-E2-to-547.json",
+  "2-word-547-to-499.json",
+  "3-word-499-preparation.json",
+  "4-word-preparation-to-388.json",
+  "5-word-388-preparation.json",
+  "6-word-preparation-to-277.json"
+ ],
+ "digest": "475c4e6910296e3fe0f8319c8c69ebe2ef52af90d993158a7a64fe84559ce8b6",
+ "off_lattice": 277,
+ "classes": [
+  {
+   "class": 0,
+   "free_grips": 118,
+   "blocked_grips": [
+    375
+   ],
+   "fragments": [
+    {
+     "pieces": 202,
+     "label": 2
+    },
+    {
+     "pieces": 12,
+     "label": 3
+    }
+   ],
+   "own_contents": 1443,
+   "generators": 6962,
+   "retained_generators": 1298,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 21498,
+     "off_lattice_poses_exact": "21498/21498",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 17,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 41296,
+     "off_lattice_poses_exact": "41296/41296",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 33809,
+     "off_lattice_poses_exact": "33809/33809",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 6,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 15699,
+     "off_lattice_poses_exact": "15699/15699",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 4,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9282,
+     "off_lattice_poses_exact": "9282/9282",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 6408,
+     "off_lattice_poses_exact": "6408/6408",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 40597,
+     "off_lattice_poses_exact": "40597/40597",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 3,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9110,
+     "off_lattice_poses_exact": "9110/9110",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 214,
+     "off_lattice_poses_exact": "214/214",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 214,
+     "off_lattice_poses_exact": "214/214",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 1,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 214,
+     "off_lattice_poses_exact": "214/214",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 12,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 214,
+     "off_lattice_poses_exact": "214/214",
+     "ok": true
+    }
+   ],
+   "skipped_words": [],
+   "all_ok": true
+  },
+  {
+   "class": 1,
+   "free_grips": 116,
+   "blocked_grips": [
+    260
+   ],
+   "fragments": [],
+   "own_contents": 1441,
+   "generators": 6844,
+   "retained_generators": 1276,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 20486,
+     "off_lattice_poses_exact": "20486/20486",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 17,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 40531,
+     "off_lattice_poses_exact": "40531/40531",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 33800,
+     "off_lattice_poses_exact": "33800/33800",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 6,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 15075,
+     "off_lattice_poses_exact": "15075/15075",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 4,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9291,
+     "off_lattice_poses_exact": "9291/9291",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 6194,
+     "off_lattice_poses_exact": "6194/6194",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 40126,
+     "off_lattice_poses_exact": "40126/40126",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 3,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9291,
+     "off_lattice_poses_exact": "9291/9291",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 1,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 12,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    }
+   ],
+   "skipped_words": [],
+   "all_ok": true
+  },
+  {
+   "class": 2,
+   "free_grips": 117,
+   "blocked_grips": [
+    336,
+    388
+   ],
+   "fragments": [
+    {
+     "pieces": 63,
+     "label": 4
+    }
+   ],
+   "own_contents": 1443,
+   "generators": 6903,
+   "retained_generators": 1287,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 21347,
+     "off_lattice_poses_exact": "21347/21347",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 17,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 41752,
+     "off_lattice_poses_exact": "41752/41752",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 34898,
+     "off_lattice_poses_exact": "34898/34898",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 6,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 13811,
+     "off_lattice_poses_exact": "13811/13811",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 4,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9354,
+     "off_lattice_poses_exact": "9354/9354",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 6257,
+     "off_lattice_poses_exact": "6257/6257",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 42173,
+     "off_lattice_poses_exact": "42173/42173",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 3,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9197,
+     "off_lattice_poses_exact": "9197/9197",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 63,
+     "off_lattice_poses_exact": "63/63",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 63,
+     "off_lattice_poses_exact": "63/63",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 1,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 63,
+     "off_lattice_poses_exact": "63/63",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 12,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 63,
+     "off_lattice_poses_exact": "63/63",
+     "ok": true
+    }
+   ],
+   "skipped_words": [],
+   "all_ok": true
+  },
+  {
+   "class": 3,
+   "free_grips": 115,
+   "blocked_grips": [
+    256,
+    295
+   ],
+   "fragments": [],
+   "own_contents": 1441,
+   "generators": 6785,
+   "retained_generators": 1265,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 21266,
+     "off_lattice_poses_exact": "21266/21266",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 17,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 39949,
+     "off_lattice_poses_exact": "39949/39949",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 33293,
+     "off_lattice_poses_exact": "33293/33293",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 6,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 15369,
+     "off_lattice_poses_exact": "15369/15369",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 4,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9291,
+     "off_lattice_poses_exact": "9291/9291",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 6194,
+     "off_lattice_poses_exact": "6194/6194",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 40728,
+     "off_lattice_poses_exact": "40728/40728",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 3,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9175,
+     "off_lattice_poses_exact": "9175/9175",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 1,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 12,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    }
+   ],
+   "skipped_words": [],
+   "all_ok": true
+  },
+  {
+   "class": 4,
+   "free_grips": 113,
+   "blocked_grips": [
+    152,
+    178,
+    244,
+    302,
+    359,
+    376,
+    468
+   ],
+   "fragments": [],
+   "own_contents": 1441,
+   "generators": 6667,
+   "retained_generators": 1243,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 23591,
+     "off_lattice_poses_exact": "23591/23591",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 7,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 15591,
+     "off_lattice_poses_exact": "15591/15591",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 18,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 34399,
+     "off_lattice_poses_exact": "34399/34399",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 14,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 25503,
+     "off_lattice_poses_exact": "25503/25503",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 4,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9180,
+     "off_lattice_poses_exact": "9180/9180",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 6194,
+     "off_lattice_poses_exact": "6194/6194",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 41715,
+     "off_lattice_poses_exact": "41715/41715",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 3,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 8896,
+     "off_lattice_poses_exact": "8896/8896",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 22,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    }
+   ],
+   "skipped_words": [],
+   "all_ok": true
+  }
+ ],
+ "check_words_checked_by": {},
+ "unchecked_words": [],
+ "all_ok": true,
+ "seconds": 525
+}

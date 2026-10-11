@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-11] update | Jumbling E: the chain to 277, orientation model and glued pair
+[open-problems](../../research/jumbling/theory/open-problems.md) records the owner's Codex and Rethlas chain from the E2 end to 277 off-lattice pieces (13,982 twists, replayed here with every twist admissible), the orientation model of a class puzzle (`orient.py`, agreeing with the exact simulator for every class at the E2 end, 388 and 277) and the one glued pair at 388 and 277, whose 2,407 legal separating loops all raise the off-lattice count (`split_pairs.py`).
+
 ## [2026-10-11] update | Jumbling E3: the class-1 fragments return
 [open-problems](../../research/jumbling/theory/open-problems.md) records E3: at the E2 end of I_a@40 a word of 312 class-1 twists puts the fragments of 50 and 48 pieces on the lattice, keeps every lattice piece on it and leaves the other four fragments unchanged, verified on the exact simulator (`e3_class.py`). The 50-piece fragment cannot reach the lattice in its own cell and moves into the one empty lattice cell of its kind; the 48-piece one is untwisted in place by a holonomy cycle of edge twists. [Card 4](../../research/jumbling/theory/cards/card-4-class-puzzle-and-vacancies.md) asks an external prover for that structure and for a way to empty the four cells that fragments share with lattice pieces, restated as moving vacant chambers.
 
