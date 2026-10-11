@@ -9,7 +9,6 @@ namespace LookLab.App.LL4;
 internal sealed partial class GreyboxControls : VBoxContainer
 {
     private readonly LabApp app;
-    private readonly SubViewportContainer stage;
     private readonly PanelContainer panel;
     private readonly VBoxContainer controls;
     private readonly FlowReportFiles files;
@@ -31,19 +30,18 @@ internal sealed partial class GreyboxControls : VBoxContainer
     public Label ReportText { get; } = new();
     public LayoutSpec CurrentLayout => Layouts[LayoutChoice.Selected];
 
-    public static void Attach(LabApp app, SubViewportContainer stage, PanelContainer panel, VBoxContainer column, string root)
+    public static void Attach(LabApp app, PanelContainer panel, VBoxContainer column, string root)
     {
-        var controls = new GreyboxControls(app, stage, panel, root) { Name = "LL4Controls" };
+        var controls = new GreyboxControls(app, panel, root) { Name = "LL4Controls" };
         column.AddChild(controls); column.MoveChild(controls, 0);
     }
 
-    private GreyboxControls(LabApp app, SubViewportContainer stage, PanelContainer panel, string root)
+    private GreyboxControls(LabApp app, PanelContainer panel, string root)
     {
-        this.app = app; this.stage = stage; this.panel = panel;
+        this.app = app; this.panel = panel;
         files = new FlowReportFiles(root);
         Catalogue = CommandCatalogue.Load(Path.Combine(root, "docs/progress/1.0/command-table.json"));
-        Layouts = Directory.GetFiles(Path.Combine(root, "tools/looklab/data/layouts"), "*.json")
-            .OrderBy(p => p, StringComparer.Ordinal).Select(p => LayoutSpec.Load(p, Catalogue)).ToArray();
+        Layouts = app.Linked.Layouts;
         Flows = Directory.GetFiles(Path.Combine(root, "tools/looklab/data/flows"), "*.json")
             .OrderBy(p => p, StringComparer.Ordinal).Select(p => FlowScript.Load(p, Catalogue)).ToArray();
         Canvas = new GreyboxCanvas(Catalogue) { Visible = false }; app.AddChild(Canvas);
@@ -115,14 +113,11 @@ internal sealed partial class GreyboxControls : VBoxContainer
         {
             float width = panel.Position.X / 2;
             Canvas.Position = Vector2.Zero; Canvas.Size = new Vector2(width, app.Size.Y);
-            stage.Position = new Vector2(width, 0); stage.Size = new Vector2(width, app.Size.Y);
+            app.Linked.Arrange(new RegionRect(width, 0, width, app.Size.Y));
         }
         else
         {
-            bool docked = app.State.Preset.Params.Choice("panelPlacement") == "docked" ||
-                app.State.Preset.Params.Choice("layoutId") == "docked-workbench";
-            stage.Position = Vector2.Zero;
-            stage.Size = new Vector2(docked ? panel.Position.X : app.Size.X, app.Size.Y);
+            app.Linked.Arrange(new RegionRect(0, 0, app.Linked.Docked ? panel.Position.X : app.Size.X, app.Size.Y));
         }
     }
 

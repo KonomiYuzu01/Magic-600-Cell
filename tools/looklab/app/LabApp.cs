@@ -11,6 +11,9 @@ internal sealed partial class LabApp : Control
     public LookState State { get; }
     public LookViewport View { get; }
     public ParameterPanels Panels { get; }
+    public SubViewportContainer GlobalStage => stage;
+    internal Control ParameterPanel => panel;
+    public LL6.LinkedViews Linked { get; }
     private readonly SubViewportContainer stage;
     private readonly SubViewport viewport;
     private readonly PanelContainer panel;
@@ -65,10 +68,11 @@ internal sealed partial class LabApp : Control
         save.FileSelected += path => Guard(() => { files.Save(path, State.Preset); status.Text = "Preset saved."; });
         var diagnostics = LL5.LabControls.Attach(root, State, View, Panels, status);
         View.Status = diagnostics.UpdateStatus;
+        Linked = new LL6.LinkedViews(this, root, diagnostics.Preview);
         State.Changed += Change;
         Resized += Layout;
         ApplyStyle(); Layout();
-        LL4.GreyboxControls.Attach(this, stage, panel, Panels, root);
+        LL4.GreyboxControls.Attach(this, panel, Panels, root);
     }
 
     private FileDialog Dialog(FileDialog.FileModeEnum mode) => new()
@@ -105,10 +109,10 @@ internal sealed partial class LabApp : Control
         if (Size.X <= 0 || Size.Y <= 0) return;
         double share = State.Preset.Params.Number("viewportShare");
         float panelWidth = Math.Min(Size.X * .65f, Math.Max(300, Size.X * (float)(1 - share)));
-        bool docked = State.Preset.Params.Choice("panelPlacement") == "docked" || State.Preset.Params.Choice("layoutId") == "docked-workbench";
+        bool docked = Linked.Docked;
         panel.Position = new Vector2(Size.X - panelWidth, 0); panel.Size = new Vector2(panelWidth, Size.Y);
-        stage.Position = Vector2.Zero; stage.Size = new Vector2(docked ? Size.X - panelWidth : Size.X, Size.Y);
+        Linked.Arrange(new RegionRect(0, 0, docked ? Size.X - panelWidth : Size.X, Size.Y));
     }
 
-    public override void _ExitTree() => State.Changed -= Change;
+    public override void _ExitTree() { State.Changed -= Change; Linked.Detach(); }
 }

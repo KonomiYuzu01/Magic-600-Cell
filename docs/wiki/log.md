@@ -8,6 +8,9 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-10-11] decision | Jumbling: complete restoration required
 Recorded in [owner-decisions-2026-10-10-jumbling-complete](decisions/owner-decisions-2026-10-10-jumbling-complete.md): the restoration method must restore every reachable configuration, at any depth; a 20-twist guarantee is rejected. [jumbling-observation](../progress/1.0/jumbling-observation.md) states what a solver must see in a jumbled state (piece filters, raw view, cut slice view) and the data the engine and renderer must add.
 
+## [2026-10-10] decision | Look Lab Global and Local layouts
+Recorded in [owner-decisions-2026-10-10-looklab-views](decisions/owner-decisions-2026-10-10-looklab-views.md): the Look Lab gets two default greybox layouts that show Global and Local together and linked, a left-right split and a picture-in-picture inset, to be revised when the engineering and design tracks join.
+
 ## [2026-10-10] update | Jumbling theory index and open problems
 [theory README](../../research/jumbling/theory/README.md) indexes the jumbling theory scripts and result files, and [open-problems](../../research/jumbling/theory/open-problems.md) gathers every open problem of the theory draft, the restoration page and the deferred-problems decision with its status and next step. The I_a@40 stopping configuration is recorded with an analysis of its off-grip seams.
 

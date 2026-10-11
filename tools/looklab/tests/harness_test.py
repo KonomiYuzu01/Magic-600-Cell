@@ -338,7 +338,7 @@ class HarnessTests(unittest.TestCase):
             runs.append((arguments, kwargs))
             output = ("LOOKLAB_STAGE0_CPU_PASS\nLOOKLAB_STAGE0_GPU_PASS\n"
                       "LOOKLAB_SMOKE_PASS instances=600 vertices=30480 slots=259800 parameters=42 bytes=123\n"
-                      "LOOKLAB_GEOMETRY_PASS cases=9 samples=2700 target=RGBA32F\n"
+                      "LOOKLAB_GEOMETRY_PASS cases=10 samples=3000 framed=1 target=RGBA32F\n"
                       "LOOKLAB_DRAW_COUNT_PASS instances=600 visible=600 primitives=6096000\n")
             return subprocess.CompletedProcess(arguments, 0, output)
 
@@ -354,14 +354,14 @@ class HarnessTests(unittest.TestCase):
             check.godot_lane("--godot", self.folder, {"NUGET_PACKAGES": str(self.folder)}, {})
             self.assertTrue(all("--headless" in args for args, _ in runs))
             self.assertEqual([kwargs.get("expected_failure") for _, kwargs in runs if "expected_failure" in kwargs], ["skip-parameter", "wrong-instance-count", "changed-preset-byte"])
-            self.assertEqual(lanes, [("lane_ll3.py", "headless"), ("lane_ll4.py", "run"), ("lane_ll5.py", "headless")])
+            self.assertEqual(lanes, [("lane_ll3.py", "headless"), ("lane_ll4.py", "run"), ("lane_ll5.py", "headless"), ("lane_ll6.py", "run")])
             runs.clear(); lanes.clear()
             check.godot_lane("--godot-gpu", self.folder, {"NUGET_PACKAGES": str(self.folder)}, {})
         self.assertEqual(lanes, [("lane_ll3.py", "graphics"), ("lane_ll5.py", "graphics")])
-        self.assertEqual(len(runs), 6)
+        self.assertEqual(len(runs), 7)
         self.assertEqual(runs[0][0], ["--headless", "--import"])
         self.assertTrue(all("--headless" not in args and kwargs["graphics"] for args, kwargs in runs[1:]))
-        self.assertEqual([kwargs["expected_failure"] for _, kwargs in runs if "expected_failure" in kwargs], ["float-offset", "transpose-q", "missing-instance"])
+        self.assertEqual([kwargs["expected_failure"] for _, kwargs in runs if "expected_failure" in kwargs], ["float-offset", "transpose-q", "missing-instance", "missing-view-frame"])
 
     def test_graphics_launch_refusal_is_not_a_pass(self):
         run = subprocess.CompletedProcess([], 1, "ERROR: Failed to create window\n")

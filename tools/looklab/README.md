@@ -250,7 +250,7 @@ The colour-vision preview and grid overlay belong to app state.
 | `fieldOfView` | Structure / number | 0.2..2.8; step 0.01 | Vertical field of view in radians; zoom is one over tan(fov/2). |
 | `panelDensity` | Frame / number | 0.5..2; step 0.05 | Instrument spacing and row density scale. |
 | `typeScale` | Frame / number | 0.75..2; step 0.05 | Typography scale relative to the app's base type sample. |
-| `layoutId` | Layout / enum | central-stage, docked-workbench | Greybox layout structure id. |
+| `layoutId` | Layout / enum | central-stage, docked-workbench, split-views, focus-inset | Greybox layout structure id. |
 | `viewportShare` | Layout / number | 0.3..0.9; step 0.01 | Requested fraction of the window devoted to the stage. |
 | `panelPlacement` | Layout / enum | docked, overlay | Instrument panel placement mode. |
 
@@ -428,8 +428,9 @@ This complete tiny example is for a catalogue with commands a and b, both in any
 }
 ```
 
-The defaults are data/layouts/central-stage.json (a central stage and contextual
-overlay instruments) and docked-workbench.json (stage and multiple docked panels).
+The defaults in data/layouts/ are central-stage.json (a central stage and contextual
+overlay instruments), docked-workbench.json (stage and multiple docked panels),
+split-views.json (Global and Local side by side) and focus-inset.json (Global with a Local inset).
 They cover the actual docs/progress/1.0/command-table.json without invented commands.
 They are greyboxes for exploration, not final owner-approved layouts.
 
@@ -620,9 +621,9 @@ runs that lane; headless checks and prepared fixtures provide no graphics eviden
 ## LL4: greybox and flow runner
 
 Enable **Greybox and flows** at the top of the parameter panels to put grey
-regions beside the existing full-detail view. The two existing structures are
-**central-stage** (contextual overlays) and **docked-workbench** (docked panels).
-The plan allows two; no third layout or new command is introduced. Select a
+regions beside the full-detail views. The four structures are **central-stage**
+(contextual overlays), **docked-workbench** (docked panels), **split-views**
+(Global and Local side by side) and **focus-inset** (Local inset over Global). Select a
 layout and a catalogue context to see its command ids in the assigned regions.
 Each region has a scrollable command list; clicking an id highlights it.
 `any` remains a named context. It is not expanded into a wildcard. Commands
@@ -658,9 +659,10 @@ are retained, and paths through links are refused.
 `python tools/looklab/check.py --godot` adds three headless result lines: exact
 metrics for the fixed docked layout and 14-step piece-operation flow, refusal
 of an unreachable final command, and exact catalogue coverage in all eight
-contexts on both layouts. The harness also requires the refusal-handler and
+contexts on all four layouts: `layouts=4 contexts=32 commands=86 placements=360`.
+The harness also requires the refusal-handler and
 catalogue-filter faults to fail their own checks. Core tests cover all six
-flows on both layouts, progression, refusal/reset, JSON precision and scoped
+flows on all four layouts, progression, refusal/reset, JSON precision and scoped
 output writes; Python tests cover missing/repeated results and negative-control
 requirements. These CPU checks supply no rendering or performance evidence.
 The integrator runs the graphics and interactive lanes.
@@ -697,9 +699,8 @@ modes, plus five background checks), cost (ten null entries and one synthetic
 measured entry with its source and a live setting/status update), and palette
 (caller thresholds and live structured gamut failures). Disabling the CVD
 transform or the meter's null-text branch must fail its own check. The managed
-runner has 56 named tests; the harness test includes all 29 LL2 assertions and
-seven LL5 schedule/result/fault cases. Its LL2 schedule fixture mocks only the
-extension, and the combined schedule is checked separately.
+runner has 73 named tests. The consolidated LL6 harness retains the LL2 and LL5
+isolation and fault cases and checks the updated combined schedules; it has 39 tests.
 
 The graphics lane adds a readback of the same 52 known linear colours through
 the actual drawing fragment body into RGBA32F; a wrong uploaded matrix must
@@ -711,3 +712,53 @@ most **2e-6 per linear RGB component**: three single-precision products and
 additions plus clamping are compared with the double-precision core. RGBA32F
 avoids 8-bit and half-float quantization. CPU checks supply no GPU evidence;
 the integrator runs the graphics lane and its wrong-matrix fault.
+
+## Global and Local greyboxes (LL6)
+
+**split-views** places Global on the left and Local on the right, with instruments,
+commands and review below. **focus-inset** places Local over the lower right of
+Global, below the review overlay. These are provisional layouts for G1 exploration.
+The layout format remains `magic600-look-layout`, version 1. It accepts either
+stage regions or exactly one docked `global` and one docked/overlay `local`,
+with identical context lists and no stage region. An overlay Local must fit within
+Global. All eight contexts remain available; only the four stage commands route
+to Global. No catalogue command is added. A paired layout always reserves the
+parameter panel's width, as in docked placement, so the panel covers neither view.
+
+The two views share one look, context, rotation and bound turn revision. Global
+owns the clock and inertia. A drag in either pane rotates that camera once;
+Local copies its rotation and binds the same turn frame after each Global step.
+Local is created on first selection of a paired layout and stops processing and
+rendering when hidden. CVD mode, coefficients and clear background follow both
+views, including a Local created after a mode has already been selected.
+The existing layouts continue to use a single view filling the original stage
+rectangle; greybox mode arranges the views within its right-half stage area.
+
+Local frames the moving slots' rest anchors at theta zero. The anchors use the
+current gap, shared rotation and Local projection/aspect. Smooth weights fade
+at clip w from 0.5 to 1, at each NDC frame edge from 1 to 1.25, and at the 4D
+denominator from 0.02 to 0.1. Weighted focus and magnification vary continuously
+towards the neutral frame when nothing is visible. Magnification lies in [1,3];
+the centre is clamped to keep the target window inside the full frame. The
+displayed frame follows exponentially with a 0.12 s time constant, capped per
+axis at 2 NDC units/s and at 4 magnification units/s. First appearance sets the
+target directly; non-finite or non-positive time steps leave the follower unchanged.
+Global always has the neutral `view_frame`. Production position and geometry
+readback derive from the same framed clip vector.
+
+`check.py --godot` adds four LL6 result lines: arrangements for four layouts at
+two sizes in normal and greybox modes with overlay and docked panel placement,
+with neither paired view under the parameter panel; exact-once drags, inertia and
+shared frames across two turn boundaries; all four CVD modes through background
+edits and layout switches; and settled framing plus per-step follower bounds. Six
+injected faults must fail their own checks: hidden Local, a parameter panel
+covering Local, ignored Local drag, an independent Local clock, CVD applied only
+to Global, and neutral Local framing. Core tests
+cover parser refusals, projection, arrangement, the three reviewed focus regressions,
+seeded sweeps and crossings of every guard, empty transitions and the follower.
+
+The GPU lane includes the original nine neutral cases (2,700 samples) and one
+non-neutral frame (300 samples), checked at the existing `1e-4 + 1e-4*abs(expected)`
+tolerance. Removing the production framing statement at shader load must make
+the non-neutral case fail. The integrator runs this lane; headless checks provide
+no rendered, window-input or performance evidence.

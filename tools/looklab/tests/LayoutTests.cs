@@ -8,7 +8,9 @@ internal static partial class Program
 {
     private static void LayoutDefaults()
     {
-        string[] files = Directory.GetFiles(FileAt("data/layouts"), "*.json"); Equal(files.Length, 2);
+        string[] files = Directory.GetFiles(FileAt("data/layouts"), "*.json"); Equal(files.Length, 4);
+        Sequence(files.Select(f => LayoutSpec.Load(f, Commands).Id).OrderBy(id => id), Schema["layoutId"].Options!.OrderBy(id => id));
+        Equal(Schema["layoutId"].Options![1], "docked-workbench", "NonDefault enum order changed");
         foreach (string file in files)
         {
             LayoutSpec layout = LayoutSpec.Load(file, Commands);
@@ -45,6 +47,29 @@ internal static partial class Program
         Bad(n => n["contexts"]!["any"]!["placed"]!["camera.rotate"] = "stage", "camera.rotate");
         Bad(n => n["contexts"]!["any"]!["hidden"]!.AsArray().Add("session.resume"), "any");
         Bad(n => n["contexts"]!.AsObject().Remove("editor"), "editor");
+    }
+
+    private static void PairedLayoutRefusals()
+    {
+        void Bad(Action<JsonNode> change, string id)
+        {
+            JsonNode node = JsonNode.Parse(Read("data/layouts/focus-inset.json"))!;
+            change(node); Refuse(() => LayoutSpec.Parse(node.ToJsonString(), Commands), id);
+        }
+        Bad(n => { n["regions"]![1]!["kind"] = "global"; n["regions"]![1]!["placement"] = "docked"; }, "regions");
+        Bad(n => n["regions"]!.AsArray().RemoveAt(1), "regions");
+        Bad(n => n["regions"]![2]!["kind"] = "stage", "regions");
+        Bad(n => { n["regions"]![0]!["rect"]!["width"] = .8; }, "local");
+        Bad(n => n["regions"]![0]!["placement"] = "overlay", "global");
+        Bad(n => n["regions"]![1]!["contexts"]!.AsArray().RemoveAt(0), "contexts");
+        foreach (string id in new[] { "split-views", "focus-inset" })
+        {
+            LayoutSpec layout = LayoutSpec.Load(FileAt("data/layouts/" + id + ".json"), Commands);
+            foreach (string command in new[] { "camera.rotate", "object.inspect", "grip.select", "twist.apply" })
+                foreach (string context in Commands.Commands[command].Contexts)
+                    Equal(layout.Resolve(command, context).Kind, "global");
+            Check(layout.Regions.Values.All(r => r.Contexts.SequenceEqual(Commands.Contexts)), "new layouts must show all contexts");
+        }
     }
 
     private static void FlowDefaults()

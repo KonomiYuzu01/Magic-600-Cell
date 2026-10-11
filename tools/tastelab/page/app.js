@@ -8,6 +8,7 @@ import { COST_HEAVY } from "./presets.js";
 import { createImagesUI, keyAction } from "./images-ui.js";
 import { createLocalDb } from "./local-db.js";
 import { chooseStorage, saveFile } from "./platform.js";
+import { loadRecords } from "./records.js";
 
 const $ = (id) => document.getElementById(id);
 const use = (name) => (window.claude && window.claude.use ? window.claude.use(name) : Promise.resolve(null));
@@ -21,7 +22,7 @@ const LABELS = {
 const geo = buildGeometry();
 const session = Math.random().toString(36).slice(2, 10);
 const PAGE = 500; // documents per read; the store answers at most 1000 per query
-const state = { scene: "solving", family: null, records: [], ids: [], sessions: [], models: {}, pair: null, busy: true, db: null, standalone: false, space: defaultSpace(), turnCell: 0 };
+const state = { scene: "solving", family: null, records: [], ids: [], sessions: [], models: {}, pair: null, busy: true, db: null, standalone: false, unread: false, space: defaultSpace(), turnCell: 0 };
 const colourings = new Map();
 let activeTab = "looks", looksStatus = "Loading the model.", imagesStatus = "";
 function setLooksStatus(message) {
@@ -324,11 +325,14 @@ async function exportData() {
     if (exportTab === "looks") setLooksStatus(message);
     else { imagesStatus = message; if (activeTab === "images") $("status").textContent = message; }
   };
-  const downloads = await use("downloads");
-  if (!downloads && !state.standalone) { status("Export is not available in this view."); return; }
   state.exporting = true;
-  status("Preparing the export.");
   try {
+    // An export clicked during boot waits for the stored answers to be read.
+    await booted;
+    if (state.unread) { status("Export is not available: stored answers could not be read."); return; }
+    const downloads = await use("downloads");
+    if (!downloads && !state.standalone) { status("Export is not available in this view."); return; }
+    status("Preparing the export.");
     const result = await requestPresets();
     let imageWarning = "";
     const data = JSON.stringify(await images.exportData({
@@ -375,28 +379,6 @@ $("reason").addEventListener("keydown", (e) => {
 });
 $("export").addEventListener("click", exportData);
 for (const b of document.querySelectorAll("[data-scene]")) b.addEventListener("click", () => setScene(b.dataset.scene));
-
-// Every stored comparison in answer order, read in pages by time stamp.
-async function loadRecords(db) {
-  const records = [], ids = [], seen = new Set();
-  let last = null;
-  for (;;) {
-    let query = db.collection("comparisons").orderBy("t").limit(PAGE);
-    if (last !== null) query = query.where("t", ">=", last);
-    const snap = await query.get();
-    let added = 0;
-    for (const d of snap.docs) {
-      if (seen.has(d.id)) continue;
-      seen.add(d.id);
-      records.push(d.data());
-      ids.push(d.id);
-      added++;
-    }
-    if (snap.size < PAGE || !added) break;
-    last = snap.docs[snap.docs.length - 1].data().t;
-  }
-  return { records, ids };
-}
 
 // The stored hyperparameters by family; the worker checks each against the table.
 async function loadModels(db) {
@@ -446,6 +428,8 @@ async function boot() {
     previews.forEach((p) => p.start());
   } catch (err) {
     setLooksStatus(err.message);
+    // Answers in a store this view may read stay unread here.
+    if (db && owner !== false) state.unread = true;
     return;
   }
   if (db && owner === false) {
@@ -471,7 +455,10 @@ async function boot() {
       state.sessions = await loadSessions(db);
       try { state.models = await loadModels(db); } catch { /* the first search starts from the starting values */ }
     } catch (err) {
+      // Keep the notice, and never export a history that was not read as if it were complete.
       setLooksStatus(`Stored answers could not be read (${err.code || "error"}).`);
+      state.statusSticky = true;
+      state.unread = true;
     }
   } else {
     setLooksStatus("Storage is not available here; answers stay in this tab.");
@@ -482,4 +469,4 @@ async function boot() {
   init();
 }
 
-boot();
+const booted = boot();
