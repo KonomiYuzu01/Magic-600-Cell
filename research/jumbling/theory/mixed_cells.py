@@ -195,7 +195,13 @@ def cell_types(R, M, members, cls):
         tab[key] = tab.get(key, 0) + 1
     def dot(a, b):
         return sum((CL.N[a][k] * CL.N[b][k] for k in range(4)), Q5(0))
-    near = max((dot(m.poles[0], c) for c in m.poles[1:]), key=float)
+    dots = [dot(m.poles[0], c) for c in m.poles[1:]]
+    near = dots[0]
+    for x in dots[1:]:
+        if near < x:                                     # exact ordering in Q(sqrt 5)
+            near = x
+    if sum(1 for x in dots if x == near) != 12:
+        raise AssertionError('a pole of the class does not have 12 nearest neighbours')
     faces = all(dot(a, b) == near for s in m.cells
                 for caps in [[m.poles[k] for k in range(120) if s >> (119 - k) & 1]]
                 for i, a in enumerate(caps) for b in caps[i + 1:])
