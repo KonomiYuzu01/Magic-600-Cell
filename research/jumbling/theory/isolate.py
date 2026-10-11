@@ -1,5 +1,6 @@
-"""For each off-lattice domain F at a configuration: the caps that hold F whole, and the smallest
-intersection of 1, 2, 3 or 4 holders that contains F (extra = pieces in the intersection outside F).
+"""For each off-lattice domain F at a configuration: the admissible caps that hold F whole
+(blocked caps are not counted), and the smallest intersection of 1, 2, 3 or 4 holders that contains F
+(extra = pieces in the intersection outside F).
 Usage: python research/jumbling/theory/isolate.py <menu> <t> <moves.json> [--prefix k]
 Run from the repository root. Evidence kind: source and exact synthetic geometry; timings are cloud
 timings of research code, not performance evidence."""
