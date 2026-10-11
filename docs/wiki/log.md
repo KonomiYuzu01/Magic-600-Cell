@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-11] update | Jumbling: joint attack results and a deep scramble
+[open-problems](../../research/jumbling/theory/open-problems.md) records the joint attack on the I_a@40 stop: the stop is made of fragments enclosed by the lattice, lens commutators are the first lowering words there that need no record, and a run without history (E2) is descending from it but has not reached the lattice. A scramble on the five inscribed 600-cells of the grip poles leaves 93.5% of the pieces off the lattice (random scrambles about two thirds), and a retained scramble placed first changes only which piece sits where (proved); [jumbling-observation](../progress/1.0/jumbling-observation.md) names it as the deep test input and records five Global layouts tried in a view lab, among them Hopf rings (20 rings of 30 cells, fibres of one Hopf fibration) and a 20 × 30 ring sheet.
+
+## [2026-10-11] decision | Jumbling: complete restoration required
+Recorded in [owner-decisions-2026-10-10-jumbling-complete](decisions/owner-decisions-2026-10-10-jumbling-complete.md): the restoration method must restore every reachable configuration, at any depth; a 20-twist guarantee is rejected. [jumbling-observation](../progress/1.0/jumbling-observation.md) states what a solver must see in a jumbled state (piece filters, raw view, cut slice view) and the data the engine and renderer must add.
+
 ## [2026-10-10] update | Jumbling theory index and open problems
 [theory README](../../research/jumbling/theory/README.md) indexes the jumbling theory scripts and result files, and [open-problems](../../research/jumbling/theory/open-problems.md) gathers every open problem of the theory draft, the restoration page and the deferred-problems decision with its status and next step. The I_a@40 stopping configuration is recorded with an analysis of its off-grip seams.
 
