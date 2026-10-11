@@ -19,6 +19,7 @@ uniform mat4 q;
 uniform float d4 = 1.18;
 uniform float zoom = 1.15;
 uniform float aspect = 1.6;
+uniform vec4 view_frame = vec4(0.0, 0.0, 1.0, 0.0);
 uniform int projection_kind = 0;
 uniform bool cellsVisible = true;
 uniform bool sliceVisible = false;
@@ -81,9 +82,11 @@ void vertex() {
     if (projection_kind == 1) factor = 1.0 / (1.0 - world.w);
     projected = world.xyz * factor;
     float w = 5.0 - projected.z;
-    geometry_value = vec3(projected.x * zoom / aspect / w, projected.y * zoom / w, w);
     // Godot's Vulkan/D3D12 depth is reversed (near=1, far=0).
-    POSITION = vec4(projected.x * zoom / aspect, projected.y * zoom, (0.05 / 99.95) * (100.0 - w), w);
+    vec4 clip = vec4(projected.x * zoom / aspect, projected.y * zoom, (0.05 / 99.95) * (100.0 - w), w);
+    clip.xy = (clip.xy - view_frame.xy * clip.w) * view_frame.z;
+    geometry_value = vec3(clip.x / clip.w, clip.y / clip.w, clip.w);
+    POSITION = clip;
     int label = int(texelFetch(labels, slot_texel, 0).r);
     int colour_class = int(texelFetch(cell_classes, ivec2(label / 433, 0), 0).r);
     sticker_colour = texelFetch(palette, ivec2(colour_class, 0), 0).rgb;

@@ -28,10 +28,14 @@ internal sealed partial class LookViewport : Node3D
     private Vector2 velocity;
     public bool Animate { get; set; } = true;
     public Action<string>? Status { get; set; }
+    public TurnFrame BoundFrame { get; private set; } = null!;
+    public event Action<double>? FrameStepped;
+    public event Action<LookViewport>? LookApplied;
+    private Func<double>? nowMs;
 
-    public LookViewport(string root, LookState state)
+    public LookViewport(string root, LookState state, bool animate = true)
     {
-        this.state = state;
+        this.state = state; Animate = animate;
         Geometry = new Geometry(root);
         Turn = new TurnData(System.IO.Path.Combine(root, "tools/looklab/fixtures/w3-turn.json"));
         if (Turn.ModelId != Geometry.ModelId) throw new Exception("turn model does not match verified geometry");
@@ -47,6 +51,7 @@ internal sealed partial class LookViewport : Node3D
         Material.SetShaderParameter("geometry_width", 300);
         Material.SetShaderParameter("q", Matrix(Q));
         Material.SetShaderParameter("aspect", 1.6f);
+        SetViewFrame(FocusFrame.Neutral);
         Material.SetShaderParameter("base_normal", Vector4(Geometry.BaseNormal.Span));
         Material.SetShaderParameter("radius", (float)Geometry.Radius);
         Material.SetShaderParameter("anchors", FloatTexture(Geometry.StickerAnchors.Span, Geometry.StickersPerCell, 1, Image.Format.Rgbaf));
@@ -103,11 +108,16 @@ internal sealed partial class LookViewport : Node3D
             TonemapMode = Godot.Environment.ToneMapper.Linear, AmbientLightSource = Godot.Environment.AmbientSource.Disabled };
         AddChild(new WorldEnvironment { Environment = Environment });
         state.Changed += ParameterChanged;
-        ApplyLook(); Bind(clock.Frame());
+        ApplyLook();
+        if (Animate) Bind(clock.Frame());
     }
 
     private TurnClock NewClock() => new(Turn, state.Preset.Params.Number("turnMs"), state.Preset.Params.Number("easeA"),
-        state.Preset.Params.Number("easeB"), () => stopwatch.Elapsed.TotalMilliseconds);
+        state.Preset.Params.Number("easeB"), () => nowMs?.Invoke() ?? stopwatch.Elapsed.TotalMilliseconds);
+
+    internal void UseClock(Func<double> now) { nowMs = now; clock = NewClock(); revision = -1; }
+
+    public void SetViewFrame(FocusFrame frame) => Material.SetShaderParameter("view_frame", new Godot.Vector4((float)frame.X, (float)frame.Y, (float)frame.M, 0));
 
     private void ParameterChanged(string id, ParameterValue value)
     {
@@ -151,6 +161,7 @@ internal sealed partial class LookViewport : Node3D
         attributes.DofBlurFarDistance = 5;
         attributes.DofBlurFarTransition = 1;
         attributes.DofBlurAmount = (float)p.Number("depthOfField") * .1f;
+        LookApplied?.Invoke(this);
         Status?.Invoke(colours.Any(c => !c.Ok) ? "Palette lightness is outside the sRGB gamut." : "Full detail: 259,800 slots · cost not measured");
     }
 
@@ -169,6 +180,7 @@ internal sealed partial class LookViewport : Node3D
         Vector2 size = GetViewport().GetVisibleRect().Size;
         Material.SetShaderParameter("aspect", size.Y > 0 ? size.X / size.Y : 1);
         Material.SetShaderParameter("q", Matrix(Q));
+        FrameStepped?.Invoke(delta);
     }
 
     public void Drag(Vector2 relative)
@@ -187,6 +199,7 @@ internal sealed partial class LookViewport : Node3D
     public void Bind(TurnFrame frame)
     {
         Turn.ValidateBinding(frame.BoundRevision, frame.Labels.Span);
+        BoundFrame = frame;
         Material.SetShaderParameter("theta", (float)frame.Theta);
         if (revision == frame.BoundRevision) return;
         var values = new double[LabelWidth * LabelHeight];

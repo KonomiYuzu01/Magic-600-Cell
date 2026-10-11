@@ -25,6 +25,7 @@ public partial class Entry : Node
                 var app = new LabApp(args[0]); AddChild(app);
                 if (mode == "smoke") { AppSmoke.Run(app, args[1], fault); GetTree().Quit(); }
                 else if (LL4.LL4Checks.Handles(mode)) { LL4.LL4Checks.Run(app, args[0], mode, fault); GetTree().Quit(); }
+                else if (LL6.LL6Checks.Handles(mode)) { LL6.LL6Checks.Run(app, mode, fault); GetTree().Quit(); }
                 else if (await LL3.ModeChecks.Dispatch(this, app, args[0], args[1], mode, fault)) return;
                 if (LL5.CheckModes.Handles(mode)) { await LL5.CheckModes.Run(this, app, mode, fault); }
                 return;

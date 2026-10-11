@@ -17,7 +17,7 @@ internal static class LL4Checks
     {
         var controls = (GreyboxControls)app.FindChild("LL4Controls", true, false);
         controls.Toggle.ButtonPressed = true;
-        var stage = app.GetChildren().OfType<SubViewportContainer>().Single();
+        var stage = app.GlobalStage;
         Require(controls.Canvas.Size.X > 0 && stage.Size.X > 0 &&
             stage.Position.X == controls.Canvas.Position.X + controls.Canvas.Size.X, "ll4-greybox", "views are not beside one another");
         if (mode == "ll4-greybox") { Greybox(controls, fault); return; }

@@ -6,7 +6,7 @@ def run(godot, stage, temporary, env, common, godot_run, failure):
     checks = (
         ("ll4-metrics", r"LOOKLAB_LL4_METRICS_PASS steps=14 checks=1"),
         ("ll4-refusal", r"LOOKLAB_LL4_REFUSAL_PASS command=target\.next\.activate context=any checks=1"),
-        ("ll4-greybox", r"LOOKLAB_LL4_GREYBOX_PASS layouts=2 contexts=16 commands=86 placements=180 checks=1"),
+        ("ll4-greybox", r"LOOKLAB_LL4_GREYBOX_PASS layouts=4 contexts=32 commands=86 placements=360 checks=1"),
     )
     for mode, pattern in checks:
         result = godot_run(godot, stage, temporary, env, ["--headless", *common, mode])

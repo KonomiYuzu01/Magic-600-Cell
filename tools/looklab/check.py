@@ -366,15 +366,16 @@ def godot_lane(mode, temporary, env, parent):
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll3.py"))["headless"](globals(), godot, stage, temporary, env, common)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll4.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll5.py"))["headless"](godot, stage, temporary, env, common, godot_run, CheckFailure)
+            __import__("runpy").run_path(str(ROOT / LAB / "lane_ll6.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
         elif mode == "--godot-gpu":
             run = godot_run(godot, stage, temporary, env, [*common, "stage0-gpu"], graphics=True)
             if "LOOKLAB_STAGE0_GPU_PASS" not in run.stdout:
                 raise CheckFailure("stage 0 graphics result missing")
             godot_run(godot, stage, temporary, env, [*common, "stage0-gpu", "float-offset"], graphics=True, expected_failure="float-offset")
             run = godot_run(godot, stage, temporary, env, [*common, "geometry"], graphics=True)
-            if "LOOKLAB_GEOMETRY_PASS cases=9 samples=2700 target=RGBA32F" not in run.stdout or "LOOKLAB_DRAW_COUNT_PASS instances=600 visible=600 primitives=6096000" not in run.stdout:
+            if "LOOKLAB_GEOMETRY_PASS cases=10 samples=3000 framed=1 target=RGBA32F" not in run.stdout or "LOOKLAB_DRAW_COUNT_PASS instances=600 visible=600 primitives=6096000" not in run.stdout:
                 raise CheckFailure("shader geometry or full draw-count result missing")
-            for fault in ("transpose-q", "missing-instance"):
+            for fault in ("transpose-q", "missing-instance", "missing-view-frame"):
                 godot_run(godot, stage, temporary, env, [*common, "geometry", fault], graphics=True, expected_failure=fault)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll3.py"))["graphics"](globals(), godot, stage, temporary, env, common)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll5.py"))["graphics"](godot, stage, temporary, env, common, godot_run, CheckFailure)
