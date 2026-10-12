@@ -1,0 +1,73 @@
+{
+ "start_digest": "3c086301091a2dad43b5efd1d1702ce005976a5f54ecbc9d22b520e49aba106b",
+ "start_off": 277,
+ "files": [
+  {
+   "name": "research/jumbling/theory/results/outside/x5-generator-word.json",
+   "twists": 6,
+   "input_digest_ok": true,
+   "output_digest_ok": true,
+   "end_digest": "f7506db887e80200202b6c29a43a2068cbc808d43b604345e345505029cdcd4f",
+   "off_min": 277,
+   "off_max": 277,
+   "off_end": 277,
+   "depth_tested": 6,
+   "depth_failures": 0,
+   "first_depth_failure": null,
+   "restored": 0,
+   "collateral": 0,
+   "collateral_ids": [],
+   "pose_changed": 0,
+   "pose_changed_ids": [],
+   "inadmissible": null
+  }
+ ],
+ "total": {
+  "name": "total",
+  "twists": 6,
+  "input_digest_ok": true,
+  "output_digest_ok": true,
+  "end_digest": "f7506db887e80200202b6c29a43a2068cbc808d43b604345e345505029cdcd4f",
+  "off_min": 277,
+  "off_max": 277,
+  "off_end": 277,
+  "depth_tested": 6,
+  "depth_failures": 0,
+  "first_depth_failure": null,
+  "restored": 0,
+  "collateral": 0,
+  "collateral_ids": [],
+  "pose_changed": 0,
+  "pose_changed_ids": [],
+  "inadmissible": null
+ },
+ "claims": {
+  "end_digest": {
+   "expected": "f7506db887e80200202b6c29a43a2068cbc808d43b604345e345505029cdcd4f",
+   "actual": "f7506db887e80200202b6c29a43a2068cbc808d43b604345e345505029cdcd4f",
+   "ok": true
+  },
+  "restored": {
+   "expected": 0,
+   "actual": 0,
+   "ok": true
+  },
+  "off_at_end": {
+   "expected": 277,
+   "actual": 277,
+   "ok": true
+  },
+  "collateral": {
+   "expected": 0,
+   "actual": 0,
+   "ok": true
+  },
+  "pose_changed": {
+   "expected": 0,
+   "actual": 0,
+   "ok": true
+  }
+ },
+ "pass": true,
+ "seconds": 5.276
+}

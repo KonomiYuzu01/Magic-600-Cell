@@ -1,0 +1,31 @@
+{
+ "word": [
+  [
+   319,
+   7
+  ],
+  [
+   528,
+   2
+  ],
+  [
+   505,
+   10
+  ],
+  [
+   410,
+   1
+  ],
+  [
+   294,
+   1
+  ],
+  [
+   319,
+   6
+  ]
+ ],
+ "input_digest": "3c086301091a2dad43b5efd1d1702ce005976a5f54ecbc9d22b520e49aba106b",
+ "output_digest": "f7506db887e80200202b6c29a43a2068cbc808d43b604345e345505029cdcd4f",
+ "note": "X5 generator from X0 (prefix 17,670 of the owner construction); external reachability evidence only"
+}

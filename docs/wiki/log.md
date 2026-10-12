@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-12] update | Jumbling E: buffer vacancy read from the current state
+[open-problems](../../research/jumbling/theory/open-problems.md) and [buffer-transport](../../research/jumbling/theory/buffer-transport.md) record a vacancy condition read from the exact current geometry, exact on the X0 family (it replaces the 83 specified vacant chambers), a reachable state X5 outside it that is recovered from its current state by a setup moving two blocks each frozen alone, and Corollary L checked along the owner's 41,457-twist construction; general E stays open.
+
 ## [2026-10-11] update | Jumbling E: the chain to 104 and what a separating loop leaves behind
 [open-problems](../../research/jumbling/theory/open-problems.md) records the owner's chain on from 277 through 191 to 104 off-lattice pieces (`results/e-chain-104/`, replayed here with every twist admissible) and their completed construction to the lattice (41,457 twists, the part after 104 replayed here), and at 104 what each separating loop of the glued pair takes off the lattice (`collateral.py`): a loop that puts the whole class-2 fragment on the lattice takes 331 to 395 lattice pieces off, and emptying their chambers before the loop needs at least 231 further pieces off the lattice (30 for the loops that put 58 of its 63 pieces on). These are facts about one finite family of loops, not about all words.
 

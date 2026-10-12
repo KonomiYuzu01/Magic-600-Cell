@@ -1,0 +1,1267 @@
+{
+ "checkpoints": [
+  {
+   "prefix": 0,
+   "digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+   "off": 690,
+   "blocks": [
+    {
+     "tracker": 0,
+     "size": 48,
+     "smallest_piece": 8888,
+     "locked": [
+      3100,
+      3239,
+      3253,
+      3736,
+      3747
+     ],
+     "occupied_by": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+     ]
+    },
+    {
+     "tracker": 1,
+     "size": 43,
+     "smallest_piece": 9104,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 2,
+     "size": 17,
+     "smallest_piece": 9117,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 3,
+     "size": 3,
+     "smallest_piece": 16245,
+     "locked": [
+      57073,
+      57074,
+      57075
+     ],
+     "occupied_by": [
+      57220,
+      47840,
+      47855
+     ]
+    },
+    {
+     "tracker": 4,
+     "size": 50,
+     "smallest_piece": 16589,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 5,
+     "size": 12,
+     "smallest_piece": 18445,
+     "locked": [
+      58358,
+      58361
+     ],
+     "occupied_by": [
+      53589,
+      31985
+     ]
+    },
+    {
+     "tracker": 6,
+     "size": 48,
+     "smallest_piece": 18491,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 7,
+     "size": 29,
+     "smallest_piece": 21607,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 8,
+     "size": 45,
+     "smallest_piece": 35795,
+     "locked": [
+      16233,
+      16234,
+      16315,
+      16316,
+      24026
+     ],
+     "occupied_by": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+     ]
+    },
+    {
+     "tracker": 9,
+     "size": 86,
+     "smallest_piece": 64184,
+     "locked": [
+      119124,
+      119141,
+      119151,
+      128877,
+      128888
+     ],
+     "occupied_by": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+     ]
+    },
+    {
+     "tracker": 10,
+     "size": 111,
+     "smallest_piece": 64191,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 11,
+     "size": 87,
+     "smallest_piece": 64213,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 12,
+     "size": 111,
+     "smallest_piece": 68424,
+     "locked": [],
+     "occupied_by": []
+    }
+   ]
+  },
+  {
+   "prefix": 17670,
+   "digest": "3c086301091a2dad43b5efd1d1702ce005976a5f54ecbc9d22b520e49aba106b",
+   "off": 277,
+   "blocks": [
+    {
+     "tracker": 13,
+     "size": 43,
+     "smallest_piece": 9104,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 14,
+     "size": 17,
+     "smallest_piece": 9117,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 15,
+     "size": 3,
+     "smallest_piece": 16245,
+     "locked": [
+      57073,
+      57074,
+      57075
+     ],
+     "occupied_by": [
+      57220,
+      47840,
+      47855
+     ]
+    },
+    {
+     "tracker": 16,
+     "size": 12,
+     "smallest_piece": 18445,
+     "locked": [
+      58358,
+      58361
+     ],
+     "occupied_by": [
+      53589,
+      31985
+     ]
+    },
+    {
+     "tracker": 17,
+     "size": 29,
+     "smallest_piece": 21607,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 18,
+     "size": 86,
+     "smallest_piece": 64184,
+     "locked": [
+      119124,
+      119141,
+      119151,
+      128877,
+      128888
+     ],
+     "occupied_by": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+     ]
+    },
+    {
+     "tracker": 19,
+     "size": 87,
+     "smallest_piece": 64213,
+     "locked": [],
+     "occupied_by": []
+    }
+   ]
+  },
+  {
+   "prefix": 22318,
+   "digest": "5689234045dad4772a142e7124b24078f91e7cd53c907c9d8ad13c01f8961761",
+   "off": 186,
+   "blocks": [
+    {
+     "tracker": 20,
+     "size": 43,
+     "smallest_piece": 9104,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 21,
+     "size": 17,
+     "smallest_piece": 9117,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 22,
+     "size": 111,
+     "smallest_piece": 11484,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 23,
+     "size": 3,
+     "smallest_piece": 16245,
+     "locked": [
+      57073,
+      57074,
+      57075
+     ],
+     "occupied_by": [
+      57220,
+      47840,
+      47855
+     ]
+    },
+    {
+     "tracker": 24,
+     "size": 12,
+     "smallest_piece": 18445,
+     "locked": [
+      58358,
+      58361
+     ],
+     "occupied_by": [
+      53589,
+      31985
+     ]
+    }
+   ]
+  },
+  {
+   "prefix": 26443,
+   "digest": "88d079678c92fb997fbc403371329ef21993177413d97e5d9f3ec4516537ed07",
+   "off": 149,
+   "blocks": [
+    {
+     "tracker": 25,
+     "size": 86,
+     "smallest_piece": 2224,
+     "locked": [
+      58357,
+      58360,
+      58372,
+      85188,
+      85208
+     ],
+     "occupied_by": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+     ]
+    },
+    {
+     "tracker": 26,
+     "size": 43,
+     "smallest_piece": 9104,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 27,
+     "size": 17,
+     "smallest_piece": 9117,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 28,
+     "size": 3,
+     "smallest_piece": 16245,
+     "locked": [
+      57073,
+      57074,
+      57075
+     ],
+     "occupied_by": [
+      57220,
+      47840,
+      47855
+     ]
+    }
+   ]
+  },
+  {
+   "prefix": 27426,
+   "digest": "b9cce35024af3f7bc7715d2917b2e5ffac27db1b81fe8540eaaae33fafbda54e",
+   "off": 131,
+   "blocks": [
+    {
+     "tracker": 29,
+     "size": 111,
+     "smallest_piece": 3775,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 30,
+     "size": 17,
+     "smallest_piece": 9117,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 31,
+     "size": 3,
+     "smallest_piece": 16245,
+     "locked": [
+      57073,
+      57074,
+      57075
+     ],
+     "occupied_by": [
+      57220,
+      47840,
+      47855
+     ]
+    }
+   ]
+  },
+  {
+   "prefix": 36636,
+   "digest": "6a92a40834fb3f464f51977ae28d53aaad125834c3342daad526d99ed8715b98",
+   "off": 90,
+   "blocks": [
+    {
+     "tracker": 32,
+     "size": 87,
+     "smallest_piece": 2985,
+     "locked": [],
+     "occupied_by": []
+    },
+    {
+     "tracker": 33,
+     "size": 3,
+     "smallest_piece": 16245,
+     "locked": [
+      57073,
+      57074,
+      57075
+     ],
+     "occupied_by": [
+      57220,
+      47840,
+      47855
+     ]
+    }
+   ]
+  },
+  {
+   "prefix": 39988,
+   "digest": "dd5ca52b66accc6dd813b0331fb13a2158c3bcb9874b2438dab83bd555f1512f",
+   "off": 86,
+   "blocks": [
+    {
+     "tracker": 34,
+     "size": 86,
+     "smallest_piece": 3991,
+     "locked": [
+      42203,
+      42204,
+      42206,
+      42211,
+      42212,
+      42213,
+      47671,
+      47672,
+      47686,
+      47687,
+      47697,
+      47702,
+      57072
+     ],
+     "occupied_by": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+     ]
+    }
+   ]
+  }
+ ],
+ "word_length": 41457,
+ "input_digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+ "end_digest": "be0553b5c0bc3af1520eb470f6bf132d375930d9b2472ba58c0b431d90f9d289",
+ "end_digest_ok": true,
+ "off_at_end": 0,
+ "violations": [],
+ "trackers": [
+  {
+   "id": 0,
+   "checkpoint": 0,
+   "size": 48,
+   "locked": 5,
+   "occupied_locked": 0,
+   "retained_moves": 10,
+   "first_move_outside_K": {
+    "prefix": 47,
+    "grip": 5,
+    "menu": 12,
+    "retained_moves_before": 10,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 1,
+   "checkpoint": 0,
+   "size": 43,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 5,
+   "first_move_outside_K": {
+    "prefix": 27388,
+    "grip": 237,
+    "menu": 28,
+    "retained_moves_before": 5,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 2,
+   "checkpoint": 0,
+   "size": 17,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 4,
+   "first_move_outside_K": {
+    "prefix": 27386,
+    "grip": 491,
+    "menu": 34,
+    "retained_moves_before": 4,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 3,
+   "checkpoint": 0,
+   "size": 3,
+   "locked": 3,
+   "occupied_locked": 3,
+   "retained_moves": 1,
+   "first_move_outside_K": {
+    "prefix": 27388,
+    "grip": 237,
+    "menu": 28,
+    "retained_moves_before": 1,
+    "occupied_locked": 3,
+    "went_off": [
+     57220,
+     47840,
+     47855
+    ],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 4,
+   "checkpoint": 0,
+   "size": 50,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 5,
+   "first_move_outside_K": {
+    "prefix": 8,
+    "grip": 170,
+    "menu": 12,
+    "retained_moves_before": 5,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 5,
+   "checkpoint": 0,
+   "size": 12,
+   "locked": 2,
+   "occupied_locked": 2,
+   "retained_moves": 1,
+   "first_move_outside_K": {
+    "prefix": 9654,
+    "grip": 369,
+    "menu": 15,
+    "retained_moves_before": 1,
+    "occupied_locked": 2,
+    "went_off": [
+     53589,
+     31985
+    ],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 6,
+   "checkpoint": 0,
+   "size": 48,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 0,
+   "first_move_outside_K": {
+    "prefix": 6198,
+    "grip": 39,
+    "menu": 18,
+    "retained_moves_before": 0,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 7,
+   "checkpoint": 0,
+   "size": 29,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 35,
+   "first_move_outside_K": {
+    "prefix": 13923,
+    "grip": 319,
+    "menu": 45,
+    "retained_moves_before": 35,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 8,
+   "checkpoint": 0,
+   "size": 45,
+   "locked": 5,
+   "occupied_locked": 0,
+   "retained_moves": 0,
+   "first_move_outside_K": {
+    "prefix": 6198,
+    "grip": 39,
+    "menu": 18,
+    "retained_moves_before": 0,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 9,
+   "checkpoint": 0,
+   "size": 86,
+   "locked": 5,
+   "occupied_locked": 0,
+   "retained_moves": 5,
+   "first_move_outside_K": {
+    "prefix": 9650,
+    "grip": 452,
+    "menu": 26,
+    "retained_moves_before": 5,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 10,
+   "checkpoint": 0,
+   "size": 111,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 21,
+   "first_move_outside_K": {
+    "prefix": 9654,
+    "grip": 369,
+    "menu": 15,
+    "retained_moves_before": 21,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 11,
+   "checkpoint": 0,
+   "size": 87,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 20,
+   "first_move_outside_K": {
+    "prefix": 9652,
+    "grip": 452,
+    "menu": 58,
+    "retained_moves_before": 20,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 12,
+   "checkpoint": 0,
+   "size": 111,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 5,
+   "first_move_outside_K": {
+    "prefix": 9650,
+    "grip": 452,
+    "menu": 26,
+    "retained_moves_before": 5,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 13,
+   "checkpoint": 17670,
+   "size": 43,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 5,
+   "first_move_outside_K": {
+    "prefix": 27388,
+    "grip": 237,
+    "menu": 28,
+    "retained_moves_before": 5,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 14,
+   "checkpoint": 17670,
+   "size": 17,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 4,
+   "first_move_outside_K": {
+    "prefix": 27386,
+    "grip": 491,
+    "menu": 34,
+    "retained_moves_before": 4,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 15,
+   "checkpoint": 17670,
+   "size": 3,
+   "locked": 3,
+   "occupied_locked": 3,
+   "retained_moves": 1,
+   "first_move_outside_K": {
+    "prefix": 27388,
+    "grip": 237,
+    "menu": 28,
+    "retained_moves_before": 1,
+    "occupied_locked": 3,
+    "went_off": [
+     57220,
+     47840,
+     47855
+    ],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 16,
+   "checkpoint": 17670,
+   "size": 12,
+   "locked": 2,
+   "occupied_locked": 2,
+   "retained_moves": 0,
+   "first_move_outside_K": {
+    "prefix": 17884,
+    "grip": 369,
+    "menu": 15,
+    "retained_moves_before": 0,
+    "occupied_locked": 2,
+    "went_off": [
+     53589,
+     31985
+    ],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 17,
+   "checkpoint": 17670,
+   "size": 29,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 0,
+   "first_move_outside_K": {
+    "prefix": 17885,
+    "grip": 507,
+    "menu": 28,
+    "retained_moves_before": 0,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 18,
+   "checkpoint": 17670,
+   "size": 86,
+   "locked": 5,
+   "occupied_locked": 0,
+   "retained_moves": 0,
+   "first_move_outside_K": {
+    "prefix": 17884,
+    "grip": 369,
+    "menu": 15,
+    "retained_moves_before": 0,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 19,
+   "checkpoint": 17670,
+   "size": 87,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 0,
+   "first_move_outside_K": {
+    "prefix": 17884,
+    "grip": 369,
+    "menu": 15,
+    "retained_moves_before": 0,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 20,
+   "checkpoint": 22318,
+   "size": 43,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 5,
+   "first_move_outside_K": {
+    "prefix": 27388,
+    "grip": 237,
+    "menu": 28,
+    "retained_moves_before": 5,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 21,
+   "checkpoint": 22318,
+   "size": 17,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 4,
+   "first_move_outside_K": {
+    "prefix": 27386,
+    "grip": 491,
+    "menu": 34,
+    "retained_moves_before": 4,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 22,
+   "checkpoint": 22318,
+   "size": 111,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 2,
+   "first_move_outside_K": {
+    "prefix": 24183,
+    "grip": 543,
+    "menu": 15,
+    "retained_moves_before": 2,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 23,
+   "checkpoint": 22318,
+   "size": 3,
+   "locked": 3,
+   "occupied_locked": 3,
+   "retained_moves": 1,
+   "first_move_outside_K": {
+    "prefix": 27388,
+    "grip": 237,
+    "menu": 28,
+    "retained_moves_before": 1,
+    "occupied_locked": 3,
+    "went_off": [
+     57220,
+     47840,
+     47855
+    ],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 24,
+   "checkpoint": 22318,
+   "size": 12,
+   "locked": 2,
+   "occupied_locked": 2,
+   "retained_moves": 2,
+   "first_move_outside_K": {
+    "prefix": 24219,
+    "grip": 369,
+    "menu": 56,
+    "retained_moves_before": 2,
+    "occupied_locked": 2,
+    "went_off": [
+     53589,
+     31985
+    ],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 25,
+   "checkpoint": 26443,
+   "size": 86,
+   "locked": 5,
+   "occupied_locked": 0,
+   "retained_moves": 0,
+   "first_move_outside_K": {
+    "prefix": 26661,
+    "grip": 369,
+    "menu": 33,
+    "retained_moves_before": 0,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 26,
+   "checkpoint": 26443,
+   "size": 43,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 5,
+   "first_move_outside_K": {
+    "prefix": 27388,
+    "grip": 237,
+    "menu": 28,
+    "retained_moves_before": 5,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 27,
+   "checkpoint": 26443,
+   "size": 17,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 4,
+   "first_move_outside_K": {
+    "prefix": 27386,
+    "grip": 491,
+    "menu": 34,
+    "retained_moves_before": 4,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 28,
+   "checkpoint": 26443,
+   "size": 3,
+   "locked": 3,
+   "occupied_locked": 3,
+   "retained_moves": 1,
+   "first_move_outside_K": {
+    "prefix": 27388,
+    "grip": 237,
+    "menu": 28,
+    "retained_moves_before": 1,
+    "occupied_locked": 3,
+    "went_off": [
+     57220,
+     47840,
+     47855
+    ],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 29,
+   "checkpoint": 27426,
+   "size": 111,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 2,
+   "first_move_outside_K": {
+    "prefix": 36561,
+    "grip": 491,
+    "menu": 34,
+    "retained_moves_before": 2,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 30,
+   "checkpoint": 27426,
+   "size": 17,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 4,
+   "first_move_outside_K": {
+    "prefix": 36566,
+    "grip": 491,
+    "menu": 34,
+    "retained_moves_before": 4,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 31,
+   "checkpoint": 27426,
+   "size": 3,
+   "locked": 3,
+   "occupied_locked": 3,
+   "retained_moves": 1,
+   "first_move_outside_K": {
+    "prefix": 36568,
+    "grip": 237,
+    "menu": 28,
+    "retained_moves_before": 1,
+    "occupied_locked": 3,
+    "went_off": [
+     57220,
+     47840,
+     47855
+    ],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 32,
+   "checkpoint": 36636,
+   "size": 87,
+   "locked": 0,
+   "occupied_locked": 0,
+   "retained_moves": 1,
+   "first_move_outside_K": {
+    "prefix": 38511,
+    "grip": 92,
+    "menu": 26,
+    "retained_moves_before": 1,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 33,
+   "checkpoint": 36636,
+   "size": 3,
+   "locked": 3,
+   "occupied_locked": 3,
+   "retained_moves": 18,
+   "first_move_outside_K": {
+    "prefix": 38553,
+    "grip": 237,
+    "menu": 15,
+    "retained_moves_before": 18,
+    "occupied_locked": 3,
+    "went_off": [
+     57220,
+     47840,
+     47855
+    ],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  },
+  {
+   "id": 34,
+   "checkpoint": 39988,
+   "size": 86,
+   "locked": 13,
+   "occupied_locked": 0,
+   "retained_moves": 0,
+   "first_move_outside_K": {
+    "prefix": 40019,
+    "grip": 162,
+    "menu": 35,
+    "retained_moves_before": 0,
+    "occupied_locked": 0,
+    "went_off": [],
+    "stayed_on": []
+   },
+   "alive_at_end": false
+  }
+ ],
+ "forcing_events": 15,
+ "forced_off": {
+  "31985": {
+   "events": [
+    {
+     "off_at": 9654,
+     "trackers": [
+      5
+     ],
+     "back_at": 9659
+    },
+    {
+     "off_at": 17884,
+     "trackers": [
+      16
+     ],
+     "back_at": 17886
+    },
+    {
+     "off_at": 24219,
+     "trackers": [
+      24
+     ],
+     "back_at": 24221
+    }
+   ],
+   "on_lattice_at_end": true
+  },
+  "47840": {
+   "events": [
+    {
+     "off_at": 27388,
+     "trackers": [
+      3,
+      15,
+      23,
+      28
+     ],
+     "back_at": 27393
+    },
+    {
+     "off_at": 36568,
+     "trackers": [
+      31
+     ],
+     "back_at": 36573
+    },
+    {
+     "off_at": 38553,
+     "trackers": [
+      33
+     ],
+     "back_at": 38569
+    }
+   ],
+   "on_lattice_at_end": true
+  },
+  "47855": {
+   "events": [
+    {
+     "off_at": 27388,
+     "trackers": [
+      3,
+      15,
+      23,
+      28
+     ],
+     "back_at": 27393
+    },
+    {
+     "off_at": 36568,
+     "trackers": [
+      31
+     ],
+     "back_at": 36573
+    },
+    {
+     "off_at": 38553,
+     "trackers": [
+      33
+     ],
+     "back_at": 38569
+    }
+   ],
+   "on_lattice_at_end": true
+  },
+  "53589": {
+   "events": [
+    {
+     "off_at": 9654,
+     "trackers": [
+      5
+     ],
+     "back_at": 9659
+    },
+    {
+     "off_at": 17884,
+     "trackers": [
+      16
+     ],
+     "back_at": 17886
+    },
+    {
+     "off_at": 24219,
+     "trackers": [
+      24
+     ],
+     "back_at": 24221
+    }
+   ],
+   "on_lattice_at_end": true
+  },
+  "57220": {
+   "events": [
+    {
+     "off_at": 27388,
+     "trackers": [
+      3,
+      15,
+      23,
+      28
+     ],
+     "back_at": 27393
+    },
+    {
+     "off_at": 36568,
+     "trackers": [
+      31
+     ],
+     "back_at": 36573
+    },
+    {
+     "off_at": 38553,
+     "trackers": [
+      33
+     ],
+     "back_at": 38569
+    }
+   ],
+   "on_lattice_at_end": true
+  }
+ },
+ "evidence": "exact simulator replay",
+ "seconds": 3648
+}
