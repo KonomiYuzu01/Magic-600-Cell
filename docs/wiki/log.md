@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-12] update | Jumbling E: v17 certificates and Lemma M
+[buffer-transport](../../research/jumbling/theory/buffer-transport.md) adds Lemma M with explicit hypotheses (a restoration that keeps every remaining off pose keeps the SAFE-ALL alphabet and every certificate; merged orbits get only the necessary counts), checked on three restorations (`monocheck.py`), and certificates at the owner's v17 states read from their pose tables: Jordan certificates for all 19 target orbits, and for the second target a peeling certificate whose greedy preparation, read from the current holes, takes 535 and 649 letters against the owner's 4,044 and 4,264; general E stays open.
+
 ## [2026-10-12] update | Jumbling E: buffer vacancy read from the current state
 [open-problems](../../research/jumbling/theory/open-problems.md) and [buffer-transport](../../research/jumbling/theory/buffer-transport.md) record a vacancy condition read from the exact current geometry, exact on the X0 family (it replaces the 83 specified vacant chambers), a reachable state X5 outside it that is recovered from its current state by a setup moving two blocks each frozen alone, and Corollary L checked along the owner's 41,457-twist construction; general E stays open.
 

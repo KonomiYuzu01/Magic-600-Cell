@@ -1,0 +1,38 @@
+{
+ "start_digest": "8eac8877d33739613b3e00ebbe519fe0762b377130b8be9431d3af3e60231265",
+ "end_digest": "ef33f3c0e6b2fdb548e8f9064fe0b1ec3fcc0a3979b68fc5728efa4acc47f22d",
+ "words": [
+  "seg-4214-4126-4214.json"
+ ],
+ "off": [
+  388,
+  277
+ ],
+ "safe_all_grips": [
+  570,
+  570
+ ],
+ "safe_all_letters": [
+  6270,
+  6270
+ ],
+ "letters_lost": [],
+ "letters_changed": [],
+ "orbits": [
+  1110,
+  1110
+ ],
+ "fixed_chambers": [
+  1075,
+  1075
+ ],
+ "checks": {
+  "restriction": true,
+  "letters_kept": true,
+  "orbits_coarsen": true,
+  "fixed_shrink": true
+ },
+ "ok": true,
+ "evidence": "exact simulator replay and exact computation",
+ "seconds": 42
+}
