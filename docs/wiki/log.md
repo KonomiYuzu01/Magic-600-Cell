@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-12] update | Jumbling E: the six unlock windows
+[buffer-transport](../../research/jumbling/theory/buffer-transport.md) section 8.5 takes apart the six unlock windows of the owner's 41,457-twist construction with `unlock.py` (exact; one code review and a scoped verification): each witness runs from an anchor before the forcing twist to the first prefix at which every lattice piece of the anchor is back (30 to 9,210 twists, while the forced pieces are back 2 to 16 twists after the forcing twist), restores whole blocks and leaves every other off piece at its exact pose; what the six windows share (U1 to U4) is computed, and that it generalizes is a conjecture.
+
 ## [2026-10-12] update | Jumbling E: v17 certificates and Lemma M
 [buffer-transport](../../research/jumbling/theory/buffer-transport.md) adds Lemma M with explicit hypotheses (a restoration that keeps every remaining off pose keeps the SAFE-ALL alphabet and every certificate; merged orbits get only the necessary counts), checked on three restorations (`monocheck.py`), and certificates at the owner's v17 states read from their pose tables: Jordan certificates for all 19 target orbits, and for the second target a peeling certificate whose greedy preparation, read from the current holes, takes 535 and 649 letters against the owner's 4,044 and 4,264; general E stays open.
 

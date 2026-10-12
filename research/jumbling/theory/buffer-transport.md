@@ -1,6 +1,6 @@
 # Buffer vacancy read from the current state (R1, question E, items 1 and 2)
 
-Status: **12 October 2026.** Labels: **Proved** (by the integrator), **Computed** (exact, by the script named), **Open**, **Conjecture**. One independent Codex review (11 October 2026, proofs only, computed values out of its scope) found Proposition N, Theorem A, Corollary A1, the lock lemma and Corollary L sound under the stated model, and Theorem B sound once its words are required to be SAFE-ALL words; its five findings on the criteria built on them are answered in the text (section 9), and a scoped verification found all five fixed. Computed values are outside that review; the two scripts the integrator wrote (`setup_flow.py`, `lockcheck.py`) had a separate code review, whose four blocking findings were fixed and verified. Section 6.1 (Lemma M, 12 October) had its own full review and two scoped verifications, and the integrator's `monocheck.py` a code review and two scoped verifications; each review's scope is the section or script named, not the whole note. Section 6.2 reads the owner's v17 states. Lemma numbers refer to the owner's manuscript (card 3, revision 11), which is not in this repository; its Lemmas 41, 44, 46, 48 to 51 are used as stated there.
+Status: **12 October 2026.** Labels: **Proved** (by the integrator), **Computed** (exact, by the script named), **Open**, **Conjecture**. One independent Codex review (11 October 2026, proofs only, computed values out of its scope) found Proposition N, Theorem A, Corollary A1, the lock lemma and Corollary L sound under the stated model, and Theorem B sound once its words are required to be SAFE-ALL words; its five findings on the criteria built on them are answered in the text (section 9), and a scoped verification found all five fixed. Computed values are outside that review; the two scripts the integrator wrote (`setup_flow.py`, `lockcheck.py`) had a separate code review, whose four blocking findings were fixed and verified. Section 6.1 (Lemma M, 12 October) had its own full review and two scoped verifications, and the integrator's `monocheck.py` a code review and two scoped verifications; each review's scope is the section or script named, not the whole note. Section 6.2 reads the owner's v17 states. Section 8.5 takes apart the six unlock windows of the owner's construction: exact computation by `unlock.py`, which had one code review and a scoped verification; the section states no new proof, so it had no math review. Lemma numbers refer to the owner's manuscript (card 3, revision 11), which is not in this repository; its Lemmas 41, 44, 46, 48 to 51 are used as stated there.
 
 The owner's two questions (11 October 2026): (1) turn BUFFER-PROGRESS into a condition read from the exact current geometry, in particular relax "83 specified vacant chambers" of Lemma 49, with explicit quantifiers, scope and simultaneity; (2) construct legal reachable depth-one states outside that condition and see whether blocks that cannot move alone ("frozen", Lemma 51) gain a way to recovery when a few blocks move together, keeping three outcomes apart: a finite search found nothing, a restricted strategy is infeasible, or the state is not recoverable at all.
 
@@ -231,6 +231,129 @@ Proof. Before τ, every twist that moves B moves it by an element of K, so the l
 | Any legal word | X5 is recoverable: it is reachable from the E2 end, and the owner's construction restores the E2 end to the lattice | not an obstruction; the generation history is used only as this evidence |
 | Restoring a block with an occupied locked chamber without taking a lattice piece off at some prefix | impossible | proved (Corollary L) |
 
+### 8.5 The six unlock windows of the owner's construction
+
+The owner asked (v17) for the six unlock mechanisms of section 8.3 in full: exact start tables or reproducible prefixes, the complete short words, the endpoint digests, the lattice pieces each step takes off and where each is first back, the remaining off poses, and the geometric hypotheses that might generalize.
+
+Convention. Every number in this section is an executed-prefix count of the owner's complete 41,457-twist word from the E2 end (input digest bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686, output digest be0553b5c0bc3af1520eb470f6bf132d375930d9b2472ba58c0b431d90f9d289): prefix p is the state after the first p twists, and twist p (counted from 1) is word[p − 1]. Section 8.3 names two kinds of numbers.
+- Forcing twists n = 9,654, 17,884, 24,219 (12-piece block) and 27,388, 36,568, 38,553 (3-piece block): twist n is the first twist after a checkpoint that moves the block by an element outside K. Prefix n − 1 is the last state with the forced pieces (the lattice pieces in the block's occupied locked chambers) on the lattice, prefix n the first without them.
+- First returns b = 9,659, 17,886, 24,221, 27,393, 36,573 and 38,569: the first prefix ≥ n at which all forced pieces are on the lattice together.
+- b − n (2 to 16 twists) is not the length of a witness. When the forced pieces are back, other lattice pieces that the same excursion took off can still be off, and the excursion can begin before n.
+
+Definitions (`unlock.py`).
+- Anchor s < n: the prefix just before the first letter of the commutator word whose letter n is the forcing twist; the integrator chose it from the word's structure (below). For window 17,884 it is the start of the owner's word 11.
+- Closing prefix e: the first prefix ≥ n at which every lattice piece of prefix s is on the lattice again.
+- Witness: word[s:e], the twists s + 1 to e (e − s twists). It contains the forcing twist n, the step at which the forced pieces first leave the lattice, and the n − s − 1 twists before it, which already take other lattice pieces off.
+- Start table: the current-only pose table of prefix s (`buffer.export_pose_table`). Loaded with `orient.start(table)`, it reproduces the digest at s, and replaying the witness from it reproduces the window. The six tables are in the handoff package; the prefix s of the owner's word reproduces the same states.
+
+Table 8.5a (**Computed**, `unlock.py`; report `results/outside/unlock-e2-to-lattice.json`). "Off" counts the pieces off the lattice; "restored" counts the pieces off at s and on at e; the last column compares the off pieces at e with those at s: off at both at the same exact pose, off at both at another pose, off at e only.
+
+| Forcing twist n (block) | Anchor s (off) | n − s | First return b | b − n | Closing prefix e (off) | Witness e − s | Peak off (prefix) | Restored at e | Off at e: at the pose of s / moved / newly off |
+| --- | --- | ---: | ---: | ---: | --- | ---: | --- | --- | --- |
+| 9,654 (12-piece) | 9,649 (499) | 5 | 9,659 | 5 | 9,688 (388) | 39 | 6,093 (9,656) | 111 (block of 111) | 388 / 0 / 0 |
+| 17,884 (12-piece) | 17,882 (277) | 2 | 17,886 | 2 | 20,107 (191) | 2,225 | 8,462 (17,895) | 86 (block of 86) | 191 / 0 / 0 |
+| 24,219 (12-piece) | 24,218 (75) | 1 | 24,221 | 2 | 27,379 (63) | 3,161 | 8,373 (25,780) | 12 (block of 12) | 63 / 0 / 0 |
+| 27,388 (3-piece) | 27,383 (63) | 5 | 27,393 | 5 | 36,593 (20) | 9,210 | 6,059 (27,390) | 43 (block of 43) | 20 / 0 / 0 |
+| 36,568 (3-piece) | 36,563 (107) | 5 | 36,573 | 5 | 36,593 (20) | 30 | 6,014 (36,570) | 87 (block of 87) | 20 / 0 / 0 |
+| 38,553 (3-piece) | 38,550 (3) | 3 | 38,569 | 16 | 41,456 (0) | 2,906 | 3,495 (38,555) | 3 (block of 3) | 0 / 0 / 0 |
+
+Digests of the full exact state (`R.st.digest()`) at the prefixes s, n − 1, b and e:
+
+| n | Prefix s | Prefix n − 1 | Prefix b | Prefix e |
+| --- | --- | --- | --- | --- |
+| 9,654 | `5b8e7a1f8e1bc28d25cd8e350a38e90ae6dd4ba1274ac331cd7d9e3a2e9ca60f` | `dbb934a1098ec60a550a94ba1ba51b33560f8d97b5ffd32459c692fa3084bbf0` | `1bc39b63e1b71c23be4c8dd06c85d7604cb2e8dcf0860fe58fc9ef4c389eda1a` | `a145da70782db64d18efaa464ff81856ed4a7413e64d4706252c1595b8f1d0cf` |
+| 17,884 | `796499769d81572b3f342f6e1cdfd8f33c3408e54d3e3249ad6cb3923be30764` | `2a1ce11f4fa083b7906be86a018250093436fd76f6e354da79d9d8a279aefab9` | `9b80f98b50b136ade537ad0a9d221d1f0882bed24cb272ff233166e8ed88efcc` | `7244ef1c11f4c02c07fc672f7c70b548abf09181d794ae6e93b12b48191172a7` |
+| 24,219 | `3d4cf5e05a0756e16f33b9224e92b382baa6d40038381eb9956e2c79960bfa65` | `3d4cf5e05a0756e16f33b9224e92b382baa6d40038381eb9956e2c79960bfa65` | `387635118e476627aef05d8d5616d6483f0abe8e7838a9c381b2525773d17263` | `bdee76cdc13f028a6440a7072691d1411f85232a9e86f7eed1d25d00db1d9e92` |
+| 27,388 | `cdea8b7293303545ebebbacae4d678a83b06b0b08e217594158641d82d187f11` | `6ff41f298c94698a78bc07fc74b1f9ce36d46dc3f2cbdd1d2cb2237a712eb564` | `affdafc0e2dc08491d73d8b6e972f545658fc8df561e1c92c9aba4133e91af06` | `a3f3a71d332c2d609107cae1f2a2861e53257938de625a1fde9de93337d4190f` |
+| 36,568 | `b318e80e110f408873bbaa5742d988c8cb91525888da24788ed5a7030c7e08e1` | `09006c62fae5b289a46c78e7bbfaa296de0eb0f4e88c78fa69ca1cc06d1c05f7` | `dedc1635a5106848bddaaa55cb14d5a2d8258ee47de6fb55affb737cdc4cdaca` | `a3f3a71d332c2d609107cae1f2a2861e53257938de625a1fde9de93337d4190f` |
+| 38,553 | `c280ae5f1e379ae92f300abeff7b81d1de7cf318160d989de239c04483097ff0` | `618d52c6e1552a26d0f4d20edf73d65bd70cf25e637af23d49c65a7a5f998754` | `381aaab66661fc4d1392cef93797dde279c8c28df66d84fb57e8001ada9fbc41` | `c7376ad8c9726d88c49e338cf7f59b8ca0fbdfd94775a033220d40ff9a04807a` |
+
+Structure of the witnesses (**Computed**, from every letter's exact element). Letters are named by grip; x′ is the exact inverse of x at the same grip (their exact matrix product is the identity), and x[i] is the menu entry i at the grip of x when it is neither x nor x′.
+
+- **Window 9,654** (12-piece block B; s = 9,649, e = 9,688, 39 twists). Grips a = 452, b = 507, c = 369, d = 578, e = 592; the letters are a = (452, 26), a′ = (452, 58), b = (507, 11), c = (369, 15), c′ = (369, 44), d = (578, 1), e = (592, 11); b, d and e are involutions in K, a and c lie outside K. The witness is
+  a b a′ b c b a b a′ c′ · d a d a′ e a d a′ d e · c a b a′ b c′ b a b a′ · e d a d a′ e a d a′,
+  that is [[a, b], c] · [[d, a], e] · [[a, b], c]⁻¹ · [[d, a], e]⁻¹ without its last letter: the commutator of commutators [[[a, b], c], [[d, a], e]] less its final d. Twist 9,689 is that d; it lies in K, and a letter in K takes no piece on or off the lattice (K is a group, so it keeps every pose in K or out of K), so the window closes one letter before the commutator ends.
+- **Window 17,884** (12-piece block B; s = 17,882, e = 20,107, 2,225 twists: the owner's word 11). Grips a = 543, b = 369, c = 507, d = 592, e = 449, f = 494; a = (543, 44), a′ = (543, 15), b = (369, 15), b′ = (369, 44), c = (507, 28), c′ = (507, 40), and x[i] is the letter (grip of x, menu i) when it is neither x nor x′; A = a[10] = (543, 10) and B = b[10] = (369, 10) are involutions in K, the other 14 letters lie outside K. The witness, compressed (exact):
+  (a b c b′ c′ a′ c b c′ b′)^72 (d B A B A d′ A B A B)^35 d (B A)^2 d′ A B a[39] (e a′ e′ B e a e′ a′ B a)^35 e a′ e′ B e a e′ a[33] (e A e′ f e A e′ A f′ A)^35 e A e′ f e A e′ a[39] (f′ a′ f a)^35 f′ a′ (b c b′ c′)^72,
+  so it opens with [a, [b, c]]^72 and ends with [b, c]^72. The forcing twist is its second letter b = (369, 15).
+- **Window 24,219** (12-piece block B; s = 24,218 = n − 1, e = 27,379, 3,161 twists). 95 grips and 158 letters (140 of them in K); a = (369, 56), a′ = (369, 34), b = (154, 45), b′ = (154, 12). The witness opens with [a, b]^72, the forcing twist being its first letter a = (369, 56). Its first 2,225 letters are six periodic stretches with the repeat counts of word 11 (72, 35, 35, 35, 35, 72); then come 217 letters through 90 grips and three more periodic stretches of 288, 288 and 143 letters, the last (b a[3] b′ a[9])^35 b a[3] b′ (exact form in the package). Twist 27,380 is a[9] = (369, 9), in K: again the window closes one letter before the last period ends.
+- **Window 27,388** (3-piece block B′; s = 27,383, e = 36,593, 9,210 twists). Grips a = 491, b = 283, c = 237, d = 407, e = 275; the letters are a = (491, 56), a′ = (491, 34), b = (283, 11), c = (237, 28), c′ = (237, 40), d = (407, 10), e = (275, 10); b, d and e are involutions in K, a and c lie outside K. The witness is exactly P · Q · P⁻¹: each of its last 43 letters is the exact inverse of the mirror letter among its first 43. P is the commutator of commutators [X, Y] = [[[a, b], c], [[d, a], e]] (40 letters, the shape of window 9,654 with its last letter d; the forcing twist is its fifth letter c), followed by three letters in K: (237, 2), (392, 2) and (283, 7). Q has 9,124 twists, with 924 distinct letters at 424 grips, every one in K, so Q takes no piece on or off the lattice. P⁻¹ ends with [X, Y]⁻¹ = Y X Y⁻¹ X⁻¹, and its last 30 letters, X Y⁻¹ X⁻¹, are the witness of window 36,568.
+- **Window 36,568** (B′; s = 36,563, e = 36,593, 30 twists). The witness is [[a, b], c] · [[d, a], e]⁻¹ · [[a, b], c]⁻¹ with the letters of window 27,388, the conjugate of [[d, a], e]⁻¹ by [[a, b], c]; the forcing twist is again the fifth letter c = (237, 28), and c′ = (237, 40) is the tenth. Twist 36,594 is (237, 2), where the word leaves this pattern. Windows 27,388 and 36,568 close at the same prefix: the conjugate both closes window 36,568 and returns the last lattice pieces of prefix 27,383 that were still off.
+- **Window 38,553** (B′; s = 38,550, e = 41,456, 2,906 twists). Grips a = 237, b = 162, c = 283 and 18 more; a = (237, 44), a′ = (237, 15), b = (162, 8), which lies in K and has order 3, b′ = (162, 4). The witness is exactly P · Q · P⁻¹: each of its last 1,438 letters is the exact inverse of the mirror letter among its first 1,438, with
+  P = (a b a′ b′)^35 a b a′ (c b[51] c′ b[16])^72 (a[11] b[35] a[11] b[27])^71 a[11] b[35] a[11] b[29] (a b a′ b′)^35 a b a′ (c b[51] c′ b[16])^72 (a[11] b[35] a[11] b[27])^72 (1,438 letters),
+  Q = d e f g h i h′ g f j k f[2] l m n k[5] n′ m l f[5] o p q r s t u t′ s′ r (30 twists, with 25 distinct letters at 18 grips, every one in K).
+  The forcing twist is the third letter a′. Twist 41,457, the last of the owner's word, is b, in K; at e no piece is off the lattice.
+
+What each forcing twist moves and what comes back (**Computed**, from the same report; "B" is the 12-piece block, "B′" the 3-piece block):
+- **9,654.** x = (369, 15) moves two whole blocks of prefix 9,653: B (its locked chambers 114153 and 118328 hold the lattice pieces 31985 and 53589), which stays off at a new pose, and the anchor's 111-piece block whose smallest piece is 64191, which x carries onto the lattice. x takes 2,860 lattice pieces off, the two forced pieces among them, and x′ = (369, 44) puts all 2,860 back at twist 9,659. B is moved only by x and x′ (twists 9,654, 9,659, 9,670 and 9,675), so the forced pieces leave and return twice. Before x, at least 790 lattice pieces of s are already off (1,289 off at n − 1 against 499 at s). Restored at e: that 111-piece block.
+- **17,884.** x = (369, 15) moves seven whole blocks of prefix 17,883: it carries B itself onto the lattice (its locked chambers 58358 and 58361 hold 53589 and 31985) and moves six blocks of 86 to 111 pieces that stay off. x takes 2,607 lattice pieces off; x′ at twist 17,886 puts 2,505 back, the other 102 come back at 17,896. In the window B is moved 646 times: 216 times each by x and x′ and 214 times by (369, 10), which lies in K. At least 3,085 lattice pieces of s are off at n − 1. Restored at e: the anchor's 86-piece block (smallest piece 64184).
+- **24,219.** x = (369, 56), the window's first letter, moves one whole block, B, and carries it onto the lattice. x takes 3,097 lattice pieces off; x′ = (369, 34) at twist 24,221 puts 2,702 back and takes B off again, the other 395 come back at 24,224. B is moved 890 times in the window, by x, x′, three letters at grip 154 and 24 letters in K at other grips. Restored at e: B itself.
+- **27,388.** x = (237, 28) moves two whole blocks of prefix 27,387: B′ (its locked chambers hold 57220, 47840 and 47855), which stays off, and the anchor's 43-piece block, which x carries onto the lattice. x takes 3,010 lattice pieces off and x′ = (237, 40) puts all of them back at twist 27,393. B′ is moved only in P and P⁻¹: by x and x′ at twists 27,388, 27,393, 27,404 and 27,409, by (237, 2), in K, at twist 27,424 and by its inverse (237, 5) at twist 36,553, and by x and x′ of window 36,568 at twists 36,568, 36,573, 36,584 and 36,589; no letter of Q moves it. At least 790 lattice pieces of s are off at n − 1 (853 against 63). After the 40-letter commutator, at prefix 27,423, 131 pieces are off: the 43-piece block is on the lattice, and 111 lattice pieces of s are off, all taken off at twist 27,416 (the a of Y⁻¹). They stay off through Q (131 pieces are off at every prefix of Q) and come back together at twist 36,561, the a′ of P⁻¹ that is the mirror inverse of twist 27,416. The a at twist 36,555 has meanwhile taken 87 other lattice pieces of s off: they form the 87-piece block of the anchor of window 36,568 and are back by e (first at twist 36,582). Restored at e: the 43-piece block; the other 20 off pieces of s, B′ among them, are at their exact poses of s.
+- **36,568.** x = (237, 28) moves only B′, which stays off. x takes 3,009 lattice pieces off and x′ puts all of them back at twist 36,573; B′ is moved only by x and x′ (twists 36,568, 36,573, 36,584 and 36,589). At least 703 lattice pieces of s are off at n − 1. Restored at e: the anchor's 87-piece block (smallest piece 3569), lattice pieces of prefix 27,383 that were off at 36,563 (taken off at twist 36,555, in window 27,388).
+- **38,553.** x = (237, 15) is a′, the exact inverse of the window's first letter a = (237, 44). It moves 26 whole blocks of prefix 38,552: B′, which stays off, and 25 blocks (2,702 pieces) that a took off at twist 38,551, which x puts back on. x takes 395 lattice pieces off, the three forced pieces among them; they come back at 38,563 (222), 38,565 (87) and 38,569 (86). Between n and b, B′ is moved only by x (at 38,553, 38,557, 38,561, 38,565 and 38,569) and by the pairs b′ = (162, 4), b = (162, 8), which cancel because a, between them, does not move B′. x has order 5 and no power x^j (1 ≤ j ≤ 4) lies in K (the same holds for the forcing letters of all six windows), so B′ is back at its pose of n − 1 exactly at the fifth x, which is b; that is why b − n = 16 here. Restored at e: B′ itself; nothing is off at e.
+
+At b the forced pieces are back, but 198 (windows 9,654, 27,388 and 36,568), 396 (38,553), 3,095 (24,219) and 5,692 (17,884) lattice pieces of s are still off (`at_b` in the report): b − n (2 to 16 twists) is not the length of a witness.
+
+Window 9,654 step by step (`windows["9654"].twists` in the report, which has the same rows for every twist of every witness). "Taken off" counts the lattice pieces the twist takes off and "First back" groups them by the first later prefix at which each is on the lattice again; a group can come back after e when its pieces were off at s (U4). "Put on" counts the pieces the twist puts on the lattice.
+
+| Prefix | Letter (grip, menu) | Symbol | In K | Taken off | First back (prefix: pieces) | Put on | Off after |
+| ---: | --- | --- | --- | ---: | --- | ---: | ---: |
+| 9,650 | (452, 26) | a | no | 2,931 | 9,652: 2,536, 9,658: 395 | 197 | 3,233 |
+| 9,651 | (507, 11) | b | yes | 0 | – | 0 | 3,233 |
+| 9,652 | (452, 58) | a' | no | 592 | 9,656: 592 | 2,536 | 1,289 |
+| 9,653 | (507, 11) | b | yes | 0 | – | 0 | 1,289 |
+| 9,654 | (369, 15) | c | no | 2,860 | 9,659: 2,860 | 111 | 4,038 |
+| 9,655 | (507, 11) | b | yes | 0 | – | 0 | 4,038 |
+| 9,656 | (452, 26) | a | no | 2,647 | 9,658: 2,647 | 592 | 6,093 |
+| 9,657 | (507, 11) | b | yes | 0 | – | 0 | 6,093 |
+| 9,658 | (452, 58) | a' | no | 197 | 9,661: 197 | 3,042 | 3,248 |
+| 9,659 | (369, 44) | c' | no | 198 | 9,670: 198 | 2,860 | 586 |
+| 9,660 | (578, 1) | d | yes | 0 | – | 0 | 586 |
+| 9,661 | (452, 26) | a | no | 3,042 | 9,663: 2,647, 9,667: 197, 9,688: 198 | 197 | 3,431 |
+| 9,662 | (578, 1) | d | yes | 0 | – | 0 | 3,431 |
+| 9,663 | (452, 58) | a' | no | 592 | 9,665: 592 | 2,647 | 1,376 |
+| 9,664 | (592, 11) | e | yes | 0 | – | 0 | 1,376 |
+| 9,665 | (452, 26) | a | no | 2,647 | 9,667: 2,647 | 592 | 3,431 |
+| 9,666 | (578, 1) | d | yes | 0 | – | 0 | 3,431 |
+| 9,667 | (452, 58) | a' | no | 197 | 9,671: 197 | 2,844 | 784 |
+| 9,668 | (578, 1) | d | yes | 0 | – | 0 | 784 |
+| 9,669 | (592, 11) | e | yes | 0 | – | 0 | 784 |
+| 9,670 | (369, 15) | c | no | 2,860 | 9,675: 2,860 | 198 | 3,446 |
+| 9,671 | (452, 26) | a | no | 2,844 | 9,673: 2,536, 9,679: 308 | 197 | 6,093 |
+| 9,672 | (507, 11) | b | yes | 0 | – | 0 | 6,093 |
+| 9,673 | (452, 58) | a' | no | 592 | 9,677: 592 | 2,536 | 4,149 |
+| 9,674 | (507, 11) | b | yes | 0 | – | 0 | 4,149 |
+| 9,675 | (369, 44) | c' | no | 0 | – | 2,860 | 1,289 |
+| 9,676 | (507, 11) | b | yes | 0 | – | 0 | 1,289 |
+| 9,677 | (452, 26) | a | no | 2,536 | 9,679: 2,536 | 592 | 3,233 |
+| 9,678 | (507, 11) | b | yes | 0 | – | 0 | 3,233 |
+| 9,679 | (452, 58) | a' | no | 197 | 9,682: 197 | 2,844 | 586 |
+| 9,680 | (592, 11) | e | yes | 0 | – | 0 | 586 |
+| 9,681 | (578, 1) | d | yes | 0 | – | 0 | 586 |
+| 9,682 | (452, 26) | a | no | 2,844 | 9,684: 2,647, 9,688: 197 | 197 | 3,233 |
+| 9,683 | (578, 1) | d | yes | 0 | – | 0 | 3,233 |
+| 9,684 | (452, 58) | a' | no | 592 | 9,686: 592 | 2,647 | 1,178 |
+| 9,685 | (592, 11) | e | yes | 0 | – | 0 | 1,178 |
+| 9,686 | (452, 26) | a | no | 2,647 | 9,688: 2,647 | 592 | 3,233 |
+| 9,687 | (578, 1) | d | yes | 0 | – | 0 | 3,233 |
+| 9,688 | (452, 58) | a' | no | 197 | 13,923: 111, 19,824: 86 | 3,042 | 388 |
+
+What the six windows share (**Computed** on these six windows; that the same pattern restores a block at other states is a **Conjecture**, untested):
+- (U1) One twist, whole blocks. The forcing twist x is admissible and moves whole rigid blocks only (no off piece straddles its cut). One of them, B, has occupied locked chambers, and x moves it by an element outside K, so it takes their lattice pieces off (Corollary L, proved). x takes off every lattice piece in its cap, not only the locked ones, since m k ∉ K for m ∉ K and k ∈ K (395 to 3,097 pieces here); the locked ones are those that cannot come back unless B moves outside K again. In five windows the same twist carries a whole off block onto the lattice: the block the window restores (9,654 and 27,388), B itself (17,884 and 24,219), or the 25 blocks that a took off two twists before (38,553).
+- (U2) The forced pieces come back with B. Between n and b, B is moved only by x, by its exact inverse x′ at the same grip, and by letters that cancel on it; b is the first prefix at which B is back at its pose of n − 1. In windows 9,654, 27,388 and 36,568, x is the c of [[a, b], c]: c′ comes five letters later, and [a, b]⁻¹ between them does not move B (b − n = 5). In windows 17,884 and 24,219, x is the first letter of a commutator x y x′ y′, and y does not move B: x′ comes two letters later (b − n = 2). In window 38,553, x = a′ has order 5 and no power x^j (1 ≤ j ≤ 4) lies in K; a does not move B′, which the K letter b′ = (162, 4) has moved out of a's cap and b = (162, 8) moves back, so B′ is back at its pose at the fifth x (b − n = 16).
+- (U3) The window closes when the word around x is complete. e is the last prefix of the word that contains x: the commutator of commutators [X, Y] (window 9,654), the owner's word 11 (17,884), the last periodic stretch (24,219), or a conjugate P Q P⁻¹ with x in P (27,388, 36,568 and 38,553); in windows 9,654, 24,219 and 38,553 one letter early, because that last letter lies in K and a letter in K takes no piece on or off. In windows 27,388 and 38,553 every letter of Q lies in K, so through Q every piece stays on or off the lattice as P left it, and a lattice piece of s that is off after P can come back only in P⁻¹. In window 27,388, [X, Y] restores the 43-piece block but leaves 111 lattice pieces of s off; they stay off through Q and come back together at twist 36,561 of P⁻¹, the mirror inverse of twist 27,416, which took them off; 87 other lattice pieces of s, taken off at twist 36,555, come back in the last 30 letters of P⁻¹, the witness of window 36,568.
+- (U4) Nothing else changes. At e every off piece of s that is still off has its exact pose of s, B included, and the pieces restored form whole blocks of s (111, 86, 12, 43, 87 and 3 pieces; in windows 24,219 and 38,553 the forcing block itself). So Ξ(e) ≤ Ξ(s) in the sense of section 6.1: by Lemma M every SAFE-ALL letter of s is one at e, with the same element and cap permutation, and section 6.1 states what Corollary S transfers to e and what must be computed again there (the holes).
+
+So b − n measures (U2) only. The witness length e − s, from 30 to 9,210 twists, is set by (U3), and the witness begins before n whenever the word around x begins before it.
+
+Status of the six windows against the owner's v17 request:
+- Start tables or reproducible prefixes: prefix s of the owner's word (from the E2 end) and the pose table at s; both reproduce the digest at s (checked for all six windows: loading the table gives the digest at s, and replaying the witness from it gives the digest at e; the replay helper is in the owner's handoff package and was not reviewed).
+- Complete short words: word[s:e], in `results/outside/unlock-e2-to-lattice.json` (`windows[n].witness`), with the twists before s that the report lists for context.
+- Endpoint digests: the digests at s, n − 1, b and e above, and the digest after every twist of every witness in the report.
+- The lattice pieces each step takes off and where each is first back: per twist, the count taken off and put on and, for the pieces taken off, how many are first back at each later prefix (`back`); for the twists s + 1 to n + 15 also the piece numbers (in the full report, which is in the handoff package; the repository copy drops the per-piece and per-twist block lists). A piece taken off inside a window and not back by e was off at s and is back at its pose of s at e (U4).
+- Remaining off poses: at e every off piece is at its exact pose of s, so the pose table at s gives them.
+- Geometric hypotheses: (U1) to (U4), computed on these six windows; that they suffice to build such a window at another state is a **Conjecture**.
+
 ## 9. Status
 
 | Claim | Status |
@@ -245,5 +368,7 @@ Proof. Before τ, every twist that moves B moves it by an element of K, so the l
 | Recovery of X5 by the setup (315, 1) | Constructed (exact); replayed with every check by the constructing script and independently by `replay_check.py` |
 | Lemma M, Corollary S (a restoration that keeps the remaining off poses keeps SAFE-ALL words and certificates) | Proved; independent review: one full review (finding MATH-M-01, adopted: recomputing at a later state transfers only the necessary counts), then two scoped verifications, both with no finding (the second after the rewrite with explicit hypotheses) |
 | Lemma M on three restorations (X5 recovery, the owner's two v17 returns) | Computed (exact), `monocheck.py` |
+| The six unlock windows of the owner's construction (section 8.5): anchors, closing prefixes, witnesses, what each twist takes off and when it comes back, the comparison at b and at e | Computed (exact), `unlock.py`; code review: one full review (six findings, all adopted), then one scoped verification: pass; every witness replayed from its anchor table (helper in the handoff package, not reviewed) |
+| U1 to U4 (what the six windows share) at other states | Conjecture, untested |
 | v17 states: same families, Jordan certificates 19 of 19, T2 peeling certificate and the 535- and 649-letter preparations followed by the owner's return 2 | Computed (exact), `buffer.py`; BUFFER-VACANCY for T1 at the 8372 start proved from the computed certificates (Corollary A1) |
 | BUFFER-PROGRESS at every reachable depth-one state (general E) | Open |
