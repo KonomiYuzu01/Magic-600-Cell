@@ -100,7 +100,7 @@ Code: `research/jumbling/explorer/`. It is written here from the published forma
    Then the integrator writes the two mid-stage packets and gives them to the owner (owner, 9 October 2026: the jumbling work affects both the renderer line and the engineering line):
    - the renderer packet (section 3);
    - the engineering packet for the backend boundaries (section 3b).
-3. **After mid-stage.** The owner signs off the twist menu, which defines the puzzle. The design track adds the jumbling states (H-04 layout, H-05 pointing, the command table). Engine and command-layer interfaces enter the 2.5 freeze.
+3. **After mid-stage.** The owner signs off the twist menu, which defines the puzzle. Chosen on 13 October 2026: I_a ([owner decision](../../wiki/decisions/owner-decisions-2026-10-13-jumbling-menu.md)). The design track adds the jumbling states (H-04 layout, H-05 pointing, the command table). Engine and command-layer interfaces enter the 2.5 freeze.
 
 A likely miss of the stage 2 schedule is reported once, with a re-plan, under the schedule rules. No duration is estimated here.
 
@@ -205,6 +205,7 @@ File: `packets/engineering/ENG-0J-jumbling-backend.md`, in the seven-part format
   - S4₀ = N(A4₀), which adds the 90° rotations and edge half-turns, if it is exactly representable;
   - the icosahedral groups containing A4₀, if they are exactly representable;
   - closures of the exact witness rotation and of reconstructed realignment rotations.
+- **Chosen menu.** I_a, one of the two icosahedral groups containing A4₀ (owner, 13 October 2026: [owner decision](../../wiki/decisions/owner-decisions-2026-10-13-jumbling-menu.md)). J1 menu identity `fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c`.
 - **Same-cap finiteness.** For one cap, ⟨A4₀, Λ₀⟩ is finite exactly when it lies in a finite subgroup of SO(3) containing A4₀: A4, S4 or A5. Multi-cap reachability is the J3 question.
 
 ## 5. Owned files and boundaries

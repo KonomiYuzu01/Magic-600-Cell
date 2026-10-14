@@ -50,7 +50,7 @@ Next step: the joint attack on this stop (two independent analyses of the same p
 
 | ID | Problem | Source | Status | Latest evidence | Next step |
 | --- | --- | --- | --- | --- | --- |
-| X1 | Finiteness of R(S4₀), R(I_a), R(I_b), and a multi-cap criterion. | theory draft item 3 | deferred | Tree heights stay small: largest (2, 4) and (3, 1) under S4₀ after 640 twists. | Reopens with a mechanism that bounds the heights. |
+| X1 | Finiteness of R(I_a), and a multi-cap criterion. R(S4₀) and R(I_b) are no longer studied: the twist menu is I_a ([owner decision of 13 October 2026](../../../docs/wiki/decisions/owner-decisions-2026-10-13-jumbling-menu.md)). | theory draft item 3 | deferred | Tree heights stay small: largest (2, 4) and (3, 1) under S4₀ after 640 twists. | Reopens with a mechanism that bounds the heights. |
 | X2 | A repeatable admissible word that raises tree heights, which would prove a menu infinite. | deferred-problems record, "still pursued" | open | None found yet. | When spare compute allows. |
 | X3 | The number of reachable configurations and the worst-case distance. | theory draft item 7 | deferred | Not known even for the retained puzzle. | Reopens with a method for the retained puzzle. |
 | X4 | A bound on the return distance in terms of a visible defect. | theory draft item 5 | deferred | The visible procedure asked for there is now restoration phase U (R1). | Same as R2. |

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-14] decision | Jumbling twist menu I_a and human scale
+Recorded in [owner-decisions-2026-10-13-jumbling-menu](decisions/owner-decisions-2026-10-13-jumbling-menu.md): the twist menu is I_a (owner, 13 October), and a restoration method a person executes has no fixed size limit as long as its counts and lengths are not astronomical (owner, 14 October). [jumbling-plan](../progress/1.0/jumbling-plan.md), [jumbling-midstage](../progress/1.0/jumbling-midstage.md), [restoration](../../research/jumbling/theory/restoration.md) and [open-problems](../../research/jumbling/theory/open-problems.md) note the chosen menu.
+
 ## [2026-10-11] decision | Class A bundles on the public Taste Lab page
 Recorded in [owner-decisions-2026-10-11-tastelab-public-bundles](decisions/owner-decisions-2026-10-11-tastelab-public-bundles.md): the class A image bundles are published with the public Taste Lab page, which loads them by itself; class B images and all answers stay private.
 
