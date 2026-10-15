@@ -1,4 +1,4 @@
-# A state-only general method for menu I_a (v4), 15 October 2026
+# A state-only general method for menu I_a, 15 October 2026
 
 Research package for the jumbling puzzle on the retained 600-cell-Full geometry, menu I_a (177,120 pieces, 259,800
 sticker slots, K+ of order 7,200). Every computation is a headless Linux run on exact synthetic geometry. Nothing
@@ -36,8 +36,9 @@ output state digests, ending at the solved configuration; or a stop with its rea
 menu words in order of length and take the first clean step. The method then restores every reachable
 configuration from the current state alone, in at most as many clean steps as there are off pieces at the start,
 followed by the lattice phase. It needs no history and no finiteness of the reachable set, and it gives no bound
-on the length of a fallback step. The driver v4 used here is a partial implementation: it has no fallback, it
-stops after `--max-steps`, and it skips the lattice phase when the last permitted step reaches the lattice.
+on the length of a fallback step. The driver `gdrive.py` implements M\* (step 4 below; `mstar.py` and
+`fallback.py`). The runs of section 6 used the earlier driver v4, a partial implementation: it had no fallback, it
+stopped after `--max-steps`, and it skipped the lattice phase when the last permitted step reached the lattice.
 
 ### Phase 1: off-lattice phase (clean steps)
 
@@ -69,12 +70,24 @@ At each state the driver `gdrive.py` does the following, reading only the pose t
    at most 720 letters exists whenever the two poles of X and one common neighbour are free; `cellpure3.py` searches
    for one and does not use that bound. The stage covers carriers in edge cells only; the same review proved
    words for the other cell kinds (in place for vertex cells, transport for triangle and tetrahedron cells;
-   section 3), which v4 does not use yet. The units with a word are then closed, the unit with the fewest lattice
-   pieces in X first, by `tclose2.py`; on 'no V', by `tclose2m3.py` (the same closure with a targeted depth-two
-   peel for V). The first clean step in that order is taken.
-4. **Stop.** If neither kind of step restores a unit, the run stops at Z and records, per unit, why the pure twist
-   failed (precondition of the cell model, no cycle of edge cells, model check, ghost premises, no V) and the
-   driver's best candidates.
+   section 3), which the driver does not use yet (the fallback covers those units). The units with a word are then
+   closed, the unit with the fewest lattice pieces in X first, by `tclose2.py`; on 'no V', by `tclose2m3.py` (the
+   same closure with a targeted depth-two peel for V). The first clean step in that order is taken.
+4. **Fallback.** If neither kind of step restores a unit, the driver records, per unit, why the pure twist failed
+   (precondition of the cell model, no cycle of edge cells, model check, ghost premises, no V) and the driver's
+   best candidates. Then `fallback.py` takes the step: for the largest unit U it searches the menu words in order
+   of length and takes the first clean step, with free set off(Z) \ U. It leaves out identity letters and two
+   consecutive letters at one cap (the menu is a group, so such a pair acts as one letter), which keeps the search
+   complete. At a reachable state it always finds a step (`SENIOR-REVIEW.md`, M1-01), with no bound on its
+   length. Length 1 has at most 35,400 letters (600 caps, 59 items). At the state of `test_fallback.py` a letter
+   took about 0.02 s (measured: 826 letters at 20 caps in 18 s), so length 1 takes minutes and length 2, about
+   1.25 x 10^9 words, about 300 days of one process. The fallback is the completeness device of M\*, not a
+   practical search.
+
+The outer loop (`mstar.py`) checks the off count before any step budget, so a run whose last permitted step
+reaches the lattice still goes on to phase 2. Each heuristic subprocess is killed after `--heuristic-seconds`
+(default 21,600), and a heuristic that fails counts as a miss, so the fallback is reached whenever the heuristic
+steps find nothing. `--max-steps` and `--fallback-max-length` are experiment bounds outside M\*, off by default.
 
 Every step is written as a chain step (word with digests, unit, free set). `verify_u.py` replays the chain from the
 start table with the simulator only: every twist admitted, both digests, unit restored, collateral 0, every moved
@@ -116,7 +129,7 @@ solved configuration (identity labels on all 259,800 stickers).
 | Lemma D | Per-type count: \|Bad_t(W)\| is at most the number of holes of type t; off counts by type only fall along a run. | proved (Codex senior review, 15 October 2026; the remark after Corollary D'' needs f_t = 0, fixed) |
 | Proposition GH, Lemma CM | Glued holes move with their carrier; a carrier moved by free K+ letters keeps the step clean, with the same free set. | proved (Codex senior review, 15 October 2026: GH as written; the statement of CM corrected to keep the same free set, which the constructions use) |
 | Lemma C (class-cell pure twist) | If the two poles of the carrier's edge cell X and one common neighbour are free, a word of at most 720 letters at those three grips twists X alone and leaves every other piece at its exact pose. Closed by a peeling certificate V that vacates X, V W V^-1 is a clean step of at most 2 L_cert + 720 letters. | proved (Codex senior review, 15 October 2026; no human review): an exact certificate on one triangle of edge cells, transported by symmetry, re-run by the integrator. The code's cheaper powers may also permute lattice pieces outside X, which a clean step allows; the claim that they return every other content to its point was false. Applied on 4 states, each word replayed exactly; at s86a Bad(W) equals X exactly (checked). `SENIOR-REVIEW.md` sections 4 and 5 |
-| Other cell kinds | A real carrier in a vertex cell lands in place (at most 104 letters); one in a triangle or tetrahedron cell cannot, but a pure transport word lands it in another cell of the same kind (at most 240 or 192 letters), every other piece keeping its exact pose. A rigid block of one frame lies in one cell. | proved (Codex senior review, 15 October 2026; no human review), with exact certificates re-run by the integrator; assumes the class's grips are free. Not used by v4, whose pure twist covers edge cells only. `SENIOR-REVIEW.md` section 6 |
+| Other cell kinds | A real carrier in a vertex cell lands in place (at most 104 letters); one in a triangle or tetrahedron cell cannot, but a pure transport word lands it in another cell of the same kind (at most 240 or 192 letters), every other piece keeping its exact pose. A rigid block of one frame lies in one cell. | proved (Codex senior review, 15 October 2026; no human review), with exact certificates re-run by the integrator; assumes the class's grips are free. Not used by the driver's heuristic steps, whose pure twist covers edge cells only; the fallback covers those units. `SENIOR-REVIEW.md` section 6 |
 | Lemma TT (stage 06) | A K+-transported word moves a congruent block exactly as the original word moves its block. | proved (stage 06); whether the transported step is clean depends on the target state: measured on 2 carriers |
 | Theorem S at stop62@245 | Every block-family word has \|Bad\| >= 333 > 245 holes, so no family closure works there. | certificate |
 | G = K | The retained group is the whole kernel of the invariants (35 position and 11 frame certificates). | certificate (independent checker) |
@@ -128,7 +141,7 @@ solved configuration (identity labels on all 259,800 stickers).
 | Theorem M\* (a general method) | Heuristic steps, a fair exhaustive search when they find nothing, then the lattice phase with the corrections last: restores every reachable configuration from the current state alone, in at most \|off\| clean steps. | proved (Codex senior review, 15 October 2026; no human review), `SENIOR-REVIEW.md` section 9; no bound on the length of a fallback step |
 | Toolkit theorem | For a unit whose frame belongs to class P, a class-P landing word W that passes finite checks at the state (free grips, exact landing action, every other off piece lands or keeps its exact pose, Bad(W) the union of its cells, vacancy for all targets at once) closes to a clean step of at most 2(Q_safe - 1) + b letters, b = 720, 104, 240 or 192 by cell kind. | proved (same review), given the certificates of `SENIOR-REVIEW.md` sections 5 and 6. Units with pieces of height four lie outside it; 150 twists of the I_a fixture make 1,411 such pieces (re-run) |
 | Lattice-phase length | At most 1,324,686,034 twists for every input, with the committed cascade and library. | proved (same review; the integer bound re-run by the integrator) |
-| Completeness of the driver v4 | v4 finds a clean step at every reachable state with an off piece. | **open** (gap M1): v4 is a partial implementation of M\*. The pure twist is tried on at most 8 units, the run stops after 80 steps (and skips the lattice phase if the last permitted step reaches the lattice), and there is no exhaustive fallback |
+| Completeness of the driver | `gdrive.py` finds a clean step at every reachable state with an off piece, and goes on to the lattice phase. | **proved** for the method (Theorem M\*); the driver implements it: its fallback is the exhaustive search of M\*, with no step limit by default. The code had one Codex review at the fast tier (two major findings, both fixed; the verification passed) and passes `test_mstar.py` (16 tests) and `test_fallback.py` (two end-to-end runs). No bound on the length or run time of a fallback step. The runs of section 6 used v4, which had no fallback, stopped after 80 steps and could skip the lattice phase |
 
 ## 4. What the new standard removes from the earlier programme
 
@@ -186,10 +199,11 @@ Two mathematical gaps:
     and the creator first needs a preparation that fills six of its source chambers (not run). Whether every state
     with one deficient carrier passes such a template is open.
 
-  What stays open is a construction from the state alone with an explicit bound on the word length, and a
-  coverage argument for the driver v4 itself. As written, v4 tries the pure twist on at most 8 units, stops after
-  80 steps and has no exhaustive fallback. A complete method needs either that fallback or a coverage theorem. M1
-  contains two narrower questions:
+  What stays open is a construction from the state alone with an explicit bound on the word length. The driver
+  now has the exhaustive fallback, so it is complete (Theorem M\*), but a fallback step has no length bound and is
+  practical only for very short words; a coverage theorem for the heuristic steps would bound the run. (The runs
+  of section 6 used v4, which tried the pure twist on at most 8 units, stopped after 80 steps and had no
+  fallback.) M1 contains two narrower questions:
   - *V existence.* N1/N2 are necessary only and a peeling certificate is sufficient only; no theorem guarantees V,
     and the searches do fail (unit 1040 first at stop62@233: no V). A breadth-first search over whole hole sets
     decides vacancy from the state, with at most Q_safe hole sets; searching orbit by orbit does not.
@@ -200,8 +214,8 @@ Two mathematical gaps:
     - a foreign frame part in the block (the class-P alphabet cannot move it: LC-04);
     - frozen blocks (LC-05);
     - carriers in triangle or tetrahedron cells: they cannot be twisted in place, but pure transport words land
-      them in another cell of the same kind (LC-13; at stop62 10 of the 15 units are such carriers); v4 does not
-      use these words yet;
+      them in another cell of the same kind (LC-13; at stop62 10 of the 15 units are such carriers); the driver's
+      heuristic steps do not use these words yet;
     - a small carrier without slack: s61c, 61 off pieces, where no whole-edge-cell closure can be clean because
       the cell has 86 chambers and there are only 61 holes (LC-07); it needs created partners (M1-13).
   The family form of the Block lemma was one candidate route to M1; Theorem S rules it out at 245. The question
@@ -244,15 +258,18 @@ of the lattice run. The lattice run read that state from a table, not with `veri
 
 ### 6.2 The state-only driver v4 (running)
 
-`gdrive.py` started on 15 October 2026 at 06:49 UTC on two inputs, with no hand steering. Status at 10:19 UTC:
+`gdrive.py` started on 15 October 2026 at 06:49 UTC on two inputs, with no hand steering. These runs use the
+driver v4 (`gdrive.py` as committed at `5c679b9`), before the M\* change: no fallback, at most 80 steps. Status at 10:40 UTC:
 
 | Input | Off at start | Steps so far | Off now | Status |
 | --- | ---: | --- | ---: | --- |
-| stop62 | 860 | 7 driver steps (10, 22, 404, 982, 1,072, 1,296 and 1,436 twists) | 355 | the driver found no step at 355; the pure-twist stage is running (below) |
-| e2run24: the end of the 24-twist E2 run of stage 05, not the state E2 of stage 01 | 690 | 2 driver steps (44 and 150 twists) | 613 | running |
+| stop62 | 860 | 7 driver steps (10, 22, 404, 982, 1,072, 1,296 and 1,436 twists), then 1 pure-twist step (762 twists) | 269 | the driver found no step at 269; the pure-twist stage is running |
+| e2run24: the end of the 24-twist E2 run of stage 05, not the state E2 of stage 01 | 690 | 2 driver steps (44 and 150 twists) | 613 | the driver step at 613 has run for about two hours |
 
 At stop62@355 the pure-twist stage found words of 288 twists for three of the seven units, all in edge cells (two
-86-piece carriers and a 12-piece unit), and is closing them. It skipped the other four:
+86-piece carriers and a 12-piece unit). It closed one of the 86-piece carriers (unit 64184: V of 237 twists, a
+clean step of 762 twists, replayed exactly by `tclose2.py`; the independent chain replay runs at the end of the
+run); the other has no V from either closure script. It skipped the other four:
 - three units of one frame (78, 61 and 15 pieces) lie in an edge, a triangle and a tetrahedron cell, and
   `cellpure3.py` needs the whole frame in one cell (`SENIOR-REVIEW.md` section 9: containment would suffice);
 - the 17-piece unit does not lie in an edge cell (at the start it lay in a tetrahedron cell, which needs a
@@ -274,7 +291,19 @@ Run the method on a pose table (this is `scripts/run/run_e2.sh` with neutral pat
     python3 -I scripts/gm/gdrive.py <research/jumbling> scripts/echain <start table> <name> <work dir> --par 2 \
         --lattice scripts/lattice/scripts <repo> data/library-merged.json scripts/lattice/checker
 
-The stop62 run added `--seed <dir>` for the word searches of the earlier stop62 runs (section 6). Fresh scrambles:
+The stop62 run added `--seed <dir>` for the word searches of the earlier stop62 runs (section 6). The runs of
+section 6 used v4 (`gdrive.py` at commit `5c679b9`). The current driver adds the fallback and three options:
+`--heuristic-seconds N` (default 21,600), and `--max-steps N` and `--fallback-max-length N`, experiment bounds
+outside M\* that are off by default.
+
+Test the outer loop and the word search on synthetic states (16 tests, no simulator), and the fallback path end to
+end (one jumble twist at cap 0 of the solved state, then the driver with `--fallback-only` and again with its
+heuristic steps killed after one second; about two minutes):
+
+    python3 -I -B scripts/gm/test_mstar.py
+    python3 -I -B scripts/gm/test_fallback.py
+
+Fresh scrambles:
 
     python3 -I scripts/gm/gen_scramble.py <research/jumbling>/theory <out dir> 2:9101 3:9102 4:9103 6:9104
 

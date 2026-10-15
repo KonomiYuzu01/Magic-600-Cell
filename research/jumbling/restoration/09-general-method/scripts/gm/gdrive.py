@@ -1,6 +1,11 @@
-"""General driver v4 (menu I_a): from a reachable state to the solved configuration, reading only the current pose
-table at every step. Research only: headless Linux, exact synthetic geometry; no Windows, DirectX, input or
-performance claim.
+"""General driver (menu I_a): the general method M* (SENIOR-REVIEW.md section 9), from a reachable state to the solved
+configuration, reading only the current pose table at every step. Research only: headless Linux, exact synthetic
+geometry; no Windows, DirectX, input or performance claim.
+
+Version history: v4 (the runs of 15 October 2026) stopped after --max-steps (default 80) and when both heuristic
+steps missed. Since the senior review's milestone audit the driver implements M*: a heuristic miss goes to the
+exhaustive fallback, there is no step limit by default, and the outer loop (mstar.py) checks the off count before
+any budget, so a run whose last permitted step reaches the lattice still runs the lattice phase.
 
 At each state Z (a pose table):
 1. Units: mkblocks2.py (the rigid blocks; one unit per frame part of a multi-frame block).
@@ -13,25 +18,36 @@ At each state Z (a pose table):
    class, model check, exact replay). The units with a word are then closed, fewest lattice pieces in the carrier
    cell first (the pieces V must move away), with tclose2.py (V from the peeling certificate, greedy fallback) and,
    on 'no V', with tclose2m3.py (targeted depth-2 peel). The first success in that order is the step.
-4. If neither kind restores a unit: stop, and record why each unit failed.
+4. If neither kind restores a unit: the exhaustive fallback (fallback.py) for the largest unit (ties by key). It
+   searches the menu words in order of length and takes the first clean step; it always finds one at a reachable
+   state (M1-01), with no bound on its length. Each heuristic subprocess is killed after --heuristic-seconds, which
+   then counts as a miss, so every heuristic batch ends and the fallback is always reached.
 5. When no piece is off the lattice: the lattice phase (restore_lattice_late.py with the correction library; then
    verify_late.py --chain, which rebuilds the state from the start table through every step word).
 Every step is appended to <work>/chain as a verify_u.py chain step (word with digests, unit, free set); at the end
 verify_u.py replays the chain independently.
 
 usage: gdrive.py <research/jumbling> <E-chain scripts> <start table> <name> <work dir> [--seed <dir>]...
-       [--par K] [--greedy-seconds N] [--pure-greedy-seconds N] [--max-steps N] [--pure-max N]
+       [--par K] [--greedy-seconds N] [--pure-greedy-seconds N] [--pure-max N] [--heuristic-seconds N]
+       [--max-steps N] [--fallback-max-length N] [--fallback-only]
        [--lattice <scriptdir> <repo root> <library json> <checker dir>]
+--max-steps (default 0, no limit) and --fallback-max-length (default 0, no limit) are experiment bounds outside M*.
+--heuristic-seconds defaults to 21600. --fallback-only skips the heuristic steps (a test of the fallback path).
 """
 import json
+import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import mstar  # noqa: E402
+
 J, SC, START, NAME, WORK = sys.argv[1:6]
 a = sys.argv[6:]
 
@@ -43,8 +59,11 @@ def opt(name, default):
 PAR = int(opt('--par', 2))
 GSEC = opt('--greedy-seconds', '600')
 PGSEC = opt('--pure-greedy-seconds', '300')
-MAXS = int(opt('--max-steps', 80))
+MAXS = int(opt('--max-steps', 0))
 PMAX = int(opt('--pure-max', 8))
+HSEC = int(opt('--heuristic-seconds', 21600))
+FBMAX = int(opt('--fallback-max-length', 0))
+FB_ONLY = '--fallback-only' in a
 SEEDS = [a[i + 1] for i, x in enumerate(a) if x == '--seed']
 LAT = a[a.index('--lattice') + 1:a.index('--lattice') + 5] if '--lattice' in a else None
 TH = str(Path(J) / 'theory')
@@ -64,9 +83,18 @@ def log(**kw):
     print(json.dumps(kw), flush=True)
 
 
-def run(cmd, logf):
+def run(cmd, logf, timeout=None):
+    """Run cmd with its output in logf. With a timeout, run it in its own process group, kill the whole group when
+    the time runs out and return 'timeout'."""
     with open(logf, 'w') as fh:
-        return subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT).returncode
+        p = subprocess.Popen(cmd, stdout=fh, stderr=subprocess.STDOUT, start_new_session=timeout is not None)
+        try:
+            return p.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            os.killpg(p.pid, signal.SIGKILL)
+            p.wait()
+            fh.write(f'\n[gdrive] killed after {timeout} s\n')
+            return 'timeout'
 
 
 def units_of(table, tag):
@@ -118,10 +146,11 @@ def driver_step(table, k):
         cmd += ['--seed', str(WORK / 'drv')]
     wd.mkdir(parents=True, exist_ok=True)
     t = time.time()
-    rc = run(cmd, str(wd) + '.log')
+    rc = run(cmd, str(wd) + '.log', HSEC)
     rows = [json.loads(x) for x in (wd / 'run.jsonl').read_text().splitlines() if x.strip()] \
         if (wd / 'run.jsonl').exists() else []
-    ok = [r for r in rows if r.get('event') == 'try' and r.get('ok')]
+    ok = [r for r in rows
+          if r.get('event') == 'try' and r.get('ok') and mstar.closure_ok(Path(r['end_table']).parent)]
     stop = next((r for r in rows if r.get('event') == 'stop'), None)
     tries = sum(1 for r in rows if r.get('event') == 'try')
     if not ok:
@@ -170,9 +199,11 @@ def pure_step(table, k, units):
         def f():
             out = wd / f'cp3-{u["key"]}.json'
             lf = wd / f'cp3-{u["key"]}.log'
-            run(PY + [str(HERE / 'cellpure3.py'), TH, table, u['file'], str(out), '--search'], str(lf))
+            rc = run(PY + [str(HERE / 'cellpure3.py'), TH, table, u['file'], str(out), '--search'], str(lf), HSEC)
             wf = wd / f'cp3-{u["key"]}-word.json'
-            if not wf.exists():
+            if rc == 'timeout':
+                return {'word': None, 'reason': f'timeout after {HSEC} s'}
+            if rc != 0 or not wf.exists():
                 return {'word': None, 'reason': cp3_reason(out, lf)}
             rec = json.loads(out.read_text())
             return {'word': json.loads(wf.read_text())['word'], 'exact': rec.get('exact'),
@@ -197,13 +228,14 @@ def pure_step(table, k, units):
             out = []
             for script, tag in (('tclose2.py', 'c2'), ('tclose2m3.py', 'c3')):
                 d = wd / f'{tag}-{u["key"]}'
-                run(PY + [str(HERE / script), TH, SC, table, u['file'], str(wf), str(d), '--greedy-seconds', PGSEC],
-                    str(d) + '.log')
-                r = json.loads((d / 'result.json').read_text()) if (d / 'result.json').exists() else {'result': 'crash'}
+                rc = run(PY + [str(HERE / script), TH, SC, table, u['file'], str(wf), str(d), '--greedy-seconds',
+                               PGSEC], str(d) + '.log', HSEC)
+                r = json.loads((d / 'result.json').read_text()) if rc == 0 and (d / 'result.json').exists() \
+                    else {'result': 'timeout' if rc == 'timeout' else 'crash'}
                 end = r.get('end')
                 ok = bool(end and end['T_restored'] == u['size'] and end['collateral'] == 0
-                          and end['protected_exact_pose_changed'] == 0)
-                out.append({'script': script, 'result': r.get('result', 'closed'), 'ok': ok,
+                          and end['protected_exact_pose_changed'] == 0 and mstar.closure_ok(d))
+                out.append({'script': script, 'rc': rc, 'result': r.get('result', 'closed'), 'ok': ok,
                             'V': len(json.loads((d / 'parts' / 'V.json').read_text())['word'])
                             if (d / 'parts' / 'V.json').exists() else None, 'length': r.get('length')})
                 if ok:
@@ -226,41 +258,73 @@ def pure_step(table, k, units):
     return None, None, res
 
 
-# ---- main loop
-log(event='start', name=NAME, start=START, seeds=SEEDS, par=PAR, greedy=GSEC, pure_greedy=PGSEC)
-table = str(Path(START).resolve())
-final = None
-for k in range(MAXS):
+# ---- the steps of M*
+def state_of(table, k):
     info, units = units_of(table, f'{NAME}-k{k:02d}')
     log(event='state', step=k, digest=info['digest'], off=info['off'], blocks=len(info['blocks']),
         units=sorted([[u['size'], u['key'], bool(u['free'])] for u in units], reverse=True))
-    if info['off'] == 0:
-        final = table
-        break
+    return info, units
+
+
+def h_driver(table, k, info, units):
     win, dinfo = driver_step(table, k)
-    if win is not None:
-        d = Path(win['end_table']).parent
-        w = add_step(d, f'{NAME}-k{k:02d}-drv-u{win["unit"]}', 'driver')
-        log(event='step', step=k, kind='driver', unit=win['unit'], size=win['size'], partial=win.get('partial'),
-            moved_blocks=win.get('moved_blocks'), length=len(w['word']), off_after=win['end']['off'], **dinfo)
-        table = str(d / 'end-table.json')
-        continue
-    log(event='driver_stop', step=k, **dinfo)
+    if win is None:
+        log(event='driver_stop', step=k, **dinfo)
+        return None
+    d = Path(win['end_table']).parent
+    w = add_step(d, f'{NAME}-k{k:02d}-drv-u{win["unit"]}', 'driver')
+    log(event='step', step=k, kind='driver', unit=win['unit'], size=win['size'], partial=win.get('partial'),
+        moved_blocks=win.get('moved_blocks'), length=len(w['word']), off_after=win['end']['off'], **dinfo)
+    return str(d / 'end-table.json')
+
+
+def h_pure(table, k, info, units):
     d, u, pres = pure_step(table, k, units)
-    if d is not None:
-        w = add_step(d, f'{NAME}-k{k:02d}-pure-u{u["key"]}', 'pure')
-        end = json.loads((d / 'result.json').read_text())['end']
-        log(event='step', step=k, kind='pure', unit=u['key'], size=u['size'], closure=d.name, length=len(w['word']),
-            off_after=end['off'])
-        table = str(d / 'end-table.json')
-        continue
-    log(event='stop', step=k, off=info['off'], result='no clean step found at this state', pure=pres)
-    break
-else:
-    log(event='stop', step=MAXS, result='max steps')
+    if d is None:
+        log(event='pure_stop', step=k, off=info['off'], result='no pure-twist step at this state', pure=pres)
+        return None
+    w = add_step(d, f'{NAME}-k{k:02d}-pure-u{u["key"]}', 'pure')
+    end = json.loads((d / 'result.json').read_text())['end']
+    log(event='step', step=k, kind='pure', unit=u['key'], size=u['size'], closure=d.name, length=len(w['word']),
+        off_after=end['off'])
+    return str(d / 'end-table.json')
+
+
+def h_fallback(table, k, info, units):
+    u = sorted(units, key=lambda x: (-x['size'], x['key']))[0]
+    d = WORK / 'fallback' / f'k{k:02d}-u{u["key"]}'
+    d.parent.mkdir(parents=True, exist_ok=True)
+    cmd = PY + [str(HERE / 'fallback.py'), TH, SC, table, u['file'], str(d)]
+    if FBMAX:
+        cmd += ['--max-length', str(FBMAX)]
+    t = time.time()
+    rc = run(cmd, str(d) + '.log')
+    r = json.loads((d / 'result.json').read_text()) if (d / 'result.json').exists() else {}
+    log(event='fallback', step=k, unit=u['key'], size=u['size'], rc=rc, result=r.get('result'),
+        length=r.get('length'), tried=r.get('tried'), seconds=round(time.time() - t))
+    if r.get('result') == 'found' and rc == 0 and mstar.closure_ok(d):
+        w = add_step(d, f'{NAME}-k{k:02d}-fb-u{u["key"]}', 'fallback')
+        log(event='step', step=k, kind='fallback', unit=u['key'], size=u['size'], length=len(w['word']),
+            off_after=r['end']['off'])
+        return str(d / 'end-table.json')
+    if rc == 3 and FBMAX:
+        return None
+    raise RuntimeError(f'fallback failed at step {k} (rc {rc}); see {d}.log')
+
+
+# ---- main loop
+log(event='start', name=NAME, start=START, seeds=SEEDS, par=PAR, greedy=GSEC, pure_greedy=PGSEC, max_steps=MAXS,
+    heuristic_seconds=HSEC, fallback_max_length=FBMAX, fallback_only=FB_ONLY)
+try:
+    table, _, reason = mstar.drive(str(Path(START).resolve()), state_of, [] if FB_ONLY else [h_driver, h_pure],
+                                   h_fallback, budget=MAXS, log=log)
+except RuntimeError as e:
+    log(event='stop', result=f'error: {e}')
+    table, reason = None, 'error'
+final = table if reason == 'lattice' else None
 
 summary = {'name': NAME, 'steps': len(chain['steps']), 'reached_lattice': final is not None,
-           'kinds': {kd: sum(1 for s in chain['steps'] if s['kind'] == kd) for kd in ('driver', 'pure')},
+           'kinds': {kd: sum(1 for s in chain['steps'] if s['kind'] == kd) for kd in ('driver', 'pure', 'fallback')},
            'twists': sum(s['length'] for s in chain['steps'])}
 log(event='off_lattice_phase_end', **summary)
 if chain['steps']:

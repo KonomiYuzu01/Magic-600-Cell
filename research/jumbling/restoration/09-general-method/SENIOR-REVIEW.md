@@ -466,6 +466,7 @@ This bounds the word, not the search time, and it says nothing about phase 1. At
   - bounded constructions for deeper domains.
 - **The reviewer's next question.** Does every reachable depth-one state with no toolkit step pass the three-phase partner template of M1-11, or is there a reachable counterexample?
 - **The implementation.** v4 is a partial implementation of M\*: it lacks the fallback, and its outer loop must change as described under AU-01.
+  - *Integrator's note.* Since this audit the driver implements M\*: `mstar.py` (the outer loop and the exhaustive word search), `fallback.py` (the search on the simulator) and the main loop of `gdrive.py`; METHOD.md section 2, step 4. A Codex review of the code at the fast tier found two major defects, both fixed before commit: a heuristic closure killed by its timeout could be taken without its end table, and a recursive search capped the word length at the interpreter's recursion limit. The runs of METHOD.md section 6 used v4.
 
 The commands for the three computations, as re-run by the integrator from the repository root (`python3 -I -B <file>`):
 
@@ -552,3 +553,7 @@ print({'R_bound':total,'C_bound':cbound,'total':total+cbound,'macros':len(lib)})
   - Section 2 states Theorem M\* and says that v4 is a partial implementation of it. The lattice lengths now give the measured range, 1.5 to 2.3 × 10^8 twists, and the bound for every input, 1,324,686,034.
   - Section 3 has new rows for Theorem M\*, the toolkit theorem and the lattice-phase bound. The row for the completeness of phase 1 now concerns v4 only, and the vacancy row says that one certificate must cover all targets at once.
   - Section 5: gap M1 records the audit, the scope list names units with pieces of height four, and gap M2 uses the bound.
+- After the driver change (AU-01):
+  - Section 2: step 4 is the exhaustive fallback, and the outer loop checks the off count before any budget; the runs of section 6 are marked as v4 runs.
+  - Section 3: the row for the completeness of the driver concerns the current driver. Section 5: gap M1 no longer asks for v4's coverage.
+  - The reproduction section gives the new options and the two tests.
