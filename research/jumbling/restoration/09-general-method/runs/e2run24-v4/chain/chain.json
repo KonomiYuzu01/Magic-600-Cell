@@ -42,6 +42,56 @@
    "size": 17,
    "free_size": 0,
    "length": 946
+  },
+  {
+   "label": "e2run24-k04-drv-u9104",
+   "kind": "driver",
+   "word": "step005-word.json",
+   "unit": "step005-unit.json",
+   "free": null,
+   "size": 43,
+   "free_size": 0,
+   "length": 1026
+  },
+  {
+   "label": "e2run24-k05-drv-u16245",
+   "kind": "driver",
+   "word": "step006-word.json",
+   "unit": "step006-unit.json",
+   "free": null,
+   "size": 3,
+   "free_size": 0,
+   "length": 990
+  },
+  {
+   "label": "e2run24-k06-drv-u68424",
+   "kind": "driver",
+   "word": "step007-word.json",
+   "unit": "step007-unit.json",
+   "free": "step007-free.json",
+   "size": 111,
+   "free_size": 87,
+   "length": 1362
+  },
+  {
+   "label": "e2run24-k07-drv-u64191",
+   "kind": "driver",
+   "word": "step008-word.json",
+   "unit": "step008-unit.json",
+   "free": null,
+   "size": 111,
+   "free_size": 0,
+   "length": 1446
+  },
+  {
+   "label": "e2run24-k08-pure-u64184",
+   "kind": "pure",
+   "word": "step009-word.json",
+   "unit": "step009-unit.json",
+   "free": null,
+   "size": 86,
+   "free_size": 0,
+   "length": 934
   }
  ]
 }

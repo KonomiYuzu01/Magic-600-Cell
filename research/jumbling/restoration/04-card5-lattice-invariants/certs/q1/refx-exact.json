@@ -1,0 +1,141 @@
+{
+ "orbits": {
+  "1": {
+   "model_orbit": [
+    0
+   ],
+   "closure_matches_refx": true,
+   "states": 9,
+   "classes": 9,
+   "max_height": 2,
+   "cap_decisions": 10800,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.187430643
+  },
+  "2": {
+   "model_orbit": [
+    1
+   ],
+   "closure_matches_refx": true,
+   "states": 13,
+   "classes": 13,
+   "max_height": 2,
+   "cap_decisions": 15600,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.128
+  },
+  "3": {
+   "model_orbit": [
+    3
+   ],
+   "closure_matches_refx": true,
+   "states": 17,
+   "classes": 17,
+   "max_height": 2,
+   "cap_decisions": 20400,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.012161492
+  },
+  "4": {
+   "model_orbit": [
+    6
+   ],
+   "closure_matches_refx": true,
+   "states": 21,
+   "classes": 21,
+   "max_height": 2,
+   "cap_decisions": 25200,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.146055209
+  },
+  "5": {
+   "model_orbit": [
+    2
+   ],
+   "closure_matches_refx": true,
+   "states": 17,
+   "classes": 17,
+   "max_height": 2,
+   "cap_decisions": 20400,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.012161492
+  },
+  "6": {
+   "model_orbit": [
+    4
+   ],
+   "closure_matches_refx": true,
+   "states": 156,
+   "classes": 97,
+   "max_height": 4,
+   "cap_decisions": 116400,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.008526225
+  },
+  "7": {
+   "model_orbit": [
+    5
+   ],
+   "closure_matches_refx": true,
+   "states": 144,
+   "classes": 49,
+   "max_height": 4,
+   "cap_decisions": 58800,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.006080746
+  },
+  "8": {
+   "model_orbit": [
+    7
+   ],
+   "closure_matches_refx": true,
+   "states": 234,
+   "classes": 105,
+   "max_height": 4,
+   "cap_decisions": 126000,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.000811249
+  },
+  "9": {
+   "model_orbit": [
+    8
+   ],
+   "closure_matches_refx": true,
+   "states": 287,
+   "classes": 133,
+   "max_height": 4,
+   "cap_decisions": 159600,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.006080746
+  },
+  "10": {
+   "model_orbit": [
+    9
+   ],
+   "closure_matches_refx": true,
+   "states": 558,
+   "classes": 257,
+   "max_height": 6,
+   "cap_decisions": 308400,
+   "inn_mismatch_classes": 0,
+   "out_mismatch_classes": 0,
+   "smallest_float_distance": 0.000811249
+  }
+ },
+ "summary": {
+  "all_exact": true,
+  "classes": 718,
+  "cap_decisions": 861600,
+  "smallest_float_distance": 0.000811249,
+  "sec": 30.4
+ }
+}

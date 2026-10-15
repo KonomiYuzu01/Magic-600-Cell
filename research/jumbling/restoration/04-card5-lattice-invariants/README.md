@@ -67,6 +67,8 @@ The same construction fails for orbit 4 in all 1,728 pairings, which agrees with
     python -I scripts/potcert5.py $J pot5.json
     # Proposition HB, certificate REFX (about 10 seconds); tree facts TREEFACTS (about 2.5 minutes)
     python -I scripts/refexact.py $J 1,2,3,4,5,6,7,8,9,10 40 refx.json
+    # every cap decision of REFX recomputed exactly, certificate REFX-EXACT (about 30 seconds)
+    python -I scripts/refx_exact.py $J refx-exact.json
     python -I scripts/treefacts.py $J data/t-T723x433-12.json treefacts.json
 
 Section 6 of PROOFS.md lists every certificate and its command. `data/arrays.npz` is not stored: `e3lib.py` of

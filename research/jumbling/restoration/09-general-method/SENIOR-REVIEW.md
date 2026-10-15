@@ -2436,7 +2436,463 @@ print('ratio',F(20866844,15643520),float(F(20866844,15643520)))
 print('with C',71516526+25852,20866844+25852)
 ```
 
-## 18. What changed in METHOD.md
+## 18. Is the reachable set finite? (rounds 13 and 13b)
+
+Round 9 left X1 open (section 14). Round 13 asked the senior review for two things: a sound closure for model orbit 10, which repairs the filter of T9-01, and anchors that control the common pose of a high component. The review returned four requirements for such work instead of results (T13-01 to T13-04, all `minor`). The integrator adopted them and met the first for the certificate of Proposition HB.
+
+Round 13b put the same questions as a research request, with the four requirements as acceptance rules. It returned eight results (T13b-01 to T13b-08, all `minor`): proofs, exact computations and exact counterexamples. The integrator re-ran every computation from the repository root, got the reported outputs, and adopted all eight. One program needed a fix, noted under "Reproduction (round 13b)" below.
+
+X1, P6 (below) and the uniform bound of M1 stay open. Proposition HB is unchanged, and all its cap decisions are now exact.
+
+### Round 13: four requirements (proved, model review)
+
+- **T13-01: exact pruning.** A closure is a height certificate only if every cap decision that it prunes with is exact.
+  - `refexact.py` decides in floating point whether a cap holds or excludes a posed region, with margin 10⁻⁷, and exactly only near ties. `innerstraddle.py` records straddlers from floating-point signs.
+  - **Met for REFX by the integrator.** The certificate REFX-EXACT (`refx_exact.py`, stage 04) recomputes over Q(√5) all 861,600 cap decisions of the ten closures: "holds" and "excludes" for each of the 718 classes and each of the 600 grips. It finds no difference. The smallest floating-point distance from a tie was 8.1 × 10⁻⁴. So every decision behind Proposition HB is exact.
+  - `innerstraddle.py` is used only by the stopped run REFX2-11 for model orbit 10, which proves nothing. It is not re-certified.
+- **T13-02: realized paths.** Lemma R follows only the letters that move the tracked piece.
+  - So an abstract path may need letters that it does not show, like the first letter of the T9-01 witness. Failing to replay its visible edges does not make it spurious.
+  - An abstract path counts as reachable only with a complete admissible realization. Without one, abstract growth gives no unbounded reachable family.
+- **T13-03: P6.** Call a maximal connected set of pieces of height at least 4 in the 3-face graph a *high component*, and its largest member height its height.
+  - "No unstraddled cap of another branch holds a component of height at least 6 whole" is then equivalent to the bound 6 on every left height. Just before the first piece reaches height 8, Corollary FN1 makes the raising letter a jumble at an unstraddled cap of another branch that holds the piece's component whole. Conversely, such a cap admits a jumble that raises the component.
+  - The same holds piece by piece:
+
+    > **P6.** At every reachable configuration, every cap of a grip of another branch that wholly contains a piece of left height at least 6 is straddled.
+
+  - P6 holds if and only if every reachable left height is at most 6. So P6 is the main question, not a smaller one. T9-04 checks it at H6.
+- **T13-04: potentials.** A potential that the moves of the blockers never increase bounds nothing unless its level sets bound the absolute height; the zero function is such a potential.
+  - A potential that no admissible letter increases is an invariant, because every letter has an admissible inverse.
+  - So a proposed potential must come with the inequality that ties it to the height.
+
+### Round 13b: eight results
+
+Notation:
+- **B** is the open inscribed ball, of radius |n|.
+- **INV** (stage 04, `PROOFS.md` section 2.3): every inner piece is on the lattice or belongs to the complete cohort of an out grip c, inside cap c. Theorem A of stage 04 proves that INV holds at every reachable configuration.
+- **NB(c)** = {d ≠ c : 2κ² < NN(NN + n_c·n_d)}: the 16 grips at 15.52 and 25.24 degrees from c, which is N15(c) ∪ N25(c). The blocking lemma of stage 04 says that while c is out, no twist at a grip of NB(c) is admissible.
+
+| Finding | Status | Result |
+| --- | --- | --- |
+| T13b-01 | proved; computed | The pieces that meet B are exactly the 9,720 pieces of the model orbits −1 (the 600 centre pieces), 0, 1, 3 and 6. With the fixed core they tile B at every reachable configuration: a twist moves whole pieces on one side of its cut, and its rotation maps B onto itself. Every cut meets B in a 3-disc of squared radius (11808 + 3936√5)/15625. A piece on the lattice, or in a frame of a grip's class, never straddles that grip's cut. |
+| T13b-02 | proved; computed | Caps c and d can meet inside B only if d ∈ NB(c) (Cauchy–Schwarz). At every reachable configuration, a piece crosses the cut of d inside B if and only if d ∈ NB(c) for some out grip c. For each of the four jumble cosets at grip 0, the 53 pieces of cap 0 that meet B straddle 22 cuts, 16 of them inside B; the other 6 crossings lie outside B. So the gate inside B gives no blocking beyond the blocking lemma. |
+| T13b-03 | computed | The admissible word [(0, 12), (2, 1), (0, 45), (2, 1)] from solved returns all 12,120 pieces of the model orbits −1, 0, 1, 2, 3 and 6 to their identity poses, and the piece 275 of model orbit 10 also has the identity pose. Yet cap 3, admissible at solved, is now blocked by the piece 2877 of model orbit 5 (digest `d58ca6a9…`, 790 pieces off). So no predicate of the inner cohorts and the tracked pose alone decides admissibility exactly: an abstraction on those data can only over-approximate. |
+| T13b-04 | proved (soundness); closure not computed | A sound repair of the T9-01 filter. Record for each out grip c the coset of its cohort, one of four. A letter at d needs d outside the cuts that every recorded cohort straddles. A grip that newly holds the tracked piece branches into "not out" and its four cosets, constrained by the admissibility of the letter before it, not after. Every admissible history maps to a path. Each coset's cohort, the 68 inner pieces of cap 0, straddles 22 cuts: the 16 of NB and 6 more. The closure for model orbit 10 was not computed, so Proposition HB is not extended. |
+| T13b-05 | computed; proved | The 78 height-6 pieces of H6 share one pose (pose 1138 of the H6 table) and form exactly one 3-face component, with 161 edges. No other piece is a 3-face neighbour: the only candidates, 71 pieces at height 4 in poses 313 and 556, are separated from it by exact bounding boxes in all 5,538 pairs. While the island has height at least 4, its members and relative poses stay fixed (AL). A cap that holds some but not all members of a connected high component is straddled by a member. |
+| T13b-06 | proved | Let U6 say that every 3-face component with a piece of height at least 6 has one height, and B42 that every cap of another branch that holds a height-4 piece with a height-2 3-face neighbour is straddled. Then U6 holds if and only if B42 does. Proposition HB settles B42 for an edge whose height-4 end lies in an orbit bounded by 4, or whose height-2 end lies in an orbit bounded by 2; whether every 4–2 edge has such an end is open. U6 alone would not settle P6. |
+| T13b-07 | computed | The exact straddler sets of the six caps of T9-04 at H6, fixed by SHA-256 digests. Cap 274: 339 pieces, all at height 2. Cap 326: 89, at height 2. Cap 340: 142 at height 2 and 16 at height 4. Cap 430: 114, at height 2. Cap 434: 226 at height 2, 18 at height 4 and 19 at height 6. Cap 463: 333 at height 2 and 8 at height 6. |
+| T13b-08 | computed | From H6, the letter (433, 45), the inverse of the jumble that made H6, keeps all 78 island pieces inside caps 274, 326, 340 and 430. It clears cap 326 completely: all 89 straddlers leave its cut and none replaces them. But the island falls to height 4 in branch 0, the branch of 326 (digest `bd0cbd33…`). So keeping the island inside a cap does not anchor that cap's straddlers; an anchor must also keep the height. |
+
+### What it gives
+
+- **Where blocking comes from.**
+  - Inside B the only blocking is that of the blocking lemma (T13b-02).
+  - A cap that cuts a high island is blocked by the island itself (T13b-05). This covers caps 434 and 463 of T9-04, which hold 59 and 70 of the 78 pieces.
+  - So the open case of P6 is a cap of another branch that holds a whole high island and lies outside NB(c) for every out grip c. Blocking such a cap needs a crossing outside B.
+- **A new fact (integrator, exact; code below).**
+  - H6 is reached by the fixture records 1 to 723 and the jumble (433, 12). That jumble raised the island from height 4 in branch 0 to height 6 in branch 4, the branch of grip 433, and grip 433 is still out.
+  - All six caps of T9-04 lie in NB(433): 340 and 430 at 15.52 degrees from grip 433, and 274, 326, 434 and 463 at 25.24 degrees. Their branches are 3, 0, 1, 2, 3 and 1.
+  - So at H6 every cap of another branch that holds a piece of the island is blocked by the cohort of the grip that raised it.
+  - If at every reachable configuration every cap of another branch that holds a high island lay in NB(c) for some out grip c, P6 would follow. Round 14 asks whether the raising grip gives this at the moment of a raise, and whether it lasts while the island stays high.
+- **Status.** X1, P6 and the uniform bound of M1 stay open. Proposition HB still covers the model orbits 0 to 9, now with exact cap decisions. T13b-04 gives a sound system for an exact closure experiment on model orbit 10 (not run).
+
+### Reproduction (round 13b)
+
+From the repository root, with Python 3.13 and NumPy 2.5. The certificate REFX-EXACT runs from stage 04 (`python -I scripts/refx_exact.py <J> certs/q1/refx-exact.json`, about 30 seconds; stage 04 README). The programs below are the review's, re-run by the integrator.
+- The NB check and T13b-01 to T13b-05 run in under 15 seconds each.
+- T13b-07 and T13b-08 form one program, which replays the 724 letters of H6: about four minutes.
+- One fix: the review's T13b-01 squared a `Q5` number with `**`, which `exact.Q5` does not support. The line `k=len(S)*d.KAPPA; q=k*k/dot(v,v)/d.NN` multiplies instead and gives the reported output.
+
+The new fact: NB(433) and the six caps of T9-04. Output:
+
+```text
+16 [274, 320, 326, 340, 373, 390, 430, 434, 448, 451, 458, 463, 493, 518, 523, 532]
+raiser branch 4
+274 25.24 3 True
+326 25.24 0 True
+340 15.52 1 True
+430 15.52 2 True
+434 25.24 3 True
+463 25.24 1 True
+```
+
+```python
+import sys, math
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling']
+import sim, trees as T
+from exact import dot
+C = sim.get_context(); d = C.data; g = 433
+NB = [c for c in range(600) if c != g and 2*d.KAPPA*d.KAPPA < d.NN*(d.NN + dot(d.N[g], d.N[c]))]
+print(len(NB), NB)
+print('raiser branch', T.branch(tuple(d.N[g])))
+for c in [274, 326, 340, 430, 434, 463]:
+    a = math.degrees(math.acos(float(dot(d.N[g], d.N[c])) / float(d.NN)))
+    print(c, round(a, 2), T.branch(tuple(d.N[c])), c in NB)
+```
+
+T13b-01, the pieces that meet B and the disc of a cut. Output:
+
+```text
+0 -1 600 Q5(14641,0,15625) -1
+1 0 1200 Q5(175692,-58564,46875) -1
+2 1 3600 Q5(761332,-58564,640625) -1
+3 3 3600 Q5(146410,-58564,15625) -1
+4 6 720 Q5(146410,-58564,15625) -1
+5 2 2400 Q5(395307,-43923,296875) 1
+outside_remaining 30 minimum_signature_bound 6 Q5(746691,-278179,124375)
+ball_pieces 9720
+NN_minus_cutdistance2 Q5(11808,3936,15625)
+```
+
+```python
+import sys
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import sim
+from exact import Q5,dot,solve
+C=sim.get_context(); d=C.data; r=C.regions
+active=[(0,),(0,13),(12,13),(0,13,17),(0,10,35),(10,12,13)]
+for o,a in enumerate(active):
+ p=r.reps[o]; S=set(d.signature_list(p)); V=r.rep_vertices[o]
+ u=[x[0] for x in solve(
+  [[dot(d.N[c],d.N[e]) for e in a] for c in a],
+  [[d.KAPPA] for c in a])]
+ assert all(x.sign()>=0 for x in u)
+ z=[sum((x*d.N[c][j] for c,x in zip(a,u)),Q5(0)) for j in range(4)]
+ assert all((dot(d.N[c],z)-d.KAPPA).is_zero() for c in a)
+ assert all(dot(n,z)<=d.NN and
+  ((dot(n,z)-d.KAPPA).sign()>=0 if c in S
+   else (dot(n,z)-d.KAPPA).sign()<=0)
+  for c,n in enumerate(d.N))
+ ratio=dot(z,z)/d.NN
+ if o<5:
+  b=[sum((v[j] for v in V),Q5(0))/len(V) for j in range(4)]
+  w=[(999*zj+bj)/1000 for zj,bj in zip(z,b)]
+  assert dot(w,w)<d.NN
+  assert all(dot(n,w)<d.NN and
+   ((dot(n,w)-d.KAPPA).sign()>0 if c in S
+    else (dot(n,w)-d.KAPPA).sign()<0)
+   for c,n in enumerate(d.N))
+ print(o,int(d.orbit_id[p]),r.report['orbit_sizes'][o],
+       ratio,(ratio-Q5(1)).sign())
+lo=[]
+for o,p in enumerate(r.reps[6:],6):
+ S=d.signature_list(p)
+ v=[sum((d.N[c][j] for c in S),Q5(0)) for j in range(4)]
+ k=len(S)*d.KAPPA; q=k*k/dot(v,v)/d.NN
+ assert Q5(1)<q
+ lo.append((q,o))
+q,o=min(lo)
+print('outside_remaining',len(lo),'minimum_signature_bound',o,q)
+print('ball_pieces',sum(r.report['orbit_sizes'][:5]))
+print('NN_minus_cutdistance2',d.NN-d.KAPPA*d.KAPPA/d.NN)
+```
+
+T13b-02, the crossings inside B for the four cosets at grip 0. Output:
+
+```text
+NB [1, 3, 5, 6, 7, 8, 10, 12, 13, 14, 17, 18, 21, 27, 35, 38] core pieces in cap 53
+12 global 22 inside_B 16 global_only [4, 15, 25, 33, 51, 65]
+24 global 22 inside_B 16 global_only [11, 33, 39, 51, 67, 72]
+25 global 22 inside_B 16 global_only [15, 26, 39, 41, 65, 72]
+27 global 22 inside_B 16 global_only [4, 11, 25, 26, 41, 67]
+```
+
+```python
+import sys
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import sim,restore as R
+from exact import Q5,dot,solve,matvec
+from sim.kernel import Evaluator,pullback_form
+C=sim.get_context(); d=C.data; rg=C.regions; M=R.menu('I_a')
+NB=[c for c in range(1,600)
+ if 2*d.KAPPA*d.KAPPA<d.NN*(d.NN+dot(d.N[0],d.N[c]))]
+assert len(NB)==16
+active=[(0,),(0,13),(12,13),(0,13,17),(0,10,35)]
+zrep=[]
+for a in active:
+ u=[x[0] for x in solve(
+  [[dot(d.N[c],d.N[e]) for e in a] for c in a],
+  [[d.KAPPA] for c in a])]
+ zrep.append([sum((x*d.N[c][j] for c,x in zip(a,u)),Q5(0))
+              for j in range(4)])
+P=[int(p) for p in d.cap_members(0) if int(rg.orbit_of[p])<5]
+Z={p:matvec(C.kplus.matrix(int(rg.transport[p])),
+            zrep[int(rg.orbit_of[p])]) for p in P}
+print('NB',NB,'core pieces in cap',len(P))
+for item in (12,24,25,27):
+ G=R.element(M,0,item); whole=[]; inside=[]
+ ZG={p:matvec(G,Z[p]) for p in P}
+ VG={p:[matvec(G,v) for v in rg.vertices(p)] for p in P}
+ for c in range(600):
+  ev=Evaluator(pullback_form(G,d.N[c]))
+  strad=[p for p in P if ev.classify(rg.vform(p))[0]=='straddle']
+  if not strad: continue
+  whole.append(c); found=False
+  for p in strad:
+   z=ZG[p]; hz=dot(d.N[c],z)-d.KAPPA
+   if hz.is_zero() and dot(z,z)<d.NN:
+    found=True; break
+   for v in VG[p]:
+    hv=dot(d.N[c],v)-d.KAPPA
+    if hz.sign()*hv.sign()>=0: continue
+    t=-hz/(hv-hz); x=[a+t*(b-a) for a,b in zip(z,v)]
+    assert (dot(d.N[c],x)-d.KAPPA).is_zero()
+    if dot(x,x)<d.NN:
+     found=True; break
+   if found: break
+  if found: inside.append(c)
+ assert inside==NB and len(whole)==22
+ assert all(2*d.KAPPA*d.KAPPA>=
+  d.NN*(d.NN+dot(d.N[0],d.N[c]))
+  for c in range(1,600) if c not in NB)
+ print(item,'global',len(whole),'inside_B',len(inside),
+       'global_only',sorted(set(whole)-set(inside)))
+```
+
+T13b-03, the counterexample. Output:
+
+```text
+inner_identity 12120 tracked_piece 275 cap 3
+solved admissible after_W blocked blocker 2877 signs [-1, 1]
+off 790 digest d58ca6a97eb6c88b6c173a2bab511e233a7ef9c0ac5ceddce9ff38d8c8199b77
+```
+
+```python
+import sys,numpy as np
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import sim,restore as R
+from exact import transpose
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator,pullback_form
+C=sim.get_context(); M=R.menu('I_a')
+x=sim.State(C,filtered=False,menu=M)
+z=sim.State(C,filtered=False,menu=M)
+W=[(0,12),(2,1),(0,45),(2,1)]
+assert R.element(M,0,45)==to_tuple(transpose(R.element(M,0,12)))
+assert R.element(M,2,1)==to_tuple(transpose(R.element(M,2,1)))
+for c,i in W:
+ o=z.apply(sim.Twist(C,c,R.element(M,c,i),'menu',{'menu':M.name}))
+ assert o.applied and not o.uncertain and o.moved==3097
+inner=np.isin(C.data.orbit_id,[-1,0,1,2,3,6])
+assert int(inner.sum())==12120 and np.all(z.pose_id[inner]==0)
+p,c,q=275,3,2877
+assert C.data.orbit_id[p]==10 and z.pose_id[p]==0
+assert Evaluator(pullback_form(z.pose(p),C.data.N[c])).classify(
+ C.regions.vform(p))[0]=='in'
+a=x.classify(c,need_inside=False,stop_at_straddle=True)
+b=z.classify(c,need_inside=False,stop_at_straddle=True)
+assert a.status=='admissible' and b.status=='blocked'
+assert not b.uncertain and b.straddle['piece']==q
+v=C.regions.vform(q)
+ev=Evaluator(pullback_form(z.pose(q),C.data.N[c]))
+assert C.data.orbit_id[q]==5 and ev.classify(v)==('straddle',2,0,1)
+assert [ev.sign_row(v[0],v[1][i]) for i in (0,1)]==[-1,1]
+h=z.digest()
+assert h=='d58ca6a97eb6c88b6c173a2bab511e233a7ef9c0ac5ceddce9ff38d8c8199b77'
+assert z.off_lattice_count()==790
+tw=sim.Twist(C,c,R.element(M,c,12),'menu',{'menu':M.name})
+assert x.apply(tw).applied
+assert not z.apply(tw).applied and z.digest()==h
+print('inner_identity',int(inner.sum()),'tracked_piece',p,'cap',c)
+print('solved',a.status,'after_W',b.status,'blocker',q,'signs',[-1,1])
+print('off',790,'digest',h)
+```
+
+T13b-04, the cuts straddled by each coset's cohort. Output:
+
+```text
+inner 68 cosets [(0, 12), (12, 12), (24, 12), (25, 12), (27, 12)]
+NB [1, 3, 5, 6, 7, 8, 10, 12, 13, 14, 17, 18, 21, 27, 35, 38]
+shape 12 blocked 22 extra [4, 15, 25, 33, 51, 65]
+shape 24 blocked 22 extra [11, 33, 39, 51, 67, 72]
+shape 25 blocked 22 extra [15, 26, 39, 41, 65, 72]
+shape 27 blocked 22 extra [4, 11, 25, 26, 41, 67]
+```
+
+```python
+import sys
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import sim,restore as R
+from exact import matmul,transpose
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator,pullback_form
+C=sim.get_context(); M=R.menu('I_a')
+S=[int(q) for q in C.data.cap_members(0)
+   if int(C.data.orbit_id[q]) in {0,1,2,3,6}]
+mat=[R.element(M,0,i) for i in range(60)]
+reps=[]; cosets=[]
+for i,g in enumerate(mat):
+ for n,r in enumerate(reps):
+  if C.kplus.index_of_matrix(to_tuple(matmul(transpose(mat[r]),g)))>=0:
+   cosets[n].append(i); break
+ else:
+  reps.append(i); cosets.append([i])
+print('inner',len(S),'cosets',[(r,len(x)) for r,x in zip(reps,cosets)])
+NB=set().union(*(C.data.signature(q) for q in S))-{0}
+print('NB',sorted(NB))
+for r in reps[1:]:
+ bs=[]
+ for c in range(600):
+  ev=Evaluator(pullback_form(mat[r],C.data.N[c]))
+  if any(ev.classify(C.regions.vform(q))[0]=='straddle' for q in S):
+   bs.append(c)
+ assert NB<=set(bs)
+ print('shape',r,'blocked',len(bs),'extra',sorted(set(bs)-NB))
+```
+
+T13b-05, the island of H6 (reads the H6 table of stage 04). Output:
+
+```text
+height6_pose_ids [1138]
+signature_edges 161 connected 78
+external_pose_ids [313, 556] piece_counts {313: 10, 556: 61}
+candidate_pairs 5538 strict_separations 5538
+```
+
+```python
+import sys,gzip,json,hashlib
+from pathlib import Path
+from collections import Counter
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import sim,trees as T
+from exact import matmul,matvec,transpose
+from sim.kplus import matrix_from_json
+p=Path('research/jumbling/restoration/04-card5-lattice-invariants/data/t-T723x433-12.json.gz')
+raw=p.read_bytes()
+assert hashlib.sha256(raw).hexdigest()=='a577af0c9722233741e08eb82f815cc74ab5b401a37918cc2f29014bd1140cdd'
+a=json.loads(gzip.decompress(raw)); C=sim.get_context()
+mat=[matrix_from_json(m) for m in a['poses']]; pid=a['pose_id']
+left=[T.factors(m)[0] for m in mat]; h=[T.dist(l) for l in left]
+assert Counter(h[i] for i in pid)=={0:57042,2:115850,4:4150,6:78}
+high=[q for q,i in enumerate(pid) if h[i]==6]
+assert sorted({pid[q] for q in high})==[1138]
+sig={frozenset(C.data.signature(q)):q for q in high}; edges=set()
+for S,q in sig.items():
+ for c in S:
+  r=sig.get(S-{c})
+  if r is not None: edges.add(tuple(sorted((q,r))))
+adj={q:[] for q in high}
+for q,r in edges: adj[q].append(r); adj[r].append(q)
+seen={min(high)}; queue=list(seen)
+for q in queue:
+ for r in adj[q]:
+  if r not in seen: seen.add(r); queue.append(r)
+assert len(edges)==161 and len(seen)==78
+near=[i for i in range(len(mat)) if i!=1138 and
+      T.dist(T.qmul(T.qconj(left[1138]),left[i]))<=2]
+assert near==[313,556]
+other=[q for q,i in enumerate(pid) if i in near]
+assert Counter(pid[q] for q in other)=={313:10,556:61}
+assert all(h[i]==4 for i in near)
+rel={i:matmul(transpose(mat[1138]),mat[i]) for i in near}
+vs={q:C.regions.vertices(q) for q in high}
+vs.update({q:[matvec(rel[pid[q]],v) for v in C.regions.vertices(q)]
+           for q in other})
+def bounds(V):
+ lo,hi=list(V[0]),list(V[0])
+ for v in V[1:]:
+  for j,x in enumerate(v):
+   if (x-lo[j]).sign()<0: lo[j]=x
+   if (x-hi[j]).sign()>0: hi[j]=x
+ return lo,hi
+boxes={q:bounds(V) for q,V in vs.items()}; count=0
+for q in high:
+ lo,hi=boxes[q]
+ for r in other:
+  lo2,hi2=boxes[r]
+  assert any((hi[j]-lo2[j]).sign()<0 or
+             (hi2[j]-lo[j]).sign()<0 for j in range(4))
+  count+=1
+assert count==5538
+print('height6_pose_ids',[1138])
+print('signature_edges',len(edges),'connected',len(seen))
+print('external_pose_ids',near,'piece_counts',dict(sorted(Counter(pid[q] for q in other).items())))
+print('candidate_pairs',count,'strict_separations',count)
+```
+
+T13b-07 and T13b-08, one program: the straddler sets at H6, then the letter (433, 45). Output:
+
+```text
+274 78 339 [(2, 339)] 41 d42a8bc768cc163613dda7c07b2c4a135d1c1766a50039a43acb542a5f146b58
+326 78 89 [(2, 89)] 28 577d988fd54c61165eaf6c5076ed624040527f7f12d231d7d1e5199903e00b42
+340 78 158 [(2, 142), (4, 16)] 32 b94ae50e5bff9e5e0ab4b456695bdb6e1b8bbd5f7d5f2999a34a8c33bc15dfbd
+430 78 114 [(2, 114)] 28 a55096aed5d20796571266e89ea0a476e6ba5a0e6700dfe145d7fc99c77839af
+434 59 263 [(2, 226), (4, 18), (6, 19)] 41 e2ff24ffc369a5c3098d1005fad17151a8fb592d2d0fda3295b899c7426a2ba8
+463 70 341 [(2, 333), (6, 8)] 58 b9dc9b617050ff4ef5f0dbcbea3b207990f07a717d5cf4d64f449dfc7f038b94
+clear 274 top_inside 78 removed 176 of 339 status blocked
+clear 326 top_inside 78 removed 89 of 89 status admissible
+clear 340 top_inside 78 removed 95 of 158 status blocked
+clear 430 top_inside 78 removed 31 of 114 status blocked
+height_branch [(4, 0)] digest bd0cbd3337ef16085cba3498916b3c683f04735b5cc3737012c6414af422f7d7
+```
+
+```python
+import sys,json,hashlib
+from pathlib import Path
+from collections import Counter
+import numpy as np
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import sim,trees as T,restore as R
+from sim.kernel import Evaluator,pullback_form
+C=sim.get_context(); M=R.menu('I_a')
+s=sim.State(C,filtered=False,menu=M)
+records=json.loads(Path('research/jumbling/fixtures/wj-I_a.json').read_text())['journal']['records']
+for rec in records[:723]:
+ o=s.apply(sim.Twist.from_record(C,rec))
+ assert o.applied and o.moved==rec.get('moved',o.moved)
+assert s.apply(sim.Twist(C,433,R.element(M,433,12),'menu',{'menu':M.name})).applied
+assert s.digest()=='fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39'
+left={i:T.factors(s._pose_matrix(i))[0] for i in set(s.pose_id.tolist())}
+h={i:T.dist(l) for i,l in left.items()}
+b={i:T.branch(l) for i,l in left.items()}
+assert Counter(h[int(i)] for i in s.pose_id)=={0:57042,2:115850,4:4150,6:78}
+top=[q for q,i in enumerate(s.pose_id) if h[int(i)]==6]
+off=np.flatnonzero(s._kpose()[s.pose_id]<0).tolist()
+rows={}
+for c in [274,326,340,430,434,463]:
+ ev={i:Evaluator(pullback_form(s._pose_matrix(i),C.data.N[c]))
+     for i in set(s.pose_id[off].tolist())}
+ rows[c]=[]
+ for q in off:
+  i=int(s.pose_id[q])
+  if ev[i].classify(C.regions.vform(q))[0]=='straddle':
+   rows[c].append([q,int(C.data.orbit_id[q]),h[i],b[i]])
+ held=sum(ev[int(s.pose_id[q])].classify(C.regions.vform(q))[0]=='in'
+          for q in top)
+ hist=sorted(Counter(r[2] for r in rows[c]).items())
+ ball=sum(r[1] in {-1,0,1,3,6} for r in rows[c])
+ digest=hashlib.sha256(json.dumps(rows[c],separators=(',',':')).encode()).hexdigest()
+ print(c,held,len(rows[c]),hist,ball,digest)
+# rows[c] contains every requested piece/orbit/height/branch record.
+# For a literal listing, additionally print(json.dumps(rows)).
+from exact import transpose
+from sim.kplus import to_tuple
+caps=[274,326,340,430]
+def classify_piece(c,q):
+ return Evaluator(pullback_form(s.pose(q),C.data.N[c])).classify(
+  C.regions.vform(q))[0]
+assert all(classify_piece(c,q)=='in' for c in caps for q in top)
+assert R.element(M,433,45)==to_tuple(transpose(R.element(M,433,12)))
+o=s.apply(sim.Twist(C,433,R.element(M,433,45),'menu',{'menu':M.name}))
+assert o.applied and not o.uncertain
+pairs=set()
+for i in set(s.pose_id[top].tolist()):
+ l=T.factors(s._pose_matrix(i))[0]
+ pairs.add((T.dist(l),T.branch(l)))
+assert pairs=={(4,0)} and T.branch(tuple(C.data.N[326]))==0
+expected={274:(176,'blocked'),326:(89,'admissible'),
+          340:(95,'blocked'),430:(31,'blocked')}
+for c in caps:
+ assert all(classify_piece(c,q)=='in' for q in top)
+ removed=sum(classify_piece(c,r[0])!='straddle' for r in rows[c])
+ cl=s.classify(c,need_inside=False,stop_at_straddle=True)
+ assert not cl.uncertain and (removed,cl.status)==expected[c]
+ print('clear',c,'top_inside',78,'removed',removed,
+       'of',len(rows[c]),'status',cl.status)
+assert s.digest()=='bd0cbd3337ef16085cba3498916b3c683f04735b5cc3737012c6414af422f7d7'
+print('height_branch',sorted(pairs),'digest',s.digest())
+```
+
+## 19. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -2477,3 +2933,6 @@ print('with C',71516526+25852,20866844+25852)
   - Section 3: the rows for the lattice-phase length and its lower bounds give the expected lengths as upper bounds and the scope of the floor (R12-01, R12-07); the row for replacing a seed says "checked by" the stage 03 checker, and the row for the completeness of the driver says what `test_fallback.py` covers (R12-03, R12-10).
   - Section 5, gap M2: the upper bounds give expected lengths as upper bounds and count actions as single twists and macro applications, and the item on fewer seed applications gives the scope of the floor and the ratio 1.334 (R12-01, R12-07, R12-09).
   - Sections 6.1 and 6.3 say how the runs were checked: the off-lattice words and the corrections were replayed on the exact simulator, and the retained cascade was evaluated as an exact permutation program (R12-03).
+- After rounds 13 and 13b (section 18):
+  - Section 5, gap M1: the finiteness item gives P6 and its equivalence with the bound 6 on left heights (T13-03), the exact cap decisions of REFX (T13-01), where the blocking comes from (T13b-02, T13b-05), the open case, and the fact about grip 433.
+  - Section 6.2: the e2run24 run to its end, and the fix to `cellpure3.py`, which stopped with a `KeyError` when no pair tool moves the unit's cell and now reports that no cycle passes through it.

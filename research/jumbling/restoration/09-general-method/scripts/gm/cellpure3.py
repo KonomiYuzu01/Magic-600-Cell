@@ -313,6 +313,12 @@ for pr, d in lab.items():
         l = (l1 + l2) % 5
         if l and (l not in d or len(w1) + len(w2) < len(d[l])):
             d[l] = w1 + w2
+if X not in ix:
+    # no pair tool moves the unit's cell, so no cycle can pass through it (and rho has no 5-cycle for it)
+    rec['cycles_found'] = 0
+    log(cycles_found=0, unit_cell_in_pair_tools=False)
+    save()
+    sys.exit(0)
 tgt = next(e for e in range(5) if rpow(X, e)[ell] == 0)
 nb = defaultdict(set)
 for (u, z) in lab:
