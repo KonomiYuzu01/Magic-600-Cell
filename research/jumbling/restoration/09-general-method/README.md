@@ -18,7 +18,9 @@ The method reads only the current pose table and restores a jumbled configuratio
 s61c obstruction and certificate, bounds), Theorem C (the class-cell pure twist, at most 720 letters) and the other
 cell kinds, the review of the clean-step and lattice-phase proofs with their corrections, and a milestone audit of
 the method as a whole: Theorem M\* (with an exhaustive fallback the method is complete), the toolkit theorem with
-its bounds, and a bound of 1,324,686,034 twists for the lattice phase.
+its bounds, and a bound of 1,324,686,034 twists for the lattice phase. Round 5 narrows the coverage question of
+gap M1; round 6 gives gap M2 lower bounds and a construction of at most 356,565,166 twists, and records the
+integrator's searches for short pure three-cycles (33 of 35 orbits).
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
@@ -35,7 +37,11 @@ v4, which had no fallback.
 | `data/library-merged.json.gz` | The 36-macro correction library of the lattice phase (rank 34 over F2 and 2 over F5) |
 | `earlier/stop62-860-to-0/` | stop62, 860 off pieces, to 0 in 14 clean steps, then to solved. Contents: the chain (start table and step words), the independent replay, the lattice restore and verify reports with the solution record, and `step014-pure-twist-omega.json` (Bad(W) = Ω_X at s86a) |
 | `earlier/x-e3-solved/` | Lattice phase and end-to-end check for E3 (the end of the X chain of stage 01) and for I1 and I2 (stage 02) |
-| `runs/` | Records of the state-only v4 runs; added when the runs end |
+| `runs/stop62-v4/` | The state-only v4 run on stop62: the chain (start table and step words), the driver log with private paths replaced by `<working tree>`, and the independent replay (`verify_u.jsonl`, `all_ok`, final off 269) |
+| `runs/e2run24-v4/` | The state-only v4 run on e2run24 up to the closing time of section 6.2: the chain so far (start table and step words), the driver log with private paths replaced by `<working tree>`, and the independent replay of those steps (`verify_u.jsonl`, `all_ok`) |
+| `scripts/short-cycles/` | The exact K⁺ action (`kplus.py`), the single-overlap search for short pure elements (`short_cycles.py`), the two-level search for the orbits it leaves (`short_cycles2.py`) and the independent checker of their words (`check_cycles.py`); `SENIOR-REVIEW.md` section 11 |
+| `data/short-cycles.json.gz` | The shortest verified element per orbit and kind that `short_cycles.py` found, with its word |
+| `data/short-cycles-2.json.gz` | The same for `short_cycles2.py` on the orbits O00, O02, O06, O15, O17, O28 and O29 |
 | `IMPORT-MANIFEST.json` | The files stored gzipped, with the SHA-256 of their uncompressed bytes |
 
 ## Paths in commands

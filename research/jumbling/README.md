@@ -30,8 +30,8 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
 - **End-to-end restorations.** A 40-twist scramble that takes 94,147 of the 177,120 pieces off the lattice is
   restored to the solved state, independently replayed: a 62-twist seam descent to 860 off pieces, 14 clean steps
   (14,098 twists, no collateral) to 0, then the lattice phase. Three other reachable inputs (X, I1 and I2) are restored too. The order
-  of the 14 steps was chosen by hand; a driver that reads only the state is running
-  ([restoration](restoration/README.md)).
+  of the 14 steps was chosen by hand. The state-only driver v4 took the same start from 860 to 269 off pieces and
+  stopped there for lack of a fallback ([restoration](restoration/README.md)).
 - **Structure.** The retained group is exactly the kernel of its invariants (G = 𝒦, an order of 598,061 digits),
   and the corrections a jumbled history can leave on the lattice form A_J = C2^34 × C5^2.
 - **Senior review (15 October 2026).** A Codex senior review proved that a clean step always exists and that an
@@ -42,13 +42,17 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   (Lemma C) with a bound of 720 twists and extended it to every kind of cell (in place for vertex cells, by
   transport for triangle and tetrahedron cells), corrected the statements of Lemma CM and Theorem R, and checked the other
   proofs. It also proved that a bound on the restoration length for every reachable configuration exists if and only
-  if there are finitely many reachable configurations, which is open, and bounded the lattice phase by
-  1,324,686,034 twists for every input
+  if there are finitely many reachable configurations, which is open, and bounded the lattice phase: a
+  construction needs at most 356,565,166 twists for every input (4,840,993 actions for a person who replays 70
+  stored macros), and some input needs at least 224,601 twists
   ([record](restoration/09-general-method/SENIOR-REVIEW.md)). It is a model review, not a human one.
-- **Open.** A construction that works from the state alone with a bound on its length, and a proof that the
-  driver always finds a step (gap M1). The lattice phase took 1.5 to 2.3 × 10^8 twists on the runs so far, far
-  beyond what a person can replicate (gap M2). Deep scrambles were not run with the general method (gap E1). No human has
-  reviewed the new proofs (gap E2).
+- **Short pure elements.** Commutators whose supports meet in one piece give pure three-cycles, which move three
+  pieces of one orbit and nothing else, for 33 of the 35 orbits, many far shorter than the atlas seeds; aligning
+  them with the lattice cascade is the next step.
+- **Open.** A construction that works from the state alone with a bound on its length (gap M1). The lattice
+  phase took 1.5 to 2.3 × 10^8 twists on the runs so far; whether a few million macro actions are within reach of
+  a person is open (gap M2). Deep scrambles were not run with the general method (gap E1). No human has reviewed
+  the new proofs (gap E2).
 - **Rendering.** The research viewer draws all 259,800 stickers of a jumbled state. On the owner's RTX 4070 Laptop
   GPU, the jumbling pose probe ran the I_a fixture at 613 fps (p99 1.91 ms); overlay costs are not measured yet
   ([evidence](../../docs/wiki/evidence/w-j-probe-results.md)).

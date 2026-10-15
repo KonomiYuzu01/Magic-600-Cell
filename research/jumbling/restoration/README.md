@@ -32,7 +32,8 @@ admissible, and every recorded state digest is reached.
 The stop62 state lies on one replayed word from the solved state (stage 05, section 5), so that 40-twist scramble is
 restored to the solved state end to end. The three records (that history replay, the 14-step chain and the lattice
 run) join by state digest. The order of its 14 steps was chosen by hand: at each state the researcher
-picked the unit and the tool. The state-only driver that makes these choices itself is running; see stage 09.
+picked the unit and the tool. The state-only driver v4, which makes these choices itself, took the same start from
+860 to 269 off pieces in 8 steps and then stopped: it had no fallback (stage 09, section 6.2; replayed).
 
 Along the way:
 - **G = 𝒦** (stage 03, certificate): the retained puzzle's group is exactly the kernel of its invariants. The
@@ -83,7 +84,7 @@ new standard removes from the earlier programme, and the reproduction commands.
 | Gap | What is missing | Status |
 | --- | --- | --- |
 | M1 | A construction from the state alone with a bound on its length. Bare existence is proved (exhaustive search), and with it as a fallback the method is complete (Theorem M\*), which the driver implements; a bound for every state exists if and only if R(I_a) is finite | **open**; the core gap |
-| M2 | The lattice cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, about 5 to 7 years at one twist per second, and is at most 1,324,686,034 twists for every input (proved), against "a person can replicate it" | **open** |
+| M2 | The lattice cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, about 5 to 7 years at one twist per second. A construction needs at most 356,565,166 twists for every input, or at most 4,840,993 actions for a person who replays 70 stored macros; some input needs at least 224,601 twists (proved, model review). Pure three-cycles exist for 33 of the 35 orbits but are not yet aligned with the cascade. Against "a person can replicate it" | **open**; bounds **proved** |
 | E1 | Coverage: deep scrambles at the I_a@40 scale (about 94,000 off pieces) were not run with the method | **not run** |
 | E2 | Review of the proofs. The senior model review of 15 October 2026 checked stages 08 and 09 and the A_J upper bound, proved Lemma C as Theorem C and corrected Lemma CM and Theorem R ([record](09-general-method/SENIOR-REVIEW.md)) | model review **done**; human review **not done** |
 

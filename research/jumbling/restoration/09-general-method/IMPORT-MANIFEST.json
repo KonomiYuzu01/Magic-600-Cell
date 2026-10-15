@@ -20,6 +20,26 @@
    "path": "earlier/x-e3-solved/solutions.json",
    "bytes": 25438513,
    "sha256": "3825d390f228249cc145e4719afd455414048068831fde54efc10d2d590a3f05"
+  },
+  {
+   "path": "runs/stop62-v4/chain/start-table.json",
+   "bytes": 555548,
+   "sha256": "d5abe195779db5ddd73c8c4d70d8990fa9f24bdd6a948ed4f3bff7e6f882b1c4"
+  },
+  {
+   "path": "runs/e2run24-v4/chain/start-table.json",
+   "bytes": 566198,
+   "sha256": "15b03d0c80be0b5b3c50d7f55d90e6039d5293c538070573a0d01d292cd28bee"
+  },
+  {
+   "path": "data/short-cycles.json",
+   "bytes": 165093,
+   "sha256": "1d49ec3848377e194083456a5ad9e2e8a4f526b2f3c4a9801f60d0285519f7b7"
+  },
+  {
+   "path": "data/short-cycles-2.json",
+   "bytes": 88692,
+   "sha256": "d446a1f22ba59132229a56b8d2afa7ad6af0d5bf9b2a5ea957b5c2c4720c639c"
   }
  ]
 }

@@ -1,0 +1,87 @@
+{
+ "name": "stop62",
+ "start": "start-table.json",
+ "start_digest": "9e70c4b9395a7e1227530f2ce6594dbbd686dcb85e4a1f79945905636e4ecc57",
+ "steps": [
+  {
+   "label": "stop62-k00-drv-u68424",
+   "kind": "driver",
+   "word": "step001-word.json",
+   "unit": "step001-unit.json",
+   "free": "step001-free.json",
+   "size": 111,
+   "free_size": 87,
+   "length": 10
+  },
+  {
+   "label": "stop62-k01-drv-u48298",
+   "kind": "driver",
+   "word": "step002-word.json",
+   "unit": "step002-unit.json",
+   "free": "step002-free.json",
+   "size": 10,
+   "free_size": 15,
+   "length": 22
+  },
+  {
+   "label": "stop62-k02-drv-u16245",
+   "kind": "driver",
+   "word": "step003-word.json",
+   "unit": "step003-unit.json",
+   "free": "step003-free.json",
+   "size": 3,
+   "free_size": 60,
+   "length": 404
+  },
+  {
+   "label": "stop62-k03-drv-u21607",
+   "kind": "driver",
+   "word": "step004-word.json",
+   "unit": "step004-unit.json",
+   "free": null,
+   "size": 29,
+   "free_size": 0,
+   "length": 982
+  },
+  {
+   "label": "stop62-k04-drv-u3644",
+   "kind": "driver",
+   "word": "step005-word.json",
+   "unit": "step005-unit.json",
+   "free": null,
+   "size": 111,
+   "free_size": 0,
+   "length": 1072
+  },
+  {
+   "label": "stop62-k05-drv-u9104",
+   "kind": "driver",
+   "word": "step006-word.json",
+   "unit": "step006-unit.json",
+   "free": "step006-free.json",
+   "size": 43,
+   "free_size": 17,
+   "length": 1296
+  },
+  {
+   "label": "stop62-k06-drv-u64191",
+   "kind": "driver",
+   "word": "step007-word.json",
+   "unit": "step007-unit.json",
+   "free": null,
+   "size": 111,
+   "free_size": 0,
+   "length": 1436
+  },
+  {
+   "label": "stop62-k07-pure-u64184",
+   "kind": "pure",
+   "word": "step008-word.json",
+   "unit": "step008-unit.json",
+   "free": null,
+   "size": 86,
+   "free_size": 0,
+   "length": 762
+  }
+ ]
+}

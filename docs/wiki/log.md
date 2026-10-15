@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: length of the lattice phase and the v4 runs
+Senior review rounds 5 and 6 are in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) sections 10 and 11 (model review; every computation re-run by the integrator): round 5 narrows the coverage question of gap M1, and round 6 bounds the lattice phase between 224,601 retained twists (some input needs that many) and a construction of 356,565,166 twists or 4,840,993 macro actions, finds pure three-cycles for 33 of the 35 orbits (not yet aligned with the cascade) and corrects two statements of stage 03. The state-only driver v4 took stop62 from 860 to 269 off pieces and stopped for lack of a fallback, and e2run24 went from 690 to 548 in 4 steps before this record; both chains are replayed independently.
+
 ## [2026-10-15] update | Jumbling: the driver implements the general method M\*
 The driver of the [general method](../../research/jumbling/restoration/09-general-method/README.md) now implements Theorem M\* (audit finding AU-01): when its heuristic steps find nothing, an exhaustive search over the menu words in order of length takes the clean step, the outer loop has no step limit and checks the off count before any budget, and a time-bounded heuristic step counts only with a whole closure record. Control-flow tests and two end-to-end runs (one jumble twist restored by the fallback, with the heuristic steps skipped or killed) pass; a fallback step has no length bound and is practical only for very short words, and the runs of 15 October used the earlier driver v4.
 
