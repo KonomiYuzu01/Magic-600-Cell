@@ -1,0 +1,17 @@
+{
+ "name": "t2",
+ "start": "../../data/states/p2-table.json",
+ "start_digest": "63f73c8ab099c59663711d280f449b957a49329c6328eb609b7a5bad3753b992",
+ "steps": [
+  {
+   "label": "PSC001-cap57",
+   "word": "step001-word.json",
+   "sets": "step001-sets.json"
+  },
+  {
+   "label": "PS002-cap86",
+   "word": "step002-word.json",
+   "sets": "step002-sets.json"
+  }
+ ]
+}

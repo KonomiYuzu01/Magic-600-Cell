@@ -1,0 +1,244 @@
+{
+ "1": {
+  "kplus_orbit": 1,
+  "model_orbit": [
+   0
+  ],
+  "complete": true,
+  "states": 9,
+  "classes": 9,
+  "classes_by_height": {
+   "0": 1,
+   "2": 8
+  },
+  "states_by_height": {
+   "0": 1,
+   "2": 8
+  },
+  "transitions": 600,
+  "class_transitions_exact": 600,
+  "exact_key_confirmations": 592,
+  "max_height": 2,
+  "class_digest": "0f4f240c18ef1fd90631a97f86cccff34dfe9c2121580a9e129429fc6ac74b48",
+  "sec": 0.3
+ },
+ "2": {
+  "kplus_orbit": 2,
+  "model_orbit": [
+   1
+  ],
+  "complete": true,
+  "states": 13,
+  "classes": 13,
+  "classes_by_height": {
+   "0": 1,
+   "2": 12
+  },
+  "states_by_height": {
+   "0": 1,
+   "2": 12
+  },
+  "transitions": 900,
+  "class_transitions_exact": 900,
+  "exact_key_confirmations": 888,
+  "max_height": 2,
+  "class_digest": "21ba663bc5372d40d51af90c284b9c4f19ba79a4ca11c62387f37105c203bfb7",
+  "sec": 0.2
+ },
+ "3": {
+  "kplus_orbit": 3,
+  "model_orbit": [
+   3
+  ],
+  "complete": true,
+  "states": 17,
+  "classes": 17,
+  "classes_by_height": {
+   "0": 1,
+   "2": 16
+  },
+  "states_by_height": {
+   "0": 1,
+   "2": 16
+  },
+  "transitions": 1200,
+  "class_transitions_exact": 1200,
+  "exact_key_confirmations": 1184,
+  "max_height": 2,
+  "class_digest": "bdbf89c955068609e4bc126ff50e54bd14342d223ed684b3a42155c67580e5bb",
+  "sec": 0.2
+ },
+ "4": {
+  "kplus_orbit": 4,
+  "model_orbit": [
+   6
+  ],
+  "complete": true,
+  "states": 21,
+  "classes": 21,
+  "classes_by_height": {
+   "0": 1,
+   "2": 20
+  },
+  "states_by_height": {
+   "0": 1,
+   "2": 20
+  },
+  "transitions": 1500,
+  "class_transitions_exact": 1500,
+  "exact_key_confirmations": 1480,
+  "max_height": 2,
+  "class_digest": "c14c723c380cde020068a532638d35a3546034271bc02439895a7194bf6d4a8d",
+  "sec": 0.3
+ },
+ "5": {
+  "kplus_orbit": 5,
+  "model_orbit": [
+   2
+  ],
+  "complete": true,
+  "states": 17,
+  "classes": 17,
+  "classes_by_height": {
+   "0": 1,
+   "2": 16
+  },
+  "states_by_height": {
+   "0": 1,
+   "2": 16
+  },
+  "transitions": 1200,
+  "class_transitions_exact": 1200,
+  "exact_key_confirmations": 1184,
+  "max_height": 2,
+  "class_digest": "61188d31781c91c7ecfc65ede9d8f4f7f275f011e45fc26cc790674bdb2072a7",
+  "sec": 0.2
+ },
+ "6": {
+  "kplus_orbit": 6,
+  "model_orbit": [
+   4
+  ],
+  "complete": true,
+  "states": 156,
+  "classes": 97,
+  "classes_by_height": {
+   "0": 1,
+   "2": 20,
+   "4": 76
+  },
+  "states_by_height": {
+   "0": 20,
+   "2": 60,
+   "4": 76
+  },
+  "transitions": 13952,
+  "class_transitions_exact": 7200,
+  "exact_key_confirmations": 7104,
+  "max_height": 4,
+  "class_digest": "143d0b7abf48ae64c7cb0441d3281fbcf65d4d4a35507b18134f2f06b677dfaf",
+  "sec": 1.1
+ },
+ "7": {
+  "kplus_orbit": 7,
+  "model_orbit": [
+   5
+  ],
+  "complete": true,
+  "states": 144,
+  "classes": 49,
+  "classes_by_height": {
+   "0": 1,
+   "2": 16,
+   "4": 32
+  },
+  "states_by_height": {
+   "0": 20,
+   "2": 92,
+   "4": 32
+  },
+  "transitions": 31820,
+  "class_transitions_exact": 3900,
+  "exact_key_confirmations": 3852,
+  "max_height": 4,
+  "class_digest": "0a39e349a98c7051b795d179fa5cf1777b07566f70a5a438e9424b9e2772daa0",
+  "sec": 0.7
+ },
+ "8": {
+  "kplus_orbit": 8,
+  "model_orbit": [
+   7
+  ],
+  "complete": true,
+  "states": 234,
+  "classes": 105,
+  "classes_by_height": {
+   "0": 1,
+   "2": 20,
+   "4": 84
+  },
+  "states_by_height": {
+   "0": 34,
+   "2": 116,
+   "4": 84
+  },
+  "transitions": 43012,
+  "class_transitions_exact": 8100,
+  "exact_key_confirmations": 7996,
+  "max_height": 4,
+  "class_digest": "7eb8a0a9d1fb8bffc2b4de9199f5e596a6efd3767821aedc51406344a6e048c3",
+  "sec": 1.1
+ },
+ "9": {
+  "kplus_orbit": 9,
+  "model_orbit": [
+   8
+  ],
+  "complete": true,
+  "states": 287,
+  "classes": 133,
+  "classes_by_height": {
+   "0": 1,
+   "2": 20,
+   "4": 112
+  },
+  "states_by_height": {
+   "0": 39,
+   "2": 136,
+   "4": 112
+  },
+  "transitions": 44872,
+  "class_transitions_exact": 10200,
+  "exact_key_confirmations": 10068,
+  "max_height": 4,
+  "class_digest": "a111b8ec92b61bab306eddae0514e05de61ae6ac7cc0cd3420db1198460e6ced",
+  "sec": 1.5
+ },
+ "10": {
+  "kplus_orbit": 10,
+  "model_orbit": [
+   9
+  ],
+  "complete": true,
+  "states": 558,
+  "classes": 257,
+  "classes_by_height": {
+   "0": 1,
+   "2": 20,
+   "4": 152,
+   "6": 84
+  },
+  "states_by_height": {
+   "0": 62,
+   "2": 220,
+   "4": 192,
+   "6": 84
+  },
+  "transitions": 104580,
+  "class_transitions_exact": 19800,
+  "exact_key_confirmations": 19544,
+  "max_height": 6,
+  "class_digest": "01637e94c8d03c0d84d8c739bf396f5aca455ca86830eaf7331ff1a8cfb8e73e",
+  "sec": 3.0
+ }
+}

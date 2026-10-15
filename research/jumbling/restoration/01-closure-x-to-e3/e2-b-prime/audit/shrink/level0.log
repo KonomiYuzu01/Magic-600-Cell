@@ -1,0 +1,7 @@
+8.5 applied P 1 parked 3097 bon 3 holes 3097
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 16}
+16.6 T 3097 BH 3094 GH [24905, 89251, 89252] T_straddle 0
+{"safe_all_grips": 562, "letters": 6182, "off_lattice": 3097, "sec": 127}
+126.8 alphabet 562 6182 cands 11 min_bh 332 F 0
+128.3 step (91, 6) enter 134 inT 134 parked_next 134
+128.9 done 128.9

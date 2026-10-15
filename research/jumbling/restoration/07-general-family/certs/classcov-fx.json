@@ -1,0 +1,1742 @@
+{
+ "run": "fx",
+ "total": {
+  "blocks": 140,
+  "pieces": 94147,
+  "on_at_end": 84947,
+  "run_steps": 36
+ },
+ "classes": {
+  "frozen, several frames": {
+   "blocks": 1,
+   "pieces": 19720,
+   "on_at_end": 18427,
+   "blocks_complete": 0,
+   "steps": 11,
+   "pieces_sent_off_again": 1501
+  },
+  "one mover, several frames": {
+   "blocks": 11,
+   "pieces": 15023,
+   "on_at_end": 13073,
+   "blocks_complete": 6,
+   "steps": 15,
+   "pieces_sent_off_again": 486
+  },
+  "one mover, one frame": {
+   "blocks": 32,
+   "pieces": 38576,
+   "on_at_end": 35413,
+   "blocks_complete": 19,
+   "steps": 28,
+   "pieces_sent_off_again": 3965
+  },
+  "two or more movers, several frames": {
+   "blocks": 8,
+   "pieces": 2352,
+   "on_at_end": 1735,
+   "blocks_complete": 4,
+   "steps": 7,
+   "pieces_sent_off_again": 0
+  },
+  "two or more movers, one frame": {
+   "blocks": 88,
+   "pieces": 18476,
+   "on_at_end": 16299,
+   "blocks_complete": 75,
+   "steps": 29,
+   "pieces_sent_off_again": 1316
+  }
+ },
+ "blocks": [
+  {
+   "block": 0,
+   "size": 19720,
+   "class": "frozen, several frames",
+   "frames": 8,
+   "movers": 0,
+   "on_at_end": 18427,
+   "steps": [
+    14,
+    15,
+    16,
+    18,
+    20,
+    21,
+    22,
+    27,
+    30,
+    31,
+    33
+   ],
+   "pieces_sent_off_again": 1501
+  },
+  {
+   "block": 1,
+   "size": 2702,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 2702,
+   "steps": [
+    30,
+    31
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 2,
+   "size": 2505,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 2505,
+   "steps": [
+    35
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 3,
+   "size": 2505,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 2505,
+   "steps": [
+    17
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 4,
+   "size": 2505,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 2505,
+   "steps": [
+    13
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 5,
+   "size": 2263,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 2025,
+   "steps": [
+    2,
+    29
+   ],
+   "pieces_sent_off_again": 469
+  },
+  {
+   "block": 6,
+   "size": 2249,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1811,
+   "steps": [
+    10
+   ],
+   "pieces_sent_off_again": 438
+  },
+  {
+   "block": 7,
+   "size": 2200,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1656,
+   "steps": [
+    5,
+    23
+   ],
+   "pieces_sent_off_again": 670
+  },
+  {
+   "block": 8,
+   "size": 2130,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 2130,
+   "steps": [
+    26
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 9,
+   "size": 2110,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1715,
+   "steps": [
+    7
+   ],
+   "pieces_sent_off_again": 395
+  },
+  {
+   "block": 10,
+   "size": 2032,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1563,
+   "steps": [
+    3
+   ],
+   "pieces_sent_off_again": 469
+  },
+  {
+   "block": 11,
+   "size": 1920,
+   "class": "one mover, several frames",
+   "frames": 3,
+   "movers": 1,
+   "on_at_end": 1346,
+   "steps": [
+    36
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 12,
+   "size": 1912,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 1912,
+   "steps": [
+    4,
+    15
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 13,
+   "size": 1912,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1854,
+   "steps": [
+    1,
+    36
+   ],
+   "pieces_sent_off_again": 335
+  },
+  {
+   "block": 14,
+   "size": 1912,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1715,
+   "steps": [
+    25
+   ],
+   "pieces_sent_off_again": 197
+  },
+  {
+   "block": 15,
+   "size": 1821,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1821,
+   "steps": [
+    28
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 16,
+   "size": 1776,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1776,
+   "steps": [
+    6,
+    22
+   ],
+   "pieces_sent_off_again": 168
+  },
+  {
+   "block": 17,
+   "size": 1745,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 1745,
+   "steps": [
+    34
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 18,
+   "size": 1715,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1690,
+   "steps": [
+    9
+   ],
+   "pieces_sent_off_again": 25
+  },
+  {
+   "block": 19,
+   "size": 1637,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 1109,
+   "steps": [
+    29
+   ],
+   "pieces_sent_off_again": 167
+  },
+  {
+   "block": 20,
+   "size": 1549,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1373,
+   "steps": [
+    19
+   ],
+   "pieces_sent_off_again": 176
+  },
+  {
+   "block": 21,
+   "size": 1518,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1321,
+   "steps": [
+    11
+   ],
+   "pieces_sent_off_again": 197
+  },
+  {
+   "block": 22,
+   "size": 1430,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 1023,
+   "steps": [
+    16,
+    32
+   ],
+   "pieces_sent_off_again": 12
+  },
+  {
+   "block": 23,
+   "size": 1321,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 1321,
+   "steps": [
+    8,
+    28
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 24,
+   "size": 1113,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 909,
+   "steps": [
+    24
+   ],
+   "pieces_sent_off_again": 204
+  },
+  {
+   "block": 25,
+   "size": 1037,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 1037,
+   "steps": [
+    12
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 26,
+   "size": 888,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 754,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 27,
+   "size": 593,
+   "class": "two or more movers, several frames",
+   "frames": 2,
+   "movers": 2,
+   "on_at_end": 593,
+   "steps": [
+    4,
+    15
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 28,
+   "size": 593,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 286,
+   "steps": [
+    30,
+    31
+   ],
+   "pieces_sent_off_again": 307
+  },
+  {
+   "block": 29,
+   "size": 481,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 481,
+   "steps": [
+    15,
+    33
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 30,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    31
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 31,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    4
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 32,
+   "size": 395,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 395,
+   "steps": [
+    20
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 33,
+   "size": 395,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 395,
+   "steps": [
+    21
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 34,
+   "size": 395,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 395,
+   "steps": [
+    33
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 35,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    9
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 36,
+   "size": 395,
+   "class": "two or more movers, several frames",
+   "frames": 2,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    29
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 37,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 0,
+   "steps": [],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 38,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    12
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 39,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    3
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 40,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 118,
+   "steps": [
+    9
+   ],
+   "pieces_sent_off_again": 277
+  },
+  {
+   "block": 41,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    10
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 42,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    9
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 43,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    1
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 44,
+   "size": 395,
+   "class": "two or more movers, several frames",
+   "frames": 2,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    34
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 45,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    28
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 46,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    11
+   ],
+   "pieces_sent_off_again": 198
+  },
+  {
+   "block": 47,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 187,
+   "steps": [
+    14
+   ],
+   "pieces_sent_off_again": 208
+  },
+  {
+   "block": 48,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    1
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 49,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    25
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 50,
+   "size": 395,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 395,
+   "steps": [
+    14
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 51,
+   "size": 395,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 395,
+   "steps": [
+    14
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 52,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 53,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    1
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 54,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    25
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 55,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    24
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 56,
+   "size": 395,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 395,
+   "steps": [
+    14
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 57,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 395,
+   "steps": [
+    7
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 58,
+   "size": 395,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 37,
+   "steps": [
+    24
+   ],
+   "pieces_sent_off_again": 358
+  },
+  {
+   "block": 59,
+   "size": 394,
+   "class": "one mover, several frames",
+   "frames": 2,
+   "movers": 1,
+   "on_at_end": 394,
+   "steps": [
+    18,
+    22
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 60,
+   "size": 308,
+   "class": "two or more movers, several frames",
+   "frames": 2,
+   "movers": 2,
+   "on_at_end": 308,
+   "steps": [
+    8,
+    28
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 61,
+   "size": 227,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 72,
+   "steps": [
+    32
+   ],
+   "pieces_sent_off_again": 155
+  },
+  {
+   "block": 62,
+   "size": 227,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 227,
+   "steps": [
+    34
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 63,
+   "size": 227,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 227,
+   "steps": [
+    5
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 64,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 198,
+   "steps": [
+    32
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 65,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 198,
+   "steps": [
+    29
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 66,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 198,
+   "steps": [
+    16
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 67,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 198,
+   "steps": [
+    8
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 68,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 111,
+   "steps": [
+    27
+   ],
+   "pieces_sent_off_again": 87
+  },
+  {
+   "block": 69,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 198,
+   "steps": [
+    6
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 70,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 198,
+   "steps": [
+    34
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 71,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 198,
+   "steps": [
+    12
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 72,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 198,
+   "steps": [
+    24
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 73,
+   "size": 198,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 198,
+   "steps": [
+    24
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 74,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    32
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 75,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    4
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 76,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    29
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 77,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    32
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 78,
+   "size": 197,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 197,
+   "steps": [
+    16
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 79,
+   "size": 197,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 197,
+   "steps": [
+    16
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 80,
+   "size": 197,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 197,
+   "steps": [
+    16
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 81,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    35
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 82,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    8
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 83,
+   "size": 197,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 86,
+   "steps": [
+    27
+   ],
+   "pieces_sent_off_again": 111
+  },
+  {
+   "block": 84,
+   "size": 197,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 86,
+   "steps": [
+    27
+   ],
+   "pieces_sent_off_again": 111
+  },
+  {
+   "block": 85,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    6
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 86,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    6
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 87,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 164,
+   "steps": [
+    9
+   ],
+   "pieces_sent_off_again": 33
+  },
+  {
+   "block": 88,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    17
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 89,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    11
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 90,
+   "size": 197,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 197,
+   "steps": [
+    27
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 91,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    8
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 92,
+   "size": 197,
+   "class": "two or more movers, several frames",
+   "frames": 2,
+   "movers": 2,
+   "on_at_end": 0,
+   "steps": [],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 93,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    34
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 94,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    12
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 95,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    12
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 96,
+   "size": 197,
+   "class": "two or more movers, several frames",
+   "frames": 2,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    8,
+    28
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 97,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    11
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 98,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    7
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 99,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    13
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 100,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    24
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 101,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    24
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 102,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    24
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 103,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 197,
+   "steps": [
+    28
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 104,
+   "size": 197,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 0,
+   "steps": [],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 105,
+   "size": 164,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 164,
+   "steps": [
+    2
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 106,
+   "size": 156,
+   "class": "two or more movers, several frames",
+   "frames": 2,
+   "movers": 2,
+   "on_at_end": 45,
+   "steps": [
+    36
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 107,
+   "size": 134,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 134,
+   "steps": [
+    19
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 108,
+   "size": 118,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 118,
+   "steps": [
+    16,
+    32
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 109,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 111,
+   "steps": [
+    33
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 110,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 111,
+   "steps": [
+    33
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 111,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 111,
+   "steps": [
+    33
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 112,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 111,
+   "steps": [
+    26
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 113,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 0,
+   "steps": [],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 114,
+   "size": 111,
+   "class": "two or more movers, several frames",
+   "frames": 2,
+   "movers": 2,
+   "on_at_end": 0,
+   "steps": [],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 115,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 111,
+   "steps": [
+    12
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 116,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 111,
+   "steps": [
+    8
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 117,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 111,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 118,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 111,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 119,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 111,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 120,
+   "size": 111,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 111,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 121,
+   "size": 87,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 87,
+   "steps": [
+    33
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 122,
+   "size": 87,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 0,
+   "steps": [],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 123,
+   "size": 87,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 87,
+   "steps": [
+    28
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 124,
+   "size": 87,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 4,
+   "on_at_end": 87,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 125,
+   "size": 86,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 86,
+   "steps": [
+    33
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 126,
+   "size": 86,
+   "class": "one mover, one frame",
+   "frames": 1,
+   "movers": 1,
+   "on_at_end": 86,
+   "steps": [
+    33
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 127,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    26
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 128,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    26
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 129,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    12
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 130,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    8
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 131,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    12
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 132,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 133,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 134,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 135,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 136,
+   "size": 86,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 86,
+   "steps": [
+    23
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 137,
+   "size": 73,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 73,
+   "steps": [
+    24
+   ],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 138,
+   "size": 61,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 2,
+   "on_at_end": 0,
+   "steps": [],
+   "pieces_sent_off_again": 0
+  },
+  {
+   "block": 139,
+   "size": 10,
+   "class": "two or more movers, one frame",
+   "frames": 1,
+   "movers": 3,
+   "on_at_end": 0,
+   "steps": [],
+   "pieces_sent_off_again": 0
+  }
+ ]
+}

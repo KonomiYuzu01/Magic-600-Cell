@@ -1,0 +1,42 @@
+{
+ "source_package": "Claude-Card5-Ia-final2-20261014",
+ "compressed": [
+  {
+   "path": "certs/b5/units/uc5-fixture40.json",
+   "bytes": 731516,
+   "sha256": "6f38c286d77c6776751cd570bdb7b07209878bdc8b763e1c38fa7b6f8fc1786c"
+  },
+  {
+   "path": "data/t-T723x433-12.json",
+   "bytes": 1076759,
+   "sha256": "3a428f7a4ac51584cf2105efaaeffaf05b09fafdf5ef0de24c85b1bf17cddb75"
+  },
+  {
+   "path": "words/generators.jsonl",
+   "bytes": 507526,
+   "sha256": "e520fad28f06f3599c0f33d5be41370f0f81f85153c6ffc82030b60330475e81"
+  }
+ ],
+ "left_out": [
+  {
+   "path": "README.zh-CN.md",
+   "bytes": 4803,
+   "sha256": "aebfffc47bda94365e2395f5e68519f98af913fd6d2adc74cfeaa88987864d51"
+  },
+  {
+   "path": "REPORT.zh-CN.md",
+   "bytes": 7626,
+   "sha256": "ca32940c7f7c95e835639bccd77a6c9326f5b45f336a8d9077378c370ea90de0"
+  },
+  {
+   "path": "SHA256SUMS.txt",
+   "bytes": 19585,
+   "sha256": "f8aa2b620c190eebfe9172fc3ee7e9e0c2943cfe82665dfbbc11edb63c7afec8"
+  },
+  {
+   "path": "data/arrays.npz",
+   "bytes": 1772208,
+   "sha256": "2125ade231ac103ad1e2d01a7394101e2fff669740bbe7317fb1e0500b208975"
+  }
+ ]
+}

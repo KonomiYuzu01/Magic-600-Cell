@@ -1,0 +1,242 @@
+{
+ "steps": [
+  {
+   "step": 0,
+   "block": 113,
+   "name": "111@81217",
+   "template": 1,
+   "m": 732,
+   "length": 10,
+   "badW": 198,
+   "off_after": 94036,
+   "collateral": 0,
+   "ok": true
+  },
+  {
+   "step": 1,
+   "block": 120,
+   "name": "111@171114",
+   "template": 0,
+   "m": 6750,
+   "length": 10,
+   "badW": 198,
+   "off_after": 93925,
+   "collateral": 0,
+   "ok": true
+  },
+  {
+   "step": 2,
+   "block": 122,
+   "name": "87@89647",
+   "template": 8,
+   "m": 3460,
+   "length": 10,
+   "badW": 198,
+   "off_after": 93838,
+   "collateral": 0,
+   "ok": true
+  }
+ ],
+ "passes": [
+  {
+   "step": 1,
+   "clean_blocks": [
+    120,
+    122
+   ],
+   "remaining": 139
+  },
+  {
+   "step": 3,
+   "clean_blocks": [],
+   "remaining": 137
+  }
+ ],
+ "stop": {
+  "step": 3,
+  "restored": [
+   120,
+   122
+  ],
+  "classes": {
+   "blocked": [
+    {
+     "block": 109,
+     "name": "111@11093",
+     "disturbed": 90,
+     "conflict_blocks": [
+      "395@33239",
+      "87@11169"
+     ],
+     "badW": 396,
+     "badW_occupied": 132,
+     "blocked_grips": 1
+    },
+    {
+     "block": 111,
+     "name": "111@33106",
+     "disturbed": 90,
+     "conflict_blocks": [
+      "395@33239",
+      "87@11169"
+     ],
+     "badW": 198,
+     "badW_occupied": 39,
+     "blocked_grips": 1
+    },
+    {
+     "block": 121,
+     "name": "87@11169",
+     "disturbed": 148,
+     "conflict_blocks": [
+      "1912@100643",
+      "1113@140141",
+      "395@168344"
+     ],
+     "badW": 198,
+     "badW_occupied": 93,
+     "blocked_grips": 1
+    },
+    {
+     "block": 126,
+     "name": "86@28091",
+     "disturbed": 409,
+     "conflict_blocks": [
+      "1430@9555",
+      "111@11093",
+      "111@33106",
+      "87@11169"
+     ],
+     "badW": 790,
+     "badW_occupied": 118,
+     "blocked_grips": 1
+    }
+   ],
+   "conflict": [
+    {
+     "block": 118,
+     "name": "111@154760",
+     "disturbed": 87,
+     "conflict_blocks": [
+      "87@151321"
+     ],
+     "badW": 198,
+     "badW_occupied": 63,
+     "blocked_grips": 0
+    },
+    {
+     "block": 119,
+     "name": "111@156921",
+     "disturbed": 285,
+     "conflict_blocks": [
+      "198@122617",
+      "197@139688",
+      "87@151321"
+     ],
+     "badW": 396,
+     "badW_occupied": 88,
+     "blocked_grips": 0
+    },
+    {
+     "block": 124,
+     "name": "87@151321",
+     "disturbed": 111,
+     "conflict_blocks": [
+      "111@151319"
+     ],
+     "badW": 396,
+     "badW_occupied": 0,
+     "blocked_grips": 0
+    },
+    {
+     "block": 130,
+     "name": "86@106705",
+     "disturbed": 111,
+     "conflict_blocks": [
+      "111@106709"
+     ],
+     "badW": 988,
+     "badW_occupied": 118,
+     "blocked_grips": 0
+    },
+    {
+     "block": 131,
+     "name": "86@110903",
+     "disturbed": 308,
+     "conflict_blocks": [
+      "1745@72499",
+      "111@95605"
+     ],
+     "badW": 790,
+     "badW_occupied": 0,
+     "blocked_grips": 0
+    },
+    {
+     "block": 135,
+     "name": "86@168809",
+     "disturbed": 309,
+     "conflict_blocks": [
+      "111@154760",
+      "111@156921",
+      "87@151321"
+     ],
+     "badW": 592,
+     "badW_occupied": 197,
+     "blocked_grips": 0
+    }
+   ],
+   "vacancy": [
+    {
+     "block": 115,
+     "name": "111@95605",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 198,
+     "badW_occupied": 198,
+     "blocked_grips": 0
+    },
+    {
+     "block": 116,
+     "name": "111@106709",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 198,
+     "badW_occupied": 63,
+     "blocked_grips": 0
+    },
+    {
+     "block": 123,
+     "name": "87@143853",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 396,
+     "badW_occupied": 198,
+     "blocked_grips": 0
+    },
+    {
+     "block": 136,
+     "name": "86@174054",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 592,
+     "badW_occupied": 139,
+     "blocked_grips": 0
+    }
+   ]
+  },
+  "counts": {
+   "blocked": [
+    4,
+    395
+   ],
+   "conflict": [
+    6,
+    567
+   ],
+   "vacancy": [
+    4,
+    395
+   ]
+  }
+ }
+}

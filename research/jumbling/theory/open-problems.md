@@ -4,7 +4,26 @@ One list of every open problem of the jumbling theory, gathered from the [theory
 
 Status: **in progress** (worked on now), **open** (not judged out of reach, lower priority), **deferred** (judged out of reach for now by owner decision of 10 October 2026), **closed**.
 
-Last updated: 11 October 2026.
+Last updated: 15 October 2026. The rows below keep their text of 11 October; the update follows.
+
+## Update of 15 October 2026
+
+Since 11 October ([restoration research](../restoration/README.md)):
+- **R1** (in progress). stop62, the 860-piece stop on the I_a@40 history, reached the lattice in 14 clean steps and then
+  the solved state, and so did X; the order of the steps was chosen by hand
+  ([stage 09](../restoration/09-general-method/README.md)). Heap peeling lowers the off count by 61% to 90% on four deep
+  states ([stage 07](../restoration/07-general-family/README.md)). Whether every reachable state has a clean step that a
+  method reading only the state finds is gap M1 of the general method: open.
+- **L1** closed: G = 𝒦, by 35 position and 11 frame certificates that pass an independent checker
+  ([stage 03](../restoration/03-retained-group-and-lattice-restorer/README.md)).
+- **L2 and L3** answered no: the 9-twist journal C2 reaches a lattice state that breaks the invariants
+  ([cards](cards/README.md)). The corrections a jumbled history can leave form A_J = C2^34 × C5^2
+  ([stage 04](../restoration/04-card5-lattice-invariants/README.md)), and the lattice restorer applies them
+  (Theorem R, [stage 03](../restoration/03-retained-group-and-lattice-restorer/README.md)).
+- **X1** stays deferred, with partial bounds: the left heights of model orbits 0 to 9 are bounded (Proposition HB,
+  [stage 04](../restoration/04-card5-lattice-invariants/README.md)).
+- **R2, R3, X3 and X4** are not needed under the owner's standard of 15 October: the general method terminates by
+  Lemma U and reads the state by program ([METHOD.md](../restoration/09-general-method/METHOD.md) section 4).
 
 ## Restoration (top priority)
 

@@ -1,0 +1,52 @@
+{
+ "start_table": "<work>/v17work/unlock-tables-d16/prefix-38550.json",
+ "end_table": "<work>/v11zip/construction/lattice-endpoint-current.json",
+ "digest_Y": "c280ae5f1e379ae92f300abeff7b81d1de7cf318160d989de239c04483097ff0",
+ "digest_E": "be0553b5c0bc3af1520eb470f6bf132d375930d9b2472ba58c0b431d90f9d289",
+ "twists": 2907,
+ "lattice_pieces_Y": 177117,
+ "lattice_pieces_in_bad_chambers": 0,
+ "lattice_pieces_ghost_end_equals_real_end": 177117,
+ "lattice_mismatches": [],
+ "off_pieces_Y": 3,
+ "off_pieces_ghost_matches_real": 3,
+ "off_rows_sample": [
+  {
+   "piece": 16245,
+   "ghost_on_K": true,
+   "ghost_end": 80183,
+   "real_end_chamber": 80183
+  },
+  {
+   "piece": 16249,
+   "ghost_on_K": true,
+   "ghost_end": 57264,
+   "real_end_chamber": 57264
+  },
+  {
+   "piece": 32088,
+   "ghost_on_K": true,
+   "ghost_end": 92747,
+   "real_end_chamber": 92747
+  }
+ ],
+ "holes_Y": [
+  41195,
+  52577,
+  55055
+ ],
+ "holes_E": [],
+ "bad": [
+  41195,
+  52577,
+  55055
+ ],
+ "bad_size": 3,
+ "bad_subset_holes_Y": true,
+ "bad_equals_holes_Y": true,
+ "good_holes_Y": [],
+ "good_holes_images": [],
+ "good_hole_images_are_holes_E": true,
+ "ghost_seconds": 7.1,
+ "seconds": 20.2
+}

@@ -1,0 +1,511 @@
+{
+ "E2_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "target_badW_from_bad_json": [
+  23354,
+  23362,
+  38667
+ ],
+ "holes": [
+  24905,
+  89251,
+  89252
+ ],
+ "off": [
+  16245,
+  16249,
+  32088
+ ],
+ "mine_safe_count": 592,
+ "mine_blocked": {
+  "232": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "237": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "250": {
+   "straddled": true,
+   "off_inside": 0
+  },
+  "257": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "273": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "301": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "307": {
+   "straddled": true,
+   "off_inside": 2
+  },
+  "356": {
+   "straddled": false,
+   "off_inside": 3
+  }
+ },
+ "seconds_safe": 3.3,
+ "cap_set_hash_unique": true,
+ "caps_per_chamber_min_max": [
+  1,
+  20
+ ],
+ "mine_letter_count": 6512,
+ "mine_letters_per_grip": [
+  11
+ ],
+ "seconds_letters": 11.4,
+ "mine_orbits": 686,
+ "mine_singletons": 651,
+ "mine_largest_orbits": [
+  7200,
+  7200,
+  7200,
+  7200,
+  7200,
+  7200,
+  7200,
+  7200
+ ],
+ "seconds_orbits": 34.2,
+ "N1_fixed_targets": [],
+ "N1_fixed_occupied_targets": [],
+ "N1": true,
+ "N2_table": [
+  {
+   "orbit_least_chamber": 31,
+   "size": 3599,
+   "targets": 1,
+   "holes": 1,
+   "target_chambers": [
+    23354
+   ],
+   "hole_chambers": [
+    89251
+   ]
+  },
+  {
+   "orbit_least_chamber": 32,
+   "size": 7200,
+   "targets": 2,
+   "holes": 2,
+   "target_chambers": [
+    23362,
+    38667
+   ],
+   "hole_chambers": [
+    24905,
+    89252
+   ]
+  }
+ ],
+ "N2": true,
+ "holes_outside_target_orbits": [],
+ "alphabet": {
+  "safe_count": 592,
+  "letters": 6512,
+  "orbits": 686,
+  "singletons": 651,
+  "blocked": {
+   "232": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "237": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "250": {
+    "straddled": true,
+    "off_inside": 0
+   },
+   "257": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "273": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "301": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "307": {
+    "straddled": true,
+    "off_inside": 2
+   },
+   "356": {
+    "straddled": false,
+    "off_inside": 3
+   }
+  }
+ },
+ "alphabet_safe_equals_mine": true,
+ "alphabet_blocked_equals_mine": true,
+ "alphabet_letters_and_permutations_equal_mine": true,
+ "alphabet_partition_equals_mine": true,
+ "seconds_alphabet": 14.6,
+ "buffer_condition": {
+  "N1": true,
+  "N2": true,
+  "by_orbit": [
+   {
+    "orbit": 14,
+    "least_chamber": 31,
+    "size": 3599,
+    "target": 1,
+    "holes": 1,
+    "threshold": null
+   },
+   {
+    "orbit": 15,
+    "least_chamber": 32,
+    "size": 7200,
+    "target": 2,
+    "holes": 2,
+    "threshold": null
+   }
+  ]
+ },
+ "pre_menu_matches": {
+  "safe_grips": true,
+  "safe_grip_count": true,
+  "letters": true,
+  "orbits": true,
+  "singletons": true,
+  "blocked": true,
+  "holes": true
+ },
+ "pre_ghost_badW_matches": true,
+ "pre_holes_match": true,
+ "pre_vacancy": {
+  "N1": true,
+  "fixed_occupied": [],
+  "N2": true,
+  "deficits": [],
+  "by_orbit": [
+   {
+    "orbit": 14,
+    "least_chamber": 31,
+    "size": 3599,
+    "target": 1,
+    "holes": 1,
+    "threshold": null
+   },
+   {
+    "orbit": 15,
+    "least_chamber": 32,
+    "size": 7200,
+    "target": 2,
+    "holes": 2,
+    "threshold": null
+   }
+  ]
+ },
+ "pre_vacancy_rows_match_mine": true,
+ "seg2_resources_E2": {
+  "digest_is_E2": true,
+  "grips_equal": true,
+  "grip_count": 592,
+  "letters": 6512,
+  "orbits": 686,
+  "singletons": 651,
+  "blocked_equal": true,
+  "holes_equal": true
+ },
+ "certificate_rerun_equals_delivered": true,
+ "seconds_certificate": 14.5,
+ "certificate_header_ok": true,
+ "certificate_rows_check": [
+  {
+   "t": 23354,
+   "y": 23485,
+   "E": [
+    [
+     72,
+     1
+    ]
+   ],
+   "E_maps_y_to_t": true,
+   "E_moves_t": true,
+   "E_fixes_P": true,
+   "y_not_in_T": true,
+   "orbit_size": 3599,
+   "conjugate_edges": 0,
+   "macros_fix_P": true,
+   "mine": {
+    "E_length": 1,
+    "ecc": 5,
+    "orbit_minus_P": 3599,
+    "reached": 3599,
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 6
+   },
+   "row_values_equal_mine": true
+  },
+  {
+   "t": 38667,
+   "y": 110319,
+   "E": [
+    [
+     260,
+     1
+    ]
+   ],
+   "E_maps_y_to_t": true,
+   "E_moves_t": true,
+   "E_fixes_P": true,
+   "y_not_in_T": true,
+   "orbit_size": 7200,
+   "conjugate_edges": 0,
+   "macros_fix_P": true,
+   "mine": {
+    "E_length": 1,
+    "ecc": 5,
+    "orbit_minus_P": 7200,
+    "reached": 7200,
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 6
+   },
+   "row_values_equal_mine": true
+  },
+  {
+   "t": 23362,
+   "y": 24383,
+   "E": [
+    [
+     108,
+     1
+    ]
+   ],
+   "E_maps_y_to_t": true,
+   "E_moves_t": true,
+   "E_fixes_P": true,
+   "y_not_in_T": true,
+   "orbit_size": 7200,
+   "conjugate_edges": 0,
+   "macros_fix_P": true,
+   "mine": {
+    "E_length": 1,
+    "ecc": 5,
+    "orbit_minus_P": 7199,
+    "reached": 7199,
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 6
+   },
+   "row_values_equal_mine": true
+  }
+ ],
+ "mine_thresholds": {
+  "31": 1,
+  "32": 2
+ },
+ "mine_thresholds_equal_targets": true,
+ "mine_all_reached": true,
+ "mine_family_bound": 18,
+ "mine_sufficient": true,
+ "delivered_thresholds_family_bound": [
+  {
+   "14": 1,
+   "15": 2
+  },
+  18,
+  true,
+  true
+ ],
+ "pre_certificate": {
+  "peeled": 3,
+  "of": 3,
+  "fixed": [],
+  "thresholds": {
+   "14": {
+    "threshold": 1,
+    "holes": 1
+   },
+   "15": {
+    "threshold": 2,
+    "holes": 2
+   }
+  },
+  "thresholds_equal_targets": true,
+  "all_reached": true,
+  "family_bound": 18,
+  "sufficient": true,
+  "prepare_deficits": {}
+ },
+ "generic_prepare_word": [
+  [
+   328,
+   2
+  ],
+  [
+   147,
+   11
+  ],
+  [
+   46,
+   2
+  ],
+  [
+   72,
+   1
+  ],
+  [
+   29,
+   11
+  ],
+  [
+   0,
+   1
+  ],
+  [
+   38,
+   1
+  ],
+  [
+   108,
+   1
+  ]
+ ],
+ "generic_prepare_steps": [
+  {
+   "row": 0,
+   "target": 23354,
+   "hole": 89251,
+   "route_length": 3,
+   "length": 4
+  },
+  {
+   "row": 2,
+   "target": 23362,
+   "hole": 24905,
+   "route_length": 3,
+   "length": 4
+  }
+ ],
+ "generic_prepare_equals_V_file": true,
+ "mine_predicted_holes_after_V": [
+  23354,
+  23362,
+  38667
+ ],
+ "mine_predicted_holes_equal_badW": true,
+ "V_prefix_checks": [
+  {
+   "n": 0,
+   "letter": [
+    328,
+    2
+   ],
+   "straddled": false,
+   "off_inside": 0,
+   "in_K": true,
+   "identity": false
+  },
+  {
+   "n": 1,
+   "letter": [
+    147,
+    11
+   ],
+   "straddled": false,
+   "off_inside": 0,
+   "in_K": true,
+   "identity": false
+  },
+  {
+   "n": 2,
+   "letter": [
+    46,
+    2
+   ],
+   "straddled": false,
+   "off_inside": 0,
+   "in_K": true,
+   "identity": false
+  },
+  {
+   "n": 3,
+   "letter": [
+    72,
+    1
+   ],
+   "straddled": false,
+   "off_inside": 0,
+   "in_K": true,
+   "identity": false
+  },
+  {
+   "n": 4,
+   "letter": [
+    29,
+    11
+   ],
+   "straddled": false,
+   "off_inside": 0,
+   "in_K": true,
+   "identity": false
+  },
+  {
+   "n": 5,
+   "letter": [
+    0,
+    1
+   ],
+   "straddled": false,
+   "off_inside": 0,
+   "in_K": true,
+   "identity": false
+  },
+  {
+   "n": 6,
+   "letter": [
+    38,
+    1
+   ],
+   "straddled": false,
+   "off_inside": 0,
+   "in_K": true,
+   "identity": false
+  },
+  {
+   "n": 7,
+   "letter": [
+    108,
+    1
+   ],
+   "straddled": false,
+   "off_inside": 0,
+   "in_K": true,
+   "identity": false
+  }
+ ],
+ "V_all_letters_safe_all": true,
+ "after_V": {
+  "digest": "98d5869934296ed58b55f9d8a74badfab45f54d8cbf88cca89a11329cf2dd87a",
+  "holes": [
+   23354,
+   23362,
+   38667
+  ],
+  "badW_vacant": 3,
+  "off_set_unchanged": true,
+  "Bprime_exact_pose_unchanged": true
+ },
+ "delivered_result_after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "seconds": 93.5
+}

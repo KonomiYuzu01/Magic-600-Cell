@@ -1,0 +1,1974 @@
+{
+ "off": 689,
+ "safe_grips": 552,
+ "unsafe_grips": {
+  "0": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    1040
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 67
+   }
+  },
+  "2": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    1040
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 0
+   }
+  },
+  "3": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    1040
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 29
+   }
+  },
+  "5": {
+   "off_inside_blocks": [
+    1040
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 86
+   }
+  },
+  "6": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    1040
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 81
+   }
+  },
+  "7": {
+   "off_inside_blocks": [
+    1040
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 86
+   }
+  },
+  "9": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    1040
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 57
+   }
+  },
+  "11": {
+   "off_inside_blocks": [
+    1040
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 86
+   }
+  },
+  "13": {
+   "off_inside_blocks": [
+    1040
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 86
+   }
+  },
+  "30": {
+   "off_inside_blocks": [
+    18512,
+    18517,
+    23955,
+    48298
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 164
+   }
+  },
+  "31": {
+   "off_inside_blocks": [
+    18512,
+    18517,
+    48298
+   ],
+   "straddling_blocks": [
+    23955
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 145
+   }
+  },
+  "34": {
+   "off_inside_blocks": [
+    18512,
+    18517,
+    23955,
+    48298
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 164
+   }
+  },
+  "36": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    18512,
+    18517
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 6
+   }
+  },
+  "59": {
+   "off_inside_blocks": [
+    18517,
+    48298
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 25
+   }
+  },
+  "64": {
+   "off_inside_blocks": [
+    18512,
+    18517
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 93
+   }
+  },
+  "73": {
+   "off_inside_blocks": [
+    18512,
+    18517,
+    48298
+   ],
+   "straddling_blocks": [
+    23955
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 159
+   }
+  },
+  "89": {
+   "off_inside_blocks": [
+    18512,
+    18517,
+    23955,
+    48298
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 164
+   }
+  },
+  "96": {
+   "off_inside_blocks": [
+    18512,
+    18517
+   ],
+   "straddling_blocks": [
+    23955,
+    48298
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 122
+   }
+  },
+  "100": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    23955
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 0
+   }
+  },
+  "145": {
+   "off_inside_blocks": [
+    18512,
+    18517,
+    23955,
+    48298
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 164
+   }
+  },
+  "152": {
+   "off_inside_blocks": [
+    16245
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 3
+   }
+  },
+  "153": {
+   "off_inside_blocks": [
+    48298
+   ],
+   "straddling_blocks": [
+    18512,
+    18517,
+    23955
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 95
+   }
+  },
+  "154": {
+   "off_inside_blocks": [
+    18445
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 12
+   }
+  },
+  "162": {
+   "off_inside_blocks": [
+    16245
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 3
+   }
+  },
+  "178": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    18445
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 10
+   }
+  },
+  "183": {
+   "off_inside_blocks": [
+    16245
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 3
+   }
+  },
+  "188": {
+   "off_inside_blocks": [
+    18445
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 12
+   }
+  },
+  "237": {
+   "off_inside_blocks": [
+    16245
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 3
+   }
+  },
+  "244": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    18445
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 0
+   }
+  },
+  "256": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    18445
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 10
+   }
+  },
+  "260": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    16245
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 0
+   }
+  },
+  "268": {
+   "off_inside_blocks": [
+    18445
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 12
+   }
+  },
+  "277": {
+   "off_inside_blocks": [
+    18445
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 12
+   }
+  },
+  "290": {
+   "off_inside_blocks": [
+    16245
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 3
+   }
+  },
+  "295": {
+   "off_inside_blocks": [
+    21607
+   ],
+   "straddling_blocks": [
+    64191,
+    64213,
+    68424
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 152
+   }
+  },
+  "301": {
+   "off_inside_blocks": [
+    16245
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 3
+   }
+  },
+  "302": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    16245
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 2
+   }
+  },
+  "315": {
+   "off_inside_blocks": [
+    21607,
+    64191,
+    64213
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 227
+   }
+  },
+  "319": {
+   "off_inside_blocks": [
+    21607,
+    64213,
+    68424
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 227
+   }
+  },
+  "336": {
+   "off_inside_blocks": [
+    68424
+   ],
+   "straddling_blocks": [
+    21607,
+    64184,
+    64191,
+    64213
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 232
+   }
+  },
+  "359": {
+   "off_inside_blocks": [
+    21607,
+    64191,
+    64213,
+    68424
+   ],
+   "straddling_blocks": [
+    64184
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 405
+   }
+  },
+  "369": {
+   "off_inside_blocks": [
+    18445,
+    64184,
+    64191,
+    64213,
+    68424
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 407
+   }
+  },
+  "376": {
+   "off_inside_blocks": [
+    18445,
+    64191
+   ],
+   "straddling_blocks": [
+    21607,
+    64184,
+    64213,
+    68424
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 292
+   }
+  },
+  "388": {
+   "off_inside_blocks": [
+    21607,
+    64191,
+    64213,
+    68424
+   ],
+   "straddling_blocks": [
+    64184
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 419
+   }
+  },
+  "393": {
+   "off_inside_blocks": [
+    21607,
+    64184,
+    64191,
+    64213,
+    68424
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 424
+   }
+  },
+  "427": {
+   "off_inside_blocks": [
+    21607,
+    64184,
+    64191,
+    64213,
+    68424
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 424
+   }
+  },
+  "468": {
+   "off_inside_blocks": [],
+   "straddling_blocks": [
+    64184
+   ],
+   "reason": {
+    "straddled": true,
+    "off_inside": 0
+   }
+  },
+  "507": {
+   "off_inside_blocks": [
+    21607,
+    64184,
+    64191,
+    64213,
+    68424
+   ],
+   "straddling_blocks": [],
+   "reason": {
+    "straddled": false,
+    "off_inside": 424
+   }
+  }
+ },
+ "words": [
+  {
+   "W": [
+    [
+     13,
+     3
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     17,
+     13
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     17,
+     47
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     17,
+     13
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     17,
+     47
+    ],
+    [
+     11,
+     1
+    ]
+   ],
+   "bad": 333,
+   "n1": 0,
+   "n2": 3,
+   "short": [
+    {
+     "orbit": 8,
+     "size": 7132,
+     "types": [
+      7
+     ],
+     "bad": 2,
+     "holes": 0,
+     "holes_of_type_by_orbit": {
+      "singleton": 6
+     },
+     "stuck_holes": [
+      {
+       "hole": 2732,
+       "grips": {
+        "2": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          1040
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "5": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "7": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "11": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "13": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        }
+       }
+      },
+      {
+       "hole": 4736,
+       "grips": {
+        "5": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "6": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          1040
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 81
+         }
+        },
+        "7": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "11": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "13": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        }
+       }
+      },
+      {
+       "hole": 11335,
+       "grips": {
+        "30": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "34": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "73": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          48298
+         ],
+         "straddling_blocks": [
+          23955
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 159
+         }
+        },
+        "89": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "145": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        }
+       }
+      },
+      {
+       "hole": 28650,
+       "grips": {
+        "30": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "34": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "89": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "100": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          23955
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "145": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        }
+       }
+      },
+      {
+       "hole": 119124,
+       "grips": {
+        "369": {
+         "off_inside_blocks": [
+          18445,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 407
+         }
+        },
+        "393": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "427": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "468": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          64184
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "507": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        }
+       }
+      },
+      {
+       "hole": 128877,
+       "grips": {
+        "369": {
+         "off_inside_blocks": [
+          18445,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 407
+         }
+        },
+        "388": {
+         "off_inside_blocks": [
+          21607,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [
+          64184
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 419
+         }
+        },
+        "393": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "427": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "507": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        }
+       }
+      }
+     ]
+    },
+    {
+     "orbit": 10,
+     "size": 3578,
+     "types": [
+      9
+     ],
+     "bad": 1,
+     "holes": 0,
+     "holes_of_type_by_orbit": {
+      "singleton": 3
+     },
+     "stuck_holes": [
+      {
+       "hole": 2743,
+       "grips": {
+        "2": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          1040
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "5": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "6": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          1040
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 81
+         }
+        },
+        "7": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "11": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "13": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        }
+       }
+      },
+      {
+       "hole": 11338,
+       "grips": {
+        "30": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "34": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "73": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          48298
+         ],
+         "straddling_blocks": [
+          23955
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 159
+         }
+        },
+        "89": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "100": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          23955
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "145": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        }
+       }
+      },
+      {
+       "hole": 119141,
+       "grips": {
+        "369": {
+         "off_inside_blocks": [
+          18445,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 407
+         }
+        },
+        "388": {
+         "off_inside_blocks": [
+          21607,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [
+          64184
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 419
+         }
+        },
+        "393": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "427": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "468": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          64184
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "507": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "fixed_occupied": []
+  },
+  {
+   "W": [
+    [
+     13,
+     3
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     11,
+     1
+    ]
+   ],
+   "bad": 333,
+   "n1": 0,
+   "n2": 3,
+   "short": [
+    {
+     "orbit": 8,
+     "size": 7132,
+     "types": [
+      7
+     ],
+     "bad": 2,
+     "holes": 0,
+     "holes_of_type_by_orbit": {
+      "singleton": 6
+     },
+     "stuck_holes": [
+      {
+       "hole": 2732,
+       "grips": {
+        "2": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          1040
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "5": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "7": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "11": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "13": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        }
+       }
+      },
+      {
+       "hole": 4736,
+       "grips": {
+        "5": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "6": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          1040
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 81
+         }
+        },
+        "7": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "11": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "13": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        }
+       }
+      },
+      {
+       "hole": 11335,
+       "grips": {
+        "30": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "34": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "73": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          48298
+         ],
+         "straddling_blocks": [
+          23955
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 159
+         }
+        },
+        "89": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "145": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        }
+       }
+      },
+      {
+       "hole": 28650,
+       "grips": {
+        "30": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "34": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "89": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "100": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          23955
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "145": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        }
+       }
+      },
+      {
+       "hole": 119124,
+       "grips": {
+        "369": {
+         "off_inside_blocks": [
+          18445,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 407
+         }
+        },
+        "393": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "427": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "468": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          64184
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "507": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        }
+       }
+      },
+      {
+       "hole": 128877,
+       "grips": {
+        "369": {
+         "off_inside_blocks": [
+          18445,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 407
+         }
+        },
+        "388": {
+         "off_inside_blocks": [
+          21607,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [
+          64184
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 419
+         }
+        },
+        "393": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "427": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "507": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        }
+       }
+      }
+     ]
+    },
+    {
+     "orbit": 10,
+     "size": 3578,
+     "types": [
+      9
+     ],
+     "bad": 1,
+     "holes": 0,
+     "holes_of_type_by_orbit": {
+      "singleton": 3
+     },
+     "stuck_holes": [
+      {
+       "hole": 2743,
+       "grips": {
+        "2": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          1040
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "5": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "6": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          1040
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 81
+         }
+        },
+        "7": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "11": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        },
+        "13": {
+         "off_inside_blocks": [
+          1040
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 86
+         }
+        }
+       }
+      },
+      {
+       "hole": 11338,
+       "grips": {
+        "30": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "34": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "73": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          48298
+         ],
+         "straddling_blocks": [
+          23955
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 159
+         }
+        },
+        "89": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        },
+        "100": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          23955
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "145": {
+         "off_inside_blocks": [
+          18512,
+          18517,
+          23955,
+          48298
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 164
+         }
+        }
+       }
+      },
+      {
+       "hole": 119141,
+       "grips": {
+        "369": {
+         "off_inside_blocks": [
+          18445,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 407
+         }
+        },
+        "388": {
+         "off_inside_blocks": [
+          21607,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [
+          64184
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 419
+         }
+        },
+        "393": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "427": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        },
+        "468": {
+         "off_inside_blocks": [],
+         "straddling_blocks": [
+          64184
+         ],
+         "reason": {
+          "straddled": true,
+          "off_inside": 0
+         }
+        },
+        "507": {
+         "off_inside_blocks": [
+          21607,
+          64184,
+          64191,
+          64213,
+          68424
+         ],
+         "straddling_blocks": [],
+         "reason": {
+          "straddled": false,
+          "off_inside": 424
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "fixed_occupied": []
+  }
+ ]
+}

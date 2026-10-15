@@ -1,0 +1,142 @@
+{
+ "runs": [
+  {
+   "input": "table:<scratch>/pkg28/Claude-E-closure-E2E3-20261012/D3/E3-table.json",
+   "status_claimed": "restored",
+   "x_table_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+   "x_off_lattice_pieces": 107,
+   "chain_segments": [
+    {
+     "twists": 1112,
+     "input_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+     "output_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+     "off_end": 90,
+     "seconds": 69.7
+    },
+    {
+     "twists": 1210,
+     "input_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+     "output_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+     "off_end": 3,
+     "seconds": 72.6
+    },
+    {
+     "twists": 79,
+     "input_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+     "output_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+     "off_end": 0,
+     "seconds": 15.5
+    }
+   ],
+   "chain_twists": 2401,
+   "chain_end_equals_restorer_input": true,
+   "start_matches_restorer": true,
+   "T_digest_matches": true,
+   "retained_part_reaches_T": true,
+   "correction_twists": 21888,
+   "corrections_replayed": [
+    {
+     "macro": 5,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 13,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 18,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 21,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 22,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 23,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": false
+    },
+    {
+     "macro": 28,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 29,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 31,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 32,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 33,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "final_digest_is_solved": true,
+   "final_labels_identity": true,
+   "late_seconds": 1007.5,
+   "w9": false,
+   "restored_to_identity": true,
+   "factors": 186687,
+   "retained_length": 223378194,
+   "length_matches_restorer": true
+  }
+ ],
+ "chain_end_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+ "pass": true,
+ "seconds": 1191.0
+}

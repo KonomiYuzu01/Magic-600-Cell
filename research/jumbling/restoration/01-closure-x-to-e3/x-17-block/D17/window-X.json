@@ -1,0 +1,886 @@
+{
+ "window": {
+  "s": 541,
+  "pre": 0,
+  "e": 571,
+  "P": 10,
+  "Q": 10,
+  "Pbar": 10,
+  "tail": 0
+ },
+ "words": {
+  "P": [
+   [
+    95,
+    25
+   ],
+   [
+    56,
+    2
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    56,
+    5
+   ],
+   [
+    187,
+    34
+   ],
+   [
+    56,
+    2
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    56,
+    5
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    187,
+    56
+   ]
+  ],
+  "Q": [
+   [
+    176,
+    1
+   ],
+   [
+    43,
+    1
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    43,
+    1
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    176,
+    1
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    43,
+    1
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    43,
+    1
+   ]
+  ],
+  "Pbar": [
+   [
+    187,
+    34
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    56,
+    2
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    56,
+    5
+   ],
+   [
+    187,
+    56
+   ],
+   [
+    56,
+    2
+   ],
+   [
+    95,
+    25
+   ],
+   [
+    56,
+    5
+   ],
+   [
+    95,
+    25
+   ]
+  ],
+  "tail": []
+ },
+ "digests": {
+  "s": "1fe3d5d55698a27575d78375b093d03c37b478a43ff1910043e81765468e3312",
+  "P": "b9db3fc374b2ff8c60c9239cb5852db4078600441f594a1de17411541d46eebe",
+  "Q": "a1bb4ae288265eb6f17608d1db05a818cadfaf0d4a23b8b6f99ab696dda8a385",
+  "Pbar": "9b449e61a942a2e41481fd4a9d6da5cdf0f06108cc5bd7674ee657e6784a34ca",
+  "tail": "9b449e61a942a2e41481fd4a9d6da5cdf0f06108cc5bd7674ee657e6784a34ca"
+ },
+ "mirror_inverse_checked": true,
+ "at_s": {
+  "off": 107,
+  "target": 17,
+  "protected": 90,
+  "protected_exact_at_end": true,
+  "lattice_of_s_off_at_end": 0
+ },
+ "after_P": {
+  "off": 305,
+  "target_on": 0,
+  "protected_on": 0,
+  "C": 198,
+  "L": 176815,
+  "protected_moved_by_P": 0,
+  "target_moved_by_P": 0
+ },
+ "twists": [
+  {
+   "stage": "P",
+   "j": 0,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 3010,
+   "moved_on_before": 3010,
+   "moved_off_before": 0,
+   "went_off": 3010,
+   "came_on": 0,
+   "off_after": 3117,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 3010
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "P",
+   "j": 1,
+   "grip": 56,
+   "menu": 2,
+   "k": 1010,
+   "moved": 3008,
+   "moved_on_before": 2700,
+   "moved_off_before": 308,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 3117,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 198,
+    "L": 2810
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "P",
+   "j": 2,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 3097,
+   "moved_on_before": 395,
+   "moved_off_before": 2702,
+   "went_off": 395,
+   "came_on": 2702,
+   "off_after": 810,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 198,
+    "L": 2899
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "P",
+   "j": 3,
+   "grip": 56,
+   "menu": 5,
+   "k": 548,
+   "moved": 3008,
+   "moved_on_before": 2502,
+   "moved_off_before": 506,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 810,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 87,
+    "L": 2921
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "P",
+   "j": 4,
+   "grip": 187,
+   "menu": 34,
+   "k": null,
+   "moved": 3009,
+   "moved_on_before": 3009,
+   "moved_off_before": 0,
+   "went_off": 3009,
+   "came_on": 0,
+   "off_after": 3819,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 3009
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "P",
+   "j": 5,
+   "grip": 56,
+   "menu": 2,
+   "k": 1010,
+   "moved": 3008,
+   "moved_on_before": 2194,
+   "moved_off_before": 814,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 3819,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 87,
+    "L": 2921
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "P",
+   "j": 6,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 2986,
+   "moved_on_before": 2591,
+   "moved_off_before": 395,
+   "went_off": 2591,
+   "came_on": 395,
+   "off_after": 6015,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 198,
+    "L": 2788
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "P",
+   "j": 7,
+   "grip": 56,
+   "menu": 5,
+   "k": 548,
+   "moved": 3119,
+   "moved_on_before": 2503,
+   "moved_off_before": 616,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 6015,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 198,
+    "L": 2921
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "P",
+   "j": 8,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 2899,
+   "moved_on_before": 0,
+   "moved_off_before": 2899,
+   "went_off": 0,
+   "came_on": 2899,
+   "off_after": 3116,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 2899
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "P",
+   "j": 9,
+   "grip": 187,
+   "menu": 56,
+   "k": null,
+   "moved": 3207,
+   "moved_on_before": 198,
+   "moved_off_before": 3009,
+   "went_off": 198,
+   "came_on": 3009,
+   "off_after": 305,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 198,
+    "L": 3009
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 0,
+   "grip": 176,
+   "menu": 1,
+   "k": 5708,
+   "moved": 3114,
+   "moved_on_before": 3097,
+   "moved_off_before": 17,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 305,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 0,
+    "L": 3097
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 1,
+   "grip": 43,
+   "menu": 1,
+   "k": 1987,
+   "moved": 3097,
+   "moved_on_before": 3097,
+   "moved_off_before": 0,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 305,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 3097
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 2,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 2899,
+   "moved_on_before": 2899,
+   "moved_off_before": 0,
+   "went_off": 2899,
+   "came_on": 0,
+   "off_after": 3204,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 2899
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 3,
+   "grip": 43,
+   "menu": 1,
+   "k": 1987,
+   "moved": 2899,
+   "moved_on_before": 2702,
+   "moved_off_before": 197,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 3204,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 2899
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 4,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 3097,
+   "moved_on_before": 395,
+   "moved_off_before": 2702,
+   "went_off": 395,
+   "came_on": 2702,
+   "off_after": 897,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 3097
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 5,
+   "grip": 176,
+   "menu": 1,
+   "k": 5708,
+   "moved": 3114,
+   "moved_on_before": 3097,
+   "moved_off_before": 17,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 897,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 0,
+    "L": 3097
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 6,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 3097,
+   "moved_on_before": 2702,
+   "moved_off_before": 395,
+   "went_off": 2702,
+   "came_on": 395,
+   "off_after": 3204,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 3097
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 7,
+   "grip": 43,
+   "menu": 1,
+   "k": 1987,
+   "moved": 2916,
+   "moved_on_before": 2702,
+   "moved_off_before": 214,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 3204,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 0,
+    "L": 2899
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 8,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 2916,
+   "moved_on_before": 0,
+   "moved_off_before": 2916,
+   "went_off": 0,
+   "came_on": 2916,
+   "off_after": 288,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 0,
+    "L": 2899
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Q",
+   "j": 9,
+   "grip": 43,
+   "menu": 1,
+   "k": 1987,
+   "moved": 3097,
+   "moved_on_before": 3097,
+   "moved_off_before": 0,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 288,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 3097
+   },
+   "moved_of_M": null
+  },
+  {
+   "stage": "Pbar",
+   "j": 0,
+   "grip": 187,
+   "menu": 34,
+   "k": null,
+   "moved": 3207,
+   "moved_on_before": 3009,
+   "moved_off_before": 198,
+   "went_off": 3009,
+   "came_on": 198,
+   "off_after": 3099,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 198,
+    "L": 3009
+   },
+   "moved_of_M": 0
+  },
+  {
+   "stage": "Pbar",
+   "j": 1,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 2916,
+   "moved_on_before": 2916,
+   "moved_off_before": 0,
+   "went_off": 2916,
+   "came_on": 0,
+   "off_after": 6015,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 0,
+    "L": 2899
+   },
+   "moved_of_M": 17
+  },
+  {
+   "stage": "Pbar",
+   "j": 2,
+   "grip": 56,
+   "menu": 2,
+   "k": 1010,
+   "moved": 3136,
+   "moved_on_before": 2503,
+   "moved_off_before": 633,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 6015,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 198,
+    "L": 2921
+   },
+   "moved_of_M": 17
+  },
+  {
+   "stage": "Pbar",
+   "j": 3,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 2986,
+   "moved_on_before": 395,
+   "moved_off_before": 2591,
+   "went_off": 395,
+   "came_on": 2591,
+   "off_after": 3819,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 198,
+    "L": 2788
+   },
+   "moved_of_M": 0
+  },
+  {
+   "stage": "Pbar",
+   "j": 4,
+   "grip": 56,
+   "menu": 5,
+   "k": 548,
+   "moved": 3025,
+   "moved_on_before": 2194,
+   "moved_off_before": 831,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 3819,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 87,
+    "L": 2921
+   },
+   "moved_of_M": 17
+  },
+  {
+   "stage": "Pbar",
+   "j": 5,
+   "grip": 187,
+   "menu": 56,
+   "k": null,
+   "moved": 3009,
+   "moved_on_before": 0,
+   "moved_off_before": 3009,
+   "went_off": 0,
+   "came_on": 3009,
+   "off_after": 810,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 0,
+    "L": 3009
+   },
+   "moved_of_M": 0
+  },
+  {
+   "stage": "Pbar",
+   "j": 6,
+   "grip": 56,
+   "menu": 2,
+   "k": 1010,
+   "moved": 3025,
+   "moved_on_before": 2502,
+   "moved_off_before": 523,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 810,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 87,
+    "L": 2921
+   },
+   "moved_of_M": 17
+  },
+  {
+   "stage": "Pbar",
+   "j": 7,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 3097,
+   "moved_on_before": 2702,
+   "moved_off_before": 395,
+   "went_off": 2702,
+   "came_on": 395,
+   "off_after": 3117,
+   "by_class": {
+    "T": 0,
+    "Prot": 0,
+    "C": 198,
+    "L": 2899
+   },
+   "moved_of_M": 0
+  },
+  {
+   "stage": "Pbar",
+   "j": 8,
+   "grip": 56,
+   "menu": 5,
+   "k": 548,
+   "moved": 3025,
+   "moved_on_before": 2700,
+   "moved_off_before": 325,
+   "went_off": 0,
+   "came_on": 0,
+   "off_after": 3117,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 198,
+    "L": 2810
+   },
+   "moved_of_M": 17
+  },
+  {
+   "stage": "Pbar",
+   "j": 9,
+   "grip": 95,
+   "menu": 25,
+   "k": null,
+   "moved": 3027,
+   "moved_on_before": 0,
+   "moved_off_before": 3027,
+   "went_off": 0,
+   "came_on": 3027,
+   "off_after": 90,
+   "by_class": {
+    "T": 17,
+    "Prot": 0,
+    "C": 0,
+    "L": 3010
+   },
+   "moved_of_M": 17
+  }
+ ],
+ "Q": {
+  "net_moved": {
+   "T": 17,
+   "Prot": 0,
+   "C": 0,
+   "L": 0
+  },
+  "net_moved_total": 17,
+  "M_on_after_Q": 17,
+  "M_off_after_Q": 0,
+  "twists_outside_K": 4,
+  "twists_moving_off_pieces": 7,
+  "max_off_inside_Q": 3204
+ },
+ "F1_unmoved_back_exact": true,
+ "F1_unmoved_count": 177103,
+ "F2_mirror_selection": {
+  "all_equal_outside_M": true,
+  "rows": [
+   {
+    "j": 0,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 0,
+    "P_mirror_selected_M": 0
+   },
+   {
+    "j": 1,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 17,
+    "P_mirror_selected_M": 0
+   },
+   {
+    "j": 2,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 17,
+    "P_mirror_selected_M": 0
+   },
+   {
+    "j": 3,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 0,
+    "P_mirror_selected_M": 0
+   },
+   {
+    "j": 4,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 17,
+    "P_mirror_selected_M": 0
+   },
+   {
+    "j": 5,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 0,
+    "P_mirror_selected_M": 0
+   },
+   {
+    "j": 6,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 17,
+    "P_mirror_selected_M": 0
+   },
+   {
+    "j": 7,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 0,
+    "P_mirror_selected_M": 0
+   },
+   {
+    "j": 8,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 17,
+    "P_mirror_selected_M": 0
+   },
+   {
+    "j": 9,
+    "equal_outside_M": true,
+    "Pbar_selects_M": 17,
+    "P_mirror_selected_M": 0
+   }
+  ]
+ },
+ "F3_landing": {
+  "M": 17,
+  "clean": 17,
+  "ghost_end_equals_real": true,
+  "end_in_K": 17,
+  "end_in_K_by_class": {
+   "T": 17,
+   "Prot": 0,
+   "C": 0,
+   "L": 0
+  },
+  "end_off_by_class": {
+   "T": 0,
+   "Prot": 0,
+   "C": 0,
+   "L": 0
+  }
+ },
+ "places": {
+  "M_ending_in_a_chamber": 17,
+  "chamber_was_a_hole_at_s": 17,
+  "chamber_held_by_M_piece_at_s": 0,
+  "chamber_held_by_unmoved_piece_at_s": 0
+ },
+ "chambers": {
+  "good": 176922,
+  "bad": 198,
+  "bad_unclean": 0,
+  "bad_clean_ends_off": 198,
+  "occupied_bad_after_P": 0,
+  "occupied_bad_after_P_equals_target_on_chambers": true,
+  "off_of_s_on_after_P": 0,
+  "target_on_after_P": 0,
+  "holes_after_P": 305,
+  "bad_holes_after_P": 198,
+  "occupied_bad_after_Q": 0,
+  "holes_after_Q": 288
+ },
+ "seconds": 27
+}

@@ -1,0 +1,8 @@
+{"world": "end-table.json", "off": 2307, "domains": 2, "blocks": 0, "sec": 10.0}
+{"event": "table", "off": 2307, "sec_table": 0.6, "sec": 12.4}
+{"event": "cand", "cap": 86, "frame": 1, "n": 2307, "occ": 790, "gain": 1517, "letter": 12, "ahead": -1517, "free": 0, "tied": 12, "npos": 0, "sec": 28.1}
+{"event": "step", "step": 1, "kind": "PSC", "cap": 86, "gain": 1517, "off_before": 2307, "off_after": 790, "restored": 2307, "collateral": 790, "moved_off": 0, "virtual_matches": true, "sec": 28.2, "ok": true}
+{"event": "chosen", "cap": 86, "frame": 1, "letter": 12, "gain": 1517, "ahead": -1517, "off": 790, "sec_step": 15.7, "sec": 28.2}
+{"event": "stuck", "off": 790, "best": [[-1517, 86, 2, 790, 2307], [-2307, 77, 2, 395, 2702], [-2307, 106, 2, 395, 2702]], "sec": 28.2}
+{"event": "end", "steps": 1, "off": 790, "sec": 28.2}
+exit 0

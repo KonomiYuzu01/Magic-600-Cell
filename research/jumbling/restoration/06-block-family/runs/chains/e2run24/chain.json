@@ -1,0 +1,22 @@
+{
+ "name": "e2run24",
+ "start": "../../../data/states/e2run24-table.json",
+ "start_digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+ "steps": [
+  {
+   "label": "s1-17block-D17",
+   "word": "s1-17block-D17/word-full.json",
+   "target": "s1-17block-D17/target.json"
+  },
+  {
+   "label": "s2-43at9104",
+   "word": "s2-43at9104/word-full.json",
+   "target": "s2-43at9104/target.json"
+  },
+  {
+   "label": "s3-50at16589",
+   "word": "s3-50at16589/word-full.json",
+   "target": "s3-50at16589/target.json"
+  }
+ ]
+}

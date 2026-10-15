@@ -1,0 +1,8 @@
+{"off": 90, "blocks": [87, 3], "straddling": 5, "status_3": 0, "sec": 13}
+{"digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8", "off": 90, "holes": 90, "concat": true, "Vinv": true, "Pinv": true, "sec": 13.4}
+{"badU": 87, "subset": true, "T": {"on_K": 87, "dead": 0}, "Bp": true, "sec_ghost": 7.0, "sec": 20.4}
+{"safe_all_grips": 581, "letters": 6391, "off_lattice": 90, "sec": 43}
+{"orbits": 914, "singletons": 879, "sec": 43}
+{"badW": 87, "badW_eq_pre": true, "H3": true, "perm_eq": true, "vacates": true, "T_land_eq": true, "holes_in_safe": 90, "sec": 43.2}
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 50}
+{"E2_holes": [24905, 89251, 89252], "good_holes": [24905, 89251, 89252], "good_end": [24905, 89251, 89252], "good_end_in_E2_holes": true, "done": "<work>/v26/audit/lemma-h/testB.json", "sec": 50.8}

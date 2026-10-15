@@ -1,0 +1,19 @@
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 9}
+{"digest": "c280ae5f1e379ae92f300abeff7b81d1de7cf318160d989de239c04483097ff0", "off": 3, "holes": 3, "sec": 10.0}
+{"twist": 250, "alive": 41938, "off_dom": 3100, "sec": 10.7}
+{"twist": 500, "alive": 41938, "off_dom": 707, "sec": 11.3}
+{"twist": 750, "alive": 41938, "off_dom": 533, "sec": 11.9}
+{"twist": 1000, "alive": 41938, "off_dom": 3211, "sec": 12.4}
+{"twist": 1250, "alive": 41938, "off_dom": 793, "sec": 13.0}
+{"twist": 1500, "alive": 41938, "off_dom": 533, "sec": 13.6}
+{"twist": 1750, "alive": 41938, "off_dom": 3409, "sec": 14.1}
+{"twist": 2000, "alive": 41938, "off_dom": 657, "sec": 14.7}
+{"twist": 2250, "alive": 41938, "off_dom": 616, "sec": 15.2}
+{"twist": 2500, "alive": 41938, "off_dom": 3211, "sec": 15.7}
+{"twist": 2750, "alive": 41938, "off_dom": 879, "sec": 16.3}
+{"bad": 3, "bad_subset_holes": true, "bad_equals_holes": true, "ghost_seconds": 6.6, "sec": 16.6}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 3, "sec": 32}
+{"orbits": 686, "singletons": 651, "sec": 33}
+{"holes_in_safe_cap": 3, "orbit_sizes": {"41195": 3599, "52577": 7200, "55055": 7200}, "sec": 32.6}
+{"prev_digest": "c078c44cf68e375617a20d1d35ec7c3bfe86d4f1b1da1f2cbb67d5f991a27eb8", "matches": true, "sec": 32.8}
+{"done": "<work>/v26/audit/lemma-h/testA.json", "sec": 32.8}

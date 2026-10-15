@@ -1,0 +1,27 @@
+{
+ "name": "sfx1",
+ "start": "end of the first package fixture chain (runs/chains/fixture), 93,046 off",
+ "start_digest": "492ba5e5b9dfb96e784ed1fee831f520e7ea681e8f82f8d93f15249876910199",
+ "steps": [
+  {
+   "label": "S001-cap456",
+   "word": "step001-word.json",
+   "target": "step001-target.json"
+  },
+  {
+   "label": "S002-cap181",
+   "word": "step002-word.json",
+   "target": "step002-target.json"
+  },
+  {
+   "label": "S003-cap317",
+   "word": "step003-word.json",
+   "target": "step003-target.json"
+  },
+  {
+   "label": "S004-cap168",
+   "word": "step004-word.json",
+   "target": "step004-target.json"
+  }
+ ]
+}

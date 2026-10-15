@@ -1,0 +1,48 @@
+order [1, 4, 5, 7, 18, 19, 20, 27, 30, 31, 32, 33, 3, 12, 14, 16, 24, 26, 28, 34, 10, 11, 13, 25, 29, 9, 23, 8, 21, 22, 2, 15, 17, 0, 6]
+1 coll 0 factors 0 len(c) 2212 0.0s nodes 37
+4 coll 0 factors 0 len(c) 562 0.0s nodes 39
+5 coll 0 factors 0 len(c) 562 0.0s nodes 41
+7 coll 0 factors 0 len(c) 298 0.0s nodes 43
+18 coll 0 factors 0 len(c) 1546 0.0s nodes 45
+19 coll 0 factors 0 len(c) 152 0.0s nodes 47
+20 coll 0 factors 0 len(c) 152 0.0s nodes 49
+27 coll 0 factors 0 len(c) 104 0.0s nodes 51
+30 coll 0 factors 0 len(c) 104 0.0s nodes 53
+31 coll 0 factors 0 len(c) 152 0.0s nodes 55
+32 coll 0 factors 0 len(c) 106 0.0s nodes 57
+33 coll 0 factors 0 len(c) 56 0.0s nodes 59
+3 coll 2 factors 8 len(c) 5642 0.1s nodes 74
+12 coll 1 factors 4 len(c) 1030 0.0s nodes 83
+14 coll 2 factors 10 len(c) 3108 0.0s nodes 103
+16 coll 1 factors 2 len(c) 620 0.0s nodes 110
+24 coll 1 factors 2 len(c) 272 0.1s nodes 115
+26 coll 1 factors 2 len(c) 266 0.1s nodes 120
+28 coll 3 factors 30 len(c) 7428 0.1s nodes 167
+34 coll 1 factors 28 len(c) 13992 0.0s nodes 212
+10 coll 5 factors 20 len(c) 18712 0.1s nodes 243
+11 coll 4 factors 20 len(c) 9202 0.1s nodes 260
+13 coll 2 factors 8 len(c) 3288 0.1s nodes 275
+25 coll 3 factors 8 len(c) 1252 0.1s nodes 290
+29 coll 6 factors 42 len(c) 17028 0.1s nodes 355
+9 coll 7 factors 28 len(c) 149890 0.1s nodes 379
+23 coll 4 factors 10 len(c) 3758 0.1s nodes 392
+8 coll 15 factors 96 len(c) 1527208 0.2s nodes 533
+21 coll 5 factors 16 len(c) 28920 0.1s nodes 565
+22 coll 9 factors 68 len(c) 133602 0.1s nodes 666
+2 coll 19 factors 189 len(c) 9981150 0.2s nodes 953
+15 coll 22 factors 540 len(c) 6417246 0.4s nodes 2381
+17 coll 19 factors 585 len(c) 4180480 0.6s nodes 4169
+0 coll 32 factors 984 len(c) 243763786 0.6s nodes 5089
+6 coll 27 factors 928 len(c) 176017672 0.4s nodes 6646
+F 0 C2 node 6648 values (1, 0) (1, 0) len 487527582
+F 3 C2 node 6651 values (1, 0) (1, 0) len 11290
+F 6 D5 node 6684 values (0, 3, 4, 1, 2) (1, 0, 3, 2, 4) len 704070698
+F 8 C2 node 4271 values (1, 0) (1, 0) len 3054422
+F 11 C2 node 363 values (1, 0) (1, 0) len 18410
+F 17 C5 node 6685 values (1, 3, 0, 4, 2) (2, 0, 4, 1, 3) len 8360964
+F 22 C2 node 746 values (1, 0) (1, 0) len 267210
+F 25 C2 node 545 values (1, 0) (1, 0) len 2508
+F 28 C5 node 6686 values (1, 2, 4, 0, 3) (3, 0, 1, 4, 2) len 14860
+F 32 C2 node 91 values (1, 0) (1, 0) len 216
+F 34 A5 node 10191 values (1, 0, 5, 4, 3, 2, 7, 6, 10, 11, 8, 9, 16, 14, 13, 17, 12, 15, 19, 18) (0, 3, 11, 5, 6, 1, 10, 2, 15, 13, 4, 7, 19, 16, 8, 14, 9, 12, 18, 17) len 363828
+nodes kept 4788 of 10192 total 5.7s

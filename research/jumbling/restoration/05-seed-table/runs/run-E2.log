@@ -1,0 +1,5 @@
+E2 off 3 depth one 3 8s
+candidates 21 for 3 pieces 8s
+k-seed candidates 3 [('K3-D3inv', [16249, 16245, 32088]), ('K3-I1inv', [16249, 16245, 32088]), ('K3-I2inv', [16245, 32088, 16249])]
+restored block {'block': [16245, 32088, 16249], 'kseed': 'K3-I2inv (inverse of the I2 three-block restoration)', 'm': 0, 'prep_length': 8, 'word_length': 71, 'needs': [70074, 70085, 73877], 'off_before': 3, 'end_digest': 'ad0cd5a8aa16dc1441974fde590ddde60868205c520fb9893cc3e9853aa15f0a'} 26s
+{"input": "E2", "input_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff", "executed": true, "off_start": 3, "depth_one": 3, "by_registry_orbit": {"2|5a": 3}, "classes_present": 3, "classes_with_seed": 3, "pieces_with_seed": 3, "restored": 3, "steps": 1, "block_steps": 1, "remaining": 0, "total_letters": 79, "kseed_candidates": 3, "end_digest": "ad0cd5a8aa16dc1441974fde590ddde60868205c520fb9893cc3e9853aa15f0a", "blocking": {}, "conflict_cycles": [], "seconds": 25.8}

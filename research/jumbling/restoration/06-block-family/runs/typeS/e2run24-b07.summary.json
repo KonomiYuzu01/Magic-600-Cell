@@ -1,0 +1,196 @@
+{
+ "state_digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+ "target": [
+  35795,
+  35800,
+  35801,
+  35807,
+  35808,
+  35809,
+  48264,
+  48265,
+  48272,
+  48278,
+  48279,
+  48296,
+  48297,
+  48300,
+  48301,
+  51950,
+  51951,
+  51952,
+  52044,
+  52045,
+  52046,
+  52047,
+  52049,
+  52062,
+  52063,
+  52068,
+  52071,
+  52072,
+  52073,
+  52076,
+  52077,
+  52078,
+  52079,
+  52082,
+  52083,
+  52085,
+  52090,
+  58540,
+  75380,
+  75381,
+  75382,
+  75384,
+  75385,
+  75443,
+  85251
+ ],
+ "protected": 645,
+ "single_letters": [
+  {
+   "R": [
+    60,
+    15
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    18
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    22
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    33
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    52
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    53
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    54
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    55
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    56
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    57
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    58
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  },
+  {
+   "R": [
+    60,
+    59
+   ],
+   "cap_pieces": 2913,
+   "other_pieces_in_cap": 2868
+  }
+ ],
+ "tried": [
+  {
+   "R": [
+    60,
+    15
+   ],
+   "stop": "protected piece on K after P",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  },
+  {
+   "R": [
+    60,
+    18
+   ],
+   "stop": "protected piece on K after P",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  },
+  {
+   "R": [
+    60,
+    22
+   ],
+   "stop": "protected piece on K after P",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  },
+  {
+   "R": [
+    60,
+    33
+   ],
+   "stop": "protected piece on K after P",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  }
+ ],
+ "seconds": 9.8
+}

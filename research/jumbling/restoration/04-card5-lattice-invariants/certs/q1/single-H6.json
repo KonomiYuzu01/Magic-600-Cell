@@ -1,0 +1,118 @@
+{
+ "results": [
+  {
+   "piece": 12538,
+   "orbit": 18,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 30553,
+   "orbit": 26,
+   "h0": 0,
+   "best": 0,
+   "path": []
+  },
+  {
+   "piece": 35860,
+   "orbit": 26,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 74431,
+   "orbit": 20,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 84956,
+   "orbit": 13,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 87479,
+   "orbit": 26,
+   "h0": 0,
+   "best": 0,
+   "path": []
+  },
+  {
+   "piece": 126418,
+   "orbit": 19,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 133595,
+   "orbit": 26,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 149651,
+   "orbit": 26,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 154424,
+   "orbit": 26,
+   "h0": 0,
+   "best": 2,
+   "path": [
+    [
+     324,
+     12
+    ]
+   ]
+  },
+  {
+   "piece": 160096,
+   "orbit": 26,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 162831,
+   "orbit": 20,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 166009,
+   "orbit": 26,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 166690,
+   "orbit": 26,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  },
+  {
+   "piece": 168830,
+   "orbit": 20,
+   "h0": 2,
+   "best": 2,
+   "path": []
+  }
+ ],
+ "stats": {
+  "blocked": 137,
+  "open": 1
+ }
+}

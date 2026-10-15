@@ -1,0 +1,481 @@
+{
+ "summary": {
+  "steps": 34,
+  "at_history_grip": 34,
+  "exact_inverse": 11,
+  "history_twists": 40,
+  "history_grips": 35
+ },
+ "steps": [
+  {
+   "step": 1,
+   "kind": "PS",
+   "cap": 344,
+   "letter": 13,
+   "gain": 3097,
+   "carrier": null,
+   "history_twists_at_grip": [
+    21
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 2,
+   "kind": "PS",
+   "cap": 376,
+   "letter": 15,
+   "gain": 3097,
+   "carrier": null,
+   "history_twists_at_grip": [
+    38
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 3,
+   "kind": "PS",
+   "cap": 481,
+   "letter": 15,
+   "gain": 2808,
+   "carrier": null,
+   "history_twists_at_grip": [
+    18
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 4,
+   "kind": "PS",
+   "cap": 260,
+   "letter": 15,
+   "gain": 2762,
+   "carrier": null,
+   "history_twists_at_grip": [
+    14
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 5,
+   "kind": "PS",
+   "cap": 502,
+   "letter": 14,
+   "gain": 2762,
+   "carrier": null,
+   "history_twists_at_grip": [
+    31
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 6,
+   "kind": "PS",
+   "cap": 334,
+   "letter": 14,
+   "gain": 3097,
+   "carrier": null,
+   "history_twists_at_grip": [
+    10,
+    39
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 7,
+   "kind": "PS",
+   "cap": 79,
+   "letter": 13,
+   "gain": 2702,
+   "carrier": null,
+   "history_twists_at_grip": [
+    36
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 8,
+   "kind": "PS",
+   "cap": 73,
+   "letter": 36,
+   "gain": 2702,
+   "carrier": null,
+   "history_twists_at_grip": [
+    37
+   ],
+   "exact_inverse_of": [
+    37
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 9,
+   "kind": "PS",
+   "cap": 572,
+   "letter": 16,
+   "gain": 2702,
+   "carrier": null,
+   "history_twists_at_grip": [
+    32
+   ],
+   "exact_inverse_of": [
+    32
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 10,
+   "kind": "PS",
+   "cap": 203,
+   "letter": 41,
+   "gain": 2702,
+   "carrier": null,
+   "history_twists_at_grip": [
+    20,
+    40
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 11,
+   "kind": "PS",
+   "cap": 511,
+   "letter": 14,
+   "gain": 3097,
+   "carrier": null,
+   "history_twists_at_grip": [
+    12
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 12,
+   "kind": "PSC",
+   "cap": 311,
+   "letter": 47,
+   "gain": 2628,
+   "carrier": null,
+   "history_twists_at_grip": [
+    24
+   ],
+   "exact_inverse_of": [
+    24
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 13,
+   "kind": "PS",
+   "cap": 377,
+   "letter": 13,
+   "gain": 3097,
+   "carrier": null,
+   "history_twists_at_grip": [
+    27
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 14,
+   "kind": "PSC",
+   "cap": 110,
+   "letter": 33,
+   "gain": 2390,
+   "carrier": null,
+   "history_twists_at_grip": [
+    16
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 15,
+   "kind": "PSC",
+   "cap": 77,
+   "letter": 27,
+   "gain": 2307,
+   "carrier": null,
+   "history_twists_at_grip": [
+    35
+   ],
+   "exact_inverse_of": [
+    35
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 16,
+   "kind": "PSC",
+   "cap": 96,
+   "letter": 14,
+   "gain": 2900,
+   "carrier": null,
+   "history_twists_at_grip": [
+    5
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 17,
+   "kind": "PS",
+   "cap": 596,
+   "letter": 45,
+   "gain": 2702,
+   "carrier": null,
+   "history_twists_at_grip": [
+    26
+   ],
+   "exact_inverse_of": [
+    26
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 18,
+   "kind": "PSC",
+   "cap": 463,
+   "letter": 54,
+   "gain": 2110,
+   "carrier": null,
+   "history_twists_at_grip": [
+    1,
+    8
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 19,
+   "kind": "PSC",
+   "cap": 406,
+   "letter": 17,
+   "gain": 2307,
+   "carrier": null,
+   "history_twists_at_grip": [
+    19
+   ],
+   "exact_inverse_of": [
+    19
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 20,
+   "kind": "PSC",
+   "cap": 456,
+   "letter": 14,
+   "gain": 2427,
+   "carrier": null,
+   "history_twists_at_grip": [
+    33
+   ],
+   "exact_inverse_of": [
+    33
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 21,
+   "kind": "PSC",
+   "cap": 161,
+   "letter": 27,
+   "gain": 2109,
+   "carrier": null,
+   "history_twists_at_grip": [
+    9
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 22,
+   "kind": "PSC",
+   "cap": 525,
+   "letter": 51,
+   "gain": 1912,
+   "carrier": null,
+   "history_twists_at_grip": [
+    15
+   ],
+   "exact_inverse_of": [
+    15
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 23,
+   "kind": "PSC",
+   "cap": 531,
+   "letter": 12,
+   "gain": 2427,
+   "carrier": null,
+   "history_twists_at_grip": [
+    11
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 24,
+   "kind": "PSC",
+   "cap": 130,
+   "letter": 31,
+   "gain": 1633,
+   "carrier": null,
+   "history_twists_at_grip": [
+    28
+   ],
+   "exact_inverse_of": [
+    28
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 25,
+   "kind": "PSC",
+   "cap": 48,
+   "letter": 14,
+   "gain": 1628,
+   "carrier": null,
+   "history_twists_at_grip": [
+    30
+   ],
+   "exact_inverse_of": [
+    30
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 26,
+   "kind": "PSC",
+   "cap": 218,
+   "letter": 44,
+   "gain": 1545,
+   "carrier": null,
+   "history_twists_at_grip": [
+    25
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 27,
+   "kind": "PSC",
+   "cap": 462,
+   "letter": 15,
+   "gain": 2138,
+   "carrier": null,
+   "history_twists_at_grip": [
+    2
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 28,
+   "kind": "PSC",
+   "cap": 487,
+   "letter": 45,
+   "gain": 2110,
+   "carrier": null,
+   "history_twists_at_grip": [
+    4
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 29,
+   "kind": "PSC",
+   "cap": 180,
+   "letter": 27,
+   "gain": 1217,
+   "carrier": null,
+   "history_twists_at_grip": [
+    34
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 30,
+   "kind": "PSC",
+   "cap": 42,
+   "letter": 37,
+   "gain": 2470,
+   "carrier": null,
+   "history_twists_at_grip": [
+    7
+   ],
+   "exact_inverse_of": [
+    7
+   ],
+   "inverse_of_product": []
+  },
+  {
+   "step": 31,
+   "kind": "PSC",
+   "cap": 468,
+   "letter": 13,
+   "gain": 1517,
+   "carrier": null,
+   "history_twists_at_grip": [
+    13
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 32,
+   "kind": "PSC",
+   "cap": 119,
+   "letter": 32,
+   "gain": 1432,
+   "carrier": null,
+   "history_twists_at_grip": [
+    22
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 33,
+   "kind": "XPSC",
+   "cap": 92,
+   "letter": 41,
+   "gain": 495,
+   "carrier": [
+    130,
+    55
+   ],
+   "history_twists_at_grip": [
+    6
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  },
+  {
+   "step": 34,
+   "kind": "PSC",
+   "cap": 130,
+   "letter": 57,
+   "gain": 1537,
+   "carrier": null,
+   "history_twists_at_grip": [
+    28
+   ],
+   "exact_inverse_of": [],
+   "inverse_of_product": []
+  }
+ ]
+}

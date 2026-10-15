@@ -1,0 +1,3 @@
+{"chain": "y", "start_digest_ok": true, "load_seconds": 3.4}
+{"label": "PSC001-cap86", "twists": 1, "applied": 1, "error": null, "input_digest_ok": true, "output_digest_ok": true, "off_before": 2307, "off_after": 790, "restored": 2307, "collateral": 790, "moved_off": 0, "restored_matches": true, "collateral_matches": true, "moved_matches": true, "seconds": 0.0, "ok": true}
+{"chain": "y", "all_ok": true, "steps": 1, "final_off": 790, "all_on_lattice": false, "final_digest": "9fef7c1a2dcd141aa0cc2d523d884ae037ad53f2778d9daab50f64613f5b3d1b", "seconds": 3.4}

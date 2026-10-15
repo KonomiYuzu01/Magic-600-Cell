@@ -1,0 +1,22 @@
+{
+ "name": "gfx1",
+ "start": "../sfx1/end-table.json",
+ "start_digest": "2201343520688cd6e527b4d4e13fe72af12e0706007483070f1ec377f128ea74",
+ "steps": [
+  {
+   "label": "SV001-cap472",
+   "word": "step001-word.json",
+   "target": "step001-target.json"
+  },
+  {
+   "label": "SV002-cap215",
+   "word": "step002-word.json",
+   "target": "step002-target.json"
+  },
+  {
+   "label": "SV003-cap162",
+   "word": "step003-word.json",
+   "target": "step003-target.json"
+  }
+ ]
+}

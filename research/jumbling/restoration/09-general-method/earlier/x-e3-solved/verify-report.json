@@ -1,0 +1,326 @@
+{
+ "runs": [
+  {
+   "input": "table:<scratch>/pkg28/Claude-E-closure-E2E3-20261012/D3/E3-table.json",
+   "status_claimed": "restored",
+   "start_matches_restorer": true,
+   "T_digest_matches": true,
+   "retained_part_reaches_T": true,
+   "correction_twists": 21888,
+   "corrections_replayed": [
+    {
+     "macro": 5,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 13,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 18,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 21,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 22,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 23,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": false
+    },
+    {
+     "macro": 28,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 29,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 31,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 32,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 33,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "final_digest_is_solved": true,
+   "final_labels_identity": true,
+   "late_seconds": 961.5,
+   "w9": false,
+   "restored_to_identity": true,
+   "factors": 186687,
+   "retained_length": 223378194,
+   "length_matches_restorer": true
+  },
+  {
+   "input": "table:<scratch>/pkg30/Claude-E-three-block-family-20261012/runs/I1/end-table.json",
+   "status_claimed": "restored",
+   "start_matches_restorer": true,
+   "T_digest_matches": true,
+   "retained_part_reaches_T": true,
+   "correction_twists": 21660,
+   "corrections_replayed": [
+    {
+     "macro": 5,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 13,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 18,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 21,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 23,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": false
+    },
+    {
+     "macro": 28,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 29,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 31,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 32,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 33,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "final_digest_is_solved": true,
+   "final_labels_identity": true,
+   "late_seconds": 1000.3,
+   "w9": false,
+   "restored_to_identity": true,
+   "factors": 186633,
+   "retained_length": 222690068,
+   "length_matches_restorer": true
+  },
+  {
+   "input": "table:<scratch>/pkg30/Claude-E-three-block-family-20261012/runs/I2/end-table.json",
+   "status_claimed": "restored",
+   "start_matches_restorer": true,
+   "T_digest_matches": true,
+   "retained_part_reaches_T": true,
+   "correction_twists": 21888,
+   "corrections_replayed": [
+    {
+     "macro": 5,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 13,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 18,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 21,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 22,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 23,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": false
+    },
+    {
+     "macro": 28,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 29,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 31,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 32,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 33,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "final_digest_is_solved": true,
+   "final_labels_identity": true,
+   "late_seconds": 1065.6,
+   "w9": false,
+   "restored_to_identity": true,
+   "factors": 187732,
+   "retained_length": 224683850,
+   "length_matches_restorer": true
+  }
+ ],
+ "chain_end_digest": null,
+ "pass": true,
+ "seconds": 3054.5
+}

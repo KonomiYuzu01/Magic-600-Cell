@@ -1,0 +1,759 @@
+{
+ "table": "<work>/v17work/unlock-tables-d16/prefix-38550.json",
+ "word": "<work>/v11zip/construction/e2-to-lattice-word.json",
+ "start": 38550,
+ "U_length": 2907,
+ "digest_file": "c280ae5f1e379ae92f300abeff7b81d1de7cf318160d989de239c04483097ff0",
+ "digest_sim": "c280ae5f1e379ae92f300abeff7b81d1de7cf318160d989de239c04483097ff0",
+ "off_geometric": [
+  16245,
+  16249,
+  32088
+ ],
+ "holes_geometric": [
+  41195,
+  52577,
+  55055
+ ],
+ "lattice_flag_equals_simulator": true,
+ "ghost_bad_all_chambers": [
+  41195,
+  52577,
+  55055
+ ],
+ "ghost_bad_equals_holes": true,
+ "ghost_good_end_chambers_distinct": true,
+ "ghost_good_count": 177117,
+ "ghost_seconds": 20.8,
+ "track_seconds": 4.1,
+ "tracked_chambers_agree_with_ghost": "43/43",
+ "tracked_off_pieces_end_on_K": [
+  true,
+  true,
+  true
+ ],
+ "tracked_holes": [
+  {
+   "kind": "chamber",
+   "id": 41195,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "moves": 943,
+   "exact_calls": 1181,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 52577,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "moves": 940,
+   "exact_calls": 1173,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 55055,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "moves": 939,
+   "exact_calls": 1174,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null
+   },
+   "agree": true
+  }
+ ],
+ "tracked_pieces": [
+  {
+   "kind": "piece",
+   "id": 16245,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 80183,
+   "moves": 1659,
+   "exact_calls": 2253
+  },
+  {
+   "kind": "piece",
+   "id": 16249,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 57264,
+   "moves": 1658,
+   "exact_calls": 1890
+  },
+  {
+   "kind": "piece",
+   "id": 32088,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 92747,
+   "moves": 1659,
+   "exact_calls": 2253
+  }
+ ],
+ "tracked_sample": [
+  {
+   "kind": "chamber",
+   "id": 4507,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 44120,
+   "moves": 292,
+   "exact_calls": 1589,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 44120
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 7895,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 49370,
+   "moves": 1,
+   "exact_calls": 1,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 49370
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 20385,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 20385,
+   "moves": 2,
+   "exact_calls": 2,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 20385
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 22035,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 48835,
+   "moves": 1,
+   "exact_calls": 1,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 48835
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 22071,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 52647,
+   "moves": 1,
+   "exact_calls": 1,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 52647
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 25255,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 54882,
+   "moves": 5,
+   "exact_calls": 5,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 54882
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 27040,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 21026,
+   "moves": 1,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 21026
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 27619,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 22009,
+   "moves": 1,
+   "exact_calls": 1,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 22009
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 28357,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 47715,
+   "moves": 1937,
+   "exact_calls": 2033,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 47715
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 30904,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 22420,
+   "moves": 1,
+   "exact_calls": 1,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 22420
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 31406,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 31406,
+   "moves": 2,
+   "exact_calls": 2,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 31406
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 32875,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 32875,
+   "moves": 2,
+   "exact_calls": 2,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 32875
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 36734,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 36734,
+   "moves": 2080,
+   "exact_calls": 2208,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 36734
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 38877,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 82459,
+   "moves": 4,
+   "exact_calls": 5,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 82459
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 45363,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 45363,
+   "moves": 2,
+   "exact_calls": 2,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 45363
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 54790,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 54790,
+   "moves": 2,
+   "exact_calls": 2,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 54790
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 55728,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 33207,
+   "moves": 1442,
+   "exact_calls": 1803,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 33207
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 55966,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 116258,
+   "moves": 3,
+   "exact_calls": 8,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 116258
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 62346,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 59802,
+   "moves": 6,
+   "exact_calls": 7,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 59802
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 65997,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 59712,
+   "moves": 3,
+   "exact_calls": 3,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 59712
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 70398,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 37415,
+   "moves": 1,
+   "exact_calls": 1,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 37415
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 73350,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 73350,
+   "moves": 864,
+   "exact_calls": 866,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 73350
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 75474,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 75474,
+   "moves": 864,
+   "exact_calls": 864,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 75474
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 84393,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 50396,
+   "moves": 1,
+   "exact_calls": 1,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 50396
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 84883,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 84883,
+   "moves": 4,
+   "exact_calls": 4,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 84883
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 87003,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 84793,
+   "moves": 290,
+   "exact_calls": 866,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 84793
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 92684,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 92684,
+   "moves": 4,
+   "exact_calls": 2020,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 92684
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 95045,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 95045,
+   "moves": 2,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 95045
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 96997,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 23394,
+   "moves": 721,
+   "exact_calls": 722,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 23394
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 118472,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 103746,
+   "moves": 1,
+   "exact_calls": 1,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 103746
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 120487,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 120487,
+   "moves": 4,
+   "exact_calls": 4,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 120487
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 124436,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 124436,
+   "moves": 2,
+   "exact_calls": 4,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 124436
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 125227,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 121988,
+   "moves": 3,
+   "exact_calls": 5,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 121988
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 126499,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 126499,
+   "moves": 4,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 126499
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 126977,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 126977,
+   "moves": 576,
+   "exact_calls": 578,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 126977
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 130893,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 32623,
+   "moves": 1,
+   "exact_calls": 1,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 32623
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 136578,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 136578,
+   "moves": 866,
+   "exact_calls": 866,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 136578
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 148357,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 148357,
+   "moves": 4,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 148357
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 156445,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 138139,
+   "moves": 2,
+   "exact_calls": 2,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 138139
+   },
+   "agree": true
+  },
+  {
+   "kind": "chamber",
+   "id": 162100,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 162100,
+   "moves": 4,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 162100
+   },
+   "agree": true
+  }
+ ]
+}

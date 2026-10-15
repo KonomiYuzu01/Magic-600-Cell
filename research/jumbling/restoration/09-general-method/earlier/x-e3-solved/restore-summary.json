@@ -1,0 +1,679 @@
+{
+ "cascade_order": [
+  6,
+  0,
+  17,
+  15,
+  2,
+  22,
+  21,
+  8,
+  23,
+  9,
+  29,
+  25,
+  13,
+  11,
+  10,
+  34,
+  28,
+  26,
+  24,
+  16,
+  14,
+  12,
+  3,
+  33,
+  32,
+  31,
+  30,
+  27,
+  20,
+  19,
+  18,
+  7,
+  5,
+  4,
+  1
+ ],
+ "nu_w9": {
+  "8": [
+   1,
+   0
+  ],
+  "25": [
+   1,
+   0
+  ]
+ },
+ "library": {
+  "sha256": "8a13eb6c4f4359ce4dd58a0018cf86eed3089111e11f20b7c00476f6393a661a",
+  "macros": 36,
+  "rank2": 34,
+  "rank5": 2
+ },
+ "runs": [
+  {
+   "input": "table:<scratch>/pkg28/Claude-E-closure-E2E3-20261012/D3/E3-table.json",
+   "input_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+   "input_labels_sha256": "a587d49950e54cfd039c9567aac1a5655cfc21cf712b79fcf18fe39e56f45dd0",
+   "nu_input": {
+    "9": [
+     1,
+     0
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "11": [
+     1,
+     0
+    ],
+    "13": [
+     1,
+     0
+    ],
+    "14": [
+     1,
+     0
+    ],
+    "15": [
+     1,
+     0
+    ],
+    "17": [
+     0,
+     2
+    ],
+    "20": [
+     1,
+     0
+    ],
+    "22": [
+     0,
+     1
+    ],
+    "25": [
+     1,
+     1
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "30": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ],
+    "32": [
+     0,
+     1
+    ],
+    "33": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 175041,
+   "corrections": [
+    {
+     "macro": 5,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 13,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 18,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 21,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 22,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 23,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": false
+    },
+    {
+     "macro": 28,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 29,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 31,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 32,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 33,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "order": "retained-first",
+   "correction_twists": 21888,
+   "T_digest": "b3f7a0761a4eb810831991c0d4e01693a54e0331bf0ac8ff489aaea4ab410b0b",
+   "T_seconds": 487.2,
+   "w9": false,
+   "C_seconds": 501.8,
+   "final_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "status": "restored",
+   "factors": 186687,
+   "factors_per_orbit": {
+    "6": 1354,
+    "0": 1408,
+    "17": 2592,
+    "15": 2395,
+    "2": 2345,
+    "22": 5417,
+    "21": 7201,
+    "8": 5356,
+    "23": 7205,
+    "9": 7135,
+    "29": 2405,
+    "25": 5374,
+    "13": 7185,
+    "11": 5373,
+    "10": 6355,
+    "34": 244,
+    "28": 2607,
+    "26": 7201,
+    "24": 7203,
+    "16": 7039,
+    "14": 6527,
+    "12": 6953,
+    "3": 5239,
+    "33": 2405,
+    "32": 5419,
+    "31": 7207,
+    "30": 7205,
+    "27": 7203,
+    "20": 7201,
+    "19": 7203,
+    "18": 7159,
+    "7": 6433,
+    "5": 6927,
+    "4": 6865,
+    "1": 3347
+   },
+   "retained_length": 223378194,
+   "new_nodes": 359689,
+   "seconds": 1003.0
+  },
+  {
+   "input": "table:<scratch>/pkg30/Claude-E-three-block-family-20261012/runs/I1/end-table.json",
+   "input_digest": "d4c74f8e1d4d2b056e6e4c1e9e6b796b93aa872f76c92956f98eccb068e251e4",
+   "input_labels_sha256": "d5091d0be370c5a9c280c6f176450108e68faf4da0946029590cc536c11a5ee4",
+   "nu_input": {
+    "9": [
+     1,
+     0
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "11": [
+     1,
+     1
+    ],
+    "13": [
+     1,
+     0
+    ],
+    "14": [
+     1,
+     0
+    ],
+    "15": [
+     1,
+     0
+    ],
+    "17": [
+     0,
+     2
+    ],
+    "20": [
+     1,
+     0
+    ],
+    "22": [
+     0,
+     1
+    ],
+    "25": [
+     1,
+     1
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "30": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ],
+    "32": [
+     0,
+     1
+    ],
+    "33": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 175175,
+   "corrections": [
+    {
+     "macro": 5,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 13,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 18,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 21,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 23,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": false
+    },
+    {
+     "macro": 28,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 29,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 31,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 32,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 33,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "order": "retained-first",
+   "correction_twists": 21660,
+   "T_digest": "c25a5134b1b953ec6826edc096ebddce671ae1c3621e36cb410875f7cd5f2866",
+   "T_seconds": 497.8,
+   "w9": false,
+   "C_seconds": 485.1,
+   "final_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "status": "restored",
+   "factors": 186633,
+   "factors_per_orbit": {
+    "6": 1360,
+    "0": 1410,
+    "17": 2581,
+    "15": 2395,
+    "2": 2343,
+    "22": 5440,
+    "21": 7199,
+    "8": 5311,
+    "23": 7205,
+    "9": 7117,
+    "29": 2401,
+    "25": 5412,
+    "13": 7187,
+    "11": 5331,
+    "10": 6385,
+    "34": 237,
+    "28": 2576,
+    "26": 7201,
+    "24": 7207,
+    "16": 7037,
+    "14": 6555,
+    "12": 6965,
+    "3": 5270,
+    "33": 2407,
+    "32": 5415,
+    "31": 7205,
+    "30": 7203,
+    "27": 7205,
+    "20": 7195,
+    "19": 7203,
+    "18": 7161,
+    "7": 6393,
+    "5": 6913,
+    "4": 6869,
+    "1": 3339
+   },
+   "retained_length": 222690068,
+   "new_nodes": 19645,
+   "seconds": 987.2
+  },
+  {
+   "input": "table:<scratch>/pkg30/Claude-E-three-block-family-20261012/runs/I2/end-table.json",
+   "input_digest": "67bafbc07bece94c3909c8996f6ac76494ea7258cd46c668d95c1ab643d1a1a8",
+   "input_labels_sha256": "bffd87994913f3a3ee8c81cdbce79516386fa10c3ab8bd0500f560ecfc886e05",
+   "nu_input": {
+    "9": [
+     1,
+     0
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "11": [
+     1,
+     0
+    ],
+    "13": [
+     1,
+     0
+    ],
+    "14": [
+     1,
+     0
+    ],
+    "15": [
+     1,
+     0
+    ],
+    "17": [
+     0,
+     2
+    ],
+    "20": [
+     1,
+     0
+    ],
+    "22": [
+     0,
+     1
+    ],
+    "25": [
+     1,
+     1
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "30": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ],
+    "32": [
+     0,
+     1
+    ],
+    "33": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 175399,
+   "corrections": [
+    {
+     "macro": 5,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 13,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 18,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 21,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 22,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 23,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": false
+    },
+    {
+     "macro": 28,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 29,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 31,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 32,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 33,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "order": "retained-first",
+   "correction_twists": 21888,
+   "T_digest": "b3f7a0761a4eb810831991c0d4e01693a54e0331bf0ac8ff489aaea4ab410b0b",
+   "T_seconds": 509.3,
+   "w9": false,
+   "C_seconds": 499.7,
+   "final_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "status": "restored",
+   "factors": 187732,
+   "factors_per_orbit": {
+    "6": 1341,
+    "0": 1430,
+    "17": 2586,
+    "15": 2403,
+    "2": 2353,
+    "22": 5470,
+    "21": 7201,
+    "8": 5365,
+    "23": 7205,
+    "9": 7153,
+    "29": 2405,
+    "25": 5435,
+    "13": 7189,
+    "11": 5420,
+    "10": 6559,
+    "34": 240,
+    "28": 2590,
+    "26": 7203,
+    "24": 7207,
+    "16": 7085,
+    "14": 6675,
+    "12": 7055,
+    "3": 5298,
+    "33": 2405,
+    "32": 5395,
+    "31": 7203,
+    "30": 7207,
+    "27": 7207,
+    "20": 7199,
+    "19": 7201,
+    "18": 7179,
+    "7": 6577,
+    "5": 6971,
+    "4": 6935,
+    "1": 3385
+   },
+   "retained_length": 224683850,
+   "new_nodes": 17410,
+   "seconds": 1013.1
+  }
+ ]
+}

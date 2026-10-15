@@ -1,0 +1,5435 @@
+{
+ "table": "<work>/v26/E2/c0/E1-table.json",
+ "word": "<work>/v26/E2/c0/word-full.json",
+ "slice": [
+  0,
+  1210
+ ],
+ "twists": 1210,
+ "contents": 280,
+ "chambers": 190,
+ "pieces": 90,
+ "convention_mismatches": 0,
+ "agree": {
+  "alive": 280,
+  "on_K": 280,
+  "end_chamber": 280,
+  "died_at": 280
+ },
+ "disagreements": [],
+ "disagreement_count": 0,
+ "mine_bad_chambers": [
+  28267,
+  28277,
+  28278,
+  28284,
+  28285,
+  28286,
+  31758,
+  31759,
+  31763,
+  36748,
+  36749,
+  36750,
+  37029,
+  42950,
+  42951,
+  42967,
+  42968,
+  42970,
+  42971,
+  42972,
+  44018,
+  44020,
+  47821,
+  47822,
+  50112,
+  50114,
+  50116,
+  54159,
+  56126,
+  56130,
+  57259,
+  61361,
+  67972,
+  69946,
+  70029,
+  70034,
+  70035,
+  70037,
+  71869,
+  71870,
+  71883,
+  71885,
+  73306,
+  73307,
+  73309,
+  77192,
+  77194,
+  77195,
+  79014,
+  79015,
+  84160,
+  90996,
+  92480,
+  97632,
+  97991,
+  102873,
+  104998,
+  110673,
+  110674,
+  110675,
+  114540,
+  114541,
+  115615,
+  117211,
+  117213,
+  117215,
+  117216,
+  117219,
+  121458,
+  128738,
+  128747,
+  130428,
+  132816,
+  133900,
+  140302,
+  141082,
+  146447,
+  148897,
+  152512,
+  159389,
+  159391,
+  165226,
+  169946,
+  170187,
+  175908,
+  175910,
+  175911
+ ],
+ "mine_seconds": 8.7,
+ "ghost_seconds": 11.6,
+ "rows": [
+  {
+   "kind": "chamber",
+   "id": 24905,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 24905,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 3,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 24905,
+    "died_at": -1,
+    "domain": 0,
+    "q": 24905
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 28267,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 189,
+   "exact_calls": 247,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19610
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 28277,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 202,
+   "exact_calls": 244,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 75473
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 28278,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 160,
+   "exact_calls": 179,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 18527
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 28284,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 97,
+   "exact_calls": 122,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 71930
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 28285,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 215,
+   "exact_calls": 227,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 58600
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 28286,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 226,
+   "exact_calls": 235,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 18530
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 31758,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 184,
+   "exact_calls": 225,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 52105
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 31759,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 214,
+   "exact_calls": 225,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 58598
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 31763,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 214,
+   "exact_calls": 225,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 85278
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 36748,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 195,
+   "exact_calls": 220,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 75471
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 36749,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 141,
+   "exact_calls": 177,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 42364
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 36750,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 233,
+   "exact_calls": 241,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 29221
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 37029,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 71,
+   "exact_calls": 124,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 42344
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 42950,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 195,
+   "exact_calls": 250,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19616
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 42951,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 159,
+   "exact_calls": 193,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19622
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 42967,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 188,
+   "exact_calls": 233,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 35863
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 42968,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 210,
+   "exact_calls": 230,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 52106
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 42970,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 222,
+   "exact_calls": 230,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 6,
+    "q": 28383
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 42971,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 197,
+   "exact_calls": 232,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19621
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 42972,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 199,
+   "exact_calls": 230,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 35868
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 44018,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 227,
+   "exact_calls": 265,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 55640
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 44020,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 239,
+   "exact_calls": 267,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 24011
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 47821,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 147,
+   "exact_calls": 192,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 75468
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 47822,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 147,
+   "exact_calls": 192,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 52098
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 50112,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 201,
+   "exact_calls": 244,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19619
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 50114,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 230,
+   "exact_calls": 244,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 24010
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 50116,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 203,
+   "exact_calls": 226,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 71934
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 54159,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 88,
+   "exact_calls": 115,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 42359
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 56126,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 207,
+   "exact_calls": 224,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 75472
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 56130,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 216,
+   "exact_calls": 238,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 47908
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 57259,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 220,
+   "exact_calls": 232,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 75474
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 61361,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 228,
+   "exact_calls": 252,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 55636
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 67972,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 236,
+   "exact_calls": 267,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 55637
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 69946,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 234,
+   "exact_calls": 251,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 55641
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 70029,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 71,
+   "exact_calls": 172,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 47901
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 70034,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 225,
+   "exact_calls": 267,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 55634
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 70035,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 225,
+   "exact_calls": 264,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 55639
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 70037,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 235,
+   "exact_calls": 273,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 6,
+    "q": 11047
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 71869,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 226,
+   "exact_calls": 248,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 6,
+    "q": 11039
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 71870,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 106,
+   "exact_calls": 178,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 31665
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 71883,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 111,
+   "exact_calls": 176,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 47907
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 71885,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 220,
+   "exact_calls": 235,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 52108
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 73306,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 162,
+   "exact_calls": 184,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19623
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 73307,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 126,
+   "exact_calls": 178,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 31667
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 73309,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 167,
+   "exact_calls": 177,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19625
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 77192,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 200,
+   "exact_calls": 237,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 75464
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 77194,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 185,
+   "exact_calls": 200,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19624
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 77195,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 234,
+   "exact_calls": 243,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 42365
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 79014,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 203,
+   "exact_calls": 229,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 85277
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 79015,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 98,
+   "exact_calls": 116,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 31668
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 84160,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 206,
+   "exact_calls": 241,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 35864
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 89251,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 89251,
+   "h_identity": true,
+   "moves": 0,
+   "exact_calls": 0,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 89251,
+    "died_at": -1,
+    "domain": 0,
+    "q": 89251
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 89252,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 89252,
+   "h_identity": true,
+   "moves": 0,
+   "exact_calls": 0,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 89252,
+    "died_at": -1,
+    "domain": 0,
+    "q": 89252
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 90996,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 126,
+   "exact_calls": 155,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 75463
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 92480,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 138,
+   "exact_calls": 154,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19620
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 97632,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 39,
+   "exact_calls": 94,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 47895
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 97991,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 40,
+   "exact_calls": 104,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 47894
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 102873,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 52,
+   "exact_calls": 60,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 71912
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 104998,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 27,
+   "exact_calls": 28,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 18529
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 110673,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 223,
+   "exact_calls": 241,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 29208
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 110674,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 231,
+   "exact_calls": 244,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 29217
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 110675,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 234,
+   "exact_calls": 242,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 29219
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 114540,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 35,
+   "exact_calls": 52,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19614
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 114541,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 35,
+   "exact_calls": 52,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 18499
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 115615,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 52,
+   "exact_calls": 57,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 71933
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 117211,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 200,
+   "exact_calls": 268,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19609
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 117213,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 223,
+   "exact_calls": 247,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 55630
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 117215,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 204,
+   "exact_calls": 252,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 19618
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 117216,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 169,
+   "exact_calls": 264,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 18520
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 117219,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 219,
+   "exact_calls": 252,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 73532
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 121458,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 164,
+   "exact_calls": 172,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 24009
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 128738,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 213,
+   "exact_calls": 221,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 6,
+    "q": 11040
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 128747,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 104,
+   "exact_calls": 152,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 31666
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 130428,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 66,
+   "exact_calls": 101,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 47905
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 132816,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 76,
+   "exact_calls": 94,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 75470
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 133900,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 52,
+   "exact_calls": 57,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 71928
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 140302,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 55,
+   "exact_calls": 74,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 47906
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 141082,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 56,
+   "exact_calls": 67,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 75461
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 146447,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 130,
+   "exact_calls": 160,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 75469
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 148897,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 45,
+   "exact_calls": 48,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 42361
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 152512,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 56,
+   "exact_calls": 60,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 58306
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 159389,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 48,
+   "exact_calls": 59,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 18522
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 159391,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 64,
+   "exact_calls": 66,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 73536
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 165226,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 37,
+   "exact_calls": 42,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 58305
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 169946,
+   "alive": false,
+   "died_at": 782,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 40,
+   "exact_calls": 49,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 782,
+    "domain": 5,
+    "q": 55638
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 170187,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 48,
+   "exact_calls": 54,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 6,
+    "q": 11044
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 175908,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 59,
+   "exact_calls": 137,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 47899
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 175910,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 59,
+   "exact_calls": 132,
+   "ghost": {
+    "alive": false,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": 1100,
+    "domain": 8,
+    "q": 47903
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 175911,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": false,
+   "moves": 69,
+   "exact_calls": 127,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 8,
+    "q": 47904
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 3212,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 3212,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 5,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 3212,
+    "died_at": -1,
+    "domain": 0,
+    "q": 3212
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 3682,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 3682,
+   "h_identity": true,
+   "moves": 56,
+   "exact_calls": 112,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 3682,
+    "died_at": -1,
+    "domain": 0,
+    "q": 3682
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 4782,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 4782,
+   "h_identity": true,
+   "moves": 102,
+   "exact_calls": 266,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 4782,
+    "died_at": -1,
+    "domain": 0,
+    "q": 4782
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 4807,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 4807,
+   "h_identity": true,
+   "moves": 128,
+   "exact_calls": 207,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 4807,
+    "died_at": -1,
+    "domain": 0,
+    "q": 4807
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 7592,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 7592,
+   "h_identity": true,
+   "moves": 32,
+   "exact_calls": 91,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 7592,
+    "died_at": -1,
+    "domain": 0,
+    "q": 7592
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 11862,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 11862,
+   "h_identity": true,
+   "moves": 14,
+   "exact_calls": 98,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 11862,
+    "died_at": -1,
+    "domain": 0,
+    "q": 11862
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 12745,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 12745,
+   "h_identity": true,
+   "moves": 36,
+   "exact_calls": 98,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 12745,
+    "died_at": -1,
+    "domain": 0,
+    "q": 12745
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 18977,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 18977,
+   "h_identity": true,
+   "moves": 108,
+   "exact_calls": 132,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 18977,
+    "died_at": -1,
+    "domain": 0,
+    "q": 18977
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 22537,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 22537,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 3,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 22537,
+    "died_at": -1,
+    "domain": 0,
+    "q": 22537
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 22965,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 22965,
+   "h_identity": true,
+   "moves": 14,
+   "exact_calls": 146,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 22965,
+    "died_at": -1,
+    "domain": 0,
+    "q": 22965
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 23398,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 23398,
+   "h_identity": true,
+   "moves": 160,
+   "exact_calls": 248,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 23398,
+    "died_at": -1,
+    "domain": 0,
+    "q": 23398
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 23610,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 23610,
+   "h_identity": true,
+   "moves": 40,
+   "exact_calls": 88,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 23610,
+    "died_at": -1,
+    "domain": 0,
+    "q": 23610
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 24025,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 24025,
+   "h_identity": true,
+   "moves": 186,
+   "exact_calls": 296,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 24025,
+    "died_at": -1,
+    "domain": 0,
+    "q": 24025
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 24639,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 24639,
+   "h_identity": true,
+   "moves": 56,
+   "exact_calls": 104,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 24639,
+    "died_at": -1,
+    "domain": 0,
+    "q": 24639
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 25234,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 25234,
+   "h_identity": true,
+   "moves": 14,
+   "exact_calls": 41,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 25234,
+    "died_at": -1,
+    "domain": 0,
+    "q": 25234
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 25331,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 25331,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 25331,
+    "died_at": -1,
+    "domain": 0,
+    "q": 25331
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 25937,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 25937,
+   "h_identity": true,
+   "moves": 44,
+   "exact_calls": 71,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 25937,
+    "died_at": -1,
+    "domain": 0,
+    "q": 25937
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 30986,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 30986,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 7,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 30986,
+    "died_at": -1,
+    "domain": 0,
+    "q": 30986
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 32459,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 32459,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 32459,
+    "died_at": -1,
+    "domain": 0,
+    "q": 32459
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 33772,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 33772,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 49,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 33772,
+    "died_at": -1,
+    "domain": 0,
+    "q": 33772
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 34512,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 34512,
+   "h_identity": true,
+   "moves": 102,
+   "exact_calls": 162,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 34512,
+    "died_at": -1,
+    "domain": 0,
+    "q": 34512
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 36561,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 36561,
+   "h_identity": true,
+   "moves": 94,
+   "exact_calls": 228,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 36561,
+    "died_at": -1,
+    "domain": 0,
+    "q": 36561
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 36784,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 36784,
+   "h_identity": true,
+   "moves": 90,
+   "exact_calls": 234,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 36784,
+    "died_at": -1,
+    "domain": 0,
+    "q": 36784
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 39147,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 39147,
+   "h_identity": true,
+   "moves": 80,
+   "exact_calls": 117,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 39147,
+    "died_at": -1,
+    "domain": 0,
+    "q": 39147
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 40734,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 40734,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 24,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 40734,
+    "died_at": -1,
+    "domain": 0,
+    "q": 40734
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 45416,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 45416,
+   "h_identity": true,
+   "moves": 8,
+   "exact_calls": 14,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 45416,
+    "died_at": -1,
+    "domain": 0,
+    "q": 45416
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 47295,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 47295,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 4,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 47295,
+    "died_at": -1,
+    "domain": 0,
+    "q": 47295
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 48240,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 48240,
+   "h_identity": true,
+   "moves": 144,
+   "exact_calls": 158,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 48240,
+    "died_at": -1,
+    "domain": 0,
+    "q": 48240
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 48307,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 48307,
+   "h_identity": true,
+   "moves": 78,
+   "exact_calls": 123,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 48307,
+    "died_at": -1,
+    "domain": 0,
+    "q": 48307
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 52204,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 52204,
+   "h_identity": true,
+   "moves": 18,
+   "exact_calls": 39,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 52204,
+    "died_at": -1,
+    "domain": 0,
+    "q": 52204
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 52828,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 52828,
+   "h_identity": true,
+   "moves": 6,
+   "exact_calls": 45,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 52828,
+    "died_at": -1,
+    "domain": 0,
+    "q": 52828
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 52846,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 52846,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 17,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 52846,
+    "died_at": -1,
+    "domain": 0,
+    "q": 52846
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 54051,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 54051,
+   "h_identity": true,
+   "moves": 6,
+   "exact_calls": 9,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 54051,
+    "died_at": -1,
+    "domain": 0,
+    "q": 54051
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 54429,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 54429,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 54429,
+    "died_at": -1,
+    "domain": 0,
+    "q": 54429
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 54538,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 54538,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 20,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 54538,
+    "died_at": -1,
+    "domain": 0,
+    "q": 54538
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 54831,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 54831,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 15,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 54831,
+    "died_at": -1,
+    "domain": 0,
+    "q": 54831
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 54862,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 54862,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 11,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 54862,
+    "died_at": -1,
+    "domain": 0,
+    "q": 54862
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 56168,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 56168,
+   "h_identity": true,
+   "moves": 44,
+   "exact_calls": 135,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 56168,
+    "died_at": -1,
+    "domain": 0,
+    "q": 56168
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 57911,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 57911,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 11,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 57911,
+    "died_at": -1,
+    "domain": 0,
+    "q": 57911
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 60287,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 60287,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 14,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 60287,
+    "died_at": -1,
+    "domain": 0,
+    "q": 60287
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 61475,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 61475,
+   "h_identity": true,
+   "moves": 30,
+   "exact_calls": 52,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 61475,
+    "died_at": -1,
+    "domain": 0,
+    "q": 61475
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 63801,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 63801,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 3,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 63801,
+    "died_at": -1,
+    "domain": 0,
+    "q": 63801
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 65053,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 65053,
+   "h_identity": true,
+   "moves": 20,
+   "exact_calls": 86,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 65053,
+    "died_at": -1,
+    "domain": 0,
+    "q": 65053
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 66201,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 66201,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 14,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 66201,
+    "died_at": -1,
+    "domain": 0,
+    "q": 66201
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 68844,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 68844,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 8,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 68844,
+    "died_at": -1,
+    "domain": 0,
+    "q": 68844
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 68999,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 68999,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 9,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 68999,
+    "died_at": -1,
+    "domain": 0,
+    "q": 68999
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 69016,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 69016,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 12,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 69016,
+    "died_at": -1,
+    "domain": 0,
+    "q": 69016
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 70330,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 70330,
+   "h_identity": true,
+   "moves": 138,
+   "exact_calls": 160,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 70330,
+    "died_at": -1,
+    "domain": 0,
+    "q": 70330
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 70665,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 70665,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 3,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 70665,
+    "died_at": -1,
+    "domain": 0,
+    "q": 70665
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 71777,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 71777,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 7,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 71777,
+    "died_at": -1,
+    "domain": 0,
+    "q": 71777
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 71829,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 71829,
+   "h_identity": true,
+   "moves": 32,
+   "exact_calls": 101,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 71829,
+    "died_at": -1,
+    "domain": 0,
+    "q": 71829
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 72290,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 72290,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 4,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 72290,
+    "died_at": -1,
+    "domain": 0,
+    "q": 72290
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 76410,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 76410,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 5,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 76410,
+    "died_at": -1,
+    "domain": 0,
+    "q": 76410
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 77142,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 77142,
+   "h_identity": true,
+   "moves": 112,
+   "exact_calls": 300,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 77142,
+    "died_at": -1,
+    "domain": 0,
+    "q": 77142
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 78498,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 78498,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 7,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 78498,
+    "died_at": -1,
+    "domain": 0,
+    "q": 78498
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 78879,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 78879,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 11,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 78879,
+    "died_at": -1,
+    "domain": 0,
+    "q": 78879
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 79058,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 79058,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 8,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 79058,
+    "died_at": -1,
+    "domain": 0,
+    "q": 79058
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 80164,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 80164,
+   "h_identity": true,
+   "moves": 44,
+   "exact_calls": 61,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 80164,
+    "died_at": -1,
+    "domain": 0,
+    "q": 80164
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 80308,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 80308,
+   "h_identity": true,
+   "moves": 66,
+   "exact_calls": 96,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 80308,
+    "died_at": -1,
+    "domain": 0,
+    "q": 80308
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 80316,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 80316,
+   "h_identity": true,
+   "moves": 22,
+   "exact_calls": 32,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 80316,
+    "died_at": -1,
+    "domain": 0,
+    "q": 80316
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 81267,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 81267,
+   "h_identity": true,
+   "moves": 16,
+   "exact_calls": 122,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 81267,
+    "died_at": -1,
+    "domain": 0,
+    "q": 81267
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 81635,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 81635,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 9,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 81635,
+    "died_at": -1,
+    "domain": 0,
+    "q": 81635
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 83426,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 83426,
+   "h_identity": true,
+   "moves": 6,
+   "exact_calls": 9,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 83426,
+    "died_at": -1,
+    "domain": 0,
+    "q": 83426
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 83477,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 83477,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 3,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 83477,
+    "died_at": -1,
+    "domain": 0,
+    "q": 83477
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 84153,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 84153,
+   "h_identity": true,
+   "moves": 70,
+   "exact_calls": 131,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 84153,
+    "died_at": -1,
+    "domain": 0,
+    "q": 84153
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 86930,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 86930,
+   "h_identity": true,
+   "moves": 38,
+   "exact_calls": 86,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 86930,
+    "died_at": -1,
+    "domain": 0,
+    "q": 86930
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 89551,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 89551,
+   "h_identity": true,
+   "moves": 8,
+   "exact_calls": 14,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 89551,
+    "died_at": -1,
+    "domain": 0,
+    "q": 89551
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 89881,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 89881,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 7,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 89881,
+    "died_at": -1,
+    "domain": 0,
+    "q": 89881
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 89963,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 89963,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 9,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 89963,
+    "died_at": -1,
+    "domain": 0,
+    "q": 89963
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 92125,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 92125,
+   "h_identity": true,
+   "moves": 58,
+   "exact_calls": 80,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 92125,
+    "died_at": -1,
+    "domain": 0,
+    "q": 92125
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 94876,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 94876,
+   "h_identity": true,
+   "moves": 26,
+   "exact_calls": 91,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 94876,
+    "died_at": -1,
+    "domain": 0,
+    "q": 94876
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 97223,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 97223,
+   "h_identity": true,
+   "moves": 16,
+   "exact_calls": 86,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 97223,
+    "died_at": -1,
+    "domain": 0,
+    "q": 97223
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 99296,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 99296,
+   "h_identity": true,
+   "moves": 22,
+   "exact_calls": 33,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 99296,
+    "died_at": -1,
+    "domain": 0,
+    "q": 99296
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 99416,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 99416,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 7,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 99416,
+    "died_at": -1,
+    "domain": 0,
+    "q": 99416
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 105985,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 105985,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 105985,
+    "died_at": -1,
+    "domain": 0,
+    "q": 105985
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 108511,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 108511,
+   "h_identity": true,
+   "moves": 78,
+   "exact_calls": 501,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 108511,
+    "died_at": -1,
+    "domain": 0,
+    "q": 108511
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 109748,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 109748,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 10,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 109748,
+    "died_at": -1,
+    "domain": 0,
+    "q": 109748
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 110514,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 110514,
+   "h_identity": true,
+   "moves": 22,
+   "exact_calls": 74,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 110514,
+    "died_at": -1,
+    "domain": 0,
+    "q": 110514
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 112034,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 112034,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 14,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 112034,
+    "died_at": -1,
+    "domain": 0,
+    "q": 112034
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 113074,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 113074,
+   "h_identity": true,
+   "moves": 6,
+   "exact_calls": 10,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 113074,
+    "died_at": -1,
+    "domain": 0,
+    "q": 113074
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 114491,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 114491,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 7,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 114491,
+    "died_at": -1,
+    "domain": 0,
+    "q": 114491
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 119367,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 119367,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 3,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 119367,
+    "died_at": -1,
+    "domain": 0,
+    "q": 119367
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 124517,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 124517,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 3,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 124517,
+    "died_at": -1,
+    "domain": 0,
+    "q": 124517
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 125793,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 125793,
+   "h_identity": true,
+   "moves": 8,
+   "exact_calls": 11,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 125793,
+    "died_at": -1,
+    "domain": 0,
+    "q": 125793
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 125893,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 125893,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 125893,
+    "died_at": -1,
+    "domain": 0,
+    "q": 125893
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 126174,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 126174,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 10,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 126174,
+    "died_at": -1,
+    "domain": 0,
+    "q": 126174
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 128305,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 128305,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 10,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 128305,
+    "died_at": -1,
+    "domain": 0,
+    "q": 128305
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 128850,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 128850,
+   "h_identity": true,
+   "moves": 138,
+   "exact_calls": 203,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 128850,
+    "died_at": -1,
+    "domain": 0,
+    "q": 128850
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 130411,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 130411,
+   "h_identity": true,
+   "moves": 36,
+   "exact_calls": 55,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 130411,
+    "died_at": -1,
+    "domain": 0,
+    "q": 130411
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 134609,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 134609,
+   "h_identity": true,
+   "moves": 24,
+   "exact_calls": 149,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 134609,
+    "died_at": -1,
+    "domain": 0,
+    "q": 134609
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 137248,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 137248,
+   "h_identity": true,
+   "moves": 44,
+   "exact_calls": 64,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 137248,
+    "died_at": -1,
+    "domain": 0,
+    "q": 137248
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 143830,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 143830,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 5,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 143830,
+    "died_at": -1,
+    "domain": 0,
+    "q": 143830
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 145400,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 145400,
+   "h_identity": true,
+   "moves": 20,
+   "exact_calls": 23,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 145400,
+    "died_at": -1,
+    "domain": 0,
+    "q": 145400
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 145512,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 145512,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 6,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 145512,
+    "died_at": -1,
+    "domain": 0,
+    "q": 145512
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 148688,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 148688,
+   "h_identity": true,
+   "moves": 4,
+   "exact_calls": 8,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 148688,
+    "died_at": -1,
+    "domain": 0,
+    "q": 148688
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 150355,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 150355,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 3,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 150355,
+    "died_at": -1,
+    "domain": 0,
+    "q": 150355
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 154956,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 154956,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 10,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 154956,
+    "died_at": -1,
+    "domain": 0,
+    "q": 154956
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 162097,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 162097,
+   "h_identity": true,
+   "moves": 40,
+   "exact_calls": 45,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 162097,
+    "died_at": -1,
+    "domain": 0,
+    "q": 162097
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 163918,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 163918,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 5,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 163918,
+    "died_at": -1,
+    "domain": 0,
+    "q": 163918
+   }
+  },
+  {
+   "kind": "chamber",
+   "id": 164021,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 164021,
+   "h_identity": true,
+   "moves": 2,
+   "exact_calls": 5,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 164021,
+    "died_at": -1,
+    "domain": 0,
+    "q": 164021
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 3569,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 133900,
+   "h_identity": false,
+   "moves": 48,
+   "exact_calls": 52,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 133900,
+    "died_at": -1,
+    "domain": 0,
+    "q": 133900
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 3784,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 79014,
+   "h_identity": false,
+   "moves": 203,
+   "exact_calls": 220,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 79014,
+    "died_at": -1,
+    "domain": 0,
+    "q": 79014
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 7821,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 71870,
+   "h_identity": false,
+   "moves": 102,
+   "exact_calls": 165,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 71870,
+    "died_at": -1,
+    "domain": 0,
+    "q": 71870
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 10394,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 50114,
+   "h_identity": false,
+   "moves": 222,
+   "exact_calls": 229,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 50114,
+    "died_at": -1,
+    "domain": 0,
+    "q": 50114
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 11273,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 44020,
+   "h_identity": false,
+   "moves": 231,
+   "exact_calls": 241,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 44020,
+    "died_at": -1,
+    "domain": 0,
+    "q": 44020
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 11825,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 67972,
+   "h_identity": false,
+   "moves": 236,
+   "exact_calls": 247,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 67972,
+    "died_at": -1,
+    "domain": 0,
+    "q": 67972
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 12803,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 47821,
+   "h_identity": false,
+   "moves": 139,
+   "exact_calls": 177,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 47821,
+    "died_at": -1,
+    "domain": 0,
+    "q": 47821
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 12819,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 69946,
+   "h_identity": false,
+   "moves": 234,
+   "exact_calls": 239,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 69946,
+    "died_at": -1,
+    "domain": 0,
+    "q": 69946
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 16245,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": true,
+   "moves": 0,
+   "exact_calls": 8,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 2,
+    "q": 16245
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 16249,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": true,
+   "moves": 0,
+   "exact_calls": 8,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 2,
+    "q": 16249
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 16875,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 175911,
+   "h_identity": false,
+   "moves": 63,
+   "exact_calls": 120,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 175911,
+    "died_at": -1,
+    "domain": 0,
+    "q": 175911
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 19053,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 54159,
+   "h_identity": false,
+   "moves": 80,
+   "exact_calls": 108,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 54159,
+    "died_at": -1,
+    "domain": 0,
+    "q": 54159
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 20927,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 36750,
+   "h_identity": false,
+   "moves": 225,
+   "exact_calls": 226,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 36750,
+    "died_at": -1,
+    "domain": 0,
+    "q": 36750
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 21747,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 61361,
+   "h_identity": false,
+   "moves": 228,
+   "exact_calls": 241,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 61361,
+    "died_at": -1,
+    "domain": 0,
+    "q": 61361
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 26588,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 37029,
+   "h_identity": false,
+   "moves": 67,
+   "exact_calls": 108,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 37029,
+    "died_at": -1,
+    "domain": 0,
+    "q": 37029
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 29386,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 132816,
+   "h_identity": false,
+   "moves": 76,
+   "exact_calls": 92,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 132816,
+    "died_at": -1,
+    "domain": 0,
+    "q": 132816
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 32088,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "h_identity": true,
+   "moves": 0,
+   "exact_calls": 8,
+   "ghost": {
+    "alive": true,
+    "on_K": false,
+    "end_chamber": null,
+    "died_at": -1,
+    "domain": 2,
+    "q": 32088
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 34124,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 36749,
+   "h_identity": false,
+   "moves": 133,
+   "exact_calls": 162,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 36749,
+    "died_at": -1,
+    "domain": 0,
+    "q": 36749
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 35533,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 70029,
+   "h_identity": false,
+   "moves": 65,
+   "exact_calls": 146,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 70029,
+    "died_at": -1,
+    "domain": 0,
+    "q": 70029
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 35538,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 175908,
+   "h_identity": false,
+   "moves": 55,
+   "exact_calls": 132,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 175908,
+    "died_at": -1,
+    "domain": 0,
+    "q": 175908
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 35539,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 175910,
+   "h_identity": false,
+   "moves": 55,
+   "exact_calls": 127,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 175910,
+    "died_at": -1,
+    "domain": 0,
+    "q": 175910
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 35543,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 130428,
+   "h_identity": false,
+   "moves": 62,
+   "exact_calls": 96,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 130428,
+    "died_at": -1,
+    "domain": 0,
+    "q": 130428
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 37728,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 141082,
+   "h_identity": false,
+   "moves": 52,
+   "exact_calls": 62,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 141082,
+    "died_at": -1,
+    "domain": 0,
+    "q": 141082
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 37729,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 102873,
+   "h_identity": false,
+   "moves": 48,
+   "exact_calls": 55,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 102873,
+    "died_at": -1,
+    "domain": 0,
+    "q": 102873
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 37753,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 73309,
+   "h_identity": false,
+   "moves": 159,
+   "exact_calls": 162,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 73309,
+    "died_at": -1,
+    "domain": 0,
+    "q": 73309
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 37754,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 28286,
+   "h_identity": false,
+   "moves": 226,
+   "exact_calls": 226,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 28286,
+    "died_at": -1,
+    "domain": 0,
+    "q": 28286
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 38105,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 169946,
+   "h_identity": false,
+   "moves": 40,
+   "exact_calls": 48,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 169946,
+    "died_at": -1,
+    "domain": 0,
+    "q": 169946
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 38107,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 70035,
+   "h_identity": false,
+   "moves": 225,
+   "exact_calls": 244,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 70035,
+    "died_at": -1,
+    "domain": 0,
+    "q": 70035
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 38109,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 110675,
+   "h_identity": false,
+   "moves": 226,
+   "exact_calls": 233,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 110675,
+    "died_at": -1,
+    "domain": 0,
+    "q": 110675
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 38705,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 31759,
+   "h_identity": false,
+   "moves": 214,
+   "exact_calls": 216,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 31759,
+    "died_at": -1,
+    "domain": 0,
+    "q": 31759
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 38706,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 31763,
+   "h_identity": false,
+   "moves": 214,
+   "exact_calls": 216,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 31763,
+    "died_at": -1,
+    "domain": 0,
+    "q": 31763
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 45970,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 90996,
+   "h_identity": false,
+   "moves": 126,
+   "exact_calls": 154,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 90996,
+    "died_at": -1,
+    "domain": 0,
+    "q": 90996
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 46434,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 73306,
+   "h_identity": false,
+   "moves": 154,
+   "exact_calls": 169,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 73306,
+    "died_at": -1,
+    "domain": 0,
+    "q": 73306
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 47354,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 31758,
+   "h_identity": false,
+   "moves": 176,
+   "exact_calls": 210,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 31758,
+    "died_at": -1,
+    "domain": 0,
+    "q": 31758
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 49566,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 71869,
+   "h_identity": false,
+   "moves": 218,
+   "exact_calls": 234,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 71869,
+    "died_at": -1,
+    "domain": 0,
+    "q": 71869
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 49572,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 128738,
+   "h_identity": false,
+   "moves": 205,
+   "exact_calls": 215,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 128738,
+    "died_at": -1,
+    "domain": 0,
+    "q": 128738
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 50178,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 36748,
+   "h_identity": false,
+   "moves": 195,
+   "exact_calls": 211,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 36748,
+    "died_at": -1,
+    "domain": 0,
+    "q": 36748
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 50442,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 56130,
+   "h_identity": false,
+   "moves": 212,
+   "exact_calls": 225,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 56130,
+    "died_at": -1,
+    "domain": 0,
+    "q": 56130
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 52223,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 42950,
+   "h_identity": false,
+   "moves": 187,
+   "exact_calls": 235,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 42950,
+    "died_at": -1,
+    "domain": 0,
+    "q": 42950
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 52235,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 148897,
+   "h_identity": false,
+   "moves": 37,
+   "exact_calls": 41,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 148897,
+    "died_at": -1,
+    "domain": 0,
+    "q": 148897
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 52236,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 77195,
+   "h_identity": false,
+   "moves": 226,
+   "exact_calls": 228,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 77195,
+    "died_at": -1,
+    "domain": 0,
+    "q": 77195
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 52625,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 50116,
+   "h_identity": false,
+   "moves": 199,
+   "exact_calls": 213,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 50116,
+    "died_at": -1,
+    "domain": 0,
+    "q": 50116
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 55053,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 42970,
+   "h_identity": false,
+   "moves": 214,
+   "exact_calls": 216,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 42970,
+    "died_at": -1,
+    "domain": 0,
+    "q": 42970
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 56711,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 28285,
+   "h_identity": false,
+   "moves": 215,
+   "exact_calls": 218,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 28285,
+    "died_at": -1,
+    "domain": 0,
+    "q": 28285
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 61058,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 77192,
+   "h_identity": false,
+   "moves": 200,
+   "exact_calls": 228,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 77192,
+    "died_at": -1,
+    "domain": 0,
+    "q": 77192
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 69000,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 42951,
+   "h_identity": false,
+   "moves": 151,
+   "exact_calls": 178,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 42951,
+    "died_at": -1,
+    "domain": 0,
+    "q": 42951
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 72710,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 114540,
+   "h_identity": false,
+   "moves": 27,
+   "exact_calls": 45,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 114540,
+    "died_at": -1,
+    "domain": 0,
+    "q": 114540
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 72711,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 114541,
+   "h_identity": false,
+   "moves": 27,
+   "exact_calls": 45,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 114541,
+    "died_at": -1,
+    "domain": 0,
+    "q": 114541
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 72716,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 117215,
+   "h_identity": false,
+   "moves": 196,
+   "exact_calls": 243,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 117215,
+    "died_at": -1,
+    "domain": 0,
+    "q": 117215
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 72718,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 92480,
+   "h_identity": false,
+   "moves": 130,
+   "exact_calls": 139,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 92480,
+    "died_at": -1,
+    "domain": 0,
+    "q": 92480
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 76768,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 146447,
+   "h_identity": false,
+   "moves": 130,
+   "exact_calls": 158,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 146447,
+    "died_at": -1,
+    "domain": 0,
+    "q": 146447
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 79429,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 28267,
+   "h_identity": false,
+   "moves": 181,
+   "exact_calls": 232,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 28267,
+    "died_at": -1,
+    "domain": 0,
+    "q": 28267
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 79444,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 50112,
+   "h_identity": false,
+   "moves": 193,
+   "exact_calls": 229,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 50112,
+    "died_at": -1,
+    "domain": 0,
+    "q": 50112
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 79445,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 128747,
+   "h_identity": false,
+   "moves": 100,
+   "exact_calls": 147,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 128747,
+    "died_at": -1,
+    "domain": 0,
+    "q": 128747
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 79446,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 42971,
+   "h_identity": false,
+   "moves": 189,
+   "exact_calls": 217,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 42971,
+    "died_at": -1,
+    "domain": 0,
+    "q": 42971
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 81761,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 28284,
+   "h_identity": false,
+   "moves": 93,
+   "exact_calls": 109,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 28284,
+    "died_at": -1,
+    "domain": 0,
+    "q": 28284
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 82634,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 170187,
+   "h_identity": false,
+   "moves": 40,
+   "exact_calls": 48,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 170187,
+    "died_at": -1,
+    "domain": 0,
+    "q": 170187
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 87786,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 57259,
+   "h_identity": false,
+   "moves": 212,
+   "exact_calls": 217,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 57259,
+    "died_at": -1,
+    "domain": 0,
+    "q": 57259
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 90390,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 44018,
+   "h_identity": false,
+   "moves": 227,
+   "exact_calls": 245,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 44018,
+    "died_at": -1,
+    "domain": 0,
+    "q": 44018
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 90533,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 97991,
+   "h_identity": false,
+   "moves": 34,
+   "exact_calls": 97,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 97991,
+    "died_at": -1,
+    "domain": 0,
+    "q": 97991
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 90780,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 47822,
+   "h_identity": false,
+   "moves": 139,
+   "exact_calls": 177,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 47822,
+    "died_at": -1,
+    "domain": 0,
+    "q": 47822
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 91687,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 42967,
+   "h_identity": false,
+   "moves": 180,
+   "exact_calls": 218,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 42967,
+    "died_at": -1,
+    "domain": 0,
+    "q": 42967
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 91688,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 84160,
+   "h_identity": false,
+   "moves": 198,
+   "exact_calls": 226,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 84160,
+    "died_at": -1,
+    "domain": 0,
+    "q": 84160
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 91692,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 42972,
+   "h_identity": false,
+   "moves": 191,
+   "exact_calls": 215,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 42972,
+    "died_at": -1,
+    "domain": 0,
+    "q": 42972
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 96080,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 28277,
+   "h_identity": false,
+   "moves": 198,
+   "exact_calls": 231,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 28277,
+    "died_at": -1,
+    "domain": 0,
+    "q": 28277
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 96548,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 97632,
+   "h_identity": false,
+   "moves": 33,
+   "exact_calls": 86,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 97632,
+    "died_at": -1,
+    "domain": 0,
+    "q": 97632
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 96853,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 115615,
+   "h_identity": false,
+   "moves": 48,
+   "exact_calls": 52,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 115615,
+    "died_at": -1,
+    "domain": 0,
+    "q": 115615
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 96964,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 56126,
+   "h_identity": false,
+   "moves": 207,
+   "exact_calls": 215,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 56126,
+    "died_at": -1,
+    "domain": 0,
+    "q": 56126
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 98110,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 117213,
+   "h_identity": false,
+   "moves": 223,
+   "exact_calls": 244,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 117213,
+    "died_at": -1,
+    "domain": 0,
+    "q": 117213
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 98115,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 70034,
+   "h_identity": false,
+   "moves": 225,
+   "exact_calls": 247,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 70034,
+    "died_at": -1,
+    "domain": 0,
+    "q": 70034
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 106420,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 117216,
+   "h_identity": false,
+   "moves": 161,
+   "exact_calls": 255,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 117216,
+    "died_at": -1,
+    "domain": 0,
+    "q": 117216
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 106427,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 28278,
+   "h_identity": false,
+   "moves": 152,
+   "exact_calls": 164,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 28278,
+    "died_at": -1,
+    "domain": 0,
+    "q": 28278
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 116900,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 117211,
+   "h_identity": false,
+   "moves": 192,
+   "exact_calls": 259,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 117211,
+    "died_at": -1,
+    "domain": 0,
+    "q": 117211
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 117078,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 152512,
+   "h_identity": false,
+   "moves": 56,
+   "exact_calls": 59,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 152512,
+    "died_at": -1,
+    "domain": 0,
+    "q": 152512
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 117476,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 110673,
+   "h_identity": false,
+   "moves": 223,
+   "exact_calls": 238,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 110673,
+    "died_at": -1,
+    "domain": 0,
+    "q": 110673
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 117858,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 117219,
+   "h_identity": false,
+   "moves": 213,
+   "exact_calls": 243,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 117219,
+    "died_at": -1,
+    "domain": 0,
+    "q": 117219
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 125408,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 77194,
+   "h_identity": false,
+   "moves": 177,
+   "exact_calls": 185,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 77194,
+    "died_at": -1,
+    "domain": 0,
+    "q": 77194
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 127115,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 73307,
+   "h_identity": false,
+   "moves": 122,
+   "exact_calls": 165,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 73307,
+    "died_at": -1,
+    "domain": 0,
+    "q": 73307
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 129237,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 71883,
+   "h_identity": false,
+   "moves": 107,
+   "exact_calls": 163,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 71883,
+    "died_at": -1,
+    "domain": 0,
+    "q": 71883
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 131221,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 121458,
+   "h_identity": false,
+   "moves": 156,
+   "exact_calls": 165,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 121458,
+    "died_at": -1,
+    "domain": 0,
+    "q": 121458
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 134719,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 165226,
+   "h_identity": false,
+   "moves": 37,
+   "exact_calls": 41,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 165226,
+    "died_at": -1,
+    "domain": 0,
+    "q": 165226
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 151672,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 140302,
+   "h_identity": false,
+   "moves": 51,
+   "exact_calls": 69,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 140302,
+    "died_at": -1,
+    "domain": 0,
+    "q": 140302
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 154787,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 159391,
+   "h_identity": false,
+   "moves": 60,
+   "exact_calls": 61,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 159391,
+    "died_at": -1,
+    "domain": 0,
+    "q": 159391
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 154855,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 70037,
+   "h_identity": false,
+   "moves": 227,
+   "exact_calls": 248,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 70037,
+    "died_at": -1,
+    "domain": 0,
+    "q": 70037
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 156041,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 42968,
+   "h_identity": false,
+   "moves": 202,
+   "exact_calls": 215,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 42968,
+    "died_at": -1,
+    "domain": 0,
+    "q": 42968
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 156377,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 71885,
+   "h_identity": false,
+   "moves": 212,
+   "exact_calls": 220,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 71885,
+    "died_at": -1,
+    "domain": 0,
+    "q": 71885
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 156780,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 79015,
+   "h_identity": false,
+   "moves": 94,
+   "exact_calls": 103,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 79015,
+    "died_at": -1,
+    "domain": 0,
+    "q": 79015
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 169852,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 159389,
+   "h_identity": false,
+   "moves": 40,
+   "exact_calls": 52,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 159389,
+    "died_at": -1,
+    "domain": 0,
+    "q": 159389
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 170029,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 104998,
+   "h_identity": false,
+   "moves": 19,
+   "exact_calls": 20,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 104998,
+    "died_at": -1,
+    "domain": 0,
+    "q": 104998
+   }
+  },
+  {
+   "kind": "piece",
+   "id": 172020,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 110674,
+   "h_identity": false,
+   "moves": 223,
+   "exact_calls": 235,
+   "ghost": {
+    "alive": true,
+    "on_K": true,
+    "end_chamber": 110674,
+    "died_at": -1,
+    "domain": 0,
+    "q": 110674
+   }
+  }
+ ],
+ "seconds": 25.8
+}

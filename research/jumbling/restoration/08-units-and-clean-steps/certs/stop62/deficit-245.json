@@ -1,0 +1,67 @@
+{
+ "state": "stop62 @245",
+ "digest": "0c945cbff8664140c9c8a4ae0a37865950be9480d844d05625d8a30536d92f83",
+ "off": 245,
+ "units": {
+  "1040": {
+   "words": 995,
+   "usable": 779,
+   "min_bad": 333,
+   "min_occupied_bad": 308,
+   "min_deficit": 151,
+   "usable_with_bad_le_off": 0,
+   "usable_deficit0": 0,
+   "vac_ok": 0,
+   "by_dir": {
+    "s62g-k00": 991,
+    "s62g-k00-s": 0,
+    "s62g-k00-r": 4
+   }
+  },
+  "18445": {
+   "words": 1223,
+   "usable": 947,
+   "min_bad": 277,
+   "min_occupied_bad": 255,
+   "min_deficit": 150,
+   "usable_with_bad_le_off": 0,
+   "usable_deficit0": 0,
+   "vac_ok": 0,
+   "by_dir": {
+    "s62g-k00": 1223,
+    "s62g-k00-s": 0,
+    "s62g-k00-r": 0
+   }
+  },
+  "23955": {
+   "words": 1762,
+   "usable": 1546,
+   "min_bad": 333,
+   "min_occupied_bad": 299,
+   "min_deficit": 151,
+   "usable_with_bad_le_off": 0,
+   "usable_deficit0": 0,
+   "vac_ok": 0,
+   "by_dir": {
+    "s62g-k00": 1762,
+    "s62g-k00-s": 0,
+    "s62g-k00-r": 0
+   }
+  },
+  "64184": {
+   "words": 1743,
+   "usable": 1527,
+   "min_bad": 333,
+   "min_occupied_bad": 279,
+   "min_deficit": 151,
+   "usable_with_bad_le_off": 0,
+   "usable_deficit0": 0,
+   "vac_ok": 0,
+   "by_dir": {
+    "s62g-k00": 1740,
+    "s62g-k00-s": 0,
+    "s62g-k00-r": 3
+   }
+  }
+ }
+}

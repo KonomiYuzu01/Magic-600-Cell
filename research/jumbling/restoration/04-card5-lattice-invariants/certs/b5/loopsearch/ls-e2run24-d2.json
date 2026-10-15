@@ -1,0 +1,21 @@
+{
+ "start": {
+  "table_digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686"
+ },
+ "wanted": [
+  5,
+  4,
+  8
+ ],
+ "depth_done": 2,
+ "nodes": 169909,
+ "stats": {
+  "expanded": 471,
+  "collisions": 93289,
+  "o5 sign 1": 93289,
+  "o4 sign 1": 93289,
+  "o8 sign 1": 93289
+ },
+ "hits": [],
+ "orbit_relevant_only": false
+}

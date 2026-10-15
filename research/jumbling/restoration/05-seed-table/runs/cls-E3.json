@@ -1,0 +1,24 @@
+{
+ "summary": {
+  "input": "E3",
+  "input_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+  "executed": false,
+  "off_start": 0,
+  "depth_one": 0,
+  "by_registry_orbit": {},
+  "classes_present": 0,
+  "classes_with_seed": 0,
+  "pieces_with_seed": 0,
+  "restored": 0,
+  "remaining": 0,
+  "total_letters": 0,
+  "end_digest": null,
+  "blocking": {},
+  "conflict_cycles": [],
+  "seconds": 7.6
+ },
+ "pieces": [],
+ "steps": [],
+ "blocking": [],
+ "conflict_edges": {}
+}

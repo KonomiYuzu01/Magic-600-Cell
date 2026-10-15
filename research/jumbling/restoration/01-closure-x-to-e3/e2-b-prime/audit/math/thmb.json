@@ -1,0 +1,153 @@
+{
+ "holes": [
+  24905,
+  89251,
+  89252
+ ],
+ "safe_grips": 592,
+ "letters": 6512,
+ "blocked": {
+  "232": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "237": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "250": {
+   "straddled": true,
+   "off_inside": 0
+  },
+  "257": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "273": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "301": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "307": {
+   "straddled": true,
+   "off_inside": 2
+  },
+  "356": {
+   "straddled": false,
+   "off_inside": 3
+  }
+ },
+ "safe_equal_pre": true,
+ "blocked_equal_pre": true,
+ "orbit_sizes": {
+  "23354": 3599,
+  "23362": 7200,
+  "24905": 7200,
+  "38667": 7200,
+  "89251": 3599,
+  "89252": 7200
+ },
+ "orbit_classes": {
+  "31": [
+   23354,
+   89251
+  ],
+  "32": [
+   23362,
+   24905,
+   38667,
+   89252
+  ]
+ },
+ "by_orbit": [
+  {
+   "least": 31,
+   "size": 3599,
+   "targets": 1,
+   "holes": 1
+  },
+  {
+   "least": 32,
+   "size": 7200,
+   "targets": 2,
+   "holes": 2
+  }
+ ],
+ "N1_no_fixed_target": true,
+ "N2": true,
+ "rows": [
+  {
+   "t": 23354,
+   "E": [
+    [
+     72,
+     1
+    ]
+   ],
+   "E_letters_safe_all": true,
+   "E_fixes_P": true,
+   "y": 23485,
+   "y_recorded": 23485,
+   "y_outside_T": true,
+   "avoid_letters": 6512,
+   "reach": 3599,
+   "reach_within_orbit": true,
+   "orbit_minus_P": 3599,
+   "u_j": 0,
+   "ecc": 5,
+   "ecc_recorded": 5
+  },
+  {
+   "t": 38667,
+   "E": [
+    [
+     260,
+     1
+    ]
+   ],
+   "E_letters_safe_all": true,
+   "E_fixes_P": true,
+   "y": 110319,
+   "y_recorded": 110319,
+   "y_outside_T": true,
+   "avoid_letters": 6424,
+   "reach": 7200,
+   "reach_within_orbit": true,
+   "orbit_minus_P": 7200,
+   "u_j": 0,
+   "ecc": 5,
+   "ecc_recorded": 5
+  },
+  {
+   "t": 23362,
+   "E": [
+    [
+     108,
+     1
+    ]
+   ],
+   "E_letters_safe_all": true,
+   "E_fixes_P": true,
+   "y": 24383,
+   "y_recorded": 24383,
+   "y_outside_T": true,
+   "avoid_letters": 6413,
+   "reach": 7199,
+   "reach_within_orbit": true,
+   "orbit_minus_P": 7199,
+   "u_j": 0,
+   "ecc": 5,
+   "ecc_recorded": 5
+  }
+ ],
+ "h_delta": {
+  "31": 1,
+  "32": 2
+ },
+ "sufficient": true,
+ "bound": 18,
+ "seconds": 22.6
+}

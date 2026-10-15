@@ -1,0 +1,25 @@
+{
+ "source": "general method v4 working tree",
+ "compressed": [
+  {
+   "path": "data/library-merged.json",
+   "bytes": 7000080,
+   "sha256": "8a13eb6c4f4359ce4dd58a0018cf86eed3089111e11f20b7c00476f6393a661a"
+  },
+  {
+   "path": "earlier/stop62-860-to-0/chain/start-table.json",
+   "bytes": 555548,
+   "sha256": "d5abe195779db5ddd73c8c4d70d8990fa9f24bdd6a948ed4f3bff7e6f882b1c4"
+  },
+  {
+   "path": "earlier/stop62-860-to-0/lattice/solutions.json",
+   "bytes": 13342855,
+   "sha256": "43793e8eabd7e1f9ec1f0189b772b08ff31194ee2128744afc48a94d672861be"
+  },
+  {
+   "path": "earlier/x-e3-solved/solutions.json",
+   "bytes": 25438513,
+   "sha256": "3825d390f228249cc145e4719afd455414048068831fde54efc10d2d590a3f05"
+  }
+ ]
+}

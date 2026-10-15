@@ -1,0 +1,5 @@
+{"stage": "E1 loaded", "digest": "903997457de665c2", "sec": 5.9}
+{"stage": "after V", "ok": true, "sec": 47.1}
+{"stage": "after P", "ok": true, "sec": 52.8}
+{"stage": "after Q", "ok": true, "sec": 56.9}
+{"stage": "after Pinv", "ok": true, "sec": 62.7}

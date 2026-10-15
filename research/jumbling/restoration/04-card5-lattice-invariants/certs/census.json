@@ -1,0 +1,488 @@
+[
+ {
+  "file": "singles.jsonl",
+  "length": 39,
+  "piece": 35757,
+  "piece_orbit": 19,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   48,
+   218
+  ],
+  "cell_sources": 86,
+  "cell_capacity": 86,
+  "registry_orbit": "2 or 5",
+  "hole": 54783,
+  "hole_orbit": 19
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 1407,
+  "piece": 33377,
+  "piece_orbit": 22,
+  "height": 2,
+  "outer_class": 1,
+  "cell_signature": [
+   116,
+   133,
+   260
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 33377,
+  "hole_orbit": 22
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 79,
+  "piece": 119361,
+  "piece_orbit": 23,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   147,
+   352
+  ],
+  "cell_sources": 86,
+  "cell_capacity": 86,
+  "registry_orbit": "2 or 5",
+  "hole": 132617,
+  "hole_orbit": 23
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 1407,
+  "piece": 63959,
+  "piece_orbit": 23,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   405,
+   510,
+   567
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 111,
+  "registry_orbit": "6",
+  "hole": 63959,
+  "hole_orbit": 23
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 79,
+  "piece": 38990,
+  "piece_orbit": 24,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   59,
+   199
+  ],
+  "cell_sources": 86,
+  "cell_capacity": 86,
+  "registry_orbit": "2 or 5",
+  "hole": 38990,
+  "hole_orbit": 24
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 159,
+  "piece": 152504,
+  "piece_orbit": 24,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   273,
+   327
+  ],
+  "cell_sources": 86,
+  "cell_capacity": 86,
+  "registry_orbit": "2 or 5",
+  "hole": 143342,
+  "hole_orbit": 24
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 1407,
+  "piece": 105931,
+  "piece_orbit": 25,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   373,
+   403,
+   534
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 78307,
+  "hole_orbit": 25
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 1407,
+  "piece": 61843,
+  "piece_orbit": 25,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   324,
+   445,
+   501
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 74953,
+  "hole_orbit": 25
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 39,
+  "piece": 127275,
+  "piece_orbit": 26,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   245,
+   361,
+   409
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 127275,
+  "hole_orbit": 26
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 175,
+  "piece": 71207,
+  "piece_orbit": 26,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   118,
+   271,
+   340
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 71207,
+  "hole_orbit": 26
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 351,
+  "piece": 160312,
+  "piece_orbit": 27,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   500,
+   581,
+   585
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 160312,
+  "hole_orbit": 27
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 351,
+  "piece": 158895,
+  "piece_orbit": 27,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   500,
+   581,
+   585
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 158895,
+  "hole_orbit": 27
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 703,
+  "piece": 97759,
+  "piece_orbit": 28,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   494,
+   534,
+   543
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 147015,
+  "hole_orbit": 28
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 639,
+  "piece": 56704,
+  "piece_orbit": 29,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   160,
+   326,
+   342
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 52729,
+  "hole_orbit": 29
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 703,
+  "piece": 49161,
+  "piece_orbit": 29,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   139,
+   149,
+   169,
+   330
+  ],
+  "cell_sources": 87,
+  "cell_capacity": 0,
+  "registry_orbit": "4",
+  "hole": 120089,
+  "hole_orbit": 29
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 319,
+  "piece": 85101,
+  "piece_orbit": 30,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   326,
+   373,
+   448
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 106166,
+  "hole_orbit": 30
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 351,
+  "piece": 111632,
+  "piece_orbit": 30,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   457,
+   502,
+   586
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 111632,
+  "hole_orbit": 30
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 351,
+  "piece": 84702,
+  "piece_orbit": 30,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   532,
+   568,
+   598
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 84702,
+  "hole_orbit": 30
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 79,
+  "piece": 73971,
+  "piece_orbit": 31,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   326,
+   373,
+   448
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 31663,
+  "hole_orbit": 31
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 175,
+  "piece": 19116,
+  "piece_orbit": 31,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   442,
+   484,
+   501,
+   579
+  ],
+  "cell_sources": 87,
+  "cell_capacity": 0,
+  "registry_orbit": "4",
+  "hole": 19116,
+  "hole_orbit": 31
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 175,
+  "piece": 107949,
+  "piece_orbit": 31,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   55,
+   149,
+   234
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 107949,
+  "hole_orbit": 31
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 175,
+  "piece": 172426,
+  "piece_orbit": 32,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   519,
+   527,
+   586
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 111,
+  "registry_orbit": "6",
+  "hole": 172426,
+  "hole_orbit": 32
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 351,
+  "piece": 138431,
+  "piece_orbit": 32,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   519,
+   527,
+   586
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 111,
+  "registry_orbit": "6",
+  "hole": 138431,
+  "hole_orbit": 32
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 87,
+  "piece": 45196,
+  "piece_orbit": 33,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   224,
+   230,
+   305,
+   429
+  ],
+  "cell_sources": 87,
+  "cell_capacity": 0,
+  "registry_orbit": "4",
+  "hole": 45196,
+  "hole_orbit": 33
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 87,
+  "piece": 30270,
+  "piece_orbit": 33,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   180,
+   273,
+   327
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 30270,
+  "hole_orbit": 33
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 175,
+  "piece": 93328,
+  "piece_orbit": 33,
+  "height": 2,
+  "outer_class": 0,
+  "cell_signature": [
+   224,
+   230,
+   305,
+   429
+  ],
+  "cell_sources": 87,
+  "cell_capacity": 0,
+  "registry_orbit": "4",
+  "hole": 93328,
+  "hole_orbit": 33
+ },
+ {
+  "file": "singles.jsonl",
+  "length": 351,
+  "piece": 62480,
+  "piece_orbit": 33,
+  "height": 2,
+  "outer_class": 3,
+  "cell_signature": [
+   110,
+   269,
+   325
+  ],
+  "cell_sources": 111,
+  "cell_capacity": 0,
+  "registry_orbit": "3",
+  "hole": 62480,
+  "hole_orbit": 33
+ }
+]

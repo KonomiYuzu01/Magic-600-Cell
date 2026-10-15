@@ -1,0 +1,5 @@
+{
+  "verdict": "pass",
+  "summary": "No defects found under the supplied model and accepted computed premises. The conjugation step, finishing condition, composability argument and Lemma H' checks are consistent with work/evidence-e3/shrink-237-13.jsonl:5, work/evidence-e3/pre.json:283, work/evidence-e3/pre.json:963, work/evidence-e3/result.json:4 and work/evidence-e3/chain-check.json:1. Computations, including type-S replay legality, were accepted as instructed and were not independently rerun. The report appropriately limits its claims to this instance and distinguishes restoration to K from solving the puzzle.",
+  "findings": []
+}

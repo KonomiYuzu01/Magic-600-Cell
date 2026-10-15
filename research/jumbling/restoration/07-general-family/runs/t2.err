@@ -1,0 +1,11 @@
+{"world": "p2-table.json", "off": 5404, "domains": 3, "blocks": 0, "sec": 9.8}
+{"event": "table", "off": 5404, "sec_table": 1.9, "sec": 13.8}
+{"event": "cand", "cap": 57, "frame": 1, "n": 2702, "occ": 395, "gain": 2307, "letter": 47, "ahead": 3097, "free": 1, "tied": 1, "npos": 1, "sec": 18.8}
+{"event": "cand", "cap": 86, "frame": 2, "n": 2702, "occ": 395, "gain": 2307, "letter": 27, "ahead": 3097, "free": 1, "tied": 1, "npos": 1, "sec": 20.1}
+{"event": "step", "step": 1, "kind": "PSC", "cap": 57, "gain": 2307, "off_before": 5404, "off_after": 3097, "restored": 2702, "collateral": 395, "moved_off": 0, "virtual_matches": true, "sec": 20.1, "ok": true}
+{"event": "chosen", "cap": 57, "frame": 1, "letter": 47, "gain": 2307, "ahead": 3097, "off": 3097, "sec_step": 6.3, "sec": 20.1}
+{"event": "cand", "cap": 86, "frame": 2, "n": 3097, "occ": 0, "gain": 3097, "letter": 12, "ahead": -1000000000, "free": 0, "tied": 12, "npos": 0, "sec": 24.6}
+{"event": "step", "step": 2, "kind": "PS", "cap": 86, "gain": 3097, "off_before": 3097, "off_after": 0, "restored": 3097, "collateral": 0, "moved_off": 0, "virtual_matches": true, "sec": 24.6, "ok": true}
+{"event": "chosen", "cap": 86, "frame": 2, "letter": 12, "gain": 3097, "ahead": -1000000000, "off": 0, "sec_step": 4.5, "sec": 24.6}
+{"event": "end", "steps": 2, "off": 0, "sec": 24.6}
+exit 0

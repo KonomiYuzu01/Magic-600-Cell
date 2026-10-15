@@ -1,0 +1,82 @@
+{"check": "1a lengths 590/10/10/10/590", "ok": true, "lens": {"V": 590, "P": 10, "Q": 10, "Pinv": 10, "Vinv": 590}}
+{"check": "1b V.input_digest = E1", "ok": true, "got": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8"}
+{"check": "1c V.output = P.input", "ok": true, "a": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3", "b": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3"}
+{"check": "1c P.output = Q.input", "ok": true, "a": "d25915b317e0262fb8469260878cc682838c026a8fb84d25f5f508b396385932", "b": "d25915b317e0262fb8469260878cc682838c026a8fb84d25f5f508b396385932"}
+{"check": "1c Q.output = Pinv.input", "ok": true, "a": "bd5431007c5bba6eaf3c7680dd51272d0b45b9dec8f24c3466a6e70e1d56c9fd", "b": "bd5431007c5bba6eaf3c7680dd51272d0b45b9dec8f24c3466a6e70e1d56c9fd"}
+{"check": "1c Pinv.output = Vinv.input", "ok": true, "a": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8", "b": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8"}
+{"check": "1d Vinv.output_digest = E2", "ok": true, "got": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"}
+{"check": "1e word-full = concatenation", "ok": true, "n_full": 1210, "n_cat": 1210}
+{"check": "1f word-full digests", "ok": true, "inp": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8", "outp": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"}
+{"check": "1g P = w87-c0.P", "ok": true}
+{"check": "1h Q = w87-c0.Q", "ok": true}
+{"check": "1i total 1210", "ok": true, "n": 1210}
+E1-table.json stored digest 903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8 sha256 18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18
+E2-table.json stored digest 19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff sha256 649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893
+{"check": "1j recomputed digest of E1-table = E1", "ok": true, "got": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8"}
+{"check": "2z identity is in K+ (both tests)", "ok": true}
+{"check": "2z sample of K+ elements pass the independent test", "ok": true, "n": 75}
+membership (sim index_of_matrix, independent pole test): {'X': (False, False), 'Xi': (False, False), 'Y': (True, True), 'Yi': (True, True), 'Z': (False, False), 'Zi': (False, False), 'A': (True, True), 'B': (True, True)}
+{"check": "2a membership tests agree for X", "ok": true, "v": [false, false]}
+{"check": "2a membership tests agree for Xi", "ok": true, "v": [false, false]}
+{"check": "2a membership tests agree for Y", "ok": true, "v": [true, true]}
+{"check": "2a membership tests agree for Yi", "ok": true, "v": [true, true]}
+{"check": "2a membership tests agree for Z", "ok": true, "v": [false, false]}
+{"check": "2a membership tests agree for Zi", "ok": true, "v": [false, false]}
+{"check": "2a membership tests agree for A", "ok": true, "v": [true, true]}
+{"check": "2a membership tests agree for B", "ok": true, "v": [true, true]}
+{"check": "2b X outside K+", "ok": true}
+{"check": "2b X^-1 outside K+", "ok": true}
+{"check": "2c X X^-1 = I", "ok": true}
+{"check": "2d X not an involution (X^2 != I, X != X^-1)", "ok": true}
+{"check": "2e Y in K+", "ok": true}
+{"check": "2e Y^-1 in K+", "ok": true}
+{"check": "2f Y Y^-1 = I", "ok": true}
+{"check": "2f Y not identity", "ok": true}
+Y involution? False
+{"check": "2g Z outside K+", "ok": true}
+{"check": "2g Z^-1 outside K+", "ok": true}
+{"check": "2h Z Z^-1 = I", "ok": true}
+Z involution? False
+{"check": "2i A in K+", "ok": true}
+{"check": "2i A involution (k^2 = I, k != I)", "ok": true}
+{"check": "2i B in K+", "ok": true}
+{"check": "2i B involution (k^2 = I, k != I)", "ok": true}
+orders {'X': 5, 'Xi': 5, 'Y': 3, 'Yi': 3, 'Z': 5, 'Zi': 5, 'A': 2, 'B': 2}
+{"check": "2j menu index of X^-1 at grip 115 is 58 (unique)", "ok": true, "hits": [58]}
+{"check": "2j menu index of Y^-1 at grip 190 is 9 (unique)", "ok": true, "hits": [9]}
+{"check": "2j menu index of Z^-1 at grip 317 is 17 (unique)", "ok": true, "hits": [17]}
+{"check": "2j menu index of A^-1 at grip 346 is 10 (unique)", "ok": true, "hits": [10]}
+{"check": "2j menu index of B^-1 at grip 314 is 1 (unique)", "ok": true, "hits": [1]}
+{"check": "3a P = X Y X^-1 Y^-1 Z Y X Y^-1 X^-1 Z^-1", "ok": true, "diff": []}
+{"check": "3b Q = A B X B^-1 X^-1 A^-1 X B X^-1 B^-1 (A^-1=A, B^-1=B)", "ok": true, "diff": []}
+{"check": "3c P equals free-group expansion of [[X,Y],Z]", "ok": true}
+{"check": "3d Q equals free-group expansion of [A,[B,X]]", "ok": true}
+{"check": "3e Pinv equals free-group expansion of [[X,Y],Z]^-1", "ok": true}
+{"check": "4 Pinv vs P: same length", "ok": true, "n": 10, "ninv": 10}
+{"check": "4 Pinv vs P: grips mirror", "ok": true, "bad": [], "n_bad": 0}
+{"check": "4 Pinv vs P: exact inverse matrices letter by letter", "ok": true, "bad": [], "n_bad": 0}
+{"check": "4 Vinv vs V: same length", "ok": true, "n": 590, "ninv": 590}
+{"check": "4 Vinv vs V: grips mirror", "ok": true, "bad": [], "n_bad": 0}
+{"check": "4 Vinv vs V: exact inverse matrices letter by letter", "ok": true, "bad": [], "n_bad": 0}
+{"check": "4 abstract product Vinv*V = I (left action, chronological)", "ok": true}
+{"check": "5 pre.json state digest is E1", "ok": true, "got": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8"}
+{"check": "5a every V grip in pre.menu.safe_grips", "ok": true, "bad": [], "n_bad": 0}
+{"check": "5b every V letter in K+ (both tests)", "ok": true, "bad": [], "n_distinct": 236}
+{"check": "5c no V letter is the identity", "ok": true, "bad": []}
+{"check": "5d every Vinv letter: safe grip, in K+, not identity", "ok": true, "bad": []}
+{"check": "5e lattice_flags == K-pose flags", "ok": true, "n_off": 90}
+{"check": "5f V grips recomputed SAFE-ALL at E1 (no straddle, no off piece inside)", "ok": true, "blocked": {}, "n_grips": 113}
+P/Q grips blocked at E1 (informational): {314: {'uncertain': False, 'straddle': False, 'off_inside': 87}, 346: {'uncertain': False, 'straddle': False, 'off_inside': 87}}
+{"check": "6 report row \"P2 = [[X, Y], Z]\" = parts/P.json", "ok": true, "row": [[115, 26], [190, 3], [115, 58], [190, 9], [317, 48], [190, 3], [115, 26], [190, 9], [115, 58], [317, 17]], "line": "| P2 = [[X, Y], Z] | 10 | (115,26) (190,3) (115,58) (190,9) (317,48) (190,3) (115,26) (190,9) (115,58) (317,17) |"}
+{"check": "6 report row \"Q2 = [A, [B, X]]\" = parts/Q.json", "ok": true, "row": [[346, 10], [314, 1], [115, 26], [314, 1], [115, 58], [346, 10], [115, 26], [314, 1], [115, 58], [314, 1]], "line": "| Q2 = [A, [B, X]] | 10 | (346,10) (314,1) (115,26) (314,1) (115,58) (346,10) (115,26) (314,1) (115,58) (314,1) |"}
+{"check": "6 report row \"P2^-1\" = parts/Pinv.json", "ok": true, "row": [[317, 48], [115, 26], [190, 3], [115, 58], [190, 9], [317, 17], [190, 3], [115, 26], [190, 9], [115, 58]], "line": "| P2^-1 | 10 | (317,48) (115,26) (190,3) (115,58) (190,9) (317,17) (190,3) (115,26) (190,9) (115,58) |"}
+{"check": "6 report letter line X", "ok": true, "got": [115, 26, 115, 58]}
+{"check": "6 report letter line Y", "ok": true, "got": [190, 3, 190, 9]}
+{"check": "6 report letter line Z", "ok": true, "got": [317, 48, 317, 17]}
+{"check": "6 report letter line A,B", "ok": true}
+{"check": "7a c2 shares Q2 with c0", "ok": true}
+{"check": "7b c2 P differs from c0 P only at Y/Y^-1 positions", "ok": true, "diffpos": [1, 3, 5, 7]}
+{"check": "7c c2 P is [[X,Y'],Z] with Y' = Pc2[1]", "ok": true, "Y2": [190, 8], "Y2i": [190, 4]}
+{"check": "7d c2 Y' in K+ and Y' Y'^-1 = I and Y' differs from Y", "ok": true}
+c2 result mentions E2 digest: True
+FAILS 0

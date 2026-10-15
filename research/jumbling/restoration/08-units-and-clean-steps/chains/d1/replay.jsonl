@@ -1,0 +1,3 @@
+{"chain": "d1-depth-one", "start_digest_ok": true, "load_seconds": 3.3}
+{"label": "d1-k00-u80", "twists": 1, "applied": 1, "error": null, "input_digest_ok": true, "output_digest_ok": true, "off_before": 3097, "off_after": 0, "unit": 111, "free": 2986, "unit_off_before": true, "unit_restored": true, "restored": 3097, "collateral": 0, "moved_off": 0, "moved_outside_free": 0, "restored_outside_unit_or_free": 0, "seconds": 0.0, "ok": true}
+{"chain": "d1-depth-one", "all_ok": true, "steps": 1, "final_off": 0, "all_on_lattice": true, "final_digest": "7d66e80012b12bbcdbf046a76340321c2e27e794cbef0d901158a12c02ad7147", "seconds": 3.3}

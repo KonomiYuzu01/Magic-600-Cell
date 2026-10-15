@@ -1,0 +1,7 @@
+{"file": "0-V.json", "twists": 4, "off": 3, "input_digest_ok": true, "output_digest_ok": null, "depth_failures": 0, "inadmissible": null, "sec": 8}
+{"file": "1-P.json", "twists": 31, "off": 10, "input_digest_ok": null, "output_digest_ok": null, "depth_failures": 0, "inadmissible": null, "sec": 52}
+{"file": "2-F.json", "twists": 1, "off": 10, "input_digest_ok": null, "output_digest_ok": null, "depth_failures": 0, "inadmissible": null, "sec": 53}
+{"file": "3-Pinv.json", "twists": 31, "off": 0, "input_digest_ok": null, "output_digest_ok": null, "depth_failures": 0, "inadmissible": null, "sec": 93}
+{"file": "4-Vinv.json", "twists": 4, "off": 0, "input_digest_ok": null, "output_digest_ok": null, "depth_failures": 0, "inadmissible": null, "sec": 93}
+{"passed": true, "twists": 71, "end_digest": "67bafbc07bece94c3909c8996f6ac76494ea7258cd46c668d95c1ab643d1a1a8", "sec": 93}
+exit=0

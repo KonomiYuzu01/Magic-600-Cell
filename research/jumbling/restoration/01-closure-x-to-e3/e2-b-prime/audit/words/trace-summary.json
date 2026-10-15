@@ -1,0 +1,1165 @@
+{
+ "traces": {
+  "singleP": {
+   "script": "<work>/v26/B3/singleP.py",
+   "argv": [
+    "<work>/v26/B3/singleP.py",
+    "<work>/wt-e3/research/jumbling/theory",
+    "<work>/v26/B4/E2-table.json",
+    "<work>/v26/B4/audit/words/trace/singleP-out.json"
+   ],
+   "status": "ok",
+   "data_reads": [
+    "<work>/v26/B4/E2-table.json",
+    "<work>/wt-e3/assets/model.npz",
+    "<work>/wt-e3/assets/primitives.npz",
+    "<work>/wt-e3/research/jumbling/fixtures/wj-I_a.json"
+   ],
+   "writes": [
+    "<work>/v26/B4/audit/words/trace/singleP-out.json"
+   ],
+   "code_files": [
+    "<work>/v26/B3/singleP.py",
+    "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/blocks.py",
+    "<work>/wt-e3/research/jumbling/theory/classes.py",
+    "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+    "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+    "<work>/wt-e3/research/jumbling/theory/orient.py",
+    "<work>/wt-e3/research/jumbling/theory/split_pairs.py"
+   ],
+   "other_events": [
+    [
+     "ctypes.dlopen",
+     "(None,)",
+     1
+    ]
+   ],
+   "listdirs": [
+    "('<work>/wt-e3/research/jumbling',)",
+    "('<work>/wt-e3/research/jumbling/fixtures',)",
+    "('<work>/wt-e3/research/jumbling/sim',)",
+    "('<work>/wt-e3/research/jumbling/theory',)"
+   ],
+   "non_system_modules": {
+    "__main__": "<work>/v26/B4/audit/words/trace_run.py",
+    "exact": "<work>/wt-e3/research/jumbling/exact.py",
+    "sim.kplus": "<work>/wt-e3/research/jumbling/sim/kplus.py",
+    "__mp_main__": "<work>/v26/B3/singleP.py",
+    "witness": "<work>/wt-e3/research/jumbling/witness.py",
+    "sim.model": "<work>/wt-e3/research/jumbling/sim/model.py",
+    "sim.kernel": "<work>/wt-e3/research/jumbling/sim/kernel.py",
+    "sim.regions": "<work>/wt-e3/research/jumbling/sim/regions.py",
+    "sim.twists": "<work>/wt-e3/research/jumbling/sim/twists.py",
+    "sim.state": "<work>/wt-e3/research/jumbling/sim/state.py",
+    "sim": "<work>/wt-e3/research/jumbling/sim/__init__.py",
+    "rim": "<work>/wt-e3/research/jumbling/theory/rim.py",
+    "trees": "<work>/wt-e3/research/jumbling/theory/trees.py",
+    "wj": "<work>/wt-e3/research/jumbling/fixtures/wj.py",
+    "restore": "<work>/wt-e3/research/jumbling/theory/restore.py",
+    "seams": "<work>/wt-e3/research/jumbling/theory/seams.py",
+    "deep_scramble": "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+    "classes": "<work>/wt-e3/research/jumbling/theory/classes.py",
+    "e3_class": "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+    "orient": "<work>/wt-e3/research/jumbling/theory/orient.py",
+    "split_pairs": "<work>/wt-e3/research/jumbling/theory/split_pairs.py",
+    "blocks": "<work>/wt-e3/research/jumbling/theory/blocks.py"
+   },
+   "pyc_all_valid_timestamp": true,
+   "pyc_checks": [
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/exact.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/witness.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/fixtures/wj.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/__init__.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/kernel.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/kplus.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/model.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/regions.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/state.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/twists.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/restore.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/rim.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/seams.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/trees.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    }
+   ]
+  },
+  "shrink": {
+   "script": "<work>/v26/B4/shrink.py",
+   "argv": [
+    "<work>/v26/B4/shrink.py",
+    "<work>/wt-e3/research/jumbling/theory",
+    "<work>/v26",
+    "<work>/v26/B4/E2-table.json",
+    "[237, 13]",
+    "8",
+    "<work>/v26/B4/audit/words/trace/shrink.jsonl"
+   ],
+   "status": "ok",
+   "data_reads": [
+    "<work>/v26/B4/E2-table.json",
+    "<work>/wt-e3/assets/model.npz",
+    "<work>/wt-e3/assets/primitives.npz",
+    "<work>/wt-e3/research/jumbling/fixtures/wj-I_a.json"
+   ],
+   "writes": [
+    "<work>/v26/B4/audit/words/trace/shrink.jsonl"
+   ],
+   "code_files": [
+    "<work>/v26/B4/shrink.py",
+    "<work>/v26/__pycache__/conjclose.cpython-313.pyc",
+    "<work>/v26/__pycache__/conjprep.cpython-313.pyc",
+    "<work>/v26/__pycache__/fastghost.cpython-313.pyc",
+    "<work>/v26/__pycache__/ghostlib.cpython-313.pyc",
+    "<work>/v26/conjclose.py",
+    "<work>/v26/conjprep.py",
+    "<work>/v26/fastghost.py",
+    "<work>/v26/ghostlib.py",
+    "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/buffer.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/blocks.py",
+    "<work>/wt-e3/research/jumbling/theory/classes.py",
+    "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+    "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+    "<work>/wt-e3/research/jumbling/theory/orient.py",
+    "<work>/wt-e3/research/jumbling/theory/split_pairs.py"
+   ],
+   "other_events": [
+    [
+     "ctypes.dlopen",
+     "(None,)",
+     1
+    ]
+   ],
+   "listdirs": [
+    "('<work>/v26',)",
+    "('<work>/wt-e3/research/jumbling',)",
+    "('<work>/wt-e3/research/jumbling/fixtures',)",
+    "('<work>/wt-e3/research/jumbling/sim',)",
+    "('<work>/wt-e3/research/jumbling/theory',)"
+   ],
+   "non_system_modules": {
+    "__main__": "<work>/v26/B4/audit/words/trace_run.py",
+    "exact": "<work>/wt-e3/research/jumbling/exact.py",
+    "sim.kplus": "<work>/wt-e3/research/jumbling/sim/kplus.py",
+    "__mp_main__": "<work>/v26/B4/shrink.py",
+    "witness": "<work>/wt-e3/research/jumbling/witness.py",
+    "sim.model": "<work>/wt-e3/research/jumbling/sim/model.py",
+    "sim.kernel": "<work>/wt-e3/research/jumbling/sim/kernel.py",
+    "sim.regions": "<work>/wt-e3/research/jumbling/sim/regions.py",
+    "sim.twists": "<work>/wt-e3/research/jumbling/sim/twists.py",
+    "sim.state": "<work>/wt-e3/research/jumbling/sim/state.py",
+    "sim": "<work>/wt-e3/research/jumbling/sim/__init__.py",
+    "rim": "<work>/wt-e3/research/jumbling/theory/rim.py",
+    "trees": "<work>/wt-e3/research/jumbling/theory/trees.py",
+    "wj": "<work>/wt-e3/research/jumbling/fixtures/wj.py",
+    "restore": "<work>/wt-e3/research/jumbling/theory/restore.py",
+    "seams": "<work>/wt-e3/research/jumbling/theory/seams.py",
+    "deep_scramble": "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+    "classes": "<work>/wt-e3/research/jumbling/theory/classes.py",
+    "e3_class": "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+    "orient": "<work>/wt-e3/research/jumbling/theory/orient.py",
+    "buffer": "<work>/wt-e3/research/jumbling/theory/buffer.py",
+    "conjclose": "<work>/v26/conjclose.py",
+    "conjprep": "<work>/v26/conjprep.py",
+    "split_pairs": "<work>/wt-e3/research/jumbling/theory/split_pairs.py",
+    "blocks": "<work>/wt-e3/research/jumbling/theory/blocks.py",
+    "fastghost": "<work>/v26/fastghost.py",
+    "ghostlib": "<work>/v26/ghostlib.py"
+   },
+   "pyc_all_valid_timestamp": true,
+   "pyc_checks": [
+    {
+     "pyc": "<work>/v26/__pycache__/conjclose.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/conjprep.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/fastghost.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/ghostlib.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/exact.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/witness.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/fixtures/wj.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/__init__.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/kernel.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/kplus.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/model.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/regions.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/state.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/twists.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/buffer.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/buffer.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/restore.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/rim.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/seams.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/trees.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    }
+   ]
+  },
+  "constructS": {
+   "script": "<work>/v26/B3/constructS.py",
+   "argv": [
+    "<work>/v26/B3/constructS.py",
+    "<work>/wt-e3/research/jumbling/theory",
+    "<work>/v26/B4/E2-table.json",
+    "[[237, 13], [91, 6], [237, 47], [154, 7], [237, 13], [91, 7], [237, 47], [133, 1], [237, 13], [91, 6], [237, 47], [154, 6], [237, 13], [91, 7], [237, 47], [183, 6], [237, 13], [91, 6], [237, 47], [154, 7], [237, 13], [91, 7], [237, 47], [133, 1], [237, 13], [91, 6], [237, 47], [154, 6], [237, 13], [91, 7], [237, 47]]",
+    "[[162, 1]]",
+    "<work>/v26/B4/audit/words/trace/cS"
+   ],
+   "status": "ok",
+   "data_reads": [
+    "<work>/v26/B4/E2-table.json",
+    "<work>/wt-e3/assets/model.npz",
+    "<work>/wt-e3/assets/primitives.npz",
+    "<work>/wt-e3/research/jumbling/fixtures/wj-I_a.json"
+   ],
+   "writes": [
+    "<work>/v26/B4/audit/words/trace/cS/certificate-Q0.json",
+    "<work>/v26/B4/audit/words/trace/cS/parts/F.json",
+    "<work>/v26/B4/audit/words/trace/cS/parts/P.json",
+    "<work>/v26/B4/audit/words/trace/cS/parts/Pinv.json",
+    "<work>/v26/B4/audit/words/trace/cS/parts/Q0.json",
+    "<work>/v26/B4/audit/words/trace/cS/pre.json",
+    "<work>/v26/B4/audit/words/trace/cS/result.json",
+    "<work>/v26/B4/audit/words/trace/cS/word-full.json"
+   ],
+   "code_files": [
+    "<work>/v26/B3/constructS.py",
+    "<work>/v26/__pycache__/conjclose.cpython-313.pyc",
+    "<work>/v26/__pycache__/conjprep.cpython-313.pyc",
+    "<work>/v26/__pycache__/fastghost.cpython-313.pyc",
+    "<work>/v26/__pycache__/ghostlib.cpython-313.pyc",
+    "<work>/v26/conjclose.py",
+    "<work>/v26/conjprep.py",
+    "<work>/v26/fastghost.py",
+    "<work>/v26/ghostlib.py",
+    "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/buffer.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/blocks.py",
+    "<work>/wt-e3/research/jumbling/theory/classes.py",
+    "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+    "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+    "<work>/wt-e3/research/jumbling/theory/orient.py",
+    "<work>/wt-e3/research/jumbling/theory/split_pairs.py"
+   ],
+   "other_events": [
+    [
+     "ctypes.dlopen",
+     "(None,)",
+     1
+    ],
+    [
+     "os.mkdir",
+     "('<work>/v26/B4/audit/words/trace/cS', 511, -1)",
+     1
+    ],
+    [
+     "os.mkdir",
+     "('<work>/v26/B4/audit/words/trace/cS/parts', 511, -1)",
+     1
+    ]
+   ],
+   "listdirs": [
+    "('<work>/v26',)",
+    "('<work>/wt-e3/research/jumbling',)",
+    "('<work>/wt-e3/research/jumbling/fixtures',)",
+    "('<work>/wt-e3/research/jumbling/sim',)",
+    "('<work>/wt-e3/research/jumbling/theory',)"
+   ],
+   "non_system_modules": {
+    "__main__": "<work>/v26/B4/audit/words/trace_run.py",
+    "exact": "<work>/wt-e3/research/jumbling/exact.py",
+    "sim.kplus": "<work>/wt-e3/research/jumbling/sim/kplus.py",
+    "__mp_main__": "<work>/v26/B3/constructS.py",
+    "witness": "<work>/wt-e3/research/jumbling/witness.py",
+    "sim.model": "<work>/wt-e3/research/jumbling/sim/model.py",
+    "sim.kernel": "<work>/wt-e3/research/jumbling/sim/kernel.py",
+    "sim.regions": "<work>/wt-e3/research/jumbling/sim/regions.py",
+    "sim.twists": "<work>/wt-e3/research/jumbling/sim/twists.py",
+    "sim.state": "<work>/wt-e3/research/jumbling/sim/state.py",
+    "sim": "<work>/wt-e3/research/jumbling/sim/__init__.py",
+    "rim": "<work>/wt-e3/research/jumbling/theory/rim.py",
+    "trees": "<work>/wt-e3/research/jumbling/theory/trees.py",
+    "wj": "<work>/wt-e3/research/jumbling/fixtures/wj.py",
+    "restore": "<work>/wt-e3/research/jumbling/theory/restore.py",
+    "seams": "<work>/wt-e3/research/jumbling/theory/seams.py",
+    "deep_scramble": "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+    "classes": "<work>/wt-e3/research/jumbling/theory/classes.py",
+    "e3_class": "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+    "orient": "<work>/wt-e3/research/jumbling/theory/orient.py",
+    "buffer": "<work>/wt-e3/research/jumbling/theory/buffer.py",
+    "conjclose": "<work>/v26/conjclose.py",
+    "conjprep": "<work>/v26/conjprep.py",
+    "split_pairs": "<work>/wt-e3/research/jumbling/theory/split_pairs.py",
+    "blocks": "<work>/wt-e3/research/jumbling/theory/blocks.py",
+    "fastghost": "<work>/v26/fastghost.py",
+    "ghostlib": "<work>/v26/ghostlib.py"
+   },
+   "pyc_all_valid_timestamp": true,
+   "pyc_checks": [
+    {
+     "pyc": "<work>/v26/__pycache__/conjclose.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/conjprep.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/fastghost.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/ghostlib.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/exact.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/witness.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/fixtures/wj.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/__init__.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/kernel.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/kplus.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/model.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/regions.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/state.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/twists.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/buffer.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/buffer.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/restore.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/rim.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/seams.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/trees.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    }
+   ]
+  },
+  "closure2": {
+   "script": "<work>/v26/closure2.py",
+   "argv": [
+    "<work>/v26/closure2.py",
+    "<work>/wt-e3/research/jumbling/theory",
+    "<work>/v26/B4/E2-table.json",
+    "3",
+    "<work>/v26/B4/w3-P4-162-1.json",
+    "<work>/v26/B4/audit/words/trace/c3"
+   ],
+   "status": "ok",
+   "data_reads": [
+    "<work>/v26/B4/E2-table.json",
+    "<work>/v26/B4/w3-P4-162-1.json",
+    "<work>/wt-e3/assets/model.npz",
+    "<work>/wt-e3/assets/primitives.npz",
+    "<work>/wt-e3/research/jumbling/fixtures/wj-I_a.json"
+   ],
+   "writes": [
+    "<work>/v26/B4/audit/words/trace/c3/certificate.json",
+    "<work>/v26/B4/audit/words/trace/c3/parts/P.json",
+    "<work>/v26/B4/audit/words/trace/c3/parts/Pinv.json",
+    "<work>/v26/B4/audit/words/trace/c3/parts/Q.json",
+    "<work>/v26/B4/audit/words/trace/c3/parts/V.json",
+    "<work>/v26/B4/audit/words/trace/c3/parts/Vinv.json",
+    "<work>/v26/B4/audit/words/trace/c3/pre.json",
+    "<work>/v26/B4/audit/words/trace/c3/result.json",
+    "<work>/v26/B4/audit/words/trace/c3/word-full.json"
+   ],
+   "code_files": [
+    "<work>/v26/__pycache__/conjclose.cpython-313.pyc",
+    "<work>/v26/__pycache__/conjprep.cpython-313.pyc",
+    "<work>/v26/__pycache__/fastghost.cpython-313.pyc",
+    "<work>/v26/__pycache__/ghostlib.cpython-313.pyc",
+    "<work>/v26/__pycache__/vacate.cpython-313.pyc",
+    "<work>/v26/closure2.py",
+    "<work>/v26/conjclose.py",
+    "<work>/v26/conjprep.py",
+    "<work>/v26/fastghost.py",
+    "<work>/v26/ghostlib.py",
+    "<work>/v26/vacate.py",
+    "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/buffer.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc",
+    "<work>/wt-e3/research/jumbling/theory/blocks.py",
+    "<work>/wt-e3/research/jumbling/theory/classes.py",
+    "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+    "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+    "<work>/wt-e3/research/jumbling/theory/orient.py",
+    "<work>/wt-e3/research/jumbling/theory/split_pairs.py"
+   ],
+   "other_events": [
+    [
+     "ctypes.dlopen",
+     "(None,)",
+     1
+    ],
+    [
+     "os.mkdir",
+     "('<work>/v26/B4/audit/words/trace/c3', 511, -1)",
+     1
+    ],
+    [
+     "os.mkdir",
+     "('<work>/v26/B4/audit/words/trace/c3/parts', 511, -1)",
+     1
+    ]
+   ],
+   "listdirs": [
+    "('<work>/v26',)",
+    "('<work>/wt-e3/research/jumbling',)",
+    "('<work>/wt-e3/research/jumbling/fixtures',)",
+    "('<work>/wt-e3/research/jumbling/sim',)",
+    "('<work>/wt-e3/research/jumbling/theory',)"
+   ],
+   "non_system_modules": {
+    "__main__": "<work>/v26/B4/audit/words/trace_run.py",
+    "exact": "<work>/wt-e3/research/jumbling/exact.py",
+    "sim.kplus": "<work>/wt-e3/research/jumbling/sim/kplus.py",
+    "__mp_main__": "<work>/v26/closure2.py",
+    "witness": "<work>/wt-e3/research/jumbling/witness.py",
+    "sim.model": "<work>/wt-e3/research/jumbling/sim/model.py",
+    "sim.kernel": "<work>/wt-e3/research/jumbling/sim/kernel.py",
+    "sim.regions": "<work>/wt-e3/research/jumbling/sim/regions.py",
+    "sim.twists": "<work>/wt-e3/research/jumbling/sim/twists.py",
+    "sim.state": "<work>/wt-e3/research/jumbling/sim/state.py",
+    "sim": "<work>/wt-e3/research/jumbling/sim/__init__.py",
+    "rim": "<work>/wt-e3/research/jumbling/theory/rim.py",
+    "trees": "<work>/wt-e3/research/jumbling/theory/trees.py",
+    "wj": "<work>/wt-e3/research/jumbling/fixtures/wj.py",
+    "restore": "<work>/wt-e3/research/jumbling/theory/restore.py",
+    "seams": "<work>/wt-e3/research/jumbling/theory/seams.py",
+    "deep_scramble": "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+    "classes": "<work>/wt-e3/research/jumbling/theory/classes.py",
+    "e3_class": "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+    "orient": "<work>/wt-e3/research/jumbling/theory/orient.py",
+    "buffer": "<work>/wt-e3/research/jumbling/theory/buffer.py",
+    "conjclose": "<work>/v26/conjclose.py",
+    "conjprep": "<work>/v26/conjprep.py",
+    "split_pairs": "<work>/wt-e3/research/jumbling/theory/split_pairs.py",
+    "blocks": "<work>/wt-e3/research/jumbling/theory/blocks.py",
+    "fastghost": "<work>/v26/fastghost.py",
+    "ghostlib": "<work>/v26/ghostlib.py",
+    "vacate": "<work>/v26/vacate.py"
+   },
+   "pyc_all_valid_timestamp": true,
+   "pyc_checks": [
+    {
+     "pyc": "<work>/v26/__pycache__/conjclose.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/conjprep.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/fastghost.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/ghostlib.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/v26/__pycache__/vacate.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/exact.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/witness.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/fixtures/wj.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/__init__.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/kernel.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/kplus.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/model.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/regions.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/state.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/sim/twists.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/buffer.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/buffer.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/restore.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/rim.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/seams.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc",
+     "exists": false,
+     "timestamp_valid": true,
+     "note": "open attempted, no cache; source compiled"
+    },
+    {
+     "pyc": "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc",
+     "magic_ok": true,
+     "flags": 0,
+     "source": "<work>/wt-e3/research/jumbling/theory/trees.py",
+     "source_exists": true,
+     "timestamp_valid": true
+    }
+   ]
+  }
+ },
+ "comparisons": {
+  "singleP_out_equals_B3_singleP.json": true,
+  "shrink_jsonl_equal_apart_from_timing": true,
+  "shrink_levels": 5,
+  "constructS_pre.json_equal_apart_from_timing": true,
+  "constructS_certificate-Q0.json_equal_apart_from_timing": true,
+  "constructS_word-full.json_equal_apart_from_timing": true,
+  "constructS_result.json_equal_apart_from_timing": true,
+  "constructS_parts/F.json_identical": true,
+  "constructS_parts/P.json_identical": true,
+  "constructS_parts/Pinv.json_identical": true,
+  "constructS_parts/Q0.json_identical": true,
+  "constructS_parts_same_names": true,
+  "closure2_pre.json_equal_apart_from_timing": true,
+  "closure2_certificate.json_equal_apart_from_timing": true,
+  "closure2_word-full.json_equal_apart_from_timing": true,
+  "closure2_result.json_equal_apart_from_timing": true,
+  "closure2_parts/P.json_identical": true,
+  "closure2_parts/Pinv.json_identical": true,
+  "closure2_parts/Q.json_identical": true,
+  "closure2_parts/V.json_identical": true,
+  "closure2_parts/Vinv.json_identical": true,
+  "closure2_parts_same_names": true
+ }
+}

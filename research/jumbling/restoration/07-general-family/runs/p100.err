@@ -1,0 +1,214 @@
+{"world": "p100-table.json", "off": 118286, "domains": 21, "blocks": 0, "sec": 11.6}
+{"event": "table", "off": 118286, "sec_table": 31.4, "sec": 45.3}
+{"event": "cand", "cap": 557, "frame": 15, "n": 2702, "occ": 164, "gain": 2538, "letter": 35, "ahead": 2471, "delta": 378348, "score": [0, -35598753, 1], "tied": 1, "npos": 1, "sec": 56.2}
+{"event": "cand", "cap": 522, "frame": 12, "n": 2505, "occ": 20, "gain": 2485, "letter": 33, "ahead": 1705, "delta": 82771, "score": [0, -33952529, 1], "tied": 1, "npos": 3, "sec": 59.3}
+{"event": "cand", "cap": 411, "frame": 15, "n": 2644, "occ": 198, "gain": 2446, "letter": 29, "ahead": 2256, "delta": 72954, "score": [0, -32564323, 0], "tied": 1, "npos": 3, "sec": 63.2}
+{"event": "step", "step": 1, "kind": "PSC", "cap": 557, "gain": 2538, "off_before": 118286, "off_after": 115748, "restored": 2702, "collateral": 164, "moved_off": 0, "virtual_matches": true, "sec": 63.4, "ok": true}
+{"event": "chosen", "cap": 557, "frame": 15, "letter": 35, "gain": 2538, "ahead": 2471, "off": 115748, "sec_step": 18.1, "sec": 63.4}
+{"event": "cand", "cap": 522, "frame": 12, "n": 2505, "occ": 20, "gain": 2485, "letter": 33, "ahead": 1705, "delta": 82771, "score": [0, -31951948, 1], "tied": 1, "npos": 3, "sec": 65.5}
+{"event": "cand", "cap": 521, "frame": 3, "n": 2471, "occ": 0, "gain": 2471, "letter": 30, "ahead": 1510, "delta": 1510, "score": [0, -27116675, 0], "tied": 1, "npos": 2, "sec": 68.5}
+{"event": "cand", "cap": 411, "frame": 15, "n": 2644, "occ": 198, "gain": 2446, "letter": 29, "ahead": 2256, "delta": 72954, "score": [0, -32564323, 0], "tied": 1, "npos": 3, "sec": 71.6}
+{"event": "step", "step": 2, "kind": "PSC", "cap": 411, "gain": 2446, "off_before": 115748, "off_after": 113302, "restored": 2644, "collateral": 198, "moved_off": 197, "virtual_matches": true, "sec": 71.7, "ok": true}
+{"event": "chosen", "cap": 411, "frame": 15, "letter": 29, "gain": 2446, "ahead": 2256, "off": 113302, "sec_step": 8.3, "sec": 71.7}
+{"event": "cand", "cap": 522, "frame": 12, "n": 2505, "occ": 20, "gain": 2485, "letter": 33, "ahead": 1705, "delta": 82771, "score": [0, -31951948, 1], "tied": 1, "npos": 3, "sec": 73.7}
+{"event": "cand", "cap": 521, "frame": 3, "n": 2471, "occ": 0, "gain": 2471, "letter": 30, "ahead": 1510, "delta": 1510, "score": [0, -27116675, 0], "tied": 1, "npos": 2, "sec": 75.7}
+{"event": "cand", "cap": 25, "frame": 2, "n": 2504, "occ": 63, "gain": 2441, "letter": 31, "ahead": 2367, "delta": 619243, "score": [0, -36652380, 1], "tied": 1, "npos": 3, "sec": 78.6}
+{"event": "step", "step": 3, "kind": "PSC", "cap": 25, "gain": 2441, "off_before": 113302, "off_after": 110861, "restored": 2504, "collateral": 63, "moved_off": 698, "virtual_matches": true, "sec": 78.8, "ok": true}
+{"event": "chosen", "cap": 25, "frame": 2, "letter": 31, "gain": 2441, "ahead": 2367, "off": 110861, "sec_step": 7.1, "sec": 78.8}
+{"event": "cand", "cap": 522, "frame": 12, "n": 2505, "occ": 20, "gain": 2485, "letter": 33, "ahead": 1705, "delta": 82771, "score": [0, -31951948, 1], "tied": 1, "npos": 3, "sec": 81.1}
+{"event": "cand", "cap": 521, "frame": 3, "n": 2471, "occ": 0, "gain": 2471, "letter": 30, "ahead": 1510, "delta": 1510, "score": [0, -27116675, 0], "tied": 1, "npos": 2, "sec": 83.5}
+{"event": "cand", "cap": 317, "frame": 20, "n": 2427, "occ": 0, "gain": 2427, "letter": 13, "ahead": 2233, "delta": 0, "score": [0, -29886934, 0], "tied": 1, "npos": 2, "sec": 87.2}
+{"event": "step", "step": 4, "kind": "PS", "cap": 317, "gain": 2427, "off_before": 110861, "off_after": 108434, "restored": 2427, "collateral": 0, "moved_off": 0, "virtual_matches": true, "sec": 87.3, "ok": true}
+{"event": "chosen", "cap": 317, "frame": 20, "letter": 13, "gain": 2427, "ahead": 2233, "off": 108434, "sec_step": 8.5, "sec": 87.3}
+{"event": "cand", "cap": 522, "frame": 12, "n": 2505, "occ": 20, "gain": 2485, "letter": 33, "ahead": 1705, "delta": 82771, "score": [0, -31951948, 1], "tied": 1, "npos": 3, "sec": 89.5}
+{"event": "cand", "cap": 521, "frame": 3, "n": 2471, "occ": 0, "gain": 2471, "letter": 30, "ahead": 1510, "delta": 1510, "score": [0, -27116675, 0], "tied": 1, "npos": 2, "sec": 93.0}
+{"event": "cand", "cap": 509, "frame": 20, "n": 2380, "occ": 0, "gain": 2380, "letter": 47, "ahead": 1786, "delta": 367528, "score": [0, -37492633, 1], "tied": 1, "npos": 3, "sec": 96.9}
+{"event": "step", "step": 5, "kind": "PSC", "cap": 522, "gain": 2485, "off_before": 108434, "off_after": 105949, "restored": 2505, "collateral": 20, "moved_off": 273, "virtual_matches": true, "sec": 97.1, "ok": true}
+{"event": "chosen", "cap": 522, "frame": 12, "letter": 33, "gain": 2485, "ahead": 1705, "off": 105949, "sec_step": 9.7, "sec": 97.1}
+{"event": "cand", "cap": 521, "frame": 3, "n": 2471, "occ": 0, "gain": 2471, "letter": 30, "ahead": 1510, "delta": 1510, "score": [0, -27116675, 0], "tied": 1, "npos": 2, "sec": 99.2}
+{"event": "cand", "cap": 509, "frame": 20, "n": 2380, "occ": 0, "gain": 2380, "letter": 47, "ahead": 1786, "delta": 398608, "score": [0, -35748553, 1], "tied": 1, "npos": 3, "sec": 101.6}
+{"event": "cand", "cap": 456, "frame": 14, "n": 2702, "occ": 446, "gain": 2256, "letter": 35, "ahead": 1100, "delta": 376116, "score": [0, -19896758, 0], "tied": 1, "npos": 1, "sec": 106.1}
+{"event": "step", "step": 6, "kind": "PS", "cap": 509, "gain": 2380, "off_before": 105949, "off_after": 103569, "restored": 2380, "collateral": 0, "moved_off": 395, "virtual_matches": true, "sec": 106.3, "ok": true}
+{"event": "chosen", "cap": 509, "frame": 20, "letter": 47, "gain": 2380, "ahead": 1786, "off": 103569, "sec_step": 9.2, "sec": 106.3}
+{"event": "cand", "cap": 521, "frame": 3, "n": 2471, "occ": 0, "gain": 2471, "letter": 30, "ahead": 1465, "delta": 1510, "score": [0, -26898093, 0], "tied": 1, "npos": 2, "sec": 108.4}
+{"event": "cand", "cap": 456, "frame": 14, "n": 2702, "occ": 446, "gain": 2256, "letter": 35, "ahead": 1100, "delta": 376116, "score": [0, -19896758, 0], "tied": 1, "npos": 1, "sec": 110.6}
+{"event": "cand", "cap": 139, "frame": 2, "n": 2367, "occ": 134, "gain": 2233, "letter": 59, "ahead": 3097, "delta": 592222, "score": [0, -26146857, 2], "tied": 1, "npos": 1, "sec": 118.6}
+{"event": "step", "step": 7, "kind": "PSC", "cap": 139, "gain": 2233, "off_before": 103569, "off_after": 101336, "restored": 2367, "collateral": 134, "moved_off": 497, "virtual_matches": true, "sec": 118.8, "ok": true}
+{"event": "chosen", "cap": 139, "frame": 2, "letter": 59, "gain": 2233, "ahead": 3097, "off": 101336, "sec_step": 12.5, "sec": 118.8}
+{"event": "cand", "cap": 180, "frame": 9, "n": 3097, "occ": 0, "gain": 3097, "letter": 28, "ahead": 1619, "delta": 17894, "score": [0, -35270372, 0], "tied": 1, "npos": 2, "sec": 125.2}
+{"event": "cand", "cap": 521, "frame": 3, "n": 2471, "occ": 0, "gain": 2471, "letter": 30, "ahead": 1465, "delta": 1510, "score": [0, -26898093, 0], "tied": 1, "npos": 2, "sec": 128.9}
+{"event": "cand", "cap": 456, "frame": 14, "n": 2702, "occ": 446, "gain": 2256, "letter": 35, "ahead": 1100, "delta": 376116, "score": [0, -19896758, 0], "tied": 1, "npos": 1, "sec": 130.9}
+{"event": "step", "step": 8, "kind": "PS", "cap": 180, "gain": 3097, "off_before": 101336, "off_after": 98239, "restored": 3097, "collateral": 0, "moved_off": 131, "virtual_matches": true, "sec": 131.0, "ok": true}
+{"event": "chosen", "cap": 180, "frame": 9, "letter": 28, "gain": 3097, "ahead": 1619, "off": 98239, "sec_step": 12.2, "sec": 131.0}
+{"event": "cand", "cap": 521, "frame": 3, "n": 2471, "occ": 0, "gain": 2471, "letter": 30, "ahead": 1465, "delta": 1510, "score": [0, -26898093, 0], "tied": 1, "npos": 2, "sec": 133.0}
+{"event": "cand", "cap": 456, "frame": 14, "n": 2702, "occ": 446, "gain": 2256, "letter": 35, "ahead": 1100, "delta": 376116, "score": [0, -19896758, 0], "tied": 1, "npos": 1, "sec": 135.2}
+{"event": "cand", "cap": 218, "frame": 2, "n": 1914, "occ": 0, "gain": 1914, "letter": 21, "ahead": 1183, "delta": 281947, "score": [0, -24890808, 0], "tied": 1, "npos": 2, "sec": 136.9}
+{"event": "step", "step": 9, "kind": "PS", "cap": 521, "gain": 2471, "off_before": 98239, "off_after": 95768, "restored": 2471, "collateral": 0, "moved_off": 395, "virtual_matches": true, "sec": 137.1, "ok": true}
+{"event": "chosen", "cap": 521, "frame": 3, "letter": 30, "gain": 2471, "ahead": 1465, "off": 95768, "sec_step": 6.1, "sec": 137.1}
+{"event": "cand", "cap": 456, "frame": 14, "n": 2702, "occ": 446, "gain": 2256, "letter": 35, "ahead": 1100, "delta": 376116, "score": [0, -19896758, 0], "tied": 1, "npos": 1, "sec": 139.3}
+{"event": "cand", "cap": 218, "frame": 2, "n": 1914, "occ": 0, "gain": 1914, "letter": 21, "ahead": 1183, "delta": 281947, "score": [0, -24890808, 0], "tied": 1, "npos": 2, "sec": 141.4}
+{"event": "cand", "cap": 66, "frame": 5, "n": 1912, "occ": 0, "gain": 1912, "letter": 29, "ahead": 1243, "delta": 319631, "score": [0, -20238122, 2], "tied": 1, "npos": 2, "sec": 145.9}
+{"event": "step", "step": 10, "kind": "PSC", "cap": 456, "gain": 2256, "off_before": 95768, "off_after": 93512, "restored": 2702, "collateral": 446, "moved_off": 197, "virtual_matches": true, "sec": 146.1, "ok": true}
+{"event": "chosen", "cap": 456, "frame": 14, "letter": 35, "gain": 2256, "ahead": 1100, "off": 93512, "sec_step": 9.0, "sec": 146.1}
+{"event": "cand", "cap": 218, "frame": 2, "n": 1914, "occ": 0, "gain": 1914, "letter": 21, "ahead": 1183, "delta": 281947, "score": [0, -24890808, 0], "tied": 1, "npos": 2, "sec": 148.1}
+{"event": "cand", "cap": 66, "frame": 5, "n": 1912, "occ": 0, "gain": 1912, "letter": 29, "ahead": 1243, "delta": 319631, "score": [0, -20238122, 2], "tied": 1, "npos": 2, "sec": 151.7}
+{"event": "cand", "cap": 162, "frame": 10, "n": 2307, "occ": 479, "gain": 1828, "letter": 57, "ahead": 1642, "delta": 312567, "score": [0, -28079479, 0], "tied": 1, "npos": 4, "sec": 157.3}
+{"event": "step", "step": 11, "kind": "PSC", "cap": 162, "gain": 1828, "off_before": 93512, "off_after": 91684, "restored": 2307, "collateral": 479, "moved_off": 220, "virtual_matches": true, "sec": 157.6, "ok": true}
+{"event": "chosen", "cap": 162, "frame": 10, "letter": 57, "gain": 1828, "ahead": 1642, "off": 91684, "sec_step": 11.5, "sec": 157.6}
+{"event": "cand", "cap": 218, "frame": 2, "n": 1914, "occ": 0, "gain": 1914, "letter": 21, "ahead": 1183, "delta": 281947, "score": [0, -24890808, 0], "tied": 1, "npos": 2, "sec": 159.7}
+{"event": "cand", "cap": 66, "frame": 5, "n": 1912, "occ": 0, "gain": 1912, "letter": 29, "ahead": 1243, "delta": 319631, "score": [0, -20238122, 2], "tied": 1, "npos": 2, "sec": 162.3}
+{"event": "cand", "cap": 402, "frame": 14, "n": 2085, "occ": 428, "gain": 1657, "letter": 57, "ahead": 1587, "delta": 608030, "score": [0, -28401796, 1], "tied": 1, "npos": 1, "sec": 168.1}
+{"event": "step", "step": 12, "kind": "PSC", "cap": 402, "gain": 1657, "off_before": 91684, "off_after": 90027, "restored": 2085, "collateral": 428, "moved_off": 882, "virtual_matches": true, "sec": 168.4, "ok": true}
+{"event": "chosen", "cap": 402, "frame": 14, "letter": 57, "gain": 1657, "ahead": 1587, "off": 90027, "sec_step": 10.8, "sec": 168.4}
+{"event": "cand", "cap": 218, "frame": 2, "n": 1914, "occ": 0, "gain": 1914, "letter": 21, "ahead": 1183, "delta": 281947, "score": [0, -24890808, 0], "tied": 1, "npos": 2, "sec": 170.8}
+{"event": "cand", "cap": 66, "frame": 5, "n": 1912, "occ": 0, "gain": 1912, "letter": 29, "ahead": 1243, "delta": 453766, "score": [0, -19826083, 2], "tied": 1, "npos": 2, "sec": 172.4}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1642, "delta": 1117310, "score": [0, -19883240, 1], "tied": 1, "npos": 0, "sec": 175.8}
+{"event": "step", "step": 13, "kind": "PS", "cap": 66, "gain": 1912, "off_before": 90027, "off_after": 88115, "restored": 1912, "collateral": 0, "moved_off": 466, "virtual_matches": true, "sec": 175.9, "ok": true}
+{"event": "chosen", "cap": 66, "frame": 5, "letter": 29, "gain": 1912, "ahead": 1243, "off": 88115, "sec_step": 7.6, "sec": 175.9}
+{"event": "cand", "cap": 218, "frame": 2, "n": 1914, "occ": 0, "gain": 1914, "letter": 21, "ahead": 1016, "delta": 281947, "score": [0, -24507186, 0], "tied": 1, "npos": 2, "sec": 178.1}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1607, "delta": 1117310, "score": [0, -19166074, 1], "tied": 1, "npos": 0, "sec": 182.8}
+{"event": "cand", "cap": 537, "frame": 6, "n": 1806, "occ": 219, "gain": 1587, "letter": 15, "ahead": 2266, "delta": 1099358, "score": [0, -23802097, 1], "tied": 1, "npos": 4, "sec": 186.7}
+{"event": "step", "step": 14, "kind": "PSC", "cap": 537, "gain": 1587, "off_before": 88115, "off_after": 86528, "restored": 1806, "collateral": 219, "moved_off": 946, "virtual_matches": true, "sec": 186.9, "ok": true}
+{"event": "chosen", "cap": 537, "frame": 6, "letter": 15, "gain": 1587, "ahead": 2266, "off": 86528, "sec_step": 10.9, "sec": 186.9}
+{"event": "cand", "cap": 514, "frame": 19, "n": 2307, "occ": 41, "gain": 2266, "letter": 16, "ahead": 2268, "delta": 623784, "score": [0, -24609160, 1], "tied": 1, "npos": 2, "sec": 191.0}
+{"event": "cand", "cap": 218, "frame": 2, "n": 1914, "occ": 0, "gain": 1914, "letter": 44, "ahead": 1760, "delta": 296729, "score": [0, -21607977, 2], "tied": 1, "npos": 3, "sec": 194.8}
+{"event": "cand", "cap": 501, "frame": 9, "n": 2216, "occ": 554, "gain": 1662, "letter": 46, "ahead": 1406, "delta": 416682, "score": [0, -19357490, 0], "tied": 1, "npos": 3, "sec": 196.7}
+{"event": "step", "step": 15, "kind": "PSC", "cap": 514, "gain": 2266, "off_before": 86528, "off_after": 84262, "restored": 2307, "collateral": 41, "moved_off": 551, "virtual_matches": true, "sec": 196.9, "ok": true}
+{"event": "chosen", "cap": 514, "frame": 19, "letter": 16, "gain": 2266, "ahead": 2268, "off": 84262, "sec_step": 10.0, "sec": 196.9}
+{"event": "cand", "cap": 218, "frame": 2, "n": 1914, "occ": 0, "gain": 1914, "letter": 44, "ahead": 2155, "delta": 296729, "score": [0, -21589689, 2], "tied": 1, "npos": 3, "sec": 198.7}
+{"event": "cand", "cap": 501, "frame": 9, "n": 2216, "occ": 554, "gain": 1662, "letter": 46, "ahead": 1406, "delta": 416682, "score": [0, -19080125, 0], "tied": 1, "npos": 3, "sec": 201.1}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1607, "delta": 1117310, "score": [0, -19166074, 1], "tied": 1, "npos": 0, "sec": 202.9}
+{"event": "step", "step": 16, "kind": "PS", "cap": 218, "gain": 1914, "off_before": 84262, "off_after": 82348, "restored": 1914, "collateral": 0, "moved_off": 331, "virtual_matches": true, "sec": 203.1, "ok": true}
+{"event": "chosen", "cap": 218, "frame": 2, "letter": 44, "gain": 1914, "ahead": 2155, "off": 82348, "sec_step": 6.2, "sec": 203.1}
+{"event": "cand", "cap": 372, "frame": 8, "n": 2155, "occ": 0, "gain": 2155, "letter": 36, "ahead": 399, "delta": 82834, "score": [0, -19957659, 0], "tied": 1, "npos": 1, "sec": 206.8}
+{"event": "cand", "cap": 501, "frame": 9, "n": 2216, "occ": 554, "gain": 1662, "letter": 46, "ahead": 1406, "delta": 439821, "score": [0, -18577945, 0], "tied": 1, "npos": 3, "sec": 208.7}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1607, "delta": 1117310, "score": [0, -19166074, 1], "tied": 1, "npos": 0, "sec": 211.8}
+{"event": "step", "step": 17, "kind": "PSC", "cap": 501, "gain": 1662, "off_before": 82348, "off_after": 80686, "restored": 2216, "collateral": 554, "moved_off": 197, "virtual_matches": true, "sec": 212.0, "ok": true}
+{"event": "chosen", "cap": 501, "frame": 9, "letter": 46, "gain": 1662, "ahead": 1406, "off": 80686, "sec_step": 8.8, "sec": 212.0}
+{"event": "cand", "cap": 372, "frame": 8, "n": 2155, "occ": 0, "gain": 2155, "letter": 36, "ahead": 399, "delta": 82834, "score": [0, -19420527, 0], "tied": 1, "npos": 1, "sec": 213.7}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1607, "delta": 1117310, "score": [0, -19166074, 1], "tied": 1, "npos": 0, "sec": 215.3}
+{"event": "cand", "cap": 326, "frame": 5, "n": 1757, "occ": 198, "gain": 1559, "letter": 21, "ahead": 1102, "delta": 473136, "score": [0, -14614912, 0], "tied": 1, "npos": 1, "sec": 219.4}
+{"event": "step", "step": 18, "kind": "PSC", "cap": 326, "gain": 1559, "off_before": 80686, "off_after": 79127, "restored": 1757, "collateral": 198, "moved_off": 568, "virtual_matches": true, "sec": 219.6, "ok": true}
+{"event": "chosen", "cap": 326, "frame": 5, "letter": 21, "gain": 1559, "ahead": 1102, "off": 79127, "sec_step": 7.6, "sec": 219.6}
+{"event": "cand", "cap": 372, "frame": 8, "n": 2155, "occ": 0, "gain": 2155, "letter": 36, "ahead": 399, "delta": 82834, "score": [0, -19420527, 0], "tied": 1, "npos": 1, "sec": 221.8}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1607, "delta": 1117310, "score": [0, -19166074, 1], "tied": 1, "npos": 0, "sec": 226.1}
+{"event": "cand", "cap": 588, "frame": 16, "n": 1816, "occ": 395, "gain": 1421, "letter": 57, "ahead": 2600, "delta": 443615, "score": [0, -15854012, 0], "tied": 1, "npos": 2, "sec": 228.4}
+{"event": "step", "step": 19, "kind": "PSC", "cap": 588, "gain": 1421, "off_before": 79127, "off_after": 77706, "restored": 1816, "collateral": 395, "moved_off": 653, "virtual_matches": true, "sec": 228.5, "ok": true}
+{"event": "chosen", "cap": 588, "frame": 16, "letter": 57, "gain": 1421, "ahead": 2600, "off": 77706, "sec_step": 8.9, "sec": 228.5}
+{"event": "cand", "cap": 573, "frame": 17, "n": 2890, "occ": 290, "gain": 2600, "letter": 23, "ahead": 323, "delta": 83274, "score": [0, -20123784, 0], "tied": 1, "npos": 1, "sec": 234.4}
+{"event": "cand", "cap": 372, "frame": 8, "n": 2155, "occ": 0, "gain": 2155, "letter": 36, "ahead": 399, "delta": 82834, "score": [0, -19420527, 0], "tied": 1, "npos": 1, "sec": 237.4}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1607, "delta": 1117310, "score": [0, -19166074, 1], "tied": 1, "npos": 0, "sec": 239.3}
+{"event": "step", "step": 20, "kind": "PSC", "cap": 573, "gain": 2600, "off_before": 77706, "off_after": 75106, "restored": 2890, "collateral": 290, "moved_off": 86, "virtual_matches": true, "sec": 239.4, "ok": true}
+{"event": "chosen", "cap": 573, "frame": 17, "letter": 23, "gain": 2600, "ahead": 323, "off": 75106, "sec_step": 10.9, "sec": 239.4}
+{"event": "cand", "cap": 372, "frame": 8, "n": 2155, "occ": 0, "gain": 2155, "letter": 36, "ahead": 127, "delta": 82834, "score": [0, -19038002, 0], "tied": 1, "npos": 1, "sec": 241.2}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1607, "delta": 1117310, "score": [0, -19166074, 1], "tied": 1, "npos": 0, "sec": 242.7}
+{"event": "cand", "cap": 593, "frame": 18, "n": 2263, "occ": 857, "gain": 1406, "letter": 13, "ahead": -1406, "delta": 0, "score": [0, -7892022, 0], "tied": 1, "npos": 0, "sec": 251.4}
+{"event": "step", "step": 21, "kind": "PS", "cap": 372, "gain": 2155, "off_before": 75106, "off_after": 72951, "restored": 2155, "collateral": 0, "moved_off": 592, "virtual_matches": true, "sec": 251.6, "ok": true}
+{"event": "chosen", "cap": 372, "frame": 8, "letter": 36, "gain": 2155, "ahead": 127, "off": 72951, "sec_step": 12.2, "sec": 251.6}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1607, "delta": 1117310, "score": [0, -19166074, 1], "tied": 1, "npos": 0, "sec": 253.9}
+{"event": "cand", "cap": 593, "frame": 18, "n": 2263, "occ": 857, "gain": 1406, "letter": 13, "ahead": -1406, "delta": 0, "score": [0, -7610348, 0], "tied": 1, "npos": 0, "sec": 255.6}
+{"event": "cand", "cap": 237, "frame": 10, "n": 2076, "occ": 770, "gain": 1306, "letter": 56, "ahead": 1180, "delta": 452205, "score": [0, -22091465, 0], "tied": 1, "npos": 3, "sec": 258.1}
+{"event": "step", "step": 22, "kind": "PSC", "cap": 237, "gain": 1306, "off_before": 72951, "off_after": 71645, "restored": 2076, "collateral": 770, "moved_off": 266, "virtual_matches": true, "sec": 258.2, "ok": true}
+{"event": "chosen", "cap": 237, "frame": 10, "letter": 56, "gain": 1306, "ahead": 1180, "off": 71645, "sec_step": 6.6, "sec": 258.2}
+{"event": "cand", "cap": 17, "frame": 8, "n": 2078, "occ": 436, "gain": 1642, "letter": 37, "ahead": -1607, "delta": 1117310, "score": [0, -17761353, 1], "tied": 1, "npos": 0, "sec": 260.3}
+{"event": "cand", "cap": 593, "frame": 18, "n": 2263, "occ": 857, "gain": 1406, "letter": 13, "ahead": -1406, "delta": 0, "score": [0, -7610348, 0], "tied": 1, "npos": 0, "sec": 262.0}
+{"event": "cand", "cap": 154, "frame": 4, "n": 1488, "occ": 308, "gain": 1180, "letter": 30, "ahead": -698, "delta": 234520, "score": [0, -14594674, 0], "tied": 1, "npos": 0, "sec": 267.1}
+{"event": "step", "step": 23, "kind": "PSC", "cap": 17, "gain": 1642, "off_before": 71645, "off_after": 70003, "restored": 2078, "collateral": 436, "moved_off": 395, "virtual_matches": true, "sec": 267.2, "ok": true}
+{"event": "chosen", "cap": 17, "frame": 8, "letter": 37, "gain": 1642, "ahead": -1607, "off": 70003, "sec_step": 9.0, "sec": 267.2}
+{"event": "cand", "cap": 593, "frame": 18, "n": 2263, "occ": 857, "gain": 1406, "letter": 13, "ahead": -1406, "delta": 0, "score": [0, -7610348, 0], "tied": 1, "npos": 0, "sec": 269.2}
+{"event": "cand", "cap": 154, "frame": 4, "n": 1488, "occ": 308, "gain": 1180, "letter": 30, "ahead": -698, "delta": 234520, "score": [0, -12739123, 0], "tied": 1, "npos": 0, "sec": 272.0}
+{"event": "cand", "cap": 245, "frame": 13, "n": 1547, "occ": 395, "gain": 1152, "letter": 26, "ahead": 659, "delta": 861383, "score": [0, -17530786, 1], "tied": 1, "npos": 1, "sec": 273.7}
+{"event": "step", "step": 24, "kind": "PSC", "cap": 245, "gain": 1152, "off_before": 70003, "off_after": 68851, "restored": 1547, "collateral": 395, "moved_off": 790, "virtual_matches": true, "sec": 273.8, "ok": true}
+{"event": "chosen", "cap": 245, "frame": 13, "letter": 26, "gain": 1152, "ahead": 659, "off": 68851, "sec_step": 6.6, "sec": 273.8}
+{"event": "cand", "cap": 593, "frame": 18, "n": 2263, "occ": 857, "gain": 1406, "letter": 13, "ahead": -1406, "delta": 0, "score": [0, -7610348, 0], "tied": 1, "npos": 0, "sec": 275.4}
+{"event": "cand", "cap": 154, "frame": 4, "n": 1488, "occ": 308, "gain": 1180, "letter": 30, "ahead": -698, "delta": 151623, "score": [0, -12826680, 0], "tied": 1, "npos": 0, "sec": 278.0}
+{"event": "cand", "cap": 324, "frame": 6, "n": 1913, "occ": 789, "gain": 1124, "letter": 22, "ahead": 1123, "delta": 1129705, "score": [0, -16654196, 1], "tied": 1, "npos": 2, "sec": 280.8}
+{"event": "step", "step": 25, "kind": "PSC", "cap": 324, "gain": 1124, "off_before": 68851, "off_after": 67727, "restored": 1913, "collateral": 789, "moved_off": 395, "virtual_matches": true, "sec": 281.1, "ok": true}
+{"event": "chosen", "cap": 324, "frame": 6, "letter": 22, "gain": 1124, "ahead": 1123, "off": 67727, "sec_step": 7.2, "sec": 281.1}
+{"event": "cand", "cap": 593, "frame": 18, "n": 2263, "occ": 857, "gain": 1406, "letter": 13, "ahead": -1406, "delta": 0, "score": [0, -7311487, 0], "tied": 1, "npos": 0, "sec": 282.4}
+{"event": "cand", "cap": 154, "frame": 4, "n": 1488, "occ": 308, "gain": 1180, "letter": 30, "ahead": -698, "delta": 151623, "score": [0, -12826680, 0], "tied": 1, "npos": 0, "sec": 285.6}
+{"event": "cand", "cap": 353, "frame": 9, "n": 1715, "occ": 592, "gain": 1123, "letter": 38, "ahead": -1123, "delta": 342402, "score": [0, -11017442, 0], "tied": 1, "npos": 0, "sec": 288.8}
+{"event": "step", "step": 26, "kind": "PSC", "cap": 593, "gain": 1406, "off_before": 67727, "off_after": 66321, "restored": 2263, "collateral": 857, "moved_off": 0, "virtual_matches": true, "sec": 288.9, "ok": true}
+{"event": "chosen", "cap": 593, "frame": 18, "letter": 13, "gain": 1406, "ahead": -1406, "off": 66321, "sec_step": 7.8, "sec": 288.9}
+{"event": "cand", "cap": 154, "frame": 4, "n": 1488, "occ": 308, "gain": 1180, "letter": 30, "ahead": -698, "delta": 151623, "score": [0, -12826680, 0], "tied": 1, "npos": 0, "sec": 290.9}
+{"event": "cand", "cap": 353, "frame": 9, "n": 1715, "occ": 592, "gain": 1123, "letter": 38, "ahead": -1123, "delta": 342402, "score": [0, -11005268, 0], "tied": 1, "npos": 0, "sec": 292.3}
+{"event": "cand", "cap": 342, "frame": 5, "n": 1970, "occ": 868, "gain": 1102, "letter": 26, "ahead": 1078, "delta": 106629, "score": [0, -17173333, 0], "tied": 1, "npos": 1, "sec": 294.0}
+{"event": "step", "step": 27, "kind": "PSC", "cap": 342, "gain": 1102, "off_before": 66321, "off_after": 65219, "restored": 1970, "collateral": 868, "moved_off": 481, "virtual_matches": true, "sec": 294.2, "ok": true}
+{"event": "chosen", "cap": 342, "frame": 5, "letter": 26, "gain": 1102, "ahead": 1078, "off": 65219, "sec_step": 5.4, "sec": 294.2}
+{"event": "cand", "cap": 154, "frame": 4, "n": 1488, "occ": 308, "gain": 1180, "letter": 30, "ahead": -698, "delta": 151623, "score": [0, -12826680, 0], "tied": 1, "npos": 0, "sec": 295.8}
+{"event": "cand", "cap": 353, "frame": 9, "n": 1715, "occ": 592, "gain": 1123, "letter": 38, "ahead": -1123, "delta": 342402, "score": [0, -11005268, 0], "tied": 1, "npos": 0, "sec": 297.2}
+{"event": "cand", "cap": 150, "frame": 3, "n": 1410, "occ": 332, "gain": 1078, "letter": 24, "ahead": -888, "delta": 639721, "score": [0, -13779962, 0], "tied": 1, "npos": 0, "sec": 299.4}
+{"event": "step", "step": 28, "kind": "PSC", "cap": 154, "gain": 1180, "off_before": 65219, "off_after": 64039, "restored": 1488, "collateral": 308, "moved_off": 1210, "virtual_matches": true, "sec": 299.5, "ok": true}
+{"event": "chosen", "cap": 154, "frame": 4, "letter": 30, "gain": 1180, "ahead": -698, "off": 64039, "sec_step": 5.3, "sec": 299.5}
+{"event": "cand", "cap": 353, "frame": 9, "n": 1715, "occ": 592, "gain": 1123, "letter": 38, "ahead": -1123, "delta": 342402, "score": [0, -11005268, 0], "tied": 1, "npos": 0, "sec": 301.1}
+{"event": "cand", "cap": 150, "frame": 3, "n": 1410, "occ": 332, "gain": 1078, "letter": 24, "ahead": -888, "delta": 639721, "score": [0, -13726448, 0], "tied": 1, "npos": 0, "sec": 303.0}
+{"event": "cand", "cap": 392, "frame": 11, "n": 1714, "occ": 851, "gain": 863, "letter": 40, "ahead": 979, "delta": 553648, "score": [0, -12739260, 0], "tied": 1, "npos": 1, "sec": 307.0}
+{"event": "step", "step": 29, "kind": "PSC", "cap": 392, "gain": 863, "off_before": 64039, "off_after": 63176, "restored": 1714, "collateral": 851, "moved_off": 1080, "virtual_matches": true, "sec": 307.1, "ok": true}
+{"event": "chosen", "cap": 392, "frame": 11, "letter": 40, "gain": 863, "ahead": 979, "off": 63176, "sec_step": 7.6, "sec": 307.1}
+{"event": "cand", "cap": 353, "frame": 9, "n": 1715, "occ": 592, "gain": 1123, "letter": 38, "ahead": -1123, "delta": 342402, "score": [0, -11005268, 0], "tied": 1, "npos": 0, "sec": 309.1}
+{"event": "cand", "cap": 150, "frame": 3, "n": 1410, "occ": 332, "gain": 1078, "letter": 24, "ahead": -888, "delta": 639721, "score": [0, -13726448, 0], "tied": 1, "npos": 0, "sec": 310.1}
+{"event": "cand", "cap": 306, "frame": 1, "n": 1709, "occ": 730, "gain": 979, "letter": 51, "ahead": -979, "delta": 176523, "score": [0, -10012862, 0], "tied": 1, "npos": 0, "sec": 316.8}
+{"event": "step", "step": 30, "kind": "PSC", "cap": 353, "gain": 1123, "off_before": 63176, "off_after": 62053, "restored": 1715, "collateral": 592, "moved_off": 481, "virtual_matches": true, "sec": 316.9, "ok": true}
+{"event": "chosen", "cap": 353, "frame": 9, "letter": 38, "gain": 1123, "ahead": -1123, "off": 62053, "sec_step": 9.9, "sec": 317.0}
+{"event": "cand", "cap": 150, "frame": 3, "n": 1410, "occ": 332, "gain": 1078, "letter": 24, "ahead": -888, "delta": 639721, "score": [0, -13726448, 0], "tied": 1, "npos": 0, "sec": 318.3}
+{"event": "cand", "cap": 306, "frame": 1, "n": 1709, "occ": 730, "gain": 979, "letter": 51, "ahead": -979, "delta": 176523, "score": [0, -10012862, 0], "tied": 1, "npos": 0, "sec": 321.2}
+{"event": "cand", "cap": 134, "frame": 6, "n": 1123, "occ": 283, "gain": 840, "letter": 22, "ahead": -333, "delta": 599545, "score": [0, -11352696, 1], "tied": 1, "npos": 0, "sec": 326.4}
+{"event": "step", "step": 31, "kind": "PSC", "cap": 150, "gain": 1078, "off_before": 62053, "off_after": 60975, "restored": 1410, "collateral": 332, "moved_off": 104, "virtual_matches": true, "sec": 326.7, "ok": true}
+{"event": "chosen", "cap": 150, "frame": 3, "letter": 24, "gain": 1078, "ahead": -888, "off": 60975, "sec_step": 9.7, "sec": 326.7}
+{"event": "cand", "cap": 306, "frame": 1, "n": 1709, "occ": 730, "gain": 979, "letter": 51, "ahead": 2484, "delta": 176523, "score": [0, -9703215, 0], "tied": 1, "npos": 1, "sec": 328.5}
+{"event": "cand", "cap": 134, "frame": 6, "n": 1123, "occ": 283, "gain": 840, "letter": 22, "ahead": -333, "delta": 599545, "score": [0, -11352696, 1], "tied": 1, "npos": 0, "sec": 330.6}
+{"event": "cand", "cap": 117, "frame": 13, "n": 994, "occ": 335, "gain": 659, "letter": 17, "ahead": -117, "delta": 1187841, "score": [0, -8066608, 0], "tied": 1, "npos": 0, "sec": 336.2}
+{"event": "step", "step": 32, "kind": "PSC", "cap": 306, "gain": 979, "off_before": 60975, "off_after": 59996, "restored": 1709, "collateral": 730, "moved_off": 600, "virtual_matches": true, "sec": 336.3, "ok": true}
+{"event": "chosen", "cap": 306, "frame": 1, "letter": 51, "gain": 979, "ahead": 2484, "off": 59996, "sec_step": 9.6, "sec": 336.3}
+{"event": "cand", "cap": 227, "frame": 7, "n": 2702, "occ": 218, "gain": 2484, "letter": 26, "ahead": -1473, "delta": 85601, "score": [0, -18271506, 0], "tied": 1, "npos": 0, "sec": 338.5}
+{"event": "cand", "cap": 134, "frame": 6, "n": 1123, "occ": 283, "gain": 840, "letter": 22, "ahead": -333, "delta": 599545, "score": [0, -11352696, 1], "tied": 1, "npos": 0, "sec": 339.8}
+{"event": "cand", "cap": 117, "frame": 13, "n": 994, "occ": 335, "gain": 659, "letter": 17, "ahead": -117, "delta": 1187841, "score": [0, -8066608, 0], "tied": 1, "npos": 0, "sec": 342.0}
+{"event": "step", "step": 33, "kind": "PSC", "cap": 227, "gain": 2484, "off_before": 59996, "off_after": 57512, "restored": 2702, "collateral": 218, "moved_off": 0, "virtual_matches": true, "sec": 342.1, "ok": true}
+{"event": "chosen", "cap": 227, "frame": 7, "letter": 26, "gain": 2484, "ahead": -1473, "off": 57512, "sec_step": 5.8, "sec": 342.1}
+{"event": "cand", "cap": 134, "frame": 6, "n": 1123, "occ": 283, "gain": 840, "letter": 22, "ahead": -333, "delta": 599545, "score": [0, -11352696, 1], "tied": 1, "npos": 0, "sec": 343.7}
+{"event": "cand", "cap": 117, "frame": 13, "n": 994, "occ": 335, "gain": 659, "letter": 17, "ahead": -117, "delta": 1187841, "score": [0, -8066608, 0], "tied": 1, "npos": 0, "sec": 345.7}
+{"event": "cand", "cap": 110, "frame": 9, "n": 1354, "occ": 819, "gain": 535, "letter": 41, "ahead": -535, "delta": 153606, "score": [0, -7630431, 1], "tied": 1, "npos": 0, "sec": 347.2}
+{"event": "step", "step": 34, "kind": "PSC", "cap": 134, "gain": 840, "off_before": 57512, "off_after": 56672, "restored": 1123, "collateral": 283, "moved_off": 1185, "virtual_matches": true, "sec": 347.4, "ok": true}
+{"event": "chosen", "cap": 134, "frame": 6, "letter": 22, "gain": 840, "ahead": -333, "off": 56672, "sec_step": 5.3, "sec": 347.4}
+{"event": "cand", "cap": 117, "frame": 13, "n": 994, "occ": 335, "gain": 659, "letter": 17, "ahead": -117, "delta": 1187841, "score": [0, -8066608, 0], "tied": 1, "npos": 0, "sec": 349.5}
+{"event": "cand", "cap": 110, "frame": 9, "n": 1354, "occ": 819, "gain": 535, "letter": 41, "ahead": -535, "delta": 153606, "score": [0, -7630431, 1], "tied": 1, "npos": 0, "sec": 350.9}
+{"event": "cand", "cap": 468, "frame": 17, "n": 1332, "occ": 1138, "gain": 194, "letter": 34, "ahead": -194, "delta": 217947, "score": [0, -6997681, 0], "tied": 1, "npos": 0, "sec": 353.8}
+{"event": "step", "step": 35, "kind": "PSC", "cap": 117, "gain": 659, "off_before": 56672, "off_after": 56013, "restored": 994, "collateral": 335, "moved_off": 1893, "virtual_matches": true, "sec": 354.0, "ok": true}
+{"event": "chosen", "cap": 117, "frame": 13, "letter": 17, "gain": 659, "ahead": -117, "off": 56013, "sec_step": 6.6, "sec": 354.0}
+{"event": "cand", "cap": 110, "frame": 9, "n": 1354, "occ": 819, "gain": 535, "letter": 41, "ahead": -535, "delta": 153606, "score": [0, -7630431, 1], "tied": 1, "npos": 0, "sec": 355.3}
+{"event": "cand", "cap": 468, "frame": 17, "n": 1332, "occ": 1138, "gain": 194, "letter": 34, "ahead": -194, "delta": 217947, "score": [0, -6997681, 0], "tied": 1, "npos": 0, "sec": 357.0}
+{"event": "cand", "cap": 497, "frame": 3, "n": 1306, "occ": 1179, "gain": 127, "letter": 37, "ahead": -127, "delta": 249955, "score": [0, -3837821, 0], "tied": 1, "npos": 0, "sec": 359.9}
+{"event": "step", "step": 36, "kind": "PSC", "cap": 110, "gain": 535, "off_before": 56013, "off_after": 55478, "restored": 1354, "collateral": 819, "moved_off": 55, "virtual_matches": true, "sec": 359.9, "ok": true}
+{"event": "chosen", "cap": 110, "frame": 9, "letter": 41, "gain": 535, "ahead": -535, "off": 55478, "sec_step": 6.0, "sec": 359.9}
+{"event": "cand", "cap": 468, "frame": 17, "n": 1332, "occ": 1138, "gain": 194, "letter": 34, "ahead": -194, "delta": 217947, "score": [0, -6997681, 0], "tied": 1, "npos": 0, "sec": 362.2}
+{"event": "cand", "cap": 497, "frame": 3, "n": 1306, "occ": 1179, "gain": 127, "letter": 37, "ahead": -127, "delta": 249955, "score": [0, -3773677, 0], "tied": 1, "npos": 0, "sec": 363.5}
+{"event": "step", "step": 37, "kind": "PSC", "cap": 468, "gain": 194, "off_before": 55478, "off_after": 55284, "restored": 1332, "collateral": 1138, "moved_off": 414, "virtual_matches": true, "sec": 363.7, "ok": true}
+{"event": "chosen", "cap": 468, "frame": 17, "letter": 34, "gain": 194, "ahead": -194, "off": 55284, "sec_step": 3.8, "sec": 363.7}
+{"event": "cand", "cap": 497, "frame": 3, "n": 1306, "occ": 1179, "gain": 127, "letter": 37, "ahead": -127, "delta": 249955, "score": [0, -3773677, 0], "tied": 1, "npos": 0, "sec": 366.0}
+{"event": "step", "step": 38, "kind": "PSC", "cap": 497, "gain": 127, "off_before": 55284, "off_after": 55157, "restored": 1306, "collateral": 1179, "moved_off": 395, "virtual_matches": true, "sec": 366.1, "ok": true}
+{"event": "chosen", "cap": 497, "frame": 3, "letter": 37, "gain": 127, "ahead": -127, "off": 55157, "sec_step": 2.4, "sec": 366.1}
+{"event": "carrier_scan", "candidates": 87, "top": [[644639, 315, 1], [427432, 315, 11], [313932, 324, 5], [300637, 315, 9], [174514, 509, 10]], "sec": 369.0}
+{"event": "carrier_cand", "c1": 315, "k": 1, "better": 644639, "cap": 181, "frame": 9, "gain": 2092, "letter": 12, "ahead": 2367, "sec": 382.1}
+{"event": "carrier_cand", "c1": 315, "k": 11, "better": 427432, "cap": 181, "frame": 9, "gain": 2353, "letter": 31, "ahead": 2568, "sec": 389.7}
+{"event": "carrier_cand", "c1": 509, "k": 10, "better": 174514, "cap": 468, "frame": 16, "gain": 74, "letter": 53, "ahead": -74, "sec": 402.1}
+{"event": "step", "step": 39, "kind": "KPSC", "cap": 181, "gain": 2353, "off_before": 55157, "off_after": 52804, "restored": 2427, "collateral": 74, "moved_off": 1532, "virtual_matches": true, "sec": 420.6, "ok": true}
+{"event": "chosen", "carrier": [315, 11], "cap": 181, "frame": 9, "letter": 31, "gain": 2353, "ahead": 2568, "off": 52804, "sec_step": 54.5, "sec": 420.6}
+{"event": "cand", "cap": 36, "frame": 8, "n": 2702, "occ": 134, "gain": 2568, "letter": 41, "ahead": -1321, "delta": -503003, "score": [0, -25360968, 0], "tied": 1, "npos": 0, "sec": 426.5}
+{"event": "step", "step": 40, "kind": "PSC", "cap": 36, "gain": 2568, "off_before": 52804, "off_after": 50236, "restored": 2702, "collateral": 134, "moved_off": 395, "virtual_matches": true, "sec": 426.6, "ok": true}
+{"event": "chosen", "cap": 36, "frame": 8, "letter": 41, "gain": 2568, "ahead": -1321, "off": 50236, "sec_step": 6.0, "sec": 426.6}
+{"event": "carrier_scan", "candidates": 102, "top": [[313932, 324, 5], [217207, 315, 10], [174514, 509, 10], [167677, 197, 11], [140742, 162, 3]], "sec": 429.5}
+{"event": "carrier_cand", "c1": 509, "k": 10, "better": 174514, "cap": 468, "frame": 16, "gain": 74, "letter": 53, "ahead": -74, "sec": 434.9}
+{"event": "step", "step": 41, "kind": "KPSC", "cap": 468, "gain": 74, "off_before": 50236, "off_after": 50162, "restored": 1252, "collateral": 1178, "moved_off": 758, "virtual_matches": true, "sec": 443.2, "ok": true}
+{"event": "chosen", "carrier": [509, 10], "cap": 468, "frame": 16, "letter": 53, "gain": 74, "ahead": -74, "off": 50162, "sec_step": 16.6, "sec": 443.2}
+{"event": "carrier_scan", "candidates": 111, "top": [[313932, 324, 5], [217207, 315, 10], [167677, 197, 11], [140742, 162, 3], [138582, 360, 10]], "sec": 445.9}
+{"event": "excursion_cand", "cap": 468, "gain": -74, "cap2": 319, "gain2": 1939, "ahead2": -561, "sec": 468.8}
+{"event": "excursion_cand", "cap": 117, "gain": -117, "cap2": 50, "gain2": 2025, "ahead2": -278, "sec": 474.6}
+{"event": "step", "step": 42, "kind": "XPSC", "cap": 50, "gain": 1908, "off_before": 50162, "off_after": 48254, "restored": 3184, "collateral": 1276, "moved_off": 1872, "virtual_matches": true, "sec": 498.3, "ok": true}
+{"event": "chosen", "excursion": [117, 40], "cap": 50, "letter": 22, "gain": 1908, "ahead": -278, "off": 48254, "sec_step": 55.1, "sec": 498.3}
+{"event": "carrier_scan", "candidates": 113, "top": [[329518, 22, 3], [313932, 324, 5], [217207, 315, 10], [140742, 162, 3], [138582, 360, 10]], "sec": 501.1}
+{"event": "excursion_cand", "cap": 468, "gain": -74, "cap2": 319, "gain2": 1939, "ahead2": -561, "sec": 518.1}
+{"event": "step", "step": 43, "kind": "XPSC", "cap": 319, "gain": 1865, "off_before": 48254, "off_after": 46389, "restored": 3684, "collateral": 1819, "moved_off": 723, "virtual_matches": true, "sec": 545.9, "ok": true}
+{"event": "chosen", "excursion": [468, 57], "cap": 319, "letter": 54, "gain": 1865, "ahead": -561, "off": 46389, "sec_step": 47.6, "sec": 545.9}
+{"event": "carrier_scan", "candidates": 138, "top": [[329518, 22, 3], [313932, 324, 5], [215150, 315, 5], [173013, 315, 11], [140742, 162, 3]], "sec": 548.1}
+{"event": "stuck", "off": 46389, "best": [[-127, 497, 3, 1179, 1306], [-278, 117, 4, 994, 1272], [-535, 110, 9, 819, 1354]], "sec": 592.2}
+{"event": "end", "steps": 43, "off": 46389, "sec": 592.2}

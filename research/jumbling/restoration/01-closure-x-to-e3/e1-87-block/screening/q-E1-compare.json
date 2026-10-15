@@ -1,0 +1,38 @@
+{
+ "A_candidates": 62424,
+ "B_candidates": 64368,
+ "A_subset_of_B": true,
+ "bad_equal_on_A": true,
+ "only_in_B": 1944,
+ "only_in_B_grips_straddled_at_A": [
+  190
+ ],
+ "only_in_B_all_use_one_of_them": true,
+ "straddled_at_A": [
+  162,
+  190,
+  209,
+  250,
+  272,
+  307,
+  407,
+  490
+ ],
+ "straddled_at_B": [
+  250,
+  272,
+  307,
+  407,
+  490
+ ],
+ "Q_in_A": true,
+ "Q_in_B": true,
+ "min_bad_A": 198,
+ "min_bad_B": 198,
+ "min_bad_only_in_B": 198,
+ "A_run_sha256": "6064a7b5266c742079f7a166e261995613071e2d7b130e4d08b836808c39db4b",
+ "B_run_sha256": "10f257b893cd3057b393c99a149bd7de06a82b426a519a2315bb8000f6131e90",
+ "A_state": "X (X-table.json of segment 1)",
+ "B_state": "E1 (input/E1-table.json)",
+ "note": "The two run files (62,424 and 64,368 rows) are not included for size; the digests identify them. B took 887 s."
+}

@@ -1,0 +1,7 @@
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 8}
+{"ghost_twist": 50, "of": 63, "alive": 177120, "sec": 9}
+{"badW": [23354, 23362, 38667], "fast": [23354, 23362, 38667], "sec": 9.3}
+{"ghost_twist": 50, "of": 63, "alive": 3, "sec": 9}
+{"bprime": {"alive": [true, true, true], "on_K": [true, true, true], "land": [23354, 23362, 38667]}, "sec": 9.5}
+{"ghost_twist": 50, "of": 79, "alive": 177120, "sec": 64}
+{"done": true, "sec": 64.0}

@@ -1,0 +1,13 @@
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 7}
+{"level": 0, "T": 3097, "Off_P": 3097, "K0": true, "L": [42275, 58266, 42278], "x": {"letter": [91, 6], "S1": true, "S2": true, "parked_in_cap": 0, "parked_cut": 0, "S3": true, "moved_out_of_T": 134, "moved_into_T": 134}, "upd": null, "sec_level": 0.2, "sec": 8.3}
+{"level": 1, "T": 134, "Off_P": 134, "K0": true, "L": [48269, 48270, 58569], "x": {"letter": [154, 7], "S1": true, "S2": true, "parked_in_cap": 0, "parked_cut": 0, "S3": true, "moved_out_of_T": 80, "moved_into_T": 80}, "upd": {"off_P": true, "T": true, "L": true, "pi": true}, "sec_level": 0.1, "sec": 8.5}
+{"level": 2, "T": 80, "Off_P": 80, "K0": true, "L": [55583, 58275, 55584], "x": {"letter": [133, 1], "S1": true, "S2": true, "parked_in_cap": 0, "parked_cut": 0, "S3": true, "moved_out_of_T": 14, "moved_into_T": 14}, "upd": {"off_P": true, "T": true, "L": true, "pi": true}, "sec_level": 0.2, "sec": 8.6}
+{"level": 3, "T": 14, "Off_P": 14, "K0": true, "L": [47688, 47699, 57090], "x": {"letter": [183, 6], "S1": true, "S2": true, "parked_in_cap": 0, "parked_cut": 0, "S3": true, "moved_out_of_T": 10, "moved_into_T": 10}, "upd": {"off_P": true, "T": true, "L": true, "pi": true}, "sec_level": 0.2, "sec": 8.8}
+{"finish": {"letter": [162, 1], "F1": true, "F2": true, "F3": true, "F4": true, "parked_in_cap": 0, "parked_cut": 0, "W_length": 63, "KV_W": 0, "Bad_W": [23354, 23362, 38667], "D_predicted": [23354, 23362, 38667], "landing_predicted": [23354, 23362, 38667], "prediction_matches_ghost": true, "W_ok": true}, "sec": 9.2}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 3, "sec": 21}
+{"orbits": 686, "singletons": 651, "sec": 22}
+{"jordan_length": 120, "tries": 20, "certified": 1, "of": 2, "sec": 22}
+{"routing_edges": 20125632, "letters_avoiding_target": 6402, "sec": 29}
+{"peeling_candidates": 1028929, "sec": 35}
+{"routing_edges": 20125632, "letters_avoiding_target": 6402, "sec": 40}
+{"result": "certificate issued", "U": 79, "times": {"template": 9.2, "vacancy": 31.2}, "sec": 40.4}

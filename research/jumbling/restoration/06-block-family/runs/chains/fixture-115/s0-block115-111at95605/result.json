@@ -1,0 +1,37 @@
+{
+ "input_digest": "b8918ba6c1d9d353923a85f14d80059c3922e53d21723f2a8723315cde1398fc",
+ "V_source": "none (Bad(W) vacant at the start)",
+ "parts": [
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "b8918ba6c1d9d353923a85f14d80059c3922e53d21723f2a8723315cde1398fc",
+   "output_digest": "b8918ba6c1d9d353923a85f14d80059c3922e53d21723f2a8723315cde1398fc"
+  },
+  {
+   "part": "Q",
+   "twists": 10,
+   "input_digest": "b8918ba6c1d9d353923a85f14d80059c3922e53d21723f2a8723315cde1398fc",
+   "output_digest": "801e1374932a45273fa5ba4661db082328f27442ab949ba9328d5def77aa04ab"
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "801e1374932a45273fa5ba4661db082328f27442ab949ba9328d5def77aa04ab",
+   "output_digest": "801e1374932a45273fa5ba4661db082328f27442ab949ba9328d5def77aa04ab"
+  }
+ ],
+ "end": {
+  "digest": "801e1374932a45273fa5ba4661db082328f27442ab949ba9328d5def77aa04ab",
+  "off": 94036,
+  "T_restored": 111,
+  "collateral": 0,
+  "protected_still_off": 94036,
+  "protected_exact_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 82973,
+  "lattice_of_S": 82973,
+  "lattice_of_S_same_exact_pose": 82775
+ },
+ "length": 10,
+ "seconds": 5.7
+}

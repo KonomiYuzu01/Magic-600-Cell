@@ -1,0 +1,37 @@
+{
+ "sim_Kplus_order": 7200,
+ "sim_Kplus_distinct_matrices": 7200,
+ "sim_Kplus_equals_independent_closure": true,
+ "X": {
+  "off": 107,
+  "off_equals_independent": true,
+  "collisions": 0,
+  "holes": 107
+ },
+ "E1": {
+  "off": 90,
+  "off_equals_independent": true,
+  "collisions": 0,
+  "holes": 90
+ },
+ "E2": {
+  "off": 3,
+  "off_equals_independent": true,
+  "collisions": 0,
+  "holes": [
+   24905,
+   89251,
+   89252
+  ],
+  "chambers_equal_independent": true
+ },
+ "E3": {
+  "off": 0,
+  "off_equals_independent": true,
+  "collisions": 0,
+  "holes": [],
+  "chambers_equal_independent": true
+ },
+ "moved3_sim_K_E3_nonneg": true,
+ "seconds": 8.9
+}

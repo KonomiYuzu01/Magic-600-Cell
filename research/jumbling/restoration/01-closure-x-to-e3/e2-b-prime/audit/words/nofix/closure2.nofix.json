@@ -1,0 +1,80 @@
+{
+ "script": "<work>/v26/closure2.py",
+ "argv": [
+  "<work>/v26/closure2.py",
+  "<work>/wt-e3/research/jumbling/theory",
+  "<work>/v26/B4/E2-table.json",
+  "3",
+  "<work>/v26/B4/w3-P4-162-1.json",
+  "<work>/v26/B4/audit/words/nofix/c3"
+ ],
+ "status": "ok",
+ "fixture_opened": false,
+ "data_opens": [
+  {
+   "path": "<work>/v26/B4/E2-table.json",
+   "mode": "r",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/c3/certificate.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/c3/parts/P.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/c3/parts/Pinv.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/c3/parts/Q.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/c3/parts/V.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/c3/parts/Vinv.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/c3/pre.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/c3/result.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/c3/word-full.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/w3-P4-162-1.json",
+   "mode": "r",
+   "count": 1
+  },
+  {
+   "path": "<work>/wt-e3/assets/model.npz",
+   "mode": "r",
+   "count": 2
+  },
+  {
+   "path": "<work>/wt-e3/assets/primitives.npz",
+   "mode": "r",
+   "count": 1
+  }
+ ]
+}

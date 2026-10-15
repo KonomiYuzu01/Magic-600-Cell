@@ -1,0 +1,16 @@
+{
+ "name": "d1-depth-one",
+ "start": "start-table.json",
+ "start_digest": "b9f09a41de2fdf437d3ba65fcfefb43a2f3619a6a0fd43141bbcfc3a99acbdbc",
+ "steps": [
+  {
+   "label": "d1-k00-u80",
+   "word": "step001-word.json",
+   "unit": "step001-unit.json",
+   "free": "step001-free.json",
+   "size": 111,
+   "free_size": 2986,
+   "length": 1
+  }
+ ]
+}

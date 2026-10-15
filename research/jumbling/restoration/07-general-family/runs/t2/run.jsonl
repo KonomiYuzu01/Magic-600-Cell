@@ -1,0 +1,2 @@
+{"step": 1, "kind": "PSC", "cap": 57, "word": [[57, 47]], "gain": 2307, "off_before": 5404, "off_after": 3097, "restored": 2702, "collateral": 395, "moved_off": 0, "virtual_matches": true, "sec": 0.0, "ok": true}
+{"step": 2, "kind": "PS", "cap": 86, "word": [[86, 12]], "gain": 3097, "off_before": 3097, "off_after": 0, "restored": 3097, "collateral": 0, "moved_off": 0, "virtual_matches": true, "sec": 0.0, "ok": true}

@@ -1,0 +1,286 @@
+{
+ "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+ "model_identity": {
+  "assets/model.npz": "680de6710e8a05b12dd4ba2ea22c866e645af032a31faf985d869798521f8b13",
+  "assets/primitives.npz": "1fac185bef9fc6d26afd821238a56b8856024a4c3e5a9ae5c03f77bb1407d5a5"
+ },
+ "macros": [
+  {
+   "id": 0,
+   "family": "w9",
+   "length": 9,
+   "steps": [
+    {
+     "grip": 0,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 3097
+    },
+    {
+     "grip": 2,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 5404
+    },
+    {
+     "grip": 161,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 8501
+    },
+    {
+     "grip": 139,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 10808
+    },
+    {
+     "grip": 16,
+     "retained": true,
+     "moved": 1637,
+     "off_lattice_after": 10808
+    },
+    {
+     "grip": 139,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 8501
+    },
+    {
+     "grip": 161,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 5404
+    },
+    {
+     "grip": 2,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 3097
+    },
+    {
+     "grip": 0,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 0
+    }
+   ],
+   "final_distinct_poses": 2,
+   "lattice_by_pole_permutation": true,
+   "lattice_by_simulator": true,
+   "moved_pieces": 1637,
+   "odd_orbits": [
+    8,
+    25
+   ],
+   "claimed_odd_orbits": [
+    8,
+    25
+   ],
+   "agree": true,
+   "sign_O08": 1,
+   "sign_O25": 1
+  },
+  {
+   "id": 8,
+   "family": "mirror2",
+   "length": 9,
+   "steps": [
+    {
+     "grip": 0,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 3097
+    },
+    {
+     "grip": 43,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 5799
+    },
+    {
+     "grip": 161,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 8896
+    },
+    {
+     "grip": 44,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 11598
+    },
+    {
+     "grip": 16,
+     "retained": true,
+     "moved": 1973,
+     "off_lattice_after": 11598
+    },
+    {
+     "grip": 44,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 8896
+    },
+    {
+     "grip": 161,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 5799
+    },
+    {
+     "grip": 43,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 3097
+    },
+    {
+     "grip": 0,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 0
+    }
+   ],
+   "final_distinct_poses": 2,
+   "lattice_by_pole_permutation": true,
+   "lattice_by_simulator": true,
+   "moved_pieces": 1973,
+   "odd_orbits": [
+    8,
+    16,
+    18,
+    19,
+    20,
+    22,
+    23,
+    26,
+    27,
+    28,
+    31,
+    32,
+    33,
+    34
+   ],
+   "claimed_odd_orbits": [
+    8,
+    16,
+    18,
+    19,
+    20,
+    22,
+    23,
+    26,
+    27,
+    28,
+    31,
+    32,
+    33,
+    34
+   ],
+   "agree": true,
+   "sign_O08": 1,
+   "sign_O25": 0
+  },
+  {
+   "id": 5,
+   "family": "mirror2",
+   "length": 9,
+   "steps": [
+    {
+     "grip": 374,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 3097
+    },
+    {
+     "grip": 161,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 5404
+    },
+    {
+     "grip": 68,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 8501
+    },
+    {
+     "grip": 19,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 10808
+    },
+    {
+     "grip": 16,
+     "retained": true,
+     "moved": 2981,
+     "off_lattice_after": 10808
+    },
+    {
+     "grip": 19,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 8501
+    },
+    {
+     "grip": 68,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 5404
+    },
+    {
+     "grip": 161,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 3097
+    },
+    {
+     "grip": 374,
+     "retained": false,
+     "moved": 3097,
+     "off_lattice_after": 0
+    }
+   ],
+   "final_distinct_poses": 2,
+   "lattice_by_pole_permutation": true,
+   "lattice_by_simulator": true,
+   "moved_pieces": 2981,
+   "odd_orbits": [
+    10,
+    12,
+    14,
+    17,
+    18,
+    21,
+    22,
+    23,
+    25,
+    26,
+    27,
+    28,
+    31,
+    33
+   ],
+   "claimed_odd_orbits": [
+    10,
+    12,
+    14,
+    17,
+    18,
+    21,
+    22,
+    23,
+    25,
+    26,
+    27,
+    28,
+    31,
+    33
+   ],
+   "agree": true,
+   "sign_O08": 0,
+   "sign_O25": 1
+  }
+ ],
+ "seconds": 6.1
+}

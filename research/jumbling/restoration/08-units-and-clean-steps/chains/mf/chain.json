@@ -1,0 +1,25 @@
+{
+ "name": "multi-frame-r40s11",
+ "start": "start-table.json",
+ "start_digest": "8847aa8110795df33455be87d6046e30c2c3041b6c83fabf058e8fb5e097a25a",
+ "steps": [
+  {
+   "label": "r40s11-k35-u111",
+   "word": "step001-word.json",
+   "unit": "step001-unit.json",
+   "free": null,
+   "size": 111,
+   "free_size": 0,
+   "length": 10
+  },
+  {
+   "label": "mf-c7127a",
+   "word": "step002-word.json",
+   "unit": "step002-unit.json",
+   "free": "step002-free.json",
+   "size": 86,
+   "free_size": 242,
+   "length": 10
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "table": "<work>/v17work/unlock-tables-d16/prefix-38550.json",
+ "pieces": {
+  "16245": {
+   "vertices": 7,
+   "separating_facets_exact": [
+    152,
+    183
+   ],
+   "max_facet_excess_min_over_vertices": 0.34564734388044727
+  },
+  "16249": {
+   "vertices": 5,
+   "separating_facets_exact": [
+    152,
+    183
+   ],
+   "max_facet_excess_min_over_vertices": 0.5527556944404317
+  },
+  "32088": {
+   "vertices": 5,
+   "separating_facets_exact": [
+    152,
+    183
+   ],
+   "max_facet_excess_min_over_vertices": 0.34564734388044727
+  }
+ }
+}

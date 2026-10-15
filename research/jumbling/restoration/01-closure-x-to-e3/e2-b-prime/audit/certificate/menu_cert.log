@@ -1,0 +1,9 @@
+9.0 safe 592 [232, 237, 250, 257, 273, 301, 307, 356]
+21.0 letters 6512
+55.2 orbits 686 651
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 3, "sec": 69}
+{"orbits": 686, "singletons": 651, "sec": 70}
+{"routing_edges": 20125632, "letters_avoiding_target": 6402, "sec": 77}
+{"peeling_candidates": 1028929, "sec": 84}
+{"routing_edges": 20125632, "letters_avoiding_target": 6402, "sec": 93}
+93.5 done

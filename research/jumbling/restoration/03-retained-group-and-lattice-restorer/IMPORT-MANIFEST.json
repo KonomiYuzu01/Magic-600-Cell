@@ -1,0 +1,72 @@
+{
+ "source_package": "Claude-cards-items2-3-20261013",
+ "compressed": [
+  {
+   "path": "certificates/certificates.json",
+   "bytes": 3163782,
+   "sha256": "057fc46921fb3c07ffdd46d2ec5c07bed037e5310a6b947c0c9ea721a0a4b57a"
+  },
+  {
+   "path": "restore/searches/diff-batch2.json",
+   "bytes": 468195,
+   "sha256": "b30e56d54a0485c6552a5d2b7b44116902b266ba895f7d43b838f82f3fa7f828"
+  },
+  {
+   "path": "restore/solutions.json",
+   "bytes": 36971047,
+   "sha256": "d649834eb53a10331ccb07a26b3bb4211a1e8f451a7fdcba4ca8fff629611093"
+  }
+ ],
+ "left_out": [
+  {
+   "path": "README.zh-CN.md",
+   "bytes": 3476,
+   "sha256": "9b8d26de9dada0a494b720a65f745c0a2d51805eb0b258034f1d2c15d2d10c37"
+  },
+  {
+   "path": "SHA256SUMS",
+   "bytes": 18431,
+   "sha256": "ac97b903c4a0453181b8470829a0acd1983a632f6ed6e26170178e19027260cd"
+  },
+  {
+   "path": "restore/start-labels-mix_6_200_6.npy",
+   "bytes": 2078528,
+   "sha256": "c53f38ff059cda7f4dcb0134ca98a30d0f1eaab5aea2f5f58419713fbc9b1b3e"
+  },
+  {
+   "path": "restore/start-labels-mix_7_300_10.npy",
+   "bytes": 2078528,
+   "sha256": "4b4cfdf869d2970f32709e326da7e94ded1198e646da2fcdf3fed56f11bd042b"
+  },
+  {
+   "path": "restore/start-labels-mix_8_100_20.npy",
+   "bytes": 2078528,
+   "sha256": "f2b688051e9d1e960b63a93d9209dbf18fb46b0e81c8dfd4ca12bcbb46e54110"
+  },
+  {
+   "path": "restore/start-labels-uniform_1.npy",
+   "bytes": 2078528,
+   "sha256": "333ffeff2ff70d4e3bea7edf28b4f59a14774e84181783eb6e988723bb5b95dd"
+  },
+  {
+   "path": "restore/start-labels-uniform_2.npy",
+   "bytes": 2078528,
+   "sha256": "9c1e74e95e4caf69d55b2f1838c25d619e3014ddaa927067e529fd12d3419035"
+  },
+  {
+   "path": "restore/start-labels-w9word_4_300.npy",
+   "bytes": 2078528,
+   "sha256": "c2b1740680eee94ec153c5220ed77e31849d497d6451f6861f9ea9410d32f600"
+  },
+  {
+   "path": "restore/start-labels-w9word_5_0.npy",
+   "bytes": 2078528,
+   "sha256": "5ff3a780eafd0de7dd0468eed78bb52cf111ba2744b7b6c2338ead71cc08bcfa"
+  },
+  {
+   "path": "restore/start-labels-word_3_300.npy",
+   "bytes": 2078528,
+   "sha256": "df6f5bb821f60a92cc4dc67403e1fbdff9fad75cbc3273be5ad8d63d1ffd892d"
+  }
+ ]
+}

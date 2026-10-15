@@ -1,0 +1,17 @@
+{
+ "69058": {
+  "from_chamber": 23354,
+  "g_inv_m_in_Kplus": true,
+  "region_equals_Bprime_piece_region": 16245
+ },
+ "69059": {
+  "from_chamber": 23362,
+  "g_inv_m_in_Kplus": true,
+  "region_equals_Bprime_piece_region": 16249
+ },
+ "121428": {
+  "from_chamber": 38667,
+  "g_inv_m_in_Kplus": true,
+  "region_equals_Bprime_piece_region": 32088
+ }
+}

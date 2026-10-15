@@ -1,0 +1,1802 @@
+{
+ "digest": "fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39",
+ "grip_branch_counts": {
+  "0": 120,
+  "3": 120,
+  "2": 120,
+  "1": 120,
+  "4": 120
+ },
+ "unanchored_floating": [
+  {
+   "size": 335,
+   "heights_branches": {
+    "4/1": 335
+   },
+   "orbits": {
+    "14": 6,
+    "17": 2,
+    "16": 8,
+    "20": 12,
+    "19": 10,
+    "22": 7,
+    "21": 14,
+    "23": 18,
+    "24": 24,
+    "28": 6,
+    "25": 12,
+    "27": 30,
+    "30": 36,
+    "26": 30,
+    "29": 12,
+    "31": 42,
+    "32": 24,
+    "33": 18,
+    "34": 1,
+    "18": 10,
+    "11": 1,
+    "13": 4,
+    "10": 2,
+    "12": 4,
+    "15": 2
+   },
+   "caps_wholly": [
+    {
+     "grip": 45,
+     "branch": 0,
+     "straddled_by": 98158,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 60,
+     "branch": 4,
+     "straddled_by": 29547,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 74,
+     "branch": 3,
+     "straddled_by": 58764,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 91,
+     "branch": 1,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    17,
+    26,
+    30,
+    35,
+    38,
+    39,
+    49,
+    56,
+    67,
+    154
+   ],
+   "n_caps_partly": 10,
+   "members_head": [
+    71711,
+    71713,
+    71715,
+    71716,
+    71722,
+    71739,
+    71741,
+    71743,
+    71744,
+    71747,
+    71748,
+    71749
+   ]
+  },
+  {
+   "size": 261,
+   "heights_branches": {
+    "4/0": 261
+   },
+   "orbits": {
+    "23": 14,
+    "24": 17,
+    "28": 4,
+    "25": 9,
+    "27": 22,
+    "30": 27,
+    "26": 22,
+    "29": 9,
+    "31": 34,
+    "32": 21,
+    "33": 17,
+    "34": 1,
+    "16": 6,
+    "20": 8,
+    "18": 8,
+    "22": 5,
+    "21": 11,
+    "14": 3,
+    "17": 1,
+    "9": 1,
+    "10": 2,
+    "11": 1,
+    "12": 4,
+    "13": 4,
+    "15": 2,
+    "19": 8
+   },
+   "caps_wholly": [
+    {
+     "grip": 87,
+     "branch": 3,
+     "straddled_by": 11056,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 88,
+     "branch": 2,
+     "straddled_by": 108,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 95,
+     "branch": 0,
+     "straddled_by": 33959,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    33,
+    37,
+    80,
+    115,
+    126,
+    159,
+    180,
+    190,
+    197,
+    250,
+    257
+   ],
+   "n_caps_partly": 11,
+   "members_head": [
+    45701,
+    45702,
+    45703,
+    45707,
+    45708,
+    45709,
+    45714,
+    45715,
+    45724,
+    45725,
+    45727,
+    45729
+   ]
+  },
+  {
+   "size": 215,
+   "heights_branches": {
+    "4/2": 215
+   },
+   "orbits": {
+    "14": 3,
+    "17": 1,
+    "20": 9,
+    "16": 7,
+    "18": 10,
+    "21": 12,
+    "23": 16,
+    "25": 10,
+    "27": 25,
+    "30": 21,
+    "22": 6,
+    "24": 21,
+    "26": 17,
+    "29": 7,
+    "31": 17,
+    "28": 5,
+    "32": 6,
+    "11": 1,
+    "12": 3,
+    "13": 5,
+    "10": 1,
+    "15": 2,
+    "19": 8,
+    "33": 2
+   },
+   "caps_wholly": [
+    {
+     "grip": 434,
+     "branch": 3,
+     "straddled_by": 13070,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 467,
+     "branch": 0,
+     "straddled_by": 103943,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 517,
+     "branch": 2,
+     "straddled_by": 157490,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 520,
+     "branch": 4,
+     "straddled_by": 122805,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    308,
+    345,
+    406,
+    421,
+    451,
+    499,
+    505,
+    506,
+    507
+   ],
+   "n_caps_partly": 9,
+   "members_head": [
+    95582,
+    95583,
+    95586,
+    95589,
+    95590,
+    95606,
+    95607,
+    95608,
+    95609,
+    95610,
+    95611,
+    95618
+   ]
+  },
+  {
+   "size": 198,
+   "heights_branches": {
+    "4/3": 198
+   },
+   "orbits": {
+    "30": 24,
+    "31": 33,
+    "32": 21,
+    "33": 17,
+    "34": 1,
+    "26": 21,
+    "29": 8,
+    "28": 3,
+    "23": 9,
+    "25": 6,
+    "24": 12,
+    "27": 15,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "21": 6,
+    "22": 3,
+    "13": 3,
+    "15": 1,
+    "19": 3
+   },
+   "caps_wholly": [
+    {
+     "grip": 193,
+     "branch": 2,
+     "straddled_by": 77548,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 194,
+     "branch": 3,
+     "straddled_by": 5671,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 247,
+     "branch": 0,
+     "straddled_by": 29076,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 253,
+     "branch": 4,
+     "straddled_by": 137051,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    201,
+    214,
+    218,
+    225,
+    248,
+    252,
+    350,
+    354,
+    413
+   ],
+   "n_caps_partly": 9,
+   "members_head": [
+    49821,
+    49822,
+    49823,
+    49824,
+    49825,
+    49826,
+    51143,
+    51150,
+    51151,
+    51155,
+    55160,
+    55161
+   ]
+  },
+  {
+   "size": 198,
+   "heights_branches": {
+    "4/0": 198
+   },
+   "orbits": {
+    "34": 1,
+    "28": 3,
+    "30": 24,
+    "31": 33,
+    "32": 21,
+    "33": 17,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "22": 3,
+    "23": 9,
+    "24": 12,
+    "27": 15,
+    "21": 6,
+    "25": 6,
+    "26": 21,
+    "29": 8,
+    "13": 3,
+    "15": 1,
+    "19": 3
+   },
+   "caps_wholly": [
+    {
+     "grip": 2,
+     "branch": 0,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 4,
+     "branch": 2,
+     "straddled_by": 9445,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 5,
+     "branch": 3,
+     "straddled_by": 36723,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 7,
+     "branch": 1,
+     "straddled_by": 37194,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    3,
+    8,
+    13,
+    15,
+    19,
+    24,
+    29,
+    31,
+    32
+   ],
+   "n_caps_partly": 9,
+   "members_head": [
+    149516,
+    150982,
+    150984,
+    150988,
+    150994,
+    150995,
+    150998,
+    150999,
+    152182,
+    152183,
+    152205,
+    152206
+   ]
+  },
+  {
+   "size": 183,
+   "heights_branches": {
+    "4/1": 183
+   },
+   "orbits": {
+    "32": 19,
+    "33": 16,
+    "34": 1,
+    "23": 9,
+    "25": 6,
+    "26": 17,
+    "30": 21,
+    "24": 12,
+    "28": 3,
+    "27": 15,
+    "29": 7,
+    "31": 29,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "22": 3,
+    "21": 6,
+    "13": 3,
+    "15": 1,
+    "19": 3
+   },
+   "caps_wholly": [
+    {
+     "grip": 192,
+     "branch": 2,
+     "straddled_by": 58069,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 200,
+     "branch": 0,
+     "straddled_by": 58069,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 215,
+     "branch": 1,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 246,
+     "branch": 3,
+     "straddled_by": 55690,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 297,
+     "branch": 4,
+     "straddled_by": 13007,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    61,
+    108,
+    130,
+    179,
+    213,
+    233,
+    251,
+    254,
+    306
+   ],
+   "n_caps_partly": 9,
+   "members_head": [
+    86958,
+    86959,
+    86960,
+    88953,
+    88954,
+    88955,
+    88956,
+    88959,
+    88960,
+    88961,
+    88962,
+    88965
+   ]
+  },
+  {
+   "size": 168,
+   "heights_branches": {
+    "4/4": 168
+   },
+   "orbits": {
+    "28": 3,
+    "14": 3,
+    "17": 1,
+    "16": 9,
+    "20": 10,
+    "19": 10,
+    "22": 7,
+    "21": 13,
+    "23": 15,
+    "25": 8,
+    "24": 16,
+    "27": 15,
+    "30": 9,
+    "18": 13,
+    "26": 11,
+    "11": 1,
+    "13": 8,
+    "10": 1,
+    "12": 3,
+    "15": 3,
+    "29": 3,
+    "31": 5,
+    "32": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 435,
+     "branch": 2,
+     "straddled_by": 48526,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 452,
+     "branch": 0,
+     "straddled_by": 124060,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 525,
+     "branch": 4,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    322,
+    346,
+    389,
+    410,
+    431,
+    447,
+    490,
+    505,
+    528,
+    535,
+    546
+   ],
+   "n_caps_partly": 11,
+   "members_head": [
+    56575,
+    59354,
+    59356,
+    59358,
+    59359,
+    59365,
+    59374,
+    59376,
+    59378,
+    59379,
+    59393,
+    59394
+   ]
+  },
+  {
+   "size": 111,
+   "heights_branches": {
+    "4/0": 111
+   },
+   "orbits": {
+    "23": 9,
+    "24": 12,
+    "28": 3,
+    "25": 6,
+    "27": 15,
+    "30": 12,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "22": 3,
+    "21": 6,
+    "26": 9,
+    "29": 4,
+    "31": 9,
+    "32": 3,
+    "13": 3,
+    "15": 1,
+    "19": 3,
+    "33": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 205,
+     "branch": 4,
+     "straddled_by": 39820,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 208,
+     "branch": 3,
+     "straddled_by": 25763,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 272,
+     "branch": 0,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 275,
+     "branch": 2,
+     "straddled_by": 33652,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 327,
+     "branch": 1,
+     "straddled_by": 14653,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    220,
+    229,
+    339,
+    346,
+    431,
+    432,
+    435
+   ],
+   "n_caps_partly": 7,
+   "members_head": [
+    43822,
+    43826,
+    43827,
+    43837,
+    43838,
+    43839,
+    57579,
+    67743,
+    67749,
+    69902,
+    69903,
+    69918
+   ]
+  },
+  {
+   "size": 111,
+   "heights_branches": {
+    "4/1": 111
+   },
+   "orbits": {
+    "28": 3,
+    "30": 12,
+    "23": 9,
+    "25": 6,
+    "24": 12,
+    "27": 15,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "22": 3,
+    "21": 6,
+    "26": 9,
+    "29": 4,
+    "31": 9,
+    "32": 3,
+    "13": 3,
+    "15": 1,
+    "19": 3,
+    "33": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 399,
+     "branch": 3,
+     "straddled_by": 143737,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 479,
+     "branch": 4,
+     "straddled_by": 111182,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 484,
+     "branch": 1,
+     "straddled_by": 107148,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 500,
+     "branch": 0,
+     "straddled_by": 100042,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    328,
+    370,
+    385,
+    438,
+    481,
+    495,
+    513
+   ],
+   "n_caps_partly": 7,
+   "members_head": [
+    64207,
+    64219,
+    68435,
+    68436,
+    68439,
+    68440,
+    68441,
+    84193,
+    84194,
+    84215,
+    84217,
+    84219
+   ]
+  },
+  {
+   "size": 111,
+   "heights_branches": {
+    "4/4": 111
+   },
+   "orbits": {
+    "23": 9,
+    "24": 12,
+    "28": 3,
+    "25": 6,
+    "27": 15,
+    "30": 12,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "22": 3,
+    "21": 6,
+    "26": 9,
+    "29": 4,
+    "31": 9,
+    "32": 3,
+    "13": 3,
+    "15": 1,
+    "19": 3,
+    "33": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 454,
+     "branch": 1,
+     "straddled_by": 165152,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 456,
+     "branch": 0,
+     "straddled_by": 112426,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 458,
+     "branch": 2,
+     "straddled_by": 129557,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 469,
+     "branch": 3,
+     "straddled_by": 160382,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 475,
+     "branch": 4,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    488,
+    493,
+    513,
+    529,
+    532,
+    534,
+    538,
+    571
+   ],
+   "n_caps_partly": 8,
+   "members_head": [
+    67150,
+    67154,
+    67155,
+    67165,
+    67166,
+    67167,
+    83238,
+    89889,
+    89895,
+    93564,
+    93565,
+    93594
+   ]
+  },
+  {
+   "size": 111,
+   "heights_branches": {
+    "4/0": 111
+   },
+   "orbits": {
+    "23": 9,
+    "25": 6,
+    "24": 12,
+    "28": 3,
+    "27": 15,
+    "30": 12,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "22": 3,
+    "21": 6,
+    "26": 9,
+    "29": 4,
+    "31": 9,
+    "32": 3,
+    "13": 3,
+    "15": 1,
+    "19": 3,
+    "33": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 146,
+     "branch": 1,
+     "straddled_by": 89921,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 163,
+     "branch": 4,
+     "straddled_by": 72412,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 177,
+     "branch": 1,
+     "straddled_by": 18073,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 186,
+     "branch": 3,
+     "straddled_by": 78396,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 210,
+     "branch": 0,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 141,
+     "branch": 2,
+     "straddled_by": 152178,
+     "float_margin_ambiguous": true
+    }
+   ],
+   "caps_partly": [
+    90,
+    93,
+    105,
+    123,
+    129,
+    158
+   ],
+   "n_caps_partly": 6,
+   "members_head": [
+    122260,
+    122261,
+    122266,
+    122267,
+    122268,
+    122269,
+    123528,
+    131802,
+    131803,
+    131813,
+    131814,
+    131815
+   ]
+  },
+  {
+   "size": 107,
+   "heights_branches": {
+    "4/4": 107
+   },
+   "orbits": {
+    "13": 3,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "21": 6,
+    "23": 9,
+    "25": 5,
+    "27": 13,
+    "28": 3,
+    "30": 11,
+    "19": 3,
+    "22": 3,
+    "24": 12,
+    "26": 10,
+    "29": 4,
+    "15": 1,
+    "31": 8,
+    "32": 3,
+    "33": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 389,
+     "branch": 3,
+     "straddled_by": 169268,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 410,
+     "branch": 2,
+     "straddled_by": 61779,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 452,
+     "branch": 0,
+     "straddled_by": 124060,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 505,
+     "branch": 1,
+     "straddled_by": 170658,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 525,
+     "branch": 4,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    361,
+    421,
+    447,
+    506,
+    512,
+    544,
+    546
+   ],
+   "n_caps_partly": 7,
+   "members_head": [
+    63106,
+    63107,
+    63108,
+    67251,
+    67252,
+    67253,
+    67254,
+    67255,
+    72499,
+    72500,
+    73073,
+    73087
+   ]
+  },
+  {
+   "size": 93,
+   "heights_branches": {
+    "4/1": 93
+   },
+   "orbits": {
+    "23": 8,
+    "24": 9,
+    "28": 2,
+    "26": 10,
+    "30": 9,
+    "31": 8,
+    "32": 3,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "22": 3,
+    "21": 6,
+    "25": 4,
+    "27": 8,
+    "29": 3,
+    "33": 1,
+    "13": 3,
+    "15": 1,
+    "19": 3
+   },
+   "caps_wholly": [
+    {
+     "grip": 6,
+     "branch": 2,
+     "straddled_by": 42903,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 12,
+     "branch": 1,
+     "straddled_by": 82487,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 17,
+     "branch": 3,
+     "straddled_by": 28079,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 27,
+     "branch": 2,
+     "straddled_by": 10515,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 33,
+     "branch": 4,
+     "straddled_by": 28079,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 0,
+     "branch": 0,
+     "straddled_by": 10520,
+     "float_margin_ambiguous": true
+    }
+   ],
+   "caps_partly": [
+    1,
+    9,
+    13,
+    21,
+    37,
+    43,
+    58
+   ],
+   "n_caps_partly": 7,
+   "members_head": [
+    12034,
+    12038,
+    12039,
+    12044,
+    12045,
+    19224,
+    19231,
+    19232,
+    29019,
+    29020,
+    29068,
+    29069
+   ]
+  },
+  {
+   "size": 87,
+   "heights_branches": {
+    "4/0": 87
+   },
+   "orbits": {
+    "26": 12,
+    "30": 12,
+    "29": 4,
+    "31": 24,
+    "32": 18,
+    "33": 16,
+    "34": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 37,
+     "branch": 1,
+     "straddled_by": 28079,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 80,
+     "branch": 2,
+     "straddled_by": 25763,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 87,
+     "branch": 3,
+     "straddled_by": 11056,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 88,
+     "branch": 2,
+     "straddled_by": 108,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 95,
+     "branch": 0,
+     "straddled_by": 33959,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 159,
+     "branch": 4,
+     "straddled_by": 90626,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    9,
+    33,
+    40,
+    99,
+    115,
+    126,
+    136
+   ],
+   "n_caps_partly": 7,
+   "members_head": [
+    56226,
+    56227,
+    56236,
+    56237,
+    56239,
+    56241,
+    56242,
+    56243,
+    56244,
+    56246,
+    56248,
+    56249
+   ]
+  },
+  {
+   "size": 78,
+   "heights_branches": {
+    "6/4": 78
+   },
+   "orbits": {
+    "28": 2,
+    "23": 8,
+    "25": 4,
+    "24": 9,
+    "27": 8,
+    "30": 6,
+    "16": 3,
+    "20": 3,
+    "18": 6,
+    "22": 3,
+    "21": 6,
+    "26": 6,
+    "29": 2,
+    "31": 4,
+    "32": 1,
+    "13": 3,
+    "15": 1,
+    "19": 3
+   },
+   "caps_wholly": [
+    {
+     "grip": 274,
+     "branch": 3,
+     "straddled_by": 79414,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 326,
+     "branch": 0,
+     "straddled_by": 84169,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 340,
+     "branch": 1,
+     "straddled_by": 71323,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 430,
+     "branch": 2,
+     "straddled_by": 106423,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 433,
+     "branch": 4,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    271,
+    313,
+    434,
+    463,
+    493
+   ],
+   "n_caps_partly": 5,
+   "members_head": [
+    6743,
+    8411,
+    8412,
+    8415,
+    8416,
+    8417,
+    17033,
+    17034,
+    17048,
+    17050,
+    17052,
+    17053
+   ]
+  },
+  {
+   "size": 71,
+   "heights_branches": {
+    "4/4": 71
+   },
+   "orbits": {
+    "22": 3,
+    "23": 4,
+    "9": 3,
+    "10": 4,
+    "14": 5,
+    "17": 1,
+    "11": 2,
+    "12": 6,
+    "16": 5,
+    "20": 5,
+    "7": 2,
+    "13": 4,
+    "15": 2,
+    "18": 5,
+    "19": 7,
+    "21": 5,
+    "25": 1,
+    "24": 2,
+    "26": 2,
+    "4": 2,
+    "8": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 430,
+     "branch": 2,
+     "straddled_by": 106423,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 433,
+     "branch": 4,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 448,
+     "branch": 0,
+     "straddled_by": 122223,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    340,
+    388,
+    390,
+    434,
+    451,
+    493,
+    520,
+    523
+   ],
+   "n_caps_partly": 8,
+   "members_head": [
+    46626,
+    46629,
+    63191,
+    63192,
+    63193,
+    63194,
+    63195,
+    63205,
+    63206,
+    63207,
+    63208,
+    69322
+   ]
+  },
+  {
+   "size": 63,
+   "heights_branches": {
+    "4/0": 63
+   },
+   "orbits": {
+    "16": 3,
+    "20": 2,
+    "18": 4,
+    "21": 3,
+    "23": 4,
+    "22": 2,
+    "24": 5,
+    "28": 1,
+    "25": 2,
+    "27": 5,
+    "30": 6,
+    "26": 6,
+    "29": 2,
+    "31": 7,
+    "32": 3,
+    "13": 3,
+    "15": 1,
+    "19": 3,
+    "33": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 141,
+     "branch": 2,
+     "straddled_by": 152178,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 177,
+     "branch": 1,
+     "straddled_by": 18073,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 210,
+     "branch": 0,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 318,
+     "branch": 4,
+     "straddled_by": 89922,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 220,
+     "branch": 1,
+     "straddled_by": 21294,
+     "float_margin_ambiguous": true
+    }
+   ],
+   "caps_partly": [
+    105,
+    129,
+    146,
+    186,
+    293,
+    312
+   ],
+   "n_caps_partly": 6,
+   "members_head": [
+    131348,
+    131349,
+    134772,
+    134773,
+    134785,
+    134786,
+    134787,
+    134789,
+    134790,
+    134791,
+    134792,
+    134795
+   ]
+  },
+  {
+   "size": 46,
+   "heights_branches": {
+    "4/3": 46
+   },
+   "orbits": {
+    "16": 3,
+    "20": 2,
+    "13": 3,
+    "15": 1,
+    "19": 3,
+    "18": 4,
+    "22": 2,
+    "21": 3,
+    "23": 4,
+    "24": 5,
+    "28": 1,
+    "25": 2,
+    "26": 3,
+    "30": 3,
+    "27": 5,
+    "29": 1,
+    "31": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 169,
+     "branch": 1,
+     "straddled_by": 95161,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 263,
+     "branch": 2,
+     "straddled_by": 114522,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 266,
+     "branch": 4,
+     "straddled_by": 137051,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 280,
+     "branch": 3,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 333,
+     "branch": 0,
+     "straddled_by": 107113,
+     "float_margin_ambiguous": false
+    }
+   ],
+   "caps_partly": [
+    121,
+    156,
+    209,
+    216,
+    325
+   ],
+   "n_caps_partly": 5,
+   "members_head": [
+    127839,
+    127840,
+    129441,
+    129442,
+    129449,
+    129454,
+    129455,
+    129456,
+    129457,
+    129458,
+    129459,
+    129460
+   ]
+  },
+  {
+   "size": 30,
+   "heights_branches": {
+    "4/1": 30
+   },
+   "orbits": {
+    "4": 2,
+    "8": 1,
+    "9": 2,
+    "10": 3,
+    "14": 4,
+    "17": 1,
+    "13": 1,
+    "16": 2,
+    "20": 3,
+    "7": 1,
+    "18": 1,
+    "21": 2,
+    "23": 1,
+    "25": 1,
+    "27": 1,
+    "30": 1,
+    "12": 1,
+    "19": 1,
+    "26": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 14,
+     "branch": 4,
+     "straddled_by": 55892,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 54,
+     "branch": 0,
+     "straddled_by": 68461,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 38,
+     "branch": 3,
+     "straddled_by": 84769,
+     "float_margin_ambiguous": true
+    },
+    {
+     "grip": 65,
+     "branch": 1,
+     "straddled_by": null,
+     "float_margin_ambiguous": true
+    }
+   ],
+   "caps_partly": [
+    0,
+    1,
+    10,
+    18,
+    51,
+    61
+   ],
+   "n_caps_partly": 6,
+   "members_head": [
+    55813,
+    55814,
+    55815,
+    55816,
+    55817,
+    55818,
+    55819,
+    55820,
+    55821,
+    55822,
+    58752,
+    58753
+   ]
+  },
+  {
+   "size": 21,
+   "heights_branches": {
+    "4/1": 21
+   },
+   "orbits": {
+    "30": 4,
+    "23": 1,
+    "24": 3,
+    "28": 1,
+    "25": 1,
+    "26": 2,
+    "27": 4,
+    "29": 1,
+    "31": 3,
+    "32": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 170,
+     "branch": 3,
+     "straddled_by": 70093,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 187,
+     "branch": 0,
+     "straddled_by": 23982,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 227,
+     "branch": 1,
+     "straddled_by": null,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 239,
+     "branch": 2,
+     "straddled_by": 33988,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 321,
+     "branch": 4,
+     "straddled_by": 141246,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 348,
+     "branch": 3,
+     "straddled_by": 98350,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 387,
+     "branch": 0,
+     "straddled_by": 16147,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 256,
+     "branch": 1,
+     "straddled_by": 71917,
+     "float_margin_ambiguous": true
+    },
+    {
+     "grip": 355,
+     "branch": 4,
+     "straddled_by": 11737,
+     "float_margin_ambiguous": true
+    }
+   ],
+   "caps_partly": [
+    178
+   ],
+   "n_caps_partly": 1,
+   "members_head": [
+    73396,
+    78715,
+    78716,
+    78717,
+    78721,
+    78722,
+    78723,
+    78728,
+    78729,
+    78733,
+    78735,
+    78737
+   ]
+  },
+  {
+   "size": 15,
+   "heights_branches": {
+    "4/3": 15
+   },
+   "orbits": {
+    "26": 4,
+    "30": 3,
+    "31": 4,
+    "32": 2,
+    "33": 1,
+    "29": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 81,
+     "branch": 4,
+     "straddled_by": 22257,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 130,
+     "branch": 1,
+     "straddled_by": 22246,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 147,
+     "branch": 0,
+     "straddled_by": 22978,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 192,
+     "branch": 2,
+     "straddled_by": 58069,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 223,
+     "branch": 3,
+     "straddled_by": 22978,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 251,
+     "branch": 4,
+     "straddled_by": 22978,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 61,
+     "branch": 3,
+     "straddled_by": 75727,
+     "float_margin_ambiguous": true
+    }
+   ],
+   "caps_partly": [
+    51,
+    142,
+    173,
+    202
+   ],
+   "n_caps_partly": 4,
+   "members_head": [
+    35198,
+    35199,
+    62947,
+    62948,
+    66194,
+    67076,
+    67088,
+    67090,
+    67092,
+    83035,
+    83037,
+    83041
+   ]
+  },
+  {
+   "size": 7,
+   "heights_branches": {
+    "4/2": 7
+   },
+   "orbits": {
+    "20": 1,
+    "19": 2,
+    "22": 1,
+    "21": 1,
+    "23": 1,
+    "24": 1
+   },
+   "caps_wholly": [
+    {
+     "grip": 542,
+     "branch": 2,
+     "straddled_by": 98954,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 551,
+     "branch": 0,
+     "straddled_by": 106586,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 560,
+     "branch": 4,
+     "straddled_by": 111523,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 580,
+     "branch": 3,
+     "straddled_by": 128151,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 582,
+     "branch": 1,
+     "straddled_by": 101989,
+     "float_margin_ambiguous": false
+    },
+    {
+     "grip": 593,
+     "branch": 2,
+     "straddled_by": null,
+     "float_margin_ambiguous": true
+    }
+   ],
+   "caps_partly": [
+    548,
+    565,
+    579,
+    596,
+    599
+   ],
+   "n_caps_partly": 5,
+   "members_head": [
+    118527,
+    126380,
+    126382,
+    126384,
+    126385,
+    149644,
+    149650
+   ]
+  }
+ ],
+ "sec": 14.1
+}

@@ -1,0 +1,29 @@
+{
+ "digest_38550": "c280ae5f1e379ae92f300abeff7b81d1de7cf318160d989de239c04483097ff0",
+ "expected": "c280ae5f1e379ae92f300abeff7b81d1de7cf318160d989de239c04483097ff0",
+ "witness_equals_word_slice": true,
+ "off": [
+  16245,
+  16249,
+  32088
+ ],
+ "holes": [
+  41195,
+  52577,
+  55055
+ ],
+ "U_length": 2906,
+ "badU": [
+  41195,
+  52577,
+  55055
+ ],
+ "badU_equals_holes": true,
+ "restored_at_close": [
+  16245,
+  16249,
+  32088
+ ],
+ "off_at_close": 0,
+ "seconds": 35.0
+}

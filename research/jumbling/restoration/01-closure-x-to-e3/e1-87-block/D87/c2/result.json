@@ -1,0 +1,66 @@
+{
+ "input_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 590,
+   "input_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+   "output_digest": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3",
+   "off_end": 90
+  },
+  {
+   "part": "P",
+   "twists": 10,
+   "input_digest": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3",
+   "output_digest": "9cfb03665c4162b4509d39d2a3a2d3a40c0e369e7bd34cb0f5dfe83a8e6b6c46",
+   "off_end": 288
+  },
+  {
+   "part": "Q",
+   "twists": 10,
+   "input_digest": "9cfb03665c4162b4509d39d2a3a2d3a40c0e369e7bd34cb0f5dfe83a8e6b6c46",
+   "output_digest": "3041dca039be0c45c873fbdca73b085c1791c9ce7c5dd64df101fc841ced3c8a",
+   "off_end": 201
+  },
+  {
+   "part": "Pinv",
+   "twists": 10,
+   "input_digest": "3041dca039be0c45c873fbdca73b085c1791c9ce7c5dd64df101fc841ced3c8a",
+   "output_digest": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8",
+   "off_end": 3
+  },
+  {
+   "part": "Vinv",
+   "twists": 590,
+   "input_digest": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8",
+   "output_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+   "off_end": 3
+  }
+ ],
+ "end": {
+  "digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+  "off": 3,
+  "T_restored": 87,
+  "collateral": 0,
+  "protected_still_off": 3,
+  "protected_exact_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 177030,
+  "lattice_of_S": 177030,
+  "lattice_of_S_same_exact_pose": 177030
+ },
+ "length": 1210,
+ "times": {
+  "ghost_premises": 14.0,
+  "menu_and_condition": 20.1,
+  "certificate": 212.5,
+  "prepare": 14.0,
+  "replay": 91.0
+ },
+ "seconds": 351.7
+}

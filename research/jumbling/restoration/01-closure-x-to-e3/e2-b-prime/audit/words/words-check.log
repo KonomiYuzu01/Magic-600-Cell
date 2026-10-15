@@ -1,0 +1,52 @@
+{"check": "1.lengths 8,31,1,31,8", "ok": true, "sec": 0.0}
+{"check": "1.E2 table sha256 and digest field", "ok": true, "sec": 0.1}
+{"check": "1.E3 table sha256 and digest field", "ok": true, "sec": 0.1}
+{"check": "1.V.input_digest = E2 digest", "ok": true, "sec": 0.1}
+{"check": "1.part output = next part input", "ok": true, "sec": 0.1}
+{"check": "1.Vinv.output_digest = E3 digest", "ok": true, "sec": 0.1}
+{"check": "1.word-full = V+P+Q+Pinv+Vinv, digests E2 -> E3", "ok": true, "sec": 0.1}
+{"check": "1.P = P4.json = w3-P4-162-1.json P", "ok": true, "sec": 0.1}
+{"check": "1.Q = [(162,1)] = w3 Q", "ok": true, "sec": 0.1}
+{"check": "1.pre.json W equals parts (P, Q, P_inverse)", "ok": true, "sec": 0.1}
+{"check": "1.result.json part digests equal part files", "ok": true, "sec": 0.1}
+{"check": "1.type-S word starts with P4 and ends with F P4^-1 (same P)", "ok": true, "sec": 0.1}
+{"check": "3.report printed P4 = parts/P.json", "ok": true, "sec": 0.1}
+{"check": "1.report printed V3 = parts/V.json", "ok": true, "sec": 0.1}
+{"check": "2.E2 table loads to its digest", "ok": true, "sec": 5.7}
+{"check": "2.every letter an exact rotation fixing its pole", "ok": true, "sec": 6.2}
+{"check": "2.every letter has exactly one inverse item (both sides agree)", "ok": true, "sec": 6.2}
+{"check": "2.(237, 47) is the exact inverse of (237, 13) (own arithmetic, both orders)", "ok": true, "sec": 6.2}
+{"check": "2.(91, 7) is the exact inverse of (91, 6) (own arithmetic, both orders)", "ok": true, "sec": 6.2}
+{"check": "2.(154, 6) is the exact inverse of (154, 7) (own arithmetic, both orders)", "ok": true, "sec": 6.2}
+{"check": "2.inverse of (133,1) determined", "ok": true, "sec": 6.2}
+{"check": "2.inverse of (183,6) determined", "ok": true, "sec": 6.2}
+{"check": "2.(91, 6) in K+ and not the identity", "ok": true, "sec": 6.2}
+{"check": "2.(154, 7) in K+ and not the identity", "ok": true, "sec": 6.2}
+{"check": "2.(133, 1) in K+ and not the identity", "ok": true, "sec": 6.2}
+{"check": "2.(183, 6) in K+ and not the identity", "ok": true, "sec": 6.2}
+{"check": "2.(162, 1) in K+ and not the identity", "ok": true, "sec": 6.2}
+{"check": "2.(237,13) not in K+", "ok": true, "sec": 6.2}
+{"check": "2.(237,47) not in K+", "ok": true, "sec": 6.2}
+{"check": "3.P4 = P3 x3 P3^-1, ..., P1 = R x0 R^-1 letter by letter", "ok": true, "sec": 6.7}
+{"check": "3.shrink level words P(k) equal the recomputed P0..P4", "ok": true, "sec": 6.7}
+{"check": "3.shrink chosen x_k = best[0] letter at levels 0..3, F=(162,1) least F letter at level 4", "ok": true, "sec": 6.7}
+{"check": "3.report: (91,7) is x0^-1 and (154,6) is x1^-1", "ok": true, "sec": 6.7}
+{"check": "3.middle letter of P3^-1 inside P4 equals x2^-1", "ok": true, "sec": 6.7}
+{"check": "4.Pinv is the mirror inverse of P (same grip, reversed, exact product I both orders)", "ok": true, "sec": 6.7}
+{"check": "4.Vinv is the mirror inverse of V (same grip, reversed, exact product I both orders)", "ok": true, "sec": 6.7}
+{"check": "4.Pinv equals own mirror(P); Vinv equals own mirror(V)", "ok": true, "sec": 7.2}
+{"check": "4.full word = X F mirror(X) with X = V3 P4", "ok": true, "sec": 7.2}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 3, "sec": 22}
+{"check": "5.E2 SAFE-ALL alphabet rebuilt = pre.json safe grips (592 grips, 6512 letters)", "ok": true, "sec": 22.3}
+{"check": "5.blocked grips at E2 = report list (232, 237, 250, 257, 273, 301, 307, 356)", "ok": true, "sec": 22.3}
+{"check": "5.every V letter: grip SAFE-ALL at E2 (pre.json), letter of the E2 alphabet, in K+, not identity", "ok": true, "sec": 22.3}
+{"check": "5.every Vinv letter is a letter of the E2 alphabet", "ok": true, "sec": 22.3}
+{"check": "5.replay: V and P admissible, digests equal part files", "ok": true, "sec": 33.2}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 10, "sec": 49}
+{"check": "5.F=(162,1) is a SAFE-ALL letter at Y4 = E2 V3 P4", "ok": true, "sec": 49.4}
+{"check": "5.F keeps the 10 off pieces at Y4 (same set, same exact poses); digest = Q file", "ok": true, "sec": 49.6}
+{"check": "1/5.replay of the whole word: every part digest as filed, end = E3 digest, 0 off", "ok": true, "sec": 59.2}
+{"check": "undo back to E2", "ok": true, "sec": 77.8}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 10, "sec": 103}
+{"check": "5.(162,1) is also SAFE-ALL at E2 P4 (shrink Y_4; digest = shrink after_P_digest)", "ok": true, "sec": 102.7}
+{"check": "1.E3 table loads to its digest", "ok": true, "sec": 116.2}

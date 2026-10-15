@@ -1,0 +1,8 @@
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 9}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 3, "sec": 25}
+{"orbits": 686, "singletons": 651, "sec": 26}
+{"routing_edges": 20125632, "letters_avoiding_target": 6402, "sec": 32}
+{"peeling_candidates": 1028929, "sec": 39}
+{"routing_edges": 20125632, "letters_avoiding_target": 6402, "sec": 44}
+{"done": "inputs/I2", "length": 294, "digest": "989fd04cb2a409b6679b2106a18295a36161f9e76d804612875798f55131dd9a", "holes": [70074, 70085, 73877], "orbits": [14, 15, 15], "sec": 94.8}
+exit=0

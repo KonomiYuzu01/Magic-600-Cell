@@ -1,0 +1,4 @@
+{"file": "I2-generation-word.json", "twists": 250, "off": 3, "depth_failures": 0, "sec": 209}
+{"file": "I2-generation-word.json", "twists": 294, "off": 3, "input_digest_ok": true, "output_digest_ok": true, "depth_failures": 0, "inadmissible": null, "sec": 236}
+{"passed": true, "twists": 294, "end_digest": "989fd04cb2a409b6679b2106a18295a36161f9e76d804612875798f55131dd9a", "sec": 236}
+exit=0

@@ -1,0 +1,7 @@
+{"grips": 100, "checked": 6000, "bad": 0, "sec": 5.1}
+{"grips": 200, "checked": 12000, "bad": 0, "sec": 6.4}
+{"grips": 300, "checked": 18000, "bad": 0, "sec": 7.7}
+{"grips": 400, "checked": 24000, "bad": 0, "sec": 8.9}
+{"grips": 500, "checked": 30000, "bad": 0, "sec": 10.0}
+{"grips": 600, "checked": 36000, "bad": 0, "sec": 11.5}
+{"done": "polefix.json", "menu_items": 60, "checked": 36000, "not_fixing_pole": 0, "sec": 11.5}

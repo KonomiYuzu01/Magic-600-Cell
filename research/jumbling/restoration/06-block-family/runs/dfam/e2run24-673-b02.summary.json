@@ -1,0 +1,32 @@
+{
+ "table": "<scratch>/bf/run2/e2run24-s1.json",
+ "target": [
+  16245,
+  16249,
+  32088
+ ],
+ "poses": 1,
+ "one_domain": true,
+ "inside_admissible": [
+  152,
+  162,
+  183,
+  237,
+  290,
+  301
+ ],
+ "straddled_by_T": [
+  260,
+  302
+ ],
+ "q_candidates": 9396,
+ "q_involution_candidates": 648,
+ "q_scored": 1500,
+ "q_good": 0,
+ "q_best": [],
+ "q_fail": {
+  "prot_moved": 1396,
+  "prot_dead": 104
+ },
+ "stop": "no Q with T on K and the protected pieces exact"
+}

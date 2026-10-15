@@ -1,0 +1,80 @@
+{
+ "table": "<pkg>/certs/stop62/family-245/inputs/stop62-245-table.json",
+ "target": [
+  18445,
+  18447,
+  18481,
+  21605,
+  31623,
+  31624,
+  31625,
+  31626,
+  31627,
+  42338,
+  47885,
+  47888
+ ],
+ "poses": 1,
+ "one_domain": true,
+ "inside_admissible": [
+  154,
+  188,
+  268,
+  277,
+  369,
+  376
+ ],
+ "straddled_by_T": [
+  178,
+  244,
+  256
+ ],
+ "q_candidates": 12684,
+ "c_type_candidates": 228,
+ "q_involution_candidates": 144,
+ "q_scored": 12684,
+ "q_good": 0,
+ "q_best": [],
+ "q_fail": {
+  "prot_dead": 12658,
+  "prot_moved": 26
+ },
+ "q_conflict_sets": [
+  [
+   [
+    3
+   ],
+   12674
+  ],
+  [
+   [
+    2,
+    3
+   ],
+   10
+  ]
+ ],
+ "blocks": [
+  [
+   0,
+   86,
+   1040
+  ],
+  [
+   1,
+   12,
+   18445
+  ],
+  [
+   2,
+   61,
+   23955
+  ],
+  [
+   3,
+   86,
+   64184
+  ]
+ ],
+ "stop": "no Q with T on K and the protected pieces exact"
+}

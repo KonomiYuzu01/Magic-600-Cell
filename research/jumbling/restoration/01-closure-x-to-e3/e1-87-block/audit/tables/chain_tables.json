@@ -1,0 +1,244 @@
+{
+ "sha256": {
+  "seg1_end": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+  "v26_E1": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+  "c0_E1": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+  "X": "a802e5bbe35bce69e6868f8a4f0d9cdf88fe9309fc2a492921a66d8b52394ae5",
+  "E2": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+ },
+ "n_pieces": {
+  "seg1_end": 177120,
+  "v26_E1": 177120,
+  "c0_E1": 177120,
+  "X": 177120,
+  "E2": 177120
+ },
+ "n_poses": {
+  "seg1_end": 7256,
+  "v26_E1": 7256,
+  "c0_E1": 7256,
+  "X": 7258,
+  "E2": 7201
+ },
+ "digest_field": {
+  "seg1_end": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "v26_E1": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "c0_E1": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "X": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+  "E2": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+ },
+ "duplicate_pose_entries_in_table": {
+  "seg1_end": 0,
+  "v26_E1": 0,
+  "c0_E1": 0,
+  "X": 0,
+  "E2": 0
+ },
+ "kplus_distinct_matrices": 7200,
+ "kplus_all_rotations": true,
+ "kplus_all_preserve_poles": true,
+ "kplus_closed_on_3000_random_products": true,
+ "distinct_matrices_all_tables": 7258,
+ "membership_criteria_agree": true,
+ "all_table_matrices_are_rotations": true,
+ "off_counts": {
+  "seg1_end": 90,
+  "v26_E1": 90,
+  "c0_E1": 90,
+  "X": 107,
+  "E2": 3
+ },
+ "E1_copies_entrywise_equal": true,
+ "E2_off_set": [
+  16245,
+  16249,
+  32088
+ ],
+ "E2_off_is_Bprime": true,
+ "E1_E2_changed": 87,
+ "E1_E2_changed_eq_offE1_minus_B": true,
+ "X_E2_changed": 104,
+ "X_E2_changed_eq_offX_minus_B": true,
+ "X_E1_changed": 17,
+ "B_subset_offX_offE1": true,
+ "Bprime_equal_X_E1_E2": true,
+ "Bprime_one_shared_pose": true,
+ "offE1_subset_offX": true,
+ "block17_size": 17,
+ "block17": [
+  9117,
+  9126,
+  9128,
+  9131,
+  9132,
+  10303,
+  16715,
+  19508,
+  19509,
+  19517,
+  19518,
+  19522,
+  19523,
+  19524,
+  19525,
+  19526,
+  36033
+ ],
+ "X_E1_changed_eq_block17": true,
+ "block17_equal_E1_E2": true,
+ "lattice_E1": 177030,
+ "lattice_E1_on_lattice_E2": 177030,
+ "lattice_E1_same_matrix_E2": 177030,
+ "T_size": 87,
+ "T_on_lattice_E2": 87,
+ "T_distinct_poses_E1": 55,
+ "T_distinct_poses_E2": 82,
+ "collateral_E1_lattice_off_at_E2": 0,
+ "Bprime_matrices_match_chain_check": true,
+ "Bprime_matrix": [
+  [
+   [
+    -3,
+    1,
+    8
+   ],
+   [
+    0,
+    -1,
+    4
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    -1,
+    0,
+    2
+   ]
+  ],
+  [
+   [
+    0,
+    0,
+    1
+   ],
+   [
+    3,
+    -1,
+    8
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    3,
+    0,
+    4
+   ]
+  ],
+  [
+   [
+    -1,
+    0,
+    4
+   ],
+   [
+    1,
+    1,
+    4
+   ],
+   [
+    -5,
+    1,
+    8
+   ],
+   [
+    -1,
+    -1,
+    8
+   ]
+  ],
+  [
+   [
+    1,
+    3,
+    8
+   ],
+   [
+    -1,
+    1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ]
+  ]
+ ],
+ "Bprime_matrix_is_rotation_not_Kplus": true,
+ "digest_recomputed": {
+  "seg1_end": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "v26_E1": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "c0_E1": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "X": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+  "E2": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+ },
+ "digest_recomputed_matches_field": {
+  "seg1_end": true,
+  "v26_E1": true,
+  "c0_E1": true,
+  "X": true,
+  "E2": true
+ },
+ "holes": {
+  "X": {
+   "lattice": 177013,
+   "distinct_chambers": 177013,
+   "holes": 107
+  },
+  "c0_E1": {
+   "lattice": 177030,
+   "distinct_chambers": 177030,
+   "holes": 90
+  },
+  "E2": {
+   "lattice": 177117,
+   "distinct_chambers": 177117,
+   "holes": 3,
+   "hole_ids": [
+    24905,
+    89251,
+    89252
+   ]
+  }
+ },
+ "chain_check_json": {
+  "segment1_end_table_sha256": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+  "segment2_start_table_sha256": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+  "E1_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "E1_tables_equal_entrywise": true,
+  "E1_to_E2_pieces_with_changed_exact_pose": 87,
+  "E1_to_E2_changed_are_the_87_block": true,
+  "X_to_E2_pieces_with_changed_exact_pose": 104,
+  "X_to_E2_changed_are_the_87_and_17_blocks": true,
+  "Bprime_pieces": [
+   16245,
+   16249,
+   32088
+  ],
+  "Bprime_exact_pose_equal_at_X_E1_E2": true,
+  "block17_exact_pose_equal_E1_E2": true,
+  "X_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+  "E2_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+ }
+}

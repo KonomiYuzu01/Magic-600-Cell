@@ -1,0 +1,108 @@
+{
+ "note": "UNITS (orbit 5) on the deep fixture tables T200, T300, T723 and H6 = T723 + (433, item 12); summary of units5c.py outputs (full outputs not shipped; rerun with units5c.py on tables from export_fixture.py).",
+ "rows": [
+  {
+   "table": "t-T200.json",
+   "digest": "ad5e0133593112873b4319a64862e6d235ece98f831c0d6b66fe1619ff3febcc",
+   "off_pieces": 120119,
+   "digest_matches_export": true,
+   "orbit": 5,
+   "parts": 1332,
+   "splits": 1274,
+   "parts_with_orbit5_member": 609,
+   "n_values": {
+    "4": 556,
+    "72": 50,
+    "76": 2,
+    "80": 1
+   },
+   "stabilizer_orders": {
+    "1": 581,
+    "3": 28
+   },
+   "all_self_locked": true,
+   "all_stabilizers_even": true,
+   "n_parities": {
+    "0": 609
+   }
+  },
+  {
+   "table": "t-T300.json",
+   "digest": "88d8b110bbf0eae42ca22a857c289ee36c5204d0f82631d5b56317611b9ab9cd",
+   "off_pieces": 120343,
+   "digest_matches_export": true,
+   "orbit": 5,
+   "parts": 1369,
+   "splits": 1322,
+   "parts_with_orbit5_member": 607,
+   "n_values": {
+    "4": 553,
+    "72": 47,
+    "76": 5,
+    "80": 1,
+    "84": 1
+   },
+   "stabilizer_orders": {
+    "1": 581,
+    "3": 26
+   },
+   "all_self_locked": true,
+   "all_stabilizers_even": true,
+   "n_parities": {
+    "0": 607
+   }
+  },
+  {
+   "table": "t-T723.json",
+   "digest": "bd0cbd3337ef16085cba3498916b3c683f04735b5cc3737012c6414af422f7d7",
+   "off_pieces": 118629,
+   "digest_matches_export": true,
+   "orbit": 5,
+   "parts": 1514,
+   "splits": 1453,
+   "parts_with_orbit5_member": 596,
+   "n_values": {
+    "4": 543,
+    "72": 41,
+    "76": 9,
+    "80": 1,
+    "84": 2
+   },
+   "stabilizer_orders": {
+    "1": 578,
+    "3": 18
+   },
+   "all_self_locked": true,
+   "all_stabilizers_even": true,
+   "n_parities": {
+    "0": 596
+   }
+  },
+  {
+   "table": "t-T723x433-12.json",
+   "digest": "fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39",
+   "off_pieces": 120078,
+   "digest_matches_export": true,
+   "orbit": 5,
+   "parts": 1533,
+   "splits": 1478,
+   "parts_with_orbit5_member": 606,
+   "n_values": {
+    "4": 552,
+    "72": 41,
+    "76": 9,
+    "80": 2,
+    "84": 2
+   },
+   "stabilizer_orders": {
+    "1": 588,
+    "3": 18
+   },
+   "all_self_locked": true,
+   "all_stabilizers_even": true,
+   "n_parities": {
+    "0": 606
+   }
+  }
+ ]
+}

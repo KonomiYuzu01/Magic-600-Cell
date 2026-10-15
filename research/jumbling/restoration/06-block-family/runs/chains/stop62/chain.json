@@ -1,0 +1,22 @@
+{
+ "name": "stop62",
+ "start": "../../../data/states/stop62-table.json",
+ "start_digest": "9e70c4b9395a7e1227530f2ce6594dbbd686dcb85e4a1f79945905636e4ecc57",
+ "steps": [
+  {
+   "label": "s1-17block-D17",
+   "word": "s1-17block-D17/word-full.json",
+   "target": "s1-17block-D17/target.json"
+  },
+  {
+   "label": "s2-111at3644",
+   "word": "s2-111at3644/word-full.json",
+   "target": "s2-111at3644/target.json"
+  },
+  {
+   "label": "s3-43at9104",
+   "word": "s3-43at9104/word-full.json",
+   "target": "s3-43at9104/target.json"
+  }
+ ]
+}

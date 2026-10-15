@@ -1,0 +1,15 @@
+{"e1_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8", "e1_off": 90, "T": 87, "sec": 5.6}
+{"words": {"lengths": {"V": 590, "P": 10, "Q": 10, "Pinv": 10, "Vinv": 590}, "P_equals_report": true, "Q_equals_report": true, "Pinv_equals_report": true, "Pinv_is_inverse_of_P": [true, null], "Vinv_is_inverse_of_V": [true, null], "word_full_is_concatenation": true, "word_full_digests": [true, true], "distinct_letters": 323, "identity_letters": [], "K_membership_of_named_letters": {"X": 0, "Xinv": 0, "Y": 1, "Yinv": 1, "Z": 0, "Zinv": 0, "A": 1, "B": 1}, "involutions": {"A": true, "B": true, "X": false}, "inverse_pairs": {"X": true, "Y": true, "Z": true}, "digest_chain_of_parts": [true, true, true, true, true, true]}, "sec": 9.4}
+{"prefix": 50, "off": 90, "coll": 0, "sec": 21.0}
+{"prefix": 100, "off": 90, "coll": 0, "sec": 33.0}
+{"prefix": 150, "off": 90, "coll": 0, "sec": 44.1}
+{"prefix": 200, "off": 90, "coll": 0, "sec": 55.1}
+{"prefix": 250, "off": 90, "coll": 0, "sec": 65.4}
+{"prefix": 300, "off": 90, "coll": 0, "sec": 76.1}
+{"prefix": 350, "off": 90, "coll": 0, "sec": 87.3}
+{"prefix": 400, "off": 90, "coll": 0, "sec": 98.3}
+{"prefix": 450, "off": 90, "coll": 0, "sec": 110.2}
+{"prefix": 500, "off": 90, "coll": 0, "sec": 120.9}
+{"prefix": 550, "off": 90, "coll": 0, "sec": 132.0}
+{"part": "V", "digest": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3", "ok": true, "off": 90, "coll": 0, "sec": 141.2}
+{"chunk": "A", "rows": 591, "errors": [], "end": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3", "sec": 141.8}

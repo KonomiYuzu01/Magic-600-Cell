@@ -1,0 +1,21 @@
+{
+ "off_counts": {
+  "X": 107,
+  "E1": 90,
+  "E2": 3,
+  "E3": 0
+ },
+ "E1_off_minus_Bprime": 87,
+ "X_off_minus_E1_off": 17,
+ "E1_off_subset_of_X_off": true,
+ "E2_off_is_Bprime": true,
+ "changed_X_E2": 104,
+ "changed_X_E2_equals_blocks": true,
+ "changed_E1_E2": 87,
+ "changed_E1_E2_equals_87block": true,
+ "moved_E2_E3_lattice": 3091,
+ "overlap_87block_with_3091": 30,
+ "overlap_17block_with_3091": 4,
+ "changed_E1_E3": 3151,
+ "changed_X_E3": 3164
+}

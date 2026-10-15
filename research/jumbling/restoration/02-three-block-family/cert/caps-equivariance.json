@@ -1,0 +1,11 @@
+{
+ "menu_elements_checked": 36000,
+ "menu_elements_not_fixing_pole": 0,
+ "cap_size": 3097,
+ "kplus_checked": 7200,
+ "cap_images_not_caps": 0,
+ "first_failures": {
+  "fix": [],
+  "cap": []
+ }
+}

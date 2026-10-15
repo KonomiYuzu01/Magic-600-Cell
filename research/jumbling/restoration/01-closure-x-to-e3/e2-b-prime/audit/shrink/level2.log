@@ -1,0 +1,7 @@
+11.5 applied P 7 parked 80 bon 3 holes 80
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 19}
+19.6 T 80 BH 77 GH [24905, 89251, 89252] T_straddle 0
+{"safe_all_grips": 589, "letters": 6479, "off_lattice": 80, "sec": 36}
+36.3 alphabet 589 6479 cands 110 min_bh 11 F 0
+41.2 step (133, 1) enter 14 inT 14 parked_next 14
+44.0 done 44.0

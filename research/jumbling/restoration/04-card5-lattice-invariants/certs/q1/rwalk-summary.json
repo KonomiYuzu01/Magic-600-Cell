@@ -1,0 +1,64 @@
+{
+ "note": "Return-biased random walks from solved (rwalk.py); every letter checked by the exact simulator; best = largest left height of any piece at any step.",
+ "runs": [
+  {
+   "seed": 1,
+   "pret": 0.45,
+   "pj": 0.5,
+   "seconds": 1200,
+   "applied": 2555,
+   "attempted": 3971,
+   "best_height": 4,
+   "per_step_max_height_hist": {
+    "0": 1,
+    "2": 411,
+    "4": 2143
+   },
+   "best_journal_letters": 409
+  },
+  {
+   "seed": 2,
+   "pret": 0.45,
+   "pj": 0.5,
+   "seconds": 1200,
+   "applied": 2529,
+   "attempted": 3770,
+   "best_height": 4,
+   "per_step_max_height_hist": {
+    "2": 470,
+    "4": 2059
+   },
+   "best_journal_letters": 464
+  },
+  {
+   "seed": 3,
+   "pret": 0.45,
+   "pj": 0.5,
+   "seconds": 1200,
+   "applied": 2560,
+   "attempted": 3516,
+   "best_height": 4,
+   "per_step_max_height_hist": {
+    "0": 2,
+    "2": 265,
+    "4": 2293
+   },
+   "best_journal_letters": 266
+  },
+  {
+   "seed": 4,
+   "pret": 0.6,
+   "pj": 0.7,
+   "seconds": 1200,
+   "applied": 3703,
+   "attempted": 4667,
+   "best_height": 4,
+   "per_step_max_height_hist": {
+    "2": 367,
+    "0": 3,
+    "4": 3333
+   },
+   "best_journal_letters": 361
+  }
+ ]
+}

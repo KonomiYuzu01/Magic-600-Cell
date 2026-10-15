@@ -1,0 +1,140 @@
+{
+ "E2_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "E2_holes": [
+  24905,
+  89251,
+  89252
+ ],
+ "Pinv_is_mirror_inverse": true,
+ "Vinv_is_mirror_inverse": true,
+ "badW_simghost": [
+  23354,
+  23362,
+  38667
+ ],
+ "badW_fastghost": [
+  23354,
+  23362,
+  38667
+ ],
+ "badW_kill_simghost": 0,
+ "badW_kill_fastghost": 0,
+ "Bprime_fastghost": {
+  "alive": [
+   true,
+   true,
+   true
+  ],
+  "on_K": [
+   true,
+   true,
+   true
+  ],
+  "land": [
+   23354,
+   23362,
+   38667
+  ]
+ },
+ "Bprime_simghost": {
+  "alive": [
+   true,
+   true,
+   true
+  ],
+  "on_K": [
+   true,
+   true,
+   true
+  ],
+  "land": [
+   23354,
+   23362,
+   38667
+  ]
+ },
+ "after_V": {
+  "off_set_is_Bprime": true,
+  "Bprime_exact_E2": true,
+  "holes": [
+   23354,
+   23362,
+   38667
+  ],
+  "holes_equal_badW": true
+ },
+ "piV_holes_E2_equal_badW": true,
+ "piV_inverse_badW_equal_E2_holes": true,
+ "V_support_size": 18962,
+ "V_support_meets_caps_of_P4_F": 2314,
+ "V_grips": [
+  0,
+  29,
+  38,
+  46,
+  72,
+  108,
+  147,
+  328
+ ],
+ "after_V_P4": {
+  "off": 10,
+  "parked": [
+   32877,
+   48853,
+   53907,
+   55426,
+   64529,
+   72188,
+   78289,
+   105000,
+   129283,
+   164054
+  ],
+  "parked_equals_parked_at_E2_P4": true,
+  "Bprime_on_K": 3,
+  "L": [
+   57075,
+   89027,
+   57076
+  ],
+  "L_equals_L4": true,
+  "F_grip_status": {
+   "uncertain": false,
+   "straddled": false,
+   "off_inside": 0,
+   "safe": true
+  }
+ },
+ "after_F": {
+  "off": 10,
+  "off_set_and_poses_unchanged": true
+ },
+ "after_Pinv": {
+  "off": 0,
+  "all_on_K": true,
+  "Vinv_grips_safe_all": true
+ },
+ "end": {
+  "digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+  "off": 0,
+  "E2_lattice_on_K": 177117,
+  "E2_lattice": 177117,
+  "holes": 0
+ },
+ "F_grip_status_at_Y4": {
+  "uncertain": false,
+  "straddled": false,
+  "off_inside": 0,
+  "safe": true
+ },
+ "badU_simghost": [
+  24905,
+  89251,
+  89252
+ ],
+ "badU_equals_E2_holes": true,
+ "badU_kill": 0,
+ "badU_sec": 0.8,
+ "seconds": 64.0
+}

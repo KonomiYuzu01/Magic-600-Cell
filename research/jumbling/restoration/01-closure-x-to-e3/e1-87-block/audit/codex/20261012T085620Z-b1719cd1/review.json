@@ -1,0 +1,89 @@
+{
+  "verdict": "findings",
+  "summary": "Lemma H’s core argument is valid under section 4, but that model contradicts the claimed SAFE-ALL vacancy transport. H4 also omits a necessary hypothesis, and off-ghost prefix legality needs clarification. Recorded computations were taken as given.",
+  "findings": [
+    {
+      "id": "MATH-E2-01",
+      "severity": "blocker",
+      "title": "The stated region model forbids the claimed SAFE-ALL vacancy transport",
+      "detail": "Under section 4, every hole z has interior overlap with an off piece p. For any SAFE-ALL letter, p is outside the cap, and neither p nor the chamber content of z straddles its cut. Their interior overlap forces z outside the cap too, so the letter fixes z. Thus every hole is fixed pointwise by the entire SAFE-ALL group. No SAFE-ALL word can vacate an initially occupied chamber. Taking the recorded 86 occupied chambers of Bad(W2) as given, the claimed clearing word V2 cannot exist under this model. The positive hole counts in non-singleton orbits are also incompatible with this deduction. The region, coverage or hole interpretation must be reconciled before this composability argument can be accepted.",
+      "evidence": [
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 21,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        },
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 24,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        },
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 116,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        },
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 149,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        }
+      ],
+      "counterexample": "Choose any of the 86 initially occupied chambers in Bad(W2). Every SAFE-ALL permutation fixes the initial hole set pointwise, so this chamber remains occupied after every SAFE-ALL word, contradicting the asserted clearance.",
+      "suggested_experiment": "For one recorded hole in a non-singleton orbit, identify an overlapping off-piece region and a SAFE-ALL letter moving that chamber. Determine which section-4 assumption fails for these actual objects.",
+      "verification_status": "verified"
+    },
+    {
+      "id": "MATH-E2-02",
+      "severity": "major",
+      "title": "Off-frame endpoint claims do not explicitly certify prefix legality",
+      "detail": "The printed ghost premises record endpoint poses and T’s compatibility with P2^-1. Point 4 then infers that no off piece straddles any cut throughout W2. Endpoint restoration and B' never being selected do not themselves establish that condition: a straddling piece need not be wholly inside the cap. The missing step is an explicit certificate that every off-frame ghost avoids every cut at every prefix. It is unclear whether the undefined G2 block conditions or the phrase 'frame ghost carries' already include this check. If so, state that implication. The accepted replay establishes instance legality afterward; the advertised before-construction implication still needs this premise.",
+      "evidence": [
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 114,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        },
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 123,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        },
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 165,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        }
+      ],
+      "counterexample": null,
+      "suggested_experiment": "Inspect the pre-construction frame-ghost certificate for a zero-straddle check on every off piece at every W2 prefix, and explicitly connect that check to point 4.",
+      "verification_status": "unverified"
+    },
+    {
+      "id": "MATH-E2-03",
+      "severity": "major",
+      "title": "H4 omits H2’s clean-word hypothesis",
+      "detail": "H4 asserts Bad(U) is inside V(Y) when U restores T while the other off pieces stay off. This upper bound additionally requires H2’s condition that every original lattice piece ends on K. Restoring T does not imply that condition. The report’s accepted prefix U = V2 P2 Q2 restores T and leaves B' unchanged, but ends with 592 original lattice pieces off K. Their initially occupied chambers belong to Bad(U), violating H4’s upper bound as written. Explicitly retain the clean-word hypothesis in H4.",
+      "evidence": [
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 204,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        },
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 209,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        },
+        {
+          "path": "work/packet-e2-legality.md",
+          "line": 227,
+          "sha256": "59fa87478bfdabf555a1a3594c2a208843149400c94fba0c1a8e01e8afe3208a"
+        }
+      ],
+      "counterexample": "The recorded prefix V2 P2 Q2 satisfies H4’s stated restoration conditions, yet its 592 collateral pieces give Bad(U) chambers outside the initial hole set.",
+      "suggested_experiment": "Apply H4 to the already recorded prefix ending after Q2; an explicit clean-word hypothesis must exclude this prefix.",
+      "verification_status": "verified"
+    }
+  ]
+}

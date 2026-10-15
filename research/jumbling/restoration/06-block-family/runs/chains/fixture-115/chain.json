@@ -1,0 +1,12 @@
+{
+ "name": "fixture-115",
+ "start": "../../../data/states/fixture40-table.json",
+ "start_digest": "b8918ba6c1d9d353923a85f14d80059c3922e53d21723f2a8723315cde1398fc",
+ "steps": [
+  {
+   "label": "s0-block115-111at95605",
+   "word": "s0-block115-111at95605/word-full.json",
+   "target": "s0-block115-111at95605/target.json"
+  }
+ ]
+}

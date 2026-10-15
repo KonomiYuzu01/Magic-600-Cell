@@ -1,0 +1,7 @@
+{"event": "seed", "dir": "<pkg>/certs/stop62/family-245", "added": 0, "sec": 0}
+{"event": "start", "table": "s86a-table.json", "words": 0, "only": 86, "sec": 0}
+{"event": "state", "step": 0, "digest": "090b175c05ada922d4ac90c8e07285e1b9f11dfb92b442c852e29643e57864ab", "off": 86, "blocks": 1, "units": [[86, 1040, 1040, false]], "sec": 18}
+{"event": "scored", "step": 0, "usable": {"1040": 24}, "deficit0": {"1040": 0}, "vac_ok": {"1040": 0}, "occ0": {"1040": 0}, "need_search": [1040], "sec": 50}
+{"event": "search", "step": 0, "searched": [1040], "added": 601, "vac_ok": {"1040": 0}, "sec": 128}
+{"event": "refine", "step": 0, "added": 4, "sec": 150}
+{"event": "stop", "step": 0, "result": "no unit restored at this state", "remaining": [[86, 1040, 1040, false]], "best": {"1040": [[247, 0, 247, 323, 333, 0], [247, 0, 247, 323, 333, 0], [344, 0, 344, 417, 430, 0], [452, 0, 452, 525, 538, 0], [455, 0, 455, 531, 541, 0]]}, "sec": 188}

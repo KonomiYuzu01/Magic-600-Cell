@@ -1,0 +1,5 @@
+{"stage": "E2 loaded", "digest_ok": true, "off": [16245, 16249, 32088], "same": true, "sec": 6.4}
+{"part": "P", "prefix": 31, "off": 10, "coll": 10, "exact": 174034, "digest": "862c936faa277a5c", "sec": 26.7}
+{"part": "Q0", "prefix": 39, "off": 10, "coll": 10, "exact": 155218, "digest": "c4fc96f00b36e823", "sec": 29.7}
+{"part": "F", "prefix": 40, "off": 10, "coll": 10, "exact": 154037, "digest": "824fa85f0e363e1d", "sec": 30.4}
+{"part": "Pinv", "prefix": 71, "off": 0, "coll": 0, "exact": 156104, "digest": "3ba8e6c2e1f84d9f", "sec": 49.2}

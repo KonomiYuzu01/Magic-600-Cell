@@ -1,0 +1,222 @@
+{
+ "E2_table_sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893",
+ "E2_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "lengths": {
+  "V": 8,
+  "P": 31,
+  "Q": 1,
+  "Pinv": 31,
+  "Vinv": 8
+ },
+ "P4_rebuilt_equals_part_P": true,
+ "P4_rebuilt_equals_P4_json": true,
+ "Pinv_is_mirror_inverse_of_P": true,
+ "Vinv_is_mirror_inverse_of_V": true,
+ "F": [
+  [
+   162,
+   1
+  ]
+ ],
+ "F_inverse": [
+  [
+   162,
+   1
+  ]
+ ],
+ "full_word_equals_parts": true,
+ "inverse_letters": {
+  "x0^-1": [
+   [
+    91,
+    7
+   ]
+  ],
+  "x1^-1": [
+   [
+    154,
+    6
+   ]
+  ],
+  "R^-1": [
+   [
+    237,
+    47
+   ]
+  ]
+ },
+ "W_length": 63,
+ "badW": [
+  23354,
+  23362,
+  38667
+ ],
+ "badW_default_chambers_equal_all": true,
+ "badW_detail": [
+  {
+   "chamber": 23354,
+   "dies": false,
+   "died_at_step": -1,
+   "end_domain": 1,
+   "end_chamber_in_frame": 16245
+  },
+  {
+   "chamber": 23362,
+   "dies": false,
+   "died_at_step": -1,
+   "end_domain": 1,
+   "end_chamber_in_frame": 16249
+  },
+  {
+   "chamber": 38667,
+   "dies": false,
+   "died_at_step": -1,
+   "end_domain": 1,
+   "end_chamber_in_frame": 32088
+  }
+ ],
+ "seconds_badW": 0.7,
+ "E2_holes": [
+  24905,
+  89251,
+  89252
+ ],
+ "E2_off": [
+  16245,
+  16249,
+  32088
+ ],
+ "badW_occupied_at_E2": 3,
+ "badW_occupants_at_E2": {
+  "23354": 69058,
+  "23362": 69059,
+  "38667": 121428
+ },
+ "ghostlib_occ_agrees": true,
+ "badPinv": [
+  21595,
+  42324,
+  52051,
+  57075,
+  57076,
+  58571,
+  58573,
+  75451,
+  75460,
+  89027
+ ],
+ "badPinv_size": 10,
+ "badP_size": 10,
+ "badU": [
+  24905,
+  89251,
+  89252
+ ],
+ "badU_equals_E2_holes": true,
+ "seconds_badU": 0.6,
+ "ghost_Bprime_alive_on_K": 3,
+ "ghost_Bprime_landing": [
+  23354,
+  23362,
+  38667
+ ],
+ "replay": {
+  "V": {
+   "digest": "98d5869934296ed58b55f9d8a74badfab45f54d8cbf88cca89a11329cf2dd87a",
+   "off_count": 3,
+   "Bprime_on_K": 0,
+   "Bprime_chambers": [
+    -1,
+    -1,
+    -1
+   ],
+   "E2_lattice_off": 0,
+   "holes": [
+    23354,
+    23362,
+    38667
+   ],
+   "badW_vacant": 3,
+   "holes_equal_badW": true,
+   "off_set": [
+    16245,
+    16249,
+    32088
+   ],
+   "Bprime_exact_pose_unchanged": true
+  },
+  "P": {
+   "digest": "1509fd078dec4568f015a33151db207345d676c1285a302dd7436d2ce8e0f6c4",
+   "off_count": 10,
+   "Bprime_on_K": 3,
+   "Bprime_chambers": [
+    57075,
+    89027,
+    57076
+   ],
+   "E2_lattice_off": 10
+  },
+  "F": {
+   "digest": "6edd6cbc579441b57db0d0f7c24b643337fddd8c7a32262d1531559b5cee12c3",
+   "off_count": 10,
+   "Bprime_on_K": 3,
+   "Bprime_chambers": [
+    23354,
+    23362,
+    38667
+   ],
+   "E2_lattice_off": 10,
+   "Bprime_chambers_in_badPinv": 0
+  },
+  "Pinv": {
+   "digest": "79abe255c1498ba41a90d6c9fc867cdb387ffad8b52be62afcd5a79bdb0767f3",
+   "off_count": 0,
+   "Bprime_on_K": 3,
+   "Bprime_chambers": [
+    23354,
+    23362,
+    38667
+   ],
+   "E2_lattice_off": 0,
+   "Bprime_landing_sorted": [
+    23354,
+    23362,
+    38667
+   ],
+   "landing_equals_badW": true,
+   "landing_equals_ghost": true
+  },
+  "Vinv": {
+   "digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+   "off_count": 0,
+   "Bprime_on_K": 3,
+   "Bprime_chambers": [
+    89251,
+    24905,
+    89252
+   ],
+   "E2_lattice_off": 0
+  }
+ },
+ "replay_twists": 79,
+ "end_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+ "negative_control": {
+  "applied": 63,
+  "off_now": 3,
+  "E2_lattice_off_now": [
+   69058,
+   69059,
+   121428
+  ],
+  "E2_lattice_off_now_count": 3,
+  "Bprime_on_K_now": 3,
+  "completed": true,
+  "collateral": [
+   69058,
+   69059,
+   121428
+  ],
+  "collateral_equals_badW_occupants": true
+ },
+ "seconds": 91.5
+}

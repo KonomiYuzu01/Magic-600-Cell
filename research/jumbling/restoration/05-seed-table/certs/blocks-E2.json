@@ -1,0 +1,36 @@
+{
+ "table_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "off": 3,
+ "blocked_grips": [
+  250,
+  307
+ ],
+ "block_sizes": {
+  "3": 1
+ },
+ "pieces_in_glued_blocks": 3,
+ "pieces_frozen": 0,
+ "free_singletons": 0,
+ "lemma_G_hypothesis_all": true,
+ "blocks": [
+  {
+   "size": 3,
+   "movers": [
+    232,
+    237,
+    257,
+    273,
+    301,
+    356
+   ],
+   "glued": true,
+   "frozen": false,
+   "lemma_G_hypothesis": true,
+   "pieces": [
+    16245,
+    16249,
+    32088
+   ]
+  }
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "T": 723,
+ "E": 433,
+ "admissible_first_twists": 48,
+ "height_transitions": {
+  "2->0": 55440,
+  "2->2": 166320,
+  "2->4": 4992,
+  "4->2": 2208,
+  "4->4": 6624,
+  "6->4": 576,
+  "6->6": 1728
+ },
+ "height6_seed_vertices": 48,
+ "height6_after_2I_closure": 240,
+ "total_height6": 5120,
+ "height8_seed_vertices": 0,
+ "height8_after_2I_closure": 0,
+ "total_height8": 81920,
+ "seconds": 388
+}

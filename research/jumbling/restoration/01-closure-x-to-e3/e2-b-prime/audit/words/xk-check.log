@@ -1,0 +1,8 @@
+{"safe_all_grips": 562, "letters": 6182, "off_lattice": 3097, "sec": 111}
+{"k": 0, "P_length": 1, "digest": "5d2a88d945674ac66cbb2759215749662b7053425a06e68cf562efd1804f05b5", "digest_equals_shrink": true, "off": 3097, "safe_grips": 562, "letters": 6182, "x_k": [91, 6], "x_k_safe_all_letter": true, "x_k_grip_status": "safe", "sec": 111.3}
+{"safe_all_grips": 589, "letters": 6479, "off_lattice": 134, "sec": 130}
+{"k": 1, "P_length": 3, "digest": "e5e5089a53bf57e798e25ef346501fb337bcf269d7471416f4d841c0c663abde", "digest_equals_shrink": true, "off": 134, "safe_grips": 589, "letters": 6479, "x_k": [154, 7], "x_k_safe_all_letter": true, "x_k_grip_status": "safe", "sec": 130.1}
+{"safe_all_grips": 589, "letters": 6479, "off_lattice": 80, "sec": 151}
+{"k": 2, "P_length": 7, "digest": "526dcf0a75cbc3bb7240080f7aa6d654b71d0d52c229e9a59f22c9d9e2a59387", "digest_equals_shrink": true, "off": 80, "safe_grips": 589, "letters": 6479, "x_k": [133, 1], "x_k_safe_all_letter": true, "x_k_grip_status": "safe", "sec": 150.6}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 14, "sec": 173}
+{"k": 3, "P_length": 15, "digest": "ad7177ad59fe62872dfaa251c5ccc2a80cfd8e245edeba5554d177929556d7e1", "digest_equals_shrink": true, "off": 14, "safe_grips": 592, "letters": 6512, "x_k": [183, 6], "x_k_safe_all_letter": true, "x_k_grip_status": "safe", "sec": 172.7}

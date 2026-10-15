@@ -1,0 +1,285 @@
+[
+ {
+  "k": 0,
+  "v": -1,
+  "parked": 3097,
+  "L": [
+   42275,
+   58266,
+   42278
+  ],
+  "grips": []
+ },
+ {
+  "k": 1,
+  "v": 84071,
+  "parked": 134,
+  "L": [
+   48269,
+   48270,
+   58569
+  ],
+  "grips": [
+   {
+    "grip": 232,
+    "L_in_cap": 0,
+    "parked_in": 132,
+    "parked_cut": 2,
+    "cap_size": 3097
+   },
+   {
+    "grip": 237,
+    "L_in_cap": 0,
+    "parked_in": 134,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 250,
+    "L_in_cap": 0,
+    "parked_in": 99,
+    "parked_cut": 21,
+    "cap_size": 3097
+   },
+   {
+    "grip": 257,
+    "L_in_cap": 0,
+    "parked_in": 131,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 273,
+    "L_in_cap": 0,
+    "parked_in": 134,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 301,
+    "L_in_cap": 0,
+    "parked_in": 134,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 307,
+    "L_in_cap": 0,
+    "parked_in": 133,
+    "parked_cut": 1,
+    "cap_size": 3097
+   },
+   {
+    "grip": 356,
+    "L_in_cap": 0,
+    "parked_in": 134,
+    "parked_cut": 0,
+    "cap_size": 3097
+   }
+  ]
+ },
+ {
+  "k": 2,
+  "v": 84071,
+  "parked": 80,
+  "L": [
+   55583,
+   58275,
+   55584
+  ],
+  "grips": [
+   {
+    "grip": 232,
+    "L_in_cap": 0,
+    "parked_in": 70,
+    "parked_cut": 10,
+    "cap_size": 3097
+   },
+   {
+    "grip": 237,
+    "L_in_cap": 0,
+    "parked_in": 80,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 250,
+    "L_in_cap": 0,
+    "parked_in": 40,
+    "parked_cut": 13,
+    "cap_size": 3097
+   },
+   {
+    "grip": 257,
+    "L_in_cap": 0,
+    "parked_in": 53,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 273,
+    "L_in_cap": 0,
+    "parked_in": 80,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 301,
+    "L_in_cap": 0,
+    "parked_in": 80,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 307,
+    "L_in_cap": 0,
+    "parked_in": 79,
+    "parked_cut": 1,
+    "cap_size": 3097
+   },
+   {
+    "grip": 356,
+    "L_in_cap": 0,
+    "parked_in": 80,
+    "parked_cut": 0,
+    "cap_size": 3097
+   }
+  ]
+ },
+ {
+  "k": 3,
+  "v": 84071,
+  "parked": 14,
+  "L": [
+   47688,
+   47699,
+   57090
+  ],
+  "grips": [
+   {
+    "grip": 232,
+    "L_in_cap": 0,
+    "parked_in": 14,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 237,
+    "L_in_cap": 3,
+    "parked_in": 14,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 250,
+    "L_in_cap": 0,
+    "parked_in": 3,
+    "parked_cut": 6,
+    "cap_size": 3097
+   },
+   {
+    "grip": 257,
+    "L_in_cap": 0,
+    "parked_in": 14,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 273,
+    "L_in_cap": 0,
+    "parked_in": 14,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 301,
+    "L_in_cap": 3,
+    "parked_in": 14,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 307,
+    "L_in_cap": 0,
+    "parked_in": 13,
+    "parked_cut": 1,
+    "cap_size": 3097
+   },
+   {
+    "grip": 356,
+    "L_in_cap": 0,
+    "parked_in": 14,
+    "parked_cut": 0,
+    "cap_size": 3097
+   }
+  ]
+ },
+ {
+  "k": 4,
+  "v": 84071,
+  "parked": 10,
+  "L": [
+   57075,
+   89027,
+   57076
+  ],
+  "grips": [
+   {
+    "grip": 232,
+    "L_in_cap": 0,
+    "parked_in": 10,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 237,
+    "L_in_cap": 3,
+    "parked_in": 10,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 250,
+    "L_in_cap": 0,
+    "parked_in": 2,
+    "parked_cut": 4,
+    "cap_size": 3097
+   },
+   {
+    "grip": 257,
+    "L_in_cap": 0,
+    "parked_in": 10,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 273,
+    "L_in_cap": 0,
+    "parked_in": 10,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 301,
+    "L_in_cap": 3,
+    "parked_in": 10,
+    "parked_cut": 0,
+    "cap_size": 3097
+   },
+   {
+    "grip": 307,
+    "L_in_cap": 0,
+    "parked_in": 9,
+    "parked_cut": 1,
+    "cap_size": 3097
+   },
+   {
+    "grip": 356,
+    "L_in_cap": 0,
+    "parked_in": 10,
+    "parked_cut": 0,
+    "cap_size": 3097
+   }
+  ]
+ }
+]

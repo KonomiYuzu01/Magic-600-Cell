@@ -1,0 +1,57 @@
+{
+ "seeds": {
+  "checked": 252,
+  "failed": []
+ },
+ "kseeds": {
+  "checked": 3,
+  "failed": []
+ },
+ "runs": [
+  {
+   "run": "run-E2.json",
+   "input_digest_ok": true,
+   "steps": 1,
+   "step_digests_ok": true,
+   "admissible": true,
+   "end_digest": "ad0cd5a8aa16dc1441974fde590ddde60868205c520fb9893cc3e9853aa15f0a",
+   "end_matches_summary": true,
+   "off_end": 0,
+   "off_end_matches": true
+  },
+  {
+   "run": "run-I1.json",
+   "input_digest_ok": true,
+   "steps": 1,
+   "step_digests_ok": true,
+   "admissible": true,
+   "end_digest": "87af376a497b11742d574b28d7c1f6e9b64cde2914a9d783df0f9f0177be03d4",
+   "end_matches_summary": true,
+   "off_end": 0,
+   "off_end_matches": true
+  },
+  {
+   "run": "run-I2.json",
+   "input_digest_ok": true,
+   "steps": 1,
+   "step_digests_ok": true,
+   "admissible": true,
+   "end_digest": "67bafbc07bece94c3909c8996f6ac76494ea7258cd46c668d95c1ab643d1a1a8",
+   "end_matches_summary": true,
+   "off_end": 0,
+   "off_end_matches": true
+  },
+  {
+   "run": "run-E1.json",
+   "input_digest_ok": true,
+   "steps": 1,
+   "step_digests_ok": true,
+   "admissible": true,
+   "end_digest": "0620e435cd793ae5cf379e0448dce655eae66deda70ae686f29f8ed718355914",
+   "end_matches_summary": true,
+   "off_end": 87,
+   "off_end_matches": true
+  }
+ ],
+ "seconds": 954.0
+}

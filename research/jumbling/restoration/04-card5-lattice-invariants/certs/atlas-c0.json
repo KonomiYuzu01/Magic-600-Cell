@@ -1,0 +1,104 @@
+{
+ "class": 0,
+ "grip": 0,
+ "frame_item": 12,
+ "H_P_order": 1440,
+ "cells": 1921,
+ "orbits": [
+  {
+   "orbit": 0,
+   "cells": 1,
+   "signature_size": 0,
+   "sources_per_cell": [
+    5280
+   ],
+   "capacity_per_cell": [
+    5280
+   ],
+   "total_sources": 5280
+  },
+  {
+   "orbit": 1,
+   "cells": 120,
+   "signature_size": 1,
+   "sources_per_cell": [
+    385
+   ],
+   "capacity_per_cell": [
+    385
+   ],
+   "total_sources": 46200
+  },
+  {
+   "orbit": 2,
+   "cells": 720,
+   "signature_size": 2,
+   "sources_per_cell": [
+    86
+   ],
+   "capacity_per_cell": [
+    86
+   ],
+   "total_sources": 61920
+  },
+  {
+   "orbit": 3,
+   "cells": 480,
+   "signature_size": 3,
+   "sources_per_cell": [
+    0,
+    111
+   ],
+   "capacity_per_cell": [
+    111
+   ],
+   "total_sources": 13320
+  },
+  {
+   "orbit": 4,
+   "cells": 360,
+   "signature_size": 3,
+   "sources_per_cell": [
+    111
+   ],
+   "capacity_per_cell": [
+    0
+   ],
+   "total_sources": 39960
+  },
+  {
+   "orbit": 5,
+   "cells": 120,
+   "signature_size": 4,
+   "sources_per_cell": [
+    0
+   ],
+   "capacity_per_cell": [
+    87
+   ],
+   "total_sources": 0
+  },
+  {
+   "orbit": 6,
+   "cells": 120,
+   "signature_size": 4,
+   "sources_per_cell": [
+    87
+   ],
+   "capacity_per_cell": [
+    0
+   ],
+   "total_sources": 10440
+  }
+ ],
+ "ambiguous_vertex_signs": [
+  0,
+  0
+ ],
+ "empty_cell": {
+  "sources": 5280,
+  "vertex_inside_core": 960,
+  "facet_separated": 2520,
+  "undecided": 1800
+ }
+}

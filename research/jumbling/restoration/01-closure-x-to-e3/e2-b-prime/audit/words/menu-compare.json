@@ -1,0 +1,15 @@
+{
+ "fixture_menu": {
+  "name": "I_a",
+  "items": 60,
+  "identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c"
+ },
+ "built_menu": {
+  "name": "I_a",
+  "items": 60,
+  "identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c"
+ },
+ "same_name": true,
+ "same_identity": true,
+ "same_items_in_order": true
+}

@@ -1,0 +1,29 @@
+# Exact runs behind restore/ (paths relative to the working directory used; $ROOT = repository root,
+# $J = research/jumbling of branch claude/jumbling-e3 at 27a001c, $P30 = three-block family package,
+# $P28 = closure E2->E3 package). All runs: python3 -I, ulimit -v 7000000, Linux.
+
+# mirrored half-turns, one-twist setups (full pass for one half-turn: 6,912 candidates; library regenerated with budget 170 s, seed 7)
+search_mirror.py scripts $ROOT $J out/mirror-s 170 7 16
+# two-twist setups
+search_mirror.py scripts $ROOT $J out/mirror-p 2400 8 -16
+search_mirror.py scripts $ROOT $J out/mirror-p2 2000 9 -16
+# lens words and random chains (w9 entry and the lens/chain negatives)
+search_macros.py scripts $ROOT $J <w9 journal> out/targets.json out/macros-s11 3600 11 4 2 6
+# shape collisions
+search_collide.py scripts $ROOT $J out/collide1 1500 3 6 3 16
+# endings of E2 (A1..A5, B1..B5): run_endings.sh out/endings < specs
+#   A1 safe 101 60 | A2 safe 102 120 | A3 safe 103 30 | A4 setup 21 40 22 60 | A5 setup 23 20 24 30
+#   B1 safe 201 60 | B2 safe 202 200 | B3 setup 31 60 32 60 | B4 setup 33 10 34 10 | B5 safe 203 90
+# difference macros (reference W3 = $P28/D3/word-full.json; S = $P28/D3/typeS/word-full.json;
+# I1/I2 = $P30/inputs/I*-generation-word.json + $P30/runs/I*/construct/parts/0-V,1-P,2-F,3-Pinv,4-Vinv;
+# Ak/Bk = out/endings/<tag>-generation.json + out/endings/<tag>-construct/word-full.json)
+diff_macro.py scripts $ROOT $J out/diff-I1-I2.json I1=... I2=...
+diff_macro.py scripts $ROOT $J out/diff-W3.json W3=... S=... I1=... I2=...
+diff_macro.py scripts $ROOT $J out/diff-AB1.json W3=... A1=... B1=...
+diff_macro.py scripts $ROOT $J out/diff-batch2.json W3=... A2=... A3=... A4=... B2=... B3=...
+diff_macro.py scripts $ROOT $J out/diff-batch3.json W3=... A5=... B4=... B5=...
+# library
+build_library.py scripts out/library-final.json out/w9-only-search.json out/mirror-s/library.json out/mirror-p/library.json out/mirror-p2/library.json out/diff-I1-I2.json out/diff-W3.json out/diff-AB1.json out/diff-batch2.json out/diff-batch3.json
+# restorer and checker
+restore_lattice.py scripts $ROOT $J out/library-final.json out/rt-final uniform:1 uniform:2 word:3:300 w9word:4:300 w9word:5:0 mix:6:200:6 mix:7:300:10 mix:8:100:20 table:$P30/runs/I1/end-table.json table:$P30/runs/I2/end-table.json table:$P28/D3/E3-table.json
+verify_restore.py $ROOT $J out/library-final.json out/rt-final out/rt-final/verify-report.json

@@ -1,0 +1,28 @@
+{"clusters": 22, "sizes": [7, 15, 21, 30, 46, 63, 71, 78, 87, 93, 107, 111, 111, 111, 111, 168, 183, 198, 198, 215, 261, 335], "sec": 1.6}
+{"cluster_size": 78, "h0": 6, "first": [433, 46], "h1": 4, "second": [326, 12], "h2": 6}
+{"cluster": 78, "h0": 6, "caps": [433], "first": 59, "second_candidates": 212, "second_straddled": 211, "found": 1, "sec": 38.3}
+{"cluster": 93, "h0": 4, "caps": [], "first": 59, "second_candidates": 212, "second_straddled": 211, "found": 1, "sec": 38.6}
+{"cluster": 15, "h0": 4, "caps": [], "first": 59, "second_candidates": 212, "second_straddled": 211, "found": 1, "sec": 39.0}
+{"cluster": 111, "h0": 4, "caps": [272], "first": 118, "second_candidates": 424, "second_straddled": 423, "found": 1, "sec": 78.0}
+{"cluster": 261, "h0": 4, "caps": [], "first": 118, "second_candidates": 424, "second_straddled": 423, "found": 1, "sec": 78.1}
+{"cluster": 71, "h0": 4, "caps": [433], "first": 177, "second_candidates": 494, "second_straddled": 493, "found": 1, "sec": 108.4}
+{"cluster": 198, "h0": 4, "caps": [], "first": 177, "second_candidates": 494, "second_straddled": 493, "found": 1, "sec": 108.7}
+{"cluster": 30, "h0": 4, "caps": [65], "first": 236, "second_candidates": 599, "second_straddled": 598, "found": 1, "sec": 142.0}
+{"cluster": 87, "h0": 4, "caps": [], "first": 236, "second_candidates": 599, "second_straddled": 598, "found": 1, "sec": 142.1}
+{"cluster": 168, "h0": 4, "caps": [525], "first": 295, "second_candidates": 741, "second_straddled": 740, "found": 1, "sec": 179.5}
+{"cluster": 107, "h0": 4, "caps": [525], "first": 354, "second_candidates": 977, "second_straddled": 976, "found": 1, "sec": 219.6}
+{"cluster": 111, "h0": 4, "caps": [], "first": 354, "second_candidates": 977, "second_straddled": 976, "found": 1, "sec": 219.8}
+{"cluster": 111, "h0": 4, "caps": [475], "first": 413, "second_candidates": 1213, "second_straddled": 1212, "found": 1, "sec": 259.8}
+{"cluster": 335, "h0": 4, "caps": [91], "first": 472, "second_candidates": 1366, "second_straddled": 1365, "found": 1, "sec": 295.2}
+{"cluster_size": 21, "h0": 4, "first": [227, 18], "h1": 2, "second": [65, 12], "h2": 4}
+{"cluster_size": 21, "h0": 4, "first": [227, 54], "h1": 2, "second": [215, 12], "h2": 4}
+{"cluster_size": 21, "h0": 4, "first": [227, 59], "h1": 2, "second": [91, 12], "h2": 4}
+{"cluster": 21, "h0": 4, "caps": [227], "first": 531, "second_candidates": 1659, "second_straddled": 1655, "found": 4, "sec": 337.7}
+{"cluster": 183, "h0": 4, "caps": [215], "first": 590, "second_candidates": 1895, "second_straddled": 1891, "found": 4, "sec": 375.2}
+{"cluster": 215, "h0": 4, "caps": [], "first": 590, "second_candidates": 1895, "second_straddled": 1891, "found": 4, "sec": 375.3}
+{"cluster_size": 7, "h0": 4, "first": [593, 58], "h1": 4, "second": [501, 12], "h2": 6}
+{"cluster": 7, "h0": 4, "caps": [593], "first": 649, "second_candidates": 2155, "second_straddled": 2150, "found": 5, "sec": 414.7}
+{"cluster": 111, "h0": 4, "caps": [210], "first": 708, "second_candidates": 2414, "second_straddled": 2409, "found": 5, "sec": 459.1}
+{"cluster": 46, "h0": 4, "caps": [280], "first": 767, "second_candidates": 2650, "second_straddled": 2645, "found": 5, "sec": 499.7}
+{"cluster": 63, "h0": 4, "caps": [210], "first": 826, "second_candidates": 2886, "second_straddled": 2881, "found": 5, "sec": 543.0}
+{"cluster": 198, "h0": 4, "caps": [2], "first": 885, "second_candidates": 3087, "second_straddled": 3082, "found": 5, "sec": 580.7}

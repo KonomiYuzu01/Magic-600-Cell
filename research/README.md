@@ -21,6 +21,13 @@ The expanded analysis proves a **worst-case distance of at least 46,648 turns** 
 
 Primary credit for **Magic Puzzle Ultimate and its original renderer belongs to [Andrey Astrelin](https://superliminal.com/andrey/mpu/)**. C600 Studio is a mod. Nan Ma's solving methods and ivan216's software projects are acknowledged as background. The research includes AI-assisted analysis and is a technical report, not a peer-reviewed publication.
 
+## Research for 1.0
+
+| Material | Introduction |
+| --- | --- |
+| [Jumbling](jumbling/README.md) | Rigid jumbling of the retained geometry: jumble twists that leave the lattice of slots. An exact simulator, a full-state viewer, a grip-orbit explorer, the theory, and the [restoration results](jumbling/restoration/README.md) of 12 to 15 October 2026, among them a 40-twist scramble with 94,147 pieces off the lattice restored to the solved state, the retained group equal to the kernel of its invariants, and the lattice correction group C2^34 × C5^2. |
+| [Proof blueprint](theory/RETHLAS_BLUEPRINT.md) | The candidate proof blueprint behind the puzzle theory, with its [problem statement](theory/review-problem.md) and verification records. |
+
 ## Build the report
 
 Use a current TeX Live, TinyTeX, or MiKTeX installation with the packages named in the source preamble. Compile from this directory:

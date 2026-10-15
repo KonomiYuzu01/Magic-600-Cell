@@ -1,0 +1,7 @@
+{"step": "context", "t": 2.9}
+{"step": "kplus", "equal": true, "order": 7200, "t": 3.7}
+{"step": "table", "name": "X", "off": 107, "off_equals_independent": true, "collisions": 0, "holes": 107, "t": 5.3}
+{"step": "table", "name": "E1", "off": 90, "off_equals_independent": true, "collisions": 0, "holes": 90, "t": 6.3}
+{"step": "table", "name": "E2", "off": 3, "off_equals_independent": true, "collisions": 0, "holes": [24905, 89251, 89252], "chambers_equal_independent": true, "t": 7.6}
+{"step": "table", "name": "E3", "off": 0, "off_equals_independent": true, "collisions": 0, "holes": [], "chambers_equal_independent": true, "t": 8.9}
+{"step": "done", "seconds": 8.9, "t": 8.9}

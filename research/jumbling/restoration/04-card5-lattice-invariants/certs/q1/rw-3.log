@@ -1,0 +1,15 @@
+{"seed": 3, "best": 2, "applied": 3, "steps": 3, "off": 3097, "outs": 1, "sec": 0.6}
+{"seed": 3, "applied": 200, "steps": 213, "max_now": 2, "off": 8293, "outs": 2, "poses": 573, "sec": 6.6}
+{"seed": 3, "best": 4, "applied": 266, "steps": 284, "off": 5269, "outs": 1, "sec": 9.6}
+{"seed": 3, "applied": 400, "steps": 428, "max_now": 4, "off": 11005, "outs": 3, "poses": 2109, "sec": 16.1}
+{"seed": 3, "applied": 600, "steps": 644, "max_now": 4, "off": 7130, "outs": 1, "poses": 3861, "sec": 37.2}
+{"seed": 3, "applied": 800, "steps": 861, "max_now": 4, "off": 9214, "outs": 1, "poses": 5767, "sec": 68.0}
+{"seed": 3, "applied": 1000, "steps": 1108, "max_now": 4, "off": 12169, "outs": 1, "poses": 7189, "sec": 121.2}
+{"seed": 3, "applied": 1200, "steps": 1362, "max_now": 4, "off": 15438, "outs": 2, "poses": 8388, "sec": 182.0}
+{"seed": 3, "applied": 1400, "steps": 1626, "max_now": 4, "off": 14192, "outs": 1, "poses": 8795, "sec": 261.9}
+{"seed": 3, "applied": 1600, "steps": 1901, "max_now": 4, "off": 12108, "outs": 0, "poses": 8558, "sec": 368.7}
+{"seed": 3, "applied": 1800, "steps": 2223, "max_now": 4, "off": 16417, "outs": 1, "poses": 9880, "sec": 481.0}
+{"seed": 3, "applied": 2000, "steps": 2549, "max_now": 4, "off": 14776, "outs": 0, "poses": 9617, "sec": 626.7}
+{"seed": 3, "applied": 2200, "steps": 2865, "max_now": 4, "off": 16270, "outs": 0, "poses": 10367, "sec": 801.4}
+{"seed": 3, "applied": 2400, "steps": 3213, "max_now": 4, "off": 16868, "outs": 0, "poses": 10733, "sec": 1002.8}
+{"done": true, "seed": 3, "best": 4, "applied": 2560, "steps": 3516, "hist": {"0": 2, "2": 265, "4": 2293}, "sec": 1200.0}

@@ -1,0 +1,53 @@
+base [(0, 42)] holes 3097 alive 3097 ghost classes 484 wanted among them 6 10s
+ level 1 children 165 beam R [134, 134, 134, 134, 134, 134, 197, 197] 11s
+ level 2 children 1661 beam R [54, 54, 54, 54, 58, 58, 76, 76] 12s
+ level 3 children 3069 beam R [22, 22, 25, 25, 25, 27, 27, 27] 13s
+ level 4 children 3168 beam R [13, 14, 14, 16, 17, 17, 17, 17] 15s
+ level 5 children 3234 beam R [3, 3, 4, 5, 5, 5, 6, 7] 16s
+ level 6 children 3377 beam R [2, 3, 3, 3, 3, 3, 4, 4] 18s
+SINGLE H31-1 class 59 2|5a len 255 level 6 classes found 1 21s
+SINGLE H31-2 class 59 2|5a len 255 level 6 classes found 1 24s
+SINGLE H31-3 class 59 2|5a len 255 level 6 classes found 1 28s
+SINGLE H31-4 class 59 2|5a len 255 level 6 classes found 1 31s
+ level 7 children 1078 beam R [2, 3, 3, 3, 3, 4, 4, 5] 33s
+ level 8 children 880 beam R [3, 3, 4, 5, 5, 6, 6, 6] 33s
+base [(75, 28), (0, 29), (75, 40), (0, 59)] holes 1185 alive 1185 ghost classes 353 wanted among them 3 34s
+ level 1 children 108 beam R [146, 146, 146, 146, 146, 146, 146, 146] 34s
+ level 2 children 2310 beam R [57, 57, 70, 70, 70, 70, 70, 70] 35s
+ level 3 children 2156 beam R [22, 26, 31, 31, 32, 32, 32, 34] 36s
+ level 4 children 2805 beam R [12, 13, 14, 14, 14, 14, 15, 15] 37s
+ level 5 children 3256 beam R [6, 6, 7, 7, 7, 8, 9, 10] 38s
+ level 6 children 3256 beam R [3, 4, 4, 4, 4, 4, 4, 4] 40s
+ level 7 children 3322 beam R [2, 2, 2, 3, 3, 3, 3, 3] 42s
+SINGLE H31-5 class 25 2|5b len 1279 level 7 classes found 2 74s
+SINGLE H31-6 class 25 2|5b len 1279 level 7 classes found 2 108s
+SINGLE H31-7 class 25 2|5b len 1279 level 7 classes found 2 142s
+SINGLE H31-8 class 25 2|5b len 1279 level 7 classes found 2 174s
+ level 8 children 990 beam R [2, 2, 3, 3, 4, 4, 4, 4] 176s
+base [(56, 9), (23, 20), (0, 55), (23, 50), (0, 55), (56, 3), (0, 55), (23, 20), (0, 55), (23, 50)] holes 198 alive 198 ghost classes 142 wanted among them 0 176s
+base [(0, 17)] holes 3097 alive 3097 ghost classes 484 wanted among them 4 177s
+ level 1 children 129 beam R [134, 134, 134, 197, 197, 197, 335, 335] 177s
+ level 2 children 857 beam R [76, 78, 78, 78, 80, 80, 80, 80] 177s
+ level 3 children 2244 beam R [16, 16, 25, 30, 36, 40, 40, 40] 178s
+ level 4 children 2211 beam R [11, 12, 13, 14, 14, 15, 15, 15] 178s
+ level 5 children 2937 beam R [3, 3, 4, 5, 6, 6, 6, 6] 179s
+ level 6 children 2651 beam R [2, 2, 2, 2, 2, 3, 3, 3] 180s
+SINGLE H31-9 class 534 1 len 255 level 6 classes found 3 184s
+SINGLE H31-10 class 534 1 len 255 level 6 classes found 3 188s
+SINGLE H31-11 class 534 1 len 255 level 6 classes found 3 192s
+SINGLE H31-12 class 534 1 len 255 level 6 classes found 3 197s
+SINGLE H31-13 class 256 2|5b len 255 level 6 classes found 4 202s
+SINGLE H31-14 class 256 2|5b len 255 level 6 classes found 4 208s
+SINGLE H31-15 class 256 2|5b len 255 level 6 classes found 4 213s
+SINGLE H31-16 class 256 2|5b len 255 level 6 classes found 4 218s
+ level 7 children 1155 beam R [2, 2, 3, 3, 3, 3, 3, 3] 219s
+base [(30, 46), (0, 14), (30, 22), (0, 14)] holes 1185 alive 1185 ghost classes 353 wanted among them 1 219s
+ level 1 children 2 beam R [277, 316] 219s
+ level 2 children 132 beam R [82, 82, 109, 109, 109, 109, 120, 120] 219s
+ level 3 children 2915 beam R [12, 18, 18, 18, 19, 23, 28, 33] 221s
+ level 4 children 3014 beam R [4, 6, 6, 9, 10, 11, 12, 14] 222s
+ level 5 children 3289 beam R [3, 4, 5, 6, 6, 6, 6, 7] 223s
+ level 6 children 3278 beam R [2, 3, 3, 3, 3, 4, 4, 4] 224s
+ level 7 children 3322 beam R [2, 2, 2, 2, 3, 3, 3, 3] 227s
+SINGLE H31-17 class 51 2|5a len 1279 level 7 classes found 5 268s
+SINGLE H31-18 class 51 2|5a len 1279 level 7 classes found 5 308s

@@ -1,0 +1,49 @@
+{
+ "after_P_digest": "691b5e30fbc8c8c2b45a056bde4ad7a2a55b0ce4206b5c1b3384be87aeb239e5",
+ "holes": 311,
+ "BH": 308,
+ "GH": [
+  24905,
+  89251,
+  89252
+ ],
+ "L": [
+  103106,
+  126995,
+  103109
+ ],
+ "badPinv": 311,
+ "safe_grips": 578,
+ "h0_grips": 564,
+ "L_in_h0_caps": [
+  false,
+  false,
+  false
+ ],
+ "GH_in_h0_caps": [
+  true,
+  true,
+  true
+ ],
+ "L_h0_comp": [
+  103106,
+  126995,
+  103109
+ ],
+ "GH_h0_comp": [
+  32,
+  31,
+  32
+ ],
+ "G_orbit_L": [
+  14,
+  15,
+  15
+ ],
+ "G_orbit_GH": [
+  15,
+  14,
+  15
+ ],
+ "h0_sec": 61.5
+}

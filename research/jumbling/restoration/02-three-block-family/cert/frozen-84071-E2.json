@@ -1,0 +1,111 @@
+{
+ "input_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "z0": 84071,
+ "z0_type": 14,
+ "z0_occupied": true,
+ "at_X": {
+  "grips_holding_z0": 8,
+  "blocked_by_block": 8,
+  "free": [],
+  "block_inside_count": 7,
+  "block_cut_count": 1
+ },
+ "levels": [
+  {
+   "k": 0,
+   "v": -1,
+   "z0_parked": true,
+   "T": 3097,
+   "L": [
+    42275,
+    58266,
+    42278
+   ]
+  },
+  {
+   "k": 1,
+   "v": 84071,
+   "z0_parked": false,
+   "T": 134,
+   "L": [
+    48269,
+    48270,
+    58569
+   ],
+   "grips_holding_v": 8,
+   "blocked_L": 0,
+   "blocked_parked": 8,
+   "free_grips": [],
+   "letters": [],
+   "kinds": {
+    "pure": 0,
+    "absorbing": 0,
+    "other": 0
+   }
+  },
+  {
+   "k": 2,
+   "v": 84071,
+   "z0_parked": false,
+   "T": 80,
+   "L": [
+    55583,
+    58275,
+    55584
+   ],
+   "grips_holding_v": 8,
+   "blocked_L": 0,
+   "blocked_parked": 8,
+   "free_grips": [],
+   "letters": [],
+   "kinds": {
+    "pure": 0,
+    "absorbing": 0,
+    "other": 0
+   }
+  },
+  {
+   "k": 3,
+   "v": 84071,
+   "z0_parked": false,
+   "T": 14,
+   "L": [
+    47688,
+    47699,
+    57090
+   ],
+   "grips_holding_v": 8,
+   "blocked_L": 2,
+   "blocked_parked": 6,
+   "free_grips": [],
+   "letters": [],
+   "kinds": {
+    "pure": 0,
+    "absorbing": 0,
+    "other": 0
+   }
+  },
+  {
+   "k": 4,
+   "v": 84071,
+   "z0_parked": false,
+   "T": 10,
+   "L": [
+    57075,
+    89027,
+    57076
+   ],
+   "grips_holding_v": 8,
+   "blocked_L": 2,
+   "blocked_parked": 6,
+   "free_grips": [],
+   "letters": [],
+   "kinds": {
+    "pure": 0,
+    "absorbing": 0,
+    "other": 0
+   }
+  }
+ ],
+ "seconds": 10.2
+}

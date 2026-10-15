@@ -1,0 +1,4 @@
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 7}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 3, "sec": 19}
+{"orbits": 686, "singletons": 651, "sec": 21}
+{"done": "<work>/out/endings/A3", "length": 30, "digest": "70b48c1f7654ae664bb0a9447dd5d7f29f711072dcc5798a1047db8299db6f1a", "holes": [24905, 89251, 89252], "orbits": [15, 14, 15], "sec": 21.6}

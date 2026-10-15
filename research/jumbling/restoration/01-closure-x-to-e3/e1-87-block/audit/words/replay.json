@@ -1,0 +1,62 @@
+[
+ {
+  "part": "V",
+  "applied": 590,
+  "of": 590,
+  "error": null,
+  "input_ok": true,
+  "output_ok": true,
+  "digest_in": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "digest_out": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3",
+  "off": 90,
+  "sec": 46.4
+ },
+ {
+  "part": "P",
+  "applied": 10,
+  "of": 10,
+  "error": null,
+  "input_ok": true,
+  "output_ok": true,
+  "digest_in": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3",
+  "digest_out": "d25915b317e0262fb8469260878cc682838c026a8fb84d25f5f508b396385932",
+  "off": 682,
+  "sec": 51.8
+ },
+ {
+  "part": "Q",
+  "applied": 10,
+  "of": 10,
+  "error": null,
+  "input_ok": true,
+  "output_ok": true,
+  "digest_in": "d25915b317e0262fb8469260878cc682838c026a8fb84d25f5f508b396385932",
+  "digest_out": "bd5431007c5bba6eaf3c7680dd51272d0b45b9dec8f24c3466a6e70e1d56c9fd",
+  "off": 595,
+  "sec": 56.0
+ },
+ {
+  "part": "Pinv",
+  "applied": 10,
+  "of": 10,
+  "error": null,
+  "input_ok": true,
+  "output_ok": true,
+  "digest_in": "bd5431007c5bba6eaf3c7680dd51272d0b45b9dec8f24c3466a6e70e1d56c9fd",
+  "digest_out": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8",
+  "off": 3,
+  "sec": 61.2
+ },
+ {
+  "part": "Vinv",
+  "applied": 590,
+  "of": 590,
+  "error": null,
+  "input_ok": true,
+  "output_ok": true,
+  "digest_in": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8",
+  "digest_out": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+  "off": 3,
+  "sec": 96.9
+ }
+]

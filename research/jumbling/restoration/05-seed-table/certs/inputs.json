@@ -1,0 +1,80 @@
+{
+ "frozen_input_tables": {
+  "X": {
+   "file": "Claude-E-closure-X1-20261012/input/X-table.json",
+   "sha256": "a802e5bbe35bce69e6868f8a4f0d9cdf88fe9309fc2a492921a66d8b52394ae5",
+   "state_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7"
+  },
+  "E1": {
+   "file": "Claude-E-closure-X1-20261012/D17/end-table.json",
+   "sha256": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+   "state_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8"
+  },
+  "E2": {
+   "file": "Claude-E-closure-E1E2-20261012/D87/E2-table.json",
+   "sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893",
+   "state_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+  },
+  "E3": {
+   "file": "Claude-E-closure-E2E3-20261012/D3/E3-table.json",
+   "sha256": "53cec2e37f3b858924c216d45d99f1563f0f1e57d1d8a78fa39946c1c965d889",
+   "state_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+  },
+  "I1": {
+   "file": "v27 package: inputs/I1-table.json",
+   "sha256": "c4b8a173ebb1e7b8da00b2a124a51e4c3912f3bdff73e463d02853f5fc909dce",
+   "state_digest": "f27c345e591eecfa9d6807fbdbeb79326eb7b3987641524bc11e84a71fb44269"
+  },
+  "I2": {
+   "file": "v27 package: inputs/I2-table.json",
+   "sha256": "d683496e6aca22da1cf2c295ebeac1c69c370a9f01114b9cc33e828be4ad22b3",
+   "state_digest": "989fd04cb2a409b6679b2106a18295a36161f9e76d804612875798f55131dd9a"
+  }
+ },
+ "history_replay_inputs": {
+  "owner's word (first 36,563 letters used)": {
+   "file": "v11 package: construction/e2-to-lattice-word.json",
+   "sha256": "b07d368bc2abb1d88e9cf072ba72ac73579ee6a0881c0773154840a0a97bea0e"
+  },
+  "u, X reachability": {
+   "file": "Claude-E-closure-X1-20261012/reachability/X-reachability.json",
+   "sha256": "6f5379d8c657676e8b9bd61d39790d1533a4e4d64921449d7da72bcbb35b4ac1"
+  },
+  "D87": {
+   "file": "Claude-E-closure-E1E2-20261012/D87/word-full.json",
+   "sha256": "8c26ce49c51d9bd30e9447cf59f0c689e35987fe1ee34457bfaaf57574f02256"
+  },
+  "D3": {
+   "file": "Claude-E-closure-E2E3-20261012/D3/word-full.json",
+   "sha256": "a2382bcbb0b55e1658b66e8e49248769836e71bfb98107fb78bfdf57727da713"
+  },
+  "D17 part V.json": {
+   "file": "Claude-E-closure-X1-20261012/D17/parts/V.json",
+   "sha256": "6d33cbef42c74e899fa67f2dc5557a9cf2816bbdb29103eedff365adcb996979"
+  },
+  "D17 part P.json": {
+   "file": "Claude-E-closure-X1-20261012/D17/parts/P.json",
+   "sha256": "bb3cc391c84defc29bb89e1a01ab9ce436d9db08f916ba22f2b7a5e4bb5d6bf1"
+  },
+  "D17 part Q.json": {
+   "file": "Claude-E-closure-X1-20261012/D17/parts/Q.json",
+   "sha256": "b322b92a75b037d9ed4905a48b1351d1d4754d051a731c0fdd53612d6d459f58"
+  },
+  "D17 part Pinv.json": {
+   "file": "Claude-E-closure-X1-20261012/D17/parts/Pinv.json",
+   "sha256": "54db221321be5c003994038957dab3b554f127ce0203b119815be6c2fdcbf5ee"
+  },
+  "D17 part Vinv.json": {
+   "file": "Claude-E-closure-X1-20261012/D17/parts/Vinv.json",
+   "sha256": "e6155bc8d3105b2677d1254a085b2a8693ab4066d5f6a1ba2077964c42f495a5"
+  },
+  "fixture and seams stop": {
+   "file": "research tree: fixtures wj-I_a journal (first 40 records), results/seams-I_a-40-stop.json, results/joint-attack-I_a-40.json (e2_stop_no_history)"
+  }
+ },
+ "research_tree": {
+  "path": "research/jumbling",
+  "branch": "claude/jumbling-e3",
+  "commit": "27a001c"
+ }
+}

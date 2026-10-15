@@ -1,0 +1,130 @@
+{
+ "W_is_own_mirror_inverse": true,
+ "off_fingerprint_E2": "470915bf8a2190871f0d419ac4b8dd9a98cc3aabdd2b51f64645ac63f4eac27f",
+ "certificate_fingerprint_matches": true,
+ "Bprime_single_pose": true,
+ "Bprime_pose_E2": [
+  [
+   [
+    -3,
+    1,
+    8
+   ],
+   [
+    0,
+    -1,
+    4
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    -1,
+    0,
+    2
+   ]
+  ],
+  [
+   [
+    0,
+    0,
+    1
+   ],
+   [
+    3,
+    -1,
+    8
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    3,
+    0,
+    4
+   ]
+  ],
+  [
+   [
+    -1,
+    0,
+    4
+   ],
+   [
+    1,
+    1,
+    4
+   ],
+   [
+    -5,
+    1,
+    8
+   ],
+   [
+    -1,
+    -1,
+    8
+   ]
+  ],
+  [
+   [
+    1,
+    3,
+    8
+   ],
+   [
+    -1,
+    1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ]
+  ]
+ ],
+ "occupants_on_K_at_E2": [
+  true,
+  true,
+  true
+ ],
+ "neg_off_after_W": [
+  69058,
+  69059,
+  121428
+ ],
+ "neg_occupants_end_at_Bprime_E2_pose": [
+  false,
+  false,
+  false
+ ],
+ "neg_Bprime_on_K": [
+  true,
+  true,
+  true
+ ],
+ "chain_check": {
+  "badU": [
+   24905,
+   89251,
+   89252
+  ],
+  "badU_equals_E2_holes": true,
+  "E2_holes": [
+   24905,
+   89251,
+   89252
+  ],
+  "word_length": 79
+ }
+}

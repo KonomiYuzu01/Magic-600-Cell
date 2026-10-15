@@ -1,0 +1,4 @@
+{"id": 0, "family": "w9", "len": 9, "nu": {"8": [1, 0], "25": [1, 0]}, "new": true, "rank2": 1, "rank5": 0, "t": 2}
+{"id": 1, "family": "lens", "len": 3, "nu": {}, "new": false, "rank2": 1, "rank5": 0, "t": 7}
+{"id": 2, "family": "chain2", "len": 5, "nu": {"11": [1, 0], "22": [1, 0], "34": [1, 0]}, "new": true, "rank2": 2, "rank5": 0, "t": 438}
+{"id": 3, "family": "chain3", "len": 7, "nu": {"22": [1, 0], "25": [1, 0], "8": [1, 0], "11": [1, 0], "34": [1, 0]}, "new": false, "rank2": 2, "rank5": 0, "t": 1283}

@@ -1,0 +1,57 @@
+{
+ "table": "<scratch>/bf/run2/e2run24-s1.json",
+ "target": [
+  21607,
+  21608,
+  21618,
+  21619,
+  21622,
+  21626,
+  21627,
+  21635,
+  21636,
+  21637,
+  21638,
+  21639,
+  29211,
+  42339,
+  42340,
+  42341,
+  42342,
+  42343,
+  42351,
+  42352,
+  42353,
+  42354,
+  42355,
+  42356,
+  42357,
+  42358,
+  42360,
+  55631,
+  55633
+ ],
+ "poses": 1,
+ "one_domain": true,
+ "inside_admissible": [
+  315,
+  319,
+  393,
+  427,
+  507
+ ],
+ "straddled_by_T": [
+  336,
+  376
+ ],
+ "q_candidates": 20352,
+ "q_involution_candidates": 1704,
+ "q_scored": 1500,
+ "q_good": 0,
+ "q_best": [],
+ "q_fail": {
+  "prot_moved": 1452,
+  "prot_dead": 48
+ },
+ "stop": "no Q with T on K and the protected pieces exact"
+}

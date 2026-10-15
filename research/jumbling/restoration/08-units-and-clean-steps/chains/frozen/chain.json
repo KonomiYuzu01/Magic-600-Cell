@@ -1,0 +1,34 @@
+{
+ "name": "frozen-x16",
+ "start": "start-table.json",
+ "start_digest": "29ef94993ff9ab976ef7ded147f102ec6d7b5f07507651d8733436e3d2ce8f9c",
+ "steps": [
+  {
+   "label": "fz4-k00-u1067",
+   "word": "step001-word.json",
+   "unit": "step001-unit.json",
+   "free": "step001-free.json",
+   "size": 86,
+   "free_size": 506,
+   "length": 4
+  },
+  {
+   "label": "fz5-k00-u45811",
+   "word": "step002-word.json",
+   "unit": "step002-unit.json",
+   "free": "step002-free.json",
+   "size": 78,
+   "free_size": 2349,
+   "length": 1
+  },
+  {
+   "label": "fz5-k01-u31895",
+   "word": "step003-word.json",
+   "unit": "step003-unit.json",
+   "free": "step003-free.json",
+   "size": 86,
+   "free_size": 3011,
+   "length": 5
+  }
+ ]
+}

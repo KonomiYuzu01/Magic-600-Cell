@@ -1,10 +1,10 @@
 # Magic 600 Cell
 
-**A solving workbench for the full 600-cell puzzle: a Rubik's-cube-style puzzle on a four-dimensional regular polytope.**
+**A solving workbench and a research project for the full 600-cell puzzle: a Rubik's-cube-style puzzle on a four-dimensional regular polytope.**
 
 Built around **[Magic Puzzle Ultimate by Andrey Astrelin](https://superliminal.com/andrey/mpu/)**. Primary credit for the original puzzle simulator and renderer belongs to Andrey. Earlier versions of this project were named C600 Studio.
 
-**[Download 0.4 for Windows](https://github.com/KonomiYuzu01/Magic-600-Cell/releases/tag/0.4)** · [Usage](USAGE.md) · [Release guide](docs/RELEASE_0_4.md) · [Mathematics](research/README.md) · [Documentation](docs/README.md) · [Roadmap to 1.0](#roadmap-10)
+**[Download 0.4 for Windows](https://github.com/KonomiYuzu01/Magic-600-Cell/releases/tag/0.4)** · [Usage](USAGE.md) · [Release guide](docs/RELEASE_0_4.md) · [Mathematics](research/README.md) · [Jumbling research](research/jumbling/README.md) · [Documentation](docs/README.md) · [Roadmap to 1.0](#roadmap-10)
 
 ---
 
@@ -21,6 +21,26 @@ The 600-cell is the four-dimensional regular polytope bounded by 600 tetrahedra.
 | Labelled sticker slots | 259,800 |
 
 Every operation in the application acts on this complete model. Nothing is simplified: display filters and visibility settings never change the mechanical state or relabel a piece.
+
+## Jumbling: when pieces leave the lattice
+
+In the puzzle above, every turn is a symmetry of the cut arrangement, so every piece always lands in a slot. A *jumble twist* turns a cell's cap by a rotation about its axis that is not such a symmetry. The moved pieces leave the lattice: they no longer fill a slot, they can stick across other cuts, and every cap they straddle is blocked until they move away. The puzzle stays rigid, but its group becomes infinite. With the twist menu I_a, each of the 600 caps has 12 ordinary rotations and 48 jumble twists. Jumbling enters 1.0 as a second puzzle with its own model identity; 600-cell-Full is unchanged.
+
+The research question is how to get back to the solved state from any reachable configuration, reading only the current state. Results so far (15 October 2026):
+
+| Result | Status |
+| --- | --- |
+| A 40-twist scramble that takes 94,147 of the 177,120 pieces off the lattice is restored to the solved state: a 62-twist seam descent to 860 off pieces, 14 clean steps (14,098 twists; no step knocks a lattice piece off) to 0, then the lattice phase | **certificate**: every twist replayed on the exact simulator by an independent checker; the order of the 14 steps was chosen by hand |
+| Every run of clean steps terminates, since each lowers the off-lattice count by at least the size of its target (Lemma U) | **proved** |
+| The retained puzzle's group is exactly the kernel of its invariants (G = 𝒦); its order has 598,061 decimal digits | **certificate**: 35 position and 11 frame certificates, checked by an independent checker |
+| The corrections a jumbled history can leave on the lattice form A_J = C2^34 × C5^2 | lower bound **certificate** (40 words); upper bound **proved** |
+| With a correction library spanning A_J, every configuration with all pieces on the lattice is solved (Theorem R) | **proved**; the 36-macro library has rank 34 over F2 and 2 over F5 (**certificate**) |
+| Every reachable configuration has a clean step that the method finds | **open**: the core gap. A driver that reads only the state is running on two inputs |
+| The lattice phase within reach of a person: it is 1.5 to 2.2 × 10^8 twists today | **open** |
+
+Every legality decision is exact, in arithmetic over Q(√5) with no tolerance. Results are labelled *proved*, *certificate* (an exact computation with a replayable record), *measured* or *open*, and the new proofs have no independent mathematical review yet. On the owner's RTX 4070 Laptop GPU the jumbling render probe ran the I_a fixture at 613 fps with a p99 frame time of 1.91 ms; overlay costs are not measured yet ([evidence](docs/wiki/evidence/w-j-probe-results.md)).
+
+Start with the [jumbling overview](research/jumbling/README.md), then the [restoration results](research/jumbling/restoration/README.md) (nine stages, each with its replay commands) and the [general method](research/jumbling/restoration/09-general-method/METHOD.md).
 
 ## What 0.4 does
 
@@ -54,30 +74,31 @@ The default G2 layout keeps the native puzzle visible. The alternate keyboard wo
 - **Chronological, complete permutations.** Every macro is executed as source-to-destination permutations in order, with its full collateral effect. Preview revisions and full-state hashes are rechecked before commit.
 - **No lost work.** Reset and import are transactional and recoverable, and the current preferences and recovery checkpoint are kept.
 - **Evidence is labelled.** Release records separate source and fixture checks, synthetic geometry, actual Windows/DirectX runs and performance measurements. A headless result is never presented as a Windows, input or performance result.
+- **Certificates over claims.** A computed result ships with the record that reproduces it and a checker that does not share the construction code.
 - **Reproducible builds.** Releases carry a [source manifest](SOURCE_MANIFEST.json) and [provenance record](docs/RELEASE_0_4_PROVENANCE.json) that bind the frozen package inputs to their hashes.
 
 ## Mathematics
 
 The [theory document](research/PUZZLE_THEORY.md) develops 15 lemmas and a combined theorem with the full 35-orbit census. It covers exact golden-ratio coordinates, incidence and duality, the radial homeomorphism to the three-sphere, binary icosahedral quaternions and the H4 symmetry group, cap signatures and local frames, parity and orientation invariants, conditional configuration bounds, and the difference between geometric symmetry and legal twists. The order of the full legal group is not asserted.
 
-PDF and LaTeX sources: [puzzle theory](research/Full_600cell_Puzzle_Theory.pdf), [technical report](research/Full_600cell_Technical_Report.pdf).
+PDF and LaTeX sources: [puzzle theory](research/Full_600cell_Puzzle_Theory.pdf), [technical report](research/Full_600cell_Technical_Report.pdf). The jumbling theory, from the tree model of jumbled poses to the lattice correction group, is in [research/jumbling/theory/](research/jumbling/theory/README.md) and [research/jumbling/restoration/](research/jumbling/restoration/README.md).
 
 <a id="roadmap-10"></a>
 ## Roadmap: 1.0
 
-0.4 is the last release of the 0.4 line; the planned 0.4.1 release was cancelled. 1.0 is a new application designed from scratch, keeping the mathematical contract, the protection rules and the model identity.
+0.4 is the last release of the 0.4 line; the planned 0.4.1 release was cancelled. 1.0 is a new application designed from scratch. For 600-cell-Full it keeps the mathematical contract, the protection rules and the model identity; the jumbling puzzle joins it with a model identity and contract of its own.
 
-- **Stage 2 (now):** inventory of every 0.4 function, keep/redesign/delete decisions, a new interaction and visual design, renderer experiments, and an architecture freeze.
-- **Renderer target:** all 259,800 sticker slots at full detail during the most complex animation, at an average of at least 30 fps with a 99th-percentile frame time of at most 33.3 ms, on a laptop RTX 4070 (8 GB). Direct3D 12 is the base; candidates are listed in the [renderer decision](docs/wiki/decisions/renderer-candidates.md). No renderer has qualified yet.
-- **Correctness:** the 1.0 engine is proven equal to the 0.4 engine by a differential oracle before it replaces it.
+- **Stage 2 (now).** The charter, two independent inventories of every 0.4 function and the dispositions are done: 503 units, 556 decisions (keep 52, redesign 486, delete 12, automate 6), signed by the owner. The redesign and the experiments (renderer, migration probes, design labs) are in progress. The freeze of the architecture, the migration format and the design system comes last.
+- **Renderer target:** all 259,800 sticker slots at full detail during the most complex animation, at an average of at least 30 fps with a 99th-percentile frame time of at most 33.3 ms, on a laptop RTX 4070 (8 GB): PresentMon at native resolution, no frame generation or upscaling, three cold 180-second runs, peak VRAM about 7 GB or less. Direct3D 12 is the base. On the bare gate trace all three candidates met it on the owner's machine (bare Direct3D 12: 788 fps, p99 1.49 ms; Godot 4.7.2: 671 fps, p99 1.91 ms; Qt 6.10.3: 60 fps at its vblank cap, p99 17.4 ms) and passed the [day-7 go/no-go](docs/wiki/decisions/day7-go-no-go-ruling.md). No renderer is selected yet: the selection waits for the run with the design's look. Candidates are listed in the [renderer decision](docs/wiki/decisions/renderer-candidates.md).
+- **Correctness:** before the 1.0 engine replaces the 0.4 engine, a differential oracle must show that the two agree on every component they share.
 - **Your data:** 0.4 sessions migrate one way into 1.0 from a locked copy; the original session directory is never modified.
-- **Platforms:** Windows first. The engine, session store and command layer stay free of Windows-only code so that macOS and Linux versions can follow after 1.0.
+- **Platforms:** Windows first. The engine, session store, command layer and view model stay free of Windows-only code, shaders are written once in portable HLSL, and the renderer backend interface stays small, so that macOS and Linux versions can follow after 1.0.
 
-The [1.0 architecture proposal](docs/architecture/1.0/README.md) is future documentation and partly superseded; current decisions are in the [engineering wiki](docs/wiki/index.md).
+The [1.0 architecture proposal](docs/architecture/1.0/README.md) is future documentation and partly superseded; current decisions are in the [engineering wiki](docs/wiki/index.md) and the progress records in [docs/progress/](docs/progress/1.0/).
 
 ## How this project is developed
 
-Development follows a written, review-gated process. The owner sets scope, design and releases. Claude (Anthropic) is the integrating developer, and Codex (OpenAI) independently checks plans and reviews every non-trivial change before it is committed; critical paths such as the engine, persistence and the model manifest need a valid review of the exact candidate. Each review finding gets a recorded disposition, and decisions are kept in a public [engineering wiki](docs/wiki/index.md). The rules are in [AGENTS.md](AGENTS.md); the [development guide](docs/development-guide/HUMAN_GUIDE.md) explains them for people.
+Development follows a written, review-gated process. The owner sets scope, design and releases. Claude (Anthropic) is the integrating developer. Codex (OpenAI) reviews by risk: a change to a critical path such as the engine, persistence or the model manifest gets a plan check and a valid review of the exact candidate before commit; other code gets one review of the finished change; pages that record owner decisions or measured results get none. Codex also implements separable parts in isolated worktrees, a senior Codex reviewer gives the rulings at three gates, and a separate solver joins on escalation. Each review finding gets a recorded disposition, and decisions are kept in a public [engineering wiki](docs/wiki/index.md). The rules are in [AGENTS.md](AGENTS.md); the [development guide](docs/development-guide/HUMAN_GUIDE.md) explains them for people.
 
 ## Repository guide
 
@@ -86,11 +107,17 @@ Development follows a written, review-gated process. The owner sets scope, desig
 | [USAGE.md](USAGE.md), [release guide](docs/RELEASE_0_4.md) | Start here for the released application. |
 | [work/experiments/magic600-04/](work/experiments/magic600-04/) | Released 0.4 workspace source and packaging inputs; the original path is retained for reproducibility. |
 | Root Python modules, [native/](native/), [assets/](assets/) | Shared backend, retained native integration and immutable full-model assets. |
-| [Build guide](docs/DEVELOPMENT.md) | Source layout, prerequisites and public-checkout limitations. |
+| [oracle/](oracle/) | An independent sparse permutation engine that tests use to cross-check the backend. |
+| [Build guide](docs/DEVELOPMENT.md) | Source layout, prerequisites and a clean-checkout build of the retained 0.4 host (Windows, .NET Framework 4.x x86 compiler, Managed DirectX). |
 | [RELEASE.json](RELEASE.json), [SOURCE_MANIFEST.json](SOURCE_MANIFEST.json) | Version identity and source inventory; [release provenance](docs/RELEASE_0_4_PROVENANCE.json) binds the frozen package inputs. |
 | [research/](research/README.md) | Mathematical references, reports and audits, with their original version and evidence scope. |
+| [research/jumbling/](research/jumbling/README.md) | Jumbling: the exact simulator, viewer, explorer, theory and the restoration results. |
 | [docs/](docs/README.md) | Current documentation, historical records, 1.0 planning and the engineering wiki. |
-| [tests/](tests/) | Headless regression tests for mechanics, persistence, process ownership and tooling; native regressions in `tests/native/`. |
+| [docs/progress/](docs/progress/1.0/) | Stage 2 records: charter, inventories, dispositions, command table, packets, migration probes, the jumbling plan. |
+| [work/experiments/](work/experiments/) | Stage 2.4 renderer probes with their result cards and gate summaries, next to the 0.4 workspace. |
+| [tools/](tools/) | Development tools: the review wrapper, the toolchain installer, the development workbench, Taste Lab, Look Lab, the renderer gate, the oracle and migration probes, wiki lint. |
+| [tests/](tests/) | Headless regression tests for mechanics, persistence, process ownership, tooling, the renderer gate, the oracle, migration probes and the jumbling simulator; native regressions in `tests/native/`. |
+| [.github/workflows/](.github/workflows/) | Continuous integration: the headless checks on Windows. A pass is not DirectX evidence. |
 
 Root launch scripts, `web/` and `packaging/` retain the earlier shared/0.3 paths; they are not the 0.4 portable-package entry point. The `work/experiments/magic600-04` name does not make the published 0.4 release a new experimental build.
 

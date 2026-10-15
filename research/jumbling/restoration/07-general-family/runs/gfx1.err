@@ -1,0 +1,24 @@
+{"world": "after-table.json", "off": 82925, "domains": 18, "blocks": 140, "sec": 9.7}
+{"event": "scan", "off": 82925, "s_caps": 0, "sv_caps": 38, "mixed": 53, "sec_scan": 36.2, "sec": 45.9}
+{"event": "clear_ok", "cap": 472, "V": 3, "contents": 2427, "t": 15.5, "sec": 61.4}
+{"event": "step", "step": 1, "kind": "SV", "cap": 472, "length": 7, "target": 2427, "blocks": [7, 63], "off_before": 82925, "off_after": 80498, "target_on": 2427, "collateral": 0, "protected": 80498, "protected_changed": 0, "virtual_matches": true, "sec": 62.0, "ok": true}
+{"event": "scan", "off": 80498, "s_caps": 0, "sv_caps": 39, "mixed": 55, "sec_scan": 20.9, "sec": 82.9}
+{"event": "clear_ok", "cap": 215, "V": 1, "contents": 2078, "t": 5.3, "sec": 88.1}
+{"event": "step", "step": 2, "kind": "SV", "cap": 215, "length": 3, "target": 2078, "blocks": [3, 20, 107], "off_before": 80498, "off_after": 78420, "target_on": 2078, "collateral": 0, "protected": 78420, "protected_changed": 0, "virtual_matches": true, "sec": 88.4, "ok": true}
+{"event": "scan", "off": 78420, "s_caps": 0, "sv_caps": 43, "mixed": 55, "sec_scan": 20.9, "sec": 109.3}
+{"event": "clear_fail", "cap": 61, "occupied": 118, "t": 3.5, "sec": 112.8}
+{"event": "clear_fail", "cap": 326, "occupied": 395, "t": 8.9, "sec": 121.6}
+{"event": "clear_fail", "cap": 227, "occupied": 529, "t": 33.3, "sec": 154.9}
+{"event": "clear_fail", "cap": 86, "occupied": 603, "t": 26.4, "sec": 181.2}
+{"event": "clear_ok", "cap": 162, "V": 3, "contents": 3097, "t": 40.2, "sec": 221.4}
+{"event": "step", "step": 3, "kind": "SV", "cap": 162, "length": 7, "target": 3097, "blocks": [2, 37, 81], "off_before": 78420, "off_after": 75323, "target_on": 3097, "collateral": 0, "protected": 75323, "protected_changed": 0, "virtual_matches": true, "sec": 221.9, "ok": true}
+{"event": "scan", "off": 75323, "s_caps": 0, "sv_caps": 40, "mixed": 54, "sec_scan": 17.5, "sec": 239.4}
+{"event": "clear_fail", "cap": 61, "occupied": 395, "t": 40.6, "sec": 280.0}
+{"event": "clear_fail", "cap": 326, "occupied": 395, "t": 7.9, "sec": 287.9}
+{"event": "clear_fail", "cap": 227, "occupied": 529, "t": 28.1, "sec": 316.0}
+{"event": "clear_fail", "cap": 86, "occupied": 603, "t": 23.2, "sec": 339.1}
+{"event": "clear_fail", "cap": 506, "occupied": 1727, "t": 133.6, "sec": 472.7}
+{"event": "clear_fail", "cap": 132, "occupied": 1805, "t": 63.8, "sec": 536.5}
+{"event": "clear_fail", "cap": 66, "occupied": 1912, "t": 58.2, "sec": 594.7}
+{"event": "clear_fail", "cap": 110, "occupied": 1912, "t": 120.8, "sec": 715.5}
+{"event": "clear_fail", "cap": 85, "occupied": 1972, "t": 121.6, "sec": 837.1}

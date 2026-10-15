@@ -1,0 +1,334 @@
+{
+ "errors": {
+  "A": [],
+  "B": [],
+  "C": []
+ },
+ "prefix_count": 1211,
+ "prefixes_contiguous": true,
+ "handover_mismatch": [],
+ "chunk_start_digest_ok": {
+  "A": true,
+  "B": true,
+  "C": true
+ },
+ "exports": {
+  "A": {
+   "path": "<work>/v26/audit/replay/state-after-V.json",
+   "digest": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3"
+  },
+  "B": {
+   "path": "<work>/v26/audit/replay/state-after-Pinv.json",
+   "digest": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8"
+  }
+ },
+ "stages": {
+  "V": {
+   "end_prefix": 590,
+   "digest": "d4ff7ac504eeea38b7c498f0fbe459b3323f02c9c892c64fc393ed63ae9bcab3",
+   "off": 90,
+   "restored": 0,
+   "collateral": 0,
+   "still_off_changed": 0,
+   "off_range_incl_start": [
+    90,
+    90
+   ],
+   "off_range_excl_start": [
+    90,
+    90
+   ],
+   "max_collateral": 0,
+   "letters_moving_T": 0,
+   "letters_moving_parked": 0,
+   "moved_vs_journal_mismatch": []
+  },
+  "P": {
+   "end_prefix": 600,
+   "digest": "d25915b317e0262fb8469260878cc682838c026a8fb84d25f5f508b396385932",
+   "off": 682,
+   "restored": 0,
+   "collateral": 592,
+   "still_off_changed": 0,
+   "off_range_incl_start": [
+    90,
+    5802
+   ],
+   "off_range_excl_start": [
+    682,
+    5802
+   ],
+   "max_collateral": 5712,
+   "letters_moving_T": 0,
+   "letters_moving_parked": 10,
+   "moved_vs_journal_mismatch": []
+  },
+  "Q": {
+   "end_prefix": 610,
+   "digest": "bd5431007c5bba6eaf3c7680dd51272d0b45b9dec8f24c3466a6e70e1d56c9fd",
+   "off": 595,
+   "restored": 87,
+   "collateral": 592,
+   "still_off_changed": 0,
+   "off_range_incl_start": [
+    595,
+    3495
+   ],
+   "off_range_excl_start": [
+    595,
+    3495
+   ],
+   "max_collateral": 3405,
+   "letters_moving_T": 4,
+   "letters_moving_parked": 6,
+   "moved_vs_journal_mismatch": []
+  },
+  "Pinv": {
+   "end_prefix": 620,
+   "digest": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8",
+   "off": 3,
+   "restored": 87,
+   "collateral": 0,
+   "still_off_changed": 0,
+   "off_range_incl_start": [
+    3,
+    5802
+   ],
+   "off_range_excl_start": [
+    3,
+    5802
+   ],
+   "max_collateral": 5712,
+   "letters_moving_T": 6,
+   "letters_moving_parked": 8,
+   "moved_vs_journal_mismatch": []
+  },
+  "Vinv": {
+   "end_prefix": 1210,
+   "digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+   "off": 3,
+   "restored": 87,
+   "collateral": 0,
+   "still_off_changed": 0,
+   "off_range_incl_start": [
+    3,
+    3
+   ],
+   "off_range_excl_start": [
+    3,
+    3
+   ],
+   "max_collateral": 0,
+   "letters_moving_T": 583,
+   "letters_moving_parked": 0,
+   "moved_vs_journal_mismatch": []
+  }
+ },
+ "stage_vs_report": {
+  "V": {
+   "digest": true,
+   "off": true,
+   "range": true,
+   "restored": true,
+   "collateral": true,
+   "still_off_changed": true
+  },
+  "P": {
+   "digest": true,
+   "off": true,
+   "range": true,
+   "restored": true,
+   "collateral": true,
+   "still_off_changed": true
+  },
+  "Q": {
+   "digest": true,
+   "off": true,
+   "range": true,
+   "restored": true,
+   "collateral": true,
+   "still_off_changed": true
+  },
+  "Pinv": {
+   "digest": true,
+   "off": true,
+   "range": true,
+   "restored": true,
+   "collateral": true,
+   "still_off_changed": true
+  },
+  "Vinv": {
+   "digest": true,
+   "off": true,
+   "range": true,
+   "restored": true,
+   "collateral": true,
+   "still_off_changed": true
+  }
+ },
+ "collateral_prefixes": [
+  591,
+  619
+ ],
+ "collateral_prefixes_contiguous": true,
+ "collateral_max": 5712,
+ "collateral_max_at": [
+  597,
+  598,
+  612,
+  613
+ ],
+ "still_off_changed_prefixes": [
+  601,
+  602,
+  603,
+  604,
+  605,
+  608,
+  612,
+  613,
+  614,
+  615,
+  616,
+  617,
+  618,
+  619
+ ],
+ "still_off_changed_count": 14,
+ "still_off_changed_max": 87,
+ "still_off_changed_all_in_T": true,
+ "bp_changed_any": [],
+ "bp_moved_any": [],
+ "e1_lattice_displaced_max": 109930,
+ "parked": {
+  "after_P": 592,
+  "after_Q": 592,
+  "same_set": true,
+  "same_exact_poses": true
+ },
+ "final": {
+  "digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+  "digest_ok": true,
+  "off": 3,
+  "T_restored": 87,
+  "collateral": 0,
+  "e1_lattice_on_K": 177030,
+  "e1_lattice_same_K_pose": 177030,
+  "e1_lattice": 177030,
+  "bp_exact_same": {
+   "16245": true,
+   "16249": true,
+   "32088": true
+  },
+  "exact_changed_E1_E2": 87,
+  "exact_changed_is_T": true,
+  "E2_table_digest_field_ok": true,
+  "E2_table_pieces": 177120,
+  "E2_table_entry_mismatches": 0,
+  "E2_table_first_mismatches": [],
+  "holes_E2_formula": [
+   24905,
+   89251,
+   89252
+  ],
+  "holes_E2_formula_injective": 1,
+  "holes_E2_signature": [
+   24905,
+   89251,
+   89252
+  ],
+  "holes_E2_signature_dups_missing": [
+   0,
+   0
+  ],
+  "holes_E2_equal_report": true,
+  "holes_E1": {
+   "count_formula": 90,
+   "count_signature": 90,
+   "paths_equal": true,
+   "injective": 1,
+   "dups_missing": [
+    0,
+    0
+   ],
+   "equal_pre_json": true
+  }
+ },
+ "words": {
+  "lengths": {
+   "V": 590,
+   "P": 10,
+   "Q": 10,
+   "Pinv": 10,
+   "Vinv": 590
+  },
+  "P_equals_report": true,
+  "Q_equals_report": true,
+  "Pinv_equals_report": true,
+  "Pinv_is_inverse_of_P": [
+   true,
+   null
+  ],
+  "Vinv_is_inverse_of_V": [
+   true,
+   null
+  ],
+  "word_full_is_concatenation": true,
+  "word_full_digests": [
+   true,
+   true
+  ],
+  "distinct_letters": 323,
+  "identity_letters": [],
+  "K_membership_of_named_letters": {
+   "X": 0,
+   "Xinv": 0,
+   "Y": 1,
+   "Yinv": 1,
+   "Z": 0,
+   "Zinv": 0,
+   "A": 1,
+   "B": 1
+  },
+  "involutions": {
+   "A": true,
+   "B": true,
+   "X": false
+  },
+  "inverse_pairs": {
+   "X": true,
+   "Y": true,
+   "Z": true
+  },
+  "digest_chain_of_parts": [
+   true,
+   true,
+   true,
+   true,
+   true,
+   true
+  ]
+ },
+ "e1": {
+  "digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "digest_ok": true,
+  "off": 90,
+  "T_size": 87,
+  "bp_off": true,
+  "bp_share_one_pose": true,
+  "T_distinct_poses": 55,
+  "lattice": 177030,
+  "sha256": {
+   "c0/E1-table.json": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+   "v26/E1-table.json": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+   "pkg D17/end-table.json": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18"
+  },
+  "pre_json_target_block_equal": true,
+  "pre_json_protected_equal": true
+ },
+ "prefixes_jsonl": {
+  "rows": 1211,
+  "diffs": 0,
+  "first_diffs": []
+ }
+}

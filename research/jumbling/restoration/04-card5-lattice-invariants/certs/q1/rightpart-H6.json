@@ -1,0 +1,10 @@
+{
+ "counts": {
+  "menu_right_dist_0": 36000,
+  "pose_right_dist_0": 1183
+ },
+ "branch_pole_images_ok": 28800,
+ "branch_pole_images_bad": 0,
+ "table": "t-T723x433-12.json",
+ "sec": 20.4
+}

@@ -1,0 +1,1 @@
+{"input_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7", "length": 30, "blocked": {"index": 11, "twist": [407, 10], "status": "blocked", "straddling_piece": 90780, "piece_off_at_start": true, "piece_block_size_at_start": 87}, "applied": 11, "off_before": 107, "off_now": 281, "restored_so_far": 0, "newly_off_so_far": 174}
