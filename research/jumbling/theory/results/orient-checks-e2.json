@@ -1,0 +1,819 @@
+{
+ "start": "E2 end of I_a@40",
+ "words": [],
+ "digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+ "off_lattice": 690,
+ "classes": [
+  {
+   "class": 0,
+   "free_grips": 113,
+   "blocked_grips": [
+    0,
+    30,
+    32,
+    154,
+    375
+   ],
+   "fragments": [
+    {
+     "pieces": 424,
+     "label": 2
+    },
+    {
+     "pieces": 12,
+     "label": 3
+    }
+   ],
+   "own_contents": 1445,
+   "generators": 6667,
+   "retained_generators": 1243,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 22250,
+     "off_lattice_poses_exact": "22250/22250",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 7,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 17240,
+     "off_lattice_poses_exact": "17240/17240",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 18,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 34415,
+     "off_lattice_poses_exact": "34415/34415",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 14,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 25545,
+     "off_lattice_poses_exact": "25545/25545",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 4,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9727,
+     "off_lattice_poses_exact": "9727/9727",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 6630,
+     "off_lattice_poses_exact": "6630/6630",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 42521,
+     "off_lattice_poses_exact": "42521/42521",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 3,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9727,
+     "off_lattice_poses_exact": "9727/9727",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 436,
+     "off_lattice_poses_exact": "436/436",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 436,
+     "off_lattice_poses_exact": "436/436",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 436,
+     "off_lattice_poses_exact": "436/436",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 22,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 436,
+     "off_lattice_poses_exact": "436/436",
+     "ok": true
+    }
+   ],
+   "skipped_words": [
+    "research/jumbling/theory/results/e3-class1-I_a-40.json"
+   ],
+   "all_ok": true
+  },
+  {
+   "class": 1,
+   "free_grips": 114,
+   "blocked_grips": [
+    89,
+    260
+   ],
+   "fragments": [
+    {
+     "pieces": 50,
+     "label": 1
+    },
+    {
+     "pieces": 48,
+     "label": 3
+    }
+   ],
+   "own_contents": 1441,
+   "generators": 6726,
+   "retained_generators": 1254,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 22622,
+     "off_lattice_poses_exact": "22622/22622",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 7,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 17100,
+     "off_lattice_poses_exact": "17100/17100",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 18,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 34790,
+     "off_lattice_poses_exact": "34790/34790",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 14,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 26786,
+     "off_lattice_poses_exact": "26786/26786",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 12,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 26391,
+     "off_lattice_poses_exact": "26391/26391",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 25,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 50055,
+     "off_lattice_poses_exact": "50055/50055",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 14,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 31795,
+     "off_lattice_poses_exact": "31795/31795",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 31993,
+     "off_lattice_poses_exact": "31993/31993",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 98,
+     "off_lattice_poses_exact": "98/98",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 7,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 98,
+     "off_lattice_poses_exact": "98/98",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 6,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 98,
+     "off_lattice_poses_exact": "98/98",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 18,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 98,
+     "off_lattice_poses_exact": "98/98",
+     "ok": true
+    },
+    {
+     "kind": "research/jumbling/theory/results/e3-class1-I_a-40.json",
+     "twists": 312,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    }
+   ],
+   "skipped_words": [],
+   "all_ok": true
+  },
+  {
+   "class": 2,
+   "free_grips": 114,
+   "blocked_grips": [
+    49,
+    336,
+    388
+   ],
+   "fragments": [
+    {
+     "pieces": 63,
+     "label": 4
+    }
+   ],
+   "own_contents": 1443,
+   "generators": 6726,
+   "retained_generators": 1254,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 22469,
+     "off_lattice_poses_exact": "22469/22469",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 7,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 16868,
+     "off_lattice_poses_exact": "16868/16868",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 18,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 34462,
+     "off_lattice_poses_exact": "34462/34462",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 14,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 26096,
+     "off_lattice_poses_exact": "26096/26096",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 12,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 26715,
+     "off_lattice_poses_exact": "26715/26715",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 25,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 50242,
+     "off_lattice_poses_exact": "50242/50242",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 14,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 31417,
+     "off_lattice_poses_exact": "31417/31417",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 32550,
+     "off_lattice_poses_exact": "32550/32550",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 63,
+     "off_lattice_poses_exact": "63/63",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 7,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 63,
+     "off_lattice_poses_exact": "63/63",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 6,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 63,
+     "off_lattice_poses_exact": "63/63",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 18,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 63,
+     "off_lattice_poses_exact": "63/63",
+     "ok": true
+    }
+   ],
+   "skipped_words": [
+    "research/jumbling/theory/results/e3-class1-I_a-40.json"
+   ],
+   "all_ok": true
+  },
+  {
+   "class": 3,
+   "free_grips": 110,
+   "blocked_grips": [
+    26,
+    91,
+    100,
+    118,
+    256,
+    295
+   ],
+   "fragments": [],
+   "own_contents": 1441,
+   "generators": 6490,
+   "retained_generators": 1210,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 23551,
+     "off_lattice_poses_exact": "23551/23551",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 7,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 18187,
+     "off_lattice_poses_exact": "18187/18187",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 18,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 35584,
+     "off_lattice_poses_exact": "35584/35584",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 14,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 26224,
+     "off_lattice_poses_exact": "26224/26224",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 4,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 9291,
+     "off_lattice_poses_exact": "9291/9291",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 6194,
+     "off_lattice_poses_exact": "6194/6194",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 42111,
+     "off_lattice_poses_exact": "42111/42111",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 36905,
+     "off_lattice_poses_exact": "36905/36905",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 22,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 15,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 13,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 5,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 0,
+     "off_lattice_poses_exact": "0/0",
+     "ok": true
+    }
+   ],
+   "skipped_words": [
+    "research/jumbling/theory/results/e3-class1-I_a-40.json"
+   ],
+   "all_ok": true
+  },
+  {
+   "class": 4,
+   "free_grips": 110,
+   "blocked_grips": [
+    13,
+    14,
+    39,
+    152,
+    178,
+    244,
+    302,
+    359,
+    376,
+    468
+   ],
+   "fragments": [
+    {
+     "pieces": 93,
+     "label": 4
+    }
+   ],
+   "own_contents": 1442,
+   "generators": 6490,
+   "retained_generators": 1210,
+   "checks": [
+    {
+     "kind": "all",
+     "twists": 11,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 22499,
+     "off_lattice_poses_exact": "22499/22499",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 7,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 16818,
+     "off_lattice_poses_exact": "16818/16818",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 18,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 32864,
+     "off_lattice_poses_exact": "32864/32864",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 14,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 27072,
+     "off_lattice_poses_exact": "27072/27072",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 4,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 8989,
+     "off_lattice_poses_exact": "8989/8989",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 2,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 6287,
+     "off_lattice_poses_exact": "6287/6287",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 16,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 41310,
+     "off_lattice_poses_exact": "41310/41310",
+     "ok": true
+    },
+    {
+     "kind": "all",
+     "twists": 19,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 35811,
+     "off_lattice_poses_exact": "35811/35811",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 22,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 93,
+     "off_lattice_poses_exact": "93/93",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 15,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 93,
+     "off_lattice_poses_exact": "93/93",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 13,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 93,
+     "off_lattice_poses_exact": "93/93",
+     "ok": true
+    },
+    {
+     "kind": "retained",
+     "twists": 5,
+     "other_pieces_unchanged": true,
+     "unmoved_own_pieces_unchanged": true,
+     "lattice_flags_agree": true,
+     "lattice_poses_agree": true,
+     "off_lattice_pieces": 93,
+     "off_lattice_poses_exact": "93/93",
+     "ok": true
+    }
+   ],
+   "skipped_words": [
+    "research/jumbling/theory/results/e3-class1-I_a-40.json"
+   ],
+   "all_ok": true
+  }
+ ],
+ "check_words_checked_by": {
+  "research/jumbling/theory/results/e3-class1-I_a-40.json": [
+   1
+  ]
+ },
+ "unchecked_words": [],
+ "all_ok": true,
+ "seconds": 124
+}

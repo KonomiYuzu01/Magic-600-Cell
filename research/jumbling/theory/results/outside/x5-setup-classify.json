@@ -1,0 +1,2197 @@
+{
+ "source_digest": "f7506db887e80200202b6c29a43a2068cbc808d43b604345e345505029cdcd4f",
+ "target": {
+  "class": 0,
+  "cell": [
+   369,
+   507
+  ],
+  "chambers": 86
+ },
+ "source_condition": {
+  "fixed_vacant": true,
+  "fixed_occupied": [],
+  "necessary": false,
+  "necessary_deficits": [
+   {
+    "orbit": 8,
+    "have": 0,
+    "need": 1,
+    "deficit": 1
+   },
+   {
+    "orbit": 10,
+    "have": 2,
+    "need": 3,
+    "deficit": 1
+   }
+  ],
+  "sufficient": false,
+  "sufficient_deficits": [
+   {
+    "orbit": 8,
+    "have": 0,
+    "need": 1,
+    "deficit": 1
+   },
+   {
+    "orbit": 10,
+    "have": 2,
+    "need": 3,
+    "deficit": 1
+   }
+  ]
+ },
+ "letters": 187,
+ "passing": [
+  [
+   315,
+   1
+  ],
+  [
+   315,
+   2
+  ],
+  [
+   315,
+   3
+  ],
+  [
+   315,
+   4
+  ],
+  [
+   315,
+   5
+  ],
+  [
+   315,
+   6
+  ],
+  [
+   315,
+   7
+  ],
+  [
+   315,
+   9
+  ],
+  [
+   315,
+   10
+  ],
+  [
+   319,
+   1
+  ],
+  [
+   319,
+   2
+  ],
+  [
+   319,
+   3
+  ],
+  [
+   319,
+   4
+  ],
+  [
+   319,
+   5
+  ],
+  [
+   319,
+   6
+  ],
+  [
+   319,
+   7
+  ],
+  [
+   319,
+   9
+  ],
+  [
+   319,
+   11
+  ],
+  [
+   369,
+   2
+  ],
+  [
+   369,
+   3
+  ],
+  [
+   369,
+   6
+  ],
+  [
+   369,
+   10
+  ]
+ ],
+ "rows": [
+  {
+   "w": [
+    154,
+    1
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    2
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    3
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    4
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    5
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    6
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    7
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    8
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    9
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    10
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    154,
+    11
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    1
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    2
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    3
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    4
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    5
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    6
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    7
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    8
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    9
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    10
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    162,
+    11
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    1
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    2
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    3
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    4
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    5
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    6
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    7
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    8
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    9
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    10
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    183,
+    11
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    1
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    2
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    3
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    4
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    5
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    6
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    7
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    8
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    9
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    10
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    188,
+    11
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    1
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 577,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    2
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    3
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    4
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    5
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    6
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 572,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    7
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    8
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    9
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 574,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    10
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 576,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    237,
+    11
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    1
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 572,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    2
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    3
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    4
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    5
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 572,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    6
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    7
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    8
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 573,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    9
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    10
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    268,
+    11
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    1
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    2
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    3
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    4
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 572,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    5
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    6
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    7
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    8
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    9
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    10
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    277,
+    11
+   ],
+   "moved_off_pieces": 12,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    1
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 562,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    2
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 562,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    3
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 562,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    4
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 562,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    5
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 562,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    6
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    7
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    8
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 562,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    9
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 562,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    10
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 562,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    283,
+    11
+   ],
+   "moved_off_pieces": 60,
+   "safe_all_grips_at_y": 562,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    1
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    2
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    3
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    4
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    5
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    6
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    7
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    8
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    9
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    10
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    290,
+    11
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    1
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    2
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 573,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    3
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    4
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    5
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    6
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    7
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    8
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    9
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    10
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    301,
+    11
+   ],
+   "moved_off_pieces": 63,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    315,
+    1
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 563,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    315,
+    2
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 566,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    315,
+    3
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 562,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    315,
+    4
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 569,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    315,
+    5
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 565,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    315,
+    6
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 563,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    315,
+    7
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 562,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    315,
+    8
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 564,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    315,
+    9
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 563,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    315,
+    10
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 562,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    315,
+    11
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 566,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    319,
+    1
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 562,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    319,
+    2
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 563,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    319,
+    3
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 564,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    319,
+    4
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 563,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    319,
+    5
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 565,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    319,
+    6
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 569,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    319,
+    7
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 564,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    319,
+    8
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 565,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    319,
+    9
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 563,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    319,
+    10
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    319,
+    11
+   ],
+   "moved_off_pieces": 116,
+   "safe_all_grips_at_y": 562,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    369,
+    1
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 566,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    369,
+    2
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 567,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    369,
+    3
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 563,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    369,
+    4
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 565,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    369,
+    5
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 567,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    369,
+    6
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 561,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    369,
+    7
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 567,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    369,
+    8
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 566,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    369,
+    9
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 563,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    369,
+    10
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 563,
+   "flow": 81,
+   "demand": 81,
+   "passes": true
+  },
+  {
+   "w": [
+    369,
+    11
+   ],
+   "moved_off_pieces": 185,
+   "safe_all_grips_at_y": 566,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    1
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 566,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    2
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 563,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    3
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 563,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    4
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 561,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    5
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 564,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    6
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 561,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    7
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 561,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    8
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 561,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    9
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 563,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    10
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 560,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    392,
+    11
+   ],
+   "moved_off_pieces": 17,
+   "safe_all_grips_at_y": 560,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    1
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    2
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    3
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 573,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    4
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    5
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 574,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    6
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    7
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    8
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    9
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    10
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    393,
+    11
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 571,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    1
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    2
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    3
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    4
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    5
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    6
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    7
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    8
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 569,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    9
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 570,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    10
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    427,
+    11
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 79,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    1
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    2
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    3
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 570,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    4
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    5
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    6
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    7
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    8
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    9
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 570,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    10
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  },
+  {
+   "w": [
+    507,
+    11
+   ],
+   "moved_off_pieces": 202,
+   "safe_all_grips_at_y": 568,
+   "flow": 80,
+   "demand": 81,
+   "passes": false
+  }
+ ],
+ "evidence": "exact; G(Y) recomputed on the simulator for every letter",
+ "seconds": 3064
+}

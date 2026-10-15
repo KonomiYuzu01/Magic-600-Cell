@@ -1,0 +1,8752 @@
+{
+ "state_digest": "3c086301091a2dad43b5efd1d1702ce005976a5f54ecbc9d22b520e49aba106b",
+ "off_lattice": 277,
+ "class": 0,
+ "cell": [
+  369,
+  507
+ ],
+ "off_geometry_fingerprint": "214dc63f2a3b8f027febfb507c5d02e7dc94432631e1fb706ee4c512f0787881",
+ "safe_all_grips": 570,
+ "alphabet_size": 6270,
+ "target_chambers": 86,
+ "target_vacant": 83,
+ "orbits": 1110,
+ "orbits_meeting_target": 24,
+ "fixed": [
+  119124,
+  119141,
+  119151,
+  128877,
+  128888
+ ],
+ "orbit_table": [
+  {
+   "orbit": 8,
+   "least_chamber": 14,
+   "size": 7158,
+   "target": 1,
+   "holes": 1,
+   "threshold": 1
+  },
+  {
+   "orbit": 10,
+   "least_chamber": 17,
+   "size": 7174,
+   "target": 3,
+   "holes": 3,
+   "threshold": 3
+  },
+  {
+   "orbit": 11,
+   "least_chamber": 22,
+   "size": 7184,
+   "target": 6,
+   "holes": 7,
+   "threshold": 6
+  },
+  {
+   "orbit": 12,
+   "least_chamber": 23,
+   "size": 7191,
+   "target": 8,
+   "holes": 11,
+   "threshold": 8
+  },
+  {
+   "orbit": 13,
+   "least_chamber": 25,
+   "size": 1439,
+   "target": 2,
+   "holes": 3,
+   "threshold": 2
+  },
+  {
+   "orbit": 14,
+   "least_chamber": 31,
+   "size": 3590,
+   "target": 3,
+   "holes": 4,
+   "threshold": 3
+  },
+  {
+   "orbit": 15,
+   "least_chamber": 32,
+   "size": 7185,
+   "target": 8,
+   "holes": 11,
+   "threshold": 8
+  },
+  {
+   "orbit": 16,
+   "least_chamber": 33,
+   "size": 7192,
+   "target": 6,
+   "holes": 10,
+   "threshold": 6
+  },
+  {
+   "orbit": 17,
+   "least_chamber": 34,
+   "size": 7196,
+   "target": 8,
+   "holes": 14,
+   "threshold": 8
+  },
+  {
+   "orbit": 18,
+   "least_chamber": 41,
+   "size": 7187,
+   "target": 4,
+   "holes": 6,
+   "threshold": 4
+  },
+  {
+   "orbit": 19,
+   "least_chamber": 64,
+   "size": 2396,
+   "target": 2,
+   "holes": 3,
+   "threshold": 2
+  },
+  {
+   "orbit": 20,
+   "least_chamber": 65,
+   "size": 7195,
+   "target": 4,
+   "holes": 8,
+   "threshold": 4
+  },
+  {
+   "orbit": 21,
+   "least_chamber": 66,
+   "size": 7193,
+   "target": 8,
+   "holes": 13,
+   "threshold": 8
+  },
+  {
+   "orbit": 22,
+   "least_chamber": 67,
+   "size": 3598,
+   "target": 3,
+   "holes": 6,
+   "threshold": 3
+  },
+  {
+   "orbit": 23,
+   "least_chamber": 69,
+   "size": 7197,
+   "target": 6,
+   "holes": 12,
+   "threshold": 6
+  },
+  {
+   "orbit": 24,
+   "least_chamber": 70,
+   "size": 7198,
+   "target": 4,
+   "holes": 11,
+   "threshold": 4
+  },
+  {
+   "orbit": 25,
+   "least_chamber": 74,
+   "size": 7199,
+   "target": 2,
+   "holes": 11,
+   "threshold": 2
+  },
+  {
+   "orbit": 27,
+   "least_chamber": 81,
+   "size": 3600,
+   "target": 1,
+   "holes": 5,
+   "threshold": 1
+  },
+  {
+   "orbit": 28,
+   "least_chamber": 82,
+   "size": 7200,
+   "target": 2,
+   "holes": 22,
+   "threshold": 2
+  },
+  {
+   "orbit": 817,
+   "least_chamber": 119124,
+   "size": 1,
+   "target": 1,
+   "holes": 1,
+   "threshold": 1
+  },
+  {
+   "orbit": 820,
+   "least_chamber": 119141,
+   "size": 1,
+   "target": 1,
+   "holes": 1,
+   "threshold": 1
+  },
+  {
+   "orbit": 822,
+   "least_chamber": 119151,
+   "size": 1,
+   "target": 1,
+   "holes": 1,
+   "threshold": 1
+  },
+  {
+   "orbit": 899,
+   "least_chamber": 128877,
+   "size": 1,
+   "target": 1,
+   "holes": 1,
+   "threshold": 1
+  },
+  {
+   "orbit": 901,
+   "least_chamber": 128888,
+   "size": 1,
+   "target": 1,
+   "holes": 1,
+   "threshold": 1
+  }
+ ],
+ "condition": {
+  "fixed_vacant": true,
+  "fixed_occupied": [],
+  "necessary": true,
+  "necessary_deficits": [],
+  "sufficient": true,
+  "sufficient_deficits": [],
+  "by_orbit": [
+   {
+    "orbit": 8,
+    "least_chamber": 14,
+    "size": 7158,
+    "target": 1,
+    "holes": 1,
+    "threshold": 1
+   },
+   {
+    "orbit": 10,
+    "least_chamber": 17,
+    "size": 7174,
+    "target": 3,
+    "holes": 3,
+    "threshold": 3
+   },
+   {
+    "orbit": 11,
+    "least_chamber": 22,
+    "size": 7184,
+    "target": 6,
+    "holes": 7,
+    "threshold": 6
+   },
+   {
+    "orbit": 12,
+    "least_chamber": 23,
+    "size": 7191,
+    "target": 8,
+    "holes": 11,
+    "threshold": 8
+   },
+   {
+    "orbit": 13,
+    "least_chamber": 25,
+    "size": 1439,
+    "target": 2,
+    "holes": 3,
+    "threshold": 2
+   },
+   {
+    "orbit": 14,
+    "least_chamber": 31,
+    "size": 3590,
+    "target": 3,
+    "holes": 4,
+    "threshold": 3
+   },
+   {
+    "orbit": 15,
+    "least_chamber": 32,
+    "size": 7185,
+    "target": 8,
+    "holes": 11,
+    "threshold": 8
+   },
+   {
+    "orbit": 16,
+    "least_chamber": 33,
+    "size": 7192,
+    "target": 6,
+    "holes": 10,
+    "threshold": 6
+   },
+   {
+    "orbit": 17,
+    "least_chamber": 34,
+    "size": 7196,
+    "target": 8,
+    "holes": 14,
+    "threshold": 8
+   },
+   {
+    "orbit": 18,
+    "least_chamber": 41,
+    "size": 7187,
+    "target": 4,
+    "holes": 6,
+    "threshold": 4
+   },
+   {
+    "orbit": 19,
+    "least_chamber": 64,
+    "size": 2396,
+    "target": 2,
+    "holes": 3,
+    "threshold": 2
+   },
+   {
+    "orbit": 20,
+    "least_chamber": 65,
+    "size": 7195,
+    "target": 4,
+    "holes": 8,
+    "threshold": 4
+   },
+   {
+    "orbit": 21,
+    "least_chamber": 66,
+    "size": 7193,
+    "target": 8,
+    "holes": 13,
+    "threshold": 8
+   },
+   {
+    "orbit": 22,
+    "least_chamber": 67,
+    "size": 3598,
+    "target": 3,
+    "holes": 6,
+    "threshold": 3
+   },
+   {
+    "orbit": 23,
+    "least_chamber": 69,
+    "size": 7197,
+    "target": 6,
+    "holes": 12,
+    "threshold": 6
+   },
+   {
+    "orbit": 24,
+    "least_chamber": 70,
+    "size": 7198,
+    "target": 4,
+    "holes": 11,
+    "threshold": 4
+   },
+   {
+    "orbit": 25,
+    "least_chamber": 74,
+    "size": 7199,
+    "target": 2,
+    "holes": 11,
+    "threshold": 2
+   },
+   {
+    "orbit": 27,
+    "least_chamber": 81,
+    "size": 3600,
+    "target": 1,
+    "holes": 5,
+    "threshold": 1
+   },
+   {
+    "orbit": 28,
+    "least_chamber": 82,
+    "size": 7200,
+    "target": 2,
+    "holes": 22,
+    "threshold": 2
+   },
+   {
+    "orbit": 817,
+    "least_chamber": 119124,
+    "size": 1,
+    "target": 1,
+    "holes": 1,
+    "threshold": 1
+   },
+   {
+    "orbit": 820,
+    "least_chamber": 119141,
+    "size": 1,
+    "target": 1,
+    "holes": 1,
+    "threshold": 1
+   },
+   {
+    "orbit": 822,
+    "least_chamber": 119151,
+    "size": 1,
+    "target": 1,
+    "holes": 1,
+    "threshold": 1
+   },
+   {
+    "orbit": 899,
+    "least_chamber": 128877,
+    "size": 1,
+    "target": 1,
+    "holes": 1,
+    "threshold": 1
+   },
+   {
+    "orbit": 901,
+    "least_chamber": 128888,
+    "size": 1,
+    "target": 1,
+    "holes": 1,
+    "threshold": 1
+   }
+  ]
+ },
+ "certificate": {
+  "format": "buffer-vacancy-1",
+  "off_geometry_fingerprint": "214dc63f2a3b8f027febfb507c5d02e7dc94432631e1fb706ee4c512f0787881",
+  "source_digest": "3c086301091a2dad43b5efd1d1702ce005976a5f54ecbc9d22b520e49aba106b",
+  "menu": "I_a",
+  "target": {
+   "class": 0,
+   "cell": [
+    369,
+    507
+   ],
+   "chambers": [
+    112207,
+    112209,
+    112211,
+    112212,
+    112216,
+    112227,
+    112228,
+    112233,
+    112234,
+    114178,
+    117641,
+    117642,
+    117651,
+    117652,
+    117653,
+    117654,
+    117655,
+    119124,
+    119126,
+    119129,
+    119133,
+    119137,
+    119141,
+    119142,
+    119143,
+    119144,
+    119145,
+    119146,
+    119147,
+    119148,
+    119149,
+    119151,
+    119152,
+    119153,
+    119154,
+    119155,
+    119156,
+    119157,
+    119158,
+    119159,
+    119160,
+    119161,
+    119163,
+    119164,
+    119167,
+    119168,
+    119170,
+    119171,
+    119172,
+    119175,
+    119176,
+    119177,
+    119178,
+    119181,
+    119191,
+    119192,
+    128877,
+    128878,
+    128879,
+    128884,
+    128885,
+    128886,
+    128888,
+    128889,
+    128895,
+    128896,
+    128897,
+    128898,
+    128899,
+    128900,
+    128901,
+    128902,
+    128903,
+    128904,
+    128905,
+    128906,
+    128907,
+    128908,
+    128909,
+    128910,
+    140746,
+    140747,
+    140757,
+    151959,
+    152017,
+    152018
+   ]
+  },
+  "fixed": [
+   119124,
+   119141,
+   119151,
+   128877,
+   128888
+  ],
+  "peeled": 81,
+  "of": 81,
+  "rows": [
+   {
+    "t": 117641,
+    "orbit": 10,
+    "y": 151974,
+    "word": [
+     [
+      451,
+      1
+     ]
+    ],
+    "E_length": 1,
+    "ecc": 6,
+    "orbit_minus_P": 7174,
+    "reached": 7174,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 7,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128895,
+    "orbit": 11,
+    "y": 151975,
+    "word": [
+     [
+      410,
+      1
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      410,
+      1
+     ],
+     [
+      451,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 6,
+    "orbit_minus_P": 7184,
+    "reached": 7184,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 10,
+    "conjugate_edges": []
+   },
+   {
+    "t": 117642,
+    "orbit": 14,
+    "y": 168980,
+    "word": [
+     [
+      520,
+      1
+     ]
+    ],
+    "E_length": 1,
+    "ecc": 5,
+    "orbit_minus_P": 3590,
+    "reached": 3590,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 6,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128897,
+    "orbit": 18,
+    "y": 169005,
+    "word": [
+     [
+      499,
+      1
+     ],
+     [
+      520,
+      1
+     ],
+     [
+      499,
+      1
+     ],
+     [
+      520,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7187,
+    "reached": 7187,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119152,
+    "orbit": 14,
+    "y": 171718,
+    "word": [
+     [
+      528,
+      1
+     ]
+    ],
+    "E_length": 1,
+    "ecc": 5,
+    "orbit_minus_P": 3589,
+    "reached": 3589,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 6,
+    "conjugate_edges": [
+     {
+      "from": 117742,
+      "to": 171718,
+      "word": [
+       [
+        520,
+        1
+       ],
+       [
+        595,
+        5
+       ],
+       [
+        520,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     }
+    ]
+   },
+   {
+    "t": 128898,
+    "orbit": 15,
+    "y": 140628,
+    "word": [
+     [
+      506,
+      1
+     ],
+     [
+      451,
+      5
+     ],
+     [
+      506,
+      1
+     ],
+     [
+      451,
+      2
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7185,
+    "reached": 7185,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128899,
+    "orbit": 19,
+    "y": 117576,
+    "word": [
+     [
+      355,
+      1
+     ],
+     [
+      451,
+      9
+     ],
+     [
+      415,
+      8
+     ],
+     [
+      355,
+      1
+     ],
+     [
+      415,
+      4
+     ],
+     [
+      451,
+      3
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 2396,
+    "reached": 2396,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128896,
+    "orbit": 15,
+    "y": 140637,
+    "word": [
+     [
+      506,
+      1
+     ],
+     [
+      520,
+      1
+     ],
+     [
+      451,
+      5
+     ],
+     [
+      506,
+      1
+     ],
+     [
+      451,
+      2
+     ],
+     [
+      520,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7184,
+    "reached": 7184,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 14,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119142,
+    "orbit": 10,
+    "y": 143207,
+    "word": [
+     [
+      522,
+      1
+     ],
+     [
+      528,
+      4
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      522,
+      1
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      528,
+      8
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7173,
+    "reached": 7173,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 117732,
+      "to": 112308,
+      "word": [
+       [
+        451,
+        2
+       ],
+       [
+        390,
+        4
+       ],
+       [
+        451,
+        5
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 117741,
+      "to": 161858,
+      "word": [
+       [
+        451,
+        1
+       ],
+       [
+        559,
+        2
+       ],
+       [
+        451,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 119037,
+      "to": 78770,
+      "word": [
+       [
+        528,
+        3
+       ],
+       [
+        415,
+        1
+       ],
+       [
+        528,
+        9
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 128876,
+      "to": 154630,
+      "word": [
+       [
+        451,
+        4
+       ],
+       [
+        520,
+        1
+       ],
+       [
+        451,
+        8
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 117627,
+      "to": 143207,
+      "word": [
+       [
+        451,
+        3
+       ],
+       [
+        528,
+        2
+       ],
+       [
+        520,
+        5
+       ],
+       [
+        528,
+        5
+       ],
+       [
+        451,
+        9
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128882,
+      "to": 143207,
+      "word": [
+       [
+        451,
+        3
+       ],
+       [
+        528,
+        4
+       ],
+       [
+        559,
+        2
+       ],
+       [
+        528,
+        8
+       ],
+       [
+        451,
+        9
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 128878,
+    "orbit": 11,
+    "y": 140607,
+    "word": [
+     [
+      308,
+      1
+     ],
+     [
+      520,
+      7
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      308,
+      1
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      520,
+      6
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7183,
+    "reached": 7183,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 128890,
+      "to": 140607,
+      "word": [
+       [
+        528,
+        2
+       ],
+       [
+        506,
+        8
+       ],
+       [
+        528,
+        3
+       ],
+       [
+        506,
+        4
+       ],
+       [
+        528,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 128889,
+    "orbit": 18,
+    "y": 140636,
+    "word": [
+     [
+      345,
+      1
+     ],
+     [
+      520,
+      7
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      345,
+      1
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      520,
+      6
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7186,
+    "reached": 7186,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 128892,
+      "to": 140636,
+      "word": [
+       [
+        528,
+        2
+       ],
+       [
+        506,
+        8
+       ],
+       [
+        528,
+        3
+       ],
+       [
+        506,
+        4
+       ],
+       [
+        528,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 119126,
+    "orbit": 8,
+    "y": 161863,
+    "word": [
+     [
+      522,
+      1
+     ],
+     [
+      528,
+      4
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      522,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      528,
+      8
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7158,
+    "reached": 7158,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 117716,
+      "to": 166328,
+      "word": [
+       [
+        451,
+        11
+       ],
+       [
+        523,
+        4
+       ],
+       [
+        451,
+        11
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 117740,
+      "to": 131626,
+      "word": [
+       [
+        451,
+        2
+       ],
+       [
+        390,
+        3
+       ],
+       [
+        451,
+        5
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 119030,
+      "to": 161934,
+      "word": [
+       [
+        528,
+        4
+       ],
+       [
+        553,
+        3
+       ],
+       [
+        528,
+        8
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 128948,
+      "to": 156687,
+      "word": [
+       [
+        528,
+        3
+       ],
+       [
+        522,
+        1
+       ],
+       [
+        528,
+        9
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 129009,
+      "to": 161863,
+      "word": [
+       [
+        451,
+        2
+       ],
+       [
+        522,
+        7
+       ],
+       [
+        451,
+        5
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 117620,
+      "to": 161863,
+      "word": [
+       [
+        451,
+        9
+       ],
+       [
+        522,
+        8
+       ],
+       [
+        390,
+        10
+       ],
+       [
+        522,
+        4
+       ],
+       [
+        451,
+        3
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 117640,
+      "to": 174393,
+      "word": [
+       [
+        451,
+        2
+       ],
+       [
+        559,
+        1
+       ],
+       [
+        448,
+        3
+       ],
+       [
+        559,
+        1
+       ],
+       [
+        451,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128873,
+      "to": 162014,
+      "word": [
+       [
+        528,
+        1
+       ],
+       [
+        583,
+        1
+       ],
+       [
+        528,
+        4
+       ],
+       [
+        583,
+        1
+       ],
+       [
+        528,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128881,
+      "to": 161863,
+      "word": [
+       [
+        451,
+        3
+       ],
+       [
+        528,
+        2
+       ],
+       [
+        520,
+        5
+       ],
+       [
+        528,
+        5
+       ],
+       [
+        451,
+        9
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151952,
+      "to": 161863,
+      "word": [
+       [
+        520,
+        3
+       ],
+       [
+        561,
+        2
+       ],
+       [
+        520,
+        11
+       ],
+       [
+        561,
+        5
+       ],
+       [
+        520,
+        9
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151977,
+      "to": 161863,
+      "word": [
+       [
+        451,
+        3
+       ],
+       [
+        528,
+        4
+       ],
+       [
+        559,
+        2
+       ],
+       [
+        528,
+        8
+       ],
+       [
+        451,
+        9
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 119129,
+    "orbit": 10,
+    "y": 138645,
+    "word": [
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 1,
+    "ecc": 6,
+    "orbit_minus_P": 7172,
+    "reached": 7172,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 7,
+    "conjugate_edges": [
+     {
+      "from": 117732,
+      "to": 125357,
+      "word": [
+       [
+        451,
+        2
+       ],
+       [
+        522,
+        6
+       ],
+       [
+        451,
+        5
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 117741,
+      "to": 161858,
+      "word": [
+       [
+        451,
+        1
+       ],
+       [
+        559,
+        2
+       ],
+       [
+        451,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 119037,
+      "to": 138645,
+      "word": [
+       [
+        528,
+        4
+       ],
+       [
+        553,
+        10
+       ],
+       [
+        528,
+        8
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 117627,
+      "to": 161937,
+      "word": [
+       [
+        451,
+        2
+       ],
+       [
+        493,
+        1
+       ],
+       [
+        559,
+        5
+       ],
+       [
+        493,
+        1
+       ],
+       [
+        451,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128876,
+      "to": 138645,
+      "word": [
+       [
+        528,
+        3
+       ],
+       [
+        460,
+        2
+       ],
+       [
+        477,
+        7
+       ],
+       [
+        460,
+        5
+       ],
+       [
+        528,
+        9
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128882,
+      "to": 138645,
+      "word": [
+       [
+        520,
+        4
+       ],
+       [
+        477,
+        6
+       ],
+       [
+        561,
+        5
+       ],
+       [
+        477,
+        7
+       ],
+       [
+        520,
+        8
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 119143,
+    "orbit": 11,
+    "y": 153120,
+    "word": [
+     [
+      494,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      494,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 6,
+    "orbit_minus_P": 7182,
+    "reached": 7182,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 10,
+    "conjugate_edges": [
+     {
+      "from": 128890,
+      "to": 153120,
+      "word": [
+       [
+        520,
+        4
+       ],
+       [
+        477,
+        6
+       ],
+       [
+        561,
+        5
+       ],
+       [
+        477,
+        7
+       ],
+       [
+        520,
+        8
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 119145,
+    "orbit": 12,
+    "y": 141863,
+    "word": [
+     [
+      362,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      362,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 6,
+    "orbit_minus_P": 7191,
+    "reached": 7191,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 10,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128879,
+    "orbit": 12,
+    "y": 154731,
+    "word": [
+     [
+      561,
+      1
+     ]
+    ],
+    "E_length": 1,
+    "ecc": 6,
+    "orbit_minus_P": 7190,
+    "reached": 7190,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 7,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119144,
+    "orbit": 12,
+    "y": 138577,
+    "word": [
+     [
+      355,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      355,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 6,
+    "orbit_minus_P": 7189,
+    "reached": 7189,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 10,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119146,
+    "orbit": 13,
+    "y": 156075,
+    "word": [
+     [
+      450,
+      1
+     ],
+     [
+      477,
+      9
+     ],
+     [
+      436,
+      5
+     ],
+     [
+      450,
+      1
+     ],
+     [
+      436,
+      2
+     ],
+     [
+      477,
+      3
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 1439,
+    "reached": 1439,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119153,
+    "orbit": 15,
+    "y": 153123,
+    "word": [
+     [
+      545,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      545,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 9,
+    "orbit_minus_P": 7183,
+    "reached": 7183,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 13,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119154,
+    "orbit": 16,
+    "y": 98061,
+    "word": [
+     [
+      344,
+      1
+     ],
+     [
+      520,
+      4
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      344,
+      1
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      520,
+      8
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 7,
+    "orbit_minus_P": 7192,
+    "reached": 7192,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 13,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119155,
+    "orbit": 17,
+    "y": 154735,
+    "word": [
+     [
+      544,
+      1
+     ],
+     [
+      561,
+      1
+     ],
+     [
+      544,
+      1
+     ],
+     [
+      561,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7196,
+    "reached": 7196,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128900,
+    "orbit": 20,
+    "y": 140640,
+    "word": [
+     [
+      505,
+      1
+     ],
+     [
+      451,
+      5
+     ],
+     [
+      505,
+      1
+     ],
+     [
+      451,
+      2
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7195,
+    "reached": 7195,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128903,
+    "orbit": 21,
+    "y": 152047,
+    "word": [
+     [
+      361,
+      1
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      361,
+      1
+     ],
+     [
+      451,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7193,
+    "reached": 7193,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128904,
+    "orbit": 23,
+    "y": 130703,
+    "word": [
+     [
+      321,
+      1
+     ],
+     [
+      451,
+      3
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      321,
+      1
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      451,
+      9
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7197,
+    "reached": 7197,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119133,
+    "orbit": 14,
+    "y": 106079,
+    "word": [
+     [
+      415,
+      1
+     ]
+    ],
+    "E_length": 1,
+    "ecc": 8,
+    "orbit_minus_P": 3588,
+    "reached": 3588,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 9,
+    "conjugate_edges": [
+     {
+      "from": 117742,
+      "to": 117515,
+      "word": [
+       [
+        451,
+        2
+       ],
+       [
+        390,
+        6
+       ],
+       [
+        451,
+        5
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 119052,
+      "to": 117515,
+      "word": [
+       [
+        528,
+        3
+       ],
+       [
+        415,
+        3
+       ],
+       [
+        528,
+        9
+       ]
+      ],
+      "conjugator_length": 1
+     }
+    ]
+   },
+   {
+    "t": 119137,
+    "orbit": 15,
+    "y": 156056,
+    "word": [
+     [
+      387,
+      1
+     ],
+     [
+      415,
+      5
+     ],
+     [
+      387,
+      1
+     ],
+     [
+      415,
+      2
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 8,
+    "orbit_minus_P": 7182,
+    "reached": 7182,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 112103,
+      "to": 156149,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        450,
+        1
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     }
+    ]
+   },
+   {
+    "t": 119163,
+    "orbit": 19,
+    "y": 117576,
+    "word": [
+     [
+      320,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      320,
+      1
+     ],
+     [
+      415,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 2395,
+    "reached": 2395,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119147,
+    "orbit": 18,
+    "y": 98233,
+    "word": [
+     [
+      320,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      390,
+      5
+     ],
+     [
+      320,
+      1
+     ],
+     [
+      390,
+      2
+     ],
+     [
+      415,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7185,
+    "reached": 7185,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 14,
+    "conjugate_edges": [
+     {
+      "from": 119162,
+      "to": 98233,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        227,
+        1
+       ],
+       [
+        390,
+        2
+       ],
+       [
+        227,
+        1
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128892,
+      "to": 130856,
+      "word": [
+       [
+        451,
+        1
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        11
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 140746,
+    "orbit": 11,
+    "y": 155524,
+    "word": [
+     [
+      523,
+      1
+     ],
+     [
+      561,
+      5
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      523,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      561,
+      2
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7181,
+    "reached": 7181,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 14,
+    "conjugate_edges": [
+     {
+      "from": 85072,
+      "to": 155524,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        448,
+        6
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 112101,
+      "to": 156603,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        522,
+        2
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 119135,
+      "to": 155524,
+      "word": [
+       [
+        415,
+        6
+       ],
+       [
+        559,
+        5
+       ],
+       [
+        522,
+        6
+       ],
+       [
+        559,
+        2
+       ],
+       [
+        415,
+        7
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128890,
+      "to": 156232,
+      "word": [
+       [
+        451,
+        1
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        7
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151955,
+      "to": 117801,
+      "word": [
+       [
+        520,
+        1
+       ],
+       [
+        564,
+        1
+       ],
+       [
+        434,
+        4
+       ],
+       [
+        564,
+        1
+       ],
+       [
+        520,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 140757,
+    "orbit": 15,
+    "y": 106082,
+    "word": [
+     [
+      187,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      187,
+      1
+     ],
+     [
+      415,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 8,
+    "orbit_minus_P": 7181,
+    "reached": 7181,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 5,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 112103,
+      "to": 105888,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        450,
+        6
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     }
+    ]
+   },
+   {
+    "t": 119148,
+    "orbit": 16,
+    "y": 96500,
+    "word": [
+     [
+      434,
+      1
+     ],
+     [
+      561,
+      5
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      434,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      561,
+      2
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7191,
+    "reached": 7191,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 14,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119164,
+    "orbit": 21,
+    "y": 98413,
+    "word": [
+     [
+      475,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      475,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      415,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7192,
+    "reached": 7192,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119168,
+    "orbit": 23,
+    "y": 117592,
+    "word": [
+     [
+      170,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      170,
+      1
+     ],
+     [
+      415,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7196,
+    "reached": 7196,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119167,
+    "orbit": 20,
+    "y": 117583,
+    "word": [
+     [
+      170,
+      1
+     ],
+     [
+      561,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      170,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      561,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7194,
+    "reached": 7194,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119172,
+    "orbit": 24,
+    "y": 98325,
+    "word": [
+     [
+      221,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      221,
+      1
+     ],
+     [
+      415,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7198,
+    "reached": 7198,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119171,
+    "orbit": 22,
+    "y": 98314,
+    "word": [
+     [
+      221,
+      1
+     ],
+     [
+      561,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      221,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      561,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 3598,
+    "reached": 3598,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119161,
+    "orbit": 15,
+    "y": 117569,
+    "word": [
+     [
+      227,
+      1
+     ],
+     [
+      528,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      227,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      528,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7180,
+    "reached": 7180,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 6,
+    "bound": 14,
+    "conjugate_edges": [
+     {
+      "from": 112103,
+      "to": 104939,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        450,
+        4
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     }
+    ]
+   },
+   {
+    "t": 119170,
+    "orbit": 21,
+    "y": 117580,
+    "word": [
+     [
+      221,
+      1
+     ],
+     [
+      520,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      221,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      520,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7191,
+    "reached": 7191,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119156,
+    "orbit": 11,
+    "y": 117525,
+    "word": [
+     [
+      227,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      227,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7180,
+    "reached": 7180,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 5,
+    "bound": 14,
+    "conjugate_edges": [
+     {
+      "from": 85072,
+      "to": 156063,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        522,
+        1
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 112101,
+      "to": 104937,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        450,
+        4
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 119135,
+      "to": 117352,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        227,
+        1
+       ],
+       [
+        348,
+        2
+       ],
+       [
+        227,
+        1
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128890,
+      "to": 117525,
+      "word": [
+       [
+        451,
+        11
+       ],
+       [
+        320,
+        2
+       ],
+       [
+        433,
+        4
+       ],
+       [
+        320,
+        5
+       ],
+       [
+        451,
+        11
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151955,
+      "to": 117525,
+      "word": [
+       [
+        520,
+        8
+       ],
+       [
+        436,
+        8
+       ],
+       [
+        448,
+        6
+       ],
+       [
+        436,
+        4
+       ],
+       [
+        520,
+        4
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 119158,
+    "orbit": 18,
+    "y": 117530,
+    "word": [
+     [
+      239,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      239,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7184,
+    "reached": 7184,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 14,
+    "conjugate_edges": [
+     {
+      "from": 119162,
+      "to": 117530,
+      "word": [
+       [
+        477,
+        5
+       ],
+       [
+        387,
+        3
+       ],
+       [
+        362,
+        7
+       ],
+       [
+        387,
+        9
+       ],
+       [
+        477,
+        2
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128892,
+      "to": 117530,
+      "word": [
+       [
+        451,
+        11
+       ],
+       [
+        320,
+        2
+       ],
+       [
+        433,
+        4
+       ],
+       [
+        320,
+        5
+       ],
+       [
+        451,
+        11
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 119159,
+    "orbit": 16,
+    "y": 98297,
+    "word": [
+     [
+      221,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      221,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7190,
+    "reached": 7190,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 14,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119157,
+    "orbit": 12,
+    "y": 98291,
+    "word": [
+     [
+      221,
+      1
+     ],
+     [
+      528,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      221,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      528,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7188,
+    "reached": 7188,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 151956,
+      "to": 98291,
+      "word": [
+       [
+        477,
+        7
+       ],
+       [
+        436,
+        1
+       ],
+       [
+        522,
+        8
+       ],
+       [
+        436,
+        1
+       ],
+       [
+        477,
+        6
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 128906,
+    "orbit": 20,
+    "y": 98312,
+    "word": [
+     [
+      170,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      170,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7193,
+    "reached": 7193,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128884,
+    "orbit": 15,
+    "y": 130899,
+    "word": [
+     [
+      274,
+      1
+     ],
+     [
+      451,
+      11
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      274,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      451,
+      11
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7179,
+    "reached": 7179,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 7,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 112103,
+      "to": 156449,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        522,
+        7
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     }
+    ]
+   },
+   {
+    "t": 128885,
+    "orbit": 16,
+    "y": 129858,
+    "word": [
+     [
+      271,
+      1
+     ],
+     [
+      451,
+      11
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      271,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      451,
+      11
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7189,
+    "reached": 7189,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128901,
+    "orbit": 21,
+    "y": 174521,
+    "word": [
+     [
+      559,
+      1
+     ]
+    ],
+    "E_length": 1,
+    "ecc": 5,
+    "orbit_minus_P": 7190,
+    "reached": 7190,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 6,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128902,
+    "orbit": 22,
+    "y": 171307,
+    "word": [
+     [
+      523,
+      1
+     ],
+     [
+      559,
+      1
+     ],
+     [
+      523,
+      1
+     ],
+     [
+      559,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 3597,
+    "reached": 3597,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 152017,
+    "orbit": 21,
+    "y": 129947,
+    "word": [
+     [
+      345,
+      1
+     ],
+     [
+      451,
+      11
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      345,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      451,
+      11
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7189,
+    "reached": 7189,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 5,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128886,
+    "orbit": 17,
+    "y": 129859,
+    "word": [
+     [
+      206,
+      1
+     ],
+     [
+      451,
+      11
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      206,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      451,
+      11
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7195,
+    "reached": 7195,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 14,
+    "conjugate_edges": []
+   },
+   {
+    "t": 151959,
+    "orbit": 17,
+    "y": 113805,
+    "word": [
+     [
+      348,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      348,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 8,
+    "orbit_minus_P": 7194,
+    "reached": 7194,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 152018,
+    "orbit": 23,
+    "y": 82625,
+    "word": [
+     [
+      274,
+      1
+     ],
+     [
+      451,
+      3
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      274,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      451,
+      9
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7195,
+    "reached": 7195,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128905,
+    "orbit": 24,
+    "y": 70398,
+    "word": [
+     [
+      345,
+      1
+     ],
+     [
+      477,
+      9
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      345,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      477,
+      3
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7197,
+    "reached": 7197,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 117651,
+    "orbit": 11,
+    "y": 135973,
+    "word": [
+     [
+      390,
+      1
+     ]
+    ],
+    "E_length": 1,
+    "ecc": 8,
+    "orbit_minus_P": 7179,
+    "reached": 7179,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 6,
+    "bound": 9,
+    "conjugate_edges": [
+     {
+      "from": 85072,
+      "to": 158918,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        448,
+        2
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 112101,
+      "to": 135973,
+      "word": [
+       [
+        415,
+        9
+       ],
+       [
+        390,
+        3
+       ],
+       [
+        415,
+        3
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 119135,
+      "to": 135973,
+      "word": [
+       [
+        415,
+        1
+       ],
+       [
+        227,
+        1
+       ],
+       [
+        390,
+        10
+       ],
+       [
+        227,
+        1
+       ],
+       [
+        415,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128890,
+      "to": 135973,
+      "word": [
+       [
+        520,
+        7
+       ],
+       [
+        308,
+        1
+       ],
+       [
+        345,
+        2
+       ],
+       [
+        308,
+        1
+       ],
+       [
+        520,
+        6
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151955,
+      "to": 135973,
+      "word": [
+       [
+        520,
+        8
+       ],
+       [
+        436,
+        2
+       ],
+       [
+        448,
+        8
+       ],
+       [
+        436,
+        5
+       ],
+       [
+        520,
+        4
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151992,
+      "to": 135973,
+      "word": [
+       [
+        520,
+        2
+       ],
+       [
+        463,
+        2
+       ],
+       [
+        434,
+        6
+       ],
+       [
+        463,
+        5
+       ],
+       [
+        520,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 117653,
+    "orbit": 15,
+    "y": 103725,
+    "word": [
+     [
+      430,
+      1
+     ],
+     [
+      390,
+      5
+     ],
+     [
+      430,
+      1
+     ],
+     [
+      390,
+      2
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7178,
+    "reached": 7178,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 8,
+    "bound": 9,
+    "conjugate_edges": [
+     {
+      "from": 112103,
+      "to": 131188,
+      "word": [
+       [
+        415,
+        5
+       ],
+       [
+        448,
+        1
+       ],
+       [
+        415,
+        2
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 151957,
+      "to": 103725,
+      "word": [
+       [
+        561,
+        2
+       ],
+       [
+        390,
+        6
+       ],
+       [
+        561,
+        2
+       ],
+       [
+        390,
+        7
+       ],
+       [
+        561,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151980,
+      "to": 103725,
+      "word": [
+       [
+        451,
+        4
+       ],
+       [
+        326,
+        4
+       ],
+       [
+        228,
+        7
+       ],
+       [
+        326,
+        8
+       ],
+       [
+        451,
+        8
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151997,
+      "to": 103725,
+      "word": [
+       [
+        451,
+        3
+       ],
+       [
+        528,
+        1
+       ],
+       [
+        390,
+        7
+       ],
+       [
+        528,
+        1
+       ],
+       [
+        451,
+        9
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 117654,
+    "orbit": 16,
+    "y": 131137,
+    "word": [
+     [
+      326,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      326,
+      1
+     ],
+     [
+      390,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 6,
+    "orbit_minus_P": 7188,
+    "reached": 7188,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 5,
+    "bound": 10,
+    "conjugate_edges": [
+     {
+      "from": 128893,
+      "to": 131137,
+      "word": [
+       [
+        520,
+        2
+       ],
+       [
+        463,
+        2
+       ],
+       [
+        434,
+        6
+       ],
+       [
+        463,
+        5
+       ],
+       [
+        520,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151958,
+      "to": 131137,
+      "word": [
+       [
+        520,
+        8
+       ],
+       [
+        436,
+        2
+       ],
+       [
+        448,
+        8
+       ],
+       [
+        436,
+        5
+       ],
+       [
+        520,
+        4
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 117652,
+    "orbit": 12,
+    "y": 131126,
+    "word": [
+     [
+      326,
+      1
+     ],
+     [
+      520,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      326,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      520,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7187,
+    "reached": 7187,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 5,
+    "bound": 14,
+    "conjugate_edges": [
+     {
+      "from": 128891,
+      "to": 131126,
+      "word": [
+       [
+        520,
+        2
+       ],
+       [
+        463,
+        2
+       ],
+       [
+        434,
+        6
+       ],
+       [
+        463,
+        5
+       ],
+       [
+        520,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151956,
+      "to": 131126,
+      "word": [
+       [
+        520,
+        8
+       ],
+       [
+        436,
+        2
+       ],
+       [
+        448,
+        8
+       ],
+       [
+        436,
+        5
+       ],
+       [
+        520,
+        4
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 112209,
+    "orbit": 13,
+    "y": 98157,
+    "word": [
+     [
+      340,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      340,
+      1
+     ],
+     [
+      390,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 1438,
+    "reached": 1438,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128909,
+    "orbit": 23,
+    "y": 131199,
+    "word": [
+     [
+      271,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      271,
+      1
+     ],
+     [
+      390,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 6,
+    "orbit_minus_P": 7194,
+    "reached": 7194,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 10,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119160,
+    "orbit": 17,
+    "y": 129886,
+    "word": [
+     [
+      271,
+      1
+     ],
+     [
+      520,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      271,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      520,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7193,
+    "reached": 7193,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 14,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119177,
+    "orbit": 24,
+    "y": 129954,
+    "word": [
+     [
+      274,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      274,
+      1
+     ],
+     [
+      390,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7196,
+    "reached": 7196,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119176,
+    "orbit": 23,
+    "y": 129950,
+    "word": [
+     [
+      274,
+      1
+     ],
+     [
+      520,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      274,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      520,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7193,
+    "reached": 7193,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 5,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 112212,
+    "orbit": 17,
+    "y": 129938,
+    "word": [
+     [
+      274,
+      1
+     ],
+     [
+      528,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      274,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      528,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7192,
+    "reached": 7192,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 5,
+    "bound": 14,
+    "conjugate_edges": []
+   },
+   {
+    "t": 112207,
+    "orbit": 12,
+    "y": 129872,
+    "word": [
+     [
+      326,
+      1
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      326,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      451,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7186,
+    "reached": 7186,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 6,
+    "bound": 14,
+    "conjugate_edges": [
+     {
+      "from": 112208,
+      "to": 114272,
+      "word": [
+       [
+        390,
+        1
+       ],
+       [
+        345,
+        1
+       ],
+       [
+        390,
+        2
+       ],
+       [
+        345,
+        1
+       ],
+       [
+        390,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128891,
+      "to": 129872,
+      "word": [
+       [
+        451,
+        1
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        11
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151956,
+      "to": 129872,
+      "word": [
+       [
+        520,
+        2
+       ],
+       [
+        463,
+        2
+       ],
+       [
+        434,
+        11
+       ],
+       [
+        463,
+        5
+       ],
+       [
+        520,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 112211,
+    "orbit": 16,
+    "y": 129937,
+    "word": [
+     [
+      274,
+      1
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      274,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      451,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7187,
+    "reached": 7187,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 6,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 128893,
+      "to": 129937,
+      "word": [
+       [
+        451,
+        1
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        11
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151958,
+      "to": 129937,
+      "word": [
+       [
+        520,
+        2
+       ],
+       [
+        463,
+        2
+       ],
+       [
+        434,
+        11
+       ],
+       [
+        463,
+        5
+       ],
+       [
+        520,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 119175,
+    "orbit": 20,
+    "y": 129946,
+    "word": [
+     [
+      271,
+      1
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      271,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      451,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7192,
+    "reached": 7192,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 152000,
+      "to": 129946,
+      "word": [
+       [
+        520,
+        2
+       ],
+       [
+        463,
+        2
+       ],
+       [
+        434,
+        11
+       ],
+       [
+        463,
+        5
+       ],
+       [
+        520,
+        5
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 152011,
+      "to": 129946,
+      "word": [
+       [
+        451,
+        1
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        11
+       ],
+       [
+        506,
+        1
+       ],
+       [
+        451,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 112227,
+    "orbit": 21,
+    "y": 135769,
+    "word": [
+     [
+      436,
+      1
+     ]
+    ],
+    "E_length": 1,
+    "ecc": 8,
+    "orbit_minus_P": 7188,
+    "reached": 7188,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 6,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 112233,
+    "orbit": 23,
+    "y": 135770,
+    "word": [
+     [
+      532,
+      1
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      532,
+      1
+     ],
+     [
+      436,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7192,
+    "reached": 7192,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 6,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 112234,
+    "orbit": 24,
+    "y": 125184,
+    "word": [
+     [
+      373,
+      1
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      373,
+      1
+     ],
+     [
+      436,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7195,
+    "reached": 7195,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 4,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 112228,
+    "orbit": 22,
+    "y": 125183,
+    "word": [
+     [
+      373,
+      1
+     ],
+     [
+      451,
+      1
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      373,
+      1
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      451,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 3596,
+    "reached": 3596,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 3,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 117655,
+    "orbit": 17,
+    "y": 98170,
+    "word": [
+     [
+      170,
+      1
+     ],
+     [
+      528,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      170,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      528,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7191,
+    "reached": 7191,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 6,
+    "bound": 14,
+    "conjugate_edges": []
+   },
+   {
+    "t": 140747,
+    "orbit": 12,
+    "y": 98291,
+    "word": [
+     [
+      522,
+      1
+     ],
+     [
+      561,
+      5
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      522,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      561,
+      2
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7185,
+    "reached": 7185,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 7,
+    "bound": 14,
+    "conjugate_edges": [
+     {
+      "from": 112194,
+      "to": 70166,
+      "word": [
+       [
+        390,
+        1
+       ],
+       [
+        436,
+        6
+       ],
+       [
+        390,
+        1
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 112208,
+      "to": 98182,
+      "word": [
+       [
+        390,
+        1
+       ],
+       [
+        345,
+        1
+       ],
+       [
+        390,
+        3
+       ],
+       [
+        345,
+        1
+       ],
+       [
+        390,
+        1
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128891,
+      "to": 98291,
+      "word": [
+       [
+        451,
+        11
+       ],
+       [
+        320,
+        2
+       ],
+       [
+        433,
+        4
+       ],
+       [
+        320,
+        5
+       ],
+       [
+        451,
+        11
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151956,
+      "to": 98291,
+      "word": [
+       [
+        477,
+        7
+       ],
+       [
+        436,
+        1
+       ],
+       [
+        522,
+        8
+       ],
+       [
+        436,
+        1
+       ],
+       [
+        477,
+        6
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 112216,
+    "orbit": 17,
+    "y": 130897,
+    "word": [
+     [
+      320,
+      1
+     ],
+     [
+      477,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      320,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      477,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7190,
+    "reached": 7190,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 7,
+    "bound": 14,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119181,
+    "orbit": 21,
+    "y": 158926,
+    "word": [
+     [
+      458,
+      1
+     ],
+     [
+      436,
+      7
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      458,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      436,
+      6
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 8,
+    "orbit_minus_P": 7187,
+    "reached": 7187,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 7,
+    "bound": 14,
+    "conjugate_edges": []
+   },
+   {
+    "t": 114178,
+    "orbit": 12,
+    "y": 58472,
+    "word": [
+     [
+      221,
+      1
+     ],
+     [
+      415,
+      3
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      221,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      415,
+      9
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7184,
+    "reached": 7184,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 8,
+    "bound": 12,
+    "conjugate_edges": [
+     {
+      "from": 85073,
+      "to": 98468,
+      "word": [
+       [
+        390,
+        4
+       ],
+       [
+        340,
+        11
+       ],
+       [
+        390,
+        8
+       ]
+      ],
+      "conjugator_length": 1
+     },
+     {
+      "from": 112194,
+      "to": 58472,
+      "word": [
+       [
+        436,
+        6
+       ],
+       [
+        221,
+        6
+       ],
+       [
+        227,
+        3
+       ],
+       [
+        221,
+        7
+       ],
+       [
+        436,
+        7
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 112208,
+      "to": 58472,
+      "word": [
+       [
+        390,
+        7
+       ],
+       [
+        207,
+        1
+       ],
+       [
+        221,
+        8
+       ],
+       [
+        207,
+        1
+       ],
+       [
+        390,
+        6
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 128891,
+      "to": 64502,
+      "word": [
+       [
+        451,
+        8
+       ],
+       [
+        557,
+        1
+       ],
+       [
+        430,
+        4
+       ],
+       [
+        557,
+        1
+       ],
+       [
+        451,
+        4
+       ]
+      ],
+      "conjugator_length": 2
+     },
+     {
+      "from": 151956,
+      "to": 118399,
+      "word": [
+       [
+        477,
+        7
+       ],
+       [
+        436,
+        1
+       ],
+       [
+        543,
+        2
+       ],
+       [
+        436,
+        1
+       ],
+       [
+        477,
+        6
+       ]
+      ],
+      "conjugator_length": 2
+     }
+    ]
+   },
+   {
+    "t": 128908,
+    "orbit": 21,
+    "y": 131198,
+    "word": [
+     [
+      271,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      271,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      415,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7186,
+    "reached": 7186,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 8,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119149,
+    "orbit": 17,
+    "y": 106084,
+    "word": [
+     [
+      170,
+      1
+     ],
+     [
+      415,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      170,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      415,
+      1
+     ]
+    ],
+    "E_length": 6,
+    "ecc": 6,
+    "orbit_minus_P": 7189,
+    "reached": 7189,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 8,
+    "bound": 12,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119191,
+    "orbit": 25,
+    "y": 125185,
+    "word": [
+     [
+      493,
+      1
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      493,
+      1
+     ],
+     [
+      436,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 6,
+    "orbit_minus_P": 7199,
+    "reached": 7199,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 10,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119178,
+    "orbit": 27,
+    "y": 129967,
+    "word": [
+     [
+      207,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      207,
+      1
+     ],
+     [
+      390,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 3600,
+    "reached": 3600,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 119192,
+    "orbit": 28,
+    "y": 125197,
+    "word": [
+     [
+      340,
+      1
+     ],
+     [
+      436,
+      1
+     ],
+     [
+      340,
+      1
+     ],
+     [
+      436,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 6,
+    "orbit_minus_P": 7200,
+    "reached": 7200,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 1,
+    "bound": 10,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128907,
+    "orbit": 25,
+    "y": 156531,
+    "word": [
+     [
+      472,
+      1
+     ],
+     [
+      415,
+      5
+     ],
+     [
+      472,
+      1
+     ],
+     [
+      415,
+      2
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7198,
+    "reached": 7198,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 9,
+    "conjugate_edges": []
+   },
+   {
+    "t": 128910,
+    "orbit": 28,
+    "y": 131215,
+    "word": [
+     [
+      228,
+      1
+     ],
+     [
+      390,
+      1
+     ],
+     [
+      228,
+      1
+     ],
+     [
+      390,
+      1
+     ]
+    ],
+    "E_length": 4,
+    "ecc": 5,
+    "orbit_minus_P": 7199,
+    "reached": 7199,
+    "unreached": [],
+    "u_j": 0,
+    "holes_needed": 2,
+    "bound": 9,
+    "conjugate_edges": []
+   }
+  ],
+  "thresholds": {
+   "10": 3,
+   "11": 6,
+   "14": 3,
+   "18": 4,
+   "15": 8,
+   "19": 2,
+   "8": 1,
+   "12": 8,
+   "13": 2,
+   "16": 6,
+   "17": 8,
+   "20": 4,
+   "21": 8,
+   "23": 6,
+   "24": 4,
+   "22": 3,
+   "25": 2,
+   "27": 1,
+   "28": 2
+  },
+  "family_bound": 899,
+  "all_reached": true,
+  "thresholds_equal_targets": true
+ },
+ "demo": {
+  "initial_digest": "3c086301091a2dad43b5efd1d1702ce005976a5f54ecbc9d22b520e49aba106b",
+  "generator_length": 300,
+  "generator_seed": 1,
+  "generator_word": [
+   [
+    100,
+    1
+   ],
+   [
+    451,
+    10
+   ],
+   [
+    598,
+    9
+   ],
+   [
+    46,
+    11
+   ],
+   [
+    195,
+    11
+   ],
+   [
+    87,
+    9
+   ],
+   [
+    395,
+    11
+   ],
+   [
+    596,
+    8
+   ],
+   [
+    354,
+    9
+   ],
+   [
+    373,
+    8
+   ],
+   [
+    515,
+    3
+   ],
+   [
+    297,
+    8
+   ],
+   [
+    158,
+    4
+   ],
+   [
+    69,
+    10
+   ],
+   [
+    387,
+    4
+   ],
+   [
+    21,
+    2
+   ],
+   [
+    307,
+    4
+   ],
+   [
+    342,
+    4
+   ],
+   [
+    481,
+    5
+   ],
+   [
+    597,
+    8
+   ],
+   [
+    1,
+    7
+   ],
+   [
+    548,
+    3
+   ],
+   [
+    351,
+    8
+   ],
+   [
+    204,
+    4
+   ],
+   [
+    567,
+    4
+   ],
+   [
+    173,
+    5
+   ],
+   [
+    469,
+    3
+   ],
+   [
+    76,
+    2
+   ],
+   [
+    243,
+    5
+   ],
+   [
+    22,
+    9
+   ],
+   [
+    16,
+    7
+   ],
+   [
+    18,
+    11
+   ],
+   [
+    513,
+    9
+   ],
+   [
+    431,
+    3
+   ],
+   [
+    6,
+    10
+   ],
+   [
+    298,
+    10
+   ],
+   [
+    541,
+    3
+   ],
+   [
+    164,
+    4
+   ],
+   [
+    333,
+    4
+   ],
+   [
+    570,
+    7
+   ],
+   [
+    21,
+    7
+   ],
+   [
+    419,
+    11
+   ],
+   [
+    168,
+    2
+   ],
+   [
+    598,
+    9
+   ],
+   [
+    346,
+    2
+   ],
+   [
+    396,
+    3
+   ],
+   [
+    439,
+    9
+   ],
+   [
+    176,
+    7
+   ],
+   [
+    267,
+    5
+   ],
+   [
+    174,
+    11
+   ],
+   [
+    534,
+    1
+   ],
+   [
+    165,
+    11
+   ],
+   [
+    596,
+    8
+   ],
+   [
+    363,
+    4
+   ],
+   [
+    221,
+    9
+   ],
+   [
+    16,
+    1
+   ],
+   [
+    328,
+    11
+   ],
+   [
+    442,
+    5
+   ],
+   [
+    508,
+    4
+   ],
+   [
+    74,
+    6
+   ],
+   [
+    138,
+    5
+   ],
+   [
+    497,
+    8
+   ],
+   [
+    568,
+    11
+   ],
+   [
+    226,
+    9
+   ],
+   [
+    90,
+    1
+   ],
+   [
+    583,
+    5
+   ],
+   [
+    255,
+    9
+   ],
+   [
+    567,
+    4
+   ],
+   [
+    559,
+    8
+   ],
+   [
+    399,
+    11
+   ],
+   [
+    333,
+    4
+   ],
+   [
+    405,
+    2
+   ],
+   [
+    529,
+    3
+   ],
+   [
+    141,
+    5
+   ],
+   [
+    231,
+    11
+   ],
+   [
+    217,
+    7
+   ],
+   [
+    465,
+    7
+   ],
+   [
+    398,
+    10
+   ],
+   [
+    403,
+    4
+   ],
+   [
+    309,
+    11
+   ],
+   [
+    466,
+    8
+   ],
+   [
+    25,
+    8
+   ],
+   [
+    381,
+    8
+   ],
+   [
+    185,
+    9
+   ],
+   [
+    583,
+    10
+   ],
+   [
+    320,
+    1
+   ],
+   [
+    327,
+    7
+   ],
+   [
+    525,
+    1
+   ],
+   [
+    128,
+    10
+   ],
+   [
+    286,
+    5
+   ],
+   [
+    436,
+    8
+   ],
+   [
+    553,
+    7
+   ],
+   [
+    532,
+    4
+   ],
+   [
+    579,
+    9
+   ],
+   [
+    293,
+    1
+   ],
+   [
+    64,
+    5
+   ],
+   [
+    346,
+    10
+   ],
+   [
+    524,
+    4
+   ],
+   [
+    405,
+    8
+   ],
+   [
+    80,
+    5
+   ],
+   [
+    121,
+    11
+   ],
+   [
+    414,
+    11
+   ],
+   [
+    309,
+    10
+   ],
+   [
+    288,
+    11
+   ],
+   [
+    389,
+    8
+   ],
+   [
+    575,
+    8
+   ],
+   [
+    22,
+    1
+   ],
+   [
+    371,
+    6
+   ],
+   [
+    32,
+    5
+   ],
+   [
+    235,
+    9
+   ],
+   [
+    553,
+    10
+   ],
+   [
+    486,
+    10
+   ],
+   [
+    470,
+    9
+   ],
+   [
+    458,
+    7
+   ],
+   [
+    310,
+    2
+   ],
+   [
+    511,
+    11
+   ],
+   [
+    126,
+    10
+   ],
+   [
+    125,
+    7
+   ],
+   [
+    401,
+    1
+   ],
+   [
+    172,
+    1
+   ],
+   [
+    9,
+    2
+   ],
+   [
+    148,
+    7
+   ],
+   [
+    429,
+    10
+   ],
+   [
+    436,
+    4
+   ],
+   [
+    175,
+    10
+   ],
+   [
+    320,
+    3
+   ],
+   [
+    409,
+    7
+   ],
+   [
+    266,
+    1
+   ],
+   [
+    458,
+    4
+   ],
+   [
+    274,
+    2
+   ],
+   [
+    362,
+    11
+   ],
+   [
+    206,
+    6
+   ],
+   [
+    520,
+    11
+   ],
+   [
+    436,
+    2
+   ],
+   [
+    482,
+    6
+   ],
+   [
+    573,
+    3
+   ],
+   [
+    4,
+    3
+   ],
+   [
+    300,
+    9
+   ],
+   [
+    581,
+    6
+   ],
+   [
+    408,
+    8
+   ],
+   [
+    96,
+    3
+   ],
+   [
+    413,
+    4
+   ],
+   [
+    446,
+    1
+   ],
+   [
+    155,
+    1
+   ],
+   [
+    337,
+    4
+   ],
+   [
+    41,
+    9
+   ],
+   [
+    382,
+    4
+   ],
+   [
+    284,
+    7
+   ],
+   [
+    452,
+    6
+   ],
+   [
+    440,
+    10
+   ],
+   [
+    148,
+    10
+   ],
+   [
+    402,
+    10
+   ],
+   [
+    326,
+    10
+   ],
+   [
+    385,
+    2
+   ],
+   [
+    276,
+    8
+   ],
+   [
+    327,
+    7
+   ],
+   [
+    267,
+    9
+   ],
+   [
+    1,
+    2
+   ],
+   [
+    429,
+    1
+   ],
+   [
+    430,
+    3
+   ],
+   [
+    493,
+    4
+   ],
+   [
+    485,
+    2
+   ],
+   [
+    254,
+    7
+   ],
+   [
+    362,
+    3
+   ],
+   [
+    475,
+    9
+   ],
+   [
+    20,
+    10
+   ],
+   [
+    173,
+    11
+   ],
+   [
+    502,
+    2
+   ],
+   [
+    131,
+    11
+   ],
+   [
+    438,
+    2
+   ],
+   [
+    463,
+    3
+   ],
+   [
+    134,
+    7
+   ],
+   [
+    68,
+    3
+   ],
+   [
+    438,
+    5
+   ],
+   [
+    196,
+    2
+   ],
+   [
+    24,
+    2
+   ],
+   [
+    531,
+    4
+   ],
+   [
+    52,
+    6
+   ],
+   [
+    61,
+    11
+   ],
+   [
+    12,
+    5
+   ],
+   [
+    357,
+    4
+   ],
+   [
+    10,
+    10
+   ],
+   [
+    591,
+    7
+   ],
+   [
+    592,
+    8
+   ],
+   [
+    215,
+    5
+   ],
+   [
+    191,
+    10
+   ],
+   [
+    206,
+    1
+   ],
+   [
+    81,
+    6
+   ],
+   [
+    494,
+    4
+   ],
+   [
+    137,
+    6
+   ],
+   [
+    266,
+    6
+   ],
+   [
+    222,
+    3
+   ],
+   [
+    51,
+    9
+   ],
+   [
+    124,
+    8
+   ],
+   [
+    118,
+    10
+   ],
+   [
+    196,
+    1
+   ],
+   [
+    419,
+    9
+   ],
+   [
+    125,
+    3
+   ],
+   [
+    519,
+    1
+   ],
+   [
+    209,
+    3
+   ],
+   [
+    512,
+    9
+   ],
+   [
+    559,
+    11
+   ],
+   [
+    225,
+    4
+   ],
+   [
+    358,
+    7
+   ],
+   [
+    553,
+    3
+   ],
+   [
+    247,
+    9
+   ],
+   [
+    396,
+    9
+   ],
+   [
+    374,
+    10
+   ],
+   [
+    85,
+    1
+   ],
+   [
+    17,
+    7
+   ],
+   [
+    239,
+    4
+   ],
+   [
+    304,
+    10
+   ],
+   [
+    265,
+    8
+   ],
+   [
+    332,
+    6
+   ],
+   [
+    140,
+    1
+   ],
+   [
+    198,
+    5
+   ],
+   [
+    80,
+    11
+   ],
+   [
+    194,
+    9
+   ],
+   [
+    573,
+    9
+   ],
+   [
+    406,
+    10
+   ],
+   [
+    157,
+    8
+   ],
+   [
+    480,
+    1
+   ],
+   [
+    341,
+    6
+   ],
+   [
+    15,
+    6
+   ],
+   [
+    170,
+    10
+   ],
+   [
+    13,
+    4
+   ],
+   [
+    312,
+    10
+   ],
+   [
+    109,
+    1
+   ],
+   [
+    26,
+    4
+   ],
+   [
+    565,
+    4
+   ],
+   [
+    119,
+    4
+   ],
+   [
+    351,
+    10
+   ],
+   [
+    554,
+    9
+   ],
+   [
+    404,
+    1
+   ],
+   [
+    535,
+    1
+   ],
+   [
+    337,
+    9
+   ],
+   [
+    433,
+    8
+   ],
+   [
+    167,
+    4
+   ],
+   [
+    498,
+    9
+   ],
+   [
+    547,
+    7
+   ],
+   [
+    411,
+    8
+   ],
+   [
+    355,
+    9
+   ],
+   [
+    169,
+    3
+   ],
+   [
+    417,
+    2
+   ],
+   [
+    512,
+    11
+   ],
+   [
+    22,
+    10
+   ],
+   [
+    311,
+    2
+   ],
+   [
+    532,
+    7
+   ],
+   [
+    456,
+    10
+   ],
+   [
+    247,
+    3
+   ],
+   [
+    521,
+    5
+   ],
+   [
+    498,
+    10
+   ],
+   [
+    337,
+    6
+   ],
+   [
+    43,
+    9
+   ],
+   [
+    579,
+    3
+   ],
+   [
+    228,
+    5
+   ],
+   [
+    93,
+    7
+   ],
+   [
+    159,
+    11
+   ],
+   [
+    35,
+    4
+   ],
+   [
+    234,
+    2
+   ],
+   [
+    52,
+    8
+   ],
+   [
+    56,
+    11
+   ],
+   [
+    238,
+    2
+   ],
+   [
+    227,
+    10
+   ],
+   [
+    583,
+    11
+   ],
+   [
+    117,
+    10
+   ],
+   [
+    328,
+    11
+   ],
+   [
+    448,
+    8
+   ],
+   [
+    193,
+    11
+   ],
+   [
+    97,
+    2
+   ],
+   [
+    6,
+    4
+   ],
+   [
+    445,
+    7
+   ],
+   [
+    28,
+    3
+   ],
+   [
+    467,
+    10
+   ],
+   [
+    165,
+    1
+   ],
+   [
+    452,
+    8
+   ],
+   [
+    364,
+    3
+   ],
+   [
+    127,
+    9
+   ],
+   [
+    554,
+    4
+   ],
+   [
+    492,
+    11
+   ],
+   [
+    405,
+    11
+   ],
+   [
+    27,
+    10
+   ],
+   [
+    296,
+    6
+   ],
+   [
+    149,
+    3
+   ],
+   [
+    269,
+    5
+   ],
+   [
+    73,
+    9
+   ],
+   [
+    155,
+    3
+   ],
+   [
+    455,
+    1
+   ],
+   [
+    532,
+    1
+   ],
+   [
+    342,
+    5
+   ],
+   [
+    469,
+    5
+   ],
+   [
+    144,
+    7
+   ],
+   [
+    391,
+    8
+   ],
+   [
+    77,
+    9
+   ],
+   [
+    525,
+    11
+   ],
+   [
+    307,
+    6
+   ],
+   [
+    226,
+    6
+   ],
+   [
+    402,
+    5
+   ],
+   [
+    399,
+    3
+   ],
+   [
+    12,
+    9
+   ]
+  ],
+  "source_digest": "3f79637425647e37cda6693d9bc9afce0cd1054a024dcea9e3fcc0f8dae3a4ea",
+  "certificate_reused": true,
+  "fingerprint_matches": true,
+  "constructor_journal_empty": true,
+  "condition": {
+   "fixed_vacant": true,
+   "fixed_occupied": [],
+   "necessary": true,
+   "necessary_deficits": [],
+   "sufficient": true,
+   "sufficient_deficits": [],
+   "by_orbit": [
+    {
+     "orbit": 8,
+     "least_chamber": 14,
+     "size": 7158,
+     "target": 1,
+     "holes": 1,
+     "threshold": 1
+    },
+    {
+     "orbit": 10,
+     "least_chamber": 17,
+     "size": 7174,
+     "target": 3,
+     "holes": 3,
+     "threshold": 3
+    },
+    {
+     "orbit": 11,
+     "least_chamber": 22,
+     "size": 7184,
+     "target": 6,
+     "holes": 7,
+     "threshold": 6
+    },
+    {
+     "orbit": 12,
+     "least_chamber": 23,
+     "size": 7191,
+     "target": 8,
+     "holes": 11,
+     "threshold": 8
+    },
+    {
+     "orbit": 13,
+     "least_chamber": 25,
+     "size": 1439,
+     "target": 2,
+     "holes": 3,
+     "threshold": 2
+    },
+    {
+     "orbit": 14,
+     "least_chamber": 31,
+     "size": 3590,
+     "target": 3,
+     "holes": 4,
+     "threshold": 3
+    },
+    {
+     "orbit": 15,
+     "least_chamber": 32,
+     "size": 7185,
+     "target": 8,
+     "holes": 11,
+     "threshold": 8
+    },
+    {
+     "orbit": 16,
+     "least_chamber": 33,
+     "size": 7192,
+     "target": 6,
+     "holes": 10,
+     "threshold": 6
+    },
+    {
+     "orbit": 17,
+     "least_chamber": 34,
+     "size": 7196,
+     "target": 8,
+     "holes": 14,
+     "threshold": 8
+    },
+    {
+     "orbit": 18,
+     "least_chamber": 41,
+     "size": 7187,
+     "target": 4,
+     "holes": 6,
+     "threshold": 4
+    },
+    {
+     "orbit": 19,
+     "least_chamber": 64,
+     "size": 2396,
+     "target": 2,
+     "holes": 3,
+     "threshold": 2
+    },
+    {
+     "orbit": 20,
+     "least_chamber": 65,
+     "size": 7195,
+     "target": 4,
+     "holes": 8,
+     "threshold": 4
+    },
+    {
+     "orbit": 21,
+     "least_chamber": 66,
+     "size": 7193,
+     "target": 8,
+     "holes": 13,
+     "threshold": 8
+    },
+    {
+     "orbit": 22,
+     "least_chamber": 67,
+     "size": 3598,
+     "target": 3,
+     "holes": 6,
+     "threshold": 3
+    },
+    {
+     "orbit": 23,
+     "least_chamber": 69,
+     "size": 7197,
+     "target": 6,
+     "holes": 12,
+     "threshold": 6
+    },
+    {
+     "orbit": 24,
+     "least_chamber": 70,
+     "size": 7198,
+     "target": 4,
+     "holes": 11,
+     "threshold": 4
+    },
+    {
+     "orbit": 25,
+     "least_chamber": 74,
+     "size": 7199,
+     "target": 2,
+     "holes": 11,
+     "threshold": 2
+    },
+    {
+     "orbit": 27,
+     "least_chamber": 81,
+     "size": 3600,
+     "target": 1,
+     "holes": 5,
+     "threshold": 1
+    },
+    {
+     "orbit": 28,
+     "least_chamber": 82,
+     "size": 7200,
+     "target": 2,
+     "holes": 22,
+     "threshold": 2
+    },
+    {
+     "orbit": 817,
+     "least_chamber": 119124,
+     "size": 1,
+     "target": 1,
+     "holes": 1,
+     "threshold": 1
+    },
+    {
+     "orbit": 820,
+     "least_chamber": 119141,
+     "size": 1,
+     "target": 1,
+     "holes": 1,
+     "threshold": 1
+    },
+    {
+     "orbit": 822,
+     "least_chamber": 119151,
+     "size": 1,
+     "target": 1,
+     "holes": 1,
+     "threshold": 1
+    },
+    {
+     "orbit": 899,
+     "least_chamber": 128877,
+     "size": 1,
+     "target": 1,
+     "holes": 1,
+     "threshold": 1
+    },
+    {
+     "orbit": 901,
+     "least_chamber": 128888,
+     "size": 1,
+     "target": 1,
+     "holes": 1,
+     "threshold": 1
+    }
+   ]
+  },
+  "target_vacant_at_source": 26,
+  "preparation_word": [
+   [
+    528,
+    7
+   ],
+   [
+    505,
+    9
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    532,
+    11
+   ],
+   [
+    561,
+    10
+   ],
+   [
+    528,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    345,
+    5
+   ],
+   [
+    506,
+    1
+   ],
+   [
+    451,
+    5
+   ],
+   [
+    506,
+    1
+   ],
+   [
+    451,
+    2
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    355,
+    1
+   ],
+   [
+    451,
+    9
+   ],
+   [
+    415,
+    8
+   ],
+   [
+    355,
+    1
+   ],
+   [
+    415,
+    4
+   ],
+   [
+    451,
+    3
+   ],
+   [
+    561,
+    9
+   ],
+   [
+    477,
+    5
+   ],
+   [
+    522,
+    1
+   ],
+   [
+    528,
+    4
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    522,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    528,
+    8
+   ],
+   [
+    467,
+    5
+   ],
+   [
+    345,
+    1
+   ],
+   [
+    520,
+    7
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    345,
+    1
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    520,
+    6
+   ],
+   [
+    505,
+    8
+   ],
+   [
+    535,
+    5
+   ],
+   [
+    561,
+    10
+   ],
+   [
+    522,
+    1
+   ],
+   [
+    528,
+    4
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    522,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    528,
+    8
+   ],
+   [
+    348,
+    6
+   ],
+   [
+    477,
+    4
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    460,
+    7
+   ],
+   [
+    494,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    494,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    568,
+    6
+   ],
+   [
+    561,
+    1
+   ],
+   [
+    448,
+    7
+   ],
+   [
+    543,
+    11
+   ],
+   [
+    355,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    355,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    494,
+    8
+   ],
+   [
+    450,
+    1
+   ],
+   [
+    477,
+    9
+   ],
+   [
+    436,
+    5
+   ],
+   [
+    450,
+    1
+   ],
+   [
+    436,
+    2
+   ],
+   [
+    477,
+    3
+   ],
+   [
+    436,
+    11
+   ],
+   [
+    460,
+    8
+   ],
+   [
+    545,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    545,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    448,
+    7
+   ],
+   [
+    320,
+    5
+   ],
+   [
+    344,
+    1
+   ],
+   [
+    520,
+    4
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    344,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    520,
+    8
+   ],
+   [
+    415,
+    6
+   ],
+   [
+    559,
+    11
+   ],
+   [
+    544,
+    1
+   ],
+   [
+    561,
+    1
+   ],
+   [
+    544,
+    1
+   ],
+   [
+    561,
+    1
+   ],
+   [
+    390,
+    10
+   ],
+   [
+    345,
+    5
+   ],
+   [
+    505,
+    1
+   ],
+   [
+    451,
+    5
+   ],
+   [
+    505,
+    1
+   ],
+   [
+    451,
+    2
+   ],
+   [
+    294,
+    6
+   ],
+   [
+    361,
+    1
+   ],
+   [
+    361,
+    1
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    361,
+    1
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    321,
+    10
+   ],
+   [
+    321,
+    1
+   ],
+   [
+    451,
+    3
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    321,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    451,
+    9
+   ],
+   [
+    276,
+    10
+   ],
+   [
+    348,
+    10
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    434,
+    1
+   ],
+   [
+    523,
+    11
+   ],
+   [
+    523,
+    1
+   ],
+   [
+    561,
+    5
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    523,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    561,
+    2
+   ],
+   [
+    387,
+    10
+   ],
+   [
+    239,
+    10
+   ],
+   [
+    187,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    187,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    517,
+    10
+   ],
+   [
+    434,
+    4
+   ],
+   [
+    434,
+    1
+   ],
+   [
+    561,
+    5
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    434,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    561,
+    2
+   ],
+   [
+    215,
+    11
+   ],
+   [
+    414,
+    8
+   ],
+   [
+    475,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    475,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    170,
+    9
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    460,
+    6
+   ],
+   [
+    355,
+    11
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    561,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    561,
+    1
+   ],
+   [
+    239,
+    11
+   ],
+   [
+    221,
+    6
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    561,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    561,
+    1
+   ],
+   [
+    362,
+    8
+   ],
+   [
+    348,
+    7
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    520,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    520,
+    1
+   ],
+   [
+    436,
+    11
+   ],
+   [
+    348,
+    8
+   ],
+   [
+    227,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    227,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    227,
+    1
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    215,
+    3
+   ],
+   [
+    348,
+    9
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    528,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    528,
+    1
+   ],
+   [
+    545,
+    8
+   ],
+   [
+    436,
+    8
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    227,
+    5
+   ],
+   [
+    274,
+    5
+   ],
+   [
+    271,
+    1
+   ],
+   [
+    451,
+    11
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    271,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    451,
+    11
+   ],
+   [
+    532,
+    4
+   ],
+   [
+    559,
+    1
+   ],
+   [
+    486,
+    6
+   ],
+   [
+    592,
+    10
+   ],
+   [
+    523,
+    1
+   ],
+   [
+    559,
+    1
+   ],
+   [
+    523,
+    1
+   ],
+   [
+    559,
+    1
+   ],
+   [
+    433,
+    5
+   ],
+   [
+    326,
+    1
+   ],
+   [
+    345,
+    1
+   ],
+   [
+    451,
+    11
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    345,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    451,
+    11
+   ],
+   [
+    558,
+    2
+   ],
+   [
+    472,
+    10
+   ],
+   [
+    348,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    348,
+    1
+   ],
+   [
+    477,
+    1
+   ],
+   [
+    125,
+    4
+   ],
+   [
+    206,
+    7
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    451,
+    3
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    451,
+    9
+   ],
+   [
+    390,
+    7
+   ],
+   [
+    345,
+    1
+   ],
+   [
+    477,
+    9
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    345,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    477,
+    3
+   ],
+   [
+    198,
+    6
+   ],
+   [
+    125,
+    6
+   ],
+   [
+    345,
+    3
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    321,
+    10
+   ],
+   [
+    221,
+    4
+   ],
+   [
+    430,
+    1
+   ],
+   [
+    390,
+    5
+   ],
+   [
+    430,
+    1
+   ],
+   [
+    390,
+    2
+   ],
+   [
+    532,
+    1
+   ],
+   [
+    430,
+    4
+   ],
+   [
+    326,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    326,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    306,
+    7
+   ],
+   [
+    227,
+    4
+   ],
+   [
+    340,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    340,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    228,
+    1
+   ],
+   [
+    271,
+    1
+   ],
+   [
+    271,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    271,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    340,
+    6
+   ],
+   [
+    271,
+    1
+   ],
+   [
+    520,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    271,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    520,
+    1
+   ],
+   [
+    118,
+    10
+   ],
+   [
+    274,
+    11
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    448,
+    2
+   ],
+   [
+    340,
+    1
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    520,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    520,
+    1
+   ],
+   [
+    271,
+    3
+   ],
+   [
+    326,
+    8
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    528,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    528,
+    1
+   ],
+   [
+    221,
+    4
+   ],
+   [
+    345,
+    8
+   ],
+   [
+    326,
+    1
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    326,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    450,
+    9
+   ],
+   [
+    340,
+    1
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    274,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    362,
+    2
+   ],
+   [
+    387,
+    4
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    523,
+    10
+   ],
+   [
+    450,
+    8
+   ],
+   [
+    532,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    532,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    179,
+    2
+   ],
+   [
+    321,
+    6
+   ],
+   [
+    373,
+    1
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    373,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    451,
+    1
+   ],
+   [
+    195,
+    8
+   ],
+   [
+    170,
+    4
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    528,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    528,
+    1
+   ],
+   [
+    340,
+    1
+   ],
+   [
+    321,
+    10
+   ],
+   [
+    522,
+    1
+   ],
+   [
+    561,
+    5
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    522,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    561,
+    2
+   ],
+   [
+    387,
+    1
+   ],
+   [
+    433,
+    7
+   ],
+   [
+    458,
+    1
+   ],
+   [
+    436,
+    7
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    458,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    436,
+    6
+   ],
+   [
+    153,
+    6
+   ],
+   [
+    171,
+    10
+   ],
+   [
+    221,
+    4
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    415,
+    3
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    221,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    415,
+    9
+   ],
+   [
+    467,
+    1
+   ],
+   [
+    271,
+    10
+   ],
+   [
+    271,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    271,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    320,
+    9
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    170,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    415,
+    1
+   ],
+   [
+    106,
+    11
+   ],
+   [
+    321,
+    11
+   ],
+   [
+    493,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    493,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    448,
+    8
+   ],
+   [
+    345,
+    4
+   ],
+   [
+    207,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    207,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    195,
+    4
+   ],
+   [
+    340,
+    7
+   ],
+   [
+    340,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    340,
+    1
+   ],
+   [
+    436,
+    1
+   ],
+   [
+    511,
+    10
+   ],
+   [
+    472,
+    1
+   ],
+   [
+    415,
+    5
+   ],
+   [
+    472,
+    1
+   ],
+   [
+    415,
+    2
+   ],
+   [
+    340,
+    1
+   ],
+   [
+    228,
+    1
+   ],
+   [
+    390,
+    1
+   ],
+   [
+    228,
+    1
+   ],
+   [
+    390,
+    1
+   ]
+  ],
+  "preparation_length": 415,
+  "filled": 64,
+  "family_bound": 899,
+  "preparation_prefix_checks": 415,
+  "off_prefixes_unchanged": true,
+  "predicted_holes": [
+   7395,
+   9090,
+   10195,
+   12812,
+   13950,
+   14919,
+   14920,
+   16189,
+   19918,
+   21061,
+   21642,
+   21745,
+   25383,
+   25502,
+   26469,
+   29463,
+   29472,
+   30438,
+   30439,
+   32057,
+   32160,
+   33848,
+   33979,
+   34630,
+   39751,
+   42139,
+   42250,
+   42363,
+   42364,
+   45189,
+   46161,
+   47153,
+   47898,
+   47905,
+   47906,
+   47908,
+   49552,
+   53204,
+   53374,
+   53377,
+   56122,
+   62063,
+   73534,
+   79112,
+   79113,
+   79804,
+   79806,
+   81637,
+   82433,
+   82707,
+   83430,
+   83655,
+   83657,
+   83659,
+   83661,
+   83662,
+   83747,
+   84361,
+   86336,
+   86946,
+   86948,
+   87193,
+   87252,
+   87278,
+   87281,
+   87287,
+   87288,
+   87289,
+   88551,
+   90398,
+   90871,
+   91415,
+   91416,
+   91688,
+   91981,
+   93007,
+   94249,
+   95880,
+   95911,
+   98428,
+   101044,
+   101053,
+   102568,
+   103663,
+   104827,
+   105359,
+   105360,
+   105525,
+   106036,
+   106169,
+   106210,
+   110240,
+   110490,
+   110494,
+   112207,
+   112209,
+   112211,
+   112212,
+   112216,
+   112227,
+   112228,
+   112233,
+   112234,
+   112235,
+   112367,
+   112407,
+   113846,
+   114178,
+   115773,
+   115776,
+   115786,
+   115789,
+   115790,
+   115792,
+   115794,
+   116813,
+   116815,
+   117641,
+   117642,
+   117651,
+   117652,
+   117653,
+   117654,
+   117655,
+   119124,
+   119126,
+   119129,
+   119133,
+   119137,
+   119141,
+   119142,
+   119143,
+   119144,
+   119145,
+   119146,
+   119147,
+   119148,
+   119149,
+   119151,
+   119152,
+   119153,
+   119154,
+   119155,
+   119156,
+   119157,
+   119158,
+   119159,
+   119160,
+   119161,
+   119163,
+   119164,
+   119167,
+   119168,
+   119169,
+   119170,
+   119171,
+   119172,
+   119173,
+   119175,
+   119176,
+   119177,
+   119178,
+   119181,
+   119191,
+   119192,
+   119193,
+   119194,
+   119270,
+   120179,
+   120739,
+   122885,
+   122886,
+   127861,
+   127882,
+   127889,
+   128877,
+   128878,
+   128879,
+   128884,
+   128885,
+   128886,
+   128888,
+   128889,
+   128890,
+   128895,
+   128896,
+   128897,
+   128898,
+   128899,
+   128900,
+   128901,
+   128902,
+   128903,
+   128904,
+   128905,
+   128906,
+   128907,
+   128908,
+   128909,
+   128910,
+   131466,
+   133182,
+   134286,
+   134287,
+   134291,
+   134912,
+   135393,
+   135603,
+   135774,
+   135958,
+   136089,
+   136275,
+   136752,
+   136758,
+   136759,
+   137478,
+   137776,
+   137996,
+   139299,
+   139519,
+   140317,
+   140746,
+   140747,
+   140757,
+   140777,
+   141713,
+   141885,
+   143854,
+   143855,
+   148339,
+   150728,
+   150735,
+   150737,
+   151959,
+   152017,
+   152018,
+   152076,
+   153433,
+   153434,
+   154162,
+   154559,
+   154564,
+   154590,
+   154855,
+   154856,
+   155476,
+   155485,
+   155730,
+   155735,
+   155737,
+   157699,
+   157905,
+   158748,
+   158814,
+   159452,
+   159637,
+   163138,
+   163139,
+   163143,
+   163144,
+   163622,
+   163623,
+   164491,
+   165631,
+   167220,
+   167225,
+   167686,
+   167687,
+   170066,
+   171768,
+   172650,
+   173647,
+   174139,
+   174471,
+   175461,
+   176237,
+   176527
+  ],
+  "predicted_equals_actual": true,
+  "target_vacant_after_preparation": true,
+  "after_preparation_digest": "2a6705a5deb9edb213bdac4d2667434be48040e4737b85dfcb3989ba97d5faf2",
+  "suffix_length": 2225,
+  "depth_one_prefix_checks": 2225,
+  "end_digest": "d8aa72820bc09696a5f9a3f9994306e6966789857f3aac113ba865196f1661e6",
+  "restored_pieces": [
+   64184,
+   64185,
+   64188,
+   64508,
+   64509,
+   64510,
+   64512,
+   64513,
+   64514,
+   64515,
+   68409,
+   68411,
+   68412,
+   68422,
+   68423,
+   68428,
+   68429,
+   70351,
+   70352,
+   70353,
+   70354,
+   70355,
+   70356,
+   70357,
+   70362,
+   70363,
+   70364,
+   70366,
+   70367,
+   70368,
+   70369,
+   70370,
+   70371,
+   70377,
+   70378,
+   70379,
+   70380,
+   70381,
+   70382,
+   70383,
+   70384,
+   70385,
+   70386,
+   70387,
+   70388,
+   70389,
+   70390,
+   70391,
+   70392,
+   70393,
+   70394,
+   70396,
+   70397,
+   70398,
+   70399,
+   70400,
+   82596,
+   82597,
+   82598,
+   82599,
+   82600,
+   82606,
+   82607,
+   82608,
+   82609,
+   82610,
+   82611,
+   82612,
+   82613,
+   82614,
+   82615,
+   82617,
+   82619,
+   82622,
+   82624,
+   82625,
+   82627,
+   82628,
+   82637,
+   82639,
+   96501,
+   96543,
+   96544,
+   114270,
+   114272,
+   114275
+  ],
+  "restored": 86,
+  "pieces_taken_off": [],
+  "off_after": 191,
+  "remaining_off_poses_equal_source": true,
+  "suffix_file": "research/jumbling/theory/results/e-chain-104/11-word-restore-86.json"
+ },
+ "seconds": 4450,
+ "trimmed": "demo.source_pose_table and demo.suffix_word removed after the run: the table is regenerated by the seeded generator from X0 (its digest is demo.source_digest); the suffix equals demo.suffix_file"
+}
