@@ -31,8 +31,10 @@ Round 10 performs each three-cycle of the lattice cascade with one application o
 word: a construction then needs at most 50,560,184 twists for every input (not implemented). Setting the frames
 during the position loop instead fails as proposed. Round 11 sets the frames inside the position loop with two
 returns, uses the fewest three-cycles and clears the remaining frames two at a time: a construction then needs at
-most 20,866,844 twists for every input, within a factor of about 1.33 of the fewest seed applications possible with
-these seeds (not implemented).
+most 20,866,844 twists for every input (not implemented), about 1.33 times the fewest twists that any cascade
+solving one orbit at a time with conjugates of these seeds spends on them. Round 12, a closing audit, stated the
+lattice-phase results as one proposition, qualified that comparison, corrected nine other statements of these pages
+and the summaries, and added the code of the round 9 checks.
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
@@ -55,7 +57,7 @@ v4, which had no fallback.
 | `data/short-cycles.json.gz` | The shortest verified element per orbit and kind that `short_cycles.py` found, with its word |
 | `data/short-cycles-2.json.gz` | The same for `short_cycles2.py` on the orbits O00, O02, O06, O15, O17, O28 and O29 |
 | `scripts/realign/` | Round 7: `realign.py` relocates the shorter candidates onto the cascade's buffers, certifies them on all slots and computes the bound; `restore_realigned.py` runs the stage 03 cascade with them and writes records that the stage 03 checker replays; `SENIOR-REVIEW.md` section 12 |
-| `data/realign.json.gz` | The certified replacement per orbit (candidate, relocation, word, length, collateral) and the bound, as `realign.py` wrote it |
+| `data/realign.json.gz` | The certified replacement per orbit (the source of the candidate, the lengths of the candidate, the relocation and the final word, the final word, the flags and the collateral orbits) and the bound, as `realign.py` wrote it; it holds no asset digests, relocation words or buffer labels |
 | `runs/realigned-cascade/` | The round 7 run on the committed synthetic inputs: logs, the summaries of the run and of the control run with no seed replaced, the stage 03 checker's report, and the commands with the SHA-256 of the files not stored |
 | `IMPORT-MANIFEST.json` | The files stored gzipped, with the SHA-256 of their uncompressed bytes |
 

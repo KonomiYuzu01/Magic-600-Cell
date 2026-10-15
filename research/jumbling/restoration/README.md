@@ -20,8 +20,9 @@ On 15 October 2026 the owner set what counts as restored
 
 ## Results
 
-Every result below was checked by an independent replay on the exact simulator: every twist is a menu element and
-admissible, and every recorded state digest is reached.
+Every result below was checked independently. The off-lattice words and the corrections were replayed on the exact
+simulator: every twist is a menu element and admissible, and every recorded state digest is reached. The retained
+cascade was evaluated as an exact permutation program on all 259,800 sticker labels.
 
 | Input | Off the lattice at the start | Off-lattice phase | Lattice phase | Status |
 | --- | ---: | --- | --- | --- |
@@ -86,7 +87,7 @@ new standard removes from the earlier programme, and the reproduction commands.
 | Gap | What is missing | Status |
 | --- | --- | --- |
 | M1 | A construction from the state alone with a bound on its length. Bare existence is proved (exhaustive search), and with it as a fallback the method is complete (Theorem M\*), which the driver implements; a bound for every state exists if and only if R(I_a) is finite | **open**; the core gap |
-| M2 | The committed lattice cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, about 5 to 7 years at one twist per second. With 31 of its 35 seeds replaced by shorter relocated elements (round 7), it restores the two synthetic inputs in 4.5 × 10^7 twists, about 1.4 years, and its cascade needs at most 71,516,526 twists for every input (the corrections at most 25,852 more), or at most 4,841,151 actions for a person who replays 70 stored macros; with retained words only, some input needs at least 224,601 twists (proved, model review). A construction that applies the seeds fewer times needs at most 20,866,844 twists for every input, within a factor of about 1.33 of the fewest seed applications possible with these seeds (proved, model review; not implemented). Against "a person can replicate it" | **open**; bounds **proved** |
+| M2 | The committed lattice cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, about 5 to 7 years at one twist per second. With 31 of its 35 seeds replaced by shorter relocated elements (round 7), it restores the two synthetic inputs in 4.5 × 10^7 twists, about 1.4 years, and its cascade needs at most 71,516,526 twists for every input (the corrections at most 25,852 more), or at most 4,841,151 actions (single twists and applications of 70 stored macros); with retained words only, some input needs at least 224,601 twists (proved, model review). A construction that applies the seeds fewer times needs at most 20,866,844 twists for every input (proved, model review; not implemented), about 1.33 times the fewest twists that any cascade solving one orbit at a time with conjugates of these seeds spends on them. Against "a person can replicate it" | **open**; bounds **proved** |
 | E1 | Coverage: deep scrambles at the I_a@40 scale (about 94,000 off pieces) were not run with the method | **not run** |
 | E2 | Review of the proofs. The senior model review of 15 October 2026 checked stages 08 and 09 and the A_J upper bound, proved Lemma C as Theorem C and corrected Lemma CM and Theorem R ([record](09-general-method/SENIOR-REVIEW.md)) | model review **done**; human review **not done** |
 

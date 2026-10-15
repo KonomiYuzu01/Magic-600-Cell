@@ -1231,7 +1231,7 @@ The committed driver's alignment assertion is therefore stronger than needed. Th
 - **Shortest.** A greedy relocation is not provably shortest. The result is the shortest among the certified candidates.
 
 What the integrator did:
-- `realign.py` records and checks every part of the certificate except α, β and γ. It records only whether they are aligned.
+- `realign.py` checks each replacement's action on all slots and its collateral against the loaded assets. It records the final word, the source of the candidate, the lengths of the candidate, the relocation and the final word, the flags (legal, pure, aligned fibres, cube identity on the orbit) and the collateral orbits. It does not archive the asset and source digests, the relocation word, the ordered triple or the buffer labels, and of α, β and γ it records only whether they are aligned (corrected in round 12, R12-05).
 - The runner asserts the committed order and passes the certified collateral as `allowed`.
 - Both stored start arrays, hashed independently as little-endian int64 bytes, equal the committed digests (`runs/realigned-cascade/commands.txt`).
 - The checker's report says `pass`, with both runs restored to the identity and their lengths matching.
@@ -1239,15 +1239,16 @@ What the integrator did:
 Not done:
 - The exhaustive frame check of each replaced orbit: every value at B, at A and at other positions, and every single in H_o′. R7-01 proves both coverage statements.
 - Separate counts of stars, pairs and singles in the run records.
+- Archiving the asset and source digests, the relocation words, the ordered triples and the buffer labels with each replacement (R12-05).
 
 ### R7-03: the bounds with the replaced seeds (proved, model review; computed by the integrator)
 
 - **The formula.** The M2-04 formula holds with the certified lengths s', relocation included. It bounds every input, and its expectation bounds a uniform input on G. Tree depths and return lengths do not change.
 - **The kit as it runs.** The kit does not build the shorter single of M2-03. Its single at C is a commutator of a pair at B and a carried pair, of at most K_o = 2P_B + 2P = 12s + 8h + 8d twists on O06 and O34. With K_o in place of the M2-03 constants, the formula bounds the cascade as it runs.
-- **With the committed seeds** (the review): the cascade as it runs needs at most 356,666,844 twists for every input (231,433,387 on average). The construction needs at most 356,565,166 (231,334,003). The earlier bound of 771,844,512 is safe but loose.
-- **With the replaced seeds** (the integrator, from the certified lengths): the construction needs at most 71,514,544 twists (46,189,354 on average). The cascade as it runs needs at most 71,516,526 (46,191,246).
-- **Actions.** With a library of the 35 seeds and their inverses, the number of actions does not depend on the seed lengths. The construction needs at most 4,840,993 actions (3,098,745 on average), and the cascade as it runs at most 4,841,151 (3,098,883). Creating the 70 macros costs 2Σs' = 14,048 twists (128,076 with the committed seeds).
-- **Scope.** The averages are over uniform inputs on G. The committed synthetic inputs are not uniform (M2-05).
+- **With the committed seeds** (the review): the cascade as it runs needs at most 356,666,844 twists for every input (expected length at most 231,433,387). The construction needs at most 356,565,166 (expected length at most 231,334,003). The earlier bound of 771,844,512 is safe but loose.
+- **With the replaced seeds** (the integrator, from the certified lengths): the construction needs at most 71,514,544 twists (expected length at most 46,189,354). The cascade as it runs needs at most 71,516,526 (expected length at most 46,191,246).
+- **Actions.** With a library of the 35 seeds and their inverses, the number of actions does not depend on the seed lengths. The construction needs at most 4,840,993 actions (expected number at most 3,098,745), and the cascade as it runs at most 4,841,151 (expected number at most 3,098,883). Creating the 70 macros costs 2Σs' = 14,048 twists (128,076 with the committed seeds).
+- **Scope.** The expected values are upper bounds for a uniform input on G, not exact means (corrected in round 12, R12-07; T11-07). The committed synthetic inputs are not uniform (M2-05).
 
 The bounds with the replaced seeds (from the repository root). Output:
 
@@ -1326,7 +1327,7 @@ print('creation70',sum(2*s for s in SP.values()))
   - uniform:1: 45,009,802 twists (committed: 229,763,734), 191,143 factors;
   - uniform:2: 44,940,982 twists (committed: 230,484,810), 191,089 factors.
 - **Control.** The same runner with no seed replaced reproduces the committed run exactly: 229,763,734 and 230,484,810 twists, 190,925 and 191,093 factors.
-- **Independent replay.** The stage 03 checker (`checker/verify_restore.py`, which shares no code with the restorer) evaluates the solutions with its own code. It passes: both inputs are restored to the identity, and the lengths agree. The stored start arrays, hashed independently, equal the committed inputs (R7-02).
+- **Independent check.** The stage 03 checker (`checker/verify_restore.py`, which shares no code with the restorer) evaluates the solutions with its own code. It passes: both inputs are restored to the identity, and the lengths agree. The stored start arrays, hashed independently, equal the committed inputs (R7-02).
 - **What the inputs are.** They are those of M2-05: valid examples, not uniform samples of G.
 
 Per orbit, on uniform:1 (sorted by the committed length; "s_o" is the seed with its relocation, in primitives):
@@ -1469,11 +1470,11 @@ Scope:
 
 Gap M1 asks for a bound on the length of a fallback step. M1-09 shows that a uniform bound exists if and only if R(I_a), the set of configurations reachable from solved, is finite. That is open (Card 5 Q1.1, open problem X1). Round 9 asked the senior review to decide X1, or else to prove the strongest partial results and say what they give for M1.
 
-X1 and X2 stay open, and Proposition HB is not extended beyond the model orbits 0 to 9. The review returned five findings, all verified:
+X1 stays open. X2 is closed for I_a in its stated form, a repeatable word, by T9-02, and Proposition HB still covers only the model orbits 0 to 9 (corrected in round 12, R12-06). The review returned five findings, all verified:
 - one correction to stage 04 (T9-01, `major`);
 - four results (T9-02 to T9-05, `minor`).
 
-The integrator re-ran the three inline computations (T9-01, T9-02 and T9-04), got the reported outputs, and adopted all five findings.
+The integrator re-ran the three exact computations (T9-01, T9-02 and T9-04), got the reported outputs, and adopted all five findings. Their code was added to this section in round 12 (R12-04; "Reproduction (round 9)" below).
 
 ### T9-01: the extended closure of stage 04 drops a reachable transition (proved, model review; the witness re-run by the integrator)
 
@@ -1532,7 +1533,7 @@ The integrator re-ran the exact check of the constants and got r = 1/512, R = 8 
 
   Every one of these caps is straddled.
 - **The argument.** Retained letters keep heights, and a jumble changes a height by at most 2 (the proof of Corollary FN1 (c)). So reaching height 8 in one letter would need one of these caps, and no single letter reaches height 8 from H6.
-- **What it adds.** The check is exact and uses neither the floating-point 3-face graph nor component membership. It makes that part of the H6 evidence of stage 04 a certificate.
+- **What it adds.** The check is exact and uses neither the floating-point 3-face graph nor component membership. It makes that part of the H6 evidence of stage 04 an exact computation that can be replayed (the code is below). It was called a certificate before its code was preserved (corrected in round 12, R12-04).
 - **Scope.** It says nothing about longer words; a longer construction would first have to change the blocking.
 
 ### T9-05: bounded starting heights (proved, model review)
@@ -1545,15 +1546,138 @@ The integrator re-ran the exact check of the constants and got r = 1/512, R = 8 
 
 ### Where X1 stands after round 9
 
-- X1 and X2 stay open. Proposition HB still covers only the model orbits 0 to 9.
+- X1 stays open. X2 is closed for I_a in its stated form by T9-02 (corrected in round 12, R12-06). Proposition HB still covers only the model orbits 0 to 9.
 - **New results:**
   - a uniform period for words repeated without end (T9-02);
-  - an exact certificate that one letter cannot reach height 8 from H6 (T9-04);
+  - an exact computation, replayable from the code below, that one letter cannot reach height 8 from H6 (T9-04);
   - the obstruction for arguments from components alone (T9-03);
   - a finite but unknown maximum b(m) (T9-05).
 - **Next (not run):**
   - repair the closure of T9-01 and prove that it simulates the puzzle;
   - build an exact 3-face graph of H6, to test whether its 78-piece component can gain new members (T9-03).
+
+### Reproduction (round 9)
+
+Added in round 12 (R12-04). From the repository root, with Python 3.13 and NumPy 2.5; each script runs in under ten seconds.
+
+T9-01, the witness. Output:
+
+```text
+0 3097
+11 2702
+reachable newly holding out grip is blocked: confirmed
+```
+
+```python
+import sys
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling']
+import sim, restore as RS
+from sim.kernel import Evaluator, pullback_form
+C = sim.get_context()
+M = RS.menu('I_a')
+s = sim.State(C, filtered=False, menu=M)
+p = 12443
+assert int(C.data.orbit_id[p]) == 10
+assert 0 not in C.data.signature(p) and 11 in C.data.signature(p)
+def inner(c):
+    return [int(q) for q in C.data.cap_members(c)
+            if int(C.data.orbit_id[q]) in {0,1,2,3,6}]
+a, b = inner(0), inner(11)
+E0, E1 = RS.element(M,0,12), RS.element(M,11,41)
+for c, E in [(0,E0),(11,E1)]:
+    assert E in [x.matrix for x in M.for_cap(c)]
+    out = s.apply(sim.Twist(C,c,E,'menu',{'menu':M.name}), journal=False)
+    assert out.applied
+    print(c, out.moved)
+    if c == 0:
+        assert int(s.pose_id[p]) == 0
+assert len(a) == len(b) == 68
+assert all(s.pose(q) == E0 for q in a)
+assert all(s.pose(q) == E1 for q in b)
+def classify(q,c):
+    return Evaluator(pullback_form(s.pose(q),C.data.N[c])).classify(C.regions.vform(q))[0]
+assert classify(p,0) == 'in'
+assert 3468 in b and int(C.data.orbit_id[3468]) == 6
+assert classify(3468,0) == 'straddle'
+print('reachable newly holding out grip is blocked: confirmed')
+```
+
+T9-02, the constants. Output:
+
+```text
+r=1/512, R=8, K= 281749955297281
+```
+
+```python
+import sys
+sys.path.insert(0, 'research/jumbling')
+import sim
+from exact import Q5 as Q
+C=sim.get_context(); d=C.data; zero=Q(0); slack=None
+for V in C.regions.rep_vertices:
+    c=[sum((v[i] for v in V),zero)/Q(len(V)) for i in range(4)]
+    for v in V:
+        assert (Q(64)-sum((x*x for x in v),zero)).sign()>0
+    for n in d.N:
+        t=sum((n[i]*c[i] for i in range(4)),zero)
+        a=t-d.KAPPA
+        assert a.sign()!=0
+        if a.sign()<0: a=-a
+        b=d.NN-t
+        assert b.sign()>0
+        for z in (a,b):
+            if slack is None or (z-slack).sign()<0: slack=z
+assert len(C.regions.rep_vertices)==36
+assert slack==Q(-8,8,625)
+assert (Q(25)-d.NN).sign()>0
+assert (slack-Q(5,0,512)).sign()>0
+print('r=1/512, R=8, K=',4097**4)
+```
+
+T9-04, the caps of H6. It asserts the digest of H6 and its height counts, classifies every height-6 piece exactly against every cap of another branch, and asserts the six containment counts and the six straddling witnesses. Output:
+
+```text
+{274: 79414, 326: 84169, 340: 71323, 430: 106423, 434: 13070, 463: 165151}
+```
+
+```python
+import gzip,json,sys
+from pathlib import Path
+from collections import Counter
+import numpy as np
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import sim,trees as T
+from sim.kplus import matrix_from_json
+from sim.kernel import Evaluator,pullback_form
+p=Path('research/jumbling/restoration/04-card5-lattice-invariants/data/t-T723x433-12.json.gz')
+tab=json.loads(gzip.decompress(p.read_bytes()))
+C=sim.get_context(); s=sim.State(C,filtered=False)
+mats=[matrix_from_json(m) for m in tab['poses']]
+s.pose_id[:]=np.array([s._intern_matrix(m) for m in mats],np.int32)[tab['pose_id']]
+assert s.digest()==tab['digest']=='fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39'
+lf={i:T.factors(s._pose_matrix(i))[0] for i in set(s.pose_id.tolist())}
+h={i:T.dist(l) for i,l in lf.items()}
+assert Counter(h[int(i)] for i in s.pose_id)=={0:57042,2:115850,4:4150,6:78}
+top=[q for q,i in enumerate(s.pose_id) if h[int(i)]==6]
+br={q:T.branch(lf[int(s.pose_id[q])]) for q in top}
+assert set(br.values())=={4}
+forms={q:C.regions.vform(q) for q in top}; caps={}
+for c in range(600):
+    cb=T.branch(tuple(C.data.N[c])); ev={}
+    for q in top:
+        if cb==br[q]: continue
+        i=int(s.pose_id[q])
+        if i not in ev: ev[i]=Evaluator(pullback_form(s._pose_matrix(i),C.data.N[c]))
+        if ev[i].classify(forms[q])[0]=='in': caps.setdefault(c,[]).append(q)
+assert {c:len(q) for c,q in caps.items()}=={274:78,326:78,340:78,430:78,434:59,463:70}
+w={}
+for c in caps:
+    cl=s.classify(c,need_inside=False,stop_at_straddle=True)
+    assert cl.straddle is not None and not cl.uncertain
+    w[c]=int(cl.straddle['piece'])
+assert w=={274:79414,326:84169,340:71323,430:106423,434:13070,463:165151}
+print(w)
+```
 
 ## 15. A shorter construction for the lattice phase (round 10)
 
@@ -1873,9 +1997,9 @@ An exact average needs fixed tie-breaking for transports, factorizations, return
 ### Where M2 stands after round 11
 
 - **Proved (model review).**
-  - A construction of R needs at most 20,866,844 twists for every input (at most 17,010,356 on average over G), or 4,655,642 actions. That is about 93 times the lower bound for retained words, and within a factor of about 1.33 of the fewest seed applications that any construction from conjugates of these seeds needs.
+  - A construction of R needs at most 20,866,844 twists for every input (at most 17,010,356 on average over G), or 4,655,642 actions. That is about 93 times the lower bound for retained words, and about 1.334 times the floor of T11-06: the twists charged for the seeds by any cascade that solves one orbit at a time with conjugates of these seeds. The comparison does not cover a construction that uses the collateral of earlier seeds on purpose, or free cancellation (corrected in round 12, R12-01).
   - The corrections add at most 25,852 twists.
-- **What this means.** With these seeds and a cascade that solves one orbit at a time, a better schedule can save at most about a quarter of the bound, counted in seed charges. A larger gain needs shorter seeds, above all for O10, O28, O03, O01 and O18, or a construction that is not built from conjugates of the seeds.
+- **What this means.** With these seeds and a cascade that solves one orbit at a time, a better schedule can save at most about a quarter of the bound, counted in seed charges. A larger gain needs shorter seeds, above all for O10, O28, O03, O01 and O18, or a construction outside that class: one not built from conjugates of the seeds, one that uses their collateral on purpose, or one whose conjugators cancel against the seeds.
 - **Implemented.** The kit as it runs is unchanged: its bound stays 71,516,526 twists, and the measured runs 4.5 × 10^7 (section 12).
 - **Next (not run).**
   - Implement the schedule of T11-04 and T11-05 with the acceptance tests above, and replay the two synthetic inputs with the stage 03 checker.
@@ -2232,7 +2356,87 @@ formula = (n - H(n) + H(n // 2) / 2 - F(1, n - 1)) / 2
 print(len(dist), max(dist.values()), mean, formula, mean == formula)
 ```
 
-## 17. What changed in METHOD.md
+## 17. Closing audit (round 12)
+
+Rounds 9 to 11 changed METHOD.md and the summaries again on the same day, and twice lowered the bound for a construction of the lattice cascade. Round 12 audited them before the repository is shown to other people. It asked three questions:
+- **Q1.** Does every claim labelled proved, certificate, computed or measured, in METHOD.md, the four READMEs, the open problems X1 and X2 and the wiki log, have a source that supports it at that strength, and is every number attached to the right object?
+- **Q2.** Can the results on the lattice phase be stated as one proposition?
+- **Q3.** Which sentences of the root README and of the jumbling overview could a careful reader with a mathematical background take as stronger than the evidence?
+
+A Codex senior review returned ten findings, all verified:
+- one statement for Q2, R12-01 (`major`, because it changes a published comparison);
+- nine defects for Q1 and Q3, R12-02 to R12-10: five `major` and four `minor`.
+
+It found that every published bound of the lattice phase reproduces exactly. The integrator checked each finding against the cited sources and adopted all ten. It re-ran the three computations of round 9, whose code is now in section 14, and the split of the action bound below. The corrections are made in METHOD.md (the last section lists the changes), in the summaries, and in sections 12, 14 and 16. The wiki log is append-only, so its entry for this round corrects the earlier entries.
+
+### R12-01: the lattice phase in one statement (proved, model review; re-computed by the integrator)
+
+**Proposition.** Fix the execution trees, the return words and the round 7 selection of the 35 seeds, 31 of them replaced. Each seed cycles its three buffers on its own orbit, with collateral only on orbits that come later in the validated cascade order; on D5 and A5 the pairs are re-indexed. Then for every retained configuration in G, the retained cascade R alone needs at most:
+
+| R built as | Every input, twists | Uniform input on G, expected twists at most | Every input, actions | Implemented |
+| --- | ---: | ---: | ---: | --- |
+| the kit as it runs (round 7) | 71,516,526 | 46,191,246 | 4,841,151 | yes, as a separate runner |
+| the construction with the shorter single (round 7) | 71,514,544 | 46,189,354 | 4,840,993 | no |
+| direct three-cycles (round 10) | 50,560,184 | 32,201,480 | 4,675,165 | no |
+| the schedule of round 11 | 20,866,844 | 17,010,356 | 4,655,642 | no |
+
+- **Actions** count single twists and applications of stored macros. The library is the 35 seeds and their inverses, and creating its 70 macros costs another 14,048 twists. For the kit, the 4,841,151 actions are 370,713 macro applications and 4,470,438 single twists.
+- **The corrections.** For a reachable lattice input the spanning correction library adds at most 25,852 twists (AU-05): 71,542,378 in all with the kit, and 20,892,696 with the schedule of round 11.
+- **The schedule of round 11** needs all of its parts, including the positions that start in place with wrong frames and the buffer cleanup. A new constructor of cycles alone does not give its bound.
+- **What runs.** The kit with the replaced seeds is `restore_realigned.py`, a runner separate from the driver: the lattice phase of `gdrive.py` (`restore_lattice_late.py`) runs the committed cascade, which needs at most 356,666,844 twists by the exact count of R7-03. The kit was measured on the two committed synthetic inputs, which are not uniform on G: 45,009,802 and 44,940,982 twists.
+- **The floor of T11-06** concerns cascades that solve one orbit at a time with conjugates of the seeds and do not use the collateral of earlier seeds on purpose. For them some input needs at least 95,024 seed applications, or 15,643,520 twists charged for the seeds. This is not a lower bound on the length of a freely reduced word. The bound of round 11 is 5,216,711/3,910,880, about 1.334, times this floor.
+- **The general lower bound.** Some input needs at least 224,601 retained twists (M2-02). It counts retained words only; a solution through jumble twists is not covered.
+
+What changed: the summaries said "within a factor of about 1.33 of the fewest seed applications possible with these seeds", and the wiki said "any construction from conjugates of the same seeds". The summaries now name the class of cascades, and the wiki entry of this round corrects the earlier one. METHOD.md says that, within that class, a larger gain needs shorter seeds; a construction outside the class is not covered by the floor.
+
+### Corrections (R12-02 to R12-10)
+
+| Finding | Severity | What was wrong | Correction |
+| --- | --- | --- | --- |
+| R12-02 | `major` | The root README and the jumbling overview said that the puzzle's group becomes infinite. The study of 9 October proves that a jumble twist and K⁺ generate an infinite group of rotations, a statement about grip closure, not about reachable configurations; whether R(I_a) is finite is open (X1). | Both say that the rotations of the caps now generate an infinite group, and that whether the menu I_a reaches infinitely many configurations is open. |
+| R12-03 | `major` | The root README said that every twist was replayed on the exact simulator by an independent checker, and the restoration overview that every result was checked by an independent replay on the exact simulator. `verify_late.py` replays the off-lattice words and the corrections on the exact simulator, but evaluates the retained cascade as a permutation program (lines 344 to 348). | The root README, both jumbling READMEs and METHOD.md section 6.1 now say: checked independently; the off-lattice words and the corrections were replayed on the exact simulator, and the retained cascade was evaluated as an exact permutation program on all 259,800 sticker labels. "Replayed by the stage 03 checker" becomes "checked by". |
+| R12-04 | `major` | Section 14 said that the integrator re-ran three inline computations, but it held no code, and it called T9-04 a certificate. The older `flt.py` of stage 04 selects caps by whole components of a floating-point 3-face graph, so it does not reproduce T9-04, which also finds caps 434 and 463 that hold only 59 and 70 of the 78 pieces. | Section 14 now holds the code of T9-01, T9-02 and T9-04 with their outputs, re-run from the repository root; T9-04 now also asserts the six witnesses. T9-04 is called an exact computation that can be replayed, not a certificate. |
+| R12-05 | `major` | R7-02 said that `realign.py` records and checks every part of the certificate except α, β and γ, and the 09 README that `data/realign.json.gz` holds the relocation. The file has no asset or source digests, relocation words, ordered triples or buffer labels; of the relocation it has only the length. | R7-02 and the 09 README list what is checked and recorded, and what is not archived. The action and length results are not affected. |
+| R12-06 | `major` | Section 14 said twice that X1 and X2 stay open, while the open problems close X2 for I_a by T9-02. | X1 stays open; X2 is closed for I_a in its stated form (a repeatable word) by T9-02; Proposition HB still covers only the model orbits 0 to 9. |
+| R12-07 | `minor` | Several averages in METHOD.md and R7-03 read as exact means. They are upper bounds on the expected length (T11-07). | "Expected length at most …, for a uniform input on G". |
+| R12-08 | `minor` | The root README said that no step knocks a lattice piece off, and the overview said "no collateral". By M1-03 the first jumble letter of each step at stop62 takes at least 3,097 − 860 = 2,237 lattice pieces off for a while. | The root README: each step ends with every piece that was on the lattice back on it. The overview: no new off-lattice pieces at the end of any step. |
+| R12-09 | `minor` | The overview and the wiki called the action counts "macro actions". They count single twists too: the kit's 4,841,151 actions are 370,713 macro applications and 4,470,438 single twists. | "Actions (single twists and stored-macro applications)"; the creation of the library is charged apart. |
+| R12-10 | `minor` | METHOD.md and the wiki called `test_fallback.py` two end-to-end runs. Both tests run without `--lattice`: they reach the lattice and pass `verify_u`, with the heuristic steps skipped or timed out, and do not run the lattice phase. | METHOD.md section 3 says so. |
+
+### Reproduction (round 12)
+
+The split of the action bound of R7-03 into macro applications and single twists, and the ratio of R12-01 (from the repository root). Output:
+
+```text
+construction seed calls 370697 other twists 4470296 actions 4840993
+kit seed calls 370713 other twists 4470438 actions 4841151
+ratio 5216711/3910880 1.3338969745939533
+with C 71542378 20892696
+```
+
+```python
+import gzip,json
+from fractions import Fraction as F
+T=json.load(gzip.open('assets/execution_trees.json.gz','rt'))
+H={0:2,3:2,6:10,8:2,11:2,17:5,22:2,25:2,28:5,32:2,34:60}
+h={0:5,3:3,6:4,8:3,11:3,17:2,22:3,25:2,28:2,32:2,34:3}
+for single in ('construction','kit'):
+  seed=0; other=0
+  for t in T:
+    o=t['orbit'];N=len(set(t['positions']))+2;d=max(t['depth'])
+    seed+=3*N//2-3; other+=(3*N//2-3)*2*d
+    if o in H:
+      seed+=(N-2)*4+2; other+=(N-2)*(2*h[o]+4*d)+2*h[o]
+      if o in (6,34):
+        if single=='construction': seed+=4; other+=(16 if o==6 else 10)
+        else:
+          PB=(2,2*h[o]); P=(4,2*h[o]+4*d); seed+=2*(PB[0]+P[0]); other+=2*(PB[1]+P[1])
+  print(single,'seed calls',seed,'other twists',other,'actions',seed+other)
+print('ratio',F(20866844,15643520),float(F(20866844,15643520)))
+print('with C',71516526+25852,20866844+25852)
+```
+
+## 18. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -2268,3 +2472,8 @@ print(len(dist), max(dist.values()), mean, formula, mean == formula)
 - After round 11 (section 16):
   - Section 2, phase 2, and the rows for the lattice-phase length and its lower bounds in section 3 give the bound of the construction with fewer seed applications and the floor for constructions from seed conjugates (T11-05, T11-06).
   - Section 5, gap M2: a new item on fewer seed applications, and the next experiments (T11-01 to T11-07).
+- After round 12 (section 17):
+  - Section 2, phase 2: the expected lengths are upper bounds (R12-07), the comparison of round 11 with the floor of T11-06 names its class of cascades (R12-01), and the kit with the replaced seeds is a runner separate from the driver, whose lattice phase runs the committed cascade.
+  - Section 3: the rows for the lattice-phase length and its lower bounds give the expected lengths as upper bounds and the scope of the floor (R12-01, R12-07); the row for replacing a seed says "checked by" the stage 03 checker, and the row for the completeness of the driver says what `test_fallback.py` covers (R12-03, R12-10).
+  - Section 5, gap M2: the upper bounds give expected lengths as upper bounds and count actions as single twists and macro applications, and the item on fewer seed applications gives the scope of the floor and the ratio 1.334 (R12-01, R12-07, R12-09).
+  - Sections 6.1 and 6.3 say how the runs were checked: the off-lattice words and the corrections were replayed on the exact simulator, and the retained cascade was evaluated as an exact permutation program (R12-03).
