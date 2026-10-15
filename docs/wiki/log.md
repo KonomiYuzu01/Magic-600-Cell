@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: frames and empty sections (round 20)
+Senior review round 20 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 25 (model review; the integrator re-ran its two exact programs and ran its own experiments during the round): the frame lemma holds and frames are decided by tree height, so a clean cut is lined only by lattice pieces and pieces of height 2 in its branch; the covering corollary of round 19 holds only inside the occupied body, because jumbled caps leave empty space inside the 600-cell, and section 24 is corrected. Raises at grips that are already out are not bounded in number, so whether left heights are bounded, and so whether R(I_a) is finite, stays open; at the owner's instruction the series stops after this round, without a joint attack.
+
 ## [2026-10-15] update | Jumbling: traps cannot carry the height (round 19)
 Senior review round 19 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 24 (model review; the integrator re-ran its four exact programs and ran its own experiments during the round): both integrator lemmas of round 18 hold, and traps cannot carry the height, so heights without bound need raises at grips that are already out, or fresh raises where the trap condition fails, without end; at most three out grips hold the high pieces at once. A frame lemma of the integrator, not yet reviewed, explains the blocking: a jumble maps exactly the cuts of its own branch onto cuts, so the pieces it moves off the lattice block the cuts of the other branches that run through them, and the raise to height 12 used pieces that the previous raiser had returned to the lattice; whether left heights are bounded, and so whether R(I_a) is finite, stays open.
 

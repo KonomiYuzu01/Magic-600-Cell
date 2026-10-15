@@ -228,7 +228,7 @@ Two mathematical gaps:
     (T9-02). No single letter takes the deep state H6 of stage 04 to height 8 (exact, T9-04). For each m, the
     states whose heights are at most 2m have a finite maximum distance to the lattice, but no value of it is known
     (T9-05).
-  - *Finiteness (rounds 13 to 19).* Still open (`SENIOR-REVIEW.md` sections 18 to 24). Every left height is at most
+  - *Finiteness (rounds 13 to 20).* Still open (`SENIOR-REVIEW.md` sections 18 to 25). Every left height is at most
     6 if and only if P6 holds: at every reachable configuration, every cap of a grip of another branch that wholly
     contains a piece of height at least 6 is straddled (T13-03). P6 is false (round 15, T15-01): after the fixture
     records 1 to 723, four admissible letters take seven pieces of model orbits 19 to 24 to height 8. Grip 593
@@ -264,7 +264,14 @@ Two mathematical gaps:
     fails (T19-08). At most three out grips hold the pieces at once (T19-07). The integrator's frame lemma, not yet
     reviewed, explains the blocking: a jumble at a grip maps exactly the cuts of its branch onto cuts, so a piece
     that it moves off the lattice never straddles a cut of that branch, and the rim raise at 576 used pieces that
-    the raiser 582 had returned to the lattice (E19-1 to E19-3). Open: whether left heights are bounded at all.
+    the raiser 582 had returned to the lattice (E19-1 to E19-3). Round 20 proved the frame lemma, and its covering
+    corollary inside the current occupied body (T20-01); it does not hold inside the 600-cell, because jumbled caps
+    leave empty regions that a clean cut can cross next to the pieces (E20-3). Frames are decided by height: all
+    cuts at height 0, the 120 cuts of the tree branch at height 2 and none from height 4 (T20-02, E20-1), so a clean
+    cut is lined only by lattice pieces and pieces of height 2 in its branch (E20-2). The number of raises at grips
+    that are already out, or fresh raises where TH fails, is not bounded while the pieces stay high, because one
+    such raise and its inverse repeat without end (T20-03), and at the trap before (526, 12) letters at other grips
+    free no other raiser (T20-05). Open: whether left heights are bounded at all.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not

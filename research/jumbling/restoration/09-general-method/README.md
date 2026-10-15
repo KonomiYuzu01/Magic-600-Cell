@@ -47,8 +47,13 @@ raiser acts as one retained letter at it. Round 19 proved both lemmas and showed
 heights without bound need raises at grips that are already out, or fresh raises where the trap condition fails,
 again and again. A lemma of the integrator, not yet reviewed, explains what such raises need: a jumble maps exactly
 the cuts of its own branch onto cuts, so the pieces it moves off the lattice block the cuts of the other branches
-that run through them, and the raise to 12 used pieces that the previous raiser had returned to the lattice. Whether
-left heights are bounded, and so whether the reachable set is finite, stays open.
+that run through them, and the raise to 12 used pieces that the previous raiser had returned to the lattice.
+Round 20 proved that lemma and found that it explains the lining only where pieces lie: jumbled caps leave empty
+space inside the 600-cell, and a clean cut can cross it next to the high pieces. Frames are decided by height, so a
+clean cut is lined only by lattice pieces and pieces of height 2 in its branch, and the number of raises at grips
+that are already out is not bounded by itself: one such raise and its inverse can be repeated without end. Whether
+left heights are bounded, and so whether the reachable set is finite, stays open. At the owner's instruction the
+senior-review series on this question stops after round 20.
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
