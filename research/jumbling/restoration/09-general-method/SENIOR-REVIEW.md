@@ -67,9 +67,11 @@ At s61c the off set is one carrier, 23955: 61 pieces in one frame domain of clas
 
 ### M1-05: a 4,402-letter certificate at s61c (proved, model review; re-run by the integrator)
 
-Let C be the s62m3 step (233 to 61 off pieces, 1,749 letters), S chain step 13 (233 to 86, 1,822 letters) and R chain step 14 (86 to 0, 1,374 letters). Then C⁻¹·S·R[0:831] restores s61c in 1,749 + 1,822 + 831 = 4,402 letters:
-- C⁻¹ returns s61c to the 233 state, and S and R restore that state;
-- R's letters after letter 831 are all K⁺ letters, which keep every piece's lattice membership, so the state is already restored after letter 831.
+Let C be the s62m3 step (233 to 61 off pieces, 1,749 letters), S chain step 13 (233 to 86, 1,822 letters) and R chain step 14 (86 to 0, 1,374 letters). Then C⁻¹·S·R[0:831] takes s61c to the lattice in 1,749 + 1,822 + 831 = 4,402 letters:
+- C⁻¹ returns s61c to the 233 state, and S and R take that state to the lattice;
+- R's letters after letter 831 are all K⁺ letters, which keep every piece's lattice membership, so every piece is already on the lattice after letter 831.
+
+The end is on the lattice but not solved: the letters after 831 are retained and keep ν, and the end of R has ν ≠ 0 (the input record of the stop62 lattice restore). So the lattice phase must still restore the stickers. (Correction, round 8, R8-03: this paragraph said "restores".)
 
 So a search of all words in order of length, from s61c alone, stops by length 4,402. The bound holds for this state only, and it comes from a known history, not from features of the state.
 
@@ -1388,7 +1390,82 @@ The lengths of O10, O24, O25 and O26 change slightly although their seeds do not
   - A uniform sampler for the synthetic inputs (M2-05).
 - **For the owner.** Whether a lattice phase of about 4.8 million actions, or 7 × 10^7 twists, counts as replicable.
 
-## 13. What changed in METHOD.md
+## 13. Closing audit (round 8)
+
+Round 8 audited METHOD.md and the public summaries against their sources before the repository is shown to other people. It asked three questions:
+- **Q1.** Does every claim labelled proved, certificate, computed or measured have a source that supports it at that strength?
+- **Q2.** Can the general method be stated as one theorem with explicit hypotheses?
+- **Q3.** Does another choice among the recorded candidates of round 7, in any cascade order, give a smaller bound than 71,516,526 twists?
+
+A Codex senior review returned nine findings, all verified:
+- two statements, R8-01 for Q2 and R8-02 for Q3, which change no published claim;
+- seven defects for Q1, R8-03 to R8-09: two `blocker`, four `major` and one `minor`.
+
+The integrator checked each finding against the records and adopted all nine. The corrections are made in METHOD.md (section 14 lists the changes), in the summaries and in M1-05 (section 2). The review's numbers are exact and were computed in memory; it re-ran no simulator replay.
+
+### R8-01: the general method as one theorem (proved, model review)
+
+**Theorem.** Assume:
+- Z is a configuration reachable from the solved state by a finite admissible word in the menu I_a: at each of the 600 caps, 12 retained rotations (the identity among them) and 48 jumble rotations;
+- the tests for legality and for the state are exact;
+- while a piece is off the lattice, there is a nonempty unit;
+- every heuristic batch is finite and accepts only verified clean steps, and the exhaustive fallback is fair;
+- the retained group equals the kernel of the invariants (G = 𝒦, a certificate), and the correction library spans A_J, as Theorem R requires.
+
+Then M\* reads only Z and gives a finite admissible word that restores all 259,800 sticker labels:
+- **Phase 1** accepts clean steps for a nonempty unit U, with the free set off(Z) \ U for the fallback, and reaches the lattice in at most |off(Z)| steps.
+- **Phase 2.** At the lattice endpoint Y, choose a correction C with ν(C) = −ν(Y) and put T = solved·C⁻¹. A retained word R takes Y to T in sticker labels, so Y·R·C is restored.
+- A rotation of a piece that no sticker shows is allowed, by the owner's standard of "restored" (15 October 2026).
+- No history is an input, and the reachable set need not be finite.
+
+The summary of M\* in METHOD.md matches this statement.
+
+What rests on what:
+- **Proofs.** Round 1 proves that the fallback exists, by the inverse history and exact enumeration (M1-01). Round 4 composes the steps into M\* (AU-01, AU-06). Sections 7 and 8 review the progress of a clean step and Theorem R.
+- **Conditional or partial results.** Rounds 2 and 3 give constructions for single cells under conditions. Round 5 adds bounded constructions for special cases without proving that they cover every unit. Rounds 6 and 7 bound the retained cascade and state when a seed can be replaced.
+- **Finite certificates.** G = 𝒦, the lower bound on A_J, the validity and ranks of the library, the replacement lengths and the example restorations. Two runs with the replaced seeds are examples, not a proof of completeness.
+
+What stays open:
+- **M1.** No bound on the length of a fallback word computed from the state, and no proof that the bounded constructions cover every unit. A uniform bound exists if and only if R(I_a) is finite, which is open (M1-09).
+- **E1.** Few runs, and no deep autonomous run.
+- **E2.** No human has reviewed the proofs.
+- **M2.** Whether the lattice phase counts as replicable is for the owner to judge; no threshold in twists or in actions is approved.
+
+### R8-02: the round 7 selection is optimal over the recorded candidates (proved, model review; re-computed by the integrator)
+
+The problem:
+- For each orbit, choose a recorded candidate of round 7 (`data/realign.json.gz`) or the committed seed.
+- Choose a cascade order in which the collateral orbits of every chosen element come after its own orbit.
+- Minimise the R7-03 bound for the kit as it runs.
+
+The proof:
+- Write q_o = ⌊3N_o/2⌋ − 3, F_o = 1 on the 11 orbits with a nontrivial frame group (0 otherwise), and D_o = 1 on O06 and O34 (0 otherwise). With the tree depth d_o and the return length h_o of M2-03, the bound is
+
+  B = Σ_o [q_o(s_o + 2d_o) + F_o((N_o − 2)(4s_o + 2h_o + 4d_o) + 2s_o + 2h_o) + D_o(12s_o + 8h_o + 8d_o)].
+
+- Hence B = 4,470,438 + Σ_o a_o s_o, with a_o = q_o + F_o(4N_o − 6) + 12D_o. Every a_o is positive; the smallest is 663.
+- Without the order condition, B is smallest when every s_o is smallest: Σ_o a_o min s_o = 67,046,088, so B ≥ 71,516,526.
+- The round 7 selection takes the shortest element on every orbit, and it satisfies the committed order. So it attains the bound: the optimum is 71,516,526, a gain of zero.
+
+The integrator re-computed the constant, the sum and the bound from `data/realign.json.gz` and `assets/execution_trees.json.gz`. All 111 recorded candidates satisfy the committed order, and the round 7 choice is the shortest on every orbit.
+
+Scope:
+- `realign.py` drops the spine prefixes whose collateral conflicts with the committed order before it writes `data/realign.json.gz`. The result says nothing about those prefixes (R7-04 treats O15 and O17) or about candidates not yet found.
+- It optimises the bound, not the measured length.
+
+### Corrections (R8-03 to R8-09)
+
+| Finding | Severity | What was wrong | Correction |
+| --- | --- | --- | --- |
+| R8-03 | `blocker` | METHOD.md (gap M1) and M1-05 said that the 4,402-letter word restores s61c. Its end is on the lattice, but its ν is not zero (the input record of the stop62 lattice restore), so the stickers are not solved. | It takes s61c to the lattice, and the lattice phase then restores the stickers (METHOD.md section 5; M1-05 carries a correction note). |
+| R8-04 | `major` | The root README and METHOD.md said that a pure transport word keeps every other piece at its exact pose. Each transport seed cycles three whole cells of its kind, so it moves the contents of the other two. | A transport word moves several whole cells of one kind and fixes every other cell, and a clean step needs the other chambers of those cells vacant. The turn of an edge or vertex cell keeps every piece outside the cell (root README, METHOD.md section 3, restoration README). |
+| R8-05 | `major` | The toolkit row of METHOD.md bounded a clean step by 2(Q_safe − 1) + b. The tests of AU-03 do not bound \|W\|, and b bounds W only when all of the class's grips are free. | The bound is 2(Q_safe − 1) + \|W\|, with \|W\| ≤ b when all of the grips are free; otherwise the length of W is checked (METHOD.md section 3). |
+| R8-06 | `blocker` | The restoration overview said that in a clean step every other off piece keeps its exact pose. A clean step may also restore pieces of its free set: stop62 step 13 restored its 61-piece unit and the 86 pieces of its free set (233 to 86 off pieces). | The definition of METHOD.md: the unit and every lattice piece end on the lattice, and every off piece outside the unit and the declared free set keeps its exact pose. V·W·V⁻¹ and the pure twist are the fast steps, and the exhaustive search of Theorem M\* is the fallback (restoration README). |
+| R8-07 | `major` | The summaries gave the lower bound of 224,601 twists without its condition: M2-02 counts retained words only. | "With retained words only" in the root README and the two jumbling READMEs. METHOD.md says that a solution through jumble twists is not covered. |
+| R8-08 | `minor` | Bounds for the retained cascade R were given as the cost of the whole lattice phase, which also has the corrections C, at most 25,852 twists (AU-05). | METHOD.md section 3 names R and C: R needs at most 71,516,526 twists as it runs, and R and C together at most 71,542,378. The summaries say "its cascade" and add the corrections. |
+| R8-09 | `major` | The 09 README and METHOD.md section 6.2 cite the driver logs and the replay reports (`gdrive.jsonl`, `verify_u.jsonl`) of `runs/stop62-v4/` and `runs/e2run24-v4/`, but they were not in the repository: its `*.jsonl` ignore rule had dropped them. | The four files are now committed. Private paths in them are replaced by `<working tree>`. |
+
+## 14. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -1414,3 +1491,6 @@ The lengths of O10, O24, O25 and O26 change slightly although their seeds do not
   - Section 3: a new row for replacing a seed; the rows for the lattice-phase length, the short pure three-cycles and the frame elements now give the round 7 results.
   - Section 5, gap M2: the measured and upper bounds with the replaced seeds, the tighter bound for the committed code (R7-03), the shorter seeds now in use, and the next experiments.
   - Section 6.3 gives the run with the replaced seeds, and section 7 its commands.
+- After round 8 (section 13):
+  - Section 3: the rows for Lemma C, the other cell kinds, the toolkit theorem and the lattice-phase length are corrected (R8-04, R8-05, R8-08).
+  - Section 5: the s61c bound of gap M1 says "to the lattice" (R8-03); gap M2 names the cascade and the corrections, says that the lower bounds count retained words, and records that the round 7 selection is optimal over the recorded candidates (R8-02, R8-07, R8-08).
