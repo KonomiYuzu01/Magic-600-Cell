@@ -37,8 +37,9 @@ lattice-phase results as one proposition, qualified that comparison, corrected n
 and the summaries, and added the code of the round 9 checks. Rounds 13 to 15 took up finiteness again: the bound 6
 on left heights is equivalent to a statement about straddled caps (P6), an island raised by a grip that was not out
 stays trapped until that grip returns under a finite condition, and round 15 found four admissible letters after
-the fixture records 1 to 723 that reach height 8, so P6 is false. Whether left heights are bounded, and so whether
-the reachable set is finite, stays open.
+the fixture records 1 to 723 that reach height 8, so P6 is false. Round 16 found no height 10 near that word and
+closed two routes to a proof or a pump. Whether left heights are bounded, and so whether the reachable set is
+finite, stays open.
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver

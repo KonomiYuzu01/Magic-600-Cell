@@ -3297,7 +3297,7 @@ Round 14 left three cases of P6 open: an island that drops to height 4 and rises
 - Arrivals happen (T15-02), so the no-arrival premise of the conditional reduction (T15-03) is false too; T15-03 records which hypotheses would have been enough.
 - X1 and the uniform bound of M1 stay open: left heights may still be bounded by a larger constant, and a height-8 witness is not an unbounded family (T15-04). Proposition HB is unchanged.
 - The searches of stage 04 that found nothing above height 6 were evidence only; TWOSTEP stopped one letter short of this word.
-- Next (round 16): whether left heights are bounded at all.
+- Next (round 16, section 21): whether left heights are bounded at all.
 
 ### Reproduction (round 15)
 
@@ -3608,7 +3608,592 @@ caps of another branch holding K whole [(529, 'blocked', False), (547, 'blocked'
 max height of K after one more letter 8
 ```
 
-## 21. What changed in METHOD.md
+## 21. Relays, cohorts and pumping (round 16)
+
+Round 15 refuted P6 (section 20). Round 16 asked whether left heights are bounded at all: whether the relay of T15-01 continues to height 10, for an explicit bound or an unbounded family, and for a sound abstraction of one high component. Before the round the integrator ran exact searches near T15-01 (E16-1 to E16-3 below). The review returned four results (T16-01 to T16-04, all `minor`). The integrator re-ran the three programs from the repository root, got the reported outputs exactly, checked the proof of T16-04, and adopted all four.
+
+| Finding | Status | Result |
+| --- | --- | --- |
+| T16-01 | computed | Every raise-only relay from X4 stops at height 8. X4 is the state after the fixture records 1 to 723, (433, 12) and (593, 58), where the seven pieces of T15-01 form one component at height 4 in branch 2. Level 1: of the four caps of another branch that hold the component whole, three are NB-blocked and one (501) is admissible; 48 raises to height 6. Level 2: 252 candidate caps, of which 250 are NB-blocked, one is straddled by another piece and one is admissible (593, after (501, 22) only); 48 raises to height 8. Level 3: 228 candidates, 212 NB-blocked and 16 straddled; no raise. In all, 97 states and 58,200 exact cap decisions. |
+| T16-02 | proved; computed | A sound abstraction for one high component K. It keeps the exact pose of K and, for each grip, the coset of the product of its letters modulo A4 (five cosets). A grip in a non-retained coset blocks the 22 cuts that its inner cohort straddles: the 16 of NB and six more. Under INV it over-approximates every continuation while K stays high. It admits the path (501, 22), (593, 12), (342, 15), (484, 13), (529, 12) from X4 to height 10: the returns of 342 and 484 do not move K, and after them cap 529 has no cohort blocker. In the puzzle the path fails at once: at the height-8 state cap 342 is straddled by piece 115294 (model orbit 9, height 2), cap 484 by piece 107148 (orbit 32) and cap 529 by piece 165151 (orbit 5). So this abstraction cannot prove a bound of 8. |
+| T16-03 | proved | A fixed word transported by the powers of one global symmetry k ∈ K⁺, or any eventually periodic schedule of fixed words, cannot raise heights without bound. k has order dividing 60, so the schedule repeats one word, and T9-02 makes the trajectory periodic. An unbounded family would have to choose its words aperiodically or from the state. |
+| T16-04 | proved | The uniform period of T9-02 does not by itself imply finiteness. An explicit infinite ray with three involutive letters has unbounded heights and unbounded return distances, yet every repeatable word returns after two repetitions. A finiteness proof needs the geometry of admissibility. |
+
+### Integrator experiments (before the round)
+
+- E16-1 (`e16c.py`), at the height-8 state of T15-01. Cap 501 is straddled (by piece 87889, model orbit 9, height 2), so 501 cannot return. The six caps of another branch that hold the component whole are in NB of the out grips 484, 501 and 593. Grip 593 can return by any of 12 items, and every return keeps the component at height 8: the component entered cap 593 after 593 departed, so the return does not undo the raise. After each return, four caps of another branch hold the component whole, and each is NB-blocked by an out grip or straddled by a height-2 piece. After three of the returns (items 52, 55 and 56) grip 501 can return as well, with the same outcome. No letter raises the component to 10.
+- E16-2 (`e16d.py`, from X4): the same counts as T16-01, found with the integrator's own code. The 16 straddling pieces at level 3 have height 2 and belong to model orbits 7, 9, 22, 28 and 34.
+- E16-3 (`e16d.py`, from H6): every cap of another branch that holds the component at H6 (four) is NB-blocked, so no raise-only relay starts there; T15-01 begins with the same-branch letter (593, 58).
+
+### What it gives
+
+- No height 10 has been found. Every continuation of the relay of T15-01 that was examined stops at a cap that is NB-blocked by an out grip or straddled by a height-2 piece outside the inscribed ball.
+- A grip that was already out when a component arrived in its cap can return without lowering the component (E16-1), so a raise by such a grip is kept after the grip returns.
+- The inner cohorts alone do not bound the height (T16-02). A bound would need the outer pieces, such as the height-2 straddlers above.
+- Two routes are closed: a fixed pattern moved by a symmetry cannot pump heights (T16-03), and the periodicity of T9-02 cannot by itself prove finiteness (T16-04).
+- X1 and the uniform bound of M1 stay open; Proposition HB is unchanged.
+- Next (round 17): realize or refute the abstract path of T16-02 with preparation letters that leave the component at height 8, and look for an invariant of the outer off-lattice pieces that accounts for the blocking.
+
+### Reproduction (round 16)
+
+From the repository root, with Python 3.13 and NumPy 2.5: `python3 -I -B -` with each program on standard input; the integrator's programs take `research/jumbling` as their first argument (`python3 -I -B - research/jumbling`), and `e16d.py` takes `X4` or `H6` as its second. On the integrator's machine T16-01, T16-02 and T16-03 took 235, 9 and 2 seconds, and E16-1 and each run of E16-2 and E16-3 about 210 seconds.
+
+T16-01: every raise-only relay from X4.
+
+```python
+import sys, signal, json, hashlib
+from collections import Counter
+from functools import lru_cache
+sys.path[:0] = ['research/jumbling/theory','research/jumbling',
+               'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot, affine_rank
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+signal.alarm(890)
+C=sim.get_context(); d=C.data; F,M=wj.load(C,'I_a')
+I=C.kplus.matrix(0)
+K=(118527,126380,126382,126384,126385,149644,149650)
+J=tuple(RS.jumble_items(M)); assert len(J)==48
+E=[Evaluator(pullback_form(I,d.N[c])) for c in range(600)]
+B=[T.branch(tuple(d.N[c])) for c in range(600)]
+V={p:{tuple(v) for v in C.regions.vertices(p)} for p in K}
+edges=[]
+for i,p in enumerate(K):
+    for q in K[i+1:]:
+        common=V[p]&V[q]
+        if len(common)>=4 and affine_rank(list(common))==3:
+            edges.append((p,q))
+seen={K[0]}
+while True:
+    old=len(seen)
+    for p,q in edges:
+        if p in seen or q in seen: seen.update((p,q))
+    if len(seen)==old: break
+assert len(edges)==7 and seen==set(K)
+H=tuple(sorted(set().union(*V.values()),key=repr)); assert len(H)==16
+@lru_cache(None)
+def hb(Q):
+    f=T.factors(Q)[0]
+    return T.dist(f),T.branch(f)
+@lru_cache(None)
+def element(c,j): return RS.element(M,c,j)
+@lru_cache(None)
+def gap(a,b):
+    return d.NN*(d.NN+dot(d.N[a],d.N[b]))-2*d.KAPPA*d.KAPPA
+@lru_cache(None)
+def holding(Q):
+    vf=rows_form(sorted({tuple(matvec(Q,v)) for v in H},key=repr))
+    labels=tuple(ev.classify(vf)[0] for ev in E)
+    assert set(labels)<={'in','out','straddle'}
+    return (tuple(c for c in range(600) if labels[c]=='in'),
+            ''.join({'in':'I','out':'O','straddle':'S'}[x] for x in labels))
+def clone(st):
+    q=sim.State(C,filtered=False,menu=M)
+    q._poses=list(st._poses); q._lookup=dict(st._lookup)
+    q.pose_id=st.pose_id.copy()
+    return q
+def tracked(st):
+    Q=st.pose(K[0]); assert all(st.pose(p)==Q for p in K)
+    return Q,hb(Q)
+def apply(st,G,O,tw):
+    out=st.apply(tw,journal=False)
+    assert out.applied and not out.uncertain,(tw.grip,out.status)
+    G[tw.grip]=to_tuple(matmul(tw.matrix,G[tw.grip]))
+    if C.kplus.index_of_matrix(G[tw.grip])<0: O.add(tw.grip)
+    else: O.discard(tw.grip)
+def put(st,G,O,c,j):
+    apply(st,G,O,sim.Twist(C,c,element(c,j),'menu',{'menu':M.name}))
+s=sim.State(C,filtered=False,menu=M)
+G={g:I for g in range(600)}; O=set()
+for n,rec in enumerate(F['journal']['records'][:723],1):
+    apply(s,G,O,sim.Twist.from_record(C,rec))
+    if n>=85: assert 593 in O
+assert s.digest()=='bd0cbd3337ef16085cba3498916b3c683f04735b5cc3737012c6414af422f7d7'
+put(s,G,O,433,12)
+assert s.digest()=='fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39'
+put(s,G,O,593,58)
+assert s.digest()=='9e8efe5ec9a7fa035319baf1fa88aac49ef2cc7c54a0d52a3faa616c667bcf03'
+assert tracked(s)[1]==(4,2)
+print('X4',s.digest(),tracked(s)[1],holding(tracked(s)[0])[0],len(O))
+stats=[Counter() for _ in range(3)]
+cap_table=[]; leaf_rows=[]; continuing=[]; known=False
+front=[(s,G,O,())]
+for depth in range(3):
+    nxt=[]
+    for st,gprod,outs,path in front:
+        Q,(h,b)=tracked(st); caps,labels=holding(Q)
+        stats[depth]['nodes']+=1
+        stats[depth]['cap_decisions']+=600
+        cap_table.append([list(path),labels]); can=[]
+        for c in caps:
+            if B[c]==b: continue
+            stats[depth]['candidates']+=1
+            blockers=[a for a in sorted(outs) if a!=c and gap(a,c).sign()>0]
+            cl=st.classify(c,need_inside=False); assert not cl.uncertain
+            if blockers:
+                stats[depth]['NB_blocked']+=1
+                assert cl.status=='blocked'
+                a=blockers[0]; z=gap(a,c)
+                leaf_rows.append([list(path),c,'NB',a,[z.a,z.b,z.d]])
+            elif cl.status=='blocked':
+                stats[depth]['other_straddled']+=1
+                leaf_rows.append([list(path),c,'straddle',cl.straddle['piece'],
+                                  cl.straddle['h_below'],cl.straddle['h_above']])
+            else:
+                assert cl.status=='admissible'
+                stats[depth]['admissible_grips']+=1; can.append(c)
+                for j in J:
+                    u=clone(st); gu=dict(gprod); ou=set(outs)
+                    put(u,gu,ou,c,j); assert tracked(u)[1][0]==h+2
+                    stats[depth]['raises']+=1; pp=path+((c,j),)
+                    if pp==((501,22),(593,12)):
+                        assert tracked(u)[1]==(8,2)
+                        assert u.digest()=='c4277e602ebcb90092e280382e3bebfba4c249bb2a03fc630cab9aa1bd493ff5'
+                        heights=[0 if p.kidx>=0 else hb(p.matrix)[0] for p in u._poses]
+                        hist=Counter(heights[int(i)] for i in u.pose_id)
+                        assert hist=={0:56457,2:116435,4:4143,6:78,8:7}
+                        print('T15-01',u.digest(),'hist',sorted(hist.items()))
+                        known=True
+                    nxt.append((u,gu,ou,pp))
+        if can: continuing.append([list(path),can])
+    print('depth',depth,json.dumps(dict(sorted(stats[depth].items())),sort_keys=True))
+    front=nxt
+assert known and not front
+print('continuing',continuing)
+print('nodes',sum(x['nodes'] for x in stats),
+      'caps_exact',sum(x['cap_decisions'] for x in stats))
+for name,table in [('cap_table',cap_table),('blocking_table',leaf_rows)]:
+    print(name+'_sha256',hashlib.sha256(
+        json.dumps(table,separators=(',',':')).encode()).hexdigest())
+print('raise10_paths',len(front))
+```
+
+Output:
+
+```text
+X4 9e8efe5ec9a7fa035319baf1fa88aac49ef2cc7c54a0d52a3faa616c667bcf03 (4, 2) (496, 501, 551, 555, 580, 593) 54
+depth 0 {"NB_blocked": 3, "admissible_grips": 1, "candidates": 4, "cap_decisions": 600, "nodes": 1, "raises": 48}
+T15-01 c4277e602ebcb90092e280382e3bebfba4c249bb2a03fc630cab9aa1bd493ff5 hist [(0, 56457), (2, 116435), (4, 4143), (6, 78), (8, 7)]
+depth 1 {"NB_blocked": 250, "admissible_grips": 1, "candidates": 252, "cap_decisions": 28800, "nodes": 48, "other_straddled": 1, "raises": 48}
+depth 2 {"NB_blocked": 212, "candidates": 228, "cap_decisions": 28800, "nodes": 48, "other_straddled": 16}
+continuing [[[], [501]], [[(501, 22)], [593]]]
+nodes 97 caps_exact 58200
+cap_table_sha256 7af6a8afd8e5ef6ae7ef17ef359c417c30951a204d5c67f63997d21c5eecc956
+blocking_table_sha256 33a6d26016138733ec5e9e2fcdcd4ca80b959321414504d991a9b16ed19ac33c
+raise10_paths 0
+```
+
+T16-02: the cohort abstraction, its height-10 path and the blockers of its realization.
+
+```python
+import sys,json,gzip,hashlib
+import numpy as np
+from functools import lru_cache
+sys.path[:0]=['research/jumbling/theory','research/jumbling',
+              'research/jumbling/fixtures']
+import sim,wj,restore as R,trees as T
+from exact import matmul,matvec
+from sim.kplus import matrix_from_json,matrix_json,to_tuple
+from sim.kernel import rows_form,Evaluator,pullback_form
+C=sim.get_context(); d=C.data; F,M=wj.load(C,'I_a'); I=C.kplus.matrix(0)
+K=(118527,126380,126382,126384,126385,149644,149650)
+base=[to_tuple(m) for _,m in M.items]; ix={m:j for j,m in enumerate(base)}
+labels={name:j for j,(name,m) in enumerate(M.items)}
+ret=[j for j,m in enumerate(base) if C.kplus.index_of_matrix(m)>=0]
+reps=[]; cs={}
+for j in range(60):
+    if j not in cs:
+        q=len(reps); reps.append(j)
+        for a in ret: cs[ix[to_tuple(matmul(base[j],base[a]))]]=q
+assert reps==[0,12,24,25,27]
+act=[[cs[ix[to_tuple(matmul(base[j],base[r]))]] for r in reps]
+     for j in range(60)]
+inner=[int(p) for p in d.cap_members(0)
+       if int(d.orbit_id[p]) in {0,1,2,3,6}]
+assert len(inner)==68
+forms=[C.regions.vform(p) for p in inner]; B0=[set()]
+for r in reps[1:]:
+    bs=set()
+    for c in range(600):
+        ev=Evaluator(pullback_form(base[r],d.N[c]))
+        if any(ev.classify(v)[0]=='straddle' for v in forms): bs.add(c)
+    B0.append(bs)
+assert [len(b) for b in B0]==[0,22,22,22,22]
+@lru_cache(None)
+def block(c,q):
+    return {int(C.kplus.perms[int(C.kplus.frame_idx[c]),e]) for e in B0[q]}
+sigma=[0]*600
+for rec in F['journal']['records'][:723]:
+    c=rec['grip']; j=labels[rec['params']['label']]
+    assert R.element(M,c,j)==matrix_from_json(rec['matrix'])
+    sigma[c]=act[j][sigma[c]]
+sigma[433]=act[12][sigma[433]]
+p='research/jumbling/restoration/04-card5-lattice-invariants/data/t-T723x433-12.json.gz'
+with gzip.open(p,'rt') as f: tab=json.load(f)
+s=sim.State(C,filtered=False,menu=M)
+ids=[s._intern_matrix(matrix_from_json(m)) for m in tab['poses']]
+s.pose_id=np.array([ids[i] for i in tab['pose_id']],np.int32)
+assert s.digest()==tab['digest']=='fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39'
+for c,j in [(593,58),(501,22),(593,12)]:
+    o=s.apply(sim.Twist(C,c,R.element(M,c,j),'menu',{'menu':M.name}),journal=False)
+    assert o.applied and not o.uncertain
+    sigma[c]=act[j][sigma[c]]
+assert s.digest()=='c4277e602ebcb90092e280382e3bebfba4c249bb2a03fc630cab9aa1bd493ff5'
+Q=s.pose(K[0]); assert all(s.pose(p)==Q for p in K)
+V={tuple(v) for p in K for v in C.regions.vertices(p)}; assert len(V)==16
+evs=[Evaluator(pullback_form(I,n)) for n in d.N]
+def cats():
+    vf=rows_form([tuple(matvec(Q,v)) for v in V])
+    return [e.classify(vf)[0] for e in evs]
+def blockers(c):
+    return [e for e,q in enumerate(sigma) if q and c in block(e,q)]
+def h(q): return T.dist(T.factors(q)[0])
+print('cohort_blocker_counts',[len(b) for b in B0])
+print('X8_out',sum(q!=0 for q in sigma))
+print('X8_nonoutside_out',[(c,sigma[c],t) for c,t in enumerate(cats())
+                           if sigma[c] and t!='out'])
+print('X8_529_cohort_blockers',blockers(529))
+for c in [342,484,529]:
+    cl=s.classify(c,need_inside=False)
+    assert cl.status=='blocked' and not cl.uncertain
+    p=cl.straddle['piece']
+    assert cl.straddle['points_checked_against_all_constraints']
+    print('actual_blocker',c,p,int(d.orbit_id[p]),h(s.pose(p)))
+for c,j in [(342,15),(484,13),(529,12)]:
+    side=cats()[c]; assert side in {'in','out'} and not blockers(c)
+    before=sigma[c]
+    if side=='in': Q=to_tuple(matmul(R.element(M,c,j),Q))
+    sigma[c]=act[j][sigma[c]]
+    print('abstract',c,j,side,before,sigma[c],h(Q))
+assert h(Q)==10
+print('h10_holding',[c for c,t in enumerate(cats()) if t=='in'])
+print('h10_pose_sha256',hashlib.sha256(
+    json.dumps(matrix_json(Q),separators=(',',':')).encode()).hexdigest())
+```
+
+Output:
+
+```text
+cohort_blocker_counts [0, 22, 22, 22, 22]
+X8_out 55
+X8_nonoutside_out [(593, 2, 'in')]
+X8_529_cohort_blockers [342, 484]
+actual_blocker 342 115294 9 2
+actual_blocker 484 107148 32 2
+actual_blocker 529 165151 5 2
+abstract 342 15 out 2 0 8
+abstract 484 13 out 4 0 8
+abstract 529 12 in 0 1 10
+h10_holding [496, 529, 554, 555, 557, 562, 564]
+h10_pose_sha256 7754cdd09aa6aa7e9e1749012541b89a8783bf04f1b34e208abb717c3f033492
+```
+
+T16-03: the orders of the units of 2I.
+
+```python
+import sys, math
+from collections import Counter
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import trees as T
+D=Counter()
+for u in T.UNITS:
+    p=T.ONEQ
+    for n in range(1,61):
+        p=T.qmul(u,p)
+        if p==T.ONEQ:
+            D[n]+=1
+            break
+    else:
+        raise AssertionError('order >60')
+assert D=={1:1,2:1,3:20,4:30,5:24,6:20,10:24}
+print(sorted(D.items()))
+print('exponent',math.lcm(*D))
+```
+
+Output:
+
+```text
+[(1, 1), (2, 1), (3, 20), (4, 30), (5, 24), (6, 20), (10, 24)]
+exponent 60
+```
+
+E16-1 (`e16c.py`): the returns of 593 and 501 at the height-8 state.
+
+```python
+# From the height-8 state of T15-01: return 593 by each of its 12 return items (K stays at 8), then
+# (a) every foreign cap holding K whole, not NB-blocked: classify, raise -> 10?
+# (b) can 501 return now (its cap was straddled at the height-8 state)? what straddles it? then (a) again.
+import sys, time
+from collections import Counter
+J = sys.argv[1]
+sys.path[:0] = [J + '/theory', J, J + '/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+t0 = time.time()
+C = sim.get_context(); d = C.data; kp = C.kplus
+F, M = wj.load(C, 'I_a')
+JUMB = RS.jumble_items(M)
+K = [118527, 126380, 126382, 126384, 126385, 149644, 149650]
+I = kp.matrix(0)
+BR = [T.branch(tuple(d.N[g])) for g in range(600)]
+def gap(a, b): return d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA
+NB = [set() for _ in range(600)]
+for a in range(600):
+    for b in range(a + 1, 600):
+        if gap(a, b).sign() > 0: NB[a].add(b); NB[b].add(a)
+def tw(g, j): return sim.Twist(C, g, RS.element(M, g, j), 'menu', {'menu': M.name})
+def clone(st):
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(st._poses); u._lookup = dict(st._lookup); u.pose_id = st.pose_id.copy()
+    return u
+def apply(st, t, G):
+    o = st.apply(t, journal=False)
+    if not (o.applied and not o.uncertain): return False
+    G[t.grip] = to_tuple(matmul(t.matrix, G[t.grip])); return True
+def out(G): return {g for g in range(600) if kp.index_of_matrix(G[g]) < 0}
+def khb(st):
+    Q = st.pose(K[0]); assert all(st.pose(p) == Q for p in K)
+    l = T.factors(Q)[0]; return T.dist(l), T.branch(l)
+def holding(st):
+    V = {tuple(matvec(st.pose(p), v)) for p in K for v in C.regions.vertices(p)}
+    vf = rows_form(V)
+    return [g for g in range(600) if Evaluator(pullback_form(I, d.N[g])).classify(vf)[0] == 'in']
+def hof(st, p):
+    P = st._poses[int(st.pose_id[p])]
+    return 0 if P.kidx >= 0 else T.dist(T.factors(P.matrix)[0])
+def try_raise(st, G, tag):
+    h, b = khb(st); O = out(G); res = []
+    for c in holding(st):
+        if BR[c] == b: continue
+        nbo = sorted(x for x in O if x != c and c in NB[x])
+        if nbo:
+            res.append((c, 'NB', nbo)); continue
+        cl = st.classify(c, need_inside=False)
+        if cl.status != 'admissible':
+            stp = cl.straddle['piece']
+            res.append((c, 'straddled', (stp, int(d.orbit_id[stp]), hof(st, stp)))); continue
+        u = clone(st); G2 = dict(G)
+        assert apply(u, tw(c, JUMB[0]), G2)
+        h2 = khb(u)[0]
+        res.append((c, 'RAISE', h2, u.digest()))
+    print(tag, 'K', (h, b), res, flush=True)
+    return res
+s = sim.State(C, filtered=False, menu=M)
+G = {g: I for g in range(600)}
+for rec in F['journal']['records'][:723]:
+    assert apply(s, sim.Twist.from_record(C, rec), G)
+for g, j in [(433, 12), (593, 58), (501, 22), (593, 12)]:
+    assert apply(s, tw(g, j), G)
+assert s.digest() == 'c4277e602ebcb90092e280382e3bebfba4c249bb2a03fc630cab9aa1bd493ff5'
+print('height-8 state', round(time.time() - t0), 's', flush=True)
+cl = s.classify(501, need_inside=False)
+stp = cl.straddle['piece'] if cl.straddle else None
+print('cap 501 at the height-8 state:', cl.status, 'straddler', stp, None if stp is None else (int(d.orbit_id[stp]), hof(s, stp)), flush=True)
+rets = [j for j in range(60) if kp.index_of_matrix(to_tuple(matmul(RS.element(M, 593, j), G[593]))) >= 0]
+print('return items at 593', rets, flush=True)
+for j in rets:
+    u = clone(s); Gu = dict(G)
+    assert apply(u, tw(593, j), Gu) and 593 not in out(Gu)
+    r = try_raise(u, Gu, f'ret593:{j}')
+    cl = u.classify(501, need_inside=False)
+    if cl.status == 'admissible':
+        rets5 = [i for i in range(60) if kp.index_of_matrix(to_tuple(matmul(RS.element(M, 501, i), Gu[501]))) >= 0]
+        for i in rets5:
+            w = clone(u); Gw = dict(Gu)
+            assert apply(w, tw(501, i), Gw)
+            try_raise(w, Gw, f'ret593:{j} ret501:{i}')
+    else:
+        p = cl.straddle['piece']
+        print(f'ret593:{j} cap 501 blocked by piece', p, (int(d.orbit_id[p]), hof(u, p)), flush=True)
+print('done', round(time.time() - t0), 's', flush=True)
+```
+
+Output:
+
+```text
+height-8 state 189 s
+cap 501 at the height-8 state: blocked straddler 87889 (9, 2)
+return items at 593 [15, 18, 22, 33, 52, 53, 54, 55, 56, 57, 58, 59]
+ret593:15 K (8, 2) [(551, 'NB', [501, 537]), (555, 'NB', [501]), (580, 'NB', [501]), (582, 'NB', [521])]
+ret593:15 cap 501 blocked by piece 126380 (19, 8)
+ret593:18 K (8, 2) [(551, 'NB', [501, 537]), (555, 'NB', [501]), (580, 'NB', [501]), (582, 'NB', [521])]
+ret593:18 cap 501 blocked by piece 126380 (19, 8)
+ret593:22 K (8, 2) [(551, 'NB', [501, 537]), (555, 'NB', [501]), (580, 'NB', [501]), (582, 'NB', [521])]
+ret593:22 cap 501 blocked by piece 112819 (4, 2)
+ret593:33 K (8, 2) [(548, 'NB', [442, 501, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:33 cap 501 blocked by piece 153642 (23, 2)
+ret593:52 K (8, 2) [(548, 'NB', [442, 501, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:14 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:21 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:23 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:43 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:44 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:45 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:46 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:47 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:48 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:49 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:50 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:52 ret501:51 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:53 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:53 cap 501 blocked by piece 138857 (9, 2)
+ret593:54 K (8, 2) [(547, 'NB', [484]), (562, 'straddled', (161992, 28, 2)), (585, 'straddled', (162582, 22, 2)), (589, 'NB', [572])]
+ret593:54 cap 501 blocked by piece 122213 (14, 2)
+ret593:55 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:14 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:21 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:23 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:43 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:44 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:45 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:46 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:47 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:48 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:49 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:50 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:55 ret501:51 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:56 K (8, 2) [(548, 'NB', [442, 501, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:14 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:21 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:23 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:43 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:44 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:45 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:46 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:47 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:48 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:49 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:50 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:56 ret501:51 K (8, 2) [(548, 'NB', [442, 537]), (550, 'NB', [484]), (579, 'straddled', (80494, 22, 2)), (581, 'NB', [497])]
+ret593:57 K (8, 2) [(594, 'NB', [573]), (596, 'NB', [576]), (598, 'NB', [572, 588]), (599, 'straddled', (89318, 34, 2))]
+ret593:57 cap 501 blocked by piece 145398 (30, 2)
+ret593:58 K (8, 2) [(547, 'NB', [484]), (562, 'straddled', (161992, 28, 2)), (585, 'straddled', (162582, 22, 2)), (589, 'NB', [572])]
+ret593:58 cap 501 blocked by piece 146381 (9, 2)
+ret593:59 K (8, 2) [(547, 'NB', [484]), (562, 'straddled', (161992, 28, 2)), (585, 'straddled', (162582, 22, 2)), (589, 'NB', [572])]
+ret593:59 cap 501 blocked by piece 147851 (9, 2)
+done 210 s
+```
+
+E16-2 and E16-3 (`e16d.py`): raise-only relays from X4 and from H6.
+
+```python
+# Raise-only relay search with details, from a given start. Level 1: every foreign cap holding K whole, outside
+# NB of every out grip, exactly admissible; every jumble there. Levels 2 and 3 likewise. Reports every candidate
+# cap outside NB(Out) that is straddled, with its straddler. Start A: X4 (records 1..723, (433,12), (593,58)).
+# Start B: H6 (records 1..723, (433,12)), K at its H6 position.
+import sys, time, math
+from collections import Counter
+import numpy as np
+J = sys.argv[1]; START = sys.argv[2]
+sys.path[:0] = [J + '/theory', J, J + '/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+t0 = time.time()
+C = sim.get_context(); d = C.data; kp = C.kplus
+F, M = wj.load(C, 'I_a')
+JUMB = RS.jumble_items(M)
+K = [118527, 126380, 126382, 126384, 126385, 149644, 149650]
+s5 = math.sqrt(5)
+def fl(q): return (q.a + q.b * s5) / q.d
+NF = np.array([[fl(x) for x in d.N[g]] for g in range(600)]); KAP = fl(d.KAPPA)
+BR = [T.branch(tuple(d.N[g])) for g in range(600)]
+NB = [set() for _ in range(600)]
+for a in range(600):
+    for b in range(a + 1, 600):
+        if (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0:
+            NB[a].add(b); NB[b].add(a)
+HOMEV = sorted({tuple(v) for p in K for v in C.regions.vertices(p)}, key=repr)
+I = kp.matrix(0)
+def holding_pose(Q):
+    V = [tuple(matvec(Q, v)) for v in HOMEV]
+    VF = np.array([[fl(x) for x in v] for v in V])
+    m = (VF @ NF.T).min(axis=0) - KAP
+    vf = rows_form(set(V))
+    return tuple(g for g in range(600) if m[g] > -1e-7 and Evaluator(pullback_form(I, d.N[g])).classify(vf)[0] == 'in')
+def lb(Q):
+    l = T.factors(Q)[0]; return T.dist(l), T.branch(l)
+def tw(g, j): return sim.Twist(C, g, RS.element(M, g, j), 'menu', {'menu': M.name})
+def clone(st):
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(st._poses); u._lookup = dict(st._lookup); u.pose_id = st.pose_id.copy()
+    return u
+def hof(st, p):
+    P = st._poses[int(st.pose_id[p])]
+    return 0 if P.kidx >= 0 else T.dist(T.factors(P.matrix)[0])
+def outset(G): return {g for g in range(600) if kp.index_of_matrix(G[g]) < 0}
+s = sim.State(C, filtered=False, menu=M)
+G = {g: I for g in range(600)}
+def step(st, G, g, j):
+    t = tw(g, j); o = st.apply(t, journal=False)
+    if not (o.applied and not o.uncertain): return False
+    G[g] = to_tuple(matmul(t.matrix, G[g])); return True
+for rec in F['journal']['records'][:723]:
+    t = sim.Twist.from_record(C, rec); o = s.apply(t, journal=False); assert o.applied and not o.uncertain
+    G[t.grip] = to_tuple(matmul(t.matrix, G[t.grip]))
+assert step(s, G, 433, 12)
+if START == 'X4':
+    assert step(s, G, 593, 58)
+print('start', START, s.digest(), 'K', lb(s.pose(K[0])), round(time.time() - t0), 's', flush=True)
+stats = Counter(); found = []; straddled = Counter()
+def level(st, G, depth, path):
+    Q = st.pose(K[0]); h, b = lb(Q); O = outset(G)
+    for c in holding_pose(Q):
+        if BR[c] == b: continue
+        if any(c in NB[x] for x in O if x != c):
+            stats[f'L{depth}_NBblocked'] += 1; continue
+        cl = st.classify(c, need_inside=False)
+        if cl.status != 'admissible':
+            p = cl.straddle['piece']
+            straddled[(depth, c, p, int(d.orbit_id[p]), hof(st, p))] += 1
+            stats[f'L{depth}_straddled'] += 1; continue
+        stats[f'L{depth}_admissible'] += 1
+        for j in JUMB:
+            u = clone(st); Gu = dict(G)
+            assert step(u, Gu, c, j)
+            h2 = lb(u.pose(K[0]))[0]; assert h2 == h + 2
+            stats[f'reach{h2}'] += 1
+            if h2 >= 10:
+                found.append((path + [(c, j)], u.digest())); print('FOUND', found[-1], flush=True)
+            if depth < 3:
+                level(u, Gu, depth + 1, path + [(c, j)])
+level(s, G, 1, [])
+print('stats', dict(stats), flush=True)
+for k, v in sorted(straddled.items()):
+    print('straddled', k, v, flush=True)
+print('found', len(found), 'seconds', round(time.time() - t0), flush=True)
+```
+
+Output from X4:
+
+```text
+start X4 9e8efe5ec9a7fa035319baf1fa88aac49ef2cc7c54a0d52a3faa616c667bcf03 K (4, 2) 186 s
+stats {'L1_admissible': 1, 'reach6': 48, 'L2_NBblocked': 250, 'L2_admissible': 1, 'reach8': 48, 'L3_NBblocked': 212, 'L3_straddled': 16, 'L2_straddled': 1, 'L1_NBblocked': 3}
+straddled (2, 593, 100537, 14, 2) 1
+straddled (3, 501, 89318, 34, 2) 1
+straddled (3, 501, 112820, 7, 2) 1
+straddled (3, 562, 161992, 28, 2) 3
+straddled (3, 577, 48812, 34, 2) 1
+straddled (3, 577, 123569, 9, 2) 1
+straddled (3, 579, 80494, 22, 2) 3
+straddled (3, 585, 162582, 22, 2) 3
+straddled (3, 599, 89318, 34, 2) 3
+found 0 seconds 219
+```
+
+Output from H6:
+
+```text
+start H6 fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39 K (4, 2) 185 s
+stats {'L1_NBblocked': 4}
+found 0 seconds 185
+```
+
+## 22. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -3654,3 +4239,4 @@ max height of K after one more letter 8
   - Section 6.2: the e2run24 run to its end, and the fix to `cellpure3.py`, which stopped with a `KeyError` when no pair tool moves the unit's cell and now reports that no cycle passes through it.
 - After round 14 (section 19): section 5, gap M1, the finiteness item gives the trap lemma (T14-03), the failure of RA for single pieces (T14-01, T14-02) and the cases that stay open.
 - After round 15 (section 20): section 5, gap M1, the finiteness item says that P6 and the bound 6 on left heights are false (T15-01), that a high island can enter the cap of a grip that is already out (T15-02), and that R(I_a) is finite if and only if the clean steps have a uniform length bound, without hypothesis H (T15-04).
+- After round 16 (section 21): section 5, gap M1, the finiteness item says that no height 10 was found, that the inner cohorts alone do not bound the height (T16-02), and that two routes to a proof or a pump are closed (T16-03, T16-04).
