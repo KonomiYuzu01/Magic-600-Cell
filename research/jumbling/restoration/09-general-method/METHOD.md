@@ -228,6 +228,14 @@ Two mathematical gaps:
     (T9-02). No single letter takes the deep state H6 of stage 04 to height 8 (exact, T9-04). For each m, the
     states whose heights are at most 2m have a finite maximum distance to the lattice, but no value of it is known
     (T9-05).
+  - *Finiteness (rounds 13 and 13b).* Still open (`SENIOR-REVIEW.md` section 18). Every left height is at most 6 if
+    and only if P6 holds: at every reachable configuration, every cap of a grip of another branch that wholly
+    contains a piece of height at least 6 is straddled (T13-03). Every cap decision behind Proposition HB is now
+    exact (REFX-EXACT). Inside the inscribed ball the only blocking is that of the 16 grips nearest an out grip
+    (T13b-02), and a cap that holds part of a high island is blocked by the island itself (T13b-05). So the open
+    case is a cap of another branch that holds a whole high island. At H6 every such cap is among the 16 grips
+    nearest grip 433, whose jumble raised the island, and 433 is still out (exact). Whether this holds at every
+    raise is the next question.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not
@@ -367,7 +375,7 @@ driver v4 (`gdrive.py` as committed at `5c679b9`), before the M\* change: no fal
 | Input | Off at start | Steps | Off | Result |
 | --- | ---: | --- | ---: | --- |
 | stop62 | 860 | 7 driver steps (10, 22, 404, 982, 1,072, 1,296 and 1,436 twists), then 1 pure-twist step (762 twists): 5,984 twists | 269 | **stopped** after 4 h 12 min: at 269 neither heuristic found a step, and v4 has no fallback. `verify_u.py` replays all 8 steps (`all_ok`, final off 269). Record: `runs/stop62-v4/` |
-| e2run24: the end of the 24-twist E2 run of stage 05, not the state E2 of stage 01 | 690 | 3 driver steps (44, 150 and 946 twists) and 1 pure-twist step (288 twists): 1,428 twists so far | 548 | **running** when this record was made (12:15 UTC, after 5 h 26 min). At 613 the driver step found nothing for 2 h 11 min; the pure twist then restored a 48-piece unit (V empty, 288 twists), and the next driver step restored the 17-piece unit. `verify_u.py` replays the 4 steps (`all_ok`, off 548). Record: `runs/e2run24-v4/` |
+| e2run24: the end of the 24-twist E2 run of stage 05, not the state E2 of stage 01 | 690 | 7 driver steps (44, 150, 946, 1,026, 990, 1,362 and 1,446 twists) and 2 pure-twist steps (288 and 934 twists): 7,186 twists | 194 | **stopped** after 10 h 4 min: at 194 neither heuristic found a step, and v4 has no fallback. `verify_u.py` replays all 9 steps (`all_ok`, final off 194). Record: `runs/e2run24-v4/` |
 
 At stop62@269 six units remain: 1040 (86 pieces), 18512 (78), 23955 (61), 9117 (17), 18517 (15) and 18445 (12).
 - The driver step found no unit it could restore.
@@ -376,12 +384,26 @@ At stop62@269 six units remain: 1040 (86 pieces), 18512 (78), 23955 (61), 9117 (
 - It skipped the others. Three units of one frame (78, 61 and 15 pieces) lie in an edge, a triangle and a
   tetrahedron cell, and `cellpure3.py` needs the whole frame in one cell (`SENIOR-REVIEW.md` section 9:
   containment would suffice). The 17-piece unit does not lie in an edge cell; the script stopped with an error
-  (`KeyError`) instead of reporting that.
+  (`KeyError`) instead of reporting that (fixed on 15 October 2026: it now reports that no cycle passes through
+  the unit's cell).
 
 The hand-steered run of section 6.1 took the same start to 0 in 14 clean steps. Under M\* the fallback would take
 over at 269. By M1-03 every clean step there has at least two jumble letters, and the fallback costs about 300 days
 for length 2 alone (section 2, step 4), so the run ends here; the next bounded steps to try are those of
 `SENIOR-REVIEW.md` section 10 (retained conjugation first).
+
+On e2run24 the off count went 690, 642, 613, 565, 548, 505, 502, 391, 280 and 194. At 613 and at 280 the driver
+step found nothing, and the pure twist restored a unit: the 48-piece unit 8888 at 613 (V empty, 288 twists), and
+the 86-piece unit 64184 at 280 (V of 287 letters around a 360-letter word, 934 twists). At 194 four units remain:
+64213 (87 pieces), 16589 (50), 35795 (45) and 18445 (12).
+- The driver step found no unit it could restore.
+- The pure-twist stage found words for 35795 (504 letters) and 18445 (360 letters; all 86 chambers of its cell hold
+  lattice pieces), but neither closure script found a vacating V.
+- For 64213 and 16589 `cellpure3.py` stopped with a `KeyError`, as for the 17-piece unit at stop62: their cells, a
+  tetrahedron cell and a triangle cell, are not edge cells, so no pair tool moves them. Re-run on the final state with
+  the fix, it reports no cycle for both.
+
+As at stop62, the fallback of M\* would take over at 194, and its cost ends the run there.
 
 Fresh scrambles of 2, 3, 4 and 6 records (6,194 to 18,247 off pieces, `gen_scramble.py`) were started and stopped:
 scoring one state with 58 units took about an hour, so a run would take days. They are **not run** (gap E1). The

@@ -609,6 +609,12 @@ it closed in every case, with classes only at the heights stated:
 
 The left height is a function of the class (Section 1). QED
 
+(Addendum, 15 October 2026, senior review round 13, T13-01: `refexact.py` decides whether a cap holds or excludes a
+posed region in floating point, with margin 1e-7, and exactly only near ties. Certificate REFX-EXACT
+(`refx_exact.py`) recomputes all 861,600 of these decisions over Q(sqrt 5), in and out for each of the 718 classes and
+600 grips of the ten closures, and finds no difference; the closures reproduce the recorded states, classes, heights
+and class digests. Every decision of REFX is therefore exact, including those of R_5 used by POT5.)
+
 The rule R4 needs one remark for orbits other than 5. If cpl = (d, j0), the pose of p is G_d P0, with P0 its pose
 before the jumble that made d out and G_d the product of the twists at d since then. The class is j0 again exactly
 when the left factor of G_d is a scalar multiple of a unit icosian, that is (its right factor is one by T3) exactly
@@ -667,6 +673,11 @@ the component together with its attached height-2 pieces, and it is never separa
 jumble twist (433, item 12) is admissible at every step and leaves 78 pieces at left height 6 (histogram {0: 57,042,
 2: 115,850, 4: 4,150, 6: 78}). So reachable heights are not bounded by 4. The height-6 pieces belong to the model
 orbits 13, 15, 16 and 18 to 32; no piece of orbits 0 to 12 is above height 4 there.
+(Addendum, 15 October 2026, senior review rounds 13 and 13b, `../09-general-method/SENIOR-REVIEW.md` section 18:
+the bound 6 on left heights is equivalent to the statement that every cap of another branch that wholly holds a
+piece of height at least 6 is straddled (P6, T13-03). The 78 height-6 pieces of H6 form exactly one 3-face component,
+with no other 3-face neighbour (T13b-05, exact). Every cap of another branch that holds one of them lies in
+N15(433) union N25(433), where 433 is the grip of the raising jumble, which is still out (exact).)
 
 **Evidence on the H6 state (floating point unless stated; diagnostics, not certificates).**
 
@@ -830,6 +841,7 @@ All scripts run with `python -I <script> <research/jumbling> ...` from a checkou
 | POT-O4 | the same construction for orbit 4 (K+ orbit 6) | no association satisfies (ii) (1,728 tried) | `potsolve.py` / `certs/b5/pot-o4.json` |
 | UNITS-DEEP | UNITS for orbit 5 on T200, T300, T723 and H6 | (N) and (S) hold | `export_fixture.py`, `capsets.py`, `units5c.py`, `run_u_deep.sh` / `certs/b5/units-deep-summary.json` |
 | REFX | the transition systems of Lemma R for K+ orbits 1 to 10 (model orbits 0, 1, 3, 6, 2, 4, 5, 7, 8, 9), exact | all closed; the heights of Proposition HB; class digests recorded | `refexact.py` / `certs/q1/refx-1-10.json` |
+| REFX-EXACT | every cap decision of REFX (in and out, for each of the 718 classes and 600 grips) recomputed over Q(sqrt 5) | 861,600 decisions, no difference; the closures reproduce REFX; among the decisions REFX takes in floating point, the smallest distance from 0 is 0.000811 | `refx_exact.py` (imports `refexact.py`) / `certs/q1/refx-exact.json` |
 | REFX2-11 | the same with inner-cohort blocking for K+ orbit 11 (model orbit 10), stopped at 600,000 states | not closed; classes up to height 14 | `refexact2.py`, `innerstraddle.py` / `certs/q1/refx2-orbit11.log`, `certs/q1/innerstraddle.json` |
 | DEEP | exact pose tables of fixture prefixes T200, T300, T723 and of H6 | the digests of `export-deep.log`; H6 shipped as `data/t-T723x433-12.json` | `export_fixture.py` / `certs/q1/export-deep.log` |
 | ADJ-H6 | 3-face graph of the H6 state (floating point) | the counts of Section 4.1; no edge beyond left distance 2 | `adj3.py` / `certs/q1/adj-H6.json`, `.log` (its `.npz` is the input of the next five rows) |
@@ -853,6 +865,7 @@ Commands for the certificates new in the second edition (`<J>` is `research/jumb
     python -I scripts/export_fixture.py <J> 200,300,723 <D> 433:12
     bash scripts/run_u_deep.sh <J> . <D> T200 T300 T723 T723x433-12
     python -I scripts/refexact.py <J> 1,2,3,4,5,6,7,8,9,10 40 certs/q1/refx-1-10.json
+    python -I scripts/refx_exact.py <J> certs/q1/refx-exact.json   (added 15 October 2026, round 13)
     python -I scripts/innerstraddle.py <J> certs/q1/innerstraddle.json
     python -I scripts/refexact2.py <J> 11 40 <D>/refx2-11.json certs/q1/innerstraddle.json --max-states 600000
     python -I scripts/adj3.py <J> data/t-T723x433-12.json certs/q1/adj-H6.json
