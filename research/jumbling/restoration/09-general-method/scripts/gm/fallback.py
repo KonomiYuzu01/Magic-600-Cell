@@ -10,8 +10,10 @@ i = 1, ..., 59 (item 0 is the identity). Two reductions keep the search complete
 A word is rejected at its first inadmissible letter (the simulator's exact certificate; admissibility depends on the
 cap only, so a blocked cap is skipped with all its items) and accepted when the off pieces of the end state lie inside
 off(Z) \\ U. The search stops: the inverse of any history from the solved state is a clean step (M1-01), so some
-length has an accepted word. There is no bound on that length. Length 1 alone has 35,400 letters, about an hour, so
-this is the completeness device of M*, not a practical search.
+length has an accepted word. There is no bound on that length; the search (mstar.word_search) keeps its own stack,
+so only memory limits it. Length 1 has at most 35,400 letters; at the state of test_fallback.py a letter took about
+0.02 s, so length 1 takes minutes and length 2 (about 1.25 x 10^9 words) about 300 days. This is the completeness
+device of M*, not a practical search.
 
 usage: fallback.py <theory dir> <E-chain scripts dir> <pose table> <unit json {pieces}> <out dir> [--max-length N]
 Writes, as tclose2.py does: word-full.json (word, input and output digests), pre.json (state digest, the off pieces,
@@ -27,6 +29,9 @@ from pathlib import Path
 import numpy as np
 
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import mstar  # noqa: E402
+
 TH = Path(sys.argv[1]).resolve()
 sys.path.insert(0, str(TH))
 sys.path.insert(0, str(TH.parent))
@@ -71,43 +76,22 @@ def main():
     (out / 'pre.json').write_text(json.dumps(pre, indent=1) + '\n')
     st.journal = []
     el = {}
-    word = []
-    tried = 0
 
     def letter(c, i):
         if (c, i) not in el:
             el[(c, i)] = sim.Twist(restore.ctx, c, restore.element(M, c, i), 'menu', {'menu': M.name})
         return el[(c, i)]
 
-    def dfs(depth, length, last):
-        nonlocal tried
-        if depth == length:
-            return set(off_set(st).tolist()) <= allowed
-        for c in range(600):
-            if c == last:
-                continue
-            for i in range(1, n):
-                tried += 1
-                o = st.apply(letter(c, i))
-                if not o.applied:
-                    # without a budget a menu letter is only ever blocked, and a blocked cut depends on the cap only
-                    assert o.status == 'blocked', f'letter {(c, i)}: status {o.status}'
-                    break
-                word.append((c, i))
-                if dfs(depth + 1, length, c):
-                    return True
-                word.pop()
-                st.undo()
-        return False
+    def apply(c, i):
+        o = st.apply(letter(c, i))
+        if not o.applied:
+            # without a budget a menu letter is only ever blocked, and a blocked cut depends on the cap only
+            assert o.status == 'blocked', f'letter {(c, i)}: status {o.status}'
+        return o.applied
 
-    length = 0
-    while not maxlen or length < maxlen:
-        length += 1
-        found = dfs(0, length, -1)
-        log(length=length, tried=tried, found=found)
-        if found:
-            break
-    else:
+    word, tried = mstar.word_search(apply, st.undo, lambda: set(off_set(st).tolist()) <= allowed, 600, n, maxlen,
+                                    lambda length, tried, found: log(length=length, tried=tried, found=found))
+    if word is None:
         res = {'result': f'no word up to length {maxlen}', 'tried': tried, 'seconds': round(time.time() - T0)}
         (out / 'result.json').write_text(json.dumps(res, indent=1) + '\n')
         print(json.dumps(res))

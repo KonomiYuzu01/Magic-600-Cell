@@ -149,7 +149,8 @@ def driver_step(table, k):
     rc = run(cmd, str(wd) + '.log', HSEC)
     rows = [json.loads(x) for x in (wd / 'run.jsonl').read_text().splitlines() if x.strip()] \
         if (wd / 'run.jsonl').exists() else []
-    ok = [r for r in rows if r.get('event') == 'try' and r.get('ok')]
+    ok = [r for r in rows
+          if r.get('event') == 'try' and r.get('ok') and mstar.closure_ok(Path(r['end_table']).parent)]
     stop = next((r for r in rows if r.get('event') == 'stop'), None)
     tries = sum(1 for r in rows if r.get('event') == 'try')
     if not ok:
@@ -198,9 +199,11 @@ def pure_step(table, k, units):
         def f():
             out = wd / f'cp3-{u["key"]}.json'
             lf = wd / f'cp3-{u["key"]}.log'
-            run(PY + [str(HERE / 'cellpure3.py'), TH, table, u['file'], str(out), '--search'], str(lf), HSEC)
+            rc = run(PY + [str(HERE / 'cellpure3.py'), TH, table, u['file'], str(out), '--search'], str(lf), HSEC)
             wf = wd / f'cp3-{u["key"]}-word.json'
-            if not wf.exists():
+            if rc == 'timeout':
+                return {'word': None, 'reason': f'timeout after {HSEC} s'}
+            if rc != 0 or not wf.exists():
                 return {'word': None, 'reason': cp3_reason(out, lf)}
             rec = json.loads(out.read_text())
             return {'word': json.loads(wf.read_text())['word'], 'exact': rec.get('exact'),
@@ -225,13 +228,14 @@ def pure_step(table, k, units):
             out = []
             for script, tag in (('tclose2.py', 'c2'), ('tclose2m3.py', 'c3')):
                 d = wd / f'{tag}-{u["key"]}'
-                run(PY + [str(HERE / script), TH, SC, table, u['file'], str(wf), str(d), '--greedy-seconds', PGSEC],
-                    str(d) + '.log', HSEC)
-                r = json.loads((d / 'result.json').read_text()) if (d / 'result.json').exists() else {'result': 'crash'}
+                rc = run(PY + [str(HERE / script), TH, SC, table, u['file'], str(wf), str(d), '--greedy-seconds',
+                               PGSEC], str(d) + '.log', HSEC)
+                r = json.loads((d / 'result.json').read_text()) if rc == 0 and (d / 'result.json').exists() \
+                    else {'result': 'timeout' if rc == 'timeout' else 'crash'}
                 end = r.get('end')
                 ok = bool(end and end['T_restored'] == u['size'] and end['collateral'] == 0
-                          and end['protected_exact_pose_changed'] == 0)
-                out.append({'script': script, 'result': r.get('result', 'closed'), 'ok': ok,
+                          and end['protected_exact_pose_changed'] == 0 and mstar.closure_ok(d))
+                out.append({'script': script, 'rc': rc, 'result': r.get('result', 'closed'), 'ok': ok,
                             'V': len(json.loads((d / 'parts' / 'V.json').read_text())['word'])
                             if (d / 'parts' / 'V.json').exists() else None, 'length': r.get('length')})
                 if ok:
@@ -298,7 +302,7 @@ def h_fallback(table, k, info, units):
     r = json.loads((d / 'result.json').read_text()) if (d / 'result.json').exists() else {}
     log(event='fallback', step=k, unit=u['key'], size=u['size'], rc=rc, result=r.get('result'),
         length=r.get('length'), tried=r.get('tried'), seconds=round(time.time() - t))
-    if r.get('result') == 'found' and rc == 0:
+    if r.get('result') == 'found' and rc == 0 and mstar.closure_ok(d):
         w = add_step(d, f'{NAME}-k{k:02d}-fb-u{u["key"]}', 'fallback')
         log(event='step', step=k, kind='fallback', unit=u['key'], size=u['size'], length=len(w['word']),
             off_after=r['end']['off'])
