@@ -31,9 +31,9 @@ configuration is a slot occupied by no lattice piece; Q denotes the off-lattice 
 
 | Item | Status after this work |
 |---|---|
-| 1.1 finiteness | **open; delivered as open, with proved partial bounds.** Proposition HB (proved; certificate REFX): a piece of model orbit 0, 1, 2, 3 or 6 never passes left height 2, a piece of orbit 4, 5, 7 or 8 never passes height 4, and a piece of orbit 9 never passes height 6. Height 6 is reachable (certificate H6; there only pieces of orbits 13 and higher reach it). Height 8 was never reached: not by the one-twist extensions of the fixture history (COVER6X, complete under H; H6-MORE) nor by the targeted searches of Section 4.1 (TWOSTEP, CLEAR78, PUMP, SINGLE, RWALK). All evidence points to bounded heights; no bound is proved for orbits 10 to 34. |
+| 1.1 finiteness | **open; delivered as open, with proved partial bounds.** Proposition HB (proved; certificate REFX): a piece of model orbit 0, 1, 2, 3 or 6 never passes left height 2, a piece of orbit 4, 5, 7 or 8 never passes height 4, and a piece of orbit 9 never passes height 6. Height 6 is reachable (certificate H6; there only pieces of orbits 13 and higher reach it). Height 8 was never reached: not by the one-twist extensions of the fixture history (COVER6X, complete under H; H6-MORE) nor by the targeted searches of Section 4.1 (TWOSTEP, CLEAR78, PUMP, SINGLE, RWALK). All evidence points to bounded heights; no bound is proved for orbits 10 to 34. (Correction, 15 October 2026, senior review round 15, T15-01: height 8 is reachable; four admissible letters after record 723 take seven pieces of model orbits 19 to 24 there, `../09-general-method/SENIOR-REVIEW.md` section 20. Whether left heights are bounded at all is open.) |
 | 1.2 Safe | answered in the handoff, under H (600, 120 and 0 elements at heights 0, 2 and at least 4); not redone. |
-| 1.3 normal form | **proved for heights 2 and 4** (certificate HEIGHTS4 with Lemma E); open from height 6 (240 of the 5,120 vertices reached, certificates COVER6 and COVER6X). If left heights are bounded, the normal form fails at every larger height; by Proposition HB it already fails for each of the model orbits 0 to 9 taken alone. |
+| 1.3 normal form | **proved for heights 2 and 4** (certificate HEIGHTS4 with Lemma E); open from height 6 (240 of the 5,120 vertices reached, certificates COVER6 and COVER6X). If left heights are bounded, the normal form fails at every larger height; by Proposition HB it already fails for each of the model orbits 0 to 9 taken alone. (Addendum, 15 October 2026: height 8 is reached, senior review round 15, T15-01.) |
 | 3.1 A_J | **answered: A_J = C2^34 x C5^2 exactly** (Theorem LB with certificate CERT-LB-V2 for the lower bound; Theorem A and Theorem B5 with certificate POT5 for the upper bound). |
 | 3.2 sign 8 = sign 25? | **answered: no.** The 9-twist word M8 has sign 8 odd and sign 25 even (Theorem 3.2). |
 | 3.3 frames zero? | answered in the handoff (no: f32). Here f8, f11, f22, f25 and the C5 frames of orbits 17 and 28 are also nonzero on A_J. |
@@ -679,7 +679,9 @@ piece of height at least 6 is straddled (P6, T13-03). The 78 height-6 pieces of 
 with no other 3-face neighbour (T13b-05, exact). Every cap of another branch that holds one of them lies in
 N15(433) union N25(433), where 433 is the grip of the raising jumble, which is still out (exact). Round 14, same
 record, section 19: the island stays at height 6, and every cap of another branch that holds it whole stays blocked,
-until 433 first returns (trap lemma, T14-03).)
+until 433 first returns (trap lemma, T14-03). Round 15, same record, section 20: the lemma's hypothesis fails at
+other raises, and P6 is false. Four admissible letters after record 723, the first of which gives H6, take seven
+other pieces, of model orbits 19 to 24, to height 8 (T15-01).)
 
 **Evidence on the H6 state (floating point unless stated; diagnostics, not certificates).**
 
@@ -701,6 +703,10 @@ until 433 first returns (trap lemma, T14-03).)
 
 **Searches for height 8 (negative evidence; every applied letter is checked by the exact simulator, candidate
 generation uses floating-point pre-tests).**
+
+(Superseded, 15 October 2026: height 8 is reachable, senior review round 15, T15-01,
+`../09-general-method/SENIOR-REVIEW.md` section 20. TWOSTEP below raised the seven pieces of T15-01 to height 6
+through grips 593 and 501 and stopped after two letters; a third letter, at 593, reaches height 8.)
 
 - **H6-MORE (certificate).** After record 723 and each of the 48 jumble twists at 433, every grip within 55.7
   degrees of 433 whose cap is unstraddled (exact classify) and every jumble element y of that grip were tried on
@@ -756,6 +762,9 @@ but it need not adapt to the state.) Everything computed points to a bound: heig
 innermost model orbits, the largest height observed anywhere is 6, a high component can only rise as a rigid
 block through a clean cap of another branch, and in the deepest state every such cap is straddled. The step still
 missing is an invariant that controls the outer orbits across jumbles, as Lemma R and REFX do for the inner ten.
+(Correction, 15 October 2026, senior review round 15, T15-01: the largest height reached is now 8. Before the
+raising letter, an unstraddled cap of another branch, cap 593, holds a whole height-6 component; whether heights are
+bounded at all is open.)
 
 ### 4.2 Q1.2
 
@@ -780,7 +789,8 @@ at even distance 2m is the left position of a reachable pose, and no other verte
 - **Link with 1.1.** If left heights are bounded (1.1), the normal form fails at every distance above the bound.
   By Proposition HB, pieces of the model orbits 0 to 9 never pass height 2, 4 or 6 (Section 4.1), so the vertices at
   distance 8 and more could only be left positions of pieces of the orbits 10 to 34. All evidence of Section 4.1
-  points to a bound, hence to a negative answer, but neither is proved. **Open; delivered as open.**
+  points to a bound, hence to a negative answer, but neither is proved. **Open; delivered as open.** (Addendum, 15
+  October 2026: height 8 is reached, senior review round 15, T15-01, so a bound, if there is one, is at least 8.)
 
 ## 5. 3E interface note (where the paused 3E line can use this)
 

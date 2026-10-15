@@ -2919,7 +2919,7 @@ At H6 (g = 433, h = 4, X0 = T723, where 433 is not out), the hypotheses hold exa
 
 - RA, stated for single pieces, is false at heights 4 and 6 (T14-01, T14-02). The statement that holds at H6 is about whole islands, and the trap lemma uses it.
 - P6 holds for the H6 island throughout its first height-6 excursion: a cap that holds part of the island is straddled by it, and a cap of another branch that holds all of it is blocked by the out raiser 433. So no continuation from H6 that keeps the island at height 6 the whole way reaches height 8.
-- Still open (round 15):
+- Still open after round 14 (taken up in section 20):
   - a continuation that first lowers the island to height 4 and then raises it again;
   - an island that enters the cap of a grip that is already out (an arrival), where the trap lemma does not apply;
   - whether the hypothesis of the trap lemma holds at every raise by a fresh departure;
@@ -3273,7 +3273,342 @@ Output:
 T723 and H6: 9 exact 4-2 contacts; all 10 foreign-cap incidences NB-covered
 ```
 
-## 20. What changed in METHOD.md
+## 20. Height 8 is reachable: P6 is false (round 15)
+
+Round 14 left three cases of P6 open: an island that drops to height 4 and rises again, an island that enters the cap of a grip that is already out (an arrival), and the hypothesis of the trap lemma (TH) at every raise by a fresh departure (section 19). Round 15 asked for a reduction of P6 to TH, a no-arrival premise and U6, for a decision on arrivals and on TH, and for the positions that the H6 island reaches after its first return. The review returned five results: T15-01 (`major`) and T15-02 to T15-05 (`minor`). The integrator re-ran the two programs from the repository root (T15-01 and T15-02 form one program), got the reported outputs exactly, replayed the word of T15-01 with its own code, and adopted all five.
+
+| Finding | Status | Result |
+| --- | --- | --- |
+| T15-01 | computed | P6 is false, and so is the bound 6 on left heights. After the fixture records 1 to 723, the four letters (433, 12), (593, 58), (501, 22) and (593, 12) are admissible; the first gives H6 and the last takes seven pieces to height 8. Grip 593 is out from record 85 on. After (593, 58) the seven pieces (118527, 126380, 126382, 126384, 126385, 149644 and 149650, of model orbits 19 to 24) form one 3-face component at height 4 in branch 2, inside cap 593. Grip 501 is not out, and the 68 inner pieces of its cap are on the lattice; its jumble (501, 22) is a fresh raise of the component to height 6 in branch 1. Cap 593 then holds the whole component, is unstraddled, and lies outside NB(501): NN(NN + n₅₀₁·n₅₉₃) − 2κ² = (−309168 − 61072√5)/15625 < 0; it is not in NB of any other out grip either. So TH fails at an admissible fresh raise, and the jumble (593, 12) at the out grip 593 raises the component to height 8 in branch 2. Heights at the end: 56,457 pieces at 0, 116,435 at 2, 4,143 at 4, 78 at 6 (the H6 island, branch 4) and 7 at 8. |
+| T15-02 | computed | Arrivals happen at height 4. From H6, the letters (593, 58), (501, 22), (501, 12) and (501, 40) bring the component back wholly into cap 593, at height 4 in branch 2, while 593 stays out; before the last letter one member straddled cap 593 and the other six were outside it. The next letter (593, 12) keeps it at height 4, since the branches agree. Appending (593, 45), the inverse of (593, 12), to the word of T15-01 gives an arrival from height 8 to 6 into the cap of the out grip 501. |
+| T15-03 | proved | A conditional reduction: INV, TH at every fresh raise, U6 and NA+ give P6. NA+ says that while a grip g stays out, no letter at another grip makes a high component wholly contained in cap g, whether the component was high before or is born there. T15-01 and T15-02 refute TH and the no-arrival premise in the puzzle, so the reduction gives no bound. |
+| T15-04 | proved | R(I_a) is finite if and only if the clean steps of the general method have a uniform length bound; this equivalence does not need hypothesis H of Card 5. Under H, a bound 2m on left heights gives at most (7200·D_m)^177120 configurations, with D_m = (4·16^m − 1)/3 (right heights are always 0). Height 8 is compatible with a larger finite bound, so it does not decide X1. |
+| T15-05 | computed | The H6 island after its first return, followed up to its first raise to height 6, with blocking by other pieces ignored: 4 K⁺-classes of 7,200 positions each (28,800 positions at height 4) and 1,380 menu edges from the four representatives (96 drop to height 2, 564 stay at height 4, 720 raise to height 6). TH fails geometrically on 96 of the raises: by the raiser 430 in the first class, 258 and 398 in the second, 299 in the third, and none in the fourth. Ignoring blocking, the path (274, 12), (326, 12), (281, 12) from the return position reaches height 10; it is not claimed reachable. |
+
+### Integrator checks
+
+- An independent replay of the word of T15-01 with the integrator's own code (the third program below) gives the same digest and the same height histogram. The seven pieces at height 8 belong to model orbits 19 to 24, so Proposition HB (orbits 0 to 9) is unchanged.
+- No single letter takes that state to height 10. A letter raises a piece from 8 to 10 only by a jumble at an unstraddled grip of another branch whose cap holds the piece whole (Corollary FN1). A cap that holds part of the seven-piece component is straddled by a member (T13b-05), and the six caps of another branch that hold all of it (529, 547, 555, 562, 580 and 585) are blocked (exact classify). The 78 pieces at height 6 can reach at most 8.
+- The seven-piece component is the one that TWOSTEP of stage 04 raised to height 6 (`certs/q1/twostep-H6.json`: a 7-piece cluster, 4 to 4 to 6, by the letters (593, 58) and (501, 12)). TWOSTEP stopped after two letters; a third letter, at the out grip 593, reaches height 8.
+
+### What it gives
+
+- P6 and the bound 6 on left heights are false (T15-01). The mechanism needs two grips of different branches, neither in the other's NB: one departs early and stays out (593, from record 85), the other raises by a fresh jumble a component that lies in the first one's cap (501), and the first one, which nothing blocks, raises it again. The trap lemma (T14-03) does not apply, because its hypothesis TH fails at 501.
+- Arrivals happen (T15-02), so the no-arrival premise of the conditional reduction (T15-03) is false too; T15-03 records which hypotheses would have been enough.
+- X1 and the uniform bound of M1 stay open: left heights may still be bounded by a larger constant, and a height-8 witness is not an unbounded family (T15-04). Proposition HB is unchanged.
+- The searches of stage 04 that found nothing above height 6 were evidence only; TWOSTEP stopped one letter short of this word.
+- Next (round 16): whether left heights are bounded at all.
+
+### Reproduction (round 15)
+
+From the repository root, with Python 3.13 and NumPy 2.5: `python3 -I -B -` with each program on standard input; the third takes `research/jumbling` as its argument (`python3 -I -B - research/jumbling`). On the integrator's machine they took 199, 20 and 201 seconds.
+
+T15-01 and T15-02: the word to height 8 with the certificates of each raise, then the arrivals.
+
+```python
+import sys
+from collections import Counter
+sys.path[:0]=['research/jumbling/theory','research/jumbling','research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, transpose, dot, affine_rank
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+C=sim.get_context(); d=C.data
+F,M=wj.load(C,'I_a')
+s=sim.State(C,filtered=False,menu=M)
+I=C.kplus.matrix(0); G={g:I for g in range(600)}; O=set()
+K=[118527,126380,126382,126384,126385,149644,149650]
+def apply(tw):
+    out=s.apply(tw,journal=False)
+    assert out.applied and not out.uncertain
+    G[tw.grip]=to_tuple(matmul(tw.matrix,G[tw.grip]))
+    if C.kplus.index_of_matrix(G[tw.grip])<0: O.add(tw.grip)
+    else: O.discard(tw.grip)
+def put(g,j):
+    apply(sim.Twist(C,g,RS.element(M,g,j),'menu',{'menu':M.name}))
+def heights():
+    return [0 if p.kidx>=0 else T.dist(T.factors(p.matrix)[0]) for p in s._poses]
+def component_hb():
+    Q=s.pose(K[0]); assert all(s.pose(p)==Q for p in K)
+    l=T.factors(Q)[0]
+    return T.dist(l),T.branch(l)
+def classification(p,g):
+    return Evaluator(pullback_form(s.pose(p),d.N[g])).classify(C.regions.vform(p))[0]
+def holding_caps():
+    V={tuple(matvec(s.pose(p),v)) for p in K for v in C.regions.vertices(p)}
+    vf=rows_form(V)
+    return [g for g in range(600) if Evaluator(pullback_form(I,d.N[g])).classify(vf)[0]=='in']
+def gap(a,b):
+    return d.NN*(d.NN+dot(d.N[a],d.N[b]))-2*d.KAPPA*d.KAPPA
+for t,rec in enumerate(F['journal']['records'][:723],1):
+    apply(sim.Twist.from_record(C,rec))
+    if t>=85: assert 593 in O
+assert s.digest()=='bd0cbd3337ef16085cba3498916b3c683f04735b5cc3737012c6414af422f7d7'
+put(433,12)
+assert s.digest()=='fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39'
+put(593,58)
+assert component_hb()==(4,2) and 593 in O and 501 not in O
+assert s.digest()=='9e8efe5ec9a7fa035319baf1fa88aac49ef2cc7c54a0d52a3faa616c667bcf03'
+cl=s.classify(501,need_inside=True)
+assert cl.status=='admissible' and not cl.uncertain
+inner=[int(p) for p in cl.inside if int(d.orbit_id[p]) in {0,1,2,3,6}]
+flags=s.lattice_flags()
+assert len(inner)==68 and all(flags[p] for p in inner)
+h=heights()
+assert sorted(int(p) for p in cl.inside if h[int(s.pose_id[p])]>=4)==K
+put(501,22)
+assert component_hb()==(6,1) and {501,593}<=O
+assert s.digest()=='ede1ebc8e264cd95db54cc816e9fcb1c68f591491c2300d23eb99c71e61628fe'
+assert holding_caps()==[496,501,548,551,555,580,593]
+cl=s.classify(593,need_inside=False)
+assert cl.status=='admissible' and not cl.uncertain
+assert all(gap(593,c).sign()<=0 for c in O if c!=593)
+assert gap(501,593).sign()<0
+put(593,12)
+assert component_hb()==(8,2) and {501,593}<=O
+assert holding_caps()==[513,529,547,555,562,580,585,593]
+assert all(classification(p,501)=='out' for p in K)
+h=heights(); hist=Counter(h[int(i)] for i in s.pose_id)
+assert hist=={0:56457,2:116435,4:4143,6:78,8:7}
+hb={}
+for i,p in enumerate(s._poses):
+    if h[i]>=6:
+        l=T.factors(s._pose_matrix(i))[0]
+        hb[i]=(h[i],T.branch(l))
+counts=Counter(hb[int(i)] for i in s.pose_id if int(i) in hb)
+assert counts=={(6,4):78,(8,2):7}
+V={p:{tuple(matvec(s.pose(p),v)) for v in C.regions.vertices(p)} for p in K}
+edges=[]
+for i,p in enumerate(K):
+    for q in K[i+1:]:
+        common=V[p]&V[q]
+        if len(common)>=4 and affine_rank(list(common))==3: edges.append((p,q))
+seen={K[0]}
+while True:
+    old=len(seen)
+    for p,q in edges:
+        if p in seen or q in seen: seen.update((p,q))
+    if len(seen)==old: break
+assert len(edges)==7 and seen==set(K)
+assert s.digest()=='c4277e602ebcb90092e280382e3bebfba4c249bb2a03fc630cab9aa1bd493ff5'
+z=gap(501,593)
+print('heights',sorted(hist.items()))
+print('high',sorted(counts.items()))
+print('digest',s.digest())
+print('gap',(z.a,z.b,z.d))
+print('PASS',727)
+assert RS.element(M,593,45)==to_tuple(transpose(RS.element(M,593,12)))
+put(593,45)
+assert component_hb()==(6,1) and 501 in O
+assert all(classification(p,501)=='in' for p in K)
+assert s.digest()=='ede1ebc8e264cd95db54cc816e9fcb1c68f591491c2300d23eb99c71e61628fe'
+put(501,12)
+assert component_hb()==(6,1) and 593 in O
+assert holding_caps()==[501,542,548,551,580]
+assert [classification(p,593) for p in K]==['straddle','out','out','out','out','out','out']
+assert RS.element(M,501,40)==to_tuple(transpose(matmul(RS.element(M,501,12),RS.element(M,501,22))))
+put(501,40)
+assert component_hb()==(4,2) and 593 in O and 501 not in O
+assert all(classification(p,593)=='in' for p in K)
+assert holding_caps()==[496,501,551,555,580,593]
+assert s.digest()=='9e8efe5ec9a7fa035319baf1fa88aac49ef2cc7c54a0d52a3faa616c667bcf03'
+print('arrival',component_hb(),holding_caps(),s.digest())
+put(593,12)
+assert component_hb()==(4,2) and 593 in O
+assert holding_caps()==[513,529,547,562,585,593]
+assert s.digest()=='95f63be5675ac2868f4b2e53756981419f5c95908ab7ba6a73e320f16f898285'
+print('next',component_hb(),holding_caps(),s.digest())
+```
+
+Output:
+
+```text
+heights [(0, 56457), (2, 116435), (4, 4143), (6, 78), (8, 7)]
+high [((6, 4), 78), ((8, 2), 7)]
+digest c4277e602ebcb90092e280382e3bebfba4c249bb2a03fc630cab9aa1bd493ff5
+gap (-309168, -61072, 15625)
+PASS 727
+arrival (4, 2) [496, 501, 551, 555, 580, 593] 9e8efe5ec9a7fa035319baf1fa88aac49ef2cc7c54a0d52a3faa616c667bcf03
+next (4, 2) [513, 529, 547, 562, 585, 593] 95f63be5675ac2868f4b2e53756981419f5c95908ab7ba6a73e320f16f898285
+```
+
+T15-05: the H6 island after its first return, up to its first raise to height 6.
+
+```python
+import sys,gzip,json
+from functools import lru_cache
+from collections import Counter
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import sim,restore as RS,trees as T
+from exact import Q5,matmul,transpose,dot
+from sim.kplus import matrix_from_json,to_tuple
+from sim.kernel import rows_form,Evaluator,pullback_form
+C=sim.get_context();d=C.data;M=RS.menu('I_a')
+with gzip.open('research/jumbling/restoration/04-card5-lattice-invariants/data/t-T723x433-12.json.gz','rt') as f:tab=json.load(f)
+K=[p for p,i in enumerate(tab['pose_id']) if i==1138]
+Q=to_tuple(matmul(transpose(RS.element(M,433,12)),matrix_from_json(tab['poses'][1138])))
+V=sorted({tuple(v) for p in K for v in C.regions.vertices(p)},key=repr);vf=rows_form(V)
+assert len(K)==78 and len(V)==74
+@lru_cache(None)
+def lhs(R):
+    l=T.factors(R)[0]
+    for a in [Q5(1),Q5(2),Q5(-1,1),Q5(1,1)]:
+        q=tuple(a*x for x in l)
+        if T.qnorm(q)==1:return T.qkey(q)
+    raise AssertionError('normalization')
+canon_cache={}
+def key(R):
+    l=lhs(R)
+    if l not in canon_cache:
+        orbit=[T.qkey(T.qmul(u,l)) for u in T.PUNITS]
+        k=min(orbit,key=lambda q:tuple((x.a,x.b,x.d) for x in q))
+        for x in orbit:canon_cache[x]=k
+    return canon_cache[l]
+@lru_cache(None)
+def holding(R):
+    out=[]
+    for c in range(600):
+        ev=Evaluator(pullback_form(R,d.N[c]))
+        if all(ev.sign_row(vf[0],r)>=0 for r in vf[1]):out.append(c)
+    return tuple(out)
+@lru_cache(None)
+def nb(g):
+    return {c for c in range(600) if c!=g and (d.NN*(d.NN+dot(d.N[g],d.N[c]))-2*d.KAPPA*d.KAPPA).sign()>0}
+@lru_cache(None)
+def element(c,j):return RS.element(M,c,j)
+reps=[Q];seen={key(Q)};parents=[None];counts=Counter();fails=[];i=0
+while i<len(reps):
+    R=reps[i]
+    for c in holding(R):
+        for j in range(60):
+            S=to_tuple(matmul(element(c,j),R));h=T.dist(lhs(S));counts[h]+=1
+            if h==4:
+                k=key(S)
+                if k not in seen:seen.add(k);reps.append(S);parents.append((i,c,j))
+            elif h==6:
+                bad=sorted(set(holding(S))-{c}-nb(c))
+                if bad:fails.append((i,c,j,bad))
+            else:assert h==2
+    i+=1
+assert len(reps)==4 and counts=={2:96,4:564,6:720} and len(fails)==96
+print('classes',len(reps),'parents',parents,'edges',dict(sorted(counts.items())),'failures',len(fails))
+for ic in sorted({(i,c) for i,c,j,b in fails}):
+    print(ic,[(j,b) for i,c,j,b in fails if (i,c)==ic])
+import numpy as np
+orders=[]
+for R in reps:
+    gens=sorted({g for c in holding(R) for g in C.kplus.a4(c)})
+    known={0};front=np.array([0],np.int64)
+    while len(front):
+        nxt=set()
+        for g in gens:nxt.update(map(int,C.kplus.compose_vec(np.full(len(front),g,np.int64),front)))
+        nxt-=known;known|=nxt;front=np.array(sorted(nxt),np.int64)
+    orders.append(len(known))
+assert orders==[7200]*4
+print('orders',orders,'poses',sum(orders))
+R=Q
+for c,j in [(274,12),(326,12),(281,12)]:
+    assert c in holding(R)
+    R=to_tuple(matmul(element(c,j),R))
+    print('abstract',c,j,'height',T.dist(lhs(R)),'holds',holding(R))
+```
+
+Output:
+
+```text
+classes 4 parents [None, (0, 326, 12), (0, 326, 13), (0, 326, 14)] edges {2: 96, 4: 564, 6: 720} failures 96
+(0, 430) [(12, [281]), (14, [315]), (16, [488]), (20, [373]), (21, [406]), (23, [520]), (24, [390]), (25, [406]), (26, [206]), (27, [557]), (28, [532]), (29, [315]), (30, [231]), (31, [520]), (32, [381]), (43, [231]), (44, [488]), (45, [390]), (46, [381]), (47, [281]), (48, [206]), (49, [557]), (50, [373]), (51, [532])]
+(1, 258) [(12, [433]), (13, [309]), (16, [79]), (17, [172]), (19, [398]), (20, [233]), (24, [102]), (25, [124]), (26, [398]), (27, [271]), (28, [309]), (29, [221]), (30, [454]), (31, [344]), (32, [172]), (34, [454]), (35, [433]), (36, [344]), (37, [102]), (38, [124]), (39, [233]), (40, [271]), (41, [79]), (42, [221])]
+(1, 398) [(13, [271]), (15, [454]), (17, [172]), (18, [279]), (19, [258]), (22, [467]), (33, [564]), (34, [433]), (35, [454]), (36, [564]), (37, [298]), (38, [487]), (39, [467]), (40, [309]), (41, [279]), (42, [482]), (52, [271]), (53, [298]), (54, [487]), (55, [258]), (56, [309]), (57, [482]), (58, [433]), (59, [172])]
+(2, 299) [(13, [425]), (14, [246]), (17, [493]), (19, [326]), (21, [97]), (23, [195]), (34, [196]), (35, [118]), (36, [97]), (37, [456]), (38, [246]), (39, [291]), (40, [320]), (41, [414]), (42, [195]), (43, [326]), (44, [320]), (45, [425]), (46, [414]), (47, [196]), (48, [118]), (49, [493]), (50, [456]), (51, [291])]
+orders [7200, 7200, 7200, 7200] poses 28800
+abstract 274 12 height 6 holds (274, 326, 340, 373, 430, 433)
+abstract 326 12 height 8 holds (281, 313, 326, 342)
+abstract 281 12 height 10 holds (281, 313, 342, 398, 425)
+```
+
+The integrator's replay of T15-01 and the one-letter check for height 10.
+
+```python
+# Independent replay of the T15-01 word (integrator's own code), then a one-letter search for height 10.
+import sys, json
+from collections import Counter
+from functools import lru_cache
+import numpy as np
+J = sys.argv[1]
+sys.path[:0] = [J + '/theory', J, J + '/fixtures']
+import sim, trees as T, wj, restore as RS
+C = sim.get_context(); d = C.data
+F, M = wj.load(C, 'I_a')
+s = sim.State(C, filtered=False, menu=M)
+@lru_cache(None)
+def hb(key):
+    if key[0] == 'K':
+        return (0, -1)
+    f = T.factors(key[1])[0]
+    return (T.dist(f), T.branch(f))
+def piece_hb(st, p):
+    return hb(st._poses[int(st.pose_id[p])].key)
+def hist(st):
+    ph = np.array([hb(p.key)[0] for p in st._poses])[st.pose_id]
+    return dict(sorted(Counter(ph.tolist()).items()))
+def letter(st, g, j):
+    o = st.apply(sim.Twist(C, g, RS.element(M, g, j), 'menu', {'menu': M.name}), journal=False)
+    assert o.applied and not o.uncertain, (g, j)
+for rec in F['journal']['records'][:723]:
+    o = s.apply(sim.Twist.from_record(C, rec), journal=False)
+    assert o.applied and not o.uncertain
+for g, j in [(433, 12), (593, 58), (501, 22), (593, 12)]:
+    letter(s, g, j)
+print('digest', s.digest())
+print('hist', hist(s))
+K = [118527, 126380, 126382, 126384, 126385, 149644, 149650]
+print('K', [piece_hb(s, p) for p in K], 'orbits', sorted({int(d.orbit_id[p]) for p in K}))
+top = [int(p) for p in np.flatnonzero(np.array([hb(p.key)[0] for p in s._poses])[s.pose_id] >= 8)]
+print('pieces at height >= 8', top)
+# one more letter: every grip whose cap wholly holds all of K, of a branch other than K's, admissible -> every jumble
+def clone(st):
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(st._poses); u._lookup = dict(st._lookup); u.pose_id = st.pose_id.copy()
+    return u
+kb = piece_hb(s, K[0])[1]
+cands = []
+for c in range(600):
+    if T.branch(tuple(d.N[c])) == kb:
+        continue
+    if not all(sim.kernel.Evaluator(sim.kernel.pullback_form(s.pose(p), d.N[c])).classify(C.regions.vform(p))[0] == 'in' for p in K):
+        continue
+    cl = s.classify(c, need_inside=False)
+    cands.append((c, cl.status, bool(cl.uncertain)))
+print('caps of another branch holding K whole', cands)
+best = 8
+for c, status, unc in cands:
+    if status != 'admissible' or unc:
+        continue
+    for j in RS.jumble_items(M):
+        u = clone(s)
+        o = u.apply(sim.Twist(C, c, RS.element(M, c, j), 'menu', {'menu': M.name}), journal=False)
+        if not (o.applied and not o.uncertain):
+            continue
+        h = piece_hb(u, K[0])[0]
+        best = max(best, h)
+        if h >= 10:
+            print('height10', c, j, u.digest()); break
+print('max height of K after one more letter', best)
+```
+
+Output:
+
+```text
+digest c4277e602ebcb90092e280382e3bebfba4c249bb2a03fc630cab9aa1bd493ff5
+hist {0: 56457, 2: 116435, 4: 4143, 6: 78, 8: 7}
+K [(8, 2), (8, 2), (8, 2), (8, 2), (8, 2), (8, 2), (8, 2)] orbits [19, 20, 21, 22, 23, 24]
+pieces at height >= 8 [118527, 126380, 126382, 126384, 126385, 149644, 149650]
+caps of another branch holding K whole [(529, 'blocked', False), (547, 'blocked', False), (555, 'blocked', False), (562, 'blocked', False), (580, 'blocked', False), (585, 'blocked', False)]
+max height of K after one more letter 8
+```
+
+## 21. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -3318,3 +3653,4 @@ T723 and H6: 9 exact 4-2 contacts; all 10 foreign-cap incidences NB-covered
   - Section 5, gap M1: the finiteness item gives P6 and its equivalence with the bound 6 on left heights (T13-03), the exact cap decisions of REFX (T13-01), where the blocking comes from (T13b-02, T13b-05), the open case, and the fact about grip 433.
   - Section 6.2: the e2run24 run to its end, and the fix to `cellpure3.py`, which stopped with a `KeyError` when no pair tool moves the unit's cell and now reports that no cycle passes through it.
 - After round 14 (section 19): section 5, gap M1, the finiteness item gives the trap lemma (T14-03), the failure of RA for single pieces (T14-01, T14-02) and the cases that stay open.
+- After round 15 (section 20): section 5, gap M1, the finiteness item says that P6 and the bound 6 on left heights are false (T15-01), that a high island can enter the cap of a grip that is already out (T15-02), and that R(I_a) is finite if and only if the clean steps have a uniform length bound, without hypothesis H (T15-04).
