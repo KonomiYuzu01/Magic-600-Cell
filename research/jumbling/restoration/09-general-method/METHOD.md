@@ -228,7 +228,7 @@ Two mathematical gaps:
     (T9-02). No single letter takes the deep state H6 of stage 04 to height 8 (exact, T9-04). For each m, the
     states whose heights are at most 2m have a finite maximum distance to the lattice, but no value of it is known
     (T9-05).
-  - *Finiteness (rounds 13 to 15).* Still open (`SENIOR-REVIEW.md` sections 18 to 20). Every left height is at most
+  - *Finiteness (rounds 13 to 16).* Still open (`SENIOR-REVIEW.md` sections 18 to 21). Every left height is at most
     6 if and only if P6 holds: at every reachable configuration, every cap of a grip of another branch that wholly
     contains a piece of height at least 6 is straddled (T13-03). P6 is false (round 15, T15-01): after the fixture
     records 1 to 723, four admissible letters take seven pieces of model orbits 19 to 24 to height 8. Grip 593
@@ -241,7 +241,11 @@ Two mathematical gaps:
     the raiser; at 501 that fails. A high island can also enter the cap of a grip that is already out (T15-02).
     R(I_a) is finite if and only if the clean steps have a uniform length bound (T15-04; this does not need
     hypothesis H). Every cap decision behind Proposition HB is exact (REFX-EXACT), and Proposition HB is unchanged.
-    Open: whether left heights are bounded at all.
+    Round 16 found no height 10: every continuation of that relay that was examined stops at a cap blocked by the
+    16 grips nearest an out grip or straddled by a height-2 piece outside the inscribed ball (T16-01). An
+    abstraction that tracks only the inner cohorts reaches height 10, so a bound would have to use the outer pieces
+    (T16-02). A pattern moved by a symmetry cannot pump heights (T16-03), and the periodicity of repeated words
+    cannot by itself prove finiteness (T16-04). Open: whether left heights are bounded at all.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not
