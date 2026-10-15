@@ -20,7 +20,10 @@ cell kinds, the review of the clean-step and lattice-phase proofs with their cor
 the method as a whole: Theorem M\* (with an exhaustive fallback the method is complete), the toolkit theorem with
 its bounds, and a bound of 1,324,686,034 twists for the lattice phase. Round 5 narrows the coverage question of
 gap M1; round 6 gives gap M2 lower bounds and a construction of at most 356,565,166 twists, and records the
-integrator's searches for short pure three-cycles (33 of 35 orbits).
+integrator's searches for short pure three-cycles (33 of 35 orbits). Round 7 shows that a seed of the lattice
+cascade needs no fibre alignment and replaces 31 of the 35 seeds by shorter relocated elements: the cascade then
+restores the two synthetic inputs in 4.5 × 10^7 twists instead of 2.3 × 10^8, and needs at most 71,516,526 twists
+for every input.
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
@@ -42,6 +45,9 @@ v4, which had no fallback.
 | `scripts/short-cycles/` | The exact K⁺ action (`kplus.py`), the single-overlap search for short pure elements (`short_cycles.py`), the two-level search for the orbits it leaves (`short_cycles2.py`) and the independent checker of their words (`check_cycles.py`); `SENIOR-REVIEW.md` section 11 |
 | `data/short-cycles.json.gz` | The shortest verified element per orbit and kind that `short_cycles.py` found, with its word |
 | `data/short-cycles-2.json.gz` | The same for `short_cycles2.py` on the orbits O00, O02, O06, O15, O17, O28 and O29 |
+| `scripts/realign/` | Round 7: `realign.py` relocates the shorter candidates onto the cascade's buffers, certifies them on all slots and computes the bound; `restore_realigned.py` runs the stage 03 cascade with them and writes records that the stage 03 checker replays; `SENIOR-REVIEW.md` section 12 |
+| `data/realign.json.gz` | The certified replacement per orbit (candidate, relocation, word, length, collateral) and the bound, as `realign.py` wrote it |
+| `runs/realigned-cascade/` | The round 7 run on the committed synthetic inputs: logs, the summaries of the run and of the control run with no seed replaced, the stage 03 checker's report, and the commands with the SHA-256 of the files not stored |
 | `IMPORT-MANIFEST.json` | The files stored gzipped, with the SHA-256 of their uncompressed bytes |
 
 ## Paths in commands
@@ -58,5 +64,5 @@ Linux, with `ulimit -v 7000000` per process.
 
 All of it is exact computation on synthetic geometry in headless Linux runs. None of it is evidence for Windows,
 DirectX, input, long sessions or performance. A Codex senior review on 15 October 2026 checked the new proofs,
-corrected several statements, proved Lemma C as Theorem C and proved Theorem M\* ([SENIOR-REVIEW.md](SENIOR-REVIEW.md));
-no human has reviewed them.
+corrected several statements, proved Lemma C as Theorem C and proved Theorem M\* and the conditions for replacing a
+seed of the lattice cascade ([SENIOR-REVIEW.md](SENIOR-REVIEW.md)); no human has reviewed them.

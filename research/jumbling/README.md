@@ -46,12 +46,13 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   construction needs at most 356,565,166 twists for every input (4,840,993 actions for a person who replays 70
   stored macros), and some input needs at least 224,601 twists
   ([record](restoration/09-general-method/SENIOR-REVIEW.md)). It is a model review, not a human one.
-- **Short pure elements.** Commutators whose supports meet in one piece give pure three-cycles, which move three
-  pieces of one orbit and nothing else, for 33 of the 35 orbits, many far shorter than the atlas seeds; aligning
-  them with the lattice cascade is the next step.
-- **Open.** A construction that works from the state alone with a bound on its length (gap M1). The lattice
-  phase took 1.5 to 2.3 × 10^8 twists on the runs so far; whether a few million macro actions are within reach of
-  a person is open (gap M2). Deep scrambles were not run with the general method (gap E1). No human has reviewed
+- **Shorter seeds for the lattice phase.** Commutators whose supports meet in one piece give pure three-cycles,
+  which move three pieces of one orbit and nothing else, for 33 of the 35 orbits. The lattice cascade needs no
+  fibre alignment from its seeds (proved, model review), so 31 of its 35 seeds are replaced by shorter elements
+  moved onto its buffers. It then restores the two synthetic inputs in 4.5 × 10^7 twists instead of 2.3 × 10^8
+  (replayed by the independent checker) and needs at most 71,516,526 twists for every input.
+- **Open.** A construction that works from the state alone with a bound on its length (gap M1). Whether a lattice
+  phase of 4.5 × 10^7 twists, or a few million macro actions, is within reach of a person is open (gap M2). Deep scrambles were not run with the general method (gap E1). No human has reviewed
   the new proofs (gap E2).
 - **Rendering.** The research viewer draws all 259,800 stickers of a jumbled state. On the owner's RTX 4070 Laptop
   GPU, the jumbling pose probe ran the I_a fixture at 613 fps (p99 1.91 ms); overlay costs are not measured yet

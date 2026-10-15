@@ -1,0 +1,4 @@
+kits 2.1s
+{"input": "uniform:1", "input_labels_sha256": "c5b62cc64c1e56bfb68dbbed3b0cc2175af0e33e95f5430c4394171abd3c9115", "input_matches_committed": true, "moved_pieces_input": 176499, "corrections": [], "w9": false, "status": "restored", "factors": 190925, "retained_length": 229763734, "seconds": 15.4}
+{"input": "uniform:2", "input_labels_sha256": "dd369c40360c287696cfdf9b34b29d16b5ecb1995113f39d7391fa13b221a2bb", "input_matches_committed": true, "moved_pieces_input": 176492, "corrections": [], "w9": false, "status": "restored", "factors": 191093, "retained_length": 230484810, "seconds": 3.0}
+done 22.1s nodes 384460

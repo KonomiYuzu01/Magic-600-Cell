@@ -122,7 +122,16 @@ solved configuration (identity labels on all 259,800 stickers).
     356,565,166 twists for every input, and at most 231,334,003 on average over G (M2-04). It is not implemented;
   - some input needs at least 224,601 retained twists (M2-02).
 
-  These are machine-scale (section 5, gap M2).
+  Round 7 (`SENIOR-REVIEW.md` section 12) replaces 31 of the 35 seeds by shorter elements relocated onto the
+  buffers. The cascade needs no fibre alignment: a seed must move exactly the stickers of the buffers on its own
+  orbit, as the position cycle, with collateral on orbits solved later; on D5 and A5 the pairs are re-indexed
+  (proved, model review).
+  - The cascade with the replaced seeds restores the two synthetic inputs in 45,009,802 and 44,940,982 twists
+    instead of 229,763,734 and 230,484,810 (computed; replayed by the stage 03 checker).
+  - For every input it then needs at most 71,516,526 twists as it runs (46,191,246 on average over G); the
+    construction with the shorter single of M2-03 needs at most 71,514,544.
+
+  These are still machine-scale (section 5, gap M2).
 
 
 ## 3. What the method rests on, and the status of each part
@@ -147,11 +156,12 @@ solved configuration (identity labels on all 259,800 stickers).
 | Small states need excursions | With 0 < h < 3,097 off pieces, every clean step has at least two jumble letters, and its first jumble letter takes at least 3,097 - h lattice pieces off. | proved (same review) |
 | Theorem M\* (a general method) | Heuristic steps, a fair exhaustive search when they find nothing, then the lattice phase with the corrections last: restores every reachable configuration from the current state alone, in at most \|off\| clean steps. | proved (Codex senior review, 15 October 2026; no human review), `SENIOR-REVIEW.md` section 9; no bound on the length of a fallback step |
 | Toolkit theorem | For a unit whose frame belongs to class P, a class-P landing word W that passes finite checks at the state (free grips, exact landing action, every other off piece lands or keeps its exact pose, Bad(W) the union of its cells, vacancy for all targets at once) closes to a clean step of at most 2(Q_safe - 1) + b letters, b = 720, 104, 240 or 192 by cell kind. | proved (same review), given the certificates of `SENIOR-REVIEW.md` sections 5 and 6. Units with pieces of height four lie outside it; 150 twists of the I_a fixture make 1,411 such pieces (re-run) |
-| Lattice-phase length | At most 1,324,686,034 twists for every input, with the committed cascade and library; 771,844,512 for the committed cascade without its trivial frame passes. A shorter frame recipe gives a construction of at most 356,565,166 twists for every input (231,334,003 on average over G), or at most 4,840,993 actions with a library of the 35 seeds and their inverses. | proved (same review for AU-05; round 6, M2-04, for the rest; the integer bounds re-run by the integrator). The 356,565,166 construction is not implemented |
+| Lattice-phase length | At most 1,324,686,034 twists for every input, with the committed cascade and library; 771,844,512 for the committed cascade without its trivial frame passes, and 356,666,844 by the exact count of R7-03. A shorter frame recipe gives a construction of at most 356,565,166 twists for every input (231,334,003 on average over G), or at most 4,840,993 actions with a library of the 35 seeds and their inverses. With the replaced seeds of round 7: at most 71,516,526 twists for every input as the cascade runs, and 71,514,544 for the construction (46,189,354 on average). | proved (same review for AU-05; round 6, M2-04, and round 7, R7-03, for the rest; the integer bounds re-run by the integrator). The round 7 bounds use the certified lengths and rest on the replacement row below. The constructions are not implemented as such; the cascade with the replaced seeds is (section 6.3) |
 | Lower bounds for the lattice phase | Some input needs at least 224,601 retained twists (185,441 cap twists), and all but a fraction 10⁻⁶ of the inputs need at least 224,599. With a fixed library of m macros at 7,200 placements each, some input needs at least 145,909, 110,495 or 104,774 actions for m = 1, 35 or 70. | proved (Codex senior review, 15 October 2026, M2-02; no human review; the integer checks re-run by the integrator). Retained words only |
 | Single-overlap lemma | If the supports of X and Y (every piece with a sticker moved) meet in one piece and both move that piece's position, [X, Y] is a pure three-cycle on its orbit. | proved (same review, M2-01) |
-| Short pure three-cycles | Pure three-cycles for 33 of the 35 orbits; the shortest per orbit has 28 to 12,416 primitives, 21 of them at most 200. None for O15 and O17. | computed: exact searches, every word re-checked by `check_cycles.py`. Not yet aligned with the cascade's buffers and fibres, so not used |
-| Frame elements | A single at C exists only for values in the derived group H_o′. From an aligned pure cycle of length ℓ, a pair costs at most 2ℓ + 2h_x at B and a single at most 4ℓ + 2(h_x + h_y + h_xy). | proved (same review, M2-03; the constants re-run by the integrator) |
+| Short pure three-cycles | Pure three-cycles for 33 of the 35 orbits; the shortest per orbit has 28 to 12,416 primitives, 21 of them at most 200. None found for O15 and O17. | computed: exact searches, every word re-checked by `check_cycles.py`. 17 of them replace seeds after relocation (round 7) |
+| Replacing a seed (round 7) | The committed cascade works with any seed that moves exactly the stickers of its three buffers on its own orbit, as the position cycle A → B → C → A, and whose collateral lies on orbits solved later. Its fibres need no alignment; on D5 and A5 the pairs are re-indexed, at no extra length. A shorter element is relocated onto the buffers by a word g, at the cost 2\|g\|. 31 of the 35 seeds are replaced: 17 by pure three-cycles and 14 by spine prefixes, among them O15 (11,574 to 106 primitives) and O17 (1,546 to 24). | proved (Codex senior review, 15 October 2026, R7-01 and R7-04; no human review). Every replacement certified on all slots (`realign.py`); the cascade with them restores the two synthetic inputs, replayed by the stage 03 checker (`SENIOR-REVIEW.md` section 12) |
+| Frame elements | A single at C exists only for values in the derived group H_o′. From a seed of length ℓ, aligned or not (round 7, R7-01), a pair costs at most 2ℓ + 2h_x at B and a single at most 4ℓ + 2(h_x + h_y + h_xy). | proved (same review, M2-03; the constants re-run by the integrator) |
 | Completeness of the driver | `gdrive.py` finds a clean step at every reachable state with an off piece, and goes on to the lattice phase. | **proved** for the method (Theorem M\*); the driver implements it: its fallback is the exhaustive search of M\*, with no step limit by default. The code had one Codex review at the fast tier (two major findings, both fixed; the verification passed) and passes `test_mstar.py` (16 tests) and `test_fallback.py` (two end-to-end runs). No bound on the length or run time of a fallback step. The runs of section 6 used v4, which had no fallback, stopped after 80 steps and could skip the lattice phase |
 
 ## 4. What the new standard removes from the earlier programme
@@ -247,23 +257,29 @@ Two mathematical gaps:
   it in two ways, which are the integrator's reading of the owner decision (the owner has not fixed a measure):
   twists L, and actions A, where a person performs cap twists and applications of macros that the program stores
   and places (7,200 placements each), with the cost of creating the macros counted apart.
-  - *Measured.* The cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, 5 to 7 years at one twist per second.
+  - *Measured.* The committed cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, 5 to 7 years at one twist
+    per second. With the replaced seeds of round 7 it restores the two synthetic inputs in 4.5 × 10^7 twists, about
+    1.4 years (section 6.3).
   - *Upper bounds (proved, model review).* A construction with the committed seeds and a shorter frame recipe needs
     at most 356,565,166 twists for every input, about 11 years at one per second, and at most 231,334,003 on average
     over G (M2-04). A person who replays the 35 relocated seeds and their inverses as 70 stored macros needs at
     most 4,840,993 actions, about 56 days at one per second (at most 3,098,745 on average); creating the macros
-    costs 128,076 twists. The committed code's cascade has the bound 771,844,512.
+    costs 128,076 twists. The committed code's cascade has the bound 771,844,512, and 356,666,844 by the exact
+    count of R7-03. With the replaced seeds of round 7 the cascade as it runs needs at most 71,516,526 twists for
+    every input, about 2.3 years, and the construction at most 71,514,544 (46,189,354 on average). Creating the 70
+    macros then costs 14,048 twists, and the action bounds do not change (4,841,151 as the cascade runs).
   - *Lower bounds (proved, model review).* Some input needs at least 224,601 retained twists, about 2.6 days, and
     all but a fraction 10⁻⁶ of the inputs need at least 224,599 (M2-02). With any fixed library of 70 macros, some
     input needs at least 104,774 actions. A library chosen for the input escapes any bound on actions alone.
-  - *Shorter seeds (computed).* Commutators whose supports meet in one piece give pure three-cycles for 33 of the
-    35 orbits, 23 of them shorter than the seed and 21 within 200 primitives; O15 and O17 have none (S1 and S2). To
-    replace a seed in the cascade, a found cycle must be aligned with the cascade's buffers and fibres, which is
-    not done. If aligned pure seeds of at most 200 primitives existed for every orbit, the construction would need
-    at most 78,609,696 twists (49,764,387 on average).
+  - *Shorter seeds (computed; round 7).* Commutators whose supports meet in one piece give pure three-cycles for
+    33 of the 35 orbits (S1 and S2). Round 7 shows that the cascade needs no fibre alignment, only the position
+    cycle on the buffers and legal collateral, with re-indexed pairs on D5 and A5 (proved, model review, R7-01). It
+    relocates the candidates onto the buffers. 31 seeds are replaced: 17 by pure three-cycles and 14 by spine
+    prefixes, among them O15 (11,574 to 106 primitives) and O17 (1,546 to 24), for which no pure three-cycle was
+    found. O10, O24, O25 and O26 keep their seeds.
   - *Open.* Whether a lattice phase of a few million actions counts as replicable is for the owner to judge. The
-    next experiments are alignment certificates for the found cycles, a search for O15 and O17, a uniform sampler
-    for the synthetic inputs (M2-05) and a better cascade order (M2-06).
+    next experiments are shorter candidates for O28, O03 and O10 (now the largest terms), the exhaustive frame check
+    of R7-02, a uniform sampler for the synthetic inputs (M2-05) and a better cascade order (M2-06).
 
 Two evidence gaps:
 - **E1. Coverage.** The method has been run on the inputs of section 6 only. Deep scrambles (the I_a@40 scale,
@@ -323,6 +339,19 @@ for length 2 alone (section 2, step 4), so the run ends here; the next bounded s
 Fresh scrambles of 2, 3, 4 and 6 records (6,194 to 18,247 off pieces, `gen_scramble.py`) were started and stopped:
 scoring one state with 58 units took about an hour, so a run would take days. They are **not run** (gap E1). The
 I_a@40 fixture state itself (94,147 off pieces) was not run with v4.
+
+### 6.3 The lattice phase with replaced seeds (round 7)
+
+The stage 03 cascade with 31 of its 35 seeds replaced (`SENIOR-REVIEW.md` section 12), on the committed synthetic
+inputs (random elements of G given as labelled stickers; not uniform on G, M2-05):
+
+| Input | Pieces displaced | Committed cascade | With the replaced seeds | Check |
+| --- | ---: | --- | --- | --- |
+| uniform:1 | 176,499 | 229,763,734 twists, 190,925 factors | 45,009,802 twists, 191,143 factors | **certificate**: the stage 03 checker replays the solution with its own code and reaches the identity on all 259,800 stickers |
+| uniform:2 | 176,492 | 230,484,810 twists, 191,093 factors | 44,940,982 twists, 191,089 factors | the same |
+
+The stored input arrays hash to the committed digests, and the same runner with no seed replaced reproduces the
+committed column exactly. Records: `runs/realigned-cascade/`; the replacements: `data/realign.json.gz`.
 
 
 ## 7. Reproduction
@@ -386,6 +415,19 @@ second writes the shortest verified element per orbit and kind (about 6 minutes)
 only when it prints `"all_ok": true`. The fourth is the two-level search for the orbits the first leaves open (about
 10 minutes; committed result `data/short-cycles-2.json.gz`, checked by the fifth). The sixth repeats it for O15 and
 O17 with overlaps of up to eight pieces; it writes an empty result (`{}`).
+
+The replaced seeds and the cascade with them (round 7, section 6.3; from the repository root, `<03>` is
+`research/jumbling/restoration/03-retained-group-and-lattice-restorer`):
+
+    python3 -I -B <09>/scripts/realign/realign.py realign.json
+    python3 -I -B <09>/scripts/realign/restore_realigned.py realign.json run uniform:1 uniform:2
+    python3 -I <03>/checker/verify_restore.py . <research/jumbling> <03>/restore/library-final.json run report.json
+
+The first certifies the replacements and prints the construction bound (about 50 s); its committed output is
+`data/realign.json.gz`. The second runs the cascade with them (about 35 s). The third replays the result with the
+stage 03 checker; accept it only when `report.json` has `"pass": true` and both runs restored to the identity.
+`runs/realigned-cascade/commands.txt` also gives the control run and the independent hash of the inputs, and
+`SENIOR-REVIEW.md` section 12 the bounds for the cascade as it runs.
 
 Check the lattice phase of a run that reached the lattice, rebuilding its start from the chain:
 
