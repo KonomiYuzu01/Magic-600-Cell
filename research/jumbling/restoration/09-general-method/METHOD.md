@@ -115,6 +115,13 @@ solved configuration (identity labels on all 259,800 stickers).
   typo and a frame convention to state, both fixed).
 - Lengths: on the runs so far R took 1.5 to 2.3 x 10^8 twists and C about 10^4. For every input, the committed
   cascade and library give at most 1,324,686,034 twists (proved, same review, `SENIOR-REVIEW.md` section 9).
+  Round 6 (`SENIOR-REVIEW.md` section 11; proved, model review) sharpens this:
+  - the frame passes of the 24 orbits with trivial H_o do nothing, so the committed cascade needs at most
+    771,844,512 twists (M2-04);
+  - a shorter frame recipe (M2-03) and the exact count of the position loop give a construction of at most
+    356,565,166 twists for every input, and at most 231,334,003 on average over G (M2-04). It is not implemented;
+  - some input needs at least 224,601 retained twists (M2-02).
+
   These are machine-scale (section 5, gap M2).
 
 
@@ -140,7 +147,11 @@ solved configuration (identity labels on all 259,800 stickers).
 | Small states need excursions | With 0 < h < 3,097 off pieces, every clean step has at least two jumble letters, and its first jumble letter takes at least 3,097 - h lattice pieces off. | proved (same review) |
 | Theorem M\* (a general method) | Heuristic steps, a fair exhaustive search when they find nothing, then the lattice phase with the corrections last: restores every reachable configuration from the current state alone, in at most \|off\| clean steps. | proved (Codex senior review, 15 October 2026; no human review), `SENIOR-REVIEW.md` section 9; no bound on the length of a fallback step |
 | Toolkit theorem | For a unit whose frame belongs to class P, a class-P landing word W that passes finite checks at the state (free grips, exact landing action, every other off piece lands or keeps its exact pose, Bad(W) the union of its cells, vacancy for all targets at once) closes to a clean step of at most 2(Q_safe - 1) + b letters, b = 720, 104, 240 or 192 by cell kind. | proved (same review), given the certificates of `SENIOR-REVIEW.md` sections 5 and 6. Units with pieces of height four lie outside it; 150 twists of the I_a fixture make 1,411 such pieces (re-run) |
-| Lattice-phase length | At most 1,324,686,034 twists for every input, with the committed cascade and library. | proved (same review; the integer bound re-run by the integrator) |
+| Lattice-phase length | At most 1,324,686,034 twists for every input, with the committed cascade and library; 771,844,512 for the committed cascade without its trivial frame passes. A shorter frame recipe gives a construction of at most 356,565,166 twists for every input (231,334,003 on average over G), or at most 4,840,993 actions with a library of the 35 seeds and their inverses. | proved (same review for AU-05; round 6, M2-04, for the rest; the integer bounds re-run by the integrator). The 356,565,166 construction is not implemented |
+| Lower bounds for the lattice phase | Some input needs at least 224,601 retained twists (185,441 cap twists), and all but a fraction 10⁻⁶ of the inputs need at least 224,599. With a fixed library of m macros at 7,200 placements each, some input needs at least 145,909, 110,495 or 104,774 actions for m = 1, 35 or 70. | proved (Codex senior review, 15 October 2026, M2-02; no human review; the integer checks re-run by the integrator). Retained words only |
+| Single-overlap lemma | If the supports of X and Y (every piece with a sticker moved) meet in one piece and both move that piece's position, [X, Y] is a pure three-cycle on its orbit. | proved (same review, M2-01) |
+| Short pure three-cycles | Pure three-cycles for 33 of the 35 orbits; the shortest per orbit has 28 to 12,416 primitives, 21 of them at most 200. None for O15 and O17. | computed: exact searches, every word re-checked by `check_cycles.py`. Not yet aligned with the cascade's buffers and fibres, so not used |
+| Frame elements | A single at C exists only for values in the derived group H_o′. From an aligned pure cycle of length ℓ, a pair costs at most 2ℓ + 2h_x at B and a single at most 4ℓ + 2(h_x + h_y + h_xy). | proved (same review, M2-03; the constants re-run by the integrator) |
 | Completeness of the driver | `gdrive.py` finds a clean step at every reachable state with an off piece, and goes on to the lattice phase. | **proved** for the method (Theorem M\*); the driver implements it: its fallback is the exhaustive search of M\*, with no step limit by default. The code had one Codex review at the fast tier (two major findings, both fixed; the verification passed) and passes `test_mstar.py` (16 tests) and `test_fallback.py` (two end-to-end runs). No bound on the length or run time of a fallback step. The runs of section 6 used v4, which had no fallback, stopped after 80 steps and could skip the lattice phase |
 
 ## 4. What the new standard removes from the earlier programme
@@ -198,6 +209,15 @@ Two mathematical gaps:
     rest) is decidable from the state, with an explicit but astronomical bound. s61c needs two created partners,
     and the creator first needs a preparation that fills six of its source chambers (not run). Whether every state
     with one deficient carrier passes such a template is open.
+  - *Coverage at depth one (round 5).* Whether every reachable depth-one state without a toolkit step admits a
+    partner template is still open; there is no proof and no reachable counterexample. The round proved three
+    bounded extensions to test before new creators (`SENIOR-REVIEW.md` section 10):
+    - retained conjugation: a legal retained word A before a toolkit closure and A^-1 after gives a clean step of
+      at most 2r + 2B + b letters, with a finite setup search from the state (M1-18; first test r = 1, not run);
+    - the template of M1-11 decides one catalogue of cores, not every creator and middle, and an edge middle needs
+      u <= e (M1-16);
+    - a finite exact test for free grips, with a positive case at I_a@115: grip 194 is free and its letter lands
+      1,410 off pieces (M1-19, re-run by the integrator).
 
   What stays open is a construction from the state alone with an explicit bound on the word length. The driver
   now has the exhaustive fallback, so it is complete (Theorem M\*), but a fallback step has no length bound and is
@@ -206,7 +226,9 @@ Two mathematical gaps:
   fallback.) M1 contains two narrower questions:
   - *V existence.* N1/N2 are necessary only and a peeling certificate is sufficient only; no theorem guarantees V,
     and the searches do fail (unit 1040 first at stop62@233: no V). A breadth-first search over whole hole sets
-    decides vacancy from the state, with at most Q_safe hole sets; searching orbit by orbit does not.
+    decides vacancy from the state, with at most Q_safe hole sets; searching orbit by orbit does not. One search
+    over target images decides it exactly, and a shortest vacating word has at most min(Q_T, Q_H) - 1 letters
+    (M1-17).
   - *Scope of the pure twist.* The word exists whenever three grips are free (Theorem C, `SENIOR-REVIEW.md`). The
     closure still needs the cell's 86 chambers vacated, which needs enough holes in the right orbits. The step
     does not cover:
@@ -220,10 +242,28 @@ Two mathematical gaps:
       the cell has 86 chambers and there are only 61 holes (LC-07); it needs created partners (M1-13).
   The family form of the Block lemma was one candidate route to M1; Theorem S rules it out at 245. The question
   itself is unchanged.
-- **M2. Lattice-phase length against "a person can replicate it".** The cascade took 1.5 to 2.3 x 10^8 twists on
-  the runs so far, 5 to 7 years at one twist per second; the bound for every input is 1,324,686,034 twists, about
-  42 years. Program assistance does not close this. The gap is the length:
-  Theorem R itself is proved, with a model review (section 3).
+- **M2. Lattice-phase length against "a person can replicate it" (open; bounds proved).** Theorem R itself is
+  proved, with a model review (section 3); the gap is the length. Round 6 (`SENIOR-REVIEW.md` section 11) measures
+  it in two ways, which are the integrator's reading of the owner decision (the owner has not fixed a measure):
+  twists L, and actions A, where a person performs cap twists and applications of macros that the program stores
+  and places (7,200 placements each), with the cost of creating the macros counted apart.
+  - *Measured.* The cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, 5 to 7 years at one twist per second.
+  - *Upper bounds (proved, model review).* A construction with the committed seeds and a shorter frame recipe needs
+    at most 356,565,166 twists for every input, about 11 years at one per second, and at most 231,334,003 on average
+    over G (M2-04). A person who replays the 35 relocated seeds and their inverses as 70 stored macros needs at
+    most 4,840,993 actions, about 56 days at one per second (at most 3,098,745 on average); creating the macros
+    costs 128,076 twists. The committed code's cascade has the bound 771,844,512.
+  - *Lower bounds (proved, model review).* Some input needs at least 224,601 retained twists, about 2.6 days, and
+    all but a fraction 10⁻⁶ of the inputs need at least 224,599 (M2-02). With any fixed library of 70 macros, some
+    input needs at least 104,774 actions. A library chosen for the input escapes any bound on actions alone.
+  - *Shorter seeds (computed).* Commutators whose supports meet in one piece give pure three-cycles for 33 of the
+    35 orbits, 23 of them shorter than the seed and 21 within 200 primitives; O15 and O17 have none (S1 and S2). To
+    replace a seed in the cascade, a found cycle must be aligned with the cascade's buffers and fibres, which is
+    not done. If aligned pure seeds of at most 200 primitives existed for every orbit, the construction would need
+    at most 78,609,696 twists (49,764,387 on average).
+  - *Open.* Whether a lattice phase of a few million actions counts as replicable is for the owner to judge. The
+    next experiments are alignment certificates for the found cycles, a search for O15 and O17, a uniform sampler
+    for the synthetic inputs (M2-05) and a better cascade order (M2-06).
 
 Two evidence gaps:
 - **E1. Coverage.** The method has been run on the inputs of section 6 only. Deep scrambles (the I_a@40 scale,
@@ -256,24 +296,29 @@ that 40-twist scramble is restored to the solved state end to end. The three rec
 history replay ends at `9e70c4b9…`, where the 14-step chain starts; the chain ends at `981c5bb2…`, the input digest
 of the lattice run. The lattice run read that state from a table, not with `verify_late.py --chain`.
 
-### 6.2 The state-only driver v4 (running)
+### 6.2 The state-only driver v4
 
-`gdrive.py` started on 15 October 2026 at 06:49 UTC on two inputs, with no hand steering. These runs use the
-driver v4 (`gdrive.py` as committed at `5c679b9`), before the M\* change: no fallback, at most 80 steps. Status at 10:40 UTC:
+`gdrive.py` started on 15 October 2026 at 06:49 UTC on two inputs, with no hand steering. These runs used the
+driver v4 (`gdrive.py` as committed at `5c679b9`), before the M\* change: no fallback, at most 80 steps.
 
-| Input | Off at start | Steps so far | Off now | Status |
+| Input | Off at start | Steps | Off | Result |
 | --- | ---: | --- | ---: | --- |
-| stop62 | 860 | 7 driver steps (10, 22, 404, 982, 1,072, 1,296 and 1,436 twists), then 1 pure-twist step (762 twists) | 269 | the driver found no step at 269; the pure-twist stage is running |
-| e2run24: the end of the 24-twist E2 run of stage 05, not the state E2 of stage 01 | 690 | 2 driver steps (44 and 150 twists) | 613 | the driver step at 613 has run for about two hours |
+| stop62 | 860 | 7 driver steps (10, 22, 404, 982, 1,072, 1,296 and 1,436 twists), then 1 pure-twist step (762 twists): 5,984 twists | 269 | **stopped** after 4 h 12 min: at 269 neither heuristic found a step, and v4 has no fallback. `verify_u.py` replays all 8 steps (`all_ok`, final off 269). Record: `runs/stop62-v4/` |
+| e2run24: the end of the 24-twist E2 run of stage 05, not the state E2 of stage 01 | 690 | 3 driver steps (44, 150 and 946 twists) and 1 pure-twist step (288 twists): 1,428 twists so far | 548 | **running** when this record was made (12:15 UTC, after 5 h 26 min). At 613 the driver step found nothing for 2 h 11 min; the pure twist then restored a 48-piece unit (V empty, 288 twists), and the next driver step restored the 17-piece unit. `verify_u.py` replays the 4 steps (`all_ok`, off 548). Record: `runs/e2run24-v4/` |
 
-At stop62@355 the pure-twist stage found words of 288 twists for three of the seven units, all in edge cells (two
-86-piece carriers and a 12-piece unit). It closed one of the 86-piece carriers (unit 64184: V of 237 twists, a
-clean step of 762 twists, replayed exactly by `tclose2.py`; the independent chain replay runs at the end of the
-run); the other has no V from either closure script. It skipped the other four:
-- three units of one frame (78, 61 and 15 pieces) lie in an edge, a triangle and a tetrahedron cell, and
-  `cellpure3.py` needs the whole frame in one cell (`SENIOR-REVIEW.md` section 9: containment would suffice);
-- the 17-piece unit does not lie in an edge cell (at the start it lay in a tetrahedron cell, which needs a
-  transport word); the script stopped with an error (`KeyError`) instead of reporting that.
+At stop62@269 six units remain: 1040 (86 pieces), 18512 (78), 23955 (61), 9117 (17), 18517 (15) and 18445 (12).
+- The driver step found no unit it could restore.
+- The pure-twist stage found 288-letter words for the carrier 1040 (36 lattice pieces in its edge cell) and for the
+  unit 18445 (all 86 chambers of its cell hold lattice pieces), but neither closure script found a vacating V.
+- It skipped the others. Three units of one frame (78, 61 and 15 pieces) lie in an edge, a triangle and a
+  tetrahedron cell, and `cellpure3.py` needs the whole frame in one cell (`SENIOR-REVIEW.md` section 9:
+  containment would suffice). The 17-piece unit does not lie in an edge cell; the script stopped with an error
+  (`KeyError`) instead of reporting that.
+
+The hand-steered run of section 6.1 took the same start to 0 in 14 clean steps. Under M\* the fallback would take
+over at 269. By M1-03 every clean step there has at least two jumble letters, and the fallback costs about 300 days
+for length 2 alone (section 2, step 4), so the run ends here; the next bounded steps to try are those of
+`SENIOR-REVIEW.md` section 10 (retained conjugation first).
 
 Fresh scrambles of 2, 3, 4 and 6 records (6,194 to 18,247 off pieces, `gen_scramble.py`) were started and stopped:
 scoring one state with 58 units took about an hour, so a run would take days. They are **not run** (gap E1). The
@@ -319,6 +364,28 @@ the 288 letters after the 543 letters of V):
 
     python3 -I scripts/gm/omega_check.py <research/jumbling>/theory scripts/echain \
         earlier/stop62-860-to-0/chain/step014-word.json 543 288 1 out.json 5 11
+
+The v4 runs of section 6.2 check the same way, with `runs/stop62-v4/chain/chain.json` and
+`runs/e2run24-v4/chain/chain.json` (decompress each start table first); the stored `verify_u.jsonl` next to each
+chain is that check's output.
+
+Short pure elements for the lattice phase (gap M2, `SENIOR-REVIEW.md` section 11). These scripts read the retained
+model from `assets/`, so run them from the repository root; `<09>` is
+`research/jumbling/restoration/09-general-method`:
+
+    python3 -I -B <09>/scripts/short-cycles/kplus.py
+    python3 -I -B <09>/scripts/short-cycles/short_cycles.py 12286 short-cycles.json
+    python3 -I -B <09>/scripts/short-cycles/check_cycles.py <09>/data/short-cycles.json.gz
+    python3 -I -B <09>/scripts/short-cycles/short_cycles2.py 12286 0,2,6,15,17,28,29 12 short-cycles-2.json
+    python3 -I -B <09>/scripts/short-cycles/check_cycles.py <09>/data/short-cycles-2.json.gz
+    python3 -I -B <09>/scripts/short-cycles/short_cycles2.py 12286 15,17 12 two-b.json 8
+
+The first prints the order of K+ (7,200) and the number of primitives that do not act as their rotation (0). The
+second writes the shortest verified element per orbit and kind (about 6 minutes); the committed result is
+`data/short-cycles.json.gz`. The third re-checks every recorded word from the primitives alone; accept the result
+only when it prints `"all_ok": true`. The fourth is the two-level search for the orbits the first leaves open (about
+10 minutes; committed result `data/short-cycles-2.json.gz`, checked by the fifth). The sixth repeats it for O15 and
+O17 with overlaps of up to eight pieces; it writes an empty result (`{}`).
 
 Check the lattice phase of a run that reached the lattice, rebuilding its start from the chain:
 

@@ -1,0 +1,47 @@
+{
+ "name": "e2run24",
+ "start": "start-table.json",
+ "start_digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+ "steps": [
+  {
+   "label": "e2run24-k00-drv-u18491",
+   "kind": "driver",
+   "word": "step001-word.json",
+   "unit": "step001-unit.json",
+   "free": null,
+   "size": 48,
+   "free_size": 0,
+   "length": 44
+  },
+  {
+   "label": "e2run24-k01-drv-u21607",
+   "kind": "driver",
+   "word": "step002-word.json",
+   "unit": "step002-unit.json",
+   "free": "step002-free.json",
+   "size": 29,
+   "free_size": 87,
+   "length": 150
+  },
+  {
+   "label": "e2run24-k02-pure-u8888",
+   "kind": "pure",
+   "word": "step003-word.json",
+   "unit": "step003-unit.json",
+   "free": null,
+   "size": 48,
+   "free_size": 0,
+   "length": 288
+  },
+  {
+   "label": "e2run24-k03-drv-u9117",
+   "kind": "driver",
+   "word": "step004-word.json",
+   "unit": "step004-unit.json",
+   "free": null,
+   "size": 17,
+   "free_size": 0,
+   "length": 946
+  }
+ ]
+}

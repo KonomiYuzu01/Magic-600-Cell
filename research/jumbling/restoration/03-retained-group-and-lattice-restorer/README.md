@@ -43,8 +43,9 @@ Results at this stage:
   - 11 conjugated mirror half-turns of 5 or 9 twists, w9 among them;
   - one pure frame macro of 228 twists (O11);
   - one 332-twist macro (f11 plus the O12 sign).
-- **Restored.** 8 of 8 inputs were restored to the identity: 2 uniform random, 1 random word, 2 with w9 and 3 mixed
-  with library macros. The independent checker `checker/verify_restore.py` passes all of them in 130 s.
+- **Restored.** 8 of 8 inputs were restored to the identity: 2 random elements of 𝒦 (not uniform on 𝒦: report
+  section 3.4), 1 random word, 2 with w9 and 3 mixed with library macros. The independent checker
+  `checker/verify_restore.py` passes all of them in 130 s.
 - **Outside the span.** For the reachable states E3, I1 and I2 the restorer returned failure certificates: their ν
   lies outside the span of this library. Stages 04 and 09 close this:
   - stage 04 extends the library to span the whole lattice correction group 𝒜_J = C2^34 × C5^2;

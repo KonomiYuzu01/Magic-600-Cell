@@ -542,7 +542,646 @@ for m in lib:
 print({'R_bound':total,'C_bound':cbound,'total':total+cbound,'macros':len(lib)})
 ```
 
-## 10. What changed in METHOD.md
+## 10. Coverage of the bounded toolkit at depth one (round 5)
+
+Round 5 asked the audit's next question: do the bounded constructions supply a clean step at every reachable depth-one state? The constructions are the toolkit of AU-03 and the partner template of M1-11. A *depth-one state* is a reachable state in which every off piece has left height two.
+
+The question is not settled. The round narrows it, proves two bounded extensions and a sharper vacancy bound, and gives a finite test with a positive case. The integrator re-ran the two computations (M1-17 and M1-19) and got the reported outputs.
+
+### M1-16: what the template decides (proved, model review; the coverage question stays open)
+
+- **Open.** Does every reachable depth-one state without a toolkit step admit some three-phase partner template? There is no proof and no reachable counterexample.
+- **The scope of M1-11 (proved).** M1-11 decides one template with given cores D and W, not every creator and middle.
+  - For a fixed state and a finite catalogue of cores, the retained searches are finite.
+  - With k rigid carriers and hole vector a, a record holds the carriers' exact K⁺ multipliers and the complete hole set. There are at most Q_k(a) = 7200^k · ∏_t binom(N_t, a_t) records.
+  - If the cores keep the other original carriers, the three phases need at most Q_k(h) + Q_{k+2}(h + e_1 + e_2) + Q_k(h − u + e_2) + |D| + |W| + 717 letters. Here h is the whole initial off vector and u is the target carrier.
+  - Where rigidity is not proved, the records track one multiplier per off piece instead.
+  - A failed search rejects the catalogue, not every possible template.
+- **An edge middle needs u ≤ e (proved).**
+  - By Lemma K, |Bad(W)_t| ≥ |F_t| when W lands F.
+  - A middle with Bad vector 2e that lands U together with one full e-partner therefore needs u + e ≤ 2e, so u ≤ e. More identical partners cannot repair a violation; a different middle is needed.
+  - At s61c, u ≤ e holds, and types 27 and 28 have u_t = 0 < e_t. With r full partners there are u + r·e holes, so vacating the 2e Bad set needs r ≥ 2. This is the arithmetic of M1-13.
+- **The s61c preparation exists (proved).**
+  - Write the recorded C chronologically as P·V·W·V⁻¹, with |V| = 849. Its inverse begins V·W⁻¹.
+  - Just before W⁻¹, the landing chambers of both partners are occupied.
+  - So a retained preparation that fills the six source chambers of M1-14 exists. Finding it from the state is a separate experiment.
+- **A caution.** The finite bound on depth-one poses does not justify searching only the solved component of the depth-one graph. No theorem says that every reachable depth-one state is reached by a path that stays at depth one.
+
+### M1-17: vacancy by one search over target images (proved, model review; the counterexample re-run by the integrator)
+
+- **An exact criterion.** Let G be the SAFE-ALL group, H the holes and T the target. For each orbit Δ_i that meets T, let n_i = |Δ_i|, h_i = |H ∩ Δ_i| and k_i = |T ∩ Δ_i|.
+  - Vacancy holds exactly when the G-orbit of the tuple (T ∩ Δ_i)_i contains a tuple (S_i)_i with S_i ⊆ H ∩ Δ_i, because T ⊆ g(H) if and only if g⁻¹(T) ⊆ H.
+  - A breadth-first search on target images decides it, and the inverse of its witness vacates T.
+- **A sharper bound.** Put Q_T = ∏_i binom(n_i, k_i) and Q_H = ∏_i binom(n_i, h_i). When a vacating word exists, a shortest one has at most min(Q_T, Q_H) − 1 letters.
+  - For a target of fixed size m, Q_T ≤ N^m, where N is the number of relevant chambers.
+  - A non-outer single-cell target has m ≤ 385.
+- **Counts suffice only with independent alternating factors.**
+  - Suppose the joint restriction of G to the remaining target orbits contains the product of their alternating groups, each orbit of size at least three. Then the counts suffice.
+  - Alternating projections alone do not suffice. Example: diagonal A5 on two five-point copies, with holes {1, 2′} and targets {1, 1′}. This is an abstract group, not a puzzle state.
+- **Distinct degrees (proved).** When the non-fixed target orbits have pairwise distinct sizes n_i ≥ 5, alternating projections do give the full product.
+- **Search per orbit, then a compatibility check.** This is exact only when every choice S_i and its whole transporter coset {g : g(S_i) = T ∩ Δ_i} are kept. One local witness per orbit is not enough.
+- **Polynomial certificates.** Straight-line programs for the cycles (1 2 j), j = 3, …, n_i, on each orbit, fixing the other target orbits, certify the alternating factors. Their size and checking time are polynomial. They do not promise short words.
+
+### M1-18: retained conjugation extends the toolkit (proved, model review)
+
+- **The construction.** Let A be a legal retained word at Z, and put Y = A(Z). Suppose an AU-03 closure C = V·W·V⁻¹ at Y lands every piece of U as transported by A, and every other off piece of Y lands or keeps its exact pose. Then A·C·A⁻¹ is a clean step for U at Z.
+- **Its length.** At most 2r + 2B + b letters, where:
+  - r = |A| and b = |W|;
+  - B is a vacancy bound: Q_safe − 1, the bound of M1-17, or a peeling bound.
+- **The setup search is finite from the state.** With h off pieces and type counts h_t, there are at most R(Z) = 7200^h · ∏_t binom(N_t, h_t) records, so a shortest setup has r ≤ R(Z) − 1.
+- **The first test (not run).** Try r = 1: one retained letter before the toolkit and its inverse after. Such a letter can change foreign-frame interference and the SAFE-ALL orbits without creating partners.
+
+### M1-19: a finite test for free grips, and a positive case (proved, model review; computed, re-run by the integrator)
+
+- **Open.** Does every reachable depth-one state with off pieces have a candidate that passes AU-03 apart from vacancy? The admissible-mover lemma does not settle this, because an admissible cap can hold foreign-frame pieces.
+- **A finite exact test at a given state (proved).**
+  - For each class P, use its free alphabet and track the accumulated rotation a_C ∈ Sym⁺(P) of every initial class cell C.
+  - An action qualifies when it lands an eligible unit, and every other off content of the class either keeps its pose (a_C is the identity) or lands (a_C γ ∈ K⁺).
+  - There are at most 7200^2640 lifted actions, so exhausting them decides the question at that state.
+- **An obstruction (proved).** Suppose one class-P cell holds off pieces of two frame domains. Then every word that passes AU-03 check 2 acts trivially on that cell, so neither content can be the target.
+- **A positive case (computed).**
+  - The state: the first 115 twists of the I_a fixture. Its digest is `f639b10b…`, and it has 114,014 off pieces, all of height (2, 0).
+  - Grip 194 is free for class 1. The letter (194, 12) lands 1,410 off pieces and leaves every other off piece at its exact pose. It also takes 395 lattice pieces off, so it is a witness for this question, not a clean step.
+  - Grip 91 is admissible but holds off pieces of classes 0 and 3. So admissibility does not imply freeness.
+- **The next test (not run).** The 11 non-identity retained letters at grip 91 of this state.
+
+### Where the method stands after round 5
+
+- The coverage question of round 4 stays open, with three bounded extensions to test before new creators: retained conjugation (M1-18, r = 1 first), the template with a stated catalogue (M1-16), and the free-grip test (M1-19).
+- Vacancy has an exact search with the bound min(Q_T, Q_H) − 1 (M1-17).
+
+The commands, as re-run by the integrator (`python3 -I -B <file>` from the repository root):
+
+M1-17: the diagonal A5 counterexample (prints `"vacating_elements": 0`):
+
+```python
+"""M1-17 check: diagonal A5 on two copies of {0..4}; holes {0, 1'} and targets {0, 0'}. Per-orbit counts and both
+projections hold, but no g has g^-1(T) inside H."""
+import itertools, json
+
+def parity(p):
+    s, seen = 0, set()
+    for i in range(len(p)):
+        if i in seen:
+            continue
+        j, n = i, 0
+        while j not in seen:
+            seen.add(j); j = p[j]; n += 1
+        s += n - 1
+    return s % 2
+
+A5 = [p for p in itertools.permutations(range(5)) if parity(p) == 0]
+H = {('a', 0), ('b', 1)}
+T = [('a', 0), ('b', 0)]
+def inv(p):
+    q = [0] * 5
+    for i, x in enumerate(p):
+        q[x] = i
+    return q
+ok = [p for p in A5 if all((s, inv(p)[x]) in H for s, x in T)]
+proj = len({p for p in A5}) == 60
+print(json.dumps({'group_order': len(A5), 'per_orbit_counts': [1 >= 1, 1 >= 1], 'projections_A5': proj,
+                  'vacating_elements': len(ok)}))
+```
+
+M1-19: the positive case at I_a@115 (about 20 s):
+
+```python
+import sys
+sys.path[:0]=['research/jumbling/theory','research/jumbling/fixtures','research/jumbling']
+import numpy as np
+import classes as CL, restore, sim, trees, wj
+fixture,M=wj.load(restore.ctx,'I_a')
+st=sim.State(restore.ctx,menu=M,filtered=False)
+for rec in fixture['journal']['records'][:115]:
+    assert st.apply(sim.Twist.from_record(restore.ctx,rec)).applied
+R=restore.Restorer(st,M); D=R.domains(); dom=np.asarray(D.dom)
+members,cls=CL.classes(); dc={}
+for d in range(1,len(D.reps)):
+    assert tuple(trees.dist(q) for q in trees.factors(D.reps[d]))==(2,0)
+    hubs=CL.hub(D.reps[d],members,cls); assert len(hubs)==1
+    dc[d]=hubs[0][1]
+print('start',st.digest(),'off',int((dom!=0).sum()),flush=True)
+for c in (194,91):
+    q=st.classify(c,need_inside=True,stop_at_straddle=True)
+    assert not q.uncertain and q.straddle is None
+    ds=set(map(int,dom[np.asarray(q.inside,dtype=np.int64)]))-{0}
+    print('grip',c,'class',int(cls[c]),'off_domain_classes',sorted({dc[d] for d in ds}),flush=True)
+    if c==194:
+        assert ds and all(dc[d]==cls[c] for d in ds)
+old=st.pose_id.copy(); matrices=[st._pose_matrix(i) for i in range(len(st._poses))]
+off=~st.lattice_flags(); R.apply(194,12)
+nowoff=~st.lattice_flags(); remaining=off & nowoff
+assert int((off & ~nowoff).sum())==1410
+pairs=np.unique(np.stack((old[remaining],st.pose_id[remaining]),axis=1),axis=0)
+assert all(matrices[int(a)]==st._pose_matrix(int(b)) for a,b in pairs)
+print('witness',(194,12),'original_off_landed',int((off & ~nowoff).sum()),'remaining_original_off_exact',True,'source_lattice_off',int((~off & nowoff).sum()))
+```
+
+## 11. The length of the lattice phase (round 6)
+
+Round 6 asked for a quantitative answer to gap M2: constructions with proved length bounds, lower bounds, and the cost to a person who replays macros with the program's help. The integrator proposed two measures; the owner has not fixed one.
+- **Twists L**: the number of primitives in the word. Where it matters, also *cap twists*: a maximal run of letters at one cap counts once, as an element of the cap's group A4.
+- **Actions A**: a person performs cap twists, one action each, and macro applications, one action each. A macro is a word the person defined once; the program stores it and replays it at any of the 7,200 placements of K⁺. Creating the library costs the sum of its lengths in twists, reported apart from A.
+
+The round proves lower bounds (M2-02), a shorter frame construction (M2-03) and a cascade bound of 356,565,166 twists with the committed seeds (M2-04). It corrects the single-overlap lemma (M2-01), the reading of the measured runs (M2-05) and a setup remark of the packet (M2-06). It establishes no uniform bound of 200 twists per orbit and no better cascade order. The integrator re-ran every exact computation of the round and got the reported outputs. The integrator's own searches for short pure elements (S1 and S2) follow the findings.
+
+### M2-01: the single-overlap lemma, corrected (proved, model review; computed, re-run by the integrator)
+
+- **The lemma.** Let S(X) be the set of pieces with any sticker moved by X, frame changes at a fixed position included. Suppose S(X) ∩ S(Y) = {p} and X and Y both move p to another position. Put x = X⁻¹(p) and y = Y⁻¹(p).
+  - Then [X, Y] = X·Y·X⁻¹·Y⁻¹ (chronological) moves the positions p → y → x → p and fixes every other piece. Its length is at most 2(|X| + |Y|).
+  - With α the fibre map of X from x to p and β that of Y from y to p, its fibre maps are β⁻¹, α⁻¹β and α, whose product around the cycle is the identity. So the commutator is **pure**: its cube fixes every sticker.
+- **Both positions must move.** Two C2 frame pairs on {p, a} and {p, b} meet in one piece and commute, so their commutator is the identity. Counting only displaced positions is unsafe too: it omits frame collateral.
+- **Pure is not aligned.** The cube identity does not make the cycle's fibre maps agree with the ordered fibres of the cascade. Using a pure cycle in the committed kit needs a relocation to its buffers, charged in the length, and exact agreement with its fibres.
+- **Why the spines shrink slowly.** For I = S(X) ∩ S(g), S([X, g]) ⊆ I ∪ X⁻¹(I) ∪ g⁻¹(I), so |S([X, g])| ≤ 3|I|. This gives no contraction when much of X's support meets the cap, while a commutator with a primitive takes the length from ℓ to 2ℓ + 2. Also S(X) ∩ g(S(X)) contains every piece of S(X) outside g's cap region, so conjugating by one cap twist cannot leave a single overlap.
+- **Placement cost (computed).** In every cap, the 12 elements of A4 lie at primitive distances 0, 1, 2, 3 with multiplicities 1, 3, 4, 4. A K⁺ placement keeps the number of cap twists but can turn one primitive into three, so [X, σ(Y)] has at most 2(|X| + 3|Y|) primitives and 2(|X| + |Y|) cap twists.
+- **The short small-support family is too small (computed).** Of the 119 distinct atlas subnodes of formula length at most 50, 20 move at most 600 pieces, and none of these 20 moves a piece of O00, O01, O02, O03, O04 or O06. Placements preserve orbits, so words built from them never reach those six orbits.
+- **A finite search (proved; outcome not given).** Counting, per orbit and per placement, the pieces where S(X) and σ(S(Y)) meet is exact; a single overlap with both positions moved gives a pure three-cycle. One certificate per orbit proves a bound for that orbit; a failure only rules out the family. The integrator's searches S1 and S2 below are of this kind, over all 122 spine nodes.
+
+### M2-02: lower bounds (proved, model review; the integer checks re-run by the integrator)
+
+- **Caps that commute (computed).** Each cap region holds 3,097 pieces, and the stickers its two primitives move lie on 3,096 of them. Each region is disjoint from 543 others and meets 56. Caps with disjoint supports commute; there are 162,900 such pairs.
+- **The counting group.** Let P be the group generated by the 600 cap groups A4 with only these relations: each cap's own, and commutation of caps with disjoint supports. P maps onto G, so a ball of radius r in G is no larger than the ball of radius r in P.
+- **Its growth series.** Let Γ be the overlap graph of the caps (maximum degree 56), and f(z) = 3z + 4z² + 4z³ for primitives or f(z) = 11z for cap twists. Reduced words in P are unique up to exchanging commuting syllables, and their cost is the word length. Their generating series H satisfies H(z) · I_Γ(u) = 1 with u = f(z)/(1 + f(z)), where I_Γ(u) = Σ (−u)^|J| over the independent sets J of Γ.
+- **A bound on it.** For 0 < x < 1 and u ≤ x(1 − x)^56, deleting the 600 vertices one at a time gives I_Γ(u) ≥ (1 − x)^600 > 0, so H converges there and H(z) ≤ (1 − x)^−600. With x = 1/57:
+  - |Ball_L(r)| ≤ 40,936 · 460^r for primitives;
+  - |Ball_cap(r)| ≤ 40,936 · 1,679^r for cap twists.
+- **The bounds** (exact integer comparisons with |G|):
+
+  | Measure | Some input needs at least | All but a fraction 10⁻⁶ of uniform inputs need at least | All but 10⁻¹² |
+  | --- | ---: | ---: | ---: |
+  | Primitives L | 224,601 | 224,599 | 224,596 |
+  | Cap twists | 185,441 | 185,439 | 185,438 |
+  | Actions A, fixed library of m = 1 macro | 145,909 | 145,908 | 145,906 |
+  | Actions A, m = 35 | 110,495 | 110,494 | 110,493 |
+  | Actions A, m = 70 | 104,774 | 104,773 | 104,772 |
+
+  - These are lower bounds, not estimates of a typical length.
+  - For actions, each macro has 7,200 placements, an inverse counts as a separate macro, and the cap blocks between macro applications are reduced as above. Creation costs are excluded.
+  - The library must be fixed in advance. If it may depend on the input, no bound on A alone holds: one macro can be the whole solution.
+- **Scope (integrator's note).** The bounds count words in the 1,200 retained primitives, which is what the retained phase uses. A lattice phase that leaves the lattice through jumble twists and returns is not covered.
+- They supersede the integrator's rough count in the packet (free reduction only: about 1.8 × 10^5 primitives and 1.6 × 10^5 cap twists).
+
+### M2-03: frame elements (proved, model review; computed, re-run by the integrator)
+
+- **Which singles exist.** A pure element that fixes every position and changes only the frame at C, by a value v, has invariant equal to the class of v in H_o^ab. Since G = ∏ ker ν_o, v must lie in the derived group H_o′. So the seven C2 and the two C5 orbits have only the identity single, O06 has the five values of D5′ = C5, and O34 has all 60 values of A5.
+- **Pairs.** Let c be a pure cycle of length ℓ aligned with the ordered fibres (f_A → f_B → f_C → f_A), and g_x a return word of length h_x that fixes both buffers and returns C with frame x. Then Q_x = g_x⁻¹ c g_x c⁻¹ has value x at B and x⁻¹ at C, fixes everything else and has length at most 2ℓ + 2h_x. Conjugated by a star it moves to any X ≠ C, at most 4ℓ + 2h_x + 4|u_X| letters.
+- **A shorter single.** For z = xy, S_C(x, y) = Q_x Q_y Q_z⁻¹ has value 1 at B and x⁻¹y⁻¹xy at C. Two seed occurrences cancel, so its length is at most 4ℓ + 2(h_x + h_y + h_xy), shorter than a commutator of two transported pairs. Every admissible single is one such commutator.
+- **The constants per orbit (computed from the execution trees; h_o is the longest chosen return, d_o the tree depth):**
+
+  | Orbit | H_o | h_o | d_o | pair at B | pair at X ≠ C | single at C |
+  | --- | --- | ---: | ---: | --- | --- | --- |
+  | O00 | C2 | 5 | 20 | 2ℓ + 10 | 4ℓ + 90 | identity only |
+  | O03 | C2 | 3 | 10 | 2ℓ + 6 | 4ℓ + 46 | identity only |
+  | O06 | D5 | 4 | 9 | 2ℓ + 8 | 4ℓ + 44 | 4ℓ + 16 |
+  | O08 | C2 | 3 | 7 | 2ℓ + 6 | 4ℓ + 34 | identity only |
+  | O11 | C2 | 3 | 7 | 2ℓ + 6 | 4ℓ + 34 | identity only |
+  | O17 | C5 | 2 | 6 | 2ℓ + 4 | 4ℓ + 28 | identity only |
+  | O22 | C2 | 3 | 6 | 2ℓ + 6 | 4ℓ + 30 | identity only |
+  | O25 | C2 | 2 | 6 | 2ℓ + 4 | 4ℓ + 28 | identity only |
+  | O28 | C5 | 2 | 6 | 2ℓ + 4 | 4ℓ + 28 | identity only |
+  | O32 | C2 | 2 | 6 | 2ℓ + 4 | 4ℓ + 28 | identity only |
+  | O34 | A5 | 3 | 5 | 2ℓ + 6 | 4ℓ + 26 | 4ℓ + 10 |
+
+- **These constants need c aligned with the existing fibres.** A short pure cycle on another triple, or one that only satisfies c³ = 1, needs an alignment certificate first.
+- **A correction to stage 03.** Its report says that products of pairs on two positions always carry conjugate values of equal order (section 2.1, the A5 case). That is false: Q_x Q_y Q_xy⁻¹ has value 1 at B and a commutator at C. The certificates of stage 03 do not depend on the claim.
+
+### M2-04: a cascade bound of 356,565,166 twists (proved, model review; computed, re-run by the integrator)
+
+- **Trivial frame passes vanish.** When H_o is trivial, a piece at its home position carries the identity frame, so the orbit is solved when its position pass ends. AU-05's formula without the frame terms of the 24 such orbits gives 771,844,512 twists for the committed cascade.
+- **The exact position loop.** For an orbit's position permutation, let m be the number of moved positions, k the number of nontrivial cycles, and i = 1 if A is moved, else 0.
+  - The loop runs exactly (m + k − 2i)/2 three-cycles: each step lowers m + k − 2i by exactly two, whichever unsolved position it picks.
+  - With b the number of steps that involve B, it uses exactly S = m + k − 2i − b stars, and S ≤ 3N_o/2 − 3. The bound is attained (N_o/2 disjoint transpositions, A paired with B).
+- **The construction.** Use the committed seeds (s_o = seed length plus twice the relocation length), the exact position count, and the frame recipe of M2-03 (pairs at every X ≠ C, B apart, and the shorter single). Then:
+  - every input needs at most **356,565,166** twists;
+  - for an input uniform on G, the expected length is at most 231,334,003.
+
+  This is a proved construction, not the length of the unchanged executable. It excludes the corrections (at most 25,852 twists).
+- **Actions.**
+  - A fixed library of the 35 relocated seeds and their inverses (m = 70), with identity placements only: A ≤ 4,840,993 and E[A] ≤ 3,098,745. Creating it costs 128,076 primitives.
+  - A library of every star, frame pair and admissible single (m = 400,760): A ≤ 291,186 and E[A] ≤ 191,121, with a creation cost of at most 869,912,422 primitives.
+- **Conditional.** If pure seeds aligned with the existing fibres have at most 200 primitives each, the same trees give L ≤ 78,609,696 and E[L] ≤ 49,764,387, with a creation cost of 14,000 for the 70 macros. Q1 has not established this.
+
+### M2-05: what the measured runs show (proved, model review, from the source)
+
+- **Factors, not stars.** The per-orbit counts of the stage 03 runs (190,925 and 191,093 in total) count every factor: stars, frame pairs and singles. A C2 orbit with 3,600 positions has about 5,400 factors, of which about 1,800 are frame pairs.
+- **The `uniform` inputs are not uniform on G.** The generator draws positions uniformly, and frame values uniformly except the last one, which it sets to a fixed representative of the required class. On O06 and O34 a class has 5 and 60 elements, so the inputs cover 1/300 of G. The two restorations are valid examples, not uniform samples.
+
+### M2-06: setups and the cascade order (proved, model review; computed, re-run by the integrator)
+
+- **The packet's setup remark was wrong.** For u_X = pa and u_Y = pb, the middle word u_X u_Y⁻¹ is p a b⁻¹ p⁻¹: a common prefix does not cancel. In the tree of O00, nodes 5 and 6 have paths [37, 103] and [37, 104], at tree distance two, and the middle word is [37, 103, −104, −37]. For a sequence of stars, a valid setup bound is |u_X1| + |u_Xr| + Σ_j |red(u_Xj u_X(j+1)⁻¹)| plus the seed lengths; free cancellation removes common suffixes.
+- **Placements do not supply the stars.** A master three-cycle gives at most 3 · 7200/N_o placed cycles of the form (A B X). On an orbit with 7,200 positions that is three of the 7,198 stars needed, so setups stay essential.
+- **Shorter spine prefixes need alignment (computed).** The shortest spine prefix that the committed order allows is, on every orbit, a pure three-cycle of that orbit (cube identity, exactly three positions moved). On 13 orbits it is shorter than the seed but differs from the seed and from its inverse: (orbit, formula length) = (6, 4), (0, 560), (17, 10), (15, 94), (2, 286), (22, 22), (21, 46), (8, 94), (9, 190), (34, 190), (28, 1,534), (16, 70), (3, 562). None can replace its seed without a new alignment certificate.
+- **A better order (open).** With certified candidates (own-orbit action, relocation, setups, collateral), choosing an order is a finite problem: a candidate for orbit o is legal after a set S of solved orbits when its collateral avoids S. One feasible order with verified costs would prove an improvement; none is established. Pure aligned elements remove the ordering constraint.
+
+### S1: short pure elements by single overlap (computed by the integrator; words checked independently)
+
+- **The family.**
+  - X and Y run over the 122 distinct spine nodes of the atlas seeds (formula lengths 4 to 12,286).
+  - Y is placed by every σ ∈ K⁺, 7,200 placements. Y^σ is written as the transported word: each letter becomes a shortest word in the A4 of its image cap.
+  - A triple (X, Y, σ) qualifies when supp X and supp Y^σ meet in exactly one piece q. The support counts every piece with a sticker moved, frame changes in place included, as M2-01 requires. There are 530,387 such triples.
+  - By the single-overlap lemma, [X, Y^σ] then moves pieces of q's orbit only:
+    - a three-cycle of positions when X and Y^σ both move q to another position, pure by M2-01 (no recorded three-cycle is twisted);
+    - a pair twist when exactly one of them keeps q at its position;
+    - a single twist when both do.
+- **The search** (`scripts/short-cycles/short_cycles.py`, about 6 minutes).
+  - It ranks the triples by the exact length of the commutator.
+  - It verifies the six shortest per orbit and kind exactly:
+    - the transported word's permutation equals the conjugate;
+    - the support and the kind are as predicted;
+    - C³ = 1 on all 259,800 slots for a pure three-cycle.
+  - `check_cycles.py` re-checks every recorded word from the primitives alone: 32 records, `all_ok`.
+  - The exact action of K⁺ on caps, pieces and slots is `kplus.py`: K⁺ has order 7,200, and all 1,200 primitives are equivariant (0 mismatches).
+  - One Codex review at the fast tier found no blocking issue.
+- **The result** (`data/short-cycles.json.gz`):
+  - *Coverage.* Pure three-cycles for 29 of the 35 orbits, from 28 to 18,496 primitives. Each moves three pieces of its orbit and nothing else.
+  - *Shorter than the seed* for 21 orbits, by up to a factor of 16: O11 goes from 766 to 48, O12 from 766 to 52, O04 from 546 to 52, O14 from 1,534 to 144.
+  - *Longer than the seed* for 8 orbits, among them O29 (18,496 against 9,214) and O34 (12,416 against 12,286).
+  - *None* for O00, O02, O06, O15, O17 and O28. Their seeds carry the most collateral: O00 moves 1,272 slots in 32 orbits, O06 1,134 slots in 27, O17 720 in 19, O15 647 in 22 and O02 195 in 19.
+  - *Frame elements:* for O06 (H = D5), a pair twist of 556 primitives and a single twist of 1,104 (order 5); for O32 (C2), a pair twist of 216.
+- **What it changes.**
+  - A seed with collateral can be used only in the cascade's order. A pure element can be used in any order.
+  - To replace a seed in the cascade, a found element must also be aligned (M2-01, M2-03): relocated onto the buffers (A_o, B_o, C_o), with the relocation charged in the length, and agreeing with the ordered fibres there. No alignment is certified yet; on the 24 orbits with trivial H_o the fibres impose nothing, but the relocation is still needed.
+  - Weight each orbit by its number of factors in the run uniform:1 of stage 03 (stars and frame factors, M2-05), and replace each seed by the shorter of the two at the seed's relocation and setup cost. Then the cascade would be about a third shorter: about 1.24 × 10^8 twists instead of 1.81 × 10^8. This is an estimate that assumes alignment at no extra cost, not a run.
+  - The three largest terms are O15, O29 and O02, about 7.2 × 10^7 together, and none of them is improved.
+
+### S2: two levels of overlap (computed by the integrator; words checked independently)
+
+- **The idea.** If supp X and supp Y meet in a set I of pieces, [X, Y] moves only pieces of I, X⁻¹(I) and Y⁻¹(I), so at most 3|I| pieces. A commutator with a small overlap is therefore an element of small support, and a second commutator can isolate one piece of it.
+- **The search** (`scripts/short-cycles/short_cycles2.py`, about 10 minutes per run). It is limited to the target orbits.
+  - *Level 1.* Z = [X, Y^σ] for spine nodes X and Y and σ ∈ K⁺ whose supports meet in 2 to k_max pieces, at least one of them in a target orbit. For each target orbit, the 12 shortest such Z are computed exactly. Those that move a piece of a target orbit are kept.
+  - *Level 2.* C = [Z, W^τ], where W is a spine node or a kept Z and τ ∈ K⁺, whose supports meet in exactly one piece of a target orbit. C is then a three-cycle, a pair twist or a single twist in that orbit. C is verified exactly as in S1 and re-checked by `check_cycles.py`.
+  - One Codex review at the fast tier found no issue.
+- **The run with k_max = 3** (targets O00, O02, O06, O15, O17, O28 and O29; `data/short-cycles-2.json.gz`, 7 records, `all_ok`).
+  - Level 1 kept 50 elements Z, each moving 6 to 9 pieces, of 56 to 14,328 primitives.
+  - Level 2 gave pure three-cycles for O00 (4,464 primitives), O02 (1,200), O06 (1,068), O28 (8,392) and O29 (140).
+    - O29 drops from 9,214 (its seed) to 140.
+    - O02 drops from 9,214 to 1,200.
+  - It also gave a pair twist of 1,412 and a single twist of 2,428 on O06, both longer than those of S1.
+  - Level 1 found no candidate for O15 or O17: no two spine nodes, in any placement, overlap in two or three pieces that include a piece of these orbits.
+- **The run for O15 and O17 with k_max = 8** writes an empty result. Level 1 kept 12 elements Z for O15, each moving 21 or 24 pieces, of 184 to 592 primitives. It found none for O17: no two spine nodes, in any placement, overlap in two to eight pieces that include a piece of O17. Level 2 found no single overlap in O15 or O17. This is a bounded search (12 Z per orbit, spine nodes only), not an obstruction.
+- **Together** (S1 and S2):
+  - pure three-cycles for 33 of the 35 orbits, 23 of them shorter than the seed;
+  - weighted as in S1, with the shorter of seed and found element per orbit, the cascade estimate drops from about 1.81 × 10^8 to about 8.3 × 10^7 twists (82,998,956), 54% less. Like the S1 figure, it assumes alignment at no extra cost; it is an estimate, not a run.
+  - The largest remaining term is O15, about 2.8 × 10^7 (a third of the total): its seed of 11,564 primitives has no pure replacement. O17 (seed 1,534) adds about 4 × 10^6.
+
+Per orbit, in primitives (S1 and S2 together; "-" means none found; the ratio uses the shorter pure three-cycle; frame elements are the shortest of either search):
+
+| Orbit | H_o | seed | pure three-cycle, S1 | pure three-cycle, S2 | seed / shortest | pair twist | single twist |
+|---|---|---:|---:|---:|---:|---:|---:|
+| O34 | A5 | 12,286 | 12,416 | - | 0.99 | - | - |
+| O15 | 1 | 11,564 | - | - | - | - | - |
+| O02 | 1 | 9,214 | - | 1,200 | 7.7 | - | - |
+| O29 | 1 | 9,214 | 18,496 | 140 | 66 | - | - |
+| O28 | C5 | 3,070 | - | 8,392 | 0.37 | - | - |
+| O01 | 1 | 2,190 | 592 | - | 3.7 | - | - |
+| O00 | C2 | 2,182 | - | 4,464 | 0.49 | - | - |
+| O08 | C2 | 1,534 | 336 | - | 4.6 | - | - |
+| O14 | 1 | 1,534 | 144 | - | 11 | - | - |
+| O17 | C5 | 1,534 | - | - | - | - | - |
+| O18 | 1 | 1,534 | 232 | - | 6.6 | - | - |
+| O03 | C2 | 1,094 | 700 | - | 1.6 | - | - |
+| O10 | 1 | 766 | 1,600 | - | 0.48 | - | - |
+| O11 | C2 | 766 | 48 | - | 16 | - | - |
+| O12 | 1 | 766 | 52 | - | 15 | - | - |
+| O22 | C2 | 766 | 472 | - | 1.6 | - | - |
+| O04 | 1 | 546 | 52 | - | 10 | - | - |
+| O05 | 1 | 546 | 148 | - | 3.7 | - | - |
+| O06 | D5 | 382 | - | 1,068 | 0.36 | 556 | 1,104 |
+| O09 | 1 | 382 | 496 | - | 0.77 | - | - |
+| O07 | 1 | 286 | 60 | - | 4.8 | - | - |
+| O16 | 1 | 286 | 88 | - | 3.2 | - | - |
+| O13 | 1 | 142 | 48 | - | 3 | - | - |
+| O19 | 1 | 142 | 96 | - | 1.5 | - | - |
+| O20 | 1 | 142 | 28 | - | 5.1 | - | - |
+| O31 | 1 | 142 | 40 | - | 3.5 | - | - |
+| O21 | 1 | 94 | 108 | - | 0.87 | - | - |
+| O27 | 1 | 94 | 56 | - | 1.7 | - | - |
+| O30 | 1 | 94 | 40 | - | 2.4 | - | - |
+| O32 | C2 | 94 | 56 | - | 1.7 | 216 | - |
+| O23 | 1 | 46 | 68 | - | 0.68 | - | - |
+| O24 | 1 | 46 | 88 | - | 0.52 | - | - |
+| O25 | C2 | 46 | 136 | - | 0.34 | - | - |
+| O26 | 1 | 46 | 40 | - | 1.1 | - | - |
+| O33 | 1 | 46 | 36 | - | 1.3 | - | - |
+
+### Where M2 stands after round 6
+
+- **Lower bounds (proved).** Some input needs at least 224,601 retained twists, about 2.6 days at one twist per second. With a fixed library of 70 macros it needs at least 104,774 actions (M2-02).
+- **Upper bounds (proved).** The construction of M2-04 needs at most 356,565,166 twists for every input, about 11 years at one per second. A person who replays the 35 relocated seeds and their inverses from the program needs at most 4,840,993 actions, about 56 days at one action per second; the expectation for an input uniform on G is at most 3,098,745 actions, about 36 days. The bound for the committed executable is 771,844,512 twists (AU-05 without the trivial frame terms).
+- **The gap** between them is a factor of about 1,600 in twists and about 46 in actions.
+- **Short pure elements (computed, S1 and S2).** Pure three-cycles exist for 33 of the 35 orbits, 21 of them within 200 primitives. None is aligned with the cascade yet, and O15 and O17 have none.
+- **Next experiments (not run).**
+  - Alignment certificates for the found three-cycles: a relocation onto the buffers and agreement with the ordered fibres. On the aligned orbits, the conditional bound of M2-04 then applies.
+  - A search for O15 and O17 beyond the spine-node families.
+  - The sampler fix of M2-05, with stars, frame pairs and singles counted apart.
+  - One feasible cascade order with certified shorter prefixes (M2-06).
+
+The commands of the round, as re-run by the integrator (`python3 -I -B <file>` from the repository root, a few seconds each). They are the reviewer's, unchanged.
+
+M2-01: the rotation group, the local distance profiles, the short subnodes and the spine prefixes the committed order allows (about 17 s). Output:
+
+```text
+K 7200 all rp/fp in K True True fp0 True
+local distance profiles {((0, 1), (1, 3), (2, 4), (3, 4)): 600}
+short 119 {1: 81, 4: 5, 10: 7, 16: 2, 22: 9, 34: 2, 46: 13} small 20 small absent orbits [0, 1, 2, 3, 4, 6]
+all35 allowed prefixes: cube identity and exactly3 positions moved; differ from seed and inverse: [(6, 4), (0, 560), (17, 10), (15, 94), (2, 286), (22, 22), (21, 46), (8, 94), (9, 190), (34, 190), (28, 1534), (16, 70), (3, 562)]
+```
+
+```python
+import json,collections,numpy as np
+from pathlib import Path
+z=np.load('assets/model.npz');pr=np.load('assets/primitives.npz');rp=z['rotperms'];fp=z['frameperms'];sp=z['slot_piece'];oid=z['orbit_id'];so=oid[sp];I=np.arange(len(sp),dtype=np.int32);E=np.arange(600,dtype=np.int16)
+G={E.tobytes():E};Q=[E]
+for x in Q:
+ for g in rp[:4]:
+  y=g[x];k=y.tobytes()
+  if k not in G:G[k]=y;Q.append(y)
+print('K',len(G),'all rp/fp in K',all(x.tobytes() in G for x in rp),all(x.tobytes() in G for x in fp),'fp0',np.array_equal(fp[:,0],np.arange(600)))
+profiles=collections.Counter()
+for c in range(600):
+ H,T=rp[2*c:2*c+2];D={E.tobytes():0};Q=[E]
+ for x in Q:
+  for g in (H,T,T[T]):
+   y=g[x];k=y.tobytes()
+   if k not in D:D[k]=D[x.tobytes()]+1;Q.append(y)
+ profiles[tuple(sorted(collections.Counter(D.values()).items()))]+=1
+print('local distance profiles',dict(profiles))
+cache={}
+def ev(t):
+ k=json.dumps(t,separators=(',',':'))
+ if k in cache:return cache[k]
+ if t[0]=='g':
+  a=t[1];i=abs(a)-1;u,v=pr['offsets'][i:i+2];s=pr['src'][u:v];d=pr['dst'][u:v];P=I.copy();P[s if a>0 else d]=d if a>0 else s;L=1
+ elif t[0]=='comm':
+  X,lx=ev(t[1]);Y,ly=ev(t[2]);P=np.argsort(Y).astype(np.int32)[np.argsort(X).astype(np.int32)[Y[X]]];L=2*(lx+ly)
+ else:
+  X,lx=ev(t[1]);P=I.copy();xx=X if t[2]>=0 else np.argsort(X)
+  for _ in range(abs(t[2])):P=xx[P]
+  L=abs(t[2])*lx
+ cache[k]=(P,L);return P,L
+at=json.loads(Path('assets/seed_atlas.json').read_text())
+for a in at:ev(a['ast'])
+short=[(P,L) for P,L in cache.values() if L<=50];small=[(P,L) for P,L in short if len(set(sp[P!=I]))<=600]
+print('short',len(short),dict(sorted(collections.Counter(L for P,L in short).items())),'small',len(small),'small absent orbits',sorted(set(range(35))-set(int(o) for P,L in small for o in so[P!=I])))
+order=[6,0,17,15,2,22,21,8,23,9,29,25,13,11,10,34,28,26,24,16,14,12,3,33,32,31,30,27,20,19,18,7,5,4,1];earlier=set();changed=[]
+for o in order:
+ final,_=ev(at[o]['ast']);t=at[o]['ast'];cands=[];ix=np.flatnonzero(so==o)
+ while True:
+  P,L=ev(t);S=np.unique(sp[P!=I]);own=S[oid[S]==o]
+  if len(own)==3 and not set(map(int,oid[S])).intersection(earlier):cands.append((L,P))
+  if t[0]=='g':break
+  t=t[1]
+ L,P=min(cands,key=lambda c:c[0]);assert np.array_equal(P[P[P[ix]]],ix);assert len(np.unique(sp[ix[sp[P[ix]]!=sp[ix]]]))==3
+ if not np.array_equal(P[ix],final[ix]):
+  assert not np.array_equal(P[ix],np.argsort(final)[ix]);changed.append((o,L))
+ earlier.add(o)
+print('all35 allowed prefixes: cube identity and exactly3 positions moved; differ from seed and inverse:',changed)
+```
+
+M2-02: cap supports and regions, and their disjointness graph. Output:
+
+```text
+support_piece_sizes Counter({3096: 600})
+disjoint_piece_degrees Counter({543: 600}) edges 162900 examples [[0, 22], [0, 28], [0, 31]]
+region_sizes Counter({3097: 600})
+region_disjoint_degrees Counter({543: 600}) edges 162900
+support_vs_region Counter({1: 600})
+```
+
+```python
+import numpy as np,collections
+m=np.load('assets/model.npz');p=np.load('assets/primitives.npz');sp=m['slot_piece'];src=p['src'];off=p['offsets']
+def bits(indices):
+ b=np.zeros(177120,dtype=np.uint8);b[indices]=1
+ return int.from_bytes(np.packbits(b).tobytes(),'little')
+ps=[];sizes=[]
+for c in range(600):
+ ix=np.unique(sp[src[off[2*c]:off[2*c+2]]]);ps.append(bits(ix));sizes.append(len(ix))
+D=np.array([[a!=b and (ps[a]&ps[b])==0 for b in range(600)] for a in range(600)])
+print('support_piece_sizes',collections.Counter(sizes))
+print('disjoint_piece_degrees',collections.Counter(D.sum(1).tolist()),'edges',int(D.sum())//2,'examples',np.argwhere(np.triu(D,1))[:3].tolist())
+maskoff=m['mask_offsets'];maskval=m['mask_values'];memberships=np.repeat(np.arange(177120),np.diff(maskoff));regions=[];rsize=[]
+for c in range(600):
+ ix=memberships[maskval==c];regions.append(bits(ix));rsize.append(len(ix))
+R=np.array([[a!=b and (regions[a]&regions[b])==0 for b in range(600)] for a in range(600)])
+print('region_sizes',collections.Counter(rsize))
+print('region_disjoint_degrees',collections.Counter(R.sum(1).tolist()),'edges',int(R.sum())//2)
+print('support_vs_region',collections.Counter((regions[c]&~ps[c]).bit_count() for c in range(600)))
+```
+
+M2-02: the local distance profiles and the twist and cap-twist bounds against the exact |G|. Output:
+
+```text
+all_cap_Cayley_distance_histograms Counter({((0, 1), (1, 3), (2, 4), (3, 4)): 600})
+primitive lambda 460 tail10^-k 0 r_max 224600 distance_at_least 224601
+primitive lambda 460 tail10^-k 6 r_max 224598 distance_at_least 224599
+primitive lambda 460 tail10^-k 12 r_max 224595 distance_at_least 224596
+cap lambda 1679 tail10^-k 0 r_max 185440 distance_at_least 185441
+cap lambda 1679 tail10^-k 6 r_max 185438 distance_at_least 185439
+cap lambda 1679 tail10^-k 12 r_max 185437 distance_at_least 185438
+N_sum 176520 G_decimal_digits_exact 598061
+```
+
+```python
+import numpy as np,collections,math
+from fractions import Fraction
+m=np.load('assets/model.npz');p=np.load('assets/primitives.npz');src=p['src'];dst=p['dst'];off=p['offsets'];hist=collections.Counter()
+for c in range(600):
+ support=np.unique(src[off[2*c]:off[2*c+2]])
+ ident=np.arange(len(support),dtype=np.int16);gen=[]
+ for a in [2*c,2*c+1]:
+  v=ident.copy();v[np.searchsorted(support,src[off[a]:off[a+1]])]=np.searchsorted(support,dst[off[a]:off[a+1]])
+  assert np.array_equal(np.sort(v),ident);gen.append(v)
+ assert np.array_equal(gen[0][gen[0]],ident)
+ assert np.array_equal(gen[1][gen[1][gen[1]]],ident)
+ gen.append(np.argsort(gen[1]).astype(np.int16))
+ seen={ident.tobytes():0};queue=[ident]
+ for v in queue:
+  d=seen[v.tobytes()]
+  for g in gen:
+   w=g[v];key=w.tobytes()
+   if key not in seen:seen[key]=d+1;queue.append(w)
+ hist[tuple(sorted(collections.Counter(seen.values()).items()))]+=1
+print('all_cap_Cayley_distance_histograms',hist)
+N=np.bincount(m['orbit_id'][m['orbit_id']>=0],minlength=35).tolist()
+orders={0:(2,2),3:(2,2),8:(2,2),11:(2,2),22:(2,2),25:(2,2),32:(2,2),6:(10,2),17:(5,5),28:(5,5),34:(60,1)}
+G=1
+for o,n in enumerate(N):
+ h,ab=orders.get(o,(1,1));G*=math.factorial(n)*h**n//(2*ab)
+assert 10**598060<=G<10**598061
+p0=Fraction(56**56,57**57)
+assert Fraction(57,56)**600<40936
+for label,lam,f in [('primitive',460,lambda z:3*z+4*z*z+4*z*z*z),('cap',1679,lambda z:11*z)]:
+ z=Fraction(1,lam);assert f(z)/(1+f(z))<=p0
+ for k in [0,6,12]:
+  lo=0;hi=300000
+  while hi-lo>1:
+   mid=(lo+hi)//2
+   if 10**k*40936*lam**mid<G:lo=mid
+   else:hi=mid
+  assert 10**k*40936*lam**lo<G<=10**k*40936*lam**hi
+  print(label,'lambda',lam,'tail10^-k',k,'r_max',lo,'distance_at_least',lo+1)
+print('N_sum',sum(N),'G_decimal_digits_exact',598061)
+```
+
+M2-02: the action bounds for m = 1, 35 and 70. Output:
+
+```text
+m 1 tail10^-k 0 max_r 145908 A_at_least 145909
+m 1 tail10^-k 6 max_r 145907 A_at_least 145908
+m 1 tail10^-k 12 max_r 145905 A_at_least 145906
+m 35 tail10^-k 0 max_r 110494 A_at_least 110495
+m 35 tail10^-k 6 max_r 110493 A_at_least 110494
+m 35 tail10^-k 12 max_r 110492 A_at_least 110493
+m 70 tail10^-k 0 max_r 104773 A_at_least 104774
+m 70 tail10^-k 6 max_r 104772 A_at_least 104773
+m 70 tail10^-k 12 max_r 104771 A_at_least 104772
+```
+
+```python
+import numpy as np,math
+from fractions import Fraction
+m=np.load('assets/model.npz');N=np.bincount(m['orbit_id'][m['orbit_id']>=0],minlength=35).tolist()
+orders={0:(2,2),3:(2,2),8:(2,2),11:(2,2),22:(2,2),25:(2,2),32:(2,2),6:(10,2),17:(5,5),28:(5,5),34:(60,1)}
+G=1
+for o,n in enumerate(N):
+ h,ab=orders.get(o,(1,1));G*=math.factorial(n)*h**n//(2*ab)
+for macros,lam,k,C in [(1,12556,1082,1308),(35,258543,23444,25981),(70,510576,46357,50492)]:
+ M=7200*macros;x=Fraction(1,k);z=Fraction(1,lam)
+ assert 11*z/(1+11*z)<=x*(1-x)**56
+ assert (1-x)**600-M*z>=Fraction(1,C)
+ for tail in [0,6,12]:
+  r=int((598060-tail-math.log10(C))/math.log10(lam))
+  while 10**tail*C*lam**r>=G:r-=1
+  while 10**tail*C*lam**(r+1)<G:r+=1
+  assert 10**tail*C*lam**r<G<=10**tail*C*lam**(r+1)
+  print('m',macros,'tail10^-k',tail,'max_r',r,'A_at_least',r+1)
+```
+
+M2-03: return words, derived groups and the frame constants. Output:
+
+```text
+{'o': 0, 'H': 2, 'derived': 1, 'all_derived_single_commutator': True, 'return_depth_max': 5, 'tree_depth_max': 20, 'pair_B_bound': '2*l+10', 'pair_any_bound': '4*l+90', 'single_C_bound': '0', 'identity_only_single': True}
+{'o': 3, 'H': 2, 'derived': 1, 'all_derived_single_commutator': True, 'return_depth_max': 3, 'tree_depth_max': 10, 'pair_B_bound': '2*l+6', 'pair_any_bound': '4*l+46', 'single_C_bound': '0', 'identity_only_single': True}
+{'o': 6, 'H': 10, 'derived': 5, 'all_derived_single_commutator': True, 'return_depth_max': 4, 'tree_depth_max': 9, 'pair_B_bound': '2*l+8', 'pair_any_bound': '4*l+44', 'single_C_bound': '4*l+16', 'identity_only_single': False}
+{'example_v': (3, 0, 1, 4, 2), 'example_x_y_xy': ((4, 2, 1, 3, 0), (0, 3, 4, 1, 2), (2, 4, 3, 1, 0)), 'loop_lengths': [2, 3, 3], 'additional_constant': 16}
+{'o': 8, 'H': 2, 'derived': 1, 'all_derived_single_commutator': True, 'return_depth_max': 3, 'tree_depth_max': 7, 'pair_B_bound': '2*l+6', 'pair_any_bound': '4*l+34', 'single_C_bound': '0', 'identity_only_single': True}
+{'o': 11, 'H': 2, 'derived': 1, 'all_derived_single_commutator': True, 'return_depth_max': 3, 'tree_depth_max': 7, 'pair_B_bound': '2*l+6', 'pair_any_bound': '4*l+34', 'single_C_bound': '0', 'identity_only_single': True}
+{'o': 17, 'H': 5, 'derived': 1, 'all_derived_single_commutator': True, 'return_depth_max': 2, 'tree_depth_max': 6, 'pair_B_bound': '2*l+4', 'pair_any_bound': '4*l+28', 'single_C_bound': '0', 'identity_only_single': True}
+{'o': 22, 'H': 2, 'derived': 1, 'all_derived_single_commutator': True, 'return_depth_max': 3, 'tree_depth_max': 6, 'pair_B_bound': '2*l+6', 'pair_any_bound': '4*l+30', 'single_C_bound': '0', 'identity_only_single': True}
+{'o': 25, 'H': 2, 'derived': 1, 'all_derived_single_commutator': True, 'return_depth_max': 2, 'tree_depth_max': 6, 'pair_B_bound': '2*l+4', 'pair_any_bound': '4*l+28', 'single_C_bound': '0', 'identity_only_single': True}
+{'o': 28, 'H': 5, 'derived': 1, 'all_derived_single_commutator': True, 'return_depth_max': 2, 'tree_depth_max': 6, 'pair_B_bound': '2*l+4', 'pair_any_bound': '4*l+28', 'single_C_bound': '0', 'identity_only_single': True}
+{'o': 32, 'H': 2, 'derived': 1, 'all_derived_single_commutator': True, 'return_depth_max': 2, 'tree_depth_max': 6, 'pair_B_bound': '2*l+4', 'pair_any_bound': '4*l+28', 'single_C_bound': '0', 'identity_only_single': True}
+{'o': 34, 'H': 60, 'derived': 60, 'all_derived_single_commutator': True, 'return_depth_max': 3, 'tree_depth_max': 5, 'pair_B_bound': '2*l+6', 'pair_any_bound': '4*l+26', 'single_C_bound': '4*l+10', 'identity_only_single': False}
+{'example_v': (4, 7, 14, 9, 5, 1, 17, 0, 16, 10, 2, 8, 19, 18, 3, 12, 6, 11, 15, 13), 'example_x_y_xy': ((7, 14, 17, 4, 16, 5, 9, 10, 18, 19, 0, 1, 12, 8, 11, 2, 3, 15, 13, 6), (17, 9, 4, 14, 8, 18, 7, 12, 1, 2, 19, 16, 0, 5, 13, 10, 15, 6, 3, 11), (12, 13, 6, 8, 15, 18, 2, 19, 3, 11, 17, 9, 0, 1, 16, 4, 14, 10, 5, 7)), 'loop_lengths': [1, 2, 2], 'additional_constant': 10}
+```
+
+```python
+import gzip,json
+from pathlib import Path
+import numpy as np
+T=json.loads(gzip.decompress(Path('assets/execution_trees.json.gz').read_bytes()))
+A=json.loads(Path('assets/seed_atlas.json').read_text())
+with np.load('assets/primitives.npz',allow_pickle=False) as z:src,dst,off=z['src'],z['dst'],z['offsets']
+def inv(p):
+ r=[0]*len(p)
+ for i,j in enumerate(p):r[j]=i
+ return tuple(r)
+def mul(p,q):return tuple(q[i] for i in p)
+def path(t,n):
+ w=[]
+ while t['parent'][n]>=0:w.append(int(t['move'][n]));n=t['parent'][n]
+ return w[::-1]
+def follow(sl,w):
+ out=np.array(sl,copy=True)
+ for m in w:
+  a,b=off[abs(m)-1:abs(m)+1];s,d=src[a:b],dst[a:b]
+  if m<0:s,d=d,s
+  order=np.argsort(s);s,d=s[order],d[order]
+  idx=np.minimum(np.searchsorted(s,out),len(s)-1)
+  hit=s[idx]==out;out[hit]=d[idx[hit]]
+ return out.tolist()
+for o in [0,3,6,8,11,17,22,25,28,32,34]:
+ t,a=T[o],A[o];C=t['third'];fc=t['frames'][0];lab={v:i for i,v in enumerate(fc)};k=len(fc);e=tuple(range(k));H={};cn=[]
+ for n,p in enumerate(t['positions']):
+  if p!=C:continue
+  w=path(t,n);assert follow(fc,w)==t['frames'][n]
+  assert follow(a['frames'][0],w)==a['frames'][0]
+  assert follow(a['frames'][1],w)==a['frames'][1]
+  x=tuple(lab[v] for v in t['frames'][n]);assert x not in H;H[x]=len(w);cn.append(n)
+ assert all(inv(x) in H for x in H)
+ assert all(mul(x,y) in H for x in H for y in H)
+ h={x:min(H[x],H[inv(x)]) for x in H};best={};wit={}
+ for x in H:
+  for y in H:
+   xy=mul(x,y);v=mul(mul(inv(x),inv(y)),xy);cost=2*(h[x]+h[y]+h[xy])
+   if v not in best or cost<best[v]:best[v]=cost;wit[v]=(x,y,xy)
+ generated={e};change=True
+ while change:
+  grown=generated|{mul(a,b) for a in generated for b in best}
+  change=grown!=generated;generated=grown
+ assert set(best)==generated
+ print({'o':o,'H':len(H),'derived':len(generated),'all_derived_single_commutator':len(best)==len(generated),'return_depth_max':max(h.values()),'tree_depth_max':max(t['depth']),'pair_B_bound':'2*l+'+str(2*max(h.values())),'pair_any_bound':'4*l+'+str(2*max(h.values())+4*max(t['depth'])),'single_C_bound':'0' if len(best)==1 else '4*l+'+str(max(best.values())),'identity_only_single':len(best)==1})
+ if o in [6,34]:
+  v=max(best,key=best.get)
+  print({'example_v':v,'example_x_y_xy':wit[v],'loop_lengths':[h[x] for x in wit[v]],'additional_constant':best[v]})
+```
+
+M2-04: the cascade bounds, expectations, action counts and creation costs. Output:
+
+```text
+committed worst 356565166 expected_upper_ceiling 231334003 creation70 128076 full_m 400760 full_creation_bound 869912422 full_actions 291186 full_expected_ceiling 191121
+compatible200 worst 78609696 expected_upper_ceiling 49764387 creation70 14000 full_m 400760 full_creation_bound 115154290 full_actions 291186 full_expected_ceiling 191121
+actions70 worst 4840993 expected_upper_ceiling 3098745 creation70 70 full_m 400760 full_creation_bound 6863664 full_actions 291186 full_expected_ceiling 191121
+seed_master_creation 128076
+```
+
+```python
+import gzip,json
+from fractions import Fraction as F
+T=json.load(gzip.open('assets/execution_trees.json.gz','rt'))
+H={0:2,3:2,6:10,8:2,11:2,17:5,22:2,25:2,28:5,32:2,34:60}
+h={0:5,3:3,6:4,8:3,11:3,17:2,22:3,25:2,28:2,32:2,34:3}
+for mode in ('committed','compatible200','actions70'):
+ total=0;expect=F(0);create=0;mfull=0;createfull=0;Af=0;Ef=F(0)
+ for t in T:
+  o=t['orbit'];N=len(set(t['positions']))+2;s0=len(t['seed'])+2*len(t['relocation']);s=200 if mode=='compatible200' else 1 if mode=='actions70' else s0;d=max(t['depth']);w=s+2*d
+  ES=F(N-5)+sum((F(1,j) for j in range(1,N+1)),F(0))+F(3,N)+F(1,N*(N-1))
+  P=4*s+2*h.get(o,0)+4*d;PB=2*s+2*h.get(o,0);SC=4*s+(16 if o==6 else 10) if o in (6,34) else 0
+  total+=(3*N//2-3)*w;expect+=ES*w;Af+=3*N//2-3;Ef+=ES
+  if o in H:
+   frame=(N-2)*P+PB+SC;total+=frame;expect+=F(H[o]-1,H[o])*((N-2)*P+PB)
+   if o in (6,34):expect+=F(4,5)*SC if o==6 else F(59,60)*SC
+   Af+=N-1+int(o in (6,34));Ef+=F(H[o]-1,H[o])*(N-1)+(F(4,5) if o==6 else F(59,60) if o==34 else 0)
+   mfull+=(N-1)*(H[o]-1)+(4 if o==6 else 59 if o==34 else 0)
+   createfull+=(H[o]-1)*((N-2)*P+PB)+(4 if o==6 else 59 if o==34 else 0)*SC
+  mfull+=2*(N-2);createfull+=2*(N-2)*w;create+=2*s
+ print(mode,'worst',total,'expected_upper_ceiling',(expect.numerator+expect.denominator-1)//expect.denominator,'creation70',create,'full_m',mfull,'full_creation_bound',createfull,'full_actions',Af,'full_expected_ceiling',(Ef.numerator+Ef.denominator-1)//Ef.denominator)
+print('seed_master_creation',sum(2*(len(t['seed'])+2*len(t['relocation'])) for t in T))
+```
+
+M2-06: the O00 setup example and AU-05 without the trivial frame terms. Output:
+
+```text
+O00 nodes5,6 [37, 103] [37, 104] middle [37, 103, -104, -37]
+AU05_without_trivial_frames 771844512
+```
+
+```python
+import gzip,json
+T=json.load(gzip.open('assets/execution_trees.json.gz','rt'));t=T[0]
+def path(n):
+ w=[]
+ while t['parent'][n]>=0:w.append(t['move'][n]);n=t['parent'][n]
+ return w[::-1]
+u,v=path(5),path(6)
+print('O00 nodes5,6',u,v,'middle',u+[-x for x in v[::-1]])
+non={0,3,6,8,11,17,22,25,28,32,34}
+print('AU05_without_trivial_frames',sum(4*(len(set(t['positions']))+2)*(len(t['seed'])+2*len(t['relocation'])+2*max(t['depth']))+((len(set(t['positions']))+5)*(4*(len(t['seed'])+2*len(t['relocation']))+6*max(t['depth'])) if t['orbit'] in non else 0) for t in T))
+```
+
+## 12. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -557,3 +1196,9 @@ print({'R_bound':total,'C_bound':cbound,'total':total+cbound,'macros':len(lib)})
   - Section 2: step 4 is the exhaustive fallback, and the outer loop checks the off count before any budget; the runs of section 6 are marked as v4 runs.
   - Section 3: the row for the completeness of the driver concerns the current driver. Section 5: gap M1 no longer asks for v4's coverage.
   - The reproduction section gives the new options and the two tests.
+- After round 5 (section 10): gap M1 gains the coverage results (M1-16, M1-18, M1-19), and its V-existence item gives the bound min(Q_T, Q_H) − 1 of M1-17.
+- After round 6 (section 11):
+  - Section 2, phase 2: the lattice-phase lengths give the construction bound of M2-04, its expectation, the executable's bound without trivial frame terms, and the lower bounds of M2-02.
+  - Section 3: new rows for the single-overlap lemma (M2-01), the short pure elements (S1, S2), the lower bounds (M2-02) and the frame elements (M2-03); the row for the lattice-phase length gives the new bounds.
+  - Section 5: gap M2 states the two measures, the lower and upper bounds in twists and in actions, the short pure elements and what aligning them needs, and the next experiments.
+- After the v4 runs ended or were cut off: section 6.2 gives their results and records (`runs/stop62-v4/`, `runs/e2run24-v4/`), and the reproduction section gives the commands of the short-cycle searches.
