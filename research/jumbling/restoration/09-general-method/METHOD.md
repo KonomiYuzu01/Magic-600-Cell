@@ -228,7 +228,7 @@ Two mathematical gaps:
     (T9-02). No single letter takes the deep state H6 of stage 04 to height 8 (exact, T9-04). For each m, the
     states whose heights are at most 2m have a finite maximum distance to the lattice, but no value of it is known
     (T9-05).
-  - *Finiteness (rounds 13 to 16).* Still open (`SENIOR-REVIEW.md` sections 18 to 21). Every left height is at most
+  - *Finiteness (rounds 13 to 17).* Still open (`SENIOR-REVIEW.md` sections 18 to 22). Every left height is at most
     6 if and only if P6 holds: at every reachable configuration, every cap of a grip of another branch that wholly
     contains a piece of height at least 6 is straddled (T13-03). P6 is false (round 15, T15-01): after the fixture
     records 1 to 723, four admissible letters take seven pieces of model orbits 19 to 24 to height 8. Grip 593
@@ -245,7 +245,12 @@ Two mathematical gaps:
     16 grips nearest an out grip or straddled by a height-2 piece outside the inscribed ball (T16-01). An
     abstraction that tracks only the inner cohorts reaches height 10, so a bound would have to use the outer pieces
     (T16-02). A pattern moved by a symmetry cannot pump heights (T16-03), and the periodicity of repeated words
-    cannot by itself prove finiteness (T16-04). Open: whether left heights are bounded at all.
+    cannot by itself prove finiteness (T16-04). Round 17 reached height 14 (E17-4, E17-6, E17-7). The word of
+    T15-01 cut down to the causal past of the seven pieces, a return of grip 593 that keeps them at height 8, and a
+    jumble at cap 582 give height 10 (147 letters). One more letter at 582 turns the pieces into a pose that a free
+    cap of another branch holds whole, and a jumble there gives height 12 (149 letters). A letter at 576, one at 573
+    and a jumble at 526 give height 14 (152 letters). At that raise the hypothesis TH of the trap lemma holds, so
+    the pieces stay at height 14 until the raiser returns. Open: whether left heights are bounded at all.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: heights 10 to 14 are reachable (round 17)
+Senior review round 17 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 22 (model review; the integrator re-ran its four exact programs and ran its own experiments during the round): the height-8 word cut down to the letters that the seven high pieces depend on, a return of one grip, and jumbles at three caps, each prepared by one more letter at the grip that made the last raise, take the pieces to left height 14 by an exact word of 152 letters. At height 14 the hypothesis of the trap lemma holds, so the pieces stay there until the raiser returns; the outer off-lattice pieces are not attached to a grip by its coset or its last letter, and whether left heights are bounded, and so whether R(I_a) is finite, stays open.
+
 ## [2026-10-15] update | Jumbling: no height 10 near the height-8 word (round 16)
 Senior review round 16 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 21 (model review; the integrator re-ran its exact programs and ran its own searches before the round): every continuation of the height-8 relay that was examined stops at a cap blocked near an out grip or straddled by a height-2 piece, an abstraction that tracks only the inner pieces would still allow height 10, a pattern moved by a symmetry cannot raise heights without bound, and the periodicity of repeated words alone cannot prove finiteness. Whether left heights are bounded, and so whether R(I_a) is finite, stays open.
 

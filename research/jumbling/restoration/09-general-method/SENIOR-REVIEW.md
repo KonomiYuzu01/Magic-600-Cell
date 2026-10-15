@@ -3632,7 +3632,7 @@ Round 15 refuted P6 (section 20). Round 16 asked whether left heights are bounde
 - The inner cohorts alone do not bound the height (T16-02). A bound would need the outer pieces, such as the height-2 straddlers above.
 - Two routes are closed: a fixed pattern moved by a symmetry cannot pump heights (T16-03), and the periodicity of T9-02 cannot by itself prove finiteness (T16-04).
 - X1 and the uniform bound of M1 stay open; Proposition HB is unchanged.
-- Next (round 17): realize or refute the abstract path of T16-02 with preparation letters that leave the component at height 8, and look for an invariant of the outer off-lattice pieces that accounts for the blocking.
+- Next (round 17, section 22): realize or refute the abstract path of T16-02 with preparation letters that leave the component at height 8, and look for an invariant of the outer off-lattice pieces that accounts for the blocking.
 
 ### Reproduction (round 16)
 
@@ -4193,7 +4193,965 @@ stats {'L1_NBblocked': 4}
 found 0 seconds 185
 ```
 
-## 22. What changed in METHOD.md
+## 22. Heights 10, 12 and 14 (round 17)
+
+Round 16 found no height 10 near the relay of T15-01 (section 21). Round 17 asked three things: whether height 10 is reachable by preparation letters and a relay (Q1); for an invariant of the outer off-lattice pieces that straddle the caps (Q2); and what each result gives (Q3). The review returned four results (T17-01 to T17-04, all `minor`). The integrator re-ran the four programs from the repository root, got the reported outputs exactly, checked the proofs of T17-01 and T17-04, and adopted all four. While the review ran, the integrator's own experiments (E17-1 to E17-4 below) reached height 10 with a word of 147 letters, which answers Q1. At the height-10 state, returns of out grips alone do not lead to a raise (E17-5), but one more letter at the grip that raised K does: height 12 follows with a word of 149 letters (E17-6), and the same search reaches height 14 with 152 letters, where the hypothesis TH of the trap lemma holds and K is trapped until the raiser returns (E17-7).
+
+| Finding | Status | Result |
+| --- | --- | --- |
+| T17-01 | computed; proved | At X8, no raise of the seven pieces K follows three or fewer preparation letters that leave every pose of K unchanged. The caps of another branch that hold K whole are 529, 547, 555, 562, 580 and 585. Piece 171842 (model orbit 0) straddles the last five, and every cap that holds it also holds K, so it cannot move while K stays put. Clearing 529 needs a first move of each of 89213 (orbit 6), 112424 (orbit 3) and 165151 (orbit 5). The caps that hold them and exclude K are {342}, {484} and {425, 488, 518, 564}: pairwise disjoint, and all blocked at X8. So at least four such letters must come first. |
+| T17-02 | computed | The grip, the coset of its letters and the last letter that moved a piece do not determine which cuts an outer piece straddles. Piece 13 (model orbit 5, outside B, height 2) straddles cuts 6, 13, 27 and 33 after (0, 12), and cuts 4, 5 and 8 after (0, 1), (0, 12). Both words have the same last letter and the same coset at grip 0. |
+| T17-03 | computed | INV does not extend directly to the outer pieces. At X8 the height-2 pieces 115294, 165151 and 87889 straddle cuts 342, 529 and 501. None of them has a grip whose cap holds it and whose current coset gives its pose. |
+| T17-04 | proved; computed | A finite abstraction by domain and chamber. A pose J_z k with k ∈ K⁺ is coded by z and by the chamber k(A). There are 21 domains (one at height 0 and twenty at height 2; under H these are all of them), and an unknown symbol stands for every other pose. A known code gives the region exactly. Transitions are exact for known codes and over-approximate for unknown pieces, so the abstraction is sound, also together with the exact pose of K and the cohort state of T16-02. At X8 the three straddlers of the path of T16-02 have known codes whose regions straddle seven cuts. So every letter at 342, 484 and 529 is rejected until one of these pieces moves. No closure under the whole menu was computed. |
+
+### Integrator experiments (during the round)
+
+- E17-1, the history of K. Of the 727 letters of the word of T15-01, only 26 move K, all at grips 521, 501 and 593. Grips 521 and 501 each take K to height 2 and back to the lattice several times. Grip 593 takes it to 4, then 501 takes it to 6 and 593 to 8: the height grows only through alternating jumbles at 501 and 593. Merging consecutive letters at one grip gives (521, 8), (501, 39), (593, 46), (501, 22), (593, 12). Replayed from solved, this word stops at (593, 46). After (501, 39), cut 593 is straddled by 160 pieces of height 2 from cap 501, and no single letter at an admissible cap that excludes K clears it.
+- E17-2, no second raise straight after a first one. From solved, K lies whole in nine caps. Each of the 432 jumbles there (9 caps × 48) takes K to height 2. Over the 432 resulting states, 2,160 caps of another branch hold K whole: 1,728 are in NB of the raiser, 432 are straddled by a piece of height 2, and none is admissible. So every raise after the first needs other letters in between.
+- E17-3, the causal past of K. Keep the letters of the word that move K and replay them from solved. While a kept letter is blocked, add every earlier letter of the word that moved one of the exact straddlers of its cut, and replay again. After four replays, 145 of the 727 letters remain. They are admissible and take K to the same pose at height 8, in a state X8c with 33,434 off-lattice pieces and 13 out grips (X8: 120,663 and 55). The six caps of another branch that hold K whole are still blocked: each is in NB of two or three out grips, 593 among them for five of the six.
+- E17-4, a return and a raise. At X8c, grip 593 returns by item 15. K moves with it and stays at height 8 in branch 2, as in E16-1. Then four caps of another branch hold K whole. Three (551, 555 and 580) are in NB of 501, and 582, of branch 1, is in NB of no out grip and is admissible. The jumble (582, 12) takes K to height 10 in branch 1. The whole word has 147 letters, and the simulator checks every letter from the solved state. The final heights are 143,805 pieces at 0, 32,605 at 2, 703 at 4 and the 7 pieces of K at 10.
+- E17-5, the height-10 state X10. K lies whole in seven caps: 582, which raised it, and six caps of another branch (542, 548, 551, 560, 580 and 593). Five of the six are in NB of 582. The sixth, 548, is not, so TH fails at 582, but 548 is in NB of the out grips 442, 501 and 537, and 537 cannot return: its cap is straddled. Each of the six caps is also straddled by 95 to 444 pieces of height 2 or 4, and no cap holds all the straddlers of any of them, except 582 for those of 593. No other out grip holds K whole, and a cap that holds part of K is straddled by a member (T13b-05), so returns of other grips leave K where it is. While K stays put, the five caps stay blocked as long as 582 is out, and 548 needs the returns of 442, 501 and 537 first. Each of the 12 returns of 582 takes K back to height 8.
+- E17-6, a turn at the raiser. At X10 grip 582 is out, its cap holds K, and it is admissible. The letter (582, 18) keeps 582 out and K at height 10 in branch 1, but turns K into a pose that the caps 560, 565, 576, 590 and 596 of other branches hold whole. Four of them are in NB of 582 (two also in NB of 537); 576, of branch 4, is in NB of no out grip and is admissible, and (576, 12) takes K to height 12 in branch 4. The letter (582, 59) frees cap 597 in the same way. The word has 149 letters, all applied by the exact simulator from the solved state; the final heights are 141,655 pieces at 0, 34,755 at 2, 703 at 4 and the 7 pieces of K at 12.
+- E17-7, the relay repeated, and TH at 526. From the height-12 state, a search tries at most two letters before a raise: first letters at admissible caps that hold K whole, then returns of out grips, with K kept at its height. At the first state where a cap of another branch holds K whole, is in NB of no out grip and is admissible, it raises K there. It finds (576, 1), a turn at the raiser, and (573, 1), a letter at a cap of K's branch, after which (526, 12) takes K to height 14 in branch 0 (152 letters). No earlier letter is at 526, so this raise is a fresh departure, and TH holds there: in each of the 48 orientations of K at height 14 that letters at 526 give, every other cap that holds K whole is in NB of 526. By the trap lemma (T14-03), while 526 is out only letters at 526 move K and K stays at height 14, and each of the 12 returns of 526 takes K back to height 12.
+
+### What it gives
+
+- Left heights reach at least 14 (E17-4, E17-6, E17-7). Every word is in a program below, and the exact simulator applies every letter from the solved state.
+- How the height grows here. A raise blocks the next raise at once: the raiser's NB and the pieces it moves straddle every candidate cap (E17-2). Three things clear the way.
+  - A grip that departed before K entered its cap can raise K and then return without lowering it (E16-1, E17-4). Its return frees its NB.
+  - Cutting the word down to the causal past of K drops 582 of its 727 letters, and with them nearly three quarters of the off-lattice pieces and 42 of the 55 out grips (E17-3).
+  - A turn at the raiser. The raiser's letters that keep it out move K through 48 orientations at the same height. In some of them K may lie whole in a cap of another branch outside the raiser's NB, which may be free. This is where TH fails: at 582, cap 548 in the orientation of the raise and caps 576 and 597 in two others hold K whole and lie outside NB of 582 (E17-5, E17-6).
+- TH holds at the raise to 14. At 526 every cap that holds K in any of the 48 orientations is in NB of 526 (E17-7), so by the trap lemma the height cannot grow until 526 returns, which takes K back to 12. TH depends only on the raiser and on the pose of K before the raise. Whether a raiser at which TH fails can always be found is open.
+- E17-5 shows why the turn helps at X10: while K stays put and 582 is out, five of the six candidate caps stay blocked, and the sixth needs three returns, one of them at a grip whose cap is straddled.
+- T17-01 shows why X8 itself is stuck while K stays put: an inner piece (model orbit 0) that cannot move without K straddles five of the six raisers, all of them in NB of 593. At X8c the return of 593 moves K, and one of the caps that then hold K (582) is admissible.
+- The outer pieces are not attached to a grip by its coset or by the last letter (T17-02, T17-03). T17-04 gives a sound finite abstraction by domain and chamber, which could support a closure computation.
+- X1 and the uniform bound of M1 stay open: the relay reached 14 and then met a raise where TH holds, which is evidence either way, not a proof. Proposition HB is unchanged: K belongs to model orbits 19 to 24.
+- Next (round 18): characterize the raises where TH holds, and either build a relay that avoids them at every height, which would make R(I_a) infinite and rule out a uniform bound for M1, or prove a bound on left heights.
+
+### Reproduction (round 17)
+
+From the repository root, with Python 3.13 and NumPy 2.5: `python3 -I -B -` with each program on standard input. T17-01, T17-03 and T17-04 run the program of T16-02 (section 21) as a prefix. The review's versions checked the digest of this whole file, which this section changes; the versions below check the digest of that program instead and print the same output. On the integrator's machine T17-01 to T17-04 took 9, 5, 9 and 8 seconds, and E17-1, E17-2, E17-3 with E17-4, the letter-by-letter check of E17-4, E17-5, E17-6 and E17-7 took 12, 16, 252, 16, 34, 21 and 91 seconds.
+
+T17-01: no raise after three or fewer preparation letters at X8.
+
+```python
+from pathlib import Path
+import hashlib
+path=Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+code=path.read_text().split('T16-02: the cohort abstraction, its height-10 path and the blockers of its realization.')[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest()=='a35ed1ad07da956ccebc4a73baa59cf48f86e50d04f3dc92fb8399bc5737038c'
+exec(code.split("print('cohort_blocker_counts'")[0])
+assert (h(Q),T.branch(T.factors(Q)[0]))==(8,2)
+kc=cats(); out={c for c,t in enumerate(kc) if t=='out'}
+raisers=[c for c,t in enumerate(kc) if t=='in' and T.branch(tuple(d.N[c]))!=2]
+assert raisers==[529,547,555,562,580,585]
+print('K_out_caps',len(out),'raisers',raisers)
+def pcats(p):
+ return [Evaluator(pullback_form(s.pose(p),n)).classify(C.regions.vform(p))[0] for n in d.N]
+expected={171842:[],89213:[342],112424:[484],165151:[425,488,518,564]}
+for p,want in expected.items():
+ pc=pcats(p); held=sorted(c for c in out if pc[c]=='in'); assert held==want
+ blocked=[c for c in raisers if pc[c]=='straddle']
+ assert blocked==([547,555,562,580,585] if p==171842 else [529,547] if p==112424 else [529])
+ for c in blocked:
+  r=Evaluator(pullback_form(s.pose(p),d.N[c])).classify(C.regions.vform(p))
+  assert s._straddle_certificate(p,int(s.pose_id[p]),c,r[2],r[3])['points_checked_against_all_constraints']
+ print('witness',p,'orbit',int(d.orbit_id[p]),'K_fixed_holders',held,'raiser_straddles',blocked)
+for c in sorted(set().union(*(set(v) for v in expected.values()))):
+ cl=s.classify(c,need_inside=False)
+ assert cl.status=='blocked' and not cl.uncertain and cl.straddle['points_checked_against_all_constraints']
+ print('initial_blocked',c,'by',cl.straddle['piece'])
+H=[set(expected[p]) for p in [89213,112424,165151]]
+assert all(H[i].isdisjoint(H[j]) for i in range(3) for j in range(i))
+print('no raise of K after at most 3 pointwise-K-fixed preparation letters')
+```
+
+Output:
+
+```text
+K_out_caps 588 raisers [529, 547, 555, 562, 580, 585]
+witness 171842 orbit 0 K_fixed_holders [] raiser_straddles [547, 555, 562, 580, 585]
+witness 89213 orbit 6 K_fixed_holders [342] raiser_straddles [529]
+witness 112424 orbit 3 K_fixed_holders [484] raiser_straddles [529, 547]
+witness 165151 orbit 5 K_fixed_holders [425, 488, 518, 564] raiser_straddles [529]
+initial_blocked 342 by 115294
+initial_blocked 425 by 116921
+initial_blocked 484 by 107148
+initial_blocked 488 by 100041
+initial_blocked 518 by 123569
+initial_blocked 564 by 136721
+no raise of K after at most 3 pointwise-K-fixed preparation letters
+```
+
+T17-02: piece 13 after two words with the same last letter and the same coset at grip 0.
+
+```python
+import sys
+sys.path[:0]=['research/jumbling/theory','research/jumbling','research/jumbling/fixtures']
+import sim,wj,restore as R,trees as T
+from exact import Q5,matmul,transpose
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator,pullback_form
+C=sim.get_context(); _,M=wj.load(C,'I_a'); d=C.data; p=13
+E1=R.element(M,0,1); E12=R.element(M,0,12)
+assert C.kplus.index_of_matrix(E1)>=0
+S=d.signature(p); n=[sum((d.N[c][i] for c in S),Q5(0)) for i in range(4)]
+z=d.KAPPA*len(S); delta=z*z/sum((v*v for v in n),Q5(0))-d.NN
+assert delta.sign()>0
+print('outside_B_lower_bound',delta)
+ss=[]
+for word in ([(0,12)],[(0,1),(0,12)]):
+ s=sim.State(C,filtered=False,menu=M)
+ for c,j in word:
+  o=s.apply(sim.Twist(C,c,R.element(M,c,j),'menu',{'menu':M.name}),journal=False)
+  assert o.applied and not o.uncertain
+ P=s.pose(p); assert T.dist(T.factors(P)[0])==2
+ cuts=[]
+ for c in range(600):
+  r=Evaluator(pullback_form(P,d.N[c])).classify(C.regions.vform(p))
+  if r[0]=='straddle':
+   cert=s._straddle_certificate(p,int(s.pose_id[p]),c,r[2],r[3])
+   assert cert['points_checked_against_all_constraints']; cuts.append(c)
+ ss.append(s)
+ print('word',word,'straddles',cuts)
+assert ss[0].pose(p)==E12
+assert ss[1].pose(p)==to_tuple(matmul(E12,E1))
+assert C.kplus.index_of_matrix(matmul(transpose(E12),ss[1].pose(p)))>=0
+print('same_piece_last_letter_and_cohort_coset',True)
+```
+
+Output:
+
+```text
+outside_B_lower_bound Q5(1904212,-848884,124375)
+word [(0, 12)] straddles [6, 13, 27, 33]
+word [(0, 1), (0, 12)] straddles [4, 5, 8]
+same_piece_last_letter_and_cohort_coset True
+```
+
+T17-03: no anchor for the three height-2 straddlers of section 21.
+
+```python
+from pathlib import Path
+import hashlib
+path=Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+src=path.read_text().split('T16-02: the cohort abstraction, its height-10 path and the blockers of its realization.')[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(src.encode()).hexdigest()=='a35ed1ad07da956ccebc4a73baa59cf48f86e50d04f3dc92fb8399bc5737038c'
+exec(src.split('Q=s.pose(K[0])')[0])
+from exact import transpose
+for p,target in [(115294,342),(165151,529),(87889,501)]:
+ P=s.pose(p); assert T.dist(T.factors(P)[0])==2
+ rr=Evaluator(pullback_form(P,d.N[target])).classify(C.regions.vform(p))
+ assert rr[0]=='straddle'
+ assert s._straddle_certificate(p,int(s.pose_id[p]),target,rr[2],rr[3])['points_checked_against_all_constraints']
+ holding=[c for c in range(600) if Evaluator(pullback_form(P,d.N[c])).classify(C.regions.vform(p))[0]=='in']
+ possible=[]; anchors=[]
+ for c in holding:
+  for q,j in enumerate(reps[1:],1):
+   E=R.element(M,c,j)
+   if C.kplus.index_of_matrix(matmul(transpose(E),P))>=0:
+    possible.append((c,sigma[c],q))
+    if sigma[c]==q: anchors.append(c)
+ assert not anchors
+ print(p,'holding',holding,'possible_(grip,current,required)',possible,'anchors',anchors)
+```
+
+Output:
+
+```text
+115294 holding [249, 281, 284, 313, 398] possible_(grip,current,required) [(281, 0, 4), (284, 0, 1)] anchors []
+165151 holding [425, 488, 518, 564] possible_(grip,current,required) [(425, 0, 1), (564, 0, 1)] anchors []
+87889 holding [495, 548, 551, 579, 593] possible_(grip,current,required) [(495, 0, 3), (593, 2, 3)] anchors []
+```
+
+T17-04: the abstraction by domain and chamber at X8.
+
+```python
+from pathlib import Path
+import hashlib
+path=Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+code=path.read_text().split('T16-02: the cohort abstraction, its height-10 path and the blockers of its realization.')[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest()=='a35ed1ad07da956ccebc4a73baa59cf48f86e50d04f3dc92fb8399bc5737038c'
+exec(code.split('Q=s.pose(K[0])')[0])
+from exact import transpose
+Js=[I]+[R.element(M,c,j) for c in (0,7,3,1,13) for j in (12,24,25,27)]
+assert len(Js)==21
+assert [T.dist(T.factors(g)[0]) for g in Js]==[0]+[2]*20
+assert all(C.kplus.index_of_matrix(matmul(transpose(a),b))<0 for i,a in enumerate(Js) for b in Js[i+1:])
+print('distinct_domains',len(Js),'region_catalogue_bound',len(Js)*len(d.orbit_id))
+blocked=set()
+for c,p in [(342,115294),(484,107148),(529,165151)]:
+ P=s.pose(p); hits=[]
+ for z,J in enumerate(Js):
+  k=C.kplus.index_of_matrix(matmul(transpose(J),P))
+  if k<0: continue
+  o,t=C.regions.rep_of(p)
+  slot=int(C.regions.piece_of[o,C.kplus.compose(k,t)])
+  assert {tuple(matvec(P,v)) for v in C.regions.vertices(p)}=={tuple(matvec(J,v)) for v in C.regions.vertices(slot)}
+  cuts=[e for e in range(600) if Evaluator(pullback_form(J,d.N[e])).classify(C.regions.vform(slot))[0]=='straddle']
+  assert c in cuts; blocked.update(cuts); hits.append((z,slot))
+  print('template',p,'code',(z,slot),'straddles',cuts)
+ assert len(hits)==1
+nonid=[j for j,(_,g) in enumerate(M.items) if to_tuple(g)!=I]
+assert len(nonid)==59
+rejected=[(c,j) for c in (342,484,529) for j in nonid if c in blocked]
+assert len(rejected)==177
+print('restricted_letters',3*len(nonid),'rejected',len(rejected),'reachable_states',1)
+print('all_menu_letters_rejected',len(blocked)*len(nonid))
+```
+
+Output:
+
+```text
+distinct_domains 21 region_catalogue_bound 3719520
+template 115294 code (7, 95579) straddles [342, 381, 425]
+template 107148 code (14, 52033) straddles [484]
+template 165151 code (11, 168042) straddles [463, 493, 529]
+restricted_letters 177 rejected 177 reachable_states 1
+all_menu_letters_rejected 413
+```
+
+E17-1: the history of K in the word of T15-01.
+
+```python
+# E17-1: the letters that move the seven pieces K in the word of T15-01, the merged word, and its replay from solved.
+import sys
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0)
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+lab = {name: j for j, (name, m) in enumerate(M.items)}
+W = [(r['grip'], lab[r['params']['label']]) for r in F['journal']['records'][:723]]
+W += [(433, 12), (593, 58), (501, 22), (593, 12)]
+E = lambda g, j: RS.element(M, g, j)
+def hb(Q):
+    l = T.factors(Q)[0]
+    return T.dist(l), T.branch(l)
+V = {p: C.regions.vertices(p) for p in K}
+Q = I; kept = []
+for n, (g, j) in enumerate(W, 1):
+    ev = Evaluator(pullback_form(I, d.N[g]))
+    sides = {ev.classify(rows_form({tuple(matvec(Q, v)) for v in V[p]}))[0] for p in K}
+    assert sides in ({'in'}, {'out'})
+    if sides == {'in'}:
+        Q = to_tuple(matmul(E(g, j), Q)); kept.append((n, g, j, hb(Q)))
+print('letters moving K:', len(kept), 'of', len(W), '; grips', sorted({g for _, g, _, _ in kept}))
+print('heights of K after each:', [h for _, _, _, (h, b) in kept])
+merged = []
+for n, g, j, _ in kept:
+    m = E(g, j)
+    if merged and merged[-1][0] == g:
+        m = to_tuple(matmul(m, merged[-1][1])); merged.pop()
+    merged.append((g, to_tuple(m)))
+MW = [(g, next(j for j in range(60) if to_tuple(E(g, j)) == m)) for g, m in merged]
+print('merged word', MW)
+s = sim.State(C, filtered=False, menu=M)
+for g, j in MW:
+    o = s.apply(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), journal=False)
+    if not o.applied:
+        print('blocked at', (g, j), 'by', o.straddle['piece']); break
+    print('after', (g, j), 'K', hb(s.pose(K[0])), 'off-lattice', s.off_lattice_count())
+c = 593
+off = np.flatnonzero(~s.lattice_flags())
+S = [int(p) for p in off if Evaluator(pullback_form(s.pose(int(p)), d.N[c])).classify(C.regions.vform(int(p)))[0] == 'straddle']
+hs = {T.dist(T.factors(s.pose(p))[0]) for p in S}
+print('cut 593: exact straddlers', len(S), 'heights', sorted(hs))
+Qk = s.pose(K[0])
+def kside(g):
+    return Evaluator(pullback_form(I, d.N[g])).classify(rows_form({tuple(matvec(Qk, v)) for p in K for v in V[p]}))[0]
+hold = {}
+for p in S:
+    for g in range(600):
+        if Evaluator(pullback_form(s.pose(p), d.N[g])).classify(C.regions.vform(p))[0] == 'in':
+            hold[g] = hold.get(g, 0) + 1
+rows = []
+for g, n in sorted(hold.items(), key=lambda x: (-x[1], x[0])):
+    rows.append((g, n, s.classify(g, need_inside=False).status, kside(g)))
+print('caps holding a straddler (cap, straddlers held, status, side of K):', rows)
+clear = 0
+for g, n, st, ks in rows:
+    if g == c or st != 'admissible' or ks != 'out': continue
+    for j in range(60):
+        if to_tuple(E(g, j)) == to_tuple(I): continue
+        u = sim.State(C, filtered=False, menu=M)
+        u._poses = list(s._poses); u._lookup = dict(s._lookup); u.pose_id = s.pose_id.copy()
+        assert u.apply(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), journal=False).applied
+        clear += u.classify(c, need_inside=False).status == 'admissible'
+print('single letters at an admissible holder that excludes K and clear cut 593:', clear)
+```
+
+Output:
+
+```text
+letters moving K: 26 of 727 ; grips [501, 521, 593]
+heights of K after each: [2, 0, 2, 2, 2, 2, 0, 2, 2, 2, 2, 0, 2, 2, 2, 0, 2, 2, 2, 0, 2, 4, 4, 4, 6, 8]
+merged word [(521, 8), (501, 39), (593, 46), (501, 22), (593, 12)]
+after (521, 8) K (0, -1) off-lattice 0
+after (501, 39) K (2, 1) off-lattice 3097
+blocked at (593, 46) by 127839
+cut 593: exact straddlers 160 heights [2]
+caps holding a straddler (cap, straddlers held, status, side of K): [(501, 160, 'admissible', 'in'), (551, 158, 'blocked', 'in'), (580, 154, 'blocked', 'in'), (548, 145, 'blocked', 'in'), (542, 139, 'blocked', 'in'), (537, 88, 'admissible', 'out'), (582, 83, 'admissible', 'straddle'), (579, 80, 'admissible', 'in'), (560, 72, 'blocked', 'out'), (539, 68, 'blocked', 'straddle')]
+single letters at an admissible holder that excludes K and clear cut 593: 0
+```
+
+E17-2: no second raise straight after a first one.
+
+```python
+# E17-2: no second raise straight after a first one. From solved, K is raised by every jumble at every cap that holds
+# it whole; then every cap of another branch that holds K whole is decided exactly (NB of the out grip, or straddled).
+import sys, math
+from collections import Counter
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0)
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+J = RS.jumble_items(M); assert len(J) == 48
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+NF = np.array([[fl(x) for x in d.N[c]] for c in range(600)]); KAP = fl(d.KAPPA)
+B = [T.branch(tuple(d.N[c])) for c in range(600)]
+V = sorted({tuple(v) for p in K for v in C.regions.vertices(p)}, key=repr)
+def holding(Q):
+    X = [tuple(matvec(Q, v)) for v in V]
+    m = (np.array([[fl(x) for x in v] for v in X]) @ NF.T - KAP).min(axis=0)
+    vf = rows_form(set(X))
+    return [c for c in range(600) if m[c] > -1e-6
+            and Evaluator(pullback_form(I, d.N[c])).classify(vf)[0] == 'in']
+def nb(a, b):
+    return (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0
+def hb(Q):
+    l = T.factors(Q)[0]
+    return T.dist(l), T.branch(l)
+first = holding(I)
+print('caps holding K at solved:', first)
+cnt = Counter()
+for c in first:
+    for j in J:
+        s = sim.State(C, filtered=False, menu=M)
+        o = s.apply(sim.Twist(C, c, RS.element(M, c, j), 'menu', {'menu': M.name}), journal=False)
+        assert o.applied and not o.uncertain
+        Q = s.pose(K[0]); assert all(s.pose(p) == Q for p in K)
+        h, b = hb(Q); assert h == 2 and b == B[c]
+        cnt['raises to 2'] += 1
+        for c2 in holding(Q):
+            if B[c2] == b: continue
+            cnt['candidates'] += 1
+            if nb(c, c2):
+                cnt['in NB of the raiser'] += 1; continue
+            cl = s.classify(c2, need_inside=False)
+            if cl.status == 'admissible':
+                cnt['admissible'] += 1
+            else:
+                p = cl.straddle['piece']
+                cnt[f'straddled by a piece of height {T.dist(T.factors(s.pose(p))[0])}'] += 1
+print(dict(cnt))
+```
+
+Output:
+
+```text
+caps holding K at solved: [293, 334, 391, 418, 445, 498, 504, 515, 521]
+{'raises to 2': 432, 'candidates': 2160, 'in NB of the raiser': 1728, 'straddled by a piece of height 2': 432}
+```
+
+E17-3 and E17-4: the causal past of K, a return of 593 and a raise to height 10.
+
+```python
+# E17-3 and E17-4: the causal past of K in the word of T15-01, then returns of out grips and a raise to height 10.
+import sys, math, time
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+t0 = time.time()
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0); RG = C.regions
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+J = RS.jumble_items(M)
+E = lambda g, j: RS.element(M, g, j)
+ID = next(j for j in range(60) if to_tuple(E(0, j)) == to_tuple(I))
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+flm = lambda m: np.array([[fl(x) for x in r] for r in m])
+NF = np.array([[fl(x) for x in d.N[c]] for c in range(600)]); KAP = fl(d.KAPPA)
+B = [T.branch(tuple(d.N[c])) for c in range(600)]
+NB = [{b for b in range(600) if b != a and
+       (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0} for a in range(600)]
+VK = sorted({tuple(v) for p in K for v in RG.vertices(p)}, key=repr)
+lab = {name: j for j, (name, m) in enumerate(M.items)}
+W = [(r['grip'], lab[r['params']['label']]) for r in F['journal']['records'][:723]]
+W += [(433, 12), (593, 58), (501, 22), (593, 12)]
+def hb(Q):
+    l = T.factors(Q)[0]
+    return T.dist(l), T.branch(l)
+def isin(m): return kp.index_of_matrix(to_tuple(m)) >= 0
+def replay(W, record=False):
+    s = sim.State(C, filtered=False, menu=M); G = [I] * 600; moved = []
+    for n, (g, j) in enumerate(W):
+        cl = s.classify(g, need_inside=True, stop_at_straddle=True)
+        if cl.straddle is not None or cl.uncertain:
+            return s, G, moved, n
+        s._commit(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), cl.inside, False)
+        G[g] = to_tuple(matmul(E(g, j), G[g]))
+        if record: moved.append(set(cl.inside.tolist()))
+    return s, G, moved, None
+def straddlers(s, c):
+    kidx = s._kpose()[s.pose_id]; out = []
+    for p in np.flatnonzero(kidx < 0).tolist():
+        h = RG.frows(p)[0] @ flm(s.pose(p)).T @ NF[c] - KAP
+        if h.min() < 1e-7 and h.max() > -1e-7 and \
+           Evaluator(pullback_form(s.pose(p), d.N[c])).classify(RG.vform(p))[0] == 'straddle':
+            out.append(p)
+    return out
+s, G, moved, bad = replay(W, record=True); assert bad is None
+keep = {n for n, mv in enumerate(moved) if K[0] in mv}
+print('X8: off-lattice', s.off_lattice_count(), '; out grips', sum(not isin(G[c]) for c in range(600)),
+      '; letters moving K:', len(keep))
+while True:
+    sub = sorted(keep)
+    s, G, _, bad = replay([W[n] for n in sub])
+    if bad is None: break
+    n0 = sub[bad]; S = set(straddlers(s, W[n0][0]))
+    add = {n for n in range(n0) if moved[n] & S} - keep
+    print('letter', n0 + 1, W[n0], 'blocked by', len(S), 'pieces; adding', len(add), 'earlier letters')
+    assert add; keep |= add
+Wc = [W[n] for n in sorted(keep)]
+O = sorted(c for c in range(600) if not isin(G[c]))
+print('causal past:', len(Wc), 'letters; K', hb(s.pose(K[0])), '; off-lattice', s.off_lattice_count(), '; out grips', O)
+def holding(Q):
+    X = [tuple(matvec(Q, v)) for v in VK]
+    m = (np.array([[fl(x) for x in v] for v in X]) @ NF.T - KAP).min(axis=0)
+    vf = rows_form(set(X))
+    return [c for c in range(600) if m[c] > -1e-6 and Evaluator(pullback_form(I, d.N[c])).classify(vf)[0] == 'in']
+def clone(s):
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(s._poses); u._lookup = dict(s._lookup); u.pose_id = s.pose_id.copy()
+    return u
+def raisers(s, G, report=False):
+    Q = s.pose(K[0]); h, b = hb(Q); O = [c for c in range(600) if not isin(G[c])]; out = []
+    for c in holding(Q):
+        if B[c] == b: continue
+        nbo = [x for x in O if c in NB[x]]
+        st = 'NB' if nbo else s.classify(c, need_inside=False).status
+        if report:
+            print('  raiser', c, 'NB of out', nbo, st, *([] if nbo or st == 'admissible' else [len(straddlers(s, c))]))
+        if st == 'admissible': out.append(c)
+    return out
+print('at the causal past:'); raisers(s, G, report=True)
+found = None
+for x in O:
+    if found or s.classify(x, need_inside=False).status != 'admissible': continue
+    for j in range(60):
+        if j == ID or not isin(matmul(E(x, j), G[x])): continue
+        u = clone(s); Gu = list(G)
+        assert u.apply(sim.Twist(C, x, E(x, j), 'menu', {'menu': M.name}), journal=False).applied
+        Gu[x] = to_tuple(matmul(E(x, j), G[x]))
+        if hb(u.pose(K[0]))[0] < 8: continue
+        for c in raisers(u, Gu):
+            v = clone(u)
+            assert v.apply(sim.Twist(C, c, E(c, J[0]), 'menu', {'menu': M.name}), journal=False).applied
+            found = [(x, j), (c, J[0])]
+            print('return', (x, j), 'keeps K at', hb(u.pose(K[0])), '; raise', (c, J[0]), 'takes K to', hb(v.pose(K[0])))
+            print('raisers after the return:'); raisers(u, Gu, report=True)
+            break
+        if found: break
+print('word to height 10:', len(Wc) + 2, 'letters; seconds', round(time.time() - t0))
+```
+
+Output:
+
+```text
+X8: off-lattice 120663 ; out grips 55 ; letters moving K: 26
+letter 676 (593, 23) blocked by 160 pieces; adding 96 earlier letters
+letter 676 (593, 23) blocked by 34 pieces; adding 13 earlier letters
+letter 568 (280, 49) blocked by 34 pieces; adding 10 earlier letters
+causal past: 145 letters; K (8, 2) ; off-lattice 33434 ; out grips [217, 218, 280, 284, 324, 353, 442, 484, 501, 525, 537, 564, 593]
+at the causal past:
+  raiser 529 NB of out [484, 564] NB
+  raiser 547 NB of out [484, 593] NB
+  raiser 555 NB of out [501, 564, 593] NB
+  raiser 562 NB of out [564, 593] NB
+  raiser 580 NB of out [501, 593] NB
+  raiser 585 NB of out [564, 593] NB
+return (593, 15) keeps K at (8, 2) ; raise (582, 12) takes K to (10, 1)
+raisers after the return:
+  raiser 551 NB of out [501, 537] NB
+  raiser 555 NB of out [501, 564] NB
+  raiser 580 NB of out [501] NB
+  raiser 582 NB of out [] admissible
+word to height 10: 147 letters; seconds 246
+```
+
+E17-4, checked letter by letter: the word of 147 letters from the solved state.
+
+```python
+# E17-4 checked letter by letter: the word of 147 letters, applied from the solved state by the exact simulator.
+# Prints every letter that moves the seven pieces K, the final digest and the heights of all pieces.
+import sys
+from collections import Counter
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matvec
+from sim.kernel import Evaluator, pullback_form, rows_form
+C = sim.get_context(); d = C.data; F, M = wj.load(C, 'I_a'); I = C.kplus.matrix(0)
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+W = [(521, 35), (557, 40), (501, 29), (353, 37), (501, 51), (218, 32), (217, 24), (557, 23), (593, 48),
+     (218, 47), (501, 13), (501, 15), (521, 27), (537, 33), (537, 25), (218, 40), (501, 27), (218, 58),
+     (324, 59), (218, 34), (324, 54), (484, 26), (218, 18), (537, 43), (537, 25), (484, 53), (484, 41),
+     (537, 16), (521, 17), (484, 46), (501, 50), (537, 28), (442, 20), (557, 13), (564, 58), (501, 32),
+     (501, 57), (218, 34), (484, 18), (537, 31), (537, 43), (360, 23), (360, 36), (501, 59), (360, 51),
+     (218, 34), (501, 51), (521, 57), (501, 25), (218, 39), (442, 52), (442, 24), (537, 59), (521, 39),
+     (218, 36), (217, 23), (217, 19), (564, 51), (218, 50), (564, 49), (218, 40), (442, 55), (110, 20),
+     (501, 59), (521, 52), (521, 33), (564, 40), (501, 21), (512, 38), (537, 53), (484, 53), (218, 49),
+     (217, 21), (217, 38), (521, 38), (512, 40), (564, 12), (217, 12), (537, 43), (484, 43), (537, 32),
+     (217, 37), (525, 16), (217, 49), (525, 15), (110, 51), (324, 29), (484, 17), (217, 24), (217, 43),
+     (521, 48), (537, 23), (110, 24), (217, 26), (521, 38), (521, 44), (564, 34), (501, 58), (501, 35),
+     (110, 43), (521, 42), (218, 31), (501, 59), (537, 54), (564, 15), (324, 52), (110, 16), (537, 50),
+     (284, 24), (110, 58), (218, 44), (564, 41), (110, 24), (501, 23), (110, 54), (218, 59), (501, 26),
+     (110, 51), (564, 39), (537, 51), (280, 49), (501, 20), (564, 55), (537, 53), (501, 49), (280, 25),
+     (501, 50), (564, 44), (501, 35), (537, 22), (501, 45), (501, 39), (537, 38), (217, 19), (537, 29),
+     (218, 37), (218, 28), (525, 47), (537, 34), (537, 12), (593, 23), (593, 36), (593, 58), (501, 22),
+     (593, 12), (593, 15), (582, 12)]
+def hb(Q):
+    l = T.factors(Q)[0]
+    return T.dist(l), T.branch(l)
+V = [v for p in K for v in C.regions.vertices(p)]
+s = sim.State(C, filtered=False, menu=M)
+for n, (g, j) in enumerate(W, 1):
+    Q0 = s.pose(K[0])
+    vf = rows_form({tuple(matvec(Q0, v)) for v in V})
+    side = Evaluator(pullback_form(I, d.N[g])).classify(vf)[0]
+    assert side in ('in', 'out')
+    o = s.apply(sim.Twist(C, g, RS.element(M, g, j), 'menu', {'menu': M.name}), journal=False)
+    assert o.applied and not o.uncertain, (n, g, j, o.status)
+    Q = s.pose(K[0]); assert all(s.pose(p) == Q for p in K)
+    assert (Q != Q0) == (side == 'in')
+    if side == 'in':
+        print(n, (g, j), 'branch of grip', T.branch(tuple(d.N[g])), 'K', hb(Q0), '->', hb(Q))
+print('letters', len(W), 'digest', s.digest())
+hp = {}
+for i, P in enumerate(s._poses):
+    hp[i] = 0 if P.kidx >= 0 else T.dist(T.factors(P.matrix)[0])
+print('heights', sorted(Counter(hp[int(i)] for i in s.pose_id).items()))
+```
+
+Output:
+
+```text
+1 (521, 35) branch of grip 3 K (0, -1) -> (2, 3)
+13 (521, 27) branch of grip 3 K (2, 3) -> (0, -1)
+29 (521, 17) branch of grip 3 K (0, -1) -> (2, 3)
+48 (521, 57) branch of grip 3 K (2, 3) -> (2, 3)
+54 (521, 39) branch of grip 3 K (2, 3) -> (2, 3)
+65 (521, 52) branch of grip 3 K (2, 3) -> (2, 3)
+66 (521, 33) branch of grip 3 K (2, 3) -> (0, -1)
+75 (521, 38) branch of grip 3 K (0, -1) -> (2, 3)
+91 (521, 48) branch of grip 3 K (2, 3) -> (2, 3)
+95 (521, 38) branch of grip 3 K (2, 3) -> (2, 3)
+96 (521, 44) branch of grip 3 K (2, 3) -> (2, 3)
+101 (521, 42) branch of grip 3 K (2, 3) -> (0, -1)
+103 (501, 59) branch of grip 1 K (0, -1) -> (2, 1)
+114 (501, 23) branch of grip 1 K (2, 1) -> (2, 1)
+117 (501, 26) branch of grip 1 K (2, 1) -> (2, 1)
+122 (501, 20) branch of grip 1 K (2, 1) -> (0, -1)
+125 (501, 49) branch of grip 1 K (0, -1) -> (2, 1)
+127 (501, 50) branch of grip 1 K (2, 1) -> (2, 1)
+129 (501, 35) branch of grip 1 K (2, 1) -> (2, 1)
+131 (501, 45) branch of grip 1 K (2, 1) -> (0, -1)
+132 (501, 39) branch of grip 1 K (0, -1) -> (2, 1)
+141 (593, 23) branch of grip 2 K (2, 1) -> (4, 2)
+142 (593, 36) branch of grip 2 K (4, 2) -> (4, 2)
+143 (593, 58) branch of grip 2 K (4, 2) -> (4, 2)
+144 (501, 22) branch of grip 1 K (4, 2) -> (6, 1)
+145 (593, 12) branch of grip 2 K (6, 1) -> (8, 2)
+146 (593, 15) branch of grip 2 K (8, 2) -> (8, 2)
+147 (582, 12) branch of grip 1 K (8, 2) -> (10, 1)
+letters 147 digest 31c90699294d97b702312c74643e5d7462f74612925642d60a8bc9ec29375849
+heights [(0, 143805), (2, 32605), (4, 703), (10, 7)]
+```
+
+E17-5: the height-10 state X10 and the returns of 582.
+
+```python
+# E17-5: the height-10 state X10 reached by the word of E17-4. For every cap of another branch that holds K whole: the
+# out grips whose 16 nearest grips contain it, its exact straddlers and the caps that hold all of them. Then every
+# letter at 582 that returns it, with K's height after it.
+import sys, math, time
+from collections import Counter
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+t0 = time.time()
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0); RG = C.regions
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+E = lambda g, j: RS.element(M, g, j)
+ID = next(j for j in range(60) if to_tuple(E(0, j)) == to_tuple(I))
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+flm = lambda m: np.array([[fl(x) for x in r] for r in m])
+NF = np.array([[fl(x) for x in d.N[c]] for c in range(600)]); KAP = fl(d.KAPPA)
+B = [T.branch(tuple(d.N[c])) for c in range(600)]
+NB = [{b for b in range(600) if b != a and
+       (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0} for a in range(600)]
+VK = sorted({tuple(v) for p in K for v in RG.vertices(p)}, key=repr)
+W = [(521, 35), (557, 40), (501, 29), (353, 37), (501, 51), (218, 32), (217, 24), (557, 23), (593, 48),
+     (218, 47), (501, 13), (501, 15), (521, 27), (537, 33), (537, 25), (218, 40), (501, 27), (218, 58),
+     (324, 59), (218, 34), (324, 54), (484, 26), (218, 18), (537, 43), (537, 25), (484, 53), (484, 41),
+     (537, 16), (521, 17), (484, 46), (501, 50), (537, 28), (442, 20), (557, 13), (564, 58), (501, 32),
+     (501, 57), (218, 34), (484, 18), (537, 31), (537, 43), (360, 23), (360, 36), (501, 59), (360, 51),
+     (218, 34), (501, 51), (521, 57), (501, 25), (218, 39), (442, 52), (442, 24), (537, 59), (521, 39),
+     (218, 36), (217, 23), (217, 19), (564, 51), (218, 50), (564, 49), (218, 40), (442, 55), (110, 20),
+     (501, 59), (521, 52), (521, 33), (564, 40), (501, 21), (512, 38), (537, 53), (484, 53), (218, 49),
+     (217, 21), (217, 38), (521, 38), (512, 40), (564, 12), (217, 12), (537, 43), (484, 43), (537, 32),
+     (217, 37), (525, 16), (217, 49), (525, 15), (110, 51), (324, 29), (484, 17), (217, 24), (217, 43),
+     (521, 48), (537, 23), (110, 24), (217, 26), (521, 38), (521, 44), (564, 34), (501, 58), (501, 35),
+     (110, 43), (521, 42), (218, 31), (501, 59), (537, 54), (564, 15), (324, 52), (110, 16), (537, 50),
+     (284, 24), (110, 58), (218, 44), (564, 41), (110, 24), (501, 23), (110, 54), (218, 59), (501, 26),
+     (110, 51), (564, 39), (537, 51), (280, 49), (501, 20), (564, 55), (537, 53), (501, 49), (280, 25),
+     (501, 50), (564, 44), (501, 35), (537, 22), (501, 45), (501, 39), (537, 38), (217, 19), (537, 29),
+     (218, 37), (218, 28), (525, 47), (537, 34), (537, 12), (593, 23), (593, 36), (593, 58), (501, 22),
+     (593, 12), (593, 15), (582, 12)]
+def hb(Q):
+    l = T.factors(Q)[0]
+    return T.dist(l), T.branch(l)
+def isin(m): return kp.index_of_matrix(to_tuple(m)) >= 0
+def twist(g, j): return sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name})
+s = sim.State(C, filtered=False, menu=M); G = [I] * 600
+for g, j in W:
+    assert s.apply(twist(g, j), journal=False).applied
+    G[g] = to_tuple(matmul(E(g, j), G[g]))
+Q = s.pose(K[0]); assert all(s.pose(p) == Q for p in K) and hb(Q) == (10, 1)
+O = [c for c in range(600) if not isin(G[c])]
+print('X10', s.digest(), 'K', hb(Q), 'off-lattice', s.off_lattice_count())
+print('out grips (grip, branch, status):', [(x, B[x], s.classify(x, need_inside=False).status) for x in O])
+def holding(Q):
+    X = [tuple(matvec(Q, v)) for v in VK]
+    m = (np.array([[fl(x) for x in v] for v in X]) @ NF.T - KAP).min(axis=0)
+    vf = rows_form(set(X))
+    return [c for c in range(600) if m[c] > -1e-6 and Evaluator(pullback_form(I, d.N[c])).classify(vf)[0] == 'in']
+def side(s, p, c): return Evaluator(pullback_form(s.pose(p), d.N[c])).classify(RG.vform(p))[0]
+def hrange(s, p): return RG.frows(p)[0] @ flm(s.pose(p)).T @ NF.T - KAP
+def straddlers(s, c):
+    kidx = s._kpose()[s.pose_id]; out = []
+    for p in np.flatnonzero(kidx < 0).tolist():
+        h = RG.frows(p)[0] @ flm(s.pose(p)).T @ NF[c] - KAP
+        if h.min() < 1e-7 and h.max() > -1e-7 and side(s, p, c) == 'straddle':
+            out.append(p)
+    return out
+hold = holding(Q)
+print('caps holding K whole (cap, branch):', [(c, B[c]) for c in hold])
+for c in hold:
+    if B[c] == 1: continue
+    Sx = straddlers(s, c); common = None
+    for p in Sx:
+        cand = np.flatnonzero(hrange(s, p).min(axis=0) > -1e-7).tolist()
+        cand = [x for x in cand if common is None or x in common]
+        common = {x for x in cand if side(s, p, x) == 'in'}
+        if not common: break
+    print('cap', c, 'branch', B[c], '; NB of out', [x for x in O if c in NB[x]], ';', s.classify(c, need_inside=False).status,
+          '; straddlers', len(Sx), 'heights', sorted(Counter(hb(s.pose(p))[0] for p in Sx).items()),
+          '; caps holding all of them', sorted(common or []))
+for j in range(60):
+    if j == ID or not isin(matmul(E(582, j), G[582])): continue
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(s._poses); u._lookup = dict(s._lookup); u.pose_id = s.pose_id.copy()
+    assert u.apply(twist(582, j), journal=False).applied
+    Qu = u.pose(K[0]); assert all(u.pose(p) == Qu for p in K)
+    print('return (582, %d): K' % j, hb(Qu))
+print('seconds', round(time.time() - t0))
+```
+
+Output:
+
+```text
+X10 31c90699294d97b702312c74643e5d7462f74612925642d60a8bc9ec29375849 K (10, 1) off-lattice 33315
+out grips (grip, branch, status): [(217, 1, 'admissible'), (218, 1, 'admissible'), (280, 3, 'admissible'), (284, 1, 'admissible'), (324, 1, 'admissible'), (353, 1, 'admissible'), (442, 1, 'admissible'), (484, 1, 'admissible'), (501, 1, 'admissible'), (525, 4, 'admissible'), (537, 1, 'blocked'), (564, 2, 'admissible'), (582, 1, 'admissible')]
+caps holding K whole (cap, branch): [(542, 2), (548, 4), (551, 0), (560, 4), (580, 3), (582, 1), (593, 2)]
+cap 542 branch 2 ; NB of out [501, 537, 582] ; blocked ; straddlers 333 heights [(2, 301), (4, 32)] ; caps holding all of them []
+cap 548 branch 4 ; NB of out [442, 501, 537] ; blocked ; straddlers 240 heights [(2, 240)] ; caps holding all of them []
+cap 551 branch 0 ; NB of out [501, 537, 582] ; blocked ; straddlers 444 heights [(2, 393), (4, 51)] ; caps holding all of them []
+cap 560 branch 4 ; NB of out [537, 582] ; blocked ; straddlers 439 heights [(2, 321), (4, 118)] ; caps holding all of them []
+cap 580 branch 3 ; NB of out [501, 582] ; blocked ; straddlers 291 heights [(2, 230), (4, 61)] ; caps holding all of them []
+cap 593 branch 2 ; NB of out [582] ; blocked ; straddlers 95 heights [(2, 49), (4, 46)] ; caps holding all of them [582]
+return (582, 14): K (8, 4)
+return (582, 21): K (8, 0)
+return (582, 23): K (8, 3)
+return (582, 43): K (8, 2)
+return (582, 44): K (8, 3)
+return (582, 45): K (8, 2)
+return (582, 46): K (8, 4)
+return (582, 47): K (8, 0)
+return (582, 48): K (8, 3)
+return (582, 49): K (8, 2)
+return (582, 50): K (8, 4)
+return (582, 51): K (8, 0)
+seconds 29
+```
+
+E17-6: a turn at the raiser, and height 12.
+
+```python
+# E17-6: a turn at the raiser. The word of E17-4 is replayed from solved (every letter applied by the exact simulator).
+# At X10, for each of the letters (582, 18) and (582, 59) at the out grip 582: K's height and branch after it, and every
+# cap of another branch that holds K whole, with the out grips whose 16 nearest grips contain it and its exact status.
+# Then (582, 18) and (576, 12) take K to height 12.
+import sys, math
+from collections import Counter
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0); RG = C.regions
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+E = lambda g, j: RS.element(M, g, j)
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+NF = np.array([[fl(x) for x in d.N[c]] for c in range(600)]); KAP = fl(d.KAPPA)
+B = [T.branch(tuple(d.N[c])) for c in range(600)]
+NB = [{b for b in range(600) if b != a and
+       (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0} for a in range(600)]
+VK = sorted({tuple(v) for p in K for v in RG.vertices(p)}, key=repr)
+W = [(521, 35), (557, 40), (501, 29), (353, 37), (501, 51), (218, 32), (217, 24), (557, 23), (593, 48),
+     (218, 47), (501, 13), (501, 15), (521, 27), (537, 33), (537, 25), (218, 40), (501, 27), (218, 58),
+     (324, 59), (218, 34), (324, 54), (484, 26), (218, 18), (537, 43), (537, 25), (484, 53), (484, 41),
+     (537, 16), (521, 17), (484, 46), (501, 50), (537, 28), (442, 20), (557, 13), (564, 58), (501, 32),
+     (501, 57), (218, 34), (484, 18), (537, 31), (537, 43), (360, 23), (360, 36), (501, 59), (360, 51),
+     (218, 34), (501, 51), (521, 57), (501, 25), (218, 39), (442, 52), (442, 24), (537, 59), (521, 39),
+     (218, 36), (217, 23), (217, 19), (564, 51), (218, 50), (564, 49), (218, 40), (442, 55), (110, 20),
+     (501, 59), (521, 52), (521, 33), (564, 40), (501, 21), (512, 38), (537, 53), (484, 53), (218, 49),
+     (217, 21), (217, 38), (521, 38), (512, 40), (564, 12), (217, 12), (537, 43), (484, 43), (537, 32),
+     (217, 37), (525, 16), (217, 49), (525, 15), (110, 51), (324, 29), (484, 17), (217, 24), (217, 43),
+     (521, 48), (537, 23), (110, 24), (217, 26), (521, 38), (521, 44), (564, 34), (501, 58), (501, 35),
+     (110, 43), (521, 42), (218, 31), (501, 59), (537, 54), (564, 15), (324, 52), (110, 16), (537, 50),
+     (284, 24), (110, 58), (218, 44), (564, 41), (110, 24), (501, 23), (110, 54), (218, 59), (501, 26),
+     (110, 51), (564, 39), (537, 51), (280, 49), (501, 20), (564, 55), (537, 53), (501, 49), (280, 25),
+     (501, 50), (564, 44), (501, 35), (537, 22), (501, 45), (501, 39), (537, 38), (217, 19), (537, 29),
+     (218, 37), (218, 28), (525, 47), (537, 34), (537, 12), (593, 23), (593, 36), (593, 58), (501, 22),
+     (593, 12), (593, 15), (582, 12)]
+def hb(Q):
+    l = T.factors(Q)[0]
+    return T.dist(l), T.branch(l)
+def isin(m): return kp.index_of_matrix(to_tuple(m)) >= 0
+def holding(Q):
+    X = [tuple(matvec(Q, v)) for v in VK]
+    m = (np.array([[fl(x) for x in v] for v in X]) @ NF.T - KAP).min(axis=0)
+    vf = rows_form(set(X))
+    return [c for c in range(600) if m[c] > -1e-6 and Evaluator(pullback_form(I, d.N[c])).classify(vf)[0] == 'in']
+def apply(s, G, g, j):
+    o = s.apply(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), journal=False)
+    assert o.applied and not o.uncertain, (g, j)
+    G[g] = to_tuple(matmul(E(g, j), G[g]))
+def clone(s):
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(s._poses); u._lookup = dict(s._lookup); u.pose_id = s.pose_id.copy()
+    return u
+s = sim.State(C, filtered=False, menu=M); G = [I] * 600
+for g, j in W: apply(s, G, g, j)
+print('X10', s.digest(), 'K', hb(s.pose(K[0])), '; out grips', [c for c in range(600) if not isin(G[c])])
+for x in [(582, 18), (582, 59)]:
+    u = clone(s); Gu = list(G); apply(u, Gu, *x)
+    Q = u.pose(K[0]); assert all(u.pose(p) == Q for p in K)
+    h, b = hb(Q); O = [c for c in range(600) if not isin(Gu[c])]
+    rows = [(c, B[c], [y for y in O if y != c and c in NB[y]], u.classify(c, need_inside=False).status)
+            for c in holding(Q) if B[c] != b]
+    print('after', x, ': 582 out', not isin(Gu[582]), '; K', (h, b), '; caps of another branch holding K (cap, branch, NB of out, status):', rows)
+for g, j in [(582, 18), (576, 12)]: apply(s, G, g, j)
+Q = s.pose(K[0]); assert all(s.pose(p) == Q for p in K)
+print('after (582, 18), (576, 12): K', hb(Q), '; letters', len(W) + 2, '; digest', s.digest())
+hp = {}
+for i, P in enumerate(s._poses):
+    hp[i] = 0 if P.kidx >= 0 else T.dist(T.factors(P.matrix)[0])
+print('heights', sorted(Counter(hp[int(i)] for i in s.pose_id).items()))
+```
+
+Output:
+
+```text
+X10 31c90699294d97b702312c74643e5d7462f74612925642d60a8bc9ec29375849 K (10, 1) ; out grips [217, 218, 280, 284, 324, 353, 442, 484, 501, 525, 537, 564, 582]
+after (582, 18) : 582 out True ; K (10, 1) ; caps of another branch holding K (cap, branch, NB of out, status): [(560, 4, [537, 582], 'blocked'), (565, 3, [537, 582], 'blocked'), (576, 4, [], 'admissible'), (590, 2, [582], 'blocked'), (596, 0, [582], 'blocked')]
+after (582, 59) : 582 out True ; K (10, 1) ; caps of another branch holding K (cap, branch, NB of out, status): [(570, 2, [582], 'blocked'), (574, 4, [582], 'blocked'), (595, 3, [582], 'blocked'), (596, 0, [582], 'blocked'), (597, 2, [], 'admissible')]
+after (582, 18), (576, 12): K (12, 4) ; letters 149 ; digest 7bb0df3ebb0e55a89135921955ae592e24249da89c16e429be0c18487f6a9aed
+heights [(0, 141655), (2, 34755), (4, 703), (12, 7)]
+```
+
+E17-7: the relay repeated to height 14, and TH at 526.
+
+```python
+# E17-7: the relay repeated, and TH at 526. From the word of E17-6 (height 12), search by iterative deepening, at
+# most two letters before a raise, over letters at admissible caps that hold K whole (these come first) and returns of
+# out grips; K must keep its height. At the first state where a cap of another branch holds K whole, is in NB of no out
+# grip and is admissible, raise K there by the first jumble that raises it and replay the whole word from solved. This
+# reaches height 14 at cap 526. Then the number of earlier letters at 526, and for every letter at 526: whether it
+# returns 526 (K drops), and otherwise every cap other than 526 that holds K whole after it, and whether all of them are
+# in NB of 526. Every letter is applied by the exact simulator; floating point only preselects caps for exact tests.
+import sys, math, time
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+HMAX = 14
+t0 = time.time()
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0); RG = C.regions
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+J = RS.jumble_items(M)
+E = lambda g, j: RS.element(M, g, j)
+ID = next(j for j in range(60) if to_tuple(E(0, j)) == to_tuple(I))
+L = [j for j in range(60) if j != ID]
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+NF = np.array([[fl(x) for x in d.N[c]] for c in range(600)]); KAP = fl(d.KAPPA)
+B = [T.branch(tuple(d.N[c])) for c in range(600)]
+NB = [{b for b in range(600) if b != a and
+       (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0} for a in range(600)]
+VK = sorted({tuple(v) for p in K for v in RG.vertices(p)}, key=repr)
+W = [(521, 35), (557, 40), (501, 29), (353, 37), (501, 51), (218, 32), (217, 24), (557, 23), (593, 48),
+     (218, 47), (501, 13), (501, 15), (521, 27), (537, 33), (537, 25), (218, 40), (501, 27), (218, 58),
+     (324, 59), (218, 34), (324, 54), (484, 26), (218, 18), (537, 43), (537, 25), (484, 53), (484, 41),
+     (537, 16), (521, 17), (484, 46), (501, 50), (537, 28), (442, 20), (557, 13), (564, 58), (501, 32),
+     (501, 57), (218, 34), (484, 18), (537, 31), (537, 43), (360, 23), (360, 36), (501, 59), (360, 51),
+     (218, 34), (501, 51), (521, 57), (501, 25), (218, 39), (442, 52), (442, 24), (537, 59), (521, 39),
+     (218, 36), (217, 23), (217, 19), (564, 51), (218, 50), (564, 49), (218, 40), (442, 55), (110, 20),
+     (501, 59), (521, 52), (521, 33), (564, 40), (501, 21), (512, 38), (537, 53), (484, 53), (218, 49),
+     (217, 21), (217, 38), (521, 38), (512, 40), (564, 12), (217, 12), (537, 43), (484, 43), (537, 32),
+     (217, 37), (525, 16), (217, 49), (525, 15), (110, 51), (324, 29), (484, 17), (217, 24), (217, 43),
+     (521, 48), (537, 23), (110, 24), (217, 26), (521, 38), (521, 44), (564, 34), (501, 58), (501, 35),
+     (110, 43), (521, 42), (218, 31), (501, 59), (537, 54), (564, 15), (324, 52), (110, 16), (537, 50),
+     (284, 24), (110, 58), (218, 44), (564, 41), (110, 24), (501, 23), (110, 54), (218, 59), (501, 26),
+     (110, 51), (564, 39), (537, 51), (280, 49), (501, 20), (564, 55), (537, 53), (501, 49), (280, 25),
+     (501, 50), (564, 44), (501, 35), (537, 22), (501, 45), (501, 39), (537, 38), (217, 19), (537, 29),
+     (218, 37), (218, 28), (525, 47), (537, 34), (537, 12), (593, 23), (593, 36), (593, 58), (501, 22),
+     (593, 12), (593, 15), (582, 12),
+     (582, 18), (576, 12)]
+def hb(Q):
+    l = T.factors(Q)[0]
+    return T.dist(l), T.branch(l)
+def isin(m): return kp.index_of_matrix(to_tuple(m)) >= 0
+def holding(Q):
+    X = [tuple(matvec(Q, v)) for v in VK]
+    m = (np.array([[fl(x) for x in v] for v in X]) @ NF.T - KAP).min(axis=0)
+    vf = rows_form(set(X))
+    return [c for c in range(600) if m[c] > -1e-6 and Evaluator(pullback_form(I, d.N[c])).classify(vf)[0] == 'in']
+def step(s, G, g, j):
+    o = s.apply(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), journal=False)
+    if not (o.applied and not o.uncertain): return False
+    G[g] = to_tuple(matmul(E(g, j), G[g])); return True
+def clone(s):
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(s._poses); u._lookup = dict(s._lookup); u.pose_id = s.pose_id.copy()
+    return u
+def outs(G): return [c for c in range(600) if not isin(G[c])]
+def replay(W):
+    s = sim.State(C, filtered=False, menu=M); G = [I] * 600
+    for g, j in W: assert step(s, G, g, j), (g, j)
+    return s, G
+def raisers(s, G):
+    Q = s.pose(K[0]); h, b = hb(Q); O = outs(G)
+    return [c for c in holding(Q) if B[c] != b and not any(c in NB[x] for x in O if x != c)
+            and s.classify(c, need_inside=False).status == 'admissible']
+def moves(s, G):
+    Q = s.pose(K[0]); O = set(outs(G)); hold = set(holding(Q)); res = []
+    for x in sorted(hold | O):
+        if any(x in NB[y] for y in O if y != x): continue
+        if s.classify(x, need_inside=False).status != 'admissible': continue
+        for j in L:
+            if x in hold or (x in O and isin(matmul(E(x, j), G[x]))): res.append((0 if x in hold else 1, x, j))
+    return [(x, j) for _, x, j in sorted(res)]
+def search(s, G, h, path, seen, depth):
+    for c in raisers(s, G):
+        for j in J:
+            u = clone(s); Gu = list(G); assert step(u, Gu, c, j)
+            Qu = u.pose(K[0])
+            if all(u.pose(p) == Qu for p in K) and hb(Qu)[0] >= h + 2: return path + [(c, j)]
+    if depth == 2: return None
+    for x, j in moves(s, G):
+        u = clone(s); Gu = list(G)
+        if not step(u, Gu, x, j): continue
+        Qu = u.pose(K[0])
+        if not all(u.pose(p) == Qu for p in K) or hb(Qu)[0] < h: continue
+        key = (u.digest(), tuple((g, Gu[g]) for g in outs(Gu)))
+        if key in seen: continue
+        seen.add(key)
+        r = search(u, Gu, h, path + [(x, j)], seen, depth + 1)
+        if r: return r
+    return None
+s, G = replay(W)
+Q = s.pose(K[0]); assert all(s.pose(p) == Q for p in K); h = hb(Q)[0]
+print('start: K', hb(Q), '; letters', len(W), '; digest', s.digest(), flush=True)
+while h < HMAX:
+    tail = None
+    for D in range(3):
+        tail = search(s, G, h, [], set(), 2 - D)
+        if tail: break
+    if not tail:
+        print('no raise within two letters at height', h, flush=True); break
+    W = W + tail
+    s, G = replay(W[:-len(tail)])
+    for g, j in tail:
+        assert step(s, G, g, j)
+        print('  letter', (g, j), '; branch of the cap', B[g], '; K after it', hb(s.pose(K[0])), flush=True)
+    s, G = replay(W)
+    Q = s.pose(K[0]); assert all(s.pose(p) == Q for p in K)
+    h = hb(Q)[0]
+    print('height', h, 'branch', hb(Q)[1], '; tail', tail, '; letters', len(W), '; out grips', len(outs(G)),
+          '; off-lattice', s.off_lattice_count(), '; digest', s.digest(), flush=True)
+print('word', W)
+r = W[-1][0]; Q = s.pose(K[0]); assert hb(Q)[0] == 14
+print('letters at', r, 'before the raise:', sum(g == r for g, _ in W[:-1]))
+rows = [('none', sorted(set(holding(Q)) - {r}))]; drops = []
+for j in L:
+    u = clone(s); Gu = list(G); assert step(u, Gu, r, j)
+    Qu = u.pose(K[0]); assert all(u.pose(p) == Qu for p in K)
+    if isin(Gu[r]):
+        assert hb(Qu)[0] == 12; drops.append(j); continue
+    assert hb(Qu)[0] == 14
+    rows.append((j, sorted(set(holding(Qu)) - {r})))
+print('letters at', r, 'that return it (K drops to 12):', drops)
+print('orientations of K at height 14 (letter at', r, ', caps other than', r, 'that hold K whole):', rows)
+print('all these caps in NB of', r, ':', all(set(c) <= NB[r] for _, c in rows), '; number of orientations', len(rows))
+print('seconds', round(time.time() - t0))
+```
+
+Output:
+
+```text
+start: K (12, 4) ; letters 149 ; digest 7bb0df3ebb0e55a89135921955ae592e24249da89c16e429be0c18487f6a9aed
+  letter (576, 1) ; branch of the cap 4 ; K after it (12, 4)
+  letter (573, 1) ; branch of the cap 4 ; K after it (12, 4)
+  letter (526, 12) ; branch of the cap 0 ; K after it (14, 0)
+height 14 branch 0 ; tail [(576, 1), (573, 1), (526, 12)] ; letters 152 ; out grips 15 ; off-lattice 38192 ; digest ea0bc4f31df0c88e4019d2cf505e05d426122721bcca399c5801f3fdc1cedb72
+word [(521, 35), (557, 40), (501, 29), (353, 37), (501, 51), (218, 32), (217, 24), (557, 23), (593, 48), (218, 47), (501, 13), (501, 15), (521, 27), (537, 33), (537, 25), (218, 40), (501, 27), (218, 58), (324, 59), (218, 34), (324, 54), (484, 26), (218, 18), (537, 43), (537, 25), (484, 53), (484, 41), (537, 16), (521, 17), (484, 46), (501, 50), (537, 28), (442, 20), (557, 13), (564, 58), (501, 32), (501, 57), (218, 34), (484, 18), (537, 31), (537, 43), (360, 23), (360, 36), (501, 59), (360, 51), (218, 34), (501, 51), (521, 57), (501, 25), (218, 39), (442, 52), (442, 24), (537, 59), (521, 39), (218, 36), (217, 23), (217, 19), (564, 51), (218, 50), (564, 49), (218, 40), (442, 55), (110, 20), (501, 59), (521, 52), (521, 33), (564, 40), (501, 21), (512, 38), (537, 53), (484, 53), (218, 49), (217, 21), (217, 38), (521, 38), (512, 40), (564, 12), (217, 12), (537, 43), (484, 43), (537, 32), (217, 37), (525, 16), (217, 49), (525, 15), (110, 51), (324, 29), (484, 17), (217, 24), (217, 43), (521, 48), (537, 23), (110, 24), (217, 26), (521, 38), (521, 44), (564, 34), (501, 58), (501, 35), (110, 43), (521, 42), (218, 31), (501, 59), (537, 54), (564, 15), (324, 52), (110, 16), (537, 50), (284, 24), (110, 58), (218, 44), (564, 41), (110, 24), (501, 23), (110, 54), (218, 59), (501, 26), (110, 51), (564, 39), (537, 51), (280, 49), (501, 20), (564, 55), (537, 53), (501, 49), (280, 25), (501, 50), (564, 44), (501, 35), (537, 22), (501, 45), (501, 39), (537, 38), (217, 19), (537, 29), (218, 37), (218, 28), (525, 47), (537, 34), (537, 12), (593, 23), (593, 36), (593, 58), (501, 22), (593, 12), (593, 15), (582, 12), (582, 18), (576, 12), (576, 1), (573, 1), (526, 12)]
+letters at 526 before the raise: 0
+letters at 526 that return it (K drops to 12): [14, 21, 23, 43, 44, 45, 46, 47, 48, 49, 50, 51]
+orientations of K at height 14 (letter at 526 , caps other than 526 that hold K whole): [('none', [530, 563, 573, 591]), (1, [396, 401, 483, 486]), (2, [483, 497, 556, 563]), (3, [478, 486, 491, 530]), (4, [478, 486, 491, 530]), (5, [486, 503, 558, 563]), (6, [480, 483, 510, 530]), (7, [483, 497, 556, 563]), (8, [480, 483, 510, 530]), (9, [486, 503, 558, 563]), (10, [530, 563, 573, 591]), (11, [396, 401, 483, 486]), (12, [486, 530, 556, 558, 563, 591]), (13, [478, 483, 486, 530]), (15, [480, 483, 510, 530, 563, 573]), (16, [483, 486, 491, 510, 530, 573]), (17, [486, 503, 530, 563]), (18, [480, 483, 497, 530, 556, 563]), (19, [401, 483, 486, 563]), (20, [396, 480, 483, 486, 497, 563]), (22, [483, 530, 556, 563, 573, 591]), (24, [401, 478, 483, 486, 503, 563]), (25, [483, 530, 556, 558, 563, 591]), (26, [486, 491, 510, 530, 563, 573]), (27, [401, 478, 483, 486, 503, 530]), (28, [483, 486, 556, 558, 563, 591]), (29, [396, 480, 483, 497, 530, 563]), (30, [401, 478, 486, 503, 530, 563]), (31, [483, 491, 510, 530, 563, 573]), (32, [396, 480, 483, 486, 497, 530]), (33, [486, 503, 530, 558, 563, 591]), (34, [483, 530, 556, 563]), (35, [483, 486, 510, 530]), (36, [483, 486, 558, 563]), (37, [480, 483, 530, 563]), (38, [396, 483, 486, 530]), (39, [486, 530, 563, 591]), (40, [483, 530, 563, 573]), (41, [483, 486, 497, 563]), (42, [486, 491, 530, 563]), (52, [478, 486, 491, 503, 530, 563]), (53, [396, 480, 483, 486, 510, 530]), (54, [396, 401, 483, 486, 497, 563]), (55, [396, 401, 478, 483, 486, 530]), (56, [486, 491, 530, 563, 573, 591]), (57, [478, 483, 486, 491, 510, 530]), (58, [483, 486, 497, 556, 558, 563]), (59, [401, 483, 486, 503, 558, 563])]
+all these caps in NB of 526 : True ; number of orientations 48
+seconds 86
+```
+
+## 23. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -4240,3 +5198,4 @@ found 0 seconds 185
 - After round 14 (section 19): section 5, gap M1, the finiteness item gives the trap lemma (T14-03), the failure of RA for single pieces (T14-01, T14-02) and the cases that stay open.
 - After round 15 (section 20): section 5, gap M1, the finiteness item says that P6 and the bound 6 on left heights are false (T15-01), that a high island can enter the cap of a grip that is already out (T15-02), and that R(I_a) is finite if and only if the clean steps have a uniform length bound, without hypothesis H (T15-04).
 - After round 16 (section 21): section 5, gap M1, the finiteness item says that no height 10 was found, that the inner cohorts alone do not bound the height (T16-02), and that two routes to a proof or a pump are closed (T16-03, T16-04).
+- After round 17 (section 22): section 5, gap M1, the finiteness item says that heights 10, 12 and 14 are reachable by exact words of 147, 149 and 152 letters (E17-4, E17-6, E17-7), through turns at the raiser, and that TH holds at the raise to 14.
