@@ -228,14 +228,17 @@ Two mathematical gaps:
     (T9-02). No single letter takes the deep state H6 of stage 04 to height 8 (exact, T9-04). For each m, the
     states whose heights are at most 2m have a finite maximum distance to the lattice, but no value of it is known
     (T9-05).
-  - *Finiteness (rounds 13 and 13b).* Still open (`SENIOR-REVIEW.md` section 18). Every left height is at most 6 if
-    and only if P6 holds: at every reachable configuration, every cap of a grip of another branch that wholly
+  - *Finiteness (rounds 13 to 14).* Still open (`SENIOR-REVIEW.md` sections 18 and 19). Every left height is at most
+    6 if and only if P6 holds: at every reachable configuration, every cap of a grip of another branch that wholly
     contains a piece of height at least 6 is straddled (T13-03). Every cap decision behind Proposition HB is now
     exact (REFX-EXACT). Inside the inscribed ball the only blocking is that of the 16 grips nearest an out grip
     (T13b-02), and a cap that holds part of a high island is blocked by the island itself (T13b-05). So the open
-    case is a cap of another branch that holds a whole high island. At H6 every such cap is among the 16 grips
-    nearest grip 433, whose jumble raised the island, and 433 is still out (exact). Whether this holds at every
-    raise is the next question.
+    case is a cap of another branch that holds a whole high island. Round 14 proved a trap lemma (T14-03): if a
+    grip g that is not out raises a connected island by a jumble, and every other cap that holds the whole island
+    in one of g's 48 non-retained orientations is among the 16 grips nearest g, then the island stays 2 higher
+    until g returns. This holds exactly for H6, so P6 holds there until the island first drops back to height 4.
+    The same statement for single pieces is false (T14-01, T14-02). Open: an island that drops and rises again,
+    an island that enters the cap of a grip that is already out, and the lemma's hypothesis at every raise.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not

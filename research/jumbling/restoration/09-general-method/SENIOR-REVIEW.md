@@ -2492,7 +2492,7 @@ Notation:
   - H6 is reached by the fixture records 1 to 723 and the jumble (433, 12). That jumble raised the island from height 4 in branch 0 to height 6 in branch 4, the branch of grip 433, and grip 433 is still out.
   - All six caps of T9-04 lie in NB(433): 340 and 430 at 15.52 degrees from grip 433, and 274, 326, 434 and 463 at 25.24 degrees. Their branches are 3, 0, 1, 2, 3 and 1.
   - So at H6 every cap of another branch that holds a piece of the island is blocked by the cohort of the grip that raised it.
-  - If at every reachable configuration every cap of another branch that holds a high island lay in NB(c) for some out grip c, P6 would follow. Round 14 asks whether the raising grip gives this at the moment of a raise, and whether it lasts while the island stays high.
+  - If at every reachable configuration every cap of another branch that holds a high island lay in NB(c) for some out grip c, P6 would follow. Round 14 (section 19) asked whether the raising grip gives this at the moment of a raise, and whether it lasts while the island stays high.
 - **Status.** X1, P6 and the uniform bound of M1 stay open. Proposition HB still covers the model orbits 0 to 9, now with exact cap decisions. T13b-04 gives a sound system for an exact closure experiment on model orbit 10 (not run).
 
 ### Reproduction (round 13b)
@@ -2892,7 +2892,388 @@ assert s.digest()=='bd0cbd3337ef16085cba3498916b3c683f04735b5cc3737012c6414af422
 print('height_branch',sorted(pairs),'digest',s.digest())
 ```
 
-## 19. What changed in METHOD.md
+## 19. Is a raised island trapped by the grip that raised it? (round 14)
+
+Round 13b left one open case of P6: a cap of another branch that holds a whole high island and lies outside NB(c) for every out grip c (section 18). At H6 every cap of another branch that holds a piece of the island lies in NB(433), and grip 433 raised the island. Round 14 asked three things: whether the raising grip always gives this (RA, stated for the pieces of the island), whether it lasts while the island stays high, and for any progress on B42. The review returned four results (T14-01 to T14-04, all `minor`). The integrator re-ran the four programs from the repository root, got the reported outputs exactly, and adopted all four. It also checked that the 60 menu elements at a grip form a group, whose 12 retained elements lie in K⁺ and whose other 48 do not (grips 0, 326 and 433), which the trap lemma below uses.
+
+| Finding | Status | Result |
+| --- | --- | --- |
+| T14-01 | computed | RA, stated for single pieces, is false at height 6. After the fixture records 1 to 723 and the jumble (433, 14), the 78 pieces of the island rise from height 4 in branch 0 to height 6 in branch 4. Piece 8412 (model orbit 25) lies wholly in cap 559, of branch 3, and 559 is outside NB(433): NN(NN + n₄₃₃·n₅₅₉) − 2κ² = (−309168 − 61072√5)/15625 < 0. But cap 559 holds only 38 of the 78 pieces and is straddled by the other 40 (for example by piece 6743). So P6 is not contradicted. |
+| T14-02 | computed | A census of the 724 fixture records. 50 letters raise pieces, 11,724 piece raises in all, every one from height 2 to 4; no recorded letter reaches height 6. RA for raises to height 4 fails at 21 of the 50 letters, with 1,670 pairs of a raised piece and a cap of another branch outside NB of the raiser; the first is at record 182. After the prefixes 723 and 724, all 48 jumbles at grip 433 were applied. Twelve of them (items 14, 21, 23 and 43 to 51) violate RA at height 6, with 456 pairs per prefix, yet every cap of another branch that holds a raised piece is straddled. |
+| T14-03 | proved; computed | The trap lemma (below). Its hypotheses hold exactly for H6, with g = 433 and h = 4. |
+| T14-04 | computed | At T723 and at H6, nine exact 3-face contacts join a height-4 piece of model orbit 9 to a height-2 piece of orbit 4, 7 or 8. Proposition HB, applied to their ends, does not exclude a raise. But every cap of another branch that holds one of the three height-4 pieces lies in NB of an out grip (12, 517 or 525), so no letter raises these contacts there. This is partial progress on B42 (T13b-06), not an exhaustive check. |
+
+### The trap lemma (T14-03; proved, model review)
+
+Assume INV. Write Λg for the group of the 60 menu elements at grip g and A4g for its 12 retained elements.
+
+> **Trap lemma.** Let X0 be a reachable configuration, g a grip that is not out at X0, and K a connected set of pieces, all at left height h ≥ 4 in a branch other than g's, wholly inside cap g. Suppose that a jumble at g is admissible at X0, and that for every A in Λg \ A4g, every cap other than cap g that wholly holds A(K) lies in NB(g). Then from that jumble until g first returns, only letters at g move K, and every member of K stays at height h + 2 in g's branch. When g first returns, every member is back at height h.
+
+Proof (the review's). Let A be the product of the letters at g since its departure, in order. By INV, g is out exactly while A is not retained, and by induction K has pose A times its pose at X0. The tree facts then give height h + 2 in g's branch. By Lemma FN, an admissible letter that moves one member of K moves all of it. A cap that holds only part of K is straddled by a member (T13b-05). A cap other than g that holds all of K lies in NB(g) by the hypothesis, so it is blocked while g is out (blocking lemma). A letter at g keeps K inside cap g and updates A. At the first return A lies in A4g, which is contained in K⁺, so the height is h again. Letters elsewhere are not restricted.
+
+The hypothesis needs a fresh departure of g. For a grip that is already out when K arrives in its cap, the product A and the island's own rotation since its arrival can differ, and the lemma says nothing.
+
+At H6 (g = 433, h = 4, X0 = T723, where 433 is not out), the hypotheses hold exactly. The 48 non-retained orientations put the island at height 6 in branch 4, and the 12 retained ones at height 4. For every non-retained orientation, four or five caps (433 included) hold the whole island, and every one of them other than 433 lies in NB(433). The 68 inner pieces of cap 433 are all on the lattice at T723 and all off it at H6.
+
+### What it gives
+
+- RA, stated for single pieces, is false at heights 4 and 6 (T14-01, T14-02). The statement that holds at H6 is about whole islands, and the trap lemma uses it.
+- P6 holds for the H6 island throughout its first height-6 excursion: a cap that holds part of the island is straddled by it, and a cap of another branch that holds all of it is blocked by the out raiser 433. So no continuation from H6 that keeps the island at height 6 the whole way reaches height 8.
+- Still open (round 15):
+  - a continuation that first lowers the island to height 4 and then raises it again;
+  - an island that enters the cap of a grip that is already out (an arrival), where the trap lemma does not apply;
+  - whether the hypothesis of the trap lemma holds at every raise by a fresh departure;
+  - B42 in general (T14-04 is partial).
+- Status: X1, P6 and the uniform bound of M1 stay open. Proposition HB is unchanged.
+
+### Reproduction (round 14)
+
+From the repository root, with Python 3.13 and NumPy 2.5: `python3 -I -B -` with each program on standard input. On the integrator's machine T14-03 took 14 seconds, and T14-01, T14-04 and T14-02, which replay the fixture, took 193, 200 and 255 seconds.
+
+T14-01: the piece 8412 and cap 559 after (433, 14).
+
+```python
+import sys
+from collections import Counter
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+               'research/jumbling/fixtures']
+import sim, trees as T, wj, restore as RS
+from exact import matvec, dot, affine_rank
+from sim.kernel import Evaluator, pullback_form
+
+C = sim.get_context(); fixture, M = wj.load(C, 'I_a')
+s = sim.State(C, filtered=False, menu=M)
+for rec in fixture['journal']['records'][:723]:
+    assert s.apply(sim.Twist.from_record(C, rec), journal=False).applied
+assert s.digest() == 'bd0cbd3337ef16085cba3498916b3c683f04735b5cc3737012c6414af422f7d7'
+before = T.factors(s.pose(8412))[0]
+assert s.apply(sim.Twist(C, 433, RS.element(M,433,14),
+    'menu', {'menu':M.name}), journal=False).applied
+after = T.factors(s.pose(8412))[0]
+assert (T.dist(before),T.branch(before),T.dist(after),T.branch(after)) == (4,0,6,4)
+assert T.branch(tuple(C.data.N[559])) == 3
+
+def classify(p):
+    return Evaluator(pullback_form(s.pose(p), C.data.N[559])).classify(C.regions.vform(p))
+
+d = C.data
+gap = d.NN*(d.NN+dot(d.N[433],d.N[559]))-2*d.KAPPA*d.KAPPA
+assert gap.sign() < 0 and classify(8412) == ('in',7)
+hs = [0 if p.kidx >= 0 else T.dist(T.factors(p.matrix)[0]) for p in s._poses]
+top = [p for p,i in enumerate(s.pose_id) if hs[int(i)] == 6]
+assert len(top) == 78 and len(set(s.pose_id[top].tolist())) == 1
+assert classify(6743) == ('straddle',3,2,0)
+V = {p:{tuple(matvec(s.pose(p),v)) for v in C.regions.vertices(p)} for p in top}
+edges = []
+for i,p in enumerate(top):
+    for q in top[i+1:]:
+        common = list(V[p] & V[q])
+        if len(common) >= 4 and affine_rank(common) == 3:
+            edges.append((p,q))
+seen = {top[0]}
+while True:
+    n = len(seen)
+    for p,q in edges:
+        if p in seen or q in seen: seen.update([p,q])
+    if len(seen) == n: break
+assert len(edges) == 161 and len(seen) == 78
+print('heights/branches', (T.dist(before),T.branch(before),T.dist(after),T.branch(after)))
+print('gap', gap)
+print('cap559', dict(Counter(classify(p)[0] for p in top)))
+print('internal straddler',6743,classify(6743))
+print('connected',len(seen),'edges',len(edges))
+print('digest',s.digest())
+```
+
+Output:
+
+```text
+heights/branches (4, 0, 6, 4)
+gap Q5(-309168,-61072,15625)
+cap559 {'straddle': 40, 'in': 38}
+internal straddler 6743 ('straddle', 3, 2, 0)
+connected 78 edges 161
+digest fd67aa19c068d9b25d122729082ce8b8cb57d0ea50a83114250bd1322b0dcc59
+```
+
+T14-02: the census of the fixture records and of the 96 jumbles at 433 (about four minutes).
+
+```python
+import sys
+from collections import Counter
+from functools import lru_cache
+sys.path[:0]=['research/jumbling/theory','research/jumbling','research/jumbling/fixtures']
+import numpy as np
+import sim, trees as T, wj, restore as RS
+from exact import matvec
+from sim.kernel import rows_form, sign5
+
+C=sim.get_context(); fixture,M=wj.load(C,'I_a')
+N1=C.data.N1.astype(object); N2=C.data.N2.astype(object)
+B=[T.branch(tuple(n)) for n in C.data.N]
+@lru_cache(None)
+def height(k):
+    return 0 if k[0]=='K' else T.dist(T.factors(k[1])[0])
+@lru_cache(None)
+def branch(k):
+    return T.branch(T.factors(k[1])[0])
+def heights(s):
+    return np.array([height(p.key) for p in s._poses])[s.pose_id]
+@lru_cache(None)
+def nb(g):
+    return {d for d in range(600) if d!=g and
+        (C.data.NN*(C.data.NN+T.qdot(C.data.N[g],C.data.N[d]))
+         -2*C.data.KAPPA*C.data.KAPPA).sign()>0}
+@lru_cache(None)
+def holding(k,p):
+    E,rows=rows_form([matvec(k[1],v) for v in C.regions.vertices(p)])
+    cand=np.arange(600)
+    for row in rows:
+        x=np.array(row[:4],object); z=np.array(row[4:],object)
+        a=125*(N1[cand]@x+5*(N2[cand]@z))-2*E*1452
+        b=125*(N1[cand]@z+N2[cand]@x)-2*E*484
+        cand=cand[np.array([sign5(int(u),int(v))>=0 for u,v in zip(a,b)])]
+        if not len(cand): break
+    return tuple(map(int,cand))
+def clone(s):
+    u=sim.State(C,filtered=False,menu=M)
+    u._poses=list(s._poses); u._lookup=dict(s._lookup); u.pose_id=s.pose_id.copy()
+    return u
+def audit(s,old,g,minimum):
+    now=heights(s); raised=np.flatnonzero((now>old)&(now>=minimum))
+    foreign=[]; bad=[]
+    for p in raised.tolist():
+        k=s._poses[int(s.pose_id[p])].key; b=branch(k)
+        for d in holding(k,p):
+            if B[d]==b: continue
+            foreign.append((p,d))
+            if d not in nb(g): bad.append((p,d))
+    return raised,foreign,bad
+
+s=sim.State(C,filtered=False,menu=M)
+events=pieces=six=0; failures=[]; bases={}
+for t,rec in enumerate(fixture['journal']['records'][:724],1):
+    old=heights(s)
+    assert s.apply(sim.Twist.from_record(C,rec),journal=False).applied
+    raised,foreign,bad=audit(s,old,rec['grip'],4)
+    if len(raised):
+        events+=1; pieces+=len(raised)
+        six+=sum(height(s._poses[int(s.pose_id[p])].key)>=6 for p in raised)
+    if bad: failures.append((t,len(bad)))
+    if t==182:
+        assert old[75338]==2 and heights(s)[75338]==4
+        assert (75338,75) in bad and B[75]==0
+        assert branch(s._poses[int(s.pose_id[75338])].key)==1
+    if t in (723,724): bases[t]=clone(s)
+print('fixture',events,pieces,six,len(failures),sum(n for t,n in failures))
+print('failures',failures)
+print('fixture724 digest',s.digest())
+for t,base in bases.items():
+    old=heights(base); failed=[]; totalbad=pairs=0; capcounts=Counter()
+    for i in RS.jumble_items(M):
+        u=clone(base)
+        assert u.apply(sim.Twist(C,433,RS.element(M,433,i),'menu',
+                                {'menu':M.name}),journal=False).applied
+        raised,foreign,bad=audit(u,old,433,6)
+        assert len(raised)==78 and set(old[raised].tolist())=={4}
+        pairs+=len(foreign); totalbad+=len(bad)
+        if bad: failed.append(i)
+        capcounts.update(d for p,d in bad)
+        for d in {d for p,d in foreign}:
+            cl=u.classify(d,need_inside=False,stop_at_straddle=True)
+            assert cl.straddle is not None and not cl.uncertain
+    print('extensions',t,failed,totalbad,pairs)
+    print('badcaps',dict(sorted(capcounts.items())))
+print('all extension foreign caps blocked')
+```
+
+Output:
+
+```text
+fixture 50 11724 0 21 1670
+failures [(182, 127), (210, 78), (221, 60), (271, 127), (300, 61), (354, 124), (401, 28), (423, 242), (431, 137), (455, 19), (510, 21), (521, 66), (528, 124), (536, 14), (550, 124), (568, 34), (628, 19), (659, 63), (668, 43), (676, 7), (723, 152)]
+fixture724 digest 99ebeeac74791692d73c0ad2dfa1281acab464345d3568d8dd9b6bd48a62e652
+extensions 723 [14, 21, 23, 43, 44, 45, 46, 47, 48, 49, 50, 51] 456 17844
+badcaps {221: 38, 258: 38, 271: 38, 344: 38, 388: 38, 398: 38, 436: 38, 454: 38, 467: 38, 534: 38, 559: 38, 564: 38}
+extensions 724 [14, 21, 23, 43, 44, 45, 46, 47, 48, 49, 50, 51] 456 17844
+badcaps {221: 38, 258: 38, 271: 38, 344: 38, 388: 38, 398: 38, 436: 38, 454: 38, 467: 38, 534: 38, 559: 38, 564: 38}
+all extension foreign caps blocked
+```
+
+T14-03: the hypotheses of the trap lemma at H6, from the H6 table of stage 04.
+
+```python
+import sys, gzip, json
+from pathlib import Path
+from collections import Counter
+import numpy as np
+sys.path[:0]=['research/jumbling/theory','research/jumbling']
+import sim, restore as RS, trees as T
+from exact import matmul, matvec, transpose, dot, affine_rank
+from sim.kplus import matrix_from_json, to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+
+C=sim.get_context(); M=RS.menu('I_a'); d=C.data; g=433
+path=Path('research/jumbling/restoration/04-card5-lattice-invariants/data/t-T723x433-12.json.gz')
+with gzip.open(path,'rt') as f: tab=json.load(f)
+P=[matrix_from_json(m) for m in tab['poses']]
+s=sim.State(C,filtered=False,menu=M)
+ids=np.array([s._intern_matrix(m) for m in P],np.int32)
+s.pose_id[:]=ids[np.array(tab['pose_id'],np.int32)]
+assert s.digest()==tab['digest']=='fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39'
+hb=[(T.dist(T.factors(m)[0]),T.branch(T.factors(m)[0])) for m in P]
+K=[p for p,i in enumerate(tab['pose_id']) if hb[i][0]==6]
+assert len(K)==78 and {hb[tab['pose_id'][p]] for p in K}=={(6,4)}
+Ei=transpose(RS.element(M,g,12))
+P0={p:to_tuple(matmul(Ei,P[tab['pose_id'][p]])) for p in K}
+assert len(set(P0.values()))==1
+Q=next(iter(P0.values()))
+assert (T.dist(T.factors(Q)[0]),T.branch(T.factors(Q)[0]))==(4,0)
+Vs={p:{tuple(matvec(P0[p],v)) for v in C.regions.vertices(p)} for p in K}
+V=sorted(set.union(*Vs.values()),key=repr); vf=rows_form(V)
+assert len(V)==74
+adj={p:set() for p in K}
+for z,p in enumerate(K):
+    for q in K[z+1:]:
+        common=Vs[p]&Vs[q]
+        if len(common)>=4 and affine_rank(list(common))==3:
+            adj[p].add(q); adj[q].add(p)
+seen={K[0]}; todo=[K[0]]
+while todo:
+    for q in adj[todo.pop()]-seen:
+        seen.add(q); todo.append(q)
+assert seen==set(K)
+print('island',len(K),'vertices',len(V),'edges',sum(map(len,adj.values()))//2,'connected',len(seen))
+NB={c for c in range(600) if c!=g and
+    (d.NN*(d.NN+dot(d.N[g],d.N[c]))-2*d.KAPPA*d.KAPPA).sign()>0}
+inner=[int(p) for p in d.cap_members(g) if int(d.orbit_id[p]) in {0,1,2,3,6}]
+assert NB==set.union(*(set(d.signature(p)) for p in inner))-{g}
+print('NB',sorted(NB))
+whole=Counter(); jumbles=set(RS.jumble_items(M)); outside=[]
+for j in range(len(M.items)):
+    A=RS.element(M,g,j); AP=to_tuple(matmul(A,Q))
+    h=(T.dist(T.factors(AP)[0]),T.branch(T.factors(AP)[0]))
+    if j not in jumbles:
+        assert h[0]==4
+        continue
+    assert h==(6,4)
+    holds=[]
+    for c in range(600):
+        ev=Evaluator(pullback_form(A,d.N[c]))
+        if all(ev.sign_row(vf[0],row)>=0 for row in vf[1]): holds.append(c)
+    assert g in holds
+    whole[len(holds)]+=1
+    outside.extend((j,c) for c in holds if c!=g and c not in NB)
+assert not outside
+print('jumble_height6',len(jumbles),'retained_height4',len(M.items)-len(jumbles))
+print('whole_holding_sizes',dict(sorted(whole.items())),'outside_NB',outside)
+for label in ['H6','T723']:
+    cl=s.classify(g,need_inside=True,stop_at_straddle=False)
+    assert cl.straddle is None and not cl.uncertain
+    qi=[int(p) for p in cl.inside if int(d.orbit_id[p]) in {0,1,2,3,6}]
+    flags=s.lattice_flags(); nlat=sum(bool(flags[p]) for p in qi)
+    assert len(qi)==68 and nlat==(0 if label=='H6' else 68)
+    print(label,'inner',len(qi),'inner_lattice',nlat,'digest',s.digest())
+    if label=='H6':
+        A=RS.element(M,g,45); assert A==to_tuple(Ei)
+        out=s.apply(sim.Twist(C,g,A,'menu',{'menu':M.name}),journal=False)
+        assert out.applied and out.moved==2071
+R=[dot(v,v)-dot(d.N[g],v)*dot(d.N[g],v)/d.NN for v in V]
+hi=max(R)
+print('axis_radius_squared_max',(hi.a,hi.b,hi.d))
+```
+
+Output:
+
+```text
+island 78 vertices 74 edges 161 connected 78
+NB [274, 320, 326, 340, 373, 390, 430, 434, 448, 451, 458, 463, 493, 518, 523, 532]
+jumble_height6 48 retained_height4 12
+whole_holding_sizes {4: 12, 5: 36} outside_NB []
+H6 inner 68 inner_lattice 0 digest fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39
+T723 inner 68 inner_lattice 68 digest bd0cbd3337ef16085cba3498916b3c683f04735b5cc3737012c6414af422f7d7
+axis_radius_squared_max (457739, -199012, 6250)
+```
+
+T14-04: the nine 4–2 contacts at T723 and H6.
+
+```python
+import sys
+sys.path[:0]=['research/jumbling/theory','research/jumbling','research/jumbling/fixtures']
+import sim, trees as T, wj, restore as RS
+from exact import Q5 as Q, dot, matvec, matmul, transpose
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form
+
+POINTS=[
+ (13336,2431,((916165,-119737,165000),(432280,-157471,82500),(78655,47681,82500),(-87545,99351,165000))),
+ (13336,2436,((37315,22332,22000),(21127,-549,22000),(18801,34963,44000),(1257,17393,44000))),
+ (13336,9349,((41149,21027,22000),(5701,-945,4000),(21870,11357,22000),(18339,8915,44000))),
+ (158513,162150,((-404945,-17187,165000),(123435,-74757,55000),(8575,-101394,82500),(-310665,238291,82500))),
+ (158513,162158,((-17861,-2957,8800),(-25269,-5549,44000),(-82711,-14415,44000),(37357,35153,44000))),
+ (158513,171358,((-34658,-11537,22000),(5673,-20759,44000),(-19501,-4065,11000),(31975,38033,44000))),
+ (169566,156793,((-25977,-11774,22000),(23123,2439,11000),(-52241,-37603,44000),(-1819,2729,8800))),
+ (169566,162806,((-176195,-11163,82500),(687905,-114053,165000),(-491815,109366,82500),(-406495,221257,165000))),
+ (169566,173052,((-41739,-29047,44000),(18943,1647,8800),(-85091,-22807,44000),(5647,5851,44000))),
+]
+EXPECTED={13336:[0,1,21,27],158513:[451,520,559],169566:[389,447,452]}
+ANCHOR={13336:12,158513:517,169566:525}
+C=sim.get_context(); d,kp=C.data,C.kplus
+fixture,M=wj.load(C,'I_a'); s=sim.State(C,filtered=False,menu=M)
+G={c:kp.matrix(0) for c in ANCHOR.values()}
+for rec in fixture['journal']['records'][:723]:
+    tw=sim.Twist.from_record(C,rec)
+    assert s.apply(tw,journal=False).applied
+    if tw.grip in G: G[tw.grip]=to_tuple(matmul(tw.matrix,G[tw.grip]))
+assert s.digest()=='bd0cbd3337ef16085cba3498916b3c683f04735b5cc3737012c6414af422f7d7'
+# INV identifies out status with the cumulative local rotation outside K+.
+assert all(kp.index_of_matrix(g)<0 for g in G.values())
+before={p:s.pose(p) for a,b,_ in POINTS for p in (a,b)}
+for a,b,_ in POINTS:
+    assert int(d.orbit_id[a])==9 and int(d.orbit_id[b]) in {4,7,8}
+    assert T.dist(T.factors(before[a])[0])==4
+    assert T.dist(T.factors(before[b])[0])==2
+assert s.apply(sim.Twist(C,433,RS.element(M,433,12),'menu',
+                        {'menu':M.name}),journal=False).applied
+assert s.digest()=='fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39'
+assert all(s.pose(p)==g for p,g in before.items())
+# The three witness grips stay out: the last letter was at 433.
+for a,b,record in POINTS:
+    x=tuple(Q(*v) for v in record); faces=[]
+    for p in (a,b):
+        v=matvec(transpose(s.pose(p)),x); sig=set(d.signature(p)); tight=[]
+        for c in range(600):
+            z=dot(d.N[c],v)-d.KAPPA; side=1 if c in sig else -1
+            assert z.sign()*side>=0
+            assert (d.NN-dot(d.N[c],v)).sign()>0
+            if z.is_zero(): tight.append(c)
+        assert len(tight)==1
+        c=tight[0]
+        faces.append((tuple(matvec(s.pose(p),d.N[c])),1 if c in sig else -1))
+    assert faces[0][0]==faces[1][0] and faces[0][1]==-faces[1][1]
+for p,want in EXPECTED.items():
+    branch=T.branch(T.factors(s.pose(p))[0]); vf=C.regions.vform(p)
+    held=[c for c in range(600) if T.branch(tuple(d.N[c]))!=branch
+          and Evaluator(pullback_form(s.pose(p),d.N[c])).classify(vf)[0]=='in']
+    assert held==want
+    anchor=ANCHOR[p]
+    for c in held:
+        assert c!=anchor
+        assert (d.NN*(d.NN+dot(d.N[anchor],d.N[c]))-Q(2)*d.KAPPA*d.KAPPA).sign()>0
+    print(p,held,'NB witness',anchor)
+print('T723 and H6: 9 exact 4-2 contacts; all 10 foreign-cap incidences NB-covered')
+```
+
+Output:
+
+```text
+13336 [0, 1, 21, 27] NB witness 12
+158513 [451, 520, 559] NB witness 517
+169566 [389, 447, 452] NB witness 525
+T723 and H6: 9 exact 4-2 contacts; all 10 foreign-cap incidences NB-covered
+```
+
+## 20. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -2936,3 +3317,4 @@ print('height_branch',sorted(pairs),'digest',s.digest())
 - After rounds 13 and 13b (section 18):
   - Section 5, gap M1: the finiteness item gives P6 and its equivalence with the bound 6 on left heights (T13-03), the exact cap decisions of REFX (T13-01), where the blocking comes from (T13b-02, T13b-05), the open case, and the fact about grip 433.
   - Section 6.2: the e2run24 run to its end, and the fix to `cellpure3.py`, which stopped with a `KeyError` when no pair tool moves the unit's cell and now reports that no cycle passes through it.
+- After round 14 (section 19): section 5, gap M1, the finiteness item gives the trap lemma (T14-03), the failure of RA for single pieces (T14-01, T14-02) and the cases that stay open.

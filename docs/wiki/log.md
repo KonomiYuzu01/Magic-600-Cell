@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: a raised island is trapped by its raiser (round 14)
+Senior review round 14 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 19 (model review; the integrator re-ran its four exact programs): the statement that the raising grip blocks every cap of another branch holding a raised piece is false at heights 4 and 6, but a trap lemma for whole islands holds: if a grip that is not out raises a connected island and a finite geometric condition holds, the island stays raised and every cap that holds it whole stays blocked until that grip returns. The condition holds at the deep state H6, so P6 holds there until the island drops back to height 4; X1, P6 and the uniform bound of gap M1 stay open.
+
 ## [2026-10-15] update | Jumbling: finiteness, rounds 13 and 13b
 Senior review rounds 13 and 13b are in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 18 (model review; the integrator re-ran every computation): the bound 6 on left heights is equivalent to P6, which says that every cap of another branch holding a piece of height at least 6 is straddled; inside the inscribed ball the only blocking is that of the 16 grips nearest an out grip; a cap that holds part of a high island is blocked by the island; and at the deep state H6 every cap that holds the island is among the 16 grips nearest the grip whose jumble raised it. A new certificate in stage 04, REFX-EXACT, recomputes every cap decision behind Proposition HB exactly, and whether R(I_a) is finite stays open; separately, the state-only v4 run on e2run24 ended at 194 off pieces after 9 steps and 7,186 twists (replayed independently), and `cellpure3.py` now reports a unit whose cell no pair tool moves instead of stopping with a `KeyError`.
 
