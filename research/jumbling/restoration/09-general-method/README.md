@@ -43,8 +43,12 @@ raise, a letter at the grip that made the last raise turns the pieces so that a 
 them whole. At height 14 the raiser traps them until it returns. Round 18 showed that this trap is decided by four
 orientations and not by height, that at most 120 grips are out at once, and, with two lemmas of the integrator not
 yet reviewed, that the relay stops at 14 because the pieces lie deep in the raiser's cap and each return of the
-raiser acts as one retained letter at it. Whether left heights are bounded, and so whether the reachable set is
-finite, stays open.
+raiser acts as one retained letter at it. Round 19 proved both lemmas and showed that traps cannot carry the height:
+heights without bound need raises at grips that are already out, or fresh raises where the trap condition fails,
+again and again. A lemma of the integrator, not yet reviewed, explains what such raises need: a jumble maps exactly
+the cuts of its own branch onto cuts, so the pieces it moves off the lattice block the cuts of the other branches
+that run through them, and the raise to 12 used pieces that the previous raiser had returned to the lattice. Whether
+left heights are bounded, and so whether the reachable set is finite, stays open.
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver

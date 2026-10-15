@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: traps cannot carry the height (round 19)
+Senior review round 19 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 24 (model review; the integrator re-ran its four exact programs and ran its own experiments during the round): both integrator lemmas of round 18 hold, and traps cannot carry the height, so heights without bound need raises at grips that are already out, or fresh raises where the trap condition fails, without end; at most three out grips hold the high pieces at once. A frame lemma of the integrator, not yet reviewed, explains the blocking: a jumble maps exactly the cuts of its own branch onto cuts, so the pieces it moves off the lattice block the cuts of the other branches that run through them, and the raise to height 12 used pieces that the previous raiser had returned to the lattice; whether left heights are bounded, and so whether R(I_a) is finite, stays open.
+
 ## [2026-10-15] update | Jumbling: why the relay stops at height 14 (round 18)
 Senior review round 18 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 23 (model review; the integrator re-ran its exact programs and ran its own experiments during the round): the trap condition of the trap lemma is decided by four orientations at the raiser and not by height, and at most 120 grips are out at once, so a relay of raises at grips that were in needs returns to go on without bound. Two lemmas of the integrator, not yet reviewed, explain the stop at 14: each return of the raiser acts as one retained letter at it before the raise, and the trap holds because the pieces lie deep in the raiser's cap; whether left heights are bounded, and so whether R(I_a) is finite, stays open.
 
