@@ -40,8 +40,11 @@ stays trapped until that grip returns under a finite condition, and round 15 fou
 the fixture records 1 to 723 that reach height 8, so P6 is false. Round 16 found no height 10 near that word and
 closed two routes to a proof or a pump. Round 17 reached height 14 with an exact word of 152 letters: before each new
 raise, a letter at the grip that made the last raise turns the pieces so that a free cap of another branch holds
-them whole. At height 14 the raiser traps them until it returns. Whether left heights are bounded, and so whether
-the reachable set is finite, stays open.
+them whole. At height 14 the raiser traps them until it returns. Round 18 showed that this trap is decided by four
+orientations and not by height, that at most 120 grips are out at once, and, with two lemmas of the integrator not
+yet reviewed, that the relay stops at 14 because the pieces lie deep in the raiser's cap and each return of the
+raiser acts as one retained letter at it. Whether left heights are bounded, and so whether the reachable set is
+finite, stays open.
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
