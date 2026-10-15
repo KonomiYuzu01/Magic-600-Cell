@@ -41,10 +41,27 @@ Along the way:
 - **A_J = C2^34 × C5^2** (stage 04): the group of corrections that a jumbled history can leave on the lattice. The
   lower bound is a certificate (40 generator words); the upper bound is proved (Theorems A and B5).
 - **The lattice restorer (Theorem R of stage 09, proved):** with a correction library that spans A_J, every
-  configuration with all pieces on the lattice is solved. Stage 03 has the weaker form: the restorer solves a
-  configuration or returns an exact failure certificate. The library has 36 macros, of rank 34 over F2 and 2 over F5.
+  reachable configuration with all pieces on the lattice is solved, in the sense of stickers. Stage 03 has the
+  weaker form: the restorer solves a configuration or returns an exact failure certificate. The library has 36
+  macros, of rank 34 over F2 and 2 over F5. (The senior review of 15 October 2026 restricted both forms to
+  reachable configurations: an unreachable lattice configuration with displaced centres has nu = 0.)
 - **Lemma U (stage 08, proved):** a clean step lowers the off count by at least its unit's size, so the off-lattice phase
   always terminates.
+- **A clean step always exists (stage 09, proved in the senior review):** at every reachable state with an off
+  piece, an exhaustive search over words that reads only the state finds a clean step. There is no bound on its
+  length.
+- **Theorem M\*, a general method (stage 09, proved in the senior review):** fast heuristic steps, that
+  exhaustive search as a fallback when they find nothing, then the lattice phase with the corrections last. It
+  restores every reachable configuration from the current state alone, in at most as many clean steps as there
+  are off pieces at the start. The driver v4 that was run is a partial implementation: it has no fallback yet.
+  Where the pure twist and transport words apply, a step has an explicit bound; units with pieces of height four
+  lie outside them.
+- **Theorem C, the pure twist (stage 09, proved in the senior review):** if the two poles of the carrier's edge
+  cell and one common neighbour are free, a word of at most 720 twists turns that cell alone and leaves every
+  other piece at its exact pose. Closed by vacating the cell, it gives a clean step. Carriers in vertex cells are
+  turned in place too (at most 104 twists); carriers in triangle and tetrahedron cells cannot be, but pure
+  transport words land them in another cell of the same kind (at most 240 and 192 twists). These bounds assume
+  the class's grips are free.
 
 ## The method, in two phases
 
@@ -64,10 +81,10 @@ new standard removes from the earlier programme, and the reproduction commands.
 
 | Gap | What is missing | Status |
 | --- | --- | --- |
-| M1 | A theorem that every reachable state with an off piece has a clean step that the method finds | **open**; the core gap |
-| M2 | The lattice cascade is 1.5 to 2.2 × 10^8 twists, about 5 to 7 years at one twist per second, against "a person can replicate it" | **open** |
+| M1 | A construction from the state alone with a bound on its length, and a proof that the driver always finds a step. Bare existence is proved (exhaustive search), and with it as a fallback the method is complete (Theorem M\*); a bound for every state exists if and only if R(I_a) is finite | **open**; the core gap |
+| M2 | The lattice cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, about 5 to 7 years at one twist per second, and is at most 1,324,686,034 twists for every input (proved), against "a person can replicate it" | **open** |
 | E1 | Coverage: deep scrambles at the I_a@40 scale (about 94,000 off pieces) were not run with the method | **not run** |
-| E2 | A written proof of Lemma C (the pure twist, measured on 4 states), and independent mathematical review of Lemma CM, Proposition GH, Theorem R and the A_J upper bound | **not done** |
+| E2 | Review of the proofs. The senior model review of 15 October 2026 checked stages 08 and 09 and the A_J upper bound, proved Lemma C as Theorem C and corrected Lemma CM and Theorem R ([record](09-general-method/SENIOR-REVIEW.md)) | model review **done**; human review **not done** |
 
 ## Stages
 
@@ -127,6 +144,7 @@ archives. Each `IMPORT-MANIFEST.json` names its source package:
 
 Everything here is exact computation on synthetic geometry in headless Linux runs. Labels: **proved** (the author's
 proof), **certificate** (an exact computation with a replayable record), **measured** (a result on finite inputs),
-**open**. Except where a stage README names a review, the new proofs have no independent mathematical review.
+**open**. The senior model review of 15 October 2026 ([record](09-general-method/SENIOR-REVIEW.md)) checked the
+proofs of stages 03, 04, 08 and 09; no human has reviewed them.
 
 Not run: Windows, DirectX, the native host regression, input, long sessions and performance measurements.

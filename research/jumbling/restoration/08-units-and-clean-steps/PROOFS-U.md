@@ -251,8 +251,9 @@ other piece of type t is off (f_t = 0), this is |Bad(W)_t| <= |U_t|.
 
 *Proof.* Lemma D in its equivalent form, with off_t(Z) = |U_t| + f_t. QED
 
-For the words of the runs the landing lies in Bad(W) (Remark L), so the bound says Bad(W)_t = L_t: W may push no
-lattice chamber of type t off the lattice except the ones where U lands. Bad(W) depends on the word alone (the lattice
+For the words of the runs the landing lies in Bad(W) (Remark L). When f_t = 0 the bound then says Bad(W)_t = L_t:
+W may push no lattice chamber of type t off the lattice except the ones where U lands. (With f_t > 0 only the
+inequality holds: at depth one a coset letter has the whole cap as its Bad set while U lands in part of it.) Bad(W) depends on the word alone (the lattice
 ghosts do not depend on the state), so the condition can be checked once per word and holds at every later state.
 Conjugation does not help: for V a word of K+ letters, Bad(V W V^-1) = V^-1(Bad(W)) as a set of chambers, and K+
 letters map chambers of a type onto chambers of the same type, so the counts per type are the same. The word W itself
@@ -1029,8 +1030,9 @@ admissible at Z, keeps every lattice piece on the lattice, keeps every other off
 rigidly by k. Let P0 be a word of such letters, with the hypothesis checked again before each letter for the moved B.
 Then P0 moves B rigidly by the product g of its elements and moves no other off piece; if a hole h is glued to B
 (conditions 1 to 3 of Proposition GH), the vacancy from h ends at g(h). Hence, if V W V^-1 is a clean step at P0(Z)
-for a unit A with B in its free set, then P0 V W V^-1 is a clean step for A at Z with free set B. The off count falls
-by at least |A|, and by |A| + |B| if W also lands g(B) (Lemma U).
+for a unit A with a free set F that contains B, then P0 V W V^-1 is a clean step for A at Z with the same free set F.
+(The three constructions below use F = B.) The off count falls by at least |A|, and by |A| + |B| if W also lands
+g(B) (Lemma U).
 
 *Proof.*
 1. No region straddles cut c: no off piece does by hypothesis, and lattice regions never straddle. So (c, k) is
@@ -1043,9 +1045,13 @@ by at least |A|, and by |A| + |B| if W also lands g(B) (Lemma U).
 4. Each letter of P0 has a cap that holds all of the current image of B, unstraddled. By the remark after the proof
    of Proposition GH, the vacancy from a hole glued to B moves with B, so it ends at g(h).
 5. P0 keeps every lattice piece of Z on the lattice and every off piece outside B at its exact pose, and no off
-   piece lands. So the lattice pieces of P0(Z) are those of Z, and the off pieces of P0(Z) outside A and B are those
-   of Z at their poses. A clean step at P0(Z) for A with free set B keeps all of them so (definition of a clean step),
-   and Lemma U gives the fall of the off count. QED
+   piece lands. So the lattice pieces of P0(Z) are those of Z, and the off pieces of P0(Z) outside A and F are those
+   of Z at their poses, since B lies in F. A clean step at P0(Z) for A with free set F keeps all of them so
+   (definition of a clean step), and the pieces of B, moved by P0, are in F. Lemma U gives the fall of the off
+   count. (Version 3.1 stated the conclusion with free set B for any free set containing B. That is false: an
+   inverse history at stop62@233 is clean for 61@23955 with free set the other two carriers, but not with free set
+   86@1040 alone. Corrected after the senior review of 15 October 2026; the constructions below are unaffected.)
+   QED
 
 **Construction (measured; the replay decides).** Start: stop62@233 (`certs/stop62/z233/inputs/stop62-233-table.json`,
 digest `46496bb1...`). Off: the three carriers 86@1040, 61@23955 and 86@64184; each carries 2 pieces of type 7 and 1

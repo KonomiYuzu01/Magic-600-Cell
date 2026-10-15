@@ -268,8 +268,9 @@ the inner pieces in cap d are exactly its cohort (another cohort inside cap d wo
 anchor, which shares inner slots with d). If g x_d is a jumble element the cohort stays anchored; if g x_d = a is
 in A4_d the cohort returns to the lattice and refills its slots bijectively. INV holds after the twist.
 Potential: for X satisfying INV let V(X) be the labelled inner state obtained by replacing every anchored pose
-x_c k by k. Choosing x_c a with a in A4_c instead changes V(X) by the retained twist (c, a) on inner orbits, so
-psi(X) = nu restricted to I'' of V(X) is well defined by F1. In case (ii) a retained twist changes psi by its own
+x_c k by k. Choosing x_c a with a in A4_c instead replaces k by a^-1 k (the actual pose x_c k is fixed), so it
+changes V(X) by the retained twist (c, a^-1) on inner orbits, and psi(X) = nu restricted to I'' of V(X) is well
+defined by F1. In case (ii) a retained twist changes psi by its own
 nu (zero by F1) and a jumble leaves V unchanged; in case (iii) an anchored step leaves V unchanged and a return
 changes V by the retained (d, a). So psi is invariant along every admissible word, psi(solved) = 0, and on a
 lattice configuration no piece is anchored, so psi = nu restricted to I''. QED
@@ -298,6 +299,15 @@ and since that jumble every twist that moved p was a twist at c; otherwise cpl i
 system on refined states with the rules R1 to R5 below, started at the lattice class with O empty. Then along every
 admissible word from solved, the refined states of p after the twists that move p form a path in R, and twists that
 do not move p leave the refined state unchanged.
+
+*Frame convention.* The refined state keeps only the class j, so grips and twists are written in the frame of the
+canonical region R_j of the class. When p's actual region is k R_j with k in K+, a physical grip d and a physical
+twist (d, h) are written as d' = k^-1(d) and h' = k^-1 h k, and O and the grip of cpl are transported in the same
+way. The rules below are read in this frame. `scripts/refexact.py` uses this convention: it writes O in the frame
+of the canonical region of the class and transports grips by exact K+ permutations after each transition. (Without
+it, R1 would be ill defined: for k in A4_d and h in Lambda_d with h k h^-1 outside A4_d, the poses 1 and k have the
+same class and empty O, but the physical twist h gives the different classes K+ h and K+ h k. Stated after the
+senior review of 15 October 2026.)
 
 - R1 (move). A twist (d, h) moves p iff p lies in cap d; it is admissible only if d is not in N15(e) u N25(e) for an
   e in O other than d (blocking lemma). The class changes from j to the class of h R_j.

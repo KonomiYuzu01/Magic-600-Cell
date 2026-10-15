@@ -113,13 +113,21 @@ The correction words are I_a words; the retained solve uses only retained twists
 
 ### 3.2 Correctness
 
-**Theorem R.** For every configuration Y the restorer returns exactly one of:
-(a) a word w (corrections, then the retained program) with Y·w = solved;
+**Theorem R.** For every reachable configuration Y the restorer returns exactly one of:
+(a) a word w (corrections, then the retained program) with Y·w = solved, in the sense of stickers (every sticker
+at its home; a pose may differ by a rotation that fixes all of a piece's stickers);
 (b) "not a lattice configuration";
 (c) a failure certificate showing that ν(Y) is not in the span of ν(M_1), …, ν(M_r).
 If the library spans 𝒜_J := ν(G_J), then (c) never happens for a reachable lattice configuration.
 
 *Proof.* Each M_i was replayed from solved: every twist admissible and in the I_a menu, the end on the lattice. By card 2, Lemma 2 (the decorated shape decides admissibility; card 5, fact S), M_i is admissible from every reachable lattice configuration and acts on all of them by one fixed relabelling ρ(M_i), so ν(Y·M_i) = ν(Y) + ν(M_i) (ν is a homomorphism, F1). After the correction ν = 0, so the relabelling lies in 𝒦, which equals G by section 2.4. The cascade is an explicit retained word; the restorer asserts the identity on all 259,800 stickers after it, and the checker of section 3.3 confirms it independently. If Y is reachable and on the lattice, Y = solved · u for a lattice-returning word u, so ν(Y) = ν(ρ(u)) ∈ 𝒜_J; when the library spans 𝒜_J, step 3 has a solution. □
+
+*Scope (stated after the senior review of 15 October 2026).* An earlier version of this theorem said "every
+configuration". That is too strong: give every piece the same rotation k of order three in K+. This is a lattice
+configuration with displaced centres, and ν = 0 (ν takes values in groups of exponent dividing 10), but the
+retained cascade cannot restore the centres. The proof above uses reachability twice: in card 2, Lemma 2, and in
+the last sentence. The stage 09 restorer applies the corrections last. The same argument covers that order: choose
+C with ν(C) = −ν(Y), put T = solved · C⁻¹, and solve Y relative to T, whose ν is zero; then Y·R·C = solved.
 
 So the restorer is complete exactly when its library spans 𝒜_J. That is card 5, question 3.1, which is open; section 3.5 gives what is known.
 
