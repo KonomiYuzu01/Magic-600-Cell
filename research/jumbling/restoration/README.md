@@ -59,19 +59,21 @@ Along the way:
   Where the pure twist and transport words apply, a step has an explicit bound; units with pieces of height four
   lie outside them.
 - **Theorem C, the pure twist (stage 09, proved in the senior review):** if the two poles of the carrier's edge
-  cell and one common neighbour are free, a word of at most 720 twists turns that cell alone and leaves every
-  other piece at its exact pose. Closed by vacating the cell, it gives a clean step. Carriers in vertex cells are
+  cell and one common neighbour are free, a word of at most 720 twists turns that cell alone: every piece outside
+  the cell keeps its exact pose. Closed by vacating the cell, it gives a clean step. Carriers in vertex cells are
   turned in place too (at most 104 twists); carriers in triangle and tetrahedron cells cannot be, but pure
-  transport words land them in another cell of the same kind (at most 240 and 192 twists). These bounds assume
-  the class's grips are free.
+  transport words land them in another cell of the same kind (at most 240 and 192 twists). A transport word moves
+  several whole cells of that kind and fixes every other cell. These bounds assume the class's grips are free.
 
 ## The method, in two phases
 
 1. **Off-lattice phase.** Split the off pieces into *units*: rigid blocks, or one frame part of a multi-frame block.
-   A *clean step* for a unit is a word V·W·V⁻¹: W puts the unit on the lattice, V first empties the chambers W
-   needs (from a peeling certificate), and V⁻¹ undoes it. Every lattice piece stays on the lattice and every other
-   off piece keeps its exact pose. When no such step is found, a *pure twist* (commutator powers around a cycle of
-   cells, exponents solved over Z5) turns one carrier's cell alone.
+   A *clean step* for a unit is a word after which the unit and every piece that was on the lattice are on the
+   lattice, and every off piece outside the unit and the step's declared *free set* keeps its exact pose. The fast
+   steps have the form V·W·V⁻¹: W puts the unit on the lattice, V first empties the chambers W needs (from a
+   peeling certificate), and V⁻¹ undoes it; a *pure twist* (commutator powers around a cycle of cells, exponents
+   solved over Z5) turns one carrier's cell alone. When the fast steps find nothing, an exhaustive search over the
+   menu words in order of length takes the step (Theorem M\*).
 2. **Lattice phase.** With every piece on the lattice, compute the invariant ν (43 bits over F2 and 2 values over
    F5), choose the correction from the library, solve the rest with the retained puzzle's cascade, and apply the
    correction last.
@@ -84,7 +86,7 @@ new standard removes from the earlier programme, and the reproduction commands.
 | Gap | What is missing | Status |
 | --- | --- | --- |
 | M1 | A construction from the state alone with a bound on its length. Bare existence is proved (exhaustive search), and with it as a fallback the method is complete (Theorem M\*), which the driver implements; a bound for every state exists if and only if R(I_a) is finite | **open**; the core gap |
-| M2 | The committed lattice cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, about 5 to 7 years at one twist per second. With 31 of its 35 seeds replaced by shorter relocated elements (round 7), it restores the two synthetic inputs in 4.5 × 10^7 twists, about 1.4 years, and needs at most 71,516,526 twists for every input, or at most 4,841,151 actions for a person who replays 70 stored macros; some input needs at least 224,601 twists (proved, model review). Against "a person can replicate it" | **open**; bounds **proved** |
+| M2 | The committed lattice cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, about 5 to 7 years at one twist per second. With 31 of its 35 seeds replaced by shorter relocated elements (round 7), it restores the two synthetic inputs in 4.5 × 10^7 twists, about 1.4 years, and its cascade needs at most 71,516,526 twists for every input (the corrections at most 25,852 more), or at most 4,841,151 actions for a person who replays 70 stored macros; with retained words only, some input needs at least 224,601 twists (proved, model review). Against "a person can replicate it" | **open**; bounds **proved** |
 | E1 | Coverage: deep scrambles at the I_a@40 scale (about 94,000 off pieces) were not run with the method | **not run** |
 | E2 | Review of the proofs. The senior model review of 15 October 2026 checked stages 08 and 09 and the A_J upper bound, proved Lemma C as Theorem C and corrected Lemma CM and Theorem R ([record](09-general-method/SENIOR-REVIEW.md)) | model review **done**; human review **not done** |
 

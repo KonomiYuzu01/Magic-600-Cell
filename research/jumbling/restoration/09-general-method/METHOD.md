@@ -129,7 +129,7 @@ solved configuration (identity labels on all 259,800 stickers).
   - The cascade with the replaced seeds restores the two synthetic inputs in 45,009,802 and 44,940,982 twists
     instead of 229,763,734 and 230,484,810 (computed; replayed by the stage 03 checker).
   - For every input it then needs at most 71,516,526 twists as it runs (46,191,246 on average over G); the
-    construction with the shorter single of M2-03 needs at most 71,514,544.
+    construction with the shorter single of M2-03 needs at most 71,514,544. The corrections add at most 25,852.
 
   These are still machine-scale (section 5, gap M2).
 
@@ -144,8 +144,8 @@ solved configuration (identity labels on all 259,800 stickers).
 | Theorem B, Proposition N, Theorem A | Vacancy for Bad(W): necessary counts N1/N2; a peeling certificate gives V, its thresholds and a length bound. One certificate must cover all targets at once: separate certificates per orbit do not prove it. | proved (Codex math review; the simultaneity condition from the Codex senior review, `SENIOR-REVIEW.md` section 9) |
 | Lemma D | Per-type count: \|Bad_t(W)\| is at most the number of holes of type t; off counts by type only fall along a run. | proved (Codex senior review, 15 October 2026; the remark after Corollary D'' needs f_t = 0, fixed) |
 | Proposition GH, Lemma CM | Glued holes move with their carrier; a carrier moved by free K+ letters keeps the step clean, with the same free set. | proved (Codex senior review, 15 October 2026: GH as written; the statement of CM corrected to keep the same free set, which the constructions use) |
-| Lemma C (class-cell pure twist) | If the two poles of the carrier's edge cell X and one common neighbour are free, a word of at most 720 letters at those three grips twists X alone and leaves every other piece at its exact pose. Closed by a peeling certificate V that vacates X, V W V^-1 is a clean step of at most 2 L_cert + 720 letters. | proved (Codex senior review, 15 October 2026; no human review): an exact certificate on one triangle of edge cells, transported by symmetry, re-run by the integrator. The code's cheaper powers may also permute lattice pieces outside X, which a clean step allows; the claim that they return every other content to its point was false. Applied on 4 states, each word replayed exactly; at s86a Bad(W) equals X exactly (checked). `SENIOR-REVIEW.md` sections 4 and 5 |
-| Other cell kinds | A real carrier in a vertex cell lands in place (at most 104 letters); one in a triangle or tetrahedron cell cannot, but a pure transport word lands it in another cell of the same kind (at most 240 or 192 letters), every other piece keeping its exact pose. A rigid block of one frame lies in one cell. | proved (Codex senior review, 15 October 2026; no human review), with exact certificates re-run by the integrator; assumes the class's grips are free. Not used by the driver's heuristic steps, whose pure twist covers edge cells only; the fallback covers those units. `SENIOR-REVIEW.md` section 6 |
+| Lemma C (class-cell pure twist) | If the two poles of the carrier's edge cell X and one common neighbour are free, a word of at most 720 letters at those three grips twists X alone: every piece outside X keeps its exact pose (corrected in round 8, R8-04). Closed by a peeling certificate V that vacates X, V W V^-1 is a clean step of at most 2 L_cert + 720 letters. | proved (Codex senior review, 15 October 2026; no human review): an exact certificate on one triangle of edge cells, transported by symmetry, re-run by the integrator. The code's cheaper powers may also permute lattice pieces outside X, which a clean step allows; the claim that they return every other content to its point was false. Applied on 4 states, each word replayed exactly; at s86a Bad(W) equals X exactly (checked). `SENIOR-REVIEW.md` sections 4 and 5 |
+| Other cell kinds | A real carrier in a vertex cell lands in place (at most 104 letters), and every piece outside that cell keeps its exact pose. One in a triangle or tetrahedron cell cannot, but a pure transport word lands it in another cell of the same kind (at most 240 or 192 letters). A transport word moves several whole cells of that kind (each seed cycles three) and fixes every other cell, so its closure needs the other chambers of those cells vacant (corrected in round 8, R8-04). A rigid block of one frame lies in one cell. | proved (Codex senior review, 15 October 2026; no human review), with exact certificates re-run by the integrator; assumes the class's grips are free. Not used by the driver's heuristic steps, whose pure twist covers edge cells only; the fallback covers those units. `SENIOR-REVIEW.md` section 6 |
 | Lemma TT (stage 06) | A K+-transported word moves a congruent block exactly as the original word moves its block. | proved (stage 06); whether the transported step is clean depends on the target state: measured on 2 carriers |
 | Theorem S at stop62@245 | Every block-family word has \|Bad\| >= 333 > 245 holes, so no family closure works there. | certificate |
 | G = K | The retained group is the whole kernel of the invariants (35 position and 11 frame certificates). | certificate (independent checker) |
@@ -155,8 +155,8 @@ solved configuration (identity labels on all 259,800 stickers).
 | Existence of a clean step | At every reachable state with an off piece, every unit has a clean step, and an exhaustive search over words in order of length finds one from the state alone and stops. | proved (Codex senior review, 15 October 2026; no human review); no bound on length or run time |
 | Small states need excursions | With 0 < h < 3,097 off pieces, every clean step has at least two jumble letters, and its first jumble letter takes at least 3,097 - h lattice pieces off. | proved (same review) |
 | Theorem M\* (a general method) | Heuristic steps, a fair exhaustive search when they find nothing, then the lattice phase with the corrections last: restores every reachable configuration from the current state alone, in at most \|off\| clean steps. | proved (Codex senior review, 15 October 2026; no human review), `SENIOR-REVIEW.md` section 9; no bound on the length of a fallback step |
-| Toolkit theorem | For a unit whose frame belongs to class P, a class-P landing word W that passes finite checks at the state (free grips, exact landing action, every other off piece lands or keeps its exact pose, Bad(W) the union of its cells, vacancy for all targets at once) closes to a clean step of at most 2(Q_safe - 1) + b letters, b = 720, 104, 240 or 192 by cell kind. | proved (same review), given the certificates of `SENIOR-REVIEW.md` sections 5 and 6. Units with pieces of height four lie outside it; 150 twists of the I_a fixture make 1,411 such pieces (re-run) |
-| Lattice-phase length | At most 1,324,686,034 twists for every input, with the committed cascade and library; 771,844,512 for the committed cascade without its trivial frame passes, and 356,666,844 by the exact count of R7-03. A shorter frame recipe gives a construction of at most 356,565,166 twists for every input (231,334,003 on average over G), or at most 4,840,993 actions with a library of the 35 seeds and their inverses. With the replaced seeds of round 7: at most 71,516,526 twists for every input as the cascade runs, and 71,514,544 for the construction (46,189,354 on average). | proved (same review for AU-05; round 6, M2-04, and round 7, R7-03, for the rest; the integer bounds re-run by the integrator). The round 7 bounds use the certified lengths and rest on the replacement row below. The constructions are not implemented as such; the cascade with the replaced seeds is (section 6.3) |
+| Toolkit theorem | For a unit whose frame belongs to class P, a class-P landing word W that passes finite checks at the state (free grips, exact landing action, every other off piece lands or keeps its exact pose, Bad(W) the union of its cells, vacancy for all targets at once) closes to a clean step of at most 2(Q_safe - 1) + \|W\| letters. When all of the class's grips are free, W can be chosen with \|W\| <= b, b = 720, 104, 240 or 192 by cell kind; with some grips blocked, b bounds no W and the length of W must be checked (corrected in round 8, R8-05). | proved (same review), given the certificates of `SENIOR-REVIEW.md` sections 5 and 6. Units with pieces of height four lie outside it; 150 twists of the I_a fixture make 1,411 such pieces (re-run) |
+| Lattice-phase length | The lattice phase is the retained cascade R, then the corrections C, which need at most 25,852 twists for every input (AU-05). R needs at most 1,324,660,182 twists with the committed cascade (1,324,686,034 with C), 771,844,512 without its trivial frame passes, and 356,666,844 by the exact count of R7-03. A shorter frame recipe gives a construction of R of at most 356,565,166 twists for every input (231,334,003 on average over G), or at most 4,840,993 actions with a library of the 35 seeds and their inverses. With the replaced seeds of round 7, R needs at most 71,516,526 twists for every input as the cascade runs (71,542,378 with C), and the construction at most 71,514,544 (46,189,354 on average). | proved (same review for AU-05; round 6, M2-04, and round 7, R7-03, for the rest; the integer bounds re-run by the integrator). The round 7 bounds use the certified lengths and rest on the replacement row below. The constructions are not implemented as such; the cascade with the replaced seeds is (section 6.3) |
 | Lower bounds for the lattice phase | Some input needs at least 224,601 retained twists (185,441 cap twists), and all but a fraction 10⁻⁶ of the inputs need at least 224,599. With a fixed library of m macros at 7,200 placements each, some input needs at least 145,909, 110,495 or 104,774 actions for m = 1, 35 or 70. | proved (Codex senior review, 15 October 2026, M2-02; no human review; the integer checks re-run by the integrator). Retained words only |
 | Single-overlap lemma | If the supports of X and Y (every piece with a sticker moved) meet in one piece and both move that piece's position, [X, Y] is a pure three-cycle on its orbit. | proved (same review, M2-01) |
 | Short pure three-cycles | Pure three-cycles for 33 of the 35 orbits; the shortest per orbit has 28 to 12,416 primitives, 21 of them at most 200. None found for O15 and O17. | computed: exact searches, every word re-checked by `check_cycles.py`. 17 of them replace seeds after relocation (round 7) |
@@ -200,10 +200,11 @@ Two mathematical gaps:
     letters before and after, takes all 86 lattice chambers of the carrier's cell off. A restoring word uses two
     classes between its first and its last jumble letter. From a single-unit state the whole word must make exactly
     the initial holes bad, type by type.
-  - *A bound for s61c.* A word of 4,402 letters restores s61c (re-run by the integrator), so a search in order of
-    length from that state alone stops by length 4,402. The word re-creates two partner carriers from lattice
-    pieces, lands the 61-piece carrier together with one of them, and pure-twists the other. Its partner creation
-    comes from the history, so it is a bound for this state, not a construction.
+  - *A bound for s61c.* A word of 4,402 letters takes s61c to the lattice (re-run by the integrator), so a search in
+    order of length from that state alone stops by length 4,402; the lattice phase then restores the stickers
+    (corrected in round 8, R8-03). The word re-creates two partner carriers from lattice pieces, lands the 61-piece
+    carrier together with one of them, and pure-twists the other. Its partner creation comes from the history, so
+    it is a bound for this state, not a construction.
   - *Uniform bounds.* A uniform bound on the restoration length, or on one clean step at every reachable state,
     exists if and only if R(I_a) is finite (Card 5 Q1.1, open). A search that bounds every piece's height is finite,
     and retained preparation for a given middle word has an explicit finite bound; both bounds are astronomically
@@ -267,19 +268,24 @@ Two mathematical gaps:
     costs 128,076 twists. The committed code's cascade has the bound 771,844,512, and 356,666,844 by the exact
     count of R7-03. With the replaced seeds of round 7 the cascade as it runs needs at most 71,516,526 twists for
     every input, about 2.3 years, and the construction at most 71,514,544 (46,189,354 on average). Creating the 70
-    macros then costs 14,048 twists, and the action bounds do not change (4,841,151 as the cascade runs).
+    macros then costs 14,048 twists, and the action bounds do not change (4,841,151 as the cascade runs). These
+    bounds are for the cascade; the corrections add at most 25,852 twists (AU-05).
   - *Lower bounds (proved, model review).* Some input needs at least 224,601 retained twists, about 2.6 days, and
     all but a fraction 10⁻⁶ of the inputs need at least 224,599 (M2-02). With any fixed library of 70 macros, some
-    input needs at least 104,774 actions. A library chosen for the input escapes any bound on actions alone.
+    input needs at least 104,774 actions. A library chosen for the input escapes any bound on actions alone. These
+    bounds count retained words only; a solution that leaves the lattice through jumble twists is not covered
+    (made explicit in round 8, R8-07).
   - *Shorter seeds (computed; round 7).* Commutators whose supports meet in one piece give pure three-cycles for
     33 of the 35 orbits (S1 and S2). Round 7 shows that the cascade needs no fibre alignment, only the position
     cycle on the buffers and legal collateral, with re-indexed pairs on D5 and A5 (proved, model review, R7-01). It
     relocates the candidates onto the buffers. 31 seeds are replaced: 17 by pure three-cycles and 14 by spine
     prefixes, among them O15 (11,574 to 106 primitives) and O17 (1,546 to 24), for which no pure three-cycle was
-    found. O10, O24, O25 and O26 keep their seeds.
+    found. O10, O24, O25 and O26 keep their seeds. No other choice among the recorded candidates, in any order,
+    gives a smaller bound (round 8, R8-02).
   - *Open.* Whether a lattice phase of a few million actions counts as replicable is for the owner to judge. The
     next experiments are shorter candidates for O28, O03 and O10 (now the largest terms), the exhaustive frame check
-    of R7-02, a uniform sampler for the synthetic inputs (M2-05) and a better cascade order (M2-06).
+    of R7-02, a uniform sampler for the synthetic inputs (M2-05) and a cascade order that admits the spine prefixes
+    dropped for their collateral (M2-06; over the recorded candidates the order gains nothing, R8-02).
 
 Two evidence gaps:
 - **E1. Coverage.** The method has been run on the inputs of section 6 only. Deep scrambles (the I_a@40 scale,

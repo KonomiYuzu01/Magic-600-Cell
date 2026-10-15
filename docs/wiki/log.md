@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: closing audit of the general method
+Senior review round 8 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 13 (model review): it states the general method as one theorem with its hypotheses, and shows that the round 7 choice of seeds is optimal over the recorded candidates (71,516,526 twists, re-computed by the integrator). It also corrected seven statements, now fixed in the method page and the summaries: the s61c word reaches the lattice but does not solve the stickers, a transport word moves several whole cells, the toolkit bound needs |W| <= b, a clean step may restore its free set, the lower bound counts retained words only, the corrections add at most 25,852 twists to the cascade, and the v4 run logs, which an ignore rule had dropped, are now committed.
+
 ## [2026-10-15] update | Jumbling: shorter seeds for the lattice phase
 Senior review round 7 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 12 (model review; the runs and certificates are the integrator's): a seed of the lattice cascade needs no fibre alignment, so 31 of the 35 seeds are replaced by shorter elements relocated onto the buffers. The cascade then restores the two synthetic inputs in 45,009,802 and 44,940,982 twists instead of about 2.3 × 10^8, replayed by the stage 03 checker, and needs at most 71,516,526 twists for every input; whether that is within reach of a person stays open (gap M2).
 
