@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: is the reachable set finite?
+Senior review round 9 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 14 (model review; the integrator re-ran its three exact checks): whether the reachable I_a configurations are finite, which decides a uniform bound for gap M1, stays open. It proved that a word repeated without end is periodic with a period that depends on neither the word nor the state, certified that no single letter takes the deep state H6 to height 8, and found that the extended height closure of stage 04 (`refexact2.py`) drops a reachable transition, which is now noted there; Proposition HB is not affected.
+
 ## [2026-10-15] update | Jumbling: closing audit of the general method
 Senior review round 8 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 13 (model review): it states the general method as one theorem with its hypotheses, and shows that the round 7 choice of seeds is optimal over the recorded candidates (71,516,526 twists, re-computed by the integrator). It also corrected seven statements, now fixed in the method page and the summaries: the s61c word reaches the lattice but does not solve the stickers, a transport word moves several whole cells, the toolkit bound needs |W| <= b, a clean step may restore its free set, the lower bound counts retained words only, the corrections add at most 25,852 twists to the cascade, and the v4 run logs, which an ignore rule had dropped, are now committed.
 

@@ -26,7 +26,9 @@ Since 11 October ([restoration research](../restoration/README.md)):
   solves every reachable lattice configuration (Theorem R, [stage 03](../restoration/03-retained-group-and-lattice-restorer/README.md);
   model review 15 October 2026).
 - **X1** stays deferred, with partial bounds: the left heights of model orbits 0 to 9 are bounded (Proposition HB,
-  [stage 04](../restoration/04-card5-lattice-invariants/README.md)).
+  [stage 04](../restoration/04-card5-lattice-invariants/README.md)). Round 9 of the senior review did not settle it;
+  it proved that a word repeated without end is periodic with a uniform period, and that no single letter takes the
+  deep state H6 to height 8 ([record](../restoration/09-general-method/SENIOR-REVIEW.md) section 14).
 - **R2, R3, X3 and X4** are not needed under the owner's standard of 15 October: the general method terminates by
   Lemma U and reads the state by program ([METHOD.md](../restoration/09-general-method/METHOD.md) section 4).
 
@@ -95,7 +97,7 @@ Owner decision (10 October 2026, [record](../../../docs/wiki/decisions/owner-dec
 | ID | Problem | Source | Status | Latest evidence | Next step |
 | --- | --- | --- | --- | --- | --- |
 | X1 | Finiteness of R(I_a), and a multi-cap criterion. R(S4₀) and R(I_b) are no longer studied: the twist menu is I_a ([owner decision of 13 October 2026](../../../docs/wiki/decisions/owner-decisions-2026-10-13-jumbling-menu.md)). | theory draft item 3 | deferred | Tree heights stay small: largest (2, 4) and (3, 1) under S4₀ after 640 twists. | Reopens with a mechanism that bounds the heights. |
-| X2 | A repeatable admissible word that raises tree heights, which would prove a menu infinite. | deferred-problems record, "still pursued" | open | None found yet. | When spare compute allows. |
+| X2 | A repeatable admissible word that raises tree heights, which would prove a menu infinite. | deferred-problems record, "still pursued" | closed for I_a: a repeated word cannot raise heights without bound | A word repeated without end is periodic, with a period that depends on neither the word nor the state (senior review round 9, T9-02). An unbounded family cannot be ultimately periodic. | Part of X1. |
 | X3 | The number of reachable configurations and the worst-case distance. | theory draft item 7 | deferred | Not known even for the retained puzzle. | Reopens with a method for the retained puzzle. |
 | X4 | A bound on the return distance in terms of a visible defect. | theory draft item 5 | deferred | The visible procedure asked for there is now restoration phase U (R1). | Same as R2. |
 | X5 | Block preservation through jumble twists, and per-phase certificates. | theory draft item 6 | open | Not started. | After R1. |

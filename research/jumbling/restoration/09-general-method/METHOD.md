@@ -209,6 +209,11 @@ Two mathematical gaps:
     exists if and only if R(I_a) is finite (Card 5 Q1.1, open). A search that bounds every piece's height is finite,
     and retained preparation for a given middle word has an explicit finite bound; both bounds are astronomically
     large.
+  - *Finiteness (round 9).* Still open (`SENIOR-REVIEW.md` section 14). A word repeated without end is periodic,
+    with a period that depends on neither the word nor the state, so no repeated word raises heights without bound
+    (T9-02). No single letter takes the deep state H6 of stage 04 to height 8 (exact, T9-04). For each m, the
+    states whose heights are at most 2m have a finite maximum distance to the lattice, but no value of it is known
+    (T9-05).
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not

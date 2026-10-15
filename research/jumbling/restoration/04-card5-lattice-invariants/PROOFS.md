@@ -619,7 +619,11 @@ The method stops at model orbit 10 (K+ orbit 11): an exact run with additional b
 uses the straddle sets of the anchored inner cohorts) passed 600,000 refined states with classes up to height 14 and
 a growing queue (`certs/q1/refx2-orbit11.log`). Since R_o without that blocking reaches at least as much, this
 over-approximation gives no bound from orbit 10 on. In the deep states the orbit-10 pieces reach height 4 only (ADJ-H6
-below), so the over-approximation is coarse there, not necessarily the dynamics.
+below), so the over-approximation is coarse there, not necessarily the dynamics. (Correction, 15 October 2026, senior
+review round 9, T9-01 in `../09-general-method/SENIOR-REVIEW.md` section 14: the extra filter of `refexact2.py` on
+newly holding out grips, line 161, drops a reachable transition, with the witness [(0, 12), (11, 41)] from solved. A
+closure of `refexact2.py` would therefore not prove a bound. The conclusion above stands, since the filter only
+removes transitions; Proposition HB uses `refexact.py`, which has no such filter.)
 
 **Structural facts (proved from TREEFACTS; H is not needed).** Every plane of the cut arrangement (cut planes, body
 facets and core facets) has the form n_c . y = const for a grip c, and every facet of a home chamber lies in such a
@@ -733,7 +737,9 @@ generation uses floating-point pre-tests).**
 
 **Status.** Neither a uniform bound nor an unbounded admissible family is established. **Open; delivered as
 open.** A fixed word that can be repeated is periodic in all poses (handoff fact f3ab02a86e740ff2), so an unbounded
-family would have to be adaptive. Everything computed points to a bound: heights are proved bounded for the ten
+family would have to be adaptive. (Correction, 15 October 2026, senior review round 9, T9-02: a word repeated without
+end has a period that depends on neither the word nor the state; an unbounded family cannot be ultimately periodic,
+but it need not adapt to the state.) Everything computed points to a bound: heights are proved bounded for the ten
 innermost model orbits, the largest height observed anywhere is 6, a high component can only rise as a rigid
 block through a clean cap of another branch, and in the deepest state every such cap is straddled. The step still
 missing is an invariant that controls the outer orbits across jumbles, as Lemma R and REFX do for the inner ten.

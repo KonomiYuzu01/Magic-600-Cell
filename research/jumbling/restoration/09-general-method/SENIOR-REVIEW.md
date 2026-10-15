@@ -1465,7 +1465,97 @@ Scope:
 | R8-08 | `minor` | Bounds for the retained cascade R were given as the cost of the whole lattice phase, which also has the corrections C, at most 25,852 twists (AU-05). | METHOD.md section 3 names R and C: R needs at most 71,516,526 twists as it runs, and R and C together at most 71,542,378. The summaries say "its cascade" and add the corrections. |
 | R8-09 | `major` | The 09 README and METHOD.md section 6.2 cite the driver logs and the replay reports (`gdrive.jsonl`, `verify_u.jsonl`) of `runs/stop62-v4/` and `runs/e2run24-v4/`, but they were not in the repository: its `*.jsonl` ignore rule had dropped them. | The four files are now committed. Private paths in them are replaced by `<working tree>`. |
 
-## 14. What changed in METHOD.md
+## 14. Is the reachable set finite? (round 9)
+
+Gap M1 asks for a bound on the length of a fallback step. M1-09 shows that a uniform bound exists if and only if R(I_a), the set of configurations reachable from solved, is finite. That is open (Card 5 Q1.1, open problem X1). Round 9 asked the senior review to decide X1, or else to prove the strongest partial results and say what they give for M1.
+
+X1 and X2 stay open, and Proposition HB is not extended beyond the model orbits 0 to 9. The review returned five findings, all verified:
+- one correction to stage 04 (T9-01, `major`);
+- four results (T9-02 to T9-05, `minor`).
+
+The integrator re-ran the three inline computations (T9-01, T9-02 and T9-04), got the reported outputs, and adopted all five findings.
+
+### T9-01: the extended closure of stage 04 drops a reachable transition (proved, model review; the witness re-run by the integrator)
+
+- **The filter.** `refexact2.py` (stage 04) extends the closure of Lemma R for model orbit 10 with the blocking by the inner cohorts of the out grips. When a twist carries the piece into the cap of an out grip g, the script admits g as out only if the other out grips do not block g after the twist (line 161).
+- **Why it is wrong.** An out grip records an anchored inner cohort, and another cohort can straddle its cap. Being out does not mean being admissible now.
+- **The witness.** From solved, the word [(0, 12), (11, 41)] is admissible.
+  - Piece 12443 (model orbit 10) is not moved by the first letter; the second carries it wholly into cap 0.
+  - Grip 0 stays out, and the inner piece 3468 (model orbit 6), jumbled by the second letter, straddles cap 0.
+  - So the transition must add grip 0 as out, and the filter drops it. The integrator re-ran the witness: the letters move 3,097 and 2,702 pieces, and every assertion holds.
+- **What changes.**
+  - A closure of `refexact2.py` would not have proved a bound.
+  - The stage 04 conclusion stands. The filter only removes transitions, so the plain system R_o still reaches everything the recorded run reached (600,000 states, height 14), and the method gives no bound from orbit 10 on.
+  - Proposition HB uses `refexact.py`, which has no such filter, and stands.
+- **Next.** Repair the filter: an entering out grip must be compatible with the admissibility of the letter just applied, not with the blocking after it. Then prove that the extended system simulates the puzzle, and use the witness as its first acceptance test.
+
+### T9-02: a word repeated without end is periodic, with a uniform period (proved, model review; the constants re-run by the integrator)
+
+**Theorem.** Put K = 4097⁴ = 281,749,955,297,281 and B = 60·lcm(1, 2, …, K). Suppose a nonempty I_a word W can be applied to Z again and again without end. Then W^B Z = Z: every piece returns to its exact pose. B depends on neither W nor Z.
+
+*Proof.*
+1. Every home piece contains a ball of radius r = 1/512 whose centre has norm less than R = 8. This is an exact check over the 36 chamber representatives (the smallest barycentre slack is 8(√5 − 1)/625), and K⁺ preserves it.
+2. Fix a piece. At the start of each repetition of W, its pose determines its *itinerary*: whether it is inside or outside the cap of each later letter.
+3. Suppose the itineraries at two starts differ. At the first letter where they differ, that letter's cut separates the two images of the ball, and both images have had the same rotations until then. So the two starting balls are disjoint.
+4. All the centres lie in the ball of radius R. Disjoint balls of radius r inside the ball of radius R + r number at most ((R + r)/r)⁴ = K, so a piece has at most K different itineraries.
+5. The itinerary at the next repetition is the shift of the current one. So the itineraries are eventually periodic, with a period k ≤ K.
+6. Over one period the piece's rotation is A = [l, u] with u in 2I.
+   - If no letter of the period moves the piece, A is the identity.
+   - Otherwise the piece's centre lies inside the cap of some letter in every period, and averaging over the periods gives a nonzero vector v fixed by A. Then l = v u v⁻¹, and A⁶⁰ = 1 because 2I has exponent 60.
+7. So each pose is eventually periodic, with a period dividing 60k, and the whole configuration repeats after B copies of W. Admissible letters are invertible, so W^B Z = Z. **QED**
+
+What it gives:
+- **No repeated word raises heights without bound.** X2 in the form "a repeatable word" cannot succeed. An unbounded family cannot be ultimately periodic, but it need not adapt to the state; stage 04 said that it "would have to be adaptive" (corrected there).
+- **A bound for one family.** Along W, W², … from solved, every state has a restoring word of at most B·|W| − 1 letters. This covers only that family, so X1 stays open.
+
+The integrator re-ran the exact check of the constants and got r = 1/512, R = 8 and K = 281,749,955,297,281.
+
+### T9-03: component size bounds relative heights, not the common pose (proved, model review)
+
+- **Relative heights.** In a connected component of n pieces of the 3-face graph, Lemma L gives d(x_p, x_q) ≤ 2 d_C(p, q) ≤ 2(n − 1). So an anchor q with a proved height bound H gives h(p) ≤ H + 2 d_C(p, q). An anchored piece has H = 2, and Proposition HB gives other anchors.
+- **Frozen neighbourhoods, stronger than Lemma FN.** Suppose a piece has height at least 4 before or after an admissible twist. Then the twist changes neither its set of 3-face neighbours nor its relative poses to them.
+- **Finitely many shapes.** Along a contact edge the relative pose has right height 0 and left height at most 2: at most 21 · 7,200 = 151,200 choices. So a fixed labelled component has finitely many internal geometries.
+- **The obstruction.** The common pose of a component is not controlled.
+  - A whole high component could rise with the same members and the same internal geometry. Corollary FN1 (d) recruits the height-2 neighbours that exist, but does not make them exist.
+  - In the tree, alternating jumble factors from two branches raise a vertex by 2 each time, and the same factors carry a fixed patch rigidly.
+  - This is a countermodel to any bound that uses only tree distances and co-motion. It is not an admissible history: whole-cap containment and blocking are not used.
+- **What would settle M1.** Suppose an invariant gave every component an anchor of bounded height at every reachable configuration. Then all heights would be bounded, and M1-09 would give a uniform bound. No such invariant is known.
+
+### T9-04: no single letter takes H6 to height 8 (computed by the review; re-run by the integrator)
+
+- **The caps.** H6 is the deep state of stage 04 (digest fe917f9a…). It has 78 pieces at height 6, all in branch 4. Exactly six caps of another branch contain a height-6 piece:
+
+  | Grip | 274 | 326 | 340 | 430 | 434 | 463 |
+  |---|---:|---:|---:|---:|---:|---:|
+  | Height-6 pieces held | 78 | 78 | 78 | 78 | 59 | 70 |
+  | Straddling piece (witness) | 79414 | 84169 | 71323 | 106423 | 13070 | 165151 |
+
+  Every one of these caps is straddled.
+- **The argument.** Retained letters keep heights, and a jumble changes a height by at most 2 (the proof of Corollary FN1 (c)). So reaching height 8 in one letter would need one of these caps, and no single letter reaches height 8 from H6.
+- **What it adds.** The check is exact and uses neither the floating-point 3-face graph nor component membership. It makes that part of the H6 evidence of stage 04 a certificate.
+- **Scope.** It says nothing about longer words; a longer construction would first have to change the blocking.
+
+### T9-05: bounded starting heights (proved, model review)
+
+- **A finite maximum.** For each m, the reachable states whose pieces all have left height at most 2m have a finite maximum distance b(m) to the lattice. There are at most S_m of them (M1-09), and each has a finite restoration. This holds even if R(I_a) is infinite.
+- **Not an explicit bound.** It does not give b(m) ≤ S_m − 1: that would need restorations that stay within the height restriction, and M1-09 shows that starting heights do not ensure this. Nor does it give an algorithm, since no procedure is known that recognizes when all reachable states of the restriction have been found.
+- **M1-09 in both directions.**
+  - A uniform clean-step length C restores any state to the lattice in at most 177,120·C letters. Each letter changes a height by at most 2, so every reachable height is at most 354,240·C.
+  - A finite R(I_a) gives a path to solved of at most |R(I_a)| − 1 letters, which is a clean step for any unit.
+
+### Where X1 stands after round 9
+
+- X1 and X2 stay open. Proposition HB still covers only the model orbits 0 to 9.
+- **New results:**
+  - a uniform period for words repeated without end (T9-02);
+  - an exact certificate that one letter cannot reach height 8 from H6 (T9-04);
+  - the obstruction for arguments from components alone (T9-03);
+  - a finite but unknown maximum b(m) (T9-05).
+- **Next (not run):**
+  - repair the closure of T9-01 and prove that it simulates the puzzle;
+  - build an exact 3-face graph of H6, to test whether its 78-piece component can gain new members (T9-03).
+
+## 15. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -1494,3 +1584,4 @@ Scope:
 - After round 8 (section 13):
   - Section 3: the rows for Lemma C, the other cell kinds, the toolkit theorem and the lattice-phase length are corrected (R8-04, R8-05, R8-08).
   - Section 5: the s61c bound of gap M1 says "to the lattice" (R8-03); gap M2 names the cascade and the corrections, says that the lower bounds count retained words, and records that the round 7 selection is optimal over the recorded candidates (R8-02, R8-07, R8-08).
+- After round 9 (section 14): section 5, gap M1, has a new item on the finiteness of R(I_a) (T9-02, T9-04, T9-05).
