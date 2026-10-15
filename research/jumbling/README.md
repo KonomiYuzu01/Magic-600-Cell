@@ -34,10 +34,20 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   ([restoration](restoration/README.md)).
 - **Structure.** The retained group is exactly the kernel of its invariants (G = 𝒦, an order of 598,061 digits),
   and the corrections a jumbled history can leave on the lattice form A_J = C2^34 × C5^2.
-- **Open.** No theorem yet says that every reachable state has a clean step that the method finds (gap M1). The
-  lattice phase is about 1.5 to 2.2 × 10^8 twists, far beyond what a person can replicate (gap M2). Deep scrambles
-  were not run with the general method (gap E1). The new proofs have no independent review, and the pure twist
-  (Lemma C) has no written proof yet (gap E2).
+- **Senior review (15 October 2026).** A Codex senior review proved that a clean step always exists and that an
+  exhaustive search reading only the state finds one, with no bound on its length. With that search as a fallback
+  after the fast steps, and the lattice phase at the end, the method restores every reachable configuration from
+  the current state alone (Theorem M\*); the driver that was run (v4) does not have the fallback yet. It proved the pure twist
+  (Lemma C) with a bound of 720 twists and extended it to every kind of cell (in place for vertex cells, by
+  transport for triangle and tetrahedron cells), corrected the statements of Lemma CM and Theorem R, and checked the other
+  proofs. It also proved that a bound on the restoration length for every reachable configuration exists if and only
+  if there are finitely many reachable configurations, which is open, and bounded the lattice phase by
+  1,324,686,034 twists for every input
+  ([record](restoration/09-general-method/SENIOR-REVIEW.md)). It is a model review, not a human one.
+- **Open.** A construction that works from the state alone with a bound on its length, and a proof that the
+  driver always finds a step (gap M1). The lattice phase took 1.5 to 2.3 × 10^8 twists on the runs so far, far
+  beyond what a person can replicate (gap M2). Deep scrambles were not run with the general method (gap E1). No human has
+  reviewed the new proofs (gap E2).
 - **Rendering.** The research viewer draws all 259,800 stickers of a jumbled state. On the owner's RTX 4070 Laptop
   GPU, the jumbling pose probe ran the I_a fixture at 613 fps (p99 1.91 ms); overlay costs are not measured yet
   ([evidence](../../docs/wiki/evidence/w-j-probe-results.md)).

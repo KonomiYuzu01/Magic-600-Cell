@@ -14,16 +14,22 @@ The method reads only the current pose table and restores a jumbled configuratio
 - reproduction commands;
 - the checks that were not run.
 
+[SENIOR-REVIEW.md](SENIOR-REVIEW.md) records the Codex senior review of 15 October 2026: gap M1 (existence, the
+s61c obstruction and certificate, bounds), Theorem C (the class-cell pure twist, at most 720 letters) and the other
+cell kinds, the review of the clean-step and lattice-phase proofs with their corrections, and a milestone audit of
+the method as a whole: Theorem M\* (with an exhaustive fallback the method is complete), the toolkit theorem with
+its bounds, and a bound of 1,324,686,034 twists for the lattice phase.
+
 ## Contents
 
 | Path | What it is |
 | --- | --- |
-| `scripts/gm/` | The driver `gdrive.py`, its step scripts and `gen_scramble.py` |
+| `scripts/gm/` | The driver `gdrive.py`, its step scripts, `gen_scramble.py` and `omega_check.py` (Bad(W) against the cell, Theorem C) |
 | `scripts/echain/` | Modules the step scripts share (stage 01) |
 | `scripts/lattice/` | The lattice restorer `restore_lattice_late.py` and the independent checker `verify_late.py` |
 | `scripts/run/` | The run commands used on 15 October; paths are neutral tokens |
 | `data/library-merged.json.gz` | The 36-macro correction library of the lattice phase (rank 34 over F2 and 2 over F5) |
-| `earlier/stop62-860-to-0/` | stop62, 860 off pieces, to 0 in 14 clean steps, then to solved. Contents: the chain (start table and step words), the independent replay, and the lattice restore and verify reports with the solution record |
+| `earlier/stop62-860-to-0/` | stop62, 860 off pieces, to 0 in 14 clean steps, then to solved. Contents: the chain (start table and step words), the independent replay, the lattice restore and verify reports with the solution record, and `step014-pure-twist-omega.json` (Bad(W) = Ω_X at s86a) |
 | `earlier/x-e3-solved/` | Lattice phase and end-to-end check for E3 (the end of the X chain of stage 01) and for I1 and I2 (stage 02) |
 | `runs/` | Records of the state-only v4 runs; added when the runs end |
 | `IMPORT-MANIFEST.json` | The files stored gzipped, with the SHA-256 of their uncompressed bytes |
@@ -41,4 +47,6 @@ Linux, with `ulimit -v 7000000` per process.
 ## Evidence
 
 All of it is exact computation on synthetic geometry in headless Linux runs. None of it is evidence for Windows,
-DirectX, input, long sessions or performance. The new proofs have no independent mathematical review.
+DirectX, input, long sessions or performance. A Codex senior review on 15 October 2026 checked the new proofs,
+corrected several statements, proved Lemma C as Theorem C and proved Theorem M\* ([SENIOR-REVIEW.md](SENIOR-REVIEW.md));
+no human has reviewed them.

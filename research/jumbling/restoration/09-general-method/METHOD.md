@@ -31,6 +31,14 @@ limits and reading the state by eye.
 Input: one pose table (the current state only). Output: a chain of steps, each a twist word with its input and
 output state digests, ending at the solved configuration; or a stop with its reason.
 
+**Completeness: Theorem M\* (proved; Codex senior review on 15 October 2026, no human review;
+`SENIOR-REVIEW.md` section 9).** Add to phase 1 a fair fallback: when the steps below find nothing, enumerate all
+menu words in order of length and take the first clean step. The method then restores every reachable
+configuration from the current state alone, in at most as many clean steps as there are off pieces at the start,
+followed by the lattice phase. It needs no history and no finiteness of the reachable set, and it gives no bound
+on the length of a fallback step. The driver v4 used here is a partial implementation: it has no fallback, it
+stops after `--max-steps`, and it skips the lattice phase when the last permitted step reaches the lattice.
+
 ### Phase 1: off-lattice phase (clean steps)
 
 A *unit* is a rigid block of off pieces (no cut separates them), or one frame part of a multi-frame block
@@ -50,14 +58,20 @@ At each state the driver `gdrive.py` does the following, reading only the pose t
    conditions N1 and N2), then closed with `tclose2.py`: V from the peeling certificate (Theorem B), a greedy
    search if the certificate fails, replay of V, W, V^-1 on the simulator with every twist checked admissible. The
    first candidate whose closure is a clean step is taken.
-3. **Pure-twist step** (only when the driver finds no step at Z). For each unit, largest first, `cellpure3.py`
+3. **Pure-twist step** (only when the driver finds no step at Z). For the largest units, at most 8 of them
+   (`--pure-max`; the units left out are logged as `pure_dropped`), largest first, `cellpure3.py`
    builds the class-cell model of the unit's class (the 120 caps of one of the five classes of grips; a cell is a
    sign vector over those caps) and searches the pure twist: commutator powers [x, y]^k of free class-P letters
    around a cycle of three or four edge cells through the carrier's cell X, exponents solved over Z5 so that the
-   carrier's cell alone turns to label 0 (model check on every content, then exact replay). Its W moves only the
-   carrier and the lattice pieces of X (Bad(W) = X). The units with a word are then closed, the unit with the fewest
-   lattice pieces in X first, by `tclose2.py`; on 'no V', by `tclose2m3.py` (the same closure with a targeted
-   depth-two peel for V). The first clean step in that order is taken.
+   carrier's cell alone turns to label 0 (model check on every content, then exact replay). Its W lands the carrier
+   and takes the lattice pieces of X off (Bad(W) = X); the cheaper powers it uses may also permute lattice pieces
+   outside X, which a clean step allows (`SENIOR-REVIEW.md`, LC-02 and LC-03). Theorem C there proves that a word of
+   at most 720 letters exists whenever the two poles of X and one common neighbour are free; `cellpure3.py` searches
+   for one and does not use that bound. The stage covers carriers in edge cells only; the same review proved
+   words for the other cell kinds (in place for vertex cells, transport for triangle and tetrahedron cells;
+   section 3), which v4 does not use yet. The units with a word are then closed, the unit with the fewest lattice
+   pieces in X first, by `tclose2.py`; on 'no V', by `tclose2m3.py` (the same closure with a targeted depth-two
+   peel for V). The first clean step in that order is taken.
 4. **Stop.** If neither kind of step restores a unit, the run stops at Z and records, per unit, why the pure twist
    failed (precondition of the cell model, no cycle of edge cells, model check, ghost premises, no V) and the
    driver's best candidates.
@@ -70,17 +84,25 @@ off piece inside the unit or the free set, off count falling.
 
 When no piece is off the lattice, `restore_lattice_late.py` computes the invariant nu (F2^43 + F5^2 coordinates)
 from the configuration, chooses the correction combination C from the library of 36 macros (rank 34 over F2 and 2
-over C5, which spans A_J), solves the labelled configuration with the retained-group cascade R, and applies C last.
+over F5, which spans A_J), solves the labelled configuration with the retained-group cascade R, and applies C last.
 `verify_late.py --chain` rebuilds the start of this phase from the chain's start table through every step word
 (each twist an I_a menu element and admissible, every digest checked), evaluates R with its own code, builds the
 target T = solved . C^-1 in the simulator, checks that T has the labels R produces, then applies C and requires the
 solved configuration (identity labels on all 259,800 stickers).
 
-- Completeness: **Theorem R** (author's proof, unreviewed): when the library spans A_J, the restorer solves every
-  configuration with all pieces on the lattice. The library's rank (34 over F2, 2 over F5) is a **certificate**; it
-  equals A_J = C2^34 x C5^2, whose lower bound is a certificate (40 words) and whose upper bound is proved
-  (Theorem A and B5, unreviewed).
-- Lengths: R is about 1.5 to 2.2 x 10^8 twists, C about 10^4. These are machine-scale (section 5, gap M2).
+- Completeness: **Theorem R** (proved; Codex senior review on 15 October 2026, no human review): when the library
+  spans A_J, the restorer solves every *reachable* configuration with all pieces on the lattice, in the sense of
+  stickers. It does not hold for every lattice configuration: one with every piece rotated by the same order-three
+  element of K+ has nu = 0 but displaced centres. With C applied last, choose C with nu(C) = -nu(Y), put
+  T = solved . C^-1 and solve Y relative to T, whose nu is zero; then Y . R . C = solved.
+- The library spans A_J: its rank (34 over F2, 2 over F5) is a **certificate**, and the two ranks suffice. In
+  C2^34 x C5^2, multiplying by 5 keeps the binary part and multiplying by 6 keeps the C5 part, so a subgroup is the
+  product of its two projections (Chinese remainder theorem). A_J = C2^34 x C5^2: the lower bound is a certificate
+  (40 words), and the upper bound is proved (Theorems A and B5; the same review found them sound, with an inverse
+  typo and a frame convention to state, both fixed).
+- Lengths: on the runs so far R took 1.5 to 2.3 x 10^8 twists and C about 10^4. For every input, the committed
+  cascade and library give at most 1,324,686,034 twists (proved, same review, `SENIOR-REVIEW.md` section 9).
+  These are machine-scale (section 5, gap M2).
 
 
 ## 3. What the method rests on, and the status of each part
@@ -88,19 +110,25 @@ solved configuration (identity labels on all 259,800 stickers).
 | Part | Statement (short) | Status |
 | --- | --- | --- |
 | Basic properties | Legal twists keep the state valid and are invertible; a lattice configuration has exactly one piece per chamber; the centre pieces never leave their poles. | proved (Codex senior review) |
-| Lemma U | A clean step lowers the off count by at least the unit's size; so every run of clean steps terminates. | proved |
+| Lemma U | A clean step lowers the off count by at least the unit's size; so every run of clean steps terminates. | proved (Codex senior review, 15 October 2026) |
 | Closure V W V^-1 | Every step of every chain here is a clean step. | certificate per step (`verify_u.py` replay) |
-| Theorem B, Proposition N, Theorem A | Vacancy for Bad(W): necessary counts N1/N2; a peeling certificate gives V, its thresholds and a length bound. | proved (Codex math review) |
-| Lemma D | Per-type count: \|Bad_t(W)\| is at most the number of holes of type t; off counts by type only fall along a run. | proved |
-| Proposition GH, Lemma CM | Glued holes move with their carrier; a carrier moved by free K+ letters keeps the step clean. | proved |
-| Lemma C (class-cell pure twist) | Commutator powers around a cycle of three or four edge cells of one class twist the carrier's cell alone. | measured on 4 states, each word replayed exactly; no written proof |
+| Theorem B, Proposition N, Theorem A | Vacancy for Bad(W): necessary counts N1/N2; a peeling certificate gives V, its thresholds and a length bound. One certificate must cover all targets at once: separate certificates per orbit do not prove it. | proved (Codex math review; the simultaneity condition from the Codex senior review, `SENIOR-REVIEW.md` section 9) |
+| Lemma D | Per-type count: \|Bad_t(W)\| is at most the number of holes of type t; off counts by type only fall along a run. | proved (Codex senior review, 15 October 2026; the remark after Corollary D'' needs f_t = 0, fixed) |
+| Proposition GH, Lemma CM | Glued holes move with their carrier; a carrier moved by free K+ letters keeps the step clean, with the same free set. | proved (Codex senior review, 15 October 2026: GH as written; the statement of CM corrected to keep the same free set, which the constructions use) |
+| Lemma C (class-cell pure twist) | If the two poles of the carrier's edge cell X and one common neighbour are free, a word of at most 720 letters at those three grips twists X alone and leaves every other piece at its exact pose. Closed by a peeling certificate V that vacates X, V W V^-1 is a clean step of at most 2 L_cert + 720 letters. | proved (Codex senior review, 15 October 2026; no human review): an exact certificate on one triangle of edge cells, transported by symmetry, re-run by the integrator. The code's cheaper powers may also permute lattice pieces outside X, which a clean step allows; the claim that they return every other content to its point was false. Applied on 4 states, each word replayed exactly; at s86a Bad(W) equals X exactly (checked). `SENIOR-REVIEW.md` sections 4 and 5 |
+| Other cell kinds | A real carrier in a vertex cell lands in place (at most 104 letters); one in a triangle or tetrahedron cell cannot, but a pure transport word lands it in another cell of the same kind (at most 240 or 192 letters), every other piece keeping its exact pose. A rigid block of one frame lies in one cell. | proved (Codex senior review, 15 October 2026; no human review), with exact certificates re-run by the integrator; assumes the class's grips are free. Not used by v4, whose pure twist covers edge cells only. `SENIOR-REVIEW.md` section 6 |
 | Lemma TT (stage 06) | A K+-transported word moves a congruent block exactly as the original word moves its block. | proved (stage 06); whether the transported step is clean depends on the target state: measured on 2 carriers |
 | Theorem S at stop62@245 | Every block-family word has \|Bad\| >= 333 > 245 holes, so no family closure works there. | certificate |
 | G = K | The retained group is the whole kernel of the invariants (35 position and 11 frame certificates). | certificate (independent checker) |
-| A_J = C2^34 x C5^2 | The lattice-phase invariant group. | lower bound certificate (40 words); upper bound proved |
-| Theorem R | With a library that spans A_J, the lattice restorer solves every lattice configuration. | proved |
+| A_J = C2^34 x C5^2 | The lattice-phase invariant group. | lower bound certificate (40 words); upper bound proved (Codex senior review, 15 October 2026) |
+| Theorem R | With a library that spans A_J, the lattice restorer solves every reachable lattice configuration (stickers). | proved (Codex senior review, 15 October 2026; restricted to reachable configurations) |
 | Termination of the whole method | Phase 1 by Lemma U, phase 2 by construction. | proved |
-| Completeness of phase 1 | Every reachable state with an off piece has a clean step that the method finds. | **open** (gap M1) |
+| Existence of a clean step | At every reachable state with an off piece, every unit has a clean step, and an exhaustive search over words in order of length finds one from the state alone and stops. | proved (Codex senior review, 15 October 2026; no human review); no bound on length or run time |
+| Small states need excursions | With 0 < h < 3,097 off pieces, every clean step has at least two jumble letters, and its first jumble letter takes at least 3,097 - h lattice pieces off. | proved (same review) |
+| Theorem M\* (a general method) | Heuristic steps, a fair exhaustive search when they find nothing, then the lattice phase with the corrections last: restores every reachable configuration from the current state alone, in at most \|off\| clean steps. | proved (Codex senior review, 15 October 2026; no human review), `SENIOR-REVIEW.md` section 9; no bound on the length of a fallback step |
+| Toolkit theorem | For a unit whose frame belongs to class P, a class-P landing word W that passes finite checks at the state (free grips, exact landing action, every other off piece lands or keeps its exact pose, Bad(W) the union of its cells, vacancy for all targets at once) closes to a clean step of at most 2(Q_safe - 1) + b letters, b = 720, 104, 240 or 192 by cell kind. | proved (same review), given the certificates of `SENIOR-REVIEW.md` sections 5 and 6. Units with pieces of height four lie outside it; 150 twists of the I_a fixture make 1,411 such pieces (re-run) |
+| Lattice-phase length | At most 1,324,686,034 twists for every input, with the committed cascade and library. | proved (same review; the integer bound re-run by the integrator) |
+| Completeness of the driver v4 | v4 finds a clean step at every reachable state with an off piece. | **open** (gap M1): v4 is a partial implementation of M\*. The pure twist is tried on at most 8 units, the run stops after 80 steps (and skips the lattice phase if the last permitted step reaches the lattice), and there is no exhaustive fallback |
 
 ## 4. What the new standard removes from the earlier programme
 
@@ -124,23 +152,74 @@ solved configuration (identity labels on all 259,800 stickers).
 ## 5. Gaps
 
 Two mathematical gaps:
-- **M1. Step existence (the core gap; open).** No theorem says that every reachable state with an off piece has a
-  clean step that the method finds from the state. It contains two narrower questions:
+- **M1. A bounded step from the state alone (the core gap; open).** Bare existence is settled; a bound from the
+  state's own features is not. Codex senior reviews on 15 October 2026 proved the following (`SENIOR-REVIEW.md`
+  sections 1 to 3 and 9); there is no human review yet:
+  - *Existence.* At every reachable state with an off piece, every unit U has a clean step with free set
+    off(Z) \ U. Every letter has an admissible inverse, so the inverse of a history from the solved state is such a
+    step. An exhaustive search over all words in order of length therefore finds one from the state alone and stops.
+    It gives no bound on the length or the run time.
+  - *Excursions.* With 0 < h < 3,097 off pieces, every clean step has at least two jumble letters, and its first
+    jumble letter takes at least 3,097 - h lattice pieces off. At s61c (61 off) every clean step passes through at
+    least 3,036 off pieces.
+  - *One class is not enough.* At s61c every word that lands the carrier with the grips of one class, with retained
+    letters before and after, takes all 86 lattice chambers of the carrier's cell off. A restoring word uses two
+    classes between its first and its last jumble letter. From a single-unit state the whole word must make exactly
+    the initial holes bad, type by type.
+  - *A bound for s61c.* A word of 4,402 letters restores s61c (re-run by the integrator), so a search in order of
+    length from that state alone stops by length 4,402. The word re-creates two partner carriers from lattice
+    pieces, lands the 61-piece carrier together with one of them, and pure-twists the other. Its partner creation
+    comes from the history, so it is a bound for this state, not a construction.
+  - *Uniform bounds.* A uniform bound on the restoration length, or on one clean step at every reachable state,
+    exists if and only if R(I_a) is finite (Card 5 Q1.1, open). A search that bounds every piece's height is finite,
+    and retained preparation for a given middle word has an explicit finite bound; both bounds are astronomically
+    large.
+  - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
+    complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
+    explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not
+    of existence or of a general method. The reviewer's next question: does every reachable depth-one state with
+    no toolkit step pass the three-phase partner template?
+  - *Partners from the state.* A landing word W whose Bad set has exactly the size of what it lands, type by type,
+    can be inverted to create carriers from lattice pieces without the history, after two finite checks. With it,
+    the three-phase template of the s61c certificate (create partners, land two carriers at once, pure-twist the
+    rest) is decidable from the state, with an explicit but astronomical bound. s61c needs two created partners,
+    and the creator first needs a preparation that fills six of its source chambers (not run). Whether every state
+    with one deficient carrier passes such a template is open.
+
+  What stays open is a construction from the state alone with an explicit bound on the word length, and a
+  coverage argument for the driver v4 itself. As written, v4 tries the pure twist on at most 8 units, stops after
+  80 steps and has no exhaustive fallback. A complete method needs either that fallback or a coverage theorem. M1
+  contains two narrower questions:
   - *V existence.* N1/N2 are necessary only and a peeling certificate is sufficient only; no theorem guarantees V,
-    and the searches do fail (unit 1040 first at stop62@233: no V).
-  - *Scope of the pure twist.* It needs one carrier in one clean class cell with enough holes of its types. It does
-    not cover multi-frame blocks, frozen blocks, carriers across cells, or a small carrier without slack (the 61
-    carrier alone, s61c). Lemma C has no written proof; it is measured on 4 states.
+    and the searches do fail (unit 1040 first at stop62@233: no V). A breadth-first search over whole hole sets
+    decides vacancy from the state, with at most Q_safe hole sets; searching orbit by orbit does not.
+  - *Scope of the pure twist.* The word exists whenever three grips are free (Theorem C, `SENIOR-REVIEW.md`). The
+    closure still needs the cell's 86 chambers vacated, which needs enough holes in the right orbits. The step
+    does not cover:
+    - a unit with pieces of height four or more: no word of one class lands them (`SENIOR-REVIEW.md` section 9);
+    - a foreign frame part in the block (the class-P alphabet cannot move it: LC-04);
+    - frozen blocks (LC-05);
+    - carriers in triangle or tetrahedron cells: they cannot be twisted in place, but pure transport words land
+      them in another cell of the same kind (LC-13; at stop62 10 of the 15 units are such carriers); v4 does not
+      use these words yet;
+    - a small carrier without slack: s61c, 61 off pieces, where no whole-edge-cell closure can be clean because
+      the cell has 86 chambers and there are only 61 holes (LC-07); it needs created partners (M1-13).
   The family form of the Block lemma was one candidate route to M1; Theorem S rules it out at 245. The question
   itself is unchanged.
-- **M2. Lattice-phase length against "a person can replicate it".** The cascade is about 1.5 to 2.2 x 10^8 twists;
-  at one twist per second that is 5 to 7 years. Program assistance does not close this. Theorem R is unreviewed.
+- **M2. Lattice-phase length against "a person can replicate it".** The cascade took 1.5 to 2.3 x 10^8 twists on
+  the runs so far, 5 to 7 years at one twist per second; the bound for every input is 1,324,686,034 twists, about
+  42 years. Program assistance does not close this. The gap is the length:
+  Theorem R itself is proved, with a model review (section 3).
 
 Two evidence gaps:
 - **E1. Coverage.** The method has been run on the inputs of section 6 only. Deep scrambles (the I_a@40 scale,
   about 94,000 off pieces, multi-frame and frozen blocks) were not run with it.
-- **E2. Proof text and review.** Lemma C has no written proof. Lemma CM, Proposition GH, Theorem R and the Card 5
-  upper bound have no independent mathematical review.
+- **E2. Proof text and review.** On 15 October 2026 a Codex senior review checked the proofs of stage 08 (Fact 1',
+  Lemmas U, D and CM, Propositions F and GH, Theorem D1) and of the lattice phase (Theorem R, Theorems A and B5,
+  the span of the library). It proved Lemma C as Theorem C with a length bound, and proved the M1 results above. It
+  corrected the statements of Lemma CM and Theorem R and fixed three smaller points (`SENIOR-REVIEW.md`). A
+  milestone audit then proved Theorem M\*, the toolkit theorem and the lattice-phase bound (section 9 there). That is a
+  model review: no human has reviewed these proofs.
 
 
 ## 6. Results
@@ -165,12 +244,19 @@ of the lattice run. The lattice run read that state from a table, not with `veri
 
 ### 6.2 The state-only driver v4 (running)
 
-`gdrive.py` started on 15 October 2026 at 06:49 UTC on two inputs, with no hand steering. Status at 08:12 UTC:
+`gdrive.py` started on 15 October 2026 at 06:49 UTC on two inputs, with no hand steering. Status at 10:19 UTC:
 
 | Input | Off at start | Steps so far | Off now | Status |
 | --- | ---: | --- | ---: | --- |
-| stop62 | 860 | 4 driver steps (10, 22, 404 and 982 twists) | 620 | running |
-| e2run24: the end of the 24-twist E2 run of stage 05, not the state E2 of stage 01 | 690 | 1 driver step (44 twists) | 642 | running |
+| stop62 | 860 | 7 driver steps (10, 22, 404, 982, 1,072, 1,296 and 1,436 twists) | 355 | the driver found no step at 355; the pure-twist stage is running (below) |
+| e2run24: the end of the 24-twist E2 run of stage 05, not the state E2 of stage 01 | 690 | 2 driver steps (44 and 150 twists) | 613 | running |
+
+At stop62@355 the pure-twist stage found words of 288 twists for three of the seven units, all in edge cells (two
+86-piece carriers and a 12-piece unit), and is closing them. It skipped the other four:
+- three units of one frame (78, 61 and 15 pieces) lie in an edge, a triangle and a tetrahedron cell, and
+  `cellpure3.py` needs the whole frame in one cell (`SENIOR-REVIEW.md` section 9: containment would suffice);
+- the 17-piece unit does not lie in an edge cell (at the start it lay in a tetrahedron cell, which needs a
+  transport word); the script stopped with an error (`KeyError`) instead of reporting that.
 
 Fresh scrambles of 2, 3, 4 and 6 records (6,194 to 18,247 off pieces, `gen_scramble.py`) were started and stopped:
 scoring one state with 58 units took about an hour, so a run would take days. They are **not run** (gap E1). The
@@ -196,6 +282,15 @@ Check a chain of the off-lattice phase independently (simulator, start table and
 
     python3 -I scripts/gm/verify_u.py <research/jumbling> scripts/echain runs/<name>/chain/chain.json out.jsonl
 
+Accept a chain only when the last line of `out.jsonl` has `"all_ok": true` and no row has `"ok": false`. The script's
+exit status does not reflect the verdict.
+
+Check that a stored pure twist has Bad(W) equal to its cell (Theorem C; for chain step 14 of the stop62 chain, W is
+the 288 letters after the 543 letters of V):
+
+    python3 -I scripts/gm/omega_check.py <research/jumbling>/theory scripts/echain \
+        earlier/stop62-860-to-0/chain/step014-word.json 543 288 1 out.json 5 11
+
 Check the lattice phase of a run that reached the lattice, rebuilding its start from the chain:
 
     python3 -I -B scripts/lattice/checker/verify_late.py <repo> <research/jumbling> data/library-merged.json \
@@ -207,6 +302,6 @@ Check the lattice phase of a run that reached the lattice, rebuilding its start 
 
 - Windows, DirectX, the native host (`tests/native/NativeHostRegression.cs`), input, long-session and performance
   checks: none run; nothing here is evidence for them. Timings are cloud timings of research code.
-- A written proof of Lemma C, and an independent mathematical review of the new proofs (Lemma CM, Proposition GH,
-  Theorem R, the Card 5 upper bound): not done.
+- A human review of the proofs: not done. The senior review of 15 October 2026 (`SENIOR-REVIEW.md`) is a model
+  review.
 - The method on deep scrambles (the I_a@40 scale): not run.
