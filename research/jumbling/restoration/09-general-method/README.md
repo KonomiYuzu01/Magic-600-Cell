@@ -25,6 +25,8 @@ cascade needs no fibre alignment and replaces 31 of the 35 seeds by shorter relo
 restores the two synthetic inputs in 4.5 × 10^7 twists instead of 2.3 × 10^8, and needs at most 71,516,526 twists
 for every input, plus at most 25,852 for the corrections. Round 8, a closing audit, corrected seven statements of
 these pages and the summaries, and showed that the round 7 choice of seeds is optimal over the recorded candidates.
+Round 9 asked whether the reachable set is finite (which decides a uniform bound for gap M1): still open, with a
+uniform period for repeated words, an exact one-letter check at the deep state H6, and a correction to stage 04.
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
