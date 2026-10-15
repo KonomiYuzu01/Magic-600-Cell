@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: direct three-cycles for the lattice phase
+Senior review round 10 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 15 (model review; the integrator re-ran its two exact computations): conjugating each seed by a word that fixes one buffer performs a three-cycle of the lattice cascade with one application of the seed instead of up to two, and a construction then needs at most 50,560,184 twists for every input instead of 71,514,544 (4,675,165 macro actions); it is not implemented. Setting the frames during the position loop fails as proposed, and the cost of the buffer cleanup that such a schedule would end with is computed.
+
 ## [2026-10-15] update | Jumbling: is the reachable set finite?
 Senior review round 9 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 14 (model review; the integrator re-ran its three exact checks): whether the reachable I_a configurations are finite, which decides a uniform bound for gap M1, stays open. It proved that a word repeated without end is periodic with a period that depends on neither the word nor the state, certified that no single letter takes the deep state H6 to height 8, and found that the extended height closure of stage 04 (`refexact2.py`) drops a reachable transition, which is now noted there; Proposition HB is not affected.
 
