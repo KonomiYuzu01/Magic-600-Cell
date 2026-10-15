@@ -6686,7 +6686,420 @@ turn (576, 10): cap 535 (branch 3), in NB of out grips [525], 170 straddlers, 13
 turn (576, 11): cap 498 (branch 2), in NB of out grips [], 446 straddlers, 139 whole in cap 576; (class, cap in frame): [(('height 2 branch 1', False), 186), (('height 2 branch 4', False), 139), (('height 4 branch 1', False), 121)]
 ```
 
-## 25. What changed in METHOD.md
+## 25. Frames, empty sections and exceptional raises (round 20)
+
+Round 19 showed that traps cannot carry the height (T19-08) and left the integrator's frame lemma unreviewed (section 24). Round 20 asked four things: to check the frame lemma and its covering corollary, and to find the frame of every reachable pose from its place in the tree (Q1); to bound the exceptional raises of T19-08 along every continuation in which K stays high, or to give a schema that raises K by two from every state of a stated kind, or an obstruction for a stated family of relays (Q2); whether letters at other grips during a trap can enable a later rise that no word without them reaches (Q3); and what each result gives (Q4). The review returned five results (T20-01 to T20-05, all `minor`). The integrator re-ran the two programs from the repository root, got the reported outputs exactly, checked the proofs, and adopted all five. The frame lemma holds, and frames are decided by height. The covering corollary holds inside the current occupied body, which after jumbles is not the 600-cell: the integrator's experiment E20-3 finds a clean cut whose hyperplane crosses the 600-cell, inside the cap of an out grip that holds K, where no piece lies, so section 24 is corrected below. The number of exceptional raises is not bounded, because a raise at an out grip and its inverse can be repeated without end (T20-03). None of the five results settles X1. At the owner's instruction the series stops after this round, without a joint attack.
+
+| Finding | Status | Result |
+| --- | --- | --- |
+| T20-01 | proved | The frame lemma holds: if P^T n_x = n_y, then n_x·Pv − κ = n_y·v − κ for every point v, and every home piece lies on one side of H_y. The covering corollary holds when "inside the body" is read as the interior of the current occupied body U, the region that the posed pieces and the core fill: if cut x is clean, H_x ∩ int(U) is covered by facets of pieces that lie in H_x, and every such piece has x in its frame. Facets in other hyperplanes meet H_x in sets of dimension at most two, so the facets in H_x cover a dense part of this section, and their union is closed, so they cover all of it. Such a facet comes from a home facet on a cut: the facets of the 600-cell lie at distance √NN from the centre and the cuts at κ/√NN, with κ = (121/125)NN, and rotations keep these distances, so P n_y = n_x. The argument gives nothing across an empty region between pieces. |
+| T20-02 | proved | Frames by height. Write P = [l, r], z = l v0 and w_x = n_x v0. Every reachable right factor fixes v0. If P n_y = n_x, then w_x = l w_y, so z is a neighbour of w_x and has height at most 2. At height 2, w_x is the middle vertex of the path from v0 to z, so the frame lies in the tree branch of the pose; at height 4 or more the frame is empty. This half needs only TREEFACTS; it is the computation of AL in stage 04 (`PROOFS.md` section 4.1). Conversely, under the tree model H: if z has height 2 beyond w_c, Λ_c fixes w_c and its orbit of v0 has 60/12 = 5 vertices, all neighbours of w_c, so some jumble g at c has g_L v0 = z and P = gk with k in K⁺; frame(gk) = frame(g), and T5 puts all 120 cuts of c's branch in it. At height 0 the frame has all 600 cuts. *Lining lemma:* a piece with a three-dimensional facet on a clean H_x is a lattice piece or a piece of height 2 in x's branch, and pieces of these kinds never straddle x; being of these kinds does not make a piece touch H_x. |
+| T20-03 | computed; proved | The count E_t of T19-08 is not bounded along continuations in which K stays high. After the first 144 letters of E17-4, K has height 6 and grip 593 is out. The letters (593, 12) and (593, 45), the second the inverse of the first, raise K to 8 and give back the exact full state; 593 stays out throughout. Repeating the pair n times gives E = n while K stays at heights 6 and 8, and every repetition is admissible by induction, since the state comes back. So no function of the state can fall at every exceptional raise without rising at some other step while K stays high, and a bound on heights has to come from something other than a count of exceptional raises. T19-08 stands as a necessary condition. |
+| T20-04 | proved | A foreign facet in a rim relay has five possible sources. Just before a fresh departure at e, let S be the pieces whole in cap e, and apply letters at e only while e is out: their product A is a jumble at e, and every letter moves exactly S. Let a be the action of A on the left tree, d a cut of another branch, y = a⁻¹v0 and u = a⁻¹w_d. Since a fixes w_e, the path v0, w_e, y, u is a geodesic, so y has height 2 and u height 3, both in e's branch. If a piece of S then has a facet in H_d, AL makes its left vertex before the departure a neighbour of u: either y, and the piece returns to the lattice, or one of the four vertices of height 4 beyond u, and the piece becomes height 2 in d's branch. Lattice pieces, pieces of another branch and pieces of height 6 or more cannot supply the facet. So where H_d has a three-dimensional section inside both the occupied body and the open cap e, only these pieces can line it. The hypothesis is needed: that K lies in both caps does not give such a section. |
+| T20-05 | proved; computed | At X151, letters at other grips during the trap at 526 cannot free another immediate raiser. Four pieces F = 160076, 157397, 167985 and 157385 lie whole in cap 526. The caps of branches other than K's that hold K whole are 526, 530, 563 and 591, and 160076, 167985 and 157385 straddle 530, 563 and 591. For each coset representative 12 to 15 at 526, piece 160076 then lies whole in exactly one cap outside NB(526) ∪ {526} (592, 384, 536 and 575), which 157397 straddles, and the other three lie whole in none; retained letters at 526 permute the caps and keep NB(526), so this covers all 48 jumbles. While 526 is out, no letter at another grip can move a piece of F: INV blocks NB(526), and the table blocks the other grips. At the first return, with retained product a, K and F have their poses turned by a, so a(530), a(563) and a(591) stay blocked and the only immediate raiser is 526, as when a is applied directly at X151; raising there again satisfies TH. Whether a change of the other pieces made during a trap helps after further letters stays open (Q3). |
+
+### Correction to section 24
+
+The covering corollary of section 24 says that if cut x is clean, "the part of H_x inside the body" is covered by facets of pieces that lie in H_x. With the body read as the 600-cell, this is false, and the proof given there assumed that every point of H_x inside the body lies in a piece. After jumbles the pieces no longer fill the 600-cell outside the core: a jumble at c fixes n_c and keeps cap c, but not the facets of the 600-cell, so a turned cap sticks out of the 600-cell and leaves empty space inside it. T20-01 proves the corollary with the interior of the current occupied body in place of the body, and that is the form used from now on. E20-3 gives an instance: before letter 145 of the relay, cut 593 is clean, and H_593 crosses the 600-cell inside the cap of the out grip 501, which holds K, at points that lie in no piece. The same gap affects the integrator's observation in the packet of this round, that a cut of another branch through the cap of the previous raiser is lined there because K lies in both caps; T20-04 states the hypothesis it needs, an occupied three-dimensional section. The frame lemma, the consequence of E19-1 and the statement in section 24 that a clean cut is lined only by pieces with it in their frames, where pieces do lie along it, are unaffected.
+
+### Integrator experiments (during the round)
+
+- E20-1, frames by height (exact). The products of at most two jumbles meet 341 cosets of K⁺, as many as the vertices of the left tree at heights 0, 2 and 4 (1, 20 and 320). Every one of them has right distance 0; the frame has all 600 cuts at height 0, exactly the 120 cuts of the tree branch at each of the 20 cosets of height 2, and no cut at each of the 320 of height 4. The 600 lattice normals, as quaternions, lie at tree distance 1, 120 in each branch. This checks T20-02 at every coset of height at most 4.
+- E20-2, what lines the raiser's cut at every rise. Along the word of 152 letters K rises 12 times. Eleven rises are exceptional; only the last, at 526, is a fresh raise where TH holds. At every rise, the 1,124 to 1,592 pieces with a facet on the raiser's cut are lattice pieces or pieces of height 2 in the raiser's branch, as the lining lemma requires. Inside the out caps that hold K, the cut runs along pieces of height 2 in the raiser's branch and along lattice pieces that letters had returned from height 2: at the raises at 501 (letters 103, 125 and 132), pieces of height 2 in branch 1 and pieces that 501, 521 or 484 had returned; at the raise at 593 at letter 141, 719 pieces of height 2 in branch 2 and 100 pieces that letters at 537, 501, 557, 564 and 484 had returned; at the rim raise at 576 (letter 149), the 22 pieces of E19-2. At letters 144 and 145, K lies whole in caps 501 and 593, and no piece whole in the cap of the other grip lines the raiser's cut.
+- E20-3, an empty part of a clean cut (exact). Before letter 145, grips 501 and 593 are out, both cuts are clean, and K lies whole in both caps. All 2,784 pieces whole in cap 501 lie strictly on one side of H_593: the 7 pieces of K beyond it, the other 2,777 before it. A segment from a vertex of K to a vertex of piece 106595 crosses H_593 at a point strictly inside cap 501 and strictly inside the 600-cell. The pieces outside cap 501 and the core lie outside the open cap, so this point lies in no piece, though cut 593 is clean.
+
+### What it gives
+
+- The frame lemma holds, and its covering corollary holds inside the current occupied body (T20-01). It does not hold inside the 600-cell: jumbled caps leave empty regions, and a clean cut can cross one inside a cap that holds K (E20-3). An argument that a cut must be lined near K therefore needs an occupied section of the cut (T20-04).
+- Frames are decided by height: all 600 cuts at height 0, the 120 cuts of the tree branch at height 2, and none from height 4 (T20-02, checked at every coset of height at most 4 by E20-1). A clean cut is lined only by lattice pieces and pieces of height 2 in its branch, and every rise of the relay of round 17 obeys this (E20-2). In a rim relay, a foreign facet can come only from pieces at five tree vertices before the departure (T20-04).
+- The count of exceptional raises is not bounded while K stays high (T20-03), so T19-08 alone cannot bound the heights: a measure that falls at every exceptional raise must rise somewhere else, as it must at the letter that lowers K again in that cycle.
+- At the trap of X151, letters at other grips during the trap cannot free another immediate raiser (T20-05). Whether a change of the other pieces made during a trap helps after further letters stays open.
+- X1 and the uniform bound of M1 stay open. Proposition HB is unchanged: K belongs to model orbits 19 to 24.
+- Next (not started; at the owner's instruction the series stops after this round): a measure of the pieces that can line an occupied section of a raiser's cut near K, allowed to rise where K falls; or a schema that reaches a state of the same kind with K two levels higher.
+
+### Reproduction (round 20)
+
+From the repository root, with Python 3.13 and NumPy 2.5: `python3 -I -B -` with each program on standard input. T20-01, T20-02 and T20-04 are proofs. T20-03, T20-05, E20-2 and E20-3 read the word of 147 letters from the program "E17-4, checked letter by letter" of section 22 and check the SHA-256 of that program. On the integrator's machine T20-03, T20-05 and E20-1 to E20-3 took 14, 16, 96, 139 and 24 seconds.
+
+T20-03: a raise at an out grip and its inverse, repeated.
+
+```python
+import sys,ast,hashlib
+from pathlib import Path
+sys.path[:0]=['research/jumbling/theory','research/jumbling','research/jumbling/fixtures']
+import sim,restore as R,trees as T
+from exact import matmul,transpose
+from sim.kplus import to_tuple
+src=Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md').read_text()
+code=src.split('E17-4, checked letter by letter: the word of 147 letters from the solved state.')[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest()=='897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911'
+W=next(ast.literal_eval(n.value) for n in ast.parse(code).body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='W' for t in n.targets))
+C=sim.get_context();M=R.menu('I_a');s=sim.State(C,filtered=False,menu=M);G=C.kplus.matrix(0)
+K=(118527,126380,126382,126384,126385,149644,149650)
+def step(c,j):
+ global G
+ A=R.element(M,c,j)
+ o=s.apply(sim.Twist(C,c,A,'menu',{'menu':M.name}),journal=False)
+ assert o.applied and not o.uncertain
+ if c==593:G=to_tuple(matmul(A,G))
+def h():
+ Q=s.pose(K[0]);assert all(s.pose(p)==Q for p in K)
+ return T.dist(T.factors(Q)[0])
+def keys():return tuple(s._poses[int(i)].key for i in s.pose_id)
+for c,j in W[:144]:step(c,j)
+base=keys();g0=G
+assert h()==6 and C.kplus.index_of_matrix(G)<0
+assert to_tuple(transpose(R.element(M,593,12)))==R.element(M,593,45)
+for i in range(2):
+ step(593,12);assert h()==8 and C.kplus.index_of_matrix(G)<0
+ step(593,45);assert h()==6 and keys()==base and G==g0
+print('PASS: exact 6->8->6 cycle; 593 stays out; full state restored')
+```
+
+Output:
+
+```text
+PASS: exact 6->8->6 cycle; 593 stays out; full state restored
+```
+
+T20-05: the four-piece certificate at X151.
+
+```python
+import sys,ast,hashlib
+from pathlib import Path
+sys.path[:0]=['research/jumbling/theory','research/jumbling','research/jumbling/fixtures']
+import sim,restore as R,trees as T
+from exact import dot,matmul,matvec
+from sim.kernel import Evaluator,pullback_form,rows_form
+C=sim.get_context();M=R.menu('I_a');I=C.kplus.matrix(0);D=C.data
+src=Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md').read_text()
+code=src.split('E17-4, checked letter by letter: the word of 147 letters from the solved state.')[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest()=='897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911'
+W=next(ast.literal_eval(n.value) for n in ast.parse(code).body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='W' for t in n.targets))
+W += [(582,18),(576,12),(576,1),(573,1)]
+s=sim.State(C,filtered=False,menu=M)
+for c,j in W:
+ o=s.apply(sim.Twist(C,c,R.element(M,c,j),'menu',{'menu':M.name}),journal=False)
+ assert o.applied and not o.uncertain
+assert len(W)==151
+K=(118527,126380,126382,126384,126385,149644,149650)
+F=(160076,157397,167985,157385)
+EV=[Evaluator(pullback_form(I,n)) for n in D.N]
+NB={d for d in range(600) if d!=526 and (D.NN*(D.NN+dot(D.N[526],D.N[d]))-2*D.KAPPA*D.KAPPA).sign()>0}
+assert len(NB)==16
+far=set(range(600))-NB-{526}
+def points(p,A=I):
+ return [matvec(matmul(A,s.pose(p)),v) for v in C.regions.vertices(p)]
+def sides(V):
+ f=rows_form(V)
+ return [ev.classify(f)[0] for ev in EV]
+def holders(V):return {c for c,t in enumerate(sides(V)) if t=='in'}
+assert all(sides(points(p))[526]=='in' for p in F)
+for p,c in [(160076,530),(167985,563),(157385,591)]:
+ assert sides(points(p))[c]=='straddle'
+b=T.branch(T.factors(s.pose(K[0]))[0]);B=[T.branch(tuple(n)) for n in D.N]
+foreign={c for c in holders([v for p in K for v in points(p)]) if B[c]!=b}
+assert foreign=={526,530,563,591}
+print('prefix',len(W),s.digest())
+print('foreign holders',sorted(foreign))
+for j,e in zip((12,13,14,15),(592,384,536,575)):
+ A=R.element(M,526,j)
+ for p in (157397,167985,157385):assert not (holders(points(p,A))&far)
+ assert holders(points(160076,A))&far=={e}
+ assert sides(points(157397,A))[e]=='straddle'
+ print('representative',j,'escape',e,'blocked by',157397)
+print('PASS: four-piece certificate')
+```
+
+Output:
+
+```text
+prefix 151 5561f12602667cebe0dd0b4a910412427104df00d1dad8e75b5549db70870d7f
+foreign holders [526, 530, 563, 591]
+representative 12 escape 592 blocked by 157397
+representative 13 escape 384 blocked by 157397
+representative 14 escape 536 blocked by 157397
+representative 15 escape 575 blocked by 157397
+PASS: four-piece certificate
+```
+
+E20-1: frames by height.
+
+```python
+# E20-1: frames by height, exact. The frame of a pose P (the cuts x with P^T n_x a lattice normal) is read off the
+# set P(N) of images of the lattice normals: x is in it exactly when n_x lies in P(N). So it depends only on the coset
+# P K+, and P(N) names that coset. Every vertex of the left tree at distance 2 from v0 is the image of v0 under a
+# single jumble, and every vertex at distance 4 the image under a jumble times a pose of height 2, so the products
+# below meet every coset of height at most 4. For one product in each coset: the tree distances of its left and right
+# factors (exact) and its frame (floating point preselects; every hit is confirmed exactly, and an exact equality
+# would put the floating-point image within 1e-9 of the normal, so a miss is exact too). Also the tree distance and
+# branch of every lattice normal as a quaternion.
+import sys
+from collections import Counter
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec
+from sim.kplus import to_tuple
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+E = lambda g, j: RS.element(M, g, j)
+isin = lambda q: kp.index_of_matrix(to_tuple(q)) >= 0
+fl = lambda q: float(q.a + q.b * 5 ** 0.5) / q.d
+NF = np.array([[fl(x) for x in n] for n in d.N])
+BR = [T.branch(tuple(n)) for n in d.N]
+print('lattice normals as quaternions (tree distance, branch): count',
+      sorted(Counter((T.dist(tuple(n)), b) for n, b in zip(d.N, BR)).items()))
+J = [(c, j) for c in range(600) for j in range(60) if not isin(E(c, j))]
+Jf = np.array([[[fl(x) for x in r] for r in E(c, j)] for c, j in J])
+def key(Pf):
+    im = np.rint((NF @ Pf.T) * 1e6).astype(np.int64)
+    return im[np.lexsort(im.T[::-1])].tobytes()
+reps = {}
+for (c, j), g in zip(J, Jf):
+    reps.setdefault(key(g), ((c, j),))
+one = list(reps.values())
+for A in one:
+    Af = Jf[J.index(A[0])]
+    for (c, j), g in zip(J, Jf):
+        reps.setdefault(key(g @ Af), ((c, j),) + A)
+print('jumbles', len(J), '; cosets met by one jumble', len(one), '; by products of two', len(reps))
+rows = Counter(); h2 = Counter()
+for word in reps.values():
+    P = kp.matrix(0)
+    for c, j in reversed(word): P = matmul(E(c, j), P)
+    dl, dr, bl, br = T.pose_tree(P)
+    Pf = np.array([[fl(x) for x in r] for r in P]); im = NF @ Pf.T
+    dist = ((im[:, None, :] - NF[None, :, :]) ** 2).sum(axis=2)
+    fr = frozenset(int(x) for y, x in zip(*np.nonzero(dist < 1e-9))
+                   if tuple(matvec(P, d.N[int(y)])) == tuple(d.N[int(x)]))
+    rows[(dl, dr, len(fr))] += 1
+    if dl == 2: h2[fr == frozenset(x for x in range(600) if BR[x] == bl)] += 1
+print('cosets (left distance, right distance, frame size): count', sorted(rows.items()))
+print('height-2 cosets whose frame is exactly the 120 cuts of their tree branch:', dict(h2))
+```
+
+Output:
+
+```text
+lattice normals as quaternions (tree distance, branch): count [((1, 0), 120), ((1, 1), 120), ((1, 2), 120), ((1, 3), 120), ((1, 4), 120)]
+jumbles 28800 ; cosets met by one jumble 20 ; by products of two 341
+cosets (left distance, right distance, frame size): count [((0, 0, 600), 1), ((2, 0, 120), 20), ((4, 0, 0), 320)]
+height-2 cosets whose frame is exactly the 120 cuts of their tree branch: {True: 20}
+```
+
+E20-2: what lines the raiser's cut at every rise.
+
+```python
+# E20-2: what lines the raiser's cut at every rise of K along the word of 152 letters. Before a letter that raises K
+# the raiser's cut e is clean, so every piece with a facet on H_e has e in its frame. For each rise: the raiser, its
+# branch, whether it was out, whether TH holds there (four orientations, exact), K's height and tree branch before
+# and after, and the out caps that hold K whole. Every piece with a facet on H_e (its vertices on H_e span H_e, and
+# its other vertices lie on one side of it) is found (floating point preselects with margin 1e-6, exact arithmetic
+# confirms) and checked to be a lattice piece or a piece of height 2 in the raiser's branch; those that lie whole in
+# an out cap holding K are counted by class, lattice pieces split into those never moved off the lattice and those
+# that a letter returned to it (with that letter's grip and the class the piece left).
+import sys, ast, hashlib, math
+from pathlib import Path
+from collections import Counter, defaultdict
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import Q5, matmul, matvec, dot, affine_rank
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0); RG = C.regions
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+path = Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+code = path.read_text().split(
+    'E17-4, checked letter by letter: the word of 147 letters from the solved state.'
+    )[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest() == '897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911'
+W = next(ast.literal_eval(n.value) for n in ast.parse(code).body
+         if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'W' for t in n.targets))
+W = W + [(582, 18), (576, 12), (576, 1), (573, 1), (526, 12)]
+E = lambda g, j: RS.element(M, g, j)
+isin = lambda q: kp.index_of_matrix(to_tuple(q)) >= 0
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+NF = np.array([[fl(x) for x in n] for n in d.N]); KAP = fl(d.KAPPA)
+BR = [T.branch(tuple(n)) for n in d.N]
+EV = [Evaluator(pullback_form(I, n)) for n in d.N]
+VK = sorted({tuple(v) for p in K for v in RG.vertices(p)}, key=repr)
+k, N, t = d.KAPPA, d.NN, Q5(1, 1, 4)
+NB = {c: {a for a in range(600) if a != c and (N * (N + dot(d.N[c], d.N[a])) - 2 * k * k).sign() > 0}
+      for c in range(600)}
+assert all(len(v) == 16 for v in NB.values())
+def holding(Q):
+    e, rows = rows_form([tuple(matvec(Q, v)) for v in VK])
+    return {a for a, ev in enumerate(EV) if all(ev.sign_row(e, row) >= 0 for row in rows)}
+def th(c, Q):
+    S = set(range(600)) - NB[c] - {c}
+    return all(not (holding(matmul(E(c, r), Q)) & S) for r in (12, 13, 14, 15))
+def lb(Q):
+    l = T.factors(Q)[0]; return T.dist(l), T.branch(l)
+CL = {}
+def pcls(P):
+    if P.key not in CL: CL[P.key] = 'lattice' if P.kidx >= 0 else 'height %d branch %d' % lb(P.matrix)
+    return CL[P.key]
+PF = {}
+def posef(st, pid):
+    key = st._poses[pid].key
+    if key not in PF: PF[key] = np.array([[fl(x) for x in r] for r in st._pose_matrix(pid)])
+    return PF[key]
+s = sim.State(C, filtered=False, menu=M); G = [I] * 600; moves = defaultdict(list); rises = []
+for i, (g, j) in enumerate(W):
+    inside = s.classify(g, need_inside=True).inside.tolist()
+    Q = s.pose(K[0]); assert all(s.pose(p) == Q for p in K)
+    if K[0] in inside and lb(matmul(E(g, j), Q))[0] > lb(Q)[0]:
+        O = sorted(c for c in range(600) if not isin(G[c]))
+        hk = tuple(o for o in O if o in holding(Q))
+        row = Counter(); facets = 0
+        for p in range(len(s.pose_id)):
+            pid = int(s.pose_id[p]); hf = RG.frows(p)[0] @ (posef(s, pid).T @ NF[g]) - KAP
+            if int((abs(hf) < 1e-6).sum()) < 4 or (hf.min() < -1e-6 and hf.max() > 1e-6): continue
+            V = [matvec(s._pose_matrix(pid), v) for v in RG.vertices(p)]
+            h = [(dot(v, d.N[g]) - d.KAPPA).sign() for v in V]
+            if h.count(0) < 4 or (1 in h and -1 in h): continue
+            if affine_rank([v for v, x in zip(V, h) if x == 0]) < 3: continue
+            cls = pcls(s._poses[pid]); facets += 1
+            assert cls == 'lattice' or cls == 'height 2 branch %d' % BR[g], cls
+            if cls == 'lattice':
+                past = [m for m in moves[p] if m[3] != 'lattice']
+                cls = 'lattice, returned by %d from %s' % (moves[p][-1][1], past[-1][3]) if past else 'lattice, never off'
+            V = [tuple(v) for v in V]
+            holders = tuple(o for o in hk if all((dot(v, d.N[o]) - d.KAPPA).sign() >= 0 for v in V))
+            if holders: row[(holders, cls)] += 1
+        rises.append((i + 1, g, j, BR[g], g in O, th(g, Q), lb(Q), lb(matmul(E(g, j), Q)), hk, facets, row))
+        print('letter %d (%d, %d): branch %d, out before %s, TH %s, K %s -> %s, out caps holding K %s;'
+              ' %d pieces with a facet on the cut, all lattice or height 2 in branch %d'
+              % (rises[-1][:10] + (BR[g],)), flush=True)
+        for key in sorted(row, key=lambda key: (-row[key], key)): print('    whole in', key[0], ':', key[1], row[key])
+    o = s.apply(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), journal=False)
+    assert o.applied and not o.uncertain, (g, j)
+    G[g] = to_tuple(matmul(E(g, j), G[g]))
+    for p in inside: moves[p].append((i + 1, g, j, pcls(s._poses[int(s.pose_id[p])])))
+print('rises', len(rises), '; exceptional (at an out grip, or fresh where TH fails):',
+      sum(1 for r in rises if r[4] or not r[5]), '; final K', lb(s.pose(K[0])), '; digest', s.digest()[:16])
+```
+
+Output:
+
+```text
+letter 1 (521, 35): branch 3, out before False, TH False, K (0, -1) -> (2, 3), out caps holding K (); 1565 pieces with a facet on the cut, all lattice or height 2 in branch 3
+letter 29 (521, 17): branch 3, out before False, TH False, K (0, -1) -> (2, 3), out caps holding K (); 1485 pieces with a facet on the cut, all lattice or height 2 in branch 3
+letter 75 (521, 38): branch 3, out before False, TH False, K (0, -1) -> (2, 3), out caps holding K (); 1534 pieces with a facet on the cut, all lattice or height 2 in branch 3
+letter 103 (501, 59): branch 1, out before True, TH False, K (0, -1) -> (2, 1), out caps holding K (501,); 1592 pieces with a facet on the cut, all lattice or height 2 in branch 1
+    whole in (501,) : height 2 branch 1 844
+    whole in (501,) : lattice, returned by 501 from height 2 branch 1 41
+    whole in (501,) : lattice, returned by 521 from height 2 branch 3 8
+letter 125 (501, 49): branch 1, out before True, TH False, K (0, -1) -> (2, 1), out caps holding K (501, 593); 1379 pieces with a facet on the cut, all lattice or height 2 in branch 1
+    whole in (501,) : height 2 branch 1 574
+    whole in (501, 593) : height 2 branch 1 76
+    whole in (501, 593) : lattice, returned by 501 from height 2 branch 1 37
+    whole in (593,) : lattice, returned by 484 from height 2 branch 1 9
+    whole in (501,) : lattice, returned by 501 from height 2 branch 1 4
+letter 132 (501, 39): branch 1, out before True, TH False, K (0, -1) -> (2, 1), out caps holding K (501,); 1356 pieces with a facet on the cut, all lattice or height 2 in branch 1
+    whole in (501,) : height 2 branch 1 707
+    whole in (501,) : lattice, returned by 501 from height 2 branch 1 41
+letter 141 (593, 23): branch 2, out before True, TH False, K (2, 1) -> (4, 2), out caps holding K (593,); 1431 pieces with a facet on the cut, all lattice or height 2 in branch 2
+    whole in (593,) : height 2 branch 2 719
+    whole in (593,) : lattice, returned by 537 from height 2 branch 1 43
+    whole in (593,) : lattice, returned by 501 from height 2 branch 1 30
+    whole in (593,) : lattice, returned by 557 from height 2 branch 3 15
+    whole in (593,) : lattice, returned by 564 from height 2 branch 2 9
+    whole in (593,) : lattice, returned by 484 from height 2 branch 1 3
+letter 144 (501, 22): branch 1, out before False, TH False, K (4, 2) -> (6, 1), out caps holding K (593,); 1382 pieces with a facet on the cut, all lattice or height 2 in branch 1
+letter 145 (593, 12): branch 2, out before True, TH False, K (6, 1) -> (8, 2), out caps holding K (501, 593); 1401 pieces with a facet on the cut, all lattice or height 2 in branch 2
+    whole in (593,) : height 2 branch 2 819
+letter 147 (582, 12): branch 1, out before False, TH False, K (8, 2) -> (10, 1), out caps holding K (); 1124 pieces with a facet on the cut, all lattice or height 2 in branch 1
+letter 149 (576, 12): branch 4, out before False, TH False, K (10, 1) -> (12, 4), out caps holding K (582,); 1341 pieces with a facet on the cut, all lattice or height 2 in branch 4
+    whole in (582,) : lattice, returned by 582 from height 2 branch 1 22
+letter 152 (526, 12): branch 0, out before False, TH True, K (12, 4) -> (14, 0), out caps holding K (); 1523 pieces with a facet on the cut, all lattice or height 2 in branch 0
+rises 12 ; exceptional (at an out grip, or fresh where TH fails): 11 ; final K (14, 0) ; digest ea0bc4f31df0c88e
+```
+
+E20-3: an empty part of a clean cut.
+
+```python
+# E20-3: an empty part of a clean cut, exact. Before letter 145 of the word of 152 letters, grips 501 and 593 are out,
+# both cuts are clean and K lies whole in both caps. Every piece whole in cap 501 lies strictly on one side of H_593
+# (exact signs at every vertex), so no piece has a vertex on H_593 inside cap 501. A segment from a vertex of K to a
+# vertex of another piece of cap 501 crosses H_593 at a point x strictly inside cap 501 and strictly inside the
+# 600-cell (exact). The other pieces and the core lie outside the open cap 501, so x lies in no piece.
+import sys, ast, hashlib, math
+from pathlib import Path
+from collections import Counter
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling', 'research/jumbling/fixtures']
+import sim, wj, restore as RS
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a'); RG = C.regions
+I = kp.matrix(0)
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+code = Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md').read_text().split(
+    'E17-4, checked letter by letter: the word of 147 letters from the solved state.')[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest() == '897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911'
+W = next(ast.literal_eval(n.value) for n in ast.parse(code).body
+         if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'W' for t in n.targets))
+E = lambda g, j: RS.element(M, g, j)
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+s = sim.State(C, filtered=False, menu=M); G = {501: I, 593: I}
+for g, j in W[:144]:
+    o = s.apply(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), journal=False)
+    assert o.applied and not o.uncertain
+    if g in G: G[g] = to_tuple(matmul(E(g, j), G[g]))
+assert all(kp.index_of_matrix(G[c]) < 0 for c in G)
+assert all(s.classify(c, need_inside=False).status == 'admissible' for c in G)
+in501 = sorted(s.classify(501, need_inside=True).inside.tolist())
+in593 = set(s.classify(593, need_inside=True).inside.tolist())
+assert set(K) <= set(in501) and set(K) <= in593
+h = lambda v, c: (dot(v, d.N[c]) - d.KAPPA).sign()
+V = {p: [matvec(s.pose(p), v) for v in RG.vertices(p)] for p in in501}
+side = Counter()
+for p in in501:
+    t = {h(v, 593) for v in V[p]}
+    side[('K' if p in K else 'other', 'beyond H_593' if t == {1} else 'before H_593' if t == {-1} else 'touches H_593')] += 1
+print('state after 144 letters:', s.digest()[:16], '; grips 501 and 593 out, both cuts clean')
+print('pieces whole in cap 501:', len(in501), '; by side of H_593:', sorted(side.items()))
+assert side[('K', 'beyond H_593')] == len(K) and sum(side.values()) == side[('K', 'beyond H_593')] + side[('other', 'before H_593')]
+NF = np.array([[fl(x) for x in n] for n in d.N]); KAP = fl(d.KAPPA); NNf = fl(d.NN)
+cand = []
+for u in (v for p in K for v in V[p]):
+    uf = np.array([fl(x) for x in u])
+    for p in in501:
+        if p in K: continue
+        for w in V[p]:
+            wf = np.array([fl(x) for x in w])
+            a, b = uf @ NF[593] - KAP, wf @ NF[593] - KAP
+            xf = uf + a / (a - b) * (wf - uf)
+            cand.append(((xf @ NF.T).max() - NNf, p, u, w))
+cand.sort(key=lambda r: r[0])
+for gap, p, u, w in cand:
+    a, b = dot(u, d.N[593]) - d.KAPPA, dot(w, d.N[593]) - d.KAPPA
+    x = tuple(ui + a / (a - b) * (wi - ui) for ui, wi in zip(u, w))
+    if (dot(x, d.N[593]) - d.KAPPA).sign() == 0 and h(x, 501) > 0 and all((dot(x, n) - d.NN).sign() < 0 for n in d.N):
+        break
+else:
+    raise AssertionError('no crossing point inside the 600-cell')
+print('a point x of H_593 strictly inside cap 501 and the 600-cell, between a vertex of K and a vertex of piece', p,
+      ': n_593.x - kappa = 0, n_501.x - kappa = %.4f, max over cuts of n_c.x - NN = %.4f'
+      % (fl(dot(x, d.N[501]) - d.KAPPA), max(fl(dot(x, n) - d.NN) for n in d.N)))
+print('candidate segments with a float crossing inside the 600-cell:', sum(1 for r in cand if r[0] < -1e-9), 'of', len(cand))
+```
+
+Output:
+
+```text
+state after 144 letters: 163af979b5ce8a23 ; grips 501 and 593 out, both cuts clean
+pieces whole in cap 501: 2784 ; by side of H_593: [(('K', 'beyond H_593'), 7), (('other', 'before H_593'), 2777)]
+a point x of H_593 strictly inside cap 501 and the 600-cell, between a vertex of K and a vertex of piece 106595 : n_593.x - kappa = 0, n_501.x - kappa = 0.3544, max over cuts of n_c.x - NN = -0.0306
+candidate segments with a float crossing inside the 600-cell: 195 of 725802
+```
+
+## 26. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -6736,3 +7149,4 @@ turn (576, 11): cap 498 (branch 2), in NB of out grips [], 446 straddlers, 139 w
 - After round 17 (section 22): section 5, gap M1, the finiteness item says that heights 10, 12 and 14 are reachable by exact words of 147, 149 and 152 letters (E17-4, E17-6, E17-7), through turns at the raiser, and that TH holds at the raise to 14.
 - After round 18 (section 23): section 5, gap M1, the finiteness item says that TH is decided by four orientations at the raiser and not by height (T18-01, T18-02), that at most 120 grips are out at once (T18-04), and that two integrator lemmas, not yet reviewed, explain the stop at height 14 (E18-1 to E18-3).
 - After round 19 (section 24): section 5, gap M1, the finiteness item says that both integrator lemmas of round 18 hold (T19-01, T19-03), that traps cannot carry the height (T19-08), that at most three out grips hold the high pieces at once (T19-07), and that the integrator's frame lemma, not yet reviewed, explains the blocking and the rim raise at 576 (E19-1 to E19-3).
+- After round 20 (section 25): section 5, gap M1, the finiteness item says that the frame lemma holds, that its covering corollary holds inside the current occupied body and not inside the 600-cell (T20-01, E20-3), that frames are decided by height, so that a clean cut is lined only by lattice pieces and pieces of height 2 in its branch (T20-02, E20-1, E20-2), that the number of exceptional raises is not bounded (T20-03), and that letters at other grips during the trap before (526, 12) free no other raiser (T20-05).
