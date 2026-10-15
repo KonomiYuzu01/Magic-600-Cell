@@ -5151,7 +5151,878 @@ all these caps in NB of 526 : True ; number of orientations 48
 seconds 86
 ```
 
-## 23. What changed in METHOD.md
+## 23. Where TH holds, returns and the lens criterion (round 18)
+
+Round 17 reached height 14 and met a raise where the hypothesis TH of the trap lemma holds (section 22). Round 18 asked three things: how to decide TH and what it depends on (Q1); whether a relay can avoid the raises where TH holds, or whether something bounds the relay (Q2); and what each result gives (Q3). The review returned four results (T18-01 to T18-04, all `minor`). The integrator re-ran the three programs from the repository root, got the reported outputs exactly, checked the proofs of T18-01, T18-03 and T18-04, and adopted all four. The integrator's own experiments and two lemmas of its own (below) explain why the relay of E17-7 stops at 14: each of the 12 returns of the raiser 526 is a retained letter at 526 applied before the raise, and TH holds at 526 because the seven pieces lie deep in its cap.
+
+| Finding | Status | Result |
+| --- | --- | --- |
+| T18-01 | proved | TH at (c, Q) is decided by four orientations. The 48 jumbles at c split into the four cosets A4c·A(c,r), r = 12, 13, 14, 15. A retained element h fixes n_c, permutes the caps and keeps NB(c), and cap d holds h·A·Q(K) whole exactly when cap h⁻¹(d) holds A·Q(K) whole. So TH holds if and only if, for each of the four representatives A(c,r), every cap other than c that holds A(c,r)·Q(K) whole is in NB(c): 4 × 583 exact cap tests. TH is a finite Boolean combination of linear inequalities in Q; height does not enter it explicitly. |
+| T18-02 | computed | TH along the word of 152 letters. Over the poses after letters 141 to 152 and every cap of another branch that holds K whole, 55 pairs (2,640 orientations, 1,584,000 exact cap decisions), TH holds at 29: at heights 4, 6, 8, 10, 12 and 14 in 9 of 12, 2 of 6, 3 of 10, 4 of 11, 9 of 12 and 2 of 4 pairs. Height does not decide TH: after letters 145 and 146 K is at height 8 both times, and TH fails at cap 555 after 145 (item 12 puts K whole in cap 542, outside NB(555)) and holds after 146; cap 580 behaves the same way. At (144, 555) TH fails only through caps of the raiser's own branch. |
+| T18-03 | computed; proved | TH failing is not enough. At X12 (after (576, 12)) the raiser 576 is out and TH fails there. Over its 48 orientations, 60 pairs of an orientation and a cap outside NB(576) hold K whole: 48 in its own branch (24 admissible, 24 blocked) and 12 in other branches, all blocked, each straddled by a height-2 piece of model orbit 3, 5 or 9. Any sequence of letters at 576 that keeps it out acts as one of these 48 elements, caps in NB(576) stay blocked, and a raise needs a cap of another branch (Corollary FN1), so no sequence of letters at 576 alone leads to a raise. The letters (576, 1), (573, 1), (526, 12) do: the letter at 573 is what leaves the raiser's own family. |
+| T18-04 | proved; computed | At most 120 grips are out at once. With A the adjacency of the 4 nearest grips (N15), the NB adjacency is A² + A − 4I, so the closed N15 neighbourhoods of two grips meet only if the grips are NB neighbours. Out grips are pairwise not NB neighbours (INV), so their closed neighbourhoods are disjoint sets of 5 grips: \|O\| ≤ 120. Each branch is an NB-independent set of 120 grips, so the bound is sharp for NB independence (not shown to be reachable). Consequence: along a continuation in which every rise of a piece happens at a grip that was in just before, with D departures and R returns, h_t ≤ h_0 + 2D_t ≤ h_0 + 2(120 − \|O_0\| + R_t); from X10 (h_0 = 10, \|O_0\| = 13) without returns this gives at most 224. So a relay without a height bound needs infinitely many returns or infinitely many raises at grips that are already out (as 593 raised K to 8). |
+
+### Two integrator lemmas (not yet reviewed)
+
+The 60 menu elements at a grip c form a group Λc; at every grip the 12 retained items are exactly the elements in K⁺, and every element fixes n_c (checked at all 600 grips in E18-1). Cap c is the half-space x·n_c ≥ κ, all normals have the same norm |n|, and a piece lies whole in a cap when all its vertices do.
+
+*Excursion identity.* Let c be in at a state X, and let w be a word of letters at c only, admissible from X, after which c is in again. Then w has the same effect as the single letter at c whose element is the product g of the elements of w, and g is retained. Proof: an admissible letter at c moves exactly the pieces that lie whole in cap c, and each element of Λc fixes n_c, so it maps cap c onto itself. Hence after each letter the same pieces lie whole in cap c and none straddles its cut: every letter of w moves the same set of pieces, which is moved by g in total, and the letter g is admissible at X. Since G[c] is in K⁺ before and after, g = G_after·G_before⁻¹ lies in Λc ∩ K⁺, the retained items. So a fresh raise at which TH holds, followed by its return and no letter at another grip, changes the state exactly as one retained letter at the raiser before the raise (E18-1 checks this for the 12 returns of 526 at X14).
+
+*Lens criterion (LC).* Let x be a vertex of K at pose Q, with norm ρ and depth δ = (x·n_c − κ)/|n| in cap c. Write κ' = κ/|n|, φ = arccos(κ'/ρ), and θ3 = 36°, the least angle between n_c and the normal of a cap outside NB(c) ∪ {c} (at every grip; the NB angles are 15.52° and 25.24°). If δ > ρ cos(max(0, θ3 − φ)) − κ' for some vertex of K, then TH holds at (c, Q). Proof: a letter at c is a rotation that fixes n_c, so it keeps ρ and δ of every vertex. If the image y of x lies in cap d at angle θ ≥ θ3 from c, then y·n_d ≥ κ gives ∠(y, n_d) ≤ φ, so ∠(y, n_c) ≥ θ − φ and δ = ρ cos ∠(y, n_c) − κ' ≤ ρ cos(max(0, θ − φ)) − κ' ≤ ρ cos(max(0, θ3 − φ)) − κ'. So no orientation that letters at c give puts K whole in a cap outside NB(c) ∪ {c}.
+
+Corollary (rim raises). If K lies whole in the cap of an out grip d and is raised at a free cap e other than d, then e is not in NB(d), so n_d is at angle at least 36° from n_e. Every vertex of K lies in cap d, so by the inequality above, with e in the place of c, no vertex satisfies the condition of LC at e. A raise made while K is still inside the cap of another out grip is never certified as a trap by LC.
+
+### Integrator experiments (during the round)
+
+- E18-1, the returns of 526. Let X12 be the state before the last letter (526, 12) of the word of 152 letters; no earlier letter is at 526. At X12, K is at height 12 in branch 4 and four caps of another branch hold K whole: 526, which is free, and 530, 563 and 591, which are blocked. Their exact straddlers are 26, 3 and 6 pieces of height 2, all whole in cap 526 and all last moved by the letter (573, 1). At X14 each of the 12 letters at 526 that return it gives the same state (digest) and the same product of letters at every grip as one retained letter at 526 applied at X12 (the excursion identity); the inverse of item 12 gives X12 itself. K is back at height 12, three times in each of the branches 1 to 4, and in each case the caps of another branch that hold K whole are 526, which is free, and three caps blocked by the retained images of those straddlers (one of them, 396, is also in NB of the out grip 280).
+- E18-2, TH, depth and LC. Over 435 pairs (the three fresh raises of the relay, and every cap of another branch that holds K whole in each of the 48 orientations after the raises at 582 and 576), TH holds at 229 and fails at 206. The depth of K in the cap ranges from 0.110 to 0.306 where TH holds and from 0.001 to 0.198 where it fails, so depth alone does not decide TH. LC holds at 217 pairs, all of them pairs where TH holds; the 12 other pairs where TH holds all have depth 0.11018 (after the raise at 576, caps 531, 569, 583 and 590). The floating-point margins are at least 0.0024 on either side of the LC threshold. Of the relay raises, LC and TH fail at 582 (depth 0.072) and 576 (0.008) and both hold at 526 (0.268).
+- E18-3, clearing a raiser and a second trap. After the return (526, 23), cap 486 holds K whole and is blocked by 26 pieces of height 2. Exactly one cap, 386, holds all of them whole, holds no piece of K and is free; 42 of its 59 letters (the 11 retained ones among them) leave K in place and make cap 486 free. After (386, 1), the jumble (486, 12) takes K to height 14 again, in branch 4. LC holds at 486 (depth 0.198), so TH holds there, and in none of the 48 orientations does a cap outside NB(486) hold K whole.
+- E18-4, a bounded relay search from X14. Moves between raises are turns at an out grip that holds K after which K lies whole in a cap outside its NB, returns of such a grip, letters at free caps of K's branch that hold K whole, and raises below the height of X14 after which K lies whole in a cap outside the raiser's NB; a candidate raiser may first be cleared by at most two letters. With up to three such moves the search visits 1,799 states, below its budget of 3,000, and finds no raise to height 16.
+
+### What it gives
+
+- TH is decided by four orientations (T18-01), and height does not decide it (T18-02). LC gives a geometric reason for most traps: TH holds when some vertex of K lies deeper in the raiser's cap than any point of its norm can lie while it is also in a cap at 36° or more from the raiser. In the census LC accounts for 217 of the 229 pairs where TH holds (E18-2).
+- Why the relay of E17-7 stops at 14. The letter (573, 1) moved K so that it no longer lies whole in cap 576 but lies deep in cap 526, and it was the last letter to move each piece that straddles the three other caps that hold K (26, 3 and 6 pieces of height 2). The raise at 526 is then a trap (LC holds), and by the excursion identity its 12 returns are just the 12 retained letters at 526 at X12, after which the candidate caps are blocked by the images of the same pieces (E18-1). Clearing one of them works (a letter at 386 frees cap 486), but the raise there is again a trap by LC (E18-3). A bounded search with clearing finds nothing within three moves (E18-4).
+- A trap followed only by its return gains nothing: by the excursion identity it is one retained letter at the raiser. So after a fresh raise at c where TH holds, any later rise needs letters at other grips while c is out (outside NB(c), and by TH none of them moves K), or must start from the state after the return.
+- Rim raises. A raise made while K still lies whole in the cap of another out grip is never certified as a trap by LC (corollary). The raises at 582 and 576 had K near the rim of the raiser's cap (depths 0.072 and 0.008), and TH failed there; at 526, LC holds, so K no longer lay whole in the cap of any out grip.
+- T18-03 and T18-04 close two simple relay schemas: turns at the raiser alone do not always lead to a raise, and fresh raises without returns are bounded, because at most 120 grips are out at once (from X10, at most height 224).
+- X1 and the uniform bound of M1 stay open: the relay stopped at a trap that the integrator's lemmas explain, which is evidence, not a proof. Proposition HB is unchanged: K belongs to model orbits 19 to 24.
+- Next (round 19): check the two integrator lemmas; extend the excursion identity to excursions during which letters at other grips are applied; decide whether a trap can contribute to a later rise; and decide whether a relay of rim raises, which returns its old raisers once K has left their caps, can go on without bound, or prove a bound on left heights.
+
+### Reproduction (round 18)
+
+From the repository root, with Python 3.13 and NumPy 2.5: `python3 -I -B -` with each program on standard input. T18-01 is a proof; its partition of the 48 jumbles into four cosets is checked in T18-02. T18-02, T18-03 and the E18 programs read the word of 147 letters from the program "E17-4, checked letter by letter" of section 22 and check the SHA-256 of that program. The review's versions of T18-02 and T18-03 checked the digest of this whole file, which this section changes; the versions below check the digest of that program instead and print the same output. On the integrator's machine T18-02 to T18-04 and E18-1 to E18-4 took 27, 27, 7, 39, 41, 33 and 616 seconds.
+
+T18-02: TH at every pair along the word of 152 letters, and the partition into four cosets.
+
+```python
+import ast, sys, hashlib
+from pathlib import Path
+from collections import Counter, defaultdict
+sys.path[:0]=['research/jumbling/theory','research/jumbling',
+             'research/jumbling/fixtures']
+import sim, restore as R, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator,pullback_form,rows_form
+
+C=sim.get_context();d=C.data;M=R.menu('I_a');I=C.kplus.matrix(0)
+K=(118527,126380,126382,126384,126385,149644,149650)
+V=sorted({tuple(v) for p in K for v in C.regions.vertices(p)},key=repr)
+B=[T.branch(tuple(n)) for n in d.N]
+J=set(R.jumble_items(M));H=set(range(60))-J
+E0=[R.element(M,0,j) for j in range(60)]
+index={A:j for j,A in enumerate(E0)}
+reps=[];coset={};remaining=set(J)
+while remaining:
+ r=min(remaining)
+ cs={index[to_tuple(matmul(E0[h],E0[r]))] for h in H}
+ assert len(cs)==12 and cs<=remaining
+ reps.append(r);coset[r]=cs;remaining-=cs
+assert reps==[12,13,14,15]
+
+EV=[Evaluator(pullback_form(I,n)) for n in d.N]
+def holding(Q):
+ vf=rows_form([tuple(matvec(Q,v)) for v in V])
+ return {c for c,ev in enumerate(EV)
+         if all(ev.sign_row(vf[0],r)>=0 for r in vf[1])}
+def hb(Q):
+ l=T.factors(Q)[0]
+ return T.dist(l),T.branch(l)
+NB={}
+def nb(c):
+ if c not in NB:
+  NB[c]={a for a in range(600) if a!=c and
+         (d.NN*(d.NN+dot(d.N[c],d.N[a]))
+          -2*d.KAPPA*d.KAPPA).sign()>0}
+  assert len(NB[c])==16
+ return NB[c]
+
+path=Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+code=path.read_text().split(
+ 'E17-4, checked letter by letter: the word of 147 letters from the solved state.'
+ )[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest()==(
+ '897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911')
+W=next(ast.literal_eval(n.value) for n in ast.parse(code).body
+       if isinstance(n,ast.Assign)
+       and any(isinstance(t,ast.Name) and t.id=='W' for t in n.targets))
+W += [(582,18),(576,12),(576,1),(573,1),(526,12)]
+
+Q=I;summary=defaultdict(Counter);result={};poses={}
+tested=0;onlysame=[]
+for n,(g,j) in enumerate(W,1):
+ vf=rows_form([tuple(matvec(Q,v)) for v in V])
+ side=EV[g].classify(vf)[0]
+ assert side in ('in','out')
+ if side=='in':
+  Q=to_tuple(matmul(R.element(M,g,j),Q))
+ if n<141:
+  continue
+ poses[n]=Q;h,b=hb(Q);yes=[];no=[]
+ for c in sorted(holding(Q)):
+  if B[c]==b:
+   continue
+  bad={};foreign={}
+  for j in sorted(J):
+   Qj=to_tuple(matmul(R.element(M,c,j),Q))
+   assert hb(Qj)==(h+2,B[c])
+   S=holding(Qj)
+   assert c in S
+   bad[j]=S-{c}-nb(c)
+   foreign[j]={x for x in bad[j] if B[x]!=B[c]}
+   tested+=600
+  for r in reps:
+   assert all(len(bad[j])==len(bad[r])
+              and len(foreign[j])==len(foreign[r])
+              for j in coset[r])
+  th=not any(bad.values())
+  summary[h]['TH' if th else 'notTH']+=1
+  (yes if th else no).append(c)
+  result[n,c]=(th,sum(bool(x) for x in bad.values()),
+               sum(map(len,bad.values())),
+               sum(map(len,foreign.values())))
+  if not th and not any(foreign.values()):
+   onlysame.append((n,c))
+ print(n,h,'TH',yes,'notTH',no,flush=True)
+
+print('summary',[(h,v['TH'],v['TH']+v['notTH'])
+                 for h,v in sorted(summary.items())])
+print('all_orientations_checked',48*len(result),
+      'all_caps_checked',tested)
+print('only_same_branch_failure',onlysame)
+print('same_height_same_raiser',
+      [(n,c,result[n,c]) for n in [145,146] for c in [555,580]])
+print('raiser576_before_raise',result[148,576])
+print('raiser526_before_raise',result[151,526])
+assert len(result)==55 and sum(v['TH'] for v in summary.values())==29
+print('PASS')
+```
+
+Output:
+
+```text
+141 4 TH [594, 598, 599] notTH [592]
+142 4 TH [551, 580, 582] notTH [560]
+143 4 TH [551, 555, 580] notTH [501]
+144 6 TH [551, 580] notTH [496, 548, 555, 593]
+145 8 TH [585] notTH [529, 547, 555, 562, 580]
+146 8 TH [555, 580] notTH [551, 582]
+147 10 TH [551, 580] notTH [542, 548, 560, 593]
+148 10 TH [590, 596] notTH [560, 565, 576]
+149 12 TH [565, 586, 590] notTH [540]
+150 12 TH [566, 569, 575] notTH [567]
+151 12 TH [526, 530, 563] notTH [591]
+152 14 TH [530, 563] notTH [573, 591]
+summary [(4, 9, 12), (6, 2, 6), (8, 3, 10), (10, 4, 11), (12, 9, 12), (14, 2, 4)]
+all_orientations_checked 2640 all_caps_checked 1584000
+only_same_branch_failure [(144, 555)]
+same_height_same_raiser [(145, 555, (False, 48, 84, 36)), (145, 580, (False, 48, 96, 48)), (146, 555, (True, 0, 0, 0)), (146, 580, (True, 0, 0, 0))]
+raiser576_before_raise (False, 48, 60, 12)
+raiser526_before_raise (True, 0, 0, 0)
+PASS
+```
+
+T18-03: the 48 orientations at the raiser 576 at X12, and the letters that lead on.
+
+```python
+import ast,hashlib,sys
+from pathlib import Path
+from collections import Counter
+sys.path[:0]=['research/jumbling/theory','research/jumbling','research/jumbling/fixtures']
+import sim,wj,restore as R,trees as T
+from exact import matmul,matvec,dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator,pullback_form,rows_form
+p=Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+code=p.read_text().split('E17-4, checked letter by letter: the word of 147 letters from the solved state.')[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest()=='897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911'
+W=next(ast.literal_eval(n.value) for n in ast.parse(code).body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='W' for t in n.targets))
+C=sim.get_context();d=C.data;kp=C.kplus;_,M=wj.load(C,'I_a');I=kp.matrix(0)
+K=(118527,126380,126382,126384,126385,149644,149650)
+E=lambda c,j:R.element(M,c,j)
+isin=lambda q:kp.index_of_matrix(to_tuple(q))>=0
+hb=lambda q:(T.dist(T.factors(q)[0]),T.branch(T.factors(q)[0]))
+B=[T.branch(tuple(n)) for n in d.N]
+V=sorted({tuple(v) for q in K for v in C.regions.vertices(q)},key=repr)
+EV=[Evaluator(pullback_form(I,n)) for n in d.N]
+def nb(a):
+ return {b for b in range(600) if b!=a and (d.NN*(d.NN+dot(d.N[a],d.N[b]))-2*d.KAPPA*d.KAPPA).sign()>0}
+def holding(q):
+ vf=rows_form([tuple(matvec(q,v)) for v in V])
+ return [c for c in range(600) if EV[c].classify(vf)[0]=='in']
+def step(s,G,c,j):
+ o=s.apply(sim.Twist(C,c,E(c,j),'menu',{'menu':M.name}),journal=False)
+ assert o.applied and not o.uncertain
+ G[c]=to_tuple(matmul(E(c,j),G[c]))
+def clone(s):
+ u=sim.State(C,filtered=False,menu=M);u._poses=list(s._poses);u._lookup=dict(s._lookup);u.pose_id=s.pose_id.copy();return u
+s=sim.State(C,filtered=False,menu=M);G=[I]*600
+for c,j in W+[(582,18),(576,12)]:step(s,G,c,j)
+assert s.digest()=='7bb0df3ebb0e55a89135921955ae592e24249da89c16e429be0c18487f6a9aed'
+assert hb(s.pose(K[0]))==(12,4)
+O=[c for c in range(600) if not isin(G[c])];NB={c:nb(c) for c in O}
+assert 576 in O
+orient=set();counts=Counter();foreign=[]
+for j in range(60):
+ if isin(matmul(E(576,j),G[576])):continue
+ u=clone(s);Gu=list(G);step(u,Gu,576,j);q=u.pose(K[0])
+ assert all(u.pose(p)==q for p in K) and hb(q)==(12,4)
+ orient.add(to_tuple(q))
+ for c in holding(q):
+  if c==576 or c in NB[576]:continue
+  cl=u.classify(c,need_inside=False);assert not cl.uncertain
+  typ='same' if B[c]==4 else 'foreign';counts[(typ,cl.status)]+=1
+  if typ=='foreign':
+   assert cl.status=='blocked'
+   p=cl.straddle['piece'];ev=Evaluator(pullback_form(u.pose(p),d.N[c]))
+   assert ev.classify(C.regions.vform(p))[0]=='straddle'
+   foreign.append((j,c,[x for x in O if c in NB[x]],p,int(d.orbit_id[p]),hb(u.pose(p))[0]))
+assert len(orient)==48
+print('orientations',len(orient),'cap_tests',48*600)
+print('outside_NB',sorted(counts.items()))
+print('foreign',foreign)
+for c,j in [(576,1),(573,1),(526,12)]:step(s,G,c,j)
+assert all(s.pose(p)==s.pose(K[0]) for p in K)
+print('two_preparatory_letters',hb(s.pose(K[0])),s.digest())
+```
+
+Output:
+
+```text
+orientations 48 cap_tests 28800
+outside_NB [(('foreign', 'blocked'), 12), (('same', 'admissible'), 24), (('same', 'blocked'), 24)]
+foreign [(0, 540, [537], 112551, 9, 2), (1, 567, [], 110889, 3, 2), (2, 594, [], 110889, 3, 2), (3, 544, [525], 127693, 5, 2), (4, 533, [], 112551, 9, 2), (5, 582, [], 112551, 9, 2), (6, 597, [], 110889, 3, 2), (7, 447, [525], 127693, 5, 2), (8, 459, [], 112551, 9, 2), (9, 464, [], 112551, 9, 2), (10, 535, [525], 149399, 3, 2), (11, 498, [], 112551, 9, 2)]
+two_preparatory_letters (14, 0) ea0bc4f31df0c88e4019d2cf505e05d426122721bcca399c5801f3fdc1cedb72
+```
+
+T18-04: the NB graph and at most 120 out grips.
+
+```python
+import sys,hashlib
+from collections import Counter
+import numpy as np
+sys.path[:0]=['research/jumbling','research/jumbling/theory']
+from sim.model import ModelData
+from exact import dot
+import trees as T
+D=ModelData();N=D.N
+v=max(q for q in (dot(N[0],n) for n in N) if q<D.NN)
+A=np.zeros((600,600),dtype=np.int64);B=A.copy()
+for i in range(600):
+ for j in range(i):
+  z=dot(N[i],N[j]);A[i,j]=A[j,i]=int(z==v)
+  B[i,j]=B[j,i]=int((D.NN*(D.NN+z)-2*D.KAPPA*D.KAPPA).sign()>0)
+assert set(A.sum(axis=1))=={4} and set(B.sum(axis=1))=={16}
+assert np.array_equal(B,A@A+A-4*np.eye(600,dtype=np.int64))
+b=[T.branch(tuple(n)) for n in N]
+assert Counter(b)=={0:120,1:120,2:120,3:120,4:120}
+assert not any(B[i,j] and b[i]==b[j] for i in range(600) for j in range(i))
+print('degrees',4,16,'out_bound',120,'branch_sizes',dict(sorted(Counter(b).items())))
+for name,G in [('N15',A),('NB',B)]:
+ print(name,hashlib.sha256(G.astype(np.uint8).tobytes()).hexdigest())
+```
+
+Output:
+
+```text
+degrees 4 16 out_bound 120 branch_sizes {0: 120, 1: 120, 2: 120, 3: 120, 4: 120}
+N15 1294e67f2a79abbb1923b5614dfa2735ea6fe7d91d2b89ce4f0d53ca91aeda08
+NB 0ad18304958e076b7c371e1cc939c24ff7e0d05fc8ef8d00a172aa3ddc8797a0
+```
+
+E18-1: the 12 returns of 526 are retained letters at X12.
+
+```python
+# E18-1: the 12 returns of 526 at X14 are the 12 retained letters at 526 at X12. The word of E17-7 (152 letters) is
+# replayed from solved by the exact simulator; X12 is the state before its last letter (526, 12), and 526 has no
+# earlier letter. At X12: every cap of another branch that holds K whole, with the out grips whose NB contains it and
+# its exact status, and for each blocked one its exact straddlers: heights, whether each lies whole in cap 526, and
+# the grip of the letter that last moved it. Then for each letter (526, j) that returns 526 at X14: the retained
+# letter k at 526 with E(526, k) = E(526, j) E(526, 12), equality of the two states, and the same cap table. First, at
+# every grip: the menu elements in K+ are exactly the 12 retained items, and every menu element fixes the normal.
+import sys, ast, hashlib, math
+from pathlib import Path
+from collections import Counter
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0); RG = C.regions
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+path = Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+code = path.read_text().split(
+    'E17-4, checked letter by letter: the word of 147 letters from the solved state.'
+    )[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest() == '897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911'
+W = next(ast.literal_eval(n.value) for n in ast.parse(code).body
+         if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'W' for t in n.targets))
+W = W + [(582, 18), (576, 12), (576, 1), (573, 1), (526, 12)]
+E = lambda g, j: RS.element(M, g, j)
+isin = lambda q: kp.index_of_matrix(to_tuple(q)) >= 0
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+NF = np.array([[fl(x) for x in d.N[c]] for c in range(600)]); KAP = fl(d.KAPPA)
+BR = [T.branch(tuple(n)) for n in d.N]
+NB = [{b for b in range(600) if b != a and (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0}
+      for a in range(600)]
+V = sorted({tuple(v) for p in K for v in RG.vertices(p)}, key=repr)
+VF = np.array([[fl(x) for x in v] for v in V])
+def lb(Q):
+    l = T.factors(Q)[0]; return T.dist(l), T.branch(l)
+def holding(Q):
+    # caps that hold K whole at pose Q; floating point only preselects, the test is exact
+    h = (VF @ np.array([[fl(x) for x in r] for r in Q]).T) @ NF.T - KAP
+    vf = rows_form([tuple(matvec(Q, v)) for v in V])
+    return [c for c in range(600) if h[:, c].min() > -1e-6
+            and Evaluator(pullback_form(I, d.N[c])).classify(vf)[0] == 'in']
+def side(st, p, c): return Evaluator(pullback_form(st.pose(p), d.N[c])).classify(RG.vform(p))[0]
+def hof(st, p):
+    P = st._poses[int(st.pose_id[p])]
+    return 0 if P.kidx >= 0 else T.dist(T.factors(P.matrix)[0])
+def step(st, G, g, j):
+    o = st.apply(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), journal=False)
+    assert o.applied and not o.uncertain, (g, j)
+    G[g] = to_tuple(matmul(E(g, j), G[g]))
+def clone(st):
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(st._poses); u._lookup = dict(st._lookup); u.pose_id = st.pose_id.copy()
+    return u
+def kpose(st):
+    Q = st.pose(K[0]); assert all(st.pose(p) == Q for p in K); return Q
+PF = {}
+def posef(st, pid):
+    key = st._poses[pid].key
+    if key not in PF: PF[key] = np.array([[fl(x) for x in r] for r in st._pose_matrix(pid)])
+    return PF[key]
+def straddlers(st, c):
+    # exact straddlers of cut c among the off-lattice pieces (floating point preselects)
+    kidx = st._kpose()[st.pose_id]; out = []
+    for p in np.flatnonzero(kidx < 0).tolist():
+        h = RG.frows(p)[0] @ (posef(st, int(st.pose_id[p])).T @ NF[c]) - KAP
+        if h.min() < 1e-6 and h.max() > -1e-6 and side(st, p, c) == 'straddle': out.append(p)
+    return out
+def caps_table(st, G, Q, detail):
+    O = {g for g in range(600) if not isin(G[g])}; rows = []
+    for c in holding(Q):
+        if BR[c] == lb(Q)[1]: continue
+        status = st.classify(c, need_inside=False).status
+        rows.append((c, BR[c], sorted(x for x in O if c in NB[x]), status))
+        if detail and status != 'admissible':
+            S = straddlers(st, c)
+            print(f'  cap {c}: {len(S)} straddlers ; heights {sorted(Counter(hof(st, p) for p in S).items())} ; '
+                  f'whole in cap 526: {sum(side(st, p, 526) == "in" for p in S)} ; last moved at grip '
+                  f'{sorted(Counter(W[last[p]][0] for p in S).items())}')
+    return rows
+RET = sorted(set(range(60)) - set(RS.jumble_items(M)))
+for c in range(600):
+    assert [j for j in range(60) if isin(E(c, j))] == RET
+    assert all(tuple(matvec(E(c, j), d.N[c])) == tuple(d.N[c]) for j in range(60))
+print('at every grip the menu elements in K+ are the retained items', RET, 'and every menu element fixes n_c')
+s = sim.State(C, filtered=False, menu=M); G = [I] * 600; last = {}
+for i, (g, j) in enumerate(W[:-1]):
+    before = s.pose_id.copy(); step(s, G, g, j)
+    for p in np.flatnonzero(before != s.pose_id).tolist(): last[p] = i
+assert not any(g == 526 for g, _ in W[:-1])
+Q12 = kpose(s); print('X12', s.digest()[:16], 'K', lb(Q12))
+print('caps of another branch holding K:', caps_table(s, G, Q12, True))
+x14 = clone(s); G14 = list(G); step(x14, G14, 526, 12)
+assert x14.digest() == 'ea0bc4f31df0c88e4019d2cf505e05d426122721bcca399c5801f3fdc1cedb72'
+index = {to_tuple(E(526, j)): j for j in range(60)}
+for j in range(60):
+    if not isin(matmul(E(526, j), G14[526])): continue
+    u = clone(x14); Gu = list(G14); step(u, Gu, 526, j)
+    k = index[to_tuple(matmul(E(526, j), E(526, 12)))]
+    assert isin(E(526, k))
+    v = clone(s); Gv = list(G)
+    if to_tuple(E(526, k)) != to_tuple(I): step(v, Gv, 526, k)
+    assert u.digest() == v.digest() and all(to_tuple(a) == to_tuple(b) for a, b in zip(Gu, Gv))
+    Q = kpose(u)
+    print(f'return (526, {j}) = retained (526, {k}) at X12: K {lb(Q)} ; caps {caps_table(u, Gu, Q, False)}')
+```
+
+Output:
+
+```text
+at every grip the menu elements in K+ are the retained items [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] and every menu element fixes n_c
+X12 5561f12602667ceb K (12, 4)
+  cap 530: 26 straddlers ; heights [(2, 26)] ; whole in cap 526: 26 ; last moved at grip [(573, 26)]
+  cap 563: 3 straddlers ; heights [(2, 3)] ; whole in cap 526: 3 ; last moved at grip [(573, 3)]
+  cap 591: 6 straddlers ; heights [(2, 6)] ; whole in cap 526: 6 ; last moved at grip [(573, 6)]
+caps of another branch holding K: [(526, 0, [], 'admissible'), (530, 3, [], 'blocked'), (563, 1, [], 'blocked'), (591, 2, [], 'blocked')]
+return (526, 14) = retained (526, 5) at X12: K (12, 2) ; caps [(486, 4, [], 'blocked'), (526, 0, [], 'admissible'), (558, 3, [], 'blocked'), (563, 1, [], 'blocked')]
+return (526, 21) = retained (526, 3) at X12: K (12, 1) ; caps [(486, 4, [], 'blocked'), (491, 2, [], 'blocked'), (526, 0, [], 'admissible'), (530, 3, [], 'blocked')]
+return (526, 23) = retained (526, 11) at X12: K (12, 3) ; caps [(396, 1, [280], 'blocked'), (483, 2, [], 'blocked'), (486, 4, [], 'blocked'), (526, 0, [], 'admissible')]
+return (526, 43) = retained (526, 6) at X12: K (12, 4) ; caps [(483, 2, [], 'blocked'), (510, 1, [], 'blocked'), (526, 0, [], 'admissible'), (530, 3, [], 'blocked')]
+return (526, 44) = retained (526, 9) at X12: K (12, 3) ; caps [(486, 4, [], 'blocked'), (503, 2, [], 'blocked'), (526, 0, [], 'admissible'), (563, 1, [], 'blocked')]
+return (526, 45) = retained (526, 0) at X12: K (12, 4) ; caps [(526, 0, [], 'admissible'), (530, 3, [], 'blocked'), (563, 1, [], 'blocked'), (591, 2, [], 'blocked')]
+return (526, 46) = retained (526, 10) at X12: K (12, 2) ; caps [(526, 0, [], 'admissible'), (530, 3, [], 'blocked'), (563, 1, [], 'blocked'), (573, 4, [], 'blocked')]
+return (526, 47) = retained (526, 1) at X12: K (12, 1) ; caps [(401, 3, [], 'blocked'), (483, 2, [], 'blocked'), (486, 4, [], 'blocked'), (526, 0, [], 'admissible')]
+return (526, 48) = retained (526, 2) at X12: K (12, 3) ; caps [(483, 2, [], 'blocked'), (526, 0, [], 'admissible'), (556, 4, [], 'blocked'), (563, 1, [], 'blocked')]
+return (526, 49) = retained (526, 7) at X12: K (12, 4) ; caps [(483, 2, [], 'blocked'), (497, 3, [], 'blocked'), (526, 0, [], 'admissible'), (563, 1, [], 'blocked')]
+return (526, 50) = retained (526, 4) at X12: K (12, 2) ; caps [(478, 1, [], 'blocked'), (486, 4, [], 'blocked'), (526, 0, [], 'admissible'), (530, 3, [], 'blocked')]
+return (526, 51) = retained (526, 8) at X12: K (12, 1) ; caps [(480, 4, [], 'blocked'), (483, 2, [], 'blocked'), (526, 0, [], 'admissible'), (530, 3, [], 'blocked')]
+```
+
+E18-2: TH, depth and the lens criterion.
+
+```python
+# E18-2: TH, depth and the lens criterion. Pairs (c, Q) with K whole in cap c at pose Q: the three fresh raises of the
+# relay (pose before the raise), and every cap of another branch that holds K whole in each of the 48 orientations of K
+# after the raises at 582 and 576 (pose A Q0, A a jumble at the raiser). For each pair: TH exactly (all 48 jumbles at c,
+# every cap holding K whole); the depth of K in cap c, min over K's vertices of (v.n_c - kappa)/|n_c|; and the lens
+# criterion LC: some vertex v of K, of norm rho and depth delta in cap c, has delta > rho cos(max(0, theta3 - phi)) -
+# kappa/|n|, phi = arccos(kappa/(|n| rho)), theta3 the least angle between n_c and a cap outside NB(c) and c. Depth
+# and LC are evaluated in floating point; LC implies TH (section 23).
+import sys, ast, hashlib, math
+from pathlib import Path
+from collections import Counter
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0); RG = C.regions
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+path = Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+code = path.read_text().split(
+    'E17-4, checked letter by letter: the word of 147 letters from the solved state.'
+    )[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest() == '897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911'
+W = next(ast.literal_eval(n.value) for n in ast.parse(code).body
+         if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'W' for t in n.targets))
+W = W + [(582, 18), (576, 12), (576, 1), (573, 1), (526, 12)]
+E = lambda g, j: RS.element(M, g, j)
+isin = lambda q: kp.index_of_matrix(to_tuple(q)) >= 0
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+NF = np.array([[fl(x) for x in d.N[c]] for c in range(600)]); KAP = fl(d.KAPPA)
+BR = [T.branch(tuple(n)) for n in d.N]
+NB = [{b for b in range(600) if b != a and (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0}
+      for a in range(600)]
+V = sorted({tuple(v) for p in K for v in RG.vertices(p)}, key=repr)
+VF = np.array([[fl(x) for x in v] for v in V])
+def lb(Q):
+    l = T.factors(Q)[0]; return T.dist(l), T.branch(l)
+def holding(Q):
+    # caps that hold K whole at pose Q; floating point only preselects, the test is exact
+    h = (VF @ np.array([[fl(x) for x in r] for r in Q]).T) @ NF.T - KAP
+    vf = rows_form([tuple(matvec(Q, v)) for v in V])
+    return [c for c in range(600) if h[:, c].min() > -1e-6
+            and Evaluator(pullback_form(I, d.N[c])).classify(vf)[0] == 'in']
+def step(st, G, g, j):
+    o = st.apply(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), journal=False)
+    assert o.applied and not o.uncertain, (g, j)
+    G[g] = to_tuple(matmul(E(g, j), G[g]))
+U = NF / np.linalg.norm(NF, axis=1)[:, None]; kp1 = KAP / np.linalg.norm(NF[0])
+ANG = np.degrees(np.arccos(np.clip(U @ U.T, -1, 1)))
+far = sorted(set(range(600)) - NB[0] - {0})
+TH3 = min(ANG[0, x] for x in far)
+assert all(abs(min(ANG[c, x] for x in set(range(600)) - NB[c] - {c}) - TH3) < 1e-9 for c in range(600))
+print('theta3', round(TH3, 6), 'NB angles', sorted({round(float(ANG[0, x]), 3) for x in NB[0]}))
+def depth_lc(c, Q):
+    X = VF @ np.array([[fl(x) for x in r] for r in Q]).T
+    rho = np.linalg.norm(X, axis=1); dl = X @ U[c] - kp1
+    phi = np.arccos(np.clip(kp1 / rho, -1, 1))
+    gap = dl - (rho * np.cos(np.maximum(0, np.radians(TH3) - phi)) - kp1)
+    return float(dl.min()), float(gap.max())
+def th(c, Q):
+    for j in range(60):
+        A = E(c, j)
+        if isin(A): continue
+        if any(x != c and x not in NB[c] for x in holding(matmul(A, Q))): return False
+    return True
+s = sim.State(C, filtered=False, menu=M); G = [I] * 600; poses = []
+for g, j in W:
+    poses.append(s.pose(K[0])); step(s, G, g, j)
+assert s.digest() == 'ea0bc4f31df0c88e4019d2cf505e05d426122721bcca399c5801f3fdc1cedb72'
+pairs = [('raise', g, poses[i]) for i, (g, j) in enumerate(W) if g in (582, 576, 526) and j == 12]
+for i, (g, j) in enumerate(W):
+    if g not in (582, 576) or j != 12: continue
+    for jj in range(60):
+        A = E(g, jj)
+        if isin(A): continue
+        Qa = matmul(A, poses[i])
+        pairs += [(f'{g}/{jj}', x, Qa) for x in holding(Qa) if x != g and BR[x] != lb(Qa)[1]]
+rows = []
+for tag, c, Q in pairs:
+    dp, gap = depth_lc(c, Q); rows.append((tag, c, th(c, Q), gap > 0, dp, gap))
+    assert not (gap > 0 and not rows[-1][2])
+hold = [r for r in rows if r[2]]; fail = [r for r in rows if not r[2]]
+print('pairs', len(rows), '; TH holds', len(hold), '; fails', len(fail))
+print(f'depth where TH holds {min(r[4] for r in hold):.5f} .. {max(r[4] for r in hold):.5f} ; '
+      f'where TH fails {min(r[4] for r in fail):.5f} .. {max(r[4] for r in fail):.5f}')
+print('(TH, LC):', sorted(Counter((r[2], r[3]) for r in rows).items()))
+print(f'LC margin: least positive {min(r[5] for r in rows if r[3]):.5f} ; largest non-positive '
+      f'{max(r[5] for r in rows if not r[3]):.5f}')
+print('TH without LC:', [(r[0], r[1], round(r[4], 5)) for r in rows if r[2] and not r[3]])
+print('relay raises:', [(r[1], r[2], r[3], round(r[4], 5)) for r in rows if r[0] == 'raise'])
+```
+
+Output:
+
+```text
+theta3 36.0 NB angles [15.522, 25.243]
+pairs 435 ; TH holds 229 ; fails 206
+depth where TH holds 0.11018 .. 0.30564 ; where TH fails 0.00117 .. 0.19791
+(TH, LC): [((False, False), 206), ((True, False), 12), ((True, True), 217)]
+LC margin: least positive 0.00242 ; largest non-positive -0.00349
+TH without LC: [('576/13', 583, 0.11018), ('576/17', 590, 0.11018), ('576/19', 531, 0.11018), ('576/34', 531, 0.11018), ('576/35', 531, 0.11018), ('576/36', 569, 0.11018), ('576/37', 583, 0.11018), ('576/38', 569, 0.11018), ('576/39', 583, 0.11018), ('576/40', 590, 0.11018), ('576/41', 590, 0.11018), ('576/42', 569, 0.11018)]
+relay raises: [(582, False, False, 0.07211), (576, False, False, 0.00841), (526, True, True, 0.26847)]
+```
+
+E18-3: clearing cap 486, and a second raise to 14.
+
+```python
+# E18-3: clearing a raiser after a return, and a second raise to 14. From X14 the return (526, 23) (K at height 12 in
+# branch 3). Cap 486 holds K whole and is blocked: its exact straddlers, and the caps that hold all of them whole, hold
+# no piece of K, are admissible and are in NB of no out grip. For each letter at such a cap: whether it leaves K in
+# place and cap 486 free. Then (386, 1) and the raise (486, 12): TH and the lens criterion at 486, and for each of the
+# 48 jumbles A at 486 (by E18-1 these give every state reached by the raise and letters at 486 that keep it out),
+# every cap of another branch than K's that holds K whole outside NB(486), with its exact status and the out grips
+# whose NB contains it.
+import sys, ast, hashlib, math
+from pathlib import Path
+from collections import Counter
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0); RG = C.regions
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+path = Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+code = path.read_text().split(
+    'E17-4, checked letter by letter: the word of 147 letters from the solved state.'
+    )[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest() == '897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911'
+W = next(ast.literal_eval(n.value) for n in ast.parse(code).body
+         if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'W' for t in n.targets))
+W = W + [(582, 18), (576, 12), (576, 1), (573, 1), (526, 12)]
+E = lambda g, j: RS.element(M, g, j)
+isin = lambda q: kp.index_of_matrix(to_tuple(q)) >= 0
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+NF = np.array([[fl(x) for x in d.N[c]] for c in range(600)]); KAP = fl(d.KAPPA)
+BR = [T.branch(tuple(n)) for n in d.N]
+NB = [{b for b in range(600) if b != a and (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0}
+      for a in range(600)]
+V = sorted({tuple(v) for p in K for v in RG.vertices(p)}, key=repr)
+VF = np.array([[fl(x) for x in v] for v in V])
+def lb(Q):
+    l = T.factors(Q)[0]; return T.dist(l), T.branch(l)
+def holding(Q):
+    # caps that hold K whole at pose Q; floating point only preselects, the test is exact
+    h = (VF @ np.array([[fl(x) for x in r] for r in Q]).T) @ NF.T - KAP
+    vf = rows_form([tuple(matvec(Q, v)) for v in V])
+    return [c for c in range(600) if h[:, c].min() > -1e-6
+            and Evaluator(pullback_form(I, d.N[c])).classify(vf)[0] == 'in']
+def side(st, p, c): return Evaluator(pullback_form(st.pose(p), d.N[c])).classify(RG.vform(p))[0]
+def hof(st, p):
+    P = st._poses[int(st.pose_id[p])]
+    return 0 if P.kidx >= 0 else T.dist(T.factors(P.matrix)[0])
+def step(st, G, g, j):
+    o = st.apply(sim.Twist(C, g, E(g, j), 'menu', {'menu': M.name}), journal=False)
+    assert o.applied and not o.uncertain, (g, j)
+    G[g] = to_tuple(matmul(E(g, j), G[g]))
+def clone(st):
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(st._poses); u._lookup = dict(st._lookup); u.pose_id = st.pose_id.copy()
+    return u
+def kpose(st):
+    Q = st.pose(K[0]); assert all(st.pose(p) == Q for p in K); return Q
+PF = {}
+def posef(st, pid):
+    key = st._poses[pid].key
+    if key not in PF: PF[key] = np.array([[fl(x) for x in r] for r in st._pose_matrix(pid)])
+    return PF[key]
+def straddlers(st, c):
+    # exact straddlers of cut c among the off-lattice pieces (floating point preselects)
+    kidx = st._kpose()[st.pose_id]; out = []
+    for p in np.flatnonzero(kidx < 0).tolist():
+        h = RG.frows(p)[0] @ (posef(st, int(st.pose_id[p])).T @ NF[c]) - KAP
+        if h.min() < 1e-6 and h.max() > -1e-6 and side(st, p, c) == 'straddle': out.append(p)
+    return out
+U = NF / np.linalg.norm(NF, axis=1)[:, None]; kp1 = KAP / np.linalg.norm(NF[0])
+TH3 = np.radians(36.0)
+def depth_lc(c, Q):
+    X = VF @ np.array([[fl(x) for x in r] for r in Q]).T
+    rho = np.linalg.norm(X, axis=1); dl = X @ U[c] - kp1
+    phi = np.arccos(np.clip(kp1 / rho, -1, 1))
+    return float(dl.min()), bool((dl - (rho * np.cos(np.maximum(0, TH3 - phi)) - kp1)).max() > 0)
+outset = lambda G: {g for g in range(600) if not isin(G[g])}
+def free(st, G, c):
+    return not any(c in NB[o] for o in outset(G) if o != c) and st.classify(c, need_inside=False).status == 'admissible'
+s = sim.State(C, filtered=False, menu=M); G = [I] * 600
+for g, j in W + [(526, 23)]: step(s, G, g, j)
+Q = kpose(s); print('return (526, 23): K', lb(Q), s.digest()[:16])
+S = straddlers(s, 486)
+print('cap 486:', len(S), 'straddlers ; heights', sorted(Counter(hof(s, p) for p in S).items()))
+held = None
+for p in S:
+    h = RG.frows(p)[0] @ (posef(s, int(s.pose_id[p])).T @ NF.T) - KAP
+    hp = {y for y in np.flatnonzero(h.min(axis=0) > -1e-6).tolist() if side(s, p, y) == 'in'}
+    held = hp if held is None else held & hp
+Y = sorted(y for y in held - {486, 526} if all(side(s, p, y) == 'out' for p in K) and free(s, G, y))
+print('caps that hold every straddler whole, no piece of K, and are free:', Y)
+for y in Y:
+    ok = []
+    for j in range(60):
+        if to_tuple(E(y, j)) == to_tuple(I): continue
+        u = clone(s); Gu = list(G); step(u, Gu, y, j)
+        if kpose(u) == Q and free(u, Gu, 486): ok.append(j)
+    print(f'letters at {y} after which K is in place and cap 486 is free: {len(ok)} of 59 ; '
+          f'retained {sum(isin(E(y, j)) for j in ok)} ; the others '
+          f'{[j for j in range(60) if j not in ok and to_tuple(E(y, j)) != to_tuple(I)]}')
+step(s, G, 386, 1); assert kpose(s) == Q and free(s, G, 486)
+dp, lc = depth_lc(486, Q)
+ths = all(x == 486 or x in NB[486] for j in range(60) if not isin(E(486, j)) for x in holding(matmul(E(486, j), Q)))
+print(f'at 486: depth {dp:.5f} ; LC {lc} ; TH {ths}')
+u = clone(s); Gu = list(G); step(u, Gu, 486, 12); Qr = kpose(u)
+print('raise (486, 12): K', lb(Qr), 'out grips', len(outset(Gu)), u.digest()[:16])
+tally = Counter(); freecaps = []
+for j in range(60):
+    if isin(E(486, j)): continue
+    u = clone(s); Gu = list(G); step(u, Gu, 486, j); Qa = kpose(u); O = outset(Gu)
+    for c in holding(Qa):
+        if c == 486 or c in NB[486] or BR[c] == lb(Qa)[1]: continue
+        nbo = sorted(o for o in O if c in NB[o] and o != c)
+        st = u.classify(c, need_inside=False).status
+        tally[('in NB of an out grip' if nbo else 'not in NB of an out grip', st)] += 1
+        if not nbo and st == 'admissible': freecaps.append((j, c))
+print('caps of another branch holding K outside NB(486), over the 48 orientations:', sorted(tally.items()))
+print('free raisers:', freecaps)
+```
+
+Output:
+
+```text
+return (526, 23): K (12, 3) 47f256f2bf080f0c
+cap 486: 26 straddlers ; heights [(2, 26)]
+caps that hold every straddler whole, no piece of K, and are free: [386]
+letters at 386 after which K is in place and cap 486 is free: 42 of 59 ; retained 11 ; the others [13, 15, 20, 25, 30, 32, 35, 36, 40, 42, 45, 50, 51, 52, 54, 58, 59]
+at 486: depth 0.19825 ; LC True ; TH True
+raise (486, 12): K (14, 4) out grips 15 6d6ebe5ef0fa4008
+caps of another branch holding K outside NB(486), over the 48 orientations: []
+free raisers: []
+```
+
+E18-4: a bounded relay search from X14.
+
+```python
+# E18-4: a bounded relay search from X14. Moves between raises, depth first, at most three: a turn at an out grip c
+# that holds K (a letter that keeps c out) when K then lies whole in a cap outside NB(c); a return of such a grip
+# (K drops by two), only at the height of X14; a letter at a free cap of K's branch that holds K whole; and, below the
+# height of X14, a raise at a free cap of another branch after which K lies whole in a cap outside its NB. A candidate
+# raiser that is not free may first be cleared by at most two letters: returns of out grips whose NB contains it and
+# whose caps hold no piece of K, and letters at free caps that hold no piece of K and hold all its remaining
+# straddlers whole. A final raise needs K whole in a free cap of another branch. Free: admissible and in NB of no
+# other out grip. Every letter is applied by the exact simulator; floating point only orders and preselects moves.
+import sys, ast, hashlib, math
+from pathlib import Path
+from collections import Counter
+import numpy as np
+sys.path[:0] = ['research/jumbling/theory', 'research/jumbling',
+                'research/jumbling/fixtures']
+import sim, wj, restore as RS, trees as T
+from exact import matmul, matvec, dot
+from sim.kplus import to_tuple
+from sim.kernel import Evaluator, pullback_form, rows_form
+C = sim.get_context(); d = C.data; kp = C.kplus; F, M = wj.load(C, 'I_a')
+I = kp.matrix(0); RG = C.regions
+K = (118527, 126380, 126382, 126384, 126385, 149644, 149650)
+path = Path('research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md')
+code = path.read_text().split(
+    'E17-4, checked letter by letter: the word of 147 letters from the solved state.'
+    )[1].split('```python\n')[1].split('```')[0]
+assert hashlib.sha256(code.encode()).hexdigest() == '897b98b4306a832f2f07e4cf570316bbe15c8cdf41dbd9bd3c408f80238ad911'
+W = next(ast.literal_eval(n.value) for n in ast.parse(code).body
+         if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'W' for t in n.targets))
+W = W + [(582, 18), (576, 12), (576, 1), (573, 1), (526, 12)]
+E = lambda g, j: RS.element(M, g, j)
+isin = lambda q: kp.index_of_matrix(to_tuple(q)) >= 0
+fl = lambda q: (q.a + q.b * math.sqrt(5)) / q.d
+NF = np.array([[fl(x) for x in d.N[c]] for c in range(600)]); KAP = fl(d.KAPPA)
+BR = [T.branch(tuple(n)) for n in d.N]
+NB = [{b for b in range(600) if b != a and (d.NN * (d.NN + dot(d.N[a], d.N[b])) - 2 * d.KAPPA * d.KAPPA).sign() > 0}
+      for a in range(600)]
+V = sorted({tuple(v) for p in K for v in RG.vertices(p)}, key=repr)
+VF = np.array([[fl(x) for x in v] for v in V])
+IDENT = [j for j in range(60) if to_tuple(E(0, j)) == to_tuple(I)]
+LETTERS = [j for j in range(60) if j != IDENT[0]]
+EL = {}
+def el(g, j):
+    if (g, j) not in EL: EL[g, j] = E(g, j)
+    return EL[g, j]
+def lb(Q):
+    l = T.factors(Q)[0]; return T.dist(l), T.branch(l)
+def step(st, G, g, j):
+    o = st.apply(sim.Twist(C, g, el(g, j), 'menu', {'menu': M.name}), journal=False)
+    if not (o.applied and not o.uncertain): return False
+    G[g] = to_tuple(matmul(el(g, j), G[g])); return True
+def clone(st):
+    u = sim.State(C, filtered=False, menu=M)
+    u._poses = list(st._poses); u._lookup = dict(st._lookup); u.pose_id = st.pose_id.copy()
+    return u
+def outset(G): return {g for g in range(600) if not isin(G[g])}
+EPS = 1e-7
+PF = {}
+def posef(st, pid):
+    key = st._poses[pid].key
+    if key not in PF: PF[key] = np.array([[fl(x) for x in r] for r in st._pose_matrix(pid)])
+    return PF[key]
+def k_caps(Q):
+    h = (VF @ np.array([[fl(x) for x in r] for r in Q]).T) @ NF.T - KAP
+    vf = rows_form([tuple(matvec(Q, v)) for v in V])
+    hold = [g for g in range(600) if h[:, g].min() > -1e-6
+            and Evaluator(pullback_form(I, d.N[g])).classify(vf)[0] == 'in']
+    return hold, h.min(axis=0), h.max(axis=0)
+def side(st, p, c): return Evaluator(pullback_form(st.pose(p), d.N[c])).classify(RG.vform(p))[0]
+def kpose(st):
+    Q = st.pose(K[0])
+    return Q if all(st.pose(p) == Q for p in K) else None
+def free(st, O, c):
+    return not any(c in NB[o] for o in O if o != c) and st.classify(c, need_inside=False).status == 'admissible'
+def straddlers(st, c):
+    kidx = st._kpose()[st.pose_id]; out = []
+    for p in np.flatnonzero(kidx < 0).tolist():
+        h = RG.frows(p)[0] @ (posef(st, int(st.pose_id[p])).T @ NF[c]) - KAP
+        if h.min() < -EPS and h.max() > EPS and side(st, p, c) == 'straddle': out.append(p)
+    return out
+def holders_of(st, p):
+    h = (RG.frows(p)[0] @ posef(st, int(st.pose_id[p])).T) @ NF.T - KAP
+    return set(np.flatnonzero(h.min(axis=0) >= -EPS).tolist())
+def apply(st, G, g, j):
+    u = clone(st); Gu = dict(G)
+    return (u, Gu) if step(u, Gu, g, j) else None
+def escapes_after(c, Qn):
+    return [x for x in k_caps(Qn)[0] if x != c and x not in NB[c]]
+def raise_with_escape(st, G, e, hh, need_escape):
+    first = None
+    for j in LETTERS:
+        Qn = matmul(el(e, j), st.pose(K[0]))
+        if lb(Qn)[0] != hh + 2: continue
+        if need_escape and not escapes_after(e, Qn): continue
+        r = apply(st, G, e, j)
+        if r is None: continue
+        Q = kpose(r[0])
+        if Q is not None and lb(Q)[0] == hh + 2:
+            if not need_escape or escapes_after(e, Q): return (e, j), r
+            if first is None: first = ((e, j), r)
+    return first
+stats = {'nodes': 0, 'clear tries': 0}
+def try_clear(st, G, Q, hmax, e, depth):
+    O = outset(G)
+    if free(st, O, e): return [], st, G
+    if depth == 0: return None
+    nbo = [o for o in O if o != e and e in NB[o]]
+    if len(nbo) > depth: return None
+    S = straddlers(st, e) if st.classify(e, need_inside=False).status != 'admissible' else []
+    moves = []
+    for o in nbo:
+        if hmax[o] < -1e-9 and free(st, O, o):
+            moves += [(o, j) for j in LETTERS if isin(matmul(el(o, j), G[o]))][:3]
+    if S:
+        held = {}
+        for p in S:
+            for y in holders_of(st, p): held.setdefault(y, set()).add(p)
+        need = len(S) if (depth == 1 or nbo) else 1
+        for y in sorted(held, key=lambda y: -len(held[y])):
+            if len(held[y]) < need or y == e or hmax[y] >= -1e-9 or not free(st, O, y): continue
+            keep = [j for j in LETTERS if isin(matmul(el(y, j), G[y])) == isin(G[y])][:2]
+            other = [j for j in LETTERS if j not in keep and not (e in NB[y] and not isin(matmul(el(y, j), G[y])))][:2]
+            moves += [(y, j) for j in keep + other]
+    for g, j in moves:
+        stats['clear tries'] += 1
+        r = apply(st, G, g, j)
+        if r is None: continue
+        u, Gu = r
+        if kpose(u) != Q: continue
+        res = try_clear(u, Gu, Q, hmax, e, depth - 1)
+        if res: return [(g, j)] + res[0], res[1], res[2]
+    return None
+def level(st, G, h, depth, path, seen):
+    stats['nodes'] += 1
+    if stats['nodes'] > BUDGET: return None
+    Q = kpose(st); hh, b = lb(Q); hold, hmin, hmax = k_caps(Q); O = outset(G)
+    cands = [e for e in hold if BR[e] != b]
+    if hh + 2 > h:
+        best = None
+        for e in cands:
+            res = try_clear(st, G, Q, hmax, e, DC)
+            if not res: continue
+            pre, u, Gu = res
+            r = raise_with_escape(u, Gu, e, hh, True)
+            if r and (best is None or (best[2] is False and escapes_after(e, kpose(r[1][0])))):
+                best = (pre + [r[0]], r[1], bool(escapes_after(e, kpose(r[1][0]))))
+                if best[2]: break
+        if best: return path + best[0], best[1]
+    if depth == 0: return None
+    def children():
+        if hh + 2 <= h:
+            for e in cands:
+                res = try_clear(st, G, Q, hmax, e, DC)
+                if not res: continue
+                pre, u, Gu = res
+                r = raise_with_escape(u, Gu, e, hh, True)
+                if r and escapes_after(e, kpose(r[1][0])): yield pre + [r[0]], r[1]
+        for c in hold:
+            if c not in O or not free(st, O, c): continue
+            for j in LETTERS:
+                Gc = matmul(el(c, j), G[c])
+                if isin(Gc):
+                    if hh >= h:
+                        r = apply(st, G, c, j)
+                        if r: yield [(c, j)], r
+                elif escapes_after(c, matmul(el(c, j), Q)):
+                    r = apply(st, G, c, j)
+                    if r: yield [(c, j)], r
+        for x in hold:
+            if x in O or BR[x] != b or not free(st, O, x): continue
+            for j in LETTERS:
+                r = apply(st, G, x, j)
+                if r: yield [(x, j)], r
+    for letters, (u, Gu) in children():
+        Qu = kpose(u)
+        if Qu is None or lb(Qu)[0] < h - 2: continue
+        key = u.digest()
+        if key in seen: continue
+        seen.add(key)
+        res = level(u, Gu, h, depth - 1, path + letters, seen)
+        if res: return res
+        if stats['nodes'] > BUDGET: return None
+    return None
+DO, DC, BUDGET = 3, 2, 3000
+s = sim.State(C, filtered=False, menu=M); G = {g: I for g in range(600)}
+for g, j in W: assert step(s, G, g, j)
+assert s.digest() == 'ea0bc4f31df0c88e4019d2cf505e05d426122721bcca399c5801f3fdc1cedb72'
+Q = kpose(s); h = lb(Q)[0]
+print('start: K', lb(Q), 'letters', len(W), 'out', len(outset(G)))
+for D in range(DO + 1):
+    stats['nodes'] = 0; stats['clear tries'] = 0
+    res = level(s, G, h, D, [], set())
+    print(f'height {h}, depth {D}: {"found " + str(res[0]) if res else "none"} ; {stats}')
+    if res: break
+```
+
+Output:
+
+```text
+start: K (14, 0) letters 152 out 15
+height 14, depth 0: none ; {'nodes': 1, 'clear tries': 0}
+height 14, depth 1: none ; {'nodes': 13, 'clear tries': 0}
+height 14, depth 2: none ; {'nodes': 1000, 'clear tries': 38}
+height 14, depth 3: none ; {'nodes': 1799, 'clear tries': 123}
+```
+
+## 24. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -5199,3 +6070,4 @@ seconds 86
 - After round 15 (section 20): section 5, gap M1, the finiteness item says that P6 and the bound 6 on left heights are false (T15-01), that a high island can enter the cap of a grip that is already out (T15-02), and that R(I_a) is finite if and only if the clean steps have a uniform length bound, without hypothesis H (T15-04).
 - After round 16 (section 21): section 5, gap M1, the finiteness item says that no height 10 was found, that the inner cohorts alone do not bound the height (T16-02), and that two routes to a proof or a pump are closed (T16-03, T16-04).
 - After round 17 (section 22): section 5, gap M1, the finiteness item says that heights 10, 12 and 14 are reachable by exact words of 147, 149 and 152 letters (E17-4, E17-6, E17-7), through turns at the raiser, and that TH holds at the raise to 14.
+- After round 18 (section 23): section 5, gap M1, the finiteness item says that TH is decided by four orientations at the raiser and not by height (T18-01, T18-02), that at most 120 grips are out at once (T18-04), and that two integrator lemmas, not yet reviewed, explain the stop at height 14 (E18-1 to E18-3).

@@ -228,7 +228,7 @@ Two mathematical gaps:
     (T9-02). No single letter takes the deep state H6 of stage 04 to height 8 (exact, T9-04). For each m, the
     states whose heights are at most 2m have a finite maximum distance to the lattice, but no value of it is known
     (T9-05).
-  - *Finiteness (rounds 13 to 17).* Still open (`SENIOR-REVIEW.md` sections 18 to 22). Every left height is at most
+  - *Finiteness (rounds 13 to 18).* Still open (`SENIOR-REVIEW.md` sections 18 to 23). Every left height is at most
     6 if and only if P6 holds: at every reachable configuration, every cap of a grip of another branch that wholly
     contains a piece of height at least 6 is straddled (T13-03). P6 is false (round 15, T15-01): after the fixture
     records 1 to 723, four admissible letters take seven pieces of model orbits 19 to 24 to height 8. Grip 593
@@ -250,7 +250,15 @@ Two mathematical gaps:
     jumble at cap 582 give height 10 (147 letters). One more letter at 582 turns the pieces into a pose that a free
     cap of another branch holds whole, and a jumble there gives height 12 (149 letters). A letter at 576, one at 573
     and a jumble at 526 give height 14 (152 letters). At that raise the hypothesis TH of the trap lemma holds, so
-    the pieces stay at height 14 until the raiser returns. Open: whether left heights are bounded at all.
+    the pieces stay at height 14 until the raiser returns. Round 18: TH is decided by four orientations at the
+    raiser and not by height (T18-01, T18-02); at most 120 grips are out at once, so a relay of raises at grips that
+    were in needs returns to go on without bound (T18-04). Two lemmas of the integrator, not yet reviewed, explain
+    the stop at 14 (E18-1 to E18-3): a raise followed only by letters at the raiser and its return is one retained
+    letter at the raiser (excursion identity), so each return of 526 gives a state that one retained letter at 526
+    gives before the raise; and TH holds wherever some vertex of the pieces lies deeper in the raiser's cap than a
+    point of its norm can lie while it is also in a cap at 36 degrees or more from the raiser (lens criterion). The
+    pieces lay that deep in cap 526, and in cap 486, where clearing gives a second raise to 14. Open: whether left
+    heights are bounded at all.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not

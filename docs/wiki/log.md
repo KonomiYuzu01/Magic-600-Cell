@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: why the relay stops at height 14 (round 18)
+Senior review round 18 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 23 (model review; the integrator re-ran its exact programs and ran its own experiments during the round): the trap condition of the trap lemma is decided by four orientations at the raiser and not by height, and at most 120 grips are out at once, so a relay of raises at grips that were in needs returns to go on without bound. Two lemmas of the integrator, not yet reviewed, explain the stop at 14: each return of the raiser acts as one retained letter at it before the raise, and the trap holds because the pieces lie deep in the raiser's cap; whether left heights are bounded, and so whether R(I_a) is finite, stays open.
+
 ## [2026-10-15] update | Jumbling: heights 10 to 14 are reachable (round 17)
 Senior review round 17 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 22 (model review; the integrator re-ran its four exact programs and ran its own experiments during the round): the height-8 word cut down to the letters that the seven high pieces depend on, a return of one grip, and jumbles at three caps, each prepared by one more letter at the grip that made the last raise, take the pieces to left height 14 by an exact word of 152 letters. At height 14 the hypothesis of the trap lemma holds, so the pieces stay there until the raiser returns; the outer off-lattice pieces are not attached to a grip by its coset or its last letter, and whether left heights are bounded, and so whether R(I_a) is finite, stays open.
 
