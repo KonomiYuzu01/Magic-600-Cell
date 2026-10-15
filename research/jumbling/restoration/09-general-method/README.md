@@ -29,7 +29,10 @@ Round 9 asked whether the reachable set is finite (which decides a uniform bound
 uniform period for repeated words, an exact one-letter check at the deep state H6, and a correction to stage 04.
 Round 10 performs each three-cycle of the lattice cascade with one application of its seed, conjugated by a short
 word: a construction then needs at most 50,560,184 twists for every input (not implemented). Setting the frames
-during the position loop instead fails as proposed.
+during the position loop instead fails as proposed. Round 11 sets the frames inside the position loop with two
+returns, uses the fewest three-cycles and clears the remaining frames two at a time: a construction then needs at
+most 20,866,844 twists for every input, within a factor of about 1.33 of the fewest seed applications possible with
+these seeds (not implemented).
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver

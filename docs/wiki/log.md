@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: fewer seed applications in the lattice phase
+Senior review round 11 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 16 (model review; the integrator re-ran its five exact computations and checked its count of three-cycles on A_8): direct frame pairs, two frames per pair, the fewest three-cycles and twisted cycles with two returns give a construction of the lattice cascade of at most 20,866,844 twists for every input instead of 50,560,184 (4,655,642 macro actions); it is not implemented. Any construction from conjugates of the same seeds needs at least 15,643,520 twists charged for the seeds, so this schedule is within a factor of about 1.33 of what the seeds allow.
+
 ## [2026-10-15] update | Jumbling: direct three-cycles for the lattice phase
 Senior review round 10 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 15 (model review; the integrator re-ran its two exact computations): conjugating each seed by a word that fixes one buffer performs a three-cycle of the lattice cascade with one application of the seed instead of up to two, and a construction then needs at most 50,560,184 twists for every input instead of 71,514,544 (4,675,165 macro actions); it is not implemented. Setting the frames during the position loop fails as proposed, and the cost of the buffer cleanup that such a schedule would end with is computed.
 
