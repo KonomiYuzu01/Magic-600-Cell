@@ -5438,9 +5438,10 @@ E18-1: the 12 returns of 526 are retained letters at X12.
 # replayed from solved by the exact simulator; X12 is the state before its last letter (526, 12), and 526 has no
 # earlier letter. At X12: every cap of another branch that holds K whole, with the out grips whose NB contains it and
 # its exact status, and for each blocked one its exact straddlers: heights, whether each lies whole in cap 526, and
-# the grip of the letter that last moved it. Then for each letter (526, j) that returns 526 at X14: the retained
-# letter k at 526 with E(526, k) = E(526, j) E(526, 12), equality of the two states, and the same cap table. First, at
-# every grip: the menu elements in K+ are exactly the 12 retained items, and every menu element fixes the normal.
+# the grip of the letter that last moved it (a letter moves exactly the pieces whole in its cap). Then for each
+# letter (526, j) that returns 526 at X14: the retained letter k at 526 with E(526, k) = E(526, j) E(526, 12),
+# equality of the two states, and the same cap table. First, at every grip: the menu elements in K+ are exactly the
+# 12 retained items, and every menu element fixes the normal.
 import sys, ast, hashlib, math
 from pathlib import Path
 from collections import Counter
@@ -5524,8 +5525,8 @@ for c in range(600):
 print('at every grip the menu elements in K+ are the retained items', RET, 'and every menu element fixes n_c')
 s = sim.State(C, filtered=False, menu=M); G = [I] * 600; last = {}
 for i, (g, j) in enumerate(W[:-1]):
-    before = s.pose_id.copy(); step(s, G, g, j)
-    for p in np.flatnonzero(before != s.pose_id).tolist(): last[p] = i
+    moved = s.classify(g, need_inside=True).inside.tolist(); step(s, G, g, j)
+    for p in moved: last[p] = i
 assert not any(g == 526 for g, _ in W[:-1])
 Q12 = kpose(s); print('X12', s.digest()[:16], 'K', lb(Q12))
 print('caps of another branch holding K:', caps_table(s, G, Q12, True))
