@@ -38,8 +38,10 @@ and the summaries, and added the code of the round 9 checks. Rounds 13 to 15 too
 on left heights is equivalent to a statement about straddled caps (P6), an island raised by a grip that was not out
 stays trapped until that grip returns under a finite condition, and round 15 found four admissible letters after
 the fixture records 1 to 723 that reach height 8, so P6 is false. Round 16 found no height 10 near that word and
-closed two routes to a proof or a pump. Whether left heights are bounded, and so whether the reachable set is
-finite, stays open.
+closed two routes to a proof or a pump. Round 17 reached height 14 with an exact word of 152 letters: before each new
+raise, a letter at the grip that made the last raise turns the pieces so that a free cap of another branch holds
+them whole. At height 14 the raiser traps them until it returns. Whether left heights are bounded, and so whether
+the reachable set is finite, stays open.
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
