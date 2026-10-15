@@ -1401,7 +1401,7 @@ A Codex senior review returned nine findings, all verified:
 - two statements, R8-01 for Q2 and R8-02 for Q3, which change no published claim;
 - seven defects for Q1, R8-03 to R8-09: two `blocker`, four `major` and one `minor`.
 
-The integrator checked each finding against the records and adopted all nine. The corrections are made in METHOD.md (section 14 lists the changes), in the summaries and in M1-05 (section 2). The review's numbers are exact and were computed in memory; it re-ran no simulator replay.
+The integrator checked each finding against the records and adopted all nine. The corrections are made in METHOD.md (the last section lists the changes), in the summaries and in M1-05 (section 2). The review's numbers are exact and were computed in memory; it re-ran no simulator replay.
 
 ### R8-01: the general method as one theorem (proved, model review)
 
@@ -1555,7 +1555,195 @@ The integrator re-ran the exact check of the constants and got r = 1/512, R = 8 
   - repair the closure of T9-01 and prove that it simulates the puzzle;
   - build an exact 3-face graph of H6, to test whether its 78-piece component can gain new members (T9-03).
 
-## 15. What changed in METHOD.md
+## 15. A shorter construction for the lattice phase (round 10)
+
+After round 8 the construction of the retained cascade R needs at most 71,514,544 twists for every input: 45,376,326 for the position passes and 26,138,218 for the frame passes. The position loop performs each three-cycle of positions with up to two stars t_X = u_X⁻¹ c u_X, so with up to two applications of the seed. Round 10 asked whether another construction from the same seeds, trees and return words has a smaller proved bound:
+- **Q1.** Perform each three-cycle with one application of the seed, conjugated by a short word (a *direct three-cycle*).
+- **Q2.** Set the frame of each piece when the position loop places it (a *twisted cycle*), so that only the buffers need fixing at the end.
+- **Q3.** The bound of each, and of both together.
+
+A Codex senior review returned four findings, all verified:
+- one result that lowers a published bound (T10-02, `major`): with direct three-cycles the construction needs at most 50,560,184 twists for every input;
+- the direct three-cycle itself (T10-01), an obstruction to the proposed twisted cycles (T10-03) and the cost of the buffer cleanup that would follow them (T10-04), all `minor`.
+
+The integrator re-ran both inline computations (T10-02 and T10-04) and got the reported outputs; the T10-02 computation also checks the witness of T10-01. All four findings are adopted. The new construction is not implemented.
+
+### T10-01: a direct three-cycle (proved, model review; the witness re-run by the integrator)
+
+- **The direction.** Words are applied left to right, so u⁻¹ c u carries the support of c forward along u. Let c' be the seed of orbit o, which cycles the buffers A, B and C. If a retained word g fixes position A and takes X to B and Y to C, then g c' g⁻¹, not g⁻¹ c' g, cycles the positions A, X and Y.
+- **The conjugating word.** Let w2 be a shortest word of letters that fix position A and take X to B, and put Z = w2(Y). Z is neither A nor B, so the committed tree gives a word u_Z that fixes every sticker of A and B and takes C to Z. Then g = w2 u_Z⁻¹ works and has at most e_o + d_o letters, where d_o is the depth of the tree and e_o the largest length of w2 over the positions of the orbit. One cycle costs at most s_o + 2(e_o + d_o) twists: one application of the seed instead of up to two.
+- **e_o.** An exact breadth-first search over the letters that fix A reaches all N_o − 1 other positions on every orbit. For O00 to O09, e_o = 18, 11, 9, 9, 8, 8, 8, 7, 7 and 7; it is 6 on O10 to O27 and on O30 to O33, 5 on O28 and O29, and 4 on O34.
+- **The number of cycles.** The loop still performs (m + k − 2i)/2 cycles, as in M2-04: each cycle lowers m + k − 2i by two. Every N_o is divisible by 4, so there are at most 3N_o/4 − 1 cycles, attained by N_o/2 disjoint transpositions. For uniform even positions the expected number is (N_o − 4 + H_N + 2/N_o + 1/(N_o(N_o − 1)))/2, where H_N is the harmonic number of N_o.
+- **Collateral.** A conjugate by a retained word moves pieces of exactly the orbits that the seed moves, so every completed direct three-cycle respects the cascade order. Its prefix g may move pieces of orbits already solved; g⁻¹ puts them back.
+- **The witness.** On O00 (A = 117, B = 175946, C = 6290), take X = B and Y = 4939. The tree path u = [38] takes C to Y, so g = u⁻¹ = [−38] takes Y to C. The cycle g c' g⁻¹ has its third position at 4939, as required. The form g⁻¹ c' g, which the packet proposed, puts it at 437.
+
+### T10-02: with direct three-cycles the construction needs at most 50,560,184 twists (proved, model review; re-computed by the integrator)
+
+- **The construction.** The position loop of M2-04 with a direct three-cycle for every cycle, then the frame construction of M2-03 unchanged: the pairs, and the shorter single on O06 and O34.
+- **The bound.** For each orbit, (3N_o/4 − 1)(s_o + 2(e_o + d_o)) for the positions, plus the frame term of M2-03 on the 11 orbits with a nontrivial frame group. For actions, s_o is replaced by 1. With the certified lengths of round 7:
+
+| | Construction of round 7 | With direct three-cycles |
+| --- | ---: | ---: |
+| Position passes, twists | 45,376,326 | 24,421,966 |
+| Frame passes, twists | 26,138,218 | 26,138,218 |
+| Every input, twists | 71,514,544 | 50,560,184 |
+| On average over G, at most, twists | 46,189,354 | 32,201,480 |
+| Every input, actions | 4,840,993 | 4,675,165 |
+| On average over G, at most, actions | 3,098,745 | 2,988,213 |
+
+- **The averages.** They are upper bounds on the expected length for a uniform input on G, not exact expected lengths. The position word depends only on positions, so the frames of a uniform input stay uniform given its positions. Earlier passes of the cascade translate independent coordinates of later orbits and keep them uniform. So the frame factors of M2-04 still apply.
+- **What it gives.**
+  - A gain of 20,954,360 twists (29%) over 71,514,544. The bound is about 225 times the lower bound of 224,601 retained twists (M2-02), and about 1.6 years at one twist per second (4,675,165 actions: about 54 days).
+  - The library is unchanged: the 35 replaced seeds and their inverses, created in 14,048 twists. A person replays one stored macro per cycle instead of up to two; each letter of a conjugating word counts as one action.
+  - The frame passes are now the larger part. The largest orbit terms are O28 (10.6 million twists, of which 8.9 million frames), O03 (9.9 million, 8.3 million frames) and O10 (4.3 million, positions only).
+  - The bound is for R; the corrections C add at most 25,852 twists (AU-05). The kit as it runs keeps the bound of round 7, 71,516,526 twists, until the direct three-cycle is implemented.
+
+The bound (from the repository root, `python -B`; 31 seconds). Output:
+
+```text
+e [18, 11, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5, 6, 6, 6, 6, 4]
+twists 50560184 32201480
+actions 4675165 2988213
+```
+
+```python
+import gzip, json, sys
+import numpy as np
+from fractions import Fraction as F
+sys.path.insert(0, 'research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts')
+from rlib import Retained, invword
+R = Retained('.')
+first = R.psorted[R.poff[:-1]]
+E = []
+for o, t in enumerate(R.trees):
+    pcs = R.orbit_pieces(o)
+    n = len(pcs)
+    ix = np.full(R.np, -1, dtype=np.int32)
+    ix[pcs] = np.arange(n)
+    fs = first[pcs]
+    A, B = map(int, t['buffers'])
+    ai, bi = int(ix[A]), int(ix[B])
+    pm = []
+    for m in range(1, 1201):
+        s, d = R.move(m)
+        j = np.minimum(np.searchsorted(s, fs), len(s)-1)
+        hit = s[j] == fs
+        img = fs.copy()
+        img[hit] = d[j[hit]]
+        p = ix[R.sp[img]]
+        if p[ai] == ai:
+            pm.extend((p, np.argsort(p)))
+    dist = np.full(n, -1, dtype=np.int32)
+    dist[bi] = 0
+    front = np.array([bi])
+    depth = 0
+    while len(front):
+        new = np.unique(np.concatenate([p[front] for p in pm]))
+        new = new[dist[new] < 0]
+        depth += 1
+        dist[new] = depth
+        front = new
+    assert dist[ai] == -1 and np.count_nonzero(dist < 0) == 1
+    E.append(int(max(dist)))
+print('e', E)
+t = R.trees[0]
+C, Y = t['third'], t['positions'][2]
+u = [int(t['move'][2])]
+assert t['parent'][2] == 0 and u == [38]
+assert int(R.sp[R.map_through([first[C]], u)][0]) == Y == 4939
+assert int(R.sp[R.map_through([first[C]], invword(u))][0]) == 437
+RJ = json.load(gzip.open('research/jumbling/restoration/09-general-method/data/realign.json.gz', 'rt'))
+SP = {r['orbit']: r['s'] for r in RJ['orbits']}
+H = {0:2,3:2,6:10,8:2,11:2,17:5,22:2,25:2,28:5,32:2,34:60}
+h = {0:5,3:3,6:4,8:3,11:3,17:2,22:3,25:2,28:2,32:2,34:3}
+for unit in ('twists', 'actions'):
+    total, expect = 0, F(0)
+    for t in R.trees:
+        o = t['orbit']
+        N = len(set(t['positions'])) + 2
+        assert N % 4 == 0
+        s = SP[o] if unit == 'twists' else 1
+        d = max(t['depth'])
+        W = s + 2*(E[o]+d)
+        EC = (F(N-4) + sum((F(1,j) for j in range(1,N+1)), F(0))
+              + F(2,N) + F(1,N*(N-1))) / 2
+        total += (3*N//4-1)*W
+        expect += EC*W
+        if o in H:
+            P, PB = 4*s+2*h[o]+4*d, 2*s+2*h[o]
+            SC = 4*s+(16 if o==6 else 10) if o in (6,34) else 0
+            total += (N-2)*P + PB + SC
+            expect += F(H[o]-1,H[o])*((N-2)*P+PB)
+            if o in (6,34):
+                expect += (F(4,5) if o==6 else F(59,60))*SC
+    print(unit, total, -(-expect.numerator//expect.denominator))
+```
+
+### T10-03: the proposed twisted cycles do not work (proved, model review)
+
+The proposal fails for two reasons. Neither uses commutativity, so both hold on D5 (O06) and A5 (O34).
+- **Pieces that start in place are never visited.** The committed loop takes its work from the position errors only. On O03, leave all 3,600 positions correct, choose a position Z outside A, B and C, and give each of the other 3,596 positions the nonidentity frame. The number of flipped frames is even, so the frame invariant is zero and the input lies in G. The loop performs no cycle, and 3,596 frame errors remain outside the buffers, which no cleanup on the buffers can remove.
+- **One fibre map does not depend on the return.** Let r_x fix the stickers of A and B and return C with frame value x. Then r_x⁻¹ c' r_x has the fibre maps (α, βx, x⁻¹γ): its map from A to B does not depend on x. After any fixed relocation one incoming map still does not depend on x. A step that closes the loop can place two pieces outside the buffers whose frames are prescribed independently. Give the piece on that fixed edge a frame that this map does not restore; then no choice of x works.
+
+This refutes the proposed drop-in, not every construction with twisted cycles. A repaired schedule must visit the misframed pieces that start in place and control every frame that a step finalizes. Until such a schedule and its cost are proved, there is no bound for Q2 alone, or for Q1 and Q2 together; T10-02 keeps the frame passes.
+
+### T10-04: the buffer cleanup, if the rest is solved (proved, model review; re-computed by the integrator)
+
+- **The condition.** Every position, and every frame outside A, B and C, is already solved. T10-03 shows that the proposed twisted cycles do not reach this state.
+- **The pairs.** Put Q_x = r_x⁻¹ c' r_x c'⁻¹. Its value at B is βxβ⁻¹. Its conjugate c'⁻¹ Q_x c' = c'⁻¹ r_x⁻¹ c' r_x is supported on A and C, has the value γ⁻¹x⁻¹γ at A, and costs at most 2s + 2h twists after cancellation. Both value maps cover the frame group, the non-abelian ones included. Clear A with the conjugate, then B with Q_x.
+- **The single.** What remains at C lies in the commutator subgroup H′. The shorter single Q_x Q_y Q_xy⁻¹ gives the commutator x⁻¹y⁻¹xy there.
+- **The cost.** At most 4s + 4h twists on the abelian orbits, 256 twists or 40 actions on O06, and 1,638 twists or 30 actions on O34, with no change of library. The commutators cover all 5 values of D5′ and all 60 of A5.
+
+The computation (from the repository root). Output:
+
+```text
+6 10 5 8 256 40
+34 60 60 5 1638 30
+```
+
+```python
+import gzip, json
+T = json.load(gzip.open('assets/execution_trees.json.gz', 'rt'))
+R = json.load(gzip.open('research/jumbling/restoration/09-general-method/data/realign.json.gz', 'rt'))
+S = {r['orbit']: r['s'] for r in R['orbits']}
+def mul(x, y):
+    return tuple(y[a] for a in x)
+def inv(x):
+    return tuple(x.index(j) for j in range(len(x)))
+for o in (6, 34):
+    t = T[o]
+    base, h = t['frames'][0], {}
+    for p, f, d in zip(t['positions'], t['frames'], t['depth']):
+        if p == t['third']:
+            x = tuple(base.index(j) for j in f)
+            for z in (x, inv(x)):
+                h[z] = min(h.get(z, d), d)
+    assert all(mul(x,y) in h for x in h for y in h)
+    best = {}
+    for x in h:
+        for y in h:
+            z = mul(x,y)
+            c = mul(mul(mul(inv(x),inv(y)),x),y)
+            best[c] = min(best.get(c,10**9), h[x]+h[y]+h[z])
+    q = max(best.values())
+    print(o, len(h), len(best), q,
+          8*S[o]+4*max(h.values())+2*q,
+          8+4*max(h.values())+2*q)
+```
+
+The columns are the orbit, the size of the frame group, the number of commutator values, the longest single, and the cleanup cost in twists and in actions.
+
+### Where M2 stands after round 10
+
+- **Proved (model review).** A construction of R with direct three-cycles needs at most 50,560,184 twists for every input (at most 32,201,480 on average over G), or 4,675,165 actions: about 225 times the lower bound for retained words. The corrections add at most 25,852 twists.
+- **Implemented.** The kit as it runs is unchanged: its bound stays 71,516,526 twists, and the measured runs 4.5 × 10^7 (section 12).
+- **Next (not run).**
+  - Implement the direct three-cycle in the kit, with the O00 witness of T10-01 as the first test of its orientation, and replay the two synthetic inputs with the stage 03 checker.
+  - A twisted-cycle schedule that visits the misframed pieces that start in place and controls every frame a step finalizes (T10-03), followed by the cleanup of T10-04.
+  - Shorter seeds for O28 and O03, whose frame passes are now the largest terms, and for O10.
+- **For the owner.** Whether a lattice phase of about 4.7 million actions, or 5 × 10^7 twists, counts as replicable.
+
+## 16. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -1585,3 +1773,6 @@ The integrator re-ran the exact check of the constants and got r = 1/512, R = 8 
   - Section 3: the rows for Lemma C, the other cell kinds, the toolkit theorem and the lattice-phase length are corrected (R8-04, R8-05, R8-08).
   - Section 5: the s61c bound of gap M1 says "to the lattice" (R8-03); gap M2 names the cascade and the corrections, says that the lower bounds count retained words, and records that the round 7 selection is optimal over the recorded candidates (R8-02, R8-07, R8-08).
 - After round 9 (section 14): section 5, gap M1, has a new item on the finiteness of R(I_a) (T9-02, T9-04, T9-05).
+- After round 10 (section 15):
+  - Section 2, phase 2, and the row for the lattice-phase length in section 3 give the bound of the construction with direct three-cycles (T10-02).
+  - Section 5, gap M2: a new item on direct three-cycles and on the twisted cycles that fail as proposed, and the next experiments (T10-01 to T10-04).

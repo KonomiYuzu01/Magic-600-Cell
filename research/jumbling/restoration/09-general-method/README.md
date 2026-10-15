@@ -27,6 +27,9 @@ for every input, plus at most 25,852 for the corrections. Round 8, a closing aud
 these pages and the summaries, and showed that the round 7 choice of seeds is optimal over the recorded candidates.
 Round 9 asked whether the reachable set is finite (which decides a uniform bound for gap M1): still open, with a
 uniform period for repeated words, an exact one-letter check at the deep state H6, and a correction to stage 04.
+Round 10 performs each three-cycle of the lattice cascade with one application of its seed, conjugated by a short
+word: a construction then needs at most 50,560,184 twists for every input (not implemented). Setting the frames
+during the position loop instead fails as proposed.
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
