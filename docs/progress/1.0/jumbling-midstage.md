@@ -39,6 +39,6 @@ Evidence kind for every row: source, fixture and synthetic geometry from a Linux
 
 ## 4. What mid-stage does not settle
 
-- The twist menu: an owner sign-off at the 2.5 freeze (owner decision, 9 October 2026). The candidates with finite same-cap behaviour are A4₀, S4₀, I_a and I_b (theory draft, Proposition 3.1); any other base-cap group is infinite, and so is the set of configurations at that cap alone.
+- The twist menu: an owner sign-off at the 2.5 freeze (owner decision, 9 October 2026). Decided after mid-stage: the owner chose I_a on 13 October 2026 ([owner decision](../../wiki/decisions/owner-decisions-2026-10-13-jumbling-menu.md)). The candidates with finite same-cap behaviour are A4₀, S4₀, I_a and I_b (theory draft, Proposition 3.1); any other base-cap group is infinite, and so is the set of configurations at that cap alone.
 - Finiteness of R(Λ) for S4₀, I_a and I_b, item 4 (whether the eight extra lattice states lie in the retained group) and items 5 and 6 of the theory: open. These three decide every menu: a menu reaches what its generated group reaches, A4₀ is finite, and a menu contained in none of the three groups gives infinite R (Proposition 3.5, Corollary 3.4); and no reachable state moves a centre off its pole (Proposition 4.1).
 - Every Windows, Direct3D 12 and performance question: E-2.4-0J runs on the owner's machine.
