@@ -233,4 +233,4 @@ Inputs of 40 and 60 records use the deep-input rules (`seams.py`); their results
 - a check whether a twist or a word the solver has chosen closes its cut (U2) or lowers N (U4, Theorem U);
 - the lens macros as stored macros, admissible from every lattice configuration (Proposition S);
 - the solver's own twist record, for reopening (U7).
-The depth up to which the method has been shown to work (section 5) is an input to the twist menu sign-off at the 2.5 freeze.
+The twist menu is decided: the owner chose I_a on 13 October 2026 ([owner decision](../../../docs/wiki/decisions/owner-decisions-2026-10-13-jumbling-menu.md)). The depth up to which the method has been shown to work (section 5) remains the measure of open problem 1.

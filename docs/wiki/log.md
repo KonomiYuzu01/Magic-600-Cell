@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-14] decision | Jumbling twist menu I_a and human scale
+Recorded in [owner-decisions-2026-10-13-jumbling-menu](decisions/owner-decisions-2026-10-13-jumbling-menu.md): the twist menu is I_a (owner, 13 October), and a restoration method a person executes has no fixed size limit as long as its counts and lengths are not astronomical (owner, 14 October). [jumbling-plan](../progress/1.0/jumbling-plan.md), [jumbling-midstage](../progress/1.0/jumbling-midstage.md), [restoration](../../research/jumbling/theory/restoration.md) and [open-problems](../../research/jumbling/theory/open-problems.md) note the chosen menu.
+
 ## [2026-10-12] update | Jumbling E: the six unlock windows
 [buffer-transport](../../research/jumbling/theory/buffer-transport.md) section 8.5 takes apart the six unlock windows of the owner's 41,457-twist construction with `unlock.py` (exact; one code review and a scoped verification): each witness runs from an anchor before the forcing twist to the first prefix at which every lattice piece of the anchor is back (30 to 9,210 twists, while the forced pieces are back 2 to 16 twists after the forcing twist), restores whole blocks and leaves every other off piece at its exact pose; what the six windows share (U1 to U4) is computed, and that it generalizes is a conjecture.
 
