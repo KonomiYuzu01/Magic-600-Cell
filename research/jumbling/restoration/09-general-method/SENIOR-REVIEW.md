@@ -1743,7 +1743,496 @@ The columns are the orbit, the size of the frame group, the number of commutator
   - Shorter seeds for O28 and O03, whose frame passes are now the largest terms, and for O10.
 - **For the owner.** Whether a lattice phase of about 4.7 million actions, or 5 × 10^7 twists, counts as replicable.
 
-## 16. What changed in METHOD.md
+## 16. Fewer seed applications (round 11)
+
+After round 10 a construction of the retained cascade R needs at most 50,560,184 twists for every input. Almost all of that is seed applications times seed length. Round 11 asked how far the number of seed applications can be cut with the same seeds, trees and return words:
+- **Q1.** Move a frame pair to its target with a short word instead of a star (a *direct pair*).
+- **Q2.** Fix two frames with one pair.
+- **Q3.** Use the fewest three-cycles, without always passing through the buffer A.
+- **Q4.** Repair the twisted cycles that T10-03 refuted.
+- **Q5.** The new bound, and a floor: the fewest seed applications that any construction from conjugates of the seeds needs.
+
+A Codex senior review returned seven findings:
+- one result that lowers a published bound (T11-05, `major`): a construction of R needs at most 20,866,844 twists for every input;
+- five results (T11-01 to T11-04 and T11-06, `minor`): direct pairs, two frames per pair, the fewest three-cycles, twisted cycles with two returns, and the floor;
+- one open question (T11-07, `minor`): exact average lengths.
+
+The integrator re-ran the five inline computations (T11-01, T11-02, T11-04, T11-05 and T11-06) and got the reported outputs. Two parts were checked independently:
+- the distance arrays of T11-01, with a separate breadth-first search;
+- the count of T11-03, by a breadth-first search over the alternating group A_8.
+
+All seven findings are adopted. The construction is not implemented.
+
+### T11-01: direct pairs (proved, model review; re-computed by the integrator)
+
+- **The pair.** Let g be a word of letters that fixes position C and takes X to B. Write a for the fibre transport of g from X to B, δ for its transport at C, and β = c'_B. Then g Q_x g⁻¹ has the value aβxβ⁻¹a⁻¹ at X and δx⁻¹δ⁻¹ at C, and fixes the rest of the orbit.
+  - Choosing x = (aβ)⁻¹v(aβ) puts any value v at X.
+  - g must fix the position C, not its stickers.
+  - The pair costs at most 2s_o + 2h_o + 2f_o twists: two applications of the seed instead of four (the committed pair conjugates by a star, which contains the seed).
+- **f_o.** f_o is the largest distance to B with the letters that fix C. For O00 to O34 it is 18, 11, 9, 9, 8, 8, 8, 7, 7, 7, 7, then 6 on O11 to O21, and on O22 to O34 5, 6, 5, 5, 6, 5, 5, 5, 6, 6, 5, 6, 5. It differs from e_o of T10-01: on O34, f = 5 and e = 4.
+- **The non-abelian groups.** An exact enumeration covers all 719 × 10 = 7,190 transported values on O06 and all 119 × 60 = 7,140 on O34. At every target the values fill the frame group.
+- **The transport matters.**
+  - On O06, take X = 10 and g = [1, 15, 57, 211, 441, 731, 1025]. The return [360, 432] gives the base pair the value (0, 3, 4, 1, 2) at B, but the transported value at X is (1, 0, 3, 2, 4).
+  - On O34, g = [−510, −698, 921, −982] for X = 72146 fixes the position C but rotates its fibre.
+
+### T11-02: two frames per pair (proved, model review; re-computed by the integrator)
+
+- **C2 (seven orbits).** After the position pass the number m of flipped frames is even (the invariant), and a transported pair flips both of its endpoints. So m/2 pairs suffice, and no schedule of operations on at most two frame positions does better: at most N_o/2 pairs, N_o/4 on average.
+  - A pair between two arbitrary positions first sends Y to C with at most b_o letters, then the image of X to B with letters that fix C. It costs 2s_o + 2h_o + 2(b_o + f_o).
+  - b_o is the largest distance to C with all letters: 19, 9, 8, 7, 6, 6, 6, 5, 5, 5 and 5 on O00, O03, O06, O08, O11, O17, O22, O25, O28, O32 and O34. The distance to A does not replace it.
+- **C5 (O17, O28).** A pair puts inverse values at its ends, so two errors a, a cannot both be removed by one pair; the errors a, a, a³ have zero invariant and show it.
+  - Split the errors into blocks whose values sum to zero, of at most five errors each; any five residues contain such a block (prefix sums). A block of k errors takes k − 1 pairs.
+  - At most 4N/5 = 1,152 pairs on either C5 orbit, attained when all 1,440 values equal one generator. On average about 677.42; the exact value is a rational number computed by a 25-state recurrence.
+- **D5 and A5 with ordinary pairs.** A chain into one reservoir: at most N − 1 pairs, (N − 1)(1 − 1/|H|) on average.
+- **A better gadget (T11-04).** A frame triple clears two arbitrary errors with two seed applications. With it, the worst counts are 720 on C5, 360 on D5 and 60 on A5, plus at most one single on D5 and A5.
+
+### T11-03: the fewest three-cycles (proved, model review; checked independently by the integrator)
+
+- **The count.** Let c_odd(σ) be the number of cycles of odd length of σ, fixed points included. A three-cycle changes it by at most two, and the identity has N, so σ needs at least (N − c_odd(σ))/2 three-cycles. That many suffice:
+  - an odd cycle of length 2r + 1 takes r three-cycles: (a1 … a2r+1) = (a1 a2 a3)(a1 a4 a5)…(a1 a2r a2r+1), chronologically;
+  - even cycles come in pairs in an even permutation; reduce them to transpositions and use (a b)(c d) = (a c d)(a c b).
+- **Worst case and average.** At most N/2 when 4 divides N; the committed loop needs up to 3N/4 − 1. For a uniform even σ the average is (N − H_N + H_{N/2}/2 − 1/(N − 1))/2.
+- **The transport.** g = w1 w2 u⁻¹ takes X, Y and Z to A, B and C:
+  - w1 takes X to A;
+  - w2 consists of letters that fix A and takes w1(Y) to B;
+  - u is a tree path that takes C to w2(w1(Z)) and fixes A and B.
+
+  A cycle costs s_o + 2(e1_o + e_o + d_o), where e1_o is the largest distance to A with all letters: 18, 11, 9, 9, 7, 8, 8, 7, 7, 7, then 6 on O10 to O17, and on O18 to O34 5, 6, 6, 6, 5, 5, 5, 5, 6, 5, 5, 5, 6, 5, 5, 5, 5.
+- **Fewer cycles are not always cheaper.** w1 lengthens every cycle. With the frame passes unchanged, always using this count gives at most 43,522,258 twists for every input but an average ceiling of 33,260,800, above the 32,201,480 of round 10. T11-05 uses it only where the frame group is trivial, and only when it is cheaper.
+- **The integrator's check.** A breadth-first search over A_8 with all 112 three-cycles reaches 20,160 states, at most 4 apart, at the mean distance 649/210. Every distance equals (8 − c_odd)/2, and the mean equals the formula.
+
+### T11-04: twisted cycles with two returns (proved, model review; re-computed by the integrator)
+
+- **The twisted seed.** Let r be a retained word that fixes the positions A, B and C, with fibre values 1, y and x there. Then r⁻¹c'r has the fibre maps (αy, y⁻¹βx, x⁻¹γ). Choosing y = α⁻¹u and x = β⁻¹yv prescribes any first two maps u and v; neither alignment nor αβγ = 1 is needed.
+- **A return at B, without another seed.** A word t that takes (A, B, C) to (A, C, B) is built from the round 10 setup and a tree path. Then t r_z t⁻¹ fixes every sticker of A and C and gives every value of the frame group at B. Combined with a return at C it gives r.
+  - The lengths τ_o = |t| are 34, 15, 13, 9, 7, 9, 9, 7, 8, 7 and 8 on O00, O03, O06, O08, O11, O17, O22, O25, O28, O32 and O34.
+  - These lengths are not claimed to be the shortest.
+- **The costs.**
+  - A twisted direct three-cycle costs W = s_o + 4h_o + 4τ_o + 2(e_o + d_o).
+  - The frame triple r⁻¹c'rc'⁻¹ has the values (αyα⁻¹, y⁻¹βxβ⁻¹, x⁻¹) at A, B and C, so it sets two frames freely. Moved to two targets, with C as the reservoir, it costs 2s_o + 4h_o + 4τ_o + 2(e1_o + e_o + d_o).
+- **A complete schedule** on an orbit with a nontrivial frame group:
+  1. Run the position loop through A with twisted direct cycles.
+  2. Whenever X or Y becomes correct, choose its incoming map (the edge A → X or X → Y) to restore its frame.
+  3. Clear the misframed positions outside A, B and C that started in place, with C2 pairs, frame triples or ordinary pairs; an odd one left over takes an ordinary pair.
+  4. Clean the buffers as in T10-04.
+- **Why nothing is missed.** Each step finalizes at most two positions outside A, and a finalized position never re-enters the loop. Positions that start in place never enter it, and completed factors do not touch them, so step 3 handles exactly the errors that T10-03 found unvisited. Every completed factor keeps the seed's collateral. If F counts the initial frame errors outside A, B and C, then E[F] = (N − 3)(1 − 1/|H|)/N for a uniform input on G.
+- **Counterexample.** Without step 3, the second return does not help: on the O03 input of T10-03 the loop runs no cycle and 3,596 frame errors remain.
+
+### T11-05: the combined construction needs at most 20,866,844 twists (proved, model review; re-computed by the integrator)
+
+- **The construction.**
+  - On the 11 orbits with a nontrivial frame group: the schedule of T11-04. The misframed positions that start in place are cleared with ordinary pairs on O06 and O17, with C2 pairs on the seven C2 orbits and with frame triples on O28 and O34, whichever the twist count favours.
+  - On the 24 orbits with a trivial frame group: for each input, the cheaper of the round 10 loop and the fewest three-cycles of T11-03.
+- **The worst case.** The bound maximises the cost over the number m of moved positions, the number k of nontrivial cycles (k ≤ m/2, of the parity of m) and whether A moves, with the frame errors F bounded by the positions that do not move. This bounds every input; it does not claim that one input attains every maximum at once.
+- **The bounds** (with the certified lengths of round 7):
+
+| | Round 10 | Round 11 |
+| --- | ---: | ---: |
+| Every input, twists | 50,560,184 | 20,866,844 |
+| On average over G, at most, twists | 32,201,480 | 17,010,356 |
+| Every input, actions | 4,675,165 | 4,655,642 |
+| On average over G, at most, actions | 2,988,213 | 3,126,229 |
+
+- **What it gives.**
+  - A gain of 29,693,340 twists (59%) over round 10, and of 50,647,700 (71%) over the construction of round 7. The bound is about 93 times the lower bound of 224,601 retained twists, and about 8 months at one twist per second (4,655,642 actions: about 54 days).
+  - The construction was chosen for twists. Its average in actions is higher than that of round 10, whose construction keeps its own bounds.
+  - The library is unchanged: the 35 replaced seeds and their inverses, created in 14,048 twists.
+  - The largest orbit terms are now O10 (2.9 million twists, positions only), O28 (2.3 million) and O03 (2.1 million). The 11 orbits with frames need 7.2 million in all and the 24 without 13.7 million.
+  - The bound is for R; the corrections C add at most 25,852 twists (AU-05).
+- **The averages.** They are upper bounds on the expected length, as in round 10. They use the exact averages of the loop count and of F, charge the cleanup at its worst, and use E[min(U, V)] ≤ min(E[U], E[V]) on the orbits without frames.
+- **Not implemented.** An implementation must carry out the whole schedule, including the positions that start in place and the collateral; replacing only the cycle constructor does not give this bound. Its acceptance tests should include:
+  - an input whose positions are all in place but whose frames are wrong;
+  - a closing three-cycle;
+  - paired transpositions;
+  - the non-abelian cleanup.
+
+### T11-06: a floor for constructions from seed conjugates (proved, model review; re-computed by the integrator)
+
+- **Positions.** Suppose orbit o changes only through conjugates of c' and c'⁻¹. Each application is then one three-cycle of positions, so an input permutation σ needs at least (N − c_odd(σ))/2 applications. Disjoint transpositions need N/2. Summed over the orbits: 88,260 applications, or 13,956,600 twists charged for the seeds.
+- **Frames.** Take the positions in place and a nonidentity frame at every position.
+  - The supports of the seed applications form a hypergraph. A connected component with v positions needs at least v − 1 applications, because returning to the identity needs as many splits of cycles as merges.
+  - On C2 and D5, choose every frame in the nonzero class of the abelianization. Each component then has even size, and with at least three positions it has at least four, so at least 3v/4 applications.
+  - On C5, choose every frame equal to one generator. Component sizes are then multiples of 5, which gives at least 4v/5 applications.
+  - On A5, a component has at least three positions, which gives at least 2v/3.
+  - These inputs lie in G.
+- **The floor.** Summed over the orbits, with N/2 on the orbits without frames: 95,024 applications, or 15,643,520 twists charged for the seeds. The construction of T11-05 is within a factor 5,216,711/3,910,880, about 1.33, of this floor.
+- **Scope.**
+  - The floor counts seed applications times s_o, not the length of a freely reduced word: if c' = u⁻¹pu, conjugating it by u leaves p, which may be shorter.
+  - Adding the orbits' worst cases is justified for cascades that solve one orbit at a time. It is not established for an algorithm that uses the collateral of earlier seeds on purpose.
+  - The lower bound for every retained word stays 224,601 (M2-02).
+
+### T11-07: exact average lengths (open)
+
+The averages above are upper bounds on the expected length, not exact averages:
+- they charge the longest setup and return words;
+- they bound the average of a minimum by the minimum of the averages;
+- they charge the cleanup at its worst.
+
+An exact average needs fixed tie-breaking for transports, factorizations, returns and cancellation, and then the joint distribution. The synthetic inputs are not uniform samples of G (M2-05).
+
+### Where M2 stands after round 11
+
+- **Proved (model review).**
+  - A construction of R needs at most 20,866,844 twists for every input (at most 17,010,356 on average over G), or 4,655,642 actions. That is about 93 times the lower bound for retained words, and within a factor of about 1.33 of the fewest seed applications that any construction from conjugates of these seeds needs.
+  - The corrections add at most 25,852 twists.
+- **What this means.** With these seeds and a cascade that solves one orbit at a time, a better schedule can save at most about a quarter of the bound, counted in seed charges. A larger gain needs shorter seeds, above all for O10, O28, O03, O01 and O18, or a construction that is not built from conjugates of the seeds.
+- **Implemented.** The kit as it runs is unchanged: its bound stays 71,516,526 twists, and the measured runs 4.5 × 10^7 (section 12).
+- **Next (not run).**
+  - Implement the schedule of T11-04 and T11-05 with the acceptance tests above, and replay the two synthetic inputs with the stage 03 checker.
+  - Shorter seeds for the largest terms.
+- **For the owner.** Whether a lattice phase of about 4.7 million actions, or 2 × 10^7 twists, counts as replicable.
+
+### Reproduction (round 11)
+
+From the repository root, `python -B`.
+
+T11-01: the distance arrays and the coverage of the transported values on O06 and O34 (31 seconds). Output:
+
+```text
+coverage 6 7190
+coverage 34 7140
+e1A [18, 11, 9, 9, 7, 8, 8, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 5, 6, 6, 6, 5, 5, 5, 5, 6, 5, 5, 5, 6, 5, 5, 5, 5]
+e1C [19, 11, 9, 9, 7, 7, 8, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5]
+e [18, 11, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5, 6, 6, 6, 6, 4]
+f [18, 11, 9, 9, 8, 8, 8, 7, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 6, 5, 5, 6, 5, 5, 5, 6, 6, 5, 6, 5]
+```
+
+```python
+import sys, gzip, json
+import numpy as np
+sys.path.insert(0, 'research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts')
+from rlib import Retained
+R = Retained('.')
+J = json.load(gzip.open('research/jumbling/restoration/09-general-method/data/realign.json.gz', 'rt'))
+first = R.psorted[R.poff[:-1]]
+def mul(*xs):
+    p = tuple(range(len(xs[0])))
+    for x in xs: p = tuple(x[i] for i in p)
+    return p
+def inv(x): return tuple(x.index(i) for i in range(len(x)))
+rows = []
+for o, t in enumerate(R.trees):
+    pcs = R.orbit_pieces(o); n = len(pcs)
+    ix = np.full(R.np, -1, dtype=np.int32); ix[pcs] = np.arange(n)
+    fs = first[pcs]
+    A, B = map(int, t['buffers']); C = int(t['third'])
+    ai, bi, ci = [int(ix[p]) for p in (A, B, C)]
+    pm = {}
+    for m in range(1, 1201):
+        s, d = R.move(m)
+        j = np.minimum(np.searchsorted(s, fs), len(s)-1)
+        hit = s[j] == fs; img = fs.copy(); img[hit] = d[j[hit]]
+        p = ix[R.sp[img]]
+        pm[m] = p; pm[-m] = np.argsort(p)
+    def bfs(root, gens):
+        dist = np.full(n, -1, dtype=np.int32)
+        nxt = np.zeros(n, dtype=np.int32)
+        dist[root] = 0; front = np.array([root]); depth = 0
+        while len(front):
+            depth += 1; new = []
+            for m in gens:
+                y = pm[-m][front]; y = y[dist[y] < 0]
+                dist[y] = depth; nxt[y] = m; new.append(y)
+            front = np.unique(np.concatenate(new))
+        return dist, nxt
+    da, _ = bfs(ai, pm); dc, _ = bfs(ci, pm)
+    de, _ = bfs(bi, [m for m,p in pm.items() if p[ai] == ai])
+    df, nf = bfs(bi, [m for m,p in pm.items() if p[ci] == ci])
+    assert min(da) >= 0 and min(dc) >= 0
+    assert np.count_nonzero(de < 0) == np.count_nonzero(df < 0) == 1
+    assert de[ai] == df[ci] == -1
+    rows.append([int(max(x)) for x in (da, dc, de, df)])
+    if o not in (6, 34): continue
+    lab = {A:list(R.atlas[o]['frames'][0]), B:list(R.atlas[o]['frames'][1])}
+    for p, fr in zip(t['positions'], t['frames']): lab.setdefault(p, list(fr))
+    H = {tuple(lab[C].index(x) for x in fr)
+         for p,fr in zip(t['positions'], t['frames']) if p == C}
+    beta = tuple(lab[C].index(int(x)) for x in
+                 R.map_through(lab[B], J['orbits'][o]['choice']['word']))
+    for X in map(int, pcs):
+        if X == C: continue
+        y = int(ix[X]); g = []
+        while y != bi:
+            m = int(nf[y]); g.append(m); y = int(pm[m][y])
+        a = tuple(lab[B].index(int(x)) for x in R.map_through(lab[X], g))
+        delta = tuple(lab[C].index(int(x)) for x in R.map_through(lab[C], g))
+        lam = mul(a, beta)
+        assert {mul(lam,x,inv(lam)) for x in H} == H
+        assert {mul(delta,inv(x),inv(delta)) for x in H} == H
+    print('coverage', o, (n-1)*len(H))
+for j, name in enumerate(('e1A', 'e1C', 'e', 'f')):
+    print(name, [r[j] for r in rows])
+```
+
+T11-02: the C5 schedule, its worst count, the ceiling of its average and the average times 10^6, rounded down. Output:
+
+```text
+1152 678 677418870
+```
+
+```python
+from itertools import combinations
+from collections import deque
+from fractions import Fraction
+
+def step(st, a):
+    v = tuple(sorted(st + (a,)))
+    for k in range(1, len(v)+1):
+        for idx in combinations(range(len(v)), k):
+            if sum(v[i] for i in idx) % 5 == 0:
+                return tuple(x for i,x in enumerate(v) if i not in idx), k-1
+    assert len(v) <= 4
+    return v, 0
+
+seen = {()}; queue = deque([()]); trans = {}
+while queue:
+    st = queue.popleft()
+    trans[st] = [step(st,a) for a in range(5)]
+    for v,c in trans[st]:
+        if v not in seen: seen.add(v); queue.append(v)
+assert len(seen) == 25
+count, cost, worst = {():1}, {():0}, {():0}
+for j in range(1440):
+    nc, nw, nm = {}, {}, {}
+    for st,n in count.items():
+        for v,c in trans[st]:
+            nc[v] = nc.get(v,0) + n
+            nw[v] = nw.get(v,0) + cost[st] + c*n
+            nm[v] = max(nm.get(v,-1), worst[st]+c)
+    count, cost, worst = nc, nw, nm
+assert count[()] == 5**1439
+E = Fraction(cost[()], count[()])
+print(worst[()], -(-E.numerator//E.denominator),
+      E.numerator*10**6//E.denominator)
+# 1152 678 677418870
+```
+
+T11-04: the swap lengths τ_o and the number of checked pairs of prescribed values (|H|²) per orbit. Output:
+
+```text
+0 34 4
+3 15 4
+6 13 100
+8 9 4
+11 7 4
+17 9 25
+22 9 4
+25 7 4
+28 8 25
+32 7 4
+34 8 3600
+```
+
+```python
+import sys, gzip, json
+import numpy as np
+sys.path.insert(0, 'research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts')
+from rlib import Retained, invword
+R = Retained('.')
+J = json.load(gzip.open('research/jumbling/restoration/09-general-method/data/realign.json.gz', 'rt'))
+first = R.psorted[R.poff[:-1]]
+def path(t,n):
+    w = []
+    while t['parent'][n] >= 0:
+        w.append(int(t['move'][n])); n = t['parent'][n]
+    return w[::-1]
+def mul(*xs):
+    p = tuple(range(len(xs[0])))
+    for x in xs: p = tuple(x[i] for i in p)
+    return p
+def inv(x): return tuple(x.index(i) for i in range(len(x)))
+for rec in J['orbits']:
+    if rec['H'] == '1': continue
+    o = rec['orbit']; t = R.trees[o]; pcs = R.orbit_pieces(o); n = len(pcs)
+    ix = np.full(R.np,-1,dtype=np.int32); ix[pcs] = np.arange(n)
+    A,B = map(int,t['buffers']); C = int(t['third'])
+    ai,bi,ci = [int(ix[p]) for p in (A,B,C)]
+    fs = first[pcs]; pm = {}
+    for m in range(1,1201):
+        s,d = R.move(m); j = np.minimum(np.searchsorted(s,fs),len(s)-1)
+        hit = s[j] == fs; img = fs.copy(); img[hit] = d[j[hit]]
+        p = ix[R.sp[img]]
+        if p[ai] == ai: pm[m] = p; pm[-m] = np.argsort(p)
+    dist = np.full(n,-1,dtype=np.int32); nxt = np.zeros(n,dtype=np.int32)
+    dist[bi] = 0; front = np.array([bi]); depth = 0
+    while dist[ci] < 0:
+        new = []; depth += 1
+        for m,p in pm.items():
+            y = p[front]; y = y[dist[y] < 0]
+            dist[y] = depth; nxt[y] = -m; new.append(y)
+        front = np.concatenate(new); assert len(front)
+    a,w = ci,[]
+    while a != bi:
+        m = int(nxt[a]); w.append(m); a = int(pm[m][a])
+    z = bi
+    for m in w: z = int(pm[m][z])
+    swap = w + invword(path(t,t['positions'].index(int(pcs[z]))))
+    labs = [np.array(f,dtype=np.int64) for f in R.atlas[o]['frames']]
+    assert [int(R.sp[R.map_through(f,swap)[0]]) for f in labs] == [A,C,B]
+    H = {}; HB = set()
+    for node,pos in enumerate(t['positions']):
+        if pos != C: continue
+        rw = path(t,node); cf = R.map_through(labs[2],rw)
+        assert all(np.array_equal(R.map_through(labs[i],rw),labs[i]) for i in (0,1))
+        x = tuple(labs[2].tolist().index(int(j)) for j in cf); H[x] = rw
+        bw = swap + rw + invword(swap)
+        assert all(np.array_equal(R.map_through(labs[i],bw),labs[i]) for i in (0,2))
+        HB.add(tuple(labs[1].tolist().index(int(j)) for j in R.map_through(labs[1],bw)))
+    assert HB == set(H)
+    sw = rec['choice']['word'] if rec['choice'] else (
+        invword(t['relocation']) + t['seed'] + t['relocation'])
+    P = R.word_perm(sw)
+    al,be,ga = [tuple(labs[(i+1)%3].tolist().index(int(P[s])) for s in labs[i])
+                for i in range(3)]
+    for va in H:
+        for vb in H:
+            y = mul(inv(al),va,al); x = mul(inv(be),y,vb,be)
+            assert y in H and x in H
+            assert mul(al,y,inv(al)) == va
+            assert mul(inv(y),be,x,inv(be)) == vb
+    print(o,len(swap),len(H)**2)
+```
+
+T11-05: the bounds. Output:
+
+```text
+twists 20866844 17010356
+actions 4655642 3126229
+gain 29693340
+factor 20866844/224601
+creation 14048
+```
+
+```python
+import gzip,json
+from fractions import Fraction as F
+T = json.load(gzip.open('assets/execution_trees.json.gz','rt'))
+J = json.load(gzip.open('research/jumbling/restoration/09-general-method/data/realign.json.gz','rt'))
+S = {r['orbit']:r['s'] for r in J['orbits']}
+e = [18,11,9,9,8,8,8,7,7,7]+[6]*18+[5,5]+[6]*4+[4]
+a = [18,11,9,9,7,8,8,7,7,7,6,6,6,6,6,6,6,6,5,6,6,6,5,5,5,5,6,5,5,5,6,5,5,5,5]
+b = {0:19,3:9,6:8,8:7,11:6,17:6,22:6,25:5,28:5,32:5,34:5}
+f = {0:18,3:9,6:8,8:7,11:6,17:6,22:5,25:5,28:5,32:5,34:5}
+H = {0:2,3:2,6:10,8:2,11:2,17:5,22:2,25:2,28:5,32:2,34:60}
+h = {0:5,3:3,6:4,8:3,11:3,17:2,22:3,25:2,28:2,32:2,34:3}
+tau = {0:34,3:15,6:13,8:9,11:7,17:9,22:9,25:7,28:8,32:7,34:8}
+ans = {'twists':[0,F()], 'actions':[0,F()]}
+for o,t in enumerate(T):
+    n = len(set(t['positions']))+2
+    D = e[o]+max(t['depth']); K = a[o]+D
+    EC = (F(n)-sum((F(1,j) for j in range(1,n,2)),F())-F(1,n-1))/2
+    EB = (F(n-4)+sum((F(1,j) for j in range(1,n+1)),F())
+          +F(2,n)+F(1,n*(n-1)))/2
+    if o not in H:
+        mu = min(EB*(S[o]+2*D), EC*(S[o]+2*K))
+        ans['twists'][0] += n//2*(S[o]+2*K)
+        ans['twists'][1] += mu
+        ans['actions'][0] += max((3*n//4-1)*(1+2*D), n//2*(1+2*K))
+        ans['actions'][1] += mu-(S[o]-1)*EC
+        continue
+    def tariffs(z):
+        P = 2*z+2*h[o]+2*f[o]
+        Q = (2*z+2*h[o]+2*(b[o]+f[o]) if H[o] == 2 else
+             2*z+4*h[o]+4*tau[o]+2*K)
+        W = z+4*h[o]+4*tau[o]+2*D
+        cleanup = 4*z+4*h[o]
+        if o in (6,34): cleanup += 4*z+(16 if o == 6 else 10)
+        return P,Q,W,cleanup
+    ps,qs,_,_ = tariffs(S[o])
+    paired = qs < 2*ps  # Choice is fixed by twist tariffs for both measures.
+    for mode,z in (('twists',S[o]),('actions',1)):
+        P,Q,W,C = tariffs(z)
+        def fc(j): return j//2*Q+(j%2)*P if paired else j*P
+        worst = fc(n-3)
+        for m in range(3,n+1):
+            k = m//2; k -= (k-m)%2
+            for i in (0,1):
+                if i == 0 and m == n: continue
+                worst = max(worst, (m+k-2*i)//2*W+fc(n-m-(1-i)))
+        EF = F(H[o]-1,H[o])*F(n-3,n)
+        per_error = max(F(P),F(Q,2)) if paired else F(P)
+        ans[mode][0] += worst+C
+        ans[mode][1] += EB*W+EF*per_error+C
+for mode,(worst,mean_bound) in ans.items():
+    print(mode,worst,-(-mean_bound.numerator//mean_bound.denominator))
+print('gain',50560184-ans['twists'][0])
+print('factor',F(ans['twists'][0],224601))
+print('creation',2*sum(S.values()))
+# twists 20866844 17010356
+# actions 4655642 3126229
+# gain 29693340
+# factor 20866844/224601
+# creation 14048
+```
+
+T11-06: the floor, with frames and for positions alone. Output:
+
+```text
+95024 15643520
+88260 13956600
+```
+
+```python
+import gzip,json
+J = json.load(gzip.open('research/jumbling/restoration/09-general-method/data/realign.json.gz','rt'))
+q = []
+for r in J['orbits']:
+    n,H = r['N'],r['H']
+    q.append(3*n//4 if H in ('C2','D5') else
+             4*n//5 if H == 'C5' else
+             2*n//3 if H == 'A5' else n//2)
+print(sum(q),sum(x*r['s'] for x,r in zip(q,J['orbits'])))
+print(sum(r['N']//2 for r in J['orbits']),
+      sum(r['N']//2*r['s'] for r in J['orbits']))
+# 95024 15643520
+# 88260 13956600
+```
+
+The integrator's check of T11-03 on A_8: the number of states, the largest distance, the mean distance and the formula. Output:
+
+```text
+20160 4 649/210 649/210 True
+```
+
+```python
+# Integrator's independent check of T11-03 on A_8: BFS over all 3-cycles from the identity.
+from itertools import permutations, combinations
+from fractions import Fraction as F
+from collections import deque
+n = 8
+def compose(p, q):  # apply p then q (chronological)
+    return tuple(q[p[i]] for i in range(n))
+gens = []
+for a, b, c in combinations(range(n), 3):
+    for x, y, z in ((a, b, c), (a, c, b)):
+        g = list(range(n)); g[x], g[y], g[z] = y, z, x
+        gens.append(tuple(g))
+assert len(gens) == 112
+idp = tuple(range(n))
+dist = {idp: 0}; q = deque([idp])
+while q:
+    p = q.popleft()
+    for g in gens:
+        r = compose(p, g)
+        if r not in dist:
+            dist[r] = dist[p] + 1; q.append(r)
+def codd(p):
+    seen, c = set(), 0
+    for i in range(n):
+        if i in seen: continue
+        L, j = 0, i
+        while j not in seen:
+            seen.add(j); j = p[j]; L += 1
+        c += L % 2
+    return c
+assert all(dist[p] == (n - codd(p)) // 2 for p in dist)
+H = lambda m: sum(F(1, j) for j in range(1, m + 1))
+mean = F(sum(dist.values()), len(dist))
+formula = (n - H(n) + H(n // 2) / 2 - F(1, n - 1)) / 2
+print(len(dist), max(dist.values()), mean, formula, mean == formula)
+```
+
+## 17. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -1776,3 +2265,6 @@ The columns are the orbit, the size of the frame group, the number of commutator
 - After round 10 (section 15):
   - Section 2, phase 2, and the row for the lattice-phase length in section 3 give the bound of the construction with direct three-cycles (T10-02).
   - Section 5, gap M2: a new item on direct three-cycles and on the twisted cycles that fail as proposed, and the next experiments (T10-01 to T10-04).
+- After round 11 (section 16):
+  - Section 2, phase 2, and the rows for the lattice-phase length and its lower bounds in section 3 give the bound of the construction with fewer seed applications and the floor for constructions from seed conjugates (T11-05, T11-06).
+  - Section 5, gap M2: a new item on fewer seed applications, and the next experiments (T11-01 to T11-07).

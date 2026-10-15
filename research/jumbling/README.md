@@ -52,8 +52,8 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   fibre alignment from its seeds (proved, model review), so 31 of its 35 seeds are replaced by shorter elements
   moved onto its buffers. It then restores the two synthetic inputs in 4.5 × 10^7 twists instead of 2.3 × 10^8
   (replayed by the independent checker), and its cascade needs at most 71,516,526 twists for every input. A
-  construction that applies each seed once per three-cycle, instead of up to twice, needs at most 50,560,184
-  (proved, model review; not implemented).
+  construction that applies the seeds fewer times needs at most 20,866,844 (proved, model review; not
+  implemented).
 - **Open.** A construction that works from the state alone with a bound on its length (gap M1). Whether a lattice
   phase of 4.5 × 10^7 twists, or a few million macro actions, is within reach of a person is open (gap M2). Deep scrambles were not run with the general method (gap E1). No human has reviewed
   the new proofs (gap E2).
