@@ -677,7 +677,9 @@ orbits 13, 15, 16 and 18 to 32; no piece of orbits 0 to 12 is above height 4 the
 the bound 6 on left heights is equivalent to the statement that every cap of another branch that wholly holds a
 piece of height at least 6 is straddled (P6, T13-03). The 78 height-6 pieces of H6 form exactly one 3-face component,
 with no other 3-face neighbour (T13b-05, exact). Every cap of another branch that holds one of them lies in
-N15(433) union N25(433), where 433 is the grip of the raising jumble, which is still out (exact).)
+N15(433) union N25(433), where 433 is the grip of the raising jumble, which is still out (exact). Round 14, same
+record, section 19: the island stays at height 6, and every cap of another branch that holds it whole stays blocked,
+until 433 first returns (trap lemma, T14-03).)
 
 **Evidence on the H6 state (floating point unless stated; diagnostics, not certificates).**
 
