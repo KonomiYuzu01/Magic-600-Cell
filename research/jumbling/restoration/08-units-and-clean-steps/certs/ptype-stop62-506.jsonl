@@ -1,0 +1,18 @@
+{"off": 506, "holes": 506, "types_with_holes": 28, "holes_by_type_equals_off_by_type": true, "unit": 48298}
+{"word": "w-stop62-k04-f48298-t01.json", "bad": 111, "occupied": 59, "types_needed": 16, "deficit_types": 0, "deficit_total": 0, "deficits": {}, "unit": 48298}
+{"word": "w-stop62-k04-f48298-t07.json", "bad": 111, "occupied": 59, "types_needed": 16, "deficit_types": 0, "deficit_total": 0, "deficits": {}, "unit": 48298}
+{"off": 506, "holes": 506, "types_with_holes": 28, "holes_by_type_equals_off_by_type": true, "unit": 21607}
+{"word": "w-stop62-k04-f21607-t03.json", "bad": 198, "occupied": 153, "types_needed": 20, "deficit_types": 4, "deficit_total": 45, "deficits": {"31": [30, 16], "32": [18, 3], "33": [17, 2], "34": [1, 0]}, "unit": 21607}
+{"word": "w-stop62-k04-f21607-t09.json", "bad": 198, "occupied": 153, "types_needed": 20, "deficit_types": 4, "deficit_total": 45, "deficits": {"31": [30, 16], "32": [18, 3], "33": [17, 2], "34": [1, 0]}, "unit": 21607}
+{"off": 506, "holes": 506, "types_with_holes": 28, "holes_by_type_equals_off_by_type": true, "unit": 68424}
+{"word": "w-stop62-k04-f68424-t02.json", "bad": 198, "occupied": 153, "types_needed": 20, "deficit_types": 4, "deficit_total": 45, "deficits": {"31": [30, 16], "32": [18, 3], "33": [17, 2], "34": [1, 0]}, "unit": 68424}
+{"word": "w-stop62-k04-f68424-t08.json", "bad": 198, "occupied": 153, "types_needed": 20, "deficit_types": 4, "deficit_total": 45, "deficits": {"31": [30, 16], "32": [18, 3], "33": [17, 2], "34": [1, 0]}, "unit": 68424}
+{"off": 506, "holes": 506, "types_with_holes": 28, "holes_by_type_equals_off_by_type": true, "unit": 64191}
+{"word": "w-stop62-k04-f64191-t04.json", "bad": 198, "occupied": 126, "types_needed": 12, "deficit_types": 4, "deficit_total": 45, "deficits": {"31": [32, 18], "32": [21, 6], "33": [17, 2], "34": [1, 0]}, "unit": 64191}
+{"word": "w-stop62-k04-f64191-t13.json", "bad": 198, "occupied": 126, "types_needed": 12, "deficit_types": 4, "deficit_total": 45, "deficits": {"31": [32, 18], "32": [21, 6], "33": [17, 2], "34": [1, 0]}, "unit": 64191}
+{"off": 506, "holes": 506, "types_with_holes": 28, "holes_by_type_equals_off_by_type": true, "unit": 18445}
+{"word": "w-stop62-k04-f18445-t05.json", "bad": 277, "occupied": 187, "types_needed": 19, "deficit_types": 7, "deficit_total": 55, "deficits": {"26": [23, 22], "29": [9, 8], "30": [27, 24], "31": [35, 17], "32": [19, 3], "33": [17, 2], "34": [1, 0]}, "unit": 18445}
+{"word": "w-stop62-k04-f18445-t14.json", "bad": 277, "occupied": 187, "types_needed": 19, "deficit_types": 7, "deficit_total": 55, "deficits": {"26": [23, 22], "29": [9, 8], "30": [27, 24], "31": [35, 17], "32": [19, 3], "33": [17, 2], "34": [1, 0]}, "unit": 18445}
+{"off": 506, "holes": 506, "types_with_holes": 28, "holes_by_type_equals_off_by_type": true, "unit": 1040}
+{"word": "w-stop62-k04-f1040-t06.json", "bad": 333, "occupied": 298, "types_needed": 28, "deficit_types": 2, "deficit_total": 2, "deficits": {"32": [7, 6], "33": [3, 2]}, "unit": 1040}
+{"word": "w-stop62-k04-f1040-t15.json", "bad": 333, "occupied": 298, "types_needed": 28, "deficit_types": 2, "deficit_total": 2, "deficits": {"32": [7, 6], "33": [3, 2]}, "unit": 1040}

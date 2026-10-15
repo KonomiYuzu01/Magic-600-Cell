@@ -1,0 +1,3500 @@
+{
+ "script": "<work>/v26/B4/shrink.py",
+ "argv": [
+  "<work>/v26/B4/shrink.py",
+  "<work>/wt-e3/research/jumbling/theory",
+  "<work>/v26",
+  "<work>/v26/B4/E2-table.json",
+  "[237, 13]",
+  "8",
+  "<work>/v26/B4/audit/words/trace/shrink.jsonl"
+ ],
+ "status": "ok",
+ "events": [
+  {
+   "event": "ctypes.dlopen",
+   "target": "(None,)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_ast",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_bisect",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_blake2",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_bz2",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_collections",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_compat_pickle",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_compression",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_contextvars",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_ctypes",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_datetime",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_decimal",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_functools",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_hashlib",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_json",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_lzma",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_opcode",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_opcode_metadata",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_operator",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_pickle",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_random",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_socket",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_sre",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_struct",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_tokenize",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_typing",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_weakrefset",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_winapi",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "_wmi",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "argparse",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "array",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "ast",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "base64",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "binascii",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "bisect",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "blocks",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "buffer",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "bz2",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "classes",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "collections",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "conjclose",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "conjprep",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "contextlib",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "contextvars",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "copyreg",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "ctypes",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "ctypes._endian",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "datetime",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "decimal",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "deep_scramble",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "dis",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "e3_class",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "encodings.cp437",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "enum",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "exact",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "fastghost",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "fnmatch",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "fractions",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "functools",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "gettext",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "ghostlib",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "glob",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "grp",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "hashlib",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "hmac",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "importlib",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "importlib._abc",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "importlib.machinery",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "importlib.util",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "inspect",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "itertools",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "json",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "json.decoder",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "json.encoder",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "json.scanner",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "keyword",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "linecache",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "lzma",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "math",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "multiprocessing",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "multiprocessing.context",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "multiprocessing.process",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "multiprocessing.reduction",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "nt",
+   "mode": "",
+   "count": 7,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "ntpath",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numbers",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.__config__",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._array_api_info",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._add_newdocs",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._add_newdocs_scalars",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._asarray",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._dtype",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._dtype_ctypes",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._exceptions",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._internal",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._methods",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._multiarray_umath",
+   "mode": "",
+   "count": 3,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._string_helpers",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._type_aliases",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core._ufunc_config",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.arrayprint",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.einsumfunc",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.fromnumeric",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.function_base",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.getlimits",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.memmap",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.multiarray",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.numeric",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.numerictypes",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.overrides",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.printoptions",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.records",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.shape_base",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._core.umath",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._distributor_init",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._distributor_init_local",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._expired_attrs_2_0",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._globals",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._pytesttester",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing._array_like",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing._char_codes",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing._dtype_like",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing._nbit",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing._nbit_base",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing._nested_sequence",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing._scalars",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing._shape",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._typing._ufunc",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._utils",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._utils._conversions",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy._utils._inspect",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.dtypes",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.exceptions",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._array_utils_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._arraypad_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._arraysetops_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._arrayterator_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._datasource",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._format_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._function_base_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._histograms_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._index_tricks_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._iotools",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._nanfunctions_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._npyio_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._polynomial_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._scimath_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._shape_base_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._stride_tricks_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._twodim_base_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._type_check_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._ufunclike_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._utils_impl",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib._version",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib.array_utils",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib.format",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib.introspect",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib.mixins",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib.npyio",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib.scimath",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.lib.stride_tricks",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.linalg",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.linalg._linalg",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.linalg._umath_linalg",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.ma",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.ma.core",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.ma.extras",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.matrixlib",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.matrixlib.defmatrix",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random._bounded_integers",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random._common",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random._generator",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random._mt19937",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random._pcg64",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random._philox",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random._pickle",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random._sfc64",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random.bit_generator",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.random.mtrand",
+   "mode": "",
+   "count": 2,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "numpy.version",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "opcode",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "operator",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "orient",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "pathlib",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "pathlib._abc",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "pathlib._local",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "pickle",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "pkgutil",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "platform",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "pwd",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "random",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "re",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "re._casefix",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "re._compiler",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "re._constants",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "re._parser",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "reprlib",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "restore",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "rim",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "runpy",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "seams",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "secrets",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "select",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "selectors",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "shutil",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "signal",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "sim",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "sim.kernel",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "sim.kplus",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "sim.model",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "sim.regions",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "sim.state",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "sim.twists",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "socket",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "split_pairs",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "struct",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "sysconfig",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "tempfile",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "textwrap",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "threading",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "token",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "tokenize",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "trees",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "types",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "typing",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "warnings",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "weakref",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "witness",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "wj",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "zipfile",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "zipfile._path",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "zipfile._path.glob",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "import",
+   "target": "zlib",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/B4/E2-table.json",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/v26/B4/E2-table.json"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/B4/audit/words/trace/shrink.jsonl",
+   "mode": "w",
+   "count": 1,
+   "real": "<work>/v26/B4/audit/words/trace/shrink.jsonl"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/B4/shrink.py",
+   "mode": "r",
+   "count": 3,
+   "real": "<work>/v26/B4/shrink.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/__pycache__/conjclose.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/v26/__pycache__/conjclose.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/__pycache__/conjprep.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/v26/__pycache__/conjprep.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/__pycache__/fastghost.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/v26/__pycache__/fastghost.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/__pycache__/ghostlib.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/v26/__pycache__/ghostlib.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/conjclose.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/v26/conjclose.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/conjprep.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/v26/conjprep.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/fastghost.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/v26/fastghost.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/v26/ghostlib.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/v26/ghostlib.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/assets/model.npz",
+   "mode": "r",
+   "count": 2,
+   "real": "<work>/wt-e3/assets/model.npz"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/assets/primitives.npz",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/assets/primitives.npz"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/__pycache__/exact.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/__pycache__/witness.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/fixtures/__pycache__/wj.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/fixtures/wj-I_a.json",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/fixtures/wj-I_a.json"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/sim/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/sim/__pycache__/kernel.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/sim/__pycache__/kplus.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/sim/__pycache__/model.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/sim/__pycache__/regions.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/sim/__pycache__/state.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/sim/__pycache__/twists.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/blocks.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/buffer.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/buffer.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/classes.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/deep_scramble.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/e3_class.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/orient.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/restore.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/rim.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/seams.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/split_pairs.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/__pycache__/trees.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/blocks.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/blocks.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/classes.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/classes.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/deep_scramble.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/e3_class.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/orient.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/orient.py"
+  },
+  {
+   "event": "open",
+   "target": "<work>/wt-e3/research/jumbling/theory/split_pairs.py",
+   "mode": "r",
+   "count": 1,
+   "real": "<work>/wt-e3/research/jumbling/theory/split_pairs.py"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/_compat_pickle.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/_compat_pickle.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/_opcode_metadata.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/_opcode_metadata.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/argparse.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/argparse.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/ast.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/ast.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/base64.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/base64.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/contextvars.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/contextvars.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/decimal.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/decimal.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/dis.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/dis.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/enum.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/enum.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/fractions.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/fractions.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/functools.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/functools.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/gettext.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/gettext.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/glob.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/glob.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/hmac.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/hmac.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/inspect.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/inspect.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/linecache.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/linecache.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/numbers.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/numbers.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/opcode.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/opcode.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/operator.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/operator.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/pickle.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/pickle.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/pkgutil.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/pkgutil.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/platform.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/platform.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/random.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/random.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/secrets.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/secrets.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/signal.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/signal.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/socket.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/socket.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/struct.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/struct.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/textwrap.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/textwrap.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/threading.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/threading.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/token.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/token.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/tokenize.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/tokenize.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/types.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/types.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/typing.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/typing.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/ctypes/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/ctypes/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/ctypes/__pycache__/_endian.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/ctypes/__pycache__/_endian.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/encodings/__pycache__/cp437.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/encodings/__pycache__/cp437.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/importlib/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/importlib/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/importlib/__pycache__/_abc.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/importlib/__pycache__/_abc.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/multiprocessing/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/multiprocessing/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/multiprocessing/__pycache__/context.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/multiprocessing/__pycache__/context.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/multiprocessing/__pycache__/process.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/multiprocessing/__pycache__/process.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/multiprocessing/__pycache__/reduction.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/multiprocessing/__pycache__/reduction.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/pathlib/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/pathlib/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/pathlib/__pycache__/_abc.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/pathlib/__pycache__/_abc.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/pathlib/__pycache__/_local.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/pathlib/__pycache__/_local.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/sysconfig/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/sysconfig/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/zipfile/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/zipfile/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/zipfile/_path/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/zipfile/_path/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/lib/python3.13/zipfile/_path/__pycache__/glob.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/lib/python3.13/zipfile/_path/__pycache__/glob.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/__config__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/__config__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_array_api_info.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_array_api_info.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_distributor_init.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_distributor_init.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_expired_attrs_2_0.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_expired_attrs_2_0.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_globals.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_globals.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_pytesttester.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/_pytesttester.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/dtypes.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/dtypes.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/exceptions.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/exceptions.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/version.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/__pycache__/version.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_add_newdocs.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_add_newdocs.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_add_newdocs_scalars.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_add_newdocs_scalars.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_asarray.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_asarray.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_dtype.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_dtype.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_dtype_ctypes.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_dtype_ctypes.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_exceptions.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_exceptions.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_internal.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_internal.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_methods.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_methods.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_string_helpers.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_string_helpers.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_type_aliases.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_type_aliases.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_ufunc_config.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/_ufunc_config.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/arrayprint.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/arrayprint.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/einsumfunc.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/einsumfunc.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/fromnumeric.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/fromnumeric.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/function_base.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/function_base.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/getlimits.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/getlimits.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/memmap.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/memmap.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/multiarray.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/multiarray.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/numeric.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/numeric.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/numerictypes.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/numerictypes.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/overrides.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/overrides.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/printoptions.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/printoptions.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/records.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/records.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/shape_base.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/shape_base.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/umath.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__pycache__/umath.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_array_like.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_array_like.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_char_codes.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_char_codes.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_dtype_like.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_dtype_like.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_nbit.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_nbit.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_nbit_base.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_nbit_base.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_nested_sequence.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_nested_sequence.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_scalars.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_scalars.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_shape.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_shape.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_ufunc.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__pycache__/_ufunc.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_utils/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_utils/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_utils/__pycache__/_conversions.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_utils/__pycache__/_conversions.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/_utils/__pycache__/_inspect.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/_utils/__pycache__/_inspect.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_array_utils_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_array_utils_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_arraypad_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_arraypad_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_arraysetops_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_arraysetops_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_arrayterator_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_arrayterator_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_datasource.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_datasource.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_format_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_format_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_function_base_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_function_base_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_histograms_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_histograms_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_index_tricks_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_index_tricks_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_iotools.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_iotools.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_nanfunctions_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_nanfunctions_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_npyio_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_npyio_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_polynomial_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_polynomial_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_scimath_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_scimath_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_shape_base_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_shape_base_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_stride_tricks_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_stride_tricks_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_twodim_base_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_twodim_base_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_type_check_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_type_check_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_ufunclike_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_ufunclike_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_utils_impl.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_utils_impl.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_version.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/_version.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/array_utils.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/array_utils.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/format.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/format.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/introspect.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/introspect.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/mixins.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/mixins.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/npyio.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/npyio.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/scimath.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/scimath.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/stride_tricks.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__pycache__/stride_tricks.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/linalg/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/linalg/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/linalg/__pycache__/_linalg.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/linalg/__pycache__/_linalg.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/ma/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/ma/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/ma/__pycache__/core.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/ma/__pycache__/core.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/ma/__pycache__/extras.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/ma/__pycache__/extras.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/matrixlib/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/matrixlib/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/matrixlib/__pycache__/defmatrix.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/matrixlib/__pycache__/defmatrix.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/random/__pycache__/__init__.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/random/__pycache__/__init__.cpython-313.pyc"
+  },
+  {
+   "event": "open",
+   "target": "/usr/local/lib/python3.13/dist-packages/numpy/random/__pycache__/_pickle.cpython-313.pyc",
+   "mode": "r",
+   "count": 1,
+   "real": "/usr/local/lib/python3.13/dist-packages/numpy/random/__pycache__/_pickle.cpython-313.pyc"
+  },
+  {
+   "event": "os.listdir",
+   "target": "('<work>/v26',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('<work>/wt-e3/research/jumbling',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('<work>/wt-e3/research/jumbling/fixtures',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('<work>/wt-e3/research/jumbling/sim',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('<work>/wt-e3/research/jumbling/theory',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/lib/python3.13/ctypes',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/lib/python3.13/importlib',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/lib/python3.13/json',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/lib/python3.13/multiprocessing',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/lib/python3.13/pathlib',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/lib/python3.13/re',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/lib/python3.13/zipfile',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/lib/python3.13/zipfile/_path',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/local/lib/python3.13/dist-packages/numpy',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/local/lib/python3.13/dist-packages/numpy/_core',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/local/lib/python3.13/dist-packages/numpy/_typing',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/local/lib/python3.13/dist-packages/numpy/_utils',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/local/lib/python3.13/dist-packages/numpy/lib',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/local/lib/python3.13/dist-packages/numpy/linalg',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/local/lib/python3.13/dist-packages/numpy/ma',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/local/lib/python3.13/dist-packages/numpy/matrixlib',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  },
+  {
+   "event": "os.listdir",
+   "target": "('/usr/local/lib/python3.13/dist-packages/numpy/random',)",
+   "mode": "",
+   "count": 1,
+   "real": null
+  }
+ ],
+ "modules": {
+  "_frozen_importlib": "/usr/lib/python3.13/importlib/_bootstrap.py",
+  "_frozen_importlib_external": "/usr/lib/python3.13/importlib/_bootstrap_external.py",
+  "zipimport": "/usr/lib/python3.13/zipimport.py",
+  "codecs": "/usr/lib/python3.13/codecs.py",
+  "encodings.aliases": "/usr/lib/python3.13/encodings/aliases.py",
+  "encodings": "/usr/lib/python3.13/encodings/__init__.py",
+  "encodings.utf_8": "/usr/lib/python3.13/encodings/utf_8.py",
+  "abc": "/usr/lib/python3.13/abc.py",
+  "io": "/usr/lib/python3.13/io.py",
+  "__main__": "<work>/v26/B4/audit/words/trace_run.py",
+  "stat": "/usr/lib/python3.13/stat.py",
+  "_collections_abc": "/usr/lib/python3.13/_collections_abc.py",
+  "genericpath": "/usr/lib/python3.13/genericpath.py",
+  "posixpath": "/usr/lib/python3.13/posixpath.py",
+  "os.path": "/usr/lib/python3.13/posixpath.py",
+  "os": "/usr/lib/python3.13/os.py",
+  "_sitebuiltins": "/usr/lib/python3.13/_sitebuiltins.py",
+  "encodings.utf_8_sig": "/usr/lib/python3.13/encodings/utf_8_sig.py",
+  "_distutils_hack": "/usr/lib/python3/dist-packages/_distutils_hack/__init__.py",
+  "sitecustomize": "/etc/python3.13/sitecustomize.py",
+  "site": "/usr/lib/python3.13/site.py",
+  "importlib._bootstrap": "/usr/lib/python3.13/importlib/_bootstrap.py",
+  "importlib._bootstrap_external": "/usr/lib/python3.13/importlib/_bootstrap_external.py",
+  "importlib": "/usr/lib/python3.13/importlib/__init__.py",
+  "importlib.machinery": "/usr/lib/python3.13/importlib/machinery.py",
+  "importlib._abc": "/usr/lib/python3.13/importlib/_abc.py",
+  "types": "/usr/lib/python3.13/types.py",
+  "importlib.util": "/usr/lib/python3.13/importlib/util.py",
+  "runpy": "/usr/lib/python3.13/runpy.py",
+  "collections.abc": "/usr/lib/python3.13/_collections_abc.py",
+  "keyword": "/usr/lib/python3.13/keyword.py",
+  "operator": "/usr/lib/python3.13/operator.py",
+  "reprlib": "/usr/lib/python3.13/reprlib.py",
+  "collections": "/usr/lib/python3.13/collections/__init__.py",
+  "functools": "/usr/lib/python3.13/functools.py",
+  "warnings": "/usr/lib/python3.13/warnings.py",
+  "_weakrefset": "/usr/lib/python3.13/_weakrefset.py",
+  "weakref": "/usr/lib/python3.13/weakref.py",
+  "copyreg": "/usr/lib/python3.13/copyreg.py",
+  "typing": "/usr/lib/python3.13/typing.py",
+  "pkgutil": "/usr/lib/python3.13/pkgutil.py",
+  "enum": "/usr/lib/python3.13/enum.py",
+  "re._constants": "/usr/lib/python3.13/re/_constants.py",
+  "re._parser": "/usr/lib/python3.13/re/_parser.py",
+  "re._casefix": "/usr/lib/python3.13/re/_casefix.py",
+  "re._compiler": "/usr/lib/python3.13/re/_compiler.py",
+  "re": "/usr/lib/python3.13/re/__init__.py",
+  "_json": "/usr/lib/python3.13/lib-dynload/_json.cpython-313-x86_64-linux-gnu.so",
+  "json.scanner": "/usr/lib/python3.13/json/scanner.py",
+  "json.decoder": "/usr/lib/python3.13/json/decoder.py",
+  "json.encoder": "/usr/lib/python3.13/json/encoder.py",
+  "json": "/usr/lib/python3.13/json/__init__.py",
+  "contextlib": "/usr/lib/python3.13/contextlib.py",
+  "fnmatch": "/usr/lib/python3.13/fnmatch.py",
+  "glob": "/usr/lib/python3.13/glob.py",
+  "pathlib._abc": "/usr/lib/python3.13/pathlib/_abc.py",
+  "ntpath": "/usr/lib/python3.13/ntpath.py",
+  "pathlib._local": "/usr/lib/python3.13/pathlib/_local.py",
+  "pathlib": "/usr/lib/python3.13/pathlib/__init__.py",
+  "numpy.version": "/usr/local/lib/python3.13/dist-packages/numpy/version.py",
+  "numpy._expired_attrs_2_0": "/usr/local/lib/python3.13/dist-packages/numpy/_expired_attrs_2_0.py",
+  "numpy._utils._conversions": "/usr/local/lib/python3.13/dist-packages/numpy/_utils/_conversions.py",
+  "numpy._utils": "/usr/local/lib/python3.13/dist-packages/numpy/_utils/__init__.py",
+  "numpy._globals": "/usr/local/lib/python3.13/dist-packages/numpy/_globals.py",
+  "numpy._distributor_init": "/usr/local/lib/python3.13/dist-packages/numpy/_distributor_init.py",
+  "datetime": "/usr/lib/python3.13/datetime.py",
+  "numpy.exceptions": "/usr/local/lib/python3.13/dist-packages/numpy/exceptions.py",
+  "numpy._core._exceptions": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_exceptions.py",
+  "_contextvars": "/usr/lib/python3.13/lib-dynload/_contextvars.cpython-313-x86_64-linux-gnu.so",
+  "contextvars": "/usr/lib/python3.13/contextvars.py",
+  "numpy._core.printoptions": "/usr/local/lib/python3.13/dist-packages/numpy/_core/printoptions.py",
+  "numpy.dtypes": "/usr/local/lib/python3.13/dist-packages/numpy/dtypes.py",
+  "numpy._core._multiarray_umath": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_multiarray_umath.cpython-313-x86_64-linux-gnu.so",
+  "ast": "/usr/lib/python3.13/ast.py",
+  "_opcode_metadata": "/usr/lib/python3.13/_opcode_metadata.py",
+  "opcode": "/usr/lib/python3.13/opcode.py",
+  "dis": "/usr/lib/python3.13/dis.py",
+  "linecache": "/usr/lib/python3.13/linecache.py",
+  "token": "/usr/lib/python3.13/token.py",
+  "tokenize": "/usr/lib/python3.13/tokenize.py",
+  "inspect": "/usr/lib/python3.13/inspect.py",
+  "numpy._utils._inspect": "/usr/local/lib/python3.13/dist-packages/numpy/_utils/_inspect.py",
+  "numpy._core.overrides": "/usr/local/lib/python3.13/dist-packages/numpy/_core/overrides.py",
+  "numpy._core.multiarray": "/usr/local/lib/python3.13/dist-packages/numpy/_core/multiarray.py",
+  "numpy._core.umath": "/usr/local/lib/python3.13/dist-packages/numpy/_core/umath.py",
+  "numbers": "/usr/lib/python3.13/numbers.py",
+  "numpy._core._string_helpers": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_string_helpers.py",
+  "numpy._core._type_aliases": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_type_aliases.py",
+  "numpy._core.numerictypes": "/usr/local/lib/python3.13/dist-packages/numpy/_core/numerictypes.py",
+  "struct": "/usr/lib/python3.13/struct.py",
+  "_compat_pickle": "/usr/lib/python3.13/_compat_pickle.py",
+  "pickle": "/usr/lib/python3.13/pickle.py",
+  "numpy._core._methods": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_methods.py",
+  "numpy._core.fromnumeric": "/usr/local/lib/python3.13/dist-packages/numpy/_core/fromnumeric.py",
+  "numpy._core.shape_base": "/usr/local/lib/python3.13/dist-packages/numpy/_core/shape_base.py",
+  "numpy._core._ufunc_config": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_ufunc_config.py",
+  "numpy._core._asarray": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_asarray.py",
+  "numpy._core.arrayprint": "/usr/local/lib/python3.13/dist-packages/numpy/_core/arrayprint.py",
+  "numpy._core.numeric": "/usr/local/lib/python3.13/dist-packages/numpy/_core/numeric.py",
+  "numpy._core.einsumfunc": "/usr/local/lib/python3.13/dist-packages/numpy/_core/einsumfunc.py",
+  "numpy._core.function_base": "/usr/local/lib/python3.13/dist-packages/numpy/_core/function_base.py",
+  "numpy._core.getlimits": "/usr/local/lib/python3.13/dist-packages/numpy/_core/getlimits.py",
+  "numpy._core.memmap": "/usr/local/lib/python3.13/dist-packages/numpy/_core/memmap.py",
+  "numpy._core.records": "/usr/local/lib/python3.13/dist-packages/numpy/_core/records.py",
+  "textwrap": "/usr/lib/python3.13/textwrap.py",
+  "numpy._core._add_newdocs": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_add_newdocs.py",
+  "numpy._core._add_newdocs_scalars": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_add_newdocs_scalars.py",
+  "numpy._core._dtype": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_dtype.py",
+  "numpy._core._dtype_ctypes": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_dtype_ctypes.py",
+  "threading": "/usr/lib/python3.13/threading.py",
+  "sysconfig": "/usr/lib/python3.13/sysconfig/__init__.py",
+  "_ctypes": "/usr/lib/python3.13/lib-dynload/_ctypes.cpython-313-x86_64-linux-gnu.so",
+  "ctypes._endian": "/usr/lib/python3.13/ctypes/_endian.py",
+  "ctypes": "/usr/lib/python3.13/ctypes/__init__.py",
+  "numpy._core._internal": "/usr/local/lib/python3.13/dist-packages/numpy/_core/_internal.py",
+  "numpy._pytesttester": "/usr/local/lib/python3.13/dist-packages/numpy/_pytesttester.py",
+  "numpy._core": "/usr/local/lib/python3.13/dist-packages/numpy/_core/__init__.py",
+  "numpy.__config__": "/usr/local/lib/python3.13/dist-packages/numpy/__config__.py",
+  "numpy._typing._nbit_base": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/_nbit_base.py",
+  "numpy._typing._nested_sequence": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/_nested_sequence.py",
+  "numpy._typing._shape": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/_shape.py",
+  "numpy._typing._array_like": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/_array_like.py",
+  "numpy._typing._char_codes": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/_char_codes.py",
+  "numpy._typing._dtype_like": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/_dtype_like.py",
+  "numpy._typing._nbit": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/_nbit.py",
+  "numpy._typing._scalars": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/_scalars.py",
+  "numpy._typing._ufunc": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/_ufunc.py",
+  "numpy._typing": "/usr/local/lib/python3.13/dist-packages/numpy/_typing/__init__.py",
+  "numpy.lib._array_utils_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_array_utils_impl.py",
+  "numpy.lib._stride_tricks_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_stride_tricks_impl.py",
+  "numpy.lib._twodim_base_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_twodim_base_impl.py",
+  "numpy.lib.array_utils": "/usr/local/lib/python3.13/dist-packages/numpy/lib/array_utils.py",
+  "numpy.linalg._umath_linalg": "/usr/local/lib/python3.13/dist-packages/numpy/linalg/_umath_linalg.cpython-313-x86_64-linux-gnu.so",
+  "numpy.linalg._linalg": "/usr/local/lib/python3.13/dist-packages/numpy/linalg/_linalg.py",
+  "numpy.linalg": "/usr/local/lib/python3.13/dist-packages/numpy/linalg/__init__.py",
+  "numpy.matrixlib.defmatrix": "/usr/local/lib/python3.13/dist-packages/numpy/matrixlib/defmatrix.py",
+  "numpy.matrixlib": "/usr/local/lib/python3.13/dist-packages/numpy/matrixlib/__init__.py",
+  "numpy.lib._histograms_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_histograms_impl.py",
+  "numpy.lib._function_base_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_function_base_impl.py",
+  "numpy.lib._index_tricks_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_index_tricks_impl.py",
+  "numpy.lib._arraypad_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_arraypad_impl.py",
+  "numpy.lib._arraysetops_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_arraysetops_impl.py",
+  "numpy.lib._arrayterator_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_arrayterator_impl.py",
+  "numpy.lib._nanfunctions_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_nanfunctions_impl.py",
+  "platform": "/usr/lib/python3.13/platform.py",
+  "numpy.lib._utils_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_utils_impl.py",
+  "numpy.lib._format_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_format_impl.py",
+  "numpy.lib.format": "/usr/local/lib/python3.13/dist-packages/numpy/lib/format.py",
+  "numpy.lib._datasource": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_datasource.py",
+  "numpy.lib._iotools": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_iotools.py",
+  "numpy.lib._npyio_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_npyio_impl.py",
+  "numpy.lib._ufunclike_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_ufunclike_impl.py",
+  "numpy.lib._type_check_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_type_check_impl.py",
+  "numpy.lib._polynomial_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_polynomial_impl.py",
+  "numpy.lib._shape_base_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_shape_base_impl.py",
+  "numpy.lib._version": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_version.py",
+  "numpy.lib.introspect": "/usr/local/lib/python3.13/dist-packages/numpy/lib/introspect.py",
+  "numpy.lib.mixins": "/usr/local/lib/python3.13/dist-packages/numpy/lib/mixins.py",
+  "numpy.lib.npyio": "/usr/local/lib/python3.13/dist-packages/numpy/lib/npyio.py",
+  "numpy.lib._scimath_impl": "/usr/local/lib/python3.13/dist-packages/numpy/lib/_scimath_impl.py",
+  "numpy.lib.scimath": "/usr/local/lib/python3.13/dist-packages/numpy/lib/scimath.py",
+  "numpy.lib.stride_tricks": "/usr/local/lib/python3.13/dist-packages/numpy/lib/stride_tricks.py",
+  "numpy.lib": "/usr/local/lib/python3.13/dist-packages/numpy/lib/__init__.py",
+  "numpy._array_api_info": "/usr/local/lib/python3.13/dist-packages/numpy/_array_api_info.py",
+  "numpy": "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py",
+  "gettext": "/usr/lib/python3.13/gettext.py",
+  "argparse": "/usr/lib/python3.13/argparse.py",
+  "_hashlib": "/usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so",
+  "hashlib": "/usr/lib/python3.13/hashlib.py",
+  "bisect": "/usr/lib/python3.13/bisect.py",
+  "random": "/usr/lib/python3.13/random.py",
+  "_compression": "/usr/lib/python3.13/_compression.py",
+  "_bz2": "/usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so",
+  "bz2": "/usr/lib/python3.13/bz2.py",
+  "_lzma": "/usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so",
+  "lzma": "/usr/lib/python3.13/lzma.py",
+  "shutil": "/usr/lib/python3.13/shutil.py",
+  "tempfile": "/usr/lib/python3.13/tempfile.py",
+  "_decimal": "/usr/lib/python3.13/lib-dynload/_decimal.cpython-313-x86_64-linux-gnu.so",
+  "decimal": "/usr/lib/python3.13/decimal.py",
+  "fractions": "/usr/lib/python3.13/fractions.py",
+  "exact": "<work>/wt-e3/research/jumbling/exact.py",
+  "sim.kplus": "<work>/wt-e3/research/jumbling/sim/kplus.py",
+  "signal": "/usr/lib/python3.13/signal.py",
+  "multiprocessing.process": "/usr/lib/python3.13/multiprocessing/process.py",
+  "selectors": "/usr/lib/python3.13/selectors.py",
+  "socket": "/usr/lib/python3.13/socket.py",
+  "multiprocessing.reduction": "/usr/lib/python3.13/multiprocessing/reduction.py",
+  "multiprocessing.context": "/usr/lib/python3.13/multiprocessing/context.py",
+  "__mp_main__": "<work>/v26/B4/shrink.py",
+  "multiprocessing": "/usr/lib/python3.13/multiprocessing/__init__.py",
+  "zipfile._path.glob": "/usr/lib/python3.13/zipfile/_path/glob.py",
+  "zipfile._path": "/usr/lib/python3.13/zipfile/_path/__init__.py",
+  "zipfile": "/usr/lib/python3.13/zipfile/__init__.py",
+  "encodings.cp437": "/usr/lib/python3.13/encodings/cp437.py",
+  "witness": "<work>/wt-e3/research/jumbling/witness.py",
+  "sim.model": "<work>/wt-e3/research/jumbling/sim/model.py",
+  "sim.kernel": "<work>/wt-e3/research/jumbling/sim/kernel.py",
+  "sim.regions": "<work>/wt-e3/research/jumbling/sim/regions.py",
+  "sim.twists": "<work>/wt-e3/research/jumbling/sim/twists.py",
+  "sim.state": "<work>/wt-e3/research/jumbling/sim/state.py",
+  "sim": "<work>/wt-e3/research/jumbling/sim/__init__.py",
+  "numpy.ma.core": "/usr/local/lib/python3.13/dist-packages/numpy/ma/core.py",
+  "numpy.ma.extras": "/usr/local/lib/python3.13/dist-packages/numpy/ma/extras.py",
+  "numpy.ma": "/usr/local/lib/python3.13/dist-packages/numpy/ma/__init__.py",
+  "numpy.random._common": "/usr/local/lib/python3.13/dist-packages/numpy/random/_common.cpython-313-x86_64-linux-gnu.so",
+  "base64": "/usr/lib/python3.13/base64.py",
+  "hmac": "/usr/lib/python3.13/hmac.py",
+  "secrets": "/usr/lib/python3.13/secrets.py",
+  "numpy.random.bit_generator": "/usr/local/lib/python3.13/dist-packages/numpy/random/bit_generator.cpython-313-x86_64-linux-gnu.so",
+  "numpy.random._bounded_integers": "/usr/local/lib/python3.13/dist-packages/numpy/random/_bounded_integers.cpython-313-x86_64-linux-gnu.so",
+  "numpy.random._pcg64": "/usr/local/lib/python3.13/dist-packages/numpy/random/_pcg64.cpython-313-x86_64-linux-gnu.so",
+  "numpy.random._generator": "/usr/local/lib/python3.13/dist-packages/numpy/random/_generator.cpython-313-x86_64-linux-gnu.so",
+  "numpy.random._mt19937": "/usr/local/lib/python3.13/dist-packages/numpy/random/_mt19937.cpython-313-x86_64-linux-gnu.so",
+  "numpy.random._philox": "/usr/local/lib/python3.13/dist-packages/numpy/random/_philox.cpython-313-x86_64-linux-gnu.so",
+  "numpy.random._sfc64": "/usr/local/lib/python3.13/dist-packages/numpy/random/_sfc64.cpython-313-x86_64-linux-gnu.so",
+  "numpy.random.mtrand": "/usr/local/lib/python3.13/dist-packages/numpy/random/mtrand.cpython-313-x86_64-linux-gnu.so",
+  "numpy.random._pickle": "/usr/local/lib/python3.13/dist-packages/numpy/random/_pickle.py",
+  "numpy.random": "/usr/local/lib/python3.13/dist-packages/numpy/random/__init__.py",
+  "rim": "<work>/wt-e3/research/jumbling/theory/rim.py",
+  "trees": "<work>/wt-e3/research/jumbling/theory/trees.py",
+  "wj": "<work>/wt-e3/research/jumbling/fixtures/wj.py",
+  "restore": "<work>/wt-e3/research/jumbling/theory/restore.py",
+  "seams": "<work>/wt-e3/research/jumbling/theory/seams.py",
+  "deep_scramble": "<work>/wt-e3/research/jumbling/theory/deep_scramble.py",
+  "classes": "<work>/wt-e3/research/jumbling/theory/classes.py",
+  "e3_class": "<work>/wt-e3/research/jumbling/theory/e3_class.py",
+  "orient": "<work>/wt-e3/research/jumbling/theory/orient.py",
+  "buffer": "<work>/wt-e3/research/jumbling/theory/buffer.py",
+  "conjclose": "<work>/v26/conjclose.py",
+  "conjprep": "<work>/v26/conjprep.py",
+  "split_pairs": "<work>/wt-e3/research/jumbling/theory/split_pairs.py",
+  "blocks": "<work>/wt-e3/research/jumbling/theory/blocks.py",
+  "fastghost": "<work>/v26/fastghost.py",
+  "ghostlib": "<work>/v26/ghostlib.py"
+ }
+}

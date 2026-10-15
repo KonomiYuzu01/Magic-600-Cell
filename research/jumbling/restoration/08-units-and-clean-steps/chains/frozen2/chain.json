@@ -1,0 +1,34 @@
+{
+ "name": "frozen-two-level",
+ "start": "start-table.json",
+ "start_digest": "e41cd3dbba2a5167abec184a0f6cb4c96cb4113139a5269c6c7c0a868b36905a",
+ "steps": [
+  {
+   "label": "fz6-k00-u22652",
+   "word": "step001-word.json",
+   "unit": "step001-unit.json",
+   "free": "step001-free.json",
+   "size": 111,
+   "free_size": 2257,
+   "length": 1
+  },
+  {
+   "label": "fz6-k01-u1729",
+   "word": "step002-word.json",
+   "unit": "step002-unit.json",
+   "free": "step002-free.json",
+   "size": 86,
+   "free_size": 395,
+   "length": 10
+  },
+  {
+   "label": "fz6-k02-u12875",
+   "word": "step003-word.json",
+   "unit": "step003-unit.json",
+   "free": "step003-free.json",
+   "size": 86,
+   "free_size": 506,
+   "length": 4
+  }
+ ]
+}

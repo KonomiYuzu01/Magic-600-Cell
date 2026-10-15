@@ -1,0 +1,15 @@
+{"event": "seed", "dir": "<scratch>/cm/runs/stop62/df", "added": 10500, "sec": 0}
+{"event": "seed", "dir": "<scratch>/cm/runs/stop62/rf", "added": 1164, "sec": 0}
+{"event": "seed", "dir": "runs/s62b/df", "added": 0, "sec": 0}
+{"event": "seed", "dir": "runs/s62b/rf", "added": 751, "sec": 0}
+{"event": "seed", "dir": "runs/s62c/df", "added": 254, "sec": 0}
+{"event": "seed", "dir": "runs/s62d/df", "added": 241, "sec": 0}
+{"event": "seed", "dir": "runs/s62e/df", "added": 2968, "sec": 0}
+{"event": "seed", "dir": "runs/s62g/df", "added": 0, "sec": 0}
+{"event": "seed", "dir": "runs/s62g/rf", "added": 7, "sec": 0}
+{"event": "start", "table": "<scratch>/final/chains/s62z/../../../ep/lemo/hole/tc/s62z-u18445/end-table.json", "words": 15885, "only": null, "sec": 0}
+{"event": "state", "step": 0, "digest": "46496bb1806f5f4078d9d15ed83986938ccb9cb776ba62fd187767f17c662514", "off": 233, "blocks": 3, "units": [[61, 23955, 23955, false], [86, 1040, 1040, false], [86, 64184, 64184, false]], "sec": 11}
+{"event": "scored", "step": 0, "usable": {"1040": 779, "23955": 1546, "64184": 1527}, "deficit0": {"1040": 0, "23955": 0, "64184": 0}, "vac_ok": {"1040": 0, "23955": 0, "64184": 0}, "occ0": {"1040": 0, "23955": 0, "64184": 0}, "need_search": [1040, 23955, 64184], "sec": 78}
+{"event": "search", "step": 0, "searched": [1040, 23955, 64184], "added": 0, "vac_ok": {"1040": 0, "23955": 0, "64184": 0}, "sec": 202}
+{"event": "refine", "step": 0, "added": 7, "sec": 232}
+{"event": "stop", "step": 0, "result": "no unit restored at this state", "remaining": [[61, 23955, 23955, false], [86, 1040, 1040, false], [86, 64184, 64184, false]], "best": {"1040": [[155, 0, 152, 308, 333, 0], [155, 0, 152, 309, 333, 0], [155, 0, 152, 309, 333, 0], [226, 0, 223, 397, 430, 0], [273, 0, 266, 442, 474, 0]], "23955": [[155, 0, 152, 303, 333, 0], [155, 0, 152, 304, 333, 0], [155, 0, 152, 304, 333, 0], [155, 0, 152, 304, 333, 0], [155, 0, 152, 304, 333, 0]], "64184": [[155, 0, 152, 291, 333, 0], [155, 0, 152, 291, 333, 0], [155, 0, 152, 291, 333, 0], [155, 0, 152, 291, 333, 0], [155, 0, 152, 291, 333, 0]]}, "sec": 306}

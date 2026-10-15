@@ -1,0 +1,6 @@
+seed-word rejected FAIL 11 ['P0 c support', 'P2 c support', 'P2 c frame cycle', 'P2 c frame cycle', 'P3 c support', 'P3 c frame cycle', 'P4 c support', 'P4 c frame cycle', 'P4 c frame cycle', 'F0 support'] 47.1 s
+setup-swap rejected FAIL 3 ['P1 setups: 2 bad', 'F1 labels cover every moving sticker', 'F1 nu failures 21'] 43.0 s
+frame-word rejected FAIL 2 ['F25 support', 'F25 (s,s)'] 44.5 s
+missing-setup rejected FAIL 3 ['P7 setup coverage', 'F1 labels cover every moving sticker', 'F1 nu failures 24'] 45.2 s
+SELFTEST PASS
+exit=0

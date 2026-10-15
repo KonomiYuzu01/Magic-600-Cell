@@ -1,0 +1,10 @@
+{"off": 107, "blocks": [87, 17, 3], "straddling": 8, "status_3": 0, "sec": 13}
+{"X": {"digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7", "W1_bad": 87, "W1inv_bad": 87, "T17_on_K": 17, "L17_subset_badW1inv": true, "L17_subset_badW1": true, "badW1_equals_badW1inv": true}, "sec": 14.2}
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 21}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 3, "sec": 38}
+{"orbits": 686, "singletons": 651, "sec": 38}
+{"R": {"letter": [[237, 13]], "inverse": [[237, 47]], "in_Kplus": false, "bad_R": 3097, "bad_Rinv": 3097, "cap237_chambers": 3097, "bad_R_equals_cap237": true, "E2_holes_in_cap237": []}, "sec": 38.3}
+{"safe_all_grips": 562, "letters": 6182, "off_lattice": 3097, "sec": 145}
+{"orbits": 1816, "singletons": 1781, "sec": 146}
+{"Y": {"digest": "5d2a88d945674ac66cbb2759215749662b7053425a06e68cf562efd1804f05b5", "holes": 3097, "safe_grips": 562, "letters": 6182, "orbits": 1816, "target_Bad_Rinv": 3097, "N1": true, "N2": true, "fixed_occupied": [], "n_fixed_occupied": 0, "deficits": [], "occupied_in_target": [42275, 42278, 58266], "occupied_in_target_orbit_sizes": [3567, 7149, 7149]}, "sec": 146.1}
+{"done": true, "sec": 146.1}

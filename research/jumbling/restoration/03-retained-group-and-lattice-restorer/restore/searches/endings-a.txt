@@ -1,0 +1,5 @@
+A1 safe 101 60
+A2 safe 102 120
+A3 safe 103 30
+A4 setup 21 40 22 60
+A5 setup 23 20 24 30

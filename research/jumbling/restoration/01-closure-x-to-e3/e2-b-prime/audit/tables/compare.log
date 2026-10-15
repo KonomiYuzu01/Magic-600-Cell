@@ -1,0 +1,54 @@
+OK   E2 sha256 (pkg27 D87/E2-table.json) | "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+OK   E2 copy sha256 pkg27/D87/E2-table.json | "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+OK   E2 copy sha256 v26/E2/c0/E2-table.json | "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+OK   E2 copy sha256 v26/B3/E2-table.json | "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+OK   E2 copy sha256 v26/B4/E2-table.json | "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+OK   E2 digest (field, recomputed from content) | "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+OK   E2 digest field matches content | true
+OK   E2 off pieces = B' | [16245, 16249, 32088]
+OK   E2 off count | 3
+OK   B' share one exact pose at E2 | true
+OK   that pose outside K+ (closure / geometric) | false
+OK   E2 holes | [24905, 89251, 89252]
+OK   E2 holes (simulator region transport) | [24905, 89251, 89252]
+OK   B' restored at E3 (in K+) | [true, true, true]
+OK   B' on K at E3 (chain-check) | true
+OK   B' exact poses at E3 | {"16245": [[[-1, 1, 4], [-1, -1, 4], [-1, 0, 2], [0, 0, 1]], [[-1, 0, 2], [-1, 0, 2], [1, 0, 2], [-1
+OK   E2 lattice pieces | 177117
+OK   E2 lattice on K at E3 | 177117
+OK   E2 lattice at exact E2 pose at E3 | 174026
+OK   collateral at end | 0
+OK   off at end | 0
+OK   E3 all on K | true
+OK   E3 digest (recomputed from content) | "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+OK   E3 digest field | "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+OK   E3 sha256 | "53cec2e37f3b858924c216d45d99f1563f0f1e57d1d8a78fa39946c1c965d889"
+OK   E3 holes | 0
+OK   lattice pieces with changed exact pose | 3091
+OK   their ids equal chain-check ids | true
+OK   of them on K at E3 | true
+OK   of them change chamber | 3086
+OK   E2->E3 changed | 3094
+OK   E2->E3 changed = B' + lattice moved | true
+OK   E2->E3 changed all on K at E3 | true
+OK   E1->E3 changed | 3151
+OK   X->E3 changed | 3164
+OK   87-block (E1 off minus B') among the 3,091 | 30
+OK   17-block (X off minus E1 off) among the 3,091 | 4
+OK   E1->E3 = 90 + 3091 - 30 | 3151
+OK   X->E3 = 107 + 3091 - 34 | 3164
+OK   E1->E3 set = E1 off U lattice moved | true
+OK   X->E3 set = X off U lattice moved | true
+OK   off counts X, E1, E2, E3 | [107, 90, 3, 0]
+OK   X digest (recomputed) | "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7"
+OK   E1 digest (recomputed) | "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8"
+OK   simulator off sets equal independent ones | [true, true, true, true]
+OK   simulator chambers equal independent ones (E2, E3) | [true, true]
+OK   simulator K+ = independent closure (7,200) | true
+OK   segment word lengths | [1112, 1210, 79]
+OK   word digest chain X->E1->E2->E3 | ["f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7", "903997457de665c2846e00ba62b71c
+OK   part lengths V, P, Q(F), Pinv, Vinv | [8, 31, 1, 31, 8]
+OK   parts concatenate to word-full | true
+OK   part digests chain E2 -> E3 | true
+OK   F = (162,1) | [[162, 1]]
+all_agree True

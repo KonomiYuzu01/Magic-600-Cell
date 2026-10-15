@@ -1,0 +1,18 @@
+{"contents": 106, "chambers": 103, "pieces": 3, "twists": 2907, "convention_bad": 0, "sec": 4.6}
+{"twist": 200, "alive": 106, "sec": 5.0}
+{"twist": 400, "alive": 106, "sec": 5.5}
+{"twist": 600, "alive": 106, "sec": 6.0}
+{"twist": 800, "alive": 106, "sec": 6.6}
+{"twist": 1000, "alive": 106, "sec": 7.1}
+{"twist": 1200, "alive": 106, "sec": 7.6}
+{"twist": 1400, "alive": 106, "sec": 8.2}
+{"twist": 1600, "alive": 106, "sec": 8.6}
+{"twist": 1800, "alive": 106, "sec": 9.0}
+{"twist": 2000, "alive": 106, "sec": 9.4}
+{"twist": 2200, "alive": 106, "sec": 9.9}
+{"twist": 2400, "alive": 106, "sec": 10.4}
+{"twist": 2600, "alive": 106, "sec": 11.0}
+{"twist": 2800, "alive": 106, "sec": 11.4}
+{"mine_seconds": 7.0, "sec": 11.7}
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 19}
+{"agree": {"alive": 106, "on_K": 106, "end_chamber": 106, "died_at": 106}, "disagreements": 0, "bad": [41195, 52577, 55055], "done": "<work>/v26/audit/lemma-h/mini-A.json", "sec": 20.0}

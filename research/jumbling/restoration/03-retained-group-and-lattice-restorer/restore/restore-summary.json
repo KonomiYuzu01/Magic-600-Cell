@@ -1,0 +1,1152 @@
+{
+ "cascade_order": [
+  6,
+  0,
+  17,
+  15,
+  2,
+  22,
+  21,
+  8,
+  23,
+  9,
+  29,
+  25,
+  13,
+  11,
+  10,
+  34,
+  28,
+  26,
+  24,
+  16,
+  14,
+  12,
+  3,
+  33,
+  32,
+  31,
+  30,
+  27,
+  20,
+  19,
+  18,
+  7,
+  5,
+  4,
+  1
+ ],
+ "nu_w9": {
+  "8": [
+   1,
+   0
+  ],
+  "25": [
+   1,
+   0
+  ]
+ },
+ "library": {
+  "sha256": "5fd4f78a12526a1a8e8aa372b9b9d37860c313bb69b1bc25da4ff0032b3e54b8",
+  "macros": 13,
+  "rank2": 13,
+  "rank5": 0
+ },
+ "runs": [
+  {
+   "input": "uniform:1",
+   "input_labels_sha256": "c5b62cc64c1e56bfb68dbbed3b0cc2175af0e33e95f5430c4394171abd3c9115",
+   "nu_input": {},
+   "moved_pieces_input": 176499,
+   "corrections": [],
+   "w9": false,
+   "status": "restored",
+   "factors": 190925,
+   "factors_per_orbit": {
+    "6": 1373,
+    "0": 1821,
+    "17": 2590,
+    "15": 2407,
+    "2": 2401,
+    "22": 5401,
+    "21": 7205,
+    "8": 5360,
+    "23": 7205,
+    "9": 7203,
+    "29": 2403,
+    "25": 5345,
+    "13": 7203,
+    "11": 5408,
+    "10": 7201,
+    "34": 238,
+    "28": 2587,
+    "26": 7203,
+    "24": 7205,
+    "16": 7199,
+    "14": 7205,
+    "12": 7203,
+    "3": 5334,
+    "33": 2407,
+    "32": 5398,
+    "31": 7203,
+    "30": 7203,
+    "27": 7207,
+    "20": 7199,
+    "19": 7203,
+    "18": 7203,
+    "7": 7203,
+    "5": 7197,
+    "4": 7203,
+    "1": 3599
+   },
+   "retained_length": 229763734,
+   "new_nodes": 368947,
+   "seconds": 12.7
+  },
+  {
+   "input": "uniform:2",
+   "input_labels_sha256": "dd369c40360c287696cfdf9b34b29d16b5ecb1995113f39d7391fa13b221a2bb",
+   "nu_input": {},
+   "moved_pieces_input": 176492,
+   "corrections": [],
+   "w9": false,
+   "status": "restored",
+   "factors": 191093,
+   "factors_per_orbit": {
+    "6": 1366,
+    "0": 1800,
+    "17": 2607,
+    "15": 2407,
+    "2": 2401,
+    "22": 5400,
+    "21": 7201,
+    "8": 5386,
+    "23": 7209,
+    "9": 7209,
+    "29": 2401,
+    "25": 5362,
+    "13": 7203,
+    "11": 5414,
+    "10": 7203,
+    "34": 237,
+    "28": 2611,
+    "26": 7203,
+    "24": 7209,
+    "16": 7207,
+    "14": 7205,
+    "12": 7201,
+    "3": 5404,
+    "33": 2401,
+    "32": 5388,
+    "31": 7211,
+    "30": 7207,
+    "27": 7205,
+    "20": 7203,
+    "19": 7207,
+    "18": 7209,
+    "7": 7205,
+    "5": 7205,
+    "4": 7203,
+    "1": 3603
+   },
+   "retained_length": 230484810,
+   "new_nodes": 16660,
+   "seconds": 2.6
+  },
+  {
+   "input": "word:3:300",
+   "input_digest": "b56499c4046e1bdc752fefbbabf03a6feb521f1fb7d82c804dd48a5b6cded79d",
+   "input_labels_sha256": "193310a7da86479850db9750f22d8895914acb66cc46bf9a315dd1bbe0323bc2",
+   "nu_input": {},
+   "moved_pieces_input": 169401,
+   "corrections": [],
+   "w9": false,
+   "status": "restored",
+   "factors": 172964,
+   "factors_per_orbit": {
+    "6": 1208,
+    "0": 960,
+    "17": 2542,
+    "15": 2369,
+    "2": 2141,
+    "22": 5374,
+    "21": 7137,
+    "8": 4754,
+    "23": 7199,
+    "9": 6495,
+    "29": 2403,
+    "25": 5434,
+    "13": 6971,
+    "11": 5117,
+    "10": 4723,
+    "34": 241,
+    "28": 2579,
+    "26": 7209,
+    "24": 7197,
+    "16": 6397,
+    "14": 4847,
+    "12": 5995,
+    "3": 4345,
+    "33": 2405,
+    "32": 5369,
+    "31": 7201,
+    "30": 7205,
+    "27": 7203,
+    "20": 7095,
+    "19": 7157,
+    "18": 7011,
+    "7": 4825,
+    "5": 5644,
+    "4": 5615,
+    "1": 2597
+   },
+   "retained_length": 204360248,
+   "new_nodes": 14277,
+   "seconds": 5.8
+  },
+  {
+   "input": "w9word:4:300",
+   "input_digest": "eadccc0f0c53a418d6b64dfbeeb8442bd9a786f9a84f30e68284bec3006d4fbb",
+   "input_labels_sha256": "e4d768eba327b6d4abe8a09e31431e4a3da170a284b99e70fa3dfcb29455f928",
+   "nu_input": {
+    "8": [
+     1,
+     0
+    ],
+    "25": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 170561,
+   "corrections": [
+    {
+     "macro": 0,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "post_correction_digest": "c46fc231f5e0a80c8ce382404d8af56dc7e9fd9fffae9397c04c7c9431ba6b9c",
+   "w9": true,
+   "status": "restored",
+   "factors": 174030,
+   "factors_per_orbit": {
+    "6": 1207,
+    "0": 993,
+    "17": 2558,
+    "15": 2377,
+    "2": 2234,
+    "22": 5391,
+    "21": 7161,
+    "8": 4873,
+    "23": 7201,
+    "9": 6593,
+    "29": 2405,
+    "25": 5358,
+    "13": 6991,
+    "11": 5119,
+    "10": 4756,
+    "34": 232,
+    "28": 2612,
+    "26": 7207,
+    "24": 7201,
+    "16": 6400,
+    "14": 4856,
+    "12": 6063,
+    "3": 4395,
+    "33": 2401,
+    "32": 5381,
+    "31": 7207,
+    "30": 7201,
+    "27": 7205,
+    "20": 7115,
+    "19": 7187,
+    "18": 7033,
+    "7": 4921,
+    "5": 5789,
+    "4": 5773,
+    "1": 2634
+   },
+   "retained_length": 206596100,
+   "new_nodes": 14394,
+   "seconds": 8.6
+  },
+  {
+   "input": "w9word:5:0",
+   "input_digest": "3d7669e3933bbc1644f30daad23c04cb8e677916b82b5038e57ad7423d303f00",
+   "input_labels_sha256": "eef3120b2dd72bcb58bc0d676f71c2b7957f0743e527281c2c0f09d2ad2e964f",
+   "nu_input": {
+    "8": [
+     1,
+     0
+    ],
+    "25": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 1634,
+   "corrections": [
+    {
+     "macro": 0,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "post_correction_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "w9": true,
+   "status": "restored",
+   "factors": 0,
+   "factors_per_orbit": {
+    "6": 0,
+    "0": 0,
+    "17": 0,
+    "15": 0,
+    "2": 0,
+    "22": 0,
+    "21": 0,
+    "8": 0,
+    "23": 0,
+    "9": 0,
+    "29": 0,
+    "25": 0,
+    "13": 0,
+    "11": 0,
+    "10": 0,
+    "34": 0,
+    "28": 0,
+    "26": 0,
+    "24": 0,
+    "16": 0,
+    "14": 0,
+    "12": 0,
+    "3": 0,
+    "33": 0,
+    "32": 0,
+    "31": 0,
+    "30": 0,
+    "27": 0,
+    "20": 0,
+    "19": 0,
+    "18": 0,
+    "7": 0,
+    "5": 0,
+    "4": 0,
+    "1": 0
+   },
+   "retained_length": 0,
+   "new_nodes": 0,
+   "seconds": 1.3
+  },
+  {
+   "input": "mix:6:200:6",
+   "planted": [
+    {
+     "macro": 4,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "inverse": true
+    },
+    {
+     "macro": 4,
+     "inverse": false
+    },
+    {
+     "macro": 5,
+     "inverse": false
+    },
+    {
+     "macro": 9,
+     "inverse": true
+    },
+    {
+     "macro": 7,
+     "inverse": true
+    }
+   ],
+   "input_digest": "444cf14b12f124331675fcf1b91815d452f621c8c5a43710ad3e62770efabf8b",
+   "input_labels_sha256": "bbd3fe94e1e8f1bedffb428e685e6773988ec1f1421ed696d05a63688450f65f",
+   "nu_input": {
+    "7": [
+     1,
+     0
+    ],
+    "8": [
+     1,
+     0
+    ],
+    "14": [
+     1,
+     0
+    ],
+    "16": [
+     1,
+     0
+    ],
+    "18": [
+     1,
+     0
+    ],
+    "19": [
+     1,
+     0
+    ],
+    "20": [
+     1,
+     0
+    ],
+    "21": [
+     1,
+     0
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "27": [
+     1,
+     0
+    ],
+    "28": [
+     1,
+     0
+    ],
+    "29": [
+     1,
+     0
+    ],
+    "30": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 164541,
+   "corrections": [
+    {
+     "macro": 5,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 7,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 9,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "post_correction_digest": "c6b3934ffdeabe69992ab992ee25d51617d17779cda39e4aa5c39eaf4eabdda9",
+   "w9": false,
+   "status": "restored",
+   "factors": 165851,
+   "factors_per_orbit": {
+    "6": 1092,
+    "0": 784,
+    "17": 2484,
+    "15": 2327,
+    "2": 2015,
+    "22": 5339,
+    "21": 7041,
+    "8": 4326,
+    "23": 7173,
+    "9": 6063,
+    "29": 2403,
+    "25": 5369,
+    "13": 6775,
+    "11": 4781,
+    "10": 4123,
+    "34": 239,
+    "28": 2593,
+    "26": 7199,
+    "24": 7179,
+    "16": 6039,
+    "14": 4260,
+    "12": 5453,
+    "3": 3951,
+    "33": 2403,
+    "32": 5426,
+    "31": 7209,
+    "30": 7203,
+    "27": 7191,
+    "20": 6947,
+    "19": 7087,
+    "18": 6861,
+    "7": 4232,
+    "5": 5059,
+    "4": 5011,
+    "1": 2214
+   },
+   "retained_length": 194793196,
+   "new_nodes": 14914,
+   "seconds": 10.2
+  },
+  {
+   "input": "mix:7:300:10",
+   "planted": [
+    {
+     "macro": 11,
+     "inverse": true
+    },
+    {
+     "macro": 4,
+     "inverse": true
+    },
+    {
+     "macro": 11,
+     "inverse": true
+    },
+    {
+     "macro": 0,
+     "inverse": true
+    },
+    {
+     "macro": 6,
+     "inverse": true
+    },
+    {
+     "macro": 6,
+     "inverse": true
+    },
+    {
+     "macro": 6,
+     "inverse": false
+    },
+    {
+     "macro": 0,
+     "inverse": true
+    },
+    {
+     "macro": 10,
+     "inverse": true
+    },
+    {
+     "macro": 1,
+     "inverse": true
+    }
+   ],
+   "input_digest": "fae096d5ad99c1c6a69e289fe2c78f5cab5a0f57200ccf713360cd94698032b5",
+   "input_labels_sha256": "7d63d4c00d9134a15da6e28e795f37996bb02e355195c5a0591fcb8a1764e9d0",
+   "nu_input": {
+    "9": [
+     1,
+     0
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "21": [
+     1,
+     0
+    ],
+    "23": [
+     1,
+     0
+    ],
+    "34": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 172435,
+   "corrections": [
+    {
+     "macro": 1,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 4,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "post_correction_digest": "98ab2ed2bb623a343d5163fb25261c773cc157fec066e23ca74dbfff86694b48",
+   "w9": false,
+   "status": "restored",
+   "factors": 177667,
+   "factors_per_orbit": {
+    "6": 1263,
+    "0": 1061,
+    "17": 2553,
+    "15": 2383,
+    "2": 2245,
+    "22": 5385,
+    "21": 7159,
+    "8": 5017,
+    "23": 7197,
+    "9": 6731,
+    "29": 2403,
+    "25": 5400,
+    "13": 7067,
+    "11": 5135,
+    "10": 5220,
+    "34": 239,
+    "28": 2585,
+    "26": 7201,
+    "24": 7195,
+    "16": 6599,
+    "14": 5410,
+    "12": 6257,
+    "3": 4709,
+    "33": 2407,
+    "32": 5417,
+    "31": 7205,
+    "30": 7203,
+    "27": 7207,
+    "20": 7143,
+    "19": 7175,
+    "18": 7069,
+    "7": 5291,
+    "5": 6166,
+    "4": 6127,
+    "1": 2843
+   },
+   "retained_length": 210808310,
+   "new_nodes": 14604,
+   "seconds": 38.7
+  },
+  {
+   "input": "mix:8:100:20",
+   "planted": [
+    {
+     "macro": 3,
+     "inverse": false
+    },
+    {
+     "macro": 4,
+     "inverse": false
+    },
+    {
+     "macro": 2,
+     "inverse": true
+    },
+    {
+     "macro": 12,
+     "inverse": false
+    },
+    {
+     "macro": 3,
+     "inverse": true
+    },
+    {
+     "macro": 6,
+     "inverse": false
+    },
+    {
+     "macro": 3,
+     "inverse": true
+    },
+    {
+     "macro": 8,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "inverse": true
+    },
+    {
+     "macro": 9,
+     "inverse": true
+    },
+    {
+     "macro": 6,
+     "inverse": false
+    },
+    {
+     "macro": 7,
+     "inverse": true
+    },
+    {
+     "macro": 8,
+     "inverse": false
+    },
+    {
+     "macro": 4,
+     "inverse": false
+    },
+    {
+     "macro": 1,
+     "inverse": false
+    },
+    {
+     "macro": 5,
+     "inverse": false
+    },
+    {
+     "macro": 12,
+     "inverse": false
+    },
+    {
+     "macro": 1,
+     "inverse": false
+    },
+    {
+     "macro": 3,
+     "inverse": true
+    },
+    {
+     "macro": 4,
+     "inverse": false
+    }
+   ],
+   "input_digest": "96c761ef14cdfd969801d072d3faada83704f9d0ec93c51cc8cfdcff910c8c6c",
+   "input_labels_sha256": "c300a47c9a1f34c35b5ff74d319509672192c837857eea8c3743d111cdcec00e",
+   "nu_input": {
+    "7": [
+     1,
+     0
+    ],
+    "9": [
+     1,
+     0
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "11": [
+     1,
+     0
+    ],
+    "14": [
+     1,
+     0
+    ],
+    "16": [
+     1,
+     0
+    ],
+    "18": [
+     1,
+     0
+    ],
+    "19": [
+     1,
+     0
+    ],
+    "20": [
+     1,
+     0
+    ],
+    "22": [
+     1,
+     0
+    ],
+    "23": [
+     1,
+     0
+    ],
+    "25": [
+     1,
+     0
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "27": [
+     1,
+     0
+    ],
+    "28": [
+     1,
+     0
+    ],
+    "29": [
+     1,
+     0
+    ],
+    "30": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ],
+    "34": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 156735,
+   "corrections": [
+    {
+     "macro": 2,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 4,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 5,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 7,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 9,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "post_correction_digest": "6c70e7bdb96995f117135e8c9e9533512f006a0b6b1ace2013416a0cbb6c864e",
+   "w9": false,
+   "status": "restored",
+   "factors": 160190,
+   "factors_per_orbit": {
+    "6": 981,
+    "0": 619,
+    "17": 2390,
+    "15": 2235,
+    "2": 1769,
+    "22": 5260,
+    "21": 6926,
+    "8": 4001,
+    "23": 7135,
+    "9": 5548,
+    "29": 2387,
+    "25": 5380,
+    "13": 6491,
+    "11": 4444,
+    "10": 4039,
+    "34": 240,
+    "28": 2599,
+    "26": 7187,
+    "24": 7151,
+    "16": 5819,
+    "14": 4188,
+    "12": 5167,
+    "3": 3423,
+    "33": 2405,
+    "32": 5330,
+    "31": 7193,
+    "30": 7197,
+    "27": 7185,
+    "20": 6779,
+    "19": 6939,
+    "18": 6797,
+    "7": 3959,
+    "5": 4533,
+    "4": 4569,
+    "1": 1925
+   },
+   "retained_length": 185296322,
+   "new_nodes": 13039,
+   "seconds": 42.1
+  },
+  {
+   "input": "table:$P30/runs/I1/end-table.json",
+   "input_digest": "d4c74f8e1d4d2b056e6e4c1e9e6b796b93aa872f76c92956f98eccb068e251e4",
+   "input_labels_sha256": "d5091d0be370c5a9c280c6f176450108e68faf4da0946029590cc536c11a5ee4",
+   "nu_input": {
+    "9": [
+     1,
+     0
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "11": [
+     1,
+     1
+    ],
+    "13": [
+     1,
+     0
+    ],
+    "14": [
+     1,
+     0
+    ],
+    "15": [
+     1,
+     0
+    ],
+    "17": [
+     0,
+     2
+    ],
+    "20": [
+     1,
+     0
+    ],
+    "22": [
+     0,
+     1
+    ],
+    "25": [
+     1,
+     1
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "30": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ],
+    "32": [
+     0,
+     1
+    ],
+    "33": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 175175,
+   "corrections": [],
+   "status": "failure certificate: nu outside the span of the correction library",
+   "library_rank": [
+    13,
+    0
+   ],
+   "residual": {
+    "sign_orbits": [
+     14,
+     21,
+     22,
+     27,
+     28,
+     30
+    ],
+    "c2_frame_orbits": [
+     22,
+     25,
+     32
+    ],
+    "c5_frame": {
+     "17": 3
+    }
+   }
+  },
+  {
+   "input": "table:$P30/runs/I2/end-table.json",
+   "input_digest": "67bafbc07bece94c3909c8996f6ac76494ea7258cd46c668d95c1ab643d1a1a8",
+   "input_labels_sha256": "bffd87994913f3a3ee8c81cdbce79516386fa10c3ab8bd0500f560ecfc886e05",
+   "nu_input": {
+    "9": [
+     1,
+     0
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "11": [
+     1,
+     0
+    ],
+    "13": [
+     1,
+     0
+    ],
+    "14": [
+     1,
+     0
+    ],
+    "15": [
+     1,
+     0
+    ],
+    "17": [
+     0,
+     2
+    ],
+    "20": [
+     1,
+     0
+    ],
+    "22": [
+     0,
+     1
+    ],
+    "25": [
+     1,
+     1
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "30": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ],
+    "32": [
+     0,
+     1
+    ],
+    "33": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 175399,
+   "corrections": [],
+   "status": "failure certificate: nu outside the span of the correction library",
+   "library_rank": [
+    13,
+    0
+   ],
+   "residual": {
+    "sign_orbits": [
+     14,
+     21,
+     22,
+     27,
+     28,
+     30
+    ],
+    "c2_frame_orbits": [
+     22,
+     25,
+     32
+    ],
+    "c5_frame": {
+     "17": 3
+    }
+   }
+  },
+  {
+   "input": "table:$P28/D3/E3-table.json",
+   "input_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+   "input_labels_sha256": "a587d49950e54cfd039c9567aac1a5655cfc21cf712b79fcf18fe39e56f45dd0",
+   "nu_input": {
+    "9": [
+     1,
+     0
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "11": [
+     1,
+     0
+    ],
+    "13": [
+     1,
+     0
+    ],
+    "14": [
+     1,
+     0
+    ],
+    "15": [
+     1,
+     0
+    ],
+    "17": [
+     0,
+     2
+    ],
+    "20": [
+     1,
+     0
+    ],
+    "22": [
+     0,
+     1
+    ],
+    "25": [
+     1,
+     1
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "30": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ],
+    "32": [
+     0,
+     1
+    ],
+    "33": [
+     1,
+     0
+    ]
+   },
+   "moved_pieces_input": 175041,
+   "corrections": [],
+   "status": "failure certificate: nu outside the span of the correction library",
+   "library_rank": [
+    13,
+    0
+   ],
+   "residual": {
+    "sign_orbits": [
+     14,
+     21,
+     22,
+     27,
+     28,
+     30
+    ],
+    "c2_frame_orbits": [
+     22,
+     25,
+     32
+    ],
+    "c5_frame": {
+     "17": 3
+    }
+   }
+  }
+ ]
+}

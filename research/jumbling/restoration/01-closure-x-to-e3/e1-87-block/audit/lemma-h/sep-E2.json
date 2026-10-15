@@ -1,0 +1,314 @@
+{
+ "table_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "off_checked": 3,
+ "holes": 3,
+ "off_with_any_candidate_chamber": 3,
+ "off_with_candidate_hole": 0,
+ "holes_that_some_off_piece_may_meet": [],
+ "controls": 20,
+ "controls_exactly_own_chamber": 20,
+ "rows": [
+  {
+   "piece": 16245,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 6,
+   "candidate_chambers": 2,
+   "candidate_holes": [],
+   "candidate_occupied": 2,
+   "candidates_sample": [
+    84069,
+    84070
+   ]
+  },
+  {
+   "piece": 16249,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 7,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    84070
+   ]
+  },
+  {
+   "piece": 32088,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 7,
+   "candidate_chambers": 2,
+   "candidate_holes": [],
+   "candidate_occupied": 2,
+   "candidates_sample": [
+    84070,
+    84071
+   ]
+  },
+  {
+   "piece": 7603,
+   "lattice": true,
+   "own_chamber": 169184,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    169184
+   ]
+  },
+  {
+   "piece": 13593,
+   "lattice": true,
+   "own_chamber": 76694,
+   "straddled_cuts": 0,
+   "inside_cuts": 5,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    76694
+   ]
+  },
+  {
+   "piece": 26733,
+   "lattice": true,
+   "own_chamber": 7241,
+   "straddled_cuts": 0,
+   "inside_cuts": 9,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    7241
+   ]
+  },
+  {
+   "piece": 29678,
+   "lattice": true,
+   "own_chamber": 15492,
+   "straddled_cuts": 0,
+   "inside_cuts": 17,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    15492
+   ]
+  },
+  {
+   "piece": 41120,
+   "lattice": true,
+   "own_chamber": 135073,
+   "straddled_cuts": 0,
+   "inside_cuts": 9,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    135073
+   ]
+  },
+  {
+   "piece": 64640,
+   "lattice": true,
+   "own_chamber": 83531,
+   "straddled_cuts": 0,
+   "inside_cuts": 16,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    83531
+   ]
+  },
+  {
+   "piece": 65290,
+   "lattice": true,
+   "own_chamber": 149549,
+   "straddled_cuts": 0,
+   "inside_cuts": 6,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    149549
+   ]
+  },
+  {
+   "piece": 65363,
+   "lattice": true,
+   "own_chamber": 28830,
+   "straddled_cuts": 0,
+   "inside_cuts": 8,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    28830
+   ]
+  },
+  {
+   "piece": 66966,
+   "lattice": true,
+   "own_chamber": 140394,
+   "straddled_cuts": 0,
+   "inside_cuts": 14,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    140394
+   ]
+  },
+  {
+   "piece": 93990,
+   "lattice": true,
+   "own_chamber": 2543,
+   "straddled_cuts": 0,
+   "inside_cuts": 5,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    2543
+   ]
+  },
+  {
+   "piece": 97466,
+   "lattice": true,
+   "own_chamber": 23014,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    23014
+   ]
+  },
+  {
+   "piece": 99816,
+   "lattice": true,
+   "own_chamber": 101610,
+   "straddled_cuts": 0,
+   "inside_cuts": 5,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    101610
+   ]
+  },
+  {
+   "piece": 122063,
+   "lattice": true,
+   "own_chamber": 19104,
+   "straddled_cuts": 0,
+   "inside_cuts": 16,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    19104
+   ]
+  },
+  {
+   "piece": 122966,
+   "lattice": true,
+   "own_chamber": 57926,
+   "straddled_cuts": 0,
+   "inside_cuts": 16,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    57926
+   ]
+  },
+  {
+   "piece": 138949,
+   "lattice": true,
+   "own_chamber": 151546,
+   "straddled_cuts": 0,
+   "inside_cuts": 13,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    151546
+   ]
+  },
+  {
+   "piece": 142546,
+   "lattice": true,
+   "own_chamber": 131650,
+   "straddled_cuts": 0,
+   "inside_cuts": 14,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    131650
+   ]
+  },
+  {
+   "piece": 150458,
+   "lattice": true,
+   "own_chamber": 160132,
+   "straddled_cuts": 0,
+   "inside_cuts": 7,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    160132
+   ]
+  },
+  {
+   "piece": 163292,
+   "lattice": true,
+   "own_chamber": 20929,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    20929
+   ]
+  },
+  {
+   "piece": 170127,
+   "lattice": true,
+   "own_chamber": 79063,
+   "straddled_cuts": 0,
+   "inside_cuts": 9,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    79063
+   ]
+  },
+  {
+   "piece": 170929,
+   "lattice": true,
+   "own_chamber": 166185,
+   "straddled_cuts": 0,
+   "inside_cuts": 19,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    166185
+   ]
+  }
+ ],
+ "seconds": 2.3
+}

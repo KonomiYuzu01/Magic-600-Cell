@@ -1,0 +1,37 @@
+{"pieces": 177120, "poses": 1183, "sec": 4.2}
+{"kplus_orbits": 36, "facets_per_orbit": [6, 10, 7, 9, 20, 10, 5, 5, 6, 8, 8, 7, 6, 15, 8, 5, 8, 6, 5, 13, 5, 5, 8, 7, 8, 6, 15, 8, 5, 7, 5, 10, 6, 8, 5, 40], "ball_orbits": [0, 1, 2, 3, 4], "sec": 4.6}
+{"facets": 1198800, "hyperplanes": 9019, "anchored_pieces": 141846, "sec": 9.7}
+{"chunk": 1, "of": 32, "edges": 12921, "cand": 286580, "face_sep": 273514, "centroid": 11426, "mnp": 1640, "mnp_edge": 1495, "sec": 18.1}
+{"chunk": 2, "of": 32, "edges": 25445, "cand": 596751, "face_sep": 571147, "centroid": 23877, "mnp": 1727, "mnp_edge": 1568, "sec": 18.8}
+{"chunk": 3, "of": 32, "edges": 40441, "cand": 915074, "face_sep": 874280, "centroid": 36926, "mnp": 3868, "mnp_edge": 3515, "sec": 19.4}
+{"chunk": 4, "of": 32, "edges": 55126, "cand": 1253822, "face_sep": 1198204, "centroid": 50133, "mnp": 5485, "mnp_edge": 4993, "sec": 19.7}
+{"chunk": 5, "of": 32, "edges": 67717, "cand": 1527238, "face_sep": 1458960, "centroid": 61956, "mnp": 6322, "mnp_edge": 5761, "sec": 26.9}
+{"chunk": 6, "of": 32, "edges": 80055, "cand": 1792090, "face_sep": 1711332, "centroid": 72903, "mnp": 7855, "mnp_edge": 7152, "sec": 27.9}
+{"chunk": 7, "of": 32, "edges": 92064, "cand": 2078764, "face_sep": 1985984, "centroid": 84861, "mnp": 7919, "mnp_edge": 7203, "sec": 28.5}
+{"chunk": 8, "of": 32, "edges": 106192, "cand": 2410957, "face_sep": 2303965, "centroid": 98195, "mnp": 8797, "mnp_edge": 7997, "sec": 30.0}
+{"chunk": 9, "of": 32, "edges": 118793, "cand": 2690012, "face_sep": 2570341, "centroid": 110026, "mnp": 9645, "mnp_edge": 8767, "sec": 35.9}
+{"chunk": 10, "of": 32, "edges": 133820, "cand": 3027689, "face_sep": 2892837, "centroid": 123661, "mnp": 11191, "mnp_edge": 10159, "sec": 36.2}
+{"chunk": 11, "of": 32, "edges": 146575, "cand": 3310009, "face_sep": 3162270, "centroid": 135083, "mnp": 12656, "mnp_edge": 11492, "sec": 36.2}
+{"chunk": 12, "of": 32, "edges": 160942, "cand": 3601649, "face_sep": 3439277, "centroid": 146548, "mnp": 15824, "mnp_edge": 14394, "sec": 39.2}
+{"chunk": 13, "of": 32, "edges": 171878, "cand": 3854384, "face_sep": 3681060, "centroid": 157320, "mnp": 16004, "mnp_edge": 14558, "sec": 43.5}
+{"chunk": 14, "of": 32, "edges": 184458, "cand": 4130976, "face_sep": 3944944, "centroid": 168531, "mnp": 17501, "mnp_edge": 15927, "sec": 43.9}
+{"chunk": 15, "of": 32, "edges": 197178, "cand": 4422627, "face_sep": 4223794, "centroid": 180387, "mnp": 18446, "mnp_edge": 16791, "sec": 44.4}
+{"chunk": 16, "of": 32, "edges": 211877, "cand": 4729515, "face_sep": 4515781, "centroid": 192965, "mnp": 20769, "mnp_edge": 18912, "sec": 48.3}
+{"chunk": 17, "of": 32, "edges": 226746, "cand": 5085315, "face_sep": 4856695, "centroid": 207694, "mnp": 20926, "mnp_edge": 19052, "sec": 52.9}
+{"chunk": 18, "of": 32, "edges": 242432, "cand": 5447018, "face_sep": 5202567, "centroid": 221930, "mnp": 22521, "mnp_edge": 20502, "sec": 53.8}
+{"chunk": 19, "of": 32, "edges": 257996, "cand": 5813594, "face_sep": 5553440, "centroid": 236097, "mnp": 24057, "mnp_edge": 21899, "sec": 54.7}
+{"chunk": 20, "of": 32, "edges": 273535, "cand": 6166333, "face_sep": 5890511, "centroid": 250264, "mnp": 25558, "mnp_edge": 23271, "sec": 58.0}
+{"chunk": 21, "of": 32, "edges": 286918, "cand": 6475678, "face_sep": 6186387, "centroid": 262774, "mnp": 26517, "mnp_edge": 24144, "sec": 63.4}
+{"chunk": 22, "of": 32, "edges": 302807, "cand": 6809954, "face_sep": 6504559, "centroid": 276556, "mnp": 28839, "mnp_edge": 26251, "sec": 63.5}
+{"chunk": 23, "of": 32, "edges": 319460, "cand": 7182953, "face_sep": 6860696, "centroid": 291152, "mnp": 31105, "mnp_edge": 28308, "sec": 64.1}
+{"chunk": 24, "of": 32, "edges": 334164, "cand": 7497730, "face_sep": 7160631, "centroid": 304415, "mnp": 32684, "mnp_edge": 29749, "sec": 67.3}
+{"chunk": 25, "of": 32, "edges": 349427, "cand": 7858349, "face_sep": 7505896, "centroid": 318880, "mnp": 33573, "mnp_edge": 30547, "sec": 73.3}
+{"chunk": 26, "of": 32, "edges": 364934, "cand": 8225298, "face_sep": 7857255, "centroid": 333481, "mnp": 34562, "mnp_edge": 31453, "sec": 74.9}
+{"chunk": 27, "of": 32, "edges": 381096, "cand": 8604756, "face_sep": 8220466, "centroid": 348668, "mnp": 35622, "mnp_edge": 32428, "sec": 75.0}
+{"chunk": 28, "of": 32, "edges": 396335, "cand": 8933777, "face_sep": 8534052, "centroid": 361739, "mnp": 37986, "mnp_edge": 34596, "sec": 76.7}
+{"chunk": 29, "of": 32, "edges": 412337, "cand": 9283965, "face_sep": 8868028, "centroid": 375424, "mnp": 40513, "mnp_edge": 36913, "sec": 84.5}
+{"chunk": 30, "of": 32, "edges": 426396, "cand": 9606217, "face_sep": 9176142, "centroid": 388759, "mnp": 41316, "mnp_edge": 37637, "sec": 84.6}
+{"chunk": 31, "of": 32, "edges": 438629, "cand": 9887563, "face_sep": 9445184, "centroid": 400304, "mnp": 42075, "mnp_edge": 38325, "sec": 85.1}
+{"chunk": 32, "of": 32, "edges": 452807, "cand": 10214781, "face_sep": 9758079, "centroid": 413031, "mnp": 43671, "mnp_edge": 39776, "sec": 85.3}
+{"edges": 452807, "tests": 43671, "sec": 85.3}
+{"table": "t-T723x433-12.json", "digest": "fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39", "pieces": 177120, "edges": 452807, "components": 289, "component_sizes_top": [157378, 395, 335, 335, 335, 335, 309, 309, 309, 284], "components_without_anchor": 22, "components_without_ball_piece": 288, "anchored_pieces": 141846, "height_hist": {"0": 57042, "2": 115850, "6": 78, "4": 4150}, "lemmaL_edge_left_distance_hist": {"0": 408966, "2": 43841}, "lemmaL_violations": 0, "height_vs_anchor_distance": {"0:0": 57042, "2:0": 84804, "2:1": 27242, "2:2": 3780, "2:3": 24, "4:-1": 2542, "4:1": 33, "4:2": 41, "4:3": 81, "4:4": 160, "4:5": 183, "4:6": 216, "4:7": 151, "4:8": 118, "4:9": 164, "4:10": 176, "4:11": 134, "4:12": 82, "4:13": 45, "4:14": 13, "4:15": 7, "4:16": 3, "4:17": 1, "6:-1": 78}, "height_bound_violations": 0, "degree_hist": {"0": 15, "1": 372, "2": 5975, "3": 26655, "4": 61761, "5": 35480, "6": 26554, "7": 3354, "8": 3922, "9": 3672, "10": 2039, "11": 1566, "12": 988, "13": 693, "14": 304, "15": 623, "16": 231, "17": 222, "18": 352, "19": 274, "20": 509, "21": 39, "22": 451, "23": 25, "24": 152, "25": 183, "26": 55, "27": 165, "28": 59, "29": 41, "30": 201, "31": 56, "32": 97, "33": 14, "35": 8, "36": 4, "39": 5, "41": 1, "42": 3}, "ball_orbits": [0, 1, 2, 3, 4], "unreached_from_anchor": 2620, "sec": 88.5}

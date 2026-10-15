@@ -1,0 +1,42 @@
+{
+ "name": "fixture",
+ "start": "../../../data/states/fixture40-table.json",
+ "start_digest": "b8918ba6c1d9d353923a85f14d80059c3922e53d21723f2a8723315cde1398fc",
+ "steps": [
+  {
+   "label": "s0-block113-111at81217",
+   "word": "s0-block113-111at81217/word-full.json",
+   "target": "s0-block113-111at81217/target.json"
+  },
+  {
+   "label": "s1-block120-111at171114",
+   "word": "s1-block120-111at171114/word-full.json",
+   "target": "s1-block120-111at171114/target.json"
+  },
+  {
+   "label": "s2-block122-87at89647",
+   "word": "s2-block122-87at89647/word-full.json",
+   "target": "s2-block122-87at89647/target.json"
+  },
+  {
+   "label": "s3-block65-198at13039",
+   "word": "s3-block65-198at13039/word-full.json",
+   "target": "s3-block65-198at13039/target.json"
+  },
+  {
+   "label": "s4-block71-198at103934",
+   "word": "s4-block71-198at103934/word-full.json",
+   "target": "s4-block71-198at103934/target.json"
+  },
+  {
+   "label": "s5-block69-198at48781",
+   "word": "s5-block69-198at48781/word-full.json",
+   "target": "s5-block69-198at48781/target.json"
+  },
+  {
+   "label": "s6-block73-198at122617",
+   "word": "s6-block73-198at122617/word-full.json",
+   "target": "s6-block73-198at122617/target.json"
+  }
+ ]
+}

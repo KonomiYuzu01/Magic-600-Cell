@@ -1,0 +1,5 @@
+{
+  "verdict": "pass",
+  "summary": "MATH-E2-04 is fixed: the correction distinguishes prefix preservation by K+ letters from endpoint preservation by the window (work/packet-e2-verify2.md:45; work/evidence-e2-v2/transient.json:10,271). The Y* construction and resource bounds follow from the supplied evidence and unchanged hypotheses. No new blocker or major found within scope. Computed values were accepted as given, not independently recomputed.",
+  "findings": []
+}

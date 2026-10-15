@@ -1,0 +1,16 @@
+{
+ "name": "stop62-245",
+ "start": "start-table.json",
+ "start_digest": "0c945cbff8664140c9c8a4ae0a37865950be9480d844d05625d8a30536d92f83",
+ "steps": [
+  {
+   "label": "s62z-u18445",
+   "word": "step001-word.json",
+   "unit": "step001-unit.json",
+   "free": null,
+   "size": 12,
+   "free_size": 0,
+   "length": 328
+  }
+ ]
+}

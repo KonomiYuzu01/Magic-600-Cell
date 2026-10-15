@@ -1,0 +1,69 @@
+{
+ "input_digest": "8c3f8a7f8e40ad0c1cb9664664c33df2bc0424eefed3b7559f1a51dac60e9194",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 886,
+   "input_digest": "8c3f8a7f8e40ad0c1cb9664664c33df2bc0424eefed3b7559f1a51dac60e9194",
+   "output_digest": "e3cc3d083ad7e36f106ddd8237bc7a84b14e0a24be08f13ecbbc18fa4e3e4079",
+   "off_end": 233
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "e3cc3d083ad7e36f106ddd8237bc7a84b14e0a24be08f13ecbbc18fa4e3e4079",
+   "output_digest": "e3cc3d083ad7e36f106ddd8237bc7a84b14e0a24be08f13ecbbc18fa4e3e4079",
+   "off_end": 233
+  },
+  {
+   "part": "Q",
+   "twists": 46,
+   "input_digest": "e3cc3d083ad7e36f106ddd8237bc7a84b14e0a24be08f13ecbbc18fa4e3e4079",
+   "output_digest": "84a3b1c3429534c3b0302ce62d41af46319d4394ca6a637e2ea5a80b506806a5",
+   "off_end": 86
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "84a3b1c3429534c3b0302ce62d41af46319d4394ca6a637e2ea5a80b506806a5",
+   "output_digest": "84a3b1c3429534c3b0302ce62d41af46319d4394ca6a637e2ea5a80b506806a5",
+   "off_end": 86
+  },
+  {
+   "part": "Vinv",
+   "twists": 886,
+   "input_digest": "84a3b1c3429534c3b0302ce62d41af46319d4394ca6a637e2ea5a80b506806a5",
+   "output_digest": "090b175c05ada922d4ac90c8e07285e1b9f11dfb92b442c852e29643e57864ab",
+   "off_end": 86
+  }
+ ],
+ "end": {
+  "digest": "090b175c05ada922d4ac90c8e07285e1b9f11dfb92b442c852e29643e57864ab",
+  "off": 86,
+  "T_restored": 61,
+  "collateral": 0,
+  "protected_still_off": 86,
+  "protected_exact_pose_changed": 0,
+  "free_on_K": 86,
+  "free_still_off": 0,
+  "free_pose_changed": 86,
+  "lattice_of_S_on_K_at_end": 176887,
+  "lattice_of_S": 176887,
+  "lattice_of_S_same_exact_pose": 175679
+ },
+ "length": 1818,
+ "times": {
+  "ghost_premises": 7.7,
+  "menu_and_condition": 13.8,
+  "certificate": 244.7,
+  "prepare": 16.8,
+  "replay": 58.7
+ },
+ "seconds": 341.7
+}

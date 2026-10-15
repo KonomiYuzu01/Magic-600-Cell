@@ -1,0 +1,14 @@
+{"step": "hashes", "E2_copies_identical": true, "E1_copies_identical": true, "t": 0.0}
+{"step": "model", "distinct_signatures": 177120, "norms": [[48, 16]], "t": 0.5}
+{"step": "table", "name": "X", "poses_listed": 7258, "pieces": 177120, "entries_in_lowest_terms": true, "distinct_listed_matrices": 7258, "duplicate_listed_matrices": 0, "distinct_used_matrices": 7258, "unused_listed_entries": 0, "digest_field": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7", "digest_recomputed": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7", "digest_field_matches_content": true, "t": 0.8}
+{"step": "table", "name": "E1", "poses_listed": 7256, "pieces": 177120, "entries_in_lowest_terms": true, "distinct_listed_matrices": 7256, "duplicate_listed_matrices": 0, "distinct_used_matrices": 7256, "unused_listed_entries": 0, "digest_field": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8", "digest_recomputed": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8", "digest_field_matches_content": true, "t": 1.1}
+{"step": "table", "name": "E2", "poses_listed": 7201, "pieces": 177120, "entries_in_lowest_terms": true, "distinct_listed_matrices": 7201, "duplicate_listed_matrices": 0, "distinct_used_matrices": 7201, "unused_listed_entries": 0, "digest_field": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff", "digest_recomputed": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff", "digest_field_matches_content": true, "t": 1.4}
+{"step": "table", "name": "E3", "poses_listed": 7200, "pieces": 177120, "entries_in_lowest_terms": true, "distinct_listed_matrices": 7200, "duplicate_listed_matrices": 0, "distinct_used_matrices": 7200, "unused_listed_entries": 0, "digest_field": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441", "digest_recomputed": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441", "digest_field_matches_content": true, "t": 1.6}
+{"step": "registry", "distinct": 7258, "frac_ok": true, "t": 3.3}
+{"step": "geometric", "rotations": 7258, "pole_preserving": 7200, "t": 6.5}
+{"step": "closure", "order": 7200, "rot": true, "pole": true, "agree": true, "t": 10.0}
+{"step": "chambers", "name": "X", "lattice": 177013, "unmatched_images": 0, "occupied": 177013, "collisions": 0, "holes": 107, "hole_count": 107, "t": 11.1}
+{"step": "chambers", "name": "E1", "lattice": 177030, "unmatched_images": 0, "occupied": 177030, "collisions": 0, "holes": 90, "hole_count": 90, "t": 12.2}
+{"step": "chambers", "name": "E2", "lattice": 177117, "unmatched_images": 0, "occupied": 177117, "collisions": 0, "holes": [24905, 89251, 89252], "hole_count": 3, "t": 12.9}
+{"step": "chambers", "name": "E3", "lattice": 177120, "unmatched_images": 0, "occupied": 177120, "collisions": 0, "holes": [], "hole_count": 0, "t": 13.7}
+{"step": "done", "seconds": 13.7, "t": 13.7}

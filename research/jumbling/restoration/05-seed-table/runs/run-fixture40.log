@@ -1,0 +1,5 @@
+fixture40 off 94147 depth one 94147 10s
+candidates 67424 for 19484 pieces 17s
+k-seed candidates 594 [('K3-D3inv', [686, 685, 1531]), ('K3-D3inv', [1384, 1383, 7025]), ('K3-D3inv', [3031, 3030, 13129]), ('K3-D3inv', [5006, 5005, 6337]), ('K3-D3inv', [5072, 5069, 17918]), ('K3-D3inv', [6481, 6425, 8087]), ('K3-D3inv', [9179, 9168, 14217]), ('K3-D3inv', [9477, 7621, 7622]), ('K3-D3inv', [9825, 9817, 22073]), ('K3-D3inv', [9835, 8275, 8276])]
+more than 5000 off pieces: classification only, no conflict analysis
+{"input": "fixture40", "input_digest": "b8918ba6c1d9d353923a85f14d80059c3922e53d21723f2a8723315cde1398fc", "executed": false, "off_start": 94147, "depth_one": 94147, "by_registry_orbit": {"3": 27928, "4": 8907, "2|5b": 16096, "1": 13800, "2|5a": 17287, "6": 10129}, "classes_present": 484, "classes_with_seed": 76, "pieces_with_seed": 19484, "restored": 0, "steps": 0, "block_steps": 0, "remaining": 94147, "total_letters": 0, "kseed_candidates": 0, "end_digest": null, "blocking": {"depth one, not analysed (more than 5000 off pieces)": 94147}, "conflict_cycles": [], "seconds": 33.5}

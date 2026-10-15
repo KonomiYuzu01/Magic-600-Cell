@@ -1,0 +1,62 @@
+{
+ "source_package": "Claude-3E-block-family-20261014",
+ "compressed": [
+  {
+   "path": "data/blocks-fixture40.json",
+   "bytes": 1096102,
+   "sha256": "0f43c1afcf84c71ef61bb4de97af194ec1c7601a4a09ca0460431d2cebb78953"
+  },
+  {
+   "path": "data/states/e2run24-table.json",
+   "bytes": 566198,
+   "sha256": "15b03d0c80be0b5b3c50d7f55d90e6039d5293c538070573a0d01d292cd28bee"
+  },
+  {
+   "path": "data/states/fixture40-table.json",
+   "bytes": 626983,
+   "sha256": "b0a8796662ac4600a9a1496ad6a40a059e62b9b2d7cd1370b385a5fd3b50e180"
+  },
+  {
+   "path": "data/states/stop62-table.json",
+   "bytes": 555548,
+   "sha256": "d5abe195779db5ddd73c8c4d70d8990fa9f24bdd6a948ed4f3bff7e6f882b1c4"
+  },
+  {
+   "path": "data/templates/e2run24-s1-table.json",
+   "bytes": 567312,
+   "sha256": "8c97a6d26f82b019ceeb9aa7b1bb804b3cb1973c2e128d318fc719f269f5f08a"
+  },
+  {
+   "path": "data/templates/fixture-s3-table.json",
+   "bytes": 634696,
+   "sha256": "8b31407bfdcc2a5e7ab7c1c4a47597e95093a428041398bbd94b352ce3f4862e"
+  },
+  {
+   "path": "data/templates/stop62-s1-table.json",
+   "bytes": 557694,
+   "sha256": "7b001c8517735b65a443b38ae194a005f760ce9d94297148e85086471b58ca07"
+  },
+  {
+   "path": "data/templates/stop62-s3-table.json",
+   "bytes": 667210,
+   "sha256": "d6dbff38df75e4e314a6dc2c1ab06fbb7c31bebdae1bfad349ed8c9147fd4011"
+  }
+ ],
+ "left_out": [
+  {
+   "path": "README.zh-CN.md",
+   "bytes": 4191,
+   "sha256": "7c53b80c9fcfc6247eecb07e8d80878093327bfc55270e3e6f09a9e19b21b6f7"
+  },
+  {
+   "path": "REPORT.zh-CN.md",
+   "bytes": 9165,
+   "sha256": "4477ff442d5066b813f7afd1d3029ada35918aa1f706f2a00ddce77481a6e439"
+  },
+  {
+   "path": "SHA256SUMS.txt",
+   "bytes": 19136,
+   "sha256": "ef030d92b9c7606ecba8eb4ad339407d06496016c2d07feaca543413aafcc602"
+  }
+ ]
+}

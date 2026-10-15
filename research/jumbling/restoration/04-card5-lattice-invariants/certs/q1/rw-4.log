@@ -1,0 +1,21 @@
+{"seed": 4, "best": 2, "applied": 1, "steps": 1, "off": 3097, "outs": 1, "sec": 0.7}
+{"seed": 4, "applied": 200, "steps": 213, "max_now": 2, "off": 4617, "outs": 1, "poses": 140, "sec": 6.0}
+{"seed": 4, "best": 4, "applied": 361, "steps": 382, "off": 10949, "outs": 3, "sec": 11.4}
+{"seed": 4, "applied": 400, "steps": 426, "max_now": 4, "off": 5195, "outs": 1, "poses": 469, "sec": 13.0}
+{"seed": 4, "applied": 600, "steps": 633, "max_now": 4, "off": 5349, "outs": 1, "poses": 877, "sec": 24.1}
+{"seed": 4, "applied": 800, "steps": 837, "max_now": 4, "off": 8445, "outs": 2, "poses": 1752, "sec": 38.7}
+{"seed": 4, "applied": 1000, "steps": 1050, "max_now": 4, "off": 5802, "outs": 1, "poses": 2553, "sec": 55.1}
+{"seed": 4, "applied": 1200, "steps": 1256, "max_now": 4, "off": 5729, "outs": 1, "poses": 3656, "sec": 75.5}
+{"seed": 4, "applied": 1400, "steps": 1483, "max_now": 4, "off": 10950, "outs": 2, "poses": 4546, "sec": 101.9}
+{"seed": 4, "applied": 1600, "steps": 1715, "max_now": 4, "off": 13648, "outs": 2, "poses": 5784, "sec": 137.8}
+{"seed": 4, "applied": 1800, "steps": 1952, "max_now": 4, "off": 12828, "outs": 1, "poses": 6437, "sec": 184.0}
+{"seed": 4, "applied": 2000, "steps": 2192, "max_now": 4, "off": 13911, "outs": 1, "poses": 6928, "sec": 245.1}
+{"seed": 4, "applied": 2200, "steps": 2445, "max_now": 4, "off": 11567, "outs": 0, "poses": 7214, "sec": 317.3}
+{"seed": 4, "applied": 2400, "steps": 2707, "max_now": 4, "off": 15181, "outs": 1, "poses": 8150, "sec": 407.8}
+{"seed": 4, "applied": 2600, "steps": 2992, "max_now": 4, "off": 16223, "outs": 1, "poses": 8476, "sec": 491.4}
+{"seed": 4, "applied": 2800, "steps": 3282, "max_now": 4, "off": 14019, "outs": 0, "poses": 8460, "sec": 587.5}
+{"seed": 4, "applied": 3000, "steps": 3580, "max_now": 4, "off": 17523, "outs": 1, "poses": 9378, "sec": 702.9}
+{"seed": 4, "applied": 3200, "steps": 3881, "max_now": 4, "off": 14767, "outs": 0, "poses": 8897, "sec": 821.4}
+{"seed": 4, "applied": 3400, "steps": 4201, "max_now": 4, "off": 17638, "outs": 1, "poses": 9732, "sec": 952.0}
+{"seed": 4, "applied": 3600, "steps": 4502, "max_now": 4, "off": 15747, "outs": 0, "poses": 9405, "sec": 1120.7}
+{"done": true, "seed": 4, "best": 4, "applied": 3703, "steps": 4667, "hist": {"2": 367, "0": 3, "4": 3333}, "sec": 1200.5}

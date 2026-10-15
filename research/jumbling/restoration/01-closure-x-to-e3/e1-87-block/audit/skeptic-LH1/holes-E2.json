@@ -1,0 +1,18 @@
+{
+ "table": "<work>/v26/E2/c0/E2-table.json",
+ "digest_file": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "digest_sim": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "off": [
+  16245,
+  16249,
+  32088
+ ],
+ "holes": [
+  24905,
+  89251,
+  89252
+ ],
+ "lattice_flag_equals_simulator": true,
+ "pose_float_err_on_max": 3.552713678800501e-15,
+ "pose_float_err_off_min": 0.7639320225002137
+}

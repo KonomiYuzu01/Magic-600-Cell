@@ -1,0 +1,250 @@
+{
+ "table": "<scratch>/bf/br-stop62/close-stop62-k01-f9104-t01/end-table.json",
+ "target": [
+  16245,
+  16249,
+  32088
+ ],
+ "poses": 1,
+ "one_domain": true,
+ "inside_admissible": [
+  152,
+  162,
+  183,
+  237,
+  290,
+  301
+ ],
+ "straddled_by_T": [
+  260,
+  302
+ ],
+ "q_candidates": 9396,
+ "q_involution_candidates": 648,
+ "q_scored": 601,
+ "q_good": 601,
+ "q_best": [
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 42,
+   "a": 162,
+   "A": 10,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 370,
+   "badQ_occupied": 370
+  },
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 30,
+   "a": 301,
+   "A": 1,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 504,
+   "badQ_occupied": 504
+  },
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 35,
+   "a": 301,
+   "A": 1,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 504,
+   "badQ_occupied": 504
+  },
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 42,
+   "a": 301,
+   "A": 1,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 504,
+   "badQ_occupied": 504
+  },
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 51,
+   "a": 301,
+   "A": 1,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 504,
+   "badQ_occupied": 504
+  },
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 54,
+   "a": 301,
+   "A": 1,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 504,
+   "badQ_occupied": 504
+  },
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 58,
+   "a": 301,
+   "A": 1,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 504,
+   "badQ_occupied": 504
+  },
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 30,
+   "a": 301,
+   "A": 11,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 504,
+   "badQ_occupied": 504
+  },
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 35,
+   "a": 301,
+   "A": 11,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 504,
+   "badQ_occupied": 504
+  },
+  {
+   "e": 237,
+   "B": 11,
+   "c": 283,
+   "X": 42,
+   "a": 301,
+   "A": 11,
+   "T_on": 3,
+   "T_dead": 0,
+   "prot_dead": 0,
+   "prot_moved": 0,
+   "conflict_blocks": [],
+   "badQ": 504,
+   "badQ_occupied": 504
+  }
+ ],
+ "q_fail": {},
+ "q_conflict_sets": [
+  [
+   [],
+   601
+  ]
+ ],
+ "blocks": [
+  [
+   0,
+   86,
+   1040
+  ],
+  [
+   1,
+   3,
+   16245
+  ],
+  [
+   2,
+   12,
+   18445
+  ],
+  [
+   3,
+   78,
+   18512
+  ],
+  [
+   4,
+   15,
+   18517
+  ],
+  [
+   5,
+   29,
+   21607
+  ],
+  [
+   6,
+   61,
+   23955
+  ],
+  [
+   7,
+   10,
+   48298
+  ],
+  [
+   8,
+   86,
+   64184
+  ],
+  [
+   9,
+   111,
+   64191
+  ],
+  [
+   10,
+   87,
+   64213
+  ],
+  [
+   11,
+   111,
+   68424
+  ]
+ ],
+ "park_good": 0,
+ "park_best": [],
+ "seconds": 51.0
+}

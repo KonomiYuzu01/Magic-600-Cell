@@ -1,0 +1,12 @@
+{
+ "name": "y",
+ "start": "../g2/end-table.json",
+ "start_digest": "dffad170d06981212d4afe0ddcde178611109a649440af1df96d61f84af85e19",
+ "steps": [
+  {
+   "label": "PSC001-cap86",
+   "word": "step001-word.json",
+   "sets": "step001-sets.json"
+  }
+ ]
+}

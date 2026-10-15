@@ -1,0 +1,15 @@
+{
+ "badU": 87,
+ "badUinv": 87,
+ "badU_equals_sigma_preimage_of_badW": true,
+ "badU_subset_holes_E1": true,
+ "T_on_K_at_E2": true,
+ "landing_U_subset_badUinv": true,
+ "landing_U_equals_badUinv": true,
+ "holes_E1_minus_badU": [
+  24905,
+  89251,
+  89252
+ ],
+ "seconds": 40.1
+}

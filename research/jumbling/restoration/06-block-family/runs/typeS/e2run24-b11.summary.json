@@ -1,0 +1,163 @@
+{
+ "state_digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+ "target": [
+  18445,
+  18447,
+  18481,
+  21605,
+  31623,
+  31624,
+  31625,
+  31626,
+  31627,
+  42338,
+  47885,
+  47888
+ ],
+ "protected": 678,
+ "single_letters": [
+  {
+   "R": [
+    369,
+    15
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    18
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    22
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    33
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    52
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    53
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    54
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    55
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    56
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    57
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    58
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  },
+  {
+   "R": [
+    369,
+    59
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3328
+  }
+ ],
+ "tried": [
+  {
+   "R": [
+    369,
+    15
+   ],
+   "stop": "no step letter",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  },
+  {
+   "R": [
+    369,
+    18
+   ],
+   "stop": "no step letter",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  },
+  {
+   "R": [
+    369,
+    22
+   ],
+   "stop": "no step letter",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  },
+  {
+   "R": [
+    369,
+    33
+   ],
+   "stop": "no step letter",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  }
+ ],
+ "seconds": 95.9
+}

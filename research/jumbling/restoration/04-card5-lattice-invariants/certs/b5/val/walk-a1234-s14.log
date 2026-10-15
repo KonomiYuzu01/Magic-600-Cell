@@ -1,0 +1,11 @@
+menus ready 5.2
+refined states 144 classes 49 2.2
+family sizes Counter({12: 600}) rep caps [0, 10, 12, 13, 35] pairs at 36 in rep [(13, 35)]
+transitions built 3900 4.3
+lens pairs [(13, 35)] option counts [12, 12, 12, 1, 1]
+assoc {0: 46, 10: 57, 12: 104, 13: 35, 35: 13} classes 49
+52 {'applied': 25, 'max_off': 888, 'blocked': 28} off orbit pieces 944 sec 25.7
+173 {'applied': 50, 'max_off': 1594, 'blocked': 124} off orbit pieces 1534 sec 79.8
+332 {'applied': 75, 'max_off': 1764, 'blocked': 258} off orbit pieces 1706 sec 145.5
+496 {'applied': 100, 'max_off': 1946, 'blocked': 397} off orbit pieces 1946 sec 214.2
+walk done {'applied': 116, 'max_off': 2066, 'blocked': 484} off orbit pieces 2010

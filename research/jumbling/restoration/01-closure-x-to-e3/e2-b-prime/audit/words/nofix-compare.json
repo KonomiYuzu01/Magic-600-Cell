@@ -1,0 +1,62 @@
+{
+ "closure2_status": "ok",
+ "closure2_fixture_opened": false,
+ "closure2_data_opens": [
+  "E2-table.json:r",
+  "P.json:w",
+  "Pinv.json:w",
+  "Q.json:w",
+  "V.json:w",
+  "Vinv.json:w",
+  "certificate.json:w",
+  "model.npz:r",
+  "pre.json:w",
+  "primitives.npz:r",
+  "result.json:w",
+  "w3-P4-162-1.json:r",
+  "word-full.json:w"
+ ],
+ "constructS_status": "ok",
+ "constructS_fixture_opened": false,
+ "constructS_data_opens": [
+  "E2-table.json:r",
+  "F.json:w",
+  "P.json:w",
+  "Pinv.json:w",
+  "Q0.json:w",
+  "certificate-Q0.json:w",
+  "model.npz:r",
+  "pre.json:w",
+  "primitives.npz:r",
+  "result.json:w",
+  "word-full.json:w"
+ ],
+ "shrink_status": "ok",
+ "shrink_fixture_opened": false,
+ "shrink_data_opens": [
+  "E2-table.json:r",
+  "model.npz:r",
+  "primitives.npz:r",
+  "shrink.jsonl:w"
+ ],
+ "singleP_status": "ok",
+ "singleP_fixture_opened": false,
+ "singleP_data_opens": [
+  "E2-table.json:r",
+  "model.npz:r",
+  "primitives.npz:r",
+  "singleP-out.json:w"
+ ],
+ "singleP_equal": true,
+ "shrink_equal_apart_from_timing": true,
+ "constructS_pre.json_equal_apart_from_timing": true,
+ "constructS_certificate-Q0.json_equal_apart_from_timing": true,
+ "constructS_word-full.json_equal_apart_from_timing": true,
+ "constructS_result.json_equal_apart_from_timing": true,
+ "constructS_parts_identical": true,
+ "closure2_pre.json_equal_apart_from_timing": true,
+ "closure2_certificate.json_equal_apart_from_timing": true,
+ "closure2_word-full.json_equal_apart_from_timing": true,
+ "closure2_result.json_equal_apart_from_timing": true,
+ "closure2_parts_identical": true
+}

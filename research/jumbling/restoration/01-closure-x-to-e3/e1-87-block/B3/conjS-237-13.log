@@ -1,0 +1,15 @@
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 8}
+{"safe_all_grips": 562, "letters": 6182, "off_lattice": 3097, "sec": 109}
+{"orbits": 1816, "singletons": 1781, "sec": 110}
+{"orbits": 7103, "singletons": 7068, "sec": 110}
+{"state_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff", "P": [[237, 13]], "after_P_digest": "5d2a88d945674ac66cbb2759215749662b7053425a06e68cf562efd1804f05b5", "T": 3097, "holes": 3097, "GH": [24905, 89251, 89252], "L": [42275, 58266, 42278], "h0_grips": 543, "h0_orbits": 7103, "L_grips": [91], "setup_sec": 101.2, "sec": 110.3}
+{"routing_edges": 18459828, "letters_avoiding_target": 5808, "sec": 116}
+{"peeling_candidates": 5892106, "sec": 282}
+{"x": [91, 1], "xL_outside_T": true, "xGH_outside_T": true, "x_holes_in_T_match": true, "Tx": 335, "xL_h0_orbit_sizes": [3462, 6948, 6948], "GH_h0_orbit_sizes": [6948, 3462, 6948], "N1": true, "N2": true, "n_fixed_occupied": 0, "fixed_occupied": [], "deficit_total": 0, "orbits_hit": 25, "construct_error": "peeling stopped at 4 of 335 target chambers", "sec": 286.6}
+{"routing_edges": 18459828, "letters_avoiding_target": 5841, "sec": 289}
+{"peeling_candidates": 3702743, "sec": 396}
+{"x": [91, 2], "xL_outside_T": true, "xGH_outside_T": true, "x_holes_in_T_match": true, "Tx": 335, "xL_h0_orbit_sizes": [3462, 6948, 6948], "GH_h0_orbit_sizes": [6948, 3462, 6948], "N1": true, "N2": true, "n_fixed_occupied": 0, "fixed_occupied": [], "deficit_total": 0, "orbits_hit": 25, "construct_error": "peeling stopped at 4 of 335 target chambers", "sec": 398.7}
+{"routing_edges": 18459828, "letters_avoiding_target": 5808, "sec": 402}
+{"peeling_candidates": 5890379, "sec": 568}
+{"x": [91, 3], "xL_outside_T": true, "xGH_outside_T": true, "x_holes_in_T_match": true, "Tx": 335, "xL_h0_orbit_sizes": [3462, 6948, 6948], "GH_h0_orbit_sizes": [6948, 3462, 6948], "N1": true, "N2": true, "n_fixed_occupied": 0, "fixed_occupied": [], "deficit_total": 0, "orbits_hit": 25, "construct_error": "peeling stopped at 4 of 335 target chambers", "sec": 572.9}
+{"routing_edges": 18459828, "letters_avoiding_target": 5808, "sec": 577}

@@ -1,0 +1,970 @@
+{
+ "inputs": {
+  "X": "pkg26/Claude-E-closure-X1-20261012/input/X-table.json",
+  "E1": "v26/E2/c0/E1-table.json",
+  "E2": "v26/B4/E2-table.json",
+  "E3": "v26/B4/c3/E3-table.json"
+ },
+ "sha256": {
+  "E2_copies": {
+   "pkg27/D87/E2-table.json": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893",
+   "v26/E2/c0/E2-table.json": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893",
+   "v26/B3/E2-table.json": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893",
+   "v26/B4/E2-table.json": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+  },
+  "E1_copies": {
+   "v26/E2/c0/E1-table.json": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+   "pkg27/input/E1-table.json": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+   "pkg26/D17/end-table.json": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18"
+  },
+  "X": "a802e5bbe35bce69e6868f8a4f0d9cdf88fe9309fc2a492921a66d8b52394ae5",
+  "E3": "53cec2e37f3b858924c216d45d99f1563f0f1e57d1d8a78fa39946c1c965d889"
+ },
+ "E2_copies_identical": true,
+ "E1_copies_identical": true,
+ "model": {
+  "sha256": "680de6710e8a05b12dd4ba2ea22c866e645af032a31faf985d869798521f8b13",
+  "pole_norms_x4": [
+   [
+    48,
+    16
+   ]
+  ],
+  "distinct_signatures": 177120
+ },
+ "tables": {
+  "X": {
+   "top_keys": [
+    "digest",
+    "journal",
+    "pose_id",
+    "poses"
+   ],
+   "poses_listed": 7258,
+   "pieces": 177120,
+   "entries_in_lowest_terms": true,
+   "distinct_listed_matrices": 7258,
+   "duplicate_listed_matrices": 0,
+   "distinct_used_matrices": 7258,
+   "unused_listed_entries": 0,
+   "digest_field": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+   "digest_recomputed": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+   "digest_field_matches_content": true
+  },
+  "E1": {
+   "top_keys": [
+    "digest",
+    "pose_id",
+    "poses"
+   ],
+   "poses_listed": 7256,
+   "pieces": 177120,
+   "entries_in_lowest_terms": true,
+   "distinct_listed_matrices": 7256,
+   "duplicate_listed_matrices": 0,
+   "distinct_used_matrices": 7256,
+   "unused_listed_entries": 0,
+   "digest_field": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+   "digest_recomputed": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+   "digest_field_matches_content": true
+  },
+  "E2": {
+   "top_keys": [
+    "digest",
+    "pose_id",
+    "poses"
+   ],
+   "poses_listed": 7201,
+   "pieces": 177120,
+   "entries_in_lowest_terms": true,
+   "distinct_listed_matrices": 7201,
+   "duplicate_listed_matrices": 0,
+   "distinct_used_matrices": 7201,
+   "unused_listed_entries": 0,
+   "digest_field": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+   "digest_recomputed": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+   "digest_field_matches_content": true
+  },
+  "E3": {
+   "top_keys": [
+    "digest",
+    "pose_id",
+    "poses"
+   ],
+   "poses_listed": 7200,
+   "pieces": 177120,
+   "entries_in_lowest_terms": true,
+   "distinct_listed_matrices": 7200,
+   "duplicate_listed_matrices": 0,
+   "distinct_used_matrices": 7200,
+   "unused_listed_entries": 0,
+   "digest_field": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+   "digest_recomputed": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+   "digest_field_matches_content": true
+  },
+  "E2_copies_parsed": {
+   "pkg27/D87/E2-table.json": {
+    "digest_field": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+    "same_poses_as_E2": true
+   },
+   "v26/E2/c0/E2-table.json": {
+    "digest_field": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+    "same_poses_as_E2": true
+   },
+   "v26/B3/E2-table.json": {
+    "digest_field": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+    "same_poses_as_E2": true
+   },
+   "v26/B4/E2-table.json": {
+    "digest_field": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+    "same_poses_as_E2": true
+   }
+  },
+  "E1_copies_parsed": {
+   "v26/E2/c0/E1-table.json": {
+    "digest_field": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+    "same_poses_as_E1": true,
+    "digest_recomputed": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8"
+   },
+   "pkg27/input/E1-table.json": {
+    "digest_field": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+    "same_poses_as_E1": true,
+    "digest_recomputed": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8"
+   },
+   "pkg26/D17/end-table.json": {
+    "digest_field": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+    "same_poses_as_E1": true,
+    "digest_recomputed": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8"
+   }
+  }
+ },
+ "distinct_matrices_all_tables": 7258,
+ "fraction_form_bijective": true,
+ "all_matrices_rotations": true,
+ "non_rotation_matrices": 0,
+ "closure": {
+  "tried": [
+   [
+    6713,
+    6775,
+    12
+   ],
+   [
+    6713,
+    6992,
+    10
+   ],
+   [
+    6713,
+    7092,
+    1440
+   ],
+   [
+    6713,
+    6721,
+    10
+   ],
+   [
+    6713,
+    7043,
+    1440
+   ],
+   [
+    6713,
+    6687,
+    10
+   ],
+   [
+    6713,
+    6705,
+    1200
+   ],
+   [
+    6713,
+    6688,
+    10
+   ],
+   [
+    6713,
+    7054,
+    1200
+   ],
+   [
+    6713,
+    6626,
+    1440
+   ],
+   [
+    6713,
+    6774,
+    1440
+   ],
+   [
+    6713,
+    6676,
+    120
+   ],
+   [
+    6713,
+    5431,
+    1200
+   ],
+   [
+    6713,
+    6115,
+    120
+   ],
+   [
+    6713,
+    6278,
+    1200
+   ],
+   [
+    6713,
+    5990,
+    24
+   ],
+   [
+    6713,
+    7016,
+    7200
+   ]
+  ],
+  "order": 7200,
+  "generators": [
+   [
+    [
+     [
+      -1,
+      -1,
+      4
+     ],
+     [
+      -1,
+      0,
+      2
+     ],
+     [
+      -1,
+      1,
+      4
+     ],
+     [
+      0,
+      0,
+      1
+     ]
+    ],
+    [
+     [
+      -1,
+      0,
+      2
+     ],
+     [
+      -1,
+      1,
+      4
+     ],
+     [
+      -1,
+      -1,
+      4
+     ],
+     [
+      0,
+      0,
+      1
+     ]
+    ],
+    [
+     [
+      -1,
+      1,
+      4
+     ],
+     [
+      -1,
+      -1,
+      4
+     ],
+     [
+      -1,
+      0,
+      2
+     ],
+     [
+      0,
+      0,
+      1
+     ]
+    ],
+    [
+     [
+      0,
+      0,
+      1
+     ],
+     [
+      0,
+      0,
+      1
+     ],
+     [
+      0,
+      0,
+      1
+     ],
+     [
+      1,
+      0,
+      1
+     ]
+    ]
+   ],
+   [
+    [
+     [
+      -1,
+      -1,
+      4
+     ],
+     [
+      -1,
+      0,
+      2
+     ],
+     [
+      -1,
+      1,
+      4
+     ],
+     [
+      0,
+      0,
+      1
+     ]
+    ],
+    [
+     [
+      -1,
+      1,
+      4
+     ],
+     [
+      0,
+      0,
+      1
+     ],
+     [
+      1,
+      1,
+      4
+     ],
+     [
+      -1,
+      0,
+      2
+     ]
+    ],
+    [
+     [
+      0,
+      0,
+      1
+     ],
+     [
+      1,
+      -1,
+      4
+     ],
+     [
+      -1,
+      0,
+      2
+     ],
+     [
+      -1,
+      -1,
+      4
+     ]
+    ],
+    [
+     [
+      -1,
+      0,
+      2
+     ],
+     [
+      1,
+      1,
+      4
+     ],
+     [
+      0,
+      0,
+      1
+     ],
+     [
+      1,
+      -1,
+      4
+     ]
+    ]
+   ]
+  ],
+  "generators_pole_preserving_rotations": true,
+  "all_orthogonal": true,
+  "all_pole_preserving": true
+ },
+ "membership_agree_closure_vs_geometric": true,
+ "membership_disagreements": [],
+ "off_counts": {
+  "X": 107,
+  "E1": 90,
+  "E2": 3,
+  "E3": 0
+ },
+ "E2_off_set": [
+  16245,
+  16249,
+  32088
+ ],
+ "E2_off_is_Bprime": true,
+ "Bprime_one_pose_at_E2": true,
+ "Bprime_pose_E2": [
+  [
+   [
+    -3,
+    1,
+    8
+   ],
+   [
+    0,
+    -1,
+    4
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    -1,
+    0,
+    2
+   ]
+  ],
+  [
+   [
+    0,
+    0,
+    1
+   ],
+   [
+    3,
+    -1,
+    8
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    3,
+    0,
+    4
+   ]
+  ],
+  [
+   [
+    -1,
+    0,
+    4
+   ],
+   [
+    1,
+    1,
+    4
+   ],
+   [
+    -5,
+    1,
+    8
+   ],
+   [
+    -1,
+    -1,
+    8
+   ]
+  ],
+  [
+   [
+    1,
+    3,
+    8
+   ],
+   [
+    -1,
+    1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ]
+  ]
+ ],
+ "Bprime_pose_E2_in_Kplus": false,
+ "Bprime_pose_E2_is_rotation": true,
+ "Bprime_pose_E2_pole_preserving": false,
+ "E3_off": 0,
+ "Bprime_poses_E3": {
+  "16245": [
+   [
+    [
+     -1,
+     1,
+     4
+    ],
+    [
+     -1,
+     -1,
+     4
+    ],
+    [
+     -1,
+     0,
+     2
+    ],
+    [
+     0,
+     0,
+     1
+    ]
+   ],
+   [
+    [
+     -1,
+     0,
+     2
+    ],
+    [
+     -1,
+     0,
+     2
+    ],
+    [
+     1,
+     0,
+     2
+    ],
+    [
+     -1,
+     0,
+     2
+    ]
+   ],
+   [
+    [
+     0,
+     0,
+     1
+    ],
+    [
+     1,
+     -1,
+     4
+    ],
+    [
+     1,
+     0,
+     2
+    ],
+    [
+     1,
+     1,
+     4
+    ]
+   ],
+   [
+    [
+     1,
+     1,
+     4
+    ],
+    [
+     0,
+     0,
+     1
+    ],
+    [
+     1,
+     0,
+     2
+    ],
+    [
+     1,
+     -1,
+     4
+    ]
+   ]
+  ],
+  "16249": [
+   [
+    [
+     1,
+     0,
+     2
+    ],
+    [
+     1,
+     1,
+     4
+    ],
+    [
+     0,
+     0,
+     1
+    ],
+    [
+     -1,
+     1,
+     4
+    ]
+   ],
+   [
+    [
+     -1,
+     1,
+     4
+    ],
+    [
+     0,
+     0,
+     1
+    ],
+    [
+     1,
+     1,
+     4
+    ],
+    [
+     -1,
+     0,
+     2
+    ]
+   ],
+   [
+    [
+     -1,
+     -1,
+     4
+    ],
+    [
+     1,
+     0,
+     2
+    ],
+    [
+     -1,
+     1,
+     4
+    ],
+    [
+     0,
+     0,
+     1
+    ]
+   ],
+   [
+    [
+     0,
+     0,
+     1
+    ],
+    [
+     -1,
+     1,
+     4
+    ],
+    [
+     -1,
+     0,
+     2
+    ],
+    [
+     -1,
+     -1,
+     4
+    ]
+   ]
+  ],
+  "32088": [
+   [
+    [
+     -1,
+     1,
+     4
+    ],
+    [
+     -1,
+     -1,
+     4
+    ],
+    [
+     -1,
+     0,
+     2
+    ],
+    [
+     0,
+     0,
+     1
+    ]
+   ],
+   [
+    [
+     -1,
+     0,
+     2
+    ],
+    [
+     -1,
+     0,
+     2
+    ],
+    [
+     1,
+     0,
+     2
+    ],
+    [
+     -1,
+     0,
+     2
+    ]
+   ],
+   [
+    [
+     0,
+     0,
+     1
+    ],
+    [
+     1,
+     -1,
+     4
+    ],
+    [
+     1,
+     0,
+     2
+    ],
+    [
+     1,
+     1,
+     4
+    ]
+   ],
+   [
+    [
+     1,
+     1,
+     4
+    ],
+    [
+     0,
+     0,
+     1
+    ],
+    [
+     1,
+     0,
+     2
+    ],
+    [
+     1,
+     -1,
+     4
+    ]
+   ]
+  ]
+ },
+ "Bprime_E3_in_Kplus": [
+  true,
+  true,
+  true
+ ],
+ "Bprime_E3_distinct_poses": 2,
+ "chambers": {
+  "X": {
+   "lattice": 177013,
+   "unmatched_images": 0,
+   "occupied": 177013,
+   "collisions": 0,
+   "holes": 107,
+   "hole_count": 107
+  },
+  "E1": {
+   "lattice": 177030,
+   "unmatched_images": 0,
+   "occupied": 177030,
+   "collisions": 0,
+   "holes": 90,
+   "hole_count": 90
+  },
+  "E2": {
+   "lattice": 177117,
+   "unmatched_images": 0,
+   "occupied": 177117,
+   "collisions": 0,
+   "holes": [
+    24905,
+    89251,
+    89252
+   ],
+   "hole_count": 3
+  },
+  "E3": {
+   "lattice": 177120,
+   "unmatched_images": 0,
+   "occupied": 177120,
+   "collisions": 0,
+   "holes": [],
+   "hole_count": 0
+  }
+ },
+ "changed_counts": {
+  "E2_to_E3": 3094,
+  "E1_to_E3": 3151,
+  "X_to_E3": 3164,
+  "X_to_E1": 17,
+  "E1_to_E2": 87,
+  "X_to_E2": 104
+ },
+ "E2_E3": {
+  "changed": 3094,
+  "changed_includes_Bprime": true,
+  "changed_minus_Bprime_equals_lattice_moved": true,
+  "lattice_moved": 3091,
+  "lattice_moved_all_on_K_at_E3": true,
+  "changed_all_on_K_at_E3": true,
+  "E2_lattice": 177117,
+  "E2_lattice_same_exact_pose": 174026,
+  "E2_lattice_on_K_at_E3": 177117,
+  "collateral_E2_lattice_off_at_E3": 0,
+  "lattice_moved_changed_chamber": 3086,
+  "lattice_moved_same_chamber_ids": [
+   24123,
+   50677,
+   68278,
+   88817,
+   136357
+  ],
+  "same_chamber_pieces_detail": [
+   {
+    "piece": 24123,
+    "chamber": 50768,
+    "home_chamber": false,
+    "signature_size": 3
+   },
+   {
+    "piece": 50677,
+    "chamber": 50677,
+    "home_chamber": true,
+    "signature_size": 1
+   },
+   {
+    "piece": 68278,
+    "chamber": 43186,
+    "home_chamber": false,
+    "signature_size": 5
+   },
+   {
+    "piece": 88817,
+    "chamber": 88817,
+    "home_chamber": true,
+    "signature_size": 3
+   },
+   {
+    "piece": 136357,
+    "chamber": 36670,
+    "home_chamber": false,
+    "signature_size": 5
+   }
+  ]
+ },
+ "blocks": {
+  "E1_off_subset_X_off": true,
+  "Bprime_subset_E1_off": true,
+  "E2_off_subset_E1_off": true,
+  "block17_size": 17,
+  "block87_size": 87,
+  "block87_in_lattice_moved": 30,
+  "block17_in_lattice_moved": 4,
+  "Bprime_in_lattice_moved": 0,
+  "block87_ids_in_lattice_moved": [
+   7821,
+   12803,
+   20927,
+   34124,
+   37753,
+   37754,
+   38705,
+   38706,
+   46434,
+   47354,
+   49566,
+   50178,
+   50442,
+   52236,
+   56711,
+   72718,
+   79429,
+   81761,
+   87786,
+   90780,
+   91687,
+   91688,
+   91692,
+   96080,
+   96964,
+   106427,
+   127115,
+   129237,
+   156041,
+   156377
+  ],
+  "block17_ids_in_lattice_moved": [
+   9128,
+   9132,
+   10303,
+   19509
+  ]
+ },
+ "decomposition": {
+  "E1_to_E3_equals_E1off_union_moved3": true,
+  "X_to_E3_equals_Xoff_union_moved3": true,
+  "E1_to_E3_formula": 3151,
+  "X_to_E3_formula": 3164,
+  "E1_to_E3_extra_not_in_union": [],
+  "E1_to_E3_union_not_changed": [],
+  "X_to_E3_extra_not_in_union": [],
+  "X_to_E3_union_not_changed": [],
+  "X_to_E1_equals_block17": true,
+  "E1_to_E2_equals_block87": true,
+  "X_lattice_moved_in_seg1": [],
+  "E1_lattice_moved_in_seg2": [],
+  "moved3_back_to_E1_pose": 0,
+  "moved3_back_to_X_pose": 0
+ },
+ "seconds": 13.7
+}

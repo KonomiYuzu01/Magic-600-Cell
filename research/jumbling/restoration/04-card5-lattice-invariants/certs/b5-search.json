@@ -1,0 +1,53 @@
+{
+ "note": "Search statistics, not a certificate. Every replayed word was checked from solved; a candidate is a cap holding an odd number of target-orbit holes (and, in the off-cap variant, off pieces of C wholly inside) after the preparation C.",
+ "runs": [
+  {
+   "script": "b45_double.py",
+   "mode": "clean",
+   "targets": [
+    4,
+    5
+   ],
+   "preparations": "C = (0, x) (e, r), x one of 23 jumble items in this run, e a clean grip holding vacated orbit-4/5 slots, r retained",
+   "result": "orbit 4: two words of 9 letters with sign 4 odd after the first jumble item tried (x = 23), both replayed (B4-0, B4-1 in words/generators.jsonl); orbit 5: no candidate cap in 1,518 preparations",
+   "final_stats": {
+    "preps": 1518,
+    "cands": 14,
+    "clean": 4,
+    "replays": 4,
+    "not_admissible_or_off_lattice": 2,
+    "pred_ok": 2,
+    "pred_mismatch": 0
+   }
+  },
+  {
+   "script": "b45_double.py",
+   "mode": "admissible",
+   "targets": [
+    5
+   ],
+   "preparations": "C = (0, x) (e, r), all 48 jumble items x, e an admissible (unstraddled) grip holding vacated orbit-5 slots, r retained",
+   "result": "candidate caps with an odd number of orbit-5 holes: 23,040; clean among them: 0",
+   "final_stats": {
+    "preps": 6336,
+    "cands": 23040,
+    "clean": 0,
+    "replays": 0
+   }
+  },
+  {
+   "script": "b5_double2.py",
+   "targets": [
+    5
+   ],
+   "preparations": "C = (0, x), all 48 jumble items; every grip whose cap holds a vacated slot",
+   "result": "admissible caps: 1,488 of 2,688; none holds an odd number of orbit-5 holes plus orbit-5 off pieces wholly inside",
+   "final_stats": {
+    "grips": 2688,
+    "admissible": 1488,
+    "pred_target": 0,
+    "replays": 0
+   }
+  }
+ ]
+}

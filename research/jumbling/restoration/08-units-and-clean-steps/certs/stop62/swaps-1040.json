@@ -1,0 +1,37 @@
+{
+ "unit": 1040,
+ "unit_size": 86,
+ "unit_by_type": {
+  "7": 2,
+  "9": 1
+ },
+ "off_by_type_at_state": {
+  "7": 6,
+  "9": 3
+ },
+ "words": 629,
+ "excess_histogram": [
+  [
+   3,
+   569
+  ],
+  [
+   6,
+   9
+  ],
+  [
+   8,
+   11
+  ],
+  [
+   9,
+   16
+  ],
+  [
+   93,
+   24
+  ]
+ ],
+ "swap_words": 0,
+ "examples": []
+}

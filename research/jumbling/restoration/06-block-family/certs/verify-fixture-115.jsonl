@@ -1,0 +1,3 @@
+{"chain": "fixture-115", "start_digest": "b8918ba6c1d9d353923a85f14d80059c3922e53d21723f2a8723315cde1398fc", "start_digest_ok": true, "load_seconds": 3.4}
+{"label": "s0-block115-111at95605", "twists": 10, "applied": 10, "error": null, "input_digest_ok": true, "output_digest_ok": true, "off_before": 94147, "off_after": 94036, "target": 111, "target_off_at_start": 111, "target_on_at_end": 111, "collateral": 0, "protected": 94036, "protected_exact": 94036, "lattice_kept": 82973, "lattice": 82973, "lattice_changed_K_pose": 198, "seconds": 1.4, "ok": true}
+{"chain": "fixture-115", "all_ok": true, "steps": 1, "seconds": 4.8}

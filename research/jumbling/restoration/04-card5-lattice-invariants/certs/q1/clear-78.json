@@ -1,0 +1,47 @@
+{
+ "cluster": 78,
+ "height": 6,
+ "targets": [
+  {
+   "T": 274,
+   "branch": 3,
+   "straddlers": 339,
+   "straddler_heights": {
+    "2": 339
+   },
+   "single_F_caps": 0,
+   "found": []
+  },
+  {
+   "T": 326,
+   "branch": 0,
+   "straddlers": 89,
+   "straddler_heights": {
+    "2": 89
+   },
+   "single_F_caps": 0,
+   "found": []
+  },
+  {
+   "T": 340,
+   "branch": 1,
+   "straddlers": 158,
+   "straddler_heights": {
+    "4": 16,
+    "2": 142
+   },
+   "single_F_caps": 0,
+   "found": []
+  },
+  {
+   "T": 430,
+   "branch": 2,
+   "straddlers": 114,
+   "straddler_heights": {
+    "2": 114
+   },
+   "single_F_caps": 0,
+   "found": []
+  }
+ ]
+}

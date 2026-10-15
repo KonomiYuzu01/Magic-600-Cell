@@ -1,0 +1,6 @@
+walk a=0 seed=11 rc=0 walk done {'applied': 130, 'max_off': 2340, 'blocked': 470} off orbit pieces 2384
+walk a=5 seed=12 rc=0 walk done {'applied': 129, 'max_off': 2402, 'blocked': 471} off orbit pieces 2292
+walk a=777 seed=13 rc=0 walk done {'applied': 130, 'max_off': 2276, 'blocked': 470} off orbit pieces 2274
+walk a=1234 seed=14 rc=0 walk done {'applied': 116, 'max_off': 2066, 'blocked': 484} off orbit pieces 2010
+tables rc=0 t-T723x433-12.json missing classes 0 t-T723x433-12.json V bijective; off orbit pieces 3086 
+DONE

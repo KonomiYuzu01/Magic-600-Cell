@@ -2,6 +2,9 @@
 
 Index of `research/jumbling/theory/`. Every script runs from the repository root on CPython 3 with NumPy, on top of the J1 reference (`research/jumbling/sim/`). Evidence kind: source and exact synthetic geometry. Timings are cloud timings of research code, not performance evidence. Open problems are listed in [open-problems.md](open-problems.md).
 
+The restoration research of 12 to 15 October 2026 (nine stages, the general method and the end-to-end results) is in
+[`../restoration/`](../restoration/README.md).
+
 ## Documents
 
 | File | What it is |

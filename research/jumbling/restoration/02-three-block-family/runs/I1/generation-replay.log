@@ -1,0 +1,3 @@
+{"file": "I1-generation-word.json", "twists": 60, "off": 3, "input_digest_ok": true, "output_digest_ok": true, "depth_failures": 0, "inadmissible": null, "sec": 44}
+{"passed": true, "twists": 60, "end_digest": "f27c345e591eecfa9d6807fbdbeb79326eb7b3987641524bc11e84a71fb44269", "sec": 44}
+exit=0

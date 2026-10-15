@@ -1,0 +1,37 @@
+{
+ "source_package": "Claude-E-closure-X1-20261012",
+ "compressed": [
+  {
+   "path": "D17/after-V-table.json",
+   "bytes": 2441284,
+   "sha256": "4c2de31675965eecfb1ed3f2311d0cc6ea263bc0c53166bc5d390011b4a19d53"
+  },
+  {
+   "path": "D17/end-table.json",
+   "bytes": 2440525,
+   "sha256": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18"
+  },
+  {
+   "path": "D17/prefixes.jsonl",
+   "bytes": 287321,
+   "sha256": "1455a9d313f25734d39f4ed850a6c00861994d582ac46f26eb4ad432ca064235"
+  },
+  {
+   "path": "input/X-table.json",
+   "bytes": 2440934,
+   "sha256": "a802e5bbe35bce69e6868f8a4f0d9cdf88fe9309fc2a492921a66d8b52394ae5"
+  }
+ ],
+ "left_out": [
+  {
+   "path": "README.zh-CN.md",
+   "bytes": 10077,
+   "sha256": "49d63fd2079f65251dfb99499ada927fc50e239c20cdf8efb3c6d33140689cb3"
+  },
+  {
+   "path": "SHA256SUMS",
+   "bytes": 4034,
+   "sha256": "6c7f7f2a78948de6db7b9db11a2e79ccc4b2f32ca294cf30cb7ecddb9ebabfea"
+  }
+ ]
+}

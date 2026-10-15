@@ -1,0 +1,69 @@
+{
+ "table_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "off": 3,
+ "pieces": [
+  {
+   "piece": 16245,
+   "in": [
+    232,
+    237,
+    257,
+    273,
+    301,
+    356
+   ],
+   "straddle": [
+    307
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16249,
+   "in": [
+    232,
+    237,
+    257,
+    273,
+    301,
+    307,
+    356
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 32088,
+   "in": [
+    232,
+    237,
+    257,
+    273,
+    301,
+    307,
+    356
+   ],
+   "straddle": [
+    250
+   ],
+   "checked_exactly": 11
+  }
+ ],
+ "groups_with_identical_in_sets": [
+  {
+   "in": [
+    232,
+    237,
+    257,
+    273,
+    301,
+    307,
+    356
+   ],
+   "pieces": [
+    16249,
+    32088
+   ]
+  }
+ ],
+ "seconds": 7.4
+}

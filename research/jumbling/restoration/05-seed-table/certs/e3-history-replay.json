@@ -1,0 +1,83 @@
+{
+ "claim": "E3 is reachable from the solved state of menu I_a by admissible twists (one continuous replay)",
+ "start_digest_solved": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+ "segments": [
+  {
+   "segment": "fixture I_a@40 (40 records)",
+   "twists": 40,
+   "end_digest": "b8918ba6c1d9d353923a85f14d80059c3922e53d21723f2a8723315cde1398fc",
+   "expected": null,
+   "digest_ok": true,
+   "off_end": 94147,
+   "seconds": 3.2
+  },
+  {
+   "segment": "seams stop (62)",
+   "twists": 62,
+   "end_digest": "9e70c4b9395a7e1227530f2ce6594dbbd686dcb85e4a1f79945905636e4ecc57",
+   "expected": null,
+   "digest_ok": true,
+   "off_end": 860,
+   "seconds": 2.5
+  },
+  {
+   "segment": "E2 run (24)",
+   "twists": 24,
+   "end_digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+   "expected": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+   "digest_ok": true,
+   "off_end": 690,
+   "seconds": 0.5
+  },
+  {
+   "segment": "owner's word, prefix 36563",
+   "twists": 36563,
+   "end_digest": "b318e80e110f408873bbaa5742d988c8cb91525888da24788ed5a7030c7e08e1",
+   "expected": "b318e80e110f408873bbaa5742d988c8cb91525888da24788ed5a7030c7e08e1",
+   "digest_ok": true,
+   "off_end": 107,
+   "seconds": 1666.7
+  },
+  {
+   "segment": "u (302) -> X",
+   "twists": 302,
+   "end_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+   "expected": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+   "digest_ok": true,
+   "off_end": 107,
+   "seconds": 14.6
+  },
+  {
+   "segment": "D17 (V P Q Pinv Vinv) -> E1",
+   "twists": 1112,
+   "end_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+   "expected": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+   "digest_ok": true,
+   "off_end": 90,
+   "seconds": 72.9
+  },
+  {
+   "segment": "D87 -> E2 (chain)",
+   "twists": 1210,
+   "end_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+   "expected": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+   "digest_ok": true,
+   "off_end": 3,
+   "seconds": 74.2
+  },
+  {
+   "segment": "D3 -> E3",
+   "twists": 79,
+   "end_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+   "expected": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+   "digest_ok": true,
+   "off_end": 0,
+   "seconds": 16.5
+  }
+ ],
+ "total_twists": 39392,
+ "end_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+ "end_off": 0,
+ "all_digests_ok": true,
+ "seconds": 1867.5
+}

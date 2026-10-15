@@ -1,0 +1,482 @@
+base [(0, 25)] holes 3097 alive 3097 ghost classes 484 wanted among them 6 10s
+ level 1 children 165 beam R [134, 134, 134, 134, 134, 134, 197, 197] 11s
+ level 2 children 1793 beam R [54, 54, 58, 76, 76, 76, 76, 76] 12s
+ level 3 children 3355 beam R [22, 22, 22, 25, 25, 27, 27, 27] 13s
+ level 4 children 3223 beam R [8, 8, 8, 9, 9, 10, 10, 11] 15s
+ level 5 children 3377 beam R [3, 5, 5, 5, 6, 6, 7, 7] 16s
+ level 6 children 3421 beam R [2, 3, 3, 3, 4, 4, 4, 5] 18s
+ level 7 children 3355 beam R [2, 3, 3, 3, 3, 3, 3, 3] 19s
+ level 8 children 3256 beam R [2, 2, 2, 3, 3, 3, 3, 3] 21s
+base [(0, 14)] holes 3097 alive 3097 ghost classes 484 wanted among them 6 22s
+ level 1 children 165 beam R [134, 134, 134, 134, 134, 134, 197, 197] 22s
+ level 2 children 1793 beam R [54, 54, 54, 54, 58, 58, 76, 76] 22s
+ level 3 children 3333 beam R [13, 22, 22, 22, 25, 25, 25, 25] 23s
+ level 4 children 3355 beam R [8, 10, 10, 12, 13, 13, 13, 13] 24s
+ level 5 children 3278 beam R [4, 5, 5, 6, 7, 7, 7, 8] 24s
+ level 6 children 3410 beam R [2, 3, 3, 3, 3, 3, 4, 4] 25s
+SINGLE H32-1 class 25 2|5b len 255 level 6 classes found 1 29s
+SINGLE H32-2 class 25 2|5b len 255 level 6 classes found 1 32s
+SINGLE H32-3 class 25 2|5b len 255 level 6 classes found 1 36s
+SINGLE H32-4 class 25 2|5b len 255 level 6 classes found 1 40s
+ level 7 children 3278 beam R [2, 2, 2, 2, 2, 2, 3, 3] 41s
+SINGLE H32-5 class 59 2|5a len 511 level 7 classes found 2 49s
+SINGLE H32-6 class 59 2|5a len 511 level 7 classes found 2 57s
+SINGLE H32-7 class 59 2|5a len 511 level 7 classes found 2 65s
+SINGLE H32-8 class 59 2|5a len 511 level 7 classes found 2 73s
+base [(0, 13)] holes 3097 alive 3097 ghost classes 484 wanted among them 4 74s
+ level 1 children 129 beam R [134, 134, 134, 197, 197, 197, 335, 335] 75s
+ level 2 children 999 beam R [76, 76, 76, 78, 78, 78, 80, 80] 75s
+ level 3 children 3124 beam R [30, 30, 36, 36, 36, 36, 40, 40] 76s
+ level 4 children 3289 beam R [10, 12, 12, 14, 14, 15, 15, 17] 77s
+ level 5 children 3256 beam R [3, 3, 4, 5, 6, 6, 6, 6] 77s
+ level 6 children 2673 beam R [2, 3, 3, 3, 3, 4, 4, 4] 78s
+SINGLE H32-9 class 534 1 len 255 level 6 classes found 3 83s
+SINGLE H32-10 class 534 1 len 255 level 6 classes found 3 90s
+SINGLE H32-11 class 534 1 len 255 level 6 classes found 3 97s
+SINGLE H32-12 class 534 1 len 255 level 6 classes found 3 102s
+SINGLE H32-13 class 256 2|5b len 255 level 6 classes found 4 108s
+SINGLE H32-14 class 256 2|5b len 255 level 6 classes found 4 115s
+SINGLE H32-15 class 256 2|5b len 255 level 6 classes found 4 120s
+SINGLE H32-16 class 256 2|5b len 255 level 6 classes found 4 126s
+SINGLE H32-17 class 51 2|5a len 255 level 6 classes found 5 131s
+SINGLE H32-18 class 51 2|5a len 255 level 6 classes found 5 136s
+SINGLE H32-19 class 51 2|5a len 255 level 6 classes found 5 141s
+SINGLE H32-20 class 51 2|5a len 255 level 6 classes found 5 147s
+ level 7 children 374 beam R [2, 2, 2, 3, 3, 3, 3, 3] 148s
+base [(45, 41), (0, 55), (45, 41), (0, 55)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 148s
+base [(23, 9), (75, 9), (0, 47), (75, 3), (0, 13), (23, 3), (0, 47), (75, 9), (0, 13), (75, 3)] holes 592 alive 592 ghost classes 228 wanted among them 0 149s
+base [(43, 4), (20, 52), (0, 20), (20, 36), (0, 50), (43, 8), (0, 20), (20, 52), (0, 50), (20, 36)] holes 814 alive 814 ghost classes 267 wanted among them 0 149s
+base [(54, 4), (45, 3), (0, 57), (45, 9), (0, 57), (54, 8), (0, 57), (45, 3), (0, 57), (45, 9)] holes 790 alive 790 ghost classes 267 wanted among them 0 150s
+base [(0, 25)] holes 3097 alive 3097 ghost classes 484 wanted among them 1 150s
+ level 1 children 33 beam R [197, 197, 395] 150s
+ level 2 children 187 beam R [78, 78, 114, 114, 114, 114, 136, 136] 151s
+ level 3 children 1573 beam R [12, 39, 40, 50, 50, 50, 50, 53] 151s
+ level 4 children 1705 beam R [6, 7, 7, 7, 9, 9, 12, 14] 152s
+SINGLE H32-21 class 452 1 len 63 level 4 classes found 6 153s
+SINGLE H32-22 class 452 1 len 63 level 4 classes found 6 154s
+SINGLE H32-23 class 452 1 len 63 level 4 classes found 6 154s
+SINGLE H32-24 class 452 1 len 63 level 4 classes found 6 155s
+ level 5 children 198 beam R [2, 6, 7, 7, 7] 156s
+base [(46, 20), (0, 43), (46, 50), (0, 19)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 156s
+base [(0, 52)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 157s
+base [(0, 51)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 157s
+base [(32, 7), (43, 7), (0, 32), (43, 6), (0, 32), (32, 6), (0, 32), (43, 7), (0, 32), (43, 6)] holes 790 alive 790 ghost classes 228 wanted among them 0 157s
+base [(0, 54)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 158s
+base [(23, 6), (20, 30), (0, 34), (20, 30), (0, 56), (23, 7), (0, 34), (20, 30), (0, 56), (20, 30)] holes 111 alive 111 ghost classes 111 wanted among them 0 158s
+base [(46, 7), (0, 43), (46, 6), (0, 19)] holes 790 alive 790 ghost classes 228 wanted among them 0 158s
+base [(30, 17), (0, 53), (30, 48), (0, 53)] holes 987 alive 987 ghost classes 353 wanted among them 0 158s
+base [(23, 8), (0, 12), (23, 4), (0, 45)] holes 790 alive 790 ghost classes 228 wanted among them 0 159s
+base [(23, 55), (0, 50), (23, 55), (0, 20)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 159s
+base [(0, 57)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 159s
+base [(54, 5), (0, 43), (54, 2), (0, 19)] holes 592 alive 592 ghost classes 228 wanted among them 0 160s
+base [(0, 16)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 160s
+base [(9, 25), (0, 14), (9, 25), (0, 14)] holes 987 alive 987 ghost classes 353 wanted among them 0 160s
+base [(32, 5), (0, 51), (32, 2), (0, 16)] holes 592 alive 592 ghost classes 228 wanted among them 0 160s
+base [(32, 8), (23, 2), (0, 15), (23, 5), (0, 44), (32, 4), (0, 15), (23, 2), (0, 44), (23, 5)] holes 986 alive 986 ghost classes 228 wanted among them 0 161s
+base [(0, 34)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 161s
+base [(23, 9), (0, 24), (23, 3), (0, 54)] holes 592 alive 592 ghost classes 228 wanted among them 0 161s
+base [(46, 2), (46, 11), (0, 46), (46, 11), (0, 22), (46, 5), (0, 46), (46, 11), (0, 22), (46, 11)] holes 790 alive 790 ghost classes 267 wanted among them 0 162s
+base [(0, 47)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 162s
+base [(46, 47), (0, 37), (46, 13), (0, 37)] holes 790 alive 790 ghost classes 228 wanted among them 0 162s
+base [(43, 43), (0, 38), (43, 19), (0, 38)] holes 987 alive 987 ghost classes 353 wanted among them 0 162s
+base [(45, 6), (0, 51), (45, 7), (0, 16)] holes 790 alive 790 ghost classes 228 wanted among them 0 163s
+base [(0, 29)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 163s
+base [(43, 1), (0, 37), (43, 1), (0, 37)] holes 790 alive 790 ghost classes 267 wanted among them 0 163s
+base [(46, 2), (0, 51), (46, 5), (0, 16)] holes 592 alive 592 ghost classes 267 wanted among them 0 163s
+base [(43, 10), (2, 1), (0, 31), (2, 1), (0, 42), (43, 10), (0, 31), (2, 1), (0, 42), (2, 1)] holes 198 alive 198 ghost classes 142 wanted among them 0 164s
+base [(46, 29), (0, 52), (46, 59), (0, 36)] holes 987 alive 987 ghost classes 353 wanted among them 0 164s
+base [(23, 57), (0, 33), (23, 57), (0, 39)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 164s
+base [(45, 11), (32, 7), (0, 54), (32, 6), (0, 24), (45, 11), (0, 54), (32, 7), (0, 24), (32, 6)] holes 285 alive 285 ghost classes 142 wanted among them 0 165s
+base [(0, 58)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 165s
+base [(23, 2), (0, 46), (23, 5), (0, 22)] holes 592 alive 592 ghost classes 228 wanted among them 0 165s
+base [(0, 17)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 165s
+base [(54, 13), (0, 38), (54, 47), (0, 38)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 166s
+base [(9, 10), (23, 6), (0, 51), (23, 7), (0, 16), (9, 10), (0, 51), (23, 6), (0, 16), (23, 7)] holes 790 alive 790 ghost classes 267 wanted among them 0 166s
+base [(56, 31), (0, 17), (56, 42), (0, 48)] holes 790 alive 790 ghost classes 267 wanted among them 0 167s
+base [(0, 45)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 167s
+base [(20, 11), (2, 1), (0, 12), (2, 1), (0, 45), (20, 11), (0, 12), (2, 1), (0, 45), (2, 1)] holes 396 alive 396 ghost classes 142 wanted among them 0 167s
+base [(9, 9), (30, 14), (0, 14), (30, 14), (0, 14), (9, 3), (0, 14), (30, 14), (0, 14), (30, 14)] holes 594 alive 594 ghost classes 181 wanted among them 0 168s
+base [(20, 1), (54, 32), (0, 25), (54, 32), (0, 25), (20, 1), (0, 25), (54, 32), (0, 25), (54, 32)] holes 198 alive 198 ghost classes 142 wanted among them 0 168s
+base [(0, 47)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 168s
+base [(0, 32)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 169s
+base [(0, 50)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 169s
+base [(9, 9), (56, 30), (0, 12), (56, 30), (0, 45), (9, 3), (0, 12), (56, 30), (0, 45), (56, 30)] holes 679 alive 679 ghost classes 228 wanted among them 0 170s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 170s
+base [(0, 28)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 170s
+base [(9, 42), (0, 14), (9, 31), (0, 14)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 171s
+base [(45, 48), (0, 57), (45, 17), (0, 57)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 171s
+base [(43, 55), (0, 56), (43, 55), (0, 34)] holes 987 alive 987 ghost classes 353 wanted among them 0 171s
+base [(45, 5), (0, 15), (45, 2), (0, 44)] holes 592 alive 592 ghost classes 228 wanted among them 0 171s
+base [(9, 6), (30, 1), (0, 16), (30, 1), (0, 51), (9, 7), (0, 16), (30, 1), (0, 51), (30, 1)] holes 790 alive 790 ghost classes 228 wanted among them 0 172s
+base [(20, 11), (43, 2), (0, 41), (43, 5), (0, 41), (20, 11), (0, 41), (43, 2), (0, 41), (43, 5)] holes 592 alive 592 ghost classes 156 wanted among them 0 172s
+base [(0, 36)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 172s
+base [(0, 48)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 173s
+base [(0, 43)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 173s
+base [(0, 27)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 174s
+base [(0, 38)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 174s
+base [(0, 47)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 175s
+base [(9, 3), (0, 30), (9, 9), (0, 30)] holes 592 alive 592 ghost classes 228 wanted among them 0 175s
+base [(56, 21), (0, 35), (56, 21), (0, 27)] holes 790 alive 790 ghost classes 267 wanted among them 0 175s
+base [(0, 44)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 176s
+base [(9, 26), (0, 32), (9, 58), (0, 32)] holes 987 alive 987 ghost classes 314 wanted among them 0 176s
+base [(2, 7), (23, 4), (0, 38), (23, 8), (0, 38), (2, 6), (0, 38), (23, 4), (0, 38), (23, 8)] holes 198 alive 198 ghost classes 142 wanted among them 0 176s
+base [(0, 54)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 176s
+base [(0, 34)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 177s
+base [(0, 17)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 177s
+base [(43, 19), (0, 37), (43, 43), (0, 37)] holes 790 alive 790 ghost classes 267 wanted among them 0 177s
+base [(0, 47)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 178s
+base [(0, 54)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 178s
+base [(32, 2), (0, 31), (32, 5), (0, 42)] holes 592 alive 592 ghost classes 267 wanted among them 0 178s
+base [(0, 41)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 178s
+base [(32, 5), (0, 43), (32, 2), (0, 19)] holes 592 alive 592 ghost classes 267 wanted among them 0 179s
+base [(54, 4), (0, 37), (54, 8), (0, 37)] holes 790 alive 790 ghost classes 228 wanted among them 0 179s
+base [(0, 37)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 179s
+base [(0, 18)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 180s
+base [(0, 57)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 180s
+base [(0, 52)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 180s
+base [(0, 51)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 181s
+base [(0, 12)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 181s
+base [(0, 14)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 182s
+base [(0, 46)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 182s
+base [(0, 18)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 182s
+base [(56, 27), (0, 32), (56, 35), (0, 32)] holes 987 alive 987 ghost classes 353 wanted among them 0 183s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 183s
+base [(32, 10), (0, 35), (32, 10), (0, 27)] holes 790 alive 790 ghost classes 228 wanted among them 0 183s
+base [(0, 26)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 184s
+base [(43, 6), (43, 34), (0, 12), (43, 56), (0, 45), (43, 7), (0, 12), (43, 34), (0, 45), (43, 56)] holes 1184 alive 1184 ghost classes 353 wanted among them 0 184s
+base [(0, 13)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 184s
+base [(0, 36)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 185s
+base [(46, 9), (23, 8), (0, 50), (23, 4), (0, 20), (46, 3), (0, 50), (23, 8), (0, 20), (23, 4)] holes 396 alive 396 ghost classes 142 wanted among them 0 185s
+base [(54, 3), (2, 37), (0, 56), (2, 37), (0, 34), (54, 9), (0, 56), (2, 37), (0, 34), (2, 37)] holes 198 alive 198 ghost classes 142 wanted among them 0 186s
+base [(56, 2), (30, 9), (0, 26), (30, 3), (0, 58), (56, 5), (0, 26), (30, 9), (0, 58), (30, 3)] holes 309 alive 309 ghost classes 70 wanted among them 0 186s
+base [(0, 28)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 187s
+base [(9, 6), (9, 26), (0, 32), (9, 58), (0, 32), (9, 7), (0, 32), (9, 26), (0, 32), (9, 58)] holes 1184 alive 1184 ghost classes 314 wanted among them 0 187s
+base [(75, 3), (45, 18), (0, 51), (45, 49), (0, 16), (75, 9), (0, 51), (45, 18), (0, 16), (45, 49)] holes 198 alive 198 ghost classes 142 wanted among them 0 187s
+base [(2, 2), (0, 28), (2, 5), (0, 40)] holes 592 alive 592 ghost classes 228 wanted among them 0 188s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 188s
+base [(2, 6), (45, 28), (0, 30), (45, 40), (0, 30), (2, 7), (0, 30), (45, 28), (0, 30), (45, 40)] holes 198 alive 198 ghost classes 142 wanted among them 0 188s
+base [(32, 1), (2, 2), (0, 13), (2, 5), (0, 47), (32, 1), (0, 13), (2, 2), (0, 47), (2, 5)] holes 111 alive 111 ghost classes 111 wanted among them 0 188s
+base [(0, 46)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 189s
+base [(43, 7), (43, 55), (0, 44), (43, 55), (0, 15), (43, 6), (0, 44), (43, 55), (0, 15), (43, 55)] holes 988 alive 988 ghost classes 228 wanted among them 0 189s
+base [(20, 6), (0, 50), (20, 7), (0, 20)] holes 790 alive 790 ghost classes 228 wanted among them 0 189s
+base [(54, 7), (32, 3), (0, 44), (32, 9), (0, 15), (54, 6), (0, 44), (32, 3), (0, 15), (32, 9)] holes 198 alive 198 ghost classes 142 wanted among them 0 190s
+base [(23, 45), (0, 57), (23, 12), (0, 57)] holes 790 alive 790 ghost classes 267 wanted among them 0 190s
+base [(56, 5), (45, 36), (0, 16), (45, 52), (0, 51), (56, 2), (0, 16), (45, 36), (0, 51), (45, 52)] holes 111 alive 111 ghost classes 111 wanted among them 0 190s
+base [(75, 11), (0, 14), (75, 11), (0, 14)] holes 790 alive 790 ghost classes 267 wanted among them 0 190s
+base [(2, 10), (0, 17), (2, 10), (0, 48)] holes 790 alive 790 ghost classes 267 wanted among them 0 190s
+base [(0, 55)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 191s
+base [(0, 35)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 191s
+base [(23, 2), (56, 2), (0, 52), (56, 5), (0, 36), (23, 5), (0, 52), (56, 2), (0, 36), (56, 5)] holes 87 alive 87 ghost classes 31 wanted among them 0 191s
+base [(43, 12), (0, 56), (43, 45), (0, 34)] holes 592 alive 592 ghost classes 267 wanted among them 0 192s
+base [(75, 3), (54, 38), (0, 56), (54, 38), (0, 34), (75, 9), (0, 56), (54, 38), (0, 34), (54, 38)] holes 790 alive 790 ghost classes 228 wanted among them 0 192s
+base [(75, 6), (0, 56), (75, 7), (0, 34)] holes 790 alive 790 ghost classes 228 wanted among them 0 192s
+base [(9, 44), (0, 28), (9, 15), (0, 40)] holes 790 alive 790 ghost classes 228 wanted among them 0 192s
+base [(0, 58)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 193s
+base [(0, 29)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 193s
+base [(46, 48), (0, 43), (46, 17), (0, 19)] holes 790 alive 790 ghost classes 228 wanted among them 0 193s
+base [(0, 59)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 194s
+base [(0, 50)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 194s
+base [(0, 55)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 194s
+base [(0, 23)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 195s
+base [(0, 40)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 195s
+base [(0, 32)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 195s
+base [(46, 50), (0, 15), (46, 20), (0, 44)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 196s
+base [(0, 55)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 196s
+base [(54, 2), (0, 14), (54, 5), (0, 14)] holes 592 alive 592 ghost classes 267 wanted among them 0 196s
+base [(43, 11), (0, 25), (43, 11), (0, 25)] holes 790 alive 790 ghost classes 228 wanted among them 0 197s
+base [(75, 6), (43, 2), (0, 49), (43, 5), (0, 18), (75, 7), (0, 49), (43, 2), (0, 18), (43, 5)] holes 111 alive 111 ghost classes 111 wanted among them 0 197s
+base [(0, 52)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 197s
+base [(56, 9), (45, 1), (0, 56), (45, 1), (0, 34), (56, 3), (0, 56), (45, 1), (0, 34), (45, 1)] holes 396 alive 396 ghost classes 142 wanted among them 0 197s
+base [(0, 37)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 198s
+base [(30, 8), (30, 2), (0, 32), (30, 5), (0, 32), (30, 4), (0, 32), (30, 2), (0, 32), (30, 5)] holes 988 alive 988 ghost classes 267 wanted among them 0 198s
+base [(9, 9), (0, 49), (9, 3), (0, 18)] holes 790 alive 790 ghost classes 267 wanted among them 0 198s
+base [(54, 3), (0, 32), (54, 9), (0, 32)] holes 790 alive 790 ghost classes 228 wanted among them 0 199s
+base [(0, 50)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 199s
+base [(0, 38)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 199s
+base [(2, 51), (0, 36), (2, 16), (0, 52)] holes 987 alive 987 ghost classes 353 wanted among them 0 200s
+base [(46, 7), (0, 46), (46, 6), (0, 22)] holes 790 alive 790 ghost classes 267 wanted among them 0 200s
+base [(56, 1), (20, 47), (0, 23), (20, 13), (0, 23), (56, 1), (0, 23), (20, 47), (0, 23), (20, 13)] holes 790 alive 790 ghost classes 228 wanted among them 0 201s
+base [(45, 4), (0, 30), (45, 8), (0, 30)] holes 790 alive 790 ghost classes 228 wanted among them 0 201s
+base [(0, 24)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 201s
+base [(0, 56)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 202s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 202s
+base [(45, 17), (0, 58), (45, 48), (0, 26)] holes 987 alive 987 ghost classes 353 wanted among them 0 202s
+base [(32, 27), (0, 14), (32, 35), (0, 14)] holes 987 alive 987 ghost classes 353 wanted among them 0 203s
+base [(32, 56), (0, 21), (32, 34), (0, 21)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 203s
+base [(32, 1), (54, 8), (0, 30), (54, 4), (0, 30), (32, 1), (0, 30), (54, 8), (0, 30), (54, 4)] holes 198 alive 198 ghost classes 142 wanted among them 0 203s
+base [(0, 17)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 203s
+base [(32, 4), (75, 31), (0, 34), (75, 42), (0, 56), (32, 8), (0, 34), (75, 31), (0, 56), (75, 42)] holes 198 alive 198 ghost classes 142 wanted among them 0 204s
+base [(2, 55), (0, 27), (2, 55), (0, 35)] holes 790 alive 790 ghost classes 228 wanted among them 0 204s
+base [(9, 5), (0, 23), (9, 2), (0, 23)] holes 592 alive 592 ghost classes 267 wanted among them 0 204s
+base [(43, 51), (0, 29), (43, 16), (0, 59)] holes 789 alive 789 ghost classes 314 wanted among them 0 204s
+base [(0, 46)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 205s
+base [(75, 3), (56, 9), (0, 37), (56, 3), (0, 37), (75, 9), (0, 37), (56, 9), (0, 37), (56, 3)] holes 309 alive 309 ghost classes 142 wanted among them 0 205s
+base [(23, 2), (32, 24), (0, 36), (32, 54), (0, 52), (23, 5), (0, 36), (32, 24), (0, 52), (32, 54)] holes 111 alive 111 ghost classes 111 wanted among them 0 206s
+base [(20, 11), (23, 1), (0, 33), (23, 1), (0, 39), (20, 11), (0, 33), (23, 1), (0, 39), (23, 1)] holes 396 alive 396 ghost classes 70 wanted among them 0 206s
+base [(75, 3), (0, 38), (75, 9), (0, 38)] holes 592 alive 592 ghost classes 228 wanted among them 0 207s
+base [(32, 6), (75, 10), (0, 34), (75, 10), (0, 56), (32, 7), (0, 34), (75, 10), (0, 56), (75, 10)] holes 198 alive 198 ghost classes 142 wanted among them 0 207s
+base [(30, 11), (2, 44), (0, 50), (2, 15), (0, 20), (30, 11), (0, 50), (2, 44), (0, 20), (2, 15)] holes 790 alive 790 ghost classes 228 wanted among them 0 207s
+base [(9, 7), (0, 52), (9, 6), (0, 36)] holes 790 alive 790 ghost classes 228 wanted among them 0 207s
+base [(0, 15)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 208s
+base [(0, 25)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 208s
+base [(56, 39), (0, 16), (56, 33), (0, 51)] holes 790 alive 790 ghost classes 228 wanted among them 0 208s
+base [(43, 11), (0, 50), (43, 11), (0, 20)] holes 790 alive 790 ghost classes 228 wanted among them 0 208s
+base [(0, 20)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 209s
+base [(0, 16)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 209s
+base [(9, 52), (0, 15), (9, 36), (0, 44)] holes 592 alive 592 ghost classes 267 wanted among them 0 210s
+base [(32, 10), (0, 12), (32, 10), (0, 45)] holes 790 alive 790 ghost classes 267 wanted among them 0 210s
+base [(23, 49), (0, 55), (23, 18), (0, 55)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 210s
+base [(32, 9), (0, 56), (32, 3), (0, 34)] holes 790 alive 790 ghost classes 267 wanted among them 0 211s
+base [(46, 5), (0, 36), (46, 2), (0, 52)] holes 592 alive 592 ghost classes 267 wanted among them 0 211s
+base [(9, 4), (0, 21), (9, 8), (0, 21)] holes 790 alive 790 ghost classes 267 wanted among them 0 211s
+base [(32, 25), (0, 15), (32, 25), (0, 44)] holes 790 alive 790 ghost classes 267 wanted among them 0 211s
+base [(46, 35), (0, 33), (46, 27), (0, 39)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 212s
+base [(32, 8), (56, 52), (0, 58), (56, 36), (0, 26), (32, 4), (0, 58), (56, 52), (0, 26), (56, 36)] holes 111 alive 111 ghost classes 111 wanted among them 0 212s
+base [(0, 22)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 212s
+base [(0, 37)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 213s
+base [(0, 43)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 213s
+base [(0, 14)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 214s
+base [(0, 46)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 214s
+base [(30, 8), (30, 1), (0, 23), (30, 1), (0, 23), (30, 4), (0, 23), (30, 1), (0, 23), (30, 1)] holes 592 alive 592 ghost classes 228 wanted among them 0 214s
+base [(75, 10), (46, 57), (0, 38), (46, 57), (0, 38), (75, 10), (0, 38), (46, 57), (0, 38), (46, 57)] holes 198 alive 198 ghost classes 142 wanted among them 0 215s
+base [(30, 4), (0, 40), (30, 8), (0, 28)] holes 790 alive 790 ghost classes 267 wanted among them 0 215s
+base [(75, 43), (0, 20), (75, 19), (0, 50)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 215s
+base [(0, 41)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 216s
+base [(54, 7), (0, 52), (54, 6), (0, 36)] holes 790 alive 790 ghost classes 228 wanted among them 0 216s
+base [(0, 59)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 216s
+base [(56, 8), (0, 23), (56, 4), (0, 23)] holes 790 alive 790 ghost classes 228 wanted among them 0 217s
+base [(75, 7), (0, 24), (75, 6), (0, 54)] holes 790 alive 790 ghost classes 228 wanted among them 0 217s
+base [(75, 5), (43, 8), (0, 12), (43, 4), (0, 45), (75, 2), (0, 12), (43, 8), (0, 45), (43, 4)] holes 198 alive 198 ghost classes 142 wanted among them 0 217s
+base [(0, 47)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 217s
+base [(30, 2), (0, 54), (30, 5), (0, 24)] holes 790 alive 790 ghost classes 267 wanted among them 0 217s
+base [(20, 8), (45, 2), (0, 25), (45, 5), (0, 25), (20, 4), (0, 25), (45, 2), (0, 25), (45, 5)] holes 198 alive 198 ghost classes 142 wanted among them 0 218s
+base [(23, 42), (0, 44), (23, 31), (0, 15)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 218s
+base [(43, 7), (0, 21), (43, 6), (0, 21)] holes 790 alive 790 ghost classes 267 wanted among them 0 218s
+base [(30, 3), (0, 13), (30, 9), (0, 47)] holes 592 alive 592 ghost classes 228 wanted among them 0 219s
+base [(56, 2), (30, 1), (0, 15), (30, 1), (0, 44), (56, 5), (0, 15), (30, 1), (0, 44), (30, 1)] holes 592 alive 592 ghost classes 228 wanted among them 0 219s
+base [(45, 59), (0, 46), (45, 29), (0, 22)] holes 790 alive 790 ghost classes 267 wanted among them 0 219s
+base [(0, 33)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 219s
+base [(32, 13), (0, 54), (32, 47), (0, 24)] holes 790 alive 790 ghost classes 228 wanted among them 0 219s
+base [(43, 15), (0, 53), (43, 44), (0, 53)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 220s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 220s
+base [(56, 9), (30, 50), (0, 45), (30, 20), (0, 12), (56, 3), (0, 45), (30, 50), (0, 12), (30, 20)] holes 420 alive 420 ghost classes 142 wanted among them 0 220s
+base [(0, 31)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 221s
+base [(2, 4), (0, 43), (2, 8), (0, 19)] holes 790 alive 790 ghost classes 228 wanted among them 0 221s
+base [(0, 17)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 221s
+base [(0, 41)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 222s
+base [(75, 9), (0, 54), (75, 3), (0, 24)] holes 790 alive 790 ghost classes 267 wanted among them 0 222s
+base [(0, 13)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 222s
+base [(0, 31)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 223s
+base [(23, 2), (23, 22), (0, 17), (23, 46), (0, 48), (23, 5), (0, 17), (23, 22), (0, 48), (23, 46)] holes 1382 alive 1382 ghost classes 353 wanted among them 0 223s
+base [(2, 4), (56, 2), (0, 16), (56, 5), (0, 51), (2, 8), (0, 16), (56, 2), (0, 51), (56, 5)] holes 198 alive 198 ghost classes 142 wanted among them 0 224s
+base [(0, 50)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 224s
+base [(0, 16)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 225s
+base [(0, 46)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 225s
+base [(0, 21)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 226s
+base [(0, 47)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 226s
+base [(0, 44)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 227s
+base [(46, 7), (0, 20), (46, 6), (0, 50)] holes 790 alive 790 ghost classes 228 wanted among them 0 227s
+base [(32, 11), (0, 35), (32, 11), (0, 27)] holes 790 alive 790 ghost classes 267 wanted among them 0 228s
+base [(0, 48)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 228s
+base [(0, 25)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 229s
+base [(0, 22)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 230s
+base [(0, 25)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 231s
+base [(0, 41)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 232s
+base [(30, 6), (0, 33), (30, 7), (0, 39)] holes 592 alive 592 ghost classes 228 wanted among them 0 232s
+base [(0, 45)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 233s
+base [(0, 30)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 234s
+base [(9, 17), (0, 46), (9, 48), (0, 22)] holes 987 alive 987 ghost classes 353 wanted among them 0 234s
+base [(45, 3), (54, 4), (0, 35), (54, 8), (0, 27), (45, 9), (0, 35), (54, 4), (0, 27), (54, 8)] holes 198 alive 198 ghost classes 142 wanted among them 0 235s
+base [(0, 31)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 235s
+base [(30, 9), (43, 21), (0, 29), (43, 21), (0, 59), (30, 3), (0, 29), (43, 21), (0, 59), (43, 21)] holes 198 alive 198 ghost classes 142 wanted among them 0 235s
+base [(9, 23), (0, 55), (9, 23), (0, 55)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 236s
+base [(0, 37)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 236s
+base [(75, 8), (0, 36), (75, 4), (0, 52)] holes 790 alive 790 ghost classes 228 wanted among them 0 236s
+base [(75, 6), (0, 35), (75, 7), (0, 27)] holes 790 alive 790 ghost classes 267 wanted among them 0 237s
+base [(2, 20), (0, 50), (2, 50), (0, 20)] holes 790 alive 790 ghost classes 267 wanted among them 0 237s
+base [(20, 5), (0, 24), (20, 2), (0, 54)] holes 592 alive 592 ghost classes 267 wanted among them 0 237s
+base [(0, 29)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 238s
+base [(0, 25)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 238s
+base [(0, 56)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 238s
+base [(2, 6), (23, 14), (0, 38), (23, 14), (0, 38), (2, 7), (0, 38), (23, 14), (0, 38), (23, 14)] holes 198 alive 198 ghost classes 142 wanted among them 0 239s
+base [(30, 14), (0, 38), (30, 14), (0, 38)] holes 790 alive 790 ghost classes 228 wanted among them 0 239s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 239s
+base [(0, 21)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 240s
+base [(32, 3), (43, 10), (0, 33), (43, 10), (0, 39), (32, 9), (0, 33), (43, 10), (0, 39), (43, 10)] holes 198 alive 198 ghost classes 142 wanted among them 0 240s
+base [(0, 19)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 240s
+base [(0, 30)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 241s
+base [(2, 4), (2, 16), (0, 17), (2, 51), (0, 48), (2, 8), (0, 17), (2, 16), (0, 48), (2, 51)] holes 987 alive 987 ghost classes 314 wanted among them 0 241s
+base [(54, 49), (0, 21), (54, 18), (0, 21)] holes 987 alive 987 ghost classes 353 wanted among them 0 241s
+base [(45, 1), (9, 8), (0, 43), (9, 4), (0, 19), (45, 1), (0, 43), (9, 8), (0, 19), (9, 4)] holes 198 alive 198 ghost classes 142 wanted among them 0 242s
+base [(32, 5), (43, 21), (0, 57), (43, 21), (0, 57), (32, 2), (0, 57), (43, 21), (0, 57), (43, 21)] holes 309 alive 309 ghost classes 70 wanted among them 0 242s
+base [(45, 1), (0, 31), (45, 1), (0, 42)] holes 790 alive 790 ghost classes 267 wanted among them 0 242s
+base [(0, 25)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 243s
+base [(0, 27)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 244s
+base [(45, 24), (0, 24), (45, 54), (0, 54)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 244s
+base [(45, 26), (0, 42), (45, 58), (0, 31)] holes 790 alive 790 ghost classes 228 wanted among them 0 244s
+base [(23, 2), (0, 48), (23, 5), (0, 17)] holes 592 alive 592 ghost classes 267 wanted among them 0 245s
+base [(56, 10), (0, 52), (56, 10), (0, 36)] holes 790 alive 790 ghost classes 267 wanted among them 0 245s
+base [(0, 54)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 245s
+base [(0, 27)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 245s
+base [(56, 30), (0, 52), (56, 30), (0, 36)] holes 790 alive 790 ghost classes 267 wanted among them 0 246s
+base [(30, 11), (56, 5), (0, 47), (56, 2), (0, 13), (30, 11), (0, 47), (56, 5), (0, 13), (56, 2)] holes 420 alive 420 ghost classes 181 wanted among them 0 246s
+base [(23, 2), (32, 1), (0, 56), (32, 1), (0, 34), (23, 5), (0, 56), (32, 1), (0, 34), (32, 1)] holes 198 alive 198 ghost classes 142 wanted among them 0 246s
+base [(43, 47), (0, 22), (43, 13), (0, 46)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 247s
+base [(0, 28)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 247s
+base [(0, 46)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 247s
+base [(45, 20), (0, 23), (45, 50), (0, 23)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 248s
+base [(56, 9), (30, 52), (0, 40), (30, 36), (0, 28), (56, 3), (0, 40), (30, 52), (0, 28), (30, 36)] holes 507 alive 507 ghost classes 181 wanted among them 0 248s
+base [(54, 59), (0, 16), (54, 29), (0, 51)] holes 790 alive 790 ghost classes 267 wanted among them 0 249s
+base [(20, 20), (0, 41), (20, 50), (0, 41)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 249s
+base [(20, 6), (0, 25), (20, 7), (0, 25)] holes 790 alive 790 ghost classes 228 wanted among them 0 249s
+base [(0, 29)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 250s
+base [(75, 2), (2, 20), (0, 18), (2, 50), (0, 49), (75, 5), (0, 18), (2, 20), (0, 49), (2, 50)] holes 111 alive 111 ghost classes 111 wanted among them 0 250s
+base [(0, 25)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 250s
+base [(0, 17)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 251s
+base [(45, 58), (0, 21), (45, 26), (0, 21)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 251s
+base [(0, 14)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 252s
+base [(30, 6), (0, 42), (30, 7), (0, 31)] holes 592 alive 592 ghost classes 267 wanted among them 0 252s
+base [(46, 17), (0, 16), (46, 48), (0, 51)] holes 987 alive 987 ghost classes 353 wanted among them 0 253s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 253s
+base [(0, 26)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 254s
+base [(0, 22)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 255s
+base [(0, 59)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 255s
+base [(2, 9), (0, 40), (2, 3), (0, 28)] holes 790 alive 790 ghost classes 267 wanted among them 0 256s
+base [(23, 7), (32, 30), (0, 55), (32, 30), (0, 55), (23, 6), (0, 55), (32, 30), (0, 55), (32, 30)] holes 198 alive 198 ghost classes 142 wanted among them 0 256s
+base [(0, 32)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 257s
+base [(32, 9), (0, 34), (32, 3), (0, 56)] holes 790 alive 790 ghost classes 228 wanted among them 0 258s
+base [(45, 32), (0, 29), (45, 32), (0, 59)] holes 790 alive 790 ghost classes 267 wanted among them 0 258s
+base [(0, 39)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 258s
+base [(23, 10), (0, 27), (23, 10), (0, 35)] holes 790 alive 790 ghost classes 267 wanted among them 0 259s
+base [(23, 47), (0, 25), (23, 13), (0, 25)] holes 987 alive 987 ghost classes 353 wanted among them 0 259s
+base [(0, 55)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 259s
+base [(9, 4), (32, 31), (0, 19), (32, 42), (0, 43), (9, 8), (0, 19), (32, 31), (0, 43), (32, 42)] holes 198 alive 198 ghost classes 142 wanted among them 0 260s
+base [(56, 7), (75, 10), (0, 29), (75, 10), (0, 59), (56, 6), (0, 29), (75, 10), (0, 59), (75, 10)] holes 198 alive 198 ghost classes 142 wanted among them 0 261s
+base [(43, 7), (75, 27), (0, 31), (75, 35), (0, 42), (43, 6), (0, 31), (75, 27), (0, 42), (75, 35)] holes 198 alive 198 ghost classes 142 wanted among them 0 261s
+base [(23, 4), (32, 11), (0, 36), (32, 11), (0, 52), (23, 8), (0, 36), (32, 11), (0, 52), (32, 11)] holes 396 alive 396 ghost classes 142 wanted among them 0 262s
+base [(30, 8), (0, 32), (30, 4), (0, 32)] holes 790 alive 790 ghost classes 267 wanted among them 0 262s
+base [(32, 6), (46, 54), (0, 31), (46, 24), (0, 42), (32, 7), (0, 31), (46, 54), (0, 42), (46, 24)] holes 790 alive 790 ghost classes 228 wanted among them 0 263s
+base [(0, 22)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 264s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 265s
+base [(45, 3), (56, 26), (0, 50), (56, 58), (0, 20), (45, 9), (0, 50), (56, 26), (0, 20), (56, 58)] holes 309 alive 309 ghost classes 142 wanted among them 0 265s
+base [(2, 49), (0, 36), (2, 18), (0, 52)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 266s
+base [(0, 56)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 267s
+base [(0, 31)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 268s
+base [(2, 13), (0, 55), (2, 47), (0, 55)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 268s
+base [(0, 52)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 268s
+base [(43, 18), (0, 19), (43, 49), (0, 43)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 269s
+base [(23, 7), (0, 46), (23, 6), (0, 22)] holes 790 alive 790 ghost classes 228 wanted among them 0 269s
+base [(46, 5), (0, 53), (46, 2), (0, 53)] holes 592 alive 592 ghost classes 267 wanted among them 0 270s
+base [(32, 27), (0, 59), (32, 35), (0, 29)] holes 789 alive 789 ghost classes 314 wanted among them 0 270s
+base [(0, 21)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 271s
+base [(2, 3), (45, 49), (0, 54), (45, 18), (0, 24), (2, 9), (0, 54), (45, 49), (0, 24), (45, 18)] holes 198 alive 198 ghost classes 142 wanted among them 0 271s
+base [(54, 3), (0, 26), (54, 9), (0, 58)] holes 790 alive 790 ghost classes 267 wanted among them 0 271s
+base [(43, 7), (0, 57), (43, 6), (0, 57)] holes 790 alive 790 ghost classes 228 wanted among them 0 271s
+base [(75, 2), (0, 14), (75, 5), (0, 14)] holes 592 alive 592 ghost classes 267 wanted among them 0 271s
+base [(75, 28), (0, 15), (75, 40), (0, 44)] holes 987 alive 987 ghost classes 353 wanted among them 0 272s
+base [(23, 2), (2, 32), (0, 37), (2, 32), (0, 37), (23, 5), (0, 37), (2, 32), (0, 37), (2, 32)] holes 111 alive 111 ghost classes 111 wanted among them 0 272s
+base [(46, 8), (56, 11), (0, 25), (56, 11), (0, 25), (46, 4), (0, 25), (56, 11), (0, 25), (56, 11)] holes 396 alive 396 ghost classes 70 wanted among them 0 273s
+base [(56, 1), (0, 13), (56, 1), (0, 47)] holes 790 alive 790 ghost classes 228 wanted among them 0 273s
+base [(0, 25)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 273s
+base [(45, 10), (0, 49), (45, 10), (0, 18)] holes 790 alive 790 ghost classes 267 wanted among them 0 274s
+base [(0, 51)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 274s
+base [(54, 9), (0, 58), (54, 3), (0, 26)] holes 790 alive 790 ghost classes 228 wanted among them 0 274s
+base [(54, 55), (0, 31), (54, 55), (0, 42)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 274s
+base [(46, 11), (0, 58), (46, 11), (0, 26)] holes 790 alive 790 ghost classes 267 wanted among them 0 275s
+base [(2, 4), (20, 3), (0, 30), (20, 9), (0, 30), (2, 8), (0, 30), (20, 3), (0, 30), (20, 9)] holes 592 alive 592 ghost classes 228 wanted among them 0 275s
+base [(45, 3), (32, 59), (0, 56), (32, 29), (0, 34), (45, 9), (0, 56), (32, 59), (0, 34), (32, 29)] holes 198 alive 198 ghost classes 142 wanted among them 0 276s
+base [(0, 49)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 276s
+base [(46, 6), (54, 47), (0, 14), (54, 13), (0, 14), (46, 7), (0, 14), (54, 47), (0, 14), (54, 13)] holes 198 alive 198 ghost classes 142 wanted among them 0 276s
+base [(0, 59)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 277s
+base [(43, 6), (75, 9), (0, 56), (75, 3), (0, 34), (43, 7), (0, 56), (75, 9), (0, 34), (75, 3)] holes 396 alive 396 ghost classes 142 wanted among them 0 277s
+base [(46, 11), (0, 36), (46, 11), (0, 52)] holes 790 alive 790 ghost classes 267 wanted among them 0 277s
+base [(0, 48)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 277s
+base [(43, 7), (0, 23), (43, 6), (0, 23)] holes 790 alive 790 ghost classes 267 wanted among them 0 278s
+base [(0, 29)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 278s
+base [(56, 10), (56, 3), (0, 56), (56, 9), (0, 34), (56, 10), (0, 56), (56, 3), (0, 34), (56, 9)] holes 988 alive 988 ghost classes 267 wanted among them 0 279s
+base [(23, 22), (0, 17), (23, 46), (0, 48)] holes 987 alive 987 ghost classes 353 wanted among them 0 279s
+base [(32, 9), (20, 7), (0, 33), (20, 6), (0, 39), (32, 3), (0, 33), (20, 7), (0, 39), (20, 6)] holes 198 alive 198 ghost classes 142 wanted among them 0 279s
+base [(20, 6), (23, 10), (0, 44), (23, 10), (0, 15), (20, 7), (0, 44), (23, 10), (0, 15), (23, 10)] holes 988 alive 988 ghost classes 228 wanted among them 0 279s
+base [(0, 33)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 280s
+base [(75, 1), (0, 51), (75, 1), (0, 16)] holes 790 alive 790 ghost classes 267 wanted among them 0 280s
+base [(0, 36)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 280s
+base [(75, 45), (0, 43), (75, 12), (0, 19)] holes 790 alive 790 ghost classes 267 wanted among them 0 281s
+base [(0, 39)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 281s
+base [(2, 56), (0, 47), (2, 34), (0, 13)] holes 987 alive 987 ghost classes 314 wanted among them 0 281s
+base [(75, 31), (0, 21), (75, 42), (0, 21)] holes 987 alive 987 ghost classes 353 wanted among them 0 282s
+base [(9, 8), (20, 27), (0, 23), (20, 35), (0, 23), (9, 4), (0, 23), (20, 27), (0, 23), (20, 35)] holes 396 alive 396 ghost classes 142 wanted among them 0 282s
+base [(20, 9), (2, 17), (0, 52), (2, 48), (0, 36), (20, 3), (0, 52), (2, 17), (0, 36), (2, 48)] holes 111 alive 111 ghost classes 111 wanted among them 0 283s
+base [(0, 16)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 283s
+base [(75, 20), (0, 29), (75, 50), (0, 59)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 284s
+base [(2, 6), (20, 18), (0, 19), (20, 49), (0, 43), (2, 7), (0, 19), (20, 18), (0, 43), (20, 49)] holes 198 alive 198 ghost classes 142 wanted among them 0 284s
+base [(45, 30), (0, 58), (45, 30), (0, 26)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 285s
+base [(30, 37), (0, 51), (30, 37), (0, 16)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 286s
+base [(0, 39)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 286s
+base [(0, 23)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 286s
+base [(32, 1), (0, 42), (32, 1), (0, 31)] holes 790 alive 790 ghost classes 228 wanted among them 0 287s
+base [(75, 9), (0, 24), (75, 3), (0, 54)] holes 790 alive 790 ghost classes 228 wanted among them 0 287s
+base [(0, 27)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 288s
+base [(23, 7), (75, 5), (0, 51), (75, 2), (0, 16), (23, 6), (0, 51), (75, 5), (0, 16), (75, 2)] holes 198 alive 198 ghost classes 142 wanted among them 0 288s
+base [(75, 11), (54, 53), (0, 39), (54, 53), (0, 33), (75, 11), (0, 39), (54, 53), (0, 33), (54, 53)] holes 396 alive 396 ghost classes 142 wanted among them 0 288s
+base [(0, 21)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 289s
+base [(9, 4), (0, 25), (9, 8), (0, 25)] holes 790 alive 790 ghost classes 228 wanted among them 0 289s
+base [(32, 5), (0, 59), (32, 2), (0, 29)] holes 592 alive 592 ghost classes 228 wanted among them 0 290s
+base [(0, 31)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 290s
+base [(0, 40)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 291s
+base [(0, 51)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 291s
+base [(56, 10), (0, 44), (56, 10), (0, 15)] holes 790 alive 790 ghost classes 267 wanted among them 0 292s
+base [(0, 18)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 293s
+base [(46, 11), (46, 9), (0, 48), (46, 3), (0, 17), (46, 11), (0, 48), (46, 9), (0, 17), (46, 3)] holes 790 alive 790 ghost classes 228 wanted among them 0 294s
+base [(9, 5), (9, 42), (0, 49), (9, 31), (0, 18), (9, 2), (0, 49), (9, 42), (0, 18), (9, 31)] holes 592 alive 592 ghost classes 267 wanted among them 0 295s
+base [(46, 39), (0, 32), (46, 33), (0, 32)] holes 592 alive 592 ghost classes 228 wanted among them 0 296s
+base [(9, 1), (2, 47), (0, 17), (2, 13), (0, 48), (9, 1), (0, 17), (2, 47), (0, 48), (2, 13)] holes 198 alive 198 ghost classes 142 wanted among them 0 296s
+base [(0, 14)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 297s
+base [(45, 10), (46, 17), (0, 24), (46, 48), (0, 54), (45, 10), (0, 24), (46, 17), (0, 54), (46, 48)] holes 198 alive 198 ghost classes 142 wanted among them 0 298s
+base [(0, 23)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 298s
+base [(56, 29), (0, 52), (56, 59), (0, 36)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 299s
+base [(2, 44), (0, 58), (2, 15), (0, 26)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 300s
+base [(0, 34)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 300s
+base [(56, 10), (56, 4), (0, 52), (56, 8), (0, 36), (56, 10), (0, 52), (56, 4), (0, 36), (56, 8)] holes 790 alive 790 ghost classes 267 wanted among them 0 301s
+base [(0, 12)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 302s
+base [(54, 47), (0, 43), (54, 13), (0, 19)] holes 790 alive 790 ghost classes 228 wanted among them 0 302s
+base [(75, 8), (0, 30), (75, 4), (0, 30)] holes 790 alive 790 ghost classes 267 wanted among them 0 303s
+base [(45, 33), (0, 37), (45, 39), (0, 37)] holes 592 alive 592 ghost classes 228 wanted among them 0 304s
+base [(56, 7), (0, 49), (56, 6), (0, 18)] holes 790 alive 790 ghost classes 228 wanted among them 0 304s
+base [(54, 5), (46, 32), (0, 18), (46, 32), (0, 49), (54, 2), (0, 18), (46, 32), (0, 49), (46, 32)] holes 309 alive 309 ghost classes 70 wanted among them 0 305s
+base [(0, 20)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 305s
+base [(46, 57), (0, 29), (46, 57), (0, 59)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 306s
+base [(9, 58), (0, 17), (9, 26), (0, 48)] holes 987 alive 987 ghost classes 353 wanted among them 0 306s
+base [(0, 39)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 307s
+base [(46, 1), (46, 49), (0, 53), (46, 18), (0, 53), (46, 1), (0, 53), (46, 49), (0, 53), (46, 18)] holes 1580 alive 1580 ghost classes 353 wanted among them 0 308s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 309s
+base [(0, 22)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 310s
+base [(20, 24), (0, 36), (20, 54), (0, 52)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 310s
+base [(56, 1), (30, 19), (0, 39), (30, 43), (0, 33), (56, 1), (0, 39), (30, 19), (0, 33), (30, 43)] holes 198 alive 198 ghost classes 142 wanted among them 0 311s
+base [(46, 11), (46, 2), (0, 19), (46, 5), (0, 43), (46, 11), (0, 19), (46, 2), (0, 43), (46, 5)] holes 790 alive 790 ghost classes 228 wanted among them 0 312s
+base [(0, 40)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 313s
+base [(0, 17)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 314s
+base [(0, 51)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 315s
+base [(2, 12), (0, 17), (2, 45), (0, 48)] holes 592 alive 592 ghost classes 267 wanted among them 0 316s
+base [(0, 39)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 316s
+base [(0, 56)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 317s
+base [(46, 8), (0, 27), (46, 4), (0, 35)] holes 790 alive 790 ghost classes 228 wanted among them 0 317s
+base [(54, 2), (0, 37), (54, 5), (0, 37)] holes 592 alive 592 ghost classes 228 wanted among them 0 318s
+base [(32, 7), (23, 2), (0, 39), (23, 5), (0, 33), (32, 6), (0, 39), (23, 2), (0, 33), (23, 5)] holes 592 alive 592 ghost classes 228 wanted among them 0 318s
+base [(30, 11), (30, 11), (0, 38), (30, 11), (0, 38), (30, 11), (0, 38), (30, 11), (0, 38), (30, 11)] holes 790 alive 790 ghost classes 228 wanted among them 0 319s
+base [(54, 1), (0, 54), (54, 1), (0, 24)] holes 790 alive 790 ghost classes 228 wanted among them 0 319s
+base [(0, 35)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 320s
+base [(0, 35)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 321s
+base [(43, 21), (0, 39), (43, 21), (0, 33)] holes 1185 alive 1185 ghost classes 353 wanted among them 0 322s
+base [(0, 53)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 323s
+base [(0, 22)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 323s
+base [(54, 10), (45, 10), (0, 33), (45, 10), (0, 39), (54, 10), (0, 33), (45, 10), (0, 39), (45, 10)] holes 420 alive 420 ghost classes 181 wanted among them 0 324s
+base [(23, 56), (0, 18), (23, 34), (0, 49)] holes 592 alive 592 ghost classes 228 wanted among them 0 324s
+base [(32, 10), (20, 17), (0, 22), (20, 48), (0, 46), (32, 10), (0, 22), (20, 17), (0, 46), (20, 48)] holes 198 alive 198 ghost classes 142 wanted among them 0 325s
+base [(0, 40)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 326s
+base [(0, 54)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 326s
+base [(56, 5), (56, 7), (0, 21), (56, 6), (0, 21), (56, 2), (0, 21), (56, 7), (0, 21), (56, 6)] holes 592 alive 592 ghost classes 228 wanted among them 0 327s
+base [(0, 52)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 328s
+base [(0, 57)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 328s
+base [(56, 38), (0, 20), (56, 38), (0, 50)] holes 790 alive 790 ghost classes 228 wanted among them 0 330s
+base [(0, 21)] holes 3097 alive 3097 ghost classes 484 wanted among them 0 330s
+base [(75, 3), (54, 27), (0, 23), (54, 35), (0, 23), (75, 9), (0, 23), (54, 27), (0, 23), (54, 35)] holes 198 alive 198 ghost classes 142 wanted among them 0 331s

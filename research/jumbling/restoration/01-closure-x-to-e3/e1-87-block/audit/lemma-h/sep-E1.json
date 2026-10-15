@@ -1,0 +1,1271 @@
+{
+ "table_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+ "off_checked": 90,
+ "holes": 90,
+ "off_with_any_candidate_chamber": 3,
+ "off_with_candidate_hole": 0,
+ "holes_that_some_off_piece_may_meet": [],
+ "controls": 20,
+ "controls_exactly_own_chamber": 20,
+ "rows": [
+  {
+   "piece": 3569,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 3784,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 7821,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 10394,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 11273,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 11825,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 12803,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 12819,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 16245,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 6,
+   "candidate_chambers": 2,
+   "candidate_holes": [],
+   "candidate_occupied": 2,
+   "candidates_sample": [
+    84069,
+    84070
+   ]
+  },
+  {
+   "piece": 16249,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 7,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    84070
+   ]
+  },
+  {
+   "piece": 16875,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 19053,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 20927,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 21747,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 26588,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 29386,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 2,
+   "inside_cuts": 9,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 32088,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 7,
+   "candidate_chambers": 2,
+   "candidate_holes": [],
+   "candidate_occupied": 2,
+   "candidates_sample": [
+    84070,
+    84071
+   ]
+  },
+  {
+   "piece": 34124,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 35533,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 35538,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 35539,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 35543,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 37728,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 37729,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 37753,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 37754,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 3,
+   "inside_cuts": 8,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 38105,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 38107,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 38109,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 38705,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 38706,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 45970,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 46434,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 47354,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 49566,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 49572,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 50178,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 2,
+   "inside_cuts": 9,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 50442,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 52223,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 52235,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 52236,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 52625,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 55053,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 56711,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 61058,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 69000,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 72710,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 72711,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 72716,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 72718,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 76768,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 3,
+   "inside_cuts": 8,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 79429,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 79444,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 79445,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 79446,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 81761,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 82634,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 87786,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 90390,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 90533,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 90780,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 91687,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 91688,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 91692,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 96080,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 2,
+   "inside_cuts": 9,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 96548,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 96853,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 96964,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 98110,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 98115,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 106420,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 106427,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 116900,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 117078,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 117476,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 117858,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 125408,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 127115,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 129237,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 131221,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 134719,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 151672,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 154787,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 154855,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 156041,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 156377,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 156780,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 1,
+   "inside_cuts": 10,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 169852,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 170029,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 172020,
+   "lattice": false,
+   "own_chamber": -1,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 0,
+   "candidate_holes": [],
+   "candidate_occupied": 0,
+   "candidates_sample": []
+  },
+  {
+   "piece": 7605,
+   "lattice": true,
+   "own_chamber": 173801,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    173801
+   ]
+  },
+  {
+   "piece": 13601,
+   "lattice": true,
+   "own_chamber": 116333,
+   "straddled_cuts": 0,
+   "inside_cuts": 9,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    116333
+   ]
+  },
+  {
+   "piece": 26746,
+   "lattice": true,
+   "own_chamber": 58780,
+   "straddled_cuts": 0,
+   "inside_cuts": 9,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    58780
+   ]
+  },
+  {
+   "piece": 29692,
+   "lattice": true,
+   "own_chamber": 20626,
+   "straddled_cuts": 0,
+   "inside_cuts": 5,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    20626
+   ]
+  },
+  {
+   "piece": 41148,
+   "lattice": true,
+   "own_chamber": 147480,
+   "straddled_cuts": 0,
+   "inside_cuts": 14,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    147480
+   ]
+  },
+  {
+   "piece": 64682,
+   "lattice": true,
+   "own_chamber": 147719,
+   "straddled_cuts": 0,
+   "inside_cuts": 17,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    147719
+   ]
+  },
+  {
+   "piece": 65332,
+   "lattice": true,
+   "own_chamber": 55437,
+   "straddled_cuts": 0,
+   "inside_cuts": 13,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    55437
+   ]
+  },
+  {
+   "piece": 65405,
+   "lattice": true,
+   "own_chamber": 130180,
+   "straddled_cuts": 0,
+   "inside_cuts": 15,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    130180
+   ]
+  },
+  {
+   "piece": 67008,
+   "lattice": true,
+   "own_chamber": 132602,
+   "straddled_cuts": 0,
+   "inside_cuts": 8,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    132602
+   ]
+  },
+  {
+   "piece": 94051,
+   "lattice": true,
+   "own_chamber": 110868,
+   "straddled_cuts": 0,
+   "inside_cuts": 14,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    110868
+   ]
+  },
+  {
+   "piece": 97531,
+   "lattice": true,
+   "own_chamber": 136928,
+   "straddled_cuts": 0,
+   "inside_cuts": 14,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    136928
+   ]
+  },
+  {
+   "piece": 99883,
+   "lattice": true,
+   "own_chamber": 103221,
+   "straddled_cuts": 0,
+   "inside_cuts": 5,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    103221
+   ]
+  },
+  {
+   "piece": 122136,
+   "lattice": true,
+   "own_chamber": 120552,
+   "straddled_cuts": 0,
+   "inside_cuts": 12,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    120552
+   ]
+  },
+  {
+   "piece": 123039,
+   "lattice": true,
+   "own_chamber": 97983,
+   "straddled_cuts": 0,
+   "inside_cuts": 16,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    97983
+   ]
+  },
+  {
+   "piece": 139027,
+   "lattice": true,
+   "own_chamber": 101223,
+   "straddled_cuts": 0,
+   "inside_cuts": 5,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    101223
+   ]
+  },
+  {
+   "piece": 142624,
+   "lattice": true,
+   "own_chamber": 27895,
+   "straddled_cuts": 0,
+   "inside_cuts": 9,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    27895
+   ]
+  },
+  {
+   "piece": 150536,
+   "lattice": true,
+   "own_chamber": 160046,
+   "straddled_cuts": 0,
+   "inside_cuts": 11,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    160046
+   ]
+  },
+  {
+   "piece": 163376,
+   "lattice": true,
+   "own_chamber": 132180,
+   "straddled_cuts": 0,
+   "inside_cuts": 10,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    132180
+   ]
+  },
+  {
+   "piece": 170213,
+   "lattice": true,
+   "own_chamber": 168281,
+   "straddled_cuts": 0,
+   "inside_cuts": 7,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    168281
+   ]
+  },
+  {
+   "piece": 171015,
+   "lattice": true,
+   "own_chamber": 135197,
+   "straddled_cuts": 0,
+   "inside_cuts": 12,
+   "candidate_chambers": 1,
+   "candidate_holes": [],
+   "candidate_occupied": 1,
+   "candidates_sample": [
+    135197
+   ]
+  }
+ ],
+ "seconds": 4.7
+}

@@ -1,0 +1,557 @@
+{
+ "E2_sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893",
+ "table_digest_field": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "n_pieces": 177120,
+ "sim_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "off": [
+  16245,
+  16249,
+  32088
+ ],
+ "bprime_json_pose_ids": [
+  7200,
+  7200,
+  7200
+ ],
+ "bprime_one_pose_sim": true,
+ "bprime_pose_in_Kplus": false,
+ "bprime_pose_json": [
+  [
+   [
+    -3,
+    1,
+    8
+   ],
+   [
+    0,
+    -1,
+    4
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    -1,
+    0,
+    2
+   ]
+  ],
+  [
+   [
+    0,
+    0,
+    1
+   ],
+   [
+    3,
+    -1,
+    8
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    3,
+    0,
+    4
+   ]
+  ],
+  [
+   [
+    -1,
+    0,
+    4
+   ],
+   [
+    1,
+    1,
+    4
+   ],
+   [
+    -5,
+    1,
+    8
+   ],
+   [
+    -1,
+    -1,
+    8
+   ]
+  ],
+  [
+   [
+    1,
+    3,
+    8
+   ],
+   [
+    -1,
+    1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ]
+  ]
+ ],
+ "bprime_pose_sim": [
+  [
+   [
+    -3,
+    1,
+    8
+   ],
+   [
+    0,
+    -1,
+    4
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    -1,
+    0,
+    2
+   ]
+  ],
+  [
+   [
+    0,
+    0,
+    1
+   ],
+   [
+    3,
+    -1,
+    8
+   ],
+   [
+    -3,
+    -1,
+    8
+   ],
+   [
+    3,
+    0,
+    4
+   ]
+  ],
+  [
+   [
+    -1,
+    0,
+    4
+   ],
+   [
+    1,
+    1,
+    4
+   ],
+   [
+    -5,
+    1,
+    8
+   ],
+   [
+    -1,
+    -1,
+    8
+   ]
+  ],
+  [
+   [
+    1,
+    3,
+    8
+   ],
+   [
+    -1,
+    1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ],
+   [
+    1,
+    -1,
+    8
+   ]
+  ]
+ ],
+ "off_fingerprint_lib": "470915bf8a2190871f0d419ac4b8dd9a98cc3aabdd2b51f64645ac63f4eac27f",
+ "off_fingerprint_json": "470915bf8a2190871f0d419ac4b8dd9a98cc3aabdd2b51f64645ac63f4eac27f",
+ "menu_items": 60,
+ "letters": {
+  "R": {
+   "letter": [
+    237,
+    13
+   ],
+   "in_Kplus": false,
+   "inverses": [
+    [
+     237,
+     47
+    ]
+   ]
+  },
+  "Rinv_claimed": {
+   "letter": [
+    237,
+    47
+   ],
+   "in_Kplus": false,
+   "inverses": [
+    [
+     237,
+     13
+    ]
+   ]
+  },
+  "x0": {
+   "letter": [
+    91,
+    6
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     91,
+     7
+    ]
+   ]
+  },
+  "x0inv_claimed": {
+   "letter": [
+    91,
+    7
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     91,
+     6
+    ]
+   ]
+  },
+  "x1": {
+   "letter": [
+    154,
+    7
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     154,
+     6
+    ]
+   ]
+  },
+  "x1inv_claimed": {
+   "letter": [
+    154,
+    6
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     154,
+     7
+    ]
+   ]
+  },
+  "x2": {
+   "letter": [
+    133,
+    1
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     133,
+     1
+    ]
+   ]
+  },
+  "x3": {
+   "letter": [
+    183,
+    6
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     183,
+     7
+    ]
+   ]
+  },
+  "x3inv_in_Pinv": {
+   "letter": [
+    183,
+    7
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     183,
+     6
+    ]
+   ]
+  },
+  "F": {
+   "letter": [
+    162,
+    1
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     162,
+     1
+    ]
+   ]
+  },
+  "V0": {
+   "letter": [
+    328,
+    2
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     328,
+     5
+    ]
+   ]
+  },
+  "V1": {
+   "letter": [
+    147,
+    11
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     147,
+     11
+    ]
+   ]
+  },
+  "V2": {
+   "letter": [
+    46,
+    2
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     46,
+     5
+    ]
+   ]
+  },
+  "V3": {
+   "letter": [
+    72,
+    1
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     72,
+     1
+    ]
+   ]
+  },
+  "V4": {
+   "letter": [
+    29,
+    11
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     29,
+     11
+    ]
+   ]
+  },
+  "V5": {
+   "letter": [
+    0,
+    1
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "V6": {
+   "letter": [
+    38,
+    1
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     38,
+     1
+    ]
+   ]
+  },
+  "V7": {
+   "letter": [
+    108,
+    1
+   ],
+   "in_Kplus": true,
+   "inverses": [
+    [
+     108,
+     1
+    ]
+   ]
+  }
+ },
+ "P_lengths": [
+  1,
+  3,
+  7,
+  15,
+  31
+ ],
+ "P4_equals_P4json": true,
+ "parts_P_equals_P4": true,
+ "parts_Pinv_is_mirror_inverse": true,
+ "parts_Vinv_is_mirror_inverse": true,
+ "parts_Q": [
+  [
+   162,
+   1
+  ]
+ ],
+ "word_full_is_concat": true,
+ "word_full_len": 79,
+ "w3_P_equals_P4": true,
+ "w3_Q": [
+  [
+   162,
+   1
+  ]
+ ],
+ "shrink_P_equal_recursion": [
+  true,
+  true,
+  true,
+  true,
+  true
+ ],
+ "typeS_P_equals_P4": true,
+ "typeS_Q0_len": 8,
+ "typeS_Q0_equals_V3": true,
+ "typeS_full_is_P_Q0_F_Pinv": true,
+ "typeS_len": 71,
+ "report_written_P4_len": 31,
+ "report_written_P4_equals": true,
+ "report_written_V3_equals": true,
+ "safe_grips": 592,
+ "safe_letters": 6512,
+ "orbits": 686,
+ "singletons": 651,
+ "blocked": [
+  232,
+  237,
+  250,
+  257,
+  273,
+  301,
+  307,
+  356
+ ],
+ "blocked_detail": {
+  "232": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "237": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "250": {
+   "straddled": true,
+   "off_inside": 0
+  },
+  "257": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "273": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "301": {
+   "straddled": false,
+   "off_inside": 3
+  },
+  "307": {
+   "straddled": true,
+   "off_inside": 2
+  },
+  "356": {
+   "straddled": false,
+   "off_inside": 3
+  }
+ },
+ "holes": [
+  24905,
+  89251,
+  89252
+ ],
+ "V3_all_safe_all_letters_at_E2": true,
+ "F_safe_all_at_E2": true,
+ "x_safe_all_at_E2": {
+  "(91, 6)": true,
+  "(154, 7)": true,
+  "(133, 1)": true,
+  "(183, 6)": true
+ },
+ "pre_safe_grips_equal": true,
+ "seg2_E2_safe_grips_equal": true,
+ "seg2_E2_blocked_equal": true,
+ "holes_orbits": {
+  "24905": [
+   15,
+   7200
+  ],
+  "89251": [
+   14,
+   3599
+  ],
+  "89252": [
+   15,
+   7200
+  ]
+ },
+ "sec": 22.1
+}

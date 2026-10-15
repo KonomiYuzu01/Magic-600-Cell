@@ -1,0 +1,8078 @@
+{
+ "summary": {
+  "classes": 500,
+  "core_ok": 492,
+  "in_harvest_bound": 353,
+  "with_seed": 76,
+  "with_3_footprints": 3,
+  "by_registry": {
+   "0": {
+    "classes": 16,
+    "core_ok": 8,
+    "in_bound": 0,
+    "with_seed": 0
+   },
+   "1": {
+    "classes": 131,
+    "core_ok": 131,
+    "in_bound": 20,
+    "with_seed": 0
+   },
+   "2|5a": {
+    "classes": 86,
+    "core_ok": 86,
+    "in_bound": 73,
+    "with_seed": 5
+   },
+   "2|5b": {
+    "classes": 86,
+    "core_ok": 86,
+    "in_bound": 81,
+    "with_seed": 4
+   },
+   "3": {
+    "classes": 111,
+    "core_ok": 111,
+    "in_bound": 111,
+    "with_seed": 26
+   },
+   "4": {
+    "classes": 31,
+    "core_ok": 31,
+    "in_bound": 31,
+    "with_seed": 31
+   },
+   "6": {
+    "classes": 39,
+    "core_ok": 39,
+    "in_bound": 37,
+    "with_seed": 10
+   }
+  },
+  "classes_present_X": 34,
+  "classes_present_with_seed_X": 34,
+  "classes_present_E1": 34,
+  "classes_present_with_seed_E1": 34,
+  "classes_present_E2": 3,
+  "classes_present_with_seed_E2": 3,
+  "classes_present_I1": 3,
+  "classes_present_with_seed_I1": 3,
+  "classes_present_I2": 3,
+  "classes_present_with_seed_I2": 3,
+  "classes_present_e2run24": 231,
+  "classes_present_with_seed_e2run24": 64,
+  "classes_present_stop62": 231,
+  "classes_present_with_seed_stop62": 64,
+  "classes_present_fixture40": 484,
+  "classes_present_with_seed_fixture40": 76
+ },
+ "rows": [
+  {
+   "class": 0,
+   "size": 120,
+   "registry_orbit": "1",
+   "model_orbit": -1,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 36
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 0,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 3,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 1,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 4,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 3,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 5,
+   "size": 120,
+   "registry_orbit": "1",
+   "model_orbit": 0,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 36
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 6,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 1,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 8,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 3,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 9,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 3,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 10,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 6,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 11,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 2,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 12,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 13,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 14,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 15,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 16,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 17,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 19,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 20,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 21,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 22,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 23,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 24,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 186
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 25,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 17,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 185
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 26,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 3,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 27,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 6,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 28,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 29,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 30,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 31,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 32,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 33,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 34,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 185
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 36,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 38,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 39,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 40,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 41,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 42,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 184
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 43,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 183
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 44,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 45,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 46,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 47,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 201
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 48,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 49,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 200
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 50,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 51,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 17,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 52,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 198
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 53,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 54,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 55,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 56,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 57,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 58,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 203
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 59,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 17,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 60,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 61,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 62,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 63,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 64,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 15,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 65,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 66,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 197
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 67,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 196
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 68,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 184
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 69,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 183
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 70,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 257
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 71,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 72,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 183
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 73,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 182
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 74,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 255
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-64",
+   "shortest_length": 43,
+   "footprints": 1
+  },
+  {
+   "class": 75,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 28,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 252
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 76,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 203
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 77,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 78,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 200
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 79,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 80,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 259
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 81,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 252
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 82,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 318
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-201",
+   "shortest_length": 39,
+   "footprints": 1
+  },
+  {
+   "class": 83,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 314
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-173",
+   "shortest_length": 639,
+   "footprints": 1
+  },
+  {
+   "class": 84,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 85,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 196
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 86,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 87,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 195
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 88,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 194
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 89,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 252
+   },
+   "seeds": 2,
+   "shortest_seed": "S06",
+   "shortest_length": 1407,
+   "footprints": 2
+  },
+  {
+   "class": 90,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 250
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 91,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 249
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 92,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 93,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 279
+   },
+   "seeds": 1,
+   "shortest_seed": "S03",
+   "shortest_length": 1407,
+   "footprints": 1
+  },
+  {
+   "class": 94,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 273
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-37",
+   "shortest_length": 175,
+   "footprints": 1
+  },
+  {
+   "class": 95,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 28,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 270
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 96,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 315
+   },
+   "seeds": 8,
+   "shortest_seed": "H21-5",
+   "shortest_length": 63,
+   "footprints": 2
+  },
+  {
+   "class": 97,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 309
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-204",
+   "shortest_length": 639,
+   "footprints": 1
+  },
+  {
+   "class": 98,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 198
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 99,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 277
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 100,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 271
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-34",
+   "shortest_length": 87,
+   "footprints": 1
+  },
+  {
+   "class": 101,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 268
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 102,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 6,
+    "fixture40": 255
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 103,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 248
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-70",
+   "shortest_length": 175,
+   "footprints": 1
+  },
+  {
+   "class": 104,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 319
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-132",
+   "shortest_length": 79,
+   "footprints": 1
+  },
+  {
+   "class": 105,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 29,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 313
+   },
+   "seeds": 1,
+   "shortest_seed": "S14",
+   "shortest_length": 703,
+   "footprints": 1
+  },
+  {
+   "class": 106,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 311
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-52",
+   "shortest_length": 255,
+   "footprints": 1
+  },
+  {
+   "class": 107,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 307
+   },
+   "seeds": 8,
+   "shortest_seed": "H21-1",
+   "shortest_length": 63,
+   "footprints": 2
+  },
+  {
+   "class": 108,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 305
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-55",
+   "shortest_length": 175,
+   "footprints": 2
+  },
+  {
+   "class": 109,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 28,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 249
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 110,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 4,
+    "fixture40": 243
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 111,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 313
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-207",
+   "shortest_length": 639,
+   "footprints": 1
+  },
+  {
+   "class": 112,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 308
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-156",
+   "shortest_length": 639,
+   "footprints": 1
+  },
+  {
+   "class": 113,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 306
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-46",
+   "shortest_length": 63,
+   "footprints": 2
+  },
+  {
+   "class": 114,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 302
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-97",
+   "shortest_length": 175,
+   "footprints": 1
+  },
+  {
+   "class": 115,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 33,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 300
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-25",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 116,
+   "size": 120,
+   "registry_orbit": "4",
+   "model_orbit": 34,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 1,
+    "E1": 1,
+    "e2run24": 1,
+    "stop62": 1,
+    "fixture40": 99
+   },
+   "seeds": 4,
+   "shortest_seed": "H21-29",
+   "shortest_length": 639,
+   "footprints": 1
+  },
+  {
+   "class": 123,
+   "size": 120,
+   "registry_orbit": "1",
+   "model_orbit": 2,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 36
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 124,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 125,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 126,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 128,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 129,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 247,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 248,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 251,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 252,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 253,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 254,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 255,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 188
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 256,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 17,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 186
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 257,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 183
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 299,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 300,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 188
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 301,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 186
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 310,
+   "size": 120,
+   "registry_orbit": "1",
+   "model_orbit": 15,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 36
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 311,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 185
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 312,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 313,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 182
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 315,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 183
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 316,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 180
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 319,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 255
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 320,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 248
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 321,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 28,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 243
+   },
+   "seeds": 1,
+   "shortest_seed": "S12",
+   "shortest_length": 703,
+   "footprints": 1
+  },
+  {
+   "class": 330,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 250
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-118",
+   "shortest_length": 79,
+   "footprints": 1
+  },
+  {
+   "class": 331,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 243
+   },
+   "seeds": 4,
+   "shortest_seed": "H1-115",
+   "shortest_length": 79,
+   "footprints": 2
+  },
+  {
+   "class": 332,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 238
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 339,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 6,
+    "E1": 3,
+    "e2run24": 6,
+    "stop62": 6,
+    "fixture40": 312
+   },
+   "seeds": 8,
+   "shortest_seed": "H22-9",
+   "shortest_length": 127,
+   "footprints": 2
+  },
+  {
+   "class": 340,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 6,
+    "E1": 3,
+    "e2run24": 6,
+    "stop62": 6,
+    "fixture40": 309
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-147",
+   "shortest_length": 319,
+   "footprints": 1
+  },
+  {
+   "class": 354,
+   "size": 120,
+   "registry_orbit": "4",
+   "model_orbit": 29,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 2,
+    "E1": 1,
+    "e2run24": 2,
+    "stop62": 2,
+    "fixture40": 102
+   },
+   "seeds": 8,
+   "shortest_seed": "H21-21",
+   "shortest_length": 255,
+   "footprints": 2
+  },
+  {
+   "class": 355,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 6,
+    "E1": 3,
+    "e2run24": 6,
+    "stop62": 6,
+    "fixture40": 303
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-114",
+   "shortest_length": 63,
+   "footprints": 1
+  },
+  {
+   "class": 357,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 6,
+    "E1": 3,
+    "e2run24": 6,
+    "stop62": 6,
+    "fixture40": 300
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-108",
+   "shortest_length": 63,
+   "footprints": 1
+  },
+  {
+   "class": 364,
+   "size": 120,
+   "registry_orbit": "4",
+   "model_orbit": 33,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 2,
+    "E1": 1,
+    "e2run24": 2,
+    "stop62": 2,
+    "fixture40": 99
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-1",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 433,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": -1,
+   "core_forbidden": true,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 434,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 0,
+   "core_forbidden": true,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 435,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 1,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 436,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 3,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 438,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 1,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 439,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 1,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 440,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 3,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 441,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 3,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 443,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 2,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 444,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 445,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 210
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 446,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 209
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 447,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 448,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 210
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 449,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 209
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 451,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 452,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 453,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 208
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 454,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 208
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 455,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 205
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 456,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 205
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 458,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 459,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 460,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 209
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 461,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 208
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 462,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 207
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 463,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 204
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 464,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 201
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 465,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 466,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 467,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 468,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 1,
+    "E1": 1,
+    "E2": 1,
+    "I1": 1,
+    "I2": 1,
+    "e2run24": 1,
+    "stop62": 1,
+    "fixture40": 202
+   },
+   "seeds": 5,
+   "shortest_seed": "H22-25",
+   "shortest_length": 255,
+   "footprints": 2
+  },
+  {
+   "class": 469,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 470,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 471,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 196
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 472,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 203
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 473,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 201
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 474,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 475,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 200
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 476,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 198
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 477,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 478,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 185
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 479,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 1,
+    "E1": 1,
+    "E2": 1,
+    "I1": 1,
+    "I2": 1,
+    "e2run24": 1,
+    "stop62": 1,
+    "fixture40": 201
+   },
+   "seeds": 8,
+   "shortest_seed": "H22-17",
+   "shortest_length": 31,
+   "footprints": 2
+  },
+  {
+   "class": 480,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 6,
+    "stop62": 6,
+    "fixture40": 265
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 481,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 6,
+    "stop62": 6,
+    "fixture40": 262
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 482,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 483,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 484,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 15,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 201
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 485,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 198
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 486,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 487,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 196
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 488,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 198
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 489,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 195
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 490,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 195
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 491,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 265
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 492,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 262
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 493,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 255
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 494,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 252
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 496,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 198
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 497,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 262
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 498,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 259
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 499,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 252
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 500,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 249
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 501,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 246
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 502,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 503,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 197
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 504,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 194
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 505,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 193
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 506,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 247
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 507,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 244
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-100",
+   "shortest_length": 79,
+   "footprints": 1
+  },
+  {
+   "class": 508,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 191
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 509,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 190
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 510,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 268
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-82",
+   "shortest_length": 79,
+   "footprints": 1
+  },
+  {
+   "class": 511,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 245
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 512,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 254
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 513,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 247
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 514,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 251
+   },
+   "seeds": 4,
+   "shortest_seed": "S08",
+   "shortest_length": 39,
+   "footprints": 2
+  },
+  {
+   "class": 515,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 29,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 244
+   },
+   "seeds": 1,
+   "shortest_seed": "S13",
+   "shortest_length": 639,
+   "footprints": 1
+  },
+  {
+   "class": 516,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 241
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-85",
+   "shortest_length": 79,
+   "footprints": 1
+  },
+  {
+   "class": 517,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 307
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-105",
+   "shortest_length": 63,
+   "footprints": 1
+  },
+  {
+   "class": 518,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 304
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-41",
+   "shortest_length": 63,
+   "footprints": 1
+  },
+  {
+   "class": 519,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 245
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 520,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 242
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 521,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 239
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 522,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 33,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 302
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-22",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 523,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 0,
+   "core_forbidden": true,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 524,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 1,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 525,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 1,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 527,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 3,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 529,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 2,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 530,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 531,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 532,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 196
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 533,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 534,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 535,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 195
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 536,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 1,
+   "core_forbidden": true,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 537,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 3,
+   "core_forbidden": true,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 540,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 2,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 541,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 542,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 210
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 543,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 209
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 544,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 2,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 545,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 546,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 547,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 548,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 551,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 552,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 555,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 556,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 557,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 558,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 205
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 560,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 562,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 1,
+    "E1": 1,
+    "E2": 1,
+    "I1": 1,
+    "I2": 1,
+    "e2run24": 1,
+    "stop62": 1,
+    "fixture40": 199
+   },
+   "seeds": 8,
+   "shortest_seed": "H21-13",
+   "shortest_length": 63,
+   "footprints": 2
+  },
+  {
+   "class": 565,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 568,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 190
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 570,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 190
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 572,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 269
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 575,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 576,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 577,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 192
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 578,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 187
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 579,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 187
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 580,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 182
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 581,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 196
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 582,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 2,
+    "fixture40": 189
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 583,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 186
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 584,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 2,
+    "fixture40": 189
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 586,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 271
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 587,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 267
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 588,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 264
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 589,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 191
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 590,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 2,
+    "fixture40": 184
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 591,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 2,
+    "fixture40": 184
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 592,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 181
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 593,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 272
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 594,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 265
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 595,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 265
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 596,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 15,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 266
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 597,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 6,
+    "stop62": 6,
+    "fixture40": 262
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 598,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 266
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 600,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 263
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 601,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 6,
+    "fixture40": 259
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 603,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 262
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 604,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 259
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 605,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 257
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 606,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 257
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 608,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 263
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 609,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 259
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 610,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 256
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 611,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 254
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 612,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 254
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 613,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 249
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 614,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 259
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 615,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 259
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 618,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 250
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-10",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 620,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 256
+   },
+   "seeds": 1,
+   "shortest_seed": "S01",
+   "shortest_length": 1407,
+   "footprints": 1
+  },
+  {
+   "class": 621,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 256
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 622,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 5,
+    "stop62": 5,
+    "fixture40": 252
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 624,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 249
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 626,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 252
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 627,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 252
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 628,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 250
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 629,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 247
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 630,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 249
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 631,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 247
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-76",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 632,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 249
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 633,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 29,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 247
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 634,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 242
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 635,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 4,
+    "fixture40": 244
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 638,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 241
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-67",
+   "shortest_length": 87,
+   "footprints": 1
+  },
+  {
+   "class": 639,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 243
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 640,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 241
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 641,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 236
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-88",
+   "shortest_length": 175,
+   "footprints": 2
+  },
+  {
+   "class": 642,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 238
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-112",
+   "shortest_length": 175,
+   "footprints": 1
+  },
+  {
+   "class": 643,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 33,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 233
+   },
+   "seeds": 5,
+   "shortest_seed": "H1-46",
+   "shortest_length": 79,
+   "footprints": 3
+  },
+  {
+   "class": 645,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 648,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 649,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 650,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 651,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 654,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 656,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 191
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 659,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 660,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 663,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 206
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 665,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 205
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 668,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 3,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 669,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 670,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 671,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 196
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 672,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 195
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 674,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 190
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 676,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 677,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 8,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 678,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 207
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 679,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 207
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 681,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 205
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 683,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 684,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 198
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 685,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 195
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 686,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 194
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 687,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 189
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 688,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 184
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 689,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 690,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 9,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 691,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 11,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 204
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 692,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 204
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 693,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 694,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 196
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 695,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 192
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 698,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 195
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 699,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 192
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 700,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 193
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 701,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 190
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 702,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 105
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 703,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 194
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 704,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 15,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 191
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 705,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 186
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 706,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 264
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 708,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 186
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 709,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 181
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 711,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 189
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 712,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 184
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 713,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 179
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 714,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 252
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 716,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 183
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 717,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 185
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 718,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 183
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 719,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 178
+   },
+   "seeds": 1,
+   "shortest_seed": "S02",
+   "shortest_length": 79,
+   "footprints": 1
+  },
+  {
+   "class": 720,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 173
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 721,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 246
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 722,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 246
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-109",
+   "shortest_length": 175,
+   "footprints": 1
+  },
+  {
+   "class": 723,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 188
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 724,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 261
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 727,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 5,
+    "fixture40": 249
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 729,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 250
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 730,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 248
+   },
+   "seeds": 1,
+   "shortest_seed": "S10",
+   "shortest_length": 351,
+   "footprints": 1
+  },
+  {
+   "class": 732,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 245
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 733,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 175
+   },
+   "seeds": 4,
+   "shortest_seed": "S04",
+   "shortest_length": 79,
+   "footprints": 2
+  },
+  {
+   "class": 734,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 170
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-52",
+   "shortest_length": 39,
+   "footprints": 1
+  },
+  {
+   "class": 735,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 248
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-13",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 736,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 29,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 243
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 737,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 243
+   },
+   "seeds": 4,
+   "shortest_seed": "H1-61",
+   "shortest_length": 79,
+   "footprints": 2
+  },
+  {
+   "class": 738,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 236
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 740,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 240
+   },
+   "seeds": 6,
+   "shortest_seed": "H1-43",
+   "shortest_length": 79,
+   "footprints": 4
+  },
+  {
+   "class": 741,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 6,
+    "E1": 3,
+    "e2run24": 6,
+    "stop62": 6,
+    "fixture40": 306
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-111",
+   "shortest_length": 63,
+   "footprints": 1
+  },
+  {
+   "class": 742,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 306
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-57",
+   "shortest_length": 175,
+   "footprints": 2
+  },
+  {
+   "class": 743,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 33,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 300
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-4",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 744,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 206
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 747,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 748,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 14,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 749,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 203
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 750,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 16,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 287
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 751,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 752,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 204
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 753,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 15,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 203
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 754,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 197
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 755,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 757,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 201
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 758,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 195
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 760,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 284
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 761,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 22,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 281
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 762,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 275
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 763,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 273
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 765,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 766,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 201
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 769,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 271
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 771,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 20,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 284
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 772,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 200
+   },
+   "seeds": 1,
+   "shortest_seed": "S00",
+   "shortest_length": 39,
+   "footprints": 1
+  },
+  {
+   "class": 773,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 281
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 774,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 23,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 278
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 775,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 25,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 272
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 776,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 270
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 777,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 267
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 778,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 192
+   },
+   "seeds": 1,
+   "shortest_seed": "S05",
+   "shortest_length": 159,
+   "footprints": 1
+  },
+  {
+   "class": 779,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 190
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 781,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 271
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-7",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 782,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 276
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 783,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 270
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 784,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 274
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-31",
+   "shortest_length": 87,
+   "footprints": 1
+  },
+  {
+   "class": 785,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 29,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 268
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 786,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 265
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-79",
+   "shortest_length": 79,
+   "footprints": 1
+  },
+  {
+   "class": 787,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 307
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-35",
+   "shortest_length": 63,
+   "footprints": 1
+  },
+  {
+   "class": 789,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 30,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 265
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 790,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 263
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 791,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 32,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 260
+   },
+   "seeds": 2,
+   "shortest_seed": "S21",
+   "shortest_length": 175,
+   "footprints": 2
+  },
+  {
+   "class": 792,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 33,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 299
+   },
+   "seeds": 3,
+   "shortest_seed": "H2-64",
+   "shortest_length": 79,
+   "footprints": 1
+  },
+  {
+   "class": 1225,
+   "size": 120,
+   "registry_orbit": "0",
+   "model_orbit": -1,
+   "core_forbidden": true,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1228,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 1,
+   "core_forbidden": true,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1231,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 1,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1236,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 2,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1237,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1238,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1239,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1240,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1244,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1247,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1252,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 199
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1253,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 198
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1256,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 188
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1260,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1262,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 108
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1265,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1270,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 196
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1272,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 191
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1277,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 191
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1279,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 189
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1285,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 190
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1286,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 193
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1287,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 15,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 188
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1288,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 262
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1289,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 2,
+    "fixture40": 181
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1291,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 188
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1292,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 5,
+    "fixture40": 262
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1294,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 183
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1297,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 253
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1301,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 187
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1302,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 182
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1305,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 3,
+    "fixture40": 247
+   },
+   "seeds": 4,
+   "shortest_seed": "S09",
+   "shortest_length": 175,
+   "footprints": 2
+  },
+  {
+   "class": 1309,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 185
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1310,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 178
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1313,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 249
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1317,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 246
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1318,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 246
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1322,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 4,
+    "stop62": 4,
+    "fixture40": 243
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1324,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 3,
+    "fixture40": 179
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1325,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 4,
+    "fixture40": 248
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-19",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 1326,
+   "size": 360,
+   "registry_orbit": "2|5b",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 1,
+    "stop62": 2,
+    "fixture40": 173
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-49",
+   "shortest_length": 19,
+   "footprints": 1
+  },
+  {
+   "class": 1327,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 29,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 243
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1328,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 241
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-73",
+   "shortest_length": 175,
+   "footprints": 1
+  },
+  {
+   "class": 1329,
+   "size": 360,
+   "registry_orbit": "3",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "e2run24": 2,
+    "stop62": 3,
+    "fixture40": 240
+   },
+   "seeds": 4,
+   "shortest_seed": "S18",
+   "shortest_length": 79,
+   "footprints": 2
+  },
+  {
+   "class": 1334,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 309
+   },
+   "seeds": 1,
+   "shortest_seed": "S19",
+   "shortest_length": 175,
+   "footprints": 1
+  },
+  {
+   "class": 1337,
+   "size": 360,
+   "registry_orbit": "4",
+   "model_orbit": 33,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "X": 3,
+    "E1": 3,
+    "e2run24": 3,
+    "stop62": 3,
+    "fixture40": 303
+   },
+   "seeds": 5,
+   "shortest_seed": "H1-16",
+   "shortest_length": 31,
+   "footprints": 3
+  },
+  {
+   "class": 1341,
+   "size": 120,
+   "registry_orbit": "0",
+   "model_orbit": 2,
+   "core_forbidden": true,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1342,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 4,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1343,
+   "size": 360,
+   "registry_orbit": "0",
+   "model_orbit": 5,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {},
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1344,
+   "size": 360,
+   "registry_orbit": "1",
+   "model_orbit": 7,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 107
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1445,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 10,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 205
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1447,
+   "size": 360,
+   "registry_orbit": "2|5a",
+   "model_orbit": 12,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 202
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1474,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 13,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 294
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1483,
+   "size": 120,
+   "registry_orbit": "6",
+   "model_orbit": 15,
+   "core_forbidden": false,
+   "in_harvest_bound": false,
+   "present_in": {
+    "fixture40": 97
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1484,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 19,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 284
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1485,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 18,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 288
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1488,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 21,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 281
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1491,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 24,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 272
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1497,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 27,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 269
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1504,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 26,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 267
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-93",
+   "shortest_length": 31,
+   "footprints": 1
+  },
+  {
+   "class": 1518,
+   "size": 120,
+   "registry_orbit": "6",
+   "model_orbit": 29,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 88
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1519,
+   "size": 360,
+   "registry_orbit": "6",
+   "model_orbit": 31,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 262
+   },
+   "seeds": 0,
+   "shortest_seed": null,
+   "shortest_length": null,
+   "footprints": 0
+  },
+  {
+   "class": 1525,
+   "size": 120,
+   "registry_orbit": "6",
+   "model_orbit": 33,
+   "core_forbidden": false,
+   "in_harvest_bound": true,
+   "present_in": {
+    "fixture40": 86
+   },
+   "seeds": 3,
+   "shortest_seed": "H1-28",
+   "shortest_length": 43,
+   "footprints": 1
+  }
+ ]
+}

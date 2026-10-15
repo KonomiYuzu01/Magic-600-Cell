@@ -1,0 +1,795 @@
+{
+ "steps": [
+  {
+   "step": 3,
+   "block": 65,
+   "name": "198@13039",
+   "template": 13,
+   "m": 0,
+   "length": 10,
+   "badW": 309,
+   "off_after": 93640,
+   "collateral": 0,
+   "ok": true
+  },
+  {
+   "step": 4,
+   "block": 71,
+   "name": "198@103934",
+   "template": 13,
+   "m": 1343,
+   "length": 10,
+   "badW": 309,
+   "off_after": 93442,
+   "collateral": 0,
+   "ok": true
+  },
+  {
+   "step": 5,
+   "block": 69,
+   "name": "198@48781",
+   "template": 13,
+   "m": 2900,
+   "length": 10,
+   "badW": 396,
+   "off_after": 93244,
+   "collateral": 0,
+   "ok": true
+  },
+  {
+   "step": 6,
+   "block": 73,
+   "name": "198@122617",
+   "template": 13,
+   "m": 2670,
+   "length": 10,
+   "badW": 396,
+   "off_after": 93046,
+   "collateral": 0,
+   "ok": true
+  }
+ ],
+ "passes": [
+  {
+   "step": 3,
+   "clean_blocks": [
+    65,
+    69,
+    70,
+    71,
+    73
+   ],
+   "remaining": 137
+  },
+  {
+   "step": 7,
+   "clean_blocks": [],
+   "remaining": 133
+  }
+ ],
+ "stop": {
+  "step": 7,
+  "restored": [
+   65,
+   69,
+   71,
+   73
+  ],
+  "classes": {
+   "blocked": [
+    {
+     "block": 32,
+     "name": "395@15195",
+     "disturbed": 320,
+     "conflict_blocks": [
+      "2032@44066",
+      "1549@26922"
+     ],
+     "badW": 592,
+     "badW_occupied": 164,
+     "blocked_grips": 2
+    },
+    {
+     "block": 33,
+     "name": "395@22327",
+     "disturbed": 715,
+     "conflict_blocks": [
+      "19720@231",
+      "2032@44066",
+      "1920@63498",
+      "395@137051"
+     ],
+     "badW": 790,
+     "badW_occupied": 0,
+     "blocked_grips": 2
+    },
+    {
+     "block": 34,
+     "name": "395@28279",
+     "disturbed": 100,
+     "conflict_blocks": [
+      "1430@9555"
+     ],
+     "badW": 592,
+     "badW_occupied": 118,
+     "blocked_grips": 1
+    },
+    {
+     "block": 37,
+     "name": "395@33239",
+     "disturbed": 456,
+     "conflict_blocks": [
+      "19720@231",
+      "2200@80099",
+      "1637@16136",
+      "197@13010",
+      "197@83438"
+     ],
+     "badW": 592,
+     "badW_occupied": 25,
+     "blocked_grips": 2
+    },
+    {
+     "block": 38,
+     "name": "395@40826",
+     "disturbed": 258,
+     "conflict_blocks": [
+      "2702@913",
+      "2263@20625"
+     ],
+     "badW": 790,
+     "badW_occupied": 223,
+     "blocked_grips": 1
+    },
+    {
+     "block": 40,
+     "name": "395@49819",
+     "disturbed": 162,
+     "conflict_blocks": [
+      "19720@231",
+      "1745@72499",
+      "395@127801"
+     ],
+     "badW": 790,
+     "badW_occupied": 0,
+     "blocked_grips": 1
+    },
+    {
+     "block": 41,
+     "name": "395@59658",
+     "disturbed": 331,
+     "conflict_blocks": [
+      "1321@59888",
+      "197@144495",
+      "61@149138",
+      "10@149177"
+     ],
+     "badW": 790,
+     "badW_occupied": 111,
+     "blocked_grips": 1
+    },
+    {
+     "block": 42,
+     "name": "395@63068",
+     "disturbed": 397,
+     "conflict_blocks": [
+      "19720@231",
+      "1715@15545",
+      "197@49745"
+     ],
+     "badW": 790,
+     "badW_occupied": 0,
+     "blocked_grips": 1
+    },
+    {
+     "block": 43,
+     "name": "395@72107",
+     "disturbed": 671,
+     "conflict_blocks": [
+      "1912@72071",
+      "888@140276",
+      "395@106423",
+      "395@135397",
+      "197@122611",
+      "197@139688"
+     ],
+     "badW": 790,
+     "badW_occupied": 55,
+     "blocked_grips": 1
+    },
+    {
+     "block": 47,
+     "name": "395@90038",
+     "disturbed": 397,
+     "conflict_blocks": [
+      "2505@115265",
+      "2263@20625",
+      "197@122249"
+     ],
+     "badW": 790,
+     "badW_occupied": 0,
+     "blocked_grips": 1
+    },
+    {
+     "block": 48,
+     "name": "395@106423",
+     "disturbed": 145,
+     "conflict_blocks": [
+      "2249@62797",
+      "395@59658"
+     ],
+     "badW": 592,
+     "badW_occupied": 164,
+     "blocked_grips": 1
+    },
+    {
+     "block": 49,
+     "name": "395@107131",
+     "disturbed": 184,
+     "conflict_blocks": [
+      "19720@231",
+      "2032@44066",
+      "481@11167"
+     ],
+     "badW": 790,
+     "badW_occupied": 134,
+     "blocked_grips": 1
+    },
+    {
+     "block": 50,
+     "name": "395@122262",
+     "disturbed": 748,
+     "conflict_blocks": [
+      "19720@231",
+      "1037@46046",
+      "395@40826",
+      "395@149444",
+      "197@48424",
+      "197@83438"
+     ],
+     "badW": 790,
+     "badW_occupied": 8,
+     "blocked_grips": 2
+    },
+    {
+     "block": 51,
+     "name": "395@127801",
+     "disturbed": 160,
+     "conflict_blocks": [
+      "1037@46046",
+      "395@40826"
+     ],
+     "badW": 592,
+     "badW_occupied": 86,
+     "blocked_grips": 1
+    },
+    {
+     "block": 53,
+     "name": "395@136753",
+     "disturbed": 910,
+     "conflict_blocks": [
+      "19720@231",
+      "2505@11828",
+      "1912@72071",
+      "1549@26922",
+      "395@15195",
+      "134@21000"
+     ],
+     "badW": 592,
+     "badW_occupied": 25,
+     "blocked_grips": 1
+    },
+    {
+     "block": 56,
+     "name": "395@149444",
+     "disturbed": 935,
+     "conflict_blocks": [
+      "19720@231",
+      "2505@115265",
+      "2263@20625",
+      "2130@37271",
+      "1037@46046",
+      "395@40826"
+     ],
+     "badW": 790,
+     "badW_occupied": 0,
+     "blocked_grips": 2
+    },
+    {
+     "block": 57,
+     "name": "395@155969",
+     "disturbed": 145,
+     "conflict_blocks": [
+      "19720@231"
+     ],
+     "badW": 790,
+     "badW_occupied": 134,
+     "blocked_grips": 1
+    },
+    {
+     "block": 66,
+     "name": "198@31425",
+     "disturbed": 145,
+     "conflict_blocks": [
+      "1912@277",
+      "395@7279"
+     ],
+     "badW": 396,
+     "badW_occupied": 15,
+     "blocked_grips": 1
+    },
+    {
+     "block": 78,
+     "name": "197@21328",
+     "disturbed": 476,
+     "conflict_blocks": [
+      "19720@231",
+      "395@72501",
+      "118@25779"
+     ],
+     "badW": 505,
+     "badW_occupied": 0,
+     "blocked_grips": 1
+    },
+    {
+     "block": 79,
+     "name": "197@31349",
+     "disturbed": 358,
+     "conflict_blocks": [
+      "19720@231",
+      "198@31425"
+     ],
+     "badW": 394,
+     "badW_occupied": 55,
+     "blocked_grips": 1
+    },
+    {
+     "block": 80,
+     "name": "197@31423",
+     "disturbed": 555,
+     "conflict_blocks": [
+      "19720@231",
+      "198@31425",
+      "197@31349"
+     ],
+     "badW": 394,
+     "badW_occupied": 41,
+     "blocked_grips": 1
+    },
+    {
+     "block": 90,
+     "name": "197@83438",
+     "disturbed": 241,
+     "conflict_blocks": [
+      "2263@20625",
+      "1637@16136"
+     ],
+     "badW": 505,
+     "badW_occupied": 0,
+     "blocked_grips": 1
+    },
+    {
+     "block": 109,
+     "name": "111@11093",
+     "disturbed": 90,
+     "conflict_blocks": [
+      "395@33239",
+      "87@11169"
+     ],
+     "badW": 396,
+     "badW_occupied": 132,
+     "blocked_grips": 1
+    },
+    {
+     "block": 111,
+     "name": "111@33106",
+     "disturbed": 90,
+     "conflict_blocks": [
+      "395@33239",
+      "87@11169"
+     ],
+     "badW": 198,
+     "badW_occupied": 39,
+     "blocked_grips": 1
+    },
+    {
+     "block": 121,
+     "name": "87@11169",
+     "disturbed": 148,
+     "conflict_blocks": [
+      "1912@100643",
+      "1113@140141",
+      "395@168344"
+     ],
+     "badW": 198,
+     "badW_occupied": 93,
+     "blocked_grips": 1
+    },
+    {
+     "block": 126,
+     "name": "86@28091",
+     "disturbed": 409,
+     "conflict_blocks": [
+      "1430@9555",
+      "111@11093",
+      "111@33106",
+      "87@11169"
+     ],
+     "badW": 790,
+     "badW_occupied": 118,
+     "blocked_grips": 1
+    }
+   ],
+   "conflict": [
+    {
+     "block": 30,
+     "name": "395@1158",
+     "disturbed": 197,
+     "conflict_blocks": [
+      "2702@913"
+     ],
+     "badW": 790,
+     "badW_occupied": 0,
+     "blocked_grips": 0
+    },
+    {
+     "block": 35,
+     "name": "395@28987",
+     "disturbed": 471,
+     "conflict_blocks": [
+      "1821@81844",
+      "1715@15545",
+      "197@49745",
+      "87@143853"
+     ],
+     "badW": 790,
+     "badW_occupied": 0,
+     "blocked_grips": 0
+    },
+    {
+     "block": 39,
+     "name": "395@49133",
+     "disturbed": 315,
+     "conflict_blocks": [
+      "2032@44066",
+      "197@122611"
+     ],
+     "badW": 790,
+     "badW_occupied": 198,
+     "blocked_grips": 0
+    },
+    {
+     "block": 45,
+     "name": "395@80894",
+     "disturbed": 385,
+     "conflict_blocks": [
+      "1821@81844",
+      "198@41541"
+     ],
+     "badW": 592,
+     "badW_occupied": 0,
+     "blocked_grips": 0
+    },
+    {
+     "block": 52,
+     "name": "395@135397",
+     "disturbed": 195,
+     "conflict_blocks": [
+      "198@112263"
+     ],
+     "badW": 790,
+     "badW_occupied": 284,
+     "blocked_grips": 0
+    },
+    {
+     "block": 85,
+     "name": "197@48752",
+     "disturbed": 170,
+     "conflict_blocks": [
+      "1776@407"
+     ],
+     "badW": 394,
+     "badW_occupied": 73,
+     "blocked_grips": 0
+    },
+    {
+     "block": 93,
+     "name": "197@97356",
+     "disturbed": 198,
+     "conflict_blocks": [
+      "198@95589"
+     ],
+     "badW": 394,
+     "badW_occupied": 197,
+     "blocked_grips": 0
+    },
+    {
+     "block": 94,
+     "name": "197@103929",
+     "disturbed": 220,
+     "conflict_blocks": [
+      "1745@72499",
+      "1037@46046"
+     ],
+     "badW": 394,
+     "badW_occupied": 111,
+     "blocked_grips": 0
+    },
+    {
+     "block": 95,
+     "name": "197@103943",
+     "disturbed": 71,
+     "conflict_blocks": [
+      "1745@72499"
+     ],
+     "badW": 394,
+     "badW_occupied": 197,
+     "blocked_grips": 0
+    },
+    {
+     "block": 97,
+     "name": "197@107129",
+     "disturbed": 197,
+     "conflict_blocks": [
+      "197@63440"
+     ],
+     "badW": 394,
+     "badW_occupied": 124,
+     "blocked_grips": 0
+    },
+    {
+     "block": 99,
+     "name": "197@122249",
+     "disturbed": 395,
+     "conflict_blocks": [
+      "395@90038"
+     ],
+     "badW": 505,
+     "badW_occupied": 0,
+     "blocked_grips": 0
+    },
+    {
+     "block": 100,
+     "name": "197@122611",
+     "disturbed": 271,
+     "conflict_blocks": [
+      "111@154760",
+      "87@151321",
+      "73@165490"
+     ],
+     "badW": 394,
+     "badW_occupied": 124,
+     "blocked_grips": 0
+    },
+    {
+     "block": 102,
+     "name": "197@139688",
+     "disturbed": 198,
+     "conflict_blocks": [
+      "111@151319",
+      "87@151321"
+     ],
+     "badW": 505,
+     "badW_occupied": 86,
+     "blocked_grips": 0
+    },
+    {
+     "block": 103,
+     "name": "197@144495",
+     "disturbed": 197,
+     "conflict_blocks": [
+      "1321@59888"
+     ],
+     "badW": 394,
+     "badW_occupied": 0,
+     "blocked_grips": 0
+    },
+    {
+     "block": 104,
+     "name": "197@162561",
+     "disturbed": 86,
+     "conflict_blocks": [
+      "86@168253"
+     ],
+     "badW": 394,
+     "badW_occupied": 197,
+     "blocked_grips": 0
+    },
+    {
+     "block": 118,
+     "name": "111@154760",
+     "disturbed": 87,
+     "conflict_blocks": [
+      "87@151321"
+     ],
+     "badW": 198,
+     "badW_occupied": 63,
+     "blocked_grips": 0
+    },
+    {
+     "block": 119,
+     "name": "111@156921",
+     "disturbed": 198,
+     "conflict_blocks": [
+      "197@139688",
+      "87@151321"
+     ],
+     "badW": 396,
+     "badW_occupied": 88,
+     "blocked_grips": 0
+    },
+    {
+     "block": 124,
+     "name": "87@151321",
+     "disturbed": 111,
+     "conflict_blocks": [
+      "111@151319"
+     ],
+     "badW": 396,
+     "badW_occupied": 87,
+     "blocked_grips": 0
+    },
+    {
+     "block": 130,
+     "name": "86@106705",
+     "disturbed": 111,
+     "conflict_blocks": [
+      "111@106709"
+     ],
+     "badW": 790,
+     "badW_occupied": 227,
+     "blocked_grips": 0
+    },
+    {
+     "block": 131,
+     "name": "86@110903",
+     "disturbed": 308,
+     "conflict_blocks": [
+      "1745@72499",
+      "111@95605"
+     ],
+     "badW": 790,
+     "badW_occupied": 0,
+     "blocked_grips": 0
+    },
+    {
+     "block": 135,
+     "name": "86@168809",
+     "disturbed": 309,
+     "conflict_blocks": [
+      "111@154760",
+      "111@156921",
+      "87@151321"
+     ],
+     "badW": 592,
+     "badW_occupied": 197,
+     "blocked_grips": 0
+    }
+   ],
+   "vacancy": [
+    {
+     "block": 31,
+     "name": "395@7279",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 592,
+     "badW_occupied": 37,
+     "blocked_grips": 0
+    },
+    {
+     "block": 46,
+     "name": "395@81201",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 790,
+     "badW_occupied": 88,
+     "blocked_grips": 0
+    },
+    {
+     "block": 54,
+     "name": "395@137051",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 790,
+     "badW_occupied": 187,
+     "blocked_grips": 0
+    },
+    {
+     "block": 55,
+     "name": "395@142013",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 592,
+     "badW_occupied": 118,
+     "blocked_grips": 0
+    },
+    {
+     "block": 58,
+     "name": "395@168344",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 592,
+     "badW_occupied": 187,
+     "blocked_grips": 0
+    },
+    {
+     "block": 70,
+     "name": "198@95589",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 396,
+     "badW_occupied": 87,
+     "blocked_grips": 0
+    },
+    {
+     "block": 76,
+     "name": "197@13010",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 394,
+     "badW_occupied": 41,
+     "blocked_grips": 0
+    },
+    {
+     "block": 86,
+     "name": "197@48775",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 394,
+     "badW_occupied": 86,
+     "blocked_grips": 0
+    },
+    {
+     "block": 115,
+     "name": "111@95605",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 198,
+     "badW_occupied": 198,
+     "blocked_grips": 0
+    },
+    {
+     "block": 116,
+     "name": "111@106709",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 198,
+     "badW_occupied": 63,
+     "blocked_grips": 0
+    },
+    {
+     "block": 123,
+     "name": "87@143853",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 396,
+     "badW_occupied": 198,
+     "blocked_grips": 0
+    },
+    {
+     "block": 136,
+     "name": "86@174054",
+     "disturbed": 0,
+     "conflict_blocks": [],
+     "badW": 592,
+     "badW_occupied": 139,
+     "blocked_grips": 0
+    }
+   ]
+  },
+  "counts": {
+   "blocked": [
+    26,
+    8096
+   ],
+   "conflict": [
+    21,
+    4512
+   ],
+   "vacancy": [
+    12,
+    2962
+   ]
+  }
+ }
+}

@@ -1,0 +1,3 @@
+{"chain": "g2", "start_digest_ok": true, "load_seconds": 3.6}
+{"label": "SV001-cap57", "twists": 3, "applied": 3, "error": null, "input_digest_ok": true, "output_digest_ok": true, "off_before": 5404, "off_after": 2307, "restored": 3097, "collateral": 0, "moved_off": 0, "restored_matches": true, "collateral_matches": true, "moved_matches": true, "seconds": 0.3, "ok": true}
+{"chain": "g2", "all_ok": true, "steps": 1, "final_off": 2307, "all_on_lattice": false, "final_digest": "dffad170d06981212d4afe0ddcde178611109a649440af1df96d61f84af85e19", "seconds": 3.9}

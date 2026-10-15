@@ -1,0 +1,5 @@
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 8}
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 3, "sec": 24}
+{"orbits": 686, "singletons": 651, "sec": 28}
+{"done": "inputs/I1", "length": 60, "digest": "f27c345e591eecfa9d6807fbdbeb79326eb7b3987641524bc11e84a71fb44269", "holes": [24971, 52576, 65558], "orbits": [15, 14, 15], "sec": 28.1}
+exit=0

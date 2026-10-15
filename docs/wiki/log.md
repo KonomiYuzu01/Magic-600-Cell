@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling restoration research imported
+[research/jumbling/restoration](../../research/jumbling/restoration/README.md) imports the restoration research of 12 to 15 October 2026 in nine stages with their scripts, certificates and replay records, and the general method; stop62 (860 pieces off the lattice on the I_a@40 history) and X reach the solved state by independently replayed chains, and the gaps M1, M2, E1 and E2 stay open. [research/jumbling/README.md](../../research/jumbling/README.md) is now an overview (the 9 October study moved to `study-2026-10-09.md`), card 5 joins the [problem cards](../../research/jumbling/theory/cards/README.md), and the root README gains a jumbling section.
+
+## [2026-10-15] decision | Jumbling: what counts as restored
+Recorded in [owner-decisions-2026-10-15-jumbling-restored](decisions/owner-decisions-2026-10-15-jumbling-restored.md): a configuration counts as restored when every sticker slot carries its home label; a macro may be very long if a person can replicate it with the program's help; a general machine method comes first.
+
 ## [2026-10-14] decision | Jumbling twist menu I_a and human scale
 Recorded in [owner-decisions-2026-10-13-jumbling-menu](decisions/owner-decisions-2026-10-13-jumbling-menu.md): the twist menu is I_a (owner, 13 October), and a restoration method a person executes has no fixed size limit as long as its counts and lengths are not astronomical (owner, 14 October). [jumbling-plan](../progress/1.0/jumbling-plan.md), [jumbling-midstage](../progress/1.0/jumbling-midstage.md), [restoration](../../research/jumbling/theory/restoration.md) and [open-problems](../../research/jumbling/theory/open-problems.md) note the chosen menu.
 

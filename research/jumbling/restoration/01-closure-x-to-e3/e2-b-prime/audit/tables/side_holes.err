@@ -1,0 +1,2 @@
+Exception ignored on flushing sys.stdout:
+BrokenPipeError: [Errno 32] Broken pipe

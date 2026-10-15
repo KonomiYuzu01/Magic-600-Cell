@@ -38,7 +38,7 @@ The [0.3](https://github.com/KonomiYuzu01/Magic-600-Cell/releases/tag/0.3) and [
 
 ## Future work
 
-0.4 is the last release of the 0.4 line; the planned 0.4.1 release was cancelled. Work now goes to 1.0.
+0.4 is the last release of the 0.4 line; the planned 0.4.1 release was cancelled. Work now goes to 1.0. Its stage 2 records (charter, inventories, dispositions, packets, migration probes, the jumbling plan) are in [progress/1.0/](progress/1.0/), and the jumbling research, with its restoration results, is in [research/jumbling/](../research/jumbling/README.md).
 
 The [1.0 architecture](architecture/1.0/README.md) is a separate future proposal. Its PDFs and source package are not 0.4 runtime requirements or delivered 0.4 features.
 

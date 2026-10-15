@@ -1,0 +1,8 @@
+{"world": "step07-table.json", "off": 93046, "domains": 18, "blocks": 140, "sec": 9.3}
+{"event": "scan", "off": 93046, "s_caps": 4, "pieces": 10121, "same_frame_occupied": 25, "sec_scan": 38.1, "sec": 47.4}
+{"event": "step", "step": 1, "cap": 456, "letter": 13, "target": 3097, "blocks": [13, 43, 48, 53], "off_before": 93046, "off_after": 89949, "target_on": 3097, "collateral": 0, "protected": 89949, "protected_changed": 0, "virtual_matches": true, "sec": 48.7, "ok": true}
+{"event": "step", "step": 2, "cap": 181, "letter": 13, "target": 2427, "blocks": [5, 105], "off_before": 89949, "off_after": 87522, "target_on": 2427, "collateral": 0, "protected": 87522, "protected_changed": 0, "virtual_matches": true, "sec": 49.7, "ok": true}
+{"event": "step", "step": 3, "cap": 317, "letter": 15, "target": 2427, "blocks": [10, 39], "off_before": 87522, "off_after": 85095, "target_on": 2427, "collateral": 0, "protected": 85095, "protected_changed": 0, "virtual_matches": true, "sec": 51.3, "ok": true}
+{"event": "step", "step": 4, "cap": 168, "letter": 13, "target": 2170, "blocks": [16, 85, 86], "off_before": 85095, "off_after": 82925, "target_on": 2170, "collateral": 0, "protected": 82925, "protected_changed": 0, "virtual_matches": true, "sec": 52.3, "ok": true}
+{"event": "scan", "off": 82925, "s_caps": 0, "pieces": 0, "same_frame_occupied": 38, "sec_scan": 23.4, "sec": 75.7}
+{"event": "end", "steps": 4, "off": 82925, "sec": 75.7}

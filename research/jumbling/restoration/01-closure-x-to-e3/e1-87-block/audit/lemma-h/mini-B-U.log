@@ -1,0 +1,10 @@
+{"contents": 280, "chambers": 190, "pieces": 90, "twists": 1210, "convention_bad": 0, "sec": 5.4}
+{"twist": 200, "alive": 280, "sec": 6.7}
+{"twist": 400, "alive": 280, "sec": 8.6}
+{"twist": 600, "alive": 280, "sec": 9.9}
+{"twist": 800, "alive": 258, "sec": 11.6}
+{"twist": 1000, "alive": 258, "sec": 12.8}
+{"twist": 1200, "alive": 239, "sec": 14.1}
+{"mine_seconds": 8.7, "sec": 14.2}
+{"off": 90, "blocks": [87, 3], "straddling": 5, "status_3": 0, "sec": 25}
+{"agree": {"alive": 280, "on_K": 280, "end_chamber": 280, "died_at": 280}, "disagreements": 0, "bad": [28267, 28277, 28278, 28284, 28285, 28286, 31758, 31759, 31763, 36748, 36749, 36750, 37029, 42950, 42951, 42967, 42968, 42970, 42971, 42972], "done": "<work>/v26/audit/lemma-h/mini-B-U.json", "sec": 25.8}

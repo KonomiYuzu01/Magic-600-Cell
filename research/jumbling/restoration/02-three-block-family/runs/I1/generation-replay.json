@@ -1,0 +1,47 @@
+{
+ "start_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "start_off": 3,
+ "files": [
+  {
+   "name": "inputs/I1-generation-word.json",
+   "twists": 60,
+   "input_digest_ok": true,
+   "output_digest_ok": true,
+   "end_digest": "f27c345e591eecfa9d6807fbdbeb79326eb7b3987641524bc11e84a71fb44269",
+   "off_min": 3,
+   "off_max": 3,
+   "off_end": 3,
+   "depth_tested": 60,
+   "depth_failures": 0,
+   "first_depth_failure": null,
+   "restored": 0,
+   "collateral": 0,
+   "collateral_ids": [],
+   "pose_changed": 0,
+   "pose_changed_ids": [],
+   "inadmissible": null
+  }
+ ],
+ "total": {
+  "name": "total",
+  "twists": 60,
+  "input_digest_ok": true,
+  "output_digest_ok": true,
+  "end_digest": "f27c345e591eecfa9d6807fbdbeb79326eb7b3987641524bc11e84a71fb44269",
+  "off_min": 3,
+  "off_max": 3,
+  "off_end": 3,
+  "depth_tested": 60,
+  "depth_failures": 0,
+  "first_depth_failure": null,
+  "restored": 0,
+  "collateral": 0,
+  "collateral_ids": [],
+  "pose_changed": 0,
+  "pose_changed_ids": [],
+  "inadmissible": null
+ },
+ "claims": {},
+ "pass": true,
+ "seconds": 43.631
+}

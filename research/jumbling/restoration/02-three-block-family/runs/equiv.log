@@ -1,0 +1,9 @@
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 9}
+{"k": 1200, "checked": 12000, "failures": 0, "sec": 17.1}
+{"k": 2400, "checked": 24000, "failures": 0, "sec": 19.8}
+{"k": 3600, "checked": 36000, "failures": 0, "sec": 21.9}
+{"k": 4800, "checked": 48000, "failures": 0, "sec": 24.4}
+{"k": 6000, "checked": 60000, "failures": 0, "sec": 26.4}
+{"k": 7200, "checked": 72000, "failures": 0, "sec": 28.4}
+{"done": "cert/equivariance-sigma-star.json", "failures": 0, "checked": 72000, "sec": 28.4}
+exit=0

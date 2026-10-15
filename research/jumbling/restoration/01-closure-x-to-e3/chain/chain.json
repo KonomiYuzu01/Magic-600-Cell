@@ -1,0 +1,107 @@
+{
+ "chain": "X -> E1 -> E2 -> E3",
+ "evidence_kind": "exact simulator replay and exact computation on isolated public test data (Linux); no Windows, DirectX, native-host or performance evidence",
+ "segments": [
+  {
+   "name": "X->E1",
+   "zip": "Claude-E-closure-X1-20261012.zip",
+   "zip_sha256": "4a45b21b0735072a695d5856c779f9827ac956b0fdb0543f3adb62026ae2c69c",
+   "dir": "D17",
+   "restores": "17-block",
+   "start_table": "input/X-table.json",
+   "end_table": "D17/end-table.json",
+   "start_table_sha256": "a802e5bbe35bce69e6868f8a4f0d9cdf88fe9309fc2a492921a66d8b52394ae5",
+   "end_table_sha256": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+   "start_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+   "end_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+   "twists": 1112,
+   "part_twists": [
+    541,
+    10,
+    10,
+    10,
+    541
+   ],
+   "start_off": 107,
+   "end_off": 90,
+   "off_max": 6015,
+   "restored": 17,
+   "collateral_end": 0,
+   "replay_seconds": 811.114
+  },
+  {
+   "name": "E1->E2",
+   "zip": "Claude-E-closure-E1E2-20261012.zip",
+   "zip_sha256": "705a3e048da41e6757020ba64346e489cfef94d919d0c67a2687722a3f76c177",
+   "dir": "D87",
+   "restores": "87-block",
+   "start_table": "input/E1-table.json",
+   "end_table": "D87/E2-table.json",
+   "start_table_sha256": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18",
+   "end_table_sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893",
+   "start_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+   "end_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+   "twists": 1210,
+   "part_twists": [
+    590,
+    10,
+    10,
+    10,
+    590
+   ],
+   "start_off": 90,
+   "end_off": 3,
+   "off_max": 5802,
+   "restored": 87,
+   "collateral_end": 0,
+   "replay_seconds": 852.551
+  },
+  {
+   "name": "E2->E3",
+   "zip": "Claude-E-closure-E2E3-20261012.zip",
+   "zip_sha256": "13ad5546f6f3323b179d5d10cde620dd34e90412cf70d0076b8983f8ff9f1d1a",
+   "dir": "D3",
+   "restores": "B' (16245, 16249, 32088)",
+   "start_table": "input/E2-table.json",
+   "end_table": "D3/E3-table.json",
+   "start_table_sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893",
+   "end_table_sha256": "53cec2e37f3b858924c216d45d99f1563f0f1e57d1d8a78fa39946c1c965d889",
+   "start_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+   "end_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441",
+   "twists": 79,
+   "part_twists": [
+    8,
+    31,
+    1,
+    31,
+    8
+   ],
+   "start_off": 3,
+   "end_off": 0,
+   "off_max": 3097,
+   "restored": 3,
+   "collateral_end": 0,
+   "replay_seconds": 97.812
+  }
+ ],
+ "links": [
+  {
+   "from": "X->E1",
+   "to": "E1->E2",
+   "table_sha256": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18"
+  },
+  {
+   "from": "E1->E2",
+   "to": "E2->E3",
+   "table_sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+  }
+ ],
+ "total_twists": 2401,
+ "off_along_chain": [
+  107,
+  90,
+  3,
+  0
+ ],
+ "note": "Off counts, restored and collateral are the simulator values of each replay report. All pieces on the lattice at E3 is not a solved puzzle."
+}

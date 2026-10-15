@@ -1,0 +1,19 @@
+{"off": 5404, "blocks": [86, 86, 111, 86, 111, 87, 111, 385, 86, 86, 111, 111, 87, 385, 86, 111, 86, 87, 86, 111, 86, 87, 111, 111, 86, 111, 86, 86, 86, 111, 111, 87, 86, 111, 86, 86, 111, 86, 111, 86, 111, 86, 86, 111, 111, 87, 111, 86, 111, 86], "straddling": 44, "status_3": 0, "sec": 28}
+{"world": "p2-table.json", "off": 5404, "domains": 3, "blocks": 50, "sec": 33.3}
+{"event": "scan", "off": 5404, "s_caps": 0, "sv_caps": 14, "mixed": 5, "sec_scan": 3.3, "sec": 36.5}
+{"event": "clear_ok", "cap": 57, "V": 1, "contents": 3097, "t": 3.8, "sec": 40.3}
+{"event": "step", "step": 1, "kind": "SV", "cap": 57, "length": 3, "target": 3097, "blocks": [0, 1, 2, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 37, 38, 41, 43, 44, 45], "off_before": 5404, "off_after": 2307, "target_on": 3097, "collateral": 0, "protected": 2307, "protected_changed": 0, "virtual_matches": true, "sec": 40.4, "ok": true}
+{"event": "scan", "off": 2307, "s_caps": 0, "sv_caps": 11, "mixed": 0, "sec_scan": 0.6, "sec": 41.0}
+{"event": "clear_fail", "cap": 86, "occupied": 790, "t": 0.7, "sec": 41.7}
+{"event": "clear_fail", "cap": 4, "occupied": 2702, "t": 12.0, "sec": 53.7}
+{"event": "clear_fail", "cap": 10, "occupied": 2702, "t": 11.9, "sec": 65.6}
+{"event": "clear_fail", "cap": 49, "occupied": 2702, "t": 12.4, "sec": 78.0}
+{"event": "clear_fail", "cap": 96, "occupied": 2702, "t": 13.8, "sec": 91.8}
+{"event": "clear_fail", "cap": 97, "occupied": 2702, "t": 8.4, "sec": 100.2}
+{"event": "clear_fail", "cap": 106, "occupied": 2702, "t": 11.8, "sec": 112.0}
+{"event": "clear_fail", "cap": 77, "occupied": 2900, "t": 14.3, "sec": 126.2}
+{"event": "clear_fail", "cap": 211, "occupied": 2900, "t": 15.1, "sec": 141.3}
+{"event": "clear_fail", "cap": 249, "occupied": 2900, "t": 13.4, "sec": 154.7}
+{"event": "clear_fail", "cap": 258, "occupied": 2900, "t": 14.3, "sec": 169.0}
+{"event": "end", "steps": 1, "off": 2307, "sec": 169.0}
+exit 0

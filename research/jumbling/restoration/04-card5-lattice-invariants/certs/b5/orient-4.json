@@ -1,0 +1,33 @@
+{
+ "orbit": 4,
+ "matching0": {
+  "edges": 3600,
+  "components": 1,
+  "component sizes": {
+   "7200": 1
+  },
+  "edges with both orientations in one component": 3600,
+  "edges wholly in a cap (per grip)": {
+   "24": 600
+  },
+  "chambers with partner outside (per grip)": {
+   "12": 600
+  },
+  "local letters swapping the ends of an edge": 0
+ },
+ "matching1": {
+  "edges": 3600,
+  "components": 1,
+  "component sizes": {
+   "7200": 1
+  },
+  "edges with both orientations in one component": 3600,
+  "edges wholly in a cap (per grip)": {
+   "24": 600
+  },
+  "chambers with partner outside (per grip)": {
+   "12": 600
+  },
+  "local letters swapping the ends of an edge": 0
+ }
+}

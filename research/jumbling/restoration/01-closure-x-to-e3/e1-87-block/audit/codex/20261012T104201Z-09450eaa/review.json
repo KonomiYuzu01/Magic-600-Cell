@@ -1,0 +1,32 @@
+{
+  "verdict": "findings",
+  "summary": "All three earlier findings are fixed. One new false claim remains in the ordering correction. Recorded computations were taken as given; no simulator was rerun.",
+  "findings": [
+    {
+      "id": "MATH-E2-04",
+      "severity": "blocker",
+      "title": "The ordering correction falsely claims prefix preservation of lattice membership",
+      "detail": "The report claims that the inverse 302 K+ letters followed by the 30-twist window reach 36593 without any lattice piece leaving K. The existing exact replay records that the window's first twist, (491,56) at prefix 36564, takes 3,009 lattice pieces off K. The inverse K+ letters preserve lattice membership, so these are also original lattice pieces of X. The window establishes preservation at its endpoint, but contradicts the claimed preservation throughout the path.",
+      "evidence": [
+        {
+          "path": "work/packet-e2-verify.md",
+          "line": 412,
+          "sha256": "57b22c389694a1105fc43203515408b7f34a1444875f2c7e37d8476c6cb33e06"
+        },
+        {
+          "path": "research/jumbling/theory/results/outside/unlock-e2-to-lattice.json",
+          "line": 1,
+          "sha256": "4ffe62e81f388bd6a51953268078a58edeb6cbe27be506527723c0e7d8bfb095"
+        },
+        {
+          "path": "research/jumbling/theory/buffer-transport.md",
+          "line": 257,
+          "sha256": "ba93862663b99d83d4e93787159dd9a623e9a0fa39ee60f95052d4c8413a1d28"
+        }
+      ],
+      "counterexample": "windows[\"36568\"].twists[0] records prefix 36564 with went_off = 3009 and off_after = 3116, starting from 107 off pieces at prefix 36563.",
+      "suggested_experiment": "Compare the existing window's prefix records with its closing-state record, and limit the ordering claim to endpoint preservation unless a different witness establishes preservation at every prefix.",
+      "verification_status": "verified"
+    }
+  ]
+}

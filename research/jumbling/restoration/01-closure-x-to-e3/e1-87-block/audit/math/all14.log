@@ -1,0 +1,16 @@
+{"off": 90, "blocks": [87, 3], "straddling": 5, "status_3": 0, "sec": 12}
+{"n": 0, "source": "park-E1-87-0.jsonl:77", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 12.8}
+{"n": 1, "source": "park-E1-87-0.jsonl:181", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 13.3}
+{"n": 2, "source": "park-E1-87-0.jsonl:227", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 13.7}
+{"n": 3, "source": "park-E1-87-0.jsonl:270", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 14.2}
+{"n": 4, "source": "park-E1-87-0.jsonl:315", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 14.6}
+{"n": 5, "source": "park-E1-87-1.jsonl:149", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 15.1}
+{"n": 6, "source": "park-E1-87-1.jsonl:150", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 15.5}
+{"n": 7, "source": "park-E1-87-2.jsonl:232", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 16.0}
+{"n": 8, "source": "park-E1-87-2.jsonl:233", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 16.5}
+{"n": 9, "source": "park-E1-87-2.jsonl:234", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 17.0}
+{"n": 10, "source": "park-E1-87-2.jsonl:263", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 17.6}
+{"n": 11, "source": "park-E1-87-5.jsonl:230", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 18.1}
+{"n": 12, "source": "park-E1-87-5.jsonl:233", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": true, "L_meets_badW": 87, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 18.5}
+{"n": 13, "source": "park-E1-87-9.jsonl:169", "badW": 87, "badWinv": 87, "T_on": 87, "L_eq_badWinv": true, "L_eq_badW": false, "L_meets_badW": 0, "badW_types_eq_T_types": true, "tight_on_T_types": true, "sec": 19.0}
+{"all_L_eq_badWinv": true, "n_L_eq_badW": 13, "all_tight_on_T_types": true, "seconds": 19.0}

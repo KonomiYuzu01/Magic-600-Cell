@@ -1,0 +1,14 @@
+{
+ "table_digest": "f27c345e591eecfa9d6807fbdbeb79326eb7b3987641524bc11e84a71fb44269",
+ "orbit": 5,
+ "free_grips": 598,
+ "partition": "splitting closure",
+ "splits": 0,
+ "signature_groups": 1,
+ "parts": 1,
+ "groups_with_wanted": 0,
+ "all_self_locked": true,
+ "all_stabilizers_even": true,
+ "n_wanted_parities": {},
+ "groups": []
+}

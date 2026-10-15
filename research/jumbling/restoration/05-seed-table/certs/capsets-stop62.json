@@ -1,0 +1,15854 @@
+{
+ "table_digest": "9e70c4b9395a7e1227530f2ce6594dbbd686dcb85e4a1f79945905636e4ecc57",
+ "off": 860,
+ "pieces": [
+  {
+   "piece": 1040,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 1041,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 1044,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 1045,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 1046,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 1047,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 1048,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 1049,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 1050,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 2742,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 3644,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 3657,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4044,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4046,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4047,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4054,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4055,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    3,
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4058,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4060,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4065,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4066,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4067,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4068,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 4069,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7708,
+   "in": [
+    5,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    2,
+    6,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 7709,
+   "in": [
+    5,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    2,
+    6,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 7710,
+   "in": [
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    2,
+    3,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 7711,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    2,
+    3
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 7712,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    2
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 7713,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    2
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 7714,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    2
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 7721,
+   "in": [
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7722,
+   "in": [
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7723,
+   "in": [
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    3,
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7724,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7725,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7726,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7776,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7777,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7778,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7779,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7780,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7781,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7782,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7783,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7784,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7785,
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7786,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7787,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7788,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7789,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7790,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7791,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7792,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7793,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7794,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7795,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7796,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7803,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7804,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7805,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7806,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7807,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7808,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 7809,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9104,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260,
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9110,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9117,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9126,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    392
+   ],
+   "straddle": [
+    260,
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9128,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    392
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9131,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9132,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9626,
+   "in": [
+    5,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    2,
+    6
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 9627,
+   "in": [
+    5,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    2,
+    3,
+    6,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 9628,
+   "in": [
+    5,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    0,
+    2,
+    3,
+    6,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 9629,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    2,
+    3
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 9630,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    2,
+    3,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 9631,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    2,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 9632,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    2,
+    3,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 9633,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    2,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 9634,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    2
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 9683,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9684,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9685,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9686,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9687,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9688,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9689,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    3,
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9690,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    3,
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9691,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9692,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9693,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9694,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    3,
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9695,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9696,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9697,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    3,
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9698,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9699,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9700,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9701,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9702,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9703,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9704,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9705,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9706,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9707,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9708,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9709,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9710,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9711,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9712,
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    3
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9713,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9714,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9715,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9716,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9717,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 9718,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 10295,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    375
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 10303,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 11589,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 11597,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 11604,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 11607,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    375
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 12235,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 12244,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 12245,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 12246,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 12248,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 12252,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 12253,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 12254,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13531,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13532,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13540,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13542,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13544,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13545,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13548,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13549,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13550,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13553,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13554,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13555,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13556,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13561,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13562,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13563,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13564,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13565,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13566,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13567,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13569,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13571,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13572,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13573,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 13574,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14664,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    2,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 14665,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    2
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 14666,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14667,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14668,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14678,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14722,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14723,
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    2,
+    9
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 14724,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14725,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14726,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14727,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14728,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14729,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14730,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14731,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14732,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14733,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14734,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14735,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14736,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14737,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14738,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14739,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14740,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14741,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14742,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14743,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14744,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14745,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14746,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14747,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14748,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14749,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14750,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14751,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14752,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14753,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 14754,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16245,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    290,
+    301
+   ],
+   "straddle": [
+    302
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16249,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16259,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16260,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16261,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16270,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16271,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16272,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16275,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16276,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16279,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16280,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16282,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16283,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16284,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16293,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16692,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16694,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16698,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16699,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16700,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16703,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16704,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16705,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16707,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16711,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16712,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 16715,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    392
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 18445,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [
+    244
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 18447,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [
+    244
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 18481,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [
+    244
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 18512,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 18516,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 18517,
+   "in": [
+    30,
+    31,
+    34,
+    36,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 18523,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 18524,
+   "in": [
+    30,
+    31,
+    34,
+    36,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19417,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19418,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "straddle": [
+    9,
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19423,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19424,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    12,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19426,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19427,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19431,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19432,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19433,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19434,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19435,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19436,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19439,
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "straddle": [
+    12
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19506,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19507,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19508,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    392
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19509,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    392
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19517,
+   "in": [
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [
+    152
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19518,
+   "in": [
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [
+    152
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19520,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260,
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19521,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19522,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19523,
+   "in": [
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    392
+   ],
+   "straddle": [
+    152,
+    260,
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19524,
+   "in": [
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    392
+   ],
+   "straddle": [
+    152,
+    375
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19525,
+   "in": [
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [
+    152,
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19526,
+   "in": [
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [
+    152
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19622,
+   "in": [
+    30,
+    31,
+    34,
+    36,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19623,
+   "in": [
+    30,
+    31,
+    34,
+    36,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 19624,
+   "in": [
+    30,
+    31,
+    34,
+    36,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21605,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [
+    244
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 21607,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21608,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21612,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21613,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21618,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21619,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21622,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21623,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21624,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21625,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21626,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21627,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21629,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21630,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21631,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21635,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21636,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21637,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21638,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21639,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21644,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21645,
+   "in": [
+    30,
+    31,
+    34,
+    36,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 21651,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23808,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23814,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23819,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23821,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23955,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    100
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 23956,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    100
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 23959,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23964,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23965,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23977,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23978,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23979,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23981,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23982,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23983,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23984,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23987,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23988,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23989,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23990,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23994,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23995,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23996,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23998,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 23999,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24001,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24002,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24003,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24004,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24005,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24006,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24007,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24008,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24009,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24010,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24011,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24061,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24062,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24063,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24070,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 24071,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29168,
+   "in": [
+    30,
+    34,
+    89,
+    145
+   ],
+   "straddle": [
+    31,
+    73,
+    96,
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 29170,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 29171,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 29175,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    96,
+    100
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 29176,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 29177,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 29178,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    100
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 29181,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29184,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29185,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29186,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29189,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29191,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29192,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29193,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29194,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29195,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29196,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29197,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29198,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29199,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29200,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29201,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29202,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29203,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29204,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29205,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29206,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29207,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29208,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29209,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29210,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29211,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29212,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29213,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29214,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29215,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29216,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29217,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 29220,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    36,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 31623,
+   "in": [
+    154,
+    188,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [
+    178,
+    244,
+    256
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 31624,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [
+    244
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 31625,
+   "in": [
+    154,
+    188,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [
+    178,
+    256
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 31626,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 31627,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 32088,
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    290,
+    301,
+    302
+   ],
+   "straddle": [
+    260
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 36033,
+   "in": [
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "straddle": [
+    152
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42338,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42339,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42340,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42341,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42342,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42343,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42351,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42352,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42353,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42354,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42355,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42356,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42357,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42358,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 42360,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 47885,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 47888,
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48281,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    100
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 48283,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48284,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48294,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48295,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48298,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48302,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48308,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48311,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48312,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48313,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48314,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48316,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48317,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48318,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48319,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48322,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48323,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48325,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 48328,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    36
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55464,
+   "in": [
+    30,
+    34,
+    89,
+    145
+   ],
+   "straddle": [
+    31,
+    73,
+    100
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 55465,
+   "in": [
+    30,
+    34,
+    89,
+    145
+   ],
+   "straddle": [
+    31,
+    73,
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 55466,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    31,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55556,
+   "in": [
+    30,
+    34,
+    89,
+    145
+   ],
+   "straddle": [
+    31,
+    73,
+    96,
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 55557,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    31,
+    96,
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 55558,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    31,
+    96,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55559,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    96,
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 55560,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [
+    100
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 55561,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    96,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55562,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55563,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55572,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55573,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55584,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55593,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55594,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55600,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    96,
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 55601,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55602,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    96,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55603,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55604,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55605,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55609,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    96,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55615,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55616,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55621,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145
+   ],
+   "straddle": [
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55622,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55623,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55627,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55630,
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55631,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 55633,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58440,
+   "in": [
+    30,
+    34,
+    89,
+    145
+   ],
+   "straddle": [
+    31,
+    73,
+    100,
+    153
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 58441,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145
+   ],
+   "straddle": [
+    31,
+    153
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58444,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58538,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58541,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58542,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58543,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58554,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58560,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58563,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58566,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31,
+    96,
+    100
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 58567,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31,
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58569,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31,
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58570,
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    31,
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58572,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58574,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58577,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58579,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58580,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58582,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58583,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [
+    96
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58592,
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 58594,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64184,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64185,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64188,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64191,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64192,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64208,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64209,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64210,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64211,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64212,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64213,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64220,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64221,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64222,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64223,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64224,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64225,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64226,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64227,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64228,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64229,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64230,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64231,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64232,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64233,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64234,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64235,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64236,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64237,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64238,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64239,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64240,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64241,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64242,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64243,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64244,
+   "in": [
+    315,
+    319,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64503,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64504,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64505,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64508,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64509,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64510,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64511,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64512,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64513,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64514,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64515,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64516,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64517,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64518,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64519,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64520,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64521,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64522,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64523,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64524,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64525,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64526,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64527,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64528,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64529,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64530,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64531,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64532,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64533,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64534,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64535,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64536,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64537,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64538,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64539,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64540,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64541,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64542,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64543,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64544,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64545,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64546,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64547,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64548,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64549,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64550,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64551,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64552,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64553,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64554,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64555,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64556,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 64557,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68409,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68411,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68412,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68422,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68423,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68424,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68425,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68426,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68428,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68429,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68430,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68431,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68432,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68437,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68438,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68442,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68443,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68444,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68445,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68446,
+   "in": [
+    315,
+    319,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68447,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68448,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68449,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68450,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68451,
+   "in": [
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68452,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 68453,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70351,
+   "in": [
+    369,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359,
+    376,
+    388,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 70352,
+   "in": [
+    369,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359,
+    376,
+    388,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 70353,
+   "in": [
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    359,
+    376,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 70354,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    359,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 70355,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 70356,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 70357,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 70362,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    359
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70363,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70364,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70366,
+   "in": [
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70367,
+   "in": [
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70368,
+   "in": [
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    359,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70369,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    359
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70370,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70371,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70377,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70378,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70379,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70380,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70381,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70382,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70383,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70384,
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    359
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70385,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70386,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70387,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70388,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70389,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70390,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70391,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70392,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70393,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70394,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70395,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70396,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70397,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70398,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70399,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70400,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70401,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70402,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70403,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70404,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70405,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70406,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70407,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70408,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70409,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70410,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70411,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70412,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70413,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70414,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70415,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70416,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70417,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70418,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70419,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70420,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70421,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 70422,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82596,
+   "in": [
+    369,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    359,
+    388,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 82597,
+   "in": [
+    369,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    359,
+    376,
+    388,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 82598,
+   "in": [
+    369,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    359,
+    376,
+    388,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 82599,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 82600,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82601,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82602,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82606,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 82607,
+   "in": [
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 82608,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 82609,
+   "in": [
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 82610,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 82611,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82612,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82613,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82614,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82615,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82616,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82617,
+   "in": [
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82618,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82619,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82620,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82621,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82622,
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82623,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82624,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82625,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82626,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82627,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82628,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82629,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82630,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82631,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82632,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82633,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82634,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82635,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82636,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82637,
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82638,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82639,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82640,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82641,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82642,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82643,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82644,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 82645,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83439,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83440,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83441,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83442,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83443,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83444,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83451,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83452,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83453,
+   "in": [
+    295,
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83454,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83455,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83456,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83457,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83458,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83459,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83460,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83461,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83462,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83463,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83464,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 83465,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 84249,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 84250,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 84251,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 84252,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 85253,
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    145,
+    153
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96501,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96543,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96544,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96545,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96546,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96547,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96548,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96549,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96550,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96551,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96552,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96553,
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96554,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96555,
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96556,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96557,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96558,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96559,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96560,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96561,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96562,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 96563,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 97992,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 97999,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 98000,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 98004,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99755,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99756,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99760,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99761,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99762,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99763,
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99764,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99765,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99766,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99767,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99768,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 99769,
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    336
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 105240,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 105241,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114267,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114268,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114269,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114270,
+   "in": [
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 114271,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114272,
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 114273,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114274,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114275,
+   "in": [
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376,
+    468
+   ],
+   "checked_exactly": 12
+  },
+  {
+   "piece": 114276,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114277,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114278,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114279,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114280,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114281,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114282,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114283,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114284,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114285,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114286,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114287,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114288,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114289,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114290,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114291,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114292,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114293,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114294,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114295,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114296,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114297,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114298,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114299,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114300,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114301,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114302,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114303,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114304,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114305,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114306,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114307,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114308,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114309,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114310,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114311,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114312,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114313,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114314,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 114315,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117841,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117842,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117843,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117850,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295,
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117851,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117852,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117853,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117854,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117855,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117856,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117857,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117858,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117859,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117860,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117861,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 117862,
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118424,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118425,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118426,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118428,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118431,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118435,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118436,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118437,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118439,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118440,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118442,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118443,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118444,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118445,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118446,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118447,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118448,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118449,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 118450,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 129979,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 129980,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 129984,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 130916,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 130928,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 130930,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 130932,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135209,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135210,
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    295
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135211,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135212,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135213,
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135216,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135217,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135218,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135219,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135220,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135221,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 135222,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [
+    376
+   ],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 136047,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  },
+  {
+   "piece": 136050,
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "straddle": [],
+   "checked_exactly": 11
+  }
+ ],
+ "groups_with_identical_in_sets": [
+  {
+   "in": [
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "pieces": [
+    1040,
+    1041,
+    7711,
+    7724,
+    7776,
+    7779,
+    7781,
+    7783,
+    7784,
+    7785
+   ]
+  },
+  {
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "pieces": [
+    1044,
+    1045,
+    1046,
+    1047,
+    1048,
+    1049,
+    1050,
+    2742,
+    4047,
+    4065,
+    4066,
+    7780,
+    7782,
+    7787,
+    7792,
+    7793,
+    7803,
+    7804,
+    7805,
+    7806,
+    9705,
+    9706,
+    9712
+   ]
+  },
+  {
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "pieces": [
+    3644,
+    4058,
+    4060,
+    9684,
+    9685,
+    9691,
+    9693,
+    9695,
+    9696,
+    9698,
+    13531,
+    13532,
+    13540,
+    13542,
+    13544,
+    13545,
+    13548,
+    13549,
+    13550,
+    13553,
+    13554,
+    13556,
+    13564,
+    13566,
+    14666,
+    14667,
+    14678,
+    14722,
+    14724,
+    14725,
+    14726,
+    14727,
+    14728,
+    14729,
+    14730,
+    14731,
+    14732,
+    14733,
+    14739,
+    14740,
+    14741,
+    14746,
+    14747,
+    14749,
+    14750,
+    14753,
+    16704,
+    19417,
+    19418
+   ]
+  },
+  {
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    11,
+    12,
+    13
+   ],
+   "pieces": [
+    3657,
+    13555,
+    13561,
+    13562,
+    13563,
+    13565,
+    13567,
+    13569,
+    13571,
+    13572,
+    13573,
+    13574,
+    16707
+   ]
+  },
+  {
+   "in": [
+    0,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "pieces": [
+    4044,
+    4046,
+    4054,
+    4055,
+    9629,
+    9630,
+    9632,
+    9683,
+    9686,
+    9687,
+    9688,
+    9689,
+    9690,
+    9694,
+    9697
+   ]
+  },
+  {
+   "in": [
+    0,
+    1,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "pieces": [
+    4067,
+    4068,
+    4069,
+    7796,
+    7809,
+    9701,
+    9702,
+    9703,
+    9704,
+    9707,
+    9708,
+    9709,
+    9710,
+    9711,
+    9713,
+    9715,
+    9716,
+    9717,
+    9718,
+    12246,
+    12248,
+    12252,
+    12253,
+    12254,
+    14668,
+    14734,
+    14735,
+    14736,
+    14737,
+    14738,
+    14742,
+    14743,
+    14744,
+    14745,
+    14748,
+    14751,
+    14752,
+    14754,
+    19423,
+    19426,
+    19427,
+    19431,
+    19432,
+    19433,
+    19434,
+    19435,
+    19436,
+    19439
+   ]
+  },
+  {
+   "in": [
+    5,
+    7,
+    11,
+    13
+   ],
+   "pieces": [
+    7708,
+    7709,
+    9626,
+    9627,
+    9628
+   ]
+  },
+  {
+   "in": [
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "pieces": [
+    7710,
+    7721,
+    7722,
+    7723
+   ]
+  },
+  {
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    9,
+    11,
+    13
+   ],
+   "pieces": [
+    7712,
+    7713,
+    7714,
+    7725,
+    7726,
+    7777,
+    7778,
+    7786,
+    7788,
+    7789,
+    7790,
+    7791,
+    7794,
+    7795,
+    7807,
+    7808,
+    9634,
+    9699,
+    9700,
+    9714,
+    12235,
+    12244,
+    12245,
+    14665
+   ]
+  },
+  {
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302
+   ],
+   "pieces": [
+    9104,
+    11589,
+    11597,
+    11604,
+    16259,
+    16260,
+    16270,
+    16271,
+    16272,
+    16275,
+    16276,
+    16279,
+    16282,
+    16283,
+    16293,
+    16692,
+    16694,
+    19506,
+    19520,
+    23808,
+    23814,
+    23819,
+    24061,
+    24062
+   ]
+  },
+  {
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302
+   ],
+   "pieces": [
+    9110,
+    16261,
+    16280,
+    16284,
+    16698,
+    16699,
+    16700,
+    16703,
+    16705,
+    16711,
+    16712,
+    19507,
+    19521,
+    23821,
+    24063,
+    24070,
+    24071
+   ]
+  },
+  {
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "pieces": [
+    9117,
+    9131,
+    10303,
+    19522
+   ]
+  },
+  {
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    392
+   ],
+   "pieces": [
+    9128,
+    16715,
+    19508,
+    19509
+   ]
+  },
+  {
+   "in": [
+    0,
+    3,
+    5,
+    6,
+    7,
+    11,
+    13
+   ],
+   "pieces": [
+    9631,
+    9633,
+    9692,
+    14664,
+    14723
+   ]
+  },
+  {
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    283,
+    290,
+    301,
+    302,
+    375
+   ],
+   "pieces": [
+    10295,
+    11607
+   ]
+  },
+  {
+   "in": [
+    152,
+    162,
+    183,
+    237,
+    290,
+    301,
+    302
+   ],
+   "pieces": [
+    16249,
+    32088
+   ]
+  },
+  {
+   "in": [
+    154,
+    178,
+    188,
+    256,
+    268,
+    277,
+    369,
+    376
+   ],
+   "pieces": [
+    18445,
+    18447,
+    18481,
+    21605,
+    31624,
+    31626,
+    31627,
+    42338,
+    47885,
+    47888
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "pieces": [
+    18512,
+    18516,
+    18523,
+    21612,
+    21613,
+    21623,
+    21624,
+    21625,
+    21629,
+    21630,
+    21631,
+    21644,
+    21651,
+    23964,
+    23977,
+    23981,
+    23987,
+    24001,
+    29181,
+    29184,
+    29185,
+    29186,
+    29189,
+    29191,
+    29192,
+    29193,
+    29194,
+    29195,
+    29198,
+    29200,
+    29201,
+    29203,
+    29204,
+    29205,
+    29209,
+    29212,
+    29213,
+    29215,
+    29216,
+    29220,
+    55615,
+    55616
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    36,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145
+   ],
+   "pieces": [
+    18517,
+    18524
+   ]
+  },
+  {
+   "in": [
+    162,
+    183,
+    237,
+    260,
+    283,
+    290,
+    301,
+    302,
+    375,
+    392
+   ],
+   "pieces": [
+    19517,
+    19518,
+    19526,
+    36033
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    36,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "pieces": [
+    19623,
+    19624
+   ]
+  },
+  {
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    21607,
+    21618,
+    21619,
+    21622,
+    21626,
+    21627,
+    42339,
+    42351,
+    55631
+   ]
+  },
+  {
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    21608,
+    21635,
+    21636,
+    21637,
+    21638,
+    21639,
+    42340,
+    42341,
+    42342,
+    42343,
+    42352,
+    42354,
+    42355,
+    42356,
+    42357,
+    42358,
+    42360
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "pieces": [
+    23955,
+    23956,
+    23959,
+    29178,
+    48281,
+    48283,
+    48284,
+    48294,
+    48295,
+    48311,
+    48312,
+    55560,
+    55562,
+    55563,
+    55604,
+    55622,
+    55623,
+    58577,
+    58579,
+    58580,
+    58592
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "pieces": [
+    23965,
+    23978,
+    23979,
+    23982,
+    23983,
+    23984,
+    23988,
+    23989,
+    23990,
+    23994,
+    23995,
+    23996,
+    23998,
+    24002,
+    24003,
+    24004,
+    24005,
+    24008,
+    24009,
+    24010,
+    29196,
+    29197,
+    29199,
+    29202,
+    29206,
+    29207,
+    29208,
+    29210,
+    29214,
+    29217,
+    48316,
+    48319,
+    55627,
+    55630
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    64,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "pieces": [
+    23999,
+    24006,
+    24007,
+    24011,
+    48308,
+    48317,
+    48318,
+    48322,
+    48323,
+    48325,
+    48328
+   ]
+  },
+  {
+   "in": [
+    30,
+    34,
+    89,
+    145
+   ],
+   "pieces": [
+    29168,
+    55464,
+    55465,
+    55556,
+    58440
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    96,
+    145
+   ],
+   "pieces": [
+    29170,
+    29171,
+    29176,
+    29177,
+    55621
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145
+   ],
+   "pieces": [
+    29175,
+    55559,
+    55561,
+    55572,
+    55584,
+    55593,
+    55600,
+    55601,
+    55602,
+    55609
+   ]
+  },
+  {
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    29211,
+    55633
+   ]
+  },
+  {
+   "in": [
+    154,
+    188,
+    268,
+    277,
+    369,
+    376
+   ],
+   "pieces": [
+    31623,
+    31625
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    145,
+    153
+   ],
+   "pieces": [
+    48298,
+    48302,
+    58542,
+    58543,
+    58572,
+    58583,
+    85253
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    59,
+    73,
+    89,
+    96,
+    145,
+    153
+   ],
+   "pieces": [
+    48313,
+    48314,
+    58594
+   ]
+  },
+  {
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145
+   ],
+   "pieces": [
+    55466,
+    55557,
+    55558,
+    58441
+   ]
+  },
+  {
+   "in": [
+    30,
+    31,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "pieces": [
+    55573,
+    55594,
+    55603,
+    55605,
+    58574,
+    58582
+   ]
+  },
+  {
+   "in": [
+    30,
+    34,
+    73,
+    89,
+    145,
+    153
+   ],
+   "pieces": [
+    58444,
+    58538,
+    58541,
+    58554,
+    58560,
+    58563,
+    58566,
+    58567,
+    58569,
+    58570
+   ]
+  },
+  {
+   "in": [
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    64184,
+    64185,
+    64188,
+    64509,
+    64510,
+    64513,
+    64514,
+    64515,
+    68412,
+    68428,
+    68429,
+    70378,
+    70380,
+    70381,
+    70386,
+    70391,
+    70392,
+    70396,
+    70397,
+    70398,
+    82624,
+    82625,
+    82637
+   ]
+  },
+  {
+   "in": [
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    64191,
+    64192,
+    64208,
+    64209,
+    64210,
+    64220,
+    64226,
+    64230,
+    64237,
+    64503,
+    64504,
+    64511,
+    64516,
+    64517,
+    64518,
+    64519,
+    64520,
+    64521,
+    64522,
+    64523,
+    64526,
+    64528,
+    64529,
+    64531,
+    64532,
+    64533,
+    64537,
+    64538,
+    64539,
+    64540,
+    64543,
+    64544,
+    64545,
+    64546,
+    64547,
+    64549,
+    64550,
+    64552,
+    64554,
+    64555,
+    68443,
+    70402,
+    70403,
+    70404,
+    70408,
+    70412,
+    83439,
+    83451,
+    96553
+   ]
+  },
+  {
+   "in": [
+    295,
+    315,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    64211,
+    64212,
+    64221,
+    64222,
+    64223,
+    64224,
+    64225,
+    64227,
+    64228,
+    64229,
+    64231,
+    64232,
+    64233,
+    64235,
+    64238,
+    64239,
+    64240,
+    64242,
+    64505,
+    64524,
+    64525,
+    64527,
+    64530,
+    64534,
+    64535,
+    64536,
+    64541,
+    64542,
+    64548,
+    64551,
+    64553,
+    64557,
+    68445,
+    83440,
+    83441,
+    83442,
+    83443,
+    83452,
+    83454,
+    83455,
+    83456,
+    83457,
+    83458,
+    83460,
+    83462,
+    83463,
+    99761,
+    99763
+   ]
+  },
+  {
+   "in": [
+    295,
+    315,
+    319,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    64213,
+    64234,
+    64236,
+    64241,
+    64243,
+    68442,
+    83444,
+    83459,
+    83464,
+    83465,
+    84249,
+    84250,
+    84251,
+    84252,
+    99755,
+    99756,
+    99760,
+    99762,
+    99764,
+    99765,
+    99766,
+    99768,
+    99769
+   ]
+  },
+  {
+   "in": [
+    315,
+    319,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    64244,
+    68446
+   ]
+  },
+  {
+   "in": [
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    64508,
+    64512,
+    70354,
+    70362,
+    70369,
+    70377,
+    70379,
+    70382,
+    70383,
+    70384
+   ]
+  },
+  {
+   "in": [
+    315,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    64556,
+    70405,
+    70406,
+    70409,
+    70410,
+    70411,
+    70413,
+    70414,
+    70415,
+    70417,
+    70419,
+    70420,
+    96555
+   ]
+  },
+  {
+   "in": [
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    68409,
+    68411,
+    68422,
+    68423,
+    82599,
+    82600,
+    82606,
+    82608,
+    82611,
+    82612,
+    82613,
+    82614,
+    82615,
+    82619,
+    82622
+   ]
+  },
+  {
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    68424,
+    68425,
+    68426,
+    82601,
+    82602,
+    82616,
+    82618,
+    82620,
+    82621,
+    82623,
+    114267,
+    114268,
+    114269,
+    114271,
+    114273,
+    114274,
+    114276,
+    114277,
+    114278,
+    114279,
+    114280,
+    114281,
+    114282,
+    114283,
+    114284,
+    114285,
+    114286,
+    114287,
+    114289,
+    114295,
+    114296,
+    114297,
+    114298,
+    114299,
+    114300,
+    114301,
+    114302,
+    114303,
+    114308,
+    114309,
+    114310,
+    117841,
+    117850,
+    118424,
+    118425,
+    118426,
+    118428,
+    118442,
+    135210
+   ]
+  },
+  {
+   "in": [
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    68430,
+    68431,
+    68432,
+    70395,
+    70401,
+    82626,
+    82629,
+    82630,
+    82631,
+    82632,
+    82633,
+    82634,
+    82635,
+    82636,
+    82638,
+    82640,
+    82641,
+    82642,
+    82643,
+    96545,
+    96546,
+    96549,
+    96550,
+    96551,
+    114288,
+    114290,
+    114291,
+    114292,
+    114293,
+    114294,
+    114304,
+    114305,
+    114306,
+    114307,
+    114312,
+    114313,
+    114314,
+    114315,
+    117842,
+    117843,
+    117851,
+    117853,
+    117854,
+    117855,
+    117856,
+    117857,
+    117859,
+    117861
+   ]
+  },
+  {
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    68437,
+    68438,
+    68449,
+    97999,
+    98000,
+    98004,
+    118440,
+    118447,
+    118448,
+    118450,
+    130916,
+    130928,
+    130930,
+    130932,
+    135209,
+    135211,
+    135212,
+    135216,
+    135217,
+    135218,
+    135219,
+    135221,
+    135222
+   ]
+  },
+  {
+   "in": [
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    68444,
+    68450,
+    68452,
+    70407,
+    70416,
+    70418,
+    70421,
+    70422,
+    82644,
+    82645,
+    96547,
+    96548,
+    96552,
+    96554,
+    96556,
+    96557,
+    96558,
+    96559,
+    96560,
+    96561,
+    96563,
+    117858,
+    117862
+   ]
+  },
+  {
+   "in": [
+    295,
+    315,
+    319,
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    68453,
+    83461,
+    96562,
+    99767,
+    105240,
+    105241,
+    117860,
+    129979,
+    129980,
+    129984,
+    135220,
+    136047,
+    136050
+   ]
+  },
+  {
+   "in": [
+    369,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    70351,
+    70352,
+    82596,
+    82597,
+    82598
+   ]
+  },
+  {
+   "in": [
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    70353,
+    70366,
+    70367,
+    70368
+   ]
+  },
+  {
+   "in": [
+    336,
+    359,
+    369,
+    376,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    70355,
+    70356,
+    70357,
+    70363,
+    70364,
+    70370,
+    70371,
+    70385,
+    70387,
+    70388,
+    70389,
+    70390,
+    70393,
+    70394,
+    70399,
+    70400,
+    82610,
+    82627,
+    82628,
+    82639,
+    96501,
+    96543,
+    96544,
+    114272
+   ]
+  },
+  {
+   "in": [
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    82607,
+    82609,
+    82617,
+    114270,
+    114275
+   ]
+  },
+  {
+   "in": [
+    295,
+    319,
+    336,
+    359,
+    369,
+    388,
+    393,
+    427,
+    507
+   ],
+   "pieces": [
+    97992,
+    114311,
+    118431,
+    118435,
+    118436,
+    118437,
+    118439,
+    118443,
+    118444,
+    118445,
+    118446,
+    118449,
+    135213
+   ]
+  }
+ ],
+ "seconds": 6.4
+}

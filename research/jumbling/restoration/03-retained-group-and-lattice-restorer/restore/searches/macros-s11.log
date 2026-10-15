@@ -1,0 +1,18 @@
+{"lens_q": 12, "returns": 272, "tried": 880, "lib": 2, "rank2": 1, "rank5": 0, "t": 55}
+{"lens_q": 13, "returns": 272, "tried": 880, "lib": 2, "rank2": 1, "rank5": 0, "t": 107}
+{"lens_q": 14, "returns": 272, "tried": 880, "lib": 2, "rank2": 1, "rank5": 0, "t": 158}
+{"lens_q": 15, "returns": 272, "tried": 880, "lib": 2, "rank2": 1, "rank5": 0, "t": 209}
+{"chain": [0, 72, 213, 486, 302], "returns": 140, "tried": 880, "lib": 2, "rank2": 1, "rank5": 0, "t": 344}
+{"chain": [0, 34, 294], "returns": 179, "tried": 880, "lib": 2, "rank2": 1, "rank5": 0, "t": 408}
+{"chain": [0, 60], "returns": 264, "tried": 880, "lib": 3, "rank2": 2, "rank5": 0, "t": 470}
+{"chain": [0, 86, 326, 376], "returns": 210, "tried": 880, "lib": 3, "rank2": 2, "rank5": 0, "t": 557}
+{"chain": [0, 42, 44, 318, 259], "returns": 142, "tried": 880, "lib": 3, "rank2": 2, "rank5": 0, "t": 639}
+{"chain": [0, 50, 42, 169, 422], "returns": 168, "tried": 880, "lib": 3, "rank2": 2, "rank5": 0, "t": 741}
+{"chain": [0, 75], "returns": 243, "tried": 880, "lib": 3, "rank2": 2, "rank5": 0, "t": 844}
+{"chain": [0, 102], "returns": 175, "tried": 880, "lib": 3, "rank2": 2, "rank5": 0, "t": 900}
+{"chain": [0, 53, 51], "returns": 212, "tried": 880, "lib": 3, "rank2": 2, "rank5": 0, "t": 966}
+{"chain": [0, 99, 30, 9], "returns": 195, "tried": 880, "lib": 3, "rank2": 2, "rank5": 0, "t": 1110}
+{"chain": [0, 81, 53, 167, 203, 199], "returns": 153, "tried": 880, "lib": 3, "rank2": 2, "rank5": 0, "t": 1221}
+{"chain": [0, 60, 39], "returns": 154, "tried": 880, "lib": 4, "rank2": 2, "rank5": 0, "t": 1303}
+{"chain": [0, 24, 131, 350, 378, 476], "returns": 162, "tried": 880, "lib": 4, "rank2": 2, "rank5": 0, "t": 1421}
+{"chain": [0, 31], "returns": 241, "tried": 880, "lib": 4, "rank2": 2, "rank5": 0, "t": 1480}

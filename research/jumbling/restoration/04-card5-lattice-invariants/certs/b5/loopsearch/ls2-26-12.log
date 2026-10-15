@@ -1,0 +1,2 @@
+depth 1 nodes 136 frontier 135 {'expanded': 1, 'collisions': 8, 'o5 sign 1 (holes 1, off 1)': 8} 67
+depth 2 nodes 11577 frontier 11441 {'expanded': 136, 'collisions': 7487, 'o5 sign 1 (holes 1, off 1)': 7487} 93

@@ -1,0 +1,9 @@
+orbit 0 homes in cap 0 4 sharing grips by angle {15.52: 4}
+orbit 1 homes in cap 0 18 sharing grips by angle {15.52: 4, 25.24: 12}
+orbit 2 homes in cap 0 16 sharing grips by angle {15.52: 4, 25.24: 12}
+orbit 3 homes in cap 0 24 sharing grips by angle {15.52: 4, 25.24: 12}
+orbit 4 homes in cap 0 60 sharing grips by angle {15.52: 4, 25.24: 12, 36.0: 12}
+orbit 5 homes in cap 0 60 sharing grips by angle {15.52: 4, 25.24: 12, 36.0: 12}
+orbit 6 homes in cap 0 6 sharing grips by angle {15.52: 4, 25.24: 12}
+orbit 7 homes in cap 0 72 sharing grips by angle {15.52: 4, 25.24: 12, 36.0: 24}
+orbit 8 homes in cap 0 36 sharing grips by angle {15.52: 4, 25.24: 12, 36.0: 24}

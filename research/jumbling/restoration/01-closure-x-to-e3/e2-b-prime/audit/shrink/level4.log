@@ -1,0 +1,6 @@
+16.3 applied P 31 parked 10 bon 3 holes 10
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 23}
+24.3 T 10 BH 7 GH [24905, 89251, 89252] T_straddle 0
+{"safe_all_grips": 592, "letters": 6512, "off_lattice": 10, "sec": 41}
+41.3 alphabet 592 6512 cands 88 min_bh 0 F 55
+68.7 done 68.7

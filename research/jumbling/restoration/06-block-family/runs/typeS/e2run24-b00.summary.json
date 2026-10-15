@@ -1,0 +1,454 @@
+{
+ "state_digest": "bb72a668da3387c62eda6e079a9b251a2909b9abea0b0079bcda24d180f85686",
+ "target": [
+  64191,
+  64192,
+  64208,
+  64209,
+  64210,
+  64211,
+  64212,
+  64220,
+  64221,
+  64222,
+  64223,
+  64224,
+  64225,
+  64226,
+  64227,
+  64228,
+  64229,
+  64230,
+  64231,
+  64232,
+  64233,
+  64235,
+  64237,
+  64238,
+  64239,
+  64240,
+  64242,
+  64503,
+  64504,
+  64505,
+  64511,
+  64516,
+  64517,
+  64518,
+  64519,
+  64520,
+  64521,
+  64522,
+  64523,
+  64524,
+  64525,
+  64526,
+  64527,
+  64528,
+  64529,
+  64530,
+  64531,
+  64532,
+  64533,
+  64534,
+  64535,
+  64536,
+  64537,
+  64538,
+  64539,
+  64540,
+  64541,
+  64542,
+  64543,
+  64544,
+  64545,
+  64546,
+  64547,
+  64548,
+  64549,
+  64550,
+  64551,
+  64552,
+  64553,
+  64554,
+  64555,
+  64556,
+  64557,
+  68443,
+  68445,
+  70402,
+  70403,
+  70404,
+  70405,
+  70406,
+  70408,
+  70409,
+  70410,
+  70411,
+  70412,
+  70413,
+  70414,
+  70415,
+  70417,
+  70419,
+  70420,
+  83439,
+  83440,
+  83441,
+  83442,
+  83443,
+  83451,
+  83452,
+  83453,
+  83454,
+  83455,
+  83456,
+  83457,
+  83458,
+  83460,
+  83462,
+  83463,
+  96553,
+  96555,
+  99761,
+  99763
+ ],
+ "protected": 579,
+ "single_letters": [
+  {
+   "R": [
+    315,
+    14
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    21
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    23
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    43
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    44
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    45
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    46
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    47
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    48
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    49
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    50
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    315,
+    51
+   ],
+   "cap_pieces": 3324,
+   "other_pieces_in_cap": 3213
+  },
+  {
+   "R": [
+    369,
+    13
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    17
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    19
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    34
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    35
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    36
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    37
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    38
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    39
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    40
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    41
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    369,
+    42
+   ],
+   "cap_pieces": 3340,
+   "other_pieces_in_cap": 3229
+  },
+  {
+   "R": [
+    507,
+    13
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    17
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    19
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    34
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    35
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    36
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    37
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    38
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    39
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    40
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    41
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  },
+  {
+   "R": [
+    507,
+    42
+   ],
+   "cap_pieces": 3357,
+   "other_pieces_in_cap": 3246
+  }
+ ],
+ "tried": [
+  {
+   "R": [
+    315,
+    14
+   ],
+   "stop": "protected piece on K after P",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  },
+  {
+   "R": [
+    315,
+    21
+   ],
+   "stop": "protected piece on K after P",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  },
+  {
+   "R": [
+    315,
+    23
+   ],
+   "stop": "protected piece on K after P",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  },
+  {
+   "R": [
+    315,
+    43
+   ],
+   "stop": "protected piece on K after P",
+   "level": 0,
+   "P_length": 1,
+   "F_letters": [],
+   "P": null
+  }
+ ],
+ "seconds": 9.0
+}

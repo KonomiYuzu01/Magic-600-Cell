@@ -1,0 +1,15 @@
+{"piece": 12538, "orbit": 18, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 5}, "sec": 19.1}
+{"piece": 30553, "orbit": 26, "h0": 0, "best": 0, "path": [], "stats": {"blocked": 20}, "sec": 19.9}
+{"piece": 35860, "orbit": 26, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 26}, "sec": 20.0}
+{"piece": 74431, "orbit": 20, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 31}, "sec": 20.1}
+{"piece": 84956, "orbit": 13, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 37}, "sec": 20.2}
+{"piece": 87479, "orbit": 26, "h0": 0, "best": 0, "path": [], "stats": {"blocked": 52}, "sec": 20.8}
+{"piece": 126418, "orbit": 19, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 57}, "sec": 21.3}
+{"piece": 133595, "orbit": 26, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 63}, "sec": 21.5}
+{"piece": 149651, "orbit": 26, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 69}, "sec": 21.6}
+{"piece": 154424, "orbit": 26, "h0": 0, "best": 2, "path": [[324, 12]], "stats": {"blocked": 108, "open": 1}, "sec": 52.5}
+{"piece": 160096, "orbit": 26, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 114, "open": 1}, "sec": 52.7}
+{"piece": 162831, "orbit": 20, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 120, "open": 1}, "sec": 52.9}
+{"piece": 166009, "orbit": 26, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 126, "open": 1}, "sec": 53.0}
+{"piece": 166690, "orbit": 26, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 132, "open": 1}, "sec": 53.1}
+{"piece": 168830, "orbit": 20, "h0": 2, "best": 2, "path": [], "stats": {"blocked": 137, "open": 1}, "sec": 53.5}

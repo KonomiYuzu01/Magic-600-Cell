@@ -1,0 +1,134 @@
+{
+ "home_centroid_duplicates": 0,
+ "home_centroid_min_separation_note": null,
+ "home_centroid_min_adjacent_distance_lexsorted": 0.03871900620159515,
+ "E2_lattice_changed_exact_pose": 3091,
+ "of_them_changed_chamber": 3086,
+ "E2_lattice_same_exact_pose_but_changed_chamber": 0,
+ "states": {
+  "E2": {
+   "lattice": 177117,
+   "unmatched": 0,
+   "max_match_error": 1.791269783030391e-15,
+   "injective": true,
+   "holes": [
+    24905,
+    89251,
+    89252
+   ],
+   "Bprime_chambers": [
+    -1,
+    -1,
+    -1
+   ]
+  },
+  "after_V": {
+   "lattice": 177117,
+   "unmatched": 0,
+   "max_match_error": 1.791269783030391e-15,
+   "injective": true,
+   "holes": [
+    23354,
+    23362,
+    38667
+   ],
+   "Bprime_chambers": [
+    -1,
+    -1,
+    -1
+   ],
+   "digest": "98d5869934296ed5",
+   "target_chambers_occupied_by_lattice": []
+  },
+  "after_P": {
+   "lattice": 177110,
+   "unmatched": 0,
+   "max_match_error": 1.791269783030391e-15,
+   "injective": true,
+   "holes": [
+    21595,
+    23354,
+    23362,
+    38667,
+    42324,
+    52051,
+    58571,
+    58573,
+    75451,
+    75460
+   ],
+   "Bprime_chambers": [
+    57075,
+    89027,
+    57076
+   ],
+   "digest": "1509fd078dec4568",
+   "target_chambers_occupied_by_lattice": []
+  },
+  "after_Q": {
+   "lattice": 177110,
+   "unmatched": 0,
+   "max_match_error": 1.791269783030391e-15,
+   "injective": true,
+   "holes": [
+    21595,
+    42324,
+    52051,
+    57075,
+    57076,
+    58571,
+    58573,
+    75451,
+    75460,
+    89027
+   ],
+   "Bprime_chambers": [
+    23354,
+    23362,
+    38667
+   ],
+   "digest": "6edd6cbc579441b5",
+   "target_chambers_occupied_by_lattice": [
+    23354,
+    23362,
+    38667
+   ]
+  },
+  "after_Pinv": {
+   "lattice": 177120,
+   "unmatched": 0,
+   "max_match_error": 1.791269783030391e-15,
+   "injective": true,
+   "holes": [],
+   "Bprime_chambers": [
+    23354,
+    23362,
+    38667
+   ],
+   "digest": "79abe255c1498ba4",
+   "target_chambers_occupied_by_lattice": [
+    23354,
+    23362,
+    38667
+   ]
+  },
+  "after_Vinv": {
+   "lattice": 177120,
+   "unmatched": 0,
+   "max_match_error": 1.791269783030391e-15,
+   "injective": true,
+   "holes": [],
+   "Bprime_chambers": [
+    89251,
+    24905,
+    89252
+   ],
+   "digest": "fb199d9997a240c6",
+   "target_chambers_occupied_by_lattice": [
+    23354,
+    23362,
+    38667
+   ]
+  }
+ }
+}

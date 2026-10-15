@@ -1,0 +1,6 @@
+{"e1_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8", "e1_off": 90, "T": 87, "sec": 6.7}
+{"prefix": 600, "off": 682, "coll": 592, "sec": 17.6}
+{"part": "P", "digest": "d25915b317e0262fb8469260878cc682838c026a8fb84d25f5f508b396385932", "ok": true, "off": 682, "coll": 592, "sec": 17.7}
+{"part": "Q", "digest": "bd5431007c5bba6eaf3c7680dd51272d0b45b9dec8f24c3466a6e70e1d56c9fd", "ok": true, "off": 595, "coll": 592, "sec": 23.3}
+{"part": "Pinv", "digest": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8", "ok": true, "off": 3, "coll": 0, "sec": 31.0}
+{"chunk": "B", "rows": 31, "errors": [], "end": "51d4c56046f198e787343978c979089e72d6ac9fa52316828ae238d704d5d9f8", "sec": 31.6}

@@ -1,0 +1,90 @@
+{
+ "state_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+ "block_size": 87,
+ "block_smallest_piece": 3569,
+ "block_poses": 55,
+ "letters": {
+  "115,26": {
+   "in_K+": false,
+   "involution": false
+  },
+  "115,58": {
+   "in_K+": false,
+   "involution": false
+  },
+  "190,3": {
+   "in_K+": true,
+   "involution": false
+  },
+  "190,9": {
+   "in_K+": true,
+   "involution": false
+  },
+  "314,1": {
+   "in_K+": true,
+   "involution": true
+  },
+  "317,17": {
+   "in_K+": false,
+   "involution": false
+  },
+  "317,48": {
+   "in_K+": false,
+   "involution": false
+  },
+  "346,10": {
+   "in_K+": true,
+   "involution": true
+  }
+ },
+ "Q_template": true,
+ "G1_poles_of_X_frame": {
+  "190": 33,
+  "314": 190,
+  "317": 21,
+  "346": 356
+ },
+ "G2": {
+  "a": 346,
+  "e": 314,
+  "c": 115,
+  "T_in_cap_e": "in",
+  "T_in_cap_c": "out",
+  "B(T)_in_cap_c": "in",
+  "X^-1 B m in K+": true,
+  "T_in_cap_a": "in",
+  "A(T)_in_cap_c": "out",
+  "A(T)_in_cap_e": "out"
+ },
+ "G3": {
+  "badQ": 198,
+  "badQ_occupied": 191,
+  "caps_holding_badQ": [
+   115,
+   128,
+   190
+  ],
+  "lens_size": 198,
+  "badQ_equals_lens": true,
+  "pole_X^-1_n_e": 190
+ },
+ "G4": {
+  "P_shape": true,
+  "X_shared_with_Q": true,
+  "Y": [
+   190,
+   3
+  ],
+  "Y_in_K+": true,
+  "Y_grip_in_lens_caps": true,
+  "Y_grip_pole_of_X_frame": 33,
+  "Z": [
+   317,
+   48
+  ],
+  "Z_in_K+": false,
+  "Z n_e": 115,
+  "Z n_p": 190
+ }
+}
+{"T_on_lattice": 87, "prot_exact": true, "badW": 87, "badW_occupied": 86, "landing_in_badW": 87, "badW_in_badQ_lens": 87, "holes": 90}

@@ -1,0 +1,6 @@
+{"file": "V.json", "twists": 8, "off": 3, "input_digest_ok": true, "output_digest_ok": true, "depth_failures": 0, "inadmissible": null, "sec": 12}
+{"file": "P.json", "twists": 31, "off": 10, "input_digest_ok": true, "output_digest_ok": true, "depth_failures": 0, "inadmissible": null, "sec": 54}
+{"file": "Q.json", "twists": 1, "off": 10, "input_digest_ok": true, "output_digest_ok": true, "depth_failures": 0, "inadmissible": null, "sec": 56}
+{"file": "Pinv.json", "twists": 31, "off": 0, "input_digest_ok": true, "output_digest_ok": true, "depth_failures": 0, "inadmissible": null, "sec": 97}
+{"file": "Vinv.json", "twists": 8, "off": 0, "input_digest_ok": true, "output_digest_ok": true, "depth_failures": 0, "inadmissible": null, "sec": 97}
+{"passed": true, "twists": 79, "end_digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441", "sec": 98}

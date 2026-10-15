@@ -1,0 +1,28 @@
+{
+ "orbit_index": 6,
+ "model_orbit": [
+  4
+ ],
+ "states": 156,
+ "classes": 97,
+ "rep": 12,
+ "rep_caps": [
+  0,
+  10,
+  12,
+  13,
+  38
+ ],
+ "lens_pairs": [
+  [
+   13,
+   38
+  ]
+ ],
+ "combos": 1728,
+ "solutions": [],
+ "failure_reasons": {
+  "tau": 1728
+ },
+ "sec": 4.7
+}

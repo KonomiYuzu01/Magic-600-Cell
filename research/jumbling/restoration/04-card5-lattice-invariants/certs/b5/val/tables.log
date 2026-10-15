@@ -1,0 +1,15 @@
+menus ready 4.7
+refined states 144 classes 49 2.3
+family sizes Counter({12: 600}) rep caps [0, 10, 12, 13, 35] pairs at 36 in rep [(13, 35)]
+transitions built 3900 4.7
+lens pairs [(13, 35)] option counts [12, 12, 12, 1, 1]
+assoc {0: 2, 10: 3, 12: 7, 13: 35, 35: 13} classes 49
+walk done {} off orbit pieces 0
+t-T200.json missing classes 0
+t-T200.json V bijective; off orbit pieces 3028
+t-T300.json missing classes 0
+t-T300.json V bijective; off orbit pieces 3070
+t-T723.json missing classes 0
+t-T723.json V bijective; off orbit pieces 3028
+t-T723x433-12.json missing classes 0
+t-T723x433-12.json V bijective; off orbit pieces 3086

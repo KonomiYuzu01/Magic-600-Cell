@@ -1,0 +1,4 @@
+{"home_centroids": "cache, rechecked in own chamber", "sec": 61.7}
+{"off1": 90, "holes1": 90, "off2": [16245, 16249, 32088], "holes2": [24905, 89251, 89252], "U": 1210, "sec": 119.3}
+{"off": 90, "blocks": [87, 3], "straddling": 5, "status_3": 0, "sec": 132}
+{"done": "testB-E1.json", "bad": 87, "subset": true, "good": [24905, 89251, 89252], "ends": [24905, 89251, 89252], "sec": 142.3}

@@ -1,0 +1,142 @@
+[
+ {
+  "shape": "da4b45",
+  "table": "../data/templates/stop62-s1-table.json",
+  "block": "../data/templates/t00-block.json",
+  "rows": [
+   "../data/templates/t00-rows.jsonl"
+  ],
+  "max": 15,
+  "source": "stop62 k00 111-block @3644"
+ },
+ {
+  "shape": "da4b45",
+  "table": "../data/templates/stop62-s3-table.json",
+  "block": "../data/templates/t01-block.json",
+  "rows": [
+   "../data/templates/t01-rows.jsonl"
+  ],
+  "max": 10,
+  "source": "stop62 k02 111-block @64191"
+ },
+ {
+  "shape": "da4b45",
+  "table": "../data/templates/stop62-s3-table.json",
+  "block": "../data/templates/t02-block.json",
+  "rows": [
+   "../data/templates/t02-rows.jsonl"
+  ],
+  "max": 10,
+  "source": "stop62 k02 111-block @68424"
+ },
+ {
+  "shape": "da4b45",
+  "table": "../data/templates/e2run24-s1-table.json",
+  "block": "../data/templates/t03-block.json",
+  "rows": [
+   "../data/templates/t03-rows.jsonl"
+  ],
+  "max": 10,
+  "source": "e2run24 s1 111-block @64191"
+ },
+ {
+  "shape": "da4b45",
+  "table": "../data/templates/e2run24-s1-table.json",
+  "block": "../data/templates/t04-block.json",
+  "rows": [
+   "../data/templates/t04-rows.jsonl"
+  ],
+  "max": 10,
+  "source": "e2run24 s1 111-block @68424"
+ },
+ {
+  "shape": "fca5f0",
+  "table": "../data/templates/stop62-s3-table.json",
+  "block": "../data/templates/t05-block.json",
+  "rows": [
+   "../data/templates/t05-rows.jsonl"
+  ],
+  "max": 15,
+  "source": "stop62 k02 86-block @1040"
+ },
+ {
+  "shape": "fca5f0",
+  "table": "../data/templates/stop62-s3-table.json",
+  "block": "../data/templates/t06-block.json",
+  "rows": [
+   "../data/templates/t06-rows.jsonl"
+  ],
+  "max": 15,
+  "source": "stop62 k02 86-block @64184"
+ },
+ {
+  "shape": "fca5f0",
+  "table": "../data/templates/e2run24-s1-table.json",
+  "block": "../data/templates/t07-block.json",
+  "rows": [
+   "../data/templates/t07-rows.jsonl"
+  ],
+  "max": 15,
+  "source": "e2run24 s1 86-block @64184"
+ },
+ {
+  "shape": "abd791",
+  "table": "../data/templates/stop62-s3-table.json",
+  "block": "../data/templates/t08-block.json",
+  "rows": [
+   "../data/templates/t08-rows.jsonl"
+  ],
+  "max": 20,
+  "source": "stop62 k02 87-block @64213"
+ },
+ {
+  "shape": "abd791",
+  "table": "../data/templates/e2run24-s1-table.json",
+  "block": "../data/templates/t09-block.json",
+  "rows": [
+   "../data/templates/t09-rows.jsonl"
+  ],
+  "max": 20,
+  "source": "e2run24 s1 87-block @64213"
+ },
+ {
+  "shape": "9162556f",
+  "table": "../data/templates/fixture-s3-table.json",
+  "block": "../data/templates/t10-block.json",
+  "rows": [
+   "../data/templates/t10-rows.jsonl"
+  ],
+  "max": 20,
+  "source": "fixture step 3, block 30 (9162556f), lite search"
+ },
+ {
+  "shape": "74fb97fc",
+  "table": "../data/templates/fixture-s3-table.json",
+  "block": "../data/templates/t11-block.json",
+  "rows": [
+   "../data/templates/t11-rows.jsonl"
+  ],
+  "max": 20,
+  "source": "fixture step 3, block 31 (74fb97fc), lite search"
+ },
+ {
+  "shape": "3b2cd040",
+  "table": "../data/templates/fixture-s3-table.json",
+  "block": "../data/templates/t12-block.json",
+  "rows": [
+   "../data/templates/t12-rows.jsonl"
+  ],
+  "max": 20,
+  "source": "fixture step 3, block 76 (3b2cd040), lite search"
+ },
+ {
+  "shape": "cdd6ff93",
+  "table": "../data/templates/fixture-s3-table.json",
+  "block": "../data/templates/t13-block.json",
+  "rows": [
+   "../data/templates/t13-rows.jsonl"
+  ],
+  "max": 20,
+  "source": "fixture step 3, block 65 (cdd6ff93), lite search"
+ }
+]

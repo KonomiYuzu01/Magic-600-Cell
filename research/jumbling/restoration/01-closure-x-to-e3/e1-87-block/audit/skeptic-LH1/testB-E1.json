@@ -1,0 +1,90 @@
+{
+ "E1_table": "<work>/v26/E2/c0/E1-table.json",
+ "E2_table": "<work>/v26/E2/c0/E2-table.json",
+ "U_length": 1210,
+ "E1_off": 90,
+ "E1_holes": 90,
+ "E2_off_geometric": [
+  16245,
+  16249,
+  32088
+ ],
+ "E2_holes_geometric": [
+  24905,
+  89251,
+  89252
+ ],
+ "restored_count": 87,
+ "bad_size": 87,
+ "bad_subset_E1_holes": true,
+ "bad_minus_holes": [],
+ "good_E1_holes": [
+  24905,
+  89251,
+  89252
+ ],
+ "good_E1_holes_ghost_end": [
+  24905,
+  89251,
+  89252
+ ],
+ "good_holes_end_in_E2_holes_ghost": true,
+ "tracked_exact": [
+  {
+   "id": 24905,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 24905,
+   "moves": 2,
+   "exact_calls": 2
+  },
+  {
+   "id": 89251,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 89251,
+   "moves": 0,
+   "exact_calls": 0
+  },
+  {
+   "id": 89252,
+   "alive": true,
+   "died_at": -1,
+   "on_K": true,
+   "end_chamber": 89252,
+   "moves": 0,
+   "exact_calls": 0
+  },
+  {
+   "id": 28267,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "moves": 189,
+   "exact_calls": 238
+  },
+  {
+   "id": 28277,
+   "alive": false,
+   "died_at": 1100,
+   "on_K": false,
+   "end_chamber": null,
+   "moves": 202,
+   "exact_calls": 235
+  },
+  {
+   "id": 28278,
+   "alive": true,
+   "died_at": -1,
+   "on_K": false,
+   "end_chamber": null,
+   "moves": 160,
+   "exact_calls": 170
+  }
+ ],
+ "ghost_seconds": 9.5,
+ "track_seconds": 0.3
+}

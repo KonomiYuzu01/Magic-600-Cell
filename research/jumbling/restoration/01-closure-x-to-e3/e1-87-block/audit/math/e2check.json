@@ -1,0 +1,86 @@
+{
+ "X": {
+  "digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+  "W1_bad": 87,
+  "W1inv_bad": 87,
+  "T17_on_K": 17,
+  "L17_subset_badW1inv": true,
+  "L17_subset_badW1": true,
+  "badW1_equals_badW1inv": true
+ },
+ "E2": {
+  "digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+  "off": [
+   16245,
+   16249,
+   32088
+  ],
+  "holes": [
+   24905,
+   89251,
+   89252
+  ],
+  "types_holes": {
+   "14": 1,
+   "15": 2
+  },
+  "types_Bprime": {
+   "14": 1,
+   "15": 2
+  },
+  "hole_orbit_sizes": [
+   3599,
+   7200,
+   7200
+  ],
+  "safe_grips": 592
+ },
+ "R": {
+  "letter": [
+   [
+    237,
+    13
+   ]
+  ],
+  "inverse": [
+   [
+    237,
+    47
+   ]
+  ],
+  "in_Kplus": false,
+  "bad_R": 3097,
+  "bad_Rinv": 3097,
+  "cap237_chambers": 3097,
+  "bad_R_equals_cap237": true,
+  "E2_holes_in_cap237": [],
+  "admissible_at_E2": true,
+  "Bprime_on_K_after": true,
+  "off_after": 3097,
+  "lattice_of_E2_taken_off": 3097
+ },
+ "Y": {
+  "digest": "5d2a88d945674ac66cbb2759215749662b7053425a06e68cf562efd1804f05b5",
+  "holes": 3097,
+  "safe_grips": 562,
+  "letters": 6182,
+  "orbits": 1816,
+  "target_Bad_Rinv": 3097,
+  "N1": true,
+  "N2": true,
+  "fixed_occupied": [],
+  "n_fixed_occupied": 0,
+  "deficits": [],
+  "occupied_in_target": [
+   42275,
+   42278,
+   58266
+  ],
+  "occupied_in_target_orbit_sizes": [
+   3567,
+   7149,
+   7149
+  ]
+ },
+ "seconds": 146.1
+}

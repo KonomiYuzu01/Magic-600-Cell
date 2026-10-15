@@ -1,0 +1,130 @@
+{
+ "state_digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+ "P": [
+  [
+   237,
+   13
+  ]
+ ],
+ "after_P_digest": "5d2a88d945674ac66cbb2759215749662b7053425a06e68cf562efd1804f05b5",
+ "T": 3097,
+ "holes": 3097,
+ "GH": [
+  24905,
+  89251,
+  89252
+ ],
+ "L": [
+  42275,
+  58266,
+  42278
+ ],
+ "h0_grips": 543,
+ "setup_sec": 105.5,
+ "x_rows": [
+  {
+   "x": [
+    91,
+    1
+   ],
+   "bubble": 335,
+   "y_letters_holding_xL": 66,
+   "y_ok": [],
+   "sec": 0.0
+  },
+  {
+   "x": [
+    91,
+    2
+   ],
+   "bubble": 335,
+   "y_letters_holding_xL": 66,
+   "y_ok": [],
+   "sec": 0.0
+  },
+  {
+   "x": [
+    91,
+    3
+   ],
+   "bubble": 335,
+   "y_letters_holding_xL": 33,
+   "y_ok": [],
+   "sec": 0.0
+  },
+  {
+   "x": [
+    91,
+    4
+   ],
+   "bubble": 335,
+   "y_letters_holding_xL": 66,
+   "y_ok": [],
+   "sec": 0.0
+  },
+  {
+   "x": [
+    91,
+    5
+   ],
+   "bubble": 335,
+   "y_letters_holding_xL": 33,
+   "y_ok": [],
+   "sec": 0.0
+  },
+  {
+   "x": [
+    91,
+    6
+   ],
+   "skip": "bubble or GH meets T after x"
+  },
+  {
+   "x": [
+    91,
+    7
+   ],
+   "skip": "bubble or GH meets T after x"
+  },
+  {
+   "x": [
+    91,
+    8
+   ],
+   "bubble": 335,
+   "y_letters_holding_xL": 66,
+   "y_ok": [],
+   "sec": 0.0
+  },
+  {
+   "x": [
+    91,
+    9
+   ],
+   "bubble": 335,
+   "y_letters_holding_xL": 66,
+   "y_ok": [],
+   "sec": 0.0
+  },
+  {
+   "x": [
+    91,
+    10
+   ],
+   "bubble": 335,
+   "y_letters_holding_xL": 66,
+   "y_ok": [],
+   "sec": 0.0
+  },
+  {
+   "x": [
+    91,
+    11
+   ],
+   "bubble": 335,
+   "y_letters_holding_xL": 0,
+   "y_ok": [],
+   "sec": 0.0
+  }
+ ]
+}

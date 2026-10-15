@@ -1,0 +1,25 @@
+{
+ "after_V3P4_vs_P4V3": {
+  "digests": [
+   "1509fd078dec4568",
+   "c4fc96f00b36e823"
+  ],
+  "pieces_differing": 543,
+  "exact_E2_counts": [
+   155218,
+   155218
+  ]
+ },
+ "after_F": {
+  "digests": [
+   "6edd6cbc579441b5",
+   "824fa85f0e363e1d"
+  ],
+  "pieces_differing": 543
+ },
+ "moved_by_V3_from_E2": 18997,
+ "moved_by_P4_from_E2": 3086,
+ "overlap": 181,
+ "differing_pieces_in_V3_support": 362,
+ "differing_pieces_in_P4_support": 362
+}

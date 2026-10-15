@@ -1,0 +1,52 @@
+{
+ "start": {
+  "pieces": 177120,
+  "digest_recomputed": "f27c345e591eecfa9d6807fbdbeb79326eb7b3987641524bc11e84a71fb44269",
+  "digest_field": "f27c345e591eecfa9d6807fbdbeb79326eb7b3987641524bc11e84a71fb44269",
+  "digest_matches": true
+ },
+ "end": {
+  "pieces": 177120,
+  "digest_recomputed": "d4c74f8e1d4d2b056e6e4c1e9e6b796b93aa872f76c92956f98eccb068e251e4",
+  "digest_field": "d4c74f8e1d4d2b056e6e4c1e9e6b796b93aa872f76c92956f98eccb068e251e4",
+  "digest_matches": true
+ },
+ "counts": {
+  "off_start": 3,
+  "off_end": 0,
+  "restored": 3,
+  "collateral": 0,
+  "start_lattice": 177117,
+  "start_lattice_on_K_at_end": 177117,
+  "start_lattice_same_exact_pose": 174026,
+  "start_lattice_pose_changed": 3091,
+  "start_lattice_same_chamber": 174031,
+  "start_lattice_chamber_changed": 3086
+ },
+ "block": {
+  "pieces": [
+   16245,
+   16249,
+   32088
+  ],
+  "end_on_K": true,
+  "end_kplus": [
+   1323,
+   4900,
+   3793
+  ],
+  "end_chambers": [
+   52576,
+   24971,
+   65558
+  ]
+ },
+ "holes": {
+  "start": [
+   24971,
+   52576,
+   65558
+  ],
+  "end": []
+ }
+}

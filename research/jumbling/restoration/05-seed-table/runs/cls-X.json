@@ -1,0 +1,2064 @@
+{
+ "summary": {
+  "input": "X",
+  "input_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+  "executed": false,
+  "off_start": 107,
+  "depth_one": 107,
+  "by_registry_orbit": {
+   "4": 104,
+   "2|5a": 3
+  },
+  "classes_present": 34,
+  "classes_with_seed": 0,
+  "pieces_with_seed": 0,
+  "restored": 0,
+  "remaining": 107,
+  "total_letters": 0,
+  "end_digest": null,
+  "blocking": {
+   "no seed for its class": 107
+  },
+  "conflict_cycles": [],
+  "seconds": 6.9
+ },
+ "pieces": [
+  {
+   "piece": 3569,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 5676,
+   "position": 99159,
+   "class": 741,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 3784,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 4986,
+   "position": 133770,
+   "class": 741,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 7821,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 4531,
+   "position": 80879,
+   "class": 97,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 9117,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 1,
+   "r": 225,
+   "position": 11143,
+   "class": 340,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 9126,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 1,
+   "r": 225,
+   "position": 14346,
+   "class": 355,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 9128,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 1,
+   "r": 225,
+   "position": 14347,
+   "class": 357,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 9131,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 1,
+   "r": 225,
+   "position": 11171,
+   "class": 357,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 9132,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 1,
+   "r": 225,
+   "position": 14351,
+   "class": 364,
+   "class_size": 120,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 10303,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 1,
+   "r": 225,
+   "position": 11164,
+   "class": 741,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 10394,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 2832,
+   "position": 143735,
+   "class": 518,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 11273,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 4754,
+   "position": 144622,
+   "class": 522,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 11825,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 7106,
+   "position": 144952,
+   "class": 113,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 12803,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 6852,
+   "position": 129576,
+   "class": 339,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 12819,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 3568,
+   "position": 144954,
+   "class": 115,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 16245,
+   "orbit": 14,
+   "depth_one": true,
+   "k": 53,
+   "r": 5158,
+   "position": 86189,
+   "class": 468,
+   "class_size": 360,
+   "registry_orbit": "2|5a",
+   "cell": 351,
+   "core_forbidden": false
+  },
+  {
+   "piece": 16249,
+   "orbit": 15,
+   "depth_one": true,
+   "k": 53,
+   "r": 5158,
+   "position": 96015,
+   "class": 562,
+   "class_size": 360,
+   "registry_orbit": "2|5a",
+   "cell": 351,
+   "core_forbidden": false
+  },
+  {
+   "piece": 16715,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 1,
+   "r": 225,
+   "position": 33133,
+   "class": 741,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 16875,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 856,
+   "position": 80890,
+   "class": 106,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19053,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 2509,
+   "position": 102175,
+   "class": 787,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19508,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 14335,
+   "class": 339,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19509,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 14336,
+   "class": 340,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19517,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 14342,
+   "class": 339,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19518,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 14348,
+   "class": 340,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19522,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 14340,
+   "class": 339,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19523,
+   "orbit": 31,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 14344,
+   "class": 354,
+   "class_size": 120,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19524,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 14345,
+   "class": 355,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19525,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 14349,
+   "class": 355,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 19526,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 14350,
+   "class": 357,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 20927,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 2832,
+   "position": 143736,
+   "class": 792,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 21747,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 7106,
+   "position": 144950,
+   "class": 112,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 26588,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 6603,
+   "position": 80869,
+   "class": 111,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 29386,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 4349,
+   "position": 129580,
+   "class": 355,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 32088,
+   "orbit": 15,
+   "depth_one": true,
+   "k": 53,
+   "r": 5158,
+   "position": 86190,
+   "class": 479,
+   "class_size": 360,
+   "registry_orbit": "2|5a",
+   "cell": 351,
+   "core_forbidden": false
+  },
+  {
+   "piece": 34124,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 6435,
+   "position": 80886,
+   "class": 114,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 35533,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 6603,
+   "position": 80878,
+   "class": 96,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 35538,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 6603,
+   "position": 80868,
+   "class": 104,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 35539,
+   "orbit": 31,
+   "depth_one": true,
+   "k": 48,
+   "r": 6603,
+   "position": 80883,
+   "class": 105,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 35543,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 6603,
+   "position": 80884,
+   "class": 112,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 36033,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 1,
+   "r": 1370,
+   "position": 18978,
+   "class": 741,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1342,
+   "core_forbidden": false
+  },
+  {
+   "piece": 37728,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 6917,
+   "position": 129574,
+   "class": 339,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 37729,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 6917,
+   "position": 99150,
+   "class": 340,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 37753,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 3026,
+   "position": 119377,
+   "class": 115,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 37754,
+   "orbit": 35,
+   "depth_one": true,
+   "k": 48,
+   "r": 3026,
+   "position": 80894,
+   "class": 116,
+   "class_size": 120,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 38105,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 4625,
+   "position": 119790,
+   "class": 97,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 38107,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 4625,
+   "position": 144953,
+   "class": 107,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 38109,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 4625,
+   "position": 143732,
+   "class": 114,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 38705,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 3892,
+   "position": 133772,
+   "class": 742,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 38706,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 3892,
+   "position": 133774,
+   "class": 743,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 45970,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 6100,
+   "position": 129569,
+   "class": 339,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 46434,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 579,
+   "position": 119374,
+   "class": 107,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 47354,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 2944,
+   "position": 132597,
+   "class": 741,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 49566,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 3892,
+   "position": 144943,
+   "class": 82,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 49572,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 3892,
+   "position": 144944,
+   "class": 83,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 50178,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 7187,
+   "position": 129579,
+   "class": 355,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 50442,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 5812,
+   "position": 80893,
+   "class": 115,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 52223,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 528,
+   "position": 119366,
+   "class": 96,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 52235,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 4625,
+   "position": 102176,
+   "class": 518,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 52236,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 4625,
+   "position": 102180,
+   "class": 792,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 52625,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 5236,
+   "position": 99163,
+   "class": 743,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 55053,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 3892,
+   "position": 149009,
+   "class": 1334,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 56711,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 3744,
+   "position": 149010,
+   "class": 1337,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 61058,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 465,
+   "position": 129570,
+   "class": 340,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 69000,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 1139,
+   "position": 119367,
+   "class": 97,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 72710,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 6364,
+   "position": 119371,
+   "class": 104,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 72711,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 6364,
+   "position": 100499,
+   "class": 111,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 72716,
+   "orbit": 31,
+   "depth_one": true,
+   "k": 48,
+   "r": 6364,
+   "position": 119372,
+   "class": 105,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 72718,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 6364,
+   "position": 119376,
+   "class": 112,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 76768,
+   "orbit": 31,
+   "depth_one": true,
+   "k": 48,
+   "r": 5596,
+   "position": 129578,
+   "class": 354,
+   "class_size": 120,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 79429,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 1902,
+   "position": 112874,
+   "class": 83,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 79444,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 1902,
+   "position": 119373,
+   "class": 106,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 79445,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 49,
+   "position": 81855,
+   "class": 517,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 79446,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 1902,
+   "position": 112894,
+   "class": 113,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 81761,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 1827,
+   "position": 99161,
+   "class": 357,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 82634,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 6918,
+   "position": 144948,
+   "class": 96,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 87786,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 6371,
+   "position": 129585,
+   "class": 364,
+   "class_size": 120,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 90390,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 831,
+   "position": 119798,
+   "class": 108,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 90533,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 5906,
+   "position": 80881,
+   "class": 82,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 90780,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 5709,
+   "position": 129582,
+   "class": 340,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 91687,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 1902,
+   "position": 112889,
+   "class": 1334,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 91688,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 1902,
+   "position": 112891,
+   "class": 742,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 91692,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 1902,
+   "position": 112895,
+   "class": 1337,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 96080,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 2210,
+   "position": 129583,
+   "class": 355,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 96548,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 4330,
+   "position": 80888,
+   "class": 83,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 96853,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 2276,
+   "position": 85756,
+   "class": 742,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 96964,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 365,
+   "position": 129581,
+   "class": 357,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 98110,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 2687,
+   "position": 144941,
+   "class": 104,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 98115,
+   "orbit": 31,
+   "depth_one": true,
+   "k": 48,
+   "r": 2687,
+   "position": 144949,
+   "class": 105,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 106420,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 1569,
+   "position": 100506,
+   "class": 787,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 106427,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 1569,
+   "position": 100507,
+   "class": 114,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 116900,
+   "orbit": 28,
+   "depth_one": true,
+   "k": 48,
+   "r": 4420,
+   "position": 119358,
+   "class": 82,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 117078,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 3026,
+   "position": 119800,
+   "class": 522,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 117476,
+   "orbit": 29,
+   "depth_one": true,
+   "k": 48,
+   "r": 1147,
+   "position": 143721,
+   "class": 111,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 117858,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 4330,
+   "position": 85755,
+   "class": 1334,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 125408,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 427,
+   "position": 119375,
+   "class": 108,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 127115,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 2970,
+   "position": 80892,
+   "class": 108,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 129237,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 2970,
+   "position": 80885,
+   "class": 107,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 131221,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 3787,
+   "position": 144621,
+   "class": 517,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 134719,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 5429,
+   "position": 119797,
+   "class": 517,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 151672,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 1831,
+   "position": 80891,
+   "class": 113,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 154787,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 1831,
+   "position": 85757,
+   "class": 1337,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 154855,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 5937,
+   "position": 144951,
+   "class": 106,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 156041,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 2752,
+   "position": 129584,
+   "class": 357,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 156377,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 2752,
+   "position": 132598,
+   "class": 743,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 156780,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 5376,
+   "position": 81861,
+   "class": 522,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 169852,
+   "orbit": 33,
+   "depth_one": true,
+   "k": 48,
+   "r": 1151,
+   "position": 81857,
+   "class": 518,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 170029,
+   "orbit": 34,
+   "depth_one": true,
+   "k": 48,
+   "r": 1151,
+   "position": 100511,
+   "class": 792,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  },
+  {
+   "piece": 172020,
+   "orbit": 32,
+   "depth_one": true,
+   "k": 48,
+   "r": 3213,
+   "position": 143730,
+   "class": 787,
+   "class_size": 360,
+   "registry_orbit": "4",
+   "cell": 1393,
+   "core_forbidden": false
+  }
+ ],
+ "steps": [],
+ "blocking": [
+  {
+   "piece": 3569,
+   "reason": "no seed for its class",
+   "class": 741,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 3784,
+   "reason": "no seed for its class",
+   "class": 741,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 7821,
+   "reason": "no seed for its class",
+   "class": 97,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 9117,
+   "reason": "no seed for its class",
+   "class": 340,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 9126,
+   "reason": "no seed for its class",
+   "class": 355,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 9128,
+   "reason": "no seed for its class",
+   "class": 357,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 9131,
+   "reason": "no seed for its class",
+   "class": 357,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 9132,
+   "reason": "no seed for its class",
+   "class": 364,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 10303,
+   "reason": "no seed for its class",
+   "class": 741,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 10394,
+   "reason": "no seed for its class",
+   "class": 518,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 11273,
+   "reason": "no seed for its class",
+   "class": 522,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 11825,
+   "reason": "no seed for its class",
+   "class": 113,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 12803,
+   "reason": "no seed for its class",
+   "class": 339,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 12819,
+   "reason": "no seed for its class",
+   "class": 115,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 16245,
+   "reason": "no seed for its class",
+   "class": 468,
+   "registry_orbit": "2|5a"
+  },
+  {
+   "piece": 16249,
+   "reason": "no seed for its class",
+   "class": 562,
+   "registry_orbit": "2|5a"
+  },
+  {
+   "piece": 16715,
+   "reason": "no seed for its class",
+   "class": 741,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 16875,
+   "reason": "no seed for its class",
+   "class": 106,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19053,
+   "reason": "no seed for its class",
+   "class": 787,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19508,
+   "reason": "no seed for its class",
+   "class": 339,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19509,
+   "reason": "no seed for its class",
+   "class": 340,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19517,
+   "reason": "no seed for its class",
+   "class": 339,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19518,
+   "reason": "no seed for its class",
+   "class": 340,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19522,
+   "reason": "no seed for its class",
+   "class": 339,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19523,
+   "reason": "no seed for its class",
+   "class": 354,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19524,
+   "reason": "no seed for its class",
+   "class": 355,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19525,
+   "reason": "no seed for its class",
+   "class": 355,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 19526,
+   "reason": "no seed for its class",
+   "class": 357,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 20927,
+   "reason": "no seed for its class",
+   "class": 792,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 21747,
+   "reason": "no seed for its class",
+   "class": 112,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 26588,
+   "reason": "no seed for its class",
+   "class": 111,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 29386,
+   "reason": "no seed for its class",
+   "class": 355,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 32088,
+   "reason": "no seed for its class",
+   "class": 479,
+   "registry_orbit": "2|5a"
+  },
+  {
+   "piece": 34124,
+   "reason": "no seed for its class",
+   "class": 114,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 35533,
+   "reason": "no seed for its class",
+   "class": 96,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 35538,
+   "reason": "no seed for its class",
+   "class": 104,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 35539,
+   "reason": "no seed for its class",
+   "class": 105,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 35543,
+   "reason": "no seed for its class",
+   "class": 112,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 36033,
+   "reason": "no seed for its class",
+   "class": 741,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 37728,
+   "reason": "no seed for its class",
+   "class": 339,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 37729,
+   "reason": "no seed for its class",
+   "class": 340,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 37753,
+   "reason": "no seed for its class",
+   "class": 115,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 37754,
+   "reason": "no seed for its class",
+   "class": 116,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 38105,
+   "reason": "no seed for its class",
+   "class": 97,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 38107,
+   "reason": "no seed for its class",
+   "class": 107,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 38109,
+   "reason": "no seed for its class",
+   "class": 114,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 38705,
+   "reason": "no seed for its class",
+   "class": 742,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 38706,
+   "reason": "no seed for its class",
+   "class": 743,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 45970,
+   "reason": "no seed for its class",
+   "class": 339,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 46434,
+   "reason": "no seed for its class",
+   "class": 107,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 47354,
+   "reason": "no seed for its class",
+   "class": 741,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 49566,
+   "reason": "no seed for its class",
+   "class": 82,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 49572,
+   "reason": "no seed for its class",
+   "class": 83,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 50178,
+   "reason": "no seed for its class",
+   "class": 355,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 50442,
+   "reason": "no seed for its class",
+   "class": 115,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 52223,
+   "reason": "no seed for its class",
+   "class": 96,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 52235,
+   "reason": "no seed for its class",
+   "class": 518,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 52236,
+   "reason": "no seed for its class",
+   "class": 792,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 52625,
+   "reason": "no seed for its class",
+   "class": 743,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 55053,
+   "reason": "no seed for its class",
+   "class": 1334,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 56711,
+   "reason": "no seed for its class",
+   "class": 1337,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 61058,
+   "reason": "no seed for its class",
+   "class": 340,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 69000,
+   "reason": "no seed for its class",
+   "class": 97,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 72710,
+   "reason": "no seed for its class",
+   "class": 104,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 72711,
+   "reason": "no seed for its class",
+   "class": 111,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 72716,
+   "reason": "no seed for its class",
+   "class": 105,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 72718,
+   "reason": "no seed for its class",
+   "class": 112,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 76768,
+   "reason": "no seed for its class",
+   "class": 354,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 79429,
+   "reason": "no seed for its class",
+   "class": 83,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 79444,
+   "reason": "no seed for its class",
+   "class": 106,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 79445,
+   "reason": "no seed for its class",
+   "class": 517,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 79446,
+   "reason": "no seed for its class",
+   "class": 113,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 81761,
+   "reason": "no seed for its class",
+   "class": 357,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 82634,
+   "reason": "no seed for its class",
+   "class": 96,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 87786,
+   "reason": "no seed for its class",
+   "class": 364,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 90390,
+   "reason": "no seed for its class",
+   "class": 108,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 90533,
+   "reason": "no seed for its class",
+   "class": 82,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 90780,
+   "reason": "no seed for its class",
+   "class": 340,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 91687,
+   "reason": "no seed for its class",
+   "class": 1334,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 91688,
+   "reason": "no seed for its class",
+   "class": 742,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 91692,
+   "reason": "no seed for its class",
+   "class": 1337,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 96080,
+   "reason": "no seed for its class",
+   "class": 355,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 96548,
+   "reason": "no seed for its class",
+   "class": 83,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 96853,
+   "reason": "no seed for its class",
+   "class": 742,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 96964,
+   "reason": "no seed for its class",
+   "class": 357,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 98110,
+   "reason": "no seed for its class",
+   "class": 104,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 98115,
+   "reason": "no seed for its class",
+   "class": 105,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 106420,
+   "reason": "no seed for its class",
+   "class": 787,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 106427,
+   "reason": "no seed for its class",
+   "class": 114,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 116900,
+   "reason": "no seed for its class",
+   "class": 82,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 117078,
+   "reason": "no seed for its class",
+   "class": 522,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 117476,
+   "reason": "no seed for its class",
+   "class": 111,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 117858,
+   "reason": "no seed for its class",
+   "class": 1334,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 125408,
+   "reason": "no seed for its class",
+   "class": 108,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 127115,
+   "reason": "no seed for its class",
+   "class": 108,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 129237,
+   "reason": "no seed for its class",
+   "class": 107,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 131221,
+   "reason": "no seed for its class",
+   "class": 517,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 134719,
+   "reason": "no seed for its class",
+   "class": 517,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 151672,
+   "reason": "no seed for its class",
+   "class": 113,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 154787,
+   "reason": "no seed for its class",
+   "class": 1337,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 154855,
+   "reason": "no seed for its class",
+   "class": 106,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 156041,
+   "reason": "no seed for its class",
+   "class": 357,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 156377,
+   "reason": "no seed for its class",
+   "class": 743,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 156780,
+   "reason": "no seed for its class",
+   "class": 522,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 169852,
+   "reason": "no seed for its class",
+   "class": 518,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 170029,
+   "reason": "no seed for its class",
+   "class": 792,
+   "registry_orbit": "4"
+  },
+  {
+   "piece": 172020,
+   "reason": "no seed for its class",
+   "class": 787,
+   "registry_orbit": "4"
+  }
+ ],
+ "conflict_edges": {}
+}

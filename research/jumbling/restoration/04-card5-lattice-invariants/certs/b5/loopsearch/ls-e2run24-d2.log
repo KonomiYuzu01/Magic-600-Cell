@@ -1,0 +1,2 @@
+depth 1 nodes 471 frontier 470 {'expanded': 1, 'collisions': 14, 'o5 sign 1': 14, 'o4 sign 1': 14, 'o8 sign 1': 14} 14
+depth 2 nodes 169909 frontier 169438 {'expanded': 471, 'collisions': 93289, 'o5 sign 1': 93289, 'o4 sign 1': 93289, 'o8 sign 1': 93289} 116

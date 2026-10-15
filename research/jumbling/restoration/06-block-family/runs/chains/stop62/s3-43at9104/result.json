@@ -1,0 +1,66 @@
+{
+ "input_digest": "f30dd5e67ffaa620c4c602b60ca4a2139706bd86ba3a065ff22a91a9ec1dd207",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 407,
+   "input_digest": "f30dd5e67ffaa620c4c602b60ca4a2139706bd86ba3a065ff22a91a9ec1dd207",
+   "output_digest": "99f7e673fad14882eff825ac53bdd0335cefd6f750edb1f64598c68604d1c6da",
+   "off_end": 732
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "99f7e673fad14882eff825ac53bdd0335cefd6f750edb1f64598c68604d1c6da",
+   "output_digest": "99f7e673fad14882eff825ac53bdd0335cefd6f750edb1f64598c68604d1c6da",
+   "off_end": 732
+  },
+  {
+   "part": "Q",
+   "twists": 10,
+   "input_digest": "99f7e673fad14882eff825ac53bdd0335cefd6f750edb1f64598c68604d1c6da",
+   "output_digest": "7f441f82d9505e47fb083544bb410e0c9f08951e6376f0e13d50d97b9bbb108a",
+   "off_end": 689
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "7f441f82d9505e47fb083544bb410e0c9f08951e6376f0e13d50d97b9bbb108a",
+   "output_digest": "7f441f82d9505e47fb083544bb410e0c9f08951e6376f0e13d50d97b9bbb108a",
+   "off_end": 689
+  },
+  {
+   "part": "Vinv",
+   "twists": 407,
+   "input_digest": "7f441f82d9505e47fb083544bb410e0c9f08951e6376f0e13d50d97b9bbb108a",
+   "output_digest": "c75352a25d06e0a8c18979037254a6bd2635262098102a4d3bd7c1bac3264145",
+   "off_end": 689
+  }
+ ],
+ "end": {
+  "digest": "c75352a25d06e0a8c18979037254a6bd2635262098102a4d3bd7c1bac3264145",
+  "off": 689,
+  "T_restored": 43,
+  "collateral": 0,
+  "protected_still_off": 689,
+  "protected_exact_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 176388,
+  "lattice_of_S": 176388,
+  "lattice_of_S_same_exact_pose": 175807
+ },
+ "length": 824,
+ "times": {
+  "ghost_premises": 8.7,
+  "menu_and_condition": 14.7,
+  "certificate": 137.2,
+  "prepare": 12.8,
+  "replay": 26.4
+ },
+ "seconds": 199.8
+}

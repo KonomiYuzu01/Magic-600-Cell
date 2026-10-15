@@ -1,0 +1,92 @@
+{
+ "class": 0,
+ "grip": 0,
+ "H_P": 1440,
+ "H_P_frame_compatible": 360,
+ "orbits": [
+  {
+   "orbit": 0,
+   "cells": 1,
+   "signature_size": 0,
+   "sources_per_cell": [
+    5280
+   ],
+   "capacity_per_cell": [
+    5280
+   ]
+  },
+  {
+   "orbit": 1,
+   "cells": 120,
+   "signature_size": 1,
+   "sources_per_cell": [
+    385
+   ],
+   "capacity_per_cell": [
+    385
+   ]
+  },
+  {
+   "orbit": 2,
+   "cells": 360,
+   "signature_size": 2,
+   "sources_per_cell": [
+    86
+   ],
+   "capacity_per_cell": [
+    86
+   ]
+  },
+  {
+   "orbit": 3,
+   "cells": 360,
+   "signature_size": 2,
+   "sources_per_cell": [
+    86
+   ],
+   "capacity_per_cell": [
+    86
+   ]
+  },
+  {
+   "orbit": 4,
+   "cells": 360,
+   "signature_size": 3,
+   "sources_per_cell": [
+    111
+   ],
+   "capacity_per_cell": [
+    0
+   ]
+  },
+  {
+   "orbit": 5,
+   "cells": 120,
+   "signature_size": 3,
+   "sources_per_cell": [
+    111
+   ],
+   "capacity_per_cell": [
+    111
+   ]
+  },
+  {
+   "orbit": 6,
+   "cells": 120,
+   "signature_size": 4,
+   "sources_per_cell": [
+    87
+   ],
+   "capacity_per_cell": [
+    0
+   ]
+  }
+ ],
+ "empty_cell": {
+  "sources": 5280,
+  "fw_int": 1440,
+  "facet_separated": 2520,
+  "vertex_inside": 960,
+  "fw_sep": 360
+ }
+}

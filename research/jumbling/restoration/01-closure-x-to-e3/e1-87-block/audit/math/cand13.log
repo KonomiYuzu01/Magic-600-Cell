@@ -1,0 +1,3 @@
+{"off": 90, "blocks": [87, 3], "straddling": 5, "status_3": 0, "sec": 13}
+{"badW": 87, "badWinv": 87, "sec": 15.0}
+{"digest_E1": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8", "source": "park-E1-87-9.jsonl:169", "row169_P_equals_cand_P": true, "row169_badW_recorded": 87, "badW": 87, "badWinv": 87, "T_on_K": 87, "landing_distinct": 87, "Bprime_exact": true, "landing_meets_badW": 0, "landing_subset_badWinv": true, "landing_equals_badWinv": true, "badW_subset_holes_E1": false, "badW_occupied_E1": 87, "seconds": 15.0, "sec": 15.0}

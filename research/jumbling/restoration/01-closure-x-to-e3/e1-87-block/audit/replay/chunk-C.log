@@ -1,0 +1,16 @@
+{"e1_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8", "e1_off": 90, "T": 87, "sec": 5.5}
+{"prefix": 650, "off": 3, "coll": 0, "sec": 16.2}
+{"prefix": 700, "off": 3, "coll": 0, "sec": 27.4}
+{"prefix": 750, "off": 3, "coll": 0, "sec": 37.6}
+{"prefix": 800, "off": 3, "coll": 0, "sec": 47.9}
+{"prefix": 850, "off": 3, "coll": 0, "sec": 58.2}
+{"prefix": 900, "off": 3, "coll": 0, "sec": 69.1}
+{"prefix": 950, "off": 3, "coll": 0, "sec": 79.1}
+{"prefix": 1000, "off": 3, "coll": 0, "sec": 90.1}
+{"prefix": 1050, "off": 3, "coll": 0, "sec": 100.2}
+{"prefix": 1100, "off": 3, "coll": 0, "sec": 110.5}
+{"prefix": 1150, "off": 3, "coll": 0, "sec": 120.7}
+{"prefix": 1200, "off": 3, "coll": 0, "sec": 130.7}
+{"part": "Vinv", "digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff", "ok": true, "off": 3, "coll": 0, "sec": 132.9}
+{"final": {"digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff", "digest_ok": true, "off": 3, "T_restored": 87, "collateral": 0, "e1_lattice_on_K": 177030, "e1_lattice_same_K_pose": 177030, "e1_lattice": 177030, "bp_exact_same": {"16245": true, "16249": true, "32088": true}, "exact_changed_E1_E2": 87, "exact_changed_is_T": true, "E2_table_digest_field_ok": true, "E2_table_pieces": 177120, "E2_table_entry_mismatches": 0, "holes_E2_formula_injective": 1, "holes_E2_equal_report": true, "holes_E1": {"count_formula": 90, "count_signature": 90, "paths_equal": true, "injective": 1, "dups_missing": [0, 0], "equal_pre_json": true}}, "sec": 135.8}
+{"chunk": "C", "rows": 591, "errors": [], "end": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff", "sec": 135.8}

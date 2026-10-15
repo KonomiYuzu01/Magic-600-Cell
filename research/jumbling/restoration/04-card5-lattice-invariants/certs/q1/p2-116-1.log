@@ -1,0 +1,3 @@
+{"best_h": 2, "tag": "pump", "len": 3, "off": 790, "stats": {"nodes": 1, "direct": 0, "pump_try": 0, "G_blocked": 0, "D_blocked": 0, "ret_blocked": 0, "pump_ok": 1}, "sec": 3.6}
+{"best_h": 4, "tag": "direct", "len": 4, "off": 3517, "stats": {"nodes": 2, "direct": 1, "pump_try": 0, "G_blocked": 0, "D_blocked": 0, "ret_blocked": 0, "pump_ok": 1}, "sec": 3.7}
+{"done": true, "best_h": 4, "stats": {"nodes": 12, "direct": 8, "pump_try": 356, "G_blocked": 39, "D_blocked": 314, "ret_blocked": 0, "pump_ok": 3}, "sec": 24.6}

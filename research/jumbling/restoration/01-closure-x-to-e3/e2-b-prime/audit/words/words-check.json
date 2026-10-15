@@ -1,0 +1,828 @@
+{
+ "lengths": {
+  "V": 8,
+  "P": 31,
+  "Q": 1,
+  "Pinv": 31,
+  "Vinv": 8
+ },
+ "checks": [
+  {
+   "check": "1.lengths 8,31,1,31,8",
+   "ok": true,
+   "lengths": {
+    "V": 8,
+    "P": 31,
+    "Q": 1,
+    "Pinv": 31,
+    "Vinv": 8
+   },
+   "total": 79
+  },
+  {
+   "check": "1.E2 table sha256 and digest field",
+   "ok": true,
+   "sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893",
+   "digest": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+  },
+  {
+   "check": "1.E3 table sha256 and digest field",
+   "ok": true,
+   "sha256": "53cec2e37f3b858924c216d45d99f1563f0f1e57d1d8a78fa39946c1c965d889",
+   "digest": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+  },
+  {
+   "check": "1.V.input_digest = E2 digest",
+   "ok": true,
+   "v_in": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+  },
+  {
+   "check": "1.part output = next part input",
+   "ok": true,
+   "chain": [
+    [
+     "V",
+     "P",
+     true
+    ],
+    [
+     "P",
+     "Q",
+     true
+    ],
+    [
+     "Q",
+     "Pinv",
+     true
+    ],
+    [
+     "Pinv",
+     "Vinv",
+     true
+    ]
+   ]
+  },
+  {
+   "check": "1.Vinv.output_digest = E3 digest",
+   "ok": true,
+   "vinv_out": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+  },
+  {
+   "check": "1.word-full = V+P+Q+Pinv+Vinv, digests E2 -> E3",
+   "ok": true,
+   "word_full_length": 79,
+   "input": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+   "output": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+  },
+  {
+   "check": "1.P = P4.json = w3-P4-162-1.json P",
+   "ok": true
+  },
+  {
+   "check": "1.Q = [(162,1)] = w3 Q",
+   "ok": true,
+   "w3_keys": [
+    "P",
+    "Q"
+   ]
+  },
+  {
+   "check": "1.pre.json W equals parts (P, Q, P_inverse)",
+   "ok": true
+  },
+  {
+   "check": "1.result.json part digests equal part files",
+   "ok": true
+  },
+  {
+   "check": "1.type-S word starts with P4 and ends with F P4^-1 (same P)",
+   "ok": true,
+   "typeS_length": 71,
+   "typeS_input": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+  },
+  {
+   "check": "3.report printed P4 = parts/P.json",
+   "ok": true,
+   "printed_length": 31
+  },
+  {
+   "check": "1.report printed V3 = parts/V.json",
+   "ok": true
+  },
+  {
+   "check": "2.E2 table loads to its digest",
+   "ok": true,
+   "loaded": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+  },
+  {
+   "check": "2.every letter an exact rotation fixing its pole",
+   "ok": true
+  },
+  {
+   "check": "2.every letter has exactly one inverse item (both sides agree)",
+   "ok": true
+  },
+  {
+   "check": "2.(237, 47) is the exact inverse of (237, 13) (own arithmetic, both orders)",
+   "ok": true
+  },
+  {
+   "check": "2.(91, 7) is the exact inverse of (91, 6) (own arithmetic, both orders)",
+   "ok": true
+  },
+  {
+   "check": "2.(154, 6) is the exact inverse of (154, 7) (own arithmetic, both orders)",
+   "ok": true
+  },
+  {
+   "check": "2.inverse of (133,1) determined",
+   "ok": true,
+   "inverse": [
+    133,
+    1
+   ],
+   "order": 2
+  },
+  {
+   "check": "2.inverse of (183,6) determined",
+   "ok": true,
+   "inverse": [
+    183,
+    7
+   ],
+   "order": 3
+  },
+  {
+   "check": "2.(91, 6) in K+ and not the identity",
+   "ok": true,
+   "kplus_index": 2432,
+   "order": 3
+  },
+  {
+   "check": "2.(154, 7) in K+ and not the identity",
+   "ok": true,
+   "kplus_index": 4171,
+   "order": 3
+  },
+  {
+   "check": "2.(133, 1) in K+ and not the identity",
+   "ok": true,
+   "kplus_index": 1201,
+   "order": 2
+  },
+  {
+   "check": "2.(183, 6) in K+ and not the identity",
+   "ok": true,
+   "kplus_index": 4599,
+   "order": 3
+  },
+  {
+   "check": "2.(162, 1) in K+ and not the identity",
+   "ok": true,
+   "kplus_index": 5697,
+   "order": 2
+  },
+  {
+   "check": "2.(237,13) not in K+",
+   "ok": true,
+   "order": 5
+  },
+  {
+   "check": "2.(237,47) not in K+",
+   "ok": true,
+   "order": 5
+  },
+  {
+   "check": "3.P4 = P3 x3 P3^-1, ..., P1 = R x0 R^-1 letter by letter",
+   "ok": true,
+   "lengths": [
+    1,
+    3,
+    7,
+    15,
+    31
+   ]
+  },
+  {
+   "check": "3.shrink level words P(k) equal the recomputed P0..P4",
+   "ok": true,
+   "shrink_levels": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     3
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     3,
+     15
+    ],
+    [
+     4,
+     31
+    ]
+   ]
+  },
+  {
+   "check": "3.shrink chosen x_k = best[0] letter at levels 0..3, F=(162,1) least F letter at level 4",
+   "ok": true
+  },
+  {
+   "check": "3.report: (91,7) is x0^-1 and (154,6) is x1^-1",
+   "ok": true
+  },
+  {
+   "check": "3.middle letter of P3^-1 inside P4 equals x2^-1",
+   "ok": true,
+   "P4_letter_23": [
+    133,
+    1
+   ],
+   "x2": [
+    133,
+    1
+   ],
+   "x2_inverse": [
+    133,
+    1
+   ]
+  },
+  {
+   "check": "4.Pinv is the mirror inverse of P (same grip, reversed, exact product I both orders)",
+   "ok": true
+  },
+  {
+   "check": "4.Vinv is the mirror inverse of V (same grip, reversed, exact product I both orders)",
+   "ok": true
+  },
+  {
+   "check": "4.Pinv equals own mirror(P); Vinv equals own mirror(V)",
+   "ok": true
+  },
+  {
+   "check": "4.full word = X F mirror(X) with X = V3 P4",
+   "ok": true
+  },
+  {
+   "check": "5.E2 SAFE-ALL alphabet rebuilt = pre.json safe grips (592 grips, 6512 letters)",
+   "ok": true,
+   "safe": 592,
+   "letters": 6512,
+   "blocked": [
+    232,
+    237,
+    250,
+    257,
+    273,
+    301,
+    307,
+    356
+   ]
+  },
+  {
+   "check": "5.blocked grips at E2 = report list (232, 237, 250, 257, 273, 301, 307, 356)",
+   "ok": true,
+   "blocked": [
+    232,
+    237,
+    250,
+    257,
+    273,
+    301,
+    307,
+    356
+   ]
+  },
+  {
+   "check": "5.every V letter: grip SAFE-ALL at E2 (pre.json), letter of the E2 alphabet, in K+, not identity",
+   "ok": true
+  },
+  {
+   "check": "5.every Vinv letter is a letter of the E2 alphabet",
+   "ok": true
+  },
+  {
+   "check": "5.replay: V and P admissible, digests equal part files",
+   "ok": true,
+   "digests": {
+    "start": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+    "V": "98d5869934296ed58b55f9d8a74badfab45f54d8cbf88cca89a11329cf2dd87a",
+    "P": "1509fd078dec4568f015a33151db207345d676c1285a302dd7436d2ce8e0f6c4"
+   }
+  },
+  {
+   "check": "5.F=(162,1) is a SAFE-ALL letter at Y4 = E2 V3 P4",
+   "ok": true,
+   "safe": 592,
+   "letters": 6512,
+   "blocked": [
+    232,
+    237,
+    250,
+    257,
+    273,
+    301,
+    307,
+    356
+   ],
+   "grip162": "safe"
+  },
+  {
+   "check": "5.F keeps the 10 off pieces at Y4 (same set, same exact poses); digest = Q file",
+   "ok": true,
+   "off": [
+    32877,
+    48853,
+    53907,
+    55426,
+    64529,
+    72188,
+    78289,
+    105000,
+    129283,
+    164054
+   ]
+  },
+  {
+   "check": "1/5.replay of the whole word: every part digest as filed, end = E3 digest, 0 off",
+   "ok": true,
+   "digests": {
+    "start": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+    "V": "98d5869934296ed58b55f9d8a74badfab45f54d8cbf88cca89a11329cf2dd87a",
+    "P": "1509fd078dec4568f015a33151db207345d676c1285a302dd7436d2ce8e0f6c4",
+    "Q": "6edd6cbc579441b57db0d0f7c24b643337fddd8c7a32262d1531559b5cee12c3",
+    "Pinv": "79abe255c1498ba41a90d6c9fc867cdb387ffad8b52be62afcd5a79bdb0767f3",
+    "Vinv": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+   },
+   "off_end": 0
+  },
+  {
+   "check": "undo back to E2",
+   "ok": true
+  },
+  {
+   "check": "5.(162,1) is also SAFE-ALL at E2 P4 (shrink Y_4; digest = shrink after_P_digest)",
+   "ok": true,
+   "digest": "862c936faa277a5c6583b9d43385459ec70e8952f08f4e8407aded551a4521a6"
+  },
+  {
+   "check": "1.E3 table loads to its digest",
+   "ok": true,
+   "loaded": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+  }
+ ],
+ "menu_items": 60,
+ "letters": {
+  "0,1": {
+   "label": "I_a[1]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 1,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    1
+   ],
+   "inverse_items_left": [
+    1
+   ],
+   "order": 2
+  },
+  "29,11": {
+   "label": "I_a[11]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 2662,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    11
+   ],
+   "inverse_items_left": [
+    11
+   ],
+   "order": 2
+  },
+  "38,1": {
+   "label": "I_a[1]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 989,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    1
+   ],
+   "inverse_items_left": [
+    1
+   ],
+   "order": 2
+  },
+  "46,2": {
+   "label": "I_a[2]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 477,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    5
+   ],
+   "inverse_items_left": [
+    5
+   ],
+   "order": 3
+  },
+  "46,5": {
+   "label": "I_a[5]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 652,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    2
+   ],
+   "inverse_items_left": [
+    2
+   ],
+   "order": 3
+  },
+  "72,1": {
+   "label": "I_a[1]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 811,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    1
+   ],
+   "inverse_items_left": [
+    1
+   ],
+   "order": 2
+  },
+  "91,6": {
+   "label": "I_a[6]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 2432,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    7
+   ],
+   "inverse_items_left": [
+    7
+   ],
+   "order": 3
+  },
+  "91,7": {
+   "label": "I_a[7]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 2151,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    6
+   ],
+   "inverse_items_left": [
+    6
+   ],
+   "order": 3
+  },
+  "108,1": {
+   "label": "I_a[1]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 2411,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    1
+   ],
+   "inverse_items_left": [
+    1
+   ],
+   "order": 2
+  },
+  "133,1": {
+   "label": "I_a[1]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 1201,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    1
+   ],
+   "inverse_items_left": [
+    1
+   ],
+   "order": 2
+  },
+  "147,11": {
+   "label": "I_a[11]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 4483,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    11
+   ],
+   "inverse_items_left": [
+    11
+   ],
+   "order": 2
+  },
+  "154,6": {
+   "label": "I_a[6]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 3254,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    7
+   ],
+   "inverse_items_left": [
+    7
+   ],
+   "order": 3
+  },
+  "154,7": {
+   "label": "I_a[7]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 4171,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    6
+   ],
+   "inverse_items_left": [
+    6
+   ],
+   "order": 3
+  },
+  "162,1": {
+   "label": "I_a[1]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 5697,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    1
+   ],
+   "inverse_items_left": [
+    1
+   ],
+   "order": 2
+  },
+  "183,6": {
+   "label": "I_a[6]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 4599,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    7
+   ],
+   "inverse_items_left": [
+    7
+   ],
+   "order": 3
+  },
+  "183,7": {
+   "label": "I_a[7]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 4022,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    6
+   ],
+   "inverse_items_left": [
+    6
+   ],
+   "order": 3
+  },
+  "237,13": {
+   "label": "I_a[13]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": -1,
+   "in_K+": false,
+   "identity": false,
+   "inverse_items_right": [
+    47
+   ],
+   "inverse_items_left": [
+    47
+   ],
+   "order": 5
+  },
+  "237,47": {
+   "label": "I_a[47]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": -1,
+   "in_K+": false,
+   "identity": false,
+   "inverse_items_right": [
+    13
+   ],
+   "inverse_items_left": [
+    13
+   ],
+   "order": 5
+  },
+  "328,2": {
+   "label": "I_a[2]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 3350,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    5
+   ],
+   "inverse_items_left": [
+    5
+   ],
+   "order": 3
+  },
+  "328,5": {
+   "label": "I_a[5]",
+   "rotation": true,
+   "fixes_pole_c": true,
+   "kplus_index": 3363,
+   "in_K+": true,
+   "identity": false,
+   "inverse_items_right": [
+    2
+   ],
+   "inverse_items_left": [
+    2
+   ],
+   "order": 3
+  }
+ },
+ "inverse_of_133_1": [
+  1
+ ],
+ "inverse_of_183_6": [
+  7
+ ],
+ "level_lengths": [
+  1,
+  3,
+  7,
+  15,
+  31
+ ],
+ "E2_alphabet": {
+  "safe": 592,
+  "letters": 6512,
+  "blocked": [
+   232,
+   237,
+   250,
+   257,
+   273,
+   301,
+   307,
+   356
+  ],
+  "blocked_detail": {
+   "232": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "237": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "250": {
+    "straddled": true,
+    "off_inside": 0
+   },
+   "257": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "273": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "301": {
+    "straddled": false,
+    "off_inside": 3
+   },
+   "307": {
+    "straddled": true,
+    "off_inside": 2
+   },
+   "356": {
+    "straddled": false,
+    "off_inside": 3
+   }
+  }
+ },
+ "V_letters": [
+  {
+   "letter": [
+    328,
+    2
+   ],
+   "grip_in_pre_safe": true,
+   "letter_in_alphabet": true,
+   "in_K+": true,
+   "identity": false
+  },
+  {
+   "letter": [
+    147,
+    11
+   ],
+   "grip_in_pre_safe": true,
+   "letter_in_alphabet": true,
+   "in_K+": true,
+   "identity": false
+  },
+  {
+   "letter": [
+    46,
+    2
+   ],
+   "grip_in_pre_safe": true,
+   "letter_in_alphabet": true,
+   "in_K+": true,
+   "identity": false
+  },
+  {
+   "letter": [
+    72,
+    1
+   ],
+   "grip_in_pre_safe": true,
+   "letter_in_alphabet": true,
+   "in_K+": true,
+   "identity": false
+  },
+  {
+   "letter": [
+    29,
+    11
+   ],
+   "grip_in_pre_safe": true,
+   "letter_in_alphabet": true,
+   "in_K+": true,
+   "identity": false
+  },
+  {
+   "letter": [
+    0,
+    1
+   ],
+   "grip_in_pre_safe": true,
+   "letter_in_alphabet": true,
+   "in_K+": true,
+   "identity": false
+  },
+  {
+   "letter": [
+    38,
+    1
+   ],
+   "grip_in_pre_safe": true,
+   "letter_in_alphabet": true,
+   "in_K+": true,
+   "identity": false
+  },
+  {
+   "letter": [
+    108,
+    1
+   ],
+   "grip_in_pre_safe": true,
+   "letter_in_alphabet": true,
+   "in_K+": true,
+   "identity": false
+  }
+ ],
+ "failed": [],
+ "seconds": 116.2
+}

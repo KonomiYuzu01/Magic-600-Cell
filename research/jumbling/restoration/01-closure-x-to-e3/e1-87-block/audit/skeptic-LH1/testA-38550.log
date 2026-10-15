@@ -1,0 +1,5 @@
+{"home_centroids_in_own_chamber": true, "ambiguous": 0, "outside": 0, "sec": 50.3}
+{"off": [16245, 16249, 32088], "holes": [41195, 52577, 55055], "U": 2907, "sec": 52.8}
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 61}
+{"ghost_bad": [41195, 52577, 55055], "ghost_sec": 20.8, "sec": 82.1}
+{"done": "testA-38550.json", "bad_eq_holes": true, "agree": "43/43", "pieces_on_K": [true, true, true], "sec": 86.8}

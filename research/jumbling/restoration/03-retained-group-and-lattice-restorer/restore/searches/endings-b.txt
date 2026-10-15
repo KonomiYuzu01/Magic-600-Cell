@@ -1,0 +1,5 @@
+B1 safe 201 60
+B2 safe 202 200
+B3 setup 31 60 32 60
+B4 setup 33 10 34 10
+B5 safe 203 90

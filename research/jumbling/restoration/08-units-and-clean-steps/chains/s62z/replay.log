@@ -1,0 +1,3 @@
+{"chain": "stop62-245", "start_digest_ok": true, "load_seconds": 3.5}
+{"label": "s62z-u18445", "twists": 328, "applied": 328, "error": null, "input_digest_ok": true, "output_digest_ok": true, "off_before": 245, "off_after": 233, "unit": 12, "free": 0, "unit_off_before": true, "unit_restored": true, "restored": 12, "collateral": 0, "moved_off": 0, "moved_outside_free": 0, "restored_outside_unit_or_free": 0, "seconds": 6.8, "ok": true}
+{"chain": "stop62-245", "all_ok": true, "steps": 1, "final_off": 233, "all_on_lattice": false, "final_digest": "46496bb1806f5f4078d9d15ed83986938ccb9cb776ba62fd187767f17c662514", "seconds": 10.3}

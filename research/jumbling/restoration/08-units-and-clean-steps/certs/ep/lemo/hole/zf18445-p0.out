@@ -1,0 +1,2 @@
+{"off": 245, "blocks": [86, 12, 61, 86], "straddling": 18, "status_3": 0, "sec": 20}
+{"root": 0, "of": 12777, "root_landing": 1, "root_len_10": 1, "root_excess0": 0, "refinements_scored": 77, "refinements_landing": 72, "w1_open": 64, "w1_closed_by_dead": 8, "hist": [[27, 2], [41, 2], [90, 18], [92, 9], [116, 1], [126, 4], [144, 2], [153, 2], [189, 16], [198, 16]], "sec": 23}

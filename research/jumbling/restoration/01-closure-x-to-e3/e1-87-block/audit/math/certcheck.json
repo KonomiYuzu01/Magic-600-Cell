@@ -1,0 +1,190 @@
+{
+ "digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+ "off": 90,
+ "safe_count": 581,
+ "safe_equals_pre": true,
+ "blocked": {
+  "232": [
+   0,
+   3
+  ],
+  "237": [
+   0,
+   3
+  ],
+  "250": [
+   1,
+   0
+  ],
+  "257": [
+   0,
+   3
+  ],
+  "272": [
+   22,
+   60
+  ],
+  "273": [
+   0,
+   3
+  ],
+  "301": [
+   0,
+   3
+  ],
+  "307": [
+   1,
+   2
+  ],
+  "314": [
+   0,
+   87
+  ],
+  "327": [
+   0,
+   87
+  ],
+  "346": [
+   0,
+   87
+  ],
+  "356": [
+   0,
+   3
+  ],
+  "407": [
+   22,
+   60
+  ],
+  "431": [
+   0,
+   87
+  ],
+  "432": [
+   0,
+   87
+  ],
+  "435": [
+   0,
+   87
+  ],
+  "464": [
+   0,
+   87
+  ],
+  "490": [
+   22,
+   60
+  ],
+  "509": [
+   0,
+   87
+  ]
+ },
+ "letters": 6391,
+ "target_equals_pre_badW": true,
+ "holes": 90,
+ "target_orbits": {
+  "82": {
+   "size": 7200,
+   "target": 12,
+   "holes": 12,
+   "type_sizes": [
+    7200
+   ]
+  },
+  "83": {
+   "size": 7200,
+   "target": 12,
+   "holes": 12,
+   "type_sizes": [
+    7200
+   ]
+  },
+  "105": {
+   "size": 2400,
+   "target": 4,
+   "holes": 4,
+   "type_sizes": [
+    2400
+   ]
+  },
+  "106": {
+   "size": 7200,
+   "target": 24,
+   "holes": 24,
+   "type_sizes": [
+    7200
+   ]
+  },
+  "108": {
+   "size": 3600,
+   "target": 18,
+   "holes": 18,
+   "type_sizes": [
+    3600
+   ]
+  },
+  "115": {
+   "size": 2400,
+   "target": 16,
+   "holes": 16,
+   "type_sizes": [
+    2400
+   ]
+  },
+  "116": {
+   "size": 120,
+   "target": 1,
+   "holes": 1,
+   "type_sizes": [
+    120
+   ]
+  }
+ },
+ "target_fixed": 0,
+ "order_is_permutation_of_T": true,
+ "u_j_max": 0,
+ "u_j_all_zero": true,
+ "thresholds": {
+  "82": {
+   "h": 12,
+   "target": 12,
+   "holes": 12
+  },
+  "83": {
+   "h": 12,
+   "target": 12,
+   "holes": 12
+  },
+  "105": {
+   "h": 4,
+   "target": 4,
+   "holes": 4
+  },
+  "106": {
+   "h": 24,
+   "target": 24,
+   "holes": 24
+  },
+  "108": {
+   "h": 18,
+   "target": 18,
+   "holes": 18
+  },
+  "115": {
+   "h": 16,
+   "target": 16,
+   "holes": 16
+  },
+  "116": {
+   "h": 1,
+   "target": 1,
+   "holes": 1
+  }
+ },
+ "thresholds_met": true,
+ "problems": [],
+ "n_problems": 0,
+ "seconds": 35.8
+}

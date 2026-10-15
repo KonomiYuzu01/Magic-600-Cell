@@ -1,0 +1,92 @@
+{
+ "source_package": "Claude-3E-general-family-20261014",
+ "compressed": [
+  {
+   "path": "data/blocks-fixture40.json",
+   "bytes": 1096102,
+   "sha256": "0f43c1afcf84c71ef61bb4de97af194ec1c7601a4a09ca0460431d2cebb78953"
+  },
+  {
+   "path": "data/states/fixture40-table.json",
+   "bytes": 626983,
+   "sha256": "b0a8796662ac4600a9a1496ad6a40a059e62b9b2d7cd1370b385a5fd3b50e180"
+  },
+  {
+   "path": "data/states/p100-table.json",
+   "bytes": 754385,
+   "sha256": "d8459d615b12a73a7bd9478776f51962e3341246a81ae9d1d5109cde8a8e2467"
+  },
+  {
+   "path": "data/states/p2-table.json",
+   "bytes": 532258,
+   "sha256": "779ac3a34f9a698498a2538ab3442f92e742807fb9503db4cd6eb6d468a3c5f5"
+  },
+  {
+   "path": "data/states/p60-table.json",
+   "bytes": 655585,
+   "sha256": "7847ee6c63b09251e27cb044cf11db51828dc17469344683855b12bdf2458903"
+  },
+  {
+   "path": "data/states/r40s11-table.json",
+   "bytes": 630892,
+   "sha256": "42fba796ba4f350db953a21c97f4649185d628e43f03fbbfa95da7436dd092b3"
+  },
+  {
+   "path": "runs/fx/end-table.json",
+   "bytes": 598318,
+   "sha256": "e732f0f997af0c9672708e9a6c46c2b3a5c67ba52750a93d43f03d0d29d9a383"
+  },
+  {
+   "path": "runs/g2/end-table.json",
+   "bytes": 532640,
+   "sha256": "8b9537e6336629d67aeec49413e7b2057ba0ada68149a22bcb80899f7e543cfa"
+  },
+  {
+   "path": "runs/p100/end-table.json",
+   "bytes": 718183,
+   "sha256": "d0b69e7277be111476c06415d7ff767b515f180e8d602ca8e727544ccaad9e46"
+  },
+  {
+   "path": "runs/p60/end-table.json",
+   "bytes": 638734,
+   "sha256": "5fac075daa1a3c59410679bffb2f6348a8733d6a701c533d24cc6e4e944fce99"
+  },
+  {
+   "path": "runs/r40s11/end-table.json",
+   "bytes": 601153,
+   "sha256": "9eb89f9648025c50a33e263c083f22089babf37c0c3d83badb27ecfe72fb81e1"
+  },
+  {
+   "path": "runs/sfx1/end-table.json",
+   "bytes": 635394,
+   "sha256": "87fa5a26219ad10d6802137daabacb0f26b709f2aa62851581cff170137b58ca"
+  },
+  {
+   "path": "runs/t2/end-table.json",
+   "bytes": 532248,
+   "sha256": "ad67a3aee163e84849fafadd9be06bcccf7897c9f768234c80a447842f8dcae0"
+  },
+  {
+   "path": "runs/y/end-table.json",
+   "bytes": 532642,
+   "sha256": "796d457f7be486ae8f09c179fb8e41cd9b195059f3a893485391d9343c0cbe69"
+  }
+ ],
+ "left_out": [
+  {
+   "path": "README.zh-CN.md",
+   "bytes": 4592,
+   "sha256": "82f21295ca5d5067e5bf977cca9bf0648ee4cd0e3ea3cca4395ad78bdfcbc633"
+  },
+  {
+   "path": "REPORT.zh-CN.md",
+   "bytes": 6835,
+   "sha256": "2675d1ed93e00514496c3d5b2ef250750ddec5b268feb86ed2a9a3660781b566"
+  },
+  {
+   "path": "SHA256SUMS.txt",
+   "bytes": 40836,
+   "sha256": "fd5b4caad6cc669e4368919675d8ffb3754e5fb838614ca2864261c5d743d225"
+  }
+ ]
+}

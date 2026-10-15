@@ -1,0 +1,24 @@
+{
+ "counts": {
+  "T1_branch_sizes": 0,
+  "T1_dist_1": 600,
+  "T2_unit_dist_0": 120,
+  "T3_jumble_left_ok": 28800,
+  "T3_retained_left_in_2I": 7200,
+  "T3_right_in_2I": 36000,
+  "T4_pose_right_in_2I": 1183,
+  "T5_ok": 7200
+ },
+ "branch_sizes": {
+  "0": 120,
+  "1": 120,
+  "2": 120,
+  "3": 120,
+  "4": 120
+ },
+ "table": "t-T723x433-12.json",
+ "table_digest": "fe917f9a77c69cf037ce5c894debdec2448b73575ed776d5c529ccfaf5bc7c39",
+ "distinct_poses": 1183,
+ "sec": 140.6,
+ "all_pass": true
+}

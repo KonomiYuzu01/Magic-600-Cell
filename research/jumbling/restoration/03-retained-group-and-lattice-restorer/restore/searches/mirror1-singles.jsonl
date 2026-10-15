@@ -1,0 +1,4 @@
+{"id": 0, "family": "mirror1", "len": 5, "nu": {}, "new": false, "rank2": 0, "rank5": 0, "t": 1}
+{"id": 1, "family": "mirror1", "len": 5, "nu": {"25": [1, 0], "22": [1, 0], "34": [1, 0], "8": [1, 0], "11": [1, 0]}, "new": true, "rank2": 1, "rank5": 0, "t": 17}
+{"id": 2, "family": "mirror1", "len": 5, "nu": {"22": [1, 0], "34": [1, 0], "11": [1, 0]}, "new": true, "rank2": 2, "rank5": 0, "t": 95}
+{"id": 3, "family": "mirror1", "len": 5, "nu": {"34": [1, 0]}, "new": true, "rank2": 3, "rank5": 0, "t": 133}

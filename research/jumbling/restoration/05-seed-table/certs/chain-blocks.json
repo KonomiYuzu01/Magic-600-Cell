@@ -1,0 +1,44 @@
+{
+ "note": "Block-wise structure of the E chain X -> E1 -> E2 -> E3 (menu I_a): for each step, the off pieces that remain are a\nsubset of the off pieces before, each at the identical pose (exact matrix entries of the pose tables), and the pieces\nthat left form whole blocks of blocks.py. Pure comparison of the given files.\n",
+ "steps": [
+  {
+   "step": "X -> E1",
+   "off_before": 107,
+   "off_after": 90,
+   "remaining_subset": true,
+   "remaining_same_pose": true,
+   "left_pieces": 17,
+   "left_is_union_of_blocks": true,
+   "blocks_left": [
+    17
+   ],
+   "digest_after": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8"
+  },
+  {
+   "step": "E1 -> E2",
+   "off_before": 90,
+   "off_after": 3,
+   "remaining_subset": true,
+   "remaining_same_pose": true,
+   "left_pieces": 87,
+   "left_is_union_of_blocks": true,
+   "blocks_left": [
+    87
+   ],
+   "digest_after": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff"
+  },
+  {
+   "step": "E2 -> E3",
+   "off_before": 3,
+   "off_after": 0,
+   "remaining_subset": true,
+   "remaining_same_pose": true,
+   "left_pieces": 3,
+   "left_is_union_of_blocks": true,
+   "blocks_left": [
+    3
+   ],
+   "digest_after": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+  }
+ ]
+}

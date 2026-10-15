@@ -1,0 +1,7 @@
+{"off": 3, "blocks": [3], "straddling": 2, "status_3": 0, "sec": 9}
+{"safe_all_grips": 562, "letters": 6182, "off_lattice": 3097, "sec": 117}
+{"digest_E2": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff", "cap237": 3097, "bad_R": 3097, "bad_R_Rinv_empty_V": 0, "digest_Y": "5d2a88d945674ac66cbb2759215749662b7053425a06e68cf562efd1804f05b5", "holes_Y": 3097, "holesY_minus_cap237_equals_holesE2": true, "sec": 116.7}
+{"run": {"seed": 1, "len": 10, "bad_RVR": 335, "formula": 335, "equal_formula": true, "bad_meets_cap237": 0}, "sec": 117.1}
+{"run": {"seed": 2, "len": 40, "bad_RVR": 469, "formula": 469, "equal_formula": true, "bad_meets_cap237": 0}, "sec": 118.5}
+{"run": {"seed": 3, "len": 120, "bad_RVR": 719, "formula": 719, "equal_formula": true, "bad_meets_cap237": 0}, "sec": 122.7}
+{"done": true, "sec": 122.7}

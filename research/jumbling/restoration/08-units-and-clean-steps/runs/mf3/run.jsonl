@@ -1,0 +1,4 @@
+{"event": "seed", "dir": "runs/mf2/df", "added": 1500, "sec": 0}
+{"event": "start", "table": "<scratch>/mfz/c7127a/end-table.json", "words": 1500, "only": 131, "sec": 0}
+{"event": "state", "step": 0, "digest": "a5a5c8f6920b50715984f06787ffcebedcd74a1218ede51aeb0c90553609a9f6", "off": 8836, "blocks": 134, "units": [[45, 17407, 17407, false]], "sec": 70}
+{"event": "scored", "step": 0, "usable": {"17407": 1500}, "deficit0": {"17407": 1500}, "vac_ok": {"17407": 0}, "occ0": {"17407": 0}, "need_search": [17407], "sec": 398}

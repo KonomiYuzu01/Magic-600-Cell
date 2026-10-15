@@ -1,0 +1,6 @@
+{"stage": "E2 loaded", "digest_ok": true, "off": [16245, 16249, 32088], "same": true, "sec": 6.2}
+{"part": "V", "prefix": 8, "off": 3, "coll": 0, "exact": 158120, "digest": "98d5869934296ed5", "sec": 9.6}
+{"part": "P", "prefix": 39, "off": 10, "coll": 10, "exact": 155218, "digest": "1509fd078dec4568", "sec": 30.1}
+{"part": "Q", "prefix": 40, "off": 10, "coll": 10, "exact": 154037, "digest": "6edd6cbc579441b5", "sec": 30.9}
+{"part": "Pinv", "prefix": 71, "off": 0, "coll": 0, "exact": 155986, "digest": "79abe255c1498ba4", "sec": 51.8}
+{"part": "Vinv", "prefix": 79, "off": 0, "coll": 0, "exact": 174026, "digest": "fb199d9997a240c6", "sec": 54.9}

@@ -1,0 +1,227 @@
+{
+ "name": "p60",
+ "start": "../../data/states/p60-table.json",
+ "start_digest": "ec3acb21fe14da213680d2b2e83a04d2f74dc8f77fa6dffeac4fd495a60b6e0a",
+ "steps": [
+  {
+   "label": "PS001-cap456",
+   "word": "step001-word.json",
+   "sets": "step001-sets.json"
+  },
+  {
+   "label": "PS002-cap317",
+   "word": "step002-word.json",
+   "sets": "step002-sets.json"
+  },
+  {
+   "label": "PS003-cap509",
+   "word": "step003-word.json",
+   "sets": "step003-sets.json"
+  },
+  {
+   "label": "PSC004-cap25",
+   "word": "step004-word.json",
+   "sets": "step004-sets.json"
+  },
+  {
+   "label": "PS005-cap372",
+   "word": "step005-word.json",
+   "sets": "step005-sets.json"
+  },
+  {
+   "label": "PSC006-cap139",
+   "word": "step006-word.json",
+   "sets": "step006-sets.json"
+  },
+  {
+   "label": "PS007-cap402",
+   "word": "step007-word.json",
+   "sets": "step007-sets.json"
+  },
+  {
+   "label": "PS008-cap236",
+   "word": "step008-word.json",
+   "sets": "step008-sets.json"
+  },
+  {
+   "label": "PSC009-cap217",
+   "word": "step009-word.json",
+   "sets": "step009-sets.json"
+  },
+  {
+   "label": "PSC010-cap411",
+   "word": "step010-word.json",
+   "sets": "step010-sets.json"
+  },
+  {
+   "label": "PSC011-cap326",
+   "word": "step011-word.json",
+   "sets": "step011-sets.json"
+  },
+  {
+   "label": "PS012-cap168",
+   "word": "step012-word.json",
+   "sets": "step012-sets.json"
+  },
+  {
+   "label": "PSC013-cap501",
+   "word": "step013-word.json",
+   "sets": "step013-sets.json"
+  },
+  {
+   "label": "PSC014-cap237",
+   "word": "step014-word.json",
+   "sets": "step014-sets.json"
+  },
+  {
+   "label": "PS015-cap557",
+   "word": "step015-word.json",
+   "sets": "step015-sets.json"
+  },
+  {
+   "label": "PSC016-cap215",
+   "word": "step016-word.json",
+   "sets": "step016-sets.json"
+  },
+  {
+   "label": "PSC017-cap409",
+   "word": "step017-word.json",
+   "sets": "step017-sets.json"
+  },
+  {
+   "label": "PSC018-cap17",
+   "word": "step018-word.json",
+   "sets": "step018-sets.json"
+  },
+  {
+   "label": "PSC019-cap117",
+   "word": "step019-word.json",
+   "sets": "step019-sets.json"
+  },
+  {
+   "label": "PS020-cap521",
+   "word": "step020-word.json",
+   "sets": "step020-sets.json"
+  },
+  {
+   "label": "PSC021-cap180",
+   "word": "step021-word.json",
+   "sets": "step021-sets.json"
+  },
+  {
+   "label": "PSC022-cap150",
+   "word": "step022-word.json",
+   "sets": "step022-sets.json"
+  },
+  {
+   "label": "PS023-cap61",
+   "word": "step023-word.json",
+   "sets": "step023-sets.json"
+  },
+  {
+   "label": "PS024-cap173",
+   "word": "step024-word.json",
+   "sets": "step024-sets.json"
+  },
+  {
+   "label": "PSC025-cap57",
+   "word": "step025-word.json",
+   "sets": "step025-sets.json"
+  },
+  {
+   "label": "PS026-cap227",
+   "word": "step026-word.json",
+   "sets": "step026-sets.json"
+  },
+  {
+   "label": "PSC027-cap86",
+   "word": "step027-word.json",
+   "sets": "step027-sets.json"
+  },
+  {
+   "label": "PSC028-cap353",
+   "word": "step028-word.json",
+   "sets": "step028-sets.json"
+  },
+  {
+   "label": "PSC029-cap392",
+   "word": "step029-word.json",
+   "sets": "step029-sets.json"
+  },
+  {
+   "label": "PSC030-cap162",
+   "word": "step030-word.json",
+   "sets": "step030-sets.json"
+  },
+  {
+   "label": "PSC031-cap315",
+   "word": "step031-word.json",
+   "sets": "step031-sets.json"
+  },
+  {
+   "label": "PSC032-cap181",
+   "word": "step032-word.json",
+   "sets": "step032-sets.json"
+  },
+  {
+   "label": "PSC033-cap218",
+   "word": "step033-word.json",
+   "sets": "step033-sets.json"
+  },
+  {
+   "label": "PSC034-cap468",
+   "word": "step034-word.json",
+   "sets": "step034-sets.json"
+  },
+  {
+   "label": "PSC035-cap588",
+   "word": "step035-word.json",
+   "sets": "step035-sets.json"
+  },
+  {
+   "label": "PS036-cap573",
+   "word": "step036-word.json",
+   "sets": "step036-sets.json"
+  },
+  {
+   "label": "PSC037-cap319",
+   "word": "step037-word.json",
+   "sets": "step037-sets.json"
+  },
+  {
+   "label": "PSC038-cap514",
+   "word": "step038-word.json",
+   "sets": "step038-sets.json"
+  },
+  {
+   "label": "PSC039-cap154",
+   "word": "step039-word.json",
+   "sets": "step039-sets.json"
+  },
+  {
+   "label": "PSC040-cap342",
+   "word": "step040-word.json",
+   "sets": "step040-sets.json"
+  },
+  {
+   "label": "PSC041-cap36",
+   "word": "step041-word.json",
+   "sets": "step041-sets.json"
+  },
+  {
+   "label": "KPSC042-cap497",
+   "word": "step042-word.json",
+   "sets": "step042-sets.json"
+  },
+  {
+   "label": "XPSC043-cap50",
+   "word": "step043-word.json",
+   "sets": "step043-sets.json"
+  },
+  {
+   "label": "PSC044-cap117",
+   "word": "step044-word.json",
+   "sets": "step044-sets.json"
+  }
+ ]
+}

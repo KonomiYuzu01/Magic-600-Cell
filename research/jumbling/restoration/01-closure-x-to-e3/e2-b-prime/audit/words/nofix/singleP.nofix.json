@@ -1,0 +1,33 @@
+{
+ "script": "<work>/v26/B3/singleP.py",
+ "argv": [
+  "<work>/v26/B3/singleP.py",
+  "<work>/wt-e3/research/jumbling/theory",
+  "<work>/v26/B4/E2-table.json",
+  "<work>/v26/B4/audit/words/nofix/singleP-out.json"
+ ],
+ "status": "ok",
+ "fixture_opened": false,
+ "data_opens": [
+  {
+   "path": "<work>/v26/B4/E2-table.json",
+   "mode": "r",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/singleP-out.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/wt-e3/assets/model.npz",
+   "mode": "r",
+   "count": 2
+  },
+  {
+   "path": "<work>/wt-e3/assets/primitives.npz",
+   "mode": "r",
+   "count": 1
+  }
+ ]
+}

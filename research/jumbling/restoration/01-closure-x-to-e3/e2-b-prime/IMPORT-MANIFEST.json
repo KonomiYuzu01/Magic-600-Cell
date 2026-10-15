@@ -1,0 +1,42 @@
+{
+ "source_package": "Claude-E-closure-E2E3-20261012",
+ "compressed": [
+  {
+   "path": "D3/E3-table.json",
+   "bytes": 2429311,
+   "sha256": "53cec2e37f3b858924c216d45d99f1563f0f1e57d1d8a78fa39946c1c965d889"
+  },
+  {
+   "path": "audit/replay/E2-keys-S.json",
+   "bytes": 1081694,
+   "sha256": "7f9e02ae73821c3df9136086b9248d3d8ede6c4a31676338fd241ef2a993f1d8"
+  },
+  {
+   "path": "audit/replay/E2-keys-W3.json",
+   "bytes": 1081694,
+   "sha256": "7f9e02ae73821c3df9136086b9248d3d8ede6c4a31676338fd241ef2a993f1d8"
+  },
+  {
+   "path": "audit/tables/closure_keys.json",
+   "bytes": 1117440,
+   "sha256": "e26709c39f62c1f58751ace176ba4e653e545b87ce30fdcb36d9f55cbe4d97d6"
+  },
+  {
+   "path": "input/E2-table.json",
+   "bytes": 2429561,
+   "sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+  }
+ ],
+ "left_out": [
+  {
+   "path": "README.zh-CN.md",
+   "bytes": 16841,
+   "sha256": "da1a98592c40e630669a730f26f36c5dc77cd2351d0397e497ee0eb5fcacb4f5"
+  },
+  {
+   "path": "SHA256SUMS",
+   "bytes": 25700,
+   "sha256": "16d926b59efcd7b3e36afecad17b49d6f110edf318114d88dc8a90fddb8123ad"
+  }
+ ]
+}

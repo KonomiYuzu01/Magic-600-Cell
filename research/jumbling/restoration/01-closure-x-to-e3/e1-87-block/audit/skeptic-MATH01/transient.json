@@ -1,0 +1,278 @@
+{
+ "start_digest_ok": true,
+ "rows": [
+  {
+   "prefix": 36564,
+   "letter": [
+    491,
+    56
+   ],
+   "lattice_of_36563_off": 3009,
+   "off_total": 3116
+  },
+  {
+   "prefix": 36565,
+   "letter": [
+    283,
+    11
+   ],
+   "lattice_of_36563_off": 3009,
+   "off_total": 3116
+  },
+  {
+   "prefix": 36566,
+   "letter": [
+    491,
+    34
+   ],
+   "lattice_of_36563_off": 703,
+   "off_total": 810
+  },
+  {
+   "prefix": 36567,
+   "letter": [
+    283,
+    11
+   ],
+   "lattice_of_36563_off": 703,
+   "off_total": 810
+  },
+  {
+   "prefix": 36568,
+   "letter": [
+    237,
+    28
+   ],
+   "lattice_of_36563_off": 3712,
+   "off_total": 3819
+  },
+  {
+   "prefix": 36569,
+   "letter": [
+    283,
+    11
+   ],
+   "lattice_of_36563_off": 3712,
+   "off_total": 3819
+  },
+  {
+   "prefix": 36570,
+   "letter": [
+    491,
+    56
+   ],
+   "lattice_of_36563_off": 5907,
+   "off_total": 6014
+  },
+  {
+   "prefix": 36571,
+   "letter": [
+    283,
+    11
+   ],
+   "lattice_of_36563_off": 5907,
+   "off_total": 6014
+  },
+  {
+   "prefix": 36572,
+   "letter": [
+    491,
+    34
+   ],
+   "lattice_of_36563_off": 3009,
+   "off_total": 3116
+  },
+  {
+   "prefix": 36573,
+   "letter": [
+    237,
+    40
+   ],
+   "lattice_of_36563_off": 198,
+   "off_total": 305
+  },
+  {
+   "prefix": 36574,
+   "letter": [
+    275,
+    10
+   ],
+   "lattice_of_36563_off": 198,
+   "off_total": 305
+  },
+  {
+   "prefix": 36575,
+   "letter": [
+    407,
+    10
+   ],
+   "lattice_of_36563_off": 198,
+   "off_total": 305
+  },
+  {
+   "prefix": 36576,
+   "letter": [
+    491,
+    56
+   ],
+   "lattice_of_36563_off": 3096,
+   "off_total": 3203
+  },
+  {
+   "prefix": 36577,
+   "letter": [
+    407,
+    10
+   ],
+   "lattice_of_36563_off": 3096,
+   "off_total": 3203
+  },
+  {
+   "prefix": 36578,
+   "letter": [
+    491,
+    34
+   ],
+   "lattice_of_36563_off": 790,
+   "off_total": 897
+  },
+  {
+   "prefix": 36579,
+   "letter": [
+    275,
+    10
+   ],
+   "lattice_of_36563_off": 790,
+   "off_total": 897
+  },
+  {
+   "prefix": 36580,
+   "letter": [
+    491,
+    56
+   ],
+   "lattice_of_36563_off": 3096,
+   "off_total": 3203
+  },
+  {
+   "prefix": 36581,
+   "letter": [
+    407,
+    10
+   ],
+   "lattice_of_36563_off": 3096,
+   "off_total": 3203
+  },
+  {
+   "prefix": 36582,
+   "letter": [
+    491,
+    34
+   ],
+   "lattice_of_36563_off": 198,
+   "off_total": 218
+  },
+  {
+   "prefix": 36583,
+   "letter": [
+    407,
+    10
+   ],
+   "lattice_of_36563_off": 198,
+   "off_total": 218
+  },
+  {
+   "prefix": 36584,
+   "letter": [
+    237,
+    28
+   ],
+   "lattice_of_36563_off": 3009,
+   "off_total": 3029
+  },
+  {
+   "prefix": 36585,
+   "letter": [
+    491,
+    56
+   ],
+   "lattice_of_36563_off": 5907,
+   "off_total": 6014
+  },
+  {
+   "prefix": 36586,
+   "letter": [
+    283,
+    11
+   ],
+   "lattice_of_36563_off": 5907,
+   "off_total": 6014
+  },
+  {
+   "prefix": 36587,
+   "letter": [
+    491,
+    34
+   ],
+   "lattice_of_36563_off": 3712,
+   "off_total": 3819
+  },
+  {
+   "prefix": 36588,
+   "letter": [
+    283,
+    11
+   ],
+   "lattice_of_36563_off": 3712,
+   "off_total": 3819
+  },
+  {
+   "prefix": 36589,
+   "letter": [
+    237,
+    40
+   ],
+   "lattice_of_36563_off": 703,
+   "off_total": 810
+  },
+  {
+   "prefix": 36590,
+   "letter": [
+    283,
+    11
+   ],
+   "lattice_of_36563_off": 703,
+   "off_total": 810
+  },
+  {
+   "prefix": 36591,
+   "letter": [
+    491,
+    56
+   ],
+   "lattice_of_36563_off": 3009,
+   "off_total": 3116
+  },
+  {
+   "prefix": 36592,
+   "letter": [
+    283,
+    11
+   ],
+   "lattice_of_36563_off": 3009,
+   "off_total": 3116
+  },
+  {
+   "prefix": 36593,
+   "letter": [
+    491,
+    34
+   ],
+   "lattice_of_36563_off": 0,
+   "off_total": 20
+  }
+ ],
+ "max_lattice_of_36563_off": 5907,
+ "end_lattice_of_36563_off": 0,
+ "end_digest": "a3f3a71d332c2d609107cae1f2a2861e53257938de625a1fde9de93337d4190f"
+}

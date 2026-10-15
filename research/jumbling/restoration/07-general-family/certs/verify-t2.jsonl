@@ -1,0 +1,4 @@
+{"chain": "t2", "start_digest_ok": true, "load_seconds": 3.5}
+{"label": "PSC001-cap57", "twists": 1, "applied": 1, "error": null, "input_digest_ok": true, "output_digest_ok": true, "off_before": 5404, "off_after": 3097, "restored": 2702, "collateral": 395, "moved_off": 0, "restored_matches": true, "collateral_matches": true, "moved_matches": true, "seconds": 0.2, "ok": true}
+{"label": "PS002-cap86", "twists": 1, "applied": 1, "error": null, "input_digest_ok": true, "output_digest_ok": true, "off_before": 3097, "off_after": 0, "restored": 3097, "collateral": 0, "moved_off": 0, "restored_matches": true, "collateral_matches": true, "moved_matches": true, "seconds": 0.0, "ok": true}
+{"chain": "t2", "all_ok": true, "steps": 2, "final_off": 0, "all_on_lattice": true, "final_digest": "6836008194fc2a8cffa245d24452e606feb8df1187cf13f68f7fe9b81ab92193", "seconds": 3.7}

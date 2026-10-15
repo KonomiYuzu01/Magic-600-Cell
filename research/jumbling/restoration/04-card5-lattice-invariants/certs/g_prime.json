@@ -1,0 +1,260 @@
+{
+ "grip": 0,
+ "orbit0_sharing_grips": [
+  1,
+  10,
+  12,
+  13
+ ],
+ "orbits": {
+  "0": {
+   "homes_in_cap0": 4,
+   "containing": {}
+  },
+  "1": {
+   "homes_in_cap0": 18,
+   "containing": {
+    "1": {
+     "count": 72,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "10": {
+     "count": 72,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "12": {
+     "count": 72,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "13": {
+     "count": 72,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    }
+   }
+  },
+  "2": {
+   "homes_in_cap0": 16,
+   "containing": {
+    "1": {
+     "count": 120,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "3": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "5": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "6": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "7": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "8": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "10": {
+     "count": 120,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "12": {
+     "count": 120,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "13": {
+     "count": 120,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "14": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "17": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "18": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "21": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "27": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "35": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "38": {
+     "count": 24,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    }
+   }
+  },
+  "3": {
+   "homes_in_cap0": 24,
+   "containing": {
+    "1": {
+     "count": 144,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "10": {
+     "count": 144,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "12": {
+     "count": 144,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "13": {
+     "count": 144,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    }
+   }
+  },
+  "4": {
+   "homes_in_cap0": 60,
+   "containing": {
+    "1": {
+     "count": 900,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "3": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "5": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "6": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "7": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "8": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "10": {
+     "count": 900,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "12": {
+     "count": 900,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "13": {
+     "count": 900,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "14": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "17": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "18": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "21": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "27": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "35": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    },
+    "38": {
+     "count": 288,
+     "angle": 25.24,
+     "shares_orbit0_home": false
+    }
+   }
+  },
+  "6": {
+   "homes_in_cap0": 6,
+   "containing": {
+    "1": {
+     "count": 36,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "10": {
+     "count": 36,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "12": {
+     "count": 36,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    },
+    "13": {
+     "count": 36,
+     "angle": 15.52,
+     "shares_orbit0_home": true
+    }
+   }
+  }
+ }
+}

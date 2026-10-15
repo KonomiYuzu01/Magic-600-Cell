@@ -1,0 +1,70 @@
+{
+ "script": "<work>/v26/B3/constructS.py",
+ "argv": [
+  "<work>/v26/B3/constructS.py",
+  "<work>/wt-e3/research/jumbling/theory",
+  "<work>/v26/B4/E2-table.json",
+  "[[237, 13], [91, 6], [237, 47], [154, 7], [237, 13], [91, 7], [237, 47], [133, 1], [237, 13], [91, 6], [237, 47], [154, 6], [237, 13], [91, 7], [237, 47], [183, 6], [237, 13], [91, 6], [237, 47], [154, 7], [237, 13], [91, 7], [237, 47], [133, 1], [237, 13], [91, 6], [237, 47], [154, 6], [237, 13], [91, 7], [237, 47]]",
+  "[[162, 1]]",
+  "<work>/v26/B4/audit/words/nofix/cS"
+ ],
+ "status": "ok",
+ "fixture_opened": false,
+ "data_opens": [
+  {
+   "path": "<work>/v26/B4/E2-table.json",
+   "mode": "r",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/cS/certificate-Q0.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/cS/parts/F.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/cS/parts/P.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/cS/parts/Pinv.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/cS/parts/Q0.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/cS/pre.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/cS/result.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/cS/word-full.json",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/wt-e3/assets/model.npz",
+   "mode": "r",
+   "count": 2
+  },
+  {
+   "path": "<work>/wt-e3/assets/primitives.npz",
+   "mode": "r",
+   "count": 1
+  }
+ ]
+}

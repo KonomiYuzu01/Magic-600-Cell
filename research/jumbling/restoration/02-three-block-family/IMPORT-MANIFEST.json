@@ -1,0 +1,47 @@
+{
+ "source_package": "Claude-E-three-block-family-20261012",
+ "compressed": [
+  {
+   "path": "inputs/E2-table.json",
+   "bytes": 2429561,
+   "sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+  },
+  {
+   "path": "inputs/I1-table.json",
+   "bytes": 2430993,
+   "sha256": "c4b8a173ebb1e7b8da00b2a124a51e4c3912f3bdff73e463d02853f5fc909dce"
+  },
+  {
+   "path": "inputs/I2-table.json",
+   "bytes": 2432397,
+   "sha256": "d683496e6aca22da1cf2c295ebeac1c69c370a9f01114b9cc33e828be4ad22b3"
+  },
+  {
+   "path": "inputs/S3-synthetic-frozen-table.json",
+   "bytes": 2429802,
+   "sha256": "3d68574a18f5bb80df86e914ca1784dcb64894c544afda9d30e02d59bc77c125"
+  },
+  {
+   "path": "runs/I1/end-table.json",
+   "bytes": 2430838,
+   "sha256": "d1fb2238d396f86684fc3e87f9326d334a4a81112cfb528b83d0041333c1f8d2"
+  },
+  {
+   "path": "runs/I2/end-table.json",
+   "bytes": 2432252,
+   "sha256": "f150f41e51b6c85be2f0ff5830a7f36c5e5c080204f95cb35a4f937c7c294be8"
+  }
+ ],
+ "left_out": [
+  {
+   "path": "README.zh-CN.md",
+   "bytes": 8547,
+   "sha256": "19a3b6fa7778fda9c80ffc4e323a63c94bcc9ccd8cf1e4c7d8e0e7fec8004ee3"
+  },
+  {
+   "path": "SHA256SUMS",
+   "bytes": 6705,
+   "sha256": "4f167d4d7d64f38739e040a5728b635d8b66ee531c20e6cef928c5ecf664361e"
+  }
+ ]
+}

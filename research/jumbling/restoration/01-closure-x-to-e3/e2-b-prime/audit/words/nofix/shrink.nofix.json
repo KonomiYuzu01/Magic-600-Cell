@@ -1,0 +1,36 @@
+{
+ "script": "<work>/v26/B4/shrink.py",
+ "argv": [
+  "<work>/v26/B4/shrink.py",
+  "<work>/wt-e3/research/jumbling/theory",
+  "<work>/v26",
+  "<work>/v26/B4/E2-table.json",
+  "[237, 13]",
+  "8",
+  "<work>/v26/B4/audit/words/nofix/shrink.jsonl"
+ ],
+ "status": "ok",
+ "fixture_opened": false,
+ "data_opens": [
+  {
+   "path": "<work>/v26/B4/E2-table.json",
+   "mode": "r",
+   "count": 1
+  },
+  {
+   "path": "<work>/v26/B4/audit/words/nofix/shrink.jsonl",
+   "mode": "w",
+   "count": 1
+  },
+  {
+   "path": "<work>/wt-e3/assets/model.npz",
+   "mode": "r",
+   "count": 2
+  },
+  {
+   "path": "<work>/wt-e3/assets/primitives.npz",
+   "mode": "r",
+   "count": 1
+  }
+ ]
+}

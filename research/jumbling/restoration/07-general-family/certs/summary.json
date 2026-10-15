@@ -1,0 +1,158 @@
+[
+ {
+  "run": "fx",
+  "start_off": 94147,
+  "steps": 36,
+  "PS": 13,
+  "PSC": 23,
+  "collateral_total": 9397,
+  "collateral_max": 1154,
+  "moved_total": 7407,
+  "gain_min": 514,
+  "end_off": 10415,
+  "all_steps_ok": true,
+  "end_event": {
+   "event": "end",
+   "off": 10415,
+   "sec": 338.6
+  },
+  "replay": {
+   "all_ok": true,
+   "steps": 36,
+   "final_off": 10415,
+   "all_on_lattice": false,
+   "final_digest": "3e5edc6fb19eb4550004d58918efbbd348b0e1cbf2b6a147af1f78604ec52f51",
+   "start_digest_ok": true
+  }
+ },
+ {
+  "run": "r40s11",
+  "start_off": 87599,
+  "steps": 34,
+  "PS": 13,
+  "PSC": 20,
+  "collateral_total": 11784,
+  "collateral_max": 2809,
+  "moved_total": 5251,
+  "gain_min": 495,
+  "end_off": 9033,
+  "all_steps_ok": true,
+  "end_event": {
+   "event": "end",
+   "off": 9033,
+   "sec": 324.6
+  },
+  "replay": {
+   "all_ok": true,
+   "steps": 34,
+   "final_off": 9033,
+   "all_on_lattice": false,
+   "final_digest": "8847aa8110795df33455be87d6046e30c2c3041b6c83fabf058e8fb5e097a25a",
+   "start_digest_ok": true
+  }
+ },
+ {
+  "run": "p60",
+  "start_off": 105676,
+  "steps": 44,
+  "PS": 13,
+  "PSC": 29,
+  "collateral_total": 15706,
+  "collateral_max": 2109,
+  "moved_total": 14040,
+  "gain_min": 160,
+  "end_off": 17316,
+  "all_steps_ok": true,
+  "end_event": {
+   "event": "end",
+   "off": 17316,
+   "sec": 472.3
+  },
+  "replay": {
+   "all_ok": true,
+   "steps": 44,
+   "final_off": 17316,
+   "all_on_lattice": false,
+   "final_digest": "e831c99d981b20359d8672b0c5beaa2b3bce91eaf0e857d00d8c37c9b87581c5",
+   "start_digest_ok": true
+  }
+ },
+ {
+  "run": "p100",
+  "start_off": 118286,
+  "steps": 43,
+  "PS": 7,
+  "PSC": 32,
+  "collateral_total": 19010,
+  "collateral_max": 1819,
+  "moved_total": 23299,
+  "gain_min": 74,
+  "end_off": 46389,
+  "all_steps_ok": true,
+  "end_event": {
+   "event": "end",
+   "off": 46389,
+   "sec": 592.2
+  },
+  "replay": {
+   "all_ok": true,
+   "steps": 43,
+   "final_off": 46389,
+   "all_on_lattice": false,
+   "final_digest": "8ce1760503c4bbf495f504daa2cc7bd205490d0c1bbda4ba2db124d9228f5492",
+   "start_digest_ok": true
+  }
+ },
+ {
+  "run": "t2",
+  "start_off": 5404,
+  "steps": 2,
+  "PS": 1,
+  "PSC": 1,
+  "collateral_total": 395,
+  "collateral_max": 395,
+  "moved_total": 0,
+  "gain_min": 2307,
+  "end_off": 0,
+  "all_steps_ok": true,
+  "end_event": {
+   "event": "end",
+   "off": 0,
+   "sec": 24.6
+  },
+  "replay": {
+   "all_ok": true,
+   "steps": 2,
+   "final_off": 0,
+   "all_on_lattice": true,
+   "final_digest": "6836008194fc2a8cffa245d24452e606feb8df1187cf13f68f7fe9b81ab92193",
+   "start_digest_ok": true
+  }
+ },
+ {
+  "run": "y",
+  "start_off": 2307,
+  "steps": 1,
+  "PS": 0,
+  "PSC": 1,
+  "collateral_total": 790,
+  "collateral_max": 790,
+  "moved_total": 0,
+  "gain_min": 1517,
+  "end_off": 790,
+  "all_steps_ok": true,
+  "end_event": {
+   "event": "end",
+   "off": 790,
+   "sec": 28.2
+  },
+  "replay": {
+   "all_ok": true,
+   "steps": 1,
+   "final_off": 790,
+   "all_on_lattice": false,
+   "final_digest": "9fef7c1a2dcd141aa0cc2d523d884ae037ad53f2778d9daab50f64613f5b3d1b",
+   "start_digest_ok": true
+  }
+ }
+]

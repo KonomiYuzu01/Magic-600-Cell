@@ -1,0 +1,57 @@
+{
+ "source_package": "Claude-E-closure-E1E2-20261012",
+ "compressed": [
+  {
+   "path": "B3/dcomm2.log",
+   "bytes": 2217451,
+   "sha256": "568b14a84d6b6e53ff8fc17654aa812a29f0cfb4dec168afd4aa93d4f489025b"
+  },
+  {
+   "path": "B3/lockgood.jsonl",
+   "bytes": 2082772,
+   "sha256": "9d0add81d77df1e55bb95d2b87546442ade8e514e75f28e97ab98b001958662b"
+  },
+  {
+   "path": "B3/q-b3.jsonl",
+   "bytes": 2978361,
+   "sha256": "6bf7e8787b4d1d1cc18bb3c4b4e0b0581dde422637925b1edff186e147f37b6c"
+  },
+  {
+   "path": "B3/qstruct.jsonl",
+   "bytes": 4438950,
+   "sha256": "3d7be9600dd0354ba23b13ba7ad66ecb0053e744a2f2a8e68263638725984748"
+  },
+  {
+   "path": "D87/E2-table.json",
+   "bytes": 2429561,
+   "sha256": "649576e69ede65a6203dfbebd3b879a68e40250abaf18a0f08ad86084834d893"
+  },
+  {
+   "path": "D87/after-V-table.json",
+   "bytes": 2442312,
+   "sha256": "2a2378e95b15294ca0a7ab9d7197164c173088a7a07ab7e4712b43825800bc3f"
+  },
+  {
+   "path": "D87/prefixes.jsonl",
+   "bytes": 312100,
+   "sha256": "d0e55996200e84f24d1f7cf3b6c01c2e54f0c0f87da1b4f68d39251f4cd1aa45"
+  },
+  {
+   "path": "input/E1-table.json",
+   "bytes": 2440525,
+   "sha256": "18242d2cadf9b05a141c07a9bb7da4a94cecdb52d5783a18d75102ae75404f18"
+  }
+ ],
+ "left_out": [
+  {
+   "path": "README.zh-CN.md",
+   "bytes": 14326,
+   "sha256": "7d703b36b3b20ccad490108facb3a9087c69eaa2e8dd393b7aadd8b7db0943fd"
+  },
+  {
+   "path": "SHA256SUMS",
+   "bytes": 26905,
+   "sha256": "a105441d704acb0c74d8b6ae837668c2821b056bb835e8192479365a9a5ada62"
+  }
+ ]
+}

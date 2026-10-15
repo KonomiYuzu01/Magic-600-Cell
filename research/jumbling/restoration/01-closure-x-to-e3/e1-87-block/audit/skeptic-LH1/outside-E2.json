@@ -1,0 +1,29 @@
+{
+ "table": "<work>/v26/E2/c0/E2-table.json",
+ "pieces": {
+  "16245": {
+   "vertices": 7,
+   "separating_facets_exact": [
+    273,
+    356
+   ],
+   "max_facet_excess_min_over_vertices": 0.34564734388044727
+  },
+  "16249": {
+   "vertices": 5,
+   "separating_facets_exact": [
+    273,
+    356
+   ],
+   "max_facet_excess_min_over_vertices": 0.5527556944404353
+  },
+  "32088": {
+   "vertices": 5,
+   "separating_facets_exact": [
+    273,
+    356
+   ],
+   "max_facet_excess_min_over_vertices": 0.34564734388044727
+  }
+ }
+}

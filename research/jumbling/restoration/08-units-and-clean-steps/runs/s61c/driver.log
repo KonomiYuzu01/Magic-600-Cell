@@ -1,0 +1,6 @@
+{"event": "start", "table": "s61c-table.json", "words": 0, "only": 61, "sec": 0}
+{"event": "state", "step": 0, "digest": "218f823f3b269c2c43146086601f9110274c2ccd98363276d0ea09466b30e669", "off": 61, "blocks": 1, "units": [[61, 23955, 23955, false]], "sec": 12}
+{"event": "scored", "step": 0, "usable": {"23955": 24}, "deficit0": {"23955": 0}, "vac_ok": {"23955": 0}, "occ0": {"23955": 0}, "need_search": [23955], "sec": 36}
+{"event": "search", "step": 0, "searched": [23955], "added": 601, "vac_ok": {"23955": 0}, "sec": 102}
+{"event": "refine", "step": 0, "added": 8, "sec": 120}
+{"event": "stop", "step": 0, "result": "no unit restored at this state", "remaining": [[61, 23955, 23955, false]], "best": {"23955": [[272, 0, 272, 322, 333, 0], [272, 0, 272, 322, 333, 0], [272, 0, 272, 322, 333, 0], [272, 0, 272, 322, 333, 0], [272, 0, 272, 322, 333, 0]]}, "sec": 154}

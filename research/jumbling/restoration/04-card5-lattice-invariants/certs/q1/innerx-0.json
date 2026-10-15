@@ -1,0 +1,57 @@
+{
+ "grip": 0,
+ "jumble_item": 12,
+ "by_angle": {
+  "15.52 diff": {
+   "n": 4,
+   "blocked": 4,
+   "ball_straddles": 4
+  },
+  "25.24 diff": {
+   "n": 12,
+   "blocked": 12,
+   "ball_straddles": 12
+  },
+  "36.00 diff": {
+   "n": 12,
+   "blocked": 6,
+   "ball_straddles": 6
+  },
+  "36.00 same": {
+   "n": 12,
+   "blocked": 0,
+   "ball_straddles": 0
+  },
+  "41.41 diff": {
+   "n": 12,
+   "blocked": 3,
+   "ball_straddles": 0
+  },
+  "44.48 diff": {
+   "n": 4,
+   "blocked": 0,
+   "ball_straddles": 0
+  },
+  "49.12 diff": {
+   "n": 24,
+   "blocked": 0,
+   "ball_straddles": 0
+  },
+  "56.01 diff": {
+   "n": 24,
+   "blocked": 0,
+   "ball_straddles": 0
+  },
+  "60.00 diff": {
+   "n": 12,
+   "blocked": 0,
+   "ball_straddles": 0
+  },
+  "60.00 same": {
+   "n": 20,
+   "blocked": 0,
+   "ball_straddles": 0
+  }
+ },
+ "sec": 4.6
+}

@@ -1,0 +1,143 @@
+{
+ "tables": {
+  "X_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+  "E1_digest": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "pieces": 177120,
+  "X_to_E1_pose_changed": 17,
+  "T_size": 87,
+  "T_equal_X_E1": true,
+  "Bp_equal_X_E1": true,
+  "changed_intersects_T": 0,
+  "changed_intersects_Bp": 0,
+  "changed_equals_X_17block": true
+ },
+ "provenance": {
+  "w87_c0_Q_is_Q2": true,
+  "q87_ownerlike_len": 23,
+  "q87_ownerlike_index_of_Q2": [
+   0
+  ],
+  "w87_c0_source": "park-E1-87-0.jsonl:77",
+  "park_row_P_equals_w87_c0_P": true,
+  "park_row": {
+   "T_on": 87,
+   "T_dead": 0,
+   "prot_exact": true,
+   "badW": 87,
+   "badW_occupied": 86
+  },
+  "park_E1_87_0_log_first_two": [
+   {
+    "off": 90,
+    "blocks": [
+     87,
+     3
+    ],
+    "straddling": 5,
+    "status_3": 0,
+    "sec": 12
+   },
+   {
+    "badQ": 198,
+    "badQ_occupied": 191,
+    "triple": [
+     115,
+     128,
+     190
+    ],
+    "a": 346,
+    "e": 314,
+    "c": 115,
+    "sec": 13
+   }
+  ],
+  "g_X_b0_log_line1": {
+   "off": 107,
+   "blocks": [
+    87,
+    17,
+    3
+   ],
+   "straddling": 8,
+   "status_3": 0,
+   "sec": 12
+  },
+  "E1q_dcomm2_log_line1": {
+   "off": 90,
+   "blocks": [
+    87,
+    3
+   ],
+   "straddling": 5,
+   "status_3": 0,
+   "sec": 12
+  },
+  "Q2_in_X_search": true,
+  "Q2_bad_at_X": 198,
+  "Q2_in_E1_rerun": true,
+  "Q2_bad_at_E1": 198,
+  "triples_rows": 13953,
+  "owner_shape_rows": 870,
+  "owner_shape_distinct_ec": 23,
+  "q87_ownerlike_all_owner_shape": true,
+  "q87_ownerlike_all_in_X_search": true,
+  "q87_ownerlike_distinct_ec": 23
+ },
+ "rerun": {
+  "X_count": 62424,
+  "E1_count": 64368,
+  "E1_all_T_on_87": true,
+  "E1_all_prot_exact": true,
+  "X_all_T_on_87_prot_exact": true,
+  "X_subset_E1": true,
+  "X_subset_same_bad": true,
+  "new_count": 1944,
+  "new_all_use_190": true,
+  "new_roles_190": [
+   [
+    "c"
+   ]
+  ],
+  "X_any_uses_190": false,
+  "min_bad_X": 198,
+  "min_bad_E1": 198,
+  "min_bad_new": 198
+ },
+ "ref_safe": {
+  "X_safe_list_len": 570,
+  "equals_resources_X_safe": true,
+  "resources_X_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+  "X_table_digest": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+  "pre_reference_safe_grips": 570,
+  "pre_safe_here_not_in_reference": [
+   43,
+   104,
+   116,
+   122,
+   140,
+   162,
+   176,
+   183,
+   190,
+   209,
+   219
+  ],
+  "X_straddling_grips": [
+   162,
+   190,
+   209,
+   250,
+   272,
+   307,
+   407,
+   490
+  ],
+  "E1_straddled_blocked": [
+   250,
+   272,
+   307,
+   407,
+   490
+  ]
+ }
+}

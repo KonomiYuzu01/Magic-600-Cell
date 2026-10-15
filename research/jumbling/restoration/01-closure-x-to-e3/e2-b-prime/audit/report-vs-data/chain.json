@@ -1,0 +1,46 @@
+{
+ "digests": {
+  "X": "f13c168efc4e038e4774f81159d9e24443c5c32727e7cd379767d95dc44dc0d7",
+  "E1": "903997457de665c2846e00ba62b71c3d3ccb7df79c78391f5a1b9f1757afc4e8",
+  "E2": "19e404d438fd929b0c6480c35374aa5147b361831806774ff65ca0f4739bc5ff",
+  "E3": "fb199d9997a240c69ce91b39953d2434939f094f183f566067ca1779fe10c441"
+ },
+ "off_counts": {
+  "X": 107,
+  "E1": 90,
+  "E2": 3,
+  "E3": 0
+ },
+ "changed_counts": {
+  "X_to_E1": 17,
+  "E1_to_E2": 87,
+  "E2_to_E3": 3094,
+  "E1_to_E3": 3151,
+  "X_to_E3": 3164,
+  "X_to_E2": 104
+ },
+ "block17": 17,
+ "block87": 87,
+ "bprime": [
+  16245,
+  16249,
+  32088
+ ],
+ "X_off_minus_blocks": 0,
+ "X_to_E1_equals_17block": true,
+ "E1_to_E2_equals_87block": true,
+ "E2_to_E3_includes_bprime": true,
+ "E2_lattice_changed": 3091,
+ "E2_lattice_changed_all_lattice_at_E2": true,
+ "E2_lattice_changed_chamber": 3086,
+ "E3_all_on_K": true,
+ "overlap_87_with_E2E3_lattice_changed": 30,
+ "overlap_17_with_E2E3_lattice_changed": 4,
+ "E1_to_E3_predicted": 3151,
+ "X_to_E3_predicted": 3164,
+ "E1_to_E3_set_equals_union_minus_returned": null,
+ "E1_to_E3_equals_union_87_bp_latchanged": true,
+ "X_to_E3_equals_union_17_87_bp_latchanged": true,
+ "chain_check_ids_equal": true,
+ "sec": 21.5
+}

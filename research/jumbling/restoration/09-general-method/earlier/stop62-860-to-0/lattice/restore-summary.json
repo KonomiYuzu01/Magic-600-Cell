@@ -1,0 +1,245 @@
+{
+ "cascade_order": [
+  6,
+  0,
+  17,
+  15,
+  2,
+  22,
+  21,
+  8,
+  23,
+  9,
+  29,
+  25,
+  13,
+  11,
+  10,
+  34,
+  28,
+  26,
+  24,
+  16,
+  14,
+  12,
+  3,
+  33,
+  32,
+  31,
+  30,
+  27,
+  20,
+  19,
+  18,
+  7,
+  5,
+  4,
+  1
+ ],
+ "nu_w9": {
+  "8": [
+   1,
+   0
+  ],
+  "25": [
+   1,
+   0
+  ]
+ },
+ "library": {
+  "sha256": "8a13eb6c4f4359ce4dd58a0018cf86eed3089111e11f20b7c00476f6393a661a",
+  "macros": 36,
+  "rank2": 34,
+  "rank5": 2
+ },
+ "runs": [
+  {
+   "input": "table:<scratch>/ep/lemo/last/xp-design-wordclass/out-pure-s86a/end-table.json",
+   "input_digest": "981c5bb2367ac2e13e7fafaa130a9b9bb81c8961a65260c6a02700b78f8a1175",
+   "input_labels_sha256": "51171d9f4c391beabd6e344a533fd4c59e0caeeec186f43728da3d3f3dfed161",
+   "nu_input": {
+    "9": [
+     1,
+     0
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "11": [
+     1,
+     1
+    ],
+    "14": [
+     1,
+     0
+    ],
+    "16": [
+     1,
+     0
+    ],
+    "17": [
+     0,
+     3
+    ],
+    "18": [
+     1,
+     0
+    ],
+    "19": [
+     1,
+     0
+    ],
+    "20": [
+     1,
+     0
+    ],
+    "24": [
+     1,
+     0
+    ],
+    "25": [
+     0,
+     1
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "28": [
+     1,
+     0
+    ],
+    "29": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ],
+    "32": [
+     0,
+     1
+    ]
+   },
+   "moved_pieces_input": 34392,
+   "corrections": [
+    {
+     "macro": 2,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 3,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 4,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 6,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 12,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 16,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 17,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": true
+    },
+    {
+     "macro": 32,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "order": "retained-first",
+   "correction_twists": 8129,
+   "T_digest": "d6a9b109faf124ade06a491de4decc885117e7e2a9068a1cdb16d0ddb9e9ae26",
+   "T_seconds": 158.7,
+   "w9": false,
+   "C_seconds": 163.4,
+   "final_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "status": "restored",
+   "factors": 134042,
+   "factors_per_orbit": {
+    "6": 725,
+    "0": 406,
+    "17": 1966,
+    "15": 1883,
+    "2": 1268,
+    "22": 4530,
+    "21": 5867,
+    "8": 2939,
+    "23": 6471,
+    "9": 4090,
+    "29": 2197,
+    "25": 4946,
+    "13": 5235,
+    "11": 3459,
+    "10": 2750,
+    "34": 219,
+    "28": 2390,
+    "26": 6763,
+    "24": 6533,
+    "16": 4621,
+    "14": 2878,
+    "12": 3933,
+    "3": 2436,
+    "33": 2317,
+    "32": 5191,
+    "31": 6805,
+    "30": 6885,
+    "27": 6703,
+    "20": 5621,
+    "19": 5939,
+    "18": 5751,
+    "7": 2663,
+    "5": 3157,
+    "4": 3179,
+    "1": 1326
+   },
+   "retained_length": 151011430,
+   "new_nodes": 253984,
+   "seconds": 332.8
+  }
+ ]
+}
