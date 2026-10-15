@@ -53,7 +53,8 @@ Along the way:
 - **Theorem M\*, a general method (stage 09, proved in the senior review):** fast heuristic steps, that
   exhaustive search as a fallback when they find nothing, then the lattice phase with the corrections last. It
   restores every reachable configuration from the current state alone, in at most as many clean steps as there
-  are off pieces at the start. The driver v4 that was run is a partial implementation: it has no fallback yet.
+  are off pieces at the start. The driver implements it; the runs of 15 October used the earlier driver v4, which
+  had no fallback.
   Where the pure twist and transport words apply, a step has an explicit bound; units with pieces of height four
   lie outside them.
 - **Theorem C, the pure twist (stage 09, proved in the senior review):** if the two poles of the carrier's edge
@@ -81,7 +82,7 @@ new standard removes from the earlier programme, and the reproduction commands.
 
 | Gap | What is missing | Status |
 | --- | --- | --- |
-| M1 | A construction from the state alone with a bound on its length, and a proof that the driver always finds a step. Bare existence is proved (exhaustive search), and with it as a fallback the method is complete (Theorem M\*); a bound for every state exists if and only if R(I_a) is finite | **open**; the core gap |
+| M1 | A construction from the state alone with a bound on its length. Bare existence is proved (exhaustive search), and with it as a fallback the method is complete (Theorem M\*), which the driver implements; a bound for every state exists if and only if R(I_a) is finite | **open**; the core gap |
 | M2 | The lattice cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, about 5 to 7 years at one twist per second, and is at most 1,324,686,034 twists for every input (proved), against "a person can replicate it" | **open** |
 | E1 | Coverage: deep scrambles at the I_a@40 scale (about 94,000 off pieces) were not run with the method | **not run** |
 | E2 | Review of the proofs. The senior model review of 15 October 2026 checked stages 08 and 09 and the A_J upper bound, proved Lemma C as Theorem C and corrected Lemma CM and Theorem R ([record](09-general-method/SENIOR-REVIEW.md)) | model review **done**; human review **not done** |
@@ -138,7 +139,7 @@ archives. Each `IMPORT-MANIFEST.json` names its source package:
 | 06 | `Claude-3E-block-family-20261014` |
 | 07 | `Claude-3E-general-family-20261014` |
 | 08 | `Claude-3E-units-20261015` (version 3.1) |
-| 09 | the working tree of the general method v4 |
+| 09 | the working tree of the general method (driver v4 for the runs; M\* since the senior review's audit) |
 
 ## Evidence and checks not run
 

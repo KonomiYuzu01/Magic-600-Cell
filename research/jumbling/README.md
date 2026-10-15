@@ -37,7 +37,8 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
 - **Senior review (15 October 2026).** A Codex senior review proved that a clean step always exists and that an
   exhaustive search reading only the state finds one, with no bound on its length. With that search as a fallback
   after the fast steps, and the lattice phase at the end, the method restores every reachable configuration from
-  the current state alone (Theorem M\*); the driver that was run (v4) does not have the fallback yet. It proved the pure twist
+  the current state alone (Theorem M\*), and the driver now implements it; the runs so far used v4, which had no
+  fallback. It proved the pure twist
   (Lemma C) with a bound of 720 twists and extended it to every kind of cell (in place for vertex cells, by
   transport for triangle and tetrahedron cells), corrected the statements of Lemma CM and Theorem R, and checked the other
   proofs. It also proved that a bound on the restoration length for every reachable configuration exists if and only

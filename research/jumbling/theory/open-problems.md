@@ -15,7 +15,8 @@ Since 11 October ([restoration research](../restoration/README.md)):
   states ([stage 07](../restoration/07-general-family/README.md)). Every reachable state off the lattice has a clean
   step, and an exhaustive search reading only the state finds one, with no bound on its length (Codex senior review,
   [record](../restoration/09-general-method/SENIOR-REVIEW.md)). With that search as a fallback, the general method restores
-  every reachable configuration from the state alone (Theorem M\*, same record). A construction from the state with
+  every reachable configuration from the state alone (Theorem M\*, same record), and the driver implements that
+  fallback. A construction from the state with
   a bound on its length is gap M1 of the general method: open. A uniform bound exists if and only if R(I_a) is finite (X1).
 - **L1** closed: G = 𝒦, by 35 position and 11 frame certificates that pass an independent checker
   ([stage 03](../restoration/03-retained-group-and-lattice-restorer/README.md)).

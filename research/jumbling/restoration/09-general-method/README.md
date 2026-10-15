@@ -1,4 +1,4 @@
-# 09. A state-only general method (v4), 15 October 2026
+# 09. A state-only general method, 15 October 2026
 
 The method reads only the current pose table and restores a jumbled configuration in two phases:
 1. clean steps take the pieces that are off the lattice back onto it;
@@ -20,11 +20,15 @@ cell kinds, the review of the clean-step and lattice-phase proofs with their cor
 the method as a whole: Theorem M\* (with an exhaustive fallback the method is complete), the toolkit theorem with
 its bounds, and a bound of 1,324,686,034 twists for the lattice phase.
 
+The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
+nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
+v4, which had no fallback.
+
 ## Contents
 
 | Path | What it is |
 | --- | --- |
-| `scripts/gm/` | The driver `gdrive.py`, its step scripts, `gen_scramble.py` and `omega_check.py` (Bad(W) against the cell, Theorem C) |
+| `scripts/gm/` | The driver `gdrive.py` with its outer loop `mstar.py` and exhaustive fallback `fallback.py` (Theorem M\*), its step scripts, the tests `test_mstar.py` and `test_fallback.py`, `gen_scramble.py` and `omega_check.py` (Bad(W) against the cell, Theorem C) |
 | `scripts/echain/` | Modules the step scripts share (stage 01) |
 | `scripts/lattice/` | The lattice restorer `restore_lattice_late.py` and the independent checker `verify_late.py` |
 | `scripts/run/` | The run commands used on 15 October; paths are neutral tokens |
