@@ -1181,7 +1181,214 @@ non={0,3,6,8,11,17,22,25,28,32,34}
 print('AU05_without_trivial_frames',sum(4*(len(set(t['positions']))+2)*(len(t['seed'])+2*len(t['relocation'])+2*max(t['depth']))+((len(set(t['positions']))+5)*(4*(len(t['seed'])+2*len(t['relocation']))+6*max(t['depth'])) if t['orbit'] in non else 0) for t in T))
 ```
 
-## 12. What changed in METHOD.md
+## 12. Replacing the seeds (round 7)
+
+Round 6 found short pure three-cycles for 33 orbits but used none of them: it assumed that a replacement seed must be aligned with the cascade's buffers and fibres (M2-01), and no certificate covered that. Round 7 states what the committed cascade needs from a seed. The integrator proposed four claims (H1 to H4). A Codex senior review proved them under sharper conditions (R7-01) and set out the certificates (R7-02), the bounds (R7-03) and the case of O15 and O17 (R7-04). Its four findings are `major` and verified, and the integrator adopted all four. The integrator then relocated the shorter candidates onto the buffers, certified them and re-ran the cascade with them. The runs and certificates are the integrator's; the review ran no restorer.
+
+### R7-01: what the cascade needs from a seed (proved, model review)
+
+Notation (chronological products, in the convention of the review):
+- For an element h and a position P, h_P is the fibre map that takes the labels of P to the labels of h(P).
+- A *candidate* c' is a legal retained word with three properties:
+  - on orbit o it moves exactly the stickers of the three positions A, B and C, frame changes included;
+  - it acts on them as the position cycle A → B → C → A, with fibre maps α = c'_A, β = c'_B and γ = c'_C;
+  - every other sticker it moves lies on an orbit solved after o.
+- The committed seed c_o is a candidate with α = β = γ = 1 (it is *aligned*). `restore_lattice.py` asserts this (lines 67 to 69).
+
+The four claims hold for every candidate:
+- **Positions (H1).** The position loop of `OrbitKit.solve` (stage 03 `kit.py`, line 236) reads only which piece sits at each position. Each tree path u_X fixes A and B and takes C to X. So the star u_X⁻¹ c' u_X is the position cycle (A B X), whatever the fibre maps. For the same entering positions, the loop makes the same choices with c' as with c_o. Earlier orbits leave different collateral, though, so a later orbit can enter differently.
+- **Frames (H2).**
+  - The setup and return paths of the committed trees fix every sticker of A and B, not only their positions.
+  - Let a return word g bring C back with the value x. Then Q_x = g⁻¹ c' g c'⁻¹ has the value βxβ⁻¹ at B and x⁻¹ at C, and fixes the rest of orbit o. The return values cover H_o, so the values at B cover H_o as well.
+  - A pair with the value v at B, carried by a star, has the value β⁻¹vβ at a position X outside {A, B, C}, and αvα⁻¹ at A.
+  - So the committed `pair_to` works unchanged exactly when α and β lie in the centre of H_o. This always holds on the trivial, C2 and C5 groups. D5 and A5 have a trivial centre.
+  - On D5 and A5 the pairs are re-indexed instead. For the value v, take the pair with the B value v at B, βvβ⁻¹ at X and α⁻¹vα at A. This adds no letters, so the pair bounds of M2-03 still hold. `ReKit.pair_to` searches for the pair whose carried value is v and checks the value exactly.
+  - The single S_C(x, y) = Q_x Q_y Q_xy⁻¹ of M2-03 has the value 1 at B and x⁻¹y⁻¹xy at C, whatever α, β and γ are. The kit's own single, a commutator of two pairs, also covers H_o′.
+  - A cube identity is not needed. After the pairs, the residual at C lies in H_o′, and a single removes it.
+- **Collateral (H3).** Every retained word preserves each orbit. So every completed star, pair and single built from c' moves only orbits that c' moves, and the order condition is the committed one: the collateral orbits of c' must be solved after o. This holds for the completed factors, not for their prefixes. The kit's `allowed` set must also contain the certified collateral of c'.
+- **Relocation (H4).** Suppose P acts on orbit o as a position three-cycle (p_i p_j p_k), and g takes p_i, p_j and p_k to A, B and C.
+  - Then g⁻¹ P g acts on orbit o as a three-cycle on {A, B, C}, and its collateral lies on the same orbits as that of P.
+  - It has at most |P| + 2|g| letters, and its inverse reverses the direction.
+  - On these assets such a g always exists; the review's exact graph checks show this for every orbit.
+
+The committed driver's alignment assertion is therefore stronger than needed. The round 7 runner replaces it by the conditions above and keeps the support, legality and collateral checks.
+
+### R7-02: certificates, and what two runs show (proved, model review)
+
+- **The certificate of a replacement** has these parts. Each is checked by composing the primitive words independently.
+  - The asset and source digests.
+  - The candidate word and its provenance.
+  - The order of its three pieces, the relocation g and the direction.
+  - The final word and its length s'.
+  - The buffers and their labels, and its action on all slots.
+  - α, β and γ.
+  - Its collateral orbits, from every moved sticker.
+- **The cascade.** Freeze the committed order, or validate a new dependency order. Take each kit's `allowed` set from the certified collateral.
+- **What two runs show.** A run plus the stage 03 replay checker proves one statement: "these replacement words restore these two inputs, in these lengths". It needs the inputs to be bound to their digests. It shows nothing about every input, the bounds, shortest words, uniform sampling, performance or human replicability.
+- **A gap in the checker.** For a synthetic input, `verify_restore.py` (lines 244 to 248) replays the stored start array without comparing its hash with the input digest of the summary. So the stored arrays must be hashed independently.
+- **Shortest.** A greedy relocation is not provably shortest. The result is the shortest among the certified candidates.
+
+What the integrator did:
+- `realign.py` records and checks every part of the certificate except α, β and γ. It records only whether they are aligned.
+- The runner asserts the committed order and passes the certified collateral as `allowed`.
+- Both stored start arrays, hashed independently as little-endian int64 bytes, equal the committed digests (`runs/realigned-cascade/commands.txt`).
+- The checker's report says `pass`, with both runs restored to the identity and their lengths matching.
+
+Not done:
+- The exhaustive frame check of each replaced orbit: every value at B, at A and at other positions, and every single in H_o′. R7-01 proves both coverage statements.
+- Separate counts of stars, pairs and singles in the run records.
+
+### R7-03: the bounds with the replaced seeds (proved, model review; computed by the integrator)
+
+- **The formula.** The M2-04 formula holds with the certified lengths s', relocation included. It bounds every input, and its expectation bounds a uniform input on G. Tree depths and return lengths do not change.
+- **The kit as it runs.** The kit does not build the shorter single of M2-03. Its single at C is a commutator of a pair at B and a carried pair, of at most K_o = 2P_B + 2P = 12s + 8h + 8d twists on O06 and O34. With K_o in place of the M2-03 constants, the formula bounds the cascade as it runs.
+- **With the committed seeds** (the review): the cascade as it runs needs at most 356,666,844 twists for every input (231,433,387 on average). The construction needs at most 356,565,166 (231,334,003). The earlier bound of 771,844,512 is safe but loose.
+- **With the replaced seeds** (the integrator, from the certified lengths): the construction needs at most 71,514,544 twists (46,189,354 on average). The cascade as it runs needs at most 71,516,526 (46,191,246).
+- **Actions.** With a library of the 35 seeds and their inverses, the number of actions does not depend on the seed lengths. The construction needs at most 4,840,993 actions (3,098,745 on average), and the cascade as it runs at most 4,841,151 (3,098,883). Creating the 70 macros costs 2Σs' = 14,048 twists (128,076 with the committed seeds).
+- **Scope.** The averages are over uniform inputs on G. The committed synthetic inputs are not uniform (M2-05).
+
+The bounds with the replaced seeds (from the repository root). Output:
+
+```text
+construction twists worst 71514544 expected_upper_ceiling 46189354
+construction actions worst 4840993 expected_upper_ceiling 3098745
+kit twists worst 71516526 expected_upper_ceiling 46191246
+kit actions worst 4841151 expected_upper_ceiling 3098883
+creation70 14048
+```
+
+```python
+import gzip,json
+from fractions import Fraction as F
+T=json.load(gzip.open('assets/execution_trees.json.gz','rt'))
+RJ=json.load(gzip.open('research/jumbling/restoration/09-general-method/data/realign.json.gz','rt'))
+SP={d['orbit']:d['s'] for d in RJ['orbits']}
+H={0:2,3:2,6:10,8:2,11:2,17:5,22:2,25:2,28:5,32:2,34:60}
+h={0:5,3:3,6:4,8:3,11:3,17:2,22:3,25:2,28:2,32:2,34:3}
+for single in ('construction','kit'):
+ for unit in ('twists','actions'):
+  total=0;expect=F(0)
+  for t in T:
+   o=t['orbit'];N=len(set(t['positions']))+2;s=1 if unit=='actions' else SP[o];d=max(t['depth']);w=s+2*d
+   ES=F(N-5)+sum((F(1,j) for j in range(1,N+1)),F(0))+F(3,N)+F(1,N*(N-1))
+   P=4*s+2*h.get(o,0)+4*d;PB=2*s+2*h.get(o,0)
+   SC=(4*s+(16 if o==6 else 10) if single=='construction' else 2*(PB+P)) if o in (6,34) else 0
+   total+=(3*N//2-3)*w;expect+=ES*w
+   if o in H:
+    total+=(N-2)*P+PB+SC;expect+=F(H[o]-1,H[o])*((N-2)*P+PB)
+    if o in (6,34):expect+=(F(4,5) if o==6 else F(59,60))*SC
+  print(single,unit,'worst',total,'expected_upper_ceiling',(expect.numerator+expect.denominator-1)//expect.denominator)
+print('creation70',sum(2*s for s in SP.values()))
+```
+
+### R7-04: O15 and O17 (proved, model review; computed by the review)
+
+- S1 and S2 found no pure three-cycle for O15 or O17. That does not prove that none exists.
+- **The two prefixes that fit.** The spine prefixes O17(10) and O15(94) each move exactly three pieces of their orbit, as a three-cycle with a cube identity on the orbit. Their collateral fits the committed order, in which O17 comes before O15. On both orbits a relocation needs at most 18 letters.
+- **The shorter prefixes conflict.** Every listed prefix of O15 shorter than 94 letters (10, 22 and 46) moves O17, and every listed prefix of O17 shorter than 94 letters (10, 22 and 46) moves O15. So no one-pass order can take a prefix shorter than 94 letters on both orbits.
+- **The swap does not pay.** Taking O15(10) before O17(94) would raise the bound by 362,376 twists at equal relocation costs, because the seed coefficient of O17 (7,911) exceeds that of O15 (3,597).
+- The certificates below select exactly O17(10) and O15(94).
+
+### Certificates for the replacements (computed by the integrator)
+
+- **Candidates for orbit o.**
+  - The pure three-cycles of S1 and S2.
+  - The spine nodes of the orbit's own seed that are shorter than the seed and act on orbit o as a three-cycle of positions. Their collateral must lie on orbits solved after o (M2-06).
+- **Relocation.** g = w1 w2 w3.
+  - w1 is a shortest word moving one piece to A.
+  - w2 is a shortest word of letters that fix position A, moving the second piece to B.
+  - w3 is the inverse of the tree path to the third piece. That path fixes A and B; this was checked as positions for every node of every tree.
+  - All six orders of the three pieces are tried. The shortest g is kept, and g⁻¹ P g is freely reduced.
+- **Checks.** Each replacement is checked on all 259,800 slots:
+  - on orbit o it moves exactly the stickers of A, B and C, as A → B → C → A;
+  - its collateral orbits are exactly those recorded, and they are solved after o.
+- **Result** (`scripts/realign/realign.py`, about 50 s; `data/realign.json.gz`).
+  - Each orbit keeps the shortest of its certified candidates if that is shorter than its seed with its relocation.
+  - 31 of the 35 seeds are replaced: 17 by pure three-cycles and 14 by spine prefixes. No replaced seed is now longer than 1,546 primitives with its relocation (O28).
+  - O10, O24, O25 and O26 keep their seeds: no candidate is shorter.
+  - The relocations have 4 to 19 letters.
+  - Every replacement has a cube identity on its own orbit.
+  - The fibres are aligned on the 21 replaced orbits with a trivial H_o. They are not aligned on the 10 replaced orbits with a nontrivial H_o: O00, O03, O08, O11, O22, O32 (C2), O17, O28 (C5), O06 (D5) and O34 (A5). Only O06 and O34 need the re-indexed pairs.
+  - The three largest seeds all fall:
+    - O15: from 11,574 to 106, a spine prefix of 94 letters;
+    - O34: from 12,294 to 202;
+    - O02: from 9,230 to 314.
+
+### The cascade with the replaced seeds (computed; replayed independently)
+
+- **The runner** (`scripts/realign/restore_realigned.py`, about 35 s). It runs the stage 03 cascade with the replaced seeds:
+  - the committed order, which it asserts, and the committed kits on the other orbits;
+  - `ReKit` on the replaced orbits, with the certified collateral as `allowed`;
+  - the same synthetic inputs: the input label digests equal the committed ones.
+- **Both inputs are restored, 5.1 times shorter:**
+  - uniform:1: 45,009,802 twists (committed: 229,763,734), 191,143 factors;
+  - uniform:2: 44,940,982 twists (committed: 230,484,810), 191,089 factors.
+- **Control.** The same runner with no seed replaced reproduces the committed run exactly: 229,763,734 and 230,484,810 twists, 190,925 and 191,093 factors.
+- **Independent replay.** The stage 03 checker (`checker/verify_restore.py`, which shares no code with the restorer) evaluates the solutions with its own code. It passes: both inputs are restored to the identity, and the lengths agree. The stored start arrays, hashed independently, equal the committed inputs (R7-02).
+- **What the inputs are.** They are those of M2-05: valid examples, not uniform samples of G.
+
+Per orbit, on uniform:1 (sorted by the committed length; "s_o" is the seed with its relocation, in primitives):
+
+| Orbit | H_o | s_o before | replacement | s_o after | relocation | fibres aligned | collateral orbits | uniform:1 before | uniform:1 after |
+|---|---|---:|---|---:|---:|---|---:|---:|---:|
+| O15 | 1 | 11,574 | spine prefix of 94 letters | 106 | 6 | yes | 23 | 27,878,156 | 274,448 |
+| O02 | 1 | 9,230 | spine prefix of 286 letters | 314 | 14 | yes | 19 | 22,190,288 | 782,316 |
+| O29 | 1 | 9,220 | pure three-cycle | 158 | 9 | yes | 0 | 22,171,180 | 395,522 |
+| O28 | C5 | 3,080 | spine prefix of 1,534 letters | 1,546 | 6 | no | 4 | 18,579,754 | 9,374,454 |
+| O08 | C2 | 1,544 | spine prefix of 94 letters | 114 | 10 | no | 18 | 16,468,066 | 1,287,212 |
+| O03 | C2 | 1,110 | spine prefix of 562 letters | 566 | 8 | no | 3 | 11,771,346 | 6,058,270 |
+| O18 | 1 | 1,546 | pure three-cycle | 248 | 8 | yes | 0 | 11,189,962 | 1,840,468 |
+| O14 | 1 | 1,544 | pure three-cycle | 162 | 9 | yes | 0 | 11,182,258 | 1,224,608 |
+| O17 | C5 | 1,546 | spine prefix of 10 letters | 24 | 8 | no | 24 | 9,364,276 | 176,060 |
+| O11 | C2 | 776 | pure three-cycle | 68 | 10 | no | 0 | 8,463,566 | 807,286 |
+| O22 | C2 | 776 | spine prefix of 22 letters | 38 | 9 | no | 13 | 8,440,728 | 482,496 |
+| O00 | C2 | 2,218 | spine prefix of 560 letters | 584 | 19 | no | 32 | 8,176,278 | 2,195,432 |
+| O01 | 1 | 2,212 | pure three-cycle | 608 | 14 | yes | 0 | 8,012,734 | 2,239,936 |
+| O34 | A5 | 12,294 | spine prefix of 190 letters | 202 | 6 | no | 4 | 7,317,366 | 123,420 |
+| O10 | 1 | 776 | seed kept | 776 | - | - | - | 5,650,306 | 5,653,440 |
+| O12 | 1 | 776 | pure three-cycle | 72 | 10 | yes | 0 | 5,648,160 | 577,250 |
+| O04 | 1 | 562 | pure three-cycle | 74 | 11 | yes | 0 | 4,124,174 | 609,294 |
+| O05 | 1 | 562 | pure three-cycle | 166 | 9 | yes | 0 | 4,118,526 | 1,269,574 |
+| O09 | 1 | 394 | spine prefix of 190 letters | 202 | 6 | yes | 8 | 2,902,848 | 1,520,288 |
+| O07 | 1 | 298 | pure three-cycle | 82 | 11 | yes | 0 | 2,217,248 | 661,580 |
+| O16 | 1 | 296 | spine prefix of 70 letters | 86 | 8 | yes | 3 | 2,186,072 | 674,652 |
+| O06 | D5 | 398 | spine prefix of 4 letters | 28 | 12 | no | 33 | 1,350,986 | 117,034 |
+| O32 | C2 | 106 | pure three-cycle | 74 | 9 | no | 0 | 1,195,612 | 874,152 |
+| O13 | 1 | 152 | pure three-cycle | 68 | 10 | yes | 0 | 1,153,266 | 548,214 |
+| O19 | 1 | 152 | pure three-cycle | 106 | 5 | yes | 0 | 1,150,222 | 819,106 |
+| O20 | 1 | 152 | pure three-cycle | 46 | 10 | yes | 0 | 1,148,246 | 385,584 |
+| O31 | 1 | 152 | pure three-cycle | 56 | 8 | yes | 0 | 1,146,608 | 455,380 |
+| O21 | 1 | 104 | spine prefix of 46 letters | 56 | 5 | yes | 8 | 802,608 | 456,754 |
+| O27 | 1 | 104 | pure three-cycle | 66 | 5 | yes | 0 | 800,174 | 526,458 |
+| O30 | 1 | 104 | pure three-cycle | 56 | 9 | yes | 0 | 798,916 | 452,922 |
+| O25 | C2 | 56 | seed kept | 56 | - | - | - | 646,818 | 658,140 |
+| O23 | 1 | 56 | spine prefix of 46 letters | 54 | 4 | yes | 4 | 458,228 | 443,810 |
+| O24 | 1 | 56 | seed kept | 56 | - | - | - | 454,880 | 455,014 |
+| O26 | 1 | 56 | seed kept | 56 | - | - | - | 453,726 | 453,848 |
+| O33 | 1 | 56 | pure three-cycle | 50 | 7 | yes | 0 | 150,152 | 135,380 |
+| total | | | | | | | | 229,763,734 | 45,009,802 |
+
+The lengths of O10, O24, O25 and O26 change slightly although their seeds do not. Earlier orbits now leave different collateral, so these orbits start from different states.
+
+### Where M2 stands after round 7
+
+- **Measured.** 4.5 × 10^7 twists on the two synthetic inputs, down from 2.3 × 10^8: about 1.4 years at one twist per second.
+- **Proved (model review).**
+  - For every input, the cascade as it runs needs at most 71,516,526 twists, about 2.3 years at one per second; the construction needs at most 71,514,544.
+  - In actions, at most 4,841,151, about 56 days.
+  - The lower bound stays at 224,601 twists. The gap between the bounds is now a factor of about 318 (it was about 1,600).
+- **The largest terms on uniform:1.**
+  - O28: 9.4 × 10^6. Its best replacement is a spine prefix of 1,534 letters (1,546 with its relocation); its pure three-cycle gives 8,404.
+  - O03: 6.1 × 10^6. A prefix of 562 letters (566); its pure three-cycle gives 706.
+  - O10: 5.7 × 10^6. It keeps its seed (776 with its relocation); its pure three-cycle gives 1,616.
+- **Next (not run).**
+  - Shorter candidates for O28, O03 and O10.
+  - A cascade order chosen with the new collateral (M2-06).
+  - The exhaustive frame check and the separate factor counts of R7-02.
+  - A uniform sampler for the synthetic inputs (M2-05).
+- **For the owner.** Whether a lattice phase of about 4.8 million actions, or 7 × 10^7 twists, counts as replicable.
+
+## 13. What changed in METHOD.md
 
 - Section 2, step 3: the pure twist is tried on at most 8 units. Its word lands the carrier and takes the lattice pieces of X off. The cheaper powers may also permute lattice pieces outside X. Theorem C bounds the word by 720 letters; `cellpure3.py` searches and does not use that bound.
 - Section 2, phase 2: Theorem R holds for reachable configurations, with the corrections applied last; the library spans A_J by the Chinese remainder theorem.
@@ -1202,3 +1409,8 @@ print('AU05_without_trivial_frames',sum(4*(len(set(t['positions']))+2)*(len(t['s
   - Section 3: new rows for the single-overlap lemma (M2-01), the short pure elements (S1, S2), the lower bounds (M2-02) and the frame elements (M2-03); the row for the lattice-phase length gives the new bounds.
   - Section 5: gap M2 states the two measures, the lower and upper bounds in twists and in actions, the short pure elements and what aligning them needs, and the next experiments.
 - After the v4 runs ended or were cut off: section 6.2 gives their results and records (`runs/stop62-v4/`, `runs/e2run24-v4/`), and the reproduction section gives the commands of the short-cycle searches.
+- After round 7 (section 12):
+  - Section 2, phase 2: the cascade with the replaced seeds, its measured lengths and the new bounds.
+  - Section 3: a new row for replacing a seed; the rows for the lattice-phase length, the short pure three-cycles and the frame elements now give the round 7 results.
+  - Section 5, gap M2: the measured and upper bounds with the replaced seeds, the tighter bound for the committed code (R7-03), the shorter seeds now in use, and the next experiments.
+  - Section 6.3 gives the run with the replaced seeds, and section 7 its commands.

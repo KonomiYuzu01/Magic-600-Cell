@@ -1,5 +1,5 @@
 """Relocate shorter elements onto the cascade's buffers and certify them as replacement seeds
-(SENIOR-REVIEW.md section 13).
+(SENIOR-REVIEW.md section 12).
 
 For every orbit o the committed cascade (stage 03, `kit.py`) uses c_o, the atlas seed conjugated by its relocation:
 a three-cycle A -> B -> C -> A of positions on orbit o whose collateral lies on orbits solved after o. Candidates
@@ -14,7 +14,7 @@ direction is A -> C -> B, freely reduced. Every chosen word is verified on all 2
 the position three-cycle A -> B -> C -> A, its collateral orbits are solved after o, and the fibre maps are recorded
 (aligned = it maps the label slots of A to B, B to C and C to A index by index, as the committed c_o does). Any
 fibres are accepted: on trivial and abelian H_o the committed kit needs no alignment, and on D5 and A5
-`restore_realigned.py` re-indexes the pairs (SENIOR-REVIEW.md section 13). The bound of M2-04 is then recomputed
+`restore_realigned.py` re-indexes the pairs (SENIOR-REVIEW.md section 12). The bound of M2-04 is then recomputed
 with the replaced lengths.
 usage (from the repository root): python3 -I -B realign.py out.json
 Research only: exact synthetic geometry; no Windows, DirectX, input or performance claim.

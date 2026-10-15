@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-15] update | Jumbling: shorter seeds for the lattice phase
+Senior review round 7 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 12 (model review; the runs and certificates are the integrator's): a seed of the lattice cascade needs no fibre alignment, so 31 of the 35 seeds are replaced by shorter elements relocated onto the buffers. The cascade then restores the two synthetic inputs in 45,009,802 and 44,940,982 twists instead of about 2.3 × 10^8, replayed by the stage 03 checker, and needs at most 71,516,526 twists for every input; whether that is within reach of a person stays open (gap M2).
+
 ## [2026-10-15] update | Jumbling: length of the lattice phase and the v4 runs
 Senior review rounds 5 and 6 are in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) sections 10 and 11 (model review; every computation re-run by the integrator): round 5 narrows the coverage question of gap M1, and round 6 bounds the lattice phase between 224,601 retained twists (some input needs that many) and a construction of 356,565,166 twists or 4,840,993 macro actions, finds pure three-cycles for 33 of the 35 orbits (not yet aligned with the cascade) and corrects two statements of stage 03. The state-only driver v4 took stop62 from 860 to 269 off pieces and stopped for lack of a fallback, and e2run24 went from 690 to 548 in 4 steps before this record; both chains are replayed independently.
 

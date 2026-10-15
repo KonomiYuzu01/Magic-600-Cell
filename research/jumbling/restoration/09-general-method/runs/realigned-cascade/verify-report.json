@@ -1,0 +1,28 @@
+{
+ "runs": [
+  {
+   "input": "uniform:1",
+   "status_claimed": "restored",
+   "synthetic_input_valid": true,
+   "start_matches_restorer": true,
+   "w9": false,
+   "restored_to_identity": true,
+   "factors": 191143,
+   "retained_length": 45009802,
+   "length_matches_restorer": true
+  },
+  {
+   "input": "uniform:2",
+   "status_claimed": "restored",
+   "synthetic_input_valid": true,
+   "start_matches_restorer": true,
+   "w9": false,
+   "restored_to_identity": true,
+   "factors": 191089,
+   "retained_length": 44940982,
+   "length_matches_restorer": true
+  }
+ ],
+ "pass": true,
+ "seconds": 22.6
+}

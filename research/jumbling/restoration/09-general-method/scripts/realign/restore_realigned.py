@@ -1,5 +1,5 @@
 """Run the committed lattice cascade of stage 03 with the replacement seeds that `realign.py` certified
-(SENIOR-REVIEW.md section 13).
+(SENIOR-REVIEW.md section 12).
 
 The kits, the order, the labels and the synthetic inputs are those of stage 03 `restore_lattice.py` (lines 49 to 70
 and 223 to 256, reproduced here without its correction machinery, which `uniform:<seed>` inputs do not need). On a
