@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-16] update | Jumbling: the round 11 lattice schedule is implemented
+The construction of round 11, which needs at most 20,866,844 twists for every input, now runs as a separate runner in [stage 09](../../research/jumbling/restoration/09-general-method/METHOD.md) section 6.4: it restores the two synthetic inputs in 15,761,436 and 15,760,112 twists instead of about 4.5 × 10^7, and the stage 03 checker replays both runs to the identity. An acceptance check written before the implementation ran the four inputs that round 11 asks for and replayed the runner's output orbit by orbit, and every orbit stayed within its term of the bound; a review of the check found three ways it could pass a wrong output, which are now closed and covered by a mutation test. The driver's lattice phase still runs the committed cascade.
+
 ## [2026-10-15] update | Jumbling: frames and empty sections (round 20)
 Senior review round 20 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 25 (model review; the integrator re-ran its two exact programs and ran its own experiments during the round): the frame lemma holds and frames are decided by tree height, so a clean cut is lined only by lattice pieces and pieces of height 2 in its branch; the covering corollary of round 19 holds only inside the occupied body, because jumbled caps leave empty space inside the 600-cell, and section 24 is corrected. Raises at grips that are already out are not bounded in number, so whether left heights are bounded, and so whether R(I_a) is finite, stays open; at the owner's instruction the series stops after this round, without a joint attack.
 

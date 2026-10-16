@@ -1,0 +1,5 @@
+SLP evaluated: 353560 nodes, 32.4s
+{"input": "uniform:1", "status_claimed": "restored", "synthetic_input_valid": true, "start_matches_restorer": true, "w9": false, "restored_to_identity": true, "factors": 88352, "retained_length": 15761436, "length_matches_restorer": true}
+{"input": "uniform:2", "status_claimed": "restored", "synthetic_input_valid": true, "start_matches_restorer": true, "w9": false, "restored_to_identity": true, "factors": 88350, "retained_length": 15760112, "length_matches_restorer": true}
+PASS 38.8
+exit 0

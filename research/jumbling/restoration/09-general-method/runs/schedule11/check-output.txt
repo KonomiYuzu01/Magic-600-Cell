@@ -1,0 +1,21 @@
+bounds: sum 20866844; largest [(10, 2930400), (28, 2282710), (3, 2115138)]
+frame groups {0: 2, 3: 2, 8: 2, 11: 2, 22: 2, 25: 2, 32: 2, 17: 5, 28: 5, 6: 10, 34: 60} (2.4s)
+frames-in-place  total   15198318  factors   84411  largest length/bound 0.967 (orbit 0)  solve 64s, check 16s
+three-cycles     total    1704164  factors   13586  largest length/bound 0.335 (orbit 33)  solve 6s, check 2s
+transpositions   total    1914908  factors   15182  largest length/bound 0.374 (orbit 33)  solve 6s, check 2s
+cleanup-C        total     664676  factors    5607  largest length/bound 0.176 (orbit 33)  solve 3s, check 1s
+cleanup-ABC      total     914142  factors    7524  largest length/bound 0.205 (orbit 33)  solve 4s, check 1s
+uniform:1        total   15761436  factors   88352  largest length/bound 0.974142 (orbit 10)  57.3s
+uniform:2        total   15760112  factors   88350  largest length/bound 0.974011 (orbit 10)  41.5s
+done 112.0s nodes 353560
+ 
+uniform:1        total   15761436  factors   88352  largest length/bound 0.974 (orbit 10)
+uniform:2        total   15760112  factors   88350  largest length/bound 0.974 (orbit 10)
+SLP evaluated: 353560 nodes, 32.6s
+{"input": "uniform:1", "status_claimed": "restored", "synthetic_input_valid": true, "start_matches_restorer": true, "w9": false, "restored_to_identity": true, "factors": 88352, "retained_length": 15761436, "length_matches_restorer": true}
+{"input": "uniform:2", "status_claimed": "restored", "synthetic_input_valid": true, "start_matches_restorer": true, "w9": false, "restored_to_identity": true, "factors": 88350, "retained_length": 15760112, "length_matches_restorer": true}
+PASS 39.1
+ 
+runner and its checks 186s
+PASS in 294s
+exit 0
