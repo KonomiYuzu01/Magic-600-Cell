@@ -54,9 +54,11 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   alignment from its seeds (proved, model review), so 31 of its 35 seeds are replaced by shorter elements moved onto
   its buffers. It then restores the two synthetic inputs in 4.5 × 10^7 twists instead of 2.3 × 10^8 (checked by the
   independent checker of stage 03), and its cascade needs at most 71,516,526 twists for every input. A construction
-  that applies the seeds fewer times needs at most 20,866,844 (proved, model review; not implemented).
+  that applies the seeds fewer times needs at most 20,866,844 (proved, model review); implemented
+  on 16 October as a runner separate from the driver, it restores them in 1.58 × 10^7 twists (checked by the same
+  checker).
 - **Open.** A construction that works from the state alone with a bound on its length (gap M1). Whether a lattice
-  phase of 4.5 × 10^7 twists, or a few million actions (single twists and stored-macro applications), is within
+  phase of 1.58 × 10^7 twists, or a few million actions (single twists and stored-macro applications), is within
   reach of a person is open (gap M2). Deep scrambles were not run with the general method (gap E1). No human has
   reviewed the new proofs (gap E2).
 - **Rendering.** The research viewer draws all 259,800 stickers of a jumbled state. On the owner's RTX 4070 Laptop

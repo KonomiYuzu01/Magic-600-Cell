@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-16] decision | X1 run on the owner's API credit, budget USD 200
+The owner approved one unattended run on open problem X1 on their own API credit with a budget of USD 200, above the first paid API ceiling of USD 100, for that run only ([decision](decisions/owner-decisions-2026-10-16-x1-api-budget.md)); the integrator checks every result independently before it enters the repository. The README summaries now state that the round 11 lattice schedule is implemented.
+
 ## [2026-10-16] update | Jumbling: the round 11 lattice schedule is implemented
 The construction of round 11, which needs at most 20,866,844 twists for every input, now runs as a separate runner in [stage 09](../../research/jumbling/restoration/09-general-method/METHOD.md) section 6.4: it restores the two synthetic inputs in 15,761,436 and 15,760,112 twists instead of about 4.5 × 10^7, and the stage 03 checker replays both runs to the identity. An acceptance check written before the implementation ran the four inputs that round 11 asks for and replayed the runner's output orbit by orbit, and every orbit stayed within its term of the bound; a review of the check found three ways it could pass a wrong output, which are now closed and covered by a mutation test. The driver's lattice phase still runs the committed cascade.
 
