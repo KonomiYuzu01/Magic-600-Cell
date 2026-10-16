@@ -2006,6 +2006,14 @@ An exact average needs fixed tie-breaking for transports, factorizations, return
   - Shorter seeds for the largest terms.
 - **For the owner.** Whether a lattice phase of about 4.7 million actions, or 2 × 10^7 twists, counts as replicable.
 
+### Implementation (16 October 2026)
+
+The schedule of T11-04 and T11-05 is implemented in `scripts/schedule11/` (`sched11.py`, `restore_schedule11.py`), as a runner separate from the driver. Codex implemented it against an acceptance check that the integrator wrote first (`check_schedule11.py`); the integrator reviewed the code, re-ran the check and replayed the runner's output with the stage 03 checker (records in `runs/schedule11/`, `METHOD.md` section 6.4).
+
+- **Acceptance check.** It recomputes the bound of T11-05 orbit by orbit (sum 20,866,844) and runs the four inputs listed under "Not implemented" above, plus the two committed synthetic inputs. After every orbit it evaluates the straight-line program with the rules of the stage 03 checker, checks that the orbits solved before stay solved, and requires every orbit within its term of the bound. All six inputs pass; the largest ratio of an orbit's length to its term is 0.974 (O10).
+- **Measured.** uniform:1 and uniform:2 need 15,761,436 and 15,760,112 twists, against 45,009,802 and 44,940,982 with the round 7 kit (65% fewer). The input with every position in place and wrong frames needs 15,198,318. The stage 03 checker replays both synthetic runs to the identity, with the committed input digests (**certificate**).
+- **Scope.** The bound for every input is the model-reviewed proof of T11-05; the runs check the implementation on six inputs. The driver's lattice phase still runs the committed cascade.
+
 ### Reproduction (round 11)
 
 From the repository root, `python -B`.

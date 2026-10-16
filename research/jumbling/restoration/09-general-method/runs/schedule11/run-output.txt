@@ -1,0 +1,3 @@
+uniform:1        total   15761436  factors   88352  largest length/bound 0.974142 (orbit 10)  55.5s
+uniform:2        total   15760112  factors   88350  largest length/bound 0.974011 (orbit 10)  40.9s
+done 107.5s nodes 353560

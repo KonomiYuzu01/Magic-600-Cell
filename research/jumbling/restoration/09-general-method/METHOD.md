@@ -143,7 +143,9 @@ solved configuration (identity labels on all 259,800 stickers).
     construction then needs at most 20,866,844 twists for every input (expected length at most 17,010,356), or
     4,655,642 actions (proved, model review). That is about 1.334 times the floor of T11-06 for cascades that solve
     one orbit at a time with conjugates of these seeds; the comparison does not cover a construction that uses
-    collateral on purpose, or free cancellation (round 12, R12-01). It is not implemented.
+    collateral on purpose, or free cancellation (round 12, R12-01). It is implemented as a runner separate from
+    the driver and restores the two synthetic inputs in 15,761,436 and 15,760,112 twists (measured; checked by the
+    stage 03 checker; section 6.4).
 
   These are still machine-scale (section 5, gap M2).
 
@@ -170,7 +172,7 @@ solved configuration (identity labels on all 259,800 stickers).
 | Small states need excursions | With 0 < h < 3,097 off pieces, every clean step has at least two jumble letters, and its first jumble letter takes at least 3,097 - h lattice pieces off. | proved (same review) |
 | Theorem M\* (a general method) | Heuristic steps, a fair exhaustive search when they find nothing, then the lattice phase with the corrections last: restores every reachable configuration from the current state alone, in at most \|off\| clean steps. | proved (Codex senior review, 15 October 2026; no human review), `SENIOR-REVIEW.md` section 9; no bound on the length of a fallback step |
 | Toolkit theorem | For a unit whose frame belongs to class P, a class-P landing word W that passes finite checks at the state (free grips, exact landing action, every other off piece lands or keeps its exact pose, Bad(W) the union of its cells, vacancy for all targets at once) closes to a clean step of at most 2(Q_safe - 1) + \|W\| letters. When all of the class's grips are free, W can be chosen with \|W\| <= b, b = 720, 104, 240 or 192 by cell kind; with some grips blocked, b bounds no W and the length of W must be checked (corrected in round 8, R8-05). | proved (same review), given the certificates of `SENIOR-REVIEW.md` sections 5 and 6. Units with pieces of height four lie outside it; 150 twists of the I_a fixture make 1,411 such pieces (re-run) |
-| Lattice-phase length | The lattice phase is the retained cascade R, then the corrections C, which need at most 25,852 twists for every input (AU-05). R needs at most 1,324,660,182 twists with the committed cascade (1,324,686,034 with C), 771,844,512 without its trivial frame passes, and 356,666,844 by the exact count of R7-03. A shorter frame recipe gives a construction of R of at most 356,565,166 twists for every input (expected length at most 231,334,003 for a uniform input on G), or at most 4,840,993 actions with a library of the 35 seeds and their inverses. With the replaced seeds of round 7, R needs at most 71,516,526 twists for every input as the cascade runs (71,542,378 with C), and the construction at most 71,514,544 (expected length at most 46,189,354). With direct three-cycles (round 10), a construction of R needs at most 50,560,184 twists for every input (expected length at most 32,201,480), or 4,675,165 actions. With the schedule of round 11, at most 20,866,844 twists for every input (expected length at most 17,010,356), or 4,655,642 actions. | proved (same review for AU-05; round 6, M2-04, round 7, R7-03, round 10, T10-02, and round 11, T11-05, for the rest; the integer bounds re-run by the integrator). The round 7 bounds use the certified lengths and rest on the replacement row below. The constructions are not implemented as such; the cascade with the replaced seeds is, as a runner separate from the driver, whose lattice phase runs the committed cascade (section 6.3) |
+| Lattice-phase length | The lattice phase is the retained cascade R, then the corrections C, which need at most 25,852 twists for every input (AU-05). R needs at most 1,324,660,182 twists with the committed cascade (1,324,686,034 with C), 771,844,512 without its trivial frame passes, and 356,666,844 by the exact count of R7-03. A shorter frame recipe gives a construction of R of at most 356,565,166 twists for every input (expected length at most 231,334,003 for a uniform input on G), or at most 4,840,993 actions with a library of the 35 seeds and their inverses. With the replaced seeds of round 7, R needs at most 71,516,526 twists for every input as the cascade runs (71,542,378 with C), and the construction at most 71,514,544 (expected length at most 46,189,354). With direct three-cycles (round 10), a construction of R needs at most 50,560,184 twists for every input (expected length at most 32,201,480), or 4,675,165 actions. With the schedule of round 11, at most 20,866,844 twists for every input (expected length at most 17,010,356), or 4,655,642 actions. | proved (same review for AU-05; round 6, M2-04, round 7, R7-03, round 10, T10-02, and round 11, T11-05, for the rest; the integer bounds re-run by the integrator). The round 7 bounds use the certified lengths and rest on the replacement row below. The construction of round 11 is implemented, and so is the cascade with the replaced seeds, both as runners separate from the driver, whose lattice phase runs the committed cascade (sections 6.3 and 6.4); the other constructions are not implemented as such |
 | Lower bounds for the lattice phase | Some input needs at least 224,601 retained twists (185,441 cap twists), and all but a fraction 10⁻⁶ of the inputs need at least 224,599. With a fixed library of m macros at 7,200 placements each, some input needs at least 145,909, 110,495 or 104,774 actions for m = 1, 35 or 70. A cascade that solves one orbit at a time with conjugates of the seeds, without using their collateral on purpose, needs at least 95,024 seed applications for some input, 15,643,520 twists charged for the seeds; this is not a bound on the length of a freely reduced word. | proved (Codex senior review, 15 October 2026, M2-02 and, for the seed applications, T11-06; no human review; the integer checks re-run by the integrator). Retained words only; the floor of T11-06 counts seed applications in a cascade that solves one orbit at a time (scope stated in round 12, R12-01) |
 | Single-overlap lemma | If the supports of X and Y (every piece with a sticker moved) meet in one piece and both move that piece's position, [X, Y] is a pure three-cycle on its orbit. | proved (same review, M2-01) |
 | Short pure three-cycles | Pure three-cycles for 33 of the 35 orbits; the shortest per orbit has 28 to 12,416 primitives, 21 of them at most 200. None found for O15 and O17. | computed: exact searches, every word re-checked by `check_cycles.py`. 17 of them replace seeds after relocation (round 7) |
@@ -323,7 +325,7 @@ Two mathematical gaps:
   and places (7,200 placements each), with the cost of creating the macros counted apart.
   - *Measured.* The committed cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, 5 to 7 years at one twist
     per second. With the replaced seeds of round 7 it restores the two synthetic inputs in 4.5 × 10^7 twists, about
-    1.4 years (section 6.3).
+    1.4 years (section 6.3), and with the schedule of round 11 in 1.58 × 10^7 twists, about 6 months (section 6.4).
   - *Upper bounds (proved, model review).* A construction with the committed seeds and a shorter frame recipe needs
     at most 356,565,166 twists for every input, about 11 years at one per second, with expected length at most
     231,334,003 for a uniform input on G (M2-04). A person who replays the 35 relocated seeds and their inverses as
@@ -363,12 +365,12 @@ Two mathematical gaps:
     at a time with conjugates of these seeds, without using their collateral on purpose, needs at least 95,024 seed
     applications for some input, 15,643,520 twists charged for the seeds (T11-06). That floor counts applications
     times seed length, not the length of a freely reduced word. The schedule is about 1.334 times the floor, so
-    within that class a larger gain needs shorter seeds (round 12, R12-01). It is not implemented.
+    within that class a larger gain needs shorter seeds (round 12, R12-01). It is implemented (section 6.4): on the
+    six inputs of its acceptance check, every orbit stays within its term of the bound (measured).
   - *Open.* Whether a lattice phase of a few million actions counts as replicable is for the owner to judge. The
-    next experiments are an implementation of the schedule of round 11 (T11-04, T11-05), shorter candidates for
-    O10, O28, O03, O01 and O18 (now the largest terms), the exhaustive frame check of R7-02, a uniform sampler for
-    the synthetic inputs (M2-05) and a cascade order that admits the spine prefixes dropped for their collateral
-    (M2-06; over the recorded candidates the order gains nothing, R8-02).
+    next experiments are shorter candidates for O10, O28, O03, O01 and O18 (now the largest terms), the exhaustive
+    frame check of R7-02, a uniform sampler for the synthetic inputs (M2-05) and a cascade order that admits the
+    spine prefixes dropped for their collateral (M2-06; over the recorded candidates the order gains nothing, R8-02).
 
 Two evidence gaps:
 - **E1. Coverage.** The method has been run on the inputs of section 6 only. Deep scrambles (the I_a@40 scale,
@@ -458,6 +460,28 @@ inputs (random elements of G given as labelled stickers; not uniform on G, M2-05
 The stored input arrays hash to the committed digests, and the same runner with no seed replaced reproduces the
 committed column exactly. Records: `runs/realigned-cascade/`; the replacements: `data/realign.json.gz`.
 
+### 6.4 The lattice phase with the schedule of round 11 (16 October 2026)
+
+The construction of T11-04 and T11-05 (`SENIOR-REVIEW.md` section 16), with the replaced seeds of round 7:
+twisted direct three-cycles that set the frame of every position they finalize, then the misframed positions that
+started in place (C2 pairs, direct pairs on O06 and O17, frame triples on O28 and O34), then the buffer cleanup of
+T10-04; on the 24 orbits without frames, the cheaper of the direct loop and the fewest three-cycles for each
+input. `scripts/schedule11/sched11.py` builds it; `restore_schedule11.py` runs it, separately from the driver.
+
+| Input | Round 7 runner | Round 11 schedule | Largest orbit length / its bound | Check |
+| --- | --- | --- | --- | --- |
+| uniform:1 | 45,009,802 twists | 15,761,436 twists, 88,352 factors | 0.974 (O10) | **certificate**: the stage 03 checker evaluates the solution with its own code and reaches the identity on all 259,800 stickers |
+| uniform:2 | 44,940,982 twists | 15,760,112 twists, 88,350 factors | 0.974 (O10) | the same |
+
+The acceptance check `check_schedule11.py` was written before the implementation and fixed its interface. It
+recomputes the bound of T11-05 orbit by orbit (sum 20,866,844) and runs the four inputs that T11-05 asks for: all
+positions in place with wrong frames (15,198,318 twists; largest ratio 0.967, O00), three-cycles that close at the
+buffer (1,704,164), paired transpositions (1,914,908) and the non-abelian cleanup on O06 and O34 (664,676 and
+914,142). After every orbit it evaluates the straight-line program with the rules of the stage 03 checker and
+checks that the orbits solved before stay solved; it requires every orbit within its term of the bound and the
+identity at the end. The bound itself is proved by model review, not by these runs (measured on six inputs).
+Records: `runs/schedule11/`.
+
 
 ## 7. Reproduction
 
@@ -533,6 +557,18 @@ The first certifies the replacements and prints the construction bound (about 50
 stage 03 checker; accept it only when `report.json` has `"pass": true` and both runs restored to the identity.
 `runs/realigned-cascade/commands.txt` also gives the control run and the independent hash of the inputs, and
 `SENIOR-REVIEW.md` section 12 the bounds for the cascade as it runs.
+
+The schedule of round 11 (section 6.4; from the repository root):
+
+    python3 -I -B <09>/scripts/schedule11/test_sched11.py
+    python3 -I -B <09>/scripts/schedule11/check_schedule11.py
+    python3 -I -B <09>/scripts/schedule11/restore_schedule11.py <09>/data/realign.json.gz run uniform:1 uniform:2
+    python3 -I <03>/checker/verify_restore.py . <research/jumbling> <03>/restore/library-final.json run report.json
+
+The first runs five exact gadget tests (about 6 s). The second is the acceptance check (about 4 minutes; it exits
+0 and prints `PASS`). The third runs the schedule on the synthetic inputs (about 110 s) and the fourth replays it
+with the stage 03 checker (about 40 s); accept it only when `report.json` has `"pass": true` and both runs restored
+to the identity. `runs/schedule11/commands.txt` gives the SHA-256 of the files not stored.
 
 Check the lattice phase of a run that reached the lattice, rebuilding its start from the chain:
 
