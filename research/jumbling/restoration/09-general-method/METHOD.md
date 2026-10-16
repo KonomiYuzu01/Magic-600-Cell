@@ -479,8 +479,14 @@ positions in place with wrong frames (15,198,318 twists; largest ratio 0.967, O0
 buffer (1,704,164), paired transpositions (1,914,908) and the non-abelian cleanup on O06 and O34 (664,676 and
 914,142). After every orbit it evaluates the straight-line program with the rules of the stage 03 checker and
 checks that the orbits solved before stay solved; it requires every orbit within its term of the bound and the
-identity at the end. The bound itself is proved by model review, not by these runs (measured on six inputs).
-Records: `runs/schedule11/`.
+identity at the end. On the two synthetic inputs it runs the runner and checks its written output the same way:
+the solution is cut into the per-orbit slices that the run summary records and replayed slice by slice, every
+orbit's length is recomputed, exactly the two requested runs must be present, and the unchanged stage 03 checker
+must pass on the same output. A review of the check found three ways to pass a wrong output (lengths per orbit
+taken from the runner's summary, an empty list of runs, and an empty product that the stage 03 checker rejects);
+these clauses close them, and `mutants_check11.py` shows that the check rejects eight mutants of a valid output
+that cover the three findings and accepts the output itself. The implementation did not change. The bound
+itself is proved by model review, not by these runs (measured on six inputs). Records: `runs/schedule11/`.
 
 
 ## 7. Reproduction
@@ -564,11 +570,14 @@ The schedule of round 11 (section 6.4; from the repository root):
     python3 -I -B <09>/scripts/schedule11/check_schedule11.py
     python3 -I -B <09>/scripts/schedule11/restore_schedule11.py <09>/data/realign.json.gz run uniform:1 uniform:2
     python3 -I <03>/checker/verify_restore.py . <research/jumbling> <03>/restore/library-final.json run report.json
+    python3 -I -B <09>/scripts/schedule11/mutants_check11.py run
 
-The first runs five exact gadget tests (about 6 s). The second is the acceptance check (about 4 minutes; it exits
-0 and prints `PASS`). The third runs the schedule on the synthetic inputs (about 110 s) and the fourth replays it
-with the stage 03 checker (about 40 s); accept it only when `report.json` has `"pass": true` and both runs restored
-to the identity. `runs/schedule11/commands.txt` gives the SHA-256 of the files not stored.
+The first runs five exact gadget tests (about 6 s). The second is the acceptance check (about 5 minutes; it
+also runs the next two steps itself, in a temporary directory; it exits 0 and prints `PASS`). The third runs the schedule on
+the synthetic inputs (about 110 s) and the fourth replays it with the stage 03 checker (about 40 s); accept it
+only when `report.json` has `"pass": true` and both runs restored to the identity. The fifth applies the
+acceptance check to eight mutants of `run` (about 3.5 minutes; it prints `PASS` when each is rejected and `run`
+itself passes). `runs/schedule11/commands.txt` gives the SHA-256 of the files not stored.
 
 Check the lattice phase of a run that reached the lattice, rebuilding its start from the chain:
 

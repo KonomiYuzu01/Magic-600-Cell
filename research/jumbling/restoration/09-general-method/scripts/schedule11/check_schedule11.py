@@ -7,13 +7,19 @@ It checks the module `sched11.py` and the runner `restore_schedule11.py` of this
 2. The acceptance inputs that T11-05 asks for: frames wrong with every position in place, closing three-cycles,
    paired transpositions, and the non-abelian cleanup on O06 and O34. Each input is solved orbit by orbit in the
    cascade order with `Schedule11.solve_orbit`. The straight-line program is then evaluated again here, with the
-   rules of the stage 03 checker (`checker/verify_restore.py`, copied, not imported), and applied to a copy of the
+   rules of the stage 03 checker (`checker/verify_restore.py`, copied, not imported; a node that it cannot evaluate,
+   such as an empty product or a letter that is not an integer, fails here too), and applied to a copy of the
    input: after each orbit, that orbit and every earlier one must be solved; at the end the state must be the
    identity on all 259,800 stickers; and each orbit's length must be at most its T11-05 bound.
-3. The runner on uniform:1 and uniform:2: the stored start arrays hash to the committed digests, both runs are
-   restored, the written straight-line program evaluated here restores both start arrays, each total is at most
-   20,866,844 twists and each orbit's reported length is at most its bound.
-Exit status 0 only if every check passes. Research only: exact synthetic geometry; no performance claim.
+3. The runner on uniform:1 and uniform:2: the summary and the solutions hold exactly these two inputs, the stored
+   start arrays hash to the committed digests, and both runs are restored. The written straight-line program is
+   evaluated here and cut into the per-orbit slices that `factors_per_orbit` gives in the cascade order; the slices
+   are applied in turn to the start array: after each one, that orbit and every earlier one must be solved, and the
+   slice's length, recomputed here, must equal the reported one and be at most the orbit's bound. Each total is at
+   most 20,866,844 twists. Then the unchanged stage 03 checker must PASS on the same output, for exactly these
+   two inputs.
+Exit status 0 only if every check passes. Importing the module runs only part 1 and the set-up (the mutation test
+`mutants_check11.py` uses that). Research only: exact synthetic geometry; no performance claim.
 """
 import gzip
 import hashlib
@@ -304,10 +310,10 @@ _MV = {}
 
 
 def move(m):
+    assert isinstance(m, int) and 0 <= abs(m) - 1 < 1200, m      # on every call: stage 03 checks uncached letters
     r = _MV.get(m)
     if r is None:
         i = abs(m) - 1
-        assert isinstance(m, int) and 0 <= i < 1200
         s, d = R.src[R.off[i]:R.off[i + 1]], R.dst[R.off[i]:R.off[i + 1]]
         if m < 0:
             s, d = d, s
@@ -342,7 +348,9 @@ def evaluate(nodes, ids):
         nd = nodes[i]
         op = nd['op']
         if op in ('word', 'path'):
-            w = [int(m) for m in nd['w']] if op == 'word' else tree_path(nd['orbit'], nd['node'])
+            # NumPy integers of in-process nodes become ints; anything else reaches move() unchanged, as in stage 03
+            w = ([int(m) if isinstance(m, np.integer) else m for m in nd['w']] if op == 'word'
+                 else tree_path(nd['orbit'], nd['node']))
             word[i] = w
             length[i] = len(w)
         elif op == 'conj':
@@ -370,12 +378,14 @@ def evaluate(nodes, ids):
                 net[i] = srt(ap(s), ap(d))
             length[i] = length[x] + 2 * length[u]
         elif op == 'prod':
+            if not nd['f']:
+                raise ValueError('node %d: empty product (the stage 03 checker cannot evaluate it)' % i)
             touched = []
             for j, sg in nd['f']:
                 s, d = net[j] if sg > 0 else srt(net[j][1], net[j][0])
                 L[d] = L[s]
                 touched.append(d)
-            t = np.unique(np.concatenate(touched)) if touched else np.zeros(0, np.int64)
+            t = np.unique(np.concatenate(touched))
             lt = L[t]
             mv = lt != t
             net[i] = srt(lt[mv].copy(), t[mv])
@@ -453,45 +463,103 @@ def run_input(name, L0):
           flush=True)
 
 
-for name, build in (('frames-in-place', input_frames_in_place), ('three-cycles', input_three_cycles),
-                    ('transpositions', input_transpositions), ('cleanup-C', input_cleanup_c),
-                    ('cleanup-ABC', input_cleanup_abc)):
-    run_input(name, build())
+INPUTS = (('frames-in-place', input_frames_in_place), ('three-cycles', input_three_cycles),
+          ('transpositions', input_transpositions), ('cleanup-C', input_cleanup_c),
+          ('cleanup-ABC', input_cleanup_abc))
 
 # ---- 3. the runner on the committed synthetic inputs ------------------------------------------------
 COMMITTED = json.loads((S03 / 'restore' / 'restore-summary.json').read_text())
 DIGEST = {r['input']: r['input_labels_sha256'] for r in COMMITTED['runs'] if 'input_labels_sha256' in r}
-with tempfile.TemporaryDirectory() as tmp:
-    out = Path(tmp) / 'run'
-    t0 = time.time()
-    p = subprocess.run([sys.executable, '-I', '-B', str(HERE / 'restore_schedule11.py'), str(REALIGN), str(out),
-                        'uniform:1', 'uniform:2'], cwd=ROOT, capture_output=True, text=True, timeout=1200)
-    print(p.stdout[-2000:], p.stderr[-2000:], flush=True)
-    if check(p.returncode == 0, 'runner exit status %d' % p.returncode):
-        summary = json.loads((out / 'restore-summary.json').read_text())
-        sol = json.loads((out / 'solutions.json').read_text())
-        check(sol.get('format') == 'lattice-restoration-v1', 'solutions format')
-        net, length = evaluate(sol['nodes'], range(len(sol['nodes'])))
-        for run in summary['runs']:
-            spec = run['input']
-            tag = spec.replace(':', '_')
-            L0 = np.load(out / ('start-labels-%s.npy' % tag))
-            check(hashlib.sha256(L0.astype('<i8').tobytes()).hexdigest() == DIGEST[spec],
-                  '%s: start array is not the committed input' % spec)
-            check(run['status'] == 'restored', '%s: status %s' % (spec, run['status']))
-            fs = sol['solutions'][tag]
-            L = L0.copy()
-            apply_factors(L, net, fs)
-            check(np.array_equal(L, np.arange(NS)), '%s: the written program does not restore the input' % spec)
-            total = sum(length[j] for j, _ in fs)
-            check(total == run['retained_length'], '%s: length %d, recomputed %d' % (spec, run['retained_length'], total))
-            check(total <= TOTAL, '%s: total %d above %d' % (spec, total, TOTAL))
-            lpo = {int(o): n for o, n in run['length_per_orbit'].items()}
-            check(sum(lpo.values()) == total, '%s: per-orbit lengths do not add up' % spec)
-            for o, n in lpo.items():
-                check(n <= BOUND[o], '%s: orbit %d length %d above its bound %d' % (spec, o, n, BOUND[o]))
-            print('%-16s total %10d  factors %7d  (runner and evaluation %.0fs)'
-                  % (spec, total, len(fs), time.time() - t0), flush=True)
+SPECS = ['uniform:1', 'uniform:2']
+TAGS = [s.replace(':', '_') for s in SPECS]
 
-print('%s in %.0fs' % ('PASS' if not FAILS else 'FAIL (%d)' % len(FAILS), time.time() - T0))
-sys.exit(1 if FAILS else 0)
+
+def check_run(run, fs, net, length, out):
+    """One runner result, replayed orbit by orbit with the slices that factors_per_orbit gives."""
+    spec = run['input']
+    L = np.load(out / ('start-labels-%s.npy' % spec.replace(':', '_')))
+    check(hashlib.sha256(L.astype('<i8').tobytes()).hexdigest() == DIGEST[spec],
+          '%s: start array is not the committed input' % spec)
+    check(run['status'] == 'restored', '%s: status %s' % (spec, run['status']))
+    cascade = RJ['cascade_order']
+    fpo = {int(o): n for o, n in run['factors_per_orbit'].items()}
+    lpo = {int(o): n for o, n in run['length_per_orbit'].items()}
+    if not check(sorted(fpo) == sorted(lpo) == sorted(cascade)
+                 and all(type(n) is int and n >= 0 for n in fpo.values())
+                 and sum(fpo.values()) == len(fs) == run['factors'],
+                 '%s: factors_per_orbit does not cut the solution into one slice per orbit' % spec):
+        return
+    pos, done, total, worst = 0, [], 0, (0.0, None)
+    for o in cascade:
+        part = fs[pos:pos + fpo[o]]
+        pos += fpo[o]
+        apply_factors(L, net, part)
+        done.append(o)
+        if not check(solved_orbits(L, done), '%s: after orbit %d an orbit up to it is not solved' % (spec, o)):
+            return
+        n = sum(length[j] for j, _ in part)
+        total += n
+        check(n == lpo[o], '%s: orbit %d reported length %d, recomputed from its slice %d' % (spec, o, lpo[o], n))
+        check(n <= BOUND[o], '%s: orbit %d length %d above its bound %d' % (spec, o, n, BOUND[o]))
+        worst = max(worst, (n / BOUND[o], o))
+    check(np.array_equal(L, np.arange(NS)), '%s: the written program does not restore the input' % spec)
+    check(total == run['retained_length'], '%s: length %d, recomputed %d' % (spec, run['retained_length'], total))
+    check(total <= TOTAL, '%s: total %d above %d' % (spec, total, TOTAL))
+    print('%-16s total %10d  factors %7d  largest length/bound %.3f (orbit %s)'
+          % (spec, total, len(fs), worst[0], worst[1]), flush=True)
+
+
+def check_runner_output(out):
+    summary = json.loads((out / 'restore-summary.json').read_text())
+    sol = json.loads((out / 'solutions.json').read_text())
+    check(sol.get('format') == 'lattice-restoration-v1', 'solutions format')
+    check(summary.get('cascade_order') == RJ['cascade_order'], 'runner: cascade order differs')
+    runs = summary.get('runs', [])
+    got = [r.get('input') for r in runs]
+    ok = check(got == SPECS, 'runner: runs for %s, expected exactly %s' % (got, SPECS))
+    got = sorted(sol.get('solutions', {}))
+    ok &= check(got == TAGS, 'runner: solutions for %s, expected exactly %s' % (got, TAGS))
+    if not ok:
+        return
+    try:
+        net, length = evaluate(sol['nodes'], range(len(sol['nodes'])))
+    except Exception as exc:                      # a node the stage 03 checker could not evaluate
+        check(False, 'runner: independent evaluation failed: %r' % (exc,))
+        return
+    for run in runs:
+        try:
+            check_run(run, sol['solutions'][run['input'].replace(':', '_')], net, length, out)
+        except Exception as exc:                  # a malformed record or factor
+            check(False, '%s: replay failed: %r' % (run['input'], exc))
+
+
+def runner_check():
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / 'run'
+        t0 = time.time()
+        p = subprocess.run([sys.executable, '-I', '-B', str(HERE / 'restore_schedule11.py'), str(REALIGN), str(out)]
+                           + SPECS, cwd=ROOT, capture_output=True, text=True, timeout=1200)
+        print(p.stdout[-2000:], p.stderr[-2000:], flush=True)
+        if check(p.returncode == 0, 'runner exit status %d' % p.returncode):
+            check_runner_output(out)
+            # the unchanged stage 03 checker on the same output; it imports the simulator of research/jumbling
+            rep = Path(tmp) / 'verify-report.json'
+            q = subprocess.run([sys.executable, '-I', str(S03 / 'checker' / 'verify_restore.py'), str(ROOT),
+                                str(GM.parents[1]), str(S03 / 'restore' / 'library-final.json'), str(out), str(rep)],
+                               cwd=ROOT, capture_output=True, text=True, timeout=1200)
+            print(q.stdout[-1500:], q.stderr[-1500:], flush=True)
+            vr = json.loads(rep.read_text()) if q.returncode == 0 and rep.is_file() else {}
+            vruns = vr.get('runs', [])
+            check(vr.get('pass') is True and [r.get('input') for r in vruns] == SPECS
+                  and all(r.get('synthetic_input_valid') and r.get('restored_to_identity')
+                          and r.get('length_matches_restorer') for r in vruns),
+                  'stage 03 checker: no PASS for exactly %s (exit status %d)' % (SPECS, q.returncode))
+        print('runner and its checks %.0fs' % (time.time() - t0), flush=True)
+
+
+if __name__ == '__main__':
+    for name, build in INPUTS:
+        run_input(name, build())
+    runner_check()
+    print('%s in %.0fs' % ('PASS' if not FAILS else 'FAIL (%d)' % len(FAILS), time.time() - T0))
+    sys.exit(1 if FAILS else 0)

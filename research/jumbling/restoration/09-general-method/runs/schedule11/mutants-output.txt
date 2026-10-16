@@ -1,0 +1,32 @@
+bounds: sum 20866844; largest [(10, 2930400), (28, 2282710), (3, 2115138)]
+frame groups {0: 2, 3: 2, 8: 2, 11: 2, 22: 2, 25: 2, 32: 2, 17: 5, 28: 5, 6: 10, 34: 60} (2.4s)
+uniform:1        total   15761436  factors   88352  largest length/bound 0.974 (orbit 10)
+uniform:2        total   15760112  factors   88350  largest length/bound 0.974 (orbit 10)
+ok   unchanged output                   passes
+FAIL runner: runs for [], expected exactly ['uniform:1', 'uniform:2']
+FAIL runner: solutions for [], expected exactly ['uniform_1', 'uniform_2']
+ok   no runs                            fails: runner: runs for [], expected exactly ['uniform:1', 'uniform:2']
+FAIL runner: runs for ['uniform:1'], expected exactly ['uniform:1', 'uniform:2']
+FAIL runner: solutions for ['uniform_1'], expected exactly ['uniform_1', 'uniform_2']
+ok   missing uniform:2                  fails: runner: runs for ['uniform:1'], expected exactly ['uniform:1', 'uniform:2']
+FAIL runner: runs for ['uniform:1', 'uniform:1'], expected exactly ['uniform:1', 'uniform:2']
+ok   duplicate uniform:1                fails: runner: runs for ['uniform:1', 'uniform:1'], expected exactly ['uniform:1', 'uniform:2']
+FAIL runner: independent evaluation failed: ValueError('node 353560: empty product (the stage 03 checker cannot evaluate it)')
+ok   empty product                      fails: runner: independent evaluation failed: ValueError('node 353560: empty product (the stage 03 checker cannot evaluate it)')
+FAIL runner: independent evaluation failed: AssertionError(217.0)
+ok   letter 5.0 instead of 5            fails: runner: independent evaluation failed: AssertionError(217.0)
+FAIL uniform:1: orbit 10 reported length 2854626, recomputed from its slice 2931810
+FAIL uniform:1: orbit 10 length 2931810 above its bound 2930400
+FAIL uniform:1: orbit 28 reported length 1228766, recomputed from its slice 1151582
+uniform:1        total   15838620  factors   88448  largest length/bound 1.000 (orbit 10)
+uniform:2        total   15760112  factors   88350  largest length/bound 0.974 (orbit 10)
+ok   padding charged to another orbit   fails: uniform:1: orbit 10 reported length 2854626, recomputed from its slice 2931810
+FAIL uniform:1: orbit 10 length 2931810 above its bound 2930400
+uniform:1        total   15838620  factors   88448  largest length/bound 1.000 (orbit 10)
+uniform:2        total   15760112  factors   88350  largest length/bound 0.974 (orbit 10)
+ok   padding reported on orbit 10       fails: uniform:1: orbit 10 length 2931810 above its bound 2930400
+FAIL uniform:1: after orbit 10 an orbit up to it is not solved
+uniform:2        total   15760112  factors   88350  largest length/bound 0.974 (orbit 10)
+ok   factor of orbit 10 delayed         fails: uniform:1: after orbit 10 an orbit up to it is not solved
+PASS
+exit 0
