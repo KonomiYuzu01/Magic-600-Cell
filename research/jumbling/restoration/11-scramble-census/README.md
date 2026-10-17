@@ -175,6 +175,77 @@ record and replays them on the exact simulator, without the code that found them
 on the lattice, no lattice piece taken off, every other off piece at its exact pose, and the recorded digests
 (`templates/check.out`).
 
+## What a person would have to try
+
+The census measures the descent when a machine carries out its rules. A person carries them out by proposing twists
+and words that the program checks ([manual](../../manual/02-descent.md), chapter 2). How many proposals that takes
+was measured on the record of the depth 40 scramble at seed 7101 (97 steps, rounds 1 and 2), replayed on the exact
+simulator with N and the off count checked after every step (measured; scripts and outputs under "Files").
+
+- **Face match steps take a search.** At the 27 face match steps a median of 2 caps passed the test (at most 8),
+  and at 17 of them only one of the 59 twists of the chosen cap reached its best drop; the rule found both by
+  evaluating every twist, which the program does not do for a person. A face match twist brings N_c exactly to the
+  cap's floor, and the cut slice shows which caps can pass (In_c ≤ Out_c, and some inside face not aligned yet). A
+  person who takes those caps by decreasing N_c and checks each one's twists in menu order until N_c reaches the
+  floor needed a median of 71 checks (at most 1,004). At the other 70 steps the same search finds none, after a
+  median of 531 checks (at most 1,239), before the person turns to the cover order or a repair. Reading the domains
+  narrows the twists of a cap to at most 12 ([manual](../../manual/02-descent.md), section 2.1); how many checks
+  that saves was not measured. The 7 cover steps need the cover relation for caps the solver names, which is not yet
+  in the observation requirements, and were not measured for a person.
+- **Repairs are found by search.** The rule tries the caps by decreasing N_c and, at each, the 59 openings in menu
+  order, the 11 retained twists first. For every opening it tries every misaligned neighbour d of c, with the best
+  twist y of d and then the best twist z of c, which is no twist when none lowers N_c. Before the repair that worked
+  it made a median of 76 openings, at most 1,598, and considered a median of 340 pairs of opening and neighbour, at
+  most 17,686. At 15 of the 63 repair steps it made at most 10 openings (steps 30 to 43 and 70 to 73), each time at
+  the cap with the largest N_c; at the other 48 it made at least 59. From step 44 on, the medians are about 110
+  openings and about 800 pairs. A person would also have to find y and z for each pair with checks, since the
+  program shows no best twist.
+- **At the cap where the repair was found, few pairs work.** At 15 tail steps from step 44 on, 1 to 11 of the 472 to
+  1,298 pairs (opening x, neighbour d) at that cap lowered N, 0.08% to 1.86% (table); at 9 of the 15 the pair the
+  rule found was the only one. At the caps the rule tried before, none did.
+- **Nothing visible marks the pair.** After the opening, d passes the face match at 6 of the 63 steps, and c after
+  y at 2. c covers d at 30 steps and d covers c at 26, so the cover relation does not single out the pair. The
+  scramble's own twists are not undone either: x undoes c's last scramble twist at no step, y undoes d's at 2.
+- **Single twists run out.** At the first repair steps, single twists that lower N existed at 5 to 11 caps (steps
+  30 to 35) and then at 1 to 3 (steps 37 to 39); the improve rule, which would make them, comes after conj in the
+  rule order and never ran. From step 40 on, one cap at most had one, at 14 of 56 steps. The floor of a cap, which
+  the program shows, tells a person only where no such twist exists: a cap at its floor has none. A cap above its
+  floor may have none either: at every repair step a median of 13 caps (at most 21) were above their floor with no
+  lowering single twist; at step 40, cap 571 had N_c = 657 and floor 53.
+- **What repairs are made of.** Over the seven records with repairs (592 repairs), 359 (61%) use retained twists
+  only, and in 236 (40%) the last twist undoes the opening (z = x⁻¹). Since the rule tries retained openings first,
+  this counts what was found first, not what exists.
+
+The repair density at the 15 tail steps measured (`runs/findability/ia-k40-s7101-density.jsonl.gz`). N: before the
+step. Cap c: the cap where the rule found the repair, with its place among the misaligned caps by decreasing N_c.
+Neighbours: the misaligned caps that meet c. Pairs: the 59 openings of c times its neighbours. Lowering N: the
+pairs whose repair, with the rule's y and z, lowers N; the last column counts those whose opening is a retained
+twist.
+
+| Step | N | Cap c | Its place | N_c | Neighbours | Pairs | Lowering N | Share | Of them retained openings |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 44 | 5,330 | 591 | 2 | 400 | 10 | 590 | 11 | 1.86% | 0 |
+| 47 | 5,104 | 354 | 2 | 355 | 11 | 649 | 1 | 0.15% | 0 |
+| 48 | 4,706 | 593 | 2 | 327 | 17 | 1,003 | 6 | 0.60% | 0 |
+| 54 | 4,382 | 571 | 2 | 337 | 15 | 885 | 5 | 0.56% | 0 |
+| 59 | 4,280 | 571 | 2 | 306 | 13 | 767 | 3 | 0.39% | 0 |
+| 64 | 4,098 | 571 | 2 | 278 | 14 | 826 | 3 | 0.36% | 0 |
+| 69 | 3,094 | 329 | 2 | 208 | 13 | 767 | 1 | 0.13% | 0 |
+| 74 | 2,822 | 353 | 2 | 254 | 14 | 826 | 1 | 0.12% | 0 |
+| 75 | 2,362 | 590 | 3 | 183 | 17 | 1,003 | 1 | 0.10% | 0 |
+| 79 | 2,056 | 593 | 2 | 198 | 17 | 1,003 | 1 | 0.10% | 0 |
+| 83 | 2,010 | 571 | 10 | 46 | 9 | 531 | 1 | 0.19% | 1 |
+| 87 | 1,950 | 593 | 3 | 153 | 17 | 1,003 | 1 | 0.10% | 0 |
+| 91 | 1,850 | 552 | 13 | 36 | 22 | 1,298 | 3 | 0.23% | 0 |
+| 96 | 1,738 | 552 | 10 | 48 | 20 | 1,180 | 1 | 0.08% | 1 |
+| 97 | 1,736 | 458 | 28 | 2 | 8 | 472 | 1 | 0.21% | 1 |
+
+So within the human-solve boundary every step takes a search. With the facts the program shows and the simplest
+order, a face match took a median of 71 checks and ruling one out a median of 531; a tail repair took a median of
+about 110 openings and 800 pairs, each pair with its own checks for y and z (the medians from step 44 on). The
+records have 42 to 197 repair steps each. Whether reading the domains brings the face match down to a few checks was
+not measured. This is one record at one depth; the other records were not measured this way.
+
 ## Assessment and the owner's choice
 
 The integrator proposed four options before the experiments (decision item 1) and assessed them against the results
@@ -206,8 +277,12 @@ templates can address hold 27% (depth 60) and 5% (depth 100).
      yet: a second seed at 1000 (7110), more seeds at 40, and further rounds of the round 3 runs.
   3. A manual of the techniques, written for a person: the three descent techniques, the shape catalogue, vacating
      and unlocking, each with its picture in the program. Started on 17 October: [manual](../../manual/README.md),
-     with chapters 1 and 2 (what the solver sees, the descent with worked examples from these records) drafted and
-     chapters 3 and 4 as outlines.
+     with chapters 1 and 2 (what the solver sees, the descent with worked examples from these records) and 4 (the
+     lattice phase) drafted and chapter 3 as an outline.
+  4. What a person would have to try (section above): with the facts the program shows, a face match took a median
+     of 71 checks in a simple order, and a repair in the tail a search of about 110 openings and 800 pairs of
+     opening and neighbour (medians). What help the program may give for these searches is an owner decision under
+     the human-solve boundary.
 - **B.** A statement: at every reachable state whose off pieces lie at left heights 2 and 4, a clean step V·W·V⁻¹
   exists whose W comes from a finite catalogue and whose vacating word V has an explicit length bound, or an
   unlocking step of explicit length; that is, gap M1 restricted to low heights. The template test puts the weight
@@ -238,6 +313,16 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     python3 -I -B $S/fxsummary.py <fx>/k60-fx/run.jsonl
     python3 -I -B $S/check_steps.py research/jumbling/restoration/11-scramble-census/runs/round2/ia-k60-s7104.json \
         research/jumbling/restoration/11-scramble-census/templates/k60-step0*-word.json
+    # what a person would have to try, at seed 7101: the choices offered at every step (about 7 minutes), the repair
+    # density at 15 tail steps (about 50 minutes), single twists at the repair steps (about 5 minutes), what the
+    # repairs of the seven records with repairs are made of (about 2 minutes), and the numbers of the section
+    R=research/jumbling/restoration/11-scramble-census/runs; F=$R/findability
+    python3 -I -B $S/findability.py $R/round2/ia-k40-s7101.json > $F/ia-k40-s7101-steps.jsonl
+    python3 -I -B $S/density.py $R/round2/ia-k40-s7101.json 44 47 48 54 59 64 69 74 75 79 83 87 91 96 97 \
+        | gzip -n > $F/ia-k40-s7101-density.jsonl.gz
+    python3 -I -B $S/single_twist.py $R/round2/ia-k40-s7101.json > $F/ia-k40-s7101-single.jsonl
+    python3 -I -B $S/repair_items.py $R/round2/ia-k*.json $R/round3/ia-k*.json > $F/repair-items.jsonl
+    python3 -I -B $S/findability_table.py $F ia-k40-s7101
 
 A rerun stops wherever its clock runs out, so its record can differ from the stored one; `check_records.py` checks
 the stored records exactly. Every script reads `research/jumbling` (the simulator `sim/`, the theory modules and the
@@ -260,12 +345,18 @@ scripts and data of stages 05, 06 and 09) without writing to it. The runs used t
 | `runs/check.out`, `runs/round3/check.out` | Output of `check_records.py` on the eleven records of rounds 1 and 2 and on the three of round 3, in the order of the commands above |
 | `residue/` | Summaries and per-block rows of the depth 60 and 100 residues |
 | `templates/` | The template test: `fxrun.py` logs, the step words, `groups.jsonl`, `summary.jsonl` and `check.out` |
+| `scripts/findability.py`, `scripts/density.py`, `scripts/single_twist.py`, `scripts/repair_items.py` | What a person would have to try: the choices offered at every step of a record, the repair density at the cap the rule chose, single twists at the repair steps, and what the repairs are made of |
+| `scripts/findability_table.py` | The numbers and the table of that section from the outputs |
+| `runs/findability/` | The outputs for seed 7101 at depth 40 (`ia-k40-s7101-*`) and, from `repair_items.py`, for the seven records with repairs (`repair-items.jsonl`) |
 
 ## Limits
 
 - One or two seeds per depth, and a time limit per round: the census measures how far phase U gets in a given time,
   not where it would stop. The two seeds at depth 40 already behave very differently.
 - Phase U only. Whether the general method finishes from these stops, and at what cost, is not measured yet.
+- What a person would have to try is measured on one record (seed 7101, depth 40): repairs in the rule's own order,
+  face matches in one simple order (caps by decreasing N_c, twists in menu order). A person need not follow either
+  order, reading the domains may narrow the twists, and no other order was measured.
 - The scramble has no retained twists. A product scramble may mix them in; they move pieces but do not change the
   heights.
 - The block notions (rigid blocks, Mov groups) and the shape classes are those of stages 05, 06 and 09; the shares

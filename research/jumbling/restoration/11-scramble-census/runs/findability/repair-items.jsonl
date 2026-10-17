@@ -1,0 +1,7 @@
+{"run": "ia-k100-s7102", "repairs": 82, "kinds_xyz": {"RRR": 39, "JRJ": 24, "RJJ": 10, "RRJ": 8, "RJR": 1}, "z_undoes_x": 43, "z_identity": 3, "net_turn_of_c_retained": 64}
+{"run": "ia-k1000-s7103", "repairs": 197, "kinds_xyz": {"RRR": 137, "RRJ": 30, "RJJ": 13, "JRJ": 11, "RJR": 5, "JRR": 1}, "z_undoes_x": 64, "z_identity": 16, "net_turn_of_c_retained": 153}
+{"run": "ia-k40-s7101", "repairs": 63, "kinds_xyz": {"RRR": 42, "JRJ": 17, "RJJ": 4}, "z_undoes_x": 29, "z_identity": 14, "net_turn_of_c_retained": 59}
+{"run": "ia-k60-s7104", "repairs": 87, "kinds_xyz": {"RRR": 57, "JRJ": 21, "RJJ": 7, "RRJ": 1, "JRR": 1}, "z_undoes_x": 32, "z_identity": 10, "net_turn_of_c_retained": 78}
+{"run": "ia-k100-s7108", "repairs": 47, "kinds_xyz": {"RRR": 24, "RJJ": 7, "RRJ": 6, "JRJ": 6, "JRR": 4}, "z_undoes_x": 20, "z_identity": 4, "net_turn_of_c_retained": 30}
+{"run": "ia-k200-s7105", "repairs": 42, "kinds_xyz": {"RRR": 22, "RRJ": 7, "RJJ": 5, "JRJ": 5, "JRR": 2, "RJR": 1}, "z_undoes_x": 16, "z_identity": 2, "net_turn_of_c_retained": 28}
+{"run": "ia-k400-s7109", "repairs": 74, "kinds_xyz": {"RRR": 38, "JRJ": 14, "RRJ": 13, "RJJ": 8, "RJR": 1}, "z_undoes_x": 32, "z_identity": 0, "net_turn_of_c_retained": 53}
