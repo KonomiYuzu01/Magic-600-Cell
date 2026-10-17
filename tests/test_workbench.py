@@ -1008,9 +1008,15 @@ class HookTests(unittest.TestCase):
             time.sleep(0.001)
         """)
 
-    def run_workers(self, body: str, n: int = 8, cap: int = 0) -> list[str]:
+    # append_event drops an event when it cannot take the lock within EVENT_LOCK_WAIT, and a waiter removes a lock
+    # older than LOCK_STALE as abandoned. On a slow runner one long hold triggers the first (each waiter drops an
+    # event) or the second (two writers at once). The append tests check what appends under the lock do, so their
+    # workers are patient enough for neither.
+    PATIENT = "h.EVENT_LOCK_WAIT, h.LOCK_STALE = 30.0, 60.0\n"
+
+    def run_workers(self, body: str, n: int = 8, cap: int = 0, patient: bool = False) -> list[str]:
         script = Path(self.fx.tmp.name) / "worker.py"
-        script.write_text(self.WORKER_HEAD + textwrap.dedent(body), encoding="utf-8")
+        script.write_text(self.WORKER_HEAD + (self.PATIENT if patient else "") + textwrap.dedent(body), encoding="utf-8")
         start = time.time() + 1.5
         procs = [subprocess.Popen([sys.executable, str(script), str(self.fx.hook), str(self.fx.data), str(i), str(start), str(cap)],
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for i in range(n)]
@@ -1024,7 +1030,7 @@ class HookTests(unittest.TestCase):
             for i in range(200):
                 line = json.dumps({{"e": "x", "id": f"{{me}}-{{i}}"}}) + "\\n"
                 h.append_event(data / "events", "{SID}", line.encode())
-            """)
+            """, patient=True)
         ids = [r["id"] for r in self.lines()]
         self.assertEqual(len(ids), 1600)
         self.assertEqual(len(set(ids)), 1600)
@@ -1035,7 +1041,7 @@ class HookTests(unittest.TestCase):
             for i in range(200):
                 line = json.dumps({{"e": "x", "id": f"{{me}}-{{i}}", "pad": "p" * 150}}) + "\\n"
                 h.append_event(data / "events", "{SID}", line.encode())
-            """, cap=cap)
+            """, cap=cap, patient=True)
         recs = self.lines()
         self.assertLessEqual(self.events.stat().st_size, cap + 200)
         self.assertEqual(sum(1 for r in recs if r["e"] == "cap_reached"), 1)
