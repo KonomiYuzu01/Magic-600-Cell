@@ -41,7 +41,7 @@ is what it has to show for the manual to work:
 
 Most of a random scramble goes in the descent: scrambles of 10 and 20 twists, and one of two scrambles of 40 twists,
 were undone by its first technique alone, and the deeper ones lost 35% to 99% of their off-lattice pieces to its
-three techniques in two and a half hours of machine search (section 2.5). What the descent leaves behind is
+three techniques in 75 to 150 minutes of machine search (section 2.5). What the descent leaves behind is
 the tail, which chapter 3 is about; whether its techniques always finish is the open research question of
 [stage 12](../restoration/12-low-height/README.md).
 

@@ -16,7 +16,7 @@ Labels: **certificate** (an exact computation with a replayable record), **measu
 
 - **Scramble.** Menu I_a. A scramble of depth k is k admissible jumble twists at uniformly random grips, each with a
   uniformly random jumble item of the grip's menu; a draw that is not admissible is skipped and drawn again
-  (`theory/restore.py`, `scramble`, with no retained twists). One seed per depth at first, two at depth 40.
+  (`theory/restore.py`, `scramble`, with no retained twists). One seed per depth at first, then two at depths 40 and 100.
   Nothing restricts the scramble.
 - **Descent.** Phase U of the earlier theory (`theory/seams.py`, `SeamRestorer`, default rule order seam, cover,
   close, conj, lock, improve, shift, reopen; [restoration](../../theory/restoration.md) section 3). Its rules read only
@@ -72,6 +72,20 @@ that reached the lattice, the solved flag and the invariant v agree with the rec
 end digests). Records changed on purpose (a move, an N, a start count, the twist count, the round boundary, the
 result, the solved flag, the start heights or off poses) fail it (`scripts/test_check_records.py`).
 
+### Round 3 (a second seed at depth 100, and depths 200 and 400)
+
+| Depth k | Seed | Off after the scramble | Left heights at the scramble | Descent time | Twists | Steps: seam / cover / conj | Off at the end | N: start → end |
+| ---: | ---: | ---: | --- | --- | ---: | --- | ---: | --- |
+| 100 | 7108 | 117,876 | all 2 | 75 minutes | 170 | 10 / 19 / 47 | 27,199 | 73,512 → 27,608 |
+| 200 | 7105 | 119,469 | 2: 118,956; 4: 513 | 29 + 75 minutes | 144 | 2 / 16 / 42 | 75,054 | 86,358 → 65,888 |
+| 400 | 7109 | 118,493 | 2: 118,083; 4: 410 | 75 minutes | 255 | 0 / 33 / 74 | 73,003 | 100,632 → 77,814 |
+
+All three ended at the time limit, having put back 76.9%, 37.2% and 38.4% of the off pieces. The depth 200 run was
+stopped after 29 minutes and 37 steps (78,283 off, N = 68,038) by a 30-minute limit on background jobs in the cloud
+session, not by its own budget; a second round continued it from its record, which ends at a step boundary.
+**Certificate**: the same replay check passes on the three records (`runs/round3/check.out`); for the depth 200
+record it also checks the off count, N, the heights and the off poses at that boundary.
+
 ### What the runs show (measured)
 
 1. **No run got stuck.** Every run that did not reach the lattice was stopped by the clock; every step it took
@@ -80,21 +94,28 @@ result, the solved flag, the start heights or off poses) fail it (`scripts/test_
    the next step first.
 3. **A fast bulk, then a slow tail.**
    - The bulk is single-twist steps (seam and cover). At depths 10 to 60 the median such step lowers N by 1,105 to
-     1,566; at depth 100 by about 550, at depth 1000 by about 55.
-   - The deeper the scramble, the sooner the single-twist steps run out: the first conj step came after 29 steps
-     (when 25,783 pieces were off) for depth 40, after 27 (53,647) for 60, after 9 (101,481) for 100 and after 3
-     (121,636) for 1000.
+     1,566; at depth 100 by about 550 and 966 (the two seeds), at 200 by 455, at 400 and 1000 by about 55.
+   - Broadly, the deeper the scramble, the sooner the single-twist steps run out: the first conj step came after 29
+     steps (when 25,783 pieces were off) for depth 40, after 27 (53,647) for 60, after 9 (101,481) and 19 (89,121)
+     for the two seeds at 100, after 10 (106,075) for 200, after 11 (109,266) for 400 and after 3 (121,636) for
+     1000.
    - In the tail almost every step is a conj step. In round 1 the median conj step lowered N by 50 to 146 after a
-     search of 20 to 52 seconds; in round 2 by 2 to 50 after 91 to 269 seconds. One search took 25 minutes, and the
-     last search of the depth 40 run had found nothing after 49 minutes when the process was killed.
+     search of 20 to 52 seconds; in round 2 by 2 to 50 after 91 to 269 seconds. Round 3 fits this: 80 and 67 after 36
+     and 29 seconds in the first rounds at depths 100 and 400, and 41 after 195 seconds in the second round at 200.
+     One search took 25 minutes, and the last search of the depth 40 run had found nothing after 49 minutes when the
+     process was killed.
    - The twists are few: 199 twists put back 98.5% of the 40-twist scramble. What is slow is finding the next step.
      For a person this is the work of seeing which cap matches and which three twists repair, which is what the
      tutorial and the program's help have to teach and show.
 4. **One seed per depth is not enough.** The two 40-twist scrambles have about the same number of off pieces, but
-   seed 7107 is solved by face matches in under three minutes while seed 7101 runs into the tail.
+   seed 7107 is solved by face matches in under three minutes while seed 7101 runs into the tail. At depth 100 the
+   second seed put back 76.9% in its first 75 minutes, the first seed 70.4%.
 5. **Heights stay low.** After 1000 random twists no piece is above left height 6. The descent cleared all pieces at
    height 6, but heights do not only fall: in round 2 the pieces at height 4 rose from 81 to 124 (depth 100) and from
-   264 to 390 (depth 1000). N is the potential, not the height.
+   264 to 390 (depth 1000), and in round 3 from 0 to 111 (depth 100, second seed) and from 410 to 607 (depth 400).
+   N is the potential, not the height.
+6. **From about 200 twists on, depth matters little.** The scrambles of 200, 400 and 1000 twists left 118,493 to
+   125,304 pieces off, and the descent put back 30.5% to 38.4% of them in its first 75 to 104 minutes.
 
 ## The residue at the end of round 2
 
@@ -181,8 +202,8 @@ templates can address hold 27% (depth 60) and 5% (depth 100).
   1. The general method from a stop, with vacating words: the clean steps of stage 09. The depth 40 stop (1,193 off
      pieces) is the size of stop62, where the state-only driver v4 went from 860 to 269 off pieces in 8 steps
      (stage 09, section 6.2).
-  2. More seeds and depths: second seeds at 100 (7108) and 1000 (7110), more at 40, and depths 200 (7105) and 400
-     (7109). The runs at 200, 100 (7108) and 400 started on 17 October; their records come with the next update.
+  2. More seeds and depths. Round 3 ran the second seed at 100 (7108) and depths 200 (7105) and 400 (7109). Not run
+     yet: a second seed at 1000 (7110), more seeds at 40, and further rounds of the round 3 runs.
   3. A manual of the techniques, written for a person: the three descent techniques, the shape catalogue, vacating
      and unlocking, each with its picture in the program. Started on 17 October: [manual](../../manual/README.md),
      with chapters 1 and 2 (what the solver sees, the descent with worked examples from these records) drafted and
@@ -203,8 +224,9 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     $S/run_jobs.sh <out2> 40:7101:<out1>/ia-k40-s7101.json 60:7104:<out1>/ia-k60-s7104.json
     # the tables of this page (one JSON line per record)
     python3 -I -B $S/table.py research/jumbling/restoration/11-scramble-census/runs/round1
-    # replay check of every record from its seed (about 50 minutes)
-    python3 -I -B $S/check_records.py research/jumbling/restoration/11-scramble-census/runs/round*/ia-k*.json
+    # replay check of every record from its seed: rounds 1 and 2 (about 50 minutes), round 3 (about 15 minutes)
+    python3 -I -B $S/check_records.py research/jumbling/restoration/11-scramble-census/runs/round[12]/ia-k*.json
+    python3 -I -B $S/check_records.py research/jumbling/restoration/11-scramble-census/runs/round3/ia-k*.json
     # its mutation test: eight changed copies of the depth 10 record must fail, the record must pass (about 1 minute)
     python3 -I -B $S/test_check_records.py
     # the residue of a record: pose table, units, summary (about 10 minutes at depth 100)
@@ -234,8 +256,8 @@ scripts and data of stages 05, 06 and 09) without writing to it. The runs used t
 | `scripts/templates.py`, `scripts/run_fx.sh` | The template test with the tools of stages 05 and 06 |
 | `scripts/groups.py` | Mov groups and shape classes of a residue, from the stage 05 and 06 outputs of `run_fx.sh` |
 | `scripts/fxsummary.py`, `scripts/check_steps.py` | Summary of a template test, and an independent replay of its steps |
-| `runs/round1/`, `runs/round2/` | The run records (scramble history, moves, steps) and `table.jsonl` |
-| `runs/check.out` | Output of `check_records.py` on all eleven records, in the order of the command above |
+| `runs/round1/`, `runs/round2/`, `runs/round3/` | The run records (scramble history, moves, steps) and `table.jsonl` |
+| `runs/check.out`, `runs/round3/check.out` | Output of `check_records.py` on the eleven records of rounds 1 and 2 and on the three of round 3, in the order of the commands above |
 | `residue/` | Summaries and per-block rows of the depth 60 and 100 residues |
 | `templates/` | The template test: `fxrun.py` logs, the step words, `groups.jsonl`, `summary.jsonl` and `check.out` |
 

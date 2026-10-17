@@ -201,7 +201,7 @@ nothing ([restoration](../theory/restoration.md) section 3):
 ## 2.5 What to expect
 
 The census of 17 October 2026 ran the descent, with its rules carried out by a machine, on unrestricted random
-scrambles of menu I_a for two rounds of 75 minutes each (measured,
+scrambles of menu I_a for one or two rounds of 75 minutes each (measured,
 [census](../restoration/11-scramble-census/README.md)):
 
 | Scramble (twists, seed) | Off the lattice after the scramble | Steps: face match / cover / repair | End |
@@ -209,10 +209,13 @@ scrambles of menu I_a for two rounds of 75 minutes each (measured,
 | 10 (7001) | 26,519 | 9 / 0 / 0 | solved |
 | 20 (7106) | 51,828 | 19 / 0 / 0 | on the lattice |
 | 40 (7107) | 97,491 | 36 / 0 / 0 | solved, in 152 seconds |
-| 40 (7101) | 90,441 | 27 / 7 / 63 | 1,193 left off: 98.7% back |
-| 60 (7104) | 106,075 | 15 / 15 / 87 | 14,610 left: 86.2% back |
-| 100 (7102) | 115,566 | 5 / 21 / 82 | 31,479 left: 72.8% back |
-| 1000 (7103) | 125,304 | 1 / 33 / 197 | 81,309 left: 35.1% back |
+| 40 (7101) | 90,441 | 27 / 7 / 63 | 1,193 left off: 98.7% back, after two rounds |
+| 60 (7104) | 106,075 | 15 / 15 / 87 | 14,610 left: 86.2% back, after two rounds |
+| 100 (7102) | 115,566 | 5 / 21 / 82 | 31,479 left: 72.8% back, after two rounds |
+| 100 (7108) | 117,876 | 10 / 19 / 47 | 27,199 left: 76.9% back, after one round |
+| 200 (7105) | 119,469 | 2 / 16 / 42 | 75,054 left: 37.2% back, after 29 + 75 minutes |
+| 400 (7109) | 118,493 | 0 / 33 / 74 | 73,003 left: 38.4% back, after one round |
+| 1000 (7103) | 125,304 | 1 / 33 / 197 | 81,309 left: 35.1% back, after two rounds |
 
 What the runs show:
 - **A fast bulk, then a slow tail.** At depths 10 to 60 the median face match or cover step lowered N by 1,105 to
@@ -224,6 +227,8 @@ What the runs show:
   finding the next step. For a person this is the work of seeing which cap matches and which three twists repair.
 - **Equal depth, different difficulty.** The two 40-twist scrambles had about the same number of pieces off. One
   fell to face matches alone, while the other ran into the tail.
+- **Past about 200 twists, depth matters little.** The scrambles of 200, 400 and 1000 twists each left 118,000 to
+  125,000 pieces off, and the descent put back 30% to 40% of them in its first 75 to 104 minutes.
 
 A scramble that ends on the lattice but not solved goes on to chapter 4. What the descent leaves off the lattice
 goes on to chapter 3.
