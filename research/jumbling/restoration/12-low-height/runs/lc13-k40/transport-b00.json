@@ -1,0 +1,243 @@
+{
+ "table": "k40-table.json",
+ "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+ "off_before": 1193,
+ "domains": {
+  "1": {
+   "size": 780,
+   "hub": [
+    [
+     1,
+     3
+    ]
+   ]
+  },
+  "2": {
+   "size": 142,
+   "hub": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "3": {
+   "size": 125,
+   "hub": [
+    [
+     1,
+     4
+    ]
+   ]
+  },
+  "4": {
+   "size": 146,
+   "hub": [
+    [
+     1,
+     2
+    ]
+   ]
+  }
+ },
+ "d_T": 1,
+ "class": 3,
+ "free_grips": 116,
+ "blocked": [
+  349,
+  582
+ ],
+ "own_contents": 1450,
+ "cell_X_contents": null,
+ "reachable_cells": 2641,
+ "generators": 6844,
+ "unit_content_size": 33,
+ "domain_contents": 13,
+ "fragments_in_model": {
+  "1": {
+   "content": 6,
+   "point": 33,
+   "n_contents": 13
+  }
+ },
+ "contents_off_label0": 13,
+ "carrier_cell": {
+  "caps": [
+   26,
+   91,
+   99
+  ],
+  "n_caps": 3,
+  "label": 3,
+  "pieces_in_cell": 33
+ },
+ "holes": 1193,
+ "chambers_of_X": 0,
+ "holes_eq_chambers_of_X": false,
+ "X_label0_vacant": true,
+ "labels_of_X_in_carrier_orbit": [
+  2,
+  3
+ ],
+ "X0_in_carrier_orbit": false,
+ "edge_orbits": 11,
+ "transport": {
+  "kind": "triangle",
+  "max_power": 60,
+  "home_cells": 1441,
+  "other_off_contents": 12,
+  "lattice_contents": 1437,
+  "grip_pairs": 66,
+  "commutators": 229746,
+  "landing_powers": 125751,
+  "candidates": 5798,
+  "fewest_lattice_pieces_off": 111,
+  "result": "word",
+  "to": [
+   26,
+   99,
+   126
+  ],
+  "cells_taken_off": [
+   [
+    26,
+    37,
+    126
+   ]
+  ],
+  "lattice_pieces_off": 111
+ },
+ "model_check_pass": true,
+ "exact_tries": [
+  {
+   "x": [
+    26,
+    7
+   ],
+   "y": [
+    37,
+    48
+   ],
+   "n": 3,
+   "word_len": 12,
+   "to": [
+    26,
+    37,
+    126
+   ],
+   "lattice_pieces_off": 111,
+   "other_off_in_caps": true,
+   "others_exact_pose_kept": 1088,
+   "carrier_on_after": 33,
+   "newly_off_as_expected": true
+  },
+  {
+   "x": [
+    26,
+    12
+   ],
+   "y": [
+    99,
+    4
+   ],
+   "n": 3,
+   "word_len": 12,
+   "to": [
+    37,
+    99,
+    126
+   ],
+   "lattice_pieces_off": 111,
+   "other_off_in_caps": true,
+   "others_exact_pose_kept": 1088,
+   "carrier_on_after": 33,
+   "newly_off_as_expected": true
+  },
+  {
+   "x": [
+    26,
+    45
+   ],
+   "y": [
+    126,
+    2
+   ],
+   "n": 3,
+   "word_len": 12,
+   "to": [
+    26,
+    99,
+    126
+   ],
+   "lattice_pieces_off": 111,
+   "other_off_in_caps": true,
+   "others_exact_pose_kept": 1160,
+   "carrier_on_after": 33,
+   "newly_off_as_expected": true
+  }
+ ],
+ "word_len": 12,
+ "word": [
+  [
+   26,
+   45
+  ],
+  [
+   126,
+   2
+  ],
+  [
+   26,
+   12
+  ],
+  [
+   126,
+   5
+  ],
+  [
+   26,
+   45
+  ],
+  [
+   126,
+   2
+  ],
+  [
+   26,
+   12
+  ],
+  [
+   126,
+   5
+  ],
+  [
+   26,
+   45
+  ],
+  [
+   126,
+   2
+  ],
+  [
+   26,
+   12
+  ],
+  [
+   126,
+   5
+  ]
+ ],
+ "exact": {
+  "all_admissible": true,
+  "off_before": 1193,
+  "off_after": 1271,
+  "digest_after": "ba252a9ab8b16189ae8ff5c16b660cef487a157796686ab2a6196ba7130782cc",
+  "carrier_on_after": 33,
+  "carrier_size": 33,
+  "others_off": 1160,
+  "others_exact_pose_kept": 1160,
+  "lattice_pieces_in_X_before": 111,
+  "newly_off_eq_lattice_pieces_of_X": true,
+  "off_after_eq_others_plus_latX": true
+ }
+}

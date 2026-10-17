@@ -1,0 +1,686 @@
+[
+ {
+  "unit": "b00",
+  "script": "tclose2.py",
+  "result": "no V",
+  "times": {
+   "ghost_premises": 12.1,
+   "menu_and_condition": 16.7,
+   "greedy": 300.0
+  },
+  "input_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+  "off": 1193,
+  "target_block_size": 33,
+  "W": {
+   "P": [],
+   "Q": [
+    [
+     26,
+     45
+    ],
+    [
+     126,
+     2
+    ],
+    [
+     26,
+     12
+    ],
+    [
+     126,
+     5
+    ],
+    [
+     26,
+     45
+    ],
+    [
+     126,
+     2
+    ],
+    [
+     26,
+     12
+    ],
+    [
+     126,
+     5
+    ],
+    [
+     26,
+     45
+    ],
+    [
+     126,
+     2
+    ],
+    [
+     26,
+     12
+    ],
+    [
+     126,
+     5
+    ]
+   ],
+   "P_inverse": []
+  },
+  "occupied_bad_W": 111,
+  "ghost": {
+   "T_on_lattice_at_end": 33,
+   "T_size": 33,
+   "protected_exact_at_end": true,
+   "free_alive": true,
+   "free": 0,
+   "badW_size": 111,
+   "badW_occupied": 111,
+   "T_landing_chambers": [
+    16665,
+    31819,
+    31823,
+    31824,
+    34458,
+    34459,
+    34460,
+    34465,
+    34466,
+    34471,
+    34472,
+    34473,
+    34477,
+    34479,
+    34481,
+    34482,
+    34483,
+    34484,
+    36056,
+    36068,
+    36070,
+    36072,
+    40074,
+    40077,
+    43154,
+    43159,
+    43160,
+    43163,
+    43167,
+    43170,
+    43171,
+    43172,
+    43175
+   ],
+   "T_landing_in_badW": 0,
+   "badPinv_size": 0,
+   "T_after_PQ_on_lattice": 33,
+   "T_after_PQ_in_badPinv": 0,
+   "badW_digest": "391e9473550f28fb5f63b6f539647ddcbb3b27a40a5fc8e2518693532aa3119e"
+  },
+  "vacancy": {
+   "N1": true,
+   "N2": true,
+   "deficits": [],
+   "fixed_occupied": []
+  },
+  "certificate_error": "peeling stopped at 35 of 111 target chambers",
+  "greedy": {
+   "ok": false,
+   "steps": 0,
+   "length": 0,
+   "left": 35,
+   "timed_out": true,
+   "seconds_limit": 300.0
+  }
+ },
+ {
+  "unit": "b00",
+  "script": "tclose2m3.py",
+  "result": "no V",
+  "times": {
+   "ghost_premises": 11.0,
+   "menu_and_condition": 17.0,
+   "greedy": 300.0
+  },
+  "input_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+  "off": 1193,
+  "target_block_size": 33,
+  "W": {
+   "P": [],
+   "Q": [
+    [
+     26,
+     45
+    ],
+    [
+     126,
+     2
+    ],
+    [
+     26,
+     12
+    ],
+    [
+     126,
+     5
+    ],
+    [
+     26,
+     45
+    ],
+    [
+     126,
+     2
+    ],
+    [
+     26,
+     12
+    ],
+    [
+     126,
+     5
+    ],
+    [
+     26,
+     45
+    ],
+    [
+     126,
+     2
+    ],
+    [
+     26,
+     12
+    ],
+    [
+     126,
+     5
+    ]
+   ],
+   "P_inverse": []
+  },
+  "occupied_bad_W": 111,
+  "ghost": {
+   "T_on_lattice_at_end": 33,
+   "T_size": 33,
+   "protected_exact_at_end": true,
+   "free_alive": true,
+   "free": 0,
+   "badW_size": 111,
+   "badW_occupied": 111,
+   "T_landing_chambers": [
+    16665,
+    31819,
+    31823,
+    31824,
+    34458,
+    34459,
+    34460,
+    34465,
+    34466,
+    34471,
+    34472,
+    34473,
+    34477,
+    34479,
+    34481,
+    34482,
+    34483,
+    34484,
+    36056,
+    36068,
+    36070,
+    36072,
+    40074,
+    40077,
+    43154,
+    43159,
+    43160,
+    43163,
+    43167,
+    43170,
+    43171,
+    43172,
+    43175
+   ],
+   "T_landing_in_badW": 0,
+   "badPinv_size": 0,
+   "T_after_PQ_on_lattice": 33,
+   "T_after_PQ_in_badPinv": 0,
+   "badW_digest": "391e9473550f28fb5f63b6f539647ddcbb3b27a40a5fc8e2518693532aa3119e"
+  },
+  "vacancy": {
+   "N1": true,
+   "N2": true,
+   "deficits": [],
+   "fixed_occupied": []
+  },
+  "certificate_error": "peeling stopped at 35 of 111 target chambers (depth-2 targeted search: {'depth2_scanned': 144292, 'depth2_accepted': 35})",
+  "greedy": {
+   "ok": false,
+   "steps": 0,
+   "length": 0,
+   "left": 35,
+   "timed_out": true,
+   "seconds_limit": 300.0
+  }
+ },
+ {
+  "unit": "b02",
+  "script": "tclose2.py",
+  "result": "no V",
+  "times": {
+   "ghost_premises": 11.8,
+   "menu_and_condition": 16.9,
+   "greedy": 300.0
+  },
+  "input_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+  "off": 1193,
+  "target_block_size": 111,
+  "W": {
+   "P": [],
+   "Q": [
+    [
+     12,
+     36
+    ],
+    [
+     137,
+     5
+    ],
+    [
+     12,
+     52
+    ],
+    [
+     137,
+     2
+    ],
+    [
+     12,
+     36
+    ],
+    [
+     137,
+     5
+    ],
+    [
+     12,
+     52
+    ],
+    [
+     137,
+     2
+    ],
+    [
+     12,
+     36
+    ],
+    [
+     137,
+     5
+    ],
+    [
+     12,
+     52
+    ],
+    [
+     137,
+     2
+    ]
+   ],
+   "P_inverse": []
+  },
+  "occupied_bad_W": 111,
+  "ghost": {
+   "T_on_lattice_at_end": 111,
+   "T_size": 111,
+   "protected_exact_at_end": true,
+   "free_alive": true,
+   "free": 0,
+   "badW_size": 111,
+   "badW_occupied": 111,
+   "T_landing_chambers": [
+    4493,
+    4494,
+    4499,
+    4500,
+    4501,
+    4502,
+    6006,
+    11664,
+    11665,
+    11675,
+    11676,
+    11677,
+    11678,
+    11679,
+    11681,
+    11682,
+    11683,
+    11684,
+    11685,
+    11690,
+    11691,
+    11695,
+    11696,
+    11697,
+    11698,
+    11699,
+    11700,
+    11703,
+    11704,
+    11705,
+    18573,
+    18574,
+    18594,
+    18595,
+    18596,
+    18598,
+    18599,
+    18600,
+    18601,
+    18605,
+    18606,
+    18607,
+    18608,
+    18612,
+    18613,
+    18614,
+    18616,
+    18619,
+    18620,
+    18621,
+    18622,
+    18623,
+    18626,
+    18627,
+    18628,
+    21783,
+    21784,
+    21785,
+    21787,
+    21788,
+    21790,
+    21791,
+    21792,
+    21793,
+    21794,
+    21795,
+    21796,
+    21797,
+    21798,
+    21799,
+    21800,
+    21801,
+    21802,
+    21803,
+    21804,
+    21805,
+    21806,
+    21807,
+    21808,
+    21809,
+    21810,
+    21811,
+    21812,
+    21813,
+    21814,
+    21815,
+    21816,
+    21817,
+    21818,
+    21819,
+    21820,
+    31860,
+    31863,
+    42387,
+    42388,
+    42389,
+    42390,
+    42391,
+    42400,
+    42401,
+    42402,
+    42403,
+    42404,
+    42405,
+    42406,
+    42407,
+    42409,
+    42411,
+    42412,
+    43462,
+    43463
+   ],
+   "T_landing_in_badW": 0,
+   "badPinv_size": 0,
+   "T_after_PQ_on_lattice": 111,
+   "T_after_PQ_in_badPinv": 0,
+   "badW_digest": "80e958b6f03880c27d51630f208241770132ba87bacb789bd3c33cd35b5c1b94"
+  },
+  "vacancy": {
+   "N1": true,
+   "N2": true,
+   "deficits": [],
+   "fixed_occupied": []
+  },
+  "certificate_error": "peeling stopped at 34 of 111 target chambers",
+  "greedy": {
+   "ok": false,
+   "steps": 0,
+   "length": 0,
+   "left": 3,
+   "timed_out": true,
+   "seconds_limit": 300.0
+  }
+ },
+ {
+  "unit": "b02",
+  "script": "tclose2m3.py",
+  "result": "no V",
+  "times": {
+   "ghost_premises": 10.1,
+   "menu_and_condition": 17.9,
+   "greedy": 300.0
+  },
+  "input_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+  "off": 1193,
+  "target_block_size": 111,
+  "W": {
+   "P": [],
+   "Q": [
+    [
+     12,
+     36
+    ],
+    [
+     137,
+     5
+    ],
+    [
+     12,
+     52
+    ],
+    [
+     137,
+     2
+    ],
+    [
+     12,
+     36
+    ],
+    [
+     137,
+     5
+    ],
+    [
+     12,
+     52
+    ],
+    [
+     137,
+     2
+    ],
+    [
+     12,
+     36
+    ],
+    [
+     137,
+     5
+    ],
+    [
+     12,
+     52
+    ],
+    [
+     137,
+     2
+    ]
+   ],
+   "P_inverse": []
+  },
+  "occupied_bad_W": 111,
+  "ghost": {
+   "T_on_lattice_at_end": 111,
+   "T_size": 111,
+   "protected_exact_at_end": true,
+   "free_alive": true,
+   "free": 0,
+   "badW_size": 111,
+   "badW_occupied": 111,
+   "T_landing_chambers": [
+    4493,
+    4494,
+    4499,
+    4500,
+    4501,
+    4502,
+    6006,
+    11664,
+    11665,
+    11675,
+    11676,
+    11677,
+    11678,
+    11679,
+    11681,
+    11682,
+    11683,
+    11684,
+    11685,
+    11690,
+    11691,
+    11695,
+    11696,
+    11697,
+    11698,
+    11699,
+    11700,
+    11703,
+    11704,
+    11705,
+    18573,
+    18574,
+    18594,
+    18595,
+    18596,
+    18598,
+    18599,
+    18600,
+    18601,
+    18605,
+    18606,
+    18607,
+    18608,
+    18612,
+    18613,
+    18614,
+    18616,
+    18619,
+    18620,
+    18621,
+    18622,
+    18623,
+    18626,
+    18627,
+    18628,
+    21783,
+    21784,
+    21785,
+    21787,
+    21788,
+    21790,
+    21791,
+    21792,
+    21793,
+    21794,
+    21795,
+    21796,
+    21797,
+    21798,
+    21799,
+    21800,
+    21801,
+    21802,
+    21803,
+    21804,
+    21805,
+    21806,
+    21807,
+    21808,
+    21809,
+    21810,
+    21811,
+    21812,
+    21813,
+    21814,
+    21815,
+    21816,
+    21817,
+    21818,
+    21819,
+    21820,
+    31860,
+    31863,
+    42387,
+    42388,
+    42389,
+    42390,
+    42391,
+    42400,
+    42401,
+    42402,
+    42403,
+    42404,
+    42405,
+    42406,
+    42407,
+    42409,
+    42411,
+    42412,
+    43462,
+    43463
+   ],
+   "T_landing_in_badW": 0,
+   "badPinv_size": 0,
+   "T_after_PQ_on_lattice": 111,
+   "T_after_PQ_in_badPinv": 0,
+   "badW_digest": "80e958b6f03880c27d51630f208241770132ba87bacb789bd3c33cd35b5c1b94"
+  },
+  "vacancy": {
+   "N1": true,
+   "N2": true,
+   "deficits": [],
+   "fixed_occupied": []
+  },
+  "certificate_error": "peeling stopped at 34 of 111 target chambers (depth-2 targeted search: {'depth2_scanned': 100435, 'depth2_accepted': 34})",
+  "greedy": {
+   "ok": false,
+   "steps": 0,
+   "length": 0,
+   "left": 3,
+   "timed_out": true,
+   "seconds_limit": 300.0
+  }
+ }
+]
