@@ -79,8 +79,10 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   restores the s61c state from the state alone with catalogue cores (2,374 letters against 4,402 from its history),
   and at the depth 60 stop one retained letter makes a unit of every blocking group ready, with checked strict′
   steps of at most 506 letters for 20 of the 52 units left there. A first bounded driver run from the depth 40 stop
-  made no step; most units there are triangle and tetrahedron contents, which need a transport closure that the
-  toolkit does not build yet. For height 4, an exhaustive search for four-letter commutators that move one high unit
+  made no step; most units there are triangle and tetrahedron contents, which need a transport closure (LC-13). A
+  transport search, tried on three of them, finds for each a single commutator power of 12 or 24 letters that lands
+  it, and the tetrahedron content among the three closes into a checked strict′ step of 624 letters; for the two
+  triangle contents no vacating word was found yet. For height 4, an exhaustive search for four-letter commutators that move one high unit
   and nothing else, pruned by a proved lemma, finds 232 that lower the unit at the positive control X and none for any
   unit at the depth 100 stop or the fixture end. No human has reviewed the new proofs (gap E2); once M1 is solved, a Lean formalization
   is to check them.

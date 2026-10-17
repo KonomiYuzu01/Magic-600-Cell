@@ -1,7 +1,8 @@
 # 12. Low heights: completeness of the off-lattice phase at left heights 2 and 4 (option B, 17 October 2026)
 
 Status: in progress. The statement and the plan passed a plan check and a scoped re-check; experiments E-B1 to E-B4
-and E-B6 are done, and E-B5 has a first bounded run (no step).
+and E-B6 are done, E-B5 has a first bounded run (no step) and a second under way, and the transport of LC-13 has its
+first words and one closure (section 10).
 
 The owner chose options A and B on 17 October 2026, provisionally
 ([decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md), item 4). Option A is the
@@ -291,6 +292,11 @@ minutes of search at this state. It says nothing about whether steps exist. The 
 `cellpure4.py` alone would not be enough here: no edge content at this state is both ready and passing N1 (the four
 ready ones fail N1, the fifth is not ready), and the 14 units that are ready and pass the T1 checks are triangle and
 tetrahedron contents, which need a transport.
+
+Run 2 started on 17 October with `cellpure5.py` (section 10) as the pure-twist script, through the driver's new
+option `--pure-script`, every unit tried (`--pure-max 22`), the searches of run 1 as seeds, and one hour for each
+heuristic subprocess (`--par 4 --heuristic-seconds 3600`, the other bounds as in run 1). Its record comes with the
+next update.
 
 ## 9. E-B6: four-letter commutators that lower the high units (measured, exact replay)
 
