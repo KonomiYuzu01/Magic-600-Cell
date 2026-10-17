@@ -1,0 +1,601 @@
+{
+ "closures": 20,
+ "filtered": 3,
+ "rejected": [
+  {
+   "unit": 2,
+   "rejected_tries": 2,
+   "others_changed": [
+    14
+   ],
+   "accepted_try": 3
+  },
+  {
+   "unit": 105,
+   "rejected_tries": 3,
+   "others_changed": [
+    15
+   ],
+   "accepted_try": 4
+  },
+  {
+   "unit": 122,
+   "rejected_tries": 2,
+   "others_changed": [
+    87
+   ],
+   "accepted_try": 3
+  }
+ ],
+ "rows": [
+  {
+   "unit": 2,
+   "Y_digest": "1d90e3d69a3ab5ab3188310511f49ae3eb8ba326c3ba7e9bd66227b6396f820a",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 10,
+     "word_len": 432,
+     "others_exact_pose_kept": 14510,
+     "unit_on_after": 86
+    },
+    {
+     "try": 2,
+     "solution": 13,
+     "word_len": 432,
+     "others_exact_pose_kept": 14510,
+     "unit_on_after": 86
+    },
+    {
+     "try": 3,
+     "solution": 18,
+     "word_len": 504,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 3,
+   "word_len": 504,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "50c90ed2298f81577f4cec92ac784767537212c264b6eed1dace41e4db2f394f",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 9,
+   "Y_digest": "2fcd5b6cd69cb28c929aec7017e35ffe8d2c83f5e535343e8885860fc7f0e09d",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 108,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 108,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "a8b2de836508a48056c6075bd5fe7de36d653f67e814046fef01dd1e1bd70080",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 21,
+   "Y_digest": "a99d0ccee3b3e8021b40e4967651f59c9cc3b7d73d93f6d9d0187820633d0613",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 108,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 108,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "933dacf39c6a4f86b1b99da940384e227a0600cc9befdc5047f9360aee98c7d6",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 23,
+   "Y_digest": "d7a866bbb889f37a3f93b222221615854892343c89ccf03f9393065d9c874087",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 108,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 108,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "f97f73dea1d195cd937c102c758fb6792490f402b8842ac45e7f5df4e2cc79c0",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 42,
+   "Y_digest": "0ed22e04993c880c74eded37106aefb79b524b669be69010237c6d3da1b403ad",
+   "unit_size": 45,
+   "others_off": 14565,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 360,
+     "others_exact_pose_kept": 14565,
+     "unit_on_after": 45
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 360,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14565,
+    "digest_after": "1e6708845c32b67c2368c66892ceb184b3e4657f98f5eaa3057d0b2230d84445",
+    "others_exact_pose_kept": 14565,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 62,
+   "Y_digest": "941defc2922faf30fd415be16b6f3fac138bc7af57fb3627681d68b0f701da94",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 7,
+     "word_len": 432,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 432,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "8228c12389f518b0e4b1a65fa174148ce109cf9efc035586c809d5dcb43bf0e8",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 65,
+   "Y_digest": "62e2cef3377c2721f495efbb7825bb7386a289af1e32690267b54332ea8caea5",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 432,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 432,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "7e45f24120b8832f2f65163bbaf450431cb6f228158d5d2d28b4d2bb91204f9b",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 79,
+   "Y_digest": "2dce3078c5948932c8fc1216c22f8ec4138ca72bfe4a06fa7186aa03490c7ccb",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 2,
+     "word_len": 324,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 324,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "326727b8e6ced15f2eb19688cf79d4c1fbe607b475b38446e2c81fae6f545a05",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 82,
+   "Y_digest": "6953c3f63570543b5154e8c197c941daab666b43780db24567b106349de4ba75",
+   "unit_size": 41,
+   "others_off": 14569,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 2,
+     "word_len": 432,
+     "others_exact_pose_kept": 14569,
+     "unit_on_after": 41
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 432,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14569,
+    "digest_after": "23d5ca90e1af4286f2e05ac04cbd69e72807331d11f98dd24e12cd6b7b618d9d",
+    "others_exact_pose_kept": 14569,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 95,
+   "Y_digest": "bff48b507c38505dcd096ce4c643d1ae2d310ce2859fb12257539980b266ef23",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 432,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 432,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "b84f6ea40df2d907b8f665ed904c62fc95cf99556a4ffb9e9fade0b81cffa0c1",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 100,
+   "Y_digest": "837a9ec2b46200f4904d9f45b70bd174bd788c254303db9295da43ffdf0e025d",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 2,
+     "word_len": 324,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 324,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "ef362f379280327067a20f2737bc1ead52924e58c0333eb7b4bd6d6da4e3ee5d",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 105,
+   "Y_digest": "663a29f56fdd06e7fc2ac267ae9fdd426d75c5ce688c2b6c24dcd1dcf0a3bfa3",
+   "unit_size": 45,
+   "others_off": 14565,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 288,
+     "others_exact_pose_kept": 14550,
+     "unit_on_after": 45
+    },
+    {
+     "try": 2,
+     "solution": 1,
+     "word_len": 288,
+     "others_exact_pose_kept": 14550,
+     "unit_on_after": 45
+    },
+    {
+     "try": 3,
+     "solution": 2,
+     "word_len": 432,
+     "others_exact_pose_kept": 14550,
+     "unit_on_after": 45
+    },
+    {
+     "try": 4,
+     "solution": 3,
+     "word_len": 432,
+     "others_exact_pose_kept": 14565,
+     "unit_on_after": 45
+    }
+   ],
+   "accepted_try": 4,
+   "word_len": 432,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14565,
+    "digest_after": "30f64bcf065f77bc2e8ced0e58fee67a5c2ff9020bb350f3dbad9f9da33893fc",
+    "others_exact_pose_kept": 14565,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 108,
+   "Y_digest": "852f6b507b8029c3f6d686a12e2a6fe8872a74b41432fe9e8d712250803366b4",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 432,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 432,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "04bf8fd6c84499253cef7a592a50b4b140f39e9a04168d91cd45d387748b93ba",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 110,
+   "Y_digest": "8799542794ced195a0d37ead8b8f1d7dcb5a261bec9009c96d2ab15b8e67d3d3",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 108,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 108,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "d5e6803776f5928675021e5093c6b788f6ea8945059f09d190f682c28249b48a",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 122,
+   "Y_digest": "2778b2ca29f1822a06a9159125e97dc30ffeab50bd3c2ec45dcb13d4df20a0bd",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 288,
+     "others_exact_pose_kept": 14437,
+     "unit_on_after": 86
+    },
+    {
+     "try": 2,
+     "solution": 1,
+     "word_len": 288,
+     "others_exact_pose_kept": 14437,
+     "unit_on_after": 86
+    },
+    {
+     "try": 3,
+     "solution": 2,
+     "word_len": 324,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 3,
+   "word_len": 324,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "79048a41bcb24a03d28f530d5bca7aa34c101dcb5ef36dddd9e108e4f2084c64",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 134,
+   "Y_digest": "12081254dcbbf35aec1f67a4946217840c856e9f665c89265e9b9e7a470fdd4c",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 324,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 324,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "18ce70d444a24cecb41a309ca2036528fe07c68a08c4e9495fdc5ffa8fabbd3c",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 148,
+   "Y_digest": "4f76fb68705317e5caf1e672c96c5cdc721410fdfb2be8fb1c35f6e4b06ee4d5",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 324,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 324,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "52e3fbce95ec264f53bffb2cda83c79a1f9cca6e32e02be026e50d7be95b5266",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 153,
+   "Y_digest": "65c45cc2f31fe1e163c085c3534035bdeff693c3c184f35ec3c9ed3ed6a46d19",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 0,
+     "word_len": 324,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 324,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "043ec9b7bb4f7dfa0ba99c88dac05df1caaa79f5dfc9d4d02fe22567607b8527",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 158,
+   "Y_digest": "b227b233d3dce22aa4ee4f8de32423d1998614e944870281d836f44722264f41",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 2,
+     "word_len": 324,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 324,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "d3b19ecd16f228c4ee06a9d10bb3c6ae663b30ee381b426b34df2effcae653ca",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  },
+  {
+   "unit": 166,
+   "Y_digest": "2af3710b5dfdd6f528c33f5a7a3eae7687c1955d8208bdbfafa003d3074481b3",
+   "unit_size": 86,
+   "others_off": 14524,
+   "tries": [
+    {
+     "try": 1,
+     "solution": 4,
+     "word_len": 432,
+     "others_exact_pose_kept": 14524,
+     "unit_on_after": 86
+    }
+   ],
+   "accepted_try": 1,
+   "word_len": 432,
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14524,
+    "digest_after": "a1b2688b6838a57abbfcc11f6f316927b29b0e2cf7583ae08fbcfa3a07ce9fa7",
+    "others_exact_pose_kept": 14524,
+    "lattice_pieces_in_X_before": 0,
+    "newly_off_eq_lattice_pieces_of_X": true
+   }
+  }
+ ]
+}

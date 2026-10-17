@@ -235,9 +235,10 @@ domain can have contents in several cells, so the unit's content is found by its
 to have one content). And the class-cell model compares content points (cell, label) only, so another off content
 can come back to its point at another exact pose: cellpure4 replays the model-passing solutions exactly, shortest
 first (at most 12), and takes the first that lands the unit, keeps the exact pose of every other off piece and takes
-off only the lattice pieces of the cell. That filter decided 3 of the 20 closures: at the units 2, 105 and 122 the
-shortest solutions left 14, 15 and 87 pieces of other contents at their points but at other poses, and the third or
-fourth solution kept them all.
+off only the lattice pieces of the cell. That filter decided 3 of the 20 closures (`runs/eb4-exact-tries-k60.json`,
+copied from the records of `cellpure4.py` by `scripts/eb4_tries.py`): at the units 2, 105 and 122 the first two,
+three and two solutions tried left 14, 15 and 87 pieces of other contents at their points but at other poses, and
+the third, fourth and third kept them all; at the other 17 the first solution tried passed.
 
 | Stage | Units (pieces) | Notes |
 |---|---|---|
@@ -335,6 +336,7 @@ E-B4, with `C` and `R` as above (`k60.json` is the depth 60 stop as a pose table
     python3 -I -B $S/eb4.py $C/ia-k60-s7104.json $R/screen-k60.json <out>         # about 31 minutes
     python3 -I -B $S/eb4_close.py k60.json $R/eb4-k60.json <work dir> --par 2     # about 77 minutes
     python3 -I -B $S/eb4_replay.py k60.json $R/eb4-k60-steps <out>               # about 10 minutes
+    python3 -I -B $S/eb4_tries.py <work dir> <out>
 
 `eb4_close.py` writes `close.json` and, per unit k, a directory `u<k>/` with the tables, logs and words of its stages;
 `step-word.json` there is the step at Z.
@@ -360,6 +362,6 @@ directory of the start table written as `<working tree>`, as in the stage 09 run
 | `scripts/eb3_prep.py`, `scripts/eb3_finish.py`, `scripts/eb3_replay.py` | E-B3: the preparation V0 and creator D; the middle and last phases with their vacating words; the independent replay |
 | `runs/eb3-prep*.json`, `runs/eb3-finish*.json`, `runs/eb3-replay.json` | E-B3 records and words (52 and 2,322 letters) with input and output digests, and the replay record; a rerun reproduces them except the timing fields |
 | `scripts/export_table.py` | The state at the end of a census record as a pose table |
-| `scripts/eb4.py`, `scripts/eb4_close.py`, `scripts/cellpure4.py`, `scripts/eb4_replay.py` | E-B4: the structural stage and N1 and N2 at Y; the closures and the steps at Z; the class-cell pure twist with the exact-pose filter; the independent replay |
-| `runs/eb4-k60.json`, `runs/eb4-close-k60.json`, `runs/eb4-k60-steps/u<k>.json`, `runs/eb4-replay-k60.json` | E-B4 records: stages 1 and 2 (`eb4.py`), the closures and the checked steps (`close.json` of `eb4_close.py`), the 20 step words with input and output digests, and the replay record |
+| `scripts/eb4.py`, `scripts/eb4_close.py`, `scripts/cellpure4.py`, `scripts/eb4_replay.py`, `scripts/eb4_tries.py` | E-B4: the structural stage and N1 and N2 at Y; the closures and the steps at Z; the class-cell pure twist with the exact-pose filter; the independent replay; the filter's tries at each closure |
+| `runs/eb4-k60.json`, `runs/eb4-close-k60.json`, `runs/eb4-k60-steps/u<k>.json`, `runs/eb4-replay-k60.json`, `runs/eb4-exact-tries-k60.json` | E-B4 records: stages 1 and 2 (`eb4.py`), the closures and the checked steps (`close.json` of `eb4_close.py`), the 20 step words with input and output digests, the replay record, and the exact-pose filter's tries with the digest of each state Y |
 | `runs/eb5-k40-run1.jsonl` | E-B5 run 1: the driver's event record (no step) |
