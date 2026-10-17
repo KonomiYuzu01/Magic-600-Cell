@@ -406,7 +406,8 @@ Two mathematical gaps; the owner closed M2 on 17 October 2026, so M1 is the one 
 
 Two evidence gaps:
 - **E1. Coverage.** The method has been run on the inputs of section 6 only. Deep scrambles (the I_a@40 scale,
-  about 94,000 off pieces, multi-frame and frozen blocks) were not run with it.
+  about 94,000 off pieces, multi-frame and frozen blocks) were not run with it. Stage 11 (17 October 2026) began a
+  census of phase U alone on unrestricted random scrambles ([README](../11-scramble-census/README.md)).
 - **E2. Proof text and review.** On 15 October 2026 a Codex senior review checked the proofs of stage 08 (Fact 1',
   Lemmas U, D and CM, Propositions F and GH, Theorem D1) and of the lattice phase (Theorem R, Theorems A and B5,
   the span of the library). It proved Lemma C as Theorem C with a length bound, and proved the M1 results above. It

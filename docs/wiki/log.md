@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-17] decision | Jumbling: coverage census and low-height theorem (provisional)
+After the first scramble experiments ([scramble census](../../research/jumbling/restoration/11-scramble-census/README.md)) the owner chose, provisionally, option A (a measured coverage census of the method on random scrambles and a manual of its techniques) with option B (a completeness theorem for low heights, aimed at the residues the census leaves); further work on the strong form of gap M1 is not pursued for now ([decision](decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)).
+
 ## [2026-10-17] decision | Jumbling: a tutorial first, from unrestricted scrambles
 The owner made a tutorial that people can read and carry out the main output of the restoration research, rejected restricting the scrambles to what the method covers, and asked for scramble experiments before choosing among the research options ([decision](decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)).
 

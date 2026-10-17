@@ -3,13 +3,14 @@ id: owner-decisions-2026-10-17-jumbling-tutorial
 type: decision
 status: verified
 visibility: public
-summary: Owner decision of 17 October 2026 - the most important output of the jumbling restoration research is a tutorial that people can read and carry out; its scrambles are not restricted; scramble experiments come first, and the owner chooses the research option from their results.
+summary: Owner decision of 17 October 2026 - the most important output of the jumbling restoration research is a tutorial that people can read and carry out; its scrambles are not restricted; scramble experiments come first, and the owner chooses the research option from their results. After the first experiments the owner chose, provisionally, a measured coverage census with a technique manual and a completeness theorem for low heights.
 related: [owner-decisions-2026-10-17-jumbling-m2, owner-decisions-2026-10-10-jumbling-complete, owner-decisions-2026-10-15-jumbling-restored]
 supersedes: []
 claims:
   - {id: tutorial-first, evidence_kind: decision, checked_at: 2026-10-17}
   - {id: no-restricted-scrambles, evidence_kind: decision, checked_at: 2026-10-17}
   - {id: experiments-before-options, evidence_kind: decision, checked_at: 2026-10-17}
+  - {id: options-a-and-b, evidence_kind: decision, checked_at: 2026-10-17}
 ---
 
 # Owner decision, 17 October 2026: a tutorial first, from unrestricted scrambles
@@ -30,6 +31,14 @@ The owner gave this decision in chat messages in Chinese; this page records it i
 3. **Experiments first.** The integrator first runs scramble experiments: the existing state-only procedure on
    fresh random scrambles of increasing depth, recording how far it gets, where it stops and what is left. The
    owner then chooses the research option from the results.
+4. **Options A and B, provisionally.** After the first experiments the owner chose, for now and open to change:
+   - option A, the measured coverage census of the method on random scrambles and a manual of the techniques it
+     uses;
+   - option B, a completeness theorem for low heights, aimed at what the census leaves behind: pieces at left
+     height 2 and 4, in blocks that hold one another up.
+
+   Further work on the strong form of gap M1 is not pursued for now. The integrator's assessment and the first
+   results are in the [scramble census](../../../research/jumbling/restoration/11-scramble-census/README.md).
 
 ## Effect
 
