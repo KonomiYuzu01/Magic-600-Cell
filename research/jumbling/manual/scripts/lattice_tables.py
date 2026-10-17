@@ -109,8 +109,13 @@ def library_tables():
         if nm in rows:
             print(f"| {nm} | {', '.join(map(str, rows[nm]))} | {sum(length[i] for i in rows[nm]):,} |")
     assert len(fives) == 2 and sum(length[i] for i in bits) + 2 * sum(length[i] for i in fives) == 25852
+    # the two C5 macros: independent over F5, and the changes the C5 rules of section 4.3 use
+    c5 = {i: vec(macros[i]['nu'])[1] for i in fives}
+    (a, b), (c, d) = c5[fives[0]], c5[fives[1]]
+    assert (a * d - b * c) % 5, f'C5 macros {fives} are dependent over F5'
+    assert c5 == {27: [4, 0], 30: [0, 1]}, c5
     print()
-    print(f'checks: rank {len(basis)} over F2, C5 macros {fives}, bound '
+    print(f'checks: rank {len(basis)} over F2, rank 2 over F5 (C5 macros {fives}), bound '
           f'{sum(length[i] for i in bits)} + 2 x {sum(length[i] for i in fives)} = 25,852')
 
 

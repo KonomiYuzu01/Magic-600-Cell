@@ -49,9 +49,11 @@ retained twists solve every lattice configuration the puzzle can reach that has 
 group is exactly the kernel of ν, G = 𝒦;
 [stage 03](../restoration/03-retained-group-and-lattice-restorer/README.md)).
 
-In the retained puzzle these rules are why a lone swap of the two buffers, or a lone flip or turn of the last buffer,
-can never be left at the end of an orbit ([solving workflow](../../../docs/progress/1.0/solving-workflow.md),
-section 3.4).
+In the retained puzzle these rules are why some residuals can never be left at the end of an orbit: a lone swap of
+the two buffers, a lone flip of the last buffer in a C2 orbit or in O06, and a lone turn of the last buffer in O17 or
+O28. Two residuals of the last buffer are allowed, because no rule counts them: a turn in O06 (one of its four frames
+of order 5) and any frame in O34. Retained twists remove them: the commutator of two orientation transfers changes
+only that buffer's frame ([solving workflow](../../../docs/progress/1.0/solving-workflow.md), section 3.4).
 
 ### What a jumbled history can leave
 
@@ -63,8 +65,11 @@ certificate of 40 words):
 - C5_17 and C5_28 can take any value modulo 5;
 - the other nine coordinates are always 0: b0, b1, b2, b3, b5, b6, f0, f3 and f6.
 
-So in the jumbled puzzle, on an orbit whose coordinate can be nonzero, a lone buffer swap, or a lone flip or turn
-of the last buffer, at the end of the orbit is not a mistake. It is ν, and no retained twist can remove it.
+So in the jumbled puzzle three of the forbidden residuals can be ν instead of a mistake: a lone swap of the two
+buffers in an orbit whose sign bit can be 1, a lone flip of the last buffer in O08, O11, O22, O25 or O32, and a lone
+turn of the last buffer in O17 or O28. No retained twist can remove them. A lone swap in O00 to O03, O05 or O06, and
+a lone flip in O00, O03 or O06, still cannot be left, because their coordinates are always 0. Once the corrections
+below have brought ν to 0, all of them are impossible again.
 
 *In the program:* ν, coordinate by coordinate, on a lattice configuration. It is a fact about the configuration.
 
