@@ -75,3 +75,6 @@ lower N, take it back and try another. Two things follow:
 From every configuration that a scramble can reach, some word lowers N (proved,
 [restoration](../theory/restoration.md) Theorem U: undoing the scramble is one), but nothing bounds how long that
 word must be. Chapter 2 gives the three short kinds of step that did almost all the work in practice.
+
+*In the program:* at a cap the solver names, the three-twist repairs that lower N, each with its three twists
+(section 2.3). It lists no other steps that lower N.

@@ -158,9 +158,22 @@ within the first few openings of the cap with the largest N_c. From step 44 on, 
 about 110 openings, and considered about 800 pairs of opening and neighbour, before a repair worked; at most 1,598
 openings and 17,686 pairs. At the cap where it worked, only 1 to 11 of the 472 to 1,298 pairs lowered N, and at 9 of
 the 15 steps measured only the one it found. Neither the face match nor the cover order points to the pair. A person
-who proposes words one at a time, with the checks this manual asks of the program, faces a search of this size at
-most tail steps (at 48 of the 52 from step 44 on, the rule made at least 59 openings); how the tail can be made
-practical is open (section 2.6).
+who proposes words one at a time would face a search of this size at most tail steps (at 48 of the 52 from step 44
+on, the rule made at least 59 openings).
+
+**With the program's repair list.** The program lists, for a cap the solver names, the pairs (x, d) whose repair
+lowers N, each with its y and z (owner decision, 17 October 2026:
+[record](../../../docs/wiki/decisions/owner-decisions-2026-10-17-repair-pairs.md)). It does not choose the cap, and
+it marks no pair as best. So a repair step goes:
+1. Name the misaligned cap with the largest N_c that can turn, and ask for its repair list.
+2. If the list is empty, no repair at that cap lowers N: name the next cap by decreasing N_c (among equal N_c,
+   the smaller cap number first, as the census did).
+3. Pick a pair from the list and make its three twists, x, then y, then z.
+
+On the record of seed 7101 the list was empty at every cap before the one where the census found its repair, since
+the census took the first repair that worked in this order. That cap was the first named at 15 of the 63 repair
+steps, the second at 26 and the third at 13, and at most the 28th. Its list held 1 to 11 pairs at the 15 tail steps
+measured.
 
 ### Example: a twist buried under a later one
 
@@ -190,7 +203,7 @@ N drops by 2. Cap 400 was never turned in the scramble. Steps like this are the 
 this one took the machine search about nine minutes to find.
 
 *In the program:* for a word the solver proposes, whether it lowers N and by how much (the sum of its own-cut
-changes); the floor of each cap.
+changes); the floor of each cap; for a cap the solver names, its repair list.
 
 ## 2.4 Rarer steps
 
@@ -251,12 +264,13 @@ goes on to chapter 3.
 - **A step that lowers N always exists** from every configuration a scramble can reach: undoing the scramble is
   one (proved, Theorem U). Nothing bounds how long it must be. The three techniques are short steps that did almost
   all the work in practice, not a guarantee.
-- **Finding a step takes a search, and in the tail a long one** (measured on one record). With the facts the
-  program shows, a face match took a median of 71 checks when each cap's twists are tried in menu order, caps by
-  decreasing N_c; reading the domains (section 2.1) narrows a cap to at most 12 twists, which was not measured. In
-  the tail the census rule made a median of about 110 openings and considered about 800 pairs of opening and
-  neighbour per repair; at the right cap only 0.08% to 1.9% of the pairs lower N, and nothing visible marks them
-  ([census](../restoration/11-scramble-census/README.md), "What a person would have to try"). Whether a person can
-  carry out the tail, and with what help from the program, is open.
+- **Finding a step takes a search, and in the tail a long one without the repair list** (measured on one record). With
+  the facts the program shows, a face match took a median of 71 checks when each cap's twists are tried in menu order,
+  caps by decreasing N_c; reading the domains (section 2.1) narrows a cap to at most 12 twists, which was not
+  measured. In the tail the census rule made a median of about 110 openings and considered about 800 pairs of opening
+  and neighbour per repair; at the right cap only 0.08% to 1.9% of the pairs lower N, and nothing visible marks them
+  ([census](../restoration/11-scramble-census/README.md), "What a person would have to try"). With the repair list of
+  section 2.3 a person names caps instead, one or two at 41 of the 63 repair steps and at most 28, and picks one of
+  the 1 to 11 pairs listed (measured on one record; the list at 15 of its 63 repair steps).
 - **The rules read only the configuration.** They never need the scramble's record. This chapter uses that record
   only to label its examples.

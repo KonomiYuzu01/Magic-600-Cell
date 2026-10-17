@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-17] decision | Jumbling: one draft pull request until the program is done
+The owner asked for no new pull request per task: the jumbling work collects in draft pull request #112, which merges only after the A and B theory is complete, the tutorial is written and accepted, the Archon formal verification passes, and the handoff and observation logs for Taste Lab, Look Lab, the renderer line and the engineering line are done ([decision](decisions/owner-decisions-2026-10-17-jumbling-pr.md)).
+
+## [2026-10-17] decision | Jumbling: the program may list the repairs that lower N at a cap
+The owner settled the human-solve boundary for restoring the jumbled puzzle: at a cap, the program may list the pairs (x, d) whose three-twist repair lowers N, and the person picks one; measured, 1 to 11 such pairs per tail step ([decision](decisions/owner-decisions-2026-10-17-repair-pairs.md)). The owner confirmed the integrator's readings (a list at a cap the solver names, each pair with its y and z, in a neutral order; elsewhere the boundary of 2 October 2026 is unchanged) and authorized the briefing's jumbling line to state the exception.
+
 ## [2026-10-17] decision | Jumbling: coverage census and low-height theorem (provisional)
 After the first scramble experiments ([scramble census](../../research/jumbling/restoration/11-scramble-census/README.md)) the owner chose, provisionally, option A (a measured coverage census of the method on random scrambles and a manual of its techniques) with option B (a completeness theorem for low heights, aimed at the residues the census leaves); further work on the strong form of gap M1 is not pursued for now ([decision](decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)).
 

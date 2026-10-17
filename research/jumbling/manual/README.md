@@ -16,8 +16,11 @@ proof or a measurement, a short note says which, with a link to the research rec
 The method needs the program to show facts about the configuration and to check moves the solver proposes. It never
 needs the program to choose a move: the tools never list the twists that would help, rank caps or mark a next move
 (the human-solve boundary of 2 October 2026; the requirements are in
-[jumbling-observation](../../../docs/progress/1.0/jumbling-observation.md)). The 1.0 program is not built yet; this
-is what it has to show for the manual to work:
+[jumbling-observation](../../../docs/progress/1.0/jumbling-observation.md)). The one exception is the repair list
+of section 2.3: for a cap the solver names, the program lists the three-twist repairs that lower N, and the solver
+picks one (owner decision, 17 October 2026:
+[record](../../../docs/wiki/decisions/owner-decisions-2026-10-17-repair-pairs.md)). The 1.0 program is not built
+yet; this is what it has to show for the manual to work:
 
 - which caps are **blocked** (a piece sticks across their cut) and which piece blocks them;
 - the **domain** of every piece, for example as a tint: pieces that were turned together and still fit together;
@@ -28,6 +31,8 @@ is what it has to show for the manual to work:
   face of their own domain;
 - a **check** of a twist or a short word that the solver proposes: what N_c and N would become, and which pieces it
   would move;
+- for a cap the solver names, its **repair list**: the pairs (x, d) whose three-twist repair lowers N, each with
+  its y and z (chapter 2, section 2.3);
 - for two caps the solver names, whether one **covers** the other (chapter 2, section 2.2; not yet in the
   observation requirements);
 - the solver's **own twist record**, so the solver can take back an earlier twist of their own;
@@ -63,6 +68,7 @@ Labels used in this manual:
 | The descent's three techniques take random scrambles of 10 to 40 twists to the lattice | measured: three of the four scrambles of 10 to 40 twists; the fourth was 98.7% back when the clock stopped it | [census](../restoration/11-scramble-census/README.md) |
 | On deeper scrambles the descent slows and leaves a tail | measured | [census](../restoration/11-scramble-census/README.md) |
 | With the facts the program shows, a face match took a median of 71 checks in a simple search order, and a three-twist repair in the tail a median of about 110 openings and 800 pairs of opening and neighbour | measured on one record | [census](../restoration/11-scramble-census/README.md) |
+| With the repair list, a repair step took naming one or two caps at 41 of 63 steps (at most 28) and picking one of 1 to 11 listed pairs | measured on one record; the list at 15 of its 63 repair steps | [census](../restoration/11-scramble-census/README.md) |
 | Off the lattice, every unit has a clean step: a word after which the unit and every piece that was on the lattice are on the lattice, while the other off pieces may move or land; an exhaustive search from the state alone finds one | proved; its length is not bounded | [senior review](../restoration/09-general-method/SENIOR-REVIEW.md) (Theorem M\*) |
 | A strict clean step, which also keeps every other off piece at its exact pose, always exists | open | [general method](../restoration/09-general-method/METHOD.md), gap M1 |
 | The tail can always be finished by the techniques of chapter 3, with lengths a person can carry out | open | [stage 12](../restoration/12-low-height/README.md) |
