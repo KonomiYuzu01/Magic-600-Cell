@@ -222,15 +222,15 @@ Two mathematical gaps:
     carrier together with one of them, and pure-twists the other. Its partner creation comes from the history, so
     it is a bound for this state, not a construction.
   - *Uniform bounds.* A uniform bound on the restoration length, or on one clean step at every reachable state,
-    exists if and only if R(I_a) is finite (Card 5 Q1.1, open). A search that bounds every piece's height is finite,
-    and retained preparation for a given middle word has an explicit finite bound; both bounds are astronomically
-    large.
-  - *Finiteness (round 9).* Still open (`SENIOR-REVIEW.md` section 14). A word repeated without end is periodic,
+    exists if and only if R(I_a) is finite (Card 5 Q1.1). R(I_a) is infinite (stage 10, 17 October 2026), so no
+    uniform bound exists. A search that bounds every piece's height is finite, and retained preparation for a given
+    middle word has an explicit finite bound; both bounds are astronomically large.
+  - *Finiteness (round 9).* Open then (`SENIOR-REVIEW.md` section 14). A word repeated without end is periodic,
     with a period that depends on neither the word nor the state, so no repeated word raises heights without bound
     (T9-02). No single letter takes the deep state H6 of stage 04 to height 8 (exact, T9-04). For each m, the
     states whose heights are at most 2m have a finite maximum distance to the lattice, but no value of it is known
     (T9-05).
-  - *Finiteness (rounds 13 to 20).* Still open (`SENIOR-REVIEW.md` sections 18 to 25). Every left height is at most
+  - *Finiteness (rounds 13 to 20).* Open then (`SENIOR-REVIEW.md` sections 18 to 25). Every left height is at most
     6 if and only if P6 holds: at every reachable configuration, every cap of a grip of another branch that wholly
     contains a piece of height at least 6 is straddled (T13-03). P6 is false (round 15, T15-01): after the fixture
     records 1 to 723, four admissible letters take seven pieces of model orbits 19 to 24 to height 8. Grip 593
@@ -273,7 +273,13 @@ Two mathematical gaps:
     cut is lined only by lattice pieces and pieces of height 2 in its branch (E20-2). The number of raises at grips
     that are already out, or fresh raises where TH fails, is not bounded while the pieces stay high, because one
     such raise and its inverse repeat without end (T20-03), and at the trap before (526, 12) letters at other grips
-    free no other raiser (T20-05). Open: whether left heights are bounded at all.
+    free no other raiser (T20-05). Whether left heights are bounded at all stayed open after round 20.
+  - *Finiteness (17 October 2026).* Settled: left heights are unbounded and R(I_a) is infinite
+    ([stage 10](../10-x1-unbounded/README.md)). An explicit family of words, admissible from the solved state,
+    alternates jumbles at two grips 36 degrees apart whose caps both hold seven pieces whole. Two finite Good sets
+    keep the other pieces of each cap from blocking the other cut, and every letter raises the seven pieces by 2.
+    A ball certificate of seven label-returning words keeps the family going without end. So bounds for M1 must
+    depend on the state.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not

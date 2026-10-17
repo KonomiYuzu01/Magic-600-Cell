@@ -1,0 +1,109 @@
+{
+ "source": "output archive of the X1 run of 16 to 17 October 2026 (x1-out.tar.gz)",
+ "source_sha256": "5f230dbe44415acad7bff9cc45d3871f90cab78d39481e2297bfee6b7164f748",
+ "paths": "the run's out/ is this directory; its programs ran from an export of commit f281b08 named repo/ and now run from the repository root",
+ "files": [
+  {
+   "run_path": "out/REPORT.md",
+   "path": "REPORT.md",
+   "sha256_in_run": "3fa18695f2dc157591b46deb58b91c39f6d092e277f03d7967656770e8e18a42",
+   "rewritten": true
+  },
+  {
+   "run_path": "out/programs/CERT.py",
+   "path": "programs/CERT.py",
+   "sha256_in_run": "1f84949f50dcd46f36949d82091e7d28010069dfb7f88c892b2d40d1f2285fe8",
+   "rewritten": true
+  },
+  {
+   "run_path": "out/programs/FAMILY.py",
+   "path": "programs/FAMILY.py",
+   "sha256_in_run": "64ba079f753f6504dca65657caed89cd6c2b2882148538dce90d7f8be8bda6c6",
+   "rewritten": true
+  },
+  {
+   "run_path": "out/programs/H20.py",
+   "path": "programs/H20.py",
+   "sha256_in_run": "800c6abe438e89205baf534da732b7eb3bae1befc160fd739f9c4416799cd974",
+   "rewritten": true
+  },
+  {
+   "run_path": "out/programs/PUMP.py",
+   "path": "programs/PUMP.py",
+   "sha256_in_run": "82a1245b89a1c3764ca4665fd8d3e87789f3096ff2a2232362ff651f002953f1",
+   "rewritten": true
+  },
+  {
+   "run_path": "out/programs/replay.py",
+   "path": "programs/replay.py",
+   "sha256_in_run": "c9919cda44eeec988afb40d876d3e7c3f337de431ecec8de4e0eea43f7e0b2a5",
+   "rewritten": true
+  },
+  {
+   "run_path": "out/witnesses/CERT.json",
+   "path": "witnesses/CERT.json",
+   "sha256_in_run": "5cb100209aa4c96cfa75b73a323521a94ca462611115cad8625c5c49150dedc2",
+   "rewritten": true
+  },
+  {
+   "run_path": "out/witnesses/F3.json",
+   "path": "witnesses/F3.json",
+   "sha256_in_run": "fe55a7caef6e9c3eb8ef16b8e68908dd51a2a15c0adeaee37912b3004615d83d",
+   "rewritten": false
+  },
+  {
+   "run_path": "out/witnesses/F40.json",
+   "path": "witnesses/F40.json",
+   "sha256_in_run": "e820d7e9de34fdacf5a7c9674797c9a974d1cc5e67a5c5fef9c3fc070b1ab90a",
+   "rewritten": false
+  },
+  {
+   "run_path": "out/witnesses/H122.json",
+   "path": "witnesses/H122.json",
+   "sha256_in_run": "dd7a477f99129d0f2cd87ee668e69ea76d324f3ee1b08fae9f745c4a4c08a2fb",
+   "rewritten": false
+  },
+  {
+   "run_path": "out/witnesses/H1230.json",
+   "path": "witnesses/H1230.json",
+   "sha256_in_run": "545671060cbe5c1810356cc1a8b1628bb9c18b0d66770455ccaa0631447d0172",
+   "rewritten": false
+  },
+  {
+   "run_path": "out/witnesses/H20.json",
+   "path": "witnesses/H20.json",
+   "sha256_in_run": "eed567520e5df5dc3dc455b515a9fb7b7cb57d7eed3733936be9628394e8ba4b",
+   "rewritten": false
+  },
+  {
+   "run_path": "out/witnesses/H22.json",
+   "path": "witnesses/H22.json",
+   "sha256_in_run": "8aea5a106aa520cde32c567f136da562fd5f97dc8fe7694ec99704bc505cea30",
+   "rewritten": false
+  },
+  {
+   "run_path": "out/witnesses/H34.json",
+   "path": "witnesses/H34.json",
+   "sha256_in_run": "34da4fc6e978a37a9b2171d0f8b406f88c6edf4b881a509e82c6266ead7e0889",
+   "rewritten": false
+  },
+  {
+   "run_path": "out/witnesses/H38.json",
+   "path": "witnesses/H38.json",
+   "sha256_in_run": "532333fa0ced147c89aebbf8339bff5e8e2dc01ea73864deb8643e6a31057dc0",
+   "rewritten": false
+  },
+  {
+   "run_path": "out/witnesses/H52.json",
+   "path": "witnesses/H52.json",
+   "sha256_in_run": "23fca9a5722ade5ff15ba422c86c92bda6e3f2159306b0bef939f5dd4cceb899",
+   "rewritten": false
+  },
+  {
+   "run_path": "out/witnesses/H6030.json",
+   "path": "witnesses/H6030.json",
+   "sha256_in_run": "87e72c1fc264f3b33450ee638c4a9a12cdc81a55bb535033fba62d08097240f2",
+   "rewritten": false
+  }
+ ]
+}

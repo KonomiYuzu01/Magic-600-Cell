@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-17] update | Jumbling: X1 settled, the reachable set of I_a is infinite
+The X1 run found an explicit family of words that raises seven pieces without bound, by jumbles at two caps that both hold them whole, with a ball certificate that keeps it going; the integrator checked it before import (line-by-line reading against the simulator, exact re-runs, three independent checkers), and at the owner's request X1 is marked proved in [open problems](../../research/jumbling/theory/open-problems.md) and [stage 10](../../research/jumbling/restoration/10-x1-unbounded/README.md). The run's billed spend is on the [decision page](decisions/owner-decisions-2026-10-16-x1-api-budget.md).
+
 ## [2026-10-16] decision | X1 run on the owner's API credit, budget USD 200
 The owner approved one unattended run on open problem X1 on their own API credit with a budget of USD 200, above the first paid API ceiling of USD 100, for that run only ([decision](decisions/owner-decisions-2026-10-16-x1-api-budget.md)); the integrator checks every result independently before it enters the repository. The README summaries now state that the round 11 lattice schedule is implemented.
 

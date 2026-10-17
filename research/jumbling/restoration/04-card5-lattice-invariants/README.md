@@ -21,7 +21,7 @@ Labels:
 | 3.2 sign 8 = sign 25? | **no**: the 9-twist word M8 has sign 8 odd and sign 25 even (Theorem 3.2) |
 | 3.3 frames zero? | **no**: f8, f11, f22, f25, f32 and the C5 frames of orbits 17 and 28 are nonzero on A_J |
 | 3.4 are conjugated half-turns enough? | **no**: their ν values generate exactly ⟨b4, b7, b8, …, b34⟩ = C2^29. The upper bound holds under H |
-| 1.1 is R(I_a) finite? | **open, with proved partial bounds.** Proposition HB, with certificate REFX: model orbits 0, 1, 2, 3, 6 never pass left height 2; orbits 4, 5, 7, 8 never pass height 4; orbit 9 never passes height 6. Height 6 is reachable (H6), and so is height 8 (senior review round 15, T15-01: seven pieces of model orbits 19 to 24). Orbits 10 to 34 have no proved bound |
+| 1.1 is R(I_a) finite? | **answered on 17 October 2026: no** ([stage 10](../10-x1-unbounded/README.md)). At this stage it was **open, with proved partial bounds.** Proposition HB, with certificate REFX: model orbits 0, 1, 2, 3, 6 never pass left height 2; orbits 4, 5, 7, 8 never pass height 4; orbit 9 never passes height 6. Height 6 is reachable (H6), and so is height 8 (senior review round 15, T15-01: seven pieces of model orbits 19 to 24). Orbits 10 to 34 have no proved bound |
 | 1.2 Safe | answered under H in the handoff |
 | 1.3 normal form | proved for heights 2 and 4; open from height 6 |
 

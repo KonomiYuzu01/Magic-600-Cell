@@ -53,8 +53,9 @@ Round 20 proved that lemma and found that it explains the lining only where piec
 space inside the 600-cell, and a clean cut can cross it next to the high pieces. Frames are decided by height, so a
 clean cut is lined only by lattice pieces and pieces of height 2 in its branch, and the number of raises at grips
 that are already out is not bounded by itself: one such raise and its inverse can be repeated without end. Whether
-left heights are bounded, and so whether the reachable set is finite, stays open. At the owner's instruction the
-senior-review series on this question stops after round 20.
+left heights are bounded, and so whether the reachable set is finite, stayed open after round 20, where the
+senior-review series on this question stopped at the owner's instruction. On 17 October 2026 an unattended run
+settled it: left heights are unbounded and the reachable set is infinite ([stage 10](../10-x1-unbounded/README.md)).
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver

@@ -5,7 +5,7 @@ in a slot of the same lattice. A *jumble twist* turns a cap by a rotation about 
 symmetry. The pieces it moves leave the lattice: they no longer fill a slot, they may stick across other cuts, and
 the caps they straddle can no longer turn until they move away. The puzzle stays rigid (pieces never overlap or
 change shape), but the rotations of the caps now generate an infinite group, and its configurations become hard to
-read. Whether the twist menu I_a reaches infinitely many configurations is open.
+read. The twist menu I_a reaches infinitely many configurations (proved on 17 October 2026).
 
 This directory is the jumbling research of the project. It asks whether the 600-cell can jumble, how to simulate
 and draw it exactly, and how to restore a jumbled configuration to the solved state.
@@ -23,7 +23,7 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   be long if a person can replicate them with the program's help; a general method for the machine comes first
   ([decision](../../docs/wiki/decisions/owner-decisions-2026-10-15-jumbling-restored.md)).
 
-## Where it stands (15 October 2026)
+## Where it stands (17 October 2026)
 
 - **Exact legality.** The simulator decides whether a twist is admissible in exact arithmetic over Q(√5), with no
   tolerance. A ten-degree jumble twist of one cap was certified legal and reversible on the retained geometry
@@ -44,10 +44,10 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   fallback. It proved the pure twist (Lemma C) with a bound of 720 twists and extended it to every kind of cell (in
   place for vertex cells, by transport for triangle and tetrahedron cells), corrected the statements of Lemma CM and
   Theorem R, and checked the other proofs. It also proved that a bound on the restoration length for every reachable
-  configuration exists if and only if there are finitely many reachable configurations, which is open, and bounded
-  the lattice phase: a construction of its cascade needs at most 356,565,166 twists for every input (4,840,993
-  actions, counting single twists and applications of 70 stored macros), the corrections at most 25,852 more, and
-  with retained words only some input needs at least 224,601 twists
+  configuration exists if and only if there are finitely many reachable configurations (there are not; see below),
+  and bounded the lattice phase: a construction of its cascade needs at most 356,565,166 twists for every input
+  (4,840,993 actions, counting single twists and applications of 70 stored macros), the corrections at most 25,852
+  more, and with retained words only some input needs at least 224,601 twists
   ([record](restoration/09-general-method/SENIOR-REVIEW.md)). It is a model review, not a human one.
 - **Shorter seeds for the lattice phase.** Commutators whose supports meet in one piece give pure three-cycles,
   which move three pieces of one orbit and nothing else, for 33 of the 35 orbits. The lattice cascade needs no fibre
@@ -57,9 +57,14 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   that applies the seeds fewer times needs at most 20,866,844 (proved, model review); implemented
   on 16 October as a runner separate from the driver, it restores them in 1.58 × 10^7 twists (checked by the same
   checker).
-- **Open.** A construction that works from the state alone with a bound on its length (gap M1). Whether a lattice
-  phase of 1.58 × 10^7 twists, or a few million actions (single twists and stored-macro applications), is within
-  reach of a person is open (gap M2). Deep scrambles were not run with the general method (gap E1). No human has
+- **X1 settled (17 October 2026).** The left heights of reachable poses are unbounded, so R(I_a) is infinite: an
+  explicit family of words, admissible from the solved state, alternates jumbles at two grips whose caps both hold
+  seven pieces whole and raises them by 2 with every letter, without end. An unattended run on the owner's API
+  credit found it, and the integrator checked it independently; no human has reviewed it
+  ([stage 10](restoration/10-x1-unbounded/README.md)).
+- **Open.** A construction that works from the state alone with a bound on its length, which must depend on the
+  state (gap M1). Whether a lattice phase of 1.58 × 10^7 twists, or a few million actions (single twists and
+  stored-macro applications), is within reach of a person is open (gap M2). Deep scrambles were not run with the general method (gap E1). No human has
   reviewed the new proofs (gap E2).
 - **Rendering.** The research viewer draws all 259,800 stickers of a jumbled state. On the owner's RTX 4070 Laptop
   GPU, the jumbling pose probe ran the I_a fixture at 613 fps (p99 1.91 ms); overlay costs are not measured yet
@@ -69,7 +74,7 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
 
 | Path | What it is |
 | --- | --- |
-| [restoration/](restoration/README.md) | Restoration research of 12 to 15 October 2026, in nine stages: closures, families, the lattice group, the general method and the end-to-end results |
+| [restoration/](restoration/README.md) | Restoration research of 12 to 17 October 2026, in ten stages: closures, families, the lattice group, the general method, the end-to-end results and the answer to X1 |
 | [theory/](theory/README.md) | Theory and scripts: tree model, rim peel, seam reading, buffer transport, the problem cards for an external prover; [open problems](theory/open-problems.md) |
 | [sim/](sim/README.md) | J1, the exact reference simulator for rigid jumbling; tests in `tests/test_jumbling_sim.py` |
 | [viewer/](viewer/README.md) | J2, the WebGL research viewer, including the full-state page |
