@@ -246,6 +246,15 @@ about 110 openings and 800 pairs, each pair with its own checks for y and z (the
 records have 42 to 197 repair steps each. Whether reading the domains brings the face match down to a few checks was
 not measured. This is one record at one depth; the other records were not measured this way.
 
+**With the repair list.** The owner then allowed one aid
+([decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-repair-pairs.md), 17 October 2026): for a cap
+the solver names, the program lists the pairs (x, d) whose repair lowers N, each with its y and z, and the person
+picks one. A person who names the caps by decreasing N_c then gets an empty list at every cap before the one where
+the rule found its repair, since the rule took the first repair that worked in the same order, and a list at that
+cap. That cap was the first named at 15 of the 63 repair steps, the second at 26, the third at 13, and at most the
+28th (the rule's place of the chosen cap; the table above shows it for 15 steps). Its list held 1 to 11 pairs at the
+15 steps of the table; at the other 48 repair steps the list was not measured.
+
 ## Assessment and the owner's choice
 
 The integrator proposed four options before the experiments (decision item 1) and assessed them against the results
@@ -281,8 +290,8 @@ templates can address hold 27% (depth 60) and 5% (depth 100).
      lattice phase) drafted and chapter 3 as an outline.
   4. What a person would have to try (section above): with the facts the program shows, a face match took a median
      of 71 checks in a simple order, and a repair in the tail a search of about 110 openings and 800 pairs of
-     opening and neighbour (medians). What help the program may give for these searches is an owner decision under
-     the human-solve boundary.
+     opening and neighbour (medians). The owner then allowed a repair list at a cap the solver names; the size of the
+     list at the 48 repair steps outside the table is the next measurement.
 - **B.** A statement: at every reachable state whose off pieces lie at left heights 2 and 4, a clean step V·W·V⁻¹
   exists whose W comes from a finite catalogue and whose vacating word V has an explicit length bound, or an
   unlocking step of explicit length; that is, gap M1 restricted to low heights. The template test puts the weight

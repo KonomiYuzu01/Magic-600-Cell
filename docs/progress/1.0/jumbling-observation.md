@@ -17,7 +17,7 @@ The restoration method has two phases, and each needs different things on screen
 
 | Phase | What the solver does | What the view must show |
 | --- | --- | --- |
-| U, shape | Reads the seams and closes misaligned cuts until the shape is restored (N = 0) | where the shape is wrong (seams, holes, overhangs); the misalignment N_c of each cap; the domain of each piece; which caps are blocked and why; whether a twist or word the solver proposes closes a cut or lowers N |
+| U, shape | Reads the seams and closes misaligned cuts until the shape is restored (N = 0) | where the shape is wrong (seams, holes, overhangs); the misalignment N_c of each cap; the domain of each piece; which caps are blocked and why; whether a twist or word the solver proposes closes a cut or lowers N; at a cap the solver names, the three-twist repairs that lower N (rule 6) |
 | L, labels | The retained method (orbit-first block building) on a lattice configuration | the retained views and filters, unchanged |
 
 At a deep stop (open problem R1), the solver also needs:
@@ -39,7 +39,7 @@ So the views answer two questions, matching D8:
    - every piece a previewed twist or word moves (its collateral);
    - protection conflicts (as in the retained design);
    - hidden pieces that matter to the selected action are drawn as an outline in the reference scope, with a count.
-6. **The tools never choose.** A check answers about a twist or word the solver proposes. No view lists the twists that close a cut or lower N, ranks caps by how promising they are, or marks a "next move" (human-solve boundary, 2 October 2026). Showing N_c, the floor and blocked caps is allowed: these are facts about the configuration, not choices.
+6. **The tools never choose.** A check answers about a twist or word the solver proposes. No view lists the twists that close a cut or lower N, ranks caps by how promising they are, or marks a "next move" (human-solve boundary, 2 October 2026). Showing N_c, the floor and blocked caps is allowed: these are facts about the configuration, not choices. One exception (owner, 17 October 2026: [record](../../wiki/decisions/owner-decisions-2026-10-17-repair-pairs.md)): for a cap c the solver names, the program may list the pairs (x, d) of the three-twist repair (manual section 2.3) that lower N, each with its y and z, and the solver picks one. The list is in menu order of x, then d, marks no pair as best, and is empty when no pair at c lowers N; the program does not choose the cap and makes no twist itself. Measured on one record: 1 to 11 pairs at the cap where a tail repair was found.
 7. **The scramble journal is never shown.** "Pieces moved by scramble record t" is not a filter. The solver's own twist record is allowed ("pieces moved by my twist k"; reopening, U7).
 8. **Hover only inspects.** Inspecting, selecting a cap, assigning a grip and moving the camera stay separate actions.
 
@@ -160,9 +160,10 @@ All exact, on the current revision, about a proposal the solver makes:
 - would the twist (c, x) close c's cut, and what would N_c become (one cap's count, by restoration M2);
 - would the word w lower N, and by how much (a sum of own-cut changes);
 - why cap c cannot improve alone (its floor);
-- is cap c blocked, and by which piece.
+- is cap c blocked, and by which piece;
+- at a cap c the solver names, which pairs (x, d) of the three-twist repair lower N, each with its y and z (the one exception to rule 6, owner, 17 October 2026).
 
-The engine answers within the command layer's preview and gates (`fresh_preview`). No check returns a list of good twists.
+The engine answers within the command layer's preview and gates (`fresh_preview`). Apart from the repair list, no check returns a list of good twists.
 
 ## 8. Data the engine and the render contract must add
 
@@ -172,10 +173,11 @@ The engine answers within the command layer's preview and gates (`fresh_preview`
 | Rim summary: N_c, In_c, Out_c, A_c, blocked | cap, per revision | Global cap map, floor | 600 rows; exact |
 | Cut cell states of one cap | cap, on request | cut slice view | exact; computed when the solver opens the slice |
 | Off-grip seam cells, with holding caps | revision | Global count, seam slice | exact |
+| Repair list of one cap: the pairs (x, d) whose repair lowers N, with y and z | cap, on request | the repair list (rule 6) | exact; the research script tries every pair at the cap, 472 to 1,298 at the tail steps measured, in about 3 minutes per cap |
 | Exposed-face meshes | piece region | raw view holes, cut slice | new asset; size to be measured |
 | Filter results | query, per revision | piece sets with SHA-256 | as the retained filters |
 
-These extend `magic600-jumbling-render/1` and the view model of ENG-0J. They are proposals for the 2.5 freeze, not authorized changes. The research code computes all of them except the exposed-face meshes (`rim.py`, `seams.py`, `trees.py`), headless and in research timings only. How fast a product engine computes them is an open engineering question, not a performance claim.
+These extend `magic600-jumbling-render/1` and the view model of ENG-0J. They are proposals for the 2.5 freeze, not authorized changes. The research code computes all of them except the exposed-face meshes (`rim.py`, `seams.py`, `trees.py`, and `research/jumbling/restoration/11-scramble-census/scripts/density.py` for the repair list), headless and in research timings only. How fast a product engine computes them is an open engineering question, not a performance claim.
 
 ## 9. What exists today
 
@@ -201,5 +203,6 @@ It has no domain tint, no exposed faces, no cap map, no cut slice and no checks.
 6. The default filters and view on entering Jumble.
 7. The motion of the turn preview in the slice (part of G-values; owner).
 8. The Global layout for Jumble: Hopf rings, ring sheet, two hemispheres or the 1.0 perspective (section 6.1).
+9. How the repair list of a cap is shown and picked from, and how the solver steps through its three twists.
 
 Not run: no Windows, Direct3D 12, input or performance check applies to this page.
