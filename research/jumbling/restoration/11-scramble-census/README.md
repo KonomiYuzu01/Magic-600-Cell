@@ -182,16 +182,24 @@ and words that the program checks ([manual](../../manual/02-descent.md), chapter
 was measured on the record of the depth 40 scramble at seed 7101 (97 steps, rounds 1 and 2), replayed on the exact
 simulator with N and the off count checked after every step (measured; scripts and outputs under "Files").
 
-- **Face match and cover steps are found at once.** At all 34 of them (27 face match, 7 cover) the cap the rule
-  chose was the first of the caps that pass the test, and a median of 2 caps passed (at most 8). A person who sees
-  which caps pass, as the program has to show, proposes one twist of that cap and the check confirms it.
+- **Face match steps take a search.** At the 27 face match steps a median of 2 caps passed the test (at most 8),
+  and at 17 of them only one of the 59 twists of the chosen cap reached its best drop; the rule found both by
+  evaluating every twist, which the program does not do for a person. A face match twist brings N_c exactly to the
+  cap's floor, and the cut slice shows which caps can pass (In_c ≤ Out_c, and some inside face not aligned yet). A
+  person who takes those caps by decreasing N_c and checks each one's twists in menu order until N_c reaches the
+  floor needed a median of 71 checks (at most 1,004). At the other 70 steps the same search finds none, after a
+  median of 531 checks (at most 1,239), before the person turns to the cover order or a repair. Reading the domains
+  narrows the twists of a cap to at most 12 ([manual](../../manual/02-descent.md), section 2.1); how many checks
+  that saves was not measured. The 7 cover steps need the cover relation for caps the solver names, which is not yet
+  in the observation requirements, and were not measured for a person.
 - **Repairs are found by search.** The rule tries the caps by decreasing N_c and, at each, the 59 openings in menu
   order, the 11 retained twists first. For every opening it tries every misaligned neighbour d of c, with the best
   twist y of d and then the best twist z of c, which is no twist when none lowers N_c. Before the repair that worked
   it made a median of 76 openings, at most 1,598, and considered a median of 340 pairs of opening and neighbour, at
   most 17,686. At 15 of the 63 repair steps it made at most 10 openings (steps 30 to 43 and 70 to 73), each time at
   the cap with the largest N_c; at the other 48 it made at least 59. From step 44 on, the medians are about 110
-  openings and about 800 pairs.
+  openings and about 800 pairs. A person would also have to find y and z for each pair with checks, since the
+  program shows no best twist.
 - **At the cap where the repair was found, few pairs work.** At 15 tail steps from step 44 on, 1 to 11 of the 472 to
   1,298 pairs (opening x, neighbour d) at that cap lowered N, 0.08% to 1.86% (table); at 9 of the 15 the pair the
   rule found was the only one. At the caps the rule tried before, none did.
@@ -201,7 +209,9 @@ simulator with N and the off count checked after every step (measured; scripts a
 - **Single twists run out.** At the first repair steps, single twists that lower N existed at 5 to 11 caps (steps
   30 to 35) and then at 1 to 3 (steps 37 to 39); the improve rule, which would make them, comes after conj in the
   rule order and never ran. From step 40 on, one cap at most had one, at 14 of 56 steps. The floor of a cap, which
-  the program shows, tells a person where such a twist exists: exactly where the floor is below N_c.
+  the program shows, tells a person only where no such twist exists: a cap at its floor has none. A cap above its
+  floor may have none either: at every repair step a median of 13 caps (at most 21) were above their floor with no
+  lowering single twist; at step 40, cap 571 had N_c = 657 and floor 53.
 - **What repairs are made of.** Over the seven records with repairs (592 repairs), 359 (61%) use retained twists
   only, and in 236 (40%) the last twist undoes the opening (z = x⁻¹). Since the rule tries retained openings first,
   this counts what was found first, not what exists.
@@ -230,10 +240,11 @@ twist.
 | 96 | 1,738 | 552 | 10 | 48 | 20 | 1,180 | 1 | 0.08% | 1 |
 | 97 | 1,736 | 458 | 28 | 2 | 8 | 472 | 1 | 0.21% | 1 |
 
-So the bulk of a descent can be found from the facts the program shows, and the tail cannot: within the human-solve
-boundary a person who follows the rule's order would make about 110 openings and consider about 800 pairs for one
-tail step (the medians from step 44 on), and the records have 42 to 197 repair steps each. This is one record at one
-depth; the other records were not measured this way.
+So within the human-solve boundary every step takes a search. With the facts the program shows and the simplest
+order, a face match took a median of 71 checks and ruling one out a median of 531; a tail repair took a median of
+about 110 openings and 800 pairs, each pair with its own checks for y and z (the medians from step 44 on). The
+records have 42 to 197 repair steps each. Whether reading the domains brings the face match down to a few checks was
+not measured. This is one record at one depth; the other records were not measured this way.
 
 ## Assessment and the owner's choice
 
@@ -268,9 +279,10 @@ templates can address hold 27% (depth 60) and 5% (depth 100).
      and unlocking, each with its picture in the program. Started on 17 October: [manual](../../manual/README.md),
      with chapters 1 and 2 (what the solver sees, the descent with worked examples from these records) and 4 (the
      lattice phase) drafted and chapter 3 as an outline.
-  4. What a person would have to try (section above): face match and cover steps are found at once, while a repair
-     in the tail needs a search of about 110 openings and 800 pairs of opening and neighbour (medians). What help
-     the program may give for that search is an owner decision under the human-solve boundary.
+  4. What a person would have to try (section above): with the facts the program shows, a face match took a median
+     of 71 checks in a simple order, and a repair in the tail a search of about 110 openings and 800 pairs of
+     opening and neighbour (medians). What help the program may give for these searches is an owner decision under
+     the human-solve boundary.
 - **B.** A statement: at every reachable state whose off pieces lie at left heights 2 and 4, a clean step V·W·V⁻¹
   exists whose W comes from a finite catalogue and whose vacating word V has an explicit length bound, or an
   unlocking step of explicit length; that is, gap M1 restricted to low heights. The template test puts the weight
@@ -342,8 +354,9 @@ scripts and data of stages 05, 06 and 09) without writing to it. The runs used t
 - One or two seeds per depth, and a time limit per round: the census measures how far phase U gets in a given time,
   not where it would stop. The two seeds at depth 40 already behave very differently.
 - Phase U only. Whether the general method finishes from these stops, and at what cost, is not measured yet.
-- What a person would have to try is measured on one record (seed 7101, depth 40), in the rule's own order. A person
-  need not follow that order, and no other order was measured.
+- What a person would have to try is measured on one record (seed 7101, depth 40): repairs in the rule's own order,
+  face matches in one simple order (caps by decreasing N_c, twists in menu order). A person need not follow either
+  order, reading the domains may narrow the twists, and no other order was measured.
 - The scramble has no retained twists. A product scramble may mix them in; they move pieces but do not change the
   heights.
 - The block notions (rigid blocks, Mov groups) and the shape classes are those of stages 05, 06 and 09; the shares

@@ -251,10 +251,11 @@ goes on to chapter 3.
 - **A step that lowers N always exists** from every configuration a scramble can reach: undoing the scramble is
   one (proved, Theorem U). Nothing bounds how long it must be. The three techniques are short steps that did almost
   all the work in practice, not a guarantee.
-- **Finding a repair in the tail takes a long search** (measured on one record). Face match and cover steps are
-  found at once from what the program shows. In the tail the census rule made a median of about 110 openings and
-  considered about 800 pairs of opening and neighbour per repair; at the right cap only 0.08% to 1.9% of the pairs
-  lower N, and nothing visible marks them
+- **Finding a step takes a search, and in the tail a long one** (measured on one record). With the facts the
+  program shows, a face match took a median of 71 checks when each cap's twists are tried in menu order, caps by
+  decreasing N_c; reading the domains (section 2.1) narrows a cap to at most 12 twists, which was not measured. In
+  the tail the census rule made a median of about 110 openings and considered about 800 pairs of opening and
+  neighbour per repair; at the right cap only 0.08% to 1.9% of the pairs lower N, and nothing visible marks them
   ([census](../restoration/11-scramble-census/README.md), "What a person would have to try"). Whether a person can
   carry out the tail, and with what help from the program, is open.
 - **The rules read only the configuration.** They never need the scramble's record. This chapter uses that record
