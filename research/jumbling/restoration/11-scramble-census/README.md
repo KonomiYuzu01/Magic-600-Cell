@@ -238,6 +238,16 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     python3 -I -B $S/fxsummary.py <fx>/k60-fx/run.jsonl
     python3 -I -B $S/check_steps.py research/jumbling/restoration/11-scramble-census/runs/round2/ia-k60-s7104.json \
         research/jumbling/restoration/11-scramble-census/templates/k60-step0*-word.json
+    # what a person would have to try, at seed 7101: the choices offered at every step (about 7 minutes), the repair
+    # density at 15 tail steps (about 50 minutes), single twists at the repair steps (about 5 minutes), what the
+    # repairs of the seven records with repairs are made of (about 2 minutes), and the numbers of the section
+    R=research/jumbling/restoration/11-scramble-census/runs; F=$R/findability
+    python3 -I -B $S/findability.py $R/round2/ia-k40-s7101.json > $F/ia-k40-s7101-steps.jsonl
+    python3 -I -B $S/density.py $R/round2/ia-k40-s7101.json 44 47 48 54 59 64 69 74 75 79 83 87 91 96 97 \
+        | gzip -n > $F/ia-k40-s7101-density.jsonl.gz
+    python3 -I -B $S/single_twist.py $R/round2/ia-k40-s7101.json > $F/ia-k40-s7101-single.jsonl
+    python3 -I -B $S/repair_items.py $R/round2/ia-k*.json $R/round3/ia-k*.json > $F/repair-items.jsonl
+    python3 -I -B $S/findability_table.py $F ia-k40-s7101
 
 A rerun stops wherever its clock runs out, so its record can differ from the stored one; `check_records.py` checks
 the stored records exactly. Every script reads `research/jumbling` (the simulator `sim/`, the theory modules and the
@@ -260,12 +270,17 @@ scripts and data of stages 05, 06 and 09) without writing to it. The runs used t
 | `runs/check.out`, `runs/round3/check.out` | Output of `check_records.py` on the eleven records of rounds 1 and 2 and on the three of round 3, in the order of the commands above |
 | `residue/` | Summaries and per-block rows of the depth 60 and 100 residues |
 | `templates/` | The template test: `fxrun.py` logs, the step words, `groups.jsonl`, `summary.jsonl` and `check.out` |
+| `scripts/findability.py`, `scripts/density.py`, `scripts/single_twist.py`, `scripts/repair_items.py` | What a person would have to try: the choices offered at every step of a record, the repair density at the cap the rule chose, single twists at the repair steps, and what the repairs are made of |
+| `scripts/findability_table.py` | The numbers and the table of that section from the outputs |
+| `runs/findability/` | The outputs for seed 7101 at depth 40 (`ia-k40-s7101-*`) and, from `repair_items.py`, for the seven records with repairs (`repair-items.jsonl`) |
 
 ## Limits
 
 - One or two seeds per depth, and a time limit per round: the census measures how far phase U gets in a given time,
   not where it would stop. The two seeds at depth 40 already behave very differently.
 - Phase U only. Whether the general method finishes from these stops, and at what cost, is not measured yet.
+- What a person would have to try is measured on one record (seed 7101, depth 40), in the rule's own order. A person
+  need not follow that order, and no other order was measured.
 - The scramble has no retained twists. A product scramble may mix them in; they move pieces but do not change the
   heights.
 - The block notions (rigid blocks, Mov groups) and the shape classes are those of stages 05, 06 and 09; the shares

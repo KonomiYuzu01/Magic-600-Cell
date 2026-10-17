@@ -152,6 +152,14 @@ c back as well as it can go. The word (c, x)(d, y)(c, x⁻¹) is the case z = x�
 neighbours. The census tried c in order of decreasing N_c and x in menu order, and kept the first word that lowered
 N.
 
+**How long the search is.** It was measured on the record of seed 7101
+([census](../restoration/11-scramble-census/README.md), "What a person would have to try"). The first repairs came
+within the first few openings of the cap with the largest N_c. From step 44 on, the census rule tried a median of
+about 110 openings before one worked, at most 1,598, and at the cap where it worked only 1 to 11 of several hundred
+pairs of opening and neighbour lowered N. Neither the face match nor the cover order points to the pair. A person who
+proposes words one at a time, with the checks this manual asks of the program, cannot carry out a search of this
+size; how the tail can be made practical is open (section 2.6).
+
 ### Example: a twist buried under a later one
 
 Seed 7101 after 29 steps: N = 15,226, with 25 misaligned caps that can turn. None passes the face match, and no
@@ -241,5 +249,10 @@ goes on to chapter 3.
 - **A step that lowers N always exists** from every configuration a scramble can reach: undoing the scramble is
   one (proved, Theorem U). Nothing bounds how long it must be. The three techniques are short steps that did almost
   all the work in practice, not a guarantee.
+- **Finding a repair in the tail takes hundreds of tries** (measured on one record). Face match and cover steps are
+  found at once from what the program shows. At the tail steps, only 0.1% to 1.9% of the pairs of opening and
+  neighbour at the right cap lower N, and nothing visible marks them
+  ([census](../restoration/11-scramble-census/README.md), "What a person would have to try"). Whether a person can
+  carry out the tail, and with what help from the program, is open.
 - **The rules read only the configuration.** They never need the scramble's record. This chapter uses that record
   only to label its examples.
