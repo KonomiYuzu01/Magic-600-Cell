@@ -154,12 +154,13 @@ N.
 
 **How long the search is.** It was measured on the record of seed 7101
 ([census](../restoration/11-scramble-census/README.md), "What a person would have to try"). The first repairs came
-within the first few openings of the cap with the largest N_c. From step 44 on, the census rule tried a median of
-about 110 openings before one worked, at most 1,598. At the cap where it worked, only 1 to 11 of the 472 to 1,298
-pairs of opening and neighbour lowered N, and at 9 of the 15 steps measured only the one it found. Neither the face
-match nor the cover order points to the pair. For a person who proposes words one at a time, with the checks this
-manual asks of the program, one tail step is hundreds of checks; how the tail can be made practical is open
-(section 2.6).
+within the first few openings of the cap with the largest N_c. From step 44 on, the census rule made a median of
+about 110 openings, and considered about 800 pairs of opening and neighbour, before a repair worked; at most 1,598
+openings and 17,686 pairs. At the cap where it worked, only 1 to 11 of the 472 to 1,298 pairs lowered N, and at 9 of
+the 15 steps measured only the one it found. Neither the face match nor the cover order points to the pair. A person
+who proposes words one at a time, with the checks this manual asks of the program, faces a search of this size at
+most tail steps (at 48 of the 52 from step 44 on, the rule made at least 59 openings); how the tail can be made
+practical is open (section 2.6).
 
 ### Example: a twist buried under a later one
 
@@ -250,9 +251,10 @@ goes on to chapter 3.
 - **A step that lowers N always exists** from every configuration a scramble can reach: undoing the scramble is
   one (proved, Theorem U). Nothing bounds how long it must be. The three techniques are short steps that did almost
   all the work in practice, not a guarantee.
-- **Finding a repair in the tail takes hundreds of tries** (measured on one record). Face match and cover steps are
-  found at once from what the program shows. At the tail steps, only 0.08% to 1.9% of the pairs of opening and
-  neighbour at the right cap lower N, and nothing visible marks them
+- **Finding a repair in the tail takes a long search** (measured on one record). Face match and cover steps are
+  found at once from what the program shows. In the tail the census rule made a median of about 110 openings and
+  considered about 800 pairs of opening and neighbour per repair; at the right cap only 0.08% to 1.9% of the pairs
+  lower N, and nothing visible marks them
   ([census](../restoration/11-scramble-census/README.md), "What a person would have to try"). Whether a person can
   carry out the tail, and with what help from the program, is open.
 - **The rules read only the configuration.** They never need the scramble's record. This chapter uses that record
