@@ -3,10 +3,12 @@ X is the state after the first 156 letters of the stage 10 witness H6030, sigma 
 of seven pieces that the family raises. Every letter is applied by the exact simulator and must be admissible and
 certain. The checks:
 - R21-06: from X, (11, 15), (80, 31) lowers K from 30 to 28 to 26, K stays whole in caps 11 and 80, both cuts stay clean;
-- E21-4 and X21A-08: at sigma, the landing (11, 15) raises K from 3,888 (branch 2) to 3,890 (branch 3), so it is not
-  tame; the landing (80, 14) keeps K at 3,888;
-- R21F-08: (11, 57), (80, 14) lands the debris of both caps with no lattice piece taken off: the off count falls from
-  52,883 to 47,676 (the state Z');
+- E21-4 and X21A-08: at sigma, the landing (11, 15) puts exactly the debris D_11 of cap 11 (its 2,505 pieces other
+  than K) on the lattice, takes no lattice piece off and raises K from 3,888 (branch 2) to 3,890 (branch 3), so it is
+  not tame; the landing (80, 14) puts exactly D_80 (2,702 pieces) on the lattice, takes none off and keeps K at 3,888;
+  undoing either gives sigma back;
+- R21F-08: (11, 57), (80, 14) puts exactly D_11 and D_80 on the lattice and takes no lattice piece off: the off count
+  falls from 52,883 to 47,676 (the state Z');
 - X21A-11: at Z', the two jumbles (11, 40), (0, 15) leave both cuts clean, and the common content of caps 11 and 0 is
   exactly K, at height 3,892.
 Prints one line per check and exits 0 when all pass. Run from the repository root:
@@ -16,6 +18,8 @@ Research only: exact synthetic geometry; no Windows, DirectX, input or performan
 import json
 import sys
 import time
+
+import numpy as np
 
 sys.path[:0] = ['research/jumbling/theory', 'research/jumbling', 'research/jumbling/fixtures']
 import sim
@@ -58,6 +62,16 @@ def cap(s, c):
     return cl.straddle is None, set(cl.inside.tolist())
 
 
+def lattice(s):
+    """Boolean array over the pieces: True where the piece's pose is a lattice pose."""
+    return s.lattice_flags().copy()
+
+
+def moved(before, after):
+    """(pieces put on the lattice, pieces taken off it) between two lattice arrays."""
+    return set(np.flatnonzero(after & ~before).tolist()), set(np.flatnonzero(before & ~after).tolist())
+
+
 def check(name, ok, detail):
     print(json.dumps({'check': name, 'pass': bool(ok), **detail}), flush=True)
     return bool(ok)
@@ -75,16 +89,30 @@ for c, j in ((11, 15), (80, 31)):
 
 s = build(2085)
 off0 = int(s.off_lattice_count())
-results.append(check('sigma', off0 == 52883 and k_height(s) == (3888, 2), {'off': off0, 'K': k_height(s)}))
-for c, j, want in ((11, 15, (3890, 3)), (80, 14, (3888, 2))):
+lat0 = lattice(s)
+(cl11, in11), (cl80, in80) = cap(s, 11), cap(s, 80)
+D = {11: in11 - set(K), 80: in80 - set(K)}
+results.append(check('sigma', off0 == 52883 and k_height(s) == (3888, 2) and cl11 and cl80 and set(K) <= in11 & in80
+                     and len(D[11]) == 2505 and len(D[80]) == 2702 and not lat0[sorted(in11 | in80)].any(),
+                     {'off': off0, 'K': k_height(s), 'D_11': len(D[11]), 'D_80': len(D[80]),
+                      'caps_hold_no_lattice_piece': not lat0[sorted(in11 | in80)].any()}))
+for c, j, want, off_want in ((11, 15, (3890, 3), 50378), (80, 14, (3888, 2), 50181)):
     apply(s, c, j, journal=True)
-    results.append(check('E21-4 landing %s' % ((c, j),), k_height(s) == want,
-                         {'K': k_height(s), 'off': int(s.off_lattice_count())}))
+    landed, taken_off = moved(lat0, lattice(s))
+    off1 = int(s.off_lattice_count())
+    results.append(check('E21-4 landing %s' % ((c, j),),
+                         k_height(s) == want and landed == D[c] and not taken_off and off1 == off_want,
+                         {'K': k_height(s), 'off': off1, 'landed': len(landed), 'landed_is_debris': landed == D[c],
+                          'taken_off': len(taken_off)}))
     s.undo()
+    results.append(check('E21-4 undo %s' % ((c, j),), s.digest() == DIGEST[2085], {'digest_is_sigma': s.digest() == DIGEST[2085]}))
 for c, j in ((11, 57), (80, 14)):
     apply(s, c, j)
-results.append(check("R21F-08 Z'", int(s.off_lattice_count()) == 47676 and k_height(s) == (3890, 3),
-                     {'off': int(s.off_lattice_count()), 'K': k_height(s)}))
+landed, taken_off = moved(lat0, lattice(s))
+results.append(check("R21F-08 Z'", int(s.off_lattice_count()) == 47676 and k_height(s) == (3890, 3)
+                     and landed == D[11] | D[80] and not taken_off,
+                     {'off': int(s.off_lattice_count()), 'K': k_height(s), 'landed': len(landed),
+                      'landed_is_both_debris': landed == D[11] | D[80], 'taken_off': len(taken_off)}))
 for c, j in ((11, 40), (0, 15)):
     apply(s, c, j)
 (cl11, in11), (cl0, in0) = cap(s, 11), cap(s, 0)
