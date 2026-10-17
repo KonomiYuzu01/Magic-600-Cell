@@ -304,7 +304,11 @@ Two mathematical gaps; the owner closed M2 on 17 October 2026, so M1 is the one 
   - *Option B (stage 12, from 17 October 2026).* A completeness conjecture for left heights 2 and 4, B′(h), with
     four template obligations, passed a plan check. Its first two experiments, at three height-2 states: every unit
     is the whole content of one class cell; besides grip blocking, the vacancy count N1 is the T1 check that fails
-    most often; and the strict-step falsifier R21-02 holds everywhere, so it cannot refute strict steps there
+    most often; and the strict-step falsifier R21-02 holds everywhere, so it cannot refute strict steps there. The
+    next two: the partner template restores s61c from the state alone once its cores are given (2,374 letters), and
+    at the depth 60 stop retained conjugation with one letter (M1-18) gives checked strict′ steps of at most 506
+    letters for 20 of the 52 units that T1 alone cannot land. A first bounded driver run from the depth 40 stop made
+    no step; most units there need a transport closure (LC-13), the next tool to build
     ([README](../12-low-height/README.md)).
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an

@@ -112,7 +112,7 @@ of the 24-twist "E2 run" in the history of stage 05).
 | [09](09-general-method/README.md) general method | 15 Oct | The two-phase method; stop62 and X to the solved state | [METHOD](09-general-method/METHOD.md) |
 | [10](10-x1-unbounded/README.md) X1 | 17 Oct | R(I_a) is infinite: an explicit family of words raises seven pieces without bound (X1 closed) | [REPORT](10-x1-unbounded/REPORT.md) |
 | [11](11-scramble-census/README.md) scramble census | 17 Oct | Phase U on unrestricted random scrambles of 10 to 1000 twists: a fast bulk of single-twist steps, then a slow tail of three-twist repairs, no run stuck; what is left at the stops | [README](11-scramble-census/README.md) |
-| [12](12-low-height/README.md) low heights (option B) | 17 Oct | A completeness conjecture for left heights 2 and 4 and its plan; a structural screen and a strict-step falsifier at three height-2 states | [README](12-low-height/README.md) |
+| [12](12-low-height/README.md) low heights (option B) | 17 Oct | A completeness conjecture for left heights 2 and 4 and its plan; a structural screen and a strict-step falsifier at three height-2 states; the partner template from the state alone at s61c; one retained letter at the blocked units of the depth 60 stop (20 checked strict′ steps); a first bounded driver run from the depth 40 stop (no step) | [README](12-low-height/README.md) |
 
 The earlier theory (the tree model, rim peel, seam reading, buffer transport, cards 1 to 4) is in
 [`../theory/`](../theory/README.md), and the open problems are in [`../theory/open-problems.md`](../theory/open-problems.md).
