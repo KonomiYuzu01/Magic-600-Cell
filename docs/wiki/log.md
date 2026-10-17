@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-17] decision | Jumbling: a tutorial first, from unrestricted scrambles
+The owner made a tutorial that people can read and carry out the main output of the restoration research, rejected restricting the scrambles to what the method covers, and asked for scramble experiments before choosing among the research options ([decision](decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)).
+
+## [2026-10-17] update | Jumbling: gap M1 by a joint attack (round 21)
+Round 21 is in [SENIOR-REVIEW](../../research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md) section 26 (two sealed analyses, a cross-examination of each by the other side, and the integrator's experiments; model review): M1 is stated in strict and free forms, explicit bounds hold on classes given by checkable hypotheses, and the integrator's Theorem D (reviewed) shows that a computable bound valid at every reachable state exists exactly when reachability is decidable. The cross-examination refuted two of the solver's claims with exact counterexamples, and in the three states examined the ladder for high units fails at its first level; M1 stays open.
+
 ## [2026-10-17] decision | Jumbling: gap M2 closed, proofs to a Lean formalization
 The owner closed gap M2 of the restoration theory: the proved lattice-phase bounds stand, and help that lets a person carry out the lattice phase moves to the engineering line ([decision](decisions/owner-decisions-2026-10-17-jumbling-m2.md)). Once gap M1 is solved, a complete handoff document of the theory goes to the owner's Lean formal-verification agent, which is to close gap E2; M1 is next.
 

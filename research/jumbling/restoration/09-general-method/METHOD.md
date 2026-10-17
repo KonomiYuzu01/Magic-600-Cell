@@ -280,6 +280,27 @@ Two mathematical gaps; the owner closed M2 on 17 October 2026, so M1 is the one 
     keep the other pieces of each cap from blocking the other cut, and every letter raises the seven pieces by 2.
     A ball certificate of seven label-returning words keeps the family going without end. So bounds for M1 must
     depend on the state.
+  - *Round 21 (17 October 2026; `SENIOR-REVIEW.md` section 26).* A joint attack: two sealed analyses, by the
+    senior reviewer and by the solver, a cross-examination of each by the other, and the integrator's experiments.
+    - Statements. A strict clean step lands U and leaves every other off piece at its exact pose; a free one only
+      lands U without new off pieces. Strict steps bound phase 1 by n·B(n, h) for a monotone B; free steps by
+      Σ B(n, H_i) with H_{i+1} = H_i + 2B(n, H_i), since a letter changes a height by at most 2 (R21-01). Whether
+      strict steps always exist is open; a word-independent obstruction for them is proved and not yet tested
+      (R21-02).
+    - Theorem D (the integrator's, reviewed): a computable B(n, h) valid at every reachable state, or any computable
+      bound on pose tables, exists exactly when reachability is decidable, and exactly when a restoring path needs to
+      climb only a computable height above the state's own heights. So an explicit bound for M1 in its general form
+      would decide reachability; Theorem D neither settles nor refutes M1.
+    - Explicit bounds on classes given by checkable hypotheses: a unit that is the only off content of an edge cell
+      with free poles and enough holes has a strict step of at most 2·min(C(N, 86), C(N, n)) + 718 letters (R21-07);
+      a high unit that passes a ladder of edge-cell checks at every level falls by 2 per level through Theorem C's
+      pure word, at most 360h letters plus the vacancy preparations (R21-03, R21-04); the X1 states are recognized
+      from the state and restored in at most h/2 + 141 letters (R21-09). In X, σ and the end of the I_a fixture the
+      ladder fails at its first level for every high unit, and at the fixture end 186 of the 305 high units have no
+      admissible lowering letter (E21-3).
+    - Moves: the twelve items at a grip of a unit's own branch that lower it form one coset of the retained items
+      (R21F-03); a four-letter lens macro turns the common content of two clean caps and returns everything else
+      when its cap tests pass (R21F-02). None of this covers ordinary scrambles.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not
@@ -301,11 +322,12 @@ Two mathematical gaps; the owner closed M2 on 17 October 2026, so M1 is the one 
     - a finite exact test for free grips, with a positive case at I_a@115: grip 194 is free and its letter lands
       1,410 off pieces (M1-19, re-run by the integrator).
 
-  What stays open is a construction from the state alone with an explicit bound on the word length. The driver
-  now has the exhaustive fallback, so it is complete (Theorem M\*), but a fallback step has no length bound and is
-  practical only for very short words; a coverage theorem for the heuristic steps would bound the run. (The runs
-  of section 6 used v4, which tried the pure twist on at most 8 units, stopped after 80 steps and had no
-  fallback.) M1 contains two narrower questions:
+  What stays open is a construction from the state alone with an explicit bound on the word length. By Theorem D
+  (round 21), a computable bound in (n, h) valid at every reachable state exists exactly when reachability is
+  decidable. The driver now has the exhaustive fallback, so it is complete (Theorem M\*), but a fallback step has no
+  length bound and is practical only for very short words; a coverage theorem for the heuristic steps would bound
+  the run. (The runs of section 6 used v4, which tried the pure twist on at most 8 units, stopped after 80 steps and
+  had no fallback.) M1 contains two narrower questions:
   - *V existence.* N1/N2 are necessary only and a peeling certificate is sufficient only; no theorem guarantees V,
     and the searches do fail (unit 1040 first at stop62@233: no V). A breadth-first search over whole hole sets
     decides vacancy from the state, with at most Q_safe hole sets; searching orbit by orbit does not. One search

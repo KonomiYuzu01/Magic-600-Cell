@@ -63,8 +63,11 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   credit found it, and the integrator checked it independently; no human has reviewed it
   ([stage 10](restoration/10-x1-unbounded/README.md)).
 - **Open.** A construction that works from the state alone with a bound on its length, which must depend on the
-  state (gap M1); it is the next target. Deep scrambles were not run with the general method (gap E1). No human
-  has reviewed the new proofs (gap E2); once M1 is solved, a Lean formalization is to check them.
+  state (gap M1). Round 21 showed that a computable bound in the number of off pieces and the largest height, valid
+  at every reachable state, exists exactly when reachability is decidable, and proved bounds only for classes given
+  by checkable hypotheses ([record](restoration/09-general-method/SENIOR-REVIEW.md) section 26). Deep scrambles were
+  not run with the general method (gap E1). No human has reviewed the new proofs (gap E2); once M1 is solved, a Lean
+  formalization is to check them.
 - **Closed by the owner (17 October 2026).** Gap M2, whether a lattice phase of 1.58 × 10^7 twists, or a few
   million actions (single twists and stored-macro applications), is within reach of a person: the bounds stand,
   and help for a person moves to the engineering line

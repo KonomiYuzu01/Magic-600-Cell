@@ -56,6 +56,10 @@ that are already out is not bounded by itself: one such raise and its inverse ca
 left heights are bounded, and so whether the reachable set is finite, stayed open after round 20, where the
 senior-review series on this question stopped at the owner's instruction. On 17 October 2026 an unattended run
 settled it: left heights are unbounded and the reachable set is infinite ([stage 10](../10-x1-unbounded/README.md)).
+Round 21, a joint attack on M1 on the same day, stated M1 precisely and proved that a computable bound in the number
+of off pieces and the largest height, valid at every reachable state, exists exactly when reachability is
+decidable (Theorem D). It proved explicit bounds on classes given by checkable hypotheses, and found that in the
+states it examined those hypotheses fail at the first level for every high unit (`SENIOR-REVIEW.md` section 26).
 
 The driver implements M\* (`scripts/gm/mstar.py`, `scripts/gm/fallback.py`): when its heuristic steps find
 nothing, an exhaustive search over the menu words takes the step. The runs of 15 October used the earlier driver
@@ -69,6 +73,7 @@ v4, which had no fallback.
 | `scripts/echain/` | Modules the step scripts share (stage 01) |
 | `scripts/lattice/` | The lattice restorer `restore_lattice_late.py` and the independent checker `verify_late.py` |
 | `scripts/run/` | The run commands used on 15 October; paths are neutral tokens |
+| `scripts/round21/` | Round 21 checks: `lens_checks.py` (R21-06, E21-4, the state Z′ and the lens of X21A-11, from the solved state) and `census.py` (E21-3: high units and their lowering caps) |
 | `data/library-merged.json.gz` | The 36-macro correction library of the lattice phase (rank 34 over F2 and 2 over F5) |
 | `earlier/stop62-860-to-0/` | stop62, 860 off pieces, to 0 in 14 clean steps, then to solved. Contents: the chain (start table and step words), the independent replay, the lattice restore and verify reports with the solution record, and `step014-pure-twist-omega.json` (Bad(W) = Ω_X at s86a) |
 | `earlier/x-e3-solved/` | Lattice phase and end-to-end check for E3 (the end of the X chain of stage 01) and for I1 and I2 (stage 02) |

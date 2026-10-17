@@ -22,6 +22,11 @@ Last updated: 17 October 2026. The rows below keep their text of 11 October, exc
     bounds that depend on the state;
   - the hypotheses of the proof form a sufficient two-cap criterion for unbounded heights; a criterion that is also
     necessary is not known.
+- **M1** (gap of the general method, round 21 the same day): stated in strict and free forms; a computable bound
+  in (n, h) valid at every reachable state exists exactly when reachability is decidable (Theorem D, reviewed);
+  explicit bounds hold on classes given by checkable hypotheses, which fail at the first level for every high unit
+  in the three states examined ([SENIOR-REVIEW](../restoration/09-general-method/SENIOR-REVIEW.md) section 26).
+  Still open.
 
 ## Update of 15 October 2026
 
