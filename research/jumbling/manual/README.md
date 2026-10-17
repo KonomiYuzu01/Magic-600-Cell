@@ -1,0 +1,71 @@
+# Restoring a jumbled 600-cell: a manual for the solver (draft)
+
+Status: **draft, started 17 October 2026.** This is option A of the owner's decision of 17 October 2026: a manual
+of the techniques the restoration method uses, written for a person
+([decision](../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)). Chapters 1 and 2 cover
+what the scramble census measured; chapters 3 and 4 are outlines of research still under way. The pictures will be
+added when the program can draw them; until then each technique says what the solver looks at.
+
+The manual is for a person who solves the jumbled puzzle in the program. It assumes the retained puzzle (the
+ordinary 600-cell, whose twists keep every piece in a slot) and no mathematics beyond it. Where a claim rests on a
+proof or a measurement, a short note says which, with a link to the research record.
+
+## What you need from the program
+
+The method needs the program to show facts about the configuration and to check moves the solver proposes. It never
+needs the program to choose a move: the tools never list the twists that would help, rank caps or mark a next move
+(the human-solve boundary of 2 October 2026; the requirements are in
+[jumbling-observation](../../../docs/progress/1.0/jumbling-observation.md)). The 1.0 program is not built yet; this
+is what it has to show for the manual to work:
+
+- which caps are **blocked** (a piece sticks across their cut) and which piece blocks them;
+- the **domain** of every piece, for example as a tint: pieces that were turned together and still fit together;
+- the **seams**: where pieces of different domains meet, or a face sticks out with nothing against it;
+- for every cap, its **misalignment** N_c (how many cells along its cut are wrong) and its **floor** (below which
+  no twist of that cap alone can bring N_c), and the total N;
+- for a selected cap, its **cut slice**: the faces on its cut from inside and from outside, and which of them meet a
+  face of their own domain;
+- a **check** of a twist or a short word that the solver proposes: what N_c and N would become, and which pieces it
+  would move;
+- for two caps the solver names, whether one **covers** the other (chapter 2, section 2.2; not yet in the
+  observation requirements);
+- the solver's **own twist record**, so the solver can take back an earlier twist of their own.
+
+## The plan of a solve
+
+| Part | Goal | What you do | Chapter |
+| --- | --- | --- | --- |
+| Descent | every piece back on the lattice | undo the scramble cap by cap, reading the seams; every kept step lowers N | [2](02-descent.md) |
+| Tail | the last blocks that hold one another up | clean steps: vacate, act, put back | [3](03-tail.md) (outline) |
+| Lattice | every label home | the retained method, with a few extra macros | [4](04-lattice.md) (outline) |
+
+Most of a random scramble goes in the descent: scrambles of 10 and 20 twists, and one of two scrambles of 40 twists,
+were undone by its first technique alone, and the deeper ones lost 35% to 99% of their off-lattice pieces to its
+three techniques in two and a half hours of machine search (section 2.5). What the descent leaves behind is
+the tail, which chapter 3 is about; whether its techniques always finish is the open research question of
+[stage 12](../restoration/12-low-height/README.md).
+
+## How sure each part is
+
+Labels used in this manual:
+- **Proved**: a mathematical proof in the research records (reviewed by models, not yet by a person).
+- **Measured**: what happened on the scrambles that were run; it shows what can happen, not what must.
+- **Open**: not known.
+
+| Claim | Label | Record |
+| --- | --- | --- |
+| N = 0 exactly when every piece is on the lattice | proved | [restoration](../theory/restoration.md) M3 |
+| A step that lowers N can never lead back to an earlier configuration | proved | [restoration](../theory/restoration.md) M2, M4 |
+| From every reachable configuration some word lowers N | proved; its length is not bounded | [restoration](../theory/restoration.md) Theorem U |
+| The descent's three techniques undo random scrambles of 10 to 40 twists | measured, on four of five scrambles | [census](../restoration/11-scramble-census/README.md) |
+| On deeper scrambles the descent slows and leaves a tail | measured | [census](../restoration/11-scramble-census/README.md) |
+| Off the lattice, a clean step (one that lands a block and disturbs nothing else) always exists, and an exhaustive search from the state alone finds one | proved; its length is not bounded | [senior review](../restoration/09-general-method/SENIOR-REVIEW.md) (Theorem M\*) |
+| The tail can always be finished by the techniques of chapter 3, with lengths a person can carry out | open | [stage 12](../restoration/12-low-height/README.md) |
+| The lattice phase finishes every reachable configuration on the lattice: its cascade needs at most 20,866,844 twists, its corrections at most 25,852 more | proved | [overview](../README.md) |
+
+## Chapters
+
+1. [What you see](01-what-you-see.md): caps, jumble twists, blocking, domains, seams and misalignment.
+2. [The descent](02-descent.md): face match, cover and the three-twist repair, with worked examples.
+3. [The tail](03-tail.md) (outline): blocks that hold one another up, clean steps, vacating, unlocking, transport.
+4. [The lattice](04-lattice.md) (outline): the retained method and the extra macros.

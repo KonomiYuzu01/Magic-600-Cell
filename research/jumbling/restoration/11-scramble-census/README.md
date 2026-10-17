@@ -184,7 +184,9 @@ templates can address hold 27% (depth 60) and 5% (depth 100).
   2. More seeds and depths: second seeds at 100 (7108) and 1000 (7110), more at 40, and depths 200 (7105) and 400
      (7109). The runs at 200, 100 (7108) and 400 started on 17 October; their records come with the next update.
   3. A manual of the techniques, written for a person: the three descent techniques, the shape catalogue, vacating
-     and unlocking, each with its picture in the program.
+     and unlocking, each with its picture in the program. Started on 17 October: [manual](../../manual/README.md),
+     with chapters 1 and 2 (what the solver sees, the descent with worked examples from these records) drafted and
+     chapters 3 and 4 as outlines.
 - **B.** A statement: at every reachable state whose off pieces lie at left heights 2 and 4, a clean step V·W·V⁻¹
   exists whose W comes from a finite catalogue and whose vacating word V has an explicit length bound, or an
   unlocking step of explicit length; that is, gap M1 restricted to low heights. The template test puts the weight

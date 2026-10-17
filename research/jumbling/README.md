@@ -98,7 +98,8 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
 
 | Path | What it is |
 | --- | --- |
-| [restoration/](restoration/README.md) | Restoration research of 12 to 17 October 2026, in ten stages: closures, families, the lattice group, the general method, the end-to-end results and the answer to X1 |
+| [manual/](manual/README.md) | The manual of the restoration techniques for a person (draft, option A of 17 October): what the solver sees, the descent with worked examples from the census, outlines of the tail and the lattice phase |
+| [restoration/](restoration/README.md) | Restoration research of 12 to 17 October 2026, in twelve stages: closures, families, the lattice group, the general method, the end-to-end results, the answer to X1, the scramble census and the low-height work |
 | [theory/](theory/README.md) | Theory and scripts: tree model, rim peel, seam reading, buffer transport, the problem cards for an external prover; [open problems](theory/open-problems.md) |
 | [sim/](sim/README.md) | J1, the exact reference simulator for rigid jumbling; tests in `tests/test_jumbling_sim.py` |
 | [viewer/](viewer/README.md) | J2, the WebGL research viewer, including the full-state page |
