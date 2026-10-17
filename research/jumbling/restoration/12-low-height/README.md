@@ -292,10 +292,10 @@ minutes of search at this state. It says nothing about whether steps exist. The 
 ready ones fail N1, the fifth is not ready), and the 14 units that are ready and pass the T1 checks are triangle and
 tetrahedron contents, which need a transport.
 
-## 9. E-B6: four-letter lowering moves for the high units (measured, exact replay)
+## 9. E-B6: four-letter commutators that lower the high units (measured, exact replay)
 
 T4 asks for an itinerary that lowers a unit of left height 4 or more and leaves every other piece where it is: the
-lens words P1 and P2 of R21F-02, or two protected lowering segments. E-B6 tests the four-letter form at the depth 100
+lens words P1 and P2 of R21F-02, or two protected lowering segments. E-B6 tests the first form at the depth 100
 residue, with X (the prefix 156 of the stage 10 witness H6030, E21-3) as the positive control and the end of the
 fixture as the negative control.
 
@@ -385,10 +385,11 @@ Readings:
    fail item 1, 814 fail item 5 and in the other 176 no commuting item pair passes the item 5 tests. No unit at the
    fixture end has a strict four-letter commutator.
 
-What E-B6 settles: at X the four-letter form of T4 exists, and at the depth 100 stop and the fixture end it exists
-for no unit. There each unit shares its only clean cap with thousands of other pieces, and most cuts near that cap are
-blocked. T4 at those states needs a longer itinerary (section 10). The non-existence is exact for these two states and
-says nothing about other states of the same depth.
+What E-B6 settles: at X a strict four-letter commutator lowers K, and at the depth 100 stop and the fixture end no
+unit has one. There each unit shares its only clean cap with thousands of other pieces, and most cuts near that cap
+are blocked. The search covers the commutator form only: it does not exclude other words of four letters or fewer,
+or T4's second form, two protected lowering segments, so it sets no lower bound on the length of T4 at those states
+(section 10). The non-existence is exact for these two states and says nothing about other states of the same depth.
 
 ## 10. Next
 
@@ -396,10 +397,11 @@ says nothing about other states of the same depth.
   stop (16 of its 22 units) and what three of the E-B4 leftovers need. Then E-B5 run 2: the driver with
   `cellpure4.py` as its pure-twist script (a new option whose default stays `cellpure3.py`, so earlier runs replay
   unchanged), every unit tried, a seed library and a longer driver-step bound.
-- Height 4 beyond four letters, where E-B6 found no strict four-letter commutator (the depth 100 stop and the fixture
-  end): a retained conjugation of the commutator (one K⁺ letter r before it and r⁻¹ after it, which can unblock a cut as
-  in E-B4), six-letter commutators [g, W] with W two letters, and T4's second form, two protected lowering segments. The
-  pattern argument of Lemma E6 is the starting point for pruning each.
+- Height 4 beyond the four-letter commutator, which E-B6 found for no unit at the depth 100 stop or the fixture end:
+  other words of four letters or fewer, which the search does not cover; a retained conjugation of the commutator (one
+  K⁺ letter r before it and r⁻¹ after it, which can unblock a cut as in E-B4); six-letter commutators [g, W] with W two
+  letters; and T4's second form, two protected lowering segments. The pattern argument of Lemma E6 is the starting
+  point for pruning each.
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
