@@ -250,4 +250,4 @@ The first two write `p.json`, `p-word.json`, `p-table.json` (the state Z1, not k
 | `scripts/r2102.py` | E-B2: exact two-sided bounds for R21-02 at one state |
 | `runs/screen-*.json`, `runs/order-*.json`, `runs/r2102-*.json` | The outputs at the three states (`233`, `k40`, `k60`); a rerun reproduces them except the timing fields |
 | `scripts/eb3_prep.py`, `scripts/eb3_finish.py`, `scripts/eb3_replay.py` | E-B3: the preparation V0 and creator D; the middle and last phases with their vacating words; the independent replay |
-| `runs/eb3-prep*.json`, `runs/eb3-finish*.json`, `runs/eb3-replay.json` | E-B3 records and words (52 and 2,322 letters) with input and output digests, and the replay record |
+| `runs/eb3-prep*.json`, `runs/eb3-finish*.json`, `runs/eb3-replay.json` | E-B3 records and words (52 and 2,322 letters) with input and output digests, and the replay record; a rerun reproduces them except the timing fields |
