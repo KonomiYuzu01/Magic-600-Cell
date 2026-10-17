@@ -3,8 +3,9 @@
 Status: **draft, started 17 October 2026.** This is option A of the owner's decision of 17 October 2026: a manual
 of the techniques the restoration method uses, written for a person
 ([decision](../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)). Chapters 1 and 2 cover
-what the scramble census measured; chapters 3 and 4 are outlines of research still under way. The pictures will be
-added when the program can draw them; until then each technique says what the solver looks at.
+what the scramble census measured, chapter 3 is an outline of research still under way, and chapter 4 is a draft of
+the lattice phase. The pictures will be added when the program can draw them; until then each technique says what
+the solver looks at.
 
 The manual is for a person who solves the jumbled puzzle in the program. It assumes the retained puzzle (the
 ordinary 600-cell, whose twists keep every piece in a slot) and no mathematics beyond it. Where a claim rests on a
@@ -29,7 +30,9 @@ is what it has to show for the manual to work:
   would move;
 - for two caps the solver names, whether one **covers** the other (chapter 2, section 2.2; not yet in the
   observation requirements);
-- the solver's **own twist record**, so the solver can take back an earlier twist of their own.
+- the solver's **own twist record**, so the solver can take back an earlier twist of their own;
+- on the lattice, the invariant **ν** coordinate by coordinate, and the 36 **corrections** as stored macros the
+  solver can make (chapter 4).
 
 ## The plan of a solve
 
@@ -37,7 +40,7 @@ is what it has to show for the manual to work:
 | --- | --- | --- | --- |
 | Descent | every piece back on the lattice | undo the scramble cap by cap, reading the seams; every kept step lowers N | [2](02-descent.md) |
 | Tail | the last blocks that hold one another up | clean steps: vacate, act, put back | [3](03-tail.md) (outline) |
-| Lattice | every label home | the retained method, with a few extra macros | [4](04-lattice.md) (outline) |
+| Lattice | every label home | read ν, make the corrections it calls for, then the retained method | [4](04-lattice.md) |
 
 Most of a random scramble goes in the descent: scrambles of 10 and 20 twists, and one of two scrambles of 40 twists,
 were undone by its first technique alone, and the deeper ones lost 35% to 99% of their off-lattice pieces to its
@@ -62,6 +65,7 @@ Labels used in this manual:
 | Off the lattice, every unit has a clean step: a word after which the unit and every piece that was on the lattice are on the lattice, while the other off pieces may move or land; an exhaustive search from the state alone finds one | proved; its length is not bounded | [senior review](../restoration/09-general-method/SENIOR-REVIEW.md) (Theorem M\*) |
 | A strict clean step, which also keeps every other off piece at its exact pose, always exists | open | [general method](../restoration/09-general-method/METHOD.md), gap M1 |
 | The tail can always be finished by the techniques of chapter 3, with lengths a person can carry out | open | [stage 12](../restoration/12-low-height/README.md) |
+| On the lattice, what a jumbled history leaves is the invariant ν, and the 36 corrections of chapter 4 remove every value it can take | proved; certificate | [chapter 4](04-lattice.md), section 4.3 |
 | The lattice phase finishes every reachable configuration on the lattice: its cascade needs at most 20,866,844 twists, its corrections at most 25,852 more | proved | [overview](../README.md) |
 
 ## Chapters
@@ -69,4 +73,5 @@ Labels used in this manual:
 1. [What you see](01-what-you-see.md): caps, jumble twists, blocking, domains, seams and misalignment.
 2. [The descent](02-descent.md): face match, cover and the three-twist repair, with worked examples.
 3. [The tail](03-tail.md) (outline): blocks that hold one another up, clean steps, vacating, unlocking, transport.
-4. [The lattice](04-lattice.md) (outline): the retained method and the extra macros.
+4. [The lattice](04-lattice.md): the invariant ν, the corrections and the retained method, with tables of the orbits
+   and the corrections.
