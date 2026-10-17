@@ -1,0 +1,409 @@
+{
+ "source": {
+  "table": "stop62-233-table.json.gz"
+ },
+ "digest": "46496bb1806f5f4078d9d15ed83986938ccb9cb776ba62fd187767f17c662514",
+ "off": 233,
+ "holes_by_type": {
+  "7": 6,
+  "8": 6,
+  "9": 3,
+  "10": 12,
+  "11": 17,
+  "12": 21,
+  "13": 5,
+  "14": 9,
+  "15": 23,
+  "16": 16,
+  "17": 20,
+  "18": 12,
+  "19": 6,
+  "20": 11,
+  "21": 22,
+  "22": 8,
+  "23": 15,
+  "24": 10,
+  "25": 5,
+  "27": 2,
+  "28": 4
+ },
+ "summary": {
+  "units": 3,
+  "pieces": 233,
+  "by_class": {
+   "1": 1,
+   "0": 2
+  },
+  "by_kind": {
+   "edge": 3
+  },
+  "pieces_by_kind": {
+   "edge": 233
+  },
+  "heights": {
+   "2": 233
+  },
+  "one_cell": 3,
+  "own_straddle": 0,
+  "not_a_face": 0,
+  "whole_content": 3,
+  "m1_19_cells": 0,
+  "needed_grips_free": 3,
+  "in_a_home_cell": 3,
+  "home_cell_lemma_D": 3,
+  "home_cell_N1": 3,
+  "home_cell_N1_N2": 3,
+  "home_cell_vacant": 0,
+  "transport_units": 0,
+  "transport_units_with_a_target": 0,
+  "T1_necessary": 3,
+  "ready_and_T1_necessary": 3,
+  "pieces_ready_and_T1_necessary": 233,
+  "home_cells_by_class": {
+   "0": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    }
+   },
+   "1": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    }
+   },
+   "2": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    }
+   },
+   "3": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    }
+   },
+   "4": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 0,
+     "lemma_D_N1_N2": 0
+    }
+   }
+  },
+  "frozen_blocks": 0,
+  "free_class_grips": {
+   "0": 117,
+   "1": 118,
+   "2": 114,
+   "3": 115,
+   "4": 115
+  },
+  "blocking_edges": 0,
+  "blocked_units": 0,
+  "blocked_only_by_ready_units": 0
+ },
+ "units": [
+  {
+   "unit": 0,
+   "block": 0,
+   "first": 1040,
+   "size": 86,
+   "domain": 2,
+   "class": 1,
+   "heights": {
+    "2": 86
+   },
+   "block_size": 86,
+   "block_movers": 4,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    5,
+    11
+   ],
+   "kind": "edge",
+   "is_face": true,
+   "content_size": 86,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [
+     5,
+     11
+    ],
+    "one_of": [
+     [
+      1,
+      17,
+      19,
+      36,
+      50
+     ]
+    ]
+   },
+   "grip_status": {
+    "1": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "5": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "11": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "17": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "19": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "36": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "50": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 86,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 54,
+   "N1": true,
+   "N1_N2": true,
+   "N_deficits": 0,
+   "N_fixed_occupied": 0,
+   "T1_necessary": true
+  },
+  {
+   "unit": 1,
+   "block": 1,
+   "first": 23955,
+   "size": 61,
+   "domain": 3,
+   "class": 0,
+   "heights": {
+    "2": 61
+   },
+   "block_size": 61,
+   "block_movers": 4,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    30,
+    145
+   ],
+   "kind": "edge",
+   "is_face": true,
+   "content_size": 61,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [
+     30,
+     145
+    ],
+    "one_of": [
+     [
+      59,
+      64,
+      107,
+      125,
+      154
+     ]
+    ]
+   },
+   "grip_status": {
+    "30": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "59": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "64": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "107": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "125": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "145": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "154": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 86,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 48,
+   "N1": true,
+   "N1_N2": true,
+   "N_deficits": 0,
+   "N_fixed_occupied": 0,
+   "T1_necessary": true
+  },
+  {
+   "unit": 2,
+   "block": 2,
+   "first": 64184,
+   "size": 86,
+   "domain": 1,
+   "class": 0,
+   "heights": {
+    "2": 86
+   },
+   "block_size": 86,
+   "block_movers": 4,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    369,
+    507
+   ],
+   "kind": "edge",
+   "is_face": true,
+   "content_size": 86,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [
+     369,
+     507
+    ],
+    "one_of": [
+     [
+      315,
+      319,
+      448,
+      449,
+      543
+     ]
+    ]
+   },
+   "grip_status": {
+    "315": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "319": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "369": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "448": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "449": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "507": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "543": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 86,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 50,
+   "N1": true,
+   "N1_N2": true,
+   "N_deficits": 0,
+   "N_fixed_occupied": 0,
+   "T1_necessary": true
+  }
+ ],
+ "seconds": 24.5
+}

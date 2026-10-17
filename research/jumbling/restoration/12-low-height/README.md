@@ -1,0 +1,196 @@
+# 12. Low heights: completeness of the off-lattice phase at left heights 2 and 4 (option B, 17 October 2026)
+
+Status: in progress. The statement and the plan passed a plan check and a scoped re-check; experiments E-B1 and E-B2
+are done.
+
+The owner chose options A and B on 17 October 2026, provisionally
+([decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md), item 4). Option A is the
+coverage census of [stage 11](../11-scramble-census/README.md). Option B, this stage, aims at what the census leaves
+behind: pieces at left heights 2 and 4, in blocks that hold one another up. It should give the tutorial's tail a
+finite, checkable set of techniques with explicit lengths.
+
+Evidence kind throughout: exact synthetic geometry (Q(√5)) and source evidence; headless Linux. Nothing here is a
+Windows, DirectX, input or performance result.
+
+## 1. The statement (a conjecture; nothing in it is proved)
+
+The setting and the terms are those of [`METHOD.md`](../09-general-method/METHOD.md) and
+[`SENIOR-REVIEW.md`](../09-general-method/SENIOR-REVIEW.md): menu I_a; a piece's left height is the tree distance of
+the left factor of its pose; 𝒞_h is the set of reachable configurations whose off pieces all have left height at most
+h; a unit is a rigid block of off pieces, or one frame part of a multi-frame block.
+
+**Conjecture B′(h)** (h = 2, then h = 4). There are an explicitly stated finite catalogue 𝒯 of step templates and
+explicit functions L_h(n) and S_h(n) such that at every Z in 𝒞_h with n ≥ 1 off pieces, an explicit enumeration of at
+most S_h(n) instances of 𝒯 at Z finds an admissible word of at most L_h(n) letters after which a nonempty unit and
+every original lattice piece are on the lattice, and every other original off piece is either on the lattice or at its
+exact original pose (a strict′ step, R21F-01). Strict′ steps keep 𝒞_h closed and may land several units at once, so
+the off-lattice phase needs at most n·max_{1≤m≤n} L_h(m) letters and n·max_{1≤m≤n} S_h(m) instances.
+
+- **Strict B(h)**, where every other off piece keeps its exact pose, is a separately tested strengthening; its first
+  test is the falsifier E-B2. **Tame B(h)** is a further relaxation, not pursued unless B′ fails.
+- 𝒞_h is finite, so some bound exists (T9-05); B′ asks for an explicit catalogue and bound. By Theorem D (round 21)
+  a computable bound at every height exists exactly when reachability is decidable, so B′ is a statement about the
+  low heights only.
+
+## 2. The templates (obligations, not results)
+
+- **T1, cell closure.** V·W·V⁻¹, with W from Theorem C (edge cell, at most 720 letters at the poles a, b and one
+  common neighbour c), LC-12 (vertex cell in place, at most 104) or LC-13 (triangle or tetrahedron transport, at most
+  240 or 192), carried by K⁺ where needed, and V a SAFE word of K⁺ letters that vacates Bad(W). LC-12 and LC-13 assume
+  every class-P grip free; each instance is instead checked at Z for its actual free grips and live ghosts.
+- **T2, partners.** A stated finite catalogue of creator/middle pairs (D, W) with their Bad vectors, each decided at Z
+  by M1-16 and M1-17, with three explicit checks: the creator's source chambers are occupied, the protected off pieces
+  are exact at the end, the partners are cleaned up inside the step. The known middle with Bad vector 2e covers edge
+  contents only; triangle, tetrahedron and vertex contents need their own. That an adequate catalogue always exists is
+  a joint-attack lemma, not an assumption. Positive control first: the s61c preparation of M1-14 from the s61c state.
+- **T3, escape from blocking.** Three named obligations: (a) straddlers of a needed grip (Proposition F, conditional);
+  (b) foreign-frame occupants of a needed cap, which the class-P alphabet and a SAFE preparation cannot move; (c) two
+  off frame domains of one class in one cell, a proved obstruction to the fixed class alphabet (M1-19). Escape
+  candidates: M1-18 retained conjugation (r = 1 first), LC-06 several edge cells, the M1-19 lifted-action test. A cycle
+  among the supports of selected words is a catalogue obstruction only, not a counterexample.
+- **T4, height 4.** An explicit itinerary with a stated endpoint contract: the lens conditions P1 and P2 (R21F-02), or
+  two protected lowering segments 4 → 2 → 0 with a combined bound; every prefix admissible, every original lattice
+  piece and every protected off piece checked at the end. Units with no admissible lowering cap (186 of 305 at the
+  fixture end, E21-3) need a named bounded preparation, unlocking or joint move; AU-02's two-class necessity is not
+  sufficiency.
+
+The statement and this list passed a plan check and a scoped re-check (both by the senior reviewer, 17 October); the
+re-check found the first check's five blocking findings resolved.
+
+## 3. The experiments, in order
+
+1. **E-B1, structural screen** (done at three states, section 4).
+2. **E-B2, strict-step falsifier R21-02** (done at three states, section 5).
+3. **E-B3**, the positive control for T2: the s61c preparation from the state alone.
+4. **E-B4**, M1-18 with r = 1 at the units E-B1 finds blocked.
+5. **E-B5**, a bounded driver run from the depth 40 stop (explicit `--heuristic-seconds`, `--max-steps`,
+   `--fallback-max-length`; no lattice phase; every accepted word replayed against the strict′ contract).
+6. **E-B6**, height 4: the two blocks of the depth 100 residue that hold height-4 pieces, with the fixture end as a
+   negative control.
+
+## 4. E-B1: the structural screen (measured, exact geometry)
+
+`scripts/screen.py` reads one state and, for every unit, finds:
+- its frame class P and its class-P cell (the sign vector over the 120 caps of P, LC-01), the cell kind, whether the
+  unit is the whole content of its cell (content: the off pieces with the same cell and the same domain, LC-01), and
+  other frame domains of class P in the cell (M1-19);
+- for every grip a T1 word needs, whether it is free (admissible, and its cap holds only lattice pieces and pieces of
+  P's frames) or blocked by a straddler or a foreign-frame occupant, and by which units. The needed grips are the
+  minimal supports: an edge cell {a, b} needs a, b and one of their five common neighbours (Theorem C); a vertex cell
+  {a} needs a; a triangle or tetrahedron cell needs one of its poles to move at all. A unit whose needed grips are
+  all free, in a cell without a second frame domain of its class, is called ready;
+- the T1 checks. A T1 word that lands a unit turns its whole cell, so Bad(W) contains the cell's home chambers (the
+  lattice chambers inside the cell: 86 for an edge cell, 385 for a vertex cell, 111 or 87 for the triangle and
+  tetrahedron cells that have any). For those chambers the screen checks Lemma D's per-type counts, and N1 and N2 for
+  vacating them with SAFE-ALL letters (the letters of the caps that hold no off piece and are not straddled;
+  `buffer.condition`). A triangle or tetrahedron content lands only by a transport into a home cell of its kind
+  (LC-13), whose chambers are then in Bad(W) too, so the screen also counts the home cells of its kind and class that
+  pass the same checks. A unit passes the T1 checks when its own home chambers pass (if it has any) and, for a
+  transport, at least one target passes. All of these are necessary conditions only, evaluated at the state.
+
+`scripts/order.py` then lands units in rounds under a structural model: a unit is landable once the units blocking
+its needed grips have been landed, and never when its cell holds a second frame domain of its class. No word is run,
+and the T1 checks are not re-evaluated along the way: the order is a structural bound, not a result.
+
+| State | Off | Units (edge, triangle, tetra, vertex) | Ready | In a home cell (Lemma D; N1 and N2) | Transports with a target | T1 checks pass | Ready and pass (pieces) | Landable in order (pieces) | Left |
+|---|---|---|---|---|---|---|---|---|---|
+| stop62@233 | 233 | 3 (3, 0, 0, 0) | 3 | 3 (3; 3) | none | 3 | 3 (233) | 3 (233), one round | 0 |
+| depth 40 stop | 1,193 | 22 (5, 12, 4, 1) | 21 | 8 (7; 1) | 16 of 16 | 15 | 14 (857) | 22 (1,193), rounds 21, 1 | 0 |
+| depth 60 stop | 14,610 | 184 (71, 81, 27, 5) | 118 | 88 (88; 62) | 108 of 108 | 158 | 107 (9,111) | 132 (10,274), rounds 118, 11, 3 | 52 (4,336) |
+
+The depth 40 stop is the end of round 2 of the census run with seed 7101, the depth 60 stop the end of round 2 with
+seed 7104 (stage 11; both all at height 2). stop62@233 is the stage 08 state with three carriers.
+
+What the screen shows:
+1. **Every unit is the whole content of one class cell.** At all 209 units of the three states the pieces of a unit
+   share one sign vector over the caps of their class (LC-14), no piece straddles a cut of its own class, the
+   positive caps form a face of the class's 600-cell, and no other piece of the same domain lies in that cell. Every
+   unit is at height 2. Most of the residue is in triangle and edge cells (depth 60: 7,332 and 4,756 of the 14,610
+   pieces; tetrahedron 1,725, vertex 797).
+2. **Positive control.** At stop62@233 the three units come out as recorded in stage 08: 1040 (86 pieces, class 1,
+   edge cell {5, 11}), 64184 (86, class 0, {369, 507}) and 23955 (61, class 0, {30, 145}), each ready and passing
+   Lemma D, N1 and N2. That the stage 08 runs still needed a 1,749-letter step there shows what the screen does not
+   decide: whether the vacating word V exists (N1 and N2 are necessary only) and what it costs.
+3. **Lemma D rarely binds; N1 often does.** Lemma D fails at one unit only, the 10-piece vertex content at the depth
+   40 stop: the 385 home chambers of a vertex cell include chambers of types 0 to 5, and no piece of those types is off
+   at that state. N1 fails where a home chamber of the unit's cell is occupied and lies in no SAFE-ALL cap (every cap
+   that contains it holds an off piece or is straddled), so no SAFE-ALL word can vacate it at the state. That happens
+   at 7 of the 8 home-cell units at the depth 40 stop (four edge contents, two triangle contents and the vertex
+   content; 250 pieces) and at 26 of the 88 at the depth 60 stop (20 edge, 3 triangle, 3 vertex; 1,023 pieces), but
+   at none of the three at stop62@233. Landing other units frees caps, so N1 may hold later; the screen does not
+   follow that.
+4. **Vacant home cells and transport targets.** At the depth 60 stop 57 of the 88 home-cell units have no lattice
+   piece in their cell's home chambers, so V is empty for their own cell (at the depth 40 stop 1 of 8, at stop62@233
+   none). Every triangle and tetrahedron content has home cells of its kind and class that pass Lemma D, N1 and N2:
+   478 of 480 triangle cells and all 120 tetrahedron cells at the depth 40 stop, 406 to 416 of 480 and 106 to 113 of
+   120 at the depth 60 stop.
+5. **Blocking.** At the depth 60 stop 66 units are not ready: 60 have a needed grip that is not free (the grip is
+   straddled, or its cap holds pieces of another class's frame), and 6 lie in three cells that hold two frame domains
+   of one class (M1-19), so no T1 word can target them. Landing in rounds clears 14 of the 60; 52 units (4,336
+   pieces) are left:
+   - the 6 units in M1-19 cells (320 pieces);
+   - 40 units (3,541 pieces) in six groups that block one another (strongly connected under "A blocks a grip that B
+     needs", among the units left): of 2, 3, 3, 4, 11 and 17 units; 36 of the 40 are edge contents, and 14 are frozen
+     blocks;
+   - 6 units (475 pieces) only behind one unit of the 11-unit group.
+
+   Of the 132 units landable in order, 116 pass the T1 checks at the state; 10 of the 52 left fail them. By the plan
+   the groups are catalogue obstructions for T1 with its minimal supports, not counterexamples: the T3 escapes
+   (M1-18, LC-06, the M1-19 lifted-action test) are their next test. If the 132 units could be landed by strict
+   steps, the 52 would keep their exact poses and their blocking would not change (landed pieces block no grip). That
+   would give a reachable state at which every unit has a needed grip blocked by another unit or lies in an M1-19
+   cell, and so answer the open part of AU-04 (`09-general-method/SENIOR-REVIEW.md`: is there always an eligible
+   unit whose grips are all free?) in the negative for T1 with its minimal supports. That state has not been
+   constructed, and strict steps for the 132 units are not known to exist.
+
+## 5. E-B2: the strict-step falsifier R21-02 (measured, exact)
+
+R21-02: for a unit U put P = off(Z) \ U, and let F_t(P) be the lattice chambers of type t whose interior meets the
+interior of a piece of P; a strict step for U needs |F_t(P)| ≤ |P_t| for every t. `scripts/r2102.py` bounds F(P) from
+both sides, exactly: a piece whose region lies beyond one facet plane of the body meets no chamber; for the other
+pieces, sampled interior points (24 per piece) inside the body and on no cut give exact overlap certificates (a lower
+bound), and the chambers whose signature agrees with the piece on every cut that does not straddle it give an upper
+bound.
+
+| State | Off pieces beyond one facet | Samples of the others | Largest F(P): certified, possible | Units where R21-02 holds for certain | Refuted |
+|---|---|---|---|---|---|
+| stop62@233 | 224 of 233 | 216, all outside the body | 0, 10 | 3 of 3 | 0 |
+| depth 40 stop | 1,188 of 1,193 | 120: 117 outside, 3 in a chamber | 2, 8 | 22 of 22 | 0 |
+| depth 60 stop | 14,083 of 14,610 | 12,648: 9,259 outside, 3,389 in a chamber | 185, 905 | 184 of 184 | 0 |
+
+The rotated regions of the off pieces stick out of the body almost entirely, as Lemma O found at stop62@245
+([`PROOFS-U.md`](../08-units-and-clean-steps/PROOFS-U.md)), so they meet few chambers: for every unit at the depth 60 stop at most 905
+chambers against at least 14,225 other off pieces, type by type within |P_t|. R21-02 holds with room to spare, and
+the falsifier cannot refute strict steps at these states; strict B stays open, neither refuted nor supported. The
+three runs took about 6, 25 and 270 seconds.
+
+## 6. Next
+
+- E-B3 and E-B4 in the plan's order. E-B1 points at two obstructions for T1 in the census residues: blocked needed
+  grips (T3), and occupied home chambers that no SAFE-ALL letter reaches at the state (N1). E-B4 takes the six depth
+  60 groups.
+- E-B5 from the depth 40 stop, where 14 units are ready and pass the T1 checks now and the other 8 need a grip or N1
+  to come free as units land.
+- E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
+
+## Replay
+
+From the repository root, with Python 3 and NumPy, `S=research/jumbling/restoration/12-low-height/scripts`,
+`C=research/jumbling/restoration/11-scramble-census/runs/round2`, `Z=research/jumbling/restoration/08-units-and-clean-steps/certs/stop62/z233/inputs/stop62-233-table.json.gz`:
+
+    python3 -I -B $S/screen.py table $Z <out>                      # about 25 seconds
+    python3 -I -B $S/screen.py record $C/ia-k40-s7101.json <out>   # about 45 seconds
+    python3 -I -B $S/screen.py record $C/ia-k60-s7104.json <out>   # about 4 minutes
+    python3 -I -B $S/order.py <screen out>
+    python3 -I -B $S/r2102.py table $Z <out>                       # about 6 seconds
+    python3 -I -B $S/r2102.py record $C/ia-k40-s7101.json <out>    # about 25 seconds
+    python3 -I -B $S/r2102.py record $C/ia-k60-s7104.json <out>    # about 5 minutes
+
+## Files
+
+| File | What it is |
+|---|---|
+| `scripts/screen.py` | E-B1: units, classes, cells, needed grips, Lemma D, N1 and N2 at one state |
+| `scripts/order.py` | The structural landing order and the units left over, from a screen output |
+| `scripts/r2102.py` | E-B2: exact two-sided bounds for R21-02 at one state |
+| `runs/screen-*.json`, `runs/order-*.json`, `runs/r2102-*.json` | The outputs at the three states (`233`, `k40`, `k60`); a rerun reproduces them except the timing fields |

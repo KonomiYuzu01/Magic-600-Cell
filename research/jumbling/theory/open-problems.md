@@ -26,7 +26,7 @@ Last updated: 17 October 2026. The rows below keep their text of 11 October, exc
   in (n, h) valid at every reachable state exists exactly when reachability is decidable (Theorem D, reviewed);
   explicit bounds hold on classes given by checkable hypotheses, which fail at the first level for every high unit
   in the three states examined ([SENIOR-REVIEW](../restoration/09-general-method/SENIOR-REVIEW.md) section 26).
-  Still open.
+  Still open. Option B ([stage 12](../restoration/12-low-height/README.md)) attacks it at left heights 2 and 4.
 - **R1** (coverage census, the same day): the owner made a tutorial that people can read and carry out the most
   important output and ruled out restricted scrambles
   ([decision](../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)). Phase U alone, on fresh

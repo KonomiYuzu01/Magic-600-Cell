@@ -301,6 +301,11 @@ Two mathematical gaps; the owner closed M2 on 17 October 2026, so M1 is the one 
     - Moves: the twelve items at a grip of a unit's own branch that lower it form one coset of the retained items
       (R21F-03); a four-letter lens macro turns the common content of two clean caps and returns everything else
       when its cap tests pass (R21F-02). None of this covers ordinary scrambles.
+  - *Option B (stage 12, from 17 October 2026).* A completeness conjecture for left heights 2 and 4, B′(h), with
+    four template obligations, passed a plan check. Its first two experiments, at three height-2 states: every unit
+    is the whole content of one class cell; besides grip blocking, the vacancy count N1 is the T1 check that fails
+    most often; and the strict-step falsifier R21-02 holds everywhere, so it cannot refute strict steps there
+    ([README](../12-low-height/README.md)).
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not
