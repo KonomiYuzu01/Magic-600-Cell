@@ -308,8 +308,10 @@ Two mathematical gaps; the owner closed M2 on 17 October 2026, so M1 is the one 
     next two: the partner template restores s61c from the state alone once its cores are given (2,374 letters), and
     at the depth 60 stop retained conjugation with one letter (M1-18) gives checked strict′ steps of at most 506
     letters for 20 of the 52 units that T1 alone cannot land. A first bounded driver run from the depth 40 stop made
-    no step; most units there need a transport closure (LC-13), the next tool to build
-    ([README](../12-low-height/README.md)).
+    no step; most units there need a transport closure (LC-13), the next tool to build. For height 4, an exhaustive
+    search for strict four-letter commutators, pruned by a proved necessary condition (Lemma E6), finds 232 that lower
+    the unit at X and none for any high unit at the depth 100 stop or the fixture end; other forms of T4 are not yet
+    tested there ([README](../12-low-height/README.md)).
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not

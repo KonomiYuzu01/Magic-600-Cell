@@ -80,7 +80,9 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   and at the depth 60 stop one retained letter makes a unit of every blocking group ready, with checked strict′
   steps of at most 506 letters for 20 of the 52 units left there. A first bounded driver run from the depth 40 stop
   made no step; most units there are triangle and tetrahedron contents, which need a transport closure that the
-  toolkit does not build yet. No human has reviewed the new proofs (gap E2); once M1 is solved, a Lean formalization
+  toolkit does not build yet. For height 4, an exhaustive search for four-letter commutators that move one high unit
+  and nothing else, pruned by a proved lemma, finds 232 that lower the unit at the positive control X and none for any
+  unit at the depth 100 stop or the fixture end. No human has reviewed the new proofs (gap E2); once M1 is solved, a Lean formalization
   is to check them.
 - **Closed by the owner (17 October 2026).** Gap M2, whether a lattice phase of 1.58 × 10^7 twists, or a few
   million actions (single twists and stored-macro applications), is within reach of a person: the bounds stand,

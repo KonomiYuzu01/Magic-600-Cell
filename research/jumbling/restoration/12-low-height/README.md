@@ -1,7 +1,7 @@
 # 12. Low heights: completeness of the off-lattice phase at left heights 2 and 4 (option B, 17 October 2026)
 
 Status: in progress. The statement and the plan passed a plan check and a scoped re-check; experiments E-B1 to E-B4
-are done, and E-B5 has a first bounded run (no step).
+and E-B6 are done, and E-B5 has a first bounded run (no step).
 
 The owner chose options A and B on 17 October 2026, provisionally
 ([decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md), item 4). Option A is the
@@ -66,8 +66,8 @@ re-check found the first check's five blocking findings resolved.
 5. **E-B5**, a bounded driver run from the depth 40 stop (explicit `--heuristic-seconds`, `--max-steps`,
    `--fallback-max-length`; no lattice phase; every accepted word replayed against the strict′ contract). Run 1
    made no step (section 8).
-6. **E-B6**, height 4: the two blocks of the depth 100 residue that hold height-4 pieces, with the fixture end as a
-   negative control.
+6. **E-B6**, height 4: the two blocks of the depth 100 residue that hold height-4 pieces, with X as the positive
+   control and the fixture end as a negative control (done, section 9).
 
 ## 4. E-B1: the structural screen (measured, exact geometry)
 
@@ -292,13 +292,116 @@ minutes of search at this state. It says nothing about whether steps exist. The 
 ready ones fail N1, the fifth is not ready), and the 14 units that are ready and pass the T1 checks are triangle and
 tetrahedron contents, which need a transport.
 
-## 9. Next
+## 9. E-B6: four-letter commutators that lower the high units (measured, exact replay)
+
+T4 asks for an itinerary that lowers a unit of left height 4 or more and leaves every other piece where it is: the
+lens words P1 and P2 of R21F-02, or two protected lowering segments. E-B6 tests the first form at the depth 100
+residue, with X (the prefix 156 of the stage 10 witness H6030, E21-3) as the positive control and the end of the
+fixture as the negative control.
+
+`scripts/eb6.py` reads one state. For every high unit (the off pieces of left height at least 4 with one pose and one
+inside vector over the 600 caps, E21-3) it lists the caps that hold the unit whole, which of them are clean, the caps
+of its own branch with their 12 lowering items (R21F-03) and their other contents, and the lens pairs. With `--comm4`
+it then finds every *strict four-letter commutator* for the unit: a word (x, a)(y, b)(x, a⁻¹)(y, b⁻¹) of non-identity
+items at two grips after which every twist was admissible, every piece outside the unit is at its exact pose (lattice
+pieces included) and every piece of the unit has moved, to one common pose. When the unit is the whole common content
+of the two caps, P1 is such a word, and P2 at (x, y) is the commutator at (y, x). The search is complete by the
+following lemma, and `scripts/eb6_replay.py` replays every word it keeps on a freshly built state.
+
+The pieces of a jumbled state do not tile the body (the regions of off pieces stick out of it, section 4), so the
+lemma uses only the ball that holds every piece: its radius R is the largest distance from the centre to a vertex of a
+home cell (R² = 96 − 32√5, R ≈ 4.944), and twists are rotations. Two caps *meet* when they share a point of this
+ball.
+
+**Lemma E6 (proved here).** Let w = (x, a)(y, b)(x, a⁻¹)(y, b⁻¹), with x ≠ y, be admissible at Z, move every piece of a
+unit U and return every other piece to its pose at Z. Then:
+1. the cut of x is clean at Z, and every piece that straddles the cut of y at Z belongs to U;
+2. U lies whole in x or whole in y at Z, and the two caps meet;
+3. if a piece outside U lies whole in both caps at Z, the rotations of a and b commute;
+4. a piece outside U that lies whole in x and outside y at Z lies outside y after the first letter;
+5. if U is not whole in y at Z, the first letter carries U whole into y; if U is not whole in x at Z, the second
+   letter carries U whole into x.
+
+*Proof.* A twist rotates the pieces inside its cap, maps the cap onto itself and is admissible only when no piece
+straddles its cut. For a piece p let m₁, …, m₄ ∈ {0, 1} record whether p lies in the twisted cap at each twist; p ends
+at b^(−m₄)·a^(−m₃)·b^(m₂)·a^(m₁) applied to its pose. A twist keeps its cap, so (m₁, m₂) = (0, 0) forces m₃ = m₄ = 0;
+(1, 0) forces m₃ = 1 and puts p back in place, so m₄ says whether p lies in y at Z; and (m₂, m₃) = (1, 0) forces m₄ = 1.
+The patterns left are 0000, 1010, 0101 and 1111, which return p when 1111 has ab = ba, and 1011, 0110, 0111, 1101 and
+1110, with products b⁻¹, a⁻¹b, b⁻¹a⁻¹b, a and a⁻¹ba. Only a⁻¹b can be the identity, when a = b, and then p is back in
+place inside y, so m₄ = 1. So a piece outside U follows 0000, 1010, 0101 or 1111, and pieces of U, which share one
+inside vector, start alike. (1) The first twist acts on Z, so the cut of x is clean there. A returned piece lies at its
+place at Z after the last twist and before it in the patterns 0000 and 1010, which end outside y, and the last twist
+keeps y in 0101 and 1111, which end inside y; so every piece outside U lies whole inside or whole outside y at Z. (2) If
+U is not whole in x at Z, it lies outside x, which is clean; its pieces start with m₁ = 0, and 0000 would return them,
+so they lie in y at Z. If no point of the ball lies in both caps, a piece in one cap lies outside the other, so every
+piece follows 0000, 1010 or 0101, and w moves nothing. (3) A piece in both caps cannot follow 1010, which ends outside
+y, so it follows 1111, and ab = ba. (4) A piece in x and outside y cannot follow 1111, which ends inside y, so it
+follows 1010, and m₂ = 0. (5) If U is not whole in y at Z, it is whole in x by (2), and a piece of U with m₂ = 0 is back
+in place before the last twist, which needs it outside y there, and then it follows 1010 and does not move; so m₂ = 1
+for every piece of U. If U is not whole in x at Z, it lies outside x and in y, and a piece of U with m₃ = 0 follows 0101
+and does not move; so m₃ = 1, and the second letter, which acts on U at its place at Z, carries U into x. ∎
+
+Two caps meet exactly when R cos(φ/2) ≥ α|n|, with φ the angle between their poles and α|n| ≈ 4.430 the distance of
+a cut from the centre (2θ = 52.73°). `scripts/eb6_meet.py` checks this in exact arithmetic for all 359,400 ordered
+pairs (`runs/eb6-meet.json`): each cap meets 80 others, at 15.52°, 25.24°, 36°, 41.41°, 44.48° and 49.12°, the next
+angle is 56.01°, and the caps within 55.7° (`restore.NEAR`) are exactly the caps that meet it.
+
+The search takes as first cap every clean cap that holds U whole, with as last cap every other cap within 55.7° of it,
+and as last cap every clean cap that holds U whole, with as first cap every clean cap within 55.7° of it that does
+not hold U. Pairs that fail item 1 are dropped. When U is not whole in the last cap, only the first letters that carry
+it whole into that cap are kept, and when U is not whole in the first cap, only the second letters that carry it whole
+into the first cap (item 5, an exact test at Z); a pair with no such letter is dropped. Where every piece whole in
+both caps belongs to U, every remaining item pair is replayed, skipping a first letter after which the last cap is
+blocked or holds a piece of the first cap outside U (item 4); elsewhere only the remaining item pairs whose rotations
+commute are replayed (item 3; a float screen, confirmed exactly).
+
+| State | Off pieces | High units (pieces) | Held whole by a clean cap | Cap pairs | Fail item 1 | Fail item 5 | Searched: all items / commuting | Words replayed | Strict words | Lowering |
+|---|---|---|---|---|---|---|---|---|---|---|
+| X, unit K only | 52,883 | 47 (710); K: 7 pieces at height 30 | K: caps 11 and 80 | 208 | 110 | 72 | 10 / 16 | 3,428 | 1,434 | 232 |
+| Depth 100 stop | 31,479 | 9 (124) | all 9: cap 61 only | 981 | 459 | 342 | 0 / 180 | 0 | 0 | 0 |
+| Fixture end | 121,184 | 305 (4,639) | 119: one cap each; 186: none | 10,015 | 9,025 | 814 | 0 / 176 | 0 | 0 | 0 |
+
+At the pairs searched by commuting items, no commuting item pair passed the item 5 tests, at any of the three
+states, so every word replayed comes from an all-items pair. Records: `runs/eb6-X.json`, `runs/eb6-k100.json`,
+`runs/eb6-fx841.json`.
+
+Readings:
+
+1. **Positive control.** At X the search finds 1,434 strict four-letter commutators for K, and 232 of them lower it: 196
+   to height 28 and 36 to height 26, a fall of 4 in four letters. 1,075 of them (88 lowering) use the caps 11 and 80,
+   which both hold K. The other 359 (144 lowering) use a pair of caps 36° apart (11 with 0, 4 or 25; 80 with 180) in
+   which no piece lies whole in both caps at X: one letter carries K into an overlap that the jumbled pieces leave
+   empty, which is why the search must not assume that the pieces tile the body. `eb6_replay.py` replays the 232
+   lowering words and the 20 other strict words that the record keeps on a freshly built X: all 252 move exactly the 7
+   pieces of K, to one pose, with the recorded heights (`runs/eb6-replay-X.json`).
+2. **Depth 100 stop.** The 124 height-4 pieces are the two blocks of stage 11: the 81-piece block falls into five
+   units and the 43-piece height-4 frame into four (one pose each, split by inside vector), all in branch 3. Each unit
+   lies whole in the clean cap 61 and in no other clean cap; cap 61 holds 3,018 pieces, 2,361 of them on the lattice.
+   Of the 109 cap pairs of each unit, 51 fail item 1, 36 to 46 fail item 5, and in the other 12 to 22 a piece outside
+   the unit lies whole in both caps while no commuting item pair passes the item 5 tests. So no unit at the depth 100
+   stop has a strict four-letter commutator, and the search replays no word.
+3. **Fixture end.** 186 of the 305 units lie whole in no clean cap, so items 1 and 2 exclude a strict four-letter
+   commutator outright. Each of the other 119 lies whole in exactly one clean cap; of their 10,015 cap pairs, 9,025
+   fail item 1, 814 fail item 5 and in the other 176 no commuting item pair passes the item 5 tests. No unit at the
+   fixture end has a strict four-letter commutator.
+
+What E-B6 settles: at X a strict four-letter commutator lowers K, and at the depth 100 stop and the fixture end no
+unit has one. There each unit shares its only clean cap with thousands of other pieces, and most cuts near that cap
+are blocked. The search covers the commutator form only: it does not exclude other words of four letters or fewer,
+or T4's second form, two protected lowering segments, so it sets no lower bound on the length of T4 at those states
+(section 10). The non-existence is exact for these two states and says nothing about other states of the same depth.
+
+## 10. Next
 
 - An LC-13 transport closure, for the triangle and tetrahedron contents: it is what E-B5 needs first at the depth 40
   stop (16 of its 22 units) and what three of the E-B4 leftovers need. Then E-B5 run 2: the driver with
   `cellpure4.py` as its pure-twist script (a new option whose default stays `cellpure3.py`, so earlier runs replay
   unchanged), every unit tried, a seed library and a longer driver-step bound.
-- E-B6, height 4.
+- Height 4 beyond the four-letter commutator, which E-B6 found for no unit at the depth 100 stop or the fixture end:
+  other words of four letters or fewer, which the search does not cover; a retained conjugation of the commutator (one
+  K⁺ letter r before it and r⁻¹ after it, which can unblock a cut as in E-B4); six-letter commutators [g, W] with W two
+  letters; and T4's second form, two protected lowering segments. The pattern argument of Lemma E6 is the starting
+  point for pruning each.
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
@@ -351,6 +454,14 @@ depth 40 stop as a pose table, digest `7e128820…`):
 The driver writes its record to `<work dir>/gdrive.jsonl`; `runs/eb5-k40-run1.jsonl` is that record with the private
 directory of the start table written as `<working tree>`, as in the stage 09 run records.
 
+E-B6, with `C` and `R` as above and `X=research/jumbling/restoration/10-x1-unbounded/witnesses/H6030.json`:
+
+    python3 -I -B $S/eb6_meet.py <out>                                              # about 10 seconds
+    python3 -I -B $S/eb6.py witness $X 156 <out> --comm4 --units 118527             # about 20 minutes
+    python3 -I -B $S/eb6.py record $C/ia-k100-s7102.json <out> --comm4              # about 3 minutes
+    python3 -I -B $S/eb6.py fixture 841 <out> --comm4 --comm4-seconds 5000          # about 16 minutes
+    python3 -I -B $S/eb6_replay.py $R/eb6-X.json witness $X 156 <out>               # about 2.5 minutes
+
 ## Files
 
 | File | What it is |
@@ -365,3 +476,5 @@ directory of the start table written as `<working tree>`, as in the stage 09 run
 | `scripts/eb4.py`, `scripts/eb4_close.py`, `scripts/cellpure4.py`, `scripts/eb4_replay.py`, `scripts/eb4_tries.py` | E-B4: the structural stage and N1 and N2 at Y; the closures and the steps at Z; the class-cell pure twist with the exact-pose filter; the independent replay; the filter's tries at each closure |
 | `runs/eb4-k60.json`, `runs/eb4-close-k60.json`, `runs/eb4-k60-steps/u<k>.json`, `runs/eb4-replay-k60.json`, `runs/eb4-exact-tries-k60.json` | E-B4 records: stages 1 and 2 (`eb4.py`), the closures and the checked steps (`close.json` of `eb4_close.py`), the 20 step words with input and output digests, the replay record, and the exact-pose filter's tries with the digest of each state Y |
 | `runs/eb5-k40-run1.jsonl` | E-B5 run 1: the driver's event record (no step) |
+| `scripts/eb6.py`, `scripts/eb6_replay.py`, `scripts/eb6_meet.py` | E-B6: the high units of a state, their caps and lens pairs, and the exhaustive search for strict four-letter commutators (Lemma E6); the independent replay of the words it keeps; the exact check of which caps can meet |
+| `runs/eb6-X.json`, `runs/eb6-k100.json`, `runs/eb6-fx841.json`, `runs/eb6-replay-X.json`, `runs/eb6-meet.json` | E-B6 records at X (the commutator search for K only), the depth 100 stop and the fixture end; the replay record at X; the angles at which caps can meet. A rerun reproduces them except the timing fields, as long as `--comm4-seconds` lets the search reach every unit |

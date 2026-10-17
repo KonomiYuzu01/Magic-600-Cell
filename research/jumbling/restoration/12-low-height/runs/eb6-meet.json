@@ -1,0 +1,93 @@
+{
+ "R_squared": [
+  96,
+  -32,
+  1
+ ],
+ "R": 4.944272,
+ "cut_alpha_n": 4.430044,
+ "two_theta_deg": 52.727,
+ "meeting_ordered_pairs": 48000,
+ "meeting_per_cap": [
+  80
+ ],
+ "largest_meeting_angle_deg": 49.12,
+ "smallest_non_meeting_angle_deg": 56.01,
+ "near_ordered_pairs": 48000,
+ "near_per_cap": [
+  80
+ ],
+ "meeting_outside_near": 0,
+ "angles": [
+  {
+   "angle_deg": 15.52,
+   "inner_product": [
+    9,
+    5,
+    1
+   ],
+   "ordered_pairs": 2400,
+   "caps_can_meet": true
+  },
+  {
+   "angle_deg": 25.24,
+   "inner_product": [
+    10,
+    4,
+    1
+   ],
+   "ordered_pairs": 7200,
+   "caps_can_meet": true
+  },
+  {
+   "angle_deg": 36.0,
+   "inner_product": [
+    8,
+    4,
+    1
+   ],
+   "ordered_pairs": 14400,
+   "caps_can_meet": true
+  },
+  {
+   "angle_deg": 41.41,
+   "inner_product": [
+    9,
+    3,
+    1
+   ],
+   "ordered_pairs": 7200,
+   "caps_can_meet": true
+  },
+  {
+   "angle_deg": 44.48,
+   "inner_product": [
+    6,
+    4,
+    1
+   ],
+   "ordered_pairs": 2400,
+   "caps_can_meet": true
+  },
+  {
+   "angle_deg": 49.12,
+   "inner_product": [
+    7,
+    3,
+    1
+   ],
+   "ordered_pairs": 14400,
+   "caps_can_meet": true
+  },
+  {
+   "angle_deg": 56.01,
+   "inner_product": [
+    5,
+    3,
+    1
+   ],
+   "ordered_pairs": 14400,
+   "caps_can_meet": false
+  }
+ ]
+}
