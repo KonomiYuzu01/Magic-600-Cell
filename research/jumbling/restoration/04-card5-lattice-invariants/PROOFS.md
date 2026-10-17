@@ -589,6 +589,8 @@ tau_d(h), and on the lattice its sign is b5.
 
 ### 4.1 Q1.1: finiteness (open; proved partial bounds)
 
+Answered on 17 October 2026, after this edition: R(I_a) is infinite ([stage 10](../10-x1-unbounded/README.md)).
+
 **Proposition HB (height bounds for the model orbits 0 to 9; proved, with certificate REFX).** At every
 configuration reachable from solved, every piece of model orbit o has left height at most 2 if o is 0, 1, 2, 3 or 6,
 at most 4 if o is 4, 5, 7 or 8, and at most 6 if o is 9.

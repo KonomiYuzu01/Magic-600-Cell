@@ -1,0 +1,36 @@
+P1: 156 letters admissible; K at height 30; 22s
+P2: K whole in caps 11 and 80, both cuts clean, not NB neighbours, branches 3 and 2; |D_11| = 2505, |D_80| = 2702; no other piece in both caps
+P3: Good_11 = [0, 2, 5, 7, 8, 11, 13, 15, 16, 19, 20, 21, 23, 24, 25, 30, 31, 36, 37, 40, 42, 43, 44, 45, 50, 58] (26 items, 20 jumbles)
+    Good_80 = [0, 3, 4, 5, 8, 11, 19, 21, 22, 27, 33, 34, 36, 37, 40, 41, 43, 44, 46, 47, 50, 52, 53, 54, 57] (25 items, 19 jumbles); 24s
+P5 at X: kind holds trivially; 171906 other pieces
+P4/P5 after letter 256: K at height 230, labels (19, 3), 20 out grips; kind holds; 37s
+P4/P5 after letter 356: K at height 430, labels (21, 34), 20 out grips; kind holds; 49s
+P4/P5 after letter 456: K at height 630, labels (50, 57), 20 out grips; kind holds; 61s
+P4/P5 after letter 556: K at height 830, labels (20, 5), 20 out grips; kind holds; 75s
+P4/P5 after letter 656: K at height 1030, labels (23, 34), 20 out grips; kind holds; 90s
+P4/P5 after letter 756: K at height 1230, labels (58, 34), 19 out grips; kind holds; 106s
+P4/P5 after letter 856: K at height 1430, labels (31, 44), 20 out grips; kind holds; 122s
+P4/P5 after letter 956: K at height 1630, labels (42, 43), 20 out grips; kind holds; 140s
+P4/P5 after letter 1056: K at height 1830, labels (19, 47), 20 out grips; kind holds; 157s
+P4/P5 after letter 1156: K at height 2030, labels (21, 57), 20 out grips; kind holds; 174s
+P4/P5 after letter 1256: K at height 2230, labels (31, 27), 19 out grips; kind holds; 194s
+P4/P5 after letter 1356: K at height 2430, labels (7, 53), 20 out grips; kind holds; 215s
+P4/P5 after letter 1456: K at height 2630, labels (19, 57), 20 out grips; kind holds; 236s
+P4/P5 after letter 1556: K at height 2830, labels (19, 37), 20 out grips; kind holds; 260s
+P4/P5 after letter 1656: K at height 3030, labels (23, 50), 20 out grips; kind holds; 284s
+P4/P5 after letter 1756: K at height 3230, labels (15, 34), 19 out grips; kind holds; 307s
+P4/P5 after letter 1856: K at height 3430, labels (44, 44), 20 out grips; kind holds; 333s
+P4/P5 after letter 1956: K at height 3630, labels (11, 44), 20 out grips; kind holds; 361s
+P4/P5 after letter 2056: K at height 3830, labels (44, 4), 20 out grips; kind holds; 389s
+P4/P5 after letter 2156: K at height 4030, labels (23, 40), 20 out grips; kind holds; 419s
+P4/P5 after letter 2256: K at height 4230, labels (20, 27), 19 out grips; kind holds; 450s
+P4/P5 after letter 2356: K at height 4430, labels (31, 34), 20 out grips; kind holds; 481s
+P4/P5 after letter 2456: K at height 4630, labels (31, 27), 19 out grips; kind holds; 515s
+P4/P5 after letter 2556: K at height 4830, labels (0, 44), 20 out grips; kind holds; 549s
+P4/P5 after letter 2656: K at height 5030, labels (0, 3), 20 out grips; kind holds; 585s
+P4/P5 after letter 2756: K at height 5230, labels (31, 3), 20 out grips; kind holds; 624s
+P4/P5 after letter 2856: K at height 5430, labels (20, 44), 20 out grips; kind holds; 665s
+P4/P5 after letter 2956: K at height 5630, labels (23, 27), 19 out grips; kind holds; 706s
+P4/P5 after letter 3056: K at height 5830, labels (19, 8), 20 out grips; kind holds; 741s
+P4/P5 after letter 3156: K at height 6030, labels (19, 8), 20 out grips; kind holds; 772s
+PASS: 3000 pump letters, each a jumble at alternating grips 11/80 raising K by 2 (height 30 -> 6030); running products in Good; kind S(h) verified at every 100th letter; digest cb1e89ed6b0b1581f8acea27e22b443df5784d928d4284579d69c444f60b37ad

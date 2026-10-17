@@ -134,6 +134,8 @@ Proof.
 
 **Open (item 3).** Finiteness of R(S4₀), R(I_a) and R(I_b). By Proposition 3.5 these three decide every menu containing A4₀ that Corollary 3.4 does not settle. A multi-cap criterion for them is also open.
 
+**Answered for I_a (17 October 2026).** R(I_a) is infinite: an explicit family of words raises seven pieces without bound, by jumbles at two caps that both hold them whole ([restoration stage 10](../restoration/10-x1-unbounded/README.md)). Its hypotheses are a sufficient two-cap criterion. R(S4₀) and R(I_b) are no longer studied (owner decision of 13 October 2026).
+
 ## Item 4. Lattice states reached through jumbling
 
 **Lead (exact states, exhaustive over one word family).** Words W = (0, q)(d, a)(0, q⁻¹), with q the quarter-turn of S4₀ (Cayley ω = (1, 0, 0)) or a fifth-turn of I_a, over every grip d ≠ 0 and every non-identity a ∈ A4_d (6,589 words per menu; `conj.py`, `conj2.py`, results in `results/conj-*.json` and `results/conj2.json`):

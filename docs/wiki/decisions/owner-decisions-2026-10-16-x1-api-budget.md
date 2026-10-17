@@ -34,3 +34,8 @@ The owner gave this decision in a chat message in Chinese; this page records it 
 - **Results.** They come back to the integrator, who checks every claim and every witness independently before anything enters the repository. Each result is labelled proved, certificate or open.
 - **Cost record.** The billed spend is recorded from the Console figure, apart from subscription usage.
 - **Unchanged.** Other project work stays on subscription quota, and the rules for API-team runs stay as they are.
+
+## Outcome (17 October 2026)
+
+- **Result.** The run answered X1: the left heights are unbounded and R(I_a) is infinite. The integrator checked the result independently before it entered the repository, and at the owner's request X1 is now marked proved ([stage 10](../../../research/jumbling/restoration/10-x1-unbounded/README.md)).
+- **Billed spend.** On 17 October the Console showed USD 73.74 spent in the month to date, a figure that includes the probe that tested the setup before the run. The run's own estimate was USD 71.99, within the budget of USD 200. The owner disabled the run's API key afterwards.

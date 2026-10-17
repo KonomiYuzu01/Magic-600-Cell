@@ -1,0 +1,11 @@
+letter 2890 ( 11, 42): height 5498 branch 3; out grips 20
+letter 2891 ( 80, 15): height 5500 branch 2; out grips 20
+letter 2892 ( 11, 31): height 5502 branch 3; out grips 20
+letter 2893 ( 80, 21): height 5504 branch 2; out grips 20
+letter 2894 ( 11, 31): height 5506 branch 3; out grips 20
+letter 2895 ( 80, 57): height 5508 branch 2; out grips 20
+final heights (height: pieces): {0: 124237, 2: 52173, 4: 703, 5508: 7}
+pieces at the top height 5508 : [118527, 126380, 126382, 126384, 126385, 149644, 149650]
+out grips: [11, 80, 123, 164, 217, 218, 238, 280, 284, 324, 353, 389, 393, 442, 484, 537, 564, 576, 582, 592]
+digest 693d92e2bb03d46d12f190420a05685e90638c336962d10f3892aacfb589c31f
+PASS: 2895 letters admissible (exact); pieces K at left height 5508 in branch 2

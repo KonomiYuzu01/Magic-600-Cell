@@ -1,0 +1,47 @@
+items: all 120 at grips 11 and 80 are orthogonal and fix their grip normals
+member 40: words [2, 5, 5, 5, 2, 5, 5, 2, 5, 5, 2, 5, 2, 5, 6, 2, 5, 5, 2, 5, 3, 2, 2, 2, 5, 5, 2, 5, 5, 2, 2, 5, 6, 5, 2, 5, 3, 2, 2, 2]; 13177 letters; |u_t - 1| <= eta for t = 0..40; 4s
+the run's F40.json holds the same word and the same word choices
+X: K at height 30, branch 3; |D_11| = 2505, |D_80| = 2702; 177120 pieces in 176 groups; 21s
+sigma (letter 2085): every letter after X moved exactly D_x and K; debris as predicted; labels (23, 33); K at P_pump Q_X
+  boundary 0 (letter 2085): debris as predicted, K at L(u_0) Q*, height 3888; 143s
+  boundary 1 (letter 2387): debris as predicted, K at L(u_1) Q*, height 4492; 165s
+  boundary 2 (letter 2641): debris as predicted, K at L(u_2) Q*, height 5000; 184s
+  boundary 3 (letter 2895): debris as predicted, K at L(u_3) Q*, height 5508; 205s
+  boundary 4 (letter 3149): debris as predicted, K at L(u_4) Q*, height 6016; 228s
+  boundary 5 (letter 3451): debris as predicted, K at L(u_5) Q*, height 6620; 255s
+  boundary 6 (letter 3705): debris as predicted, K at L(u_6) Q*, height 7128; 280s
+  boundary 7 (letter 3959): debris as predicted, K at L(u_7) Q*, height 7636; 306s
+  boundary 8 (letter 4261): debris as predicted, K at L(u_8) Q*, height 8240; 338s
+  boundary 9 (letter 4515): debris as predicted, K at L(u_9) Q*, height 8748; 368s
+  boundary 10 (letter 4769): debris as predicted, K at L(u_10) Q*, height 9256; 398s
+  boundary 11 (letter 5071): debris as predicted, K at L(u_11) Q*, height 9860; 436s
+  boundary 12 (letter 5325): debris as predicted, K at L(u_12) Q*, height 10368; 470s
+  boundary 13 (letter 5627): debris as predicted, K at L(u_13) Q*, height 10972; 514s
+  boundary 14 (letter 5881): debris as predicted, K at L(u_14) Q*, height 11480; 554s
+  boundary 15 (letter 6179): debris as predicted, K at L(u_15) Q*, height 12076; 601s
+  boundary 16 (letter 6481): debris as predicted, K at L(u_16) Q*, height 12680; 651s
+  boundary 17 (letter 6735): debris as predicted, K at L(u_17) Q*, height 13188; 700s
+  boundary 18 (letter 6989): debris as predicted, K at L(u_18) Q*, height 13696; 753s
+  boundary 19 (letter 7291): debris as predicted, K at L(u_19) Q*, height 14300; 814s
+  boundary 20 (letter 7545): debris as predicted, K at L(u_20) Q*, height 14808; 871s
+  boundary 21 (letter 7813): debris as predicted, K at L(u_21) Q*, height 15344; 935s
+  boundary 22 (letter 8115): debris as predicted, K at L(u_22) Q*, height 15948; 1008s
+  boundary 23 (letter 8417): debris as predicted, K at L(u_23) Q*, height 16552; 1084s
+  boundary 24 (letter 8719): debris as predicted, K at L(u_24) Q*, height 17156; 1162s
+  boundary 25 (letter 8973): debris as predicted, K at L(u_25) Q*, height 17664; 1232s
+  boundary 26 (letter 9227): debris as predicted, K at L(u_26) Q*, height 18172; 1303s
+  boundary 27 (letter 9529): debris as predicted, K at L(u_27) Q*, height 18776; 1386s
+  boundary 28 (letter 9783): debris as predicted, K at L(u_28) Q*, height 19284; 1467s
+  boundary 29 (letter 10037): debris as predicted, K at L(u_29) Q*, height 19792; 1547s
+  boundary 30 (letter 10339): debris as predicted, K at L(u_30) Q*, height 20396; 1638s
+  boundary 31 (letter 10641): debris as predicted, K at L(u_31) Q*, height 21000; 1734s
+  boundary 32 (letter 10895): debris as predicted, K at L(u_32) Q*, height 21508; 1821s
+  boundary 33 (letter 11193): debris as predicted, K at L(u_33) Q*, height 22104; 1920s
+  boundary 34 (letter 11447): debris as predicted, K at L(u_34) Q*, height 22612; 2014s
+  boundary 35 (letter 11749): debris as predicted, K at L(u_35) Q*, height 23216; 2125s
+  boundary 36 (letter 12003): debris as predicted, K at L(u_36) Q*, height 23724; 2234s
+  boundary 37 (letter 12271): debris as predicted, K at L(u_37) Q*, height 24260; 2345s
+  boundary 38 (letter 12573): debris as predicted, K at L(u_38) Q*, height 24864; 2490s
+  boundary 39 (letter 12875): debris as predicted, K at L(u_39) Q*, height 25468; 2666s
+  boundary 40 (letter 13177): debris as predicted, K at L(u_40) Q*, height 26072; 2809s
+PASS (independent family check): member 40, 13177 letters, 172 pose checks of all 177120 pieces (K included), heights 3888 .. 26072

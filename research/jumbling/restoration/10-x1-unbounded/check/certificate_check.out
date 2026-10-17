@@ -1,0 +1,16 @@
+items: 48 jumbles at 11, 48 at 80 (own test: not in K+)
+tree lemma premises: every left factor at 11 and 80 fixes w_x; jumbles move v0 (distance 2); branches of the grips: 3, 2
+X: K at left height 30, branch 3; 16 vertices; all margins > 0 in caps 11 and 80
+X: cuts 11 and 80 clean; |D_11| = 2505, |D_80| = 2702; no other piece whole in both caps
+Good_11 (26) = [0, 2, 5, 7, 8, 11, 13, 15, 16, 19, 20, 21, 23, 24, 25, 30, 31, 36, 37, 40, 42, 43, 44, 45, 50, 58]
+Good_80 (25) = [0, 3, 4, 5, 8, 11, 19, 21, 22, 27, 33, 34, 36, 37, 40, 41, 43, 44, 46, 47, 50, 52, 53, 54, 57]; 18s
+sigma: 1929 pump letters keep the step hypotheses; K at height 3888 (= 30 + 2*1929), branch 2; labels (23, 33); next grip 11; 32s
+word 0: 66 letters, step hypotheses and (*) at every state (2144 checks), labels return, P = L(lambda), lambda_0 > 0, |lambda| = 1; 35s
+word 1: 302 letters, step hypotheses and (*) at every state (9696 checks), labels return, P = L(lambda), lambda_0 > 0, |lambda| = 1; 48s
+word 2: 302 letters, step hypotheses and (*) at every state (9696 checks), labels return, P = L(lambda), lambda_0 > 0, |lambda| = 1; 60s
+word 3: 268 letters, step hypotheses and (*) at every state (8608 checks), labels return, P = L(lambda), lambda_0 > 0, |lambda| = 1; 71s
+word 4: 256 letters, step hypotheses and (*) at every state (8224 checks), labels return, P = L(lambda), lambda_0 > 0, |lambda| = 1; 81s
+word 5: 254 letters, step hypotheses and (*) at every state (8160 checks), labels return, P = L(lambda), lambda_0 > 0, |lambda| = 1; 92s
+word 6: 298 letters, step hypotheses and (*) at every state (9568 checks), labels return, P = L(lambda), lambda_0 > 0, |lambda| = 1; 104s
+cover: 408 cells of depth 3 meet the ball and each lies in a listed box; all 113 boxes satisfy the inequality; 104s
+PASS (independent check): tree premises, X, Good sets, pump to sigma, 7 words with (*), cover of eta = 1/200
