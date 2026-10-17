@@ -50,16 +50,15 @@ drows = lines(D / f'{RUN}-density.jsonl.gz')
 assert drows[-1] == {'done': True}
 for r in drows[:-1]:
     dens[r['step']].append(r)
-print('\n| Step | N | Cap c | Its place | N_c | Openings | Neighbours | Pairs | Lowering N | Share | Retained openings among them |')
-print('| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |')
+print('\n| Step | N | Cap c | Its place | N_c | Neighbours | Pairs | Lowering N | Share | Of them retained openings |')
+print('| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |')
 byst = {r['step']: r for r in C}
 for s in sorted(dens):
     R, rc = dens[s], byst[s]
     low = [r for r in R if r['delta'] is not None and r['delta'] < 0]
-    assert sum(r['chosen'] for r in R) == 1 and any(r['chosen'] for r in low)
-    print(f"| {s} | {rc['N_before']:,} | {rc['c']} | {rc['rank_c']} | {rc['N_c']} | {len({r['x'] for r in R})} | "
-          f"{len({r['d'] for r in R})} | {len(R):,} | {len(low)} | {100 * len(low) / len(R):.2f}% | "
-          f"{sum(r['x'] < 12 for r in low)} |")
+    assert sum(r['chosen'] for r in R) == 1 and any(r['chosen'] for r in low) and len({r['x'] for r in R}) == 59
+    print(f"| {s} | {rc['N_before']:,} | {rc['c']} | {rc['rank_c']} | {rc['N_c']} | {len({r['d'] for r in R})} | "
+          f"{len(R):,} | {len(low)} | {100 * len(low) / len(R):.2f}% | {sum(r['x'] < 12 for r in low)} |")
 
 single = [r for r in lines(D / f'{RUN}-single.jsonl') if 'step' in r]
 print(f"\nSingle twists that lower N, at the {len(single)} repair steps: some cap had one at "

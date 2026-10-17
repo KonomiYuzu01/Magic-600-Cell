@@ -175,6 +175,63 @@ record and replays them on the exact simulator, without the code that found them
 on the lattice, no lattice piece taken off, every other off piece at its exact pose, and the recorded digests
 (`templates/check.out`).
 
+## What a person would have to try
+
+The census measures the descent when a machine carries out its rules. A person carries them out by proposing twists
+and words that the program checks ([manual](../../manual/02-descent.md), chapter 2). How many proposals that takes
+was measured on the record of the depth 40 scramble at seed 7101 (97 steps, rounds 1 and 2), replayed on the exact
+simulator with N and the off count checked after every step (measured; scripts and outputs under "Files").
+
+- **Face match and cover steps are found at once.** At all 34 of them (27 face match, 7 cover) the cap the rule
+  chose was the first of the caps that pass the test, and a median of 2 caps passed (at most 8). A person who sees
+  which caps pass, as the program has to show, proposes one twist of that cap and the check confirms it.
+- **Repairs are found by search.** The rule tries the caps by decreasing N_c and, at each, the 59 openings in menu
+  order, the 11 retained twists first. Before the opening that worked it tried a median of 76 openings, at most
+  1,598. At 15 of the 63 repair steps it tried at most 10 (steps 30 to 43 and 70 to 73), at the other 48 at least 59.
+  For every opening it also tries every misaligned neighbour d of c, with the best twist of d and then of c, each
+  the best of 59.
+- **At the cap where the repair was found, few pairs work.** At 15 tail steps from step 44 on, 1 to 11 of the 472 to
+  1,298 pairs (opening x, neighbour d) at that cap lowered N, 0.08% to 1.86% (table); at 9 of the 15 the pair the
+  rule found was the only one. At the caps the rule tried before, none did.
+- **Nothing visible marks the pair.** After the opening, d passes the face match at 6 of the 63 steps, and c after
+  y at 2. c covers d at 30 steps and d covers c at 26, so the cover relation does not single out the pair. The
+  scramble's own twists are not undone either: x undoes c's last scramble twist at no step, y undoes d's at 2.
+- **Single twists run out.** At the first repair steps (30 to 35), single twists that lower N existed at 5 to 11
+  caps; the improve rule, which would make them, comes after conj in the rule order and never ran. From step 40 on,
+  one cap at most had one, at 14 of 56 steps. The floor of a cap, which the program shows, tells a person where such
+  a twist exists: exactly where the floor is below N_c.
+- **What repairs are made of.** Over the seven records with repairs (592 repairs), 359 (61%) use retained twists
+  only, and in 236 (40%) the last twist undoes the opening (z = x⁻¹). Since the rule tries retained openings first,
+  this counts what was found first, not what exists.
+
+The repair density at the 15 tail steps measured (`runs/findability/ia-k40-s7101-density.jsonl.gz`). N: before the
+step. Cap c: the cap where the rule found the repair, with its place among the misaligned caps by decreasing N_c.
+Neighbours: the misaligned caps that meet c. Pairs: the 59 openings of c times its neighbours. Lowering N: the
+pairs whose repair, with the rule's y and z, lowers N; the last column counts those whose opening is a retained
+twist.
+
+| Step | N | Cap c | Its place | N_c | Neighbours | Pairs | Lowering N | Share | Of them retained openings |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 44 | 5,330 | 591 | 2 | 400 | 10 | 590 | 11 | 1.86% | 0 |
+| 47 | 5,104 | 354 | 2 | 355 | 11 | 649 | 1 | 0.15% | 0 |
+| 48 | 4,706 | 593 | 2 | 327 | 17 | 1,003 | 6 | 0.60% | 0 |
+| 54 | 4,382 | 571 | 2 | 337 | 15 | 885 | 5 | 0.56% | 0 |
+| 59 | 4,280 | 571 | 2 | 306 | 13 | 767 | 3 | 0.39% | 0 |
+| 64 | 4,098 | 571 | 2 | 278 | 14 | 826 | 3 | 0.36% | 0 |
+| 69 | 3,094 | 329 | 2 | 208 | 13 | 767 | 1 | 0.13% | 0 |
+| 74 | 2,822 | 353 | 2 | 254 | 14 | 826 | 1 | 0.12% | 0 |
+| 75 | 2,362 | 590 | 3 | 183 | 17 | 1,003 | 1 | 0.10% | 0 |
+| 79 | 2,056 | 593 | 2 | 198 | 17 | 1,003 | 1 | 0.10% | 0 |
+| 83 | 2,010 | 571 | 10 | 46 | 9 | 531 | 1 | 0.19% | 1 |
+| 87 | 1,950 | 593 | 3 | 153 | 17 | 1,003 | 1 | 0.10% | 0 |
+| 91 | 1,850 | 552 | 13 | 36 | 22 | 1,298 | 3 | 0.23% | 0 |
+| 96 | 1,738 | 552 | 10 | 48 | 20 | 1,180 | 1 | 0.08% | 1 |
+| 97 | 1,736 | 458 | 28 | 2 | 8 | 472 | 1 | 0.21% | 1 |
+
+So the bulk of a descent can be found from the facts the program shows, and the tail cannot: within the human-solve
+boundary a person would have to propose hundreds of three-twist words for one tail step, and the records have 42 to
+197 repair steps each. This is one record at one depth; the other records were not measured this way.
+
 ## Assessment and the owner's choice
 
 The integrator proposed four options before the experiments (decision item 1) and assessed them against the results
@@ -206,8 +263,11 @@ templates can address hold 27% (depth 60) and 5% (depth 100).
      yet: a second seed at 1000 (7110), more seeds at 40, and further rounds of the round 3 runs.
   3. A manual of the techniques, written for a person: the three descent techniques, the shape catalogue, vacating
      and unlocking, each with its picture in the program. Started on 17 October: [manual](../../manual/README.md),
-     with chapters 1 and 2 (what the solver sees, the descent with worked examples from these records) drafted and
-     chapters 3 and 4 as outlines.
+     with chapters 1 and 2 (what the solver sees, the descent with worked examples from these records) and 4 (the
+     lattice phase) drafted and chapter 3 as an outline.
+  4. What a person would have to try (section above): face match and cover steps are found at once, while a repair
+     in the tail needs a search of hundreds of words. What help the program may give for that search is an owner
+     decision under the human-solve boundary.
 - **B.** A statement: at every reachable state whose off pieces lie at left heights 2 and 4, a clean step V·W·V⁻¹
   exists whose W comes from a finite catalogue and whose vacating word V has an explicit length bound, or an
   unlocking step of explicit length; that is, gap M1 restricted to low heights. The template test puts the weight
