@@ -13,9 +13,10 @@ At each state Z (a pose table):
    refinement; each candidate W is closed as V W V^-1 by tclose2.py and accepted only when its unit is restored
    with collateral 0 and every off piece outside the step's free set keeps its exact pose (a clean step, Lemma U).
    The word library is the --seed directories plus every search made earlier in this run.
-3. If the driver restores no unit at Z: pure-twist step. cellpure3.py runs on the units, largest first (ties by
-   key), PAR at a time: the class-cell pure twist W (commutator powers around a triangle of edge cells of the unit's
-   class, model check, exact replay). The units with a word are then closed, fewest lattice pieces in the carrier
+3. If the driver restores no unit at Z: pure-twist step. cellpure3.py (or the script that --pure-script names) runs
+   on the units, largest first (ties by key), PAR at a time: the class-cell pure twist W (commutator powers around a
+   triangle of edge cells of the unit's class, model check, exact replay; stage 12's cellpure5.py adds the transport
+   of LC-13 for the other cell kinds). The units with a word are then closed, fewest lattice pieces in the carrier
    cell first (the pieces V must move away), with tclose2.py (V from the peeling certificate, greedy fallback) and,
    on 'no V', with tclose2m3.py (targeted depth-2 peel). The first success in that order is the step.
 4. If neither kind restores a unit: the exhaustive fallback (fallback.py) for the largest unit (ties by key). It
@@ -29,10 +30,11 @@ verify_u.py replays the chain independently.
 
 usage: gdrive.py <research/jumbling> <E-chain scripts> <start table> <name> <work dir> [--seed <dir>]...
        [--par K] [--greedy-seconds N] [--pure-greedy-seconds N] [--pure-max N] [--heuristic-seconds N]
-       [--max-steps N] [--fallback-max-length N] [--fallback-only]
+       [--max-steps N] [--fallback-max-length N] [--fallback-only] [--pure-script <path>]
        [--lattice <scriptdir> <repo root> <library json> <checker dir>]
 --max-steps (default 0, no limit) and --fallback-max-length (default 0, no limit) are experiment bounds outside M*.
 --heuristic-seconds defaults to 21600. --fallback-only skips the heuristic steps (a test of the fallback path).
+--pure-script defaults to cellpure3.py next to this file, so earlier runs replay unchanged.
 """
 import json
 import os
@@ -64,6 +66,7 @@ PMAX = int(opt('--pure-max', 8))
 HSEC = int(opt('--heuristic-seconds', 21600))
 FBMAX = int(opt('--fallback-max-length', 0))
 FB_ONLY = '--fallback-only' in a
+PSCRIPT = Path(opt('--pure-script', str(HERE / 'cellpure3.py'))).resolve()
 SEEDS = [a[i + 1] for i, x in enumerate(a) if x == '--seed']
 LAT = a[a.index('--lattice') + 1:a.index('--lattice') + 5] if '--lattice' in a else None
 TH = str(Path(J) / 'theory')
@@ -171,6 +174,8 @@ def cp3_reason(out, logf):
     if 'Traceback' in txt:
         return 'crash: ' + txt.strip().splitlines()[-1][:200]
     rec = json.loads(Path(out).read_text()) if Path(out).exists() else {}
+    if 'transport' in rec:
+        return 'transport: ' + rec['transport'].get('result', 'no word')
     if rec.get('cycles_found') == 0:
         return 'no cycle of edge cells'
     if rec.get('model_check_pass') is False:
@@ -199,7 +204,7 @@ def pure_step(table, k, units):
         def f():
             out = wd / f'cp3-{u["key"]}.json'
             lf = wd / f'cp3-{u["key"]}.log'
-            rc = run(PY + [str(HERE / 'cellpure3.py'), TH, table, u['file'], str(out), '--search'], str(lf), HSEC)
+            rc = run(PY + [str(PSCRIPT), TH, table, u['file'], str(out), '--search'], str(lf), HSEC)
             wf = wd / f'cp3-{u["key"]}-word.json'
             if rc == 'timeout':
                 return {'word': None, 'reason': f'timeout after {HSEC} s'}
@@ -314,7 +319,7 @@ def h_fallback(table, k, info, units):
 
 # ---- main loop
 log(event='start', name=NAME, start=START, seeds=SEEDS, par=PAR, greedy=GSEC, pure_greedy=PGSEC, max_steps=MAXS,
-    heuristic_seconds=HSEC, fallback_max_length=FBMAX, fallback_only=FB_ONLY)
+    heuristic_seconds=HSEC, fallback_max_length=FBMAX, fallback_only=FB_ONLY, pure_script=PSCRIPT.name)
 try:
     table, _, reason = mstar.drive(str(Path(START).resolve()), state_of, [] if FB_ONLY else [h_driver, h_pure],
                                    h_fallback, budget=MAXS, log=log)
