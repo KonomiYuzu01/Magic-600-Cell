@@ -4,10 +4,11 @@
 # - every step: the misaligned caps that can turn, how many pass the face match, the search time of the record;
 # - seam and cover steps: the chosen cap's rank among the candidates, its N_c, best drop and how many twists reach it;
 # - conj steps (c, x)(d, y)(c, z): the rank of c among the misaligned caps in the rule's order (decreasing N_c), the
-#   neighbours d of c in that order, the openings (c', x') that the rule's order tries before (c, x), whether d passes
-#   the face match once c is opened by x, whether c passes it once y is made, whether c covers d or d covers c before
-#   the step, whether z is the inverse of x, and (labels from the scramble's history only) whether x undoes c's last
-#   scramble twist and whether y undoes d's last scramble twist.
+#   neighbours d of c in that order, the openings (c', x') and the pairs (c', x', d') of opening and neighbour that
+#   the rule's order tries before (c, x) and (c, x, d), whether d passes the face match once c is opened by x, whether
+#   c passes it once y is made, whether c covers d or d covers c before the step, whether z is the inverse of x, and
+#   (labels from the scramble's history only) whether x undoes c's last scramble twist and whether y undoes d's last
+#   scramble twist.
 # Run from the repository root:  python3 -I -B findability.py <record json> [<first step> <last step>]
 import json
 import sys
@@ -97,6 +98,7 @@ for j, step in enumerate(rec['steps']):
                 'rank_c': r_c + 1, 'N_c': sv[c][0], 'N_d': sv[d][0],
                 'neighbours_of_c': len(nb), 'index_d': nb.index(d) + 1,
                 'openings_before': sum(per_cap for q in mis[:r_c] if nbs[q]) + x_rank,
+                'pairs_before': sum(per_cap * len(nbs[q]) for q in mis[:r_c]) + x_rank * len(nb) + nb.index(d),
                 'x_rank_in_menu': x_rank + 1,
                 'N_c_after_x': sv[c][1][x],
                 'x_rank_by_N_c': 1 + sum(v < sv[c][1][x] for i2, v in sv[c][1].items() if i2 != ident),

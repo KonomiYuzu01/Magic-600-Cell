@@ -35,6 +35,15 @@ C = [r for r in steps if r['rule'] == 'conj']
 ob = [r['openings_before'] for r in C]
 print(f'\nRepair steps: {len(C)}; openings tried before the one that worked: min {min(ob)}, median '
       f'{statistics.median(ob)}, max {max(ob)}; at most 10 in {sum(o <= 10 for o in ob)} steps')
+few = [r for r in C if r['openings_before'] <= 10]
+print(f"  the steps with at most 10: {[r['step'] for r in few]}, the chosen cap the first by decreasing N_c at "
+      f"{sum(r['rank_c'] == 1 for r in few)}")
+pb = [r['pairs_before'] for r in C]
+print(f'  pairs (opening, neighbour) tried before the one that worked: median {statistics.median(pb)}, max {max(pb)}')
+T = [r for r in C if r['step'] >= 44]
+print(f"  from step 44 on, {len(T)} steps: openings median {statistics.median(r['openings_before'] for r in T)}, "
+      f"pairs median {statistics.median(r['pairs_before'] for r in T)}, at least 59 openings at "
+      f"{sum(r['openings_before'] >= 59 for r in T)}")
 print(f"  chosen cap by decreasing N_c: {dict(sorted(Counter(r['rank_c'] for r in C).items()))}")
 print(f"  opening retained (items 1 to 11): {sum(r['x'] < 12 for r in C)}; z undoes x: "
       f"{sum(r['z_inverse_of_x'] for r in C)}; c covers d: {sum(r['c_covers_d'] for r in C)}; d covers c: "
@@ -61,7 +70,10 @@ for s in sorted(dens):
           f"{len(R):,} | {len(low)} | {100 * len(low) / len(R):.2f}% | {sum(r['x'] < 12 for r in low)} |")
 
 single = [r for r in lines(D / f'{RUN}-single.jsonl') if 'step' in r]
-print(f"\nSingle twists that lower N, at the {len(single)} repair steps: some cap had one at "
+assert lines(D / f'{RUN}-single.jsonl')[-1] == {'done': True}
+print('\nCaps with a single twist that lowers N, before step 40:',
+      {r['step']: r['caps_with_single_drop'] for r in single if r['step'] < 40})
+print(f"Single twists that lower N, at the {len(single)} repair steps: some cap had one at "
       f"{sum(r['caps_with_single_drop'] > 0 for r in single)} steps; from step 40 on at "
       f"{sum(r['caps_with_single_drop'] > 0 for r in single if r['step'] >= 40)} of "
       f"{sum(r['step'] >= 40 for r in single)}, at most {max(r['caps_with_single_drop'] for r in single if r['step'] >= 40)} "

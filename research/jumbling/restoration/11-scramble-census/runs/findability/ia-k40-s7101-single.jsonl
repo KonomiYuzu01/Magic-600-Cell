@@ -1,0 +1,64 @@
+{"step": 30, "misaligned": 25, "caps_with_single_drop": 11, "best_single_drop": 1268, "top_drops": [1268, 1202, 1046, 994, 970], "conj_drop": 1804}
+{"step": 32, "misaligned": 25, "caps_with_single_drop": 9, "best_single_drop": 1360, "top_drops": [1360, 1268, 1202, 970, 948], "conj_drop": 2514}
+{"step": 33, "misaligned": 25, "caps_with_single_drop": 7, "best_single_drop": 1268, "top_drops": [1268, 1202, 970, 834, 306], "conj_drop": 1462}
+{"step": 35, "misaligned": 28, "caps_with_single_drop": 5, "best_single_drop": 1268, "top_drops": [1268, 306, 150, 46, 26], "conj_drop": 1230}
+{"step": 37, "misaligned": 34, "caps_with_single_drop": 3, "best_single_drop": 114, "top_drops": [114, 84, 60], "conj_drop": 68}
+{"step": 38, "misaligned": 32, "caps_with_single_drop": 1, "best_single_drop": 74, "top_drops": [74], "conj_drop": 88}
+{"step": 39, "misaligned": 34, "caps_with_single_drop": 1, "best_single_drop": 46, "top_drops": [46], "conj_drop": 60}
+{"step": 40, "misaligned": 32, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 68}
+{"step": 41, "misaligned": 31, "caps_with_single_drop": 1, "best_single_drop": 28, "top_drops": [28], "conj_drop": 66}
+{"step": 42, "misaligned": 33, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 20}
+{"step": 43, "misaligned": 35, "caps_with_single_drop": 1, "best_single_drop": 2, "top_drops": [2], "conj_drop": 26}
+{"step": 44, "misaligned": 37, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 50}
+{"step": 45, "misaligned": 37, "caps_with_single_drop": 1, "best_single_drop": 68, "top_drops": [68], "conj_drop": 62}
+{"step": 46, "misaligned": 41, "caps_with_single_drop": 1, "best_single_drop": 68, "top_drops": [68], "conj_drop": 114}
+{"step": 47, "misaligned": 41, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 398}
+{"step": 48, "misaligned": 50, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 54}
+{"step": 49, "misaligned": 49, "caps_with_single_drop": 1, "best_single_drop": 46, "top_drops": [46], "conj_drop": 44}
+{"step": 50, "misaligned": 54, "caps_with_single_drop": 1, "best_single_drop": 72, "top_drops": [72], "conj_drop": 46}
+{"step": 51, "misaligned": 53, "caps_with_single_drop": 1, "best_single_drop": 72, "top_drops": [72], "conj_drop": 40}
+{"step": 53, "misaligned": 53, "caps_with_single_drop": 1, "best_single_drop": 72, "top_drops": [72], "conj_drop": 134}
+{"step": 54, "misaligned": 52, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 82}
+{"step": 55, "misaligned": 51, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 6}
+{"step": 56, "misaligned": 52, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 6}
+{"step": 57, "misaligned": 53, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 2}
+{"step": 59, "misaligned": 50, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 14}
+{"step": 60, "misaligned": 50, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 6}
+{"step": 61, "misaligned": 50, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 72}
+{"step": 62, "misaligned": 49, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 76}
+{"step": 63, "misaligned": 48, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 14}
+{"step": 64, "misaligned": 54, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 116}
+{"step": 65, "misaligned": 54, "caps_with_single_drop": 1, "best_single_drop": 46, "top_drops": [46], "conj_drop": 824}
+{"step": 66, "misaligned": 51, "caps_with_single_drop": 1, "best_single_drop": 46, "top_drops": [46], "conj_drop": 46}
+{"step": 67, "misaligned": 52, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 16}
+{"step": 68, "misaligned": 49, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 2}
+{"step": 69, "misaligned": 50, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 64}
+{"step": 70, "misaligned": 47, "caps_with_single_drop": 1, "best_single_drop": 84, "top_drops": [84], "conj_drop": 18}
+{"step": 71, "misaligned": 49, "caps_with_single_drop": 1, "best_single_drop": 68, "top_drops": [68], "conj_drop": 26}
+{"step": 72, "misaligned": 50, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 98}
+{"step": 73, "misaligned": 49, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 66}
+{"step": 74, "misaligned": 45, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 460}
+{"step": 75, "misaligned": 44, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 174}
+{"step": 76, "misaligned": 44, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 50}
+{"step": 77, "misaligned": 38, "caps_with_single_drop": 1, "best_single_drop": 4, "top_drops": [4], "conj_drop": 10}
+{"step": 78, "misaligned": 41, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 72}
+{"step": 79, "misaligned": 42, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 26}
+{"step": 80, "misaligned": 43, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 2}
+{"step": 81, "misaligned": 41, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 14}
+{"step": 82, "misaligned": 43, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 4}
+{"step": 83, "misaligned": 41, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 8}
+{"step": 84, "misaligned": 41, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 4}
+{"step": 85, "misaligned": 41, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 26}
+{"step": 86, "misaligned": 39, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 22}
+{"step": 87, "misaligned": 40, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 72}
+{"step": 88, "misaligned": 41, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 10}
+{"step": 89, "misaligned": 39, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 2}
+{"step": 90, "misaligned": 40, "caps_with_single_drop": 1, "best_single_drop": 16, "top_drops": [16], "conj_drop": 16}
+{"step": 91, "misaligned": 41, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 2}
+{"step": 92, "misaligned": 42, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 76}
+{"step": 93, "misaligned": 35, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 2}
+{"step": 94, "misaligned": 33, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 2}
+{"step": 95, "misaligned": 32, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 30}
+{"step": 96, "misaligned": 34, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 2}
+{"step": 97, "misaligned": 33, "caps_with_single_drop": 0, "best_single_drop": 0, "top_drops": [], "conj_drop": 2}
+{"done": true}
