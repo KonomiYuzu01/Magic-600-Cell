@@ -389,14 +389,71 @@ What E-B6 settles: at X a strict four-letter commutator lowers K, and at the dep
 unit has one. There each unit shares its only clean cap with thousands of other pieces, and most cuts near that cap
 are blocked. The search covers the commutator form only: it does not exclude other words of four letters or fewer,
 or T4's second form, two protected lowering segments, so it sets no lower bound on the length of T4 at those states
-(section 10). The non-existence is exact for these two states and says nothing about other states of the same depth.
+(section 11). The non-existence is exact for these two states and says nothing about other states of the same depth.
 
-## 10. Next
+## 10. LC-13: transport words for triangle and tetrahedron contents (measured, exact replay)
 
-- An LC-13 transport closure, for the triangle and tetrahedron contents: it is what E-B5 needs first at the depth 40
-  stop (16 of its 22 units) and what three of the E-B4 leftovers need. Then E-B5 run 2: the driver with
-  `cellpure4.py` as its pure-twist script (a new option whose default stays `cellpure3.py`, so earlier runs replay
-  unchanged), every unit tried, a seed library and a longer driver-step bound.
+A triangle or tetrahedron content cannot land in its own cell (LC-12); it lands only by a transport to label 0 of a
+home cell of its kind (LC-13, `09-general-method/SENIOR-REVIEW.md` section 6). The seeds of LC-13 (48 and 24 letters)
+are not in the repository, and its bounds (240 and 192 letters) assume every class-P grip free, so
+`scripts/cellpure5.py` looks for a transport at the state instead. It is `cellpure4.py` with a second branch, marked
+in the file, for a unit whose content is not in an edge cell:
+
+1. **Search, in the class-cell model.** For each ordered pair of free class-P grips that share a cell, one of them a
+   cap of the unit's cell X, and each item x at the first grip and y at the second, it follows the powers [x, y]^n of
+   the single-letter commutator up to n = 60 (`--max-power`). A power is a candidate when it moves the unit's point
+   to label 0 of a home cell (a cell that holds lattice chambers) and fixes the point of every other off content of
+   the class.
+2. **Order.** Candidates are sorted by the number of lattice pieces they take off label 0, which are the pieces V
+   must vacate, then by whether another off content of the class lies in one of the two caps (its exact pose can
+   change), then by length.
+3. **Exact filter.** W is the first candidate whose exact replay from the pose table lands the unit, keeps every other
+   off piece at its exact pose and takes off exactly the predicted lattice pieces (at most 12 tries, as in
+   `cellpure4.py`).
+
+W then goes to the closure V·W·V⁻¹ of stage 09 (`tclose2.py`, and `tclose2m3.py` when the first finds no V), as an
+edge-cell word does. The driver runs `cellpure5.py` through its new option `--pure-script` (section 8).
+
+At the depth 40 stop, for its first three units in block order (`runs/lc13-k40/`; 3 to 4 minutes per word and 4 to
+12 minutes per closure):
+
+| Unit | Content | Grip pairs | Landing powers | Candidates | W | Exact tries | Lattice pieces off | Bad(W) occupied | Closure |
+|---|---|---|---|---|---|---|---|---|---|
+| b00 | triangle, 33 pieces | 66 | 125,751 | 5,798 | [x, y]³, 12 letters | 3 | 111 | 111 of 111 | no V |
+| b01 | tetrahedron, 72 pieces | 84 | 221,937 | 16,052 | [x, y]⁶, 24 letters | 1 | 15 | 15 of 87 | V of 300 letters; step of 624 letters |
+| b02 | triangle, 111 pieces | 66 | 125,751 | 4,632 | [x, y]³, 12 letters | 2 | 111 | 111 of 111 | no V |
+
+Each grip pair gives 59 × 59 commutators (229,746 for the triangle units, 292,404 for the tetrahedron unit). A landing
+power moves the unit's point to label 0 of a home cell; a candidate also fixes the other 12 off contents of the class.
+
+- **Every unit has a transport word.** Each W is one commutator power of 12 or 24 letters, far below the bounds of
+  LC-13, and lands the unit whole at its exact replay. Every candidate also takes lattice pieces off label 0: at
+  least 111 for the triangle units (W takes the lattice content of one triangle home cell) and at least 15 for the
+  tetrahedron unit, so all three need a V. The exact filter rejected the first two candidates of b00 and the first of
+  b02: each left 72 other off pieces at their points but at other exact poses.
+- **b01 closes.** The peeling certificate (Theorem B) gives a V of 300 letters that vacates the 15 occupied chambers
+  of Bad(W), one tetrahedron home cell. The step V·W·V⁻¹ has 624 letters and takes the off count from 1,193 to
+  1,121: the unit lands, collateral is 0, every other off piece keeps its exact pose, and all 175,927 pieces on the
+  lattice stay on it (175,841 at the same exact pose). `scripts/eb4_replay.py` replays the step independently from
+  the exported table and finds it strict′ (`runs/lc13-k40/replay-b01.json`).
+- **The two triangle units do not close.** Bad(W) is a whole triangle home cell of 111 occupied chambers. The peeling
+  certificate stops after 35 (b00) and 34 (b02) of them, also with the depth-2 search of `tclose2m3.py` (144,292 and
+  100,435 letter pairs scanned), and the greedy fallback, bounded at 300 seconds, leaves 35 and 3 occupied
+  (`runs/lc13-k40/close-no-v.json`). For b02 the greedy stopped three chambers short when the time bound ended it; a
+  longer bound was not tried.
+
+What this shows, at one state: LC-13's transport exists here as single commutator powers of 12 and 24 letters, and
+the closure works for b01, whose Bad(W) holds 15 lattice pieces. For a triangle content every candidate takes at
+least 111 lattice pieces off, so the closure must vacate at least 111 chambers, and V is then the open part. The 13
+other triangle and tetrahedron units of this state were not run outside the driver (section 8).
+
+## 11. Next
+
+- V for the triangle transports of section 10, whose Bad(W) is a full triangle home cell: a longer greedy bound (for
+  b02 it stopped three chambers short at 300 seconds), and transports with a smaller Bad(W), which no single
+  commutator power gives for b00 or b02 (each takes at least 111 lattice pieces off): a power conjugated by one
+  retained letter (M1-18), or two powers in sequence. The three triangle contents among the E-B4 leftovers at the
+  depth 60 stop can be tried with `cellpure5.py` as it is.
 - Height 4 beyond the four-letter commutator, which E-B6 found for no unit at the depth 100 stop or the fixture end:
   other words of four letters or fewer, which the search does not cover; a retained conjugation of the commutator (one
   K⁺ letter r before it and r⁻¹ after it, which can unblock a cut as in E-B4); six-letter commutators [g, W] with W two
@@ -462,6 +519,20 @@ E-B6, with `C` and `R` as above and `X=research/jumbling/restoration/10-x1-unbou
     python3 -I -B $S/eb6.py fixture 841 <out> --comm4 --comm4-seconds 5000          # about 16 minutes
     python3 -I -B $S/eb6_replay.py $R/eb6-X.json witness $X 156 <out>               # about 2.5 minutes
 
+LC-13 (section 10), with `G` and `k40.json` as for E-B5, `L=research/jumbling/restoration/12-low-height/runs/lc13-k40`
+and `u` one of `b00`, `b01`, `b02`:
+
+    python3 -I -B $S/cellpure5.py research/jumbling/theory k40.json $L/units/eb5-k40-k00-$u.json t-$u.json --search   # 3 to 4 minutes
+    python3 -I $G/gm/tclose2.py research/jumbling/theory $G/echain k40.json $L/units/eb5-k40-k00-$u.json w-$u.json \
+        c2-$u --greedy-seconds 300                                                  # 4 to 7 minutes
+    python3 -I $G/gm/tclose2m3.py research/jumbling/theory $G/echain k40.json $L/units/eb5-k40-k00-$u.json w-$u.json \
+        c3-$u --greedy-seconds 300                                                  # after 'no V'; 10 to 12 minutes
+    python3 -I -B $S/eb4_replay.py k40.json $L/steps <out>                         # about 35 seconds
+
+`cellpure5.py` writes `t-$u.json` and the word `t-$u-word.json`; `w-$u.json` is `{"P": [], "Q": <that word>}`, as
+the driver writes it. The unit files are those the driver writes for the start state (`<work dir>/tg/eb5-k40-k00/`),
+and `steps/u1.json` is `word-full.json` of the closure `c2-b01`.
+
 ## Files
 
 | File | What it is |
@@ -478,3 +549,5 @@ E-B6, with `C` and `R` as above and `X=research/jumbling/restoration/10-x1-unbou
 | `runs/eb5-k40-run1.jsonl` | E-B5 run 1: the driver's event record (no step) |
 | `scripts/eb6.py`, `scripts/eb6_replay.py`, `scripts/eb6_meet.py` | E-B6: the high units of a state, their caps and lens pairs, and the exhaustive search for strict four-letter commutators (Lemma E6); the independent replay of the words it keeps; the exact check of which caps can meet |
 | `runs/eb6-X.json`, `runs/eb6-k100.json`, `runs/eb6-fx841.json`, `runs/eb6-replay-X.json`, `runs/eb6-meet.json` | E-B6 records at X (the commutator search for K only), the depth 100 stop and the fixture end; the replay record at X; the angles at which caps can meet. A rerun reproduces them except the timing fields, as long as `--comm4-seconds` lets the search reach every unit |
+| `scripts/cellpure5.py` | LC-13: `cellpure4.py` with a transport branch for a content that is not in an edge cell (commutator powers into a home cell of its kind, exact-pose filter) |
+| `runs/lc13-k40/` | LC-13 at the depth 40 stop: the three unit files; the transport records and words with input and output digests (`transport-<u>.json`, `transport-<u>-word.json`); the closure record of b01 (`close-b01.json`) and its step word (`steps/u1.json`); the replay record of that step (`replay-b01.json`); and, for b00 and b02, the closures' Bad(W), vacancy, certificate and greedy fields (`close-no-v.json`, taken from their `pre.json` and `result.json`) |
