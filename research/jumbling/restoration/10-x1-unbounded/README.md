@@ -77,7 +77,7 @@ The integrator checked the result in a cloud session, apart from the run, before
   and pages shard found three defects, all fixed: `replay_witness.py` converted letters with `int()`, so a
   fractional letter was truncated and still verified; `family_check.py` left K out of its checks every 100 letters;
   and the root README still called X1 open. Probes confirmed both checker defects before the fix and their
-  rejection after it.
+  rejection after it. The outputs in `check/` are re-runs of the fixed checkers.
 - **Not done.** No human has reviewed the proof.
 
 ## Replay

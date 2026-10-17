@@ -1,4 +1,4 @@
-letters: 169 ; common prefix with E17-4: 141
+letters: 169 (each two integers, grip and item in range); common prefix with E17-4: 141
 140 (537,12) K left height  2 branch 1, out grips 12
 141 (593,23) K left height  4 branch 2, out grips 12
 142 (592,22) K left height  6 branch 0, out grips 13
