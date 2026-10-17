@@ -3,12 +3,13 @@ id: owner-decisions-2026-10-17-repair-pairs
 type: decision
 status: verified
 visibility: public
-summary: Owner decision of 17 October 2026 - the human-solve boundary for restoring the jumbled puzzle is settled - at a cap, the program may list the pairs (x, d) whose three-twist repair lowers N, and the person picks one; measured, 1 to 11 such pairs per tail step.
+summary: Owner decision of 17 October 2026 - the human-solve boundary for restoring the jumbled puzzle is settled - at a cap the solver names, the program may list the pairs (x, d) whose three-twist repair lowers N, and the person picks one; measured, 1 to 11 such pairs per tail step.
 related: [owner-decisions-2026-10-02, owner-decisions-2026-10-17-jumbling-tutorial, owner-decisions-2026-10-09-jumbling]
 supersedes: []
 claims:
   - {id: repair-pair-list, evidence_kind: decision, checked_at: 2026-10-17}
   - {id: person-picks, evidence_kind: decision, checked_at: 2026-10-17}
+  - {id: readings-confirmed, evidence_kind: decision, checked_at: 2026-10-17}
 ---
 
 # Owner decision, 17 October 2026: the program may list the repairs that lower N at a cap
@@ -41,9 +42,9 @@ to the owner:
 
 The owner chose the list of lowering pairs at a cap.
 
-## How the integrator reads it
+## How it applies
 
-The owner may correct these readings; until then the requirements and the manual follow them.
+The integrator wrote these readings down, and the owner confirmed them on 17 October 2026.
 - **The pairs** are those of the three-twist repair: an opening x of the cap c, the 59 twists of its menu other than
   the identity, and a misaligned cap d that meets c. A pair is listed when its repair, with y the best twist of d
   after x and z the best twist of c after x and y, lowers N. This is how the measurement counted them.
@@ -66,5 +67,5 @@ The owner may correct these readings; until then the requirements and the manual
   63 repair steps of the record, and at most the 28th.
 - **Measurement.** The list was measured at 15 of the 63 repair steps of the record. Measuring it at all of them is
   the next item of option A.
-- **Briefing.** The briefing's jumbling line still says that the human-solve boundary applies unchanged. Changing a
-  rule file needs the owner's explicit authorization, which has been asked for.
+- **Briefing.** With the owner's explicit authorization of 17 October 2026, the briefing's jumbling line states this
+  exception.
