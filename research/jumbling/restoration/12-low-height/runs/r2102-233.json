@@ -1,0 +1,58 @@
+{
+ "source": {
+  "table": "stop62-233-table.json.gz"
+ },
+ "digest": "46496bb1806f5f4078d9d15ed83986938ccb9cb776ba62fd187767f17c662514",
+ "off": 233,
+ "samples": 24,
+ "pieces_separated_by_a_facet": 224,
+ "samples_by_outcome": {
+  "outside": 216
+ },
+ "units": [
+  {
+   "unit": 0,
+   "first": 1040,
+   "size": 86,
+   "P": 147,
+   "P_pieces_not_separated": 6,
+   "F_lower": 0,
+   "F_exactly_empty": false,
+   "F_upper": 10,
+   "holds_for_certain": true,
+   "violations": {},
+   "refuted": false
+  },
+  {
+   "unit": 1,
+   "first": 23955,
+   "size": 61,
+   "P": 172,
+   "P_pieces_not_separated": 6,
+   "F_lower": 0,
+   "F_exactly_empty": false,
+   "F_upper": 10,
+   "holds_for_certain": true,
+   "violations": {},
+   "refuted": false
+  },
+  {
+   "unit": 2,
+   "first": 64184,
+   "size": 86,
+   "P": 147,
+   "P_pieces_not_separated": 6,
+   "F_lower": 0,
+   "F_exactly_empty": false,
+   "F_upper": 10,
+   "holds_for_certain": true,
+   "violations": {},
+   "refuted": false
+  }
+ ],
+ "units_refuted": 0,
+ "units_F_exactly_empty": 0,
+ "units_holding_for_certain": 3,
+ "state_refuted": false,
+ "seconds": 6.4
+}

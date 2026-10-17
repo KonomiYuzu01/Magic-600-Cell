@@ -1,0 +1,1767 @@
+{
+ "source": {
+  "record": "ia-k40-s7101.json",
+  "run": "ia-k40-s7101",
+  "moves": 223
+ },
+ "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+ "off": 1193,
+ "holes_by_type": {
+  "6": 2,
+  "7": 2,
+  "8": 4,
+  "9": 2,
+  "10": 8,
+  "11": 14,
+  "12": 22,
+  "13": 6,
+  "14": 7,
+  "15": 22,
+  "16": 38,
+  "17": 46,
+  "18": 28,
+  "19": 12,
+  "20": 51,
+  "21": 46,
+  "22": 30,
+  "23": 61,
+  "24": 76,
+  "25": 90,
+  "26": 20,
+  "27": 46,
+  "28": 99,
+  "29": 108,
+  "30": 102,
+  "31": 36,
+  "32": 114,
+  "33": 59,
+  "34": 40,
+  "35": 2
+ },
+ "summary": {
+  "units": 22,
+  "pieces": 1193,
+  "by_class": {
+   "3": 13,
+   "4": 3,
+   "2": 6
+  },
+  "by_kind": {
+   "triangle": 12,
+   "tetrahedron": 4,
+   "edge": 5,
+   "vertex": 1
+  },
+  "pieces_by_kind": {
+   "edge": 258,
+   "tetrahedron": 175,
+   "triangle": 750,
+   "vertex": 10
+  },
+  "heights": {
+   "2": 1193
+  },
+  "one_cell": 22,
+  "own_straddle": 0,
+  "not_a_face": 0,
+  "whole_content": 22,
+  "m1_19_cells": 0,
+  "needed_grips_free": 21,
+  "in_a_home_cell": 8,
+  "home_cell_lemma_D": 7,
+  "home_cell_N1": 1,
+  "home_cell_N1_N2": 1,
+  "home_cell_vacant": 1,
+  "transport_units": 16,
+  "transport_units_with_a_target": 16,
+  "T1_necessary": 15,
+  "ready_and_T1_necessary": 14,
+  "pieces_ready_and_T1_necessary": 857,
+  "home_cells_by_class": {
+   "0": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 480,
+     "lemma_D_N1_N2": 480
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 120,
+     "lemma_D_N1_N2": 120
+    }
+   },
+   "1": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 480,
+     "lemma_D_N1_N2": 480
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 120,
+     "lemma_D_N1_N2": 120
+    }
+   },
+   "2": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 480,
+     "lemma_D_N1_N2": 478
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 120,
+     "lemma_D_N1_N2": 120
+    }
+   },
+   "3": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 480,
+     "lemma_D_N1_N2": 478
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 120,
+     "lemma_D_N1_N2": 120
+    }
+   },
+   "4": {
+    "triangle": {
+     "cells": 480,
+     "lemma_D": 480,
+     "lemma_D_N1_N2": 478
+    },
+    "tetrahedron": {
+     "cells": 120,
+     "lemma_D": 120,
+     "lemma_D_N1_N2": 120
+    }
+   }
+  },
+  "frozen_blocks": 0,
+  "free_class_grips": {
+   "0": 115,
+   "1": 110,
+   "2": 113,
+   "3": 116,
+   "4": 111
+  },
+  "blocking_edges": 3,
+  "blocked_units": 1,
+  "blocked_only_by_ready_units": 1
+ },
+ "units": [
+  {
+   "unit": 0,
+   "block": 0,
+   "first": 83,
+   "size": 33,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 33
+   },
+   "block_size": 33,
+   "block_movers": 5,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    26,
+    91,
+    99
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 33,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      26,
+      91,
+      99
+     ]
+    ]
+   },
+   "grip_status": {
+    "26": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "91": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "99": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  },
+  {
+   "unit": 1,
+   "block": 1,
+   "first": 106,
+   "size": 72,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 72
+   },
+   "block_size": 72,
+   "block_movers": 6,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    12,
+    26,
+    91,
+    99
+   ],
+   "kind": "tetrahedron",
+   "is_face": true,
+   "content_size": 72,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      12,
+      26,
+      91,
+      99
+     ]
+    ]
+   },
+   "grip_status": {
+    "12": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "26": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "91": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "99": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 120,
+   "targets_D": 120,
+   "targets_D_N": 120,
+   "T1_necessary": true
+  },
+  {
+   "unit": 2,
+   "block": 2,
+   "first": 2198,
+   "size": 111,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 111
+   },
+   "block_size": 111,
+   "block_movers": 5,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    12,
+    91,
+    99
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 111,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      12,
+      91,
+      99
+     ]
+    ]
+   },
+   "grip_status": {
+    "12": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "91": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "99": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  },
+  {
+   "unit": 3,
+   "block": 3,
+   "first": 2364,
+   "size": 63,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 63
+   },
+   "block_size": 63,
+   "block_movers": 5,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    12,
+    26,
+    91
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 63,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      12,
+      26,
+      91
+     ]
+    ]
+   },
+   "grip_status": {
+    "12": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "26": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "91": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 111,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 111,
+   "N1": false,
+   "N1_N2": false,
+   "N_deficits": 4,
+   "N_fixed_occupied": 4,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": false
+  },
+  {
+   "unit": 4,
+   "block": 4,
+   "first": 3265,
+   "size": 45,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 45
+   },
+   "block_size": 45,
+   "block_movers": 4,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    91,
+    99
+   ],
+   "kind": "edge",
+   "is_face": true,
+   "content_size": 45,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [
+     91,
+     99
+    ],
+    "one_of": [
+     [
+      12,
+      26,
+      137,
+      166,
+      256
+     ]
+    ]
+   },
+   "grip_status": {
+    "12": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "26": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "91": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "99": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "137": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "166": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "256": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 86,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 86,
+   "N1": false,
+   "N1_N2": false,
+   "N_deficits": 5,
+   "N_fixed_occupied": 5,
+   "T1_necessary": false
+  },
+  {
+   "unit": 5,
+   "block": 5,
+   "first": 9013,
+   "size": 61,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 61
+   },
+   "block_size": 61,
+   "block_movers": 4,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    12,
+    91
+   ],
+   "kind": "edge",
+   "is_face": true,
+   "content_size": 61,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [
+     12,
+     91
+    ],
+    "one_of": [
+     [
+      8,
+      26,
+      65,
+      99,
+      137
+     ]
+    ]
+   },
+   "grip_status": {
+    "8": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "12": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "26": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "65": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "91": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "99": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "137": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 86,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 86,
+   "N1": false,
+   "N1_N2": false,
+   "N_deficits": 7,
+   "N_fixed_occupied": 6,
+   "T1_necessary": false
+  },
+  {
+   "unit": 6,
+   "block": 6,
+   "first": 16314,
+   "size": 10,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 10
+   },
+   "block_size": 10,
+   "block_movers": 3,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    91
+   ],
+   "kind": "vertex",
+   "is_face": true,
+   "content_size": 10,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [
+     91
+    ],
+    "one_of": []
+   },
+   "grip_status": {
+    "91": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 385,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": false,
+   "lemma_D_deficits": {
+    "0": [
+     1,
+     0
+    ],
+    "1": [
+     4,
+     0
+    ],
+    "2": [
+     18,
+     0
+    ],
+    "3": [
+     24,
+     0
+    ],
+    "4": [
+     6,
+     0
+    ],
+    "5": [
+     16,
+     0
+    ],
+    "6": [
+     60,
+     2
+    ],
+    "7": [
+     36,
+     2
+    ],
+    "8": [
+     48,
+     4
+    ],
+    "9": [
+     24,
+     2
+    ],
+    "10": [
+     36,
+     8
+    ],
+    "11": [
+     24,
+     14
+    ],
+    "14": [
+     12,
+     7
+    ]
+   },
+   "home_occupied": 375,
+   "N1": false,
+   "N1_N2": false,
+   "N_deficits": 39,
+   "N_fixed_occupied": 27,
+   "T1_necessary": false
+  },
+  {
+   "unit": 7,
+   "block": 7,
+   "first": 60011,
+   "size": 111,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 111
+   },
+   "block_size": 111,
+   "block_movers": 6,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    148,
+    324,
+    353
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 111,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      148,
+      324,
+      353
+     ]
+    ]
+   },
+   "grip_status": {
+    "148": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "324": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "353": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  },
+  {
+   "unit": 8,
+   "block": 8,
+   "first": 60085,
+   "size": 33,
+   "domain": 3,
+   "class": 4,
+   "heights": {
+    "2": 33
+   },
+   "block_size": 33,
+   "block_movers": 5,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    439,
+    548,
+    560
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 33,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      439,
+      548,
+      560
+     ]
+    ]
+   },
+   "grip_status": {
+    "439": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "548": {
+     "free": false,
+     "straddled_by": [
+      17
+     ],
+     "foreign": []
+    },
+    "560": {
+     "free": false,
+     "straddled_by": [
+      17
+     ],
+     "foreign": [
+      17,
+      20
+     ]
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  },
+  {
+   "unit": 9,
+   "block": 9,
+   "first": 60092,
+   "size": 58,
+   "domain": 3,
+   "class": 4,
+   "heights": {
+    "2": 58
+   },
+   "block_size": 58,
+   "block_movers": 6,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    439,
+    548,
+    555,
+    560
+   ],
+   "kind": "tetrahedron",
+   "is_face": true,
+   "content_size": 58,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      439,
+      548,
+      555,
+      560
+     ]
+    ]
+   },
+   "grip_status": {
+    "439": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "548": {
+     "free": false,
+     "straddled_by": [
+      17
+     ],
+     "foreign": []
+    },
+    "555": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "560": {
+     "free": false,
+     "straddled_by": [
+      17
+     ],
+     "foreign": [
+      17,
+      20
+     ]
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 120,
+   "targets_D": 120,
+   "targets_D_N": 120,
+   "T1_necessary": true
+  },
+  {
+   "unit": 10,
+   "block": 10,
+   "first": 60412,
+   "size": 34,
+   "domain": 3,
+   "class": 4,
+   "heights": {
+    "2": 34
+   },
+   "block_size": 34,
+   "block_movers": 5,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    548,
+    555,
+    560
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 34,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      548,
+      555,
+      560
+     ]
+    ]
+   },
+   "grip_status": {
+    "548": {
+     "free": false,
+     "straddled_by": [
+      17
+     ],
+     "foreign": []
+    },
+    "555": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "560": {
+     "free": false,
+     "straddled_by": [
+      17
+     ],
+     "foreign": [
+      17,
+      20
+     ]
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  },
+  {
+   "unit": 11,
+   "block": 11,
+   "first": 81223,
+   "size": 29,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 29
+   },
+   "block_size": 29,
+   "block_movers": 7,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    148,
+    217,
+    324,
+    353
+   ],
+   "kind": "tetrahedron",
+   "is_face": true,
+   "content_size": 29,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      148,
+      217,
+      324,
+      353
+     ]
+    ]
+   },
+   "grip_status": {
+    "148": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "217": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "324": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "353": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 120,
+   "targets_D": 120,
+   "targets_D_N": 120,
+   "T1_necessary": true
+  },
+  {
+   "unit": 12,
+   "block": 12,
+   "first": 106716,
+   "size": 41,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 41
+   },
+   "block_size": 41,
+   "block_movers": 5,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    148,
+    353
+   ],
+   "kind": "edge",
+   "is_face": true,
+   "content_size": 41,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [
+     148,
+     353
+    ],
+    "one_of": [
+     [
+      201,
+      217,
+      218,
+      324,
+      329
+     ]
+    ]
+   },
+   "grip_status": {
+    "148": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "201": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "217": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "218": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "324": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "329": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "353": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 86,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 86,
+   "N1": false,
+   "N1_N2": false,
+   "N_deficits": 5,
+   "N_fixed_occupied": 5,
+   "T1_necessary": false
+  },
+  {
+   "unit": 13,
+   "block": 13,
+   "first": 106783,
+   "size": 101,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 101
+   },
+   "block_size": 101,
+   "block_movers": 6,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    148,
+    217,
+    324
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 101,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      148,
+      217,
+      324
+     ]
+    ]
+   },
+   "grip_status": {
+    "148": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "217": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "324": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  },
+  {
+   "unit": 14,
+   "block": 14,
+   "first": 107733,
+   "size": 78,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 78
+   },
+   "block_size": 78,
+   "block_movers": 6,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    148,
+    217,
+    353
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 78,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      148,
+      217,
+      353
+     ]
+    ]
+   },
+   "grip_status": {
+    "148": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "217": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "353": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  },
+  {
+   "unit": 15,
+   "block": 15,
+   "first": 112734,
+   "size": 25,
+   "domain": 1,
+   "class": 3,
+   "heights": {
+    "2": 25
+   },
+   "block_size": 25,
+   "block_movers": 5,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    217,
+    324
+   ],
+   "kind": "edge",
+   "is_face": true,
+   "content_size": 25,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [
+     217,
+     324
+    ],
+    "one_of": [
+     [
+      134,
+      148,
+      316,
+      353,
+      445
+     ]
+    ]
+   },
+   "grip_status": {
+    "134": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "148": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "217": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "316": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "324": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "353": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "445": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 86,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 86,
+   "N1": false,
+   "N1_N2": false,
+   "N_deficits": 7,
+   "N_fixed_occupied": 6,
+   "T1_necessary": false
+  },
+  {
+   "unit": 16,
+   "block": 16,
+   "first": 149477,
+   "size": 111,
+   "domain": 2,
+   "class": 2,
+   "heights": {
+    "2": 111
+   },
+   "block_size": 111,
+   "block_movers": 7,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    303,
+    416,
+    513
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 111,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      303,
+      416,
+      513
+     ]
+    ]
+   },
+   "grip_status": {
+    "303": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "416": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "513": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  },
+  {
+   "unit": 17,
+   "block": 17,
+   "first": 160130,
+   "size": 86,
+   "domain": 4,
+   "class": 2,
+   "heights": {
+    "2": 86
+   },
+   "block_size": 86,
+   "block_movers": 4,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    542,
+    593
+   ],
+   "kind": "edge",
+   "is_face": true,
+   "content_size": 86,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [
+     542,
+     593
+    ],
+    "one_of": [
+     [
+      495,
+      496,
+      552,
+      570,
+      590
+     ]
+    ]
+   },
+   "grip_status": {
+    "495": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "496": {
+     "free": false,
+     "straddled_by": [
+      8,
+      9,
+      10
+     ],
+     "foreign": [
+      8,
+      9,
+      10
+     ]
+    },
+    "542": {
+     "free": false,
+     "straddled_by": [],
+     "foreign": [
+      8,
+      9,
+      10
+     ]
+    },
+    "552": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "570": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "590": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "593": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": false,
+   "home_chambers": 86,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 0,
+   "N1": true,
+   "N1_N2": true,
+   "N_deficits": 0,
+   "N_fixed_occupied": 0,
+   "T1_necessary": true
+  },
+  {
+   "unit": 18,
+   "block": 18,
+   "first": 161408,
+   "size": 5,
+   "domain": 2,
+   "class": 2,
+   "heights": {
+    "2": 5
+   },
+   "block_size": 5,
+   "block_movers": 7,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    303,
+    416,
+    458
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 5,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      303,
+      416,
+      458
+     ]
+    ]
+   },
+   "grip_status": {
+    "303": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "416": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "458": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 111,
+   "home_cell": true,
+   "home_size_ok": true,
+   "lemma_D": true,
+   "lemma_D_deficits": {},
+   "home_occupied": 111,
+   "N1": false,
+   "N1_N2": false,
+   "N_deficits": 4,
+   "N_fixed_occupied": 4,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": false
+  },
+  {
+   "unit": 19,
+   "block": 19,
+   "first": 161418,
+   "size": 16,
+   "domain": 2,
+   "class": 2,
+   "heights": {
+    "2": 16
+   },
+   "block_size": 16,
+   "block_movers": 8,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    303,
+    416,
+    458,
+    513
+   ],
+   "kind": "tetrahedron",
+   "is_face": true,
+   "content_size": 16,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      303,
+      416,
+      458,
+      513
+     ]
+    ]
+   },
+   "grip_status": {
+    "303": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "416": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "458": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "513": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 120,
+   "targets_D": 120,
+   "targets_D_N": 120,
+   "T1_necessary": true
+  },
+  {
+   "unit": 20,
+   "block": 20,
+   "first": 161661,
+   "size": 60,
+   "domain": 4,
+   "class": 2,
+   "heights": {
+    "2": 60
+   },
+   "block_size": 60,
+   "block_movers": 5,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    542,
+    570,
+    593
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 60,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      542,
+      570,
+      593
+     ]
+    ]
+   },
+   "grip_status": {
+    "542": {
+     "free": false,
+     "straddled_by": [],
+     "foreign": [
+      8,
+      9,
+      10
+     ]
+    },
+    "570": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "593": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  },
+  {
+   "unit": 21,
+   "block": 21,
+   "first": 163032,
+   "size": 10,
+   "domain": 2,
+   "class": 2,
+   "heights": {
+    "2": 10
+   },
+   "block_size": 10,
+   "block_movers": 7,
+   "frames_in_block": 1,
+   "own_straddle": false,
+   "one_cell": true,
+   "cell": [
+    416,
+    458,
+    513
+   ],
+   "kind": "triangle",
+   "is_face": true,
+   "content_size": 10,
+   "whole": true,
+   "other_domains_in_cell": {},
+   "needed": {
+    "all": [],
+    "one_of": [
+     [
+      416,
+      458,
+      513
+     ]
+    ]
+   },
+   "grip_status": {
+    "416": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "458": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    },
+    "513": {
+     "free": true,
+     "straddled_by": [],
+     "foreign": []
+    }
+   },
+   "all_class_grips_free": false,
+   "ready": true,
+   "home_chambers": 0,
+   "home_cell": false,
+   "targets": 480,
+   "targets_D": 480,
+   "targets_D_N": 478,
+   "T1_necessary": true
+  }
+ ],
+ "seconds": 42.2
+}

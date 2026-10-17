@@ -74,8 +74,9 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   not run with the general method (gap E1). A census of the state-only descent on unrestricted random scrambles
   began on 17 October: scrambles of 10 and 20 twists reach the lattice, and so does one of two 40-twist scrambles;
   the others descend fast and then slowly, and no run got stuck
-  ([stage 11](restoration/11-scramble-census/README.md)). No human has reviewed the new proofs (gap E2); once M1 is
-  solved, a Lean formalization is to check them.
+  ([stage 11](restoration/11-scramble-census/README.md)). Option B, a completeness conjecture for left heights 2 and
+  4, has its plan and first two experiments ([stage 12](restoration/12-low-height/README.md)). No human has reviewed
+  the new proofs (gap E2); once M1 is solved, a Lean formalization is to check them.
 - **Closed by the owner (17 October 2026).** Gap M2, whether a lattice phase of 1.58 × 10^7 twists, or a few
   million actions (single twists and stored-macro applications), is within reach of a person: the bounds stand,
   and help for a person moves to the engineering line
