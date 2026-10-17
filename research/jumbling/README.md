@@ -75,8 +75,13 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   began on 17 October: scrambles of 10 and 20 twists reach the lattice, and so does one of two 40-twist scrambles;
   the others descend fast and then slowly, and no run got stuck
   ([stage 11](restoration/11-scramble-census/README.md)). Option B, a completeness conjecture for left heights 2 and
-  4, has its plan and first two experiments ([stage 12](restoration/12-low-height/README.md)). No human has reviewed
-  the new proofs (gap E2); once M1 is solved, a Lean formalization is to check them.
+  4, has its plan and four experiments ([stage 12](restoration/12-low-height/README.md)): the partner template
+  restores the s61c state from the state alone with catalogue cores (2,374 letters against 4,402 from its history),
+  and at the depth 60 stop one retained letter makes a unit of every blocking group ready, with checked strict′
+  steps of at most 506 letters for 20 of the 52 units left there. A first bounded driver run from the depth 40 stop
+  made no step; most units there are triangle and tetrahedron contents, which need a transport closure that the
+  toolkit does not build yet. No human has reviewed the new proofs (gap E2); once M1 is solved, a Lean formalization
+  is to check them.
 - **Closed by the owner (17 October 2026).** Gap M2, whether a lattice phase of 1.58 × 10^7 twists, or a few
   million actions (single twists and stored-macro applications), is within reach of a person: the bounds stand,
   and help for a person moves to the engineering line

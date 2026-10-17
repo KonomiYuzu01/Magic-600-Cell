@@ -1,7 +1,7 @@
 # 12. Low heights: completeness of the off-lattice phase at left heights 2 and 4 (option B, 17 October 2026)
 
-Status: in progress. The statement and the plan passed a plan check and a scoped re-check; experiments E-B1 and E-B2
-are done.
+Status: in progress. The statement and the plan passed a plan check and a scoped re-check; experiments E-B1 to E-B4
+are done, and E-B5 has a first bounded run (no step).
 
 The owner chose options A and B on 17 October 2026, provisionally
 ([decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md), item 4). Option A is the
@@ -61,10 +61,11 @@ re-check found the first check's five blocking findings resolved.
 
 1. **E-B1, structural screen** (done at three states, section 4).
 2. **E-B2, strict-step falsifier R21-02** (done at three states, section 5).
-3. **E-B3**, the positive control for T2: the s61c preparation from the state alone.
-4. **E-B4**, M1-18 with r = 1 at the units E-B1 finds blocked.
+3. **E-B3**, the positive control for T2: the s61c preparation from the state alone (done, section 6).
+4. **E-B4**, M1-18 with r = 1 at the units E-B1 finds blocked (done at the depth 60 stop, section 7).
 5. **E-B5**, a bounded driver run from the depth 40 stop (explicit `--heuristic-seconds`, `--max-steps`,
-   `--fallback-max-length`; no lattice phase; every accepted word replayed against the strict′ contract).
+   `--fallback-max-length`; no lattice phase; every accepted word replayed against the strict′ contract). Run 1
+   made no step (section 8).
 6. **E-B6**, height 4: the two blocks of the depth 100 residue that hold height-4 pieces, with the fixture end as a
    negative control.
 
@@ -164,13 +165,142 @@ chambers against at least 14,225 other off pieces, type by type within |P_t|. R2
 the falsifier cannot refute strict steps at these states; strict B stays open, neither refuted nor supported. The
 three runs took about 6, 25 and 270 seconds.
 
-## 6. Next
+## 6. E-B3: the positive control for T2 at s61c (measured, exact replay)
 
-- E-B3 and E-B4 in the plan's order. E-B1 points at two obstructions for T1 in the census residues: blocked needed
-  grips (T3), and occupied home chambers that no SAFE-ALL letter reaches at the state (N1). E-B4 takes the six depth
-  60 groups.
-- E-B5 from the depth 40 stop, where 14 units are ready and pass the T1 checks now and the other 8 need a grip or N1
-  to come free as units land.
+T2 asks for a stated catalogue of creator and middle words whose instances are decided at the state alone. Its
+positive control is the s61c preparation of M1-14 (`09-general-method/SENIOR-REVIEW.md`), not run until now. s61c is
+the stop62 state with one off unit, the carrier 23955: 61 pieces in one class-0 frame domain at the edge cell
+{30, 145} (M1-04). The stage 08 step s62m3 reaches it from stop62@233. The template has three phases. Each core is a
+word of the stop62 chain, so the catalogue has one entry per phase. Every vacating word is read from the holes of the
+state it acts on.
+
+| Phase | Word | Letters | Off after | Source |
+|---|---|---|---|---|
+| preparation | V0 | 1 | 61 | state: `vacate.Vacate` with the roles of holes and pieces exchanged moves the 6 holes that lie in Bad(D) out of it with one letter, (369, 1) |
+| creator | D = W_C⁻¹·P_C⁻¹ | 51 | 233 | catalogue: the inverted middle (46 letters) and prefix (5) of the stage 08 step s62m3 = P_C·V_C·W_C·V_C⁻¹ |
+| middle | P_S | 4 | 233 | catalogue: the prefix of the stage 08 step s62m = P_S·V_S·W_S·V_S⁻¹ |
+| | V1 | 429 | 233 | state: the peeling certificate of Theorem B for Bad(W_S) (172 chambers, 68 occupied): 162 of 162 movable chambers peeled, family bound 1,955 |
+| | W_S | 46 | 86 | catalogue: the middle of s62m |
+| | V1⁻¹ | 429 | 86 | |
+| last | V2 | 563 | 86 | state: the peeling certificate for Bad(W_R), the 86 home chambers of the carrier's cell (58 occupied): 81 of 81 peeled, family bound 974 |
+| | W_R | 288 | 0 | catalogue: the class-cell pure twist inside step 14 of the stop62 chain (its letters 543 to 830) |
+| | V2⁻¹ | 563 | 0 | |
+| total | | 2,374 | 0 | |
+
+`scripts/eb3_replay.py` replays the whole word from the s61c table on a fresh simulator. It checks every twist for
+admissibility and the digests at the boundaries of the parts. The checks:
+- the creator's source chambers are occupied when it runs: after V0 no hole lies in Bad(D) (172 chambers);
+- V0·D keeps the carrier at its exact pose and takes exactly the 172 lattice pieces of Bad(D) off; the off regions
+  after it equal those of stop62@233;
+- N1 and N2 hold at both vacating states, and both certificates have no deficit, so the greedy fallback was not
+  used;
+- the partners are cleaned up inside the step: no piece is off the lattice at the end.
+
+So s61c reaches the lattice from the state alone, with these catalogue cores, in 2,374 letters; the last piece lands
+with W_R, after 1,811 letters. The history certificate M1-05 takes 4,402 letters, ending with W_R as well. Its
+creator is the whole inverted step s62m3 (1,749 letters), whose vacating part V0 replaces with one letter; its two
+vacating words are 886 and 543 letters long, against 429 and 563 here. As in M1-05, the end is on the lattice but the
+stickers are not solved: the lattice phase follows.
+
+The control passes for one state, with cores taken from that state's own history. It shows that the vacating phases
+of the template can be read from the state with exact certificates once the cores are given. It does not show that a
+finite catalogue covers every partner situation at low heights; that remains the joint-attack lemma of T2.
+
+## 7. E-B4: one retained letter at the blocked units (M1-18 with r = 1; measured, exact replay)
+
+E-B1 left 52 units (4,336 pieces) at the depth 60 stop Z that T1 with its minimal supports cannot land in any order:
+a needed grip is blocked by another left unit, or the unit's cell holds a second frame domain of its class (M1-19).
+M1-18 is the escape to try first: if C is a clean step at Y = A(Z) for the unit A(U), then A·C·A⁻¹ is a clean step at
+Z for U. With r = 1, A is one retained letter, a non-identity K⁺ item at an admissible grip (11 per grip). It turns
+the content of its cap by a symmetry E of the 600-cell that permutes the 600 caps, so the cut labels at Y follow from
+those at Z and the cap permutation of E, with no new classification; a moved piece of frame domain R K⁺ lies in
+E R K⁺ at Y, and E permutes the five classes as blocks (checked). `scripts/eb4.py` runs the first two stages,
+`scripts/eb4_close.py` the third:
+
+1. **Structural, at all 52 units.** The candidate grips are the admissible caps that wholly hold the unit, one of its
+   blockers, or another frame domain of its cell. A letter passes when A(U) is ready at Y in the sense of E-B1: every
+   grip it needs is free, and no second frame domain of its class shares its cell (the frame domains at Y identified
+   exactly as cosets). Two variants: at Z every off piece counts; at Z′ only the 52 left units count, as they would
+   after the 132 landable units had landed by strict steps (structural only, as in E-B1).
+2. **N1 and N2 at Y**, for the first passing letter of each unit at Z, with the SAFE-ALL alphabet of Y, for A(U)'s home
+   chambers and, for a triangle or tetrahedron content, for the home cells of its kind and class.
+3. **Closures**, for the edge contents that pass N1 and N2: at Y the class-cell pure twist W of A(U)'s cell
+   (`scripts/cellpure4.py`), then V·W·V⁻¹ by the driver's `tclose2.py` (V from the peeling certificate of Theorem B,
+   greedy fallback), and by `tclose2m3.py` on 'no V'. The step A·C·A⁻¹ is replayed at Z on a fresh simulator, every
+   twist checked admissible, against the strict′ contract: U lands, no lattice piece of Z leaves the lattice, and
+   every other off piece of Z ends on the lattice or at its exact pose.
+
+`cellpure4.py` is the driver's `cellpure3.py` with two changes, both marked in the file. At a deep state a frame
+domain can have contents in several cells, so the unit's content is found by its pieces (cellpure3 asked the domain
+to have one content). And the class-cell model compares content points (cell, label) only, so another off content
+can come back to its point at another exact pose: cellpure4 replays the model-passing solutions exactly, shortest
+first (at most 12), and takes the first that lands the unit, keeps the exact pose of every other off piece and takes
+off only the lattice pieces of the cell. That filter decided 3 of the 20 closures (`runs/eb4-exact-tries-k60.json`,
+copied from the records of `cellpure4.py` by `scripts/eb4_tries.py`): at the units 2, 105 and 122 the first two,
+three and two solutions tried left 14, 15 and 87 pieces of other contents at their points but at other poses, and
+the third, fourth and third kept them all; at the other 17 the first solution tried passed.
+
+| Stage | Units (pieces) | Notes |
+|---|---|---|
+| left by the landing order | 52 (4,336) | 46 edge, 4 triangle, 2 vertex contents; six blocking groups of 2, 3, 3, 4, 11 and 17 units, 6 units in M1-19 cells, 6 behind one group |
+| 1. ready after one letter, at Z | 34 (2,417) | 31 edge, 3 triangle; 322 of 2,310 letters tried pass; every blocking group and every M1-19 cell has a unit among them (groups: 2 of 2, 1 of 3, 2 of 3, 3 of 4, 3 of 11, 11 of 17; M1-19: 6 of 6; behind: 6 of 6) |
+| 1. ready after one letter, at Z′ | 42 (3,185) | structural only |
+| 2. N1 and N2 at Y (first letter) | 20 (1,593) | all edge; 11 edge contents fail N1 at their first letter (an occupied home chamber that no SAFE-ALL letter reaches at Y); the 3 triangle contents need a transport: no home chambers in their cell, and 402 to 413 of the 480 home cells of their kind pass Lemma D, N1 and N2 |
+| 3. strict′ step A·C·A⁻¹ at Z | 20 (1,593) | 110 to 506 letters (110: 4 units, 326: 7, 362: 1, 434: 7, 506: 1); V empty in all 20, so C = W |
+
+All 20 closures succeeded: in every case A(U)'s cell held no lattice piece at Y, so Bad(W) was vacant and C = W, a
+class-cell pure twist of 108 to 504 letters (commutator powers around three edge cells, once four). Each step lands
+its unit with collateral 0 and leaves all 14,524 (or 14,565 and 14,569) other off pieces at their exact poses. The run
+took 77 minutes with two closures at a time. `scripts/eb4_replay.py` replays the 20 committed words independently
+from the exported table, and all 20 meet the strict′ contract (`runs/eb4-replay-k60.json`).
+
+What E-B4 shows, at one state:
+- **One retained letter breaks every group.** The six blocking groups and the three M1-19 cells of the depth 60 stop
+  each have a unit that one retained letter makes ready; in three of the six M1-19 units the letter moves the other
+  frame domain out of the cell rather than the unit. For 20 units the escape is a checked strict′ step from the
+  state alone, built with the driver's own tools: at this state M1-18 with r = 1 is a working template for T3, with
+  at most 2 + 720 letters when V is empty (Theorem C) and 11 letters per candidate grip to enumerate. At Z′, the state
+  that section 4 describes for AU-04 (not constructed), 42 of the 52 units become ready after one letter.
+- **What it does not show.** 32 of the 52 units have no step yet: 18 have no single letter that makes them ready (15
+  edge, 2 vertex, 1 triangle), 11 fail N1 at their first letter (their other passing letters were not tried), and 3
+  triangle contents need a transport closure (LC-13), which the toolkit does not build. Each step starts at Z: that
+  they compose is not tested (landing a unit can only remove blockers, since landed pieces block no grip, but it can
+  change N1). Z′ is structural only.
+
+## 8. E-B5: a bounded driver run from the depth 40 stop (run 1: no step; measured)
+
+The driver of stage 09 (`09-general-method/scripts/gm/gdrive.py`, the method M* with experiment bounds) ran once from
+the depth 40 stop (1,193 off pieces, 22 units; table digest `7e128820…`) with `--par 2 --heuristic-seconds 1800
+--max-steps 30 --fallback-max-length 1`, no seed library and no lattice phase. It made no step in 59 minutes
+(`runs/eb5-k40-run1.jsonl`):
+
+1. **Driver step** (`cbrun3.py`, one step). With no seed library every unit needed a fresh search, and the step was
+   killed at the 30-minute bound before it had tried a candidate.
+2. **Pure-twist step** (`cellpure3.py` on the 8 largest units; `--pure-max 8` dropped the other 14). All 8 stopped
+   at a precondition: their frame domains have 2, 4 or 13 contents in the class-cell model, and `cellpure3.py` asks
+   for one, the restriction that `cellpure4.py` lifts (section 7). Six of the eight are triangle contents and one is
+   a tetrahedron content, which land only by a transport (LC-13); the eighth, the 86-piece edge content, is not
+   ready. The four ready edge contents (61, 45, 41 and 25 pieces) were among the 14 dropped.
+3. **Fallback** for the largest unit (a 111-piece triangle content): no single letter of the I_a menu is a clean
+   step for it (34,124 letters tried in 22 minutes), and the length bound 1, an experiment bound outside M*, ended
+   the run.
+
+What run 1 shows: as it stands, the driver cannot start its pure-twist step at a state as deep as this one, and its
+other two steps found nothing within these bounds; the census driver of stage 11 had also found nothing after 49
+minutes of search at this state. It says nothing about whether steps exist. The screen (section 4) explains why
+`cellpure4.py` alone would not be enough here: no edge content at this state is both ready and passing N1 (the four
+ready ones fail N1, the fifth is not ready), and the 14 units that are ready and pass the T1 checks are triangle and
+tetrahedron contents, which need a transport.
+
+## 9. Next
+
+- An LC-13 transport closure, for the triangle and tetrahedron contents: it is what E-B5 needs first at the depth 40
+  stop (16 of its 22 units) and what three of the E-B4 leftovers need. Then E-B5 run 2: the driver with
+  `cellpure4.py` as its pure-twist script (a new option whose default stays `cellpure3.py`, so earlier runs replay
+  unchanged), every unit tried, a seed library and a longer driver-step bound.
+- E-B6, height 4.
+- For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
+  (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
 
 ## Replay
@@ -186,6 +316,41 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     python3 -I -B $S/r2102.py record $C/ia-k40-s7101.json <out>    # about 25 seconds
     python3 -I -B $S/r2102.py record $C/ia-k60-s7104.json <out>    # about 5 minutes
 
+E-B3 reads two tables unpacked with `gunzip -c` into `s61c.json` and `s233.json`, from
+`$U/certs/stop62/cm233/inputs/stop62-61-c-table.json.gz` and `$U/certs/stop62/z233/inputs/stop62-233-table.json.gz`,
+with
+
+    U=research/jumbling/restoration/08-units-and-clean-steps
+    W=research/jumbling/restoration/09-general-method/earlier/stop62-860-to-0/chain/step014-word.json
+    R=research/jumbling/restoration/12-low-height/runs
+    T=research/jumbling/theory
+    python3 -I -B $S/eb3_prep.py $T s61c.json $U/chains/s62m3/step001-word.json s233.json p    # about 30 seconds
+    python3 -I -B $S/eb3_finish.py $T p-table.json $U/chains/s62m/step001-word.json $W f       # about 10 minutes
+    python3 -I -B $S/eb3_replay.py $T s61c.json $R/eb3-prep-word.json $R/eb3-finish-word.json <out>   # about 2.5 minutes
+
+The first two write `p.json`, `p-word.json`, `p-table.json` (the state Z1, not kept) and `f.json`, `f-word.json`.
+
+E-B4, with `C` and `R` as above (`k60.json` is the depth 60 stop as a pose table, digest `ef45a117…`):
+
+    python3 -I -B $S/export_table.py $C/ia-k60-s7104.json k60.json                # about 4 minutes
+    python3 -I -B $S/eb4.py $C/ia-k60-s7104.json $R/screen-k60.json <out>         # about 31 minutes
+    python3 -I -B $S/eb4_close.py k60.json $R/eb4-k60.json <work dir> --par 2     # about 77 minutes
+    python3 -I -B $S/eb4_replay.py k60.json $R/eb4-k60-steps <out>               # about 10 minutes
+    python3 -I -B $S/eb4_tries.py <work dir> <out>
+
+`eb4_close.py` writes `close.json` and, per unit k, a directory `u<k>/` with the tables, logs and words of its stages;
+`step-word.json` there is the step at Z.
+
+E-B5 run 1, with `C` as above and `G=research/jumbling/restoration/09-general-method/scripts` (`k40.json` is the
+depth 40 stop as a pose table, digest `7e128820…`):
+
+    python3 -I -B $S/export_table.py $C/ia-k40-s7101.json k40.json                # about 20 seconds
+    python3 -I $G/gm/gdrive.py research/jumbling $G/echain k40.json eb5-k40 <work dir> \
+        --par 2 --heuristic-seconds 1800 --max-steps 30 --fallback-max-length 1     # about 1 hour
+
+The driver writes its record to `<work dir>/gdrive.jsonl`; `runs/eb5-k40-run1.jsonl` is that record with the private
+directory of the start table written as `<working tree>`, as in the stage 09 run records.
+
 ## Files
 
 | File | What it is |
@@ -194,3 +359,9 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
 | `scripts/order.py` | The structural landing order and the units left over, from a screen output |
 | `scripts/r2102.py` | E-B2: exact two-sided bounds for R21-02 at one state |
 | `runs/screen-*.json`, `runs/order-*.json`, `runs/r2102-*.json` | The outputs at the three states (`233`, `k40`, `k60`); a rerun reproduces them except the timing fields |
+| `scripts/eb3_prep.py`, `scripts/eb3_finish.py`, `scripts/eb3_replay.py` | E-B3: the preparation V0 and creator D; the middle and last phases with their vacating words; the independent replay |
+| `runs/eb3-prep*.json`, `runs/eb3-finish*.json`, `runs/eb3-replay.json` | E-B3 records and words (52 and 2,322 letters) with input and output digests, and the replay record; a rerun reproduces them except the timing fields |
+| `scripts/export_table.py` | The state at the end of a census record as a pose table |
+| `scripts/eb4.py`, `scripts/eb4_close.py`, `scripts/cellpure4.py`, `scripts/eb4_replay.py`, `scripts/eb4_tries.py` | E-B4: the structural stage and N1 and N2 at Y; the closures and the steps at Z; the class-cell pure twist with the exact-pose filter; the independent replay; the filter's tries at each closure |
+| `runs/eb4-k60.json`, `runs/eb4-close-k60.json`, `runs/eb4-k60-steps/u<k>.json`, `runs/eb4-replay-k60.json`, `runs/eb4-exact-tries-k60.json` | E-B4 records: stages 1 and 2 (`eb4.py`), the closures and the checked steps (`close.json` of `eb4_close.py`), the 20 step words with input and output digests, the replay record, and the exact-pose filter's tries with the digest of each state Y |
+| `runs/eb5-k40-run1.jsonl` | E-B5 run 1: the driver's event record (no step) |
