@@ -1,9 +1,11 @@
 # The numbers of the section "What a person would have to try" from the outputs in runs/findability/:
-# - <run>-steps.jsonl (findability.py): single-twist steps, the chosen cap's place among the candidates; repair
-#   steps, the openings that the rule's order tries before the one that works;
+# - <run>-steps.jsonl (findability.py): every step, the cost of a face match search from the facts the program
+#   shows; single-twist steps, the candidates; repair steps, the openings and pairs that the rule's order tries
+#   before the one that works;
 # - <run>-density.jsonl.gz (density.py): at the chosen cap of a repair step, how many (opening, neighbour) pairs make
 #   a repair that lowers N;
-# - <run>-single.jsonl (single_twist.py): whether a single twist that lowers N existed at a repair step;
+# - <run>-single.jsonl (single_twist.py): whether a single twist that lowers N existed at a repair step, and the caps
+#   above their floor without one;
 # - repair-items.jsonl (repair_items.py): what the repairs of the census records are made of.
 # python3 -I -B findability_table.py <runs/findability dir> <run>
 import gzip
@@ -25,11 +27,21 @@ steps = [r for r in lines(D / f'{RUN}-steps.jsonl') if 'rule' in r]
 assert lines(D / f'{RUN}-steps.jsonl')[-1] == {'ok': True}
 print(f'{RUN}: {len(steps)} steps', dict(Counter(r['rule'] for r in steps)))
 
-print('\nSingle-twist steps: the chosen cap among the caps that pass the test')
+print('\nSingle-twist steps: the caps that pass the test (the rule takes the one with the largest drop)')
 for rule in ('seam', 'cover'):
     R = [r for r in steps if r['rule'] == rule]
-    print(f"  {rule}: {len(R)} steps, chosen cap first in {sum(r['rank'] == 1 for r in R)}, candidates median "
-          f"{statistics.median(r['candidates'] for r in R)} max {max(r['candidates'] for r in R)}")
+    assert all(r['rank'] == 1 for r in R)
+    print(f"  {rule}: {len(R)} steps, candidates median {statistics.median(r['candidates'] for r in R)} max "
+          f"{max(r['candidates'] for r in R)}; twists of the chosen cap that reach its best drop: median "
+          f"{statistics.median(r['best_twists'] for r in R)}, one at {sum(r['best_twists'] == 1 for r in R)}")
+
+print('\nFace match search from the facts the program shows (findability.py, face_search)')
+assert all(r['face_found'] == (r['rule'] == 'seam') for r in steps)
+for label, R in (('face match steps', [r for r in steps if r['face_found']]),
+                 ('other steps, where it finds none', [r for r in steps if not r['face_found']])):
+    print(f"  {label}: {len(R)}; checks median {statistics.median(r['face_checks'] for r in R)}, max "
+          f"{max(r['face_checks'] for r in R)}; caps the cut slice allows median "
+          f"{statistics.median(r['face_slice_caps'] for r in R)}, max {max(r['face_slice_caps'] for r in R)}")
 
 C = [r for r in steps if r['rule'] == 'conj']
 ob = [r['openings_before'] for r in C]
@@ -73,6 +85,11 @@ single = [r for r in lines(D / f'{RUN}-single.jsonl') if 'step' in r]
 assert lines(D / f'{RUN}-single.jsonl')[-1] == {'done': True}
 print('\nCaps with a single twist that lowers N, before step 40:',
       {r['step']: r['caps_with_single_drop'] for r in single if r['step'] < 40})
+af = [r['above_floor_without_drop'] for r in single]
+print(f"Caps above their floor with no lowering single twist, at the {len(single)} repair steps: at "
+      f"{sum(a > 0 for a in af)} steps, median {statistics.median(af)}, max {max(af)}; at step 40: "
+      f"{next(r['above_floor_without_drop'] for r in single if r['step'] == 40)}, the furthest above its floor "
+      f"[cap, N_c, floor] {next(r['furthest_above_floor'] for r in single if r['step'] == 40)}")
 print(f"Single twists that lower N, at the {len(single)} repair steps: some cap had one at "
       f"{sum(r['caps_with_single_drop'] > 0 for r in single)} steps; from step 40 on at "
       f"{sum(r['caps_with_single_drop'] > 0 for r in single if r['step'] >= 40)} of "

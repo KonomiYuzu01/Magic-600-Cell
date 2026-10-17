@@ -1,7 +1,8 @@
 # How much a person would have to try to find each step of a census record, under the rules of phase U.
 # Replays a census record on the exact simulator (checking N and the off count after every step against the record)
 # and prints, for every step, what the state offered before it:
-# - every step: the misaligned caps that can turn, how many pass the face match, the search time of the record;
+# - every step: the misaligned caps that can turn, how many pass the face match, the search time of the record, and
+#   what a face match search from the facts the program shows costs (face_search below);
 # - seam and cover steps: the chosen cap's rank among the candidates, its N_c, best drop and how many twists reach it;
 # - conj steps (c, x)(d, y)(c, z): the rank of c among the misaligned caps in the rule's order (decreasing N_c), the
 #   neighbours d of c in that order, the openings (c', x') and the pairs (c', x', d') of opening and neighbour that
@@ -35,6 +36,33 @@ def passes_face(S, c):
         return False
     now, after = r
     return now - min(after.values()) >= 2 * (b[0] - b[2]) > 0
+
+
+def face_search(S, sv):
+    """A face match search from the facts the program shows. A face match twist aligns every inside cell of c's
+    cut, so it brings N_c exactly to the floor Out_c - In_c, and c can pass only if In_c <= Out_c and some inside
+    cell is misaligned (In_c > A_c); the cut slice shows In_c, Out_c and A_c. The search takes those caps by
+    decreasing N_c and checks each cap's twists in menu order until N_c reaches the floor. Returns (the caps the
+    cut slice allows, the checks made, whether a face match was found)."""
+    caps = []
+    for c, (now, after) in sv.items():
+        n_in, n_out, n_al = S.balance(c)
+        assert min(after.values()) >= abs(n_in - n_out), 'a twist went below the floor'
+        if n_al < n_in <= n_out:
+            caps.append(c)
+    caps.sort(key=lambda q: (-sv[q][0], q))
+    checks = 0
+    for c in caps:
+        n_in, n_out, _ = S.balance(c)
+        for i in range(S.n_items):
+            if S.g(c, i) == I4:
+                continue
+            checks += 1
+            if sv[c][1][i] == n_out - n_in:
+                assert c in S.face_caps()
+                return len(caps), checks, True
+    assert not S.face_caps()
+    return len(caps), checks, False
 
 
 def covers(S, coverer, covered, pos):
@@ -74,6 +102,7 @@ for j, step in enumerate(rec['steps']):
         sv = S.survey()
         out = {'step': n, 'rule': step['rule'], 'word': word, 'N_before': step['N_before'],
                'search_sec': sec, 'misaligned_caps': len(sv), 'face_match_caps': len(S.face_caps())}
+        out['face_slice_caps'], out['face_checks'], out['face_found'] = face_search(S, sv)
         if step['rule'] in ('seam', 'cover'):
             rows = S._rows(S.face_caps()) if step['rule'] == 'seam' else S._rows(S.cover_tops())
             c, i = word[0]
