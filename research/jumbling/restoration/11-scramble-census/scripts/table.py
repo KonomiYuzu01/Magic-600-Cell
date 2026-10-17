@@ -1,6 +1,7 @@
 # One row per census record: depth, outcome, twists, off and N at the start and at the stop, heights, rule counts,
-# and the two phases of a descent: where the first conj step came, the N drop of the single-twist steps (seam,
-# cover), and for the conj steps of this round their N drop and search time (seconds between finished steps).
+# and the two phases of a descent: how many steps came before the first conj step and how many pieces were off
+# then, the N drop of the single-twist steps (seam, cover), and for the conj steps of this round their N drop and
+# search time (seconds between finished steps).
 # python3 -I -B table.py <runs dir>
 import sys, json, collections, statistics
 from pathlib import Path
@@ -19,7 +20,7 @@ for f in sorted(Path(sys.argv[1]).glob('ia-k*-s*.json'), key=lambda p: (int(p.st
         done += steps[prior]['twists']
         prior += 1
     assert done == r['continued_from_moves']
-    first_conj = next((j for j, s in enumerate(steps) if s['rule'] == 'conj'), None)
+    first_conj = next((j for j, s in enumerate(steps) if s['rule'] == 'conj'), None)   # = steps before it
     single = [s['N_before'] - s['N_after'] for s in steps if s['rule'] in ('seam', 'cover')]
     prev, conj_sec, conj_drop = 0, [], []
     for s in steps[prior:]:
@@ -33,7 +34,7 @@ for f in sorted(Path(sys.argv[1]).glob('ia-k*-s*.json'), key=lambda p: (int(p.st
                  'N_start': r['N_start'], 'N_now': r['N_now'],
                  'heights_start': r.get('heights_start'), 'heights_end': r.get('heights_end'),
                  'off_poses_end': r.get('off_poses_end'), 'rules': dict(rc), 'rule_twists': dict(tw),
-                 'first_conj_step': first_conj,
+                 'steps_before_first_conj': first_conj,
                  'off_before_first_conj': None if first_conj is None else
                  (steps[first_conj - 1]['off_after'] if first_conj else r['off_scramble']),
                  'single_twist_N_drop_median': statistics.median(single) if single else None,

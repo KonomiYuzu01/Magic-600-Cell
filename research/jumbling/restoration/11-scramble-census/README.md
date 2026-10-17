@@ -64,9 +64,13 @@ lattice phase restores it (Theorem R; not run here).
 | 1000 | 87,067 → 81,309 | 91,682 → 87,820 | 625 | 5 cover, 43 conj | 2: 80,919; 4: 390 | time limit |
 
 After two rounds the descent has put back 98.7%, 86.2%, 72.8% and 35.1% of the off pieces of the 40- (seed 7101),
-60-, 100- and 1000-twist scrambles. **Certificate**: `scripts/check_records.py` rebuilds every scramble from its seed and replays
-every recorded move on the exact simulator: every twist is admissible, and the off count and N after every step, the
-heights and the end state agree with the records (`runs/check.out`, with the end digests).
+60-, 100- and 1000-twist scrambles. **Certificate**: `scripts/check_records.py` rebuilds every scramble from its
+seed and replays every recorded move on the exact simulator. Every twist is admissible and N drops at every step;
+the off count and N after the scramble, at the start of each round (which must fall between two steps) and after
+every step, the heights and off poses at the start and at the end, the twist count, the result and, for the runs
+that reached the lattice, the solved flag and the invariant v agree with the records (`runs/check.out`, with the
+end digests). Records changed on purpose (a move, an N, a start count, the twist count, the round boundary, the
+result, the solved flag, the start heights or off poses) fail it (`scripts/test_check_records.py`).
 
 ### What the runs show (measured)
 
@@ -77,8 +81,8 @@ heights and the end state agree with the records (`runs/check.out`, with the end
 3. **A fast bulk, then a slow tail.**
    - The bulk is single-twist steps (seam and cover). At depths 10 to 60 the median such step lowers N by 1,105 to
      1,566; at depth 100 by about 550, at depth 1000 by about 55.
-   - The deeper the scramble, the sooner the single-twist steps run out: the first conj step came at step 29 (when
-     25,783 pieces were off) for depth 40, at step 27 (53,647) for 60, at step 9 (101,481) for 100 and at step 3
+   - The deeper the scramble, the sooner the single-twist steps run out: the first conj step came after 29 steps
+     (when 25,783 pieces were off) for depth 40, after 27 (53,647) for 60, after 9 (101,481) for 100 and after 3
      (121,636) for 1000.
    - In the tail almost every step is a conj step. In round 1 the median conj step lowered N by 50 to 146 after a
      search of 20 to 52 seconds; in round 2 by 2 to 50 after 91 to 269 seconds. One search took 25 minutes, and the
@@ -199,6 +203,8 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     python3 -I -B $S/table.py research/jumbling/restoration/11-scramble-census/runs/round1
     # replay check of every record from its seed (about 50 minutes)
     python3 -I -B $S/check_records.py research/jumbling/restoration/11-scramble-census/runs/round*/ia-k*.json
+    # its mutation test: eight changed copies of the depth 10 record must fail, the record must pass (about 1 minute)
+    python3 -I -B $S/test_check_records.py
     # the residue of a record: pose table, units, summary (about 10 minutes at depth 100)
     python3 -I -B $S/residue.py research/jumbling/restoration/11-scramble-census/runs/round2/ia-k60-s7104.json <out>
     # the template test on that residue (about 15 minutes), its summary, and the replay of its steps
@@ -221,7 +227,7 @@ scripts and data of stages 05, 06 and 09) without writing to it. The runs used t
 | `scripts/census_seams.py` | One census run: scramble, phase U with a clock, a record after every step |
 | `scripts/run_jobs.sh` | Runs census jobs in parallel, fresh or continued |
 | `scripts/table.py` | The tables of this page from a directory of records |
-| `scripts/check_records.py` | Replay check of records from their seeds |
+| `scripts/check_records.py`, `scripts/test_check_records.py` | Replay check of records from their seeds, and its mutation test |
 | `scripts/residue.py` | The residue of a record: pose table, units, block sizes, movers and heights |
 | `scripts/templates.py`, `scripts/run_fx.sh` | The template test with the tools of stages 05 and 06 |
 | `scripts/groups.py` | Mov groups and shape classes of a residue, from the stage 05 and 06 outputs of `run_fx.sh` |
