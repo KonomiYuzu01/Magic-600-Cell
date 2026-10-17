@@ -57,9 +57,10 @@ Labels used in this manual:
 | N = 0 exactly when every piece is on the lattice | proved | [restoration](../theory/restoration.md) M3 |
 | A step that lowers N can never lead back to an earlier configuration | proved | [restoration](../theory/restoration.md) M2, M4 |
 | From every reachable configuration some word lowers N | proved; its length is not bounded | [restoration](../theory/restoration.md) Theorem U |
-| The descent's three techniques undo random scrambles of 10 to 40 twists | measured, on four of five scrambles | [census](../restoration/11-scramble-census/README.md) |
+| The descent's three techniques take random scrambles of 10 to 40 twists to the lattice | measured: three of the four scrambles of 10 to 40 twists; the fourth was 98.7% back when the clock stopped it | [census](../restoration/11-scramble-census/README.md) |
 | On deeper scrambles the descent slows and leaves a tail | measured | [census](../restoration/11-scramble-census/README.md) |
-| Off the lattice, a clean step (one that lands a block and disturbs nothing else) always exists, and an exhaustive search from the state alone finds one | proved; its length is not bounded | [senior review](../restoration/09-general-method/SENIOR-REVIEW.md) (Theorem M\*) |
+| Off the lattice, every unit has a clean step: a word after which the unit and every piece that was on the lattice are on the lattice, while the other off pieces may move or land; an exhaustive search from the state alone finds one | proved; its length is not bounded | [senior review](../restoration/09-general-method/SENIOR-REVIEW.md) (Theorem M\*) |
+| A strict clean step, which also keeps every other off piece at its exact pose, always exists | open | [general method](../restoration/09-general-method/METHOD.md), gap M1 |
 | The tail can always be finished by the techniques of chapter 3, with lengths a person can carry out | open | [stage 12](../restoration/12-low-height/README.md) |
 | The lattice phase finishes every reachable configuration on the lattice: its cascade needs at most 20,866,844 twists, its corrections at most 25,852 more | proved | [overview](../README.md) |
 

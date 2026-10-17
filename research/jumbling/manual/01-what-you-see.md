@@ -7,8 +7,8 @@ This chapter names the things the solver looks at. Each section ends with what t
 The puzzle has 600 cells, and each cell has a **cap**: the part of the puzzle on that cell's side of its cut. In the
 retained puzzle a cap turns by the 12 rotations of its tetrahedron, and every piece it moves lands in a slot again.
 Jumbling adds 48 more rotations per cap: with them each cap's **menu** is the 60 rotations of an icosahedral group
-(menu I_a, the owner's choice of 13 October 2026). These 48 are the **jumble twists**. A jumble twist leaves the
-pieces of its cap out of the slots: they are **off the lattice**.
+(menu I_a, the owner's choice of 13 October 2026). These 48 are the **jumble twists**. A jumble twist made on
+pieces that sit in slots leaves them out of the slots: they are **off the lattice**.
 
 In the research records a twist is written (cap, item), with the item one of the 60 rotations of that cap's menu.
 The 177,120 pieces are the same as in the retained puzzle; only where they sit changes.
@@ -25,8 +25,9 @@ allowed is decided exactly, with no tolerance.
 
 ## 1.3 Domains
 
-Pieces that one twist turned together still fit together afterwards: they lie in one rotated copy of the slot
-pattern. Such a set is a **domain**. The pieces in their slots form one domain, the **lattice**. Two pieces belong to
+Pieces that lie in one rotated copy of the slot pattern form a **domain**. A twist turns all the pieces of its cap
+by one rotation, so pieces of one domain that it turns together stay in one domain. The pieces in slots form one
+domain, the **lattice**. Two pieces belong to
 the same domain exactly when they fit the same rotated copy of the slot pattern (proved,
 [restoration](../theory/restoration.md) T6), so the domain of a piece is a fact the program can show.
 
@@ -34,7 +35,8 @@ the same domain exactly when they fit the same rotated copy of the slot pattern 
 
 ## 1.4 Heights
 
-Every piece has a **left height**: 0 in its slot, and 2, 4, 6 and so on off the lattice. A jumble twist changes the
+Every piece has a **left height**: 0 on the lattice, and 2, 4, 6 and so on off it (proved,
+[restoration](../theory/restoration.md) T3 and T5). A jumble twist changes the
 height of each piece it moves by −2, 0 or +2, so a piece at height h needs at least h/2 more jumble twists of caps
 that hold it before it is back on the lattice (proved, [restoration](../theory/restoration.md) T5 and T7).
 

@@ -15,13 +15,16 @@ often still cannot go home: the chambers it needs are held by other blocks, whic
 ## 3.2 Clean steps: vacate, act, put back
 
 A **clean step** lands one unit on the lattice. A unit is a block, or one frame part of a block that lies in several
-frames. After the step, every piece that was on the lattice is still on it, and every other off piece has its exact
-pose. The usual form is V·W·V⁻¹: V empties the chambers W needs, W puts the unit on the lattice, and V⁻¹ undoes V.
+frames. After the step, the unit and every piece that was on the lattice are on it, and every other off piece has
+its exact pose, except the pieces of the step's declared **free set**, which may move or land too. The usual form is
+V·W·V⁻¹: V empties the chambers W needs, W puts the unit on the lattice, and V⁻¹ undoes V.
 - A clean step lowers the number of off pieces by at least the unit's size (proved, stage 08 Lemma U), so clean
   steps never go round in circles.
-- Off the lattice a clean step always exists, and an exhaustive search that reads only the configuration finds one.
-  Nothing bounds its length (proved, Theorem M\*,
+- Off the lattice every unit has a clean step whose free set is all the other off pieces, and an exhaustive search
+  that reads only the configuration finds one. Nothing bounds its length (proved, Theorem M\*,
   [senior review](../restoration/09-general-method/SENIOR-REVIEW.md)).
+- Whether a **strict** clean step, with an empty free set, always exists is open
+  ([general method](../restoration/09-general-method/METHOD.md), gap M1).
 
 ## 3.3 The shape catalogue
 

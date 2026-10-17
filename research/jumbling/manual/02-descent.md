@@ -35,9 +35,10 @@ The misalignment is N_c = In_c + Out_c − 2·A_c. A twist of the cap turns the 
 leaves the outside faces where they are, like the dial of a combination lock. It never changes In_c or Out_c, so no
 twist of this cap alone can bring N_c below the **floor** |In_c − Out_c|.
 
-**The test.** The cap passes the face match when one twist of it aligns every inside face: after the twist,
-A_c = In_c. N_c then drops by 2·(In_c − A_c), to Out_c − In_c, and when In_c = Out_c the twist closes the cut. A
-cap with more faces inside than outside (In_c > Out_c) cannot pass.
+**The test.** The cap passes the face match when some inside face is not aligned yet (In_c > A_c) and one twist of
+it aligns every inside face: after the twist, A_c = In_c. N_c then drops by 2·(In_c − A_c), to Out_c − In_c, and
+when In_c = Out_c the twist closes the cut. A cap with more faces inside than outside (In_c > Out_c) cannot pass,
+and neither can a cap whose inside faces are all aligned already.
 
 **Finding the twist.** Inside faces line up with outside faces only if the twist carries their domain onto the
 domain outside. At most 12 twists of the menu do that, and they differ by the 12 retained twists of the cap.
@@ -46,9 +47,11 @@ one with the largest drop. Among equal drops, take the one that sends the most p
 
 **Which cap first.** If several caps pass, take the one with the largest drop.
 
-**Why it works.** The last twist of a scramble leaves a seam along its own cut, and undoing it closes that cut
-(proved, [restoration](../theory/restoration.md) M5). The face match finds such a twist from the configuration
-alone, without knowing the scramble. It is rarely wrong, but it misses more as the scramble deepens. At the true
+**Why it works.** If a cap's cut was closed before a twist of that cap and is misaligned after it, undoing the twist
+closes the cut again (proved, [restoration](../theory/restoration.md) M5). So the last twist of a scramble can be
+undone by a face match, unless its cut already carried a seam before it, or it left its own cut closed (a retained
+twist, which chapter 4 handles). The face match finds such a twist from the configuration alone, without knowing
+the scramble. It is rarely wrong, but it misses more as the scramble deepens. At the true
 scramble states of the menu I_a fixtures of 20, 40 and 60 twists, 30 caps passed, and 29 of them were caps whose
 last twist could be undone next. It missed 9 such caps (measured, [restoration](../theory/restoration.md)
 section 3, U1a).
@@ -94,9 +97,10 @@ sections 5 to 7).
 
 When no cap passes the face match, the order of the twists can still be read from how their caps overlap.
 
-**What to look at.** Take a misaligned cap c and a neighbouring cap d whose region c's cut runs into. Cap d
-**covers** c when every face piece of c's cut inside d's region sits on an aligned cell, with at least ten such
-pieces on each side of the cut. A later twist of d has erased c's seam there. So d was twisted after c, and d comes
+**What to look at.** Take a misaligned cap c and a neighbouring cap d whose region c's cut runs into. Look at the
+face pieces of c's cut (the pieces with a face on it) whose centres lie in d's region. Cap d **covers** c when all of
+them sit on aligned cells, with the same number of them, at least ten, on each side of the cut. A later twist of d
+has erased c's seam there. So d was twisted after c, and d comes
 off first.
 
 **The rule.** Find a cap that covers some cap and that no cap covers, and make its best twist: the one that lowers
