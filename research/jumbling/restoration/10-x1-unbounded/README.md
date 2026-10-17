@@ -55,9 +55,10 @@ The integrator checked the result in a cloud session, apart from the run, before
   Their outputs agree with the run's own apart from run times, and `programs/FAMILY.py` rewrites `witnesses/F3.json`
   and `witnesses/F40.json` byte for byte. The outputs stored in `programs/` are these re-runs.
 - **Own checkers.** Three programs in `check/` were written from the statements, not from the run's code:
-  - `replay_witness.py` replays a witness from the solved state with the simulator. After every letter it checks that
-    the seven pieces share one pose with right height 0, and it records their left height. It checks the final height
-    and digest. It ran on the eight records from H20 to H6030.
+  - `replay_witness.py` replays a witness from the solved state with the simulator. It takes every letter as written:
+    a letter that is not two integers, with grip 0 to 599 and item 0 to 59, is rejected before the replay. After
+    every letter it checks that the seven pieces share one pose with right height 0, and it records their left
+    height. It checks the final height and digest. It ran on the eight records from H20 to H6030.
   - `certificate_check.py` checks every premise of the proof that the certificate supplies:
     - the tree lemma's premises for all 120 items at grips 11 and 80: each left factor fixes w_x, jumbles move v0 to
       distance 2 and retained items fix it;
@@ -70,8 +71,13 @@ The integrator checked the result in a cloud session, apart from the run, before
     checks three things:
     - after X, every letter moves exactly the debris of its cap and K;
     - every 100 letters and at all 41 member boundaries, each of the 177,120 pieces is at the pose that property Z(t)
-      of the proof predicts;
+      of the proof predicts, K included (its X-pose turned by the product of all letters after X);
     - at every boundary, K is at L(u_t)Q*, at the predicted height.
+- **Codex review (17 October 2026).** Two shards reviewed the import. The mathematics shard found no gap. The code
+  and pages shard found three defects, all fixed: `replay_witness.py` converted letters with `int()`, so a
+  fractional letter was truncated and still verified; `family_check.py` left K out of its checks every 100 letters;
+  and the root README still called X1 open. Probes confirmed both checker defects before the fix and their
+  rejection after it.
 - **Not done.** No human has reviewed the proof.
 
 ## Replay

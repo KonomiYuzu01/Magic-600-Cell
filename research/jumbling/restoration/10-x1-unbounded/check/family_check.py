@@ -4,7 +4,8 @@
 #   - every item at the two grips is orthogonal and fixes its grip normal (used by the isolation lemma);
 #   - every letter after X is applied, not uncertain, and moves exactly D_x and K (|D_x| + 7 pieces);
 #   - every 100 letters and at every member boundary, the pose of every piece: D_c at its X-pose turned by the
-#     running product at c, D_d by the one at d, every other piece outside K at its X-pose;
+#     running product at c, D_d by the one at d, K by the product of all letters after X, every other piece at its
+#     X-pose;
 #   - at sigma, K at (product of the pump letters) times its X-pose; at boundary t, K at L(u_t) Q*, with left height
 #     h_X + 2 (letters after X) in the branch of d, and |u_t - 1| <= eta.
 # Run from the repository root, with S = research/jumbling/restoration/10-x1-unbounded:
@@ -116,26 +117,28 @@ for k in (0, 1, 2):
     sel = np.nonzero(CLS == k)[0]
     for p in np.unique(pidX[sel]):
         GROUPS.append((k, int(p), sel[pidX[sel] == p]))
-NONK = CLS != 3
 print('X: K at height %d, branch %d; |D_%d| = %d, |D_%d| = %d; %d pieces in %d groups; %.0fs'
       % (hX, T.branch(lX), c, len(DS[c]), d, len(DS[d]), NPC, len(GROUPS), time.time() - t0), flush=True)
 
 def key_of(m):
     k = KP.index_of_matrix(m)
     return ('K', int(k)) if k >= 0 else ('M', m)
-def check_debris(G, where):
+def check_poses(G, PK, where):
     pred = np.full(NPC, -1, np.int64)
     for k, p, members in GROUPS:
         m = matX[p] if k == 0 else to_tuple(matmul(G[c] if k == 1 else G[d], matX[p]))
         cur = s._lookup.get(key_of(m))
         assert cur is not None, ('a predicted pose is held by no piece', where)
         pred[members] = cur
-    bad = int(np.count_nonzero(pred[NONK] != s.pose_id[NONK]))
+    cur = s._lookup.get(key_of(to_tuple(matmul(PK, QX))))
+    assert cur is not None, ('the predicted pose of K is held by no piece', where)
+    pred[list(K)] = cur
+    bad = int(np.count_nonzero(pred != s.pose_id))
     assert bad == 0, ('pieces off their predicted pose', where, bad)
 
 G = {c: I4, d: I4}
-check_debris(G, n0)
 PK = I4
+check_poses(G, PK, n0)
 Qstar = None
 nchecks = 1
 for n in range(n0 + 1, len(word) + 1):
@@ -145,7 +148,7 @@ for n in range(n0 + 1, len(word) + 1):
     G[x] = to_tuple(matmul(EL[(x, j)], G[x]))
     PK = to_tuple(matmul(EL[(x, j)], PK))
     if n % 100 == 0 or n in bounds:
-        check_debris(G, n); nchecks += 1
+        check_poses(G, PK, n); nchecks += 1
     if n in bounds:
         b = bounds.index(n)
         Q = s.pose(K[0]); assert all(s.pose(p) == Q for p in K)
@@ -163,5 +166,5 @@ for n in range(n0 + 1, len(word) + 1):
         assert h == hX + 2 * (n - n0) and T.branch(lq) == T.branch(tuple(D.N[d])), ('height or branch', b, h)
         print('  boundary %d (letter %d): debris as predicted, K at L(u_%d) Q*, height %d; %.0fs'
               % (b, n, b, h, time.time() - t0), flush=True)
-print('PASS (independent family check): member %d, %d letters, %d debris checks of all %d pieces, heights %d .. %d'
+print('PASS (independent family check): member %d, %d letters, %d pose checks of all %d pieces (K included), heights %d .. %d'
       % (NMEM, len(word), nchecks, NPC, hX + 2 * CI, hX + 2 * (len(word) - n0)))

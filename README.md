@@ -24,9 +24,9 @@ Every operation in the application acts on this complete model. Nothing is simpl
 
 ## Jumbling: when pieces leave the lattice
 
-In the puzzle above, every turn is a symmetry of the cut arrangement, so every piece always lands in a slot. A *jumble twist* turns a cell's cap by a rotation about its axis that is not such a symmetry. The moved pieces leave the lattice: they no longer fill a slot, they can stick across other cuts, and every cap they straddle is blocked until they move away. The puzzle stays rigid, but the rotations of the caps now generate an infinite group. With the twist menu I_a, each of the 600 caps has 12 ordinary rotations and 48 jumble twists; whether this menu reaches infinitely many configurations is open. Jumbling enters 1.0 as a second puzzle with its own model identity; 600-cell-Full is unchanged.
+In the puzzle above, every turn is a symmetry of the cut arrangement, so every piece always lands in a slot. A *jumble twist* turns a cell's cap by a rotation about its axis that is not such a symmetry. The moved pieces leave the lattice: they no longer fill a slot, they can stick across other cuts, and every cap they straddle is blocked until they move away. The puzzle stays rigid, but the rotations of the caps now generate an infinite group. With the twist menu I_a, each of the 600 caps has 12 ordinary rotations and 48 jumble twists, and this menu reaches infinitely many configurations (proved on 17 October 2026). Jumbling enters 1.0 as a second puzzle with its own model identity; 600-cell-Full is unchanged.
 
-The research question is how to get back to the solved state from any reachable configuration, reading only the current state. Results so far (15 October 2026):
+The research question is how to get back to the solved state from any reachable configuration, reading only the current state. Results so far (17 October 2026):
 
 | Result | Status |
 | --- | --- |
