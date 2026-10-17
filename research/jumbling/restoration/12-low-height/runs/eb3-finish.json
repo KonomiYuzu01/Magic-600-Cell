@@ -1,0 +1,99 @@
+{
+ "input_digest": "302db20318d2242723fb689d204877f804c8bcf07a7e9d3447c0bf975cdf0ca0",
+ "off_start": 233,
+ "cores": {
+  "P_S": 4,
+  "W_S": 46,
+  "W_R": 288
+ },
+ "trace": [
+  {
+   "after": "P_S",
+   "letters": 4,
+   "off": 233,
+   "lattice_of_start_off": 0
+  },
+  {
+   "after": "V1",
+   "letters": 433,
+   "off": 233,
+   "lattice_of_start_off": 0
+  },
+  {
+   "after": "W_S",
+   "letters": 479,
+   "off": 86,
+   "lattice_of_start_off": 0
+  },
+  {
+   "after": "V1^-1",
+   "letters": 908,
+   "off": 86,
+   "lattice_of_start_off": 0
+  },
+  {
+   "after": "V2",
+   "letters": 1471,
+   "off": 86,
+   "lattice_of_start_off": 0
+  },
+  {
+   "after": "W_R",
+   "letters": 1759,
+   "off": 0,
+   "lattice_of_start_off": 0
+  },
+  {
+   "after": "V2^-1",
+   "letters": 2322,
+   "off": 0,
+   "lattice_of_start_off": 0
+  }
+ ],
+ "V1": {
+  "bad": 172,
+  "unclean": 0,
+  "occupied_in_bad": 68,
+  "holes": 233,
+  "N1": true,
+  "N1_N2": true,
+  "safe_grips": 574,
+  "orbits": 902,
+  "certificate": {
+   "peeled": 162,
+   "of": 162,
+   "family_bound": 1955,
+   "deficits": {},
+   "seconds": 316.7,
+   "length": 429
+  },
+  "source": "certificate",
+  "length": 429
+ },
+ "V2": {
+  "bad": 86,
+  "unclean": 0,
+  "occupied_in_bad": 58,
+  "holes": 86,
+  "N1": true,
+  "N1_N2": true,
+  "safe_grips": 591,
+  "orbits": 700,
+  "certificate": {
+   "peeled": 81,
+   "of": 81,
+   "family_bound": 974,
+   "deficits": {},
+   "seconds": 56.6,
+   "length": 563
+  },
+  "source": "certificate",
+  "length": 563
+ },
+ "end": {
+  "digest": "2d5afd155ff60730de19953335dad742a1415e41ef4adc24b2976df4d8ff3c1d",
+  "off": 0,
+  "letters": 2322
+ },
+ "seconds": 563.0
+}

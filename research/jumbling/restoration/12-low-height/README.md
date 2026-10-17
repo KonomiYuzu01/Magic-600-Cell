@@ -1,7 +1,7 @@
 # 12. Low heights: completeness of the off-lattice phase at left heights 2 and 4 (option B, 17 October 2026)
 
-Status: in progress. The statement and the plan passed a plan check and a scoped re-check; experiments E-B1 and E-B2
-are done.
+Status: in progress. The statement and the plan passed a plan check and a scoped re-check; experiments E-B1, E-B2 and
+E-B3 are done.
 
 The owner chose options A and B on 17 October 2026, provisionally
 ([decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md), item 4). Option A is the
@@ -61,7 +61,7 @@ re-check found the first check's five blocking findings resolved.
 
 1. **E-B1, structural screen** (done at three states, section 4).
 2. **E-B2, strict-step falsifier R21-02** (done at three states, section 5).
-3. **E-B3**, the positive control for T2: the s61c preparation from the state alone.
+3. **E-B3**, the positive control for T2: the s61c preparation from the state alone (done, section 6).
 4. **E-B4**, M1-18 with r = 1 at the units E-B1 finds blocked.
 5. **E-B5**, a bounded driver run from the depth 40 stop (explicit `--heuristic-seconds`, `--max-steps`,
    `--fallback-max-length`; no lattice phase; every accepted word replayed against the strict′ contract).
@@ -164,9 +164,50 @@ chambers against at least 14,225 other off pieces, type by type within |P_t|. R2
 the falsifier cannot refute strict steps at these states; strict B stays open, neither refuted nor supported. The
 three runs took about 6, 25 and 270 seconds.
 
-## 6. Next
+## 6. E-B3: the positive control for T2 at s61c (measured, exact replay)
 
-- E-B3 and E-B4 in the plan's order. E-B1 points at two obstructions for T1 in the census residues: blocked needed
+T2 asks for a stated catalogue of creator and middle words whose instances are decided at the state alone. Its
+positive control is the s61c preparation of M1-14 (`09-general-method/SENIOR-REVIEW.md`), not run until now. s61c is
+the stop62 state with one off unit, the carrier 23955: 61 pieces in one class-0 frame domain at the edge cell
+{30, 145} (M1-04). The stage 08 step s62m3 reaches it from stop62@233. The template has three phases. Each core is a
+word of the stop62 chain, so the catalogue has one entry per phase. Every vacating word is read from the holes of the
+state it acts on.
+
+| Phase | Word | Letters | Off after | Source |
+|---|---|---|---|---|
+| preparation | V0 | 1 | 61 | state: `vacate.Vacate` with the roles of holes and pieces exchanged moves the 6 holes that lie in Bad(D) out of it with one letter, (369, 1) |
+| creator | D = W_C⁻¹·P_C⁻¹ | 51 | 233 | catalogue: the inverted middle (46 letters) and prefix (5) of the stage 08 step s62m3 = P_C·V_C·W_C·V_C⁻¹ |
+| middle | P_S | 4 | 233 | catalogue: the prefix of the stage 08 step s62m = P_S·V_S·W_S·V_S⁻¹ |
+| | V1 | 429 | 233 | state: the peeling certificate of Theorem B for Bad(W_S) (172 chambers, 68 occupied): 162 of 162 movable chambers peeled, family bound 1,955 |
+| | W_S | 46 | 86 | catalogue: the middle of s62m |
+| | V1⁻¹ | 429 | 86 | |
+| last | V2 | 563 | 86 | state: the peeling certificate for Bad(W_R), the 86 home chambers of the carrier's cell (58 occupied): 81 of 81 peeled, family bound 974 |
+| | W_R | 288 | 0 | catalogue: the class-cell pure twist inside step 14 of the stop62 chain (its letters 543 to 830) |
+| | V2⁻¹ | 563 | 0 | |
+| total | | 2,374 | 0 | |
+
+`scripts/eb3_replay.py` replays the whole word from the s61c table on a fresh simulator. It checks every twist for
+admissibility and the digests at the boundaries of the parts. The checks:
+- the creator's source chambers are occupied when it runs: after V0 no hole lies in Bad(D) (172 chambers);
+- V0·D keeps the carrier at its exact pose and takes exactly the 172 lattice pieces of Bad(D) off; the off regions
+  after it equal those of stop62@233;
+- N1 and N2 hold at both vacating states, and both certificates have no deficit, so the greedy fallback was not
+  used;
+- the partners are cleaned up inside the step: no piece is off the lattice at the end.
+
+So s61c reaches the lattice from the state alone, with these catalogue cores, in 2,374 letters; the last piece lands
+with W_R, after 1,811 letters. The history certificate M1-05 takes 4,402 letters, ending with W_R as well. Its
+creator is the whole inverted step s62m3 (1,749 letters), whose vacating part V0 replaces with one letter; its two
+vacating words are 886 and 543 letters long, against 429 and 563 here. As in M1-05, the end is on the lattice but the
+stickers are not solved: the lattice phase follows.
+
+The control passes for one state, with cores taken from that state's own history. It shows that the vacating phases
+of the template can be read from the state with exact certificates once the cores are given. It does not show that a
+finite catalogue covers every partner situation at low heights; that remains the joint-attack lemma of T2.
+
+## 7. Next
+
+- E-B4 in the plan's order. E-B1 points at two obstructions for T1 in the census residues: blocked needed
   grips (T3), and occupied home chambers that no SAFE-ALL letter reaches at the state (N1). E-B4 takes the six depth
   60 groups.
 - E-B5 from the depth 40 stop, where 14 units are ready and pass the T1 checks now and the other 8 need a grip or N1
@@ -186,6 +227,20 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     python3 -I -B $S/r2102.py record $C/ia-k40-s7101.json <out>    # about 25 seconds
     python3 -I -B $S/r2102.py record $C/ia-k60-s7104.json <out>    # about 5 minutes
 
+E-B3 reads two tables unpacked with `gunzip -c` into `s61c.json` and `s233.json`, from
+`$U/certs/stop62/cm233/inputs/stop62-61-c-table.json.gz` and `$U/certs/stop62/z233/inputs/stop62-233-table.json.gz`,
+with
+
+    U=research/jumbling/restoration/08-units-and-clean-steps
+    W=research/jumbling/restoration/09-general-method/earlier/stop62-860-to-0/chain/step014-word.json
+    R=research/jumbling/restoration/12-low-height/runs
+    T=research/jumbling/theory
+    python3 -I -B $S/eb3_prep.py $T s61c.json $U/chains/s62m3/step001-word.json s233.json p    # about 30 seconds
+    python3 -I -B $S/eb3_finish.py $T p-table.json $U/chains/s62m/step001-word.json $W f       # about 10 minutes
+    python3 -I -B $S/eb3_replay.py $T s61c.json $R/eb3-prep-word.json $R/eb3-finish-word.json <out>   # about 2.5 minutes
+
+The first two write `p.json`, `p-word.json`, `p-table.json` (the state Z1, not kept) and `f.json`, `f-word.json`.
+
 ## Files
 
 | File | What it is |
@@ -194,3 +249,5 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
 | `scripts/order.py` | The structural landing order and the units left over, from a screen output |
 | `scripts/r2102.py` | E-B2: exact two-sided bounds for R21-02 at one state |
 | `runs/screen-*.json`, `runs/order-*.json`, `runs/r2102-*.json` | The outputs at the three states (`233`, `k40`, `k60`); a rerun reproduces them except the timing fields |
+| `scripts/eb3_prep.py`, `scripts/eb3_finish.py`, `scripts/eb3_replay.py` | E-B3: the preparation V0 and creator D; the middle and last phases with their vacating words; the independent replay |
+| `runs/eb3-prep*.json`, `runs/eb3-finish*.json`, `runs/eb3-replay.json` | E-B3 records and words (52 and 2,322 letters) with input and output digests, and the replay record |
