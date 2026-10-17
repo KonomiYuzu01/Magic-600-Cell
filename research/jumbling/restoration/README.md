@@ -89,7 +89,7 @@ new standard removes from the earlier programme, and the reproduction commands.
 | --- | --- | --- |
 | M1 | A construction from the state alone with a bound on its length. Bare existence is proved (exhaustive search), and with it as a fallback the method is complete (Theorem M\*), which the driver implements. A bound for every state exists if and only if R(I_a) is finite, and R(I_a) is infinite (stage 10), so a bound must depend on the state. Round 21: a computable bound in (n, h) valid at every reachable state exists exactly when reachability is decidable (Theorem D); explicit bounds hold on classes given by checkable hypotheses ([record](09-general-method/SENIOR-REVIEW.md) section 26) | **open**; the core gap |
 | M2 | The committed lattice cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, about 5 to 7 years at one twist per second. With 31 of its 35 seeds replaced by shorter relocated elements (round 7), it restores the two synthetic inputs in 4.5 × 10^7 twists, about 1.4 years, and its cascade needs at most 71,516,526 twists for every input (the corrections at most 25,852 more), or at most 4,841,151 actions (single twists and applications of 70 stored macros); with retained words only, some input needs at least 224,601 twists (proved, model review). A construction that applies the seeds fewer times needs at most 20,866,844 twists for every input (proved, model review), about 1.33 times the fewest twists that any cascade solving one orbit at a time with conjugates of these seeds spends on them; implemented on 16 October as a runner separate from the driver, it restores the two synthetic inputs in 1.58 × 10^7 twists, about 6 months at one twist per second. Against "a person can replicate it" | **closed** by owner decision ([17 October 2026](../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-m2.md)): help for a person moves to the engineering line; bounds **proved**; runs **certificate** |
-| E1 | Coverage: deep scrambles at the I_a@40 scale (about 94,000 off pieces) were not run with the method | **not run** |
+| E1 | Coverage: deep scrambles at the I_a@40 scale (about 94,000 off pieces) were not run with the general method. Stage 11 (17 October) runs phase U alone on unrestricted random scrambles, one or two seeds per depth: 10 and 20 twists and one of two 40-twist scrambles reach the lattice; for the other 40-twist scramble and at 60, 100 and 1000 twists the clock stopped the descent after it had put back 98.7%, 86.2%, 72.8% and 35.1% of the off pieces, and no run got stuck. Most of the residue lies in rigid blocks of the three sizes catalogued in stage 06, but only 27% (60 twists) and 5% (100 twists) of it in groups of the catalogued shapes, and the stored template words alone restore 1.5% and 0.4% of it | **in progress** ([stage 11](11-scramble-census/README.md)); the general method from these stops **not run** |
 | E2 | Review of the proofs. The senior model review of 15 October 2026 checked stages 08 and 09 and the A_J upper bound, proved Lemma C as Theorem C and corrected Lemma CM and Theorem R ([record](09-general-method/SENIOR-REVIEW.md)) | model review **done**; human review **not done**; a Lean formalization from a complete handoff document is planned once M1 is solved (owner, 17 October 2026) |
 
 ## Stages
@@ -111,6 +111,7 @@ of the 24-twist "E2 run" in the history of stage 05).
 | [08](08-units-and-clean-steps/README.md) units and clean steps | 15 Oct | Lemma U; stop62 from 689 to 86 by clean steps and a carrier move; where the word family stops | [PROOFS-U](08-units-and-clean-steps/PROOFS-U.md) |
 | [09](09-general-method/README.md) general method | 15 Oct | The two-phase method; stop62 and X to the solved state | [METHOD](09-general-method/METHOD.md) |
 | [10](10-x1-unbounded/README.md) X1 | 17 Oct | R(I_a) is infinite: an explicit family of words raises seven pieces without bound (X1 closed) | [REPORT](10-x1-unbounded/REPORT.md) |
+| [11](11-scramble-census/README.md) scramble census | 17 Oct | Phase U on unrestricted random scrambles of 10 to 1000 twists: a fast bulk of single-twist steps, then a slow tail of three-twist repairs, no run stuck; what is left at the stops | [README](11-scramble-census/README.md) |
 
 The earlier theory (the tree model, rim peel, seam reading, buffer transport, cards 1 to 4) is in
 [`../theory/`](../theory/README.md), and the open problems are in [`../theory/open-problems.md`](../theory/open-problems.md).
@@ -127,7 +128,8 @@ The questions put to an external prover, with the answers so far, are in [`../th
   stage 01), `<scratch>`, `<repo>`, `<tmp>`.
 - Each result has a checker that does not import the construction code: `replay_check.py` (in `../theory/`),
   `verify_chain.py`, `verify_hp.py`, `verify_u.py`, `check_certs.py`, `verify_restore.py` and `verify_late.py`;
-  stage 10 has three in `10-x1-unbounded/check/`.
+  stage 10 has three in `10-x1-unbounded/check/`, and stage 11 replays its census records with
+  `11-scramble-census/scripts/check_records.py`.
 - The runs used `ulimit -v 7000000` per process. Run times in the records are cloud timings, not performance
   evidence.
 
@@ -148,6 +150,7 @@ archives. Each `IMPORT-MANIFEST.json` names its source package:
 | 08 | `Claude-3E-units-20261015` (version 3.1) |
 | 09 | the working tree of the general method (driver v4 for the runs; M\* since the senior review's audit) |
 | 10 | the output archive of the X1 run of 16 to 17 October 2026 |
+| 11 | the integrator's census runs of 17 October 2026, with the scripts of this repository |
 
 ## Evidence and checks not run
 

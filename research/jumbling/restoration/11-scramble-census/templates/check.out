@@ -1,0 +1,3 @@
+{"step": "k60-step00-word.json", "letters": 10, "pieces": 111, "off_after": 14499, "other_off_pieces_kept": 14499, "digest": "f5a4dfb632f3d462ba57dbf89cf709e4bff9aaf0dbabfe8ddb136f6d86159ba7", "pass": true, "fails": []}
+{"step": "k60-step01-word.json", "letters": 10, "pieces": 111, "off_after": 14388, "other_off_pieces_kept": 14388, "digest": "6400a4b05213675263e0463694814f62dd94d25a545f1dd83f8418b8895fcffe", "pass": true, "fails": []}
+{"step": "k100-step00-word.json", "letters": 10, "pieces": 111, "off_after": 31368, "other_off_pieces_kept": 31368, "digest": "a608c97cf0984ae057195491155ecd7fa4d1e5f253d54223cc4bf371c8532c6c", "pass": true, "fails": []}

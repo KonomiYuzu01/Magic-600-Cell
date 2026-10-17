@@ -27,6 +27,17 @@ Last updated: 17 October 2026. The rows below keep their text of 11 October, exc
   explicit bounds hold on classes given by checkable hypotheses, which fail at the first level for every high unit
   in the three states examined ([SENIOR-REVIEW](../restoration/09-general-method/SENIOR-REVIEW.md) section 26).
   Still open.
+- **R1** (coverage census, the same day): the owner made a tutorial that people can read and carry out the most
+  important output and ruled out restricted scrambles
+  ([decision](../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)). Phase U alone, on fresh
+  random scrambles of 10 to 1000 twists with one or two seeds per depth: 10 and 20 twists and one of two 40-twist
+  scrambles reach the lattice by face matches alone; the other scrambles descend fast by single-twist steps and then
+  slowly by three-twist repairs, and the clock stopped them after 98.7% (40 twists) to 35.1% (1000 twists) of their
+  off pieces were back. No run got stuck, and no left height exceeded 6. The residues are rigid blocks, mostly of
+  the three sizes catalogued in stage 06, but only 27% (60 twists) and 5% (100 twists) of their pieces lie in
+  groups of the three catalogued shapes, and the stored template words alone restore 1.5% and 0.4% of them
+  ([stage 11](../restoration/11-scramble-census/README.md)). The owner then chose, provisionally, a coverage census
+  with a manual of techniques and a completeness theorem for left heights 2 and 4.
 
 ## Update of 15 October 2026
 
