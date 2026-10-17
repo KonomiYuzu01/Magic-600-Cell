@@ -1,0 +1,18 @@
+letter 194 ( 11, 44): height 98 branch 3; out grips 20
+letter 195 ( 80, 42): height 100 branch 2; out grips 20
+letter 196 ( 11, 57): height 102 branch 3; out grips 20
+letter 197 ( 80, 15): height 104 branch 2; out grips 20
+letter 198 ( 11, 42): height 106 branch 3; out grips 19
+letter 199 ( 80, 21): height 108 branch 2; out grips 19
+letter 200 ( 11, 31): height 110 branch 3; out grips 20
+letter 201 ( 80, 31): height 112 branch 2; out grips 19
+letter 202 ( 11, 57): height 114 branch 3; out grips 19
+letter 203 ( 80, 42): height 116 branch 2; out grips 20
+letter 204 ( 11, 15): height 118 branch 3; out grips 20
+letter 205 ( 80, 31): height 120 branch 2; out grips 19
+letter 206 ( 11, 13): height 122 branch 3; out grips 19
+final heights (height: pieces): {0: 126939, 2: 49471, 4: 703, 122: 7}
+pieces at the top height 122 : [118527, 126380, 126382, 126384, 126385, 149644, 149650]
+out grips: [11, 123, 164, 217, 218, 238, 280, 284, 324, 353, 389, 393, 442, 484, 537, 564, 576, 582, 592]
+digest 96fc60034eecf323001bfd5d56e8e7e560be2764dadbe88f2e475025fdb53107
+PASS: 206 letters admissible (exact); pieces K at left height 122 in branch 3

@@ -1,0 +1,34 @@
+letters: 169 ; common prefix with E17-4: 141
+140 (537,12) K left height  2 branch 1, out grips 12
+141 (593,23) K left height  4 branch 2, out grips 12
+142 (592,22) K left height  6 branch 0, out grips 13
+143 (593,30) K left height  8 branch 2, out grips 12
+144 (582,30) K left height 10 branch 1, out grips 13
+145 (576,51) K left height 12 branch 4, out grips 14
+146 (525,21) K left height 12 branch 4, out grips 13
+147 (410,15) K left height 14 branch 2, out grips 14
+148 (393,20) K left height 16 branch 1, out grips 15
+149 (410,14) K left height 18 branch 2, out grips 14
+150 (389,36) K left height 20 branch 3, out grips 15
+151 (165, 2) K left height 20 branch 3, out grips 15
+152 (238,50) K left height 22 branch 2, out grips 16
+153 (164,57) K left height 24 branch 4, out grips 17
+154 ( 80,32) K left height 26 branch 2, out grips 18
+155 (123,51) K left height 28 branch 4, out grips 19
+156 ( 11,26) K left height 30 branch 3, out grips 20
+157 ( 80,57) K left height 32 branch 2, out grips 20
+158 ( 11,15) K left height 34 branch 3, out grips 19
+159 ( 80,57) K left height 36 branch 2, out grips 19
+160 ( 11,44) K left height 36 branch 2, out grips 20
+161 ( 80,34) K left height 36 branch 2, out grips 20
+162 ( 11,15) K left height 38 branch 3, out grips 19
+163 ( 80,21) K left height 40 branch 2, out grips 18
+164 ( 11,56) K left height 42 branch 3, out grips 19
+165 ( 80,42) K left height 44 branch 2, out grips 20
+166 ( 11,21) K left height 46 branch 3, out grips 20
+167 ( 80,31) K left height 48 branch 2, out grips 19
+168 ( 11,31) K left height 50 branch 3, out grips 19
+169 ( 80,35) K left height 52 branch 2, out grips 20
+max height along the word: 52 final: 52
+digest 487741046496fefea2dc7800f4813463a61e83f858d5dfe93062b9ca8a0a7f0d
+VERIFIED H52.json

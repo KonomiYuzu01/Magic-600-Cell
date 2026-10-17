@@ -1,0 +1,12 @@
+P1: 156 letters admissible; K at height 30; 11s
+P2: K whole in caps 11 and 80, both cuts clean, not NB neighbours, branches 3 and 2; |D_11| = 2505, |D_80| = 2702; no other piece in both caps
+P3: Good_11 = [0, 2, 5, 7, 8, 11, 13, 15, 16, 19, 20, 21, 23, 24, 25, 30, 31, 36, 37, 40, 42, 43, 44, 45, 50, 58] (26 items, 20 jumbles)
+    Good_80 = [0, 3, 4, 5, 8, 11, 19, 21, 22, 27, 33, 34, 36, 37, 40, 41, 43, 44, 46, 47, 50, 52, 53, 54, 57] (25 items, 19 jumbles); 12s
+P5 at X: kind holds trivially; 171906 other pieces
+P4/P5 after letter 256: K at height 230, labels (19, 3), 20 out grips; kind holds; 18s
+P4/P5 after letter 356: K at height 430, labels (21, 34), 20 out grips; kind holds; 24s
+P4/P5 after letter 456: K at height 630, labels (50, 57), 20 out grips; kind holds; 30s
+P4/P5 after letter 556: K at height 830, labels (20, 5), 20 out grips; kind holds; 37s
+P4/P5 after letter 656: K at height 1030, labels (23, 34), 20 out grips; kind holds; 43s
+P4/P5 after letter 756: K at height 1230, labels (20, 27), 19 out grips; kind holds; 51s
+PASS: 600 pump letters, each a jumble at alternating grips 11/80 raising K by 2 (height 30 -> 1230); running products in Good; kind S(h) verified at every 100th letter; digest ba77e165ebb205307cba8d7666bff9f5ccd9d31bb3cbff161acdb7f0e5c3faf9

@@ -201,7 +201,7 @@ solved configuration (identity labels on all 259,800 stickers).
 
 ## 5. Gaps
 
-Two mathematical gaps:
+Two mathematical gaps; the owner closed M2 on 17 October 2026, so M1 is the one still open:
 - **M1. A bounded step from the state alone (the core gap; open).** Bare existence is settled; a bound from the
   state's own features is not. Codex senior reviews on 15 October 2026 proved the following (`SENIOR-REVIEW.md`
   sections 1 to 3 and 9); there is no human review yet:
@@ -324,11 +324,14 @@ Two mathematical gaps:
       the cell has 86 chambers and there are only 61 holes (LC-07); it needs created partners (M1-13).
   The family form of the Block lemma was one candidate route to M1; Theorem S rules it out at 245. The question
   itself is unchanged.
-- **M2. Lattice-phase length against "a person can replicate it" (open; bounds proved).** Theorem R itself is
-  proved, with a model review (section 3); the gap is the length. Round 6 (`SENIOR-REVIEW.md` section 11) measures
-  it in two ways, which are the integrator's reading of the owner decision (the owner has not fixed a measure):
-  twists L, and actions A, where a person performs cap twists and applications of macros that the program stores
-  and places (7,200 placements each), with the cost of creating the macros counted apart.
+- **M2. Lattice-phase length against "a person can replicate it" (closed by owner decision, 17 October 2026;
+  bounds proved).** Theorem R itself is proved, with a model review (section 3); the gap was the length. The owner
+  closed it for the theory: the bounds below stand, and help that lets a person carry out the lattice phase with
+  the program's assistance moves to the engineering line ([decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-m2.md)).
+  Round 6 (`SENIOR-REVIEW.md` section 11) measures the length in two ways, which are the integrator's reading of
+  the owner decision of 15 October (the owner has not fixed a measure): twists L, and actions A, where a person
+  performs cap twists and applications of macros that the program stores and places (7,200 placements each), with
+  the cost of creating the macros counted apart.
   - *Measured.* The committed cascade took 1.5 to 2.3 × 10^8 twists on the runs so far, 5 to 7 years at one twist
     per second. With the replaced seeds of round 7 it restores the two synthetic inputs in 4.5 × 10^7 twists, about
     1.4 years (section 6.3), and with the schedule of round 11 in 1.58 × 10^7 twists, about 6 months (section 6.4).
@@ -373,10 +376,11 @@ Two mathematical gaps:
     times seed length, not the length of a freely reduced word. The schedule is about 1.334 times the floor, so
     within that class a larger gain needs shorter seeds (round 12, R12-01). It is implemented (section 6.4): on the
     six inputs of its acceptance check, every orbit stays within its term of the bound (measured).
-  - *Open.* Whether a lattice phase of a few million actions counts as replicable is for the owner to judge. The
-    next experiments are shorter candidates for O10, O28, O03, O01 and O18 (now the largest terms), the exhaustive
-    frame check of R7-02, a uniform sampler for the synthetic inputs (M2-05) and a cascade order that admits the
-    spine prefixes dropped for their collateral (M2-06; over the recorded candidates the order gains nothing, R8-02).
+  - *Closed (17 October 2026).* The owner judged the question: M2 is closed for the theory, and the help a person
+    needs moves to the engineering line. Shorter candidates for O10, O28, O03, O01 and O18 (now the largest terms),
+    the exhaustive frame check of R7-02, a uniform sampler for the synthetic inputs (M2-05) and a cascade order that
+    admits the spine prefixes dropped for their collateral (M2-06; over the recorded candidates the order gains
+    nothing, R8-02) remain possible improvements, not open gaps.
 
 Two evidence gaps:
 - **E1. Coverage.** The method has been run on the inputs of section 6 only. Deep scrambles (the I_a@40 scale,
@@ -386,7 +390,9 @@ Two evidence gaps:
   the span of the library). It proved Lemma C as Theorem C with a length bound, and proved the M1 results above. It
   corrected the statements of Lemma CM and Theorem R and fixed three smaller points (`SENIOR-REVIEW.md`). A
   milestone audit then proved Theorem M\*, the toolkit theorem and the lattice-phase bound (section 9 there). That is a
-  model review: no human has reviewed these proofs.
+  model review: no human has reviewed these proofs. The owner's plan (17 October 2026): once M1 is solved, a
+  complete handoff document of the theory goes to a strict Lean formalization by the owner's agent (Archon), which
+  is to close E2.
 
 
 ## 6. Results

@@ -1,0 +1,17 @@
+letters: 152 ; common prefix with E17-4: 141
+140 (537,12) K left height  2 branch 1, out grips 12
+141 (593,23) K left height  4 branch 2, out grips 12
+142 (592,22) K left height  6 branch 0, out grips 13
+143 (593,30) K left height  8 branch 2, out grips 12
+144 (582,30) K left height 10 branch 1, out grips 13
+145 (576,51) K left height 12 branch 4, out grips 14
+146 (525,21) K left height 12 branch 4, out grips 13
+147 (410,15) K left height 14 branch 2, out grips 14
+148 (393,20) K left height 16 branch 1, out grips 15
+149 (410,14) K left height 18 branch 2, out grips 14
+150 (389,13) K left height 20 branch 3, out grips 15
+151 (165, 1) K left height 20 branch 3, out grips 15
+152 (409,12) K left height 22 branch 0, out grips 16
+max height along the word: 22 final: 22
+digest 4a7302dc9faabb99e083db762d22a17918bfdb4359592b5d0a6abb9fb3637191
+VERIFIED H22.json

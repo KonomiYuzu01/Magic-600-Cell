@@ -1,0 +1,6 @@
+member 3: words [2, 5, 5], 2895 letters; built in 1s
+  member 0 ends at letter 2085: K at L(u_0) Q*, height 3888; 113s
+  member 1 ends at letter 2387: K at L(u_1) Q*, height 4492; 130s
+  member 2 ends at letter 2641: K at L(u_2) Q*, height 5000; 145s
+  member 3 ends at letter 2895: K at L(u_3) Q*, height 5508; 161s
+PASS: members 0..3 admissible (exact replay of 2895 letters); K at L(u_t) Q* at every boundary; heights 3888 .. 5508

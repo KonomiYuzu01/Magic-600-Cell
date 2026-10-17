@@ -1,0 +1,15 @@
+A1: 156 letters admissible; X: K at height 30 whole in caps 11 and 80, cuts clean, |D| = 2505, 2702; |Good| = 26, 25; K has 16 vertices (= the simulator rows of its 7 pieces)
+    Good_11 = [0, 2, 5, 7, 8, 11, 13, 15, 16, 19, 20, 21, 23, 24, 25, 30, 31, 36, 37, 40, 42, 43, 44, 45, 50, 58]
+    Good_80 = [0, 3, 4, 5, 8, 11, 19, 21, 22, 27, 33, 34, 36, 37, 40, 41, 43, 44, 46, 47, 50, 52, 53, 54, 57]
+A1b: Good sets and (i) agree with the simulator classify (62484 piece-cases at lattice poses); 59s
+A2: 1929 pump letters satisfy the step hypotheses (61760 exact margins > 0); centre: K at height 3888, labels (23, 33), next grip 11; the simulator replays them and reaches K at Q*; 305s
+B: word 0 (66 letters): step hypotheses and (*) hold at every state (2144 margin checks); labels return; P = L(lambda); K at height 4020 at the end; 310s
+B: word 1 (302 letters): step hypotheses and (*) hold at every state (9696 margin checks); labels return; P = L(lambda); K at height 4492 at the end; 337s
+B: word 2 (302 letters): step hypotheses and (*) hold at every state (9696 margin checks); labels return; P = L(lambda); K at height 4492 at the end; 363s
+B: word 3 (268 letters): step hypotheses and (*) hold at every state (8608 margin checks); labels return; P = L(lambda); K at height 4424 at the end; 387s
+B: word 4 (256 letters): step hypotheses and (*) hold at every state (8224 margin checks); labels return; P = L(lambda); K at height 4400 at the end; 408s
+B: word 5 (254 letters): step hypotheses and (*) hold at every state (8160 margin checks); labels return; P = L(lambda); K at height 4396 at the end; 432s
+B: word 6 (298 letters): step hypotheses and (*) hold at every state (9568 margin checks); labels return; P = L(lambda); K at height 4484 at the end; 456s
+C: the u_vec-ball of {|u - 1| <= 1/200} is covered by 113 boxes (16 split boxes, 0 boxes outside the ball), each with a word mapping it into the ball; 456s
+D: every certificate word replays with the simulator from the centre and ends with K at L(lambda_i) Q*; 665s
+PASS: ball certificate holds: centre after 156 + 1929 letters (K at height 3888), eta = 1/200, 7 words ([66, 302, 302, 268, 256, 254, 298] letters), 113 boxes

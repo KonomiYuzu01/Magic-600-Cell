@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-17] decision | Jumbling: gap M2 closed, proofs to a Lean formalization
+The owner closed gap M2 of the restoration theory: the proved lattice-phase bounds stand, and help that lets a person carry out the lattice phase moves to the engineering line ([decision](decisions/owner-decisions-2026-10-17-jumbling-m2.md)). Once gap M1 is solved, a complete handoff document of the theory goes to the owner's Lean formal-verification agent, which is to close gap E2; M1 is next.
+
 ## [2026-10-17] update | Jumbling: X1 settled, the reachable set of I_a is infinite
 The X1 run found an explicit family of words that raises seven pieces without bound, by jumbles at two caps that both hold them whole, with a ball certificate that keeps it going; the integrator checked it before import (line-by-line reading against the simulator, exact re-runs, three independent checkers), and at the owner's request X1 is marked proved in [open problems](../../research/jumbling/theory/open-problems.md) and [stage 10](../../research/jumbling/restoration/10-x1-unbounded/README.md). The run's billed spend is on the [decision page](decisions/owner-decisions-2026-10-16-x1-api-budget.md).
 

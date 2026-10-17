@@ -63,9 +63,12 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   credit found it, and the integrator checked it independently; no human has reviewed it
   ([stage 10](restoration/10-x1-unbounded/README.md)).
 - **Open.** A construction that works from the state alone with a bound on its length, which must depend on the
-  state (gap M1). Whether a lattice phase of 1.58 × 10^7 twists, or a few million actions (single twists and
-  stored-macro applications), is within reach of a person is open (gap M2). Deep scrambles were not run with the general method (gap E1). No human has
-  reviewed the new proofs (gap E2).
+  state (gap M1); it is the next target. Deep scrambles were not run with the general method (gap E1). No human
+  has reviewed the new proofs (gap E2); once M1 is solved, a Lean formalization is to check them.
+- **Closed by the owner (17 October 2026).** Gap M2, whether a lattice phase of 1.58 × 10^7 twists, or a few
+  million actions (single twists and stored-macro applications), is within reach of a person: the bounds stand,
+  and help for a person moves to the engineering line
+  ([decision](../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-m2.md)).
 - **Rendering.** The research viewer draws all 259,800 stickers of a jumbled state. On the owner's RTX 4070 Laptop
   GPU, the jumbling pose probe ran the I_a fixture at 613 fps (p99 1.91 ms); overlay costs are not measured yet
   ([evidence](../../docs/wiki/evidence/w-j-probe-results.md)).
