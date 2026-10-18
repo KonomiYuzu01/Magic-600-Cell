@@ -2229,8 +2229,9 @@ K⁺, gives an exact criterion for the SAFE-prepared whole-cap step at a singlet
 reaching word, which decides nothing. Round 5 (COV-29 to COV-35) covers the 24 exceptional holes through the cap
 antipodal to cap 0, so every valid singleton with a rim placement has a step, cuts the other singletons by validity to
 457,200 class–hole pairs in 67 deep and two outer classes, and gives an exact test for a whole-cap step with several off
-pieces and a lemma that lifts a certified step past separated contents. Coverage stays open: no reachable state without
-a step was found, and nothing here proves that every state has one.
+pieces and a lemma that lifts a certified step past separated contents; its experiment COV-35 found no reaching word for
+eight deep classes. Coverage stays open: no reachable state without a step was found, and nothing here proves that every
+state has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -2945,14 +2946,15 @@ B′(2) still needs, and one more experiment. Its computations are `scripts/roun
 `cov30_validity.py`, `cov33_whole_cap_737.py` and `cov33_singleton_caps.py`; the integrator re-ran them and got the same
 pairs, resource chambers, classes, verdicts and cap counts, with the outputs `runs/round22/cov29_two_cap.txt`,
 `cov30_validity.txt`, `cov33_whole_cap_737.txt` and `cov33_singleton_caps.txt`. For COV-13's state the reviewer re-ran
-`cov13_mixed_frames.py` and got the recorded output `runs/round22/cov13_mixed_frames.txt`. Its experiment is
-`scripts/round22/cov35_deep_search.py`. Every exceptional pair of COV-24 has a four-core restoration through the cap
-antipodal to cap 0, so every valid singleton with a rim placement has a step (COV-29); validity leaves 67 deep and two
-outer classes, 457,200 class–hole pairs (COV-30); vacancy of every block lock survives retained words, which removes
-COV-25's exact-return condition (COV-31); a whole-cap step with several off pieces has an exact joint test, and a
-certified step lifts past contents that stay outside its caps (COV-32); the exact counts of whole-cap steps at three
-states (COV-33); the three obligations left for B′(2), with the bounds (COV-34); and an experiment on eight deep classes
-(COV-35). B′(2), the reachability of the deep and outer classes and coverage with several off pieces stay open.
+`cov13_mixed_frames.py` and got the recorded output `runs/round22/cov13_mixed_frames.txt`. Its experiment,
+`scripts/round22/cov35_deep_search.py`, found no reaching word (outputs `runs/round22/cov35/seed0.txt` to `seed7.txt`).
+Every exceptional pair of COV-24 has a four-core restoration through the cap antipodal to cap 0, so every valid
+singleton with a rim placement has a step (COV-29); validity leaves 67 deep and two outer classes, 457,200 class–hole
+pairs (COV-30); vacancy of every block lock survives retained words, which removes COV-25's exact-return condition
+(COV-31); a whole-cap step with several off pieces has an exact joint test, and a certified step lifts past contents
+that stay outside its caps (COV-32); the exact counts of whole-cap steps at three states (COV-33); the three obligations
+left for B′(2), with the bounds (COV-34); and an experiment on eight deep classes (COV-35). B′(2), the reachability of
+the deep and outer classes and coverage with several off pieces stay open.
 
 ### COV-29. The 24 exceptional holes: four cores through the antipodal cap (proved from computed certificates)
 
@@ -3139,6 +3141,9 @@ states (COV-33); the three obligations left for B′(2), with the bounds (COV-34
   chosen geometric templates would not show that the full catalogue fails.
 - Command: `scripts/round22/cov35_deep_search.py <seed>` for the seeds 0 to 7, each with a 1,700-second CPU cutoff
   (about 3.8 CPU hours in all). The script is the source that the reviewer's generator builds from
-  `cov28_cohort_search.py` (4,518 characters, as the reviewer compiled it), with its own header. The integrator started
-  the eight seeds on 18 October, four at a time; their outputs are recorded when they finish.
+  `cov28_cohort_search.py` (4,518 characters, as the reviewer compiled it), with its own header. The integrator ran the
+  eight seeds on 18 October, four at a time (the design said at most two; the cutoff per seed is the same). Every seed
+  ended CUT_SHORT at its cutoff, after 97,287, 97,341 and 97,278 trials for the targets 12, 41 and 64 and 9,647 to
+  11,052 for the other five (343,764 in all, dropped trials included), and none found a word, so it decides nothing.
+  Outputs `runs/round22/cov35/seed0.txt` to `seed7.txt`.
 - Uses: COV-28, COV-30.

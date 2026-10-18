@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 5 experiment
+The search COV-35, the mixed words of round 4 aimed at eight valid deep placements, found no word reaching any of them in 343,764 trials, every seed stopping at its time limit, which decides nothing ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8). Coverage round 6 starts from it.
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 5
 A restoration through the cap opposite the turned one lands each of the 24 exceptional single off pieces of round 4, so every valid single off piece whose landing chambers safe twists can refill has a restoring step; an exact overlap test leaves 67 deep and two outer placements, 457,200 placement and hole pairs, still to settle; safe twists keep every locked chamber empty, so no word of safe twists between two cap turns reaches a deep single piece through its landing twist; and for several off pieces an exact joint test and a lifting lemma reduce one route to finite checks, with what B′(2) still needs stated as three obligations ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-29 to COV-35). A bounded search on eight deep placements is running, and the handoff index now lists 109 results.
 

@@ -7443,7 +7443,7 @@ The fourth coverage shard (the senior reviewer, fast tier: the classification of
 
 ### Coverage of B′(2), round 5 (COV-29 to COV-35)
 
-The fifth coverage shard (the senior reviewer, fast tier: the deep and outer singletons, the 24 exceptional holes of COV-24, several off pieces, what B′(2) still needs and one more experiment; seven results, all `minor`, all adopted; the integrator re-ran its four computations with the same pairs, resource chambers, classes, verdicts and cap counts, and started its experiment). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
+The fifth coverage shard (the senior reviewer, fast tier: the deep and outer singletons, the 24 exceptional holes of COV-24, several off pieces, what B′(2) still needs and one more experiment; seven results, all `minor`, all adopted; the integrator re-ran its four computations with the same pairs, resource chambers, classes, verdicts and cap counts, and ran its experiment). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
 
 | Finding | Status | Index |
 | --- | --- | --- |
@@ -7453,7 +7453,7 @@ The fifth coverage shard (the senior reviewer, fast tier: the deep and outer sin
 | COV-32 | proved | A whole-cap step with several off pieces exists exactly when a joint hole-orbit test holds; a certified strict′ step lifts past added contents that lie outside every cap it uses. |
 | COV-33 | computed | The all-content-landing whole-cap route passes at five caps of the 737 state (one after a preparation), at none of COV-13's state and at two of COV-17's singleton; ten caps at 737 fail under every preparation. |
 | COV-34 | proved | B′(2) still needs SingletonResidual (the 457,200 pairs), MultiCover and MixedCoreBound; b, L and S(n) are unchanged, and a height-restricted-history lemma would give a conditional bound. |
-| COV-35 | experiment design | Run COV-28's search on eight valid deep classes; only a hit decides (running). |
+| COV-35 | experiment design | Run COV-28's search on eight valid deep classes; only a hit decides; none in 343,764 trials (every seed cut short at its CPU cutoff). |
 
 ### The integrator's experiments (round 22)
 
