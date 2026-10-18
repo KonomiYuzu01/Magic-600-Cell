@@ -7470,6 +7470,21 @@ The sixth coverage shard (the senior reviewer, fast tier: the singleton residual
 | COV-42 | proved | B′(2) still needs SingletonResidual (118 cases), MultiCover and MixedCoreBound, or R2 in place of all three; no growth of b is shown to be necessary. |
 | COV-43 | experiment design | Search for a restoring word at each of the 118 cases (120 CPU seconds each); ALL_PASS settles SingletonResidual, a miss decides nothing; the integrator's run found none, every case cut short. |
 
+### Coverage of B′(2), round 7 (COV-44 to COV-51)
+
+The seventh coverage shard (the senior reviewer, fast tier: the open cases, restoration within a fixed height and peak reduction; eight results, all `minor`, all adopted; the integrator re-ran its four computations with the same locks, blocks, heights, multipliers, candidates and digests, and started its experiment, stopping it after eight cases when the existing descent turned out to be stuck at the residual tables). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| COV-44 | proved | B′(2) with explicit bounds holds exactly when R_h, restoration inside height h, holds for an explicit even h: R_h gives the exhaustive catalogue up to (7,200·(4^(h+1) − 1)/3)^177,120 − 1 letters, and explicit bounds L₂ give h = 2 + 2·max L₂. |
+| COV-45 | computed from certificates; proved | VL fails at a reachable singleton whose history stays inside U₂ (nine occupied locked chambers), so VL for one or a few off pieces is no invariant of reachable states. |
+| COV-46 | proved; computed | Every restoring word for a residual case uses at least three jumble letters: the first letter's 3,097 off pieces form 29 rigid blocks of at least 86 pieces, which land or stay whole. |
+| COV-47 | computed | A residual piece changes its tree branch inside U₄ ([(1, 12), (41, 16)] at the case (2149, 41)) without changing its placement orbit; no case is settled. |
+| COV-48 | proved | The two-letter peak classification holds at every even boundary height, and the first detours above U₄ peak at 6; general peak reduction needs one simultaneous replacement on the whole table, which is open. |
+| COV-49 | computed | Neither different-cap peak of COV-41 has a replacement of at most two letters (exhaustive over the 35,400 letters; 100 candidate pairs replayed for each). |
+| COV-50 | proved | The covered subclass is unchanged; B′(2) needs SingletonResidual, MultiCover and MixedCoreBound, or R_h for one explicit h; coverage is closer to a decisive bounded experiment. |
+| COV-51 | experiment design | Forced jumble letters (one to four) then the existing descent at each of the 118 cases (120 CPU seconds each); ALL_PASS settles SingletonResidual within 7,253 letters per case, a miss decides nothing; the integrator stopped it after eight cases, each cut short in its first descent, which is stuck at the residual tables. |
+
 ### The integrator's experiments (round 22)
 
 - Zero endpoint collateral at the depth 40 stop, with points as owners: strict′ steps of 60, 84, 60, 72 and 36 letters for b00, b01, b11, b16 and b20, each replayed exactly (no lattice piece off, every other off piece exact). With whole cells as owners (R22A-02), class 3: seven of 13 units have strict′ steps (b00 60, b01 84, b02 60, b07 48, b11 60, b13 60, b14 60 letters, each replayed exactly), including the four whose replay had failed with points as owners; the other six are glued; the seven share four vacant targets (R22A-05). Classes 2 and 4 (9 units): b16 72, b20 36 and b21 84 letters (two vacant targets for the three), b17 moved by no clean power (Theorem C applies), b18 glued, and b19, b08, b09, b10 without a vacant target but with entry transports (84, 96, 168 and 144 letters) into occupied home cells of 15, 20, 24 and 20 lattice pieces (`scripts/round22/transport_census.py`, records in stage 12 `runs/round22/line-a/`).

@@ -1,0 +1,1 @@
+SINGLETON_VL_COUNTEREXAMPLE placement 2335 pose [0, 45] hole 809 type 9 I [0, 8, 10] S [5, 14, 38, 39] locked [3237, 3238, 3239, 3726, 3729, 3730, 3736, 3804, 3887] lock_types [3, 6, 9, 2, 5, 6, 7, 5, 6] orbit 3555 prime 3083 certificate_letters 400 CPU 33.1

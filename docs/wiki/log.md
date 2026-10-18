@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 7
+B′(2) with explicit bounds holds exactly when every state restores without leaving some stated height; the condition that every locked chamber is empty fails even at a reachable state with one off piece; every restoring word for the 118 cases needs at least three jumble twists; and the two-twist detours across different caps have no replacement of at most two twists ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-44 to COV-51). The round's experiment, forced jumble twists followed by the existing descent, was stopped after eight cases, since at eight sampled case tables the descent finds no move at all (stuck after 207 to 741 seconds), and the handoff index now lists 125 results.
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 6 experiment
 The search COV-43 looked for a restoring word at each of the 118 cases of round 6, one table each, and found none, every case stopping at its time limit after 387 to 558 trials, which decides nothing ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8). Before round 7 the integrator checked that every twist of the menu changes a piece's left height by at most 2, so a word of k twists from height 2 stays within height 2 + 2k.
 

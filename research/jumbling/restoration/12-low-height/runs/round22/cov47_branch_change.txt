@@ -1,0 +1,2 @@
+REPLAY [(1, 12), (41, 16)] height [2, 4, 2] tree (2, 0, 0, -1) (2, 0, 1, -1) K 1365 off 5405 start a9c35fd873d6c47ecf05e7cbc88bc57fd806bbd4ecfea9e7cbefa90544d33cc0 end 4c7c6590ab4ec7af9caf9bd5a76f904507d53cd58ec2fc92260091c8d03c29df
+EXACT_INVERSE True CPU 7.2

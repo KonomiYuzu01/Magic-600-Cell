@@ -1670,6 +1670,21 @@ header comment; they write no file. Its experiment COV-43 runs once, its 118 cas
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov41_endpoint.py         # seconds
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov43_residual_search.py  # about 2 hours
 
+Coverage round 7 (section 8: COV-45, COV-46, COV-47 and COV-49), the senior reviewer's computations kept as written
+apart from a header comment, with the integrator's checks before the round (`letter_heights.py`) and after its
+experiment started (`descent_cost.py`, one run per case); they write no file. Its experiment COV-51 runs once, its 118
+cases two at a time; the integrator stopped it after eight cases (section 8):
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/letter_heights.py             # about 20 seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov45_singleton_vl.py         # about 35 seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov46_first_jumble_blocks.py  # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov47_branch_change.py        # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov49_two_letter_audit.py     # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov51_forced_descent.py       # about 2 hours as designed
+    for c in "12 12 1800" "136 13 900" "446 14 900" "2149 41 1800" "3889 12 900" "2548 17 900" "1345 13 900" \
+        "1437 13 900"; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/descent_cost.py $c; done                                                             # 4 to 13 minutes each
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -2242,8 +2257,12 @@ pieces and a lemma that lifts a certified step past separated contents; its expe
 eight deep classes. Round 6 (COV-36 to COV-43) reduces the singleton residual exactly to 118 cases, shows that the
 vacant-lock condition is no invariant of reachable states, proves that R2, restoration inside height 2, gives B′(2) with
 an explicit exhaustive catalogue, and classifies the two-letter excursions above height 2; its experiment COV-43 found
-no restoring word at any of the 118 cases, which decides nothing. Coverage stays open: no reachable state without a step
-was found, and nothing here proves that every state has one.
+no restoring word at any of the 118 cases, which decides nothing. Round 7 (COV-44 to COV-51) shows that B′(2) holds with
+explicit bounds exactly when restoration stays inside an explicit height, that the vacant-lock condition fails even at a
+reachable singleton and that every restoring word for a residual case needs at least three jumble letters, and finds no
+replacement of at most two letters for the different-cap peaks of COV-41; its experiment COV-51 was stopped after eight
+cases, since the existing descent is stuck at the residual tables (the integrator's check after it). Coverage stays
+open: no reachable state without a step was found, and nothing here proves that every state has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -3384,3 +3403,235 @@ classified, and those at one cap collapse to one letter (COV-41); the covered su
   heights 0, every reachable pose has right height 0, as COV-39's universe assumes.
 - Command: `scripts/round22/letter_heights.py`; output `runs/round22/letter_heights.txt` (22 seconds of CPU).
 - Uses: COV-39, the tree model (`research/jumbling/theory/trees.py`).
+
+### Round 7 of coverage
+
+The senior reviewer took up the open cases, restoration within a fixed height and peak reduction (findings COV-44 to
+COV-51, all `minor`, all adopted, fast tier, 18 October 2026). Its computations are
+`scripts/round22/cov45_singleton_vl.py`, `cov46_first_jumble_blocks.py`, `cov47_branch_change.py` and
+`cov49_two_letter_audit.py`, and it re-ran `letter_heights.py` with the same counts; the integrator re-ran the four and
+got the same locks, blocks, heights, multipliers, candidates and digests, with the outputs
+`runs/round22/cov45_singleton_vl.txt`, `cov46_first_jumble_blocks.txt`, `cov47_branch_change.txt` and
+`cov49_two_letter_audit.txt`. Its experiment, `scripts/round22/cov51_forced_descent.py`, was stopped after eight of the
+118 cases, each cut short inside its first descent (output `runs/round22/cov51_forced_descent.txt`); the integrator's
+check after it shows that the existing descent is stuck at the residual tables. B′(2) holds with explicit bounds exactly
+when R_h, restoration inside height h, holds for an explicit even h (COV-44); VL fails even at a reachable singleton
+whose history stays inside U₂ (COV-45); every restoring word for a residual case uses at least three jumble letters
+(COV-46); a residual piece can change its tree branch inside U₄ without changing its placement orbit (COV-47); the
+two-letter peak classification of COV-41 holds at every even boundary height (COV-48); neither different-cap peak of
+COV-41 has a replacement of at most two letters (COV-49); the covered subclass is unchanged and the obligations are
+explicit (COV-50); and an experiment forces up to four jumble letters before the existing descent (COV-51).
+SingletonResidual, MultiCover, R2, R4, R6, general peak reduction and HRH stay open.
+
+### COV-44. B′(2) holds with explicit bounds exactly when R_h holds for an explicit h (proved)
+
+- The universe. For even h ≥ 2, U_h is the set of labelled pose tables of the I_a pose group, with its fixed right-tree
+  vertex, whose poses all have left height at most h, as in COV-39; bounding only the left height of arbitrary rotations
+  over Q(√5) would give no finite set. There are v_h = 1 + Σ_{j=1}^{h/2} 5·4^(2j−1) = (4^(h+1) − 1)/3 left-tree vertices
+  at even distance at most h, and at most 7,200 poses over each: two poses with the same left vertex that fix the right
+  root differ by an element fixing both roots, that is by an element of K⁺. So |U_h| ≤ Q_h = (7,200·v_h)^N with N =
+  177,120; the bases 7,200·v_h are 151,200, 2,455,200 and 39,319,200 for h = 2, 4 and 6.
+- From R_h to B′(2). R_h: every state of 𝒞₂ has a restoring word, to some lattice table, whose states all lie in U_h.
+  Assume it. A shortest admissible path inside U_h from Z ∈ 𝒞₂ to a lattice table repeats no labelled table, since
+  cutting out a loop keeps every later admissibility test, so it has at most D_h = Q_h − 1 letters. The catalogue of all
+  words over the m = 35,400 nonidentity letters of lengths 0 to D_h, each replayed exactly, with blocked prefixes
+  rejected and lattice endpoints accepted, proves B′(2) with L₂(n) = D_h and S₂(n) = (m^(D_h+1) − 1)/(m − 1), in one
+  strict′ step. COV-39 is the case h = 2.
+- From B′(2) to R_h. Suppose B′(2) gives explicit bounds L₂(n), and let M be their largest value for 1 ≤ n ≤ N. Each
+  accepted step lowers the off count, so a chain of steps ends on the lattice; each step starts in 𝒞₂, since strict′
+  steps keep 𝒞₂ closed, and by the integrator's check before this round every prefix of a step has left heights at most
+  2 + 2M. So R_h holds for h = 2 + 2M; the height bound starts again at each step boundary and carries no factor N.
+- What it gives. A quantitative equivalence: an explicit h with a proof of R_h gives explicit bounds for B′(2), and
+  explicit bounds give such an h. The finiteness of 𝒞₂ (T9-05), with one reversed reaching history for each state,
+  already gives some finite h, but no stated number, so it does not prove B′(2).
+- Command: the reviewer re-ran `scripts/round22/letter_heights.py` and got the same counts (output
+  `runs/round22/letter_heights.txt`).
+- Uses: COV-39, T9-05 (stage 09 `SENIOR-REVIEW.md` section 14), the integrator's check before coverage round 7, the tree
+  model (`research/jumbling/theory/trees.py`).
+
+### COV-45. VL fails even at a reachable singleton whose history stays inside U₂ (computed from certificates; proved)
+
+- The state. COV-18's vertex example: J = (0, 12), R = J⁻¹ = (0, 45), C = cap 0 and Y = solved·J. The SAFE orbit of
+  chamber 2335 at Y has 3,555 chambers, and its global Jordan certificate (prime 3,083, a 400-letter word) checks again;
+  chambers 809 and 813 lie in that orbit outside C and are occupied, so the SAFE group contains a word V that induces
+  the three-cycle (2335 809 813) and fixes every other chamber. After V the holes are (C ∖ {2335}) ∪ {809}, and J⁻¹
+  lands every original off piece and leaves one off piece, at R·λ_2335, whose only hole is 809. So the singleton is
+  reachable, by a word of at most 7,200^174,023 + 1 letters every prefix of which stays inside U₂; V is certified to
+  exist, not expanded or replayed, and the labels of the lattice table and the orientation of the off piece are not
+  prescribed.
+- The locks. The caps that contain the placement are I = {0, 8, 10}, those it straddles are S = {5, 14, 38, 39}, and the
+  chambers locked to it are 3237, 3238, 3239, 3726, 3729, 3730, 3736, 3804 and 3887, of types 3, 6, 9, 2, 5, 6, 7, 5 and
+  6. All nine are occupied, since the only hole is 809. Chamber 3237 has type 3, so it is never the hole of a singleton
+  whose off piece has type 9: VL fails at this placement whatever the hole.
+- The consequence. Neither "VL whenever n = 1" nor "VL whenever 1 ≤ n ≤ k", for any k ≥ 1, is an invariant of reachable
+  states, and restricting the reaching history to U₂ rescues neither. This removes those candidate invariants, not any
+  of the 118 cases.
+- Command: `scripts/round22/cov45_singleton_vl.py` (it runs `cov18_singleton_kinds.py` first); output
+  `runs/round22/cov45_singleton_vl.txt` (about 35 seconds of CPU).
+- Uses: COV-18, COV-31, COV-37.
+
+### COV-46. Every restoring word for a residual case uses at least three jumble letters (proved; computed)
+
+- The theorem. Every admissible path from a lattice table to a singleton that uses at most two jumble letters ends in a
+  rim placement class. So no restoring word for any of the 118 cases of COV-36 uses at most two jumble letters, however
+  many retained letters it has.
+- Proof. Retained prefixes keep the full lattice geometry. After the first jumble letter the off geometry is a K⁺ image
+  of that of solved·(0, 12), by the conjugacy reduction of the integrator's depth table for coverage round 4, and its
+  3,097 off pieces form 29 intrinsic rigid blocks, of sizes 86 (twelve), 87 (four), 111 (twelve) and 385 (one), so every
+  block has at least 86 pieces. During the retained middle each block takes one common K⁺ multiplier, stays
+  intrinsically rigid and keeps all its pieces in one pose domain, so the second jumble letter moves a whole block or
+  none of it: its pieces all land or all stay off, and no original off piece can be the only one left. A singleton
+  endpoint is therefore one newly displaced lattice piece, with all 3,097 original off pieces landing. Just before that
+  last jumble letter those pieces fill the whole off geometry of the inverse letter applied to its cap; VL holds after
+  the first jumble letter and survives the retained middle, so if the new singleton were deep, COV-23 and COV-25 would
+  make its occupied preimage chamber locked in that full off geometry, against VL. An outer placement without a landing
+  letter is impossible as well, since the inverse of the last jumble letter lands the new off piece. A retained suffix
+  keeps the K⁺ placement class, and zero or one jumble letter gives no singleton.
+- Scope. The argument uses only the full geometry of the starting lattice table, so it holds when that table's labels
+  are not solved, and reversing a proposed restoration gives the lower bound for every valid table of a residual case.
+  It excludes no history with three or more jumble letters and proves no case unreachable.
+- Command: `scripts/round22/cov46_first_jumble_blocks.py` (through the setup of `cov29_two_cap.py`); output
+  `runs/round22/cov46_first_jumble_blocks.txt` (about 10 seconds of CPU). The reviewer's re-run of
+  `cov36_hole_orbits.py` gave TOTAL 457200 118 118 again, with COV-23's assertion that the locked landing pairs are the
+  deep-class landing pairs.
+- Uses: COV-23, COV-25, COV-31, COV-36, the integrator's depth table for coverage round 4.
+
+### COV-47. A residual piece can change its tree branch inside U₄ without changing its placement orbit (computed)
+
+- The replay. At the case (y, h) = (2149, 41) of COV-36, the table whose only off piece is 2149 at R = element(I_a, 0,
+  45), with lattice piece 41 moved into chamber 2149 by the K⁺ transport and hole 41 (digest `a9c35fd8…`). The word [(1,
+  12), (41, 16)] is admissible, and the largest left heights over the whole table are 2, 4 and 2 along it. The tree data
+  (d_L, d_R, branch_L, branch_R) of piece 2149 change from (2, 0, 0, −1) to (2, 0, 1, −1), its accumulated multiplier is
+  the K⁺ element 1365, the endpoint (digest `4c7c6590…`) has 5,405 off pieces, and the inverse word returns the start
+  digest.
+- What it shows. A piece of a residual case can change its branch inside U₄, as Q2 asked. This is no restoration, and
+  the starting table is not shown to be reachable. Branch or frame classes and the 500 placement classes are different
+  notions, the latter already taken modulo K⁺; COV-41 puts the multiplier of every raised and returned foreign piece of
+  a two-letter excursion in K⁺, so such an excursion never changes that piece's placement orbit, and its collateral off
+  pieces keep its endpoint from being another singleton case. No case is settled.
+- Command: `scripts/round22/cov47_branch_change.py`; output `runs/round22/cov47_branch_change.txt` (about 7 seconds of
+  CPU).
+- Uses: COV-23, COV-36, COV-41, the tree model (`research/jumbling/theory/trees.py`).
+
+### COV-48. The two-letter peak classification holds at every even boundary height (proved)
+
+- The theorem. Let A ∈ U_h with h ≥ 2 even, and let legal letters g at c and f at d form an excursion A → A·g → A·g·f
+  whose middle leaves U_h and whose end is in U_h; let P be the class of c. Then both letters are jumble letters of
+  class P, f·g ∈ K⁺, and they move exactly the same nonempty set of pieces of height h whose branch is foreign to P;
+  subject to legality these conditions are sufficient. For h > 2 the equality concerns those height-h foreign pieces
+  only, not every foreign off piece. COV-41 is the case h = 2.
+- Proof. A class-P jumble letter fixes the adjacent vertex w_P, raises a vertex on a foreign branch by exactly 2 and
+  cannot raise a vertex already on branch P, so the offending pieces start at height h and reach h + 2 on branch P. A
+  retained second letter cannot lower them and a jumble letter of another class raises them again, so f has class P and
+  moves every offending piece. The product f·g fixes w_P; the original foreign vertex is at distance h + 1 from w_P, and
+  bringing it back within distance h of the root forces the first edge of that geodesic to point to the root again, so
+  f·g fixes the root, and since its right factor fixes the right root, f·g ∈ K⁺. A height-h foreign piece that g left in
+  place and f moved would become a new offender at height h + 2. Lower pieces do not spoil sufficiency: after g they
+  stay below h or lie on branch P at height at most h, which f cannot raise.
+- For Q2. The first possible boundary excursion above U₄ goes 4 → 6 → 4; every three-letter excursion from U₄ back to U₄
+  peaks at most at 6; a path from U₂ back to U₂ that visits height 6 needs at least four letters, and with exactly four
+  its offending piece goes 2 → 4 → 6 → 4 → 2. These are necessary profiles; no legal height-6 witness was built. The
+  same boundary family appears above U₆, at height 8.
+- Exact relations. Same-cap multiplication, (c, g)(c, f) = (c, f·g), and the cancellation of inverses hold on every
+  labelled piece, since a twist at c does not change the inside set of c, so an excursion at one cap collapses to one
+  retained letter or the identity at any boundary height. COV-41's replay of [(8, 12), (8, 1), (8, 54)] at COV-17's
+  singleton, the identity with heights 4, 4 and 2, was run again through `cov41_excursions.py`. Twists at antipodal caps
+  commute: their cap halfspaces are disjoint and each twist keeps both.
+- What is missing. General peak reduction needs a simultaneous admissible replacement on the whole table: reducing the
+  rotation word of one peak piece controls neither the other pieces' supports nor their straddling. A theorem that
+  lowers the measure (largest height, number of states at it), compared lexicographically, while keeping the first state
+  and a lattice endpoint, would prove R_h by well-founded descent; keeping both endpoints would give the stronger
+  elimination of excursions. Neither such a theorem nor a peak that resists every longer admissible replacement was
+  found.
+- R4 and R2. R4 admits COV-41's height-4 witnesses without rewriting them, but that does not prove R4, since the same
+  boundary problem returns at height 6; R2 is not refuted, so no smallest successful choice among 2, 4 and 6 is
+  justified yet.
+- Uses: COV-17, COV-40, COV-41, the tree model (`research/jumbling/theory/trees.py`).
+
+### COV-49. Neither different-cap peak of COV-41 has a replacement of at most two letters (computed)
+
+- The audit. At COV-17's reachable singleton A, each of [(14, 12), (35, 13)] and [(39, 12), (29, 13)] is the only word
+  of at most two letters with its exact labelled endpoint (digests `11f99379…` and `fb6f759e…`), and both peak at 4. So
+  neither peak is lowered by any replacement of at most two letters over the whole alphabet of 35,400 letters.
+- Why it is complete. Two letters with multipliers E and F give a piece only the multipliers I, E, F and F·E. Each
+  endpoint shows exactly three distinct nonidentity multipliers, two outside K⁺ on 2,702 pieces each and one in K⁺ on
+  396 pieces (the K⁺ elements 2054 and 1260; 171,320 pieces unmoved), so {E, F, F·E} must be that triple. For each
+  target the K⁺ multiplier is the multiplier of no letter, each of the other two is that of ten letters, and 100 ordered
+  letter pairs pass the matrix test; exact replay leaves only the original pair. Zero or one letter cannot give three
+  distinct nonidentity effects.
+- What it does not decide. Peaks of height 4, the lowest above U₂, already resist the complete system of replacements of
+  two letters by at most two. That does not exclude a longer path inside U₂; the endpoints are not lattice tables, and
+  this local obstruction refutes neither R2 nor HRH.
+- Command: `scripts/round22/cov49_two_letter_audit.py` (through `cov41_excursions.py`; it combines the reviewer's two
+  separate audits, which gave the same effects, candidates and words); output `runs/round22/cov49_two_letter_audit.txt`
+  (under a minute of CPU).
+- Uses: COV-17, COV-41.
+
+### COV-50. The covered subclass is unchanged, and the obligations are explicit (proved)
+
+- Covered. As in COV-42: every valid rim singleton, within 7,200^170,927 + 7,200^174,023 + 2 letters; every state that
+  passes the joint test of COV-32; the separated constructions of COV-38 whose hole resources survive; and the certified
+  backward closure of catalogue steps. The bounds stay b = 13,205! − 1, R = 7,200^177,120, L = 4b + 5(R − 1) and S(n) ≤
+  n·C_b⁴·T_R⁵, with at most nL letters for a certified chain of restorations. Certificates built only from free-class
+  cores and retained segments stay inside U₂; arbitrary native cores need their own height audit. This round adds no
+  residual singleton and no proof of unreachability; all 118 cases stay open.
+- The obligations. (1) SingletonResidual: for each of the 118 cases, a verified restoring certificate with a bound, or a
+  proof that excludes every reachable representative; COV-45 removes singleton VL as a route, and COV-46 excludes only
+  words with at most two jumble letters. (2) MultiCover: catalogue coverage of every reachable height-2 state with at
+  least two off pieces; the joint test and the separation theorem stay sufficient conditions, not a universal reduction.
+  (3) MixedCoreBound: an explicit uniform bound if further mixed-class cores are needed. (4) The height route: R_h for
+  one stated even h, which gives B′(2) directly by COV-44. For a fixed h the exhaustive exploration of Γ_h is finite,
+  but deciding which failed low-height components contain reachable states still needs a reaching witness or an
+  unreachability lemma; histories confined to Γ_h do not show that it contains 𝒞₂. (5) LRH, or its U_h version, for the
+  stronger history statement: restoration to some lattice table gives no bridge to the exact solved pose table.
+- The bounds. A uniform peak-reduction lemma would discharge (4); the same-cap identities and the finite two-letter
+  audit do not. No growth of b is shown to be necessary; with R_h alone, b_new = max(b, D_h) replaces the old envelope,
+  without showing that the old envelope already covers the resulting words.
+- Which route is closer (an assessment, not a theorem). Coverage is closer to a decisive bounded experiment, since its
+  singleton frontier has 118 concrete inputs and an exact checker. Neither route is close to a universal proof:
+  MultiCover stays global, and the height route lacks simultaneous admissible peak reduction.
+- Uses: COV-32, COV-34, COV-38, COV-39, COV-40, COV-42, COV-44, COV-45, COV-46, COV-48, COV-49.
+
+### COV-51. Forced excursions followed by the existing descent on all 118 cases (experiment design)
+
+- Design. COV-43's table for each case, its 118 cases, its two-worker scheduler, its 120-second CPU cutoff per case and
+  its endpoint and inverse checks, with the unguided 48-letter walks replaced: trial 0 runs the existing descent of
+  `research/jumbling/theory/restore.py` (close, lock, improve, shift) from the table, and each later trial first applies
+  one to four legal jumble letters, 80% of them at grips local to y and h, and then the same descent, capped at 48
+  descent letters. A descent step adds at most three letters, so the descent passes its cap by at most two and a
+  candidate has at most 54 letters. Every lattice endpoint is replayed exactly from the original table, with every
+  prefix checked, the largest height over every piece recorded and the inverse word required to return the start digest.
+  It tests whether such excursions open a route that the existing descent can finish, and builds no new vacancy
+  machinery; about 4.1 CPU hours with the case reduction, about two hours on two cores.
+- What it decides. A FOUND settles its case. ALL_PASS settles SingletonResidual: SAFE routing of the hole inside its
+  COV-36 orbit adds at most 7,199 retained letters, so every residual singleton has a certificate of at most 7,253
+  letters, inside the present envelope, and COV-06 carries it to every valid labelled table of its case; the recorded
+  heights show whether the certificates stay inside U₂, U₄ or U₆. Even ALL_PASS settles neither MultiCover nor R_h.
+  MISSING, NO_HIT, CUT_SHORT, a descent stall or an error decides neither unreachability nor the absence of a restoring
+  word, not even of one with 54 letters, since the candidates are sampled and the descent is incomplete.
+- Command: `scripts/round22/cov51_forced_descent.py` (it runs `cov43_residual_search.py` with the worker replaced in
+  memory, as the design says); output `runs/round22/cov51_forced_descent.txt`. The integrator started it on 18 October,
+  two cases at a time as designed, and stopped it after the first eight cases, those of the classes 12, 13, 14, 16, 17
+  and 21: each had ended CUT_SHORT at its 120-second cutoff still inside trial 0, the first descent, and the
+  integrator's check below shows why. Its COV-36 part reproduced the 118 cases; the output ends after the eighth case,
+  without a final line. The partial run decides nothing.
+- Uses: COV-06, COV-36, COV-43.
+
+### The integrator's check after COV-51 started: the existing descent is stuck at the residual tables (computed)
+
+- Why. The first eight cases of COV-51 ended CUT_SHORT with no finished trial: each was still in trial 0, the existing
+  descent from the table, when its 120 seconds ran out.
+- The computation. At eight cases, (12, 12), (136, 13), (446, 14), (2149, 41), (3889, 12) and (2548, 17) in deep classes
+  and (1345, 13) and (1437, 13) in the two outer classes, the table of COV-43 and COV-51 and one run of the existing
+  descent (`Restorer.run` with at most 48 letters, as trial 0 of COV-51), under a cutoff of 1,800 seconds for the first
+  and the fourth and 900 for the others.
+- The result. At all eight the descent stops as stuck before its first step: none of its four rules (close, lock,
+  improve, shift) finds a move at the table, whose misalignment N is 8 at six of the cases, 10 at (446, 14) and 12 at
+  (2548, 17). Reaching that verdict takes 207 to 741 seconds of CPU, after about 7 seconds of setup.
+- The consequence. At these cases trial 0 of COV-51 finds nothing, and within 120 seconds no forced trial ever starts,
+  so the design cannot decide anything at its budget. A forced trial starts after a jumble letter, which moves a whole
+  cap of pieces off the lattice; these runs do not time the descent from there. The check settles no case and says
+  nothing about restoring words outside the descent.
+- Command: `scripts/round22/descent_cost.py <y> <h> <CPU seconds>`; output `runs/round22/descent_cost.txt` (the eight
+  runs, each after a line with its case, cutoff and exit code).
+- Uses: COV-36, COV-43, COV-51, the descent of `research/jumbling/theory/restore.py`.
