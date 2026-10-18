@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: a draft handoff for the Lean formalization of round 22
+A new index page lists the objects, the 57 results of theory round 22 in dependency order, the hypotheses that are computations with the script that decides each, and the earlier and classical results the proofs use; formalization itself waits for the owner's decision ([handoff](../../research/jumbling/restoration/12-low-height/ARCHON-HANDOFF.md)).
+
 ## [2026-10-18] decision | Jumbling: B′(h) existence first, shorter records
 A stuck step of B′(h) is now settled by finite existence checks (N1, N2 and Jordan certificates, a minute or two) and its vacating word is built only when a later state needs it; the short-seed search is deferred, long runs go to the lowest priority, and new results enter the senior review record as one-line indexes into `PROOFS-B.md` ([decision](decisions/owner-decisions-2026-10-18-bprime-goal.md)).
 
