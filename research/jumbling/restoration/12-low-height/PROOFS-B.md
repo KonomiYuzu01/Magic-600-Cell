@@ -1628,6 +1628,12 @@ at most two at a time:
     for k in 0 1 2 3 4 5 6 7; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
         python3 -I -B -u $S/round22/cov22_mixed_search.py $k; done                                 # up to 29 minutes each
 
+The integrator's checks after COV-20 (section 8, after COV-22); they write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov20_all_landers.py     # about 14 minutes
+    for L in 0:12 0:25; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov20_two_level.py $L; done                                    # about 50 minutes each
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -2660,3 +2666,28 @@ family of words provably misses X (COV-20); X's reachability stays open.
 - Command: `scripts/round22/cov22_mixed_search.py <seed>` for the seeds 0 to 7. The integrator started the eight runs
   on 18 October; their outputs go to `runs/round22/cov22/` when they end.
 - Uses: COV-01, COV-17, COV-20.
+
+### The integrator's checks after COV-20: no one-letter SAFE sandwich, and the second level (computed)
+
+- The claim. For no letter L and no word V over the SAFE alphabet of solved·L is solved·L·V·L⁻¹ a state of COV-01's
+  family. COV-20 shows it for L = (0, 12); COV-22's design assumes it for every L.
+- The proof. A SAFE word keeps every off piece and maps the lattice to the lattice, so at W = solved·L·V the off pieces
+  are the pieces of L's cap, in their poses after L, and L⁻¹ lands them all; the off pieces of the endpoint are the
+  lattice pieces that W has in the chambers of L's cap, turned by L⁻¹ (if L lies in K⁺ the endpoint is on the
+  lattice). A state of the family has one off piece, in X's off region, so W has one lattice piece in L's cap, in a
+  chamber x that L⁻¹ takes to that region: L lands X's piece. L is legal at the endpoint, whose only off piece is X's
+  (lattice pieces straddle no cut), so its cap is unstraddled at X too, and L is one of the 36 whole-cap letters of
+  COV-14, at grips 0, 2 and 23, with x = (L·R)(1474). At solved·L every one of these chambers x is a hole in an orbit
+  of one chamber of the SAFE group, so every SAFE word leaves it vacant.
+- The computation. For each of the 36 letters, solved·L has 3,097 off pieces and 3,097 holes (the chambers of L's
+  cap), 562 SAFE grips with 6,182 letters and 1,816 orbits, and its x is a type-18 hole in a singleton orbit (33
+  distinct chambers; x = 2149 at (0, 12), as in COV-20). It agrees with COV-14: N1 fails at the middle X·L of every
+  one of the 36 letters, and the SAFE alphabet of solved·L is contained in that of X·L, whose off pieces are those of
+  solved·L but one, so x is fixed at solved·L as well. Command: `scripts/round22/cov20_all_landers.py`; output
+  `runs/round22/cov20_all_landers.txt` (814 s of CPU).
+- The second level (running). For L = (0, 12) and (0, 25), `scripts/round22/cov20_two_level.py` applies each lattice
+  letter g at the twelve caps other than L's that are unstraddled and hold off pieces at solved·L, and prints the SAFE
+  orbit of the chamber x′ = g(x) (x itself when g's cap does not contain x) from which g⁻¹ brings content to x. The
+  integrator started both runs on 18 October; their outputs go to `runs/round22/cov20_two_level-0-12.txt` and
+  `cov20_two_level-0-25.txt` when they end.
+- Uses: COV-01, COV-14, COV-20.
