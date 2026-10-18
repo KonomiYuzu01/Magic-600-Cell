@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 3 checks
+No word that turns one cap, makes only safe twists and turns the cap back reaches the isolated triangle's family, at any of its 36 landing twists, and for two of them a second level of conjugates through the other caps misses it too; the bounded search COV-22 found no reaching word in 160,000 samples, which decides nothing ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8). A depth table for round 4 shows that, up to the puzzle's symmetry, every state one twist from solved is the same, and that safe twists can never refill 715 of the 3,097 chambers of its turned cap.
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 3
 A legal 24-twist word from the solved state reaches a state with exactly one off piece, and constructions with Jordan certificates give such states in every kind of cell, each restored by one step the catalogue already has; no abelian invariant can tell the isolated triangle of the first round from a reachable state, one family of reaching words provably misses it, its reachability stays open, and a bounded search for a reaching word is running ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-17 to COV-22). The handoff index now lists 96 results.
 

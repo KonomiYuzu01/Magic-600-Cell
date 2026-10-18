@@ -1634,6 +1634,13 @@ The integrator's checks after COV-20 (section 8, after COV-22); they write no fi
     for L in 0:12 0:25; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
         python3 -I -B -u $S/round22/cov20_two_level.py $L; done                                    # about 50 minutes each
 
+The integrator's depth table for coverage round 4 (section 8, at its end); the shards write no file, and the check of
+their classes reads their outputs from `runs/round22/cov_depth_grip0-<k>.txt`:
+
+    for k in 0 1; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov_depth_grip0.py $k 2; done                                  # about 10 minutes each
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov_depth_cosets.py      # seconds
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -2194,9 +2201,10 @@ experiment as `cov07_word_order.py` (output `cov07_word_order.txt`). Experiment 
 section 2 continued with every step built at the state in front of it; it reached the lattice (the subsection after
 COV-07). Round 2 (COV-08 to COV-16, after E2) refutes two shortcuts and reduces coverage to one finite per-state
 predicate, Cover(Z) (COV-15). Round 3 (COV-17 to COV-22) constructs reachable states with one off piece in every kind
-of cell and shows that the catalogue covers them; whether COV-01's state is reachable stays open, and COV-22 is its
-experiment. Coverage stays open: no reachable state without a step was found, and nothing here proves that every
-state has one.
+of cell and shows that the catalogue covers them; whether COV-01's state is reachable stays open: its experiment
+COV-22 found no reaching word, and the integrator's checks after it exclude every one-letter SAFE sandwich. The
+integrator's depth table at the end of the section is the input to round 4. Coverage stays open: no reachable state
+without a step was found, and nothing here proves that every state has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -2552,7 +2560,9 @@ the integrator re-ran them and got the same digests, certificates and counts, wi
 `runs/round22/cov17_single_off.txt`, `cov18_singleton_kinds.txt` and `cov19_perfect_menu.txt`. Its experiment is
 `scripts/round22/cov22_mixed_search.py`. Reachable states with exactly one off piece exist in every kind of cell, and
 the catalogue as it stands covers them (COV-17, COV-18, COV-21); no abelian invariant can exclude X (COV-19); one
-family of words provably misses X (COV-20); X's reachability stays open.
+family of words provably misses X (COV-20); X's reachability stays open. COV-22 found no reaching word, and the
+integrator's checks after COV-20 (at the end of this section) extend it to every landing letter and, for two of
+them, to a second level.
 
 ### COV-17. A legal 24-letter word reaches exactly one off piece (computed)
 
@@ -2663,8 +2673,9 @@ family of words provably misses X (COV-20); X's reachability stays open.
 - What it decides. FOUND gives a legal reaching word and settles X's reachability positively; covering that state
   then needs the 24-letter inverse as a native core, within the present b. NO_HIT or CUT_SHORT decides nothing: the
   family is sampled, not exhausted, and no finite exhaustive reduction of unrestricted reachability is proved.
-- Command: `scripts/round22/cov22_mixed_search.py <seed>` for the seeds 0 to 7. The integrator started the eight runs
-  on 18 October; their outputs go to `runs/round22/cov22/` when they end.
+- Command: `scripts/round22/cov22_mixed_search.py <seed>` for the seeds 0 to 7. The integrator ran the eight seeds on
+  18 October, two at a time: each ended NO_HIT after its 20,000 words, none cut short (1,500 to 1,541 s of CPU each,
+  3.4 CPU hours in all), so the experiment decides nothing; outputs `runs/round22/cov22/seed0.txt` to `seed7.txt`.
 - Uses: COV-01, COV-17, COV-20.
 
 ### The integrator's checks after COV-20: no one-letter SAFE sandwich, and the second level (computed)
@@ -2685,9 +2696,54 @@ family of words provably misses X (COV-20); X's reachability stays open.
   one of the 36 letters, and the SAFE alphabet of solved·L is contained in that of X·L, whose off pieces are those of
   solved·L but one, so x is fixed at solved·L as well. Command: `scripts/round22/cov20_all_landers.py`; output
   `runs/round22/cov20_all_landers.txt` (814 s of CPU).
-- The second level (running). For L = (0, 12) and (0, 25), `scripts/round22/cov20_two_level.py` applies each lattice
-  letter g at the twelve caps other than L's that are unstraddled and hold off pieces at solved·L, and prints the SAFE
-  orbit of the chamber x′ = g(x) (x itself when g's cap does not contain x) from which g⁻¹ brings content to x. The
-  integrator started both runs on 18 October; their outputs go to `runs/round22/cov20_two_level-0-12.txt` and
-  `cov20_two_level-0-25.txt` when they end.
+- The second level, for L = (0, 12) and (0, 25) (computed). At solved·L the unstraddled caps that hold off pieces are
+  L's own cap, with all 3,097, and twelve others, at grips 2, 9, 20, 23, 30, 32, 43, 45, 46, 54, 56 and 75, with 395
+  each; x lies in two of the twelve, at grips 2 and 32 for (0, 12) and 2 and 23 for (0, 25). A lattice letter at L's
+  own cap composes with L into one letter at that grip, so it gives a one-letter word, settled above. For each of the
+  132 lattice letters g at the twelve other caps (eleven at each), solved·L·g keeps its 3,097 off pieces, and the
+  chamber x′ = g(x) (x itself when g's cap does not contain x), from which g⁻¹ brings content to x, is a hole in an
+  orbit of one chamber of the SAFE group of solved·L·g (6,061 to 6,171 SAFE letters, 1,839 to 3,107 orbits). So every
+  SAFE letter of solved·L·g fixes x′, and every conjugate g·v·g⁻¹ fixes x. Each of these generators keeps the off
+  geometry of solved·L (a SAFE letter moves no off piece, and g⁻¹ returns the off pieces that g moved), and the SAFE
+  alphabet and the legality of a lattice letter depend on the off geometry alone, so at every state with that off
+  geometry the same generators apply and fix x. The group G₂ that they generate with the SAFE group of solved·L
+  therefore keeps x vacant, and for these two letters no word L·w·L⁻¹ with w in G₂ reaches COV-01's family. Command:
+  `scripts/round22/cov20_two_level.py` with the argument `0:12` or `0:25`; outputs
+  `runs/round22/cov20_two_level-0-12.txt` and `cov20_two_level-0-25.txt` (3,027 and 3,021 s of CPU).
+- What it does not decide: the second level at the other 34 landing letters; middles with a jumble letter at one of
+  the twelve caps, which can land some of its 395 off pieces and so change the off geometry; nested conjugates through
+  states with another off geometry; and histories whose last move of X's piece is not the inverse of a landing letter
+  (a lattice letter at a cap that contains the piece, or a jumble letter of another region). X's reachability stays
+  open.
 - Uses: COV-01, COV-14, COV-20.
+
+### The integrator's depth table for coverage round 4 (computed; proved)
+
+- What it gives. For each of the 48 jumble letters L at grip 0, the holes of solved·L are the 3,097 chambers of cap 0,
+  and `scripts/round22/cov_depth_grip0.py` gives each of them its orbit under the SAFE group of solved·L: deep if the
+  orbit holds no occupied chamber, rim otherwise. A word L·V·L⁻¹ with V SAFE leaves one off piece only by bringing one
+  lattice piece into a rim chamber of cap 0, so a singleton geometry whose landing chambers are all deep is reached by
+  no such word, as COV-01's state is not (the check above).
+- The numbers. At every one of the 48 letters, 2,382 chambers are rim and 715 deep, every deep chamber is an orbit of
+  one chamber, and the SAFE alphabet has 6,182 letters and 1,816 orbits; the counts by piece type are the same at
+  every letter. Cap 0 holds 108 chambers of type 18, 45 of them deep, among them the chamber x of each of the twelve
+  letters that land X's piece; types 0 to 5 and 7 are deep in every chamber and types 26 and 29 to 35 in none. Outputs
+  `runs/round22/cov_depth_grip0-0.txt` and `cov_depth_grip0-1.txt` (two shards, 569 and 564 s of CPU); each lists the
+  deep chambers with the sizes of their orbits and counts both kinds by type.
+- Four classes, one geometry (proved; the group facts and the classes checked exactly by
+  `scripts/round22/cov_depth_cosets.py`, output `runs/round22/cov_depth_cosets.txt`). The deep sets take four values,
+  each on twelve letters (385 chambers deep in all four, 1,225 in at least one), and each class is one left coset L·T
+  of the twelve lattice items T of grip 0: L⁻¹·L′ lies in K⁺ within a class and never across. The menu at grip 0 is a
+  group of 60 elements and T is the stabilizer of pole 0 in K⁺. For t in T the letter L·t takes the lattice positions
+  of cap 0 to the same set of positions as L does, since t permutes them, so solved·L and solved·(L·t) have the same
+  off geometry, and with it the same SAFE group, holes and orbits. T permutes the four cosets off T transitively, each
+  with a stabilizer of order 3, and the letter t·L·t⁻¹, in the coset t·L·T, gives the off geometry of solved·L moved
+  by t; so the four geometries are images of one another under K⁺, which is why their counts agree. A symmetry in K⁺
+  of the geometry of solved·L maps cap 0 to itself, so it lies in T and fixes L's coset (a letter off T moves every
+  piece of cap 0 off the lattice): the geometry has exactly three symmetries in K⁺. With COV-19, every one-letter
+  state solved·L is, in its off geometry, the image under K⁺ of solved·(0, 12).
+- What it does not give: the classification of singleton geometries up to K⁺. By the above it is enough to take L =
+  (0, 12) and its 3,097 landing pairs (L, y), y a chamber of cap 0, up to the three symmetries; what remains is to
+  identify the pairs whose pieces, landed by L⁻¹, give the same singleton geometry, and to read off the depth of each
+  class (coverage round 4).
+- Uses: COV-14, COV-19.

@@ -1,0 +1,2 @@
+NO_HIT {'seed': 0, 'trials': 20000}
+COMPLETED_CPU 1504.5

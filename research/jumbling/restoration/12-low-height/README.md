@@ -687,13 +687,19 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
     of R22C3-06, and the catalogue needs no new core for them (COV-21).
   - COV-01's state X stays open. No homomorphism to an abelian group can exclude it, since every grip's menu is a
     perfect group (COV-19), and no word J·V·J⁻¹ with V SAFE reaches its family, since the chamber its piece must come
-    from is a SAFE-fixed hole (COV-20). The experiment COV-22 samples 24-letter mixed-class commutators for a reaching
-    word (eight seeds, two at a time, 1,700 s of CPU each); only a hit decides.
-  - The integrator's checks after COV-20 (`scripts/round22/cov20_all_landers.py`, output
-    `runs/round22/cov20_all_landers.txt`): at every one of the 36 landing letters L of COV-14, the chamber that X's
-    piece must come from is a hole fixed by the SAFE group of solved·L, so no word L·V·L⁻¹ with V SAFE reaches X's
-    family. A second level, conjugates g·V·g⁻¹ through the legal lattice letters g of the other caps that hold off
-    pieces, is running for two of them (`cov20_two_level.py`).
+    from is a SAFE-fixed hole (COV-20). The experiment COV-22 sampled 24-letter mixed-class commutators for a reaching
+    word: no hit in eight seeds of 20,000 words each (about 1,500 s of CPU each, none cut short), which decides
+    nothing.
+  - The integrator's checks after COV-20 (`scripts/round22/cov20_all_landers.py` and `cov20_two_level.py`, outputs in
+    `runs/round22/`): at every one of the 36 landing letters L of COV-14, the chamber that X's piece must come from is
+    a hole fixed by the SAFE group of solved·L, so no word L·V·L⁻¹ with V SAFE reaches X's family. For L = (0, 12) and
+    (0, 25) it stays fixed under all 132 conjugates g·V·g⁻¹ through the legal lattice letters g of the twelve other
+    caps that hold off pieces.
+  - The integrator's depth table for coverage round 4 (`scripts/round22/cov_depth_grip0.py`, `cov_depth_cosets.py`):
+    at each of the 48 jumble letters L at grip 0, 2,382 of the 3,097 chambers of cap 0 are rim at solved·L and 715
+    deep, every deep one an orbit of one chamber. The letters fall into four classes, the left cosets of the twelve
+    lattice items of grip 0, whose geometries are images of one another under K⁺, so every one-letter state is, up to
+    K⁺, solved·(0, 12).
 - The census with whole cells as owners (R22A-02), class 3 (13 units; measured, scratch census, each kept word
   replayed exactly): seven units have strict′ steps without endpoint collateral, b00 60, b01 84, b02 60, b07 48,
   b11 60, b13 60 and b14 60 letters (one to three clean powers), and the other six (b03, b04, b05, b06, b12, b15)
@@ -879,14 +885,16 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   each found at the state in front of it, so no state along that trajectory was a dead end; it is one trajectory.
   Round 2 reduced coverage to one finite per-state predicate, Cover(Z) (COV-15), and refuted two shortcuts: resources
   do not persist across steps (COV-09), and not every reachable state has a cap whose whole off content lands
-  (COV-13). Round 3 showed that reachable states with one off piece exist in every kind of cell and that the
-  catalogue covers them (COV-17, COV-18, COV-21). Three parts remain. (1) Whether the isolated triangle of COV-01 is
-  reachable, or an invariant that excludes it: no abelian invariant can (COV-19), and one family of words misses it
-  (COV-20); the experiment COV-22 is running, and only a hit decides. If it is reachable, the geometric templates and
-  the whole-cap route all fail there, and the inverse of its reaching word is the one native core it needs (COV-01,
-  COV-14, COV-21). (2) The lemma that every state of 𝒞₂ with off pieces satisfies Cover(Z), with the resource contract
-  of COV-08 and the preparation test of COV-10 as its tools. (3) Unit 130 at the depth 60 stop after 131, 132, 133,
-  150 and 163.
+  (COV-13). Round 3 showed that reachable states with one off piece exist in every kind of cell and that the catalogue
+  covers them (COV-17, COV-18, COV-21). Three parts remain. (1) Whether the isolated triangle of COV-01 is reachable,
+  or an invariant that excludes it: no abelian invariant can (COV-19); no one-letter SAFE sandwich reaches it, at any
+  of its 36 landing letters, and for two of them neither does the second level (COV-20 and the integrator's checks);
+  COV-22 found no hit in 160,000 sampled words, which decides nothing. Coverage round 4 asks for an invariant from the
+  depth of these landing chambers, or a reaching word, and for the classification of the singleton states. If the
+  triangle is reachable, the geometric templates and the whole-cap route all fail there, and the inverse of its
+  reaching word is the one native core it needs (COV-01, COV-14, COV-21). (2) The lemma that every state of 𝒞₂ with
+  off pieces satisfies Cover(Z), with the resource contract of COV-08 and the preparation test of COV-10 as its tools.
+  (3) Unit 130 at the depth 60 stop after 131, 132, 133, 150 and 163.
 - Line (a): the replay of the depth 40 stop is finished (E2, 1,193 to 0). The other 𝒞₂ census stop on record is the
   depth 60 stop `ia-k60-s7104`; the census round 3 records are deeper and have height-4 pieces, so they are not 𝒞₂
   inputs (COV-16). A further replay adds a trajectory and decides nothing universal.
@@ -1123,8 +1131,9 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/round22/r22b24_regular_hole.py`, `r22b26_small60.py`, `r22b27_small_t1prime.py`, `runs/round22/r22b24_regular_hole.txt`, `r22b26_small60.txt`, `r22b27_small_t1prime.txt` | Line (b), round 5: the senior reviewer's computations (kept as written apart from a header) and their outputs: an orbit without Alt that meets a target with one hole, the small orbits against the depth 60 home targets, and the same at the T1′ middles of 151 and 180 |
 | `scripts/round22/cov01_isolated_triangle.py`, `cov02_point_orbits.py`, `cov04_middles737.py`, `cov07_word_order.py`, `runs/round22/cov01_isolated_triangle.txt`, `cov02_point_orbits.txt`, `cov04_middles737.txt`, `cov07_word_order.txt` | Coverage, round 1: the senior reviewer's computations (kept as written apart from a header) and the integrator's run of its proposed experiment, with their outputs |
 | `scripts/round22/cov09_resource_persistence.py`, `cov13_mixed_frames.py`, `cov14_isolated_wholecap.py`, `runs/round22/cov09_resource_persistence.txt`, `cov13_mixed_frames.txt`, `cov14_isolated_wholecap.txt` | Coverage, round 2: the senior reviewer's computations (kept as written apart from a header), with the integrator's re-run outputs |
-| `scripts/round22/cov17_single_off.py`, `cov18_singleton_kinds.py`, `cov19_perfect_menu.py`, `cov22_mixed_search.py`, `runs/round22/cov17_single_off.txt`, `cov18_singleton_kinds.txt`, `cov19_perfect_menu.txt` | Coverage, round 3: the senior reviewer's computations and its experiment (kept as written apart from a header), with the integrator's re-run outputs |
-| `scripts/round22/cov20_all_landers.py`, `cov20_two_level.py`, `runs/round22/cov20_all_landers.txt` | Coverage, round 3: the integrator's checks after COV-20, every one-letter SAFE sandwich over the 36 landing letters and the second level for two of them |
+| `scripts/round22/cov17_single_off.py`, `cov18_singleton_kinds.py`, `cov19_perfect_menu.py`, `cov22_mixed_search.py`, `runs/round22/cov17_single_off.txt`, `cov18_singleton_kinds.txt`, `cov19_perfect_menu.txt`, `runs/round22/cov22/` | Coverage, round 3: the senior reviewer's computations and its experiment (kept as written apart from a header), with the integrator's re-run outputs and the eight seeds of COV-22 |
+| `scripts/round22/cov20_all_landers.py`, `cov20_two_level.py`, `runs/round22/cov20_all_landers.txt`, `cov20_two_level-0-12.txt`, `cov20_two_level-0-25.txt` | Coverage, round 3: the integrator's checks after COV-20, every one-letter SAFE sandwich over the 36 landing letters and the second level for two of them |
+| `scripts/round22/cov_depth_grip0.py`, `cov_depth_cosets.py`, `runs/round22/cov_depth_grip0-0.txt`, `cov_depth_grip0-1.txt`, `cov_depth_cosets.txt` | Coverage, round 4 input: the integrator's depth table (deep and rim chambers of cap 0 at solved·L for each of the 48 jumble letters L at grip 0) and the check that its four classes are the cosets of the lattice items |
 | `scripts/slp_apply.py`, `scripts/test_slp_apply.py` | The exact applier of a program of literal words, `tclose2.py` cores and R22B-10 certificates (straight-line programs of SAFE-ALL letters, applied to the labelled poses without expanding powers): the end pose table and the strict′ contract against the start state; its unit test |
 | `scripts/round22/replay_slp.py`, `runs/round22/line-a/replay2/` | E2, the replay continued from 737: the driver (literal words, closures with certificate V, T1′ steps with a literal or certificate V′, each applied by `slp_apply.py`); the plans, the stored landing words and cores (`inputs/`), and runs 1 and 2 with every step's files and end tables |
 | `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`, `e2_b06_t1.py` | E2, b06 with b05: the first SAFE-ALL preparation, the second counted against the reference middle's orbits, and the prepared T1′ attempt applied by `slp_apply.py`; records in `runs/round22/line-a/replay2/b06-<n>/` |
