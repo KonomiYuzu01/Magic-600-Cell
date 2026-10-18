@@ -202,9 +202,8 @@ simulator with N and the off count checked after every step (measured; scripts a
   program shows no best twist.
 - **At the cap where the repair was found, few pairs work.** At all 63 repair steps, 1 to 61 of the pairs (opening
   x, neighbour d) at that cap lowered N, median 5. At the 11 steps before step 44 it was 15 to 61 (median 27); from
-  step 44 on, 1 to 59 (median 3), and at 15 of those 52 steps the pair the rule found was the only one. At the 15
-  tail steps of the table it was 1 to 11 of 472 to 1,298 pairs, 0.08% to 1.86%. At the caps the rule tried before,
-  none did.
+  step 44 on, 1 to 59 (median 3), 0.08% to 6.67% of the 118 to 1,593 pairs at the cap, and at 15 of those 52 steps
+  the pair the rule found was the only one. At the caps the rule tried before, none did.
 - **Nothing visible marks the pair.** After the opening, d passes the face match at 6 of the 63 steps, and c after
   y at 2. c covers d at 30 steps and d covers c at 26, so the cover relation does not single out the pair. The
   scramble's own twists are not undone either: x undoes c's last scramble twist at no step, y undoes d's at 2.
@@ -219,7 +218,7 @@ simulator with N and the off count checked after every step (measured; scripts a
   this counts what was found first, not what exists.
 
 The repair density at 15 tail steps (`runs/findability/ia-k40-s7101-density.jsonl.gz`; the other 48 repair steps are
-in `ia-k40-s7101-density-rest.jsonl.gz`). N: before the
+in `ia-k40-s7101-density-rest.jsonl.gz`, and `scripts/findability_table.py` prints the list at all 63). N: before the
 step. Cap c: the cap where the rule found the repair, with its place among the misaligned caps by decreasing N_c.
 Neighbours: the misaligned caps that meet c. Pairs: the 59 openings of c times its neighbours. Lowering N: the
 pairs whose repair, with the rule's y and z, lowers N; the last column counts those whose opening is a retained
@@ -295,8 +294,9 @@ templates can address hold 27% (depth 60) and 5% (depth 100).
      lattice phase) drafted and chapter 3 as an outline.
   4. What a person would have to try (section above): with the facts the program shows, a face match took a median
      of 71 checks in a simple order, and a repair in the tail a search of about 110 openings and 800 pairs of
-     opening and neighbour (medians). The owner then allowed a repair list at a cap the solver names; the size of the
-     list at the 48 repair steps outside the table is the next measurement.
+     opening and neighbour (medians). The owner then allowed a repair list at a cap the solver names; at all 63 repair
+     steps of this record it held 1 to 61 pairs, a median of 5 (from step 44 on, a median of 3). Other records were
+     not measured this way.
 - **B.** A statement: at every reachable state whose off pieces lie at left heights 2 and 4, a clean step V·W·V⁻¹
   exists whose W comes from a finite catalogue and whose vacating word V has an explicit length bound, or an
   unlocking step of explicit length; that is, gap M1 restricted to low heights. The template test puts the weight

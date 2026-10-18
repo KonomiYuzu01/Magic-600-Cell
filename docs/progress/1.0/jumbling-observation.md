@@ -173,7 +173,7 @@ The engine answers within the command layer's preview and gates (`fresh_preview`
 | Rim summary: N_c, In_c, Out_c, A_c, blocked | cap, per revision | Global cap map, floor | 600 rows; exact |
 | Cut cell states of one cap | cap, on request | cut slice view | exact; computed when the solver opens the slice |
 | Off-grip seam cells, with holding caps | revision | Global count, seam slice | exact |
-| Repair list of one cap: the pairs (x, d) whose repair lowers N, with y and z | cap, on request | the repair list (rule 6) | exact; the research script tries every pair at the cap, 472 to 1,298 at the tail steps measured, in about 3 minutes per cap |
+| Repair list of one cap: the pairs (x, d) whose repair lowers N, with y and z | cap, on request | the repair list (rule 6) | exact; the research script tries every pair at the cap, 118 to 1,593 at the 63 repair steps of one record, in 3 to 5 minutes per cap |
 | Exposed-face meshes | piece region | raw view holes, cut slice | new asset; size to be measured |
 | Filter results | query, per revision | piece sets with SHA-256 | as the retained filters |
 
