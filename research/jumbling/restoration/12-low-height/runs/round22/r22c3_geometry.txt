@@ -1,0 +1,5 @@
+GEOMETRY 60 142 ef45a117ac97106ffb594ca0b05e065ad18fce23bc9f44b7a538d12484d7e989 U 41 vacant 86 poles_free [True, True] free_common [224, 305, 394, 515]
+PREFIX_142_151 rotation_item 24 disjoint_cells True max_type_consumption 5
+GEOMETRY 40 17 7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818 U 86 vacant 86 poles_free [False, True] free_common [495, 552, 570, 590]
+B17_BLOCKERS [8, 9, 10]
+PASS

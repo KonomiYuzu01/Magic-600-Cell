@@ -1,0 +1,1 @@
+{"source": {"record": "ia-k100-s7102.json", "run": "ia-k100-s7102", "moves": 272}, "digest": "4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db", "totals": {"letters": 322, "searched": 152, "pruned": 170, "strict_words": 0, "strict_lowering_words": 0, "replayed_strict_prime": 0}, "complete": true, "letters_not_run": [], "seconds": 5219.768}

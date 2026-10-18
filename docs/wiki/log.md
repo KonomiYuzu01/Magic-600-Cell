@@ -2,6 +2,18 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: the Lean handoff covers 68 results
+The handoff index now also lists line (b) round 4 and line (c) round 3, eleven more results, with line numbers of the current `PROOFS-B.md`; formalization still waits for the owner's decision ([handoff](../../research/jumbling/restoration/12-low-height/ARCHON-HANDOFF.md)).
+
+## [2026-10-18] update | Jumbling: B′(h) line (a), round 3, the order replayed
+R22A2-04's order, rebuilt step by step at the states it actually reaches, lands eight of the 22 units at the depth 40 stop in 4,516 twists (1,193 to 737 off pieces), each step replayed strict′; b17, which nothing moved at the stop, gets a 432-twist pure-cell step once b08, b09 and b10 have left its pole, and seven more units have steps proved by N1, N2 and Jordan certificates where they were tried. Without a preparation b05 and b15 still fail N1 at 737, and b06 has no landing word of the pure-cell family ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 2; [stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 11).
+
+## [2026-10-18] update | Jumbling: B′(h) line (c), round 3
+The senior reviewer showed that strict′ steps only enlarge the SAFE group while hole counts per orbit can fall, so an order of steps needs resource contracts as well as a blocker order, audited experiment D, and proved that at the depth 60 stop 142 then 151 land (14,610 to 14,524 off pieces, an explicit bound, no word built); the routes for the unresolved units are proposals, and coverage stays open ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) R22C3-01 to R22C3-06; model review).
+
+## [2026-10-18] update | Jumbling: B′(h) line (b), round 4
+Alt does not hold on every large orbit at every height-2 state: eight twists from solved reach a state with a 12-chamber orbit whose group has order 12, though that orbit has no holes, so B′(2) is not refuted. Vacancy now needs N1 and N2 with independent alternating factors (local Alt plus separating words, proved) or a joint finite test on orbits of 2 to 7 chambers, which occur at the depth 60 stop ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) R22B-19 to R22B-23; model review).
+
 ## [2026-10-18] update | Jumbling: a draft handoff for the Lean formalization of round 22
 A new index page lists the objects, the 57 results of theory round 22 in dependency order, the hypotheses that are computations with the script that decides each, and the earlier and classical results the proofs use; formalization itself waits for the owner's decision ([handoff](../../research/jumbling/restoration/12-low-height/ARCHON-HANDOFF.md)).
 

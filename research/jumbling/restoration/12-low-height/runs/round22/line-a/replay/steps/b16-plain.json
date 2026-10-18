@@ -1,0 +1,15 @@
+{
+ "start_digest": "743992e866eb349c50a2d4e3418c2f79a07bccdb720e5b7c59ad04b4b736cacf",
+ "end_digest": "0db217184bd3dcd72ac25419bb0118d6842fbd8fc351a2b18a0f50864cd46fe6",
+ "letters": 72,
+ "unit_size": 111,
+ "unit_on_lattice": 111,
+ "collateral": 66,
+ "others": 712,
+ "others_exact": 712,
+ "others_landed": 0,
+ "off_before": 823,
+ "off_after": 778,
+ "strict_prime": false,
+ "end_table_digest": "0db217184bd3dcd72ac25419bb0118d6842fbd8fc351a2b18a0f50864cd46fe6"
+}

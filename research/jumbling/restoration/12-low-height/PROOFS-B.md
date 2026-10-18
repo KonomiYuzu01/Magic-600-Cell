@@ -429,9 +429,52 @@ census steps (b00, b01, b02, b07, b11, b13, b14, b16, b20, b21) and the entry tr
 - Command: section 6 (GLUE rows).
 - Uses: Proposition N, R22A-06, R22A-07, R22B-01, R22B-02.
 
-Open after round 2: building practical V_i for the sequence of R22A2-04 and replaying it; the eight units it leaves
-(b03, b04, b05, b06, b12, b15, b18, which the N1 and N2 failures above block for every class-P closure, and b17,
-which no clean power moves); coverage of B′(2) at every state of 𝒞_2. Nothing here is formalized.
+### The order of R22A2-04 at the actual states, and b17 (computed; the integrator's replay)
+
+- What was run (`scripts/round22/replay_a3.sh`, section 6). R22A2-04's order at the depth 40 stop, each step built at
+  the state the previous built step reached: the unit's census word alone when it is strict′ there, otherwise a fresh
+  closure V·W·V⁻¹ with R22A2-04's middle W (`tclose2.py`: V from the peeling certificate of Theorem B, else a
+  300-second greedy search). Every built step is replayed from the exported pose table (`stepchk.py`) before the next
+  one starts. A unit with neither is skipped, and the replay goes on from the last built state.
+- Built, each landing its unit, taking no lattice piece off and keeping every other off piece at its exact pose: b00
+  (census word, 60 letters, 1,193 → 1,160 off pieces), b01 (census word, 84, → 1,088), b02 (closure, 158, → 977),
+  b08 (closure, 762, → 944), b11 (closure, 878, → 915), b09 (closure, 970, → 857) and b10 (closure, 1,172, → 823);
+  every V came from the peeling certificate. Seven units in 4,084 letters, 1,193 → 823 (digest `743992e8…`).
+- Proved, not built: b07 (tried after b02), b13 and b19 (after b11), b14, b16, b21 and b20 (after b10). At each of
+  these states the census word is not strict′ and the greedy search did not finish V, but N1 and N2 hold for the
+  closure's complete Bad(W), and `jordan_target.py` finds a global Jordan certificate on every orbit of size at least
+  2 that meets it (20 orbits for b07, b13 and b19, 19 for each of the four at 823; none has 2 to 7 chambers). So by
+  Corollary A1 each has a strict′ closure step at the state where it was tried (R22A-06, R22A2-05), as R22A2-04
+  predicts from the stop. Their V are not built, so the states after these steps are not known exactly, and the
+  replay went on without them.
+- b17. At the stop b17 (86 pieces of class 2, the whole content of the edge cell {542, 593}) is moved by no clean
+  power, and its pole 542 holds pieces of b08, b09 and b10, so Theorem C does not apply there (R22C3-05). At the state
+  of 823 those three have landed: the cell's 86 home chambers are vacant, both poles and the five common neighbours
+  495, 496, 552, 570 and 590 are free, and exactly one landing rotation fixes the edge (menu item 26 at 542), so
+  Theorem C gives a pure-cell step of at most 720 letters. `cellpure4.py --search` builds one of 432 letters (a cycle
+  through the edge cells {542, 593}, {542, 570} and {570, 593}); its replay lands all 86 pieces, takes no lattice piece
+  off and keeps the other 737 off pieces at their exact poses: 823 → 737 (digest `2e3b8f99…`). An order turned a unit
+  that no step could move at the stop into one with a short pure step.
+- At the state of 737. The closures of b14, b16, b21 and b20 still have their premises: their Bad(W) is that of the
+  same words (a fixed word's Bad set does not depend on the state), N1 and N2 hold, and every orbit that meets it has
+  a global Jordan certificate (19 each), so each still has a strict′ step there. b21's Bad(W) is b16's (digest
+  `1b0e8081…`), so b16's certificates serve both. The other off pieces at 737 are those at 823 less b17's, at the same
+  poses, so W's ghost premises carry over; b17's landed pieces enter only through the occupancy of Bad(W), which the
+  test reads at 737. b15 and b05 without a preparation (`exp_b.py`): `cellpure4.py` finds a landing word W of 432
+  letters for each (all 25 and 61 pieces land; the 86 lattice pieces of the cell go off), but at Z1 = Z·W 17 and 48
+  occupied chambers of Bad(W⁻¹) (86 chambers; 25 and 61 occupied) are fixed by every SAFE letter, so N1 fails and
+  this T1′ has no closure. 48 is also the count R22C3-05 records at the stop: landing b00, b01 and b02 freed none of
+  b05's. b06, a vertex content, has no landing word of this family. None of the three was tried after the orders
+  R22C3-05 proposes.
+- Totals. Built: eight units in 4,516 letters, 1,193 → 737. Proved at 737 and not built: four more. Left at 737: b03,
+  b04, b05, b06, b07, b12, b13, b14, b15, b16, b18, b19, b20 and b21.
+- Command: section 6. Records: `runs/round22/line-a/replay/`.
+- Uses: R22A2-04, R22A2-05, R22A-06, Corollary A1, Theorem B, Theorem C, R22C3-01.
+
+Open after round 2 and the replay: V for the seven units whose steps are proved but not built, when a later state
+needs them; the units the order leaves at the state of 737 (b03, b04, b12 and b18, which have T1′ steps at the stop,
+and b05, b06 and b15, whose own cells hold occupied chambers that every SAFE letter fixes); coverage of B′(2) at every
+state of 𝒞_2. Nothing here is formalized.
 
 ## 3. Line (b): the vacating word V
 
@@ -826,6 +869,118 @@ got the output `runs/round22/r22b13_seeds.txt`. Z is the depth 40 stop (digest `
   control, and a forced deadline as an incomplete control; then one complete certificate built and checked before any
   conclusion about coverage.
 
+### Round 4 of line (b)
+
+After the decision to prove existence before building words, the senior reviewer took line (b) a fourth round
+(findings R22B-19 to R22B-23, 18 October 2026): when local Alt and separating words give independent alternating
+factors, whether Alt holds on every large orbit at every state of 𝒞₂, orbits of 2 to 7 chambers, and what the closure
+bounds give without Alt. Its computations are `scripts/round22/r22b20_separation.py`, `r22b21_regular12.py` and
+`r22b22_small_orbits.py` (section 6); the integrator re-ran them and got the outputs `runs/round22/r22b20_separation.txt`,
+`r22b21_regular12.txt` and `r22b22_small_orbits.txt`, and re-ran the global check `jordan_target.py` of b00 (R22B-04).
+
+### R22B-19. Local Alt and separating words give a product of alternating groups (proved)
+
+- Objects: G = G(Z); orbits Δ_1, ..., Δ_r of G with d_i = |Δ_i| ≥ 8; U their union; H the group G induces on U.
+- Hypotheses: H1, for each i the group G|Δ_i contains Alt(Δ_i) (R22B-15's local test or a global certificate); H2,
+  for each pair i ≠ j with d_i = d_j, some SAFE word has different cycle types on Δ_i and Δ_j (the words may differ
+  between pairs). Both are finite exact checks.
+- Statement. H contains ∏_i Alt(Δ_i).
+- Proof. Each coordinate image H_i is Alt(d_i) or Sym(d_i), so D = [H, H] lies in P = ∏_i Alt(Δ_i) and projects onto
+  every factor: D is a subdirect product of nonabelian simple groups. Such a group is a product of diagonal subgroups
+  (induct on r: the kernel of the projection onto the first r − 1 coordinates meets the last factor in the whole factor
+  or trivially; in the second case the last coordinate is a simple quotient of a product of nonabelian simple groups,
+  which factors through one of them). A diagonal between i and j needs d_i = d_j, since |Alt(d)| = d!/2 increases, and
+  for d ≥ 8 its automorphism is induced by a bijection f: Δ_i → Δ_j. D is normal in H, and the centralizer of Alt(d) in
+  Sym(d) is trivial, so h_j = f h_i f⁻¹ for every h ∈ H; then every element of H has equal cycle types on Δ_i and Δ_j,
+  against H2. So D = P.
+- Consequence for vacancy. If every orbit of size at least 2 that meets the target T has d ≥ 8 and H1 and H2 hold on
+  them, N1 and N2 suffice for a vacating V: choose k_i = |T ∩ Δ_i| holes in each Δ_i, map them onto T ∩ Δ_i by an even
+  permutation (correct the parity inside the chosen set or its complement), realize all of them at once in P and lift
+  to a SAFE word. The word may move other orbits. If T meets an orbit of 2 to 7 chambers, H1 and H2 say nothing about
+  it (R22B-22).
+- This is containment in the induced action on U; the lifted word need not fix chambers outside U.
+- Counterexample to dropping the size condition (abstract, not a state of the puzzle): the cyclic group generated by
+  (0 1 2 3), holes {0, 2}, T = {0, 1}: N1 and N2 hold, and no element maps a subset of the holes onto T.
+- Uses: R22B-15, Theorem A; the simplicity of Alt(d) and Aut(Alt(d)) = Sym(d) for d ≥ 7 (standard).
+
+### R22B-20. At b00 no letter separates two pairs; one word separates all (computed)
+
+- Statement. At Z the 6,039 SAFE letters have orders 2 (1,647 letters) and 3 (4,392). b00's 19 target orbits form 40
+  pairs of equal size. Every letter has equal cycle types on two of them, the pairs with least chambers 34 and 66 and
+  82 and 90, all four of 7,200 chambers, so single letters do not give H2 of R22B-19. The first 120-letter word of
+  Random(1) separates all 40 pairs (pair-word digest `a41fd137…`), each of the 19 orbits gets a local Jordan witness
+  within the first 80 words, and no target orbit has 2 to 7 chambers, so R22B-19 applies at b00. The global check
+  (R22B-04) also passes, so the failed letter test contradicts nothing.
+- The 10 non-target orbits of at least 8 chambers without a local witness in 200 words are failures of that search,
+  not orbits without Alt.
+- Command: `scripts/round22/r22b20_separation.py`; output `runs/round22/r22b20_separation.txt`.
+
+### R22B-21. An orbit of twelve chambers with a group of order twelve (computed; counterexample)
+
+- Statement. From the solved state, the eight menu twists (40, 12), (81, 12), (133, 12), (86, 12), (121, 12),
+  (52, 12), (215, 12), (221, 12) (grip, item), in this order, are each admissible without uncertainty. They reach a
+  state (digest `93d1dab0…`, 24,776 off pieces) whose off pieces all have left height 2, so it lies in 𝒞₂. Its SAFE
+  alphabet has 356 grips and 3,916 letters. Grip 0 is SAFE, and every other SAFE cap misses cap 0 on the home
+  chambers, so every other SAFE letter fixes cap 0. The 12 chambers 4, 8, 9, 18, 26, 35, 120, 121, 131, 132, 242, 271
+  form one G-orbit, and the group G induces on it has exactly 12 elements (exhaustive closure). It is regular, so no
+  element fixes a point; it contains no three-cycle and not Alt(12).
+- So the claim that G|Δ contains Alt(Δ) for every orbit of at least 8 chambers at every state of 𝒞₂ (the second
+  question of the round) is false, and neither the local nor the global Jordan route covers every state.
+- Limit. The orbit has no holes, so any target that meets it already fails N2. B′(2) is not refuted, and the narrower
+  claim, for target orbits with enough holes, stays open.
+- How it was found: greedy packings of single-twist blocking sets that keep cap 0 SAFE and block every cap that meets
+  it; then the word is replayed and the alphabet rebuilt at the reached state, so the conclusion does not rest on the
+  packing.
+- Command: `scripts/round22/r22b21_regular12.py`; output `runs/round22/r22b21_regular12.txt`.
+
+### R22B-22. Small orbits need a joint test; they occur at the depth 60 stop (proved; computed)
+
+- Statement. Let T meet orbits of 2 to 7 chambers and S be their union. Breadth-first search over the joint images of
+  the tuple (T ∩ Δ)_{Δ ⊆ S} under the SAFE letters, with one common word for all coordinates, decides vacancy on S: a
+  vertex whose sets all lie in the holes gives V on S as the inverse of its path word, and an exhausted component shows
+  that none exists. It has at most ∏_Δ C(d_Δ, k_Δ) ≤ 35^s vertices for s such orbits, so a word of at most that number
+  minus one letters exists when any does. Tests on each orbit alone (local Alt for 5 to 7 chambers by enumerating at
+  most 5,040 elements, R22B-15) do not replace it: a diagonal A5 on two five-point copies passes every local test,
+  and holes {1, 2′} cannot cover {1, 1′}.
+- With large orbits. If R22B-19 gives P = ∏ Alt(Δ_i) on the large target orbits, project G onto the union of the large
+  and small target orbits; the subgroup fixing S pointwise still projects onto P, since otherwise a nontrivial quotient
+  of P would be a quotient of a subgroup of ∏ Sym(d), d ≤ 7, whose composition factors have order at most 5,040 <
+  |Alt(8)| = 20,160. So clear S first with a passing word, then the large targets with that subgroup; singleton targets
+  stay with N1. Without R22B-19 the general fallback is the joint search over the whole target (R22B-15, R22B-03).
+- Counts. At the depth 40 stop no orbit has 2 to 7 chambers. At the depth 60 stop (14,610 off pieces, all of left
+  height 2) there are 12 orbits of 4 chambers, 6 of 6 and one of 7; each of 4 or 6 chambers carries a group of order
+  12 (generated by 11 letters), so the six-chamber orbits do not have Alt(6), and the one of 7 carries a group of order
+  2,520, which is Alt(7). Eight orbits of 10 to 115 chambers passed the 100,000-element cap of the enumeration, which
+  shows nothing about them.
+- Command: `scripts/round22/r22b22_small_orbits.py`; output `runs/round22/r22b22_small_orbits.txt`.
+
+### R22B-23. What the closure bounds give without Alt (proved; conditional)
+
+- Objects: a preparation state Y with holes H; a target T; B(Y, T) = ∏_{Δ meets T} C(|Δ|, |T ∩ Δ|) − 1.
+- Statement. If a SAFE vacating word for T exists at Y, one of at most B(Y, T) letters exists: breadth-first search on
+  the joint target images reaches a subset of H, a shortest path repeats no vertex, and its inverse clears T (R22B-04's
+  argument; no Alt needed). Every prefix is legal, because the SAFE alphabet depends only on the fixed off geometry.
+  Each SAFE letter keeps a K⁺ chamber type of at most 7,200 chambers, so B(Y, T) ≤ 7,200^|T| − 1 ≤ 7,200^n(Y) − 1 when
+  N1 and N2 hold; the hole-set bound C(177,120, n(Y)) − 1 also holds, and the smaller may be used.
+- Closures. For R22A-06, |V·W·V⁻¹| ≤ |W| + 2B(Z, Bad(W)): V fixes every off pose but may rearrange lattice chambers
+  of other orbits, which the proof does not use; after W the off geometry is a subset of the start's with the same
+  poses, so V⁻¹ stays SAFE. For T1′, |W·V′·W⁻¹·V′⁻¹| ≤ 2|W| + 2B(Z1, Bad(W⁻¹)) with Z1 = Z·W; the hole count there is
+  n(Z1), not n(Z), because W can create the collateral Q.
+- Under R22B-19 with no target orbit of 2 to 7 chambers, vacancy is equivalent to N1 and N2; with such orbits add the
+  passing joint test of R22B-22. Global Jordan certificates stay a sufficient alternative (Theorem A).
+- What does not follow: a theorem that every closure at a state of 𝒞₂ exists exactly when N1 and N2 hold. R22B-21
+  refutes Alt on every large orbit, and local Alt alone would not exclude diagonal coupling (a diagonal A8 on two
+  eight-point copies, holes {1, 2′}, targets {1, 1′}). B′(2) still needs, at every required preparation state, either
+  independent alternating factors or another exact certificate such as the joint search. N1 and N2 failures stay real
+  obstructions for that target and send it to other preparations (section 7); not every remaining obligation moves to
+  line (c).
+- A later state needs the chosen word's full action: existence alone does not fix the lattice arrangement.
+- Uses: R22B-04, R22B-19, R22B-22, Theorem A, R22A-06, R22C-T1′.
+
+Open after round 4 of line (b): whether a non-Alt orbit can meet a target that has holes in it (R22B-21's orbit has
+none), a target-specific theorem for orbits with enough holes, and the joint test wherever a target meets the small
+orbits of the depth 60 stop.
+
 ## 4. The integrator's experiments in this round
 
 - **Zero endpoint collateral at the depth 40 stop (measured, exact replay).** With points as owners, clean-power paths
@@ -1129,10 +1284,37 @@ comment; it replays the fourteen middles and writes no file:
 
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B $S/round22/r22a2_04_sequence.py   # about 75 CPU seconds
 
+The replay of R22A2-04 and b17 (section 2), with `k40.json` as above, `R=$A/replay`, and `<n>.json` the pose table
+with n off pieces, gunzipped from `$R/tables/<n>.json.gz` (977, 915, 823 and 737) or rebuilt by replaying the words of
+`$R/words/` in the order of `$R/seq.jsonl` with `stepchk.py`, whose records `$R/steps/` give each step's start and end
+digests:
+
+    bash $S/round22/replay_a3.sh k40.json <new dir>                                # about 2 hours
+    python3 -I -B $S/round22/jordan_target.py $R/jordan/<u>-<n>-target.json <n>.json   # each about 1 minute
+    python3 -I -B $S/round22/thmc_premises.py <n>.json research/jumbling/restoration/12-low-height/runs/screen-k40.json \
+        $A/units/eb5-k40-k00-b17.json 17                                            # n = 1,193 (k40.json) and 823; about 1 minute
+    python3 -I -B $S/cellpure4.py research/jumbling/theory 823.json $A/units/eb5-k40-k00-b17.json <out>.json --search
+                                                                                    # writes <out>-word.json; about 4 minutes
+    python3 -I -B $S/round22/stepchk.py 823.json $A/units/eb5-k40-k00-b17.json $R/words/b17.json <out> 737.json
+    python3 -I -B $S/round22/exp_b.py 737.json $A/units/eb5-k40-k00-<u>.json - - <new dir>   # u = b15, b05, b06; about 5 minutes each
+
+The run used a scratch copy of `replay_a3.sh` with fixed paths; the script here takes them as arguments, writes the
+summary line of a closure step, which the scratch copy missed through a file-name slip (`seq.jsonl` is rebuilt from the
+step records), and stops if a built closure is not strict′, which did not happen. `$R/jordan/` holds each target with
+the test's output `<u>-<n>-jordan.txt` (b21 at 823 uses b16's, the same T), `$R/closures/` the closures' results,
+`$R/b17/` the output of `thmc_premises.py` at 1,193 and 823, and `$R/t1prime-737.jsonl` the three `exp_b.py` results.
+
 Round 3 of line (b) (R22B-13, R22B-14, R22B-16, R22B-17), the senior reviewer's computation kept as written apart
 from a header comment; it writes no file:
 
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B $S/round22/r22b13_seeds.py   # about 2 minutes
+
+Round 4 of line (b) (R22B-20 to R22B-22), the senior reviewer's computations kept as written apart from a header
+comment; they write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b20_separation.py    # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b21_regular12.py     # about 5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b22_small_orbits.py  # about 2 minutes
 
 Line (c) (section 7): the senior reviewer's computations and the solver's (`r22cf02_shadow.py`), each kept as written
 apart from a header comment and re-run by the integrator with the outputs the analyses report;
@@ -1186,6 +1368,13 @@ under other names: `run.out` is the driver's output, `units.jsonl` and `picks.js
 and the closures' `pre.json` are not kept. `e180-cert/` keeps the target file (`ghost.badW` of the closure after
 (481, 1), with its digest), the Jordan check, V′ as a certificate of R22B-10, the builder's log and the checker's
 output.
+
+Round 3 of line (c) (R22C3-03, R22C3-04, R22C3-05), the senior reviewer's computations kept as written apart from a
+header comment; they read the records of experiment D and write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B -u $S/round22/r22c3_audit_d.py   # about 6 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B -u $S/round22/r22c3_u151.py      # about 2 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B -u $S/round22/r22c3_geometry.py  # a few minutes
 
 ## 7. Line (c): T2 and T3 (joint attack)
 
@@ -1539,8 +1728,10 @@ Further objects for this section:
 
 ### Experiments of line (c) (computed)
 
-All exact, at exported pose tables, every step replayed (`stepchk.py`, `exp_a.sh`, `exp_b.py`, `tclose2.py`,
-`jordan_target.py`, `x22c09_r2_ready.py`; stage 12 section 11; commands in section 6).
+All exact, at exported pose tables (`stepchk.py`, `exp_a.sh`, `exp_b.py`, `tclose2.py`, `jordan_target.py`,
+`x22c09_r2_ready.py`; stage 12 section 11; commands in section 6). A step given as words is replayed letter by letter;
+a step whose V is a checked straight-line program (b14's V in A, V′ in D) is Theorem T1′ or R22A-06 applied to that
+exactly evaluated program, not a literal replay, and its end pose table is not computed (R22C3-03).
 - A, an order at the depth 40 stop (X22C-06, R22C2-04): b12's T1′ step, then b14, then b15. b14's census word,
   computed at the stop, is admissible after b12's step but takes 17 lattice pieces off, so it is not strict′ there;
   b15's landing word at that state leaves 25 of 25 landing chambers occupied and fixed, each with the Q-free cap 286
@@ -1579,3 +1770,156 @@ All exact, at exported pose tables, every step replayed (`stepchk.py`, `exp_a.sh
   (`e180-cert/check.txt`, about 20 minutes). So 180 has the strict step A·W·V′·W⁻¹·V′⁻¹·A⁻¹ at the state after 174,
   175 and 176 (T1′ with R22D-01): its blocking at cap 555 came from the order of the steps, as R22C2-02 says. 130,
   whose cap 429 seven other units block, was not tried, and the state after 180's step needs V′ on all chambers.
+
+### Round 3 of line (c)
+
+After experiment D the solver had stopped (owner, 18 October 2026), and the senior reviewer assisted the integrator
+alone at the fast tier (findings R22C3-01 to R22C3-06, 18 October 2026): whether strict′ steps keep SAFE-ALL and the
+hole inventories, a lemma for mixed orders, an audit of D, an order towards 130, the catalogue of the unresolved
+units, and a uniform core bound. Its computations are `scripts/round22/r22c3_audit_d.py`, `r22c3_u151.py` and
+`r22c3_geometry.py` (section 6); the integrator re-ran them and got the outputs `runs/round22/r22c3_audit_d.txt`,
+`r22c3_u151.txt` and `r22c3_geometry.txt`.
+
+### R22C3-01. Strict′ steps keep SAFE-ALL, not the hole inventories (proved)
+
+- Statement. Let Z′ end a strict′ step from Z. Then A(Z) ⊆ A(Z′), G(Z) ≤ G(Z′), every orbit of G(Z) lies in one of
+  G(Z′), and Fix(G(Z′)) ⊆ Fix(G(Z)). Proof: Z′ has a subset of Z's off pieces, each at its pose of Z; removing off
+  pieces puts no off occupant and no straddler into a cap that was SAFE, and landed pieces are lattice pieces, which do
+  not straddle (Lemma M). This compares endpoints, not the middle states of a macro.
+- Certificates. An old global Jordan certificate with prime p still gives an alternating factor on its old orbit. It
+  certifies a merged orbit Δ′ ⊇ Δ only if p > |Δ′|/2 (its other inequality survives); since orbits stay inside one K⁺
+  type of at most 7,200 chambers, p > 3,600 suffices. Otherwise recompute on Δ′. Counterexample (abstract): Alt(8) ×
+  Alt(8) on two blocks, with a 5-cycle certificate on each, enlarged by a swap of the blocks; the wreath product is
+  transitive on 16 points and does not contain Alt(16); with two holes in one block and a two-point target split
+  between the blocks, N1 and N2 hold and no V exists. Merging and counts do not replace a certificate.
+- Inventory identity. With L the occupied chambers at Z, φ the step's good-ghost map on L, and D the chambers of all
+  newly landed pieces (beneficial landings outside the named unit included): L′ = φ(L) ⊔ D, and for every chamber set Δ,
+  h′_Δ = h_Δ + |L ∩ Δ| − |φ(L) ∩ Δ| − |D ∩ Δ|. Only when φ keeps Δ can the landings simply be subtracted; total holes
+  fall, but the cores can move holes between old orbits.
+- Finite tests for a later step: keep the old group and check its fixed target chambers and per-orbit holes at Z′, or
+  recompute G(Z′), the counts and the certificates. Bad(W) of a fixed word does not depend on the state, its occupancy
+  does; a newly chosen word needs its own ghost computation. For T1′ the tests belong at Z′·A·W.
+- Uses: Lemma M, R22A-06, Theorem A.
+
+### R22C3-02. Mixed orders need resource contracts as well as a blocker order (proved)
+
+- Statement (resource-certified order). Name the units by their original piece sets, choose an order, and skip a unit
+  that has already landed. At each stage choose a census word, a closure V·W·V⁻¹, a prepared T1′ word
+  A·W·V·W⁻¹·V⁻¹·A⁻¹ or the complete T2′ word, and require: (i) the preparation is retained and admissible and the
+  free-class hypotheses hold; (ii) the core keeps its whole-content and exact off-pose contracts; (iii) the Bad sets
+  are complete ghost sets; (iv) vacancy holds at the right state, by N1, N2 and independent global Jordan factors or
+  by an exact joint search; (v) the hole resources that later stages need are propagated. Then the whole order exists
+  and is strict′, and every stage lowers n. All are finite checks, at the successive pose tables or uniformly over a
+  stated finite family of predecessor endpoints. Proof: the local theorem of each stage, R22D-01 for the retained
+  conjugation, the resource contract, induction.
+- T1′ before V. At Y with B = Bad(W), T = Bad(W⁻¹), f: Ω∖B → Ω∖T the good-ghost bijection of W and D_U ⊆ T the landing
+  chambers of U: H(Y·W) = (T∖D_U) ⊔ f(H(Y)∖B), so for every orbit Δ at Y·W,
+  |H(Y·W) ∩ Δ| = |T ∩ Δ| − |D_U ∩ Δ| + |H(Y) ∩ f⁻¹(Δ)|, and N2 holds exactly when |H(Y) ∩ f⁻¹(Δ)| ≥ |D_U ∩ Δ|;
+  singletons give the fixed-chamber obstruction. With a retained preparation A the resource set at Z is
+  π_A⁻¹(f⁻¹(Δ)). This refines the type inequality of R22C-V to orbits.
+- Static budget. If every allowed earlier step keeps each later resource set R under its good-ghost map and adds at
+  most δ_{j,R} landed occupants to it, then h_initial(R) − Σ_j δ_{j,R} bounds the holes of R later; certify the SAFE
+  subgroup needed there as well. R22A2-04 is the case where the resources are old SAFE orbits. Without these
+  conditions use the identity of R22C3-01 or the actual endpoint.
+- A blocker graph is only the schedule: all blockers of one cap are needed together, alternative caps are choices,
+  and deficient orbits are shared resources. Acyclicity proves neither the predecessors' steps nor the budgets.
+- Bounds, with F = ∏ C(d_i, k_i) − 1 for the vacancy target: |W| for a checked census word, |W| + 2F for a closure,
+  2|A| + 2|W| + 2F for a prepared T1′. T2′ needs both its vacancy premises; replacing its first V by another vacating
+  word does not keep the state of the second certificate.
+- Counterexample to reusing independent successes (recorded, experiment A): after b12's step the census word of b14
+  computed at the stop takes 17 lattice pieces off.
+- Uses: R22C-T1′, R22C-T2′, R22D-01, R22A2-04, R22C3-01.
+
+### R22C3-03. Experiment D passes an independent exact audit (computed)
+
+- Statement. The reviewer replayed D: 174 (24 letters, 14,610 → 14,564, digest `d6653e1e…`), 175 (24 letters,
+  → 14,532, `a4987caa…`) and 176 (132 letters, → 14,515, `9f24aa3e…`), each landing its whole piece set, taking no
+  lattice piece off and keeping every other off pose. For 180 without a preparation the 360-letter W lands 56 pieces,
+  keeps the other 14,459 off poses, displaces 86 lattice pieces, and N1 and N2 fail. With A = (481, 1), retained and
+  admissible, U is the whole 56-piece content of its class cell and every grip of W is free in that class (H1); the
+  288 letters give H2 and H3 (Q of 86 pieces; Z1 with 14,545 off pieces, digest `534aaa7a…`); a ghost replay rebuilds
+  the stored 86-chamber T (56 occupied), and N1 and N2 pass. For H4 the reviewer checked the program's leaves against
+  the SAFE alphabet, its references and lengths and the 19 Jordan certificates, and evaluated the actual V′ node on
+  every nontrivial target orbit: every target is vacated; the 13 singleton targets were holes. So T1′ applies, and by
+  R22D-01 A·W·V′·W⁻¹·V′⁻¹·A⁻¹ is a strict step at the state after 174, 175 and 176, of 578 + 2|V′| letters, ending
+  with 14,459 off pieces.
+- Evidence kind. This is a theorem applied to an exactly evaluated straight-line program, not a literal replay of
+  about 10^162 letters, and the end pose table was not exported; the experiments paragraph of this section now says so.
+- Command: `scripts/round22/r22c3_audit_d.py` (about 6 minutes).
+
+### R22C3-04. 142, then 151: a proved prefix of 130's predecessors (proved from computed hypotheses)
+
+- 142. At the depth 60 stop, 142 is the whole 41-piece class-0 content of the edge cell {412, 429}; its 86 home
+  chambers are vacant, both poles and the common neighbours 224, 305, 394 and 515 are free, and one landing rotation
+  fixes the edge (menu item 24 at 412). Theorem C gives a pure-cell strict step of at most 720 letters that fixes every
+  original lattice piece.
+- 151. 151 is the whole 45-piece class-1 content of {443, 481}; the poles and the common neighbour 286 are free; its
+  cell holds 86 lattice pieces Q; the unique landing rotation is item 54 at 443. Theorem C gives a pure-cell W of at
+  most 720 letters with that accumulated cell rotation, fixing everything outside the cell, so H1 to H3 of T1′ hold and
+  Bad(W) = Bad(W⁻¹) is the cell's 86 home chambers. The reviewer computed W's exact endpoint without building W
+  (digest `d76309e0…`, 14,651 off pieces: U landed, the 86 pieces of Q off): N1 and N2 pass, 11 target chambers are
+  fixed holes, and the other 75 lie in 18 nontrivial orbits, each with a checked global Jordan certificate. So V′
+  exists and T1′ lands 151, in at most 1,440 + 2·F151 letters with F151 ≤ 7,200^75 − 1.
+- The order 142 then 151, without building V′. The two home cells are disjoint (the first all vacant, the second all
+  occupied). The pure step of 142 changes only U142, so at 151's middle Q151 is unchanged and the off geometry has only
+  lost U142. Keep the old SAFE subgroup and its 18 certificates (R22C3-01): the least slack on a nontrivial target orbit
+  was 29, U142 has at most five pieces of any K⁺ type, and each old orbit lies in one type, so landing 142 uses at most
+  five holes of any orbit; the singleton target holes are untouched. Every inequality keeps a slack of at least 24.
+  The order lowers n from 14,610 to 14,524 in at most 2,160 + 2(7,200^75 − 1) letters. A proof from computed finite
+  hypotheses, not a replayed word.
+- Still open for 130: 131 and 163 (ready triangle contents) and 132 (a ready tetrahedron content) need a census
+  transport or a fresh closure; 133 is a glued triangle content (a transport middle and T1′); 150 is a vertex content
+  that needs a genuine vertex isolation middle (LC-12's all-free hypothesis fails at the stop). No order for these
+  five is proved, so no step for 130 yet.
+- Commands: `scripts/round22/r22c3_u151.py`, `scripts/round22/r22c3_geometry.py`.
+- Uses: Theorem C, R22C-T1′, R22C3-01, Corollary A1.
+
+### R22C3-05. The catalogue of unresolved units stays conditional (inventory)
+
+- Depth 40. b05: an order followed by a fresh T1′ (48 occupied fixed landing chambers in the recorded middle; deleting
+  b00 to b03 leaves 31; b04 and b06 are needed for the Q-free route); recompute H1 to H4 after a certified order.
+  b06: a partner that supplies type 6, a genuine vertex middle and the complete T2′ cleanup (every own-class T1′
+  without a partner is two type-6 pieces short at the stop, and edge partners cannot supply that type). b15: b12, then
+  the built b14 closure, then b15's middle recomputed; the earlier diagnosis was at the end of b14's non-strict census
+  word. b17: its home cell {542, 593} is vacant but pole 542 holds pieces of b08, b09 and b10, so Theorem C does not
+  apply at the stop; after those three land, a vacant cell with free poles gives a step of at most 720 letters (done
+  in the replay of section 2).
+- Depth 60, the 32 E-B4 leftovers: 18 lack one-letter readiness (edge units 4, 36, 39, 44, 45, 59, 72, 74, 101, 115,
+  121, 127, 144, 155, 167; vertex units 27 and 120; triangle unit 47); 11 fail N1 for their first preparation (50, 52,
+  56, 60, 107, 112, 130, 138, 146, 162, 180), of which 56, 130, 138, 146 and 180 have occupied own locks; 3 triangle
+  units become ready (102, 109, 114) but need actual transport words, Bad sets and certificates. D proves 180 after
+  174, 175 and 176, not at the stop.
+- Run 2 is not a strict′ order: two of its steps (0 and 2) move other off blocks (`moved_blocks` in its record), so
+  Lemma M does not carry certificates through them, and its remaining units cannot be found by subtracting unit names
+  from the census at the stop. The root-state E-B4 successes are independent instances, not a chain.
+- The routes above are proposals, not results, except where R22C3-03, R22C3-04 or section 2 proves them.
+
+### R22C3-06. A uniform core bound; coverage stays open (proved; conditional)
+
+- Statement. Fix a state and its free class-P alphabet. Every letter permutes the complete five-label cell model of
+  13,205 points; let H be the group generated. A realizable model action has a word of at most |H| − 1 ≤ 13,205! − 1
+  letters (a shortest path in H repeats no element). Every word over a fixed free alphabet is admissible (freeness
+  persists); equal action on all five labels of every nonempty cell gives the same accumulated rotation (O8), outer
+  cells and foreign pieces stay fixed, so the shorter word has the same exact action and the same Bad set (free class
+  words have no straddling ghost). Tracking only the occupied content points would not justify this.
+- So b = 13,205! − 1 bounds every native core that satisfies the free-class hypotheses, those of T1′ and T2′
+  included. It does not give such a core for any unresolved unit, nor cover mixed-class cores.
+- With this b the supercatalogue of R22C-K (four cores, five retained segments) has explicit bounds without the open
+  question whether b = 720 covers every cycle word: with N = 177,120, R = 7,200^N, m = 35,400, g = 6,600,
+  C_b = (m^(b+1) − 1)/(m − 1) and T_R = (g^R − 1)/(g − 1), L = 4b + 5(R − 1) letters per step and S(n) ≤ n·C_b⁴·T_R⁵
+  candidates. Shortening a retained segment must keep its complete labelled endpoint.
+- Coverage. The strongest statement available is conditional backward certification (R22C2-06): A_0 the lattice
+  tables of the finite height-2 universe, A_{j+1} adds the tables with a certified strict′ catalogue successor in A_j;
+  the sets stabilize within N stages, and every state of their union has a restoration of at most n steps and n·L
+  letters. Still needed: finite certificates for readiness and routing (legal vertex middles and partners included),
+  for simultaneous vacancy at every middle (independent factors or joint subset reachability) and for the full T2′
+  cleanup, and a successor invariant or backward-coverage certificate that contains all of 𝒞₂. A finite superset of
+  𝒞₂ needs its own containment proof, and exploring histories of height at most 2 does not cover every reachable
+  height-2 state.
+- D and 142 → 151 support the order and resource lemmas; the occupied locks, b06's type deficit, the old b14 word after
+  b12 and 180 without a preparation refute weaker criteria (readiness, total holes, deleting blockers, independent
+  root-state successes). None is a counterexample to B′(2).
+- Uses: O8, Theorem C, R22C-K, R22C2-06.
+
+Open after round 3 of line (c): orders for 131, 132, 133, 150 and 163 with resource contracts, then 130; b05, b06 and
+b15 after certified orders (section 2 gives the state after the replay); and coverage of 𝒞₂.

@@ -1,0 +1,34 @@
+STATE 2e3b8f990229799fc88198b2fe4f2062ab4f9d73c78347ee67b252d412b0a086 737
+{"safe_all_grips": 555, "letters": 6105, "off_lattice": 737, "sec": 23}
+{"orbits": 1109, "singletons": 1074, "sec": 24}
+TARGET 222 43 34c75e240c2736c73f16491d2073a88a81325979805af195f3cb1811e388ec40
+CONDITION {"fixed_vacant": true, "fixed_occupied": [], "necessary": true, "necessary_deficits": [], "sufficient": null, "sufficient_deficits": [], "by_orbit": [{"orbit": 16, "least_chamber": 33, "size": 7200, "target": 6, "holes": 29, "threshold": null}, {"orbit": 17, "least_chamber": 34, "size": 7200, "target": 6, "holes": 35, "threshold": null}, {"orbit": 18, "least_chamber": 41, "size": 7191, "target": 6, "holes": 21, "threshold": null}, {"orbit": 19, "least_chamber": 64, "size": 2397, "target": 2, "holes": 9, "threshold": null}, {"orbit": 20, "least_chamber": 65, "size": 7200, "target": 12, "holes": 41, "threshold": null}, {"orbit": 21, "least_chamber": 66, "size": 7200, "target": 6, "holes": 35, "threshold": null}, {"orbit": 22, "least_chamber": 67, "size": 3600, "target": 6, "holes": 24, "threshold": null}, {"orbit": 23, "least_chamber": 69, "size": 7200, "target": 12, "holes": 49, "threshold": null}, {"orbit": 24, "least_chamber": 70, "size": 7200, "target": 18, "holes": 60, "threshold": null}, {"orbit": 25, "least_chamber": 74, "size": 7200, "target": 24, "holes": 67, "threshold": null}, {"orbit": 26, "least_chamber": 75, "size": 1440, "target": 6, "holes": 14, "threshold": null}, {"orbit": 27, "least_chamber": 81, "size": 3600, "target": 12, "holes": 34, "threshold": null}, {"orbit": 28, "least_chamber": 82, "size": 7200, "target": 18, "holes": 58, "threshold": null}, {"orbit": 29, "least_chamber": 83, "size": 7200, "target": 24, "holes": 57, "threshold": null}, {"orbit": 30, "least_chamber": 90, "size": 7200, "target": 30, "holes": 68, "threshold": null}, {"orbit": 31, "least_chamber": 105, "size": 2400, "target": 8, "holes": 19, "threshold": null}, {"orbit": 32, "least_chamber": 106, "size": 7200, "target": 18, "holes": 44, "threshold": null}, {"orbit": 33, "least_chamber": 108, "size": 3600, "target": 6, "holes": 15, "threshold": null}, {"orbit": 34, "least_chamber": 115, "size": 2400, "target": 2, "holes": 5, "threshold": null}]}
+JORDAN {"orbit": 27, "orbit_size": 3600, "prime": 2251, "cycle_least_point": 81, "verified": true, "stage": 0, "trial": 1, "length": 120, "word_sha256": "f27e362ca0e12c113b04835fd57cd1c379a9c91baeae816222fca0ba07ed801a"}
+JORDAN {"orbit": 31, "orbit_size": 2400, "prime": 1427, "cycle_least_point": 227, "verified": true, "stage": 0, "trial": 1, "length": 120, "word_sha256": "f27e362ca0e12c113b04835fd57cd1c379a9c91baeae816222fca0ba07ed801a"}
+JORDAN {"orbit": 18, "orbit_size": 7191, "prime": 4259, "cycle_least_point": 166, "verified": true, "stage": 0, "trial": 2, "length": 120, "word_sha256": "85d8ac37c2a6271763daa01e9ad64bd6387207607c8736082168781e57ddcac5"}
+JORDAN {"orbit": 17, "orbit_size": 7200, "prime": 3793, "cycle_least_point": 168, "verified": true, "stage": 0, "trial": 3, "length": 120, "word_sha256": "a24b0113976f6ed6ee6b92cc35df7fa1e1e966fabf23739d66ee9dd06f3a1011"}
+JORDAN {"orbit": 24, "orbit_size": 7200, "prime": 4157, "cycle_least_point": 80, "verified": true, "stage": 0, "trial": 5, "length": 120, "word_sha256": "d64f36199f7336270af507a2b7afba4e6800ebdc20dc5e41b8f8608b7b74b24a"}
+JORDAN {"orbit": 25, "orbit_size": 7200, "prime": 4597, "cycle_least_point": 74, "verified": true, "stage": 0, "trial": 5, "length": 120, "word_sha256": "d64f36199f7336270af507a2b7afba4e6800ebdc20dc5e41b8f8608b7b74b24a"}
+JORDAN {"orbit": 33, "orbit_size": 3600, "prime": 2221, "cycle_least_point": 108, "verified": true, "stage": 0, "trial": 5, "length": 120, "word_sha256": "d64f36199f7336270af507a2b7afba4e6800ebdc20dc5e41b8f8608b7b74b24a"}
+JORDAN {"orbit": 23, "orbit_size": 7200, "prime": 5557, "cycle_least_point": 79, "verified": true, "stage": 0, "trial": 8, "length": 120, "word_sha256": "59ad33f9011a1e3186820ba188f6132b2de32cc5d919d8cd9bd07168286d6d65"}
+JORDAN {"orbit": 29, "orbit_size": 7200, "prime": 6257, "cycle_least_point": 91, "verified": true, "stage": 0, "trial": 8, "length": 120, "word_sha256": "59ad33f9011a1e3186820ba188f6132b2de32cc5d919d8cd9bd07168286d6d65"}
+JORDAN {"orbit": 30, "orbit_size": 7200, "prime": 4549, "cycle_least_point": 90, "verified": true, "stage": 0, "trial": 9, "length": 120, "word_sha256": "fbe883f0fe9c92ecf073ce0f06a6d20541f4d85cc712013b5d78fffd0ad80b22"}
+JORDAN {"orbit": 32, "orbit_size": 7200, "prime": 5651, "cycle_least_point": 106, "verified": true, "stage": 0, "trial": 9, "length": 120, "word_sha256": "fbe883f0fe9c92ecf073ce0f06a6d20541f4d85cc712013b5d78fffd0ad80b22"}
+JORDAN {"orbit": 22, "orbit_size": 3600, "prime": 1999, "cycle_least_point": 67, "verified": true, "stage": 0, "trial": 11, "length": 120, "word_sha256": "286e692390a8ebac435700123c7c50fc28bcd20f92a3da3c737e576349858647"}
+JORDAN {"orbit": 21, "orbit_size": 7200, "prime": 4211, "cycle_least_point": 311, "verified": true, "stage": 0, "trial": 17, "length": 120, "word_sha256": "b319e21c2e94509ba0e1e49e8ae1a77e4f68622c79fd3feae1ebdd1f3989743d"}
+JORDAN {"orbit": 28, "orbit_size": 7200, "prime": 6229, "cycle_least_point": 82, "verified": true, "stage": 0, "trial": 18, "length": 120, "word_sha256": "ffaab89d73b3b369dc31aca1db2b616e3965a64ca1c1a7afaa6a59e539ecb754"}
+PROGRESS 0 20 14 19 26.1
+JORDAN {"orbit": 19, "orbit_size": 2397, "prime": 1579, "cycle_least_point": 190, "verified": true, "stage": 0, "trial": 24, "length": 120, "word_sha256": "6134c10b83890f9f8cd0bd70b6cd82e1024a6ff739603a57c0f40185ec06c0ec"}
+JORDAN {"orbit": 26, "orbit_size": 1440, "prime": 1151, "cycle_least_point": 201, "verified": true, "stage": 0, "trial": 27, "length": 120, "word_sha256": "a21e0318765b4af1d72232b64de2cc99d9fff6a66cdb1171c55529d9049ba301"}
+JORDAN {"orbit": 34, "orbit_size": 2400, "prime": 1987, "cycle_least_point": 115, "verified": true, "stage": 0, "trial": 36, "length": 120, "word_sha256": "b58876e65554fcc5dd06d6bb91bbcc0bba1e46c20fe32395e9cbade34b04c701"}
+JORDAN {"orbit": 20, "orbit_size": 7200, "prime": 4373, "cycle_least_point": 65, "verified": true, "stage": 0, "trial": 39, "length": 120, "word_sha256": "adf1b62e70d3864dd09c6c2cc4d948d2031f403b09b20ee480f555deffd7fcf4"}
+PROGRESS 0 40 18 19 26.6
+PROGRESS 0 60 18 19 27.0
+PROGRESS 0 80 18 19 27.4
+PROGRESS 0 100 18 19 27.8
+PROGRESS 0 120 18 19 28.3
+PROGRESS 0 140 18 19 28.7
+PROGRESS 0 160 18 19 29.2
+PROGRESS 0 180 18 19 29.7
+JORDAN {"orbit": 16, "orbit_size": 7200, "prime": 3607, "cycle_least_point": 181, "verified": true, "stage": 0, "trial": 189, "length": 120, "word_sha256": "d9466922cdee02c1d67a69bb8c83392d32fe268b3e5561dd1d31e88701d13144"}
+JORDAN_DONE [] cpu 29.9
