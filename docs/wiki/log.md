@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] decision | Jumbling: a tutorial that a machine can follow to the end
+The owner set the tutorial's target: a machine that follows it step by step, using only the rules it teaches and playing only literal words, takes a scramble to the solved state, and the owner then works out how a person can carry it out, with a person's complexity limits in view ([decision](decisions/owner-decisions-2026-10-18-machine-tutorial.md)). A step known only by a certificate counts as stuck, so coverage round 9 waits while the senior reviewer looks for literal words for the nine certificate steps of E2, and height 4 comes before coverage.
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 8 experiment
 The exact enumeration COV-57 tried every word of one family, three jumble twists with at most two retained twists between them, at two of the 112 deep cases of round 8; all 24 jobs ran to the end and no word of the family restores either case, which excludes only that family and proves nothing about other words ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8).
 

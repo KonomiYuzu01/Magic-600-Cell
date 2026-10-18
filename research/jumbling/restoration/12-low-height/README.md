@@ -990,6 +990,11 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
 
 ## 12. Next
 
+- Order of work (owner, 18 October 2026:
+  [decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-18-machine-tutorial.md)). The tutorial is accepted
+  when a machine that follows it plays only literal words to the solved state, and a step known only by a certificate
+  counts as stuck. First, short literal words for the nine certificate steps of E2 (the senior reviewer: the search of
+  R22B-18 and the structure of the steps); then height 4; coverage of B′(2) after that, with its round 9 held.
 - Coverage of B′(2), the one step the proof still lacks: every reachable height-2 state has a step in the catalogue.
   Vacancy at a given middle is settled (R22B-29: N1, N2 and the joint target-image test, finite and without Alt), so
   coverage is what remains (`PROOFS-B.md` section 8). E2 took the depth 40 stop to the lattice in 21 strict′ steps, each
@@ -1022,17 +1027,18 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   (7,200·(4^(h+1) − 1)/3)^177,120 − 1 letters, 151,200^177,120 − 1 for h = 2 (COV-39, COV-44); two-letter excursions
   above height 2 collapse at one cap, the same classification holds at every even height, and the two at different caps
   have no replacement of at most two letters (COV-41, COV-48, COV-49). Also open: unit 130 at the depth 60 stop after
-  131, 132, 133, 150 and 163.
+  131, 132, 133, 150 and 163. Round 9 waits (owner, 18 October).
 - Line (a): the replay of the depth 40 stop is finished (E2, 1,193 to 0). The other 𝒞₂ census stop on record is the
   depth 60 stop `ia-k60-s7104`; the census round 3 records are deeper and have height-4 pieces, so they are not 𝒞₂
   inputs (COV-16). A further replay adds a trajectory and decides nothing universal.
-- Line (b): whether N1 and N2 alone suffice at every target of 𝒞₂ (no step needs it once it carries the joint test
-  of R22B-29), and the residual primitive case of R22B-25. The commutator-power search of R22B-18 stays deferred:
-  short seeds shrink V's bound but do not decide existence.
+- Line (b): whether N1 and N2 alone suffice at every target of 𝒞₂ (no step needs it once it carries the joint test of
+  R22B-29), and the residual primitive case of R22B-25. The commutator-power search of R22B-18 was deferred because
+  short seeds shrink V's bound but do not decide existence; since the owner's decision of 18 October it comes first,
+  because the machine plays only literal words.
 - Existence before construction: a stuck step is settled by N1, N2 and the Jordan certificates of its target
   (`jordan_target.py`); V is built with the builder of E22-1b only when a later state is needed.
-- Height 4 (lowest priority): E22-2 is complete and gives no strict step; next, six-letter commutators (R22D-02) and
-  protected two-level steps with a smaller Bad set than a whole cap (R22D-05).
+- Height 4 (before coverage since 18 October): E22-2 is complete and gives no strict step; next, six-letter commutators
+  (R22D-02) and protected two-level steps with a smaller Bad set than a whole cap (R22D-05).
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
