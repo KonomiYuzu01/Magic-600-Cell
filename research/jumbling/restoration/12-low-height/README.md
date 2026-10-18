@@ -761,7 +761,12 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   - What B′(2) still needs: SingletonResidual (the 118 cases), MultiCover and MixedCoreBound, or R2 in place of all
     three; no growth of b is shown to be necessary (COV-42).
   - The experiment COV-43 searches for a restoring word at each of the 118 cases, 120 CPU seconds each; ALL_PASS would
-    settle SingletonResidual, and a miss decides nothing. It is running.
+    settle SingletonResidual, and a miss decides nothing. It found no restoring word at any case, each cut short at its
+    cutoff after 387 to 558 trials (`runs/round22/cov43_residual_search.txt`).
+- The integrator's check before coverage round 7 (`PROOFS-B.md` section 8; computed): at all 600 caps every jumble
+  letter of the I_a menu has left tree distance 2 and right tree distance 0, and every retained item 0 and 0, so one
+  letter changes a piece's left height by at most 2 and every reachable pose has right height 0
+  (`scripts/round22/letter_heights.py`, 22 seconds of CPU).
 - The census with whole cells as owners (R22A-02), class 3 (13 units; measured, scratch census, each kept word
   replayed exactly): seven units have strict′ steps without endpoint collateral, b00 60, b01 84, b02 60, b07 48,
   b11 60, b13 60 and b14 60 letters (one to three clean powers), and the other six (b03, b04, b05, b06, b12, b15)
@@ -957,15 +962,15 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   one-letter SAFE sandwich reaches it, at any of its 36 landing letters (COV-20 and the integrator's checks), and no
   retained middle through its landing branch (COV-25, COV-31), while the vacant-lock condition is no invariant of
   reachable states (COV-37); COV-22 found no hit in 160,000 sampled words, COV-28 none in 80,581 trials and COV-35 none
-  in 343,764 trials on eight deep classes, which decides nothing; COV-43 searches for a restoring word at all 118 cases.
-  If the triangle is reachable, the geometric templates and the whole-cap route all fail there, and the inverse of its
-  reaching word is the one native core it needs (COV-01, COV-14, COV-21). (2) MultiCover: every state of 𝒞₂ with two or
-  more off pieces satisfies Cover(Z), with the resource contract of COV-08, the preparation test of COV-10, the joint
-  test and the separation lemma of COV-32 and the separation theorem of COV-38 as its tools. (3) MixedCoreBound: an
-  explicit bound for any further native cores the proof needs. (4) R2, in place of (1) to (3): every state of 𝒞₂
-  restores inside height 2, which gives B′(2) within 151,200^177,120 − 1 letters (COV-39); two-letter excursions above
-  height 2 collapse at one cap, and at different caps they are open (COV-41). Also open: unit 130 at the depth 60 stop
-  after 131, 132, 133, 150 and 163.
+  in 343,764 trials on eight deep classes, which decides nothing; COV-43 found no restoring word at any of the 118
+  cases, which decides nothing. If the triangle is reachable, the geometric templates and the whole-cap route all fail
+  there, and the inverse of its reaching word is the one native core it needs (COV-01, COV-14, COV-21). (2) MultiCover:
+  every state of 𝒞₂ with two or more off pieces satisfies Cover(Z), with the resource contract of COV-08, the
+  preparation test of COV-10, the joint test and the separation lemma of COV-32 and the separation theorem of COV-38 as
+  its tools. (3) MixedCoreBound: an explicit bound for any further native cores the proof needs. (4) R2, in place of (1)
+  to (3): every state of 𝒞₂ restores inside height 2, which gives B′(2) within 151,200^177,120 − 1 letters (COV-39);
+  two-letter excursions above height 2 collapse at one cap, and at different caps they are open (COV-41). Also open:
+  unit 130 at the depth 60 stop after 131, 132, 133, 150 and 163.
 - Line (a): the replay of the depth 40 stop is finished (E2, 1,193 to 0). The other 𝒞₂ census stop on record is the
   depth 60 stop `ia-k60-s7104`; the census round 3 records are deeper and have height-4 pieces, so they are not 𝒞₂
   inputs (COV-16). A further replay adds a trajectory and decides nothing universal.
@@ -1207,7 +1212,8 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/round22/cov_depth_grip0.py`, `cov_depth_cosets.py`, `runs/round22/cov_depth_grip0-0.txt`, `cov_depth_grip0-1.txt`, `cov_depth_cosets.txt` | Coverage, round 4 input: the integrator's depth table (deep and rim chambers of cap 0 at solved·L for each of the 48 jumble letters L at grip 0) and the check that its four classes are the cosets of the lattice items |
 | `scripts/round22/cov23_singleton_classes.py`, `cov26_exterior_singletons.py`, `cov28_cohort_search.py`, `cov24_reference.py`, `runs/round22/cov23_singleton_classes.txt`, `cov26_exterior_singletons.txt`, `cov24_reference.txt`, `runs/round22/cov28/` | Coverage, round 4: the senior reviewer's computations and its experiment COV-28 (kept as written apart from a header), with the integrator's re-run outputs, and the integrator's repetition of the reference check of COV-24 |
 | `scripts/round22/cov29_two_cap.py`, `cov30_validity.py`, `cov33_whole_cap_737.py`, `cov33_singleton_caps.py`, `cov35_deep_search.py`, `runs/round22/cov29_two_cap.txt`, `cov30_validity.txt`, `cov33_whole_cap_737.txt`, `cov33_singleton_caps.txt`, `runs/round22/cov35/` | Coverage, round 5: the senior reviewer's computations and its experiment COV-35 (kept as written apart from a header; COV-35's source as the reviewer's generator builds it), with the integrator's re-run outputs |
-| `scripts/round22/cov36_hole_orbits.py`, `cov37_vl_737.py`, `cov41_excursions.py`, `cov41_endpoint.py`, `cov43_residual_search.py`, `runs/round22/cov36_hole_orbits.txt`, `cov37_vl_737.txt`, `cov41_excursions.txt`, `cov41_endpoint.txt` | Coverage, round 6: the senior reviewer's computations and its experiment COV-43 (kept as written apart from a header; COV-43 is COV-36's command with the experiment's lines appended), with the integrator's re-run outputs |
+| `scripts/round22/cov36_hole_orbits.py`, `cov37_vl_737.py`, `cov41_excursions.py`, `cov41_endpoint.py`, `cov43_residual_search.py`, `runs/round22/cov36_hole_orbits.txt`, `cov37_vl_737.txt`, `cov41_excursions.txt`, `cov41_endpoint.txt`, `cov43_residual_search.txt` | Coverage, round 6: the senior reviewer's computations and its experiment COV-43 (kept as written apart from a header; COV-43 is COV-36's command with the experiment's lines appended), with the integrator's re-run outputs and the experiment's run |
+| `scripts/round22/letter_heights.py`, `runs/round22/letter_heights.txt` | The integrator's check before coverage round 7: the left and right tree distances of every letter of the I_a menu at all 600 caps |
 | `scripts/slp_apply.py`, `scripts/test_slp_apply.py` | The exact applier of a program of literal words, `tclose2.py` cores and R22B-10 certificates (straight-line programs of SAFE-ALL letters, applied to the labelled poses without expanding powers): the end pose table and the strict′ contract against the start state; its unit test |
 | `scripts/round22/replay_slp.py`, `runs/round22/line-a/replay2/` | E2, the replay continued from 737: the driver (literal words, closures with certificate V, T1′ steps with a literal or certificate V′, each applied by `slp_apply.py`); the plans, the stored landing words and cores (`inputs/`), and runs 1 and 2 with every step's files and end tables |
 | `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`, `e2_b06_t1.py` | E2, b06 with b05: the first SAFE-ALL preparation, the second counted against the reference middle's orbits, and the prepared T1′ attempt applied by `slp_apply.py`; records in `runs/round22/line-a/replay2/b06-<n>/` |

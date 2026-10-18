@@ -1,0 +1,1 @@
+ALL_CAPS [(('jumble', 2, 0), 28800), (('retained', 0, 0), 7200)] CPU 22.2

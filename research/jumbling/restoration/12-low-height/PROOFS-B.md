@@ -2241,9 +2241,9 @@ antipodal to cap 0, so every valid singleton with a rim placement has a step, cu
 pieces and a lemma that lifts a certified step past separated contents; its experiment COV-35 found no reaching word for
 eight deep classes. Round 6 (COV-36 to COV-43) reduces the singleton residual exactly to 118 cases, shows that the
 vacant-lock condition is no invariant of reachable states, proves that R2, restoration inside height 2, gives B′(2) with
-an explicit exhaustive catalogue, and classifies the two-letter excursions above height 2; its experiment COV-43 is
-running. Coverage stays open: no reachable state without a step was found, and nothing here proves that every state has
-one.
+an explicit exhaustive catalogue, and classifies the two-letter excursions above height 2; its experiment COV-43 found
+no restoring word at any of the 118 cases, which decides nothing. Coverage stays open: no reachable state without a step
+was found, and nothing here proves that every state has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -3167,13 +3167,14 @@ The senior reviewer took up the obligations of COV-34 (findings COV-36 to COV-43
 `scripts/round22/cov36_hole_orbits.py`, `cov37_vl_737.py`, `cov41_excursions.py` and `cov41_endpoint.py`; the integrator
 re-ran them and got the same cases, lock violations, returning caps, witnesses, endpoint multipliers and counts, with
 the outputs `runs/round22/cov36_hole_orbits.txt`, `cov37_vl_737.txt`, `cov41_excursions.txt` and `cov41_endpoint.txt`.
-Its experiment, `scripts/round22/cov43_residual_search.py`, is running. The 457,200 pairs of COV-30 reduce exactly to
-118 coverage cases (COV-36); the vacant-lock condition of COV-31 fails at the reachable 737 state, so it is no invariant
-of reachable states (COV-37); separated contents restore one at a time while the hole resources of each step survive the
-earlier steps (COV-38); R2, restoration inside height 2, gives B′(2) with an explicit exhaustive catalogue (COV-39); HRH
-is R2 together with a lattice bridge (COV-40); the two-letter excursions above height 2 are classified, and those at one
-cap collapse to one letter (COV-41); the covered subclass and the obligations left (COV-42); and an experiment on all
-118 cases (COV-43). SingletonResidual, MultiCover, R2 and HRH stay open.
+Its experiment, `scripts/round22/cov43_residual_search.py`, found no restoring word at any of the 118 cases, every case
+cut short at its CPU cutoff (output `runs/round22/cov43_residual_search.txt`). The 457,200 pairs of COV-30 reduce
+exactly to 118 coverage cases (COV-36); the vacant-lock condition of COV-31 fails at the reachable 737 state, so it is
+no invariant of reachable states (COV-37); separated contents restore one at a time while the hole resources of each
+step survive the earlier steps (COV-38); R2, restoration inside height 2, gives B′(2) with an explicit exhaustive
+catalogue (COV-39); HRH is R2 together with a lattice bridge (COV-40); the two-letter excursions above height 2 are
+classified, and those at one cap collapse to one letter (COV-41); the covered subclass and the obligations left
+(COV-42); and an experiment on all 118 cases (COV-43). SingletonResidual, MultiCover, R2 and HRH stay open.
 
 ### COV-36. The singleton residual is 118 coverage cases (computed; the reduction proved)
 
@@ -3364,5 +3365,22 @@ cap collapse to one letter (COV-41); the covered subclass and the obligations le
   at length 48, since the search samples a restricted family. ALL_PASS would settle neither MultiCover nor R2; the
   recorded heights show which words stay inside U₂.
 - Command: `scripts/round22/cov43_residual_search.py` (COV-36's computation followed by the experiment's lines, as the
-  design says); output `runs/round22/cov43_residual_search.txt` (the integrator's run, under way).
+  design says); output `runs/round22/cov43_residual_search.txt`. The integrator ran it on 18 October, two cases at a
+  time as designed: each of the 118 cases ended CUT_SHORT at its 120-second CPU cutoff after 387 to 558 trials (52,409
+  in all, dropped trials included), none found a restoring word, and the run ended with MISSING and all 118 cases, which
+  decides nothing.
 - Uses: COV-06, COV-30, COV-36.
+
+### The integrator's check before coverage round 7: one letter changes a left height by at most 2 (computed; proved)
+
+- The computation. For each of the 600 caps and each of the 60 items of the I_a menu, the exact multiplier
+  `restore.element(M, c, i)` is factored into its left and right quaternions (`trees.factors`) and their tree distances
+  are taken (`trees.dist`): all 28,800 jumble letters have left distance 2 and right distance 0, and all 7,200 retained
+  items, the identity included, have 0 and 0.
+- The consequence. A letter with multiplier g takes a pose p to g·p, whose left factor is g_L·p_L up to a scalar. Since
+  g_L acts on the left tree by an isometry, d(v₀, g_L·p_L·v₀) ≤ d(v₀, g_L·v₀) + d(v₀, p_L·v₀), and the same holds for
+  g⁻¹, whose left distance is the same. So one letter changes a piece's left height by at most 2, a word of k letters
+  from a state of left heights at most h stays at left heights at most h + 2k, and, since the solved state has right
+  heights 0, every reachable pose has right height 0, as COV-39's universe assumes.
+- Command: `scripts/round22/letter_heights.py`; output `runs/round22/letter_heights.txt` (22 seconds of CPU).
+- Uses: COV-39, the tree model (`research/jumbling/theory/trees.py`).

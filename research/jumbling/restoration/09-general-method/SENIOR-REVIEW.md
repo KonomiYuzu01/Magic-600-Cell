@@ -7457,7 +7457,7 @@ The fifth coverage shard (the senior reviewer, fast tier: the deep and outer sin
 
 ### Coverage of B′(2), round 6 (COV-36 to COV-43)
 
-The sixth coverage shard (the senior reviewer, fast tier: the singleton residual, several off pieces and existence within height 2; eight results, all `minor`, all adopted; the integrator re-ran its four computations with the same cases, lock violations, returning caps, witnesses, endpoint multipliers and counts, and is running its experiment). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
+The sixth coverage shard (the senior reviewer, fast tier: the singleton residual, several off pieces and existence within height 2; eight results, all `minor`, all adopted; the integrator re-ran its four computations with the same cases, lock violations, returning caps, witnesses, endpoint multipliers and counts, and ran its experiment, which found no restoring word). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
 
 | Finding | Status | Index |
 | --- | --- | --- |
@@ -7468,7 +7468,7 @@ The sixth coverage shard (the senior reviewer, fast tier: the singleton residual
 | COV-40 | proved | HRH is R2 together with a lattice bridge LRH; B′(2) implies neither by its definition; eliminating every reachable excursion is equivalent to HRH. |
 | COV-41 | proved; computed | Two-letter excursions above height 2 are exactly jumble pairs of one class with a retained product and the same foreign off pieces; at one cap they collapse to one letter, at two caps they need not. |
 | COV-42 | proved | B′(2) still needs SingletonResidual (118 cases), MultiCover and MixedCoreBound, or R2 in place of all three; no growth of b is shown to be necessary. |
-| COV-43 | experiment design | Search for a restoring word at each of the 118 cases (120 CPU seconds each); ALL_PASS settles SingletonResidual, a miss decides nothing (running). |
+| COV-43 | experiment design | Search for a restoring word at each of the 118 cases (120 CPU seconds each); ALL_PASS settles SingletonResidual, a miss decides nothing; the integrator's run found none, every case cut short. |
 
 ### The integrator's experiments (round 22)
 

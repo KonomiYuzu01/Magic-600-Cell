@@ -171,14 +171,14 @@ literature are in section 5. Statuses as in `PROOFS-B.md`. A formalization can f
 | 107 | COV-33 | Exact whole-cap counts: five caps at 737, none at COV-13's state, two at COV-17's | computed | computed | COV-04, COV-10, COV-13, COV-17, COV-32 | COV-34, COV-37, COV-38 | 8, 3088 |
 | 108 | COV-34 | What B′(2) still needs, and the bounds | proved | model | COV-15, COV-24, COV-29, COV-30, COV-32, COV-33, R22C3-06, R22C-FC | COV-39, COV-40, COV-42 | 8, 3116 |
 | 109 | COV-35 | An experiment on eight valid deep classes | experiment design | specification | COV-28, COV-30 | — | 8, 3143 |
-| 110 | COV-36 | The singleton residual is 118 coverage cases | computed; the reduction proved | model + computed | COV-06, COV-23, COV-30, R22C3-06 | COV-42, COV-43 | 8, 3178 |
-| 111 | COV-37 | The vacant-lock condition fails at the reachable 737 state | computed | computed | R22C-T, COV-31, COV-33 | — | 8, 3205 |
-| 112 | COV-38 | Separated contents restore one at a time while their hole resources survive | proved | model | R22C-FC, COV-06, COV-09, COV-13, COV-32, COV-33 | COV-42 | 8, 3224 |
-| 113 | COV-39 | R2 gives B′(2) with an explicit exhaustive catalogue | proved | model | R22C3-06, COV-34 | COV-40, COV-42 | 8, 3250 |
-| 114 | COV-40 | HRH is R2 together with a lattice bridge | proved; the puzzle lemmas open | model | COV-34, COV-39 | COV-41, COV-42 | 8, 3270 |
-| 115 | COV-41 | Two-letter excursions above height 2: classified, and collapsed at one cap | proved; computed | model + computed | COV-17, COV-40 | COV-42 | 8, 3293 |
-| 116 | COV-42 | The covered subclass and the obligations left | proved | model | COV-13, COV-32, COV-34, COV-36, COV-38, COV-39, COV-40, COV-41 | — | 8, 3329 |
-| 117 | COV-43 | An experiment on all 118 cases | experiment design | specification | COV-06, COV-30, COV-36 | — | 8, 3351 |
+| 110 | COV-36 | The singleton residual is 118 coverage cases | computed; the reduction proved | model + computed | COV-06, COV-23, COV-30, R22C3-06 | COV-42, COV-43 | 8, 3179 |
+| 111 | COV-37 | The vacant-lock condition fails at the reachable 737 state | computed | computed | R22C-T, COV-31, COV-33 | — | 8, 3206 |
+| 112 | COV-38 | Separated contents restore one at a time while their hole resources survive | proved | model | R22C-FC, COV-06, COV-09, COV-13, COV-32, COV-33 | COV-42 | 8, 3225 |
+| 113 | COV-39 | R2 gives B′(2) with an explicit exhaustive catalogue | proved | model | R22C3-06, COV-34 | COV-40, COV-42 | 8, 3251 |
+| 114 | COV-40 | HRH is R2 together with a lattice bridge | proved; the puzzle lemmas open | model | COV-34, COV-39 | COV-41, COV-42 | 8, 3271 |
+| 115 | COV-41 | Two-letter excursions above height 2: classified, and collapsed at one cap | proved; computed | model + computed | COV-17, COV-40 | COV-42 | 8, 3294 |
+| 116 | COV-42 | The covered subclass and the obligations left | proved | model | COV-13, COV-32, COV-34, COV-36, COV-38, COV-39, COV-40, COV-41 | — | 8, 3330 |
+| 117 | COV-43 | An experiment on all 118 cases | experiment design | specification | COV-06, COV-30, COV-36 | — | 8, 3352 |
 
 ## 4. Hypotheses that are finite computations
 
@@ -330,9 +330,10 @@ either covers them or states them as assumptions, and says which.
   pieces and a separation lemma (COV-32); its bounded experiment (COV-35) found no reaching word. Round 6 (COV-36 to
   COV-43) reduces the singleton residual exactly to 118 cases (COV-36), shows that the vacant-lock condition is no
   invariant of reachable states (COV-37), and proves that restoration inside height 2 (R2) gives B′(2) with an explicit
-  catalogue (COV-39) and that HRH is R2 together with a lattice bridge (COV-40); its bounded experiment (COV-43) is
-  running. Open, as COV-42 states them: SingletonResidual (the 118 cases of COV-36, in 67 deep classes, X's and COV-26's
-  among them, and the outer classes 1345 and 1437), MultiCover (every state of 𝒞₂ with two or more off pieces has a
-  step) and MixedCoreBound (a bound for any further native cores the proof needs), or R2 in place of all three; and
-  whether COV-01's state is reachable (COV-14, COV-20, COV-25, COV-31, COV-37).
+  catalogue (COV-39) and that HRH is R2 together with a lattice bridge (COV-40); its bounded experiment (COV-43) found
+  no restoring word; the integrator's check after it, that one letter changes a left height by at most 2 (section 8),
+  has no row. Open, as COV-42 states them: SingletonResidual (the 118 cases of COV-36, in 67 deep classes, X's and
+  COV-26's among them, and the outer classes 1345 and 1437), MultiCover (every state of 𝒞₂ with two or more off pieces
+  has a step) and MixedCoreBound (a bound for any further native cores the proof needs), or R2 in place of all three;
+  and whether COV-01's state is reachable (COV-14, COV-20, COV-25, COV-31, COV-37).
 - Results recorded after this page's last update are not in the tables; they get rows when they are recorded.
