@@ -156,8 +156,9 @@ N.
 ([census](../restoration/11-scramble-census/README.md), "What a person would have to try"). The first repairs came
 within the first few openings of the cap with the largest N_c. From step 44 on, the census rule made a median of
 about 110 openings, and considered about 800 pairs of opening and neighbour, before a repair worked; at most 1,598
-openings and 17,686 pairs. At the cap where it worked, only 1 to 11 of the 472 to 1,298 pairs lowered N, and at 9 of
-the 15 steps measured only the one it found. Neither the face match nor the cover order points to the pair. A person
+openings and 17,686 pairs. At the cap where it worked, 1 to 59 of the pairs lowered N from step 44 on, a median of
+3, and at 15 of those 52 steps only the one it found; at the 15 tail steps where the share was measured, 1 to 11 of
+the 472 to 1,298 pairs. Neither the face match nor the cover order points to the pair. A person
 who proposes words one at a time would face a search of this size at most tail steps (at 48 of the 52 from step 44
 on, the rule made at least 59 openings).
 
@@ -172,8 +173,9 @@ it marks no pair as best. So a repair step goes:
 
 On the record of seed 7101 the list was empty at every cap before the one where the census found its repair, since
 the census took the first repair that worked in this order. That cap was the first named at 15 of the 63 repair
-steps, the second at 26 and the third at 13, and at most the 28th. Its list held 1 to 11 pairs at the 15 tail steps
-measured.
+steps, the second at 26 and the third at 13, and at most the 28th. Its list held 1 to 61 pairs, a median of 5: 15 to
+61 at the 11 repair steps before step 44, when much was still off the lattice, and from step 44 on 1 to 59, a median
+of 3, with a single pair at 15 of the 52 steps and at most 12 at 48 of them.
 
 ### Example: a twist buried under a later one
 
@@ -271,6 +273,7 @@ goes on to chapter 3.
   and neighbour per repair; at the right cap only 0.08% to 1.9% of the pairs lower N, and nothing visible marks them
   ([census](../restoration/11-scramble-census/README.md), "What a person would have to try"). With the repair list of
   section 2.3 a person names caps instead, one or two at 41 of the 63 repair steps and at most 28, and picks one of
-  the 1 to 11 pairs listed (measured on one record; the list at 15 of its 63 repair steps).
+  the pairs listed: 1 to 61, a median of 5, and in the tail from step 44 on a median of 3 (measured on one record, at
+  all 63 of its repair steps).
 - **The rules read only the configuration.** They never need the scramble's record. This chapter uses that record
   only to label its examples.

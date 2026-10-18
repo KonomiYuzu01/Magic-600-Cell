@@ -200,9 +200,11 @@ simulator with N and the off count checked after every step (measured; scripts a
   the cap with the largest N_c; at the other 48 it made at least 59. From step 44 on, the medians are about 110
   openings and about 800 pairs. A person would also have to find y and z for each pair with checks, since the
   program shows no best twist.
-- **At the cap where the repair was found, few pairs work.** At 15 tail steps from step 44 on, 1 to 11 of the 472 to
-  1,298 pairs (opening x, neighbour d) at that cap lowered N, 0.08% to 1.86% (table); at 9 of the 15 the pair the
-  rule found was the only one. At the caps the rule tried before, none did.
+- **At the cap where the repair was found, few pairs work.** At all 63 repair steps, 1 to 61 of the pairs (opening
+  x, neighbour d) at that cap lowered N, median 5. At the 11 steps before step 44 it was 15 to 61 (median 27); from
+  step 44 on, 1 to 59 (median 3), and at 15 of those 52 steps the pair the rule found was the only one. At the 15
+  tail steps of the table it was 1 to 11 of 472 to 1,298 pairs, 0.08% to 1.86%. At the caps the rule tried before,
+  none did.
 - **Nothing visible marks the pair.** After the opening, d passes the face match at 6 of the 63 steps, and c after
   y at 2. c covers d at 30 steps and d covers c at 26, so the cover relation does not single out the pair. The
   scramble's own twists are not undone either: x undoes c's last scramble twist at no step, y undoes d's at 2.
@@ -216,7 +218,8 @@ simulator with N and the off count checked after every step (measured; scripts a
   only, and in 236 (40%) the last twist undoes the opening (z = x⁻¹). Since the rule tries retained openings first,
   this counts what was found first, not what exists.
 
-The repair density at the 15 tail steps measured (`runs/findability/ia-k40-s7101-density.jsonl.gz`). N: before the
+The repair density at 15 tail steps (`runs/findability/ia-k40-s7101-density.jsonl.gz`; the other 48 repair steps are
+in `ia-k40-s7101-density-rest.jsonl.gz`). N: before the
 step. Cap c: the cap where the rule found the repair, with its place among the misaligned caps by decreasing N_c.
 Neighbours: the misaligned caps that meet c. Pairs: the 59 openings of c times its neighbours. Lowering N: the
 pairs whose repair, with the rule's y and z, lowers N; the last column counts those whose opening is a retained
@@ -252,8 +255,10 @@ the solver names, the program lists the pairs (x, d) whose repair lowers N, each
 picks one. A person who names the caps by decreasing N_c then gets an empty list at every cap before the one where
 the rule found its repair, since the rule took the first repair that worked in the same order, and a list at that
 cap. That cap was the first named at 15 of the 63 repair steps, the second at 26, the third at 13, and at most the
-28th (the rule's place of the chosen cap; the table above shows it for 15 steps). Its list held 1 to 11 pairs at the
-15 steps of the table; at the other 48 repair steps the list was not measured.
+28th (the rule's place of the chosen cap; the table above shows it for 15 steps). Its list held 1 to 61 pairs, median
+5. At the 11 steps before step 44 (N from 15,226 down to 5,356, the cap always the first named) it held 15 to 61,
+median 27. From step 44 on it held 1 to 59, median 3: one pair at 15 of the 52 steps, at most 12 at 48 of them, and
+more at four (20, 18 and 19 at steps 45, 51 and 53; 59 at step 90).
 
 ## Assessment and the owner's choice
 
@@ -323,12 +328,16 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     python3 -I -B $S/check_steps.py research/jumbling/restoration/11-scramble-census/runs/round2/ia-k60-s7104.json \
         research/jumbling/restoration/11-scramble-census/templates/k60-step0*-word.json
     # what a person would have to try, at seed 7101: the choices offered at every step (about 7 minutes), the repair
-    # density at 15 tail steps (about 50 minutes), single twists at the repair steps (about 5 minutes), what the
-    # repairs of the seven records with repairs are made of (about 2 minutes), and the numbers of the section
+    # density at 15 tail steps (about 50 minutes) and at the other 48 repair steps (about 4 hours), single twists at
+    # the repair steps (about 5 minutes), what the repairs of the seven records with repairs are made of (about 2
+    # minutes), and the numbers of the section
     R=research/jumbling/restoration/11-scramble-census/runs; F=$R/findability
     python3 -I -B $S/findability.py $R/round2/ia-k40-s7101.json > $F/ia-k40-s7101-steps.jsonl
     python3 -I -B $S/density.py $R/round2/ia-k40-s7101.json 44 47 48 54 59 64 69 74 75 79 83 87 91 96 97 \
         | gzip -n > $F/ia-k40-s7101-density.jsonl.gz
+    python3 -I -B $S/density.py $R/round2/ia-k40-s7101.json 30 32 33 35 37 38 39 40 41 42 43 45 46 49 50 51 53 55 \
+        56 57 60 61 62 63 65 66 67 68 70 71 72 73 76 77 78 80 81 82 84 85 86 88 89 90 92 93 94 95 \
+        | gzip -n > $F/ia-k40-s7101-density-rest.jsonl.gz
     python3 -I -B $S/single_twist.py $R/round2/ia-k40-s7101.json > $F/ia-k40-s7101-single.jsonl
     python3 -I -B $S/repair_items.py $R/round2/ia-k*.json $R/round3/ia-k*.json > $F/repair-items.jsonl
     python3 -I -B $S/findability_table.py $F ia-k40-s7101

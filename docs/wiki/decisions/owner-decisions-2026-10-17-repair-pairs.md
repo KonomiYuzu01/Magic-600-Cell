@@ -3,7 +3,7 @@ id: owner-decisions-2026-10-17-repair-pairs
 type: decision
 status: verified
 visibility: public
-summary: Owner decision of 17 October 2026 - the human-solve boundary for restoring the jumbled puzzle is settled - at a cap the solver names, the program may list the pairs (x, d) whose three-twist repair lowers N, and the person picks one; measured, 1 to 11 such pairs per tail step.
+summary: Owner decision of 17 October 2026 - the human-solve boundary for restoring the jumbled puzzle is settled - at a cap the solver names, the program may list the pairs (x, d) whose three-twist repair lowers N, and the person picks one; measured on one record, 1 to 11 such pairs at the 15 tail steps first measured and 1 to 61 (median 5) at all 63 repair steps.
 related: [owner-decisions-2026-10-02, owner-decisions-2026-10-17-jumbling-tutorial, owner-decisions-2026-10-09-jumbling]
 supersedes: []
 claims:
@@ -65,7 +65,15 @@ The integrator wrote these readings down, and the owner confirmed them on 17 Oct
 - **Manual.** Section 2.3 gives the procedure with the list, and section 2.6 and the claims table state what was
   measured: naming caps by decreasing N_c, the cap with a lowering pair was the first or second named at 41 of the
   63 repair steps of the record, and at most the 28th.
-- **Measurement.** The list was measured at 15 of the 63 repair steps of the record. Measuring it at all of them is
-  the next item of option A.
+- **Measurement.** The list was measured at 15 of the 63 repair steps of the record when the owner decided, and at
+  all 63 on 18 October 2026 (below).
 - **Briefing.** With the owner's explicit authorization of 17 October 2026, the briefing's jumbling line states this
   exception.
+
+## Later measurement (18 October 2026)
+
+The density run on the other 48 repair steps of the same record finished
+([census](../../../research/jumbling/restoration/11-scramble-census/README.md), "With the repair list"). At all 63
+repair steps the list at the cap where the repair was found held 1 to 61 pairs, a median of 5: 15 to 61 at the 11
+steps before step 44, and 1 to 59, a median of 3, from step 44 on, with a single pair at 15 of those 52 steps and at
+most 12 at 48 of them. The 1 to 11 of the decision were the 15 tail steps measured then. The decision is unchanged.
