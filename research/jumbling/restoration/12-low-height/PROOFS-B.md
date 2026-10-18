@@ -1651,6 +1651,16 @@ they write no file. Its experiment COV-28 runs once for each seed 0 to 7:
     for k in 0 1 2 3 4 5 6 7; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
         python3 -I -B -u $S/round22/cov28_cohort_search.py $k; done                                                      # up to 29 minutes each
 
+Coverage round 5 (section 8: COV-29, COV-30 and COV-33), the senior reviewer's computations kept as written apart from a
+header comment; they write no file. Its experiment COV-35 runs once for each seed 0 to 7:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov29_two_cap.py          # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov30_validity.py         # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov33_whole_cap_737.py    # about 2.5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov33_singleton_caps.py   # about 1 minute
+    for k in 0 1 2 3 4 5 6 7; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov35_deep_search.py $k; done                                                    # up to 29 minutes each
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -2216,8 +2226,11 @@ found no reaching word, and the integrator's checks after it exclude every one-l
 depth table after them is the input to round 4 (COV-23 to COV-28). Round 4 classifies the height-2 off placements up to
 K⁺, gives an exact criterion for the SAFE-prepared whole-cap step at a singleton (it covers every rim placement except
 24 exceptional holes) and excludes every retained middle that returns X's locking block; its experiment COV-28 found no
-reaching word, which decides nothing. Coverage stays open: no reachable state without a step was found, and nothing here
-proves that every state has one.
+reaching word, which decides nothing. Round 5 (COV-29 to COV-35) covers the 24 exceptional holes through the cap
+antipodal to cap 0, so every valid singleton with a rim placement has a step, cuts the other singletons by validity to
+457,200 class–hole pairs in 67 deep and two outer classes, and gives an exact test for a whole-cap step with several off
+pieces and a lemma that lifts a certified step past separated contents. Coverage stays open: no reachable state without
+a step was found, and nothing here proves that every state has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -2923,3 +2936,209 @@ Cover(Z) on 𝒞₂ stay open.
   (80,581 in all, dropped trials included), and none found a word, so it decides nothing. Outputs
   `runs/round22/cov28/seed0.txt` to `seed7.txt`.
 - Uses: COV-01, COV-22, COV-25.
+
+### Round 5 of coverage
+
+The senior reviewer took up the questions left by round 4 (findings COV-29 to COV-35, all `minor`, all adopted, fast
+tier, 18 October 2026): the deep and outer singletons, the 24 exceptional holes of COV-24, several off pieces, what
+B′(2) still needs, and one more experiment. Its computations are `scripts/round22/cov29_two_cap.py`,
+`cov30_validity.py`, `cov33_whole_cap_737.py` and `cov33_singleton_caps.py`; the integrator re-ran them and got the same
+pairs, resource chambers, classes, verdicts and cap counts, with the outputs `runs/round22/cov29_two_cap.txt`,
+`cov30_validity.txt`, `cov33_whole_cap_737.txt` and `cov33_singleton_caps.txt`. For COV-13's state the reviewer re-ran
+`cov13_mixed_frames.py` and got the recorded output `runs/round22/cov13_mixed_frames.txt`. Its experiment is
+`scripts/round22/cov35_deep_search.py`. Every exceptional pair of COV-24 has a four-core restoration through the cap
+antipodal to cap 0, so every valid singleton with a rim placement has a step (COV-29); validity leaves 67 deep and two
+outer classes, 457,200 class–hole pairs (COV-30); vacancy of every block lock survives retained words, which removes
+COV-25's exact-return condition (COV-31); a whole-cap step with several off pieces has an exact joint test, and a
+certified step lifts past contents that stay outside its caps (COV-32); the exact counts of whole-cap steps at three
+states (COV-33); the three obligations left for B′(2), with the bounds (COV-34); and an experiment on eight deep classes
+(COV-35). B′(2), the reachability of the deep and outer classes and coverage with several off pieces stay open.
+
+### COV-29. The 24 exceptional holes: four cores through the antipodal cap (proved from computed certificates)
+
+- The word. Let K = 7,200, J = (0, 12), R = J⁻¹, C = cap(0), D = (596, 12) and E = cap(596); grip 596 is antipodal to
+  grip 0, so C and E are disjoint (CREATOR_CAP 596). Take one of the 24 exceptional singletons of COV-24, with its off
+  piece at R·λ_y and its hole h. Every listed h lies in C, the off piece lies outside E, and the pieces that D displaces
+  stay outside C. The restoring word is D·J·V·J⁻¹·V₂·D⁻¹, whose four native cores D, J, J⁻¹ and D⁻¹ are single
+  free-class letters and whose V and V₂ are retained segments. This uses the four-core supercatalogue of R22C-K; it does
+  not claim that the SAFE-prepared whole-cap test of COV-24 succeeds at these pairs.
+- After D·J. The singleton's piece has landed in y, the off geometry is J(C ∖ {h}) together with D(E), 6,193 off pieces,
+  and the holes are (C ∖ {y}) ⊔ E. The computation applies D·J exactly at every pair and checks the holes and the count.
+- The middles. It finds a chamber a ∈ E that lies both in the orbit of y under the actual SAFE group of the first middle
+  and in the orbit of h under G(solved·D), and global Jordan certificates isolate alternating actions on both orbits. V
+  changes the hole set to C ⊔ (E ∖ {a}). Then J⁻¹ is admissible: C holds no lattice piece, its displaced pieces return
+  to the lattice and D(E) is unchanged. The off geometry left is exactly D(E), with the holes {h} ⊔ (E ∖ {a}); V₂
+  changes them to E, and D⁻¹ lands every remaining off piece and takes no lattice piece off. The whole word is strict′
+  and ends on the lattice; no inverse of V or V₂ is needed.
+- The results. All 24 pairs pass, at one first-middle geometry, with twelve global certificates each checked again. The
+  resource chamber depends only on the piece type: type 6 → 166717, 8 → 166718, 9 → 166720, 10 → 166721, 14 → 166644, 15
+  → 166655. The two orbit sizes and the two certified primes, by type: 6: 6,966, 7,083; 5,303, 3,919. 8: 6,996, 7,098;
+  5,011, 5,783. 9: 3,510, 3,555; 1,801, 2,351. 10: 7,044, 7,122; 4,751, 3,643. 14: 3,534, 3,567; 1,889, 2,081. 15:
+  7,098, 7,149; 4,517, 4,027. The words V and V₂ exist by the certificates; they are not expanded or replayed.
+- The statement. With COV-24, every valid singleton whose placement is in a rim class has Cover(Z). Bound: V fixes 6,193
+  off poses and V₂ fixes 3,097, so the word has at most K^170,927 + K^174,023 + 2 letters, inside the four-core,
+  five-segment envelope of R22C3-06 without a larger b. Read backward from the lattice, the restoring word also shows
+  that every exceptional class–hole pair has a reachable representative; it does not show that every prescribed labelled
+  pose table is reachable.
+- Command: `scripts/round22/cov29_two_cap.py`; output `runs/round22/cov29_two_cap.txt` (under a minute of CPU).
+- Uses: COV-12, COV-15, COV-18, COV-24, R22C-K, R22C3-06.
+
+### COV-30. Validity leaves 67 deep and two outer classes: 457,200 class–hole pairs (computed)
+
+- The test. Let P be the lattice body, A = R·λ_y and R = element(I_a, 0, 45). The one hole of a singleton has the type
+  of y. If the interior of A meets the interior of a chamber of another type, that chamber cannot be the hole; if it
+  meets the interiors of two chambers, one hole cannot remove both overlaps. Either certificate excludes every singleton
+  with that placement, whatever its labels and history.
+- The computation. Each home region is rebuilt from its active exact cut and body constraints (its vertices checked
+  against `regions.vertices`), rotated by R and intersected with P by exact double description. An empty or
+  lower-dimensional intersection makes every hole of the matching type valid; for a full-dimensional one, exact positive
+  barycentres and interior perturbations name the overlapped chambers. Every decision is exact in Q(√5), without
+  floating point.
+- Deep classes. Of the 131, exactly 67 are valid for every matching hole; the other 64 have an overlap certificate (52 a
+  chamber of another type, 12 two chambers). The 67 representatives, in coordinates where the off region is R·λ_y: 12,
+  13, 14, 16, 17, 21, 22, 31, 32, 41, 64, 136, 137, 140, 143, 144, 147, 148, 151, 152, 156, 162, 164, 166, 171, 172,
+  173, 175, 176, 178, 180, 183, 184, 185, 187, 190, 194, 202, 446, 449, 459, 467, 477, 482, 2172, 2148, 2150, 2244,
+  2245, 2149, 2249, 3889, 3911, 3922, 3899, 3900, 2548, 3739, 3740, 2549, 3894, 3935, 2551, 3746, 3736, 3747 and 1470.
+  They include X's class (2149 is one of its landing chambers, COV-25) and COV-26's type-19 triangle (2249).
+- Outer classes with movers. 1228 is invalid (it meets chamber 2716, of type 1), 1229 (4018, type 2), 1338 (2714, type
+  1), 1341 (2800, type 2) and 1343 (1436, type 3) too; 1345 and 1437 do not meet P and are valid for every type-7 hole.
+  A mover cap does not make a placement valid: 1228 has one. The reachability of 1345 and 1437 stays open: their
+  own-class cores cannot move them, retained conjugation keeps them outer, and neither has a landing letter, so the
+  elementary own-class and whole-cap templates give no restoration for them; unrestricted native cores are untested.
+- The checklist. With COV-29, and Theorem FC's exclusion of the nine outer classes without movers, the singletons left
+  are exactly the finite set of pairs (y, h) with y one of the 67 or 1345 or 1437 and h a chamber of the type of y:
+  457,200 pairs, possibly redundant under symmetry, each a valid geometric singleton. This reduces the obligation; it
+  does not show that any pair is reachable or needs a particular kind of core.
+- Command: `scripts/round22/cov30_validity.py` (it runs `cov23_singleton_classes.py` first); output
+  `runs/round22/cov30_validity.txt` (about a minute of CPU).
+- Uses: COV-23, COV-25, COV-26, COV-29, R22C-FC.
+
+### COV-31. Vacant locks: a retained-word invariant without COV-25's exact return (proved from computed certificates)
+
+- The invariant. VL(Z): every home chamber locked to an intrinsic rigid off block is vacant. Every admissible retained
+  word preserves VL. Each block receives one multiplier k ∈ K⁺, its whole lock set moves by k, and the lock lemma (O9)
+  carries each locked hole to its moved chamber. Intrinsic rigid components cannot split under such a word, and distinct
+  components cannot merge: the inverse word would give the merged component one multiplier and keep its intrinsic
+  nonseparation, against the original split. So the moved components account for every block and every lock at the
+  endpoint.
+- It holds at solved·L. Every off block lies in L's cap, the condition I_B ⊆ caps(x) puts every locked chamber in that
+  cap, and every chamber of the cap is a hole.
+- The consequence. No word solved·L₀·w·L₁⁻¹ with w retained reaches a deep singleton whose one off piece was on the
+  lattice just before L₁⁻¹ (branch 1 of COV-27), whatever the block multipliers. The word w keeps the 3,097 original off
+  pieces off; in this branch all of them land under the last letter, so just before it they fill the full off geometry
+  of solved·L₁. The newly off piece must then occupy its deep landing chamber x, which COV-23 and COV-25 certify as
+  locked in that geometry, and VL requires x vacant. COV-25 needed w to return the locking block exactly; this does not.
+- What it does not prove. Jumble letters can change lattice membership and the blocks, and VL is not shown to survive
+  them; at an arbitrary prefix nothing makes the relevant locked chamber vacant; SAFE orbits depend on the state, and
+  the depth table describes solved·L only. The valid configuration X·L has the occupied landing chamber, so validity and
+  local locks alone cannot exclude it. The whole-cap predecessor conditions describe the immediate predecessor of the
+  final singleton; if a suffix B follows the last move τ of X's piece, they cannot be imposed before τ without an
+  argument about B. The 99 retained and 396 jumble off-to-off cases of COV-27, and such suffixes, stay outside the
+  obstruction. No deep or outer reaching history was found.
+- Command: the LOCKS and LAST_MOVE lines of `scripts/round22/cov23_singleton_classes.py`.
+- Uses: O9, COV-23, COV-25, COV-27.
+
+### COV-32. Several off pieces: an exact joint test for a whole-cap step, and lifting past separated contents (proved)
+
+- The setting. An unstraddled cap C holds a nonempty off set U, and W = (c, i), with a multiplier g ∉ K⁺, lands every
+  piece of U. Every other off piece (the set E) lies outside C and keeps its exact pose. Write H = holes(Z), G₀ = G(Z),
+  and D ⊆ C for the landing chambers of U.
+- The test. For each J in the joint orbit G₀·H, the actual middle has the off geometry E ⊔ {g·λ_q : q ∈ C ∖ J}; let
+  G₁(J) be its SAFE group and H₁(J) = (C ∖ D) ⊔ (J ∖ C). A SAFE-prepared whole-cap step exists exactly when some J ∈
+  G₀·H and π ∈ G₁(J) give C ⊆ π(H₁(J)). Both are joint actions on the complete hole set. The other contents affect G₀
+  and G₁ through every cap they occupy or straddle, so leaving them out is unsound. Here Bad(W) = Bad(W⁻¹) = C and the
+  good-ghost map is the identity outside C; an unchanged off content contributes its exact geometry and the holes
+  already in H, and no further Bad set.
+- Proof. Necessity: read the two retained segments of an accepted step. Sufficiency: realize J by a SAFE word X and π by
+  a SAFE word V at the actual middle. Then X·W·V·W⁻¹ is admissible and strict: V vacates C while it fixes E and every
+  displaced lattice piece, and W⁻¹ returns those pieces, fixes E and takes no lattice piece off, since C is vacant. This
+  also proves the endpoint contract when U holds several units.
+- The inequalities. For each orbit Δ of the actual middle, |J ∩ (Δ ∖ C)| ≥ |D ∩ Δ|, with D avoiding fixed chambers, is
+  necessary. The inequalities are sufficient when independent alternating actions on the required nontrivial orbits are
+  certified; otherwise the exact joint subset action stays necessary. For a fixed inside mask I = J ∩ C, the flow from
+  source orbits to middle orbits of COV-10 applies unchanged, with all of E in the middle geometry.
+- Separation. Let w be a certified strict′ word at a valid state with off set U and holes H_U, and add off pieces E to
+  get another valid state whose holes contain H_U. If every piece of E lies wholly outside every cap that w uses, then w
+  is strict′ for U in the enlarged state: E stays fixed and straddles no cut that w uses, and every remaining lattice
+  trajectory is one of the original certificate's, since more holes only remove lattice trajectories, so the original
+  off trajectories and every conclusion about lattice membership at the endpoint survive. The inclusion of the holes is
+  essential.
+- What it does not prove. This is a conditional reduction under a finite separation check, not coverage. Theorem FC does
+  not supply its hypotheses, and COV-13 refutes the reduction to caps where every content lands: its reachable state has
+  120 unstraddled mover caps, each with several off domains, and none where every content lands, yet its 120-letter
+  free-class inverse history restores it, so it is no deadlock of the full catalogue. No valid state with two contents
+  where the full catalogue provably fails was found; a reachable example built by a history H of at most b letters
+  cannot be one, since H⁻¹ is already an accepted single native core.
+- Uses: COV-10, COV-12, COV-13, R22C-FC.
+
+### COV-33. Exact whole-cap counts: five caps at 737, none at COV-13's state, two at COV-17's (computed)
+
+- What is counted: the route in which every content of a cap lands, with any SAFE preparation; not every template of the
+  catalogue.
+- At the 737 state of the line (a) replay (digest `2e3b8f99…`). The 600 caps are 555 empty, 16 straddled, 14 with one
+  off domain but no landing item, and 15 eligible. Exactly five eligible caps pass: 26, 91, 513, 570 and 593, with 63,
+  179, 137, 60 and 60 pieces to land. Caps 26, 513, 570 and 593 pass without preparation, at the items 14, 13, 15 and
+  13, with 17, 19, 17 and 17 global Jordan certificates, each checked again. Cap 91 fails the unprepared inventory by 23
+  but passes after a preparation with the inside mask ∅: an exact integer flow of 179 supplies every landing vacancy
+  from the 737 holes, and all 28 source orbits and all 28 middle demand orbits have verified global Jordan certificates,
+  so the preparation and the middle vacancy exist together.
+- The other ten eligible caps fail under every preparation. A source SAFE orbit with no hole keeps every chamber
+  occupied under every preparation. Keeping only these mandatory displaced regions and the unchanged other contents
+  gives an optimistic middle SAFE group that contains every actual middle group, and even this group fixes occupied
+  landing chambers at all twelve landing items of each failed cap. The least numbers of fixed occupied chambers over the
+  items, by cap: 12: 44; 99: 3; 148: 5; 217: 5; 303: 2; 324: 22; 353: 7; 416: 7; 458: 2; 542: 7. This is an obstruction
+  over all preparations, not a failed search.
+- At COV-13's state (digest `afc43efd…`, 147,904 off pieces, height 2, four domains): 120 caps are mixed and 480
+  straddled, so no cap qualifies under any preparation.
+- At COV-17's singleton (digest `16d61ac2…`, off piece 58388, a hole orbit of 7,200 chambers): three caps are eligible
+  and two pass. All twelve landing items at caps 0 and 32 pass, and all twelve at cap 45 fail: eligibility is not
+  coverage.
+- Command: `scripts/round22/cov33_whole_cap_737.py` (it reads `runs/round22/line-a/replay/tables/737.json.gz`) and
+  `cov33_singleton_caps.py` (it replays COV-17's word through `cov17_single_off.py`); outputs
+  `runs/round22/cov33_whole_cap_737.txt` and `cov33_singleton_caps.txt` (about two and a half minutes and a little over
+  a minute of CPU); for COV-13's state `runs/round22/cov13_mixed_frames.txt`.
+- Uses: COV-04, COV-10, COV-13, COV-17, COV-32.
+
+### COV-34. What B′(2) still needs, and the bounds (proved)
+
+- Singletons. Every valid singleton whose placement is in one of the 353 rim classes has Cover(Z), within 7,200^170,927
+  + 7,200^174,023 + 2 letters; outside the 24 exceptions the smaller bound of COV-24 holds. The statement covers every
+  valid lattice assignment with that off placement and hole, and relabels no mechanical state.
+- Several off pieces. The covered subclass contains every state that passes COV-32's exact test, the separated
+  extensions of certified words, the certified catalogue families and their certified backward closure. The five caps at
+  737 are five certificates for a first step, not a new universal order of restoration; COV-13's state has its
+  free-class inverse history although no cap of it is eligible. E2 stays evidence for its recorded trajectory; the
+  reviewer did not replay its 21 steps again.
+- The obligations left. (1) SingletonResidual: for each of COV-30's 457,200 pairs, exclude every reachable
+  representative or give a passing certificate from the current catalogue. It is a finite checklist; a bounded reaching
+  search does not decide that a failed pair is unreachable. (2) MultiCover: every reachable height-2 state with at least
+  two off pieces has a passing catalogue instance. COV-32 gives an exact finite test for one route, but neither Theorem
+  FC nor the measured cap counts proves the lemma, and no counterexample with two contents to the full catalogue was
+  found. (3) MixedCoreBound: if the coverage proof needs further unrestricted native cores, an explicit uniform bound
+  for them; the 13,205-point free-class argument does not give one.
+- The bounds. For everything proved here, b = 13,205! − 1, L = 4b + 5(R − 1) and S(n) ≤ n·C_b⁴·T_R⁵ are unchanged;
+  COV-29 uses four cores of length one and two retained segments. If further certified native cores have the maximum
+  length M, then b′ = max(b, M), L grows by exactly 4·max(0, M − b), and C_b becomes C_b′ in S. No numerical M is known
+  for all the remaining mixed-class cases.
+- A conditional bound. There are at most (21·7,200)^177,120 labelled pose tables with every pose of height at most 2, so
+  a shortest path wholly inside that finite set has at most 151,200^177,120 − 1 letters. This bounds inverse histories
+  in that restricted component only; it covers all of 𝒞₂ only with a further lemma that every reachable height-2 state
+  has a history whose states all have height at most 2.
+- Uses: COV-15, COV-24, COV-29, COV-30, COV-32, COV-33, R22C3-06, R22C-FC.
+
+### COV-35. An experiment on eight valid deep classes (experiment design)
+
+- Design. COV-28's exact-prefix commutator search, adapted to eight valid deep representatives of COV-30, 12, 41, 64,
+  446, 449, 2172, 2149 and 2249, which span the vertex, edge and both deep triangle cases. Each run uses its target's
+  own cell, home-cell cohort and local grips and every landing letter of the cell, and accepts the target at exactly R =
+  element(I_a, 0, 45) as the only off piece, with the inverse-replay check; seed k takes the target at index k mod 8.
+- What it decides. FOUND proves that a valid deep singleton is reachable and gives a native restoring core of the
+  recorded length, within the present b; it decides whether some deep class is reachable, not the 457,200 pairs. NO_HIT,
+  CUT_SHORT or a failure of the cohort filter decides neither unreachability nor a failure of Cover(Z). The reviewer
+  proposes no bounded deadlock search: a short reaching history already gives a native inverse core, and a failure of
+  chosen geometric templates would not show that the full catalogue fails.
+- Command: `scripts/round22/cov35_deep_search.py <seed>` for the seeds 0 to 7, each with a 1,700-second CPU cutoff
+  (about 3.8 CPU hours in all). The script is the source that the reviewer's generator builds from
+  `cov28_cohort_search.py` (4,518 characters, as the reviewer compiled it), with its own header. The integrator started
+  the eight seeds on 18 October, four at a time; their outputs are recorded when they finish.
+- Uses: COV-28, COV-30.

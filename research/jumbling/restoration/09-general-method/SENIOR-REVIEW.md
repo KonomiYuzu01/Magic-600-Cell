@@ -7441,6 +7441,20 @@ The fourth coverage shard (the senior reviewer, fast tier: the classification of
 | COV-27 | computed | The last move of X's piece leaves two branches (36 landing letters and 495 off-to-off cases), and nothing here excludes either for unrestricted histories. |
 | COV-28 | experiment design | Sample 36- to 48-letter words L·[[[A,B],C],D]·L⁻¹ whose foreign segment changes X's cohort; only a hit decides; none in 80,581 trials (every seed cut short at its CPU cutoff). |
 
+### Coverage of B′(2), round 5 (COV-29 to COV-35)
+
+The fifth coverage shard (the senior reviewer, fast tier: the deep and outer singletons, the 24 exceptional holes of COV-24, several off pieces, what B′(2) still needs and one more experiment; seven results, all `minor`, all adopted; the integrator re-ran its four computations with the same pairs, resource chambers, classes, verdicts and cap counts, and started its experiment). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| COV-29 | proved from computed certificates | Each of COV-24's 24 exceptional pairs has a four-core restoration D·J·V·J⁻¹·V₂·D⁻¹ through the antipodal cap 596, within 7,200^170,927 + 7,200^174,023 + 2 letters, so every valid singleton with a rim placement is covered. |
+| COV-30 | computed | Exact singleton validity removes 64 of the 131 deep classes and five of the seven outer classes with movers; 457,200 class–hole pairs are left, in 67 deep classes and the outer classes 1345 and 1437. |
+| COV-31 | proved from computed certificates | Vacancy of every block lock survives retained words, so no retained middle reaches a deep singleton through its landing branch, whatever the block multipliers; jumble letters and suffixes stay outside. |
+| COV-32 | proved | A whole-cap step with several off pieces exists exactly when a joint hole-orbit test holds; a certified strict′ step lifts past added contents that lie outside every cap it uses. |
+| COV-33 | computed | The all-content-landing whole-cap route passes at five caps of the 737 state (one after a preparation), at none of COV-13's state and at two of COV-17's singleton; ten caps at 737 fail under every preparation. |
+| COV-34 | proved | B′(2) still needs SingletonResidual (the 457,200 pairs), MultiCover and MixedCoreBound; b, L and S(n) are unchanged, and a height-restricted-history lemma would give a conditional bound. |
+| COV-35 | experiment design | Run COV-28's search on eight valid deep classes; only a hit decides (running). |
+
 ### The integrator's experiments (round 22)
 
 - Zero endpoint collateral at the depth 40 stop, with points as owners: strict′ steps of 60, 84, 60, 72 and 36 letters for b00, b01, b11, b16 and b20, each replayed exactly (no lattice piece off, every other off piece exact). With whole cells as owners (R22A-02), class 3: seven of 13 units have strict′ steps (b00 60, b01 84, b02 60, b07 48, b11 60, b13 60, b14 60 letters, each replayed exactly), including the four whose replay had failed with points as owners; the other six are glued; the seven share four vacant targets (R22A-05). Classes 2 and 4 (9 units): b16 72, b20 36 and b21 84 letters (two vacant targets for the three), b17 moved by no clean power (Theorem C applies), b18 glued, and b19, b08, b09, b10 without a vacant target but with entry transports (84, 96, 168 and 144 letters) into occupied home cells of 15, 20, 24 and 20 lattice pieces (`scripts/round22/transport_census.py`, records in stage 12 `runs/round22/line-a/`).

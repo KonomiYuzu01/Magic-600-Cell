@@ -7,12 +7,12 @@ one of the conditions for merging draft pull request #112
 ([owner decision, 17 October 2026](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-pr.md)); this page
 is the index that work starts from.
 
-The statements, hypotheses, proofs and bounds are in [`PROOFS-B.md`](PROOFS-B.md), written hypothesis by hypothesis
-for this purpose. This page adds what a formalization needs for its plan: the objects, the 102 results of theory round
-22 in an order in which each comes after the results it uses, the hypotheses that are finite computations and what
-decides them, and the results of earlier stages and of the literature that the proofs rely on. It was extracted from
+The statements, hypotheses, proofs and bounds are in [`PROOFS-B.md`](PROOFS-B.md), written hypothesis by hypothesis for
+this purpose. This page adds what a formalization needs for its plan: the objects, the 109 results of theory round 22 in
+an order in which each comes after the results it uses, the hypotheses that are finite computations and what decides
+them, and the results of earlier stages and of the literature that the proofs rely on. It was extracted from
 `PROOFS-B.md` at commit 2e94c53, extended by hand with the results recorded later (R22B-19 to R22B-29, R22C3-01 to
-R22C3-06 and COV-01 to COV-28), and checked against the file's headings; line numbers are those of the file in the
+R22C3-06 and COV-01 to COV-35), and checked against the file's headings; line numbers are those of the file in the
 commit that last updated this page.
 
 ## 1. Four layers
@@ -23,18 +23,18 @@ commit that last updated this page.
   finite classifier of the induced action). They come first and need Jordan's theorem on primitive groups with a
   prime cycle, Schreier's lemma, the normal subgroups of Alt(d) and Sym(d), and the simplicity and automorphisms of
   Alt(d) (section 5).
-- **The model** (40 results, layer "model"; 21 more, "model + computed", also have computed hypotheses): statements
+- **The model** (42 results, layer "model"; 23 more, "model + computed", also have computed hypotheses): statements
   about the puzzle's state model, defined once through the objects O1 to O11 (section 2): poses in K⁺ over Q(√5),
-  letters, heights, steps, the SAFE-ALL group, ghosts and Bad sets, the class-cell model, blocks and types. The
-  vacancy theorem R22B-29 (a finite equivalence for vacancy at a middle, without Alt) and the coverage results
-  COV-03, COV-06, COV-08, COV-10, COV-12, COV-15 and COV-21 belong here.
-- **Computed facts** (20 results, layer "computed", and the computed hypotheses of the mixed ones): finite checks on
+  letters, heights, steps, the SAFE-ALL group, ghosts and Bad sets, the class-cell model, blocks and types. The vacancy
+  theorem R22B-29 (a finite equivalence for vacancy at a middle, without Alt) and the coverage results COV-03, COV-06,
+  COV-08, COV-10, COV-12, COV-15, COV-21, COV-32 and COV-34 belong here.
+- **Computed facts** (22 results, layer "computed", and the computed hypotheses of the mixed ones): finite checks on
   stated states, decided by the scripts named in section 4. A formalization does not re-derive them by hand: either a
   checker whose soundness is proved reads the recorded data (R22B-16 states the soundness of `check_r22b10.py` for the
   certificates of R22B-10), or they stay stated computational facts, marked as such.
-- **Specifications** (8): R22B-10 (implemented as E22-1b), R22B-11 (an audit), R22B-18 (not implemented), R22C3-05 (an
-  inventory of proposed routes), COV-11 (an audit of a heuristic), COV-16, COV-22 and COV-28 (experiment design);
-  nothing to prove.
+- **Specifications** (9): R22B-10 (implemented as E22-1b), R22B-11 (an audit), R22B-18 (not implemented), R22C3-05 (an
+  inventory of proposed routes), COV-11 (an audit of a heuristic), COV-16, COV-22, COV-28 and COV-35 (experiment
+  design); nothing to prove.
 
 ## 2. Objects
 
@@ -51,9 +51,9 @@ code that computes the object at a state.
 | O6 | ghosts and Bad | 1, 68 | fastghost.Ghost, ghostlib.ghost |
 | O7 | the class-cell model (LC-01) | 1, 72 | e3_class.Model and classes.py (research/jumbling/theory/) |
 | O8 | LC-03 (used throughout) | 1, 81 | — |
-| O9 | blocks, locks and shadows | 7 (preamble), 1664 | blocks.Blocks |
-| O10 | types | 7 (preamble), 1671 | regions.orbit_of |
-| O11 | creators and partners | 7 (preamble), 1674 | — |
+| O9 | blocks, locks and shadows | 7 (preamble), 1674 | blocks.Blocks |
+| O10 | types | 7 (preamble), 1681 | regions.orbit_of |
+| O11 | creators and partners | 7 (preamble), 1684 | — |
 
 ## 3. Results in dependency order
 
@@ -99,9 +99,9 @@ literature are in section 5. Statuses as in `PROOFS-B.md`. A formalization can f
 | 35 | R22B-20 | At b00 no letter separates two pairs; one word separates all | computed | computed | R22B-19, R22B-04 | — | 3, 978 |
 | 36 | R22B-21 | An orbit of twelve chambers with a group of order twelve | computed; counterexample | computed | R22B-15 | R22B-24 | 3, 990 |
 | 37 | R22B-22 | Small orbits need a joint test; they occur at the depth 60 stop | proved; computed | model + computed | R22B-15, R22B-03, R22B-19 | R22B-23, R22B-24, R22B-25, R22B-26, R22B-27, R22B-28, R22B-29 | 3, 1008 |
-| 38 | R22C-G | Lemma G: one rotation per cell | proved; R22CF-01, X22C-01 | model | — | R22C-V, R22C-T1′, R22C-T, R22C-M, R22C2-01, R22C2-05, COV-01, COV-17, COV-20 | 7, 1677 |
-| 39 | R22C-V | Type vectors and counts | proved; computed; R22C-04, R22CF-03, X22C-03, X22C-04 | model + computed | R22A-01, R22A-05, R22C-G | R22C-T1′, R22C2-05, COV-03, COV-04 | 7, 1779 |
-| 40 | R22C-T1′ | Theorem T1′: land, vacate the landing chambers, unwind | proved; computed; R22CF-04, X22C-05 | model | R22C-G, R22C-V | R22B-23, R22C-T2′, R22C2-01, R22C2-03, R22C2-05, R22C-K, R22C3-02, R22C3-03, R22C3-04, COV-06 | 7, 1813 |
+| 38 | R22C-G | Lemma G: one rotation per cell | proved; R22CF-01, X22C-01 | model | — | R22C-V, R22C-T1′, R22C-T, R22C-M, R22C2-01, R22C2-05, COV-01, COV-17, COV-20 | 7, 1687 |
+| 39 | R22C-V | Type vectors and counts | proved; computed; R22C-04, R22CF-03, X22C-03, X22C-04 | model + computed | R22A-01, R22A-05, R22C-G | R22C-T1′, R22C2-05, COV-03, COV-04 | 7, 1789 |
+| 40 | R22C-T1′ | Theorem T1′: land, vacate the landing chambers, unwind | proved; computed; R22CF-04, X22C-05 | model | R22C-G, R22C-V | R22B-23, R22C-T2′, R22C2-01, R22C2-03, R22C2-05, R22C-K, R22C3-02, R22C3-03, R22C3-04, COV-06 | 7, 1823 |
 | 41 | R22B-23 | What the closure bounds give without Alt | proved; conditional | model | R22B-04, R22B-19, R22B-22, R22A-06, R22C-T1′ | R22B-29 | 3, 1029 |
 | 42 | R22D-01 | Retained conjugation | proved | model | — | R22D-08, R22C-05, R22C-K, R22C3-02, R22C3-03 | 5, 1287 |
 | 43 | R22D-02 | Six-letter commutators: the mask lemma | proved; computed | model + computed | — | — | 5, 1315 |
@@ -111,59 +111,66 @@ literature are in section 5. Statuses as in `PROOFS-B.md`. A formalization can f
 | 47 | R22D-06 | Fixed occupied chambers rule out both whole-cap middles | computed; proved | model + computed | — | — | 5, 1387 |
 | 48 | R22D-07 | Unlocking | proved; Lemmas B and C conditional | model | — | — | 5, 1401 |
 | 49 | R22D-08 | A finite bound for a stated family | proved | model | R22D-01, R22D-03 | — | 5, 1417 |
-| 50 | R22C-T | Locked chambers and Lemma T | proved as scoped; R22CF-02, R22C-01, X22C-02 | model | R22C-G | — | 7, 1700 |
-| 51 | R22C-S | The Shadow lemma | proved; R22CF-02, X22C-02 | model | — | — | 7, 1738 |
-| 52 | R22C-M | Partners do not repair N1 | proved; R22CF-03, X22C-03 | model | R22C-G | — | 7, 1766 |
-| 53 | R22C-T2′ | One partner and T1′ | proved; conditional on its certificates; R22CF-03, X22C-03 | model | R22C-T1′ | R22C-K, R22C3-02 | 7, 1849 |
-| 54 | R22C2-01 | The intrinsic Q-shadow | proved | model | R22C-G, R22C-T1′ | COV-01, COV-03, COV-04, COV-14 | 7, 1865 |
-| 55 | R22C2-03 | One action for the edge-cycle family | proved for a stated family | model | R22C-T1′ | — | 7, 1885 |
-| 56 | R22C2-05 | b06: the twelve landing rotations | computed; proved parts | model + computed | R22C-V, R22C-G, R22C-T1′ | — | 7, 1901 |
-| 57 | R22C-FC | Theorem FC: no self-frozen set | proved; R22CF-05, X22C-07 | model | — | COV-03, COV-13, COV-15, COV-26 | 7, 1917 |
-| 58 | R22C-R1 | Lemma R1: the one-letter readiness test | proved; R22CF-05, X22C-07 | model | — | — | 7, 1933 |
-| 59 | R22C-CH | Lemma CH: co-held cycles | conditional; R22CF-05, X22C-07 | model | — | — | 7, 1944 |
-| 60 | R22C-05 | One-letter unlocking with vacancy | proved | model | R22D-01 | COV-01 | 7, 1954 |
-| 61 | R22C-06 | A rigid two-domain cell cannot be unlocked by retained conjugation | proved | model | — | — | 7, 1967 |
-| 62 | R22C-K | The catalogue, backward certification and coverage | conditional; R22C-07, R22CF-06, X22C-08, R22C2-06 | model + computed | R22C-T1′, R22C-T2′, R22D-01 | R22C3-06, COV-15 | 7, 1979 |
-| 63 | R22C3-01 | Strict′ steps keep SAFE-ALL, not the hole inventories | proved | model | R22A-06 | R22C3-02, R22C3-04, R22B-28, COV-08 | 7, 2058 |
-| 64 | R22C3-02 | Mixed orders need resource contracts as well as a blocker order | proved | model | R22C-T1′, R22C-T2′, R22D-01, R22A2-04, R22C3-01 | — | 7, 2079 |
-| 65 | R22C3-03 | Experiment D passes an independent exact audit | computed | computed | R22C-T1′, R22D-01 | R22B-27 | 7, 2108 |
-| 66 | R22C3-04 | 142, then 151: a proved prefix of 130's predecessors | proved from computed hypotheses | model + computed | R22C-T1′, R22C3-01 | R22B-27, COV-05 | 7, 2125 |
-| 67 | R22C3-05 | The catalogue of unresolved units stays conditional | inventory | specification | — | — | 7, 2152 |
-| 68 | R22C3-06 | A uniform core bound; coverage stays open | proved; conditional | model | R22C-K | COV-03, COV-15, COV-21, COV-24 | 7, 2172 |
+| 50 | R22C-T | Locked chambers and Lemma T | proved as scoped; R22CF-02, R22C-01, X22C-02 | model | R22C-G | — | 7, 1710 |
+| 51 | R22C-S | The Shadow lemma | proved; R22CF-02, X22C-02 | model | — | — | 7, 1748 |
+| 52 | R22C-M | Partners do not repair N1 | proved; R22CF-03, X22C-03 | model | R22C-G | — | 7, 1776 |
+| 53 | R22C-T2′ | One partner and T1′ | proved; conditional on its certificates; R22CF-03, X22C-03 | model | R22C-T1′ | R22C-K, R22C3-02 | 7, 1859 |
+| 54 | R22C2-01 | The intrinsic Q-shadow | proved | model | R22C-G, R22C-T1′ | COV-01, COV-03, COV-04, COV-14 | 7, 1875 |
+| 55 | R22C2-03 | One action for the edge-cycle family | proved for a stated family | model | R22C-T1′ | — | 7, 1895 |
+| 56 | R22C2-05 | b06: the twelve landing rotations | computed; proved parts | model + computed | R22C-V, R22C-G, R22C-T1′ | — | 7, 1911 |
+| 57 | R22C-FC | Theorem FC: no self-frozen set | proved; R22CF-05, X22C-07 | model | — | COV-03, COV-13, COV-15, COV-26, COV-30, COV-32, COV-34 | 7, 1927 |
+| 58 | R22C-R1 | Lemma R1: the one-letter readiness test | proved; R22CF-05, X22C-07 | model | — | — | 7, 1943 |
+| 59 | R22C-CH | Lemma CH: co-held cycles | conditional; R22CF-05, X22C-07 | model | — | — | 7, 1954 |
+| 60 | R22C-05 | One-letter unlocking with vacancy | proved | model | R22D-01 | COV-01 | 7, 1964 |
+| 61 | R22C-06 | A rigid two-domain cell cannot be unlocked by retained conjugation | proved | model | — | — | 7, 1977 |
+| 62 | R22C-K | The catalogue, backward certification and coverage | conditional; R22C-07, R22CF-06, X22C-08, R22C2-06 | model + computed | R22C-T1′, R22C-T2′, R22D-01 | R22C3-06, COV-15, COV-29 | 7, 1989 |
+| 63 | R22C3-01 | Strict′ steps keep SAFE-ALL, not the hole inventories | proved | model | R22A-06 | R22C3-02, R22C3-04, R22B-28, COV-08 | 7, 2068 |
+| 64 | R22C3-02 | Mixed orders need resource contracts as well as a blocker order | proved | model | R22C-T1′, R22C-T2′, R22D-01, R22A2-04, R22C3-01 | — | 7, 2089 |
+| 65 | R22C3-03 | Experiment D passes an independent exact audit | computed | computed | R22C-T1′, R22D-01 | R22B-27 | 7, 2118 |
+| 66 | R22C3-04 | 142, then 151: a proved prefix of 130's predecessors | proved from computed hypotheses | model + computed | R22C-T1′, R22C3-01 | R22B-27, COV-05 | 7, 2135 |
+| 67 | R22C3-05 | The catalogue of unresolved units stays conditional | inventory | specification | — | — | 7, 2162 |
+| 68 | R22C3-06 | A uniform core bound; coverage stays open | proved; conditional | model | R22C-K | COV-03, COV-15, COV-21, COV-24, COV-29, COV-34 | 7, 2182 |
 | 69 | R22B-24 | A non-Alt orbit meets a catalogue target that has a hole; vacancy still holds | computed | computed | R22B-21, R22B-22 | — | 3, 1065 |
 | 70 | R22B-25 | A finite classifier of the induced action, with a residual case | proved | group | R22B-15, R22B-19, R22B-22 | — | 3, 1084 |
 | 71 | R22B-26 | The depth 60 home targets miss every small orbit | computed | computed | R22B-22 | — | 3, 1104 |
 | 72 | R22B-27 | The T1′ middles of 151 and 180 miss the small orbits too | computed | computed | R22B-22, R22C3-03, R22C3-04 | — | 3, 1115 |
 | 73 | R22B-28 | What a strict′ step keeps: subgroup certificates, not inventories | proved | model | R22C3-01, R22B-19, R22B-22 | — | 3, 1125 |
 | 74 | R22B-29 | The vacancy theorem: a finite equivalence without Alt | proved | model | R22B-19, R22B-22, R22B-23 | COV-03, COV-08, COV-10, COV-12 | 3, 1143 |
-| 75 | COV-01 | An isolated triangle with an intrinsic Q-shadow | computed; proved; reachability open | model + computed | R22C2-01, R22C-G, R22C-05 | COV-14, COV-19, COV-20, COV-21, COV-22, COV-26, COV-27, COV-28 | 8, 2222 |
-| 76 | COV-02 | Seven geometric off-point cases | computed | computed | — | COV-23 | 8, 2249 |
-| 77 | COV-03 | A local certificate, and what coverage still needs | proved; conditional | model | R22C2-01, R22C-V, R22C-FC, R22C3-06, R22B-29 | COV-15 | 8, 2264 |
-| 78 | COV-04 | At 737, b05 and b15 are blocked by other units, b06 by two types | computed | computed | R22C-V, R22C2-01 | — | 8, 2295 |
-| 79 | COV-05 | Unit 130 at depth 60 is blocked by seven units | from the record | computed | R22C3-04 | — | 8, 2317 |
-| 80 | COV-06 | Coverage needs the holes and the off poses, not the lattice orientations | proved | model | R22C-T1′ | COV-08, COV-09, COV-10, COV-12 | 8, 2326 |
-| 81 | COV-07 | The stored T1′ words form no order at 737 | computed | computed | — | — | 8, 2345 |
-| 82 | COV-08 | T1′ resources pull back through the good-ghost map | proved | model | COV-06, R22C3-01, R22B-29 | COV-09, COV-10 | 8, 2388 |
-| 83 | COV-09 | A strict′ predecessor turns N2 at a whole-cap middle from true to false | computed | computed | COV-06, COV-08 | COV-16 | 8, 2410 |
-| 84 | COV-10 | SAFE preparation: an exact finite test and a flow criterion | proved | model | COV-06, COV-08, R22B-19, R22B-29 | COV-11, COV-12, COV-15, COV-24 | 8, 2430 |
-| 85 | COV-11 | prep2 is a heuristic, not a preparation test | audit | specification | COV-10 | — | 8, 2455 |
-| 86 | COV-12 | Whole-cap cores: exact eligibility and a three-segment form | proved | model | COV-06, COV-10, R22B-29 | COV-13, COV-14, COV-15, COV-21, COV-24 | 8, 2468 |
-| 87 | COV-13 | A reachable height-2 state with no all-content-landing cap | computed | computed | R22C-FC, COV-12 | COV-16 | 8, 2489 |
-| 88 | COV-14 | The isolated triangle has whole-cap landers but no prepared whole-cap vacancy | computed; proved | model + computed | COV-01, COV-12, R22C2-01 | COV-20, COV-21, COV-23, COV-25, COV-27 | 8, 2504 |
-| 89 | COV-15 | Coverage reduces to one finite per-state predicate | proved; conditional | model | COV-03, COV-10, COV-12, R22C3-06, R22C-K, R22C-FC | COV-16, COV-21, COV-24 | 8, 2524 |
-| 90 | COV-16 | The adjudicating experiments are done; E5's inputs were wrong | experiment design | specification | COV-09, COV-13, COV-15 | — | 8, 2550 |
-| 91 | COV-17 | A legal 24-letter word reaches exactly one off piece | computed | computed | R22C-G | COV-20, COV-22 | 8, 2580 |
-| 92 | COV-18 | Singleton off contents exist in all four kinds of cell | proved from computed certificates | model + computed | — | COV-20, COV-21, COV-24 | 8, 2596 |
-| 93 | COV-19 | No homomorphism to an abelian group tells X apart | computed; proved | model + computed | COV-01 | — | 8, 2626 |
-| 94 | COV-20 | X is outside the SAFE sandwich family of J = (0, 12); its reachability stays open | computed | computed | COV-01, COV-14, COV-17, COV-18, R22C-G | COV-22 | 8, 2640 |
-| 95 | COV-21 | The constructed singletons are covered by the catalogue as it stands | proved | model | COV-01, COV-12, COV-14, COV-15, COV-18, R22C3-06 | COV-27 | 8, 2660 |
-| 96 | COV-22 | One bounded mixed-class experiment for X's family | experiment design | specification | COV-01, COV-17, COV-20 | COV-28 | 8, 2678 |
-| 97 | COV-23 | 500 classes of height-2 off placements: 353 rim, 131 deep, 16 without a landing letter | computed | computed | COV-02, COV-14 | COV-24, COV-25, COV-26, COV-27 | 8, 2782 |
-| 98 | COV-24 | Whole-cap coverage of singletons: an exact hole-access criterion | proved from computed certificates | model + computed | COV-10, COV-12, COV-15, COV-18, COV-23, R22C3-06 | COV-27 | 8, 2806 |
-| 99 | COV-25 | No retained middle that returns X's locking block reaches X's family | proved from computed certificates | model + computed | COV-14, COV-23 | COV-27, COV-28 | 8, 2845 |
-| 100 | COV-26 | X is not the only deep singleton; outer placements need their own treatment | computed | computed | COV-01, COV-23, R22C-FC | — | 8, 2867 |
-| 101 | COV-27 | The last move of X's piece: two branches, neither excluded for unrestricted histories | computed | computed | COV-01, COV-14, COV-21, COV-24, COV-25 | — | 8, 2884 |
-| 102 | COV-28 | A mixed-class experiment that changes X's cohort | experiment design | specification | COV-01, COV-22, COV-25 | — | 8, 2908 |
+| 75 | COV-01 | An isolated triangle with an intrinsic Q-shadow | computed; proved; reachability open | model + computed | R22C2-01, R22C-G, R22C-05 | COV-14, COV-19, COV-20, COV-21, COV-22, COV-26, COV-27, COV-28 | 8, 2235 |
+| 76 | COV-02 | Seven geometric off-point cases | computed | computed | — | COV-23 | 8, 2262 |
+| 77 | COV-03 | A local certificate, and what coverage still needs | proved; conditional | model | R22C2-01, R22C-V, R22C-FC, R22C3-06, R22B-29 | COV-15 | 8, 2277 |
+| 78 | COV-04 | At 737, b05 and b15 are blocked by other units, b06 by two types | computed | computed | R22C-V, R22C2-01 | COV-33 | 8, 2308 |
+| 79 | COV-05 | Unit 130 at depth 60 is blocked by seven units | from the record | computed | R22C3-04 | — | 8, 2330 |
+| 80 | COV-06 | Coverage needs the holes and the off poses, not the lattice orientations | proved | model | R22C-T1′ | COV-08, COV-09, COV-10, COV-12 | 8, 2339 |
+| 81 | COV-07 | The stored T1′ words form no order at 737 | computed | computed | — | — | 8, 2358 |
+| 82 | COV-08 | T1′ resources pull back through the good-ghost map | proved | model | COV-06, R22C3-01, R22B-29 | COV-09, COV-10 | 8, 2401 |
+| 83 | COV-09 | A strict′ predecessor turns N2 at a whole-cap middle from true to false | computed | computed | COV-06, COV-08 | COV-16 | 8, 2423 |
+| 84 | COV-10 | SAFE preparation: an exact finite test and a flow criterion | proved | model | COV-06, COV-08, R22B-19, R22B-29 | COV-11, COV-12, COV-15, COV-24, COV-32, COV-33 | 8, 2443 |
+| 85 | COV-11 | prep2 is a heuristic, not a preparation test | audit | specification | COV-10 | — | 8, 2468 |
+| 86 | COV-12 | Whole-cap cores: exact eligibility and a three-segment form | proved | model | COV-06, COV-10, R22B-29 | COV-13, COV-14, COV-15, COV-21, COV-24, COV-29, COV-32 | 8, 2481 |
+| 87 | COV-13 | A reachable height-2 state with no all-content-landing cap | computed | computed | R22C-FC, COV-12 | COV-16, COV-32, COV-33 | 8, 2502 |
+| 88 | COV-14 | The isolated triangle has whole-cap landers but no prepared whole-cap vacancy | computed; proved | model + computed | COV-01, COV-12, R22C2-01 | COV-20, COV-21, COV-23, COV-25, COV-27 | 8, 2517 |
+| 89 | COV-15 | Coverage reduces to one finite per-state predicate | proved; conditional | model | COV-03, COV-10, COV-12, R22C3-06, R22C-K, R22C-FC | COV-16, COV-21, COV-24, COV-29, COV-34 | 8, 2537 |
+| 90 | COV-16 | The adjudicating experiments are done; E5's inputs were wrong | experiment design | specification | COV-09, COV-13, COV-15 | — | 8, 2563 |
+| 91 | COV-17 | A legal 24-letter word reaches exactly one off piece | computed | computed | R22C-G | COV-20, COV-22, COV-33 | 8, 2593 |
+| 92 | COV-18 | Singleton off contents exist in all four kinds of cell | proved from computed certificates | model + computed | — | COV-20, COV-21, COV-24, COV-29 | 8, 2609 |
+| 93 | COV-19 | No homomorphism to an abelian group tells X apart | computed; proved | model + computed | COV-01 | — | 8, 2639 |
+| 94 | COV-20 | X is outside the SAFE sandwich family of J = (0, 12); its reachability stays open | computed | computed | COV-01, COV-14, COV-17, COV-18, R22C-G | COV-22 | 8, 2653 |
+| 95 | COV-21 | The constructed singletons are covered by the catalogue as it stands | proved | model | COV-01, COV-12, COV-14, COV-15, COV-18, R22C3-06 | COV-27 | 8, 2673 |
+| 96 | COV-22 | One bounded mixed-class experiment for X's family | experiment design | specification | COV-01, COV-17, COV-20 | COV-28 | 8, 2691 |
+| 97 | COV-23 | 500 classes of height-2 off placements: 353 rim, 131 deep, 16 without a landing letter | computed | computed | COV-02, COV-14 | COV-24, COV-25, COV-26, COV-27, COV-30, COV-31 | 8, 2795 |
+| 98 | COV-24 | Whole-cap coverage of singletons: an exact hole-access criterion | proved from computed certificates | model + computed | COV-10, COV-12, COV-15, COV-18, COV-23, R22C3-06 | COV-27, COV-29, COV-34 | 8, 2819 |
+| 99 | COV-25 | No retained middle that returns X's locking block reaches X's family | proved from computed certificates | model + computed | COV-14, COV-23 | COV-27, COV-28, COV-30, COV-31 | 8, 2858 |
+| 100 | COV-26 | X is not the only deep singleton; outer placements need their own treatment | computed | computed | COV-01, COV-23, R22C-FC | COV-30 | 8, 2880 |
+| 101 | COV-27 | The last move of X's piece: two branches, neither excluded for unrestricted histories | computed | computed | COV-01, COV-14, COV-21, COV-24, COV-25 | COV-31 | 8, 2897 |
+| 102 | COV-28 | A mixed-class experiment that changes X's cohort | experiment design | specification | COV-01, COV-22, COV-25 | COV-35 | 8, 2921 |
+| 103 | COV-29 | The 24 exceptional holes: four cores through the antipodal cap | proved from computed certificates | model + computed | COV-12, COV-15, COV-18, COV-24, R22C-K, R22C3-06 | COV-30, COV-34 | 8, 2957 |
+| 104 | COV-30 | Validity leaves 67 deep and two outer classes: 457,200 class–hole pairs | computed | computed | COV-23, COV-25, COV-26, COV-29, R22C-FC | COV-34, COV-35 | 8, 2986 |
+| 105 | COV-31 | Vacant locks: a retained-word invariant without COV-25's exact return | proved from computed certificates | model + computed | COV-23, COV-25, COV-27 | — | 8, 3016 |
+| 106 | COV-32 | Several off pieces: an exact joint test for a whole-cap step, and lifting past separated contents | proved | model | COV-10, COV-12, COV-13, R22C-FC | COV-33, COV-34 | 8, 3041 |
+| 107 | COV-33 | Exact whole-cap counts: five caps at 737, none at COV-13's state, two at COV-17's | computed | computed | COV-04, COV-10, COV-13, COV-17, COV-32 | COV-34 | 8, 3074 |
+| 108 | COV-34 | What B′(2) still needs, and the bounds | proved | model | COV-15, COV-24, COV-29, COV-30, COV-32, COV-33, R22C3-06, R22C-FC | — | 8, 3102 |
+| 109 | COV-35 | An experiment on eight valid deep classes | experiment design | specification | COV-28, COV-30 | — | 8, 3129 |
 
 ## 4. Hypotheses that are finite computations
 
@@ -239,6 +246,10 @@ the result itself.
 | COV-25 | at Y, the 29 rigid blocks and their 445 locked chambers in cap 0; X's locking block (first piece 404, its I_B and S_B, its rigidity certificate); the normalized landing chambers of X's 36 landing letters | scripts/round22/cov23_singleton_classes.py (LOCKS, LAST_MOVE) |
 | COV-26 | piece 2249 at R with every other piece at identity: type, height, class-0 cell, separation from the lattice interiors and its landing chambers; the outer placements of pieces 1345 and 1437 and their mover caps; the 16 outer classes split by Theorem FC | scripts/round22/cov26_exterior_singletons.py; scripts/round22/cov23_singleton_classes.py (OUTER, LAST_MOVE) |
 | COV-27 | the nine caps that contain X's piece and the 531 inverse-letter cases of its last move (36 landing, 99 retained and 396 jumble off-to-off) | scripts/round22/cov23_singleton_classes.py (LAST_MOVE) |
+| COV-29 | for each of the 24 exceptional pairs: D·J applied exactly (its holes and 6,193 off pieces), the resource chamber in cap 596 in both SAFE orbits, and the global Jordan certificates of the orbit of y at the first middle and of the orbit of h under G(solved·D) | scripts/round22/cov29_two_cap.py |
+| COV-30 | for the 131 deep and the seven outer representatives with movers: each home region rebuilt from its active cuts and body facets (vertices checked), rotated by R and intersected with the lattice body by exact double description, and the overlap certificates | scripts/round22/cov30_validity.py |
+| COV-31 | at Y, the rigid blocks, their locked chambers and the deep landing chambers, as for COV-25 | scripts/round22/cov23_singleton_classes.py (LOCKS, LAST_MOVE) |
+| COV-33 | the replay state of 737: the classification of its 600 caps, the actual middle of each landing item of each eligible cap with its Jordan certificates, the optimistic middle groups of the failed caps, and cap 91's flow and certificates; COV-13's state: its 600 caps; COV-17's singleton: its eligible caps and landing items | scripts/round22/cov33_whole_cap_737.py; scripts/round22/cov13_mixed_frames.py; scripts/round22/cov33_singleton_caps.py |
 
 ## 5. Results of earlier stages and of the literature
 
@@ -247,7 +258,7 @@ the result itself.
 | Proposition N | buffer-transport.md sections 2 and 3 (research/jumbling/theory/buffer-transport.md; named in O5) | R22A-07, R22A2-06, R22B-01, R22C-M |
 | Theorem A | buffer-transport.md sections 2 and 3 (research/jumbling/theory/buffer-transport.md; named in O5) | R22B-01, R22B-04, R22B-07, R22B-08, R22B-15, R22B-19, R22B-23, R22C3-01, R22B-29 |
 | Corollary A1 | buffer-transport.md sections 2 and 3 (research/jumbling/theory/buffer-transport.md; named in O5) | R22A2-04, R22A2-06, R22B-04, R22C3-04, COV-10 |
-| Jordan certificate (global; Jordan word and prime) | buffer-transport.md sections 2 and 3 (research/jumbling/theory/buffer-transport.md; named in O5) | R22A2-01, R22A2-04, R22A2-05, R22B-01, R22B-04, R22B-05, R22B-06, R22B-07, R22B-08, R22B-09, R22B-10, COV-18, COV-24 |
+| Jordan certificate (global; Jordan word and prime) | buffer-transport.md sections 2 and 3 (research/jumbling/theory/buffer-transport.md; named in O5) | R22A2-01, R22A2-04, R22A2-05, R22B-01, R22B-04, R22B-05, R22B-06, R22B-07, R22B-08, R22B-09, R22B-10, COV-18, COV-24, COV-29, COV-33 |
 | Lemma M (items (M1), (M2)) | not named in PROOFS-B | R22A2-04, R22C-M, R22C-T1′, R22C-T2′, R22C3-01, R22B-28, COV-06, COV-12 |
 | Theorem B (peeling certificate) | not named in PROOFS-B | R22C-T1′ |
 | Theorem C | not named in PROOFS-B | R22A-07, R22C-T1′, R22C-05, R22C3-04, R22C3-06, COV-04 |
@@ -255,7 +266,7 @@ the result itself.
 | Proposition F | PROOFS-U.md (named in R22D-07; no path given) | R22D-07 |
 | Lemma E6 | not named in PROOFS-B | R22D-01 |
 | T1 | not named in PROOFS-B | R22C-K |
-| lock lemma | buffer-transport.md section 5 (research/jumbling/theory/buffer-transport.md; named in O9) | R22C-T, COV-25 |
+| lock lemma | buffer-transport.md section 5 (research/jumbling/theory/buffer-transport.md; named in O9) | R22C-T, COV-25, COV-31 |
 | LC-03 | not named in PROOFS-B | R22A-01 |
 | LC-12 | not named in PROOFS-B | R22A-02, R22A-07, R22C-G, R22C-T1′ |
 | LC-13 | not named in PROOFS-B | R22C-T1′ |
@@ -300,8 +311,11 @@ either covers them or states them as assumptions, and says which.
   checks, and the depth table, by which every one-letter state is, up to K⁺, solved·(0, 12)) have no rows; round 4
   (COV-23 to COV-28) takes them up. It classifies the height-2 off placements up to K⁺ (COV-23), covers every singleton
   with a rim placement except at 24 exceptional holes (COV-24), excludes every retained middle that returns X's locking
-  block exactly (COV-25); its bounded experiment (COV-28) found no reaching word. Open: the lemma that every state of 𝒞₂
-  with off pieces satisfies Cover(Z); the singletons of the 131 deep classes, among them X and COV-26's triangle, and
-  those of the outer classes with mover caps and of the 24 exceptional holes, each subject to validity and reachability
-  (COV-26, COV-27); and whether COV-01's state is reachable (COV-14, COV-20, COV-25).
+  block exactly (COV-25); its bounded experiment (COV-28) found no reaching word. Round 5 (COV-29 to COV-35) covers the
+  24 exceptional holes (COV-29), so every valid singleton with a rim placement has a step; cuts the other singletons by
+  validity to 457,200 class–hole pairs (COV-30); and gives an exact joint test for a whole-cap step with several off
+  pieces and a separation lemma (COV-32). Open, as COV-34 states them: SingletonResidual (the 457,200 pairs, in 67 deep
+  classes, X's and COV-26's among them, and the outer classes 1345 and 1437), MultiCover (every state of 𝒞₂ with two or
+  more off pieces has a step) and MixedCoreBound (a bound for any further native cores the proof needs); and whether
+  COV-01's state is reachable (COV-14, COV-20, COV-25, COV-31).
 - Results recorded after this page's last update are not in the tables; they get rows when they are recorded.
