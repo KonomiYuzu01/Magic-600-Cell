@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: B′(h) line (a), the census and the closures
+With whole cells as owners, the transport census at the depth 40 stop finds strict′ steps without endpoint collateral for ten of the 22 units, and the entry transports of b08, b09 and b10 close by V·W·V⁻¹ (222, 270 and 704 letters, each replayed); b19's vacating word exists by Corollary A1 (N1, N2 and 20 Jordan certificates) but is not built ([stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 11, [PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 4; model review).
+
 ## [2026-10-18] update | Jumbling: B′(h) line (b), round 2
 Where a target orbit carries Alt(Δ), the vacating certificate of R22B-01 now exists by construction: tables of Schreier words, an exact seed criterion with a fallback, and a seed from a Jordan word and a letter of small support; at b00 every hypothesis holds and the construction gives |V| < 10^539, a construction bound, with no V built yet (`research/jumbling/restoration/12-low-height/PROOFS-B.md`, R22B-05 to R22B-10).
 

@@ -255,11 +255,13 @@ The setting is that of [`METHOD.md`](../09-general-method/METHOD.md),
   116 and 111 in classes 2, 3 and 4.
 - Command: `scripts/round22/r22a08_vacancy.py` (section 6); output `runs/round22/r22a08_vacancy.txt`.
 
-### R22A-09. The five disputed units (open)
+### R22A-09. The five disputed units (computed)
 
 - b02, b07, b13, b14 and b21 had model paths in a census that protected points instead of cells; their exact replays
   turned another off content of a moved cell to another pose at the same point. R22A-02 explains the failure.
-  Whether they have paths under the whole-cell rule is the census of section 4 (running).
+- Under the whole-cell rule all five have strict′ steps (section 4): b02 60, b07 48, b13 60 and b14 60 letters in
+  class 3, b21 84 letters in class 2, each replayed exactly. Command: `scripts/round22/transport_census.py`
+  (section 6); records `runs/round22/line-a/census-class3.json` and `census-class24.json`.
 - A wider exact decision procedure exists for one fixed free class alphabet: record the accumulated rotation
   a_C ∈ G_P of each of the 2,640 non-outer cells; accept when U lands, every lattice content ends at label 0 and every
   other protected off cell has a_C = 1. There are at most 7,200^2,640 records, so breadth-first search terminates, and a
@@ -518,8 +520,29 @@ The setting is that of [`METHOD.md`](../09-general-method/METHOD.md),
   60 and b14 60 letters, each replayed exactly (the unit lands, no lattice piece goes off, every other off piece
   keeps its exact pose). b02, b07, b13 and b14 had failed with points as owners, as R22A-02 predicts. The other six
   are glued (R22A-07). The seven share four vacant targets (three triangle home cells, one tetrahedron home cell),
-  so at most four land this way from this state (R22A-05). Classes 2 and 4 and the entry transports of R22A-06 are
-  next.
+  so at most four land this way from this state (R22A-05).
+- **The census, classes 2 and 4 (measured, exact replay).** b16, b20 and b21 (class 2) have strict′ steps of 72, 36
+  and 84 letters; b16 and b21 go to one vacant triangle home cell and b20 to the other, so at most two of the three
+  land this way. b17 is moved by no clean power (its cell is its home, Theorem C), and b18 is glued. b19 (class 2,
+  tetrahedron) and b08, b09, b10 (class 4) have no vacant home cell of their kind; for each the census keeps an
+  entry transport W into an occupied home cell (84, 96, 168 and 144 letters) whose exact replay lands the unit,
+  takes exactly that cell's lattice content off (15, 20, 24 and 20 pieces) and keeps every other off piece at its
+  exact pose. b08 and b10 enter the same home cell.
+- **The closures of the four entry transports (R22A-06; measured, exact replay).** `tclose2.py` at the depth 40
+  stop with W as the transport to close. N1 and N2 hold for all four Bad(W) (the 198, 111, 111 and 87 chambers
+  that the words need). For b08, b10 and b09 the peeling certificate of Theorem B is complete (V of 63, 63 and 268
+  letters, against its bounds 1,371, 1,371 and 1,186; `closures/<u>-log.txt`), and V·W·V⁻¹ is a strict′ step of
+  222, 270 and 704 letters: an independent replay from the exported table (`stepchk.py`) lands 33, 34 and 58
+  pieces, takes no lattice piece off and leaves every other off piece at its exact pose. For b19 the peeling stops at
+  68 of 198 chambers and a 300-second greedy search leaves 13 occupied (`closures/b19-log.txt`); this rejects the
+  two searches, not V.
+- **b19's V exists (computed; Corollary A1).** b19's Bad(W) has 198 chambers, 15 of them occupied, and meets 20
+  orbits of G(Z) of sizes 120 to 7,200. N1 and N2 hold, and a seeded random search finds a Jordan certificate on
+  every one of the 20 (the orbit of 120 chambers with the prime 73), each checked on all chambers. By Corollary A1
+  of `research/jumbling/theory/buffer-transport.md` a SAFE-ALL word V clears Bad(W), so V·W·V⁻¹ is a strict′ step
+  for b19 (R22A-06), and by R22B-02 one of at most C(177,120, 1,193) − 1 letters exists (an existence bound). V has
+  not been built. Command `scripts/round22/jordan_target.py` on `runs/round22/line-a/closures/b19-target.json`
+  (section 6); output `closures/b19-jordan.txt`.
 - **b02 closes (measured, exact replay).** The greedy search, bounded at 3,600 seconds, found an 18-letter V for b02's
   transport word; the step V·W·V⁻¹ has 48 letters and is strict′ by an independent replay from the exported table.
 - **E22-1, a vacating word built from clean powers (measured, scratch probe; no V).** For b00's target: the greedy
@@ -743,3 +766,22 @@ Each script prints the output recorded under `runs/round22/` (the timing lines a
 
 The scripts are the senior reviewer's commands, kept as written apart from a header comment; the integrator re-ran
 each one and got the outputs the review reports.
+
+The integrator's census and closures of section 4, with `k40.json` the depth 40 stop as a pose table (written by
+`$S/export_table.py`, digest `7e128820…`), `A=research/jumbling/restoration/12-low-height/runs/round22/line-a`,
+`G=research/jumbling/restoration/09-general-method/scripts` and `u` one of `b19`, `b08`, `b10`, `b09`:
+
+    python3 -I -B $S/round22/transport_census.py k40.json <out> $A/units/eb5-k40-k00-b{00,01,02,03,04,05,06,07,11,12,13,14,15}.json
+                                                        # class 3; about 47 minutes
+    python3 -I -B $S/round22/transport_census.py k40.json <out> $A/units/eb5-k40-k00-b{16,17,18,19,20,21,08,09,10}.json
+                                                        # classes 2 and 4; about 66 minutes
+    python3 -I $G/gm/tclose2.py research/jumbling/theory $G/echain k40.json $A/units/eb5-k40-k00-$u.json \
+        $A/closures/$u-core.json <dir> --greedy-seconds 300                       # 4 to 10 minutes
+    python3 -I -B $S/round22/stepchk.py k40.json $A/units/eb5-k40-k00-$u.json $A/closures/$u-step.json <out>
+
+`$u-core.json` is `{"P": [], "Q": W}` with W the census's entry transport word; `$u-step.json` is the closure's
+`word-full.json`, `$u-result.json` its `result.json`, `$u-log.txt` its log (the certificate and its bound, or where
+the peeling and the greedy search stopped) and `$u-replay.json` the record of the independent replay.
+b19's target file holds `ghost.badW` of its closure (`pre.json`), with its digest; then
+
+    python3 -I -B $S/round22/jordan_target.py $A/closures/b19-target.json     # N1, N2 and 20 Jordan certificates; about 2 minutes
