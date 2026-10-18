@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 4 experiment
+The search COV-28 over mixed words of 36 to 48 twists that disturb the isolated triangle's home-cell cohort found no word reaching the triangle in 80,581 trials, every seed stopping at its time limit, which decides nothing ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8). Coverage round 5 starts from it.
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 4
 Up to the puzzle's symmetry the single off pieces of height 2 fall into 500 placements, and an exact test on the holes gives a restoring step at every placement whose landing chambers safe twists can refill, except at 24 hole positions; no word that keeps the isolated triangle's locking block and returns it exactly reaches the triangle, a second such deep placement exists, and the triangle's reachability stays open ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-23 to COV-28). A bounded search over longer mixed words is running, and the handoff index now lists 102 results.
 

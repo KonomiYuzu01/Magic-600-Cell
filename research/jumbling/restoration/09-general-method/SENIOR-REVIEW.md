@@ -7439,7 +7439,7 @@ The fourth coverage shard (the senior reviewer, fast tier: the classification of
 | COV-25 | proved from computed certificates | The 29 rigid blocks lock exactly the landing chambers of the deep classes, so no retained middle that returns X's locking block exactly reaches X's family, at any of its 36 landing letters. |
 | COV-26 | computed | A type-19 triangle (piece 2249) is a second deep singleton besides X; two type-7 outer placements have mover caps, so Theorem FC does not exclude them. |
 | COV-27 | computed | The last move of X's piece leaves two branches (36 landing letters and 495 off-to-off cases), and nothing here excludes either for unrestricted histories. |
-| COV-28 | experiment design | Sample 36- to 48-letter words L·[[[A,B],C],D]·L⁻¹ whose foreign segment changes X's cohort; only a hit decides; running. |
+| COV-28 | experiment design | Sample 36- to 48-letter words L·[[[A,B],C],D]·L⁻¹ whose foreign segment changes X's cohort; only a hit decides; none in 80,581 trials (every seed cut short at its CPU cutoff). |
 
 ### The integrator's experiments (round 22)
 

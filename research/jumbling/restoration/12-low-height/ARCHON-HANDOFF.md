@@ -158,12 +158,12 @@ literature are in section 5. Statuses as in `PROOFS-B.md`. A formalization can f
 | 94 | COV-20 | X is outside the SAFE sandwich family of J = (0, 12); its reachability stays open | computed | computed | COV-01, COV-14, COV-17, COV-18, R22C-G | COV-22 | 8, 2640 |
 | 95 | COV-21 | The constructed singletons are covered by the catalogue as it stands | proved | model | COV-01, COV-12, COV-14, COV-15, COV-18, R22C3-06 | COV-27 | 8, 2660 |
 | 96 | COV-22 | One bounded mixed-class experiment for X's family | experiment design | specification | COV-01, COV-17, COV-20 | COV-28 | 8, 2678 |
-| 97 | COV-23 | 500 classes of height-2 off placements: 353 rim, 131 deep, 16 without a landing letter | computed | computed | COV-02, COV-14 | COV-24, COV-25, COV-26, COV-27 | 8, 2781 |
-| 98 | COV-24 | Whole-cap coverage of singletons: an exact hole-access criterion | proved from computed certificates | model + computed | COV-10, COV-12, COV-15, COV-18, COV-23, R22C3-06 | COV-27 | 8, 2805 |
-| 99 | COV-25 | No retained middle that returns X's locking block reaches X's family | proved from computed certificates | model + computed | COV-14, COV-23 | COV-27, COV-28 | 8, 2844 |
-| 100 | COV-26 | X is not the only deep singleton; outer placements need their own treatment | computed | computed | COV-01, COV-23, R22C-FC | — | 8, 2866 |
-| 101 | COV-27 | The last move of X's piece: two branches, neither excluded for unrestricted histories | computed | computed | COV-01, COV-14, COV-21, COV-24, COV-25 | — | 8, 2883 |
-| 102 | COV-28 | A mixed-class experiment that changes X's cohort | experiment design | specification | COV-01, COV-22, COV-25 | — | 8, 2907 |
+| 97 | COV-23 | 500 classes of height-2 off placements: 353 rim, 131 deep, 16 without a landing letter | computed | computed | COV-02, COV-14 | COV-24, COV-25, COV-26, COV-27 | 8, 2782 |
+| 98 | COV-24 | Whole-cap coverage of singletons: an exact hole-access criterion | proved from computed certificates | model + computed | COV-10, COV-12, COV-15, COV-18, COV-23, R22C3-06 | COV-27 | 8, 2806 |
+| 99 | COV-25 | No retained middle that returns X's locking block reaches X's family | proved from computed certificates | model + computed | COV-14, COV-23 | COV-27, COV-28 | 8, 2845 |
+| 100 | COV-26 | X is not the only deep singleton; outer placements need their own treatment | computed | computed | COV-01, COV-23, R22C-FC | — | 8, 2867 |
+| 101 | COV-27 | The last move of X's piece: two branches, neither excluded for unrestricted histories | computed | computed | COV-01, COV-14, COV-21, COV-24, COV-25 | — | 8, 2884 |
+| 102 | COV-28 | A mixed-class experiment that changes X's cohort | experiment design | specification | COV-01, COV-22, COV-25 | — | 8, 2908 |
 
 ## 4. Hypotheses that are finite computations
 
@@ -300,8 +300,8 @@ either covers them or states them as assumptions, and says which.
   checks, and the depth table, by which every one-letter state is, up to K⁺, solved·(0, 12)) have no rows; round 4
   (COV-23 to COV-28) takes them up. It classifies the height-2 off placements up to K⁺ (COV-23), covers every singleton
   with a rim placement except at 24 exceptional holes (COV-24), excludes every retained middle that returns X's locking
-  block exactly (COV-25) and starts a bounded experiment (COV-28). Open: the lemma that every state of 𝒞₂ with off
-  pieces satisfies Cover(Z); the singletons of the 131 deep classes, among them X and COV-26's triangle, and those of
-  the outer classes with mover caps and of the 24 exceptional holes, each subject to validity and reachability (COV-26,
-  COV-27); and whether COV-01's state is reachable (COV-14, COV-20, COV-25).
+  block exactly (COV-25); its bounded experiment (COV-28) found no reaching word. Open: the lemma that every state of 𝒞₂
+  with off pieces satisfies Cover(Z); the singletons of the 131 deep classes, among them X and COV-26's triangle, and
+  those of the outer classes with mover caps and of the 24 exceptional holes, each subject to validity and reachability
+  (COV-26, COV-27); and whether COV-01's state is reachable (COV-14, COV-20, COV-25).
 - Results recorded after this page's last update are not in the tables; they get rows when they are recorded.

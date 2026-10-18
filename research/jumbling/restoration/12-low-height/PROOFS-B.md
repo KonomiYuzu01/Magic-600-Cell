@@ -2215,9 +2215,9 @@ cell and shows that the catalogue covers them; whether COV-01's state is reachab
 found no reaching word, and the integrator's checks after it exclude every one-letter SAFE sandwich. The integrator's
 depth table after them is the input to round 4 (COV-23 to COV-28). Round 4 classifies the height-2 off placements up to
 K⁺, gives an exact criterion for the SAFE-prepared whole-cap step at a singleton (it covers every rim placement except
-24 exceptional holes) and excludes every retained middle that returns X's locking block; its experiment COV-28 is
-running. Coverage stays open: no reachable state without a step was found, and nothing here proves that every state has
-one.
+24 exceptional holes) and excludes every retained middle that returns X's locking block; its experiment COV-28 found no
+reaching word, which decides nothing. Coverage stays open: no reachable state without a step was found, and nothing here
+proves that every state has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -2771,12 +2771,13 @@ for X, and what either does to Cover(Z) and its bounds. Its computations are
 `cov26_exterior_singletons.py`; the integrator re-ran both and got the same classes, counts, exceptional holes, blocks
 and landing chambers, with the outputs `runs/round22/cov23_singleton_classes.txt` and `cov26_exterior_singletons.txt`,
 and repeated the reviewer's reference check for COV-24 (`scripts/round22/cov24_reference.py`, output
-`runs/round22/cov24_reference.txt`). Its experiment is `scripts/round22/cov28_cohort_search.py`. The height-2 off
-placements fall into 500 classes up to K⁺ (COV-23); a singleton whose placement is in a rim class has a SAFE-prepared
-whole-cap step unless its hole is one of 24 exceptional placements (COV-24); no retained middle that returns X's locking
-block exactly reaches X's family, at any of its 36 landing letters (COV-25); X is not the only deep singleton, and outer
-placements need their own treatment (COV-26); and the last move of X's piece leaves two branches that nothing here
-excludes (COV-27). X's reachability and Cover(Z) on 𝒞₂ stay open.
+`runs/round22/cov24_reference.txt`). Its experiment, `scripts/round22/cov28_cohort_search.py`, found no reaching word
+(outputs `runs/round22/cov28/seed0.txt` to `seed7.txt`). The height-2 off placements fall into 500 classes up to K⁺
+(COV-23); a singleton whose placement is in a rim class has a SAFE-prepared whole-cap step unless its hole is one of 24
+exceptional placements (COV-24); no retained middle that returns X's locking block exactly reaches X's family, at any of
+its 36 landing letters (COV-25); X is not the only deep singleton, and outer placements need their own treatment
+(COV-26); and the last move of X's piece leaves two branches that nothing here excludes (COV-27). X's reachability and
+Cover(Z) on 𝒞₂ stay open.
 
 ### COV-23. 500 classes of height-2 off placements: 353 rim, 131 deep, 16 without a landing letter (computed)
 
@@ -2917,6 +2918,8 @@ excludes (COV-27). X's reachability and Cover(Z) on 𝒞₂ stay open.
   decides nothing: the family is sampled, its acceptance condition is stricter than matching an unlabelled off region,
   and neither a failure nor the cohort filter exhausts unrestricted histories.
 - Command: `scripts/round22/cov28_cohort_search.py <seed>` for the seeds 0 to 7, each with a 1,700-second CPU cutoff (at
-  most about 3.8 CPU hours in all). The integrator started the eight seeds on 18 October, four at a time (the design
-  said at most two; the cutoff per seed is the same): running.
+  most about 3.8 CPU hours in all). The integrator ran the eight seeds on 18 October, four at a time (the design said at
+  most two; the cutoff per seed is the same). Every seed ended CUT_SHORT at its cutoff after 9,690 to 10,446 trials
+  (80,581 in all, dropped trials included), and none found a word, so it decides nothing. Outputs
+  `runs/round22/cov28/seed0.txt` to `seed7.txt`.
 - Uses: COV-01, COV-22, COV-25.
