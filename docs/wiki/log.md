@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 8 experiment
+The exact enumeration COV-57 tried every word of one family, three jumble twists with at most two retained twists between them, at two of the 112 deep cases of round 8; all 24 jobs ran to the end and no word of the family restores either case, which excludes only that family and proves nothing about other words ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8).
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 8
 The two outer placement classes left after validity occur in no reachable state, since a piece at height 2 always lies inside a cap of its own class, which leaves 112 deep cases; every path from the lattice to a state with one off piece and exactly three jumble twists stays at height 2; and the existing descent is incomplete: it is stuck even at a reachable state with one off piece that a 24-twist word restores, so its stalls decide nothing ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-52 to COV-57). The round's experiment, an exact enumeration of one three-jumble family at two cases, is running, and the handoff index now lists 131 results.
 

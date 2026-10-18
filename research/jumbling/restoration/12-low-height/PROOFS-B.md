@@ -1686,15 +1686,15 @@ cases two at a time; the integrator stopped it after eight cases (section 8):
         python3 -I -B -u $S/round22/descent_cost.py $c; done                                                             # 4 to 13 minutes each
 
 Coverage round 8 (section 8: COV-52 to COV-55), the senior reviewer's computations kept as written apart from a header
-comment, with COV-17's script run again; they write no file. Its experiment COV-57 runs once, its 24 jobs two at a time
-(section 8):
+comment, with COV-17's script run again; they write no file. Its experiment COV-57 ran once, its 24 jobs two at a time,
+and wrote `runs/round22/cov57_frontier_search.txt` (section 8):
 
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov52_outer_classes.py    # about 70 seconds
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov53_cohort_images.py    # seconds
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov54_rule_audit.py       # about 3 minutes
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov55_descent_cov17.py    # about 9 minutes
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov17_single_off.py       # seconds
-    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov57_frontier_search.py  # at most about 3 hours
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov57_frontier_search.py  # about 65 minutes
 
 ## 7. Line (c): T2 and T3 (joint attack)
 
@@ -3658,15 +3658,16 @@ computations are `scripts/round22/cov52_outer_classes.py`, `cov53_cohort_images.
 `cov55_descent_cov17.py`, and it re-ran `cov17_single_off.py`; the integrator re-ran all five and got the same classes,
 totals, cosets, blocks, faces, scores, openings, net changes, rule results and digests, with the outputs
 `runs/round22/cov52_outer_classes.txt`, `cov53_cohort_images.txt`, `cov54_rule_audit.txt` and `cov55_descent_cov17.txt`.
-Its experiment, `scripts/round22/cov57_frontier_search.py`, was still running when the round was recorded. The outer
-classes 1345 and 1437 occur in no reachable table, which removes six of the 118 cases and leaves 112 deep cases in 67
-classes, 442,800 class–hole pairs (COV-52); every path from a lattice table to a singleton with exactly three jumble
-letters stays inside U₂, and the first jumble letter's 29 cohorts stay whole under the four nonlattice cosets, but the
-deep three-jumble frontier stays undecided (COV-53); at the case (12, 12) the descent has no closing move and no
-strictly improving shift (COV-54); the descent is stuck at COV-17's reachable singleton, so it is incomplete (COV-55);
-the bounds are unchanged and the obligations are restated for the 112 deep cases (COV-56); and an experiment enumerates
-one three-jumble family exactly at two cases (COV-57). SingletonResidual (the 112 deep cases), MultiCover, R_h, general
-peak reduction and HRH stay open.
+Its experiment, `scripts/round22/cov57_frontier_search.py`, ran after the round was recorded, and every one of its 24
+jobs exhausted the family (`runs/round22/cov57_frontier_search.txt`). The outer classes 1345 and 1437 occur in no
+reachable table, which removes six of the 118 cases and leaves 112 deep cases in 67 classes, 442,800 class–hole pairs
+(COV-52); every path from a lattice table to a singleton with exactly three jumble letters stays inside U₂, and the
+first jumble letter's 29 cohorts stay whole under the four nonlattice cosets, but the deep three-jumble frontier stays
+undecided (COV-53); at the case (12, 12) the descent has no closing move and no strictly improving shift (COV-54); the
+descent is stuck at COV-17's reachable singleton, so it is incomplete (COV-55); the bounds are unchanged and the
+obligations are restated for the 112 deep cases (COV-56); and an exact enumeration finds no restoring word in one
+three-jumble family at two cases, which excludes only that family (COV-57). SingletonResidual (the 112 deep cases),
+MultiCover, R_h, general peak reduction and HRH stay open.
 
 ### COV-52. The outer classes 1345 and 1437 occur in no reachable table, which removes six cases (proved; computed)
 
@@ -3835,6 +3836,10 @@ peak reduction and HRH stay open.
   EXHAUSTED_FAMILY from all 24 jobs excludes only this family; CUT_SHORT or an error decides nothing. No negative
   outcome proves unreachability or excludes three jumble letters with general retained segments.
 - Command: `scripts/round22/cov57_frontier_search.py` (it runs the head of `cov43_residual_search.py`'s worker with the
-  search replaced, as the design says). The integrator started it on 18 October, two jobs at a time as designed; its
-  output and result are added when the run ends.
+  search replaced, as the design says). The integrator ran it on 18 October, two jobs at a time as designed, in about 65
+  minutes; output `runs/round22/cov57_frontier_search.txt`.
+- Result (18 October 2026). All 24 jobs exited 0 with EXHAUSTED_FAMILY, none cut short: each job tried 27,264 to 27,600
+  second jumble letters E, at both cases. No word (0, 12)·A·E·B·F of the family restores either case. This excludes only
+  the family: it proves neither that the cases are unreachable nor that three jumble letters with general retained
+  segments fail.
 - Uses: COV-36, COV-43, COV-46, COV-53.

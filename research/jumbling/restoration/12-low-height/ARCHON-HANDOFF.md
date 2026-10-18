@@ -188,12 +188,12 @@ literature are in section 5. Statuses as in `PROOFS-B.md`. A formalization can f
 | 123 | COV-49 | Neither different-cap peak of COV-41 has a replacement of at most two letters | computed | computed | COV-17, COV-41 | COV-50 | 8, 3565 |
 | 124 | COV-50 | The covered subclass is unchanged, and the obligations are explicit | proved | model | COV-32, COV-34, COV-38, COV-39, COV-40, COV-42, COV-44, COV-45, COV-46, COV-48, COV-49 | COV-56 | 8, 3584 |
 | 125 | COV-51 | Forced excursions followed by the existing descent on all 118 cases | experiment design | specification | COV-06, COV-36, COV-43 | — | 8, 3609 |
-| 126 | COV-52 | The outer classes 1345 and 1437 occur in no reachable table, which removes six cases | proved; computed | model + computed | COV-23, COV-30, COV-36 | COV-53, COV-56 | 8, 3671 |
-| 127 | COV-53 | Three-jumble paths to a singleton stay inside U₂; the deep frontier stays open | proved; computed | model + computed | COV-23, COV-46, COV-52 | COV-56, COV-57 | 8, 3708 |
-| 128 | COV-54 | At the case (12, 12) the descent has no closing move and no strictly improving shift | computed | computed | COV-36, COV-43 | — | 8, 3749 |
-| 129 | COV-55 | The existing descent is stuck at COV-17's reachable singleton, so it is incomplete | computed | computed | COV-17 | COV-56 | 8, 3774 |
-| 130 | COV-56 | The bounds are unchanged; 112 deep cases and the global obligations remain | proved | model | COV-06, COV-32, COV-36, COV-38, COV-44, COV-50, COV-52, COV-53, COV-55 | — | 8, 3792 |
-| 131 | COV-57 | One three-jumble family at two cases, by exact enumeration | experiment design | specification | COV-36, COV-43, COV-46, COV-53 | — | 8, 3820 |
+| 126 | COV-52 | The outer classes 1345 and 1437 occur in no reachable table, which removes six cases | proved; computed | model + computed | COV-23, COV-30, COV-36 | COV-53, COV-56 | 8, 3672 |
+| 127 | COV-53 | Three-jumble paths to a singleton stay inside U₂; the deep frontier stays open | proved; computed | model + computed | COV-23, COV-46, COV-52 | COV-56, COV-57 | 8, 3709 |
+| 128 | COV-54 | At the case (12, 12) the descent has no closing move and no strictly improving shift | computed | computed | COV-36, COV-43 | — | 8, 3750 |
+| 129 | COV-55 | The existing descent is stuck at COV-17's reachable singleton, so it is incomplete | computed | computed | COV-17 | COV-56 | 8, 3775 |
+| 130 | COV-56 | The bounds are unchanged; 112 deep cases and the global obligations remain | proved | model | COV-06, COV-32, COV-36, COV-38, COV-44, COV-50, COV-52, COV-53, COV-55 | — | 8, 3793 |
+| 131 | COV-57 | One three-jumble family at two cases, by exact enumeration | experiment design | specification | COV-36, COV-43, COV-46, COV-53 | — | 8, 3821 |
 
 ## 4. Hypotheses that are finite computations
 
@@ -363,9 +363,10 @@ covers them or states them as assumptions, and says which.
   integrator's check after it, that the existing descent is stuck at the residual tables (section 8), has no row. Round
   8 (COV-52 to COV-57) proves the outer classes 1345 and 1437 unreachable, which leaves 112 deep cases (COV-52), keeps
   every three-jumble path from a lattice table to a singleton inside U₂ (COV-53) and shows that the existing descent is
-  incomplete, stuck even at COV-17's reachable singleton (COV-55); its experiment (COV-57) enumerates one three-jumble
-  family at two cases. Open, as COV-56 states them: SingletonResidual (the 112 deep cases of COV-36 that COV-52 leaves,
-  in 67 classes, X's and COV-26's among them), MultiCover (every state of 𝒞₂ with two or more off pieces has a step) and
-  MixedCoreBound (a bound for any further native cores the proof needs), or R_h for one explicit h in place of all
-  three; and whether COV-01's state is reachable (COV-14, COV-20, COV-25, COV-31, COV-37).
+  incomplete, stuck even at COV-17's reachable singleton (COV-55); its experiment (COV-57) finds no restoring word in
+  one three-jumble family at two cases, which excludes only that family. Open, as COV-56 states them: SingletonResidual
+  (the 112 deep cases of COV-36 that COV-52 leaves, in 67 classes, X's and COV-26's among them), MultiCover (every state
+  of 𝒞₂ with two or more off pieces has a step) and MixedCoreBound (a bound for any further native cores the proof
+  needs), or R_h for one explicit h in place of all three; and whether COV-01's state is reachable (COV-14, COV-20,
+  COV-25, COV-31, COV-37).
 - Results recorded after this page's last update are not in the tables; they get rows when they are recorded.

@@ -7490,8 +7490,8 @@ The seventh coverage shard (the senior reviewer, fast tier: the open cases, rest
 The eighth coverage shard (the senior reviewer, fast tier: the three-jumble-letter frontier, the descent's stall and
 constructive restorations; six results, all `minor`, all adopted; the integrator re-ran its four computations and
 `cov17_single_off.py` with the same classes, cosets, blocks, scores, openings, net changes, rule results and digests,
-its experiment COV-57 running). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section
-8:
+its experiment COV-57, run after the round, exhausted its family at both cases). One line each; the full text is in
+[`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
 
 | Finding | Status | Index |
 | --- | --- | --- |
@@ -7500,7 +7500,7 @@ its experiment COV-57 running). One line each; the full text is in [`PROOFS-B.md
 | COV-54 | computed | At (12, 12), N = 2f_t = 8 and only the grips 13 and 35 are surveyed; lock has no candidate, and shift's 139 continuations change N by 0 or +1,564, so it accepts none. |
 | COV-55 | computed | The existing descent is stuck at COV-17's reachable singleton (N = 8; all four rules return None), which a 24-letter word restores: the descent is incomplete. |
 | COV-56 | proved | The bounds are unchanged; SingletonResidual (112 deep cases), MultiCover and MixedCoreBound, or R_h for one explicit h, remain. |
-| COV-57 | experiment design | Exact enumeration of (0, 12)·A·E·B·F at the cases (12, 12) and (2149, 41), A and B retained at fixed grips, 24 jobs of at most 900 CPU seconds; a FOUND settles its case and exhausting the family excludes only it; running. |
+| COV-57 | experiment design | Exact enumeration of (0, 12)·A·E·B·F at the cases (12, 12) and (2149, 41), A and B retained at fixed grips, 24 jobs of at most 900 CPU seconds; a FOUND settles its case and exhausting the family excludes only it; run on 18 October: all 24 jobs exhausted it, so it restores neither case. |
 
 ### The integrator's experiments (round 22)
 
