@@ -1,0 +1,3 @@
+REFERENCE {"piece": 2335, "pose": [0, 45], "off": [2335], "holes": [2335], "type": 9, "exceptional_hole": 3239, "hole_type": 9, "safe_grips": 593, "safe_letters": 6523, "orbits": 664, "orbit_of_exceptional_hole": 1}
+REFERENCE {"piece": 3805, "pose": [0, 45], "off": [3805], "holes": [3805], "type": 6, "exceptional_hole": 541, "hole_type": 6, "safe_grips": 593, "safe_letters": 6523, "orbits": 664, "orbit_of_exceptional_hole": 1}
+COMPLETED_CPU 39.4

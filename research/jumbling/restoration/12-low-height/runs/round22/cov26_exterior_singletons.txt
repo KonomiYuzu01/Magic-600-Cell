@@ -1,0 +1,6 @@
+ISOLATED_TRIANGLE {"digest": "6580ef02200588345300bda0178891f05f9f53ce3335e779bcb829c3dfac3f21", "piece": 1474, "pose": [0, 25], "class": 0, "cell": [0, 2, 23], "height": 2, "holes": [1474], "U_type": 18, "Q_chambers": [404, 762], "Q_types": [24, 24], "separating_body_facet": 3, "moving_cap_certificate": [[0, [[404, "in"], [762, "in"]]], [1, [[404, "in"], [762, "in"]]], [2, [[404, "in"], [762, "in"]]], [3, [[404, "in"], [762, "in"]]], [7, [[404, "in"], [762, "in"]]], [15, [[404, "in"], [762, "in"]]], [18, [[404, "in"], [762, "straddle"]]], [19, [[404, "straddle"], [762, "in"]]], [23, [[404, "in"], [762, "in"]]]], "reachable": "not established"}
+COMPLETED_CPU 7.4
+EXTERIOR {'piece': 2249, 'type': 19, 'pose': [0, 45], 'separating_body_facet': 3}
+EXTERIOR {'piece': 1345, 'type': 7, 'pose': [0, 45], 'separating_body_facet': 7}
+EXTERIOR {'piece': 1437, 'type': 7, 'pose': [0, 45], 'separating_body_facet': 7}
+COMPLETED_CPU 7.4

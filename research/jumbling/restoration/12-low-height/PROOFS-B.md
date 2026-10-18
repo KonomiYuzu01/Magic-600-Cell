@@ -1641,6 +1641,16 @@ their classes reads their outputs from `runs/round22/cov_depth_grip0-<k>.txt`:
         python3 -I -B -u $S/round22/cov_depth_grip0.py $k 2; done                                  # about 10 minutes each
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov_depth_cosets.py      # seconds
 
+Coverage round 4 (section 8: COV-23 with the computations of COV-24, COV-25 and COV-27, and COV-26), the senior
+reviewer's computations kept as written apart from a header comment, and the integrator's reference check for COV-24;
+they write no file. Its experiment COV-28 runs once for each seed 0 to 7:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov23_singleton_classes.py    # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov26_exterior_singletons.py  # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov24_reference.py            # under a minute
+    for k in 0 1 2 3 4 5 6 7; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov28_cohort_search.py $k; done                                                      # up to 29 minutes each
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -2200,11 +2210,14 @@ designed the deadlock experiments. Its computations are `scripts/round22/cov01_i
 experiment as `cov07_word_order.py` (output `cov07_word_order.txt`). Experiment E2 of this section is the replay of
 section 2 continued with every step built at the state in front of it; it reached the lattice (the subsection after
 COV-07). Round 2 (COV-08 to COV-16, after E2) refutes two shortcuts and reduces coverage to one finite per-state
-predicate, Cover(Z) (COV-15). Round 3 (COV-17 to COV-22) constructs reachable states with one off piece in every kind
-of cell and shows that the catalogue covers them; whether COV-01's state is reachable stays open: its experiment
-COV-22 found no reaching word, and the integrator's checks after it exclude every one-letter SAFE sandwich. The
-integrator's depth table at the end of the section is the input to round 4. Coverage stays open: no reachable state
-without a step was found, and nothing here proves that every state has one.
+predicate, Cover(Z) (COV-15). Round 3 (COV-17 to COV-22) constructs reachable states with one off piece in every kind of
+cell and shows that the catalogue covers them; whether COV-01's state is reachable stays open: its experiment COV-22
+found no reaching word, and the integrator's checks after it exclude every one-letter SAFE sandwich. The integrator's
+depth table after them is the input to round 4 (COV-23 to COV-28). Round 4 classifies the height-2 off placements up to
+K⁺, gives an exact criterion for the SAFE-prepared whole-cap step at a singleton (it covers every rim placement except
+24 exceptional holes) and excludes every retained middle that returns X's locking block; its experiment COV-28 is
+running. Coverage stays open: no reachable state without a step was found, and nothing here proves that every state has
+one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -2710,11 +2723,12 @@ them, to a second level.
   therefore keeps x vacant, and for these two letters no word L·w·L⁻¹ with w in G₂ reaches COV-01's family. Command:
   `scripts/round22/cov20_two_level.py` with the argument `0:12` or `0:25`; outputs
   `runs/round22/cov20_two_level-0-12.txt` and `cov20_two_level-0-25.txt` (3,027 and 3,021 s of CPU).
-- What it does not decide: the second level at the other 34 landing letters; middles with a jumble letter at one of
-  the twelve caps, which can land some of its 395 off pieces and so change the off geometry; nested conjugates through
-  states with another off geometry; and histories whose last move of X's piece is not the inverse of a landing letter
-  (a lattice letter at a cap that contains the piece, or a jumble letter of another region). X's reachability stays
-  open.
+- What it does not decide: the second level at the other 34 landing letters; middles with a jumble letter at one of the
+  twelve caps, which can land some of its 395 off pieces and so change the off geometry; nested conjugates through
+  states with another off geometry; and histories whose last move of X's piece is not the inverse of a landing letter (a
+  lattice letter at a cap that contains the piece, or a jumble letter of another region). X's reachability stays open.
+  Round 4 removes the first and the third limit for every retained middle that returns X's locking block exactly
+  (COV-25).
 - Uses: COV-01, COV-14, COV-20.
 
 ### The integrator's depth table for coverage round 4 (computed; proved)
@@ -2747,3 +2761,162 @@ them, to a second level.
   identify the pairs whose pieces, landed by L⁻¹, give the same singleton geometry, and to read off the depth of each
   class (coverage round 4).
 - Uses: COV-14, COV-19.
+
+### Round 4 of coverage
+
+The senior reviewer took up the questions of the depth table (findings COV-23 to COV-28, all `minor`, all adopted, fast
+tier, 18 October 2026): the classification of singleton geometries up to K⁺, an invariant from depth or a reaching word
+for X, and what either does to Cover(Z) and its bounds. Its computations are
+`scripts/round22/cov23_singleton_classes.py`, which also gives the results that COV-24, COV-25 and COV-27 use, and
+`cov26_exterior_singletons.py`; the integrator re-ran both and got the same classes, counts, exceptional holes, blocks
+and landing chambers, with the outputs `runs/round22/cov23_singleton_classes.txt` and `cov26_exterior_singletons.txt`,
+and repeated the reviewer's reference check for COV-24 (`scripts/round22/cov24_reference.py`, output
+`runs/round22/cov24_reference.txt`). Its experiment is `scripts/round22/cov28_cohort_search.py`. The height-2 off
+placements fall into 500 classes up to K⁺ (COV-23); a singleton whose placement is in a rim class has a SAFE-prepared
+whole-cap step unless its hole is one of 24 exceptional placements (COV-24); no retained middle that returns X's locking
+block exactly reaches X's family, at any of its 36 landing letters (COV-25); X is not the only deep singleton, and outer
+placements need their own treatment (COV-26); and the last move of X's piece leaves two branches that nothing here
+excludes (COV-27). X's reachability and Cover(Z) on 𝒞₂ stay open.
+
+### COV-23. 500 classes of height-2 off placements: 353 rim, 131 deep, 16 without a landing letter (computed)
+
+- The reduction. Let J = (0, 12), R = J⁻¹ = element(I_a, 0, 45), Y = solved·J and C the 3,097 chambers of cap 0, and
+  write λ_y for the region of the chamber y. The group H = {h ∈ K⁺ : R·h·R⁻¹ ∈ K⁺} has order 360, and h ∈ H takes the
+  placement R·λ_y to R·λ_{h(y)} by the rotation R·h·R⁻¹ ∈ K⁺. The 177,120 chambers form 500 orbits of H, and a
+  comparison of exact vertex sets under all 7,200 rotations of K⁺ (exact vertex centroids serve only as a filter for
+  candidates) identifies no two of them: the placements R·λ_y fall into exactly 500 classes up to K⁺. The model has 20
+  nonlattice domains of left height 2 (`classes.frames`: five classes with four each, none shared), and K⁺ takes each to
+  the domain of R, so these are all the height-2 off placements. They are classes of placements, not of states: their
+  reachability, and whether a placement and a given hole form a valid state without overlap, are separate questions.
+- The counts. 484 classes meet C, so they have landing pairs (J, y) with y ∈ C; the other 16 are outer placements
+  without a landing letter (COV-26). A class is deep when all its landing pairs are deep chambers of Y (the depth
+  table), rim otherwise. By the class-0 cell of the placement, as (rim, deep): vertex (20, 111); edge (154, 18);
+  triangle without home chambers (111, 0); triangle with home chambers (37, 2); tetrahedron (31, 0); 353 rim and 131
+  deep classes in all.
+- The depth of one pair does not classify. Of the 715 deep chambers of Y, 445 lie in the 131 deep classes and 270 in 89
+  rim classes that also have rim pairs. Nor do the point case of COV-02 and the piece type together: R·λ_41 and R·λ_3982
+  are type-18 vertex placements, the first deep and the second rim, and of the eight type-18 vertex classes six are deep
+  and two rim. X's class is one of the two deep classes of triangles with home chambers; the other is COV-26's.
+- Command: `scripts/round22/cov23_singleton_classes.py`; output `runs/round22/cov23_singleton_classes.txt` (the
+  CLASSIFICATION line, and for the findings below the lines JORDAN, COVERAGE, LOCKS, LAST_MOVE and OUTER; about a minute
+  of CPU).
+- Uses: COV-02, COV-14, the depth table.
+
+### COV-24. Whole-cap coverage of singletons: an exact hole-access criterion (proved from computed certificates)
+
+- Every rim class has a reachable singleton. At Y each of the 29 SAFE orbits that contain rim chambers passes a global
+  Jordan certificate (JORDAN 29), which isolates an odd prime cycle on that orbit and fixes every other chamber, so by
+  the normal-closure argument of COV-18 the SAFE group acts as Alt on that orbit alone. For a rim class, take a rim
+  chamber y and two occupied chambers outside C in its orbit; a SAFE word V that realizes the isolated three-cycle on
+  them gives the reachable singleton solved·J·V·J⁻¹, whose off piece has the placement R·λ_y. This is an existence
+  proof: the words are not expanded, and |V| ≤ 7,200^174,023 − 1 as in COV-18.
+- The criterion. Let Z be a valid singleton with the hole h. For each legal landing letter L of its off piece, at the
+  cap C_L, let x_L be the landed chamber and Δ_L its orbit under the SAFE group of solved·L. A SAFE-prepared whole-cap
+  route (COV-10, COV-12) exists exactly when G(Z)·h meets Δ_L outside C_L for at least one L. Necessity: a preparation
+  that leaves the hole inside C_L leaves the middle |C_L| − 1 holes, too few to vacate C_L; otherwise the middle has the
+  off geometry of solved·L and the holes (C_L ∖ {x_L}) ∪ {h′}, and the orbit inventories force h′ ∈ Δ_L. Sufficiency:
+  the isolated alternating action on Δ_L carries that hole set to C_L and fixes every other orbit, and COV-12 gives the
+  strict step Z·L·V·L⁻¹ after the preparation. The orbit of the hole is taken in G(Z) and Δ_L in the middle's group;
+  they are different groups, and both are checked.
+- The computation. It uses the two retained generators of each SAFE grip, which generate the same A4 cap group as its
+  eleven retained letters, and for the other landing letters the exact normalizations E_i = t·J·u with t, u ∈ T,
+  transporting the reference orbits by the grip's frame and t, so the actual middle, its cap included, is used. In 337
+  of the 353 rim classes one landing pair serves every hole of the piece's type. In the other 16, after all landing
+  letters, exactly 24 hole placements fail, here as class: holes, in coordinates where the off geometry is R·λ_y (a hole
+  is transported by the same symmetry as the geometry): 1529: 2548; 2136: 3247; 2328: 3238, 3730, 3887; 2335: 3239;
+  2648: 2352; 2651: 2336; 2656: 2350; 2878: 2328, 4675, 4772; 2890: 2335; 2891: 2336; 2905: 2329, 4685, 4780; 2953:
+  2343; 3730: 3904; 3732: 3798; 3805: 541, 669, 1464; 3807: 543. Every other hole of these classes passes; the
+  integrator's re-run gives the same 16 classes and 24 holes. A reference check with the full `buffer.Alphabet` (the
+  reviewer's, repeated by the integrator): the geometry R·λ_2335 has 593 SAFE grips and chamber 3239 is an orbit of one
+  chamber, and so is chamber 541 at R·λ_3805.
+- The statement. Cover(Z) (COV-15) holds for every valid singleton Z whose off placement is in a rim class and whose
+  hole is not one of the 24. Bounds: the preparation routes one hole within a K⁺ type of at most 7,200 chambers, so it
+  needs at most 7,199 letters; at the middle the 3,097 off poses stay fixed, so V shortens to at most 7,200^174,023 − 1
+  letters with its complete labelled endpoint; the step has at most 7,200^174,023 + 7,200 letters, two one-letter cores
+  and two retained segments, inside the L and S(n) of R22C3-06 unchanged.
+- What it does not prove: that the 24 exceptions are unreachable, or that every other template of the catalogue fails at
+  them; anything for several off pieces, where neither the separation by kind of cell nor this classification supplies
+  the legality and hole-resource contracts.
+- Command: the JORDAN and COVERAGE lines of `scripts/round22/cov23_singleton_classes.py`; the reference check
+  `scripts/round22/cov24_reference.py`, output `runs/round22/cov24_reference.txt` (40 s of CPU).
+- Uses: COV-10, COV-12, COV-15, COV-18, COV-23, R22C3-06.
+
+### COV-25. No retained middle that returns X's locking block reaches X's family (proved from computed certificates)
+
+- The blocks. At Y the exact piece and cut classifications give 29 rigid blocks (O9). The union of their locked chambers
+  in cap 0 has 445 chambers, exactly the landing pairs of the 131 deep classes of COV-23, so the other 270 deep pairs
+  lie in rim classes. For x = 2149 the locking block is the 111-piece block whose first piece is 404, with I_B = {0, 2,
+  4, 5, 8, 13, 32} and S_B = {7, 10, 29}; its locked chambers in cap 0 are 2149, 2173, 2247 and 2249. The computation
+  checks the inclusions I_B ⊆ caps(x) ⊆ I_B ∪ S_B and the block's exact rigidity certificate.
+- The argument. Under a legal retained word w the block B moves by one multiplier k_B ∈ K⁺, and the content that was in
+  a locked chamber x is afterwards in k_B(x) (the lock lemma, O9). If w returns B to its exact poses, k_B is the
+  identity and x stays vacant. This allows any length of w and any retained motion of the off pieces along it, and needs
+  no fixed SAFE alphabet along w.
+- All 36 landing letters of X. Normalized to Y, the landing chamber of each is one of 2149, 2173, 2247, 6134, 6146,
+  6190, 12591, 12594 and 12599, all locked holes. So no word solved·L·w·L⁻¹ with w retained and returning the
+  corresponding locking block exactly reaches X's family. This includes every retained middle that returns all off
+  poses, every finite product of the lattice conjugates of the second level, and nested retained conjugations with SAFE
+  interiors to any depth: the two letters and the one level of the integrator's checks after COV-20 are no longer the
+  limit.
+- What it does not prove: an invariant of reachable states. A jumble middle can change lattice membership and the
+  blocks, and retained middles that do not return the locking block exactly, and other histories, are outside the proof.
+- Command: the LOCKS and LAST_MOVE lines of `scripts/round22/cov23_singleton_classes.py`.
+- Uses: O9, COV-14, COV-23, the integrator's checks after COV-20.
+
+### COV-26. X is not the only deep singleton, and outer placements need their own treatment (computed)
+
+- A second deep triangle. With every other piece at identity, piece 2249 at R has type 19 and left height 2, its class-0
+  cell is the triangle {0, 2, 23}, and its hole is 2249. Every vertex of its off region lies on or beyond body facet 3,
+  so the piece meets no lattice piece's interior: a valid singleton configuration, whose reachability is not proved. At
+  all 36 of its landing letters the normalized landing chambers are 2249, 6192 and 12601, all locked deep holes
+  (LAST_MOVE). So the type-19 triangle with home chambers is a second deep class of that kind besides X's type-18 class.
+- Outer placements. Pieces 1345 and 1437, each at R with every other piece at identity, give two distinct type-7 outer
+  placements, each separated from the lattice interiors by body facet 7. Neither has a landing letter; their mover caps
+  are {3, 7} and {3, 7, 13}, so Theorem FC (R22C-FC) does not exclude them, and their reachability stays open. Of the 16
+  outer classes of COV-23, nine have no cap that contains their off region and are excluded from reachable states by
+  Theorem FC (representatives 433, 434, 439, 440, 544, 545, 1225, 1226 and 1339), and seven have movers (1228, 1229,
+  1338, 1341, 1343, 1345 and 1437). These are placements; that each passes singleton non-overlap is not claimed.
+- Command: `scripts/round22/cov26_exterior_singletons.py`; output `runs/round22/cov26_exterior_singletons.txt` (seconds
+  of CPU; it rebuilds X first, with the same digest); the OUTER and LAST_MOVE lines of `cov23_singleton_classes.py`.
+- Uses: COV-01, COV-23, R22C-FC.
+
+### COV-27. The last move of X's piece: two branches, neither excluded for unrestricted histories (computed)
+
+- The reduction. Write a reaching history as A·τ·B, with τ the last letter that moves X's piece; the letters of B avoid
+  that piece but may move, create and land other off pieces.
+- Branch 1: the piece is on the lattice just before τ. Then τ = L⁻¹ for one of the 36 landing letters, and just before τ
+  the piece is in x_L = (L·R_X)(1474), with R_X = element(I_a, 0, 25): the history is A·L⁻¹·B. The off geometry at the
+  end of A is arbitrary, not that of solved·L, so the depth at solved·L does not exclude this branch in general; COV-25
+  excludes its retained-return subfamily only.
+- Branch 2: the piece is already off before τ, and τ has a multiplier g with g⁻¹·R_X outside K⁺. The inverse letter is
+  legal at the final singleton, since the piece lies wholly inside its cap and every other piece is on the lattice. The
+  nine caps that contain the piece, with their 59 nonidentity items, give 531 inverse-letter cases: 36 landing letters,
+  99 retained off-to-off cases and 396 jumble off-to-off cases (LAST_MOVE). The depth table supplies no transition
+  invariant for the 495 off-to-off cases or for the suffix B.
+- Where it stands. No reaching word for a deep class, and no invariant that excludes X under every legal history, was
+  found. The classification confines the singleton whole-cap problem to the 131 deep classes, the outer classes without
+  a landing letter and the 24 exceptional holes of COV-24, subject to validity and reachability; excluding every deep
+  class would still not give coverage of every singleton.
+- Bounds. They hold on the subclass that COV-24 covers. If a word H reaches a deep singleton, H⁻¹ is a native restoring
+  core for that state (its least length is not known): if |H| ≤ b the search envelope contains it without a larger b,
+  and otherwise b becomes max(b, |H|) for that instance. This gives no uniform bound over unrestricted mixed-class
+  histories.
+- Command: the LAST_MOVE lines of `scripts/round22/cov23_singleton_classes.py`.
+- Uses: COV-01, COV-14, COV-21, COV-24, COV-25, the depth table.
+
+### COV-28. A mixed-class experiment that changes X's cohort (experiment design)
+
+- Design. By COV-25, more retained nesting with exact return cannot reach X, so the experiment enlarges COV-22's
+  commutator inputs to words: L·[[[A, B], C], D]·L⁻¹ of 36 to 48 letters, with L one of X's 36 landing letters, A an
+  own-class and C a foreign-class jumble word of two or three letters at grips local to chambers 1474, 404 and 762, and
+  B and D retained letters there. The foreign segment C must change the pose of at least one piece of X's 111-piece
+  home-cell cohort, or the trial is dropped; every prefix is applied exactly, and a blocked prefix drops the trial too.
+  FOUND requires 1474 at exactly R_X as the only off piece, records the word and the endpoint digest, and checks that
+  the inverse word returns the solved digest.
+- What it decides. FOUND settles X's reachability positively and gives a native core well within b. NO_HIT or CUT_SHORT
+  decides nothing: the family is sampled, its acceptance condition is stricter than matching an unlabelled off region,
+  and neither a failure nor the cohort filter exhausts unrestricted histories.
+- Command: `scripts/round22/cov28_cohort_search.py <seed>` for the seeds 0 to 7, each with a 1,700-second CPU cutoff (at
+  most about 3.8 CPU hours in all). The integrator started the eight seeds on 18 October, four at a time (the design
+  said at most two; the cutoff per seed is the same): running.
+- Uses: COV-01, COV-22, COV-25.

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 4
+Up to the puzzle's symmetry the single off pieces of height 2 fall into 500 placements, and an exact test on the holes gives a restoring step at every placement whose landing chambers safe twists can refill, except at 24 hole positions; no word that keeps the isolated triangle's locking block and returns it exactly reaches the triangle, a second such deep placement exists, and the triangle's reachability stays open ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-23 to COV-28). A bounded search over longer mixed words is running, and the handoff index now lists 102 results.
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 3 checks
 No word that turns one cap, makes only safe twists and turns the cap back reaches the isolated triangle's family, at any of its 36 landing twists, and for two of them a second level of conjugates through the other caps misses it too; the bounded search COV-22 found no reaching word in 160,000 samples, which decides nothing ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8). A depth table for round 4 shows that, up to the puzzle's symmetry, every state one twist from solved is the same, and that safe twists can never refill 715 of the 3,097 chambers of its turned cap.
 

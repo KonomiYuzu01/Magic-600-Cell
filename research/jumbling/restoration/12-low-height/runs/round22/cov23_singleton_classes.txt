@@ -1,0 +1,9 @@
+CLASSIFICATION {"H": 360, "all_classes": 500, "landing_classes": 484, "counts": [[1, true, false, 20], [1, true, true, 111], [2, true, false, 154], [2, true, true, 18], [3, false, false, 111], [3, true, false, 37], [3, true, true, 2], [4, false, false, 31]], "mixed_pair_depth_classes": 89, "no_extra_vertex_equivalences": true}
+JORDAN 29
+COVERAGE {"all_holes_at_selected_lander": 337, "exceptions_after_all_landers": [[2136, 10, 24, [3247]], [3805, 6, 12, [541, 669, 1464]], [2890, 9, 12, [2335]], [2953, 10, 12, [2343]], [3807, 8, 24, [543]], [2891, 10, 24, [2336]], [2651, 10, 24, [2336]], [2656, 14, 24, [2350]], [2328, 6, 12, [3238, 3730, 3887]], [2335, 9, 12, [3239]], [2648, 15, 24, [2352]], [3730, 6, 12, [3904]], [2878, 6, 12, [2328, 4675, 4772]], [2905, 8, 12, [2329, 4685, 4780]], [1529, 10, 24, [2548]], [3732, 8, 24, [3798]]], "exception_holes": 24}
+LOCKS {"blocks": 29, "locked_pairs": 445, "equals_all_deep_class_pairs": true, "x_block": [26, 111, 404, [0, 2, 4, 5, 8, 13, 32], [7, 10, 29], [2149, 2173, 2247, 2249]]}
+LAST_MOVE {"piece": 1474, "counts": {"retained_off_off": 99, "landing": 36, "jumble_off_off": 396}, "landing_chambers": [2149, 2173, 2247, 6134, 6146, 6190, 12591, 12594, 12599]}
+LAST_MOVE {"piece": 2249, "counts": {"retained_off_off": 77, "landing": 36, "jumble_off_off": 300}, "landing_chambers": [2249, 6192, 12601]}
+OUTER [[433, 0, []], [434, 1, []], [439, 2, []], [440, 3, []], [544, 5, []], [545, 7, []], [1225, 0, []], [1226, 1, []], [1228, 2, [7]], [1229, 3, [7]], [1338, 2, [13]], [1339, 2, []], [1341, 5, [7]], [1343, 7, [1, 3, 7, 13]], [1345, 7, [3, 7]], [1437, 7, [3, 7, 13]]]
+VERSIONS 3.13.16 2.5.3
+COMPLETED_CPU 56.6

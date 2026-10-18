@@ -7428,6 +7428,19 @@ The third coverage shard (the senior reviewer, fast tier: the reachability of CO
 | COV-21 | proved | Every such state with off pieces is restored by the three-segment whole-cap step with empty preparation, within the bounds of R22C3-06; no new core is needed. |
 | COV-22 | experiment design | Sample 24-letter mixed-class commutators J·[[[a,b],c],d]·J⁻¹ for a word that reaches COV-01's family; only a hit decides. |
 
+### Coverage of B′(2), round 4 (COV-23 to COV-28)
+
+The fourth coverage shard (the senior reviewer, fast tier: the classification of singleton geometries up to K⁺, an invariant from depth or a reaching word for COV-01's state X, and what either does to Cover(Z) and its bounds; six results, all `minor`, all adopted; the integrator re-ran its two computations with the same classes, counts, exceptional holes, blocks and landing chambers, repeated its reference check and started its experiment). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| COV-23 | computed | The height-2 off placements fall into 500 classes up to K⁺: 353 rim, 131 deep and 16 outer without a landing letter; the depth of one landing pair does not decide the class. |
+| COV-24 | proved from computed certificates | A singleton has a SAFE-prepared whole-cap step exactly when the SAFE orbit of its hole meets the landed chamber's orbit outside the cap; this covers every rim placement except 24 holes in 16 classes, within 7,200^174,023 + 7,200 letters. |
+| COV-25 | proved from computed certificates | The 29 rigid blocks lock exactly the landing chambers of the deep classes, so no retained middle that returns X's locking block exactly reaches X's family, at any of its 36 landing letters. |
+| COV-26 | computed | A type-19 triangle (piece 2249) is a second deep singleton besides X; two type-7 outer placements have mover caps, so Theorem FC does not exclude them. |
+| COV-27 | computed | The last move of X's piece leaves two branches (36 landing letters and 495 off-to-off cases), and nothing here excludes either for unrestricted histories. |
+| COV-28 | experiment design | Sample 36- to 48-letter words L·[[[A,B],C],D]·L⁻¹ whose foreign segment changes X's cohort; only a hit decides; running. |
+
 ### The integrator's experiments (round 22)
 
 - Zero endpoint collateral at the depth 40 stop, with points as owners: strict′ steps of 60, 84, 60, 72 and 36 letters for b00, b01, b11, b16 and b20, each replayed exactly (no lattice piece off, every other off piece exact). With whole cells as owners (R22A-02), class 3: seven of 13 units have strict′ steps (b00 60, b01 84, b02 60, b07 48, b11 60, b13 60, b14 60 letters, each replayed exactly), including the four whose replay had failed with points as owners; the other six are glued; the seven share four vacant targets (R22A-05). Classes 2 and 4 (9 units): b16 72, b20 36 and b21 84 letters (two vacant targets for the three), b17 moved by no clean power (Theorem C applies), b18 glued, and b19, b08, b09, b10 without a vacant target but with entry transports (84, 96, 168 and 144 letters) into occupied home cells of 15, 20, 24 and 20 lattice pieces (`scripts/round22/transport_census.py`, records in stage 12 `runs/round22/line-a/`).
