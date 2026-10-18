@@ -10,6 +10,7 @@ claims:
   - {id: bprime-existence-goal, evidence_kind: decision, checked_at: 2026-10-18}
   - {id: bprime-research-lines, evidence_kind: decision, checked_at: 2026-10-18}
   - {id: bprime-line-c-without-solver, evidence_kind: decision, checked_at: 2026-10-18}
+  - {id: bprime-existence-first, evidence_kind: decision, checked_at: 2026-10-18}
 ---
 
 # Owner decision, 18 October 2026: the goal of B′(h) is existence with explicit bounds
@@ -52,6 +53,20 @@ Once the solver has finished its sealed analysis of line (c), it stops. The line
 reviewer, assisted by the integrator: the senior reviewer cross-examines the solver's analysis against its own,
 and the integrator re-checks the solver's computed results and runs the adjudicating experiment. The solver joins
 no later round of the line unless the owner assigns it again.
+
+## Existence first and shorter records (owner, later on 18 October 2026)
+
+The integrator proposed five ways to spend less time per result, and the owner agreed:
+
+1. A stuck step is settled by finite existence checks: N1, N2 and the Jordan certificates of its target
+   (`jordan_target.py`, a minute or two), which give a vacating word by Corollary A1. The word itself is built and
+   checked (10 to 20 minutes of CPU) only when a later state is needed.
+2. The search for short seeds (R22B-18) is deferred: short seeds shrink the bound but do not decide existence.
+3. Fewer single-instance experiments and more coverage theory: an order lemma for blocking, Alt at every state and a
+   coverage potential.
+4. The long background runs (E-B5 run 2 and E22-2) run at the lowest CPU priority; they are not stopped.
+5. From experiment D of line (c) on, each new result in the senior review record is a one-line index into stage 12
+   `PROOFS-B.md`, which keeps the full statement, proof and commands; each periodic check commits once.
 
 ## Effect
 

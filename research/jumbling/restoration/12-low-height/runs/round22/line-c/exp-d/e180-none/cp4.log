@@ -1,0 +1,47 @@
+{"table": "Y-table.json", "off_before": 14515, "domains": {"1": {"size": 592, "hub": [[2, 2]]}, "2": {"size": 1785, "hub": [[3, 1]]}, "3": {"size": 989, "hub": [[1, 1]]}, "4": {"size": 265, "hub": [[3, 2]]}, "5": {"size": 763, "hub": [[4, 2]]}, "6": {"size": 4681, "hub": [[3, 3]]}, "7": {"size": 111, "hub": [[3, 3]]}, "8": {"size": 238, "hub": [[3, 3]]}, "9": {"size": 1075, "hub": [[1, 1]]}, "10": {"size": 861, "hub": [[0, 0]]}, "11": {"size": 405, "hub": [[0, 0]]}, "12": {"size": 61, "hub": [[0, 0]]}, "13": {"size": 1893, "hub": [[1, 1]]}, "14": {"size": 726, "hub": [[1, 0]]}, "15": {"size": 67, "hub": [[3, 2]]}, "16": {"size": 3, "hub": [[4, 3]]}}, "sec": 6}
+{"own_contents": 1450, "free": 70, "blocked": [7, 12, 25, 37, 44, 47, 48, 55, 84, 99, 119, 134, 161, 168, 177, 201, 215, 217, 218, 234, 267, 269, 271, 281, 290, 291, 330, 340, 349, 353, 383, 396, 445, 454, 484, 501, 510, 538, 562], "fragments": {"6": 4681, "7": 111, "8": 238, "16": 3}, "sec": 18}
+{"model": "pole permutations and label actions", "sec": 90}
+{"cells": 2496, "generators": 4130, "bad_at_start": 56, "sec": 94}
+{"carrier_cell": {"caps": [562, 579], "n_caps": 2, "label": 1, "pieces_in_cell": 142}, "holes": 14515, "chambers_of_X": 86, "holes_eq_chambers_of_X": false, "free": 70, "gens": 4130, "cells": 2496, "sec": 93}
+{"labels_of_X_in_orbit": [0, 1, 2, 3, 4], "edge_orbits": 806, "sec": 95}
+{"near": 9, "grip_pairs": 36, "sec": 95}
+{"pair": [442, 473], "tools": 200, "cell_pairs": 10, "sec": 96}
+{"pair": [442, 502], "tools": 400, "cell_pairs": 19, "sec": 97}
+{"pair": [442, 579], "tools": 600, "cell_pairs": 27, "sec": 98}
+{"pair": [473, 442], "tools": 800, "cell_pairs": 27, "sec": 99}
+{"pair": [473, 502], "tools": 1000, "cell_pairs": 35, "sec": 100}
+{"pair": [473, 563], "tools": 1200, "cell_pairs": 44, "sec": 100}
+{"pair": [473, 579], "tools": 1400, "cell_pairs": 50, "sec": 101}
+{"pair": [502, 442], "tools": 1600, "cell_pairs": 50, "sec": 103}
+{"pair": [502, 473], "tools": 1800, "cell_pairs": 50, "sec": 104}
+{"pair": [502, 563], "tools": 2000, "cell_pairs": 58, "sec": 104}
+{"pair": [502, 579], "tools": 2200, "cell_pairs": 63, "sec": 105}
+{"pair": [502, 586], "tools": 2400, "cell_pairs": 71, "sec": 106}
+{"pair": [563, 473], "tools": 2600, "cell_pairs": 71, "sec": 107}
+{"pair": [563, 502], "tools": 2800, "cell_pairs": 71, "sec": 108}
+{"pair": [563, 579], "tools": 3000, "cell_pairs": 77, "sec": 109}
+{"pair": [563, 586], "tools": 3200, "cell_pairs": 84, "sec": 110}
+{"pair": [563, 598], "tools": 3400, "cell_pairs": 92, "sec": 110}
+{"pair": [579, 442], "tools": 3600, "cell_pairs": 92, "sec": 111}
+{"pair": [579, 473], "tools": 3800, "cell_pairs": 92, "sec": 112}
+{"pair": [579, 502], "tools": 4000, "cell_pairs": 92, "sec": 113}
+{"pair": [579, 563], "tools": 4200, "cell_pairs": 92, "sec": 114}
+{"pair": [579, 582], "tools": 4400, "cell_pairs": 102, "sec": 115}
+{"pair": [579, 586], "tools": 4600, "cell_pairs": 107, "sec": 116}
+{"pair": [579, 598], "tools": 4800, "cell_pairs": 113, "sec": 117}
+{"pair": [582, 579], "tools": 5000, "cell_pairs": 113, "sec": 119}
+{"pair": [582, 586], "tools": 5200, "cell_pairs": 121, "sec": 119}
+{"pair": [582, 598], "tools": 5400, "cell_pairs": 128, "sec": 120}
+{"pair": [586, 502], "tools": 5600, "cell_pairs": 128, "sec": 121}
+{"pair": [586, 563], "tools": 5800, "cell_pairs": 128, "sec": 122}
+{"pair": [586, 579], "tools": 6000, "cell_pairs": 128, "sec": 123}
+{"pair": [586, 582], "tools": 6200, "cell_pairs": 128, "sec": 123}
+{"pair": [586, 598], "tools": 6400, "cell_pairs": 132, "sec": 124}
+{"pair": [598, 563], "tools": 6600, "cell_pairs": 132, "sec": 125}
+{"pair": [598, 579], "tools": 6800, "cell_pairs": 132, "sec": 126}
+{"pair": [598, 582], "tools": 7000, "cell_pairs": 132, "sec": 127}
+{"pair": [598, 586], "tools": 7200, "cell_pairs": 132, "sec": 128}
+{"pair_tools": 7200, "cell_pairs": 132, "edge_cells": 65, "X_in_nodes": true, "z5_rank": 65, "z5_rank_with_unit_at_X": 65, "sec": 128}
+{"cycles_found": 2, "target_exponent": 4, "sec": 128}
+{"exact_try": {"solution": 0, "word_len": 360, "others_exact_pose_kept": 14459, "carrier_on_after": 56}, "sec": 156}
+{"model_off": 56, "word_len": 360, "cycle": [[562, 579], [579, 598], [582, 598], [579, 582]], "exact": {"all_admissible": true, "off_before": 14515, "off_after": 14545, "digest_after": "5622bce057a4ab66df1496a81f9dcfebfb4fdf3f68d3b55b8d23293b8339f534", "carrier_on_after": 56, "carrier_size": 56, "others_off": 14459, "others_exact_pose_kept": 14459, "lattice_pieces_in_X_before": 86, "newly_off_eq_lattice_pieces_of_X": true, "off_after_eq_others_plus_latX": true}, "sec": 156}

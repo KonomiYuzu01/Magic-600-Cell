@@ -681,8 +681,18 @@ rules out transport only. Its record goes into section 8 when the run ends.
   - B continued (R22C2-03): T1′ for 130 after (496, 1) and for 180 after (481, 2), the preparations R22C2-03 does
     not cover, fails the same way. The landing words (432 letters each) land all 61 and 56 pieces, but after W 61 and
     22 chambers of Bad(W⁻¹) (86 chambers; 61 and 56 occupied) are occupied and fixed by every SAFE letter, so N1
-    fails (`runs/round22/line-c/exp-b2.json`). Both preparations tried for each unit fail; experiment D (strict steps
-    for 174, 175 and 176 at the depth 60 stop in turn, then 180; R22C2-02) is next.
+    fails (`runs/round22/line-c/exp-b2.json`). Both preparations tried for each unit fail.
+  - D, an order at the depth 60 stop (R22C2-02; `scripts/round22/exp_d.sh`, `runs/round22/line-c/exp-d/`): first
+    174, 175 and 176, the units that block 180's cap 555, each by a strict′ step without endpoint collateral that the
+    transport census finds at the current state (24, 24 and 132 letters; 14,610 to 14,515 off pieces; each replayed
+    by `stepchk.py`). Then 180: without a preparation its landing word (360 letters) has no T1′ closure (N1 and N2
+    fail). After the readiness letter (481, 1) the landing word (288 letters) lands all 56 pieces; N1 and N2 hold for
+    T = Bad(W⁻¹) (86 chambers, 56 occupied), a 300-second greedy search leaves 8 occupied, and all 19 orbits that
+    meet T have Jordan certificates, so V′ exists by Corollary A1. The builder of E22-1b built V′ there (56 steps,
+    Jordan-route seeds of 117 to 162 digits, e ≤ 63, f ≤ 170, |V′| < 10^162, about 5 minutes) and the checker passes
+    it (about 20 minutes). So after 174, 175 and 176, 180 has a strict step (T1′ under the retained conjugation of
+    R22D-01): its blocking came from the order of the steps. 130 was not tried; the state after 180's step needs V′
+    on all chambers.
 - E22-2 (`scripts/eb6r.py`, written by Codex and reviewed by the integrator; its acceptance check
   `scripts/check_eb6r.py` passes): the complete search of R22D-01 with one retained letter r at the depth 100 stop.
   Of the 2,574 retained letters at the 234 clean grips, an exact rule prunes 1,309 (no piece of a high unit moves,
@@ -697,12 +707,14 @@ rules out transport only. Its record goes into section 8 when the run ends.
 - Line (a), round 3, continued: the replay of the order of R22A2-04 with each step built at the state in front of it
   (the census word when it is strict′ there, otherwise a fresh closure with `tclose2.py`) is running; then the eight
   units the sequence leaves, which need a step that changes the off geometry first.
-- Line (b): the commutator-power search of R22B-18 in the builder (the two seeds of R22B-13 as positive controls),
-  then b00's certificate rebuilt with it, to see how much of V's length short seeds remove; Alt at every state of 𝒞₂
-  (R22B-15) stays open.
-- Line (c), round 3 (senior reviewer) after the running experiments: a construction of b14's V after b12 and then
-  b15; 130 and 180 after experiment D (both preparations tried for each fail N1); unit 36's ready pair as a closure; a
-  one-partner T2′ for b06 with a vertex middle; and the coverage of 𝒞_2 by backward certification.
+- Line (b): the commutator-power search of R22B-18 is deferred: short seeds shrink V's bound but do not decide
+  existence, which N1, N2 and Jordan certificates already decide in a minute or two (Corollary A1). Alt at every
+  state of 𝒞₂ (R22B-15) stays open.
+- Existence before construction: a stuck step is settled by N1, N2 and the Jordan certificates of its target
+  (`jordan_target.py`); V is built with the builder of E22-1b only when a later state is needed.
+- Line (c), round 3 (senior reviewer): monotonicity of the SAFE group across strict steps, an order lemma for
+  blocking applied to 130, the units without a route (b05, b06, b15, b17 and the depth 60 leftovers), an audit of
+  experiment D, and the coverage of 𝒞_2 by backward certification.
 - Height 4: E22-2, then six-letter commutators (R22D-02) and protected two-level steps with a smaller Bad set than a
   whole cap (R22D-05).
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
@@ -809,6 +821,11 @@ step: the strict′ rows, the landing words' exact checks, and the vacancy premi
 chambers that every SAFE letter fixes. The landing words are `b15-W.json`, `u130-W.json`, `u180-W.json`,
 `u130-496-1-W.json` and `u180-481-2-W.json`.
 
+Line (c), experiment D (section 11), with `k60.json` as for E-B4; the Jordan check, the certificate of V′ and its
+check are listed in [`PROOFS-B.md`](PROOFS-B.md) section 6:
+
+    sh $S/round22/exp_d.sh k60.json <work dir>                                     # about 2 hours
+
 E22-2 (section 11), shard i of 8 (i = 0 to 7; 75 to 85 minutes each on one core):
 
     python3 -I -B $S/eb6r.py record $C/ia-k100-s7102.json <out>/shard-i.json --shard i/8 --seconds 86400 > <out>/shard-i.out 2> <out>/shard-i.log
@@ -881,12 +898,14 @@ Line (a), round 3, the closure of b10 after b08 (section 11), with `k40.json` as
 | `scripts/round22/r22a2_04_sequence.py`, `runs/round22/r22a2_04_sequence.txt` | Line (a), round 2: the senior reviewer's computation (kept as written apart from a header) and its output: the fourteen middles with their Bad sets and ghost maps, the composition matrix of the thirteen supplied steps, the hole-count search for fresh closures with its order, the construction bounds, and N1 and N2 for the glued units' own cells |
 | `runs/round22/t1prime-k40/` | Line (c): the solver's four T1′ steps at the depth 40 stop (`steps/u3.json`, `u4.json`, `u12.json`, `u18.json`, words with input and output digests) and the integrator's replay record (`replay.json`) |
 | `scripts/eb6r.py`, `scripts/test_eb6r.py`, `scripts/check_eb6r.py` | E22-2: the E-B6 search after one retained letter, with the exact classification update of R22D-01, exact pruning and the replay of every kept word r·C·r⁻¹; its unit test; its acceptance check at the depth 100 stop |
-| `scripts/round22/stepchk.py`, `scripts/round22/prep_t1prime.py`, `scripts/round22/exp_a.sh`, `scripts/round22/exp_b.py` | Line (c), the adjudicating experiments A and B: one step replayed from a pose table against the strict′ contract, the preparation of a T1′ closure (the solver's computation, given arguments), and the two experiments |
+| `scripts/round22/stepchk.py`, `scripts/round22/prep_t1prime.py`, `scripts/round22/exp_a.sh`, `scripts/round22/exp_b.py` | Line (c), the adjudicating experiments A and B: one step replayed from a pose table against the strict′ contract, the preparation of a T1′ closure (the solver's computation, given arguments), and the two experiments (`exp_b.py` also takes the unit as a unit file and `-` for no preparation, as experiment D uses it) |
 | `runs/round22/line-c/` | Their records: the unit files of b12, b14 and b15, b14's census word, the five landing words, and the outcomes (`exp-a.json`, `exp-b.json`, and `exp-b2.json` for the other preparations of 130 and 180) |
 | `runs/round22/e22-2/` | E22-2: for each finished shard, its final line (`shard-<i>-result.json`) and its per-letter log (`shard-<i>.jsonl.gz`) |
 | `scripts/round22/r22c02_locks.py`, `r22c03_locks60.py`, `r22c04_vectors.py`, `r22c04_orbits.py`, `r22c04_b06.py`, `x22c04_s61c.py`, `x22c07_movers.py`, `r22c2_02_blockers.py`, `r22c2_05_vertex.py`, `r22cf02_shadow.py` | Line (c): the computations of the senior reviewer's sealed analysis, cross-examination and second round, and of the solver's sealed analysis (`r22cf02_shadow.py`), each kept as written apart from a header; their outputs, re-run by the integrator, are `runs/round22/<name>.txt` and `runs/round22/line-c/shadow/` |
 | `scripts/round22/x22c09_r2_ready.py`, `runs/round22/line-c/r2-<unit>.txt` | Line (c), experiment C: two-letter readiness at the depth 60 stop for units 27, 36, 44 and 59 |
 | `runs/round22/line-c/b14-after-b12/` | Line (c), experiment A continued: b12's replay record, b14's core, the closure's log and result at the state after b12, the target file and Jordan check of its Bad(W) (`jordan_target.py` with that state's pose table), and b14's V as a certificate of R22B-10 with the builder's log and the checker's output |
+| `scripts/round22/exp_d.sh`, `scripts/round22/exp_d_units.py`, `scripts/round22/exp_d_pick.py` | Line (c), experiment D: the driver (three steps found and checked at the current state, then T1′ for 180 with `exp_b.py`), the unit files at a state with the search for a unit by its pieces, and the choice of a census step or a core to close |
+| `runs/round22/line-c/exp-d/` | Line (c), experiment D: the unit files, the census picks, the three step words and their replay records, 180's outcome without a preparation and after (481, 1), and `e180-cert/`: the target file, the Jordan check, V′ as a certificate of R22B-10, the builder's log and the checker's output |
 | `scripts/r22b01_cert.py`, `scripts/test_r22b01.py`, `scripts/check_r22b01.py`, `runs/lc13-k40/target-b00.json` | E22-1: the bounded builder of the R22B-01 certificate (seeds, letter tables and V; it records what it completed and why each other orbit is missing), its unit test on small exact alphabets, its acceptance check at the depth 40 stop, and b00's transport target T (111 chambers, with its digest) |
 | `scripts/r22b10_cert.py`, `scripts/check_r22b10.py`, `scripts/test_r22b10.py` | E22-1b: the builder of the R22B-10 certificate (seeds by the commutator or Jordan route, Schreier tables with word edges, every word an acyclic straight-line program with exact lengths), its independent checker, and its unit test with the controls of R22B-10 |
 | `runs/round22/e22-1b/` | E22-1b: the certificates of b00 and b19 at the depth 40 stop, the builder's logs and the checker's outputs |

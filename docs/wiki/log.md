@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] decision | Jumbling: B′(h) existence first, shorter records
+A stuck step of B′(h) is now settled by finite existence checks (N1, N2 and Jordan certificates, a minute or two) and its vacating word is built only when a later state needs it; the short-seed search is deferred, long runs go to the lowest priority, and new results enter the senior review record as one-line indexes into `PROOFS-B.md` ([decision](decisions/owner-decisions-2026-10-18-bprime-goal.md)).
+
+## [2026-10-18] update | Jumbling: B′(h) line (c), experiment D
+At the depth 60 stop, units 174, 175 and 176 land first by census steps of 24, 24 and 132 twists; after that unit 180, one half of the blocking cycle {130, 180}, has a strict T1′ step after the readiness twist (481, 1): its vacating word exists by Corollary A1 and was built and checked (fewer than 10^162 twists), so its blocking came from the order of the steps ([stage 12](../../research/jumbling/restoration/12-low-height/README.md), section 11; [proofs](../../research/jumbling/restoration/12-low-height/PROOFS-B.md), section 7).
+
 ## [2026-10-18] update | Jumbling: B′(h) line (b), round 3, and b14's vacating word after b12
 The senior reviewer gave an exact test for when a power of a word is a seed and found two seeds of 32 and 40 twists that pass in the full order at b00; powers of single letters cannot help there (every SAFE letter has order 2 or 3), short seeds for every orbit would give a bound linear in n, and Alt at every state stays open. The certificate builder also built b14's vacating word after b12's step (fewer than 10^158 twists, checked), so that strict′ step is constructed ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) R22B-11 to R22B-18; [stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 11; model review).
 

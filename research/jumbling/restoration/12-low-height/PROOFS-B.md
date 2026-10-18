@@ -1167,6 +1167,20 @@ Experiment A continued (R22C2-04), with `k40.json` as above, `G` as above and `z
 result, `b12-replay.json` the replay record of b12's step; `b14-cert.json.gz`, `b14-build-log.txt` and `b14-check.txt`
 are the certificate of V, the builder's log and the checker's output.
 
+Experiment D (R22C2-02), with `k60.json` the depth 60 stop as a pose table (`$S/export_table.py`), `E=$L/exp-d` and
+`z1.json` the pose table at Z1 that `exp_b.py` writes as `u-z1-table.json` in the work directory `<dir>/e180-481-1`:
+
+    sh $S/round22/exp_d.sh k60.json <dir>                                          # about 2 hours
+    python3 -I -B $S/round22/jordan_target.py $E/e180-cert/e180-target.json z1.json     # about 1 minute
+    python3 -I -B $S/r22b10_cert.py table z1.json $E/e180-cert/e180-target.json <cert>.json.gz --seconds 3600   # about 5 minutes
+    python3 -I -B $S/check_r22b10.py table z1.json $E/e180-cert/e180-target.json <cert>.json.gz                 # about 20 minutes
+
+`exp_d.sh` writes the unit files (`units/`), the census picks (`picks.jsonl`), the step words and their replay
+records (`word-<u>.json`, `step-<u>.json`), and for 180 the outcome without a preparation and after (481, 1)
+(`e180-none/`, `e180-481-1/`: the landing word, the closure's log and result). `e180-cert/` keeps the target file
+(`ghost.badW` of the closure after (481, 1), with its digest), the Jordan check, V′ as a certificate of R22B-10, the
+builder's log and the checker's output.
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -1546,4 +1560,16 @@ All exact, at exported pose tables, every step replayed (`stepchk.py`, `exp_a.sh
   (459, 1) (34 of its 66 first letters tried before the first success); units 44 and 59 have no ready pair (66 and 33
   first letters, exhaustive for this shape), and unit 27 has no first letter of this shape. Readiness is not vacancy:
   the pair gives a candidate for a closure, not a step.
-- D, an order at the depth 60 stop (R22C2-02): strict steps for 174, 175 and 176 in turn, then 180: queued.
+- D, an order at the depth 60 stop (R22C2-02; `exp_d.sh`, `runs/round22/line-c/exp-d/`): 174, 175 and 176, which
+  block 180's cap 555, land first, each by a strict′ step without endpoint collateral that the transport census finds
+  at the current state (two clean powers each; 24, 24 and 132 letters; 14,610 to 14,515 off pieces), each replayed by
+  `stepchk.py`. At that state 180's landing word without a preparation (360 letters) has no T1′ closure: N1 and N2
+  fail for its T. After the readiness letter A = (481, 1) the landing word W (288 letters) lands all 56 pieces and
+  takes the 86 lattice pieces of the cell off; at Z1 = W(Y), T = Bad(W⁻¹) has 86 chambers, 56 occupied, and N1 and N2
+  hold. The peeling certificate stops early and a 300-second greedy search leaves 8 occupied, but all 19 orbits of
+  the SAFE-ALL group that meet T have Jordan certificates (`jordan_target.py`), so V′ exists by Corollary A1. The
+  builder of R22B-10 then built V′ (56 steps, Jordan-route seeds of 117 to 162 digits on all 19 orbits, tables with
+  e ≤ 63 and f ≤ 170, |V′| < 10^162 within its bound; about 5 minutes), and its checker passes it
+  (`e180-cert/check.txt`, about 20 minutes). So 180 has the strict step A·W·V′·W⁻¹·V′⁻¹·A⁻¹ at the state after 174,
+  175 and 176 (T1′ with R22D-01): its blocking at cap 555 came from the order of the steps, as R22C2-02 says. 130,
+  whose cap 429 seven other units block, was not tried, and the state after 180's step needs V′ on all chambers.

@@ -3,7 +3,10 @@
 # Y = A(Z) the class-cell pure twist W (cellpure4.py --search), then T1' at Y: the closure V'.W^-1.V'^-1 of the
 # displaced content Q at Z1 = W(Y) (prep_t1prime.py, tclose2.py); the step at Z is A.W.V'.W^-1.V'^-1.A^-1, replayed
 # from Z against the strict' contract (stepchk.py). Exact; headless; research only.
-# Usage (from the repository root): python3 -I -B exp_b.py <Z table> <unit> <grip> <item> <work dir>
+# Experiment D uses the same template: the unit may be given by a unit file ({"pieces": [...]}, as exp_d_units.py
+# writes it) instead of its number, and the letter may be '-' '-' (no preparation, so the step is T1' alone); the
+# result's "letter" is the list of preparation letters.
+# Usage (from the repository root): python3 -I -B exp_b.py <Z table> <unit|unit json> <grip|-> <item|-> <work dir>
 import json
 import subprocess
 import sys
@@ -29,7 +32,7 @@ PY = [sys.executable, '-I', '-B']
 
 
 def main():
-    ztable, u, g, i, wd = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), Path(sys.argv[5])
+    ztable, u, g, i, wd = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], Path(sys.argv[5])
     wd.mkdir(parents=True, exist_ok=True)
     R, M = O.start(ztable)
     st = R.st
@@ -42,14 +45,24 @@ def main():
         for d in np.unique(dom[pieces]).tolist():
             units.append((sorted(int(p) for p in pieces[dom[pieces] == d]),
                           sorted(int(p) for p in pieces[dom[pieces] != d])))
+    if u.isdigit():
+        u = int(u)
+    else:
+        want = sorted(json.loads(Path(u).read_text())['pieces'])
+        hit = [k for k, (T, F) in enumerate(units) if T == want]
+        assert len(hit) == 1, 'the pieces are not one unit at this state'
+        u = hit[0]
     T, F = units[u]
     assert not F, 'the unit has other frames in its block; not handled here'
     (wd / 'unit.json').write_text(json.dumps({'pieces': T}) + '\n')
-    R.apply(g, i)
+    A = [] if g == '-' else [(int(g), int(i))]
+    for x in A:
+        R.apply(*x)
     B.export_pose_table(st, wd / 'Y-table.json')
-    R.undo()
+    for _ in A:
+        R.undo()
     assert st.digest() == z
-    res = {'unit': u, 'letter': [g, i], 'size': len(T), 'z_digest': z}
+    res = {'unit': u, 'letter': [list(x) for x in A], 'size': len(T), 'z_digest': z}
     with open(wd / 'cp4.log', 'w') as f:
         rc = subprocess.run(PY + [str(L / 'cellpure4.py'), str(TH), str(wd / 'Y-table.json'), str(wd / 'unit.json'),
                                   str(wd / 'cp4.json'), '--search'], stdout=f, stderr=subprocess.STDOUT).returncode
@@ -82,7 +95,6 @@ def main():
         print(json.dumps(res))
         return
     C = json.loads(full.read_text())['word']
-    A = [(g, i)]
     word = [list(x) for x in A] + Wd['word'] + C + [list(x) for x in CP.inverse_word(M, A)]
     (wd / 'step-word.json').write_text(json.dumps({'word': word, 'input_digest': z}) + '\n')
     with open(wd / 'stepchk.out', 'w') as f:
