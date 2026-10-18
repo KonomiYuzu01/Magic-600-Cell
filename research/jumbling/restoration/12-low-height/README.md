@@ -675,6 +675,20 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   - The two adjudicating experiments are done, and a bounded replay survey cannot decide Cover(Z) (COV-16). The
     packet's E5 inputs were wrong (the integrator's error): the census round 3 records are deeper scrambles with
     height-4 pieces, not depth 40 stops of 𝒞₂; the 𝒞₂ census stops on record are `ia-k40-s7101` and `ia-k60-s7104`.
+- Coverage, round 3 (the senior reviewer; COV-17 to COV-22 in `PROOFS-B.md` section 8; its computations
+  `scripts/round22/cov17_single_off.py`, `cov18_singleton_kinds.py` and `cov19_perfect_menu.py` re-run by the
+  integrator with the same digests, certificates and counts; `runs/round22/`):
+  - One off piece is reachable. The 24-letter word J·[[[A,B],B],D]·J⁻¹ (J = (0,12), A = (74,8), B = (188,4),
+    D = (178,1)) reaches a state whose only off piece is 58388, of type 17 and height 2, in a triangle cell, and its
+    inverse restores the solved state (COV-17); the smallest off count the integrator had found in the stored records
+    was 3 (stage 01's E2). By global Jordan certificates at solved·J, words J·V·J⁻¹ with V SAFE leave exactly one off
+    piece in a vertex, an edge, a triangle and a tetrahedron cell (COV-18).
+  - These singletons are covered: the inverse J·V⁻¹·J⁻¹ is a three-segment whole-cap step (COV-12) within the bounds
+    of R22C3-06, and the catalogue needs no new core for them (COV-21).
+  - COV-01's state X stays open. No homomorphism to an abelian group can exclude it, since every grip's menu is a
+    perfect group (COV-19), and no word J·V·J⁻¹ with V SAFE reaches its family, since the chamber its piece must come
+    from is a SAFE-fixed hole (COV-20). The experiment COV-22 samples 24-letter mixed-class commutators for a reaching
+    word (eight seeds, two at a time, 1,700 s of CPU each); only a hit decides.
 - The census with whole cells as owners (R22A-02), class 3 (13 units; measured, scratch census, each kept word
   replayed exactly): seven units have strict′ steps without endpoint collateral, b00 60, b01 84, b02 60, b07 48,
   b11 60, b13 60 and b14 60 letters (one to three clean powers), and the other six (b03, b04, b05, b06, b12, b15)
@@ -860,11 +874,14 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   each found at the state in front of it, so no state along that trajectory was a dead end; it is one trajectory.
   Round 2 reduced coverage to one finite per-state predicate, Cover(Z) (COV-15), and refuted two shortcuts: resources
   do not persist across steps (COV-09), and not every reachable state has a cap whose whole off content lands
-  (COV-13). Three parts remain. (1) Whether the isolated triangle of COV-01 is reachable, or a reachability invariant
-  that excludes it; if it is reachable, the geometric templates and the whole-cap route all fail there (COV-01,
-  COV-14). (2) The lemma that every state of 𝒞₂ with off pieces satisfies Cover(Z), with the resource contract of
-  COV-08 and the preparation test of COV-10 as its tools. (3) Unit 130 at the depth 60 stop after 131, 132, 133, 150
-  and 163. The third coverage round takes up (1) and (2).
+  (COV-13). Round 3 showed that reachable states with one off piece exist in every kind of cell and that the
+  catalogue covers them (COV-17, COV-18, COV-21). Three parts remain. (1) Whether the isolated triangle of COV-01 is
+  reachable, or an invariant that excludes it: no abelian invariant can (COV-19), and one family of words misses it
+  (COV-20); the experiment COV-22 is running, and only a hit decides. If it is reachable, the geometric templates and
+  the whole-cap route all fail there, and the inverse of its reaching word is the one native core it needs (COV-01,
+  COV-14, COV-21). (2) The lemma that every state of 𝒞₂ with off pieces satisfies Cover(Z), with the resource contract
+  of COV-08 and the preparation test of COV-10 as its tools. (3) Unit 130 at the depth 60 stop after 131, 132, 133,
+  150 and 163.
 - Line (a): the replay of the depth 40 stop is finished (E2, 1,193 to 0). The other 𝒞₂ census stop on record is the
   depth 60 stop `ia-k60-s7104`; the census round 3 records are deeper and have height-4 pieces, so they are not 𝒞₂
   inputs (COV-16). A further replay adds a trajectory and decides nothing universal.
@@ -1101,6 +1118,7 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/round22/r22b24_regular_hole.py`, `r22b26_small60.py`, `r22b27_small_t1prime.py`, `runs/round22/r22b24_regular_hole.txt`, `r22b26_small60.txt`, `r22b27_small_t1prime.txt` | Line (b), round 5: the senior reviewer's computations (kept as written apart from a header) and their outputs: an orbit without Alt that meets a target with one hole, the small orbits against the depth 60 home targets, and the same at the T1′ middles of 151 and 180 |
 | `scripts/round22/cov01_isolated_triangle.py`, `cov02_point_orbits.py`, `cov04_middles737.py`, `cov07_word_order.py`, `runs/round22/cov01_isolated_triangle.txt`, `cov02_point_orbits.txt`, `cov04_middles737.txt`, `cov07_word_order.txt` | Coverage, round 1: the senior reviewer's computations (kept as written apart from a header) and the integrator's run of its proposed experiment, with their outputs |
 | `scripts/round22/cov09_resource_persistence.py`, `cov13_mixed_frames.py`, `cov14_isolated_wholecap.py`, `runs/round22/cov09_resource_persistence.txt`, `cov13_mixed_frames.txt`, `cov14_isolated_wholecap.txt` | Coverage, round 2: the senior reviewer's computations (kept as written apart from a header), with the integrator's re-run outputs |
+| `scripts/round22/cov17_single_off.py`, `cov18_singleton_kinds.py`, `cov19_perfect_menu.py`, `cov22_mixed_search.py`, `runs/round22/cov17_single_off.txt`, `cov18_singleton_kinds.txt`, `cov19_perfect_menu.txt` | Coverage, round 3: the senior reviewer's computations and its experiment (kept as written apart from a header), with the integrator's re-run outputs |
 | `scripts/slp_apply.py`, `scripts/test_slp_apply.py` | The exact applier of a program of literal words, `tclose2.py` cores and R22B-10 certificates (straight-line programs of SAFE-ALL letters, applied to the labelled poses without expanding powers): the end pose table and the strict′ contract against the start state; its unit test |
 | `scripts/round22/replay_slp.py`, `runs/round22/line-a/replay2/` | E2, the replay continued from 737: the driver (literal words, closures with certificate V, T1′ steps with a literal or certificate V′, each applied by `slp_apply.py`); the plans, the stored landing words and cores (`inputs/`), and runs 1 and 2 with every step's files and end tables |
 | `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`, `e2_b06_t1.py` | E2, b06 with b05: the first SAFE-ALL preparation, the second counted against the reference middle's orbits, and the prepared T1′ attempt applied by `slp_apply.py`; records in `runs/round22/line-a/replay2/b06-<n>/` |

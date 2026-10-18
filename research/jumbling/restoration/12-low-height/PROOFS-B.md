@@ -1618,6 +1618,16 @@ a header comment; they write no file:
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov13_mixed_frames.py          # about 14 minutes
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov14_isolated_wholecap.py     # under a minute
 
+Coverage round 3 (section 8: COV-17, COV-18 with the checks of COV-20, and COV-19), the senior reviewer's computations
+kept as written apart from a header comment; they write no file. Its experiment COV-22 runs once for each seed 0 to 7,
+at most two at a time:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov17_single_off.py       # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov18_singleton_kinds.py  # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov19_perfect_menu.py     # seconds
+    for k in 0 1 2 3 4 5 6 7; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov22_mixed_search.py $k; done                                 # up to 29 minutes each
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -2177,8 +2187,10 @@ designed the deadlock experiments. Its computations are `scripts/round22/cov01_i
 experiment as `cov07_word_order.py` (output `cov07_word_order.txt`). Experiment E2 of this section is the replay of
 section 2 continued with every step built at the state in front of it; it reached the lattice (the subsection after
 COV-07). Round 2 (COV-08 to COV-16, after E2) refutes two shortcuts and reduces coverage to one finite per-state
-predicate, Cover(Z) (COV-15). Coverage stays open: no reachable state without a step was found, and nothing here
-proves that every state has one.
+predicate, Cover(Z) (COV-15). Round 3 (COV-17 to COV-22) constructs reachable states with one off piece in every kind
+of cell and shows that the catalogue covers them; whether COV-01's state is reachable stays open, and COV-22 is its
+experiment. Coverage stays open: no reachable state without a step was found, and nothing here proves that every
+state has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -2524,3 +2536,127 @@ neither a proof of B′(2) nor a reachable deadlock is established.
 - Next. Decide the reachability of COV-01's state (a reaching history or an invariant that excludes it), and attack
   the Cover(Z) lemma itself.
 - Uses: COV-09, COV-13, COV-15.
+
+### Round 3 of coverage
+
+The senior reviewer took up the two items round 2 left open (findings COV-17 to COV-22, all `minor`, all adopted,
+fast tier, 18 October 2026): whether COV-01's isolated triangle X is reachable, and what the answer does to Cover(Z).
+Its computations are `scripts/round22/cov17_single_off.py`, `cov18_singleton_kinds.py` and `cov19_perfect_menu.py`;
+the integrator re-ran them and got the same digests, certificates and counts, with the outputs
+`runs/round22/cov17_single_off.txt`, `cov18_singleton_kinds.txt` and `cov19_perfect_menu.txt`. Its experiment is
+`scripts/round22/cov22_mixed_search.py`. Reachable states with exactly one off piece exist in every kind of cell, and
+the catalogue as it stands covers them (COV-17, COV-18, COV-21); no abelian invariant can exclude X (COV-19); one
+family of words provably misses X (COV-20); X's reachability stays open.
+
+### COV-17. A legal 24-letter word reaches exactly one off piece (computed)
+
+- The word. With chronological commutators [A, B] = A·B·A⁻¹·B⁻¹, A = (74, 8), B = (188, 4), D = (178, 1) and
+  J = (0, 12), the word J·[[[A, B], B], D]·J⁻¹ has 24 letters. Its 22 middle letters are SAFE at solved·J, every prefix
+  is applied exactly, and the middle keeps the off fingerprint of solved·J.
+- The endpoint (digest `16d61ac2…`) has exactly one off piece, 58388, of type 17 and left height 2, in the class-0
+  triangle cell {0, 32, 45}; its only hole is 58388. Of the 2,976 pieces with nonidentity poses, all but 58388 are on
+  the lattice. The inverse word, applied exactly, returns the solved digest.
+- So the smallest positive off count at a reachable state is 1, inside 𝒞₂; the smallest the integrator had found in
+  the stored records was 3, at stage 01's E2 (one block of three pieces; [stage 01](../01-closure-x-to-e3/README.md)).
+  The witness does not settle X: its piece is of type 17, X's of type 18. It also shows that one member of a home-cell
+  cohort can carry a nonzero frame label while every other member is on the lattice, so no unrestricted form of
+  Lemma G forbids a singleton; Lemma G (R22C-G) holds in its free-class scope.
+- Command: `scripts/round22/cov17_single_off.py`; output `runs/round22/cov17_single_off.txt` (9 s of CPU).
+- Uses: R22C-G.
+
+### COV-18. Singleton off contents exist in all four kinds of cell (proved from computed certificates)
+
+- The construction. Let J = (0, 12), C the 3,097 chambers of cap 0 and Y = solved·J. At Y every piece of C is off,
+  every other piece is on the lattice and the hole set is C; the SAFE group has 562 grips, 6,182 letters and 1,816
+  chamber orbits, 1,781 of them singletons. Suppose G(Y) contains a three-cycle (h a b) that fixes every other chamber,
+  with h ∈ C and a, b ∉ C, and let V be a SAFE word that realizes it. Then the holes of Y·V are (C∖{h}) ∪ {a}, so one
+  lattice piece is inside cap 0, in chamber h. J⁻¹ lands all 3,097 original off pieces and takes that piece off:
+  solved·J·V·J⁻¹ has one off piece, in the region J⁻¹(h), of left height 2, and one hole, a. Every prefix is legal: V
+  uses Y's SAFE alphabet, which keeps the original off pieces, and J⁻¹ meets only those pieces, still inside cap 0, and
+  lattice pieces.
+- The certificates. For each row a global Jordan certificate (O5) was checked: its prime p satisfies d/2 < p ≤ d − 3
+  and divides exactly one cycle length on all 177,120 chambers, so a power of the word isolates a p-cycle on that
+  orbit. The orbit action is primitive and contains Alt(d), and the normal closure of the isolated p-cycle contains
+  Alt(d) on that orbit alone, which gives the three-cycle.
+  - Vertex: h = 2335, a, b = 809, 813; an orbit of 3,555 chambers with 6 holes; type 9; the cell {0}, which has home
+    chambers; p = 3,083; a certificate word of 400 letters.
+  - Edge: h = 25, a, b = 561, 571; 1,434 chambers, 18 holes; type 13; the cell {0, 54}, with home chambers; p = 797;
+    120 letters.
+  - Triangle: h = 75, a, b = 607, 623; 1,440 chambers, 36 holes; type 26; the cell {0, 45, 54}, without home
+    chambers; p = 863; 120 letters.
+  - Tetrahedron: h = 116, a, b = 644, 909; 120 chambers, 4 holes; type 35; the cell {0, 32, 45, 54}, without home
+    chambers; p = 79; 120 letters.
+- So each kind of cell has a reachable state whose one off content is one piece. X's case, a type-18 piece in a
+  triangle cell with home chambers, is not among them. Bound: |V| ≤ 7,200^174,023 − 1, since the 3,097 off poses stay
+  fixed through V and each of the other 174,023 pieces has at most 7,200 lattice poses; the reaching word has at most
+  7,200^174,023 + 1 letters.
+- Command: `scripts/round22/cov18_singleton_kinds.py`; output `runs/round22/cov18_singleton_kinds.txt` (35 s of CPU;
+  it also prints the checks of COV-20).
+- Uses: O5 (SAFE-ALL and Jordan certificates).
+
+### COV-19. No homomorphism to an abelian group tells X apart (computed; proved)
+
+- The check. The 60 I_a elements at grip 0 form a group that acts faithfully on the 120 class-0 poles (the poles 0, 2,
+  9 and 20 span R⁴) and is perfect: all 60 elements are commutators. Every other grip's menu is its conjugate by the
+  grip's frame, and all 600 frames lie in K⁺.
+- So every homomorphism χ from the group Γ that the menus generate to an abelian group vanishes on each grip's menu,
+  hence on every generator, hence on Γ. Lead (i) of the packet, an orientation sum of χ over the pieces weighted by
+  type or class, cannot tell X from a reachable state, whatever the cap populations are; this is stronger than χ
+  vanishing on K⁺. A position-dependent frame cocycle, an invariant built from stabilizers or a nonabelian invariant
+  is not excluded; each needs its own definition and a proof across all legal mixed-class moves.
+- Command: `scripts/round22/cov19_perfect_menu.py`; output `runs/round22/cov19_perfect_menu.txt` (9 s of CPU; it
+  rebuilds X first).
+- Uses: COV-01.
+
+### COV-20. X is outside the SAFE sandwich family of J = (0, 12); its reachability stays open (computed)
+
+- The obstruction. With J, Y and C as in COV-18, J·R lies in K⁺ and maps chamber 1474 to chamber 2149. A state of X's
+  family at the end of J·V·J⁻¹ would need a lattice piece in chamber 2149 just before J⁻¹. At Y, 2149 is a hole in a
+  singleton orbit of G(Y), so every SAFE V leaves it vacant: no word of this form reaches X's family, whatever V's
+  length or the final hole.
+- The type-18 holes of cap 0 at Y, by the cell of J⁻¹(h) and by whether h's SAFE orbit also holds occupied chambers
+  (wholly vacant, mixed): vertex cells with home chambers 18 and 6; edge cells with home chambers 15 and 33; triangle
+  cells without home chambers 3 and 24; triangle cells with home chambers 9 and 0. So the nine sources in X's case all
+  lie in wholly vacant orbits and none can take a lattice piece in. These are finite checks at this Y, not a
+  classification of reachability.
+- What stays open. No invariant that excludes X's family under every legal history was found, and no reaching word.
+  The orbit obstruction does not extend to an invariant, since further jumble letters change the off geometry and its
+  SAFE group. COV-17 shows that the unrestricted singleton prohibition of the packet's lead (ii) is false; Lemma G
+  constrains free words of one class and gives no law for mixed-class moves. An invariant special to type-18 pieces
+  in triangle cells with home chambers is still possible and unproved.
+- Command: the X lines of `scripts/round22/cov18_singleton_kinds.py` (`X_TARGET_FIXED`, `TYPE18_SINGLE_J`); output
+  in `runs/round22/cov18_singleton_kinds.txt`.
+- Uses: COV-01, COV-14, COV-17, COV-18, R22C-G.
+
+### COV-21. The constructed singletons are covered by the catalogue as it stands (proved)
+
+- The subclass. L_J is the set of states Z = solved·J·V·J⁻¹ with J = (0, 12), V SAFE at Y = solved·J and n(Z) > 0.
+  It is defined by a history; it is not proposed as an invariant of reachable states.
+- Every Z ∈ L_J satisfies Cover(Z) (COV-15). Apply J, then V⁻¹, then J⁻¹. J returns to Y·V and lands every off piece
+  of Z; at that middle the off geometry is exactly Y's, so V⁻¹ is SAFE there and restores the hole set C, which
+  vacates cap 0; J⁻¹ then returns to the solved state. This is COV-12's three-segment whole-cap form with an empty
+  preparation, and a strict′ step, since its endpoint is solved. It covers the four singletons of COV-18, and COV-17's
+  witness, whose 24-letter inverse word is the step.
+- Bounds. Shortening V to its complete labelled endpoint gives |V| ≤ 7,200^174,023 − 1 ≤ R − 1. The step uses two
+  one-letter cores and one retained segment, so it fits L = 4b + 5(R − 1) and the S(n) of R22C3-06; no native
+  mixed-class core is needed.
+- What it does not prove: Cover(Z) for every singleton state, the lemma on 𝒞₂, or X's case. If a reaching word H for
+  X's family is found, the geometric catalogue fails there (COV-01, COV-14), and adjoining the one native core H⁻¹
+  covers that instance; with |H| ≤ b the counting bound needs no change, otherwise b becomes max(b, |H|) for it. Neither
+  gives a uniform bound over arbitrary mixed-class histories.
+- Uses: COV-01, COV-12, COV-14, COV-15, COV-18, R22C3-06.
+
+### COV-22. One bounded mixed-class experiment for X's family (experiment design)
+
+- Design. COV-20 rules out a SAFE middle after one jumble letter, so the experiment samples 24-letter words
+  J·[[[a, b], c], d]·J⁻¹ whose middle has an own-class jumble letter a and a foreign-class jumble letter c, with b and
+  d retained letters, all at grips local to chambers 1474, 404 and 762. Every prefix is applied with the exact
+  simulator, and only an endpoint whose sole off piece is 1474 at exactly R is accepted: a member of X's family,
+  whatever its other lattice poses. Eight seeds, at most two at a time, each with a 1,700-second CPU cutoff (about 3.8
+  CPU hours in all).
+- What it decides. FOUND gives a legal reaching word and settles X's reachability positively; covering that state
+  then needs the 24-letter inverse as a native core, within the present b. NO_HIT or CUT_SHORT decides nothing: the
+  family is sampled, not exhausted, and no finite exhaustive reduction of unrestricted reachability is proved.
+- Command: `scripts/round22/cov22_mixed_search.py <seed>` for the seeds 0 to 7. The integrator started the eight runs
+  on 18 October; their outputs go to `runs/round22/cov22/` when they end.
+- Uses: COV-01, COV-17, COV-20.

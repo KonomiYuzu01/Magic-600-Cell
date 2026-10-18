@@ -7415,6 +7415,19 @@ The second coverage shard (the senior reviewer, fast tier, after E2: bridge lemm
 | COV-15 | proved; conditional | Coverage reduces to one finite per-state predicate Cover(Z); if every state of 𝒞₂ with off pieces satisfies it, restoration takes at most n strict′ steps within R22C3-06's bounds. |
 | COV-16 | experiment design | The two adjudicating experiments (COV-09, COV-13) are done and no bounded replay survey decides Cover(Z); the packet's census round 3 inputs have height-4 pieces and are not 𝒞₂ stops (the integrator's error). |
 
+### Coverage of B′(2), round 3 (COV-17 to COV-22)
+
+The third coverage shard (the senior reviewer, fast tier: the reachability of COV-01's isolated triangle and the Cover(Z) lemma; six results, all `minor`, all adopted; the integrator re-ran its three computations with the same digests, certificates and counts, and started its experiment). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| COV-17 | computed | A legal 24-letter word J·[[[A,B],B],D]·J⁻¹ from the solved state reaches exactly one off piece (type 17, height 2, in a triangle cell); its inverse restores the solved state. |
+| COV-18 | proved from computed certificates | Singleton off contents exist in vertex, edge, triangle and tetrahedron cells: words J·V·J⁻¹ with V SAFE, by global Jordan certificates at solved·(0,12), with V of at most 7,200^174,023 − 1 letters. |
+| COV-19 | computed; proved | The grip-0 menu is a perfect group of order 60 and every grip's menu is its K⁺-conjugate, so no homomorphism to an abelian group can tell COV-01's state apart. |
+| COV-20 | computed | No word J·V·J⁻¹ with V SAFE reaches COV-01's family (the chamber its piece must come from, 2149, is a SAFE-fixed hole); its reachability stays open. |
+| COV-21 | proved | Every such state with off pieces is restored by the three-segment whole-cap step with empty preparation, within the bounds of R22C3-06; no new core is needed. |
+| COV-22 | experiment design | Sample 24-letter mixed-class commutators J·[[[a,b],c],d]·J⁻¹ for a word that reaches COV-01's family; only a hit decides. |
+
 ### The integrator's experiments (round 22)
 
 - Zero endpoint collateral at the depth 40 stop, with points as owners: strict′ steps of 60, 84, 60, 72 and 36 letters for b00, b01, b11, b16 and b20, each replayed exactly (no lattice piece off, every other off piece exact). With whole cells as owners (R22A-02), class 3: seven of 13 units have strict′ steps (b00 60, b01 84, b02 60, b07 48, b11 60, b13 60, b14 60 letters, each replayed exactly), including the four whose replay had failed with points as owners; the other six are glued; the seven share four vacant targets (R22A-05). Classes 2 and 4 (9 units): b16 72, b20 36 and b21 84 letters (two vacant targets for the three), b17 moved by no clean power (Theorem C applies), b18 glued, and b19, b08, b09, b10 without a vacant target but with entry transports (84, 96, 168 and 144 letters) into occupied home cells of 15, 20, 24 and 20 lattice pieces (`scripts/round22/transport_census.py`, records in stage 12 `runs/round22/line-a/`).

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 3
+A legal 24-twist word from the solved state reaches a state with exactly one off piece, and constructions with Jordan certificates give such states in every kind of cell, each restored by one step the catalogue already has; no abelian invariant can tell the isolated triangle of the first round from a reachable state, one family of reaching words provably misses it, its reachability stays open, and a bounded search for a reaching word is running ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-17 to COV-22). The handoff index now lists 96 results.
+
 ## [2026-10-18] update | Jumbling: E-B5 run 2, the driver from the depth 40 stop
 With the LC-13 pure-twist script the stage 09 driver took the depth 40 stop from 1,193 to 377 off pieces in twelve steps (8,702 twists in about 14 hours), each replayed by the verifier with no collateral; three of its steps also moved other units, so the run is not a strict′ order. It stopped at the fallback's length bound with nine units left, which line (a) and E2 land on their own trajectory ([stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 8).
 
