@@ -7399,6 +7399,22 @@ The coverage shard (the senior reviewer, fast tier: a proof attempt and the desi
 | COV-06 | proved | Coverage checks need the holes and the off pieces' identities and poses, not the lattice orientations; explicit successor formulas for the holes after T1 and T1′. |
 | COV-07 | computed | The four stored T1′ words of b03, b04, b12 and b18 form no order at 737: after b12 the other three fail; rebuilt words are needed (section 2 of `PROOFS-B.md`). |
 
+### Coverage of B′(2), round 2 (COV-08 to COV-16)
+
+The second coverage shard (the senior reviewer, fast tier, after E2: bridge lemmas from successful steps to coverage; nine results, all `minor`, all adopted; the integrator re-ran its three computations with the same digests and verdicts). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| COV-08 | proved | T1′ resources pull back through the good-ghost map: N1 and N2 are exact checks on the holes of Z in f⁻¹(Δ∖T), and their persistence needs the inventory contract, not kept off poses or orbit partitions. |
+| COV-09 | computed | A strict′ predecessor (b15's step from the prepared 96 state) keeps the old middle alphabet yet turns N2 at b06's whole-cap middle from true to false (20 holes short on eight orbits). |
+| COV-10 | proved | A SAFE preparation exists exactly when some image of the hole set under the SAFE group gives a passing middle (a finite test); an integral flow criterion suffices under alternating-group hypotheses. |
+| COV-11 | audit | `e2_b06_prep2.py` is strict greedy descent with a 60-letter cap and a reference-middle limitation, so its failure certifies nothing; E2's recorded steps stand. |
+| COV-12 | proved | A whole-cap letter is eligible exactly when every off pose in the cap lies in one right coset; the three-segment form X·W·V′·W⁻¹ is strict even if other off pieces of the cap move for a while. |
+| COV-13 | computed | A reachable 120-letter state of 𝒞₂ (four frame domains) has no cap whose whole off content lands, so the universal whole-cap lemma is false; its inverse history is still a step. |
+| COV-14 | computed; proved | COV-01's isolated triangle has 36 whole-cap landing letters, and N1 fails at all of them under every SAFE preparation; its reachability is open. |
+| COV-15 | proved; conditional | Coverage reduces to one finite per-state predicate Cover(Z); if every state of 𝒞₂ with off pieces satisfies it, restoration takes at most n strict′ steps within R22C3-06's bounds. |
+| COV-16 | experiment design | The two adjudicating experiments (COV-09, COV-13) are done and no bounded replay survey decides Cover(Z); the packet's census round 3 inputs have height-4 pieces and are not 𝒞₂ stops (the integrator's error). |
+
 ### The integrator's experiments (round 22)
 
 - Zero endpoint collateral at the depth 40 stop, with points as owners: strict′ steps of 60, 84, 60, 72 and 36 letters for b00, b01, b11, b16 and b20, each replayed exactly (no lattice piece off, every other off piece exact). With whole cells as owners (R22A-02), class 3: seven of 13 units have strict′ steps (b00 60, b01 84, b02 60, b07 48, b11 60, b13 60, b14 60 letters, each replayed exactly), including the four whose replay had failed with points as owners; the other six are glued; the seven share four vacant targets (R22A-05). Classes 2 and 4 (9 units): b16 72, b20 36 and b21 84 letters (two vacant targets for the three), b17 moved by no clean power (Theorem C applies), b18 glued, and b19, b08, b09, b10 without a vacant target but with entry transports (84, 96, 168 and 144 letters) into occupied home cells of 15, 20, 24 and 20 lattice pieces (`scripts/round22/transport_census.py`, records in stage 12 `runs/round22/line-a/`).

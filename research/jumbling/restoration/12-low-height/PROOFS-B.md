@@ -1611,6 +1611,13 @@ written apart from a header comment; they write no file. COV-07 runs once for ea
     for u in 3 4 12 18; do COV_FIRST=$u OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
         python3 -I -B -u $S/round22/cov07_word_order.py; done                                     # up to 20 minutes each
 
+Coverage round 2 (section 8: COV-09, COV-13 and COV-14), the senior reviewer's computations kept as written apart from
+a header comment; they write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov09_resource_persistence.py  # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov13_mixed_frames.py          # about 14 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov14_isolated_wholecap.py     # under a minute
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -2168,9 +2175,10 @@ designed the deadlock experiments. Its computations are `scripts/round22/cov01_i
 `cov02_point_orbits.py` and `cov04_middles737.py`; the integrator re-ran them with the outputs
 `runs/round22/cov01_isolated_triangle.txt`, `cov02_point_orbits.txt` and `cov04_middles737.txt`, and ran its proposed
 experiment as `cov07_word_order.py` (output `cov07_word_order.txt`). Experiment E2 of this section is the replay of
-section 2 continued with every step built at the state in front of it; it reached the lattice (the last subsection
-below). Coverage stays open: no reachable state without a step was found, and nothing here proves that every state
-has one.
+section 2 continued with every step built at the state in front of it; it reached the lattice (the subsection after
+COV-07). Round 2 (COV-08 to COV-16, after E2) refutes two shortcuts and reduces coverage to one finite per-state
+predicate, Cover(Z) (COV-15). Coverage stays open: no reachable state without a step was found, and nothing here
+proves that every state has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -2323,6 +2331,196 @@ has one.
   for the same units pass: a closure needs a hole outside Bad(W) for each lattice piece that W takes off, a T1′ step
   one outside its target for each landing piece.
 - What it does not show. E2 is one trajectory from one stop, along a fixed plan rather than a search; it says
-  nothing about other states of 𝒞₂, and COV-01's state is untouched. Coverage stays open; its second round starts
+  nothing about other states of 𝒞₂, and COV-01's state is untouched. Coverage stays open; round 2 (below) starts
   from these results.
 - Uses: COV-03, COV-04, COV-06, COV-07, R22C3-02, section 2 (E2).
+
+### Round 2 of coverage
+
+After E2 the senior reviewer took up coverage again at the fast tier (findings COV-08 to COV-16, all `minor`, all
+adopted, 18 October 2026): whether a step's hole resources survive the steps before it, whether every reachable state
+has a cap whose whole off content lands, an exact preparation test, and the strongest coverage theorem the record
+supports. Its computations are `scripts/round22/cov09_resource_persistence.py`, `cov13_mixed_frames.py` and
+`cov14_isolated_wholecap.py`; the integrator re-ran them and got the same digests and verdicts, with the outputs
+`runs/round22/cov09_resource_persistence.txt`, `cov13_mixed_frames.txt` and `cov14_isolated_wholecap.txt`. Two
+proposed shortcuts are false (COV-09, COV-13), coverage reduces to one finite per-state predicate (COV-15), and
+neither a proof of B′(2) nor a reachable deadlock is established.
+
+### COV-08. T1′ resources pull back through the good-ghost map (proved)
+
+- Statement. Let a free-class core W land a nonempty set U exactly and keep every other off piece at its pose; let
+  B = Bad(W), T = Bad(W⁻¹), f: Ω∖B → Ω∖T its good-ghost bijection, H the holes of Z and D ⊆ T the landing chambers.
+  The middle holes are H1 = (T∖D) ⊔ f(H∖B) (COV-06). For each orbit Δ of the actual middle group G1 = G(Z·W) put
+  R_Δ = f⁻¹(Δ∖T). Then N1 is exactly D ∩ Fix(G1) = ∅, and N2 is exactly |H ∩ R_Δ| ≥ |D ∩ Δ| for every Δ: finite checks
+  from Z, W and the middle geometry. Counting the holes of Z outside T is wrong in general, since the source sets R_Δ
+  lie outside B. For a whole-cap letter B = T is the cap and f is the identity outside it.
+- The resource contract. For a strict′ predecessor P with occupied chambers E before it, good-ghost map φ on E and
+  landing chambers D_P of all the pieces it lands, every fixed chamber set R has h_after(R) = h_before(R) + |E ∩ R| −
+  |φ(E) ∩ R| − |D_P ∩ R| (the identity of R22C3-01, applied to R = R_Δ). Keeping off poses or an orbit partition gives
+  no bound on this. Sufficient for an old vacancy certificate to survive: the target off pieces and W's contract
+  survive, the old middle SAFE alphabet stays available, and the old per-orbit inequalities hold with the new H. A
+  stronger and simpler condition is that φ keeps each R_Δ and D_P avoids it.
+- Middles are not monotone. Endpoint SAFE alphabets grow under strict′ steps (R22C3-01), but middles need not: moving
+  holes out of B adds displaced lattice geometry Q, which can remove SAFE letters, split orbits or fix landing
+  chambers; moving holes into B removes some Q but spends outside holes; landing other off pieces can merge orbits.
+  Detection: recompute the middle off geometry, its SAFE alphabet and orbits, D ∩ Fix(G1) and the inequalities, with
+  the joint test of R22B-29 where independent alternating factors are not certified. Merged-orbit counts alone certify
+  nothing.
+- Uses: COV-06, R22C3-01, R22B-29.
+
+### COV-09. A strict′ predecessor turns N2 at a whole-cap middle from true to false (computed)
+
+- The run. Start from the recorded 96 state of run 2 (`runs/round22/line-a/replay2/run2/z-05-b19.json.gz`) and prepare
+  it by X = (178,7)(170,1)(75,1), the preparation that E2 later used for b06 at 71 (`replay2/b06-71/prep2/x-word.json`);
+  every letter is in the SAFE alphabet and the off fingerprint is kept. Then apply X⁻¹ and the stored b15 program as
+  an SLP. This predecessor is strict′: 96 → 71, b15's 25 pieces land, collateral 0, the other 71 off pieces exact; it
+  ends at the recorded 71 state (`291ae718…`).
+- The letter is W = (91,14), b06's whole-cap letter, whose landing set D is the 71 chambers of b05 and b06 at both
+  states. Before the predecessor (source `5e077fb6…`, the prepared 96 state) cap 91 holds 3 holes and the middle 3,119
+  off pieces; N1 and N2 hold. After it the cap holds 20 holes and the middle 3,077 off pieces; N1 holds and N2 fails,
+  with the deficits (orbit, deficit) (6, 2), (8, 2), (9, 1), (10, 3), (11, 3), (12, 2), (14, 2), (15, 5), 20 in all.
+  The holes outside the cap fell from 93 to 51. The old middle SAFE alphabet is a subset of the new one; the orbit
+  partitions differ.
+- So keeping the target off poses and the old middle alphabet does not keep the T1′ resources; COV-08's inventory
+  contract is the missing hypothesis. E2 restored the resource at 71 by applying the same X again before b06's T1′
+  (section 2).
+- Command: `scripts/round22/cov09_resource_persistence.py`; output `runs/round22/cov09_resource_persistence.txt`
+  (159 s of CPU in the integrator's run, 167 s in the reviewer's).
+- Uses: COV-06, COV-08, section 2 (E2).
+
+### COV-10. SAFE preparation: an exact finite test and a flow criterion (proved)
+
+- Exact test. Fix Z and a core W with the contract of COV-08, put G0 = G(Z), and let Γ0 be the joint orbit of the
+  hole set H under G0. A SAFE preparation exists exactly when some J ∈ Γ0 gives a middle at which the exact vacancy
+  test of R22B-29 accepts T. For each J the middle holes are (T∖D) ⊔ f(J∖B), and the middle off geometry, hence its
+  SAFE group, is fixed by the original off geometry and J ∩ B (the displaced lattice regions are W applied to B∖J).
+  Every J ∈ Γ0 is reached by a legal SAFE word, on a shortest path of at most ∏_i binom(|A_i|, |H ∩ A_i|) − 1 letters,
+  A_i the starting SAFE orbits; conversely every SAFE preparation gives such a J. No Alt hypothesis and no
+  identification of starting with middle orbits is assumed.
+- Flow criterion (sufficient). Choose an inside mask I ⊆ B; it fixes the middle geometry and G1. With A_i the G0
+  orbits, h_i = |H ∩ A_i|, b_i = |I ∩ A_i|, Δ_j the G1 orbits, d_j = |D ∩ Δ_j| and R_j = f⁻¹(Δ_j∖T), find integers
+  0 ≤ x_ij ≤ |A_i ∩ R_j| with Σ_j x_ij = h_i − b_i and Σ_i x_ij ≥ d_j; require also that I respects the fixed hole
+  bits of Z and that D ∩ Fix(G1) = ∅. If the partially filled starting orbits have degree at least 8 and their joint
+  action contains the product of their alternating groups (global Jordan words or R22B-19), one SAFE word X realizes
+  the chosen J; if the nontrivial target orbits of the middle carry independent alternating actions, Corollary A1
+  gives V′. Partially filled small or exceptional orbits need the joint-action test (with its kernel condition when
+  they are combined with large alternating factors); separate local tests do not suffice.
+- This is a finite sufficient condition, not a claim that its group hypotheses hold at every reachable state. It keeps
+  each starting orbit's hole count, which is stronger than type conservation; the capacities |A_i ∩ R_j| record how
+  starting and middle orbits meet, so no bijection between them is needed.
+- The integrator's count. In the six certificate checks of V′ recorded for E2 (`*-v-check.txt` under
+  `runs/round22/line-a/replay2/`) every target orbit had at least 120 chambers and passed by a Jordan certificate; no
+  orbit of 2 to 7 chambers met a target there.
+- Uses: COV-06, COV-08, R22B-19, R22B-29, Corollary A1.
+
+### COV-11. prep2 is a heuristic, not a preparation test (audit)
+
+- `scripts/round22/e2_b06_prep2.py` accepts only a single letter that strictly lowers its deficit and stops after 60
+  added letters, so even the flow hypotheses of COV-10 do not make it complete. Abstract counterexample: Sym(8)
+  generated by adjacent transpositions, one hole at point 1, and the requirement that the hole reach point 8. The
+  group contains Alt(8) and the one-unit flow is feasible, but every one-letter move from {1} leaves deficit 1, so
+  strict descent stops, while the sequence (1 2), (2 3), …, (7 8) succeeds.
+- Its second phase scores against the stored middle partition and has no inside-mask constraint, so it can move holes
+  into or out of T and change Q and the actual middle alphabet; a zero reference deficit certifies nothing about the
+  resulting middle. The E2 driver rebuilt and checked the actual middle and applied the whole program, so the recorded
+  steps stand. A greedy failure or timeout never shows that no preparation exists; the exact test is COV-10's.
+- Uses: COV-10, section 2 (E2).
+
+### COV-12. Whole-cap cores: exact eligibility and a three-segment form (proved)
+
+- Eligibility. Let C be the chamber set of an unstraddled cap c and W = (c, i) with element g ∉ K⁺. Then B = T = C and
+  the good-ghost map is the identity outside C. If W must land some off pieces and keep every other off piece at its
+  exact pose, every off piece inside c must land, since a nonidentity left multiplication changes every pose. So W is
+  eligible exactly when the cap holds a nonempty off set U_c and g·γ_p ∈ K⁺ for every p ∈ U_c: all these poses lie in
+  the one right coset g⁻¹K⁺. Two frame domains in the cap rule it out; one domain still needs a matching menu element.
+  A SAFE preparation fixes all off poses and cannot change eligibility.
+- Vacancy. For a prepared hole set J and landing chambers D the middle holes are (C∖D) ⊔ (J∖C); N1 is
+  D ∩ Fix(G1) = ∅, N2 is |(J∖C) ∩ Δ| ≥ |D ∩ Δ| for every actual middle orbit Δ, and R22B-29 decides vacancy exactly.
+  With COV-10's preparation test this characterizes the whole-cap T1′ route that keeps H3.
+- Three-segment form. Allow other off pieces inside c to move to other off poses under W, and require only that a
+  nonempty set U lands. If a SAFE V′ at Z·X·W vacates C, then X·W·V′·W⁻¹ is strict for U. V′ fixes every middle off
+  piece, the moved ones and Q included. W⁻¹ is admissible, since those pieces stay on their side of the cap and lattice
+  pieces never straddle. C is vacant, so W⁻¹ moves no lattice piece: it returns Q to the lattice and the moved pieces to
+  their poses, and U, which V′ took out of C, stays landed. X was SAFE and needs no undoing. The same hole formula and
+  vacancy test apply. Appending V′⁻¹ then needs its own admissibility check, since after the unwinding the surviving
+  off pieces need not have their middle poses. So a cap whose content does not all land does not rule out every
+  whole-cap step.
+- Uses: COV-06, COV-10, R22B-29, Lemma M.
+
+### COV-13. A reachable height-2 state with no all-content-landing cap (computed)
+
+- The state. From the solved state apply menu item 12 at every class-0 grip in increasing order: 120 legal letters,
+  digest `afc43efd…`. It has 147,904 off pieces, all of left height 2, in four off frame domains.
+- The audit. Of the 600 grips, 480 have straddled cuts and the other 120 are unstraddled caps holding at least two off
+  frame domains; there are no other cases. Two domains γ1K⁺ ≠ γ2K⁺ cannot both land under one g, since g·γ1 and g·γ2 in
+  K⁺ would give γ1⁻¹γ2 ∈ K⁺. So no admissible letter lands the whole off content of its cap, and SAFE preparations
+  leave this unchanged.
+- This answers the packet's question Q3 negatively inside 𝒞₂: the universal all-content-landing lemma is false.
+  Theorem FC holds (the 120 unstraddled grips are movers), and by FC no reachable state with off pieces has every cut
+  straddled. The state is no counterexample to coverage: its inverse history of 120 letters restores the solved state
+  with one free class, a direct strict′ core (a closure with empty V whose Bad set is already vacant).
+- Command: `scripts/round22/cov13_mixed_frames.py`; output `runs/round22/cov13_mixed_frames.txt`.
+- Uses: R22C-FC, COV-12.
+
+### COV-14. The isolated triangle has whole-cap landers but no prepared whole-cap vacancy (computed; proved)
+
+- The state is COV-01's X (digest `6580ef02…`, reconstructed). The unstraddled caps that contain piece 1474 are those
+  of grips 0, 1, 2, 3, 7, 13, 15, 19 and 23, and 36 whole-cap letters land it: grip 0 with items 12, 16, 20 and 24 to
+  32; grip 2 with items 14, 21, 23 and 43 to 51; grip 23 with the items of grip 0.
+- At W = (0, 12) the middle (digest `dad66d60…`) has 3,096 off pieces and a target of 3,097 chambers; 1474 lands in
+  chamber 2149. N1 fails, since 2149 is SAFE-fixed and occupied, and N2 has the deficit orbit 564 (0 holes, 1 needed).
+  The one source hole, 1474, is inside the cap.
+- Every preparation fails (proved). All 36 landers use grips 0, 2 and 23, each containing the triangle cell, so the
+  type-24 witness chambers 404 and 762 receive the same landing rotation as the piece. There is no type-24 hole and a
+  SAFE preparation keeps the piece exact, so both witnesses stay occupied. Every landing rotation differs from the
+  reference R⁻¹ by a left multiplication in K⁺, and the intrinsic Q-shadow certificate (R22C2-01) moves with it and
+  fixes the occupied landing chamber under every SAFE letter of the middle. So N1 fails for every preparation and all
+  36 letters; moving the type-18 hole out of the cap does not help.
+- Reachability of X is still open, so this is no counterexample to B′(2). If X is reachable, the geometric templates
+  of COV-01 and the whole-cap route all fail there, and only a native core, such as the inverse of a reaching
+  history, is left.
+- Command: `scripts/round22/cov14_isolated_wholecap.py`; output `runs/round22/cov14_isolated_wholecap.txt`.
+- Uses: COV-01, COV-12, R22C2-01.
+
+### COV-15. Coverage reduces to one finite per-state predicate (proved; conditional)
+
+- The catalogue. Free-class cores with their complete off-pose contracts and complete ghost Bad sets; closures
+  V·W·V⁻¹; T1′ steps with vacancy at their actual middles; SAFE-prepared T1′ steps; the single-letter whole-cap
+  three-segment form of COV-12; Theorem C instances. Units that land on the way count in the landing set. Each
+  instance checks its whole-content and free-class hypotheses where needed, the admissibility of every required
+  prefix, the joint preparation and vacancy conditions and the strict′ endpoint; a final V′⁻¹ is included only when
+  justified or checked. N1 and N2 alone are the acceptance test only where the simultaneous group-action hypotheses
+  are certified.
+- Cover(Z) means that some instance passes at Z. It is finite: enumerate the bounded cores, the joint SAFE hole images
+  and preparations, and the exact joint vacancy components at the resulting middles (COV-10 gives the exact
+  preparation test, its flow criterion a shortcut).
+- Theorem (conditional). If every Z ∈ 𝒞₂ with n(Z) > 0 satisfies Cover(Z), then every such Z is restored in at most
+  n(Z) strict′ steps: each accepted step lowers n by at least one, keeps the surviving off poses and ends in 𝒞₂, so no
+  further successor invariant is needed. The bounds stay those of R22C3-06: b = 13,205! − 1, N = 177,120,
+  R = 7,200^N, m = 35,400, g = 6,600, C_b = (m^(b+1) − 1)/(m − 1), T_R = (g^R − 1)/(g − 1), L = 4b + 5(R − 1) and
+  S(n) ≤ n·C_b⁴·T_R⁵. The templates fit the envelope of four cores and five retained segments (a preparation uses a
+  retained slot, and a whole-cap core has length one); shortening a core must keep its complete five-label action, and
+  shortening a retained segment its complete labelled endpoint.
+- What is established. E2 gives passing instances along one trajectory, not the lemma; the reviewer independently
+  evaluated only the b15 predecessor of COV-09, not all 21 steps. FC gives a mover, not a core or the resources;
+  COV-13 refutes the all-content shortcut but has an inverse-history step; COV-14's state is not known to be
+  reachable. Neither a proof of B′(2) nor a reachable deadlock of the full catalogue is established. The open lemma
+  is Cover(Z) on 𝒞₂.
+- Uses: COV-03, COV-10, COV-12, R22C3-06, R22C-K, R22C-FC.
+
+### COV-16. The adjudicating experiments are done; E5's inputs were wrong (experiment design)
+
+- The two bridge lemmas of the packet are decided by COV-09 (resources) and COV-13 (mixed frames), both run to the end
+  (167 s and 826 s of CPU on one thread each, in the reviewer's runs). The universal lemma Cover(Z) is not decided by a
+  bounded replay survey: an E5 success adds a trajectory, an E6 success gives step counts (lower bounds when the search
+  is incomplete), and a stall, a failed greedy preparation, a failed certificate builder or a timeout shows no
+  deadlock. A negative certificate must exhaust the stated cores and joint-action alternatives, or prove an
+  obstruction that covers them all.
+- Input correction (the integrator's error). The round 2 packet named the census round 3 records as depth 40 stops of
+  𝒞₂. Their recorded end heights are {2: 74,541, 4: 513} (`ia-k200-s7105`), {2: 27,088, 4: 111} (`ia-k100-s7108`) and
+  {2: 72,396, 4: 607} (`ia-k400-s7109`): deeper scrambles with height-4 pieces, outside 𝒞₂. The integrator confirmed
+  this from the records (`11-scramble-census/runs/round3/`, field `heights_end`). The 𝒞₂ census stops on record are
+  `round2/ia-k40-s7101` (E2's input) and `round2/ia-k60-s7104` (heights {2: 14,610}).
+- Next. Decide the reachability of COV-01's state (a reaching history or an invariant that excludes it), and attack
+  the Cover(Z) lemma itself.
+- Uses: COV-09, COV-13, COV-15.

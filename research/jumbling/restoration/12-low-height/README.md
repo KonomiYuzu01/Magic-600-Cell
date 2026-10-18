@@ -644,6 +644,27 @@ rules out transport only. Its record goes into section 8 when the run ends.
   - COV-07: the four stored T1′ words of b03, b04, b12 and b18 form no order at 737. b12's word is strict′ there; the
     other three are not, at 737 or after b12. So the words must be rebuilt at the current state, which the replay of
     line (a) continued (E2, below) does.
+- Coverage, round 2 (the senior reviewer, after E2; COV-08 to COV-16 in `PROOFS-B.md` section 8; its computations
+  `scripts/round22/cov09_resource_persistence.py`, `cov13_mixed_frames.py` and `cov14_isolated_wholecap.py` re-run
+  by the integrator with the same digests and verdicts; `runs/round22/`):
+  - Resources. A T1′ step's N1 and N2 are exact formulas in the holes of Z pulled back through the good-ghost map
+    (COV-08). They do not survive other steps: before b15's step the whole-cap middle of b06 at grip 91 passes N2;
+    after it, with the old middle alphabet kept, N2 fails by 20 holes on eight orbits (COV-09). So each step needs its
+    middle recomputed, as E2 did.
+  - Preparation has an exact finite test (some image of the hole set under the SAFE group gives a passing middle) and
+    a flow criterion when the groups are alternating (COV-10); the greedy `e2_b06_prep2.py` is a heuristic whose
+    failure proves nothing (COV-11).
+  - Whole caps. A whole-cap letter is eligible exactly when every off pose in the cap lies in one right coset, and the
+    three-segment form X·W·V′·W⁻¹ lets other off pieces of the cap move for a while (COV-12). A reachable state of 120
+    letters has no cap whose whole off content lands (four frame domains), so that universal lemma is false; the state
+    still has a step, the inverse of its history (COV-13). COV-01's isolated triangle has 36 whole-cap landing
+    letters, and N1 fails at every one of them under every preparation (COV-14); its reachability is still open.
+  - Coverage reduces to one finite per-state predicate Cover(Z): if every state of 𝒞₂ with off pieces satisfies it,
+    every such state is restored in at most n strict′ steps within the bounds of R22C3-06 (COV-15). Neither a proof
+    of B′(2) nor a reachable deadlock exists.
+  - The two adjudicating experiments are done, and a bounded replay survey cannot decide Cover(Z) (COV-16). The
+    packet's E5 inputs were wrong (the integrator's error): the census round 3 records are deeper scrambles with
+    height-4 pieces, not depth 40 stops of 𝒞₂; the 𝒞₂ census stops on record are `ia-k40-s7101` and `ia-k60-s7104`.
 - The census with whole cells as owners (R22A-02), class 3 (13 units; measured, scratch census, each kept word
   replayed exactly): seven units have strict′ steps without endpoint collateral, b00 60, b01 84, b02 60, b07 48,
   b11 60, b13 60 and b14 60 letters (one to three clean powers), and the other six (b03, b04, b05, b06, b12, b15)
@@ -826,13 +847,16 @@ rules out transport only. Its record goes into section 8 when the run ends.
   Vacancy at a given middle is settled (R22B-29: N1, N2 and the joint target-image test, finite and without Alt), so
   coverage is what remains (`PROOFS-B.md` section 8). E2 took the depth 40 stop to the lattice in 21 strict′ steps,
   each found at the state in front of it, so no state along that trajectory was a dead end; it is one trajectory.
-  Three parts remain. (1) Whether the isolated triangle of COV-01 is reachable, or a reachability invariant that
-  excludes it. (2) Resource contracts (R22C3-02): a closure spends one hole outside Bad(W) for each lattice piece that
-  W takes off, a T1′ step one outside its target for each landing piece, and a SAFE-ALL preparation moves holes (E2).
-  (3) Unit 130 at the depth 60 stop after 131, 132, 133, 150 and 163, and the other stops. The second coverage round
-  starts from the results of E2.
-- Line (a): the replay of the depth 40 stop is finished (E2, 1,193 to 0). Further replays only as the second
-  coverage round asks, for example at the census stops of stage 11.
+  Round 2 reduced coverage to one finite per-state predicate, Cover(Z) (COV-15), and refuted two shortcuts: resources
+  do not persist across steps (COV-09), and not every reachable state has a cap whose whole off content lands
+  (COV-13). Three parts remain. (1) Whether the isolated triangle of COV-01 is reachable, or a reachability invariant
+  that excludes it; if it is reachable, the geometric templates and the whole-cap route all fail there (COV-01,
+  COV-14). (2) The lemma that every state of 𝒞₂ with off pieces satisfies Cover(Z), with the resource contract of
+  COV-08 and the preparation test of COV-10 as its tools. (3) Unit 130 at the depth 60 stop after 131, 132, 133, 150
+  and 163. The third coverage round takes up (1) and (2).
+- Line (a): the replay of the depth 40 stop is finished (E2, 1,193 to 0). The other 𝒞₂ census stop on record is the
+  depth 60 stop `ia-k60-s7104`; the census round 3 records are deeper and have height-4 pieces, so they are not 𝒞₂
+  inputs (COV-16). A further replay adds a trajectory and decides nothing universal.
 - Line (b): whether N1 and N2 alone suffice at every target of 𝒞₂ (no step needs it once it carries the joint test
   of R22B-29), and the residual primitive case of R22B-25. The commutator-power search of R22B-18 stays deferred:
   short seeds shrink V's bound but do not decide existence.
@@ -1055,6 +1079,7 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/round22/r22c3_audit_d.py`, `r22c3_u151.py`, `r22c3_geometry.py`, `runs/round22/r22c3_audit_d.txt`, `r22c3_u151.txt`, `r22c3_geometry.txt` | Line (c), round 3: the senior reviewer's computations (kept as written apart from a header) and their outputs: the audit of experiment D, 151's pure endpoint and vacancy, the geometry of 142 and b17 |
 | `scripts/round22/r22b24_regular_hole.py`, `r22b26_small60.py`, `r22b27_small_t1prime.py`, `runs/round22/r22b24_regular_hole.txt`, `r22b26_small60.txt`, `r22b27_small_t1prime.txt` | Line (b), round 5: the senior reviewer's computations (kept as written apart from a header) and their outputs: an orbit without Alt that meets a target with one hole, the small orbits against the depth 60 home targets, and the same at the T1′ middles of 151 and 180 |
 | `scripts/round22/cov01_isolated_triangle.py`, `cov02_point_orbits.py`, `cov04_middles737.py`, `cov07_word_order.py`, `runs/round22/cov01_isolated_triangle.txt`, `cov02_point_orbits.txt`, `cov04_middles737.txt`, `cov07_word_order.txt` | Coverage, round 1: the senior reviewer's computations (kept as written apart from a header) and the integrator's run of its proposed experiment, with their outputs |
+| `scripts/round22/cov09_resource_persistence.py`, `cov13_mixed_frames.py`, `cov14_isolated_wholecap.py`, `runs/round22/cov09_resource_persistence.txt`, `cov13_mixed_frames.txt`, `cov14_isolated_wholecap.txt` | Coverage, round 2: the senior reviewer's computations (kept as written apart from a header), with the integrator's re-run outputs |
 | `scripts/slp_apply.py`, `scripts/test_slp_apply.py` | The exact applier of a program of literal words, `tclose2.py` cores and R22B-10 certificates (straight-line programs of SAFE-ALL letters, applied to the labelled poses without expanding powers): the end pose table and the strict′ contract against the start state; its unit test |
 | `scripts/round22/replay_slp.py`, `runs/round22/line-a/replay2/` | E2, the replay continued from 737: the driver (literal words, closures with certificate V, T1′ steps with a literal or certificate V′, each applied by `slp_apply.py`); the plans, the stored landing words and cores (`inputs/`), and runs 1 and 2 with every step's files and end tables |
 | `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`, `e2_b06_t1.py` | E2, b06 with b05: the first SAFE-ALL preparation, the second counted against the reference middle's orbits, and the prepared T1′ attempt applied by `slp_apply.py`; records in `runs/round22/line-a/replay2/b06-<n>/` |

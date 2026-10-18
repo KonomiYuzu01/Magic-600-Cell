@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 2
+After E2 the senior reviewer reduced coverage to one finite test per state (some step of the catalogue passes there) and refuted two shortcuts: a step's hole resources do not survive other steps even when its old middle moves are kept, and a reachable 120-twist state has no cap whose whole off content lands, though it still has a step; the isolated triangle of the first round defeats the whole-cap route as well, and whether it is reachable stays open, as does the claim that every reachable state passes the test ([stage 12](../../research/jumbling/restoration/12-low-height/README.md), [proofs](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8). The handoff index now lists 90 results.
+
 ## [2026-10-18] update | Jumbling: B′(2) experiment E2, the replay from 737 to the lattice
 The replay of line (a) continued from 737 off pieces with every step built at the state in front of it and applied exactly, certificates evaluated without expansion: b12 by its T1′ word, closures with certificate vacating words for four units, T1′ steps for seven more (three of them where closures had run out of holes), and b06 with b05 in one prepared T1′ step at a whole-cap middle, which removes b06's type deficit without a partner; with round 3 the depth 40 stop reaches the lattice, 1,193 to 0 off pieces in 21 strict′ steps, in under 10¹⁶⁴ letters ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) sections 2 and 8). It is one trajectory: coverage of every height-2 state stays open, and its second round starts from these results.
 
