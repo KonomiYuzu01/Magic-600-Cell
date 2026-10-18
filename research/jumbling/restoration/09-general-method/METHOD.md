@@ -312,6 +312,20 @@ Two mathematical gaps; the owner closed M2 on 17 October 2026, so M1 is the one 
     search for strict four-letter commutators, pruned by a proved necessary condition (Lemma E6), finds 232 that lower
     the unit at X and none for any high unit at the depth 100 stop or the fixture end; other forms of T4 are not yet
     tested there ([README](../12-low-height/README.md)).
+  - *Round 22 (18 October 2026; `SENIOR-REVIEW.md` section 27).* The theory research on B′(h) runs on four lines;
+    the proofs are written out in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md).
+    - Transport without endpoint collateral is a finite test at the state, with whole cells as owners and an explicit
+      bound. Its limits are proved: distinct contents never merge, so the words of one class land at most as many
+      contents of a kind as the class has vacant home cells of that kind, and a content that shares its cell with
+      lattice pieces takes them off whenever it lands. At the depth 40 stop class 3 has more contents than vacant
+      targets, class 4 has none, and the cells of seven glued units hold occupied chambers that no SAFE word moves.
+    - Whenever a vacating word V exists, one of at most C(177,120, n) − 1 letters does; a certificate of three-cycle
+      seeds and conjugator tables gives |V| ≤ 10·|T|·L. b00's transport target at the depth 40 stop can be vacated.
+    - A retained letter before and its inverse after a word transfers the landing problem exactly, and a lowering
+      conjugate has an exact endpoint contract. At the depth 100 stop 93 of the 108 direct free-class cases and both
+      whole-cap middles are impossible.
+    - The common open part is coverage: that every state of 𝒞_h has a step in a stated catalogue. Line (c), a joint
+      attack on T2 and T3, is recorded after its cross-examination.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not

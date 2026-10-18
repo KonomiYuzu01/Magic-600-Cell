@@ -2,7 +2,8 @@
 
 Status: in progress. The statement and the plan passed a plan check and a scoped re-check; experiments E-B1 to E-B4
 and E-B6 are done, E-B5 has a first bounded run (no step) and a second under way, and the transport of LC-13 has its
-first words and one closure (section 10).
+first words and two closures (section 10). Theory round 22 (18 October 2026) proved the first lemmas of four research
+lines toward B′(h) (section 11; the proofs are in [`PROOFS-B.md`](PROOFS-B.md)).
 
 The owner chose options A and B on 17 October 2026, provisionally
 ([decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md), item 4). Option A is the
@@ -401,7 +402,7 @@ What E-B6 settles: at X a strict four-letter commutator lowers K, and at the dep
 unit has one. There each unit shares its only clean cap with thousands of other pieces, and most cuts near that cap
 are blocked. The search covers the commutator form only: it does not exclude other words of four letters or fewer,
 or T4's second form, two protected lowering segments, so it sets no lower bound on the length of T4 at those states
-(section 11). The non-existence is exact for these two states and says nothing about other states of the same depth.
+(section 12). The non-existence is exact for these two states and says nothing about other states of the same depth.
 
 ## 10. LC-13: transport words for triangle and tetrahedron contents (measured, exact replay)
 
@@ -431,9 +432,9 @@ At the depth 40 stop, for its first three units in block order (`runs/lc13-k40/`
 
 | Unit | Content | Grip pairs | Landing powers | Candidates | W | Exact tries | Lattice pieces off | Bad(W) occupied | Closure |
 |---|---|---|---|---|---|---|---|---|---|
-| b00 | triangle, 33 pieces | 66 | 125,751 | 5,798 | [x, y]³, 12 letters | 3 | 111 | 111 of 111 | no V |
+| b00 | triangle, 33 pieces | 66 | 125,751 | 5,798 | [x, y]³, 12 letters | 3 | 111 | 111 of 111 | no V (greedy bounded at 3,600 seconds: 12 left) |
 | b01 | tetrahedron, 72 pieces | 84 | 221,937 | 16,052 | [x, y]⁶, 24 letters | 1 | 15 | 15 of 87 | V of 300 letters; step of 624 letters |
-| b02 | triangle, 111 pieces | 66 | 125,751 | 4,632 | [x, y]³, 12 letters | 2 | 111 | 111 of 111 | no V |
+| b02 | triangle, 111 pieces | 66 | 125,751 | 4,632 | [x, y]³, 12 letters | 2 | 111 | 111 of 111 | V of 18 letters (greedy, 3,600-second bound); step of 48 letters |
 
 Each grip pair gives 59 × 59 commutators (229,746 for the triangle units, 292,404 for the tetrahedron unit). A landing
 power moves the unit's point to label 0 of a home cell; a candidate also fixes the other 12 off contents of the class.
@@ -448,29 +449,104 @@ power moves the unit's point to label 0 of a home cell; a candidate also fixes t
   1,121: the unit lands, collateral is 0, every other off piece keeps its exact pose, and all 175,927 pieces on the
   lattice stay on it (175,841 at the same exact pose). `scripts/eb4_replay.py` replays the step independently from
   the exported table and finds it strict′ (`runs/lc13-k40/replay-b01.json`).
-- **The two triangle units do not close.** Bad(W) is a whole triangle home cell of 111 occupied chambers. The peeling
-  certificate stops after 35 (b00) and 34 (b02) of them, also with the depth-2 search of `tclose2m3.py` (144,292 and
-  100,435 letter pairs scanned), and the greedy fallback, bounded at 300 seconds, leaves 35 and 3 occupied
-  (`runs/lc13-k40/close-no-v.json`). For b02 the greedy stopped three chambers short when the time bound ended it; a
-  longer bound was not tried.
+- **The two triangle units: b02 closes with a longer bound, b00 lands another way.** Bad(W) is a whole triangle home
+  cell of 111 occupied chambers. The peeling certificate stops after 35 (b00) and 34 (b02) of them, also with the
+  depth-2 search of `tclose2m3.py` (144,292 and 100,435 letter pairs scanned), and the greedy fallback, bounded at 300
+  seconds, leaves 35 and 3 occupied (`runs/lc13-k40/close-no-v.json`). With the bound raised to 3,600 seconds the
+  greedy search finds an 18-letter V for b02 after 504 seconds. The step V·W·V⁻¹ has 48 letters and takes the off
+  count from 1,193 to 1,082: the unit lands, collateral is 0, every other off piece keeps its exact pose, and all
+  175,927 lattice pieces stay on the lattice (`close-b02.json`, `steps/u2.json`; `eb4_replay.py` finds it strict′,
+  `replay-b02.json`). For b00 the greedy search still stops, with 12 chambers occupied after 3,600 seconds, although
+  the target can be vacated (R22B-04, section 11). b00 lands instead without any V: two clean powers of single-letter
+  commutators, [x, y]³ and [x′, y′]¹², 60 letters, carry it into a vacant triangle home cell of its class, and the
+  independent replay finds the step strict′, 1,193 to 1,160 off pieces with collateral 0 (`steps/u0.json`,
+  `replay-b00.json`; section 11).
 
 What this shows, at one state: LC-13's transport exists here as single commutator powers of 12 and 24 letters, and
-the closure works for b01, whose Bad(W) holds 15 lattice pieces. For a triangle content every candidate takes at
-least 111 lattice pieces off, so the closure must vacate at least 111 chambers, and V is then the open part. The 13
-other triangle and tetrahedron units of this state were not run outside the driver (section 8).
+the closure works for b01, whose Bad(W) holds 15 lattice pieces, and for b02, whose Bad(W) holds 111. For a triangle
+content every candidate takes at least 111 lattice pieces off, so the closure must vacate at least 111 chambers; where
+a vacant home cell of the unit's kind can be reached by clean powers, no V is needed at all (section 11).
 
-## 11. Next
+## 11. Theory round 22: the stuck units and four lines toward B′(h) (18 October 2026)
 
-- V for the triangle transports of section 10, whose Bad(W) is a full triangle home cell: a longer greedy bound (for
-  b02 it stopped three chambers short at 300 seconds), and transports with a smaller Bad(W), which no single
-  commutator power gives for b00 or b02 (each takes at least 111 lattice pieces off): a power conjugated by one
-  retained letter (M1-18), or two powers in sequence. The three triangle contents among the E-B4 leftovers at the
-  depth 60 stop can be tried with `cellpure5.py` as it is.
-- Height 4 beyond the four-letter commutator, which E-B6 found for no unit at the depth 100 stop or the fixture end:
-  other words of four letters or fewer, which the search does not cover; a retained conjugation of the commutator (one
-  K⁺ letter r before it and r⁻¹ after it, which can unblock a cut as in E-B4); six-letter commutators [g, W] with W two
-  letters; and T4's second form, two protected lowering segments. The pattern argument of Lemma E6 is the starting
-  point for pruning each.
+The owner's decision of 18 October set the goal of section 1 and four lines of research that start from the units the
+depth 40 stop leaves stuck. The senior reviewer's results are in `09-general-method/SENIOR-REVIEW.md` section 27, and
+their proofs, written hypothesis by hypothesis for a later Lean formalization, in [`PROOFS-B.md`](PROOFS-B.md).
+
+**The 22 units of the depth 40 stop.** All are at height 2, in classes 2, 3 and 4. A scratch census searched, in the
+class-cell model, for paths of clean commutator powers that carry each unit into a vacant home cell of its kind, with
+points as owners, and replayed every word it kept exactly:
+
+| Group | Units (kind, pieces) | What holds them |
+|---|---|---|
+| A step without endpoint collateral | b00 (triangle, 33), b01 (tetrahedron, 72), b11 (tetrahedron, 29), b16 (triangle, 111), b20 (triangle, 60) | strict′ steps of 60, 84, 60, 72 and 36 letters (1 to 3 powers); no lattice piece goes off, so no V is needed. b01 and b11 need the same tetrahedron cell, so only one of them can land this way (R22A-05) |
+| Replay failed | b02, b07, b13 (triangle, 111, 111, 101), b14 (triangle, 78), b21 (triangle, 10) | the census protected points, not whole cells, and the replay turned another off content of a moved cell to another pose at the same point (R22A-02). With whole cells as owners the class 3 census finds strict′ steps for b02, b07, b13 and b14 (60, 48, 60 and 60 letters, each replayed exactly); b21 is in class 2, still to be run. b02 also closes by its LC-13 transport (section 10) |
+| Glued | b03, b18 (triangle, 63 and 5), b04, b05, b12, b15 (edge, 45, 61, 41, 25), b06 (vertex, 10) | the unit shares its cell with lattice pieces, which every class-P landing takes off (R22A-07), and the cell holds occupied chambers that no SAFE word moves (N1 fails), so no closure V·W·V⁻¹ exists for them at this state |
+| In place | b17 (edge, 86) | an edge content lands in its own cell (Theorem C), not by transport |
+| No target | b19 (tetrahedron, 16, class 2), b08, b09, b10 (triangle 33, tetrahedron 58, triangle 34, class 4) | no vacant home cell of the unit's kind in its class |
+
+E-B5 run 2 (the driver from this state, still running) has made six steps so far, from 1,193 to 724 off pieces: driver
+steps of 10, 10 and 848 letters for b07, b13 and b21, and pure-twist closures of 576, 24 and 762 letters for b17, b20
+and b01. Two of the driver steps changed the poses of other units (b11; b18 and b19), which the driver's free set
+allows, so they are clean steps but not strict′. Its record goes into section 8 when the run ends.
+
+**The four lines after round 22.**
+- (a) Transport without endpoint collateral. A finite test at the state, with whole cells as owners, decides whether
+  clean commutator powers carry a unit into a vacant home cell of its kind, and gives the step and an explicit
+  (existence) bound (R22A-01 to R22A-04). Its limits are proved: contents never merge, so one class lands at most as
+  many contents of a kind as it has vacant home cells of that kind (R22A-05); a glued content takes its cell's lattice
+  pieces off whenever it lands (R22A-07). At this state class 3 has five triangle and two tetrahedron contents that
+  clean powers move but three and one vacant targets, and class 4 has none. An entry power into an occupied home cell
+  followed by a closure with V is the next tool (R22A-06).
+- (b) The vacating word V. Whenever V exists, one of at most C(177,120, n) − 1 letters exists (R22B-02); with a
+  certificate of three-cycle seeds and conjugator tables, |V| ≤ 10·|T|·L (R22B-01). b00's transport target can be
+  vacated: its 19 target orbits have Jordan certificates (R22B-04). A greedy V counts net gains only and must be
+  checked as a whole (R22B-03).
+- (c) The T2 catalogue and T3 unlocking: a joint attack. After the two sealed analyses the solver stops (owner, 18
+  October 2026); the senior reviewer cross-examines the solver's analysis and the integrator runs the adjudicating
+  experiment. Recorded after the cross-examination.
+- (d) Height 4. A retained letter before a word and its inverse after transfers the landing problem exactly
+  (R22D-01), and a lowering conjugate has an exact endpoint contract (R22D-03). At the depth 100 stop 93 of the 108
+  direct free-class cases (R22D-04) and both whole-cap middles (R22D-06) are impossible; SAFE preparations cannot
+  unlock a cut (R22D-07).
+- What all four leave open is coverage: that every state of 𝒞_2 (𝒞_4) has a step in a stated catalogue. The explicit
+  bounds proved so far are either conditional (R22B-01) or existence bounds that show a finite search decides a
+  question; the measured steps (24 to 848 letters at this state) are of human scale.
+
+**Experiments of the round (integrator).**
+- E22-1 (measured, scratch probe): a vacating word for b00's target built from the greedy moves and from powers of
+  commutators whose exponent, chosen by the Chinese remainder theorem, keeps every vacated target vacant and carries a
+  hole onto the next target, each word checked on the full chamber permutation. The greedy phase (16 letters) vacates
+  77 of the 111 target chambers; for the next one (chamber 3392) no commutator around it has such a power, so this
+  construction stops with 34 occupied. A probe for seeds of the form [[x, y], z] found none. Neither result bears on
+  existence (R22B-04); the certificate of R22B-01, with its seeds and conjugator tables, is still to be built.
+- The census with whole cells as owners (R22A-02), class 3 (13 units; measured, scratch census, each kept word
+  replayed exactly): seven units have strict′ steps without endpoint collateral, b00 60, b01 84, b02 60, b07 48,
+  b11 60, b13 60 and b14 60 letters (one to three clean powers), and the other six (b03, b04, b05, b06, b12, b15)
+  are glued. The targets are shared: b00 and b02 go to one vacant triangle home cell, b07 and b13 to another, b14
+  to a third, and b01 and b11 to the one vacant tetrahedron home cell, so at most four of the seven land this way
+  from this state (R22A-05). Classes 2 and 4 are next; the script and its records are committed with them.
+- Line (c), the integrator's re-check of the solver's computed steps (measured): the solver's four T1′ steps at the
+  depth 40 stop, each its landing word W followed by V′·W⁻¹·V′⁻¹, replay strict with the units recomputed from the
+  state: b03 160 letters, b04 942, b12 1,158 and b18 160; no lattice piece leaves the lattice and every other off
+  piece ends at its exact pose (`runs/round22/t1prime-k40/`). All four are glued units whose home cells hold occupied
+  chambers locked to their own blocks. What this means for the catalogue is written after the cross-examination.
+- E22-2 (`scripts/eb6r.py`, written by Codex and reviewed by the integrator; its acceptance check
+  `scripts/check_eb6r.py` passes): the complete search of R22D-01 with one retained letter r at the depth 100 stop.
+  Of the 2,574 retained letters at the 234 clean grips, an exact rule prunes 1,309 (no piece of a high unit moves,
+  and no inside or straddler set changes at a cap the search reads), so 1,265 prepared states are searched, at about
+  a minute each; every kept word is replayed as r·C·r⁻¹. The 22 letters of grips 1 and 61 (the acceptance run) give
+  no strict word. The full search is running.
+
+## 12. Next
+
+- The census with whole cells as owners for all 22 units, with complete components and the entry transports of
+  R22A-06 (R22A-09); then line (a), round 2.
+- V for b00 from a certificate of R22B-01 (E22-1); then line (b), round 2.
+- Units that no single class can land at this state (capacity, glued cells, no target): words of another class,
+  retained conjugation (M1-18), landing other units first; line (c) after its cross-examination.
+- Height 4: E22-2, then six-letter commutators (R22D-02) and protected two-level steps with a smaller Bad set than a
+  whole cap (R22D-05).
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
@@ -539,11 +615,25 @@ and `u` one of `b00`, `b01`, `b02`:
         c2-$u --greedy-seconds 300                                                  # 4 to 7 minutes
     python3 -I $G/gm/tclose2m3.py research/jumbling/theory $G/echain k40.json $L/units/eb5-k40-k00-$u.json w-$u.json \
         c3-$u --greedy-seconds 300                                                  # after 'no V'; 10 to 12 minutes
-    python3 -I -B $S/eb4_replay.py k40.json $L/steps <out>                         # about 35 seconds
+    python3 -I -B $S/eb4_replay.py k40.json $L/steps <out>                         # 14 to 34 seconds per step
 
 `cellpure5.py` writes `t-$u.json` and the word `t-$u-word.json`; `w-$u.json` is `{"P": [], "Q": <that word>}`, as
-the driver writes it. The unit files are those the driver writes for the start state (`<work dir>/tg/eb5-k40-k00/`),
-and `steps/u1.json` is `word-full.json` of the closure `c2-b01`.
+the driver writes it. The unit files are those the driver writes for the start state (`<work dir>/tg/eb5-k40-k00/`).
+`steps/u1.json` is `word-full.json` of the closure `c2-b01`, and `steps/u2.json` that of the closure of b02 run with
+`--greedy-seconds 3600` (about 10 minutes). `steps/u0.json` is b00's step without endpoint collateral (section 11),
+found by the scratch census. `eb4_replay.py` replays each step from the start state on a fresh simulator;
+`replay-b00.json`, `replay-b01.json` and `replay-b02.json` are its records for one step each.
+
+Theory round 22 (section 11): the six exact computations of the senior review are listed in
+[`PROOFS-B.md`](PROOFS-B.md) section 6 (`scripts/round22/`, outputs in `runs/round22/`).
+
+Line (c), the integrator's re-check of the solver's four T1′ steps (section 11), with `k40.json` as for E-B5 and
+`Q=research/jumbling/restoration/12-low-height/runs/round22/t1prime-k40`:
+
+    python3 -I -B $S/eb4_replay.py k40.json $Q/steps <out>                         # about 3 minutes
+
+Each `steps/u<k>.json` is the solver's step for unit k: its landing word W (`cellpure5.py`) followed by the closure
+word V′·W⁻¹·V′⁻¹ (`tclose2.py` at W(Z), with W⁻¹ as the transport to close); `replay.json` is the replay record.
 
 ## Files
 
@@ -562,4 +652,9 @@ and `steps/u1.json` is `word-full.json` of the closure `c2-b01`.
 | `scripts/eb6.py`, `scripts/eb6_replay.py`, `scripts/eb6_meet.py` | E-B6: the high units of a state, their caps and lens pairs, and the exhaustive search for strict four-letter commutators (Lemma E6); the independent replay of the words it keeps; the exact check of which caps can meet |
 | `runs/eb6-X.json`, `runs/eb6-k100.json`, `runs/eb6-fx841.json`, `runs/eb6-replay-X.json`, `runs/eb6-meet.json` | E-B6 records at X (the commutator search for K only), the depth 100 stop and the fixture end; the replay record at X; the angles at which caps can meet. A rerun reproduces them except the timing fields, as long as `--comm4-seconds` lets the search reach every unit |
 | `scripts/cellpure5.py` | LC-13: `cellpure4.py` with a transport branch for a content that is not in an edge cell (commutator powers into a home cell of its kind, exact-pose filter) |
-| `runs/lc13-k40/` | LC-13 at the depth 40 stop: the three unit files; the transport records and words with input and output digests (`transport-<u>.json`, `transport-<u>-word.json`); the closure record of b01 (`close-b01.json`) and its step word (`steps/u1.json`); the replay record of that step (`replay-b01.json`); and, for b00 and b02, the closures' Bad(W), vacancy, certificate and greedy fields (`close-no-v.json`, taken from their `pre.json` and `result.json`) |
+| `runs/lc13-k40/` | LC-13 at the depth 40 stop: the three unit files; the transport records and words with input and output digests (`transport-<u>.json`, `transport-<u>-word.json`); the closure records of b01 and b02 (`close-b01.json`, `close-b02.json`) and their step words (`steps/u1.json`, `steps/u2.json`); b00's step without endpoint collateral (`steps/u0.json`); the replay record of each step (`replay-b00.json`, `replay-b01.json`, `replay-b02.json`); and, for b00 and b02, the 300-second closures' Bad(W), vacancy, certificate and greedy fields (`close-no-v.json`, taken from their `pre.json` and `result.json`) |
+| `PROOFS-B.md` | Theory round 22: the lemmas of lines (a), (b) and (d) toward B′(h), each with its hypotheses as finite checks at the state, its proof, its bound and its instances |
+| `scripts/round22/`, `runs/round22/` | The senior reviewer's six exact computations of round 22, re-run by the integrator, and their outputs |
+| `runs/round22/t1prime-k40/` | Line (c): the solver's four T1′ steps at the depth 40 stop (`steps/u3.json`, `u4.json`, `u12.json`, `u18.json`, words with input and output digests) and the integrator's replay record (`replay.json`) |
+| `scripts/eb6r.py`, `scripts/test_eb6r.py`, `scripts/check_eb6r.py` | E22-2: the E-B6 search after one retained letter, with the exact classification update of R22D-01, exact pruning and the replay of every kept word r·C·r⁻¹; its unit test; its acceptance check at the depth 100 stop |
+| `scripts/check_r22b01.py`, `runs/lc13-k40/target-b00.json` | E22-1: the acceptance check of the R22B-01 certificate builder (`r22b01_cert.py`, being written) and b00's transport target T (111 chambers, with its digest) |

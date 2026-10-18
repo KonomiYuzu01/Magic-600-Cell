@@ -1,0 +1,22 @@
+{
+ "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+ "off": 1193,
+ "steps": 1,
+ "strict_prime": 1,
+ "rows": [
+  {
+   "unit": 2,
+   "letters": 48,
+   "unit_size": 111,
+   "free": 0,
+   "unit_on_lattice": 111,
+   "collateral": 0,
+   "others": 1082,
+   "others_exact": 1082,
+   "others_landed": 0,
+   "off_after": 1082,
+   "strict_prime": true
+  }
+ ],
+ "seconds": 14.4
+}

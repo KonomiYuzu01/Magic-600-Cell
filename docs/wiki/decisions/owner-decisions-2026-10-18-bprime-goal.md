@@ -9,6 +9,7 @@ supersedes: []
 claims:
   - {id: bprime-existence-goal, evidence_kind: decision, checked_at: 2026-10-18}
   - {id: bprime-research-lines, evidence_kind: decision, checked_at: 2026-10-18}
+  - {id: bprime-line-c-without-solver, evidence_kind: decision, checked_at: 2026-10-18}
 ---
 
 # Owner decision, 18 October 2026: the goal of B′(h) is existence with explicit bounds
@@ -31,7 +32,8 @@ stated in [stage 12](../../../research/jumbling/restoration/12-low-height/README
      regularities of the words the greedy search finds;
    - (c) whether the T2 partner catalogue suffices, and how the units that T3 blocks are unlocked (straddlers,
      foreign-frame occupants, M1-19), as a joint attack of the senior reviewer and the solver: two sealed analyses,
-     exchanged, cross-examined, and decided by an experiment;
+     exchanged, cross-examined, and decided by an experiment (changed the same day: after its sealed analysis the
+     solver stops, see below);
    - (d) T4, height 4: retained conjugation, six-letter commutators and two protected lowering segments.
 4. **Senior-review rounds.** After each batch of experimental results, a research or review round of the senior
    reviewer runs, one shard per line, several lines at once. Plan checks and reviews use the fast tier; joint attacks
@@ -43,6 +45,13 @@ stated in [stage 12](../../../research/jumbling/restoration/12-low-height/README
    can later be handed to the Lean agent Archon ([record](owner-decisions-2026-10-17-jumbling-m2.md)). Everything is
    pushed to the branch of draft pull request #112, which stays a draft; no new pull request is opened
    ([record](owner-decisions-2026-10-17-jumbling-pr.md)).
+
+## Line (c) after the sealed analyses (owner, later on 18 October 2026)
+
+Once the solver has finished its sealed analysis of line (c), it stops. The line continues with the senior
+reviewer, assisted by the integrator: the senior reviewer cross-examines the solver's analysis against its own,
+and the integrator re-checks the solver's computed results and runs the adjudicating experiment. The solver joins
+no later round of the line unless the owner assigns it again.
 
 ## Effect
 

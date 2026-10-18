@@ -38,8 +38,10 @@ vacating.
 
 Finding V is the hard part. A peeling certificate gives an order in which the chambers that W needs can be emptied
 ([general method](../restoration/09-general-method/METHOD.md)). At the depth 40 stop of the census, a tetrahedron
-unit closed this way, in a step of 624 twists; for two triangle units no vacating word has been found yet (measured,
-[stage 12](../restoration/12-low-height/README.md), section 10).
+unit closed this way, in a step of 624 twists. For the two triangle units W needs a whole triangle home cell of 111
+chambers, and the certificate stops after about a third of them; a longer greedy search found an 18-twist V for one
+of them, which then closed in a step of 48 twists (measured, [stage 12](../restoration/12-low-height/README.md),
+section 10). The other one needed no V (section 3.5).
 
 ## 3.5 Turning one cell alone, and transport
 
@@ -51,6 +53,12 @@ unit closed this way, in a step of 624 twists; for two triangle units no vacatin
   cell's class are free).
 - At the depth 40 stop the transport words found were single commutator powers of 12 and 24 twists (measured,
   [stage 12](../restoration/12-low-height/README.md), section 10).
+- **Into an empty home cell, without V.** When a chain of commutator powers leads the unit to an empty home cell of
+  its kind and each power fixes every cell position that other pieces hold, the chain alone is a strict clean step
+  (proved, R22A-03 in the [stage 12 proofs](../restoration/12-low-height/PROOFS-B.md), which list the exact
+  conditions). A home cell that other pieces hold in part cannot take the unit (R22A-05). At the depth 40 stop one
+  triangle unit landed this way, with two powers in a step of 60 twists (measured,
+  [stage 12](../restoration/12-low-height/README.md), section 11). Look for such a cell before vacating one.
 
 ## 3.6 Unlocking
 
