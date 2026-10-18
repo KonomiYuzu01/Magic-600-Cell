@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: handoff and observation logs for five 1.0 lines
+One page per line that the jumbling work feeds (renderer, engineering, Look Lab, Taste Lab and design table) lists what the research hands over, each item with its status and the check that shows it done, and what the research has observed, each fact with its evidence ([handoff logs](../progress/1.0/jumbling-handoff/README.md)); writing them is one of the conditions under which draft pull request #112 merges. The logs decide nothing: their open items wait for the owner or for measurements on the owner's machine.
+
 ## [2026-10-18] update | Jumbling: B′(h) line (a), round 2
 The senior reviewer showed that b19's vacating word can be built (|V| < 10^539, a construction bound), that a step computed at one state stays strict′ after another exactly when the other's landing leaves its complete Bad set vacant, and that the computed steps, used unchanged, compose at most six deep; with a fresh vacating word for each step, fourteen of the 22 units at the depth 40 stop land in a checked order (1,193 to 336 off pieces), by an induction whose hypotheses are finite checks at the stop. The other eight are b17 and the seven glued units, which no SAFE word frees there; nothing of the sequence is built yet ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 2, R22A2-01 to R22A2-06; model review).
 
