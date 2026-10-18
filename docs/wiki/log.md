@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] decision | Jumbling: B′(h) is to be proved as existence with explicit bounds
+The owner judged a single step of a few hundred twists executable by a person and set the goal of conjecture B′(h) to an existence proof with explicit bounds that need not be small, not the shortest words; the theory starts from the units that the zero-Bad transport census and E-B5 run 2 leave stuck, on four parallel lines (a zero-Bad transport lemma, the vacating word V, T2 and T3 by a joint attack, height 4), with a senior-review round after each batch of results ([decision](decisions/owner-decisions-2026-10-18-bprime-goal.md)).
+
 ## [2026-10-17] decision | Jumbling: one draft pull request until the program is done
 The owner asked for no new pull request per task: the jumbling work collects in draft pull request #112, which merges only after the A and B theory is complete, the tutorial is written and accepted, the Archon formal verification passes, and the handoff and observation logs for Taste Lab, Look Lab, the renderer line and the engineering line are done ([decision](decisions/owner-decisions-2026-10-17-jumbling-pr.md)).
 

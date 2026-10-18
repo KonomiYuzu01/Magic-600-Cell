@@ -32,6 +32,12 @@ the off-lattice phase needs at most n·max_{1≤m≤n} L_h(m) letters and n·max
 - 𝒞_h is finite, so some bound exists (T9-05); B′ asks for an explicit catalogue and bound. By Theorem D (round 21)
   a computable bound at every height exists exactly when reachability is decidable, so B′ is a statement about the
   low heights only.
+- **The goal** (owner, 18 October 2026: [decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-18-bprime-goal.md)):
+  a single step of a few hundred twists is executable by a person, so B′(h) is to be proved as an existence statement
+  with explicit L_h and S_h that need not be small. The shortest words are not sought. The research starts from the
+  units that the zero-Bad census (section 10) and E-B5 run 2 leave stuck, on four lines: (a) a zero-Bad transport
+  lemma, (b) the vacating word V with an explicit bound, (c) the T2 catalogue and T3 unlocking by a joint attack,
+  (d) T4 at height 4.
 
 ## 2. The templates (obligations, not results)
 
