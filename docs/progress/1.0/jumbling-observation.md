@@ -64,7 +64,7 @@ A piece has a fixed identity (its id and its home region) wherever it is. A slot
 | Predicate | Definition | Source |
 | --- | --- | --- |
 | Lattice status | on or off the lattice (pose in K⁺) | `pose_lattice` |
-| Domain | the pieces of one domain γK⁺: same tree positions (t_L, t_R) (restoration T6); the lattice domain is (v₀, v₀) | new per-pose field (section 6) |
+| Domain | the pieces of one domain γK⁺: same tree positions (t_L, t_R) (restoration T6); the lattice domain is (v₀, v₀) | new per-pose field (section 8) |
 | Height | tree heights (d_L, d_R), for example "height at least 2" | new per-pose field |
 | Inside cap c | the certified inside set of an admissible cap c | engine classification |
 | Lens of c and d | inside c and inside d | engine |
@@ -81,7 +81,7 @@ Predicates combine with and, or and not, and save as a live query or as frozen i
 
 ### 3.3 Tints
 
-- **Domain tint** (restoration section 3, "the solver's view"): one colour per domain, the lattice domain neutral. Domains seen so far: 6 at the I_a@40 stop, 18 at an S4@60 stop. The palette must keep about 20 domains apart in both theme families, or fall back to "largest domains coloured, the rest one colour, with a count".
+- **Domain tint** (restoration section 3, "the solver's view"): one colour per domain, the lattice domain neutral. Domains seen so far: 6 at the I_a@40 stop, 18 at an S4@60 stop; on the W-J I_a fixture path the count passes 20 at record 82 and reaches 37 at record 300 (`research/jumbling/theory/results/paths-I_a-300.json`, series `domains`). The palette must keep about 20 domains apart in both theme families, or fall back to "largest domains coloured, the rest one colour, with a count".
 - **Off-lattice tint**: already in the research viewer.
 - **Height tint**: optional, a ramp over d_L + d_R.
 - A tint never replaces the sticker label: the label stays readable (A3: effects never hide structure).
@@ -96,7 +96,7 @@ Predicates combine with and, or and not, and save as a live query or as frozen i
 - By restoration M1, a cut is closed exactly when every contact across it joins one domain and nothing on it sticks out or is left open. The raw view shows the second half (holes and overhangs). A contact between two domains without a gap is visible only through the domain tint. Phase U is done when neither shows anything (N = 0, restoration M3).
 
 **Requirements.**
-1. Exposed faces are drawn in a neutral material, distinct from every sticker colour, optionally tinted by domain. This needs new geometry: the 3-faces of each piece on the cut hyperplanes of its region (section 6). Its size is not known and must be measured before the contract revision.
+1. Exposed faces are drawn in a neutral material, distinct from every sticker colour, optionally tinted by domain. This needs new geometry: the 3-faces of each piece on the cut hyperplanes of its region (section 8). Its size is not known and must be measured before the contract revision.
 2. The cut hyperplane of a selected cap can be shown as a translucent overlay, without hiding geometry.
 3. Projection: the existing chain (rotation Q, then perspective with eye distance d4 or stereographic from a named pole, then the 3D camera). The raw view adds one preset, **cap-centred**: stereographic from the antipode of the selected cap's pole, so that cap sits undistorted in the middle.
 4. The raw view is a view mode, not a filter: switching to it changes no selection or saved filter, and switching back restores the previous shrink and filters.
@@ -191,7 +191,7 @@ The full-state research page (`research/jumbling/viewer/full.html`) has:
 
 It has no domain tint, no exposed faces, no cap map, no cut slice and no checks.
 
-**Deep test input.** Random admissible scrambles leave about a third of the pieces on the lattice (I_a: 63 to 69% off from 700 to 1,400 twists), so they under-test every view and filter here. `research/jumbling/theory/deep_scramble.py` gives a 360-twist I_a scramble with 93.5% of the pieces off the lattice ([open problems](../../../research/jumbling/theory/open-problems.md), structure results). By the lattice-prefix rule it can follow any retained scramble, which mixes the colours as well, without changing which pieces are off the lattice. Views, filters and the cut slice are to be judged on it as well as on the W-J fixtures and the I_a@40 stop.
+**Deep test input.** Random admissible scrambles leave about a third of the pieces on the lattice (I_a: 63 to 69% off from 700 to 1,400 twists; 71% after the 1,000-twist scramble of the [scramble census](../../../research/jumbling/restoration/11-scramble-census/README.md)), so they under-test every view and filter here. `research/jumbling/theory/deep_scramble.py` gives a 360-twist I_a scramble with 93.5% of the pieces off the lattice ([open problems](../../../research/jumbling/theory/open-problems.md), structure results). By the lattice-prefix rule it can follow any retained scramble, which mixes the colours as well, without changing which pieces are off the lattice. Views, filters and the cut slice are to be judged on it as well as on the W-J fixtures and the I_a@40 stop.
 
 ## 10. Questions for the design table and the owner
 

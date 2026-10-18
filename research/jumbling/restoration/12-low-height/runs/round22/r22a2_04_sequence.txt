@@ -1,0 +1,87 @@
+{"safe_all_grips": 549, "letters": 6039, "off_lattice": 1193, "sec": 35}
+{"orbits": 1272, "singletons": 1237, "sec": 36}
+CORE b00 letters 60 Bad 111 occupied 0 good_cross_orbit 0 good_moved 0 unit 33 cpu 38.0
+CORE b01 letters 84 Bad 198 occupied 0 good_cross_orbit 0 good_moved 0 unit 72 cpu 39.7
+CORE b02 letters 60 Bad 111 occupied 0 good_cross_orbit 0 good_moved 0 unit 111 cpu 41.5
+CORE b07 letters 48 Bad 198 occupied 0 good_cross_orbit 0 good_moved 0 unit 111 cpu 42.8
+CORE b08 letters 96 Bad 111 occupied 20 good_cross_orbit 0 good_moved 0 unit 33 cpu 45.7
+CORE b09 letters 168 Bad 87 occupied 24 good_cross_orbit 0 good_moved 0 unit 58 cpu 52.2
+CORE b10 letters 144 Bad 111 occupied 20 good_cross_orbit 0 good_moved 0 unit 34 cpu 55.9
+CORE b11 letters 60 Bad 87 occupied 0 good_cross_orbit 0 good_moved 0 unit 29 cpu 57.9
+CORE b13 letters 60 Bad 198 occupied 0 good_cross_orbit 0 good_moved 0 unit 101 cpu 59.2
+CORE b14 letters 60 Bad 222 occupied 0 good_cross_orbit 0 good_moved 0 unit 78 cpu 60.8
+CORE b16 letters 72 Bad 111 occupied 0 good_cross_orbit 0 good_moved 0 unit 111 cpu 62.7
+CORE b20 letters 36 Bad 111 occupied 0 good_cross_orbit 0 good_moved 0 unit 60 cpu 64.1
+CORE b21 letters 84 Bad 111 occupied 0 good_cross_orbit 0 good_moved 0 unit 10 cpu 66.5
+CORE b19 letters 84 Bad 198 occupied 15 good_cross_orbit 0 good_moved 0 unit 16 cpu 68.2
+STATE 7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818 target_orbits [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+MATRIX b00 [None, 0, 33, 0, 9, 0, 9, 0, 0, 0, 19, 0, 19]
+MATRIX b01 [0, None, 0, 72, 0, 32, 0, 72, 72, 0, 0, 0, 0]
+MATRIX b02 [111, 0, None, 0, 28, 0, 28, 0, 0, 0, 45, 0, 45]
+MATRIX b07 [0, 111, 0, None, 0, 13, 0, 0, 111, 111, 0, 0, 0]
+MATRIX b08 [20, 0, 20, 0, None, 0, 33, 0, 0, 0, 19, 0, 19]
+MATRIX b09 [0, 31, 0, 31, 0, None, 0, 23, 31, 10, 0, 11, 0]
+MATRIX b10 [7, 0, 7, 0, 34, 0, None, 0, 0, 0, 23, 0, 23]
+MATRIX b11 [0, 29, 0, 29, 0, 7, 0, None, 29, 0, 0, 0, 0]
+MATRIX b13 [0, 101, 0, 101, 0, 13, 0, 0, None, 101, 0, 0, 0]
+MATRIX b14 [0, 0, 0, 0, 0, 6, 0, 0, 0, None, 0, 0, 0]
+MATRIX b16 [45, 0, 45, 0, 47, 0, 47, 0, 0, 0, None, 0, 111]
+MATRIX b20 [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, None, 0]
+MATRIX b21 [0, 0, 0, 0, 6, 0, 6, 0, 0, 0, 10, 0, None]
+FIXED_WORDS_MAX 6 sequence ['b21', 'b00', 'b14', 'b07', 'b11', 'b20'] reachable_subsets 261
+RECLOSURE 13 max 13 sequence ['b00', 'b01', 'b02', 'b07', 'b08', 'b11', 'b13', 'b09', 'b10', 'b14', 'b16', 'b21', 'b20'] reachable_subsets 8192 core_letters 1032
+RESOURCE_STEP b00 off_before 1193 minimum_slack 11 orbit35 2 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b01 off_before 1160 minimum_slack 1 orbit35 2 orbit35_need 1 orbit35_consumed 1
+RESOURCE_STEP b02 off_before 1088 minimum_slack 11 orbit35 1 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b07 off_before 977 minimum_slack 0 orbit35 1 orbit35_need 1 orbit35_consumed 0
+RESOURCE_STEP b08 off_before 866 minimum_slack 9 orbit35 1 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b11 off_before 833 minimum_slack 0 orbit35 1 orbit35_need 1 orbit35_consumed 0
+RESOURCE_STEP b13 off_before 804 minimum_slack 0 orbit35 1 orbit35_need 1 orbit35_consumed 0
+RESOURCE_STEP b09 off_before 703 minimum_slack 0 orbit35 1 orbit35_need 1 orbit35_consumed 1
+RESOURCE_STEP b10 off_before 645 minimum_slack 3 orbit35 0 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b14 off_before 611 minimum_slack 1 orbit35 0 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b16 off_before 533 minimum_slack 2 orbit35 0 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b21 off_before 422 minimum_slack 0 orbit35 0 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b20 off_before 412 minimum_slack 0 orbit35 0 orbit35_need 0 orbit35_consumed 0
+OFF_AFTER 352
+RECLOSURE 14 max 14 sequence ['b00', 'b01', 'b02', 'b07', 'b08', 'b11', 'b13', 'b19', 'b09', 'b10', 'b14', 'b16', 'b21', 'b20'] reachable_subsets 16384 core_letters 1116
+RESOURCE_STEP b00 off_before 1193 minimum_slack 11 orbit35 2 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b01 off_before 1160 minimum_slack 1 orbit35 2 orbit35_need 1 orbit35_consumed 1
+RESOURCE_STEP b02 off_before 1088 minimum_slack 11 orbit35 1 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b07 off_before 977 minimum_slack 0 orbit35 1 orbit35_need 1 orbit35_consumed 0
+RESOURCE_STEP b08 off_before 866 minimum_slack 9 orbit35 1 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b11 off_before 833 minimum_slack 0 orbit35 1 orbit35_need 1 orbit35_consumed 0
+RESOURCE_STEP b13 off_before 804 minimum_slack 0 orbit35 1 orbit35_need 1 orbit35_consumed 0
+RESOURCE_STEP b19 off_before 703 minimum_slack 0 orbit35 1 orbit35_need 1 orbit35_consumed 0
+RESOURCE_STEP b09 off_before 687 minimum_slack 0 orbit35 1 orbit35_need 1 orbit35_consumed 1
+RESOURCE_STEP b10 off_before 629 minimum_slack 2 orbit35 0 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b14 off_before 595 minimum_slack 0 orbit35 0 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b16 off_before 517 minimum_slack 1 orbit35 0 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b21 off_before 406 minimum_slack 0 orbit35 0 orbit35_need 0 orbit35_consumed 0
+RESOURCE_STEP b20 off_before 396 minimum_slack 0 orbit35 0 orbit35_need 0 orbit35_consumed 0
+OFF_AFTER 336
+RESOURCE_ORBITS [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+DEMAND_CONSUMPTION b00 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0] [0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 1, 2, 3, 6, 7, 2, 5, 2, 1, 0]
+DEMAND_CONSUMPTION b01 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 21, 24, 15, 8, 33, 21, 17, 1] [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 9, 0, 3, 20, 16, 15, 1]
+DEMAND_CONSUMPTION b02 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0] [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0]
+DEMAND_CONSUMPTION b07 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 21, 24, 15, 8, 33, 21, 17, 1] [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0]
+DEMAND_CONSUMPTION b08 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0] [0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 1, 2, 3, 6, 7, 2, 5, 2, 1, 0]
+DEMAND_CONSUMPTION b09 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 0, 4, 24, 18, 16, 1] [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 0, 2, 16, 14, 14, 1]
+DEMAND_CONSUMPTION b10 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0] [0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 1, 1, 4, 6, 5, 2, 7, 3, 1, 0]
+DEMAND_CONSUMPTION b11 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 0, 4, 24, 18, 16, 1] [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 6, 0, 2, 8, 4, 2, 0]
+DEMAND_CONSUMPTION b13 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 21, 24, 15, 8, 33, 21, 17, 1] [2, 2, 2, 1, 5, 3, 3, 5, 8, 11, 3, 5, 9, 12, 13, 4, 9, 3, 1, 0]
+DEMAND_CONSUMPTION b14 [6, 6, 6, 2, 12, 6, 6, 12, 18, 24, 6, 12, 18, 24, 30, 8, 18, 6, 2, 0] [3, 3, 3, 1, 6, 3, 3, 6, 8, 9, 2, 4, 6, 6, 8, 2, 4, 1, 0, 0]
+DEMAND_CONSUMPTION b16 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0] [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0]
+DEMAND_CONSUMPTION b20 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0] [3, 3, 3, 1, 6, 3, 3, 6, 7, 6, 1, 4, 4, 3, 5, 1, 1, 0, 0, 0]
+DEMAND_CONSUMPTION b21 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 9, 12, 15, 4, 9, 3, 1, 0] [1, 1, 0, 0, 0, 1, 0, 1, 1, 2, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0]
+DEMAND_CONSUMPTION b19 [3, 3, 3, 1, 6, 3, 3, 6, 9, 12, 3, 6, 21, 24, 15, 8, 33, 21, 17, 1] [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 3, 0, 1, 4, 2, 1, 0]
+ALL_RECLOSURES_BOUND 13 947965955617449161805790199551679651862858682416059372308213104198418707561428621539347700437775457585281763917614393145089382678527909653797220521369935341712258681132351328234333317348477612601288743637865169663610999684452064923346612253170851191208157400709727098819670146184031840641824128475738918708632019550731091759945056019456701026109601178801294791524401760260757989140661566493430605555126262409491931825333561628715540726777236837792644321972890176523258518087918826397497735871119688884451770768009607666327001763364232518800 digits 540
+ALL_RECLOSURES_BOUND 14 1085171554456814575946491566882837139482419032095775430310149879993384485366226220484352801001056709203051316074264912490676145397793072742554467665563911667319014834893585420867549640411940234775423611770584265217333188433396502001166327313933115624194735919242608957619026738707304524484403135155186910462646666343704627543460151041623034128502103662505208791971191129422879264054363560112392870327022579238318573374969607853842935988759356542846089855092431455922358851732425483101858143222275396292096781034701272333885365705676161233012 digits 541
+GLUE b03 fixed_occupied 4 nontrivial_deficits []
+GLUE b04 fixed_occupied 5 nontrivial_deficits []
+GLUE b05 fixed_occupied 6 nontrivial_deficits [(7, 7125, 0, 1)]
+GLUE b06 fixed_occupied 27 nontrivial_deficits [(1, 1139, 0, 2), (2, 3493, 0, 13), (3, 3528, 0, 20), (4, 707, 0, 5), (5, 2356, 0, 13), (6, 7126, 2, 56), (7, 7125, 0, 34), (8, 7137, 3, 45), (9, 3577, 1, 23), (10, 7164, 6, 35), (11, 7184, 12, 24), (14, 3587, 6, 12)]
+GLUE b12 fixed_occupied 5 nontrivial_deficits []
+GLUE b15 fixed_occupied 6 nontrivial_deficits [(7, 7125, 0, 1)]
+GLUE b18 fixed_occupied 4 nontrivial_deficits []
+DONE_CPU 70.88
