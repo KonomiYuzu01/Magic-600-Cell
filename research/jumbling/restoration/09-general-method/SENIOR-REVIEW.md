@@ -7259,7 +7259,7 @@ On 18 October 2026 the owner started the theory research on conjecture B′(h) o
 | R22A-08 | computed (re-run) | Vacant home cells at the depth 40 stop: class 2, two triangle and one edge (the edge cell holds b17 itself); class 3, three triangle and one tetrahedron; class 4, none. Free grips 113, 116 and 111. |
 | R22A-09 | open | The five units whose replays failed under the point rule (b02, b07, b13, b14, b21): R22A-02 explains the failure; whether they have paths under the whole-cell rule is the integrator's census below. A wider decision procedure (accumulated rotations of the 2,640 non-outer cells, at most 7,200^2,640 records) exists and was not run. |
 
-### Line (b): the vacating word V (R22B-01 to R22B-04)
+### Line (b): the vacating word V (R22B-01 to R22B-10)
 
 | Finding | Status | Result |
 | --- | --- | --- |
@@ -7267,6 +7267,17 @@ On 18 October 2026 the owner started the theory research on conjecture B′(h) o
 | R22B-02 | proved | Whenever V exists, one of at most C(177,120, n) − 1 letters exists and a search on hole sets finds it, so bounded n never forces unbounded V (an existence bound). Missing is coverage: at the depth 40 stop the 549 SAFE grips leave 1,237 singleton orbits and 1,193 holes, so at least 44 SAFE-fixed chambers are occupied and some targets have no V. |
 | R22B-03 | proved; computed | A cluster certificate (p⁻¹(P ∪ Q) ⊆ H keeps P ∪ Q vacant), and the separated-overlap commutator: when a and b move I = supp a ∩ supp b off itself, [a, b] is the product of the disjoint three-cycles (r, b⁻¹(r), a⁻¹(r)), r ∈ I. b00's first greedy commutator is such a product (335 three-cycles, 65 target holes gained, none lost); the second gains 16, loses 8 and moves 31 vacated targets, so the greedy's gains are net and its result must be checked as a whole. |
 | R22B-04 | computed; proved | b00's original target can be vacated: Bad(W) of its 12-letter transport has 111 occupied chambers, N1 and N2 hold, and all 19 target orbits have Jordan certificates (120-letter words, primes 1,009 to 5,783), so by Corollary A1 a V exists, of at most ∏ C(d_i, k_i) − 1 ≤ 7,200^111 − 1 letters. The earlier failures were not nonexistence; no V for b00 is built yet (E22-1). |
+
+Round 2 of line (b), after E22-1 (one shard, fast tier; six results, all `minor`, all adopted; the integrator re-ran R22B-09 and got the same output, and checked the counterexample of R22B-06 by enumeration):
+
+| Finding | Status | Result |
+| --- | --- | --- |
+| R22B-05 | proved | Tables of Schreier words always exist when the orbit carries Alt(Δ), d ≥ 5: from a breadth-first transversal R_x, the words R_x·s·R_{x·s}⁻¹ fix a and generate its stabilizer, a tree over them gives P_x, and the same step once more gives Q_z, with e ≤ (d − 2)(2d − 1) and f ≤ (d − 3)(2d − 3)(2d − 1). Without Alt the same construction still decides H3 and H4 exactly. |
+| R22B-06 | proved; counterexample checked | Moving the anchors is decided by a search over ordered anchor pairs (at most d(d − 1)), but nothing guarantees a pair that works: on nine points the letters r, r·(0 1 2) and their inverses are nine-cycles, so no letter fixes any point, yet they generate A9, have a seed and a Jordan word. With chronological words g⁻¹·C·g has the anchors a·g, b·g, c·g (a correction to PROOFS-B section 4). |
+| R22B-07 | proved | A seed for an orbit that fixes the earlier orbits exists exactly when their pointwise stabilizer acts nontrivially on it (a normal subgroup of Alt(d) or Sym(d)); successive Schreier stabilizers decide this and give a seed of at most 2(2N − 1)^{\|E\| + d − 3} letters. With global Jordan certificates every order works, so the missing seeds of E22-1 (orbits 67 and 105) were search failures. |
+| R22B-08 | proved | A seed from a Jordan word w and any letter h of small support R on the orbit: a power of w is one p-cycle; its conjugates generate Alt(Δ) on Δ alone; a word U of them moves R to a set meeting R in one point; then h·h′·h⁻¹·h′⁻¹ with h′ = U⁻¹·h·U is a three-cycle on Δ and the identity elsewhere, of at most 4q + 4[ℓM + 2(d − p)][C(d, r) − 1] letters. |
+| R22B-09 | computed; proved | At b00 all 19 orbits meet these hypotheses (support 36 to 204 chambers per orbit for a single letter), so the certificate of R22B-01 exists by a terminating construction with \|V\| < 10^539 (a construction bound, larger than R22B-04's existence bound). No V is built. |
+| R22B-10 | specification | A builder and checker for word-valued tables: edges carry complete words checked as wholes, path costs are sums of expanded lengths, words may be straight-line programs with exact expanded lengths, and V is checked on all chambers; seven controls it must reject. |
 
 ### Line (d): height 4 (R22D-01 to R22D-08)
 
@@ -7314,7 +7325,7 @@ Open for line (c): the order of the glued units (experiment A needs a strict b14
 ### What it gives
 
 - Line (a): transport without endpoint collateral is a finite test at the state with an explicit bound, and its limits are proved: target capacity per class and kind, and glued contents. At the depth 40 stop class 3 has more contents than vacant targets, class 4 has none, and seven glued units cannot be unglued by any SAFE preparation, so those units need an entry transport with V, another class, or a step that moves off pieces first.
-- Line (b): V has a bound in n alone whenever it exists, and a polynomial bound from a certificate of seeds and conjugator tables; b00's target can be vacated. With tables of single letters the certificate closes on two of b00's 19 target orbits per run; the others need tables of words or moved anchors (line (b), round 2).
+- Line (b): V has a bound in n alone whenever it exists, and a polynomial bound from a certificate of seeds and conjugator tables; b00's target can be vacated. With tables of single letters the certificate closes on two of b00's 19 target orbits per run. Round 2 removed that gap in theory: wherever the orbits carry Alt (as Jordan certificates show at b00), seeds and tables always exist by explicit constructions, and b00's certificate exists with \|V\| < 10^539. Building it (E22-1b, R22B-10) and the length of V in practice are next.
 - Line (c): glue is a theorem and Lemma T explains why every single-turn template fails at a locked unit; T1′ turns the cell twice and gives verified strict steps for b03, b04 and b18 (and b12, which has no lock). The order of the glued units, b06's partners and the blocking cycle {130, 180} stay open.
 - Line (d): the retained conjugate transfers the problem exactly and the lowering conjugate has an exact endpoint contract; at the depth 100 stop the direct free-class route is closed for 93 of 108 cases and for both whole-cap middles.
 - The bounds of this round are of two kinds. R22B-01 and the measured words (36 to 84 letters, 48 for b02) are of human scale; R22A-04, R22B-02, R22B-04, R22D-05, R22D-07 and R22D-08 are existence bounds that show a finite search decides the question. The common open part of all four lines is coverage: that every state of 𝒞_2 (𝒞_4) has a step in a stated catalogue.

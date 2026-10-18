@@ -352,9 +352,160 @@ The setting is that of [`METHOD.md`](../09-general-method/METHOD.md),
   vacancy. A shortest path in the graph of target images is simple; its inverse vacates the target.
 - The earlier failures for b00 (peeling stopped after 35 chambers, greedy bounded at 300 seconds) were not
   nonexistence. No V for b00 is constructed yet: the clean-power probe stops with 34 chambers occupied, and the
-  bounded builder of the R22B-01 certificate completes two of the 19 orbits per run (E22-1, section 4).
+  bounded builder of the R22B-01 certificate completes two of the 19 orbits per run (E22-1, section 4). R22B-09 gives
+  a construction of the certificate that terminates.
 - Command: `scripts/round22/r22b04_jordan.py`; output `runs/round22/r22b04_jordan.txt`.
 - Uses: Theorem A, Corollary A1.
+
+### R22B-05. Tables of Schreier words always exist (proved)
+
+- Objects: Z, the SAFE-ALL letters S = A(Z) (closed under inverses, O2), a target orbit Δ with d = |Δ| ≥ 5, distinct
+  anchors a, b, c ∈ Δ. For a chamber x and a word w, x·w is the image of x under w.
+- Hypotheses:
+  - H1: G(Z) induces on Δ a group that contains Alt(Δ). A Jordan certificate of Δ decides it
+    (`buffer.check_jordan`).
+- Statement. For every x ∈ Δ \ {a} there is a SAFE word P_x of at most e letters that fixes a and sends x to b, and
+  for every z ∈ Δ \ {a, b} a SAFE word Q_z of at most f letters that fixes a and b and sends c to z, with
+  e ≤ (d − 2)(2d − 1) and f ≤ (d − 3)(2d − 3)(2d − 1). These are H3 and H4 of R22B-01, whose proof is unchanged; the
+  table words need not fix the earlier orbits, since a conjugate of a seed fixes them whenever the seed does.
+- Proof.
+  1. A breadth-first tree on Δ from a over single SAFE letters gives words R_x with a·R_x = x, R_a empty and
+     |R_x| ≤ d − 1 (Δ is an orbit, so its letter graph is connected).
+  2. For x ∈ Δ and s ∈ S put h(x, s) = R_x·s·R_{x·s}⁻¹. It fixes a and has at most L1 = 2d − 1 letters. These words
+     generate the stabilizer G_a: if s_1 ⋯ s_t fixes a and x_j = a·s_1 ⋯ s_j, the product of the h(x_{j−1}, s_j)
+     telescopes to s_1 ⋯ s_t, because x_0 = x_t = a.
+  3. By H1, G_a induces on Δ \ {a} a group containing Alt(d − 1), which is transitive. A breadth-first tree from b on
+     Δ \ {a} over the words of step 2 gives B_x with b·B_x = x in at most d − 2 edges; P_x = B_x⁻¹, and
+     e ≤ (d − 2)·L1.
+  4. For x ∈ Δ \ {a} and h a word of step 2, j(x, h) = B_x·h·B_{x·h}⁻¹ fixes a and b, has at most L2 = 2e + L1
+     letters, and these words generate G_{a,b} by the same telescoping. G_{a,b} induces a group containing
+     Alt(d − 2), transitive on Δ \ {a, b} since d − 2 ≥ 3. A breadth-first tree from c gives Q_z in at most d − 3
+     edges, so f ≤ (d − 3)·L2 = (d − 3)(2d − 3)(2d − 1).
+- Sharper bounds at an instance use the expanded lengths: L1 ≤ 2·max|R_x| + 1 and L2 ≤ 2·max|B_x| + L1. Tree depth
+  alone does not bound a path when its edges are words of different lengths.
+- Without H1, building all these Schreier words and testing the two reachability graphs still decides H3 and H4 for
+  the chosen anchors, exactly and in finitely many steps. A failure then concerns the full stabilizers, not, as in
+  E22-1 (section 4), the graphs of single letters.
+- Bound: with R22B-01, |V| ≤ 2·Σ_i k_i·(s_i + 2e_i + 2f_i) with e_i and f_i as above, polynomial in the d_i once the
+  seeds are given.
+- Uses: Schreier's lemma; the point stabilizer of Alt(d) is Alt(d − 1).
+
+### R22B-06. Moving the anchors: a decision procedure, and no guarantee (proved; counterexample checked)
+
+- Convention. With chronological words, g⁻¹·C·g acts on Δ as the three-cycle (a·g, b·g, c·g); g·C·g⁻¹ has the
+  anchors a·g⁻¹, b·g⁻¹, c·g⁻¹. (The first version of section 4 gave the forward anchors for g·C·g⁻¹; corrected.)
+- Selection test. A breadth-first search over the ordered pairs (a′, b′) in the orbit of (a, b) under single SAFE
+  letters keeps a word g for each pair. At each pair it tests whether the graph on Δ \ {a′} of the letters that fix
+  a′ is connected, and the graph on Δ \ {a′, b′} of the letters that fix a′ and b′; the second test does not depend on
+  the third anchor. If both hold, g⁻¹·C·g with third anchor c·g repairs both single-letter tables. There are at most
+  d(d − 1) pairs, so a passing pair has a word g of at most d(d − 1) − 1 letters, and exhausting the pair orbit decides
+  whether any conjugate of C repairs the single-letter tables. A search bounded in radius decides that radius only.
+- Statement (negative). Neither a seed nor a Jordan certificate guarantees that some anchor pair passes.
+- Counterexample (checked by enumeration). On nine points let r = (0 1 2 3 4 5 6 7 8), t = (0 1 2), b = r·t, and take
+  the letters S = {r, r⁻¹, b, b⁻¹}. Both r and b are nine-cycles, so every letter moves every point and every
+  single-letter stabilizer graph has no edges, for every choice of anchors. Yet r⁻¹·b = t is a seed; the conjugates of
+  t by powers of r are the three-cycles of consecutive points, which generate A9 (the group S generates has order
+  181,440); and t·r⁻²·t·r² = (0 1 3 4 2) is a Jordan word, since 9/2 < 5 ≤ 9 − 3. Conjugates of single letters are
+  again derangements, so longer conjugators around one letter do not help. The word tables of R22B-05 still exist.
+- Instance: at b00, whether another anchor pair repairs a failed single-letter table was not computed; an isolated c
+  or a few unreached chambers do not decide it.
+
+### R22B-07. Seeds: an exact criterion and a fallback that always works (proved)
+
+- Objects: G = G(Z) acting on Ω, N = |Ω| = 177,120; an orbit Δ with d ≥ 5; E the union of the orbits before Δ in the
+  chosen order; K the subgroup of G that fixes E pointwise.
+- Hypotheses:
+  - H1: G induces on Δ a group that contains Alt(Δ).
+- Statement. A seed for Δ (a SAFE word acting on Δ as a three-cycle and fixing E pointwise) exists if and only if K
+  acts nontrivially on Δ. The following finite exact procedure decides it and, when it holds, gives a seed of at most
+  s ≤ 2·(2N − 1)^{|E| + d − 3} letters (an existence bound).
+- Proof. E is a union of orbits, so it is G-invariant and K is normal in G; hence the group K|Δ that K induces on Δ
+  is normal in G|Δ, which is Alt(d) or Sym(d). For d ≥ 5 every nontrivial normal subgroup of either contains Alt(d)
+  (the fact Theorem A uses), so a nontrivial K|Δ contains a three-cycle. Conversely a seed lies in K and acts
+  nontrivially on Δ.
+- Procedure. Take Schreier point stabilizers (R22B-05, step 2) successively for the points of E, keeping the words.
+  If every resulting word acts trivially on Δ, no seed exists. Otherwise stabilize d − 3 further points of Δ; the
+  remaining words act on the last three points and generate a group containing A3, so one of them acts there as a
+  three-cycle, or two act as distinct transpositions and their product is a three-cycle. That word fixes E and the
+  stabilized points of Δ, so it is a seed. Each stabilizer step multiplies the word length by at most 2N − 1, which
+  gives the bound; the procedure needs no random search and no length cutoff.
+- Global Jordan certificates (R22B-04) give Alt(Δ) acting on Δ alone (Theorem A), so K|Δ contains Alt(Δ) for every
+  order of the orbits. At b00 a missing seed (orbits 67 and 105 in one E22-1 run) is therefore a failure of the
+  bounded search, not of existence, and no reordering is needed.
+- Counterexample to the global hypothesis: the diagonal A5 on two five-point orbits induces A5 on each orbit, but
+  fixing either orbit pointwise forces the identity on the other, whichever orbit comes first.
+- Uses: Theorem A; the normal subgroups of Alt(d) and Sym(d), d ≥ 5.
+
+### R22B-08. A seed from a Jordan word and a letter of small support (proved)
+
+- Objects: an orbit Δ with d chambers; the orbits before it are arbitrary.
+- Hypotheses:
+  - H1: a global Jordan certificate (w, p) for Δ: |w| = ℓ, p prime with d/2 < p ≤ d − 3, π_w has exactly one cycle of
+    length divisible by p, a p-cycle inside Δ (checked on all of Ω, `buffer.check_jordan`).
+  - H2: a SAFE word h of q letters whose moved support R on Δ has r chambers, with 2 ≤ r and 2r − 1 ≤ d. h may move
+    the earlier orbits.
+- Construction and proof.
+  1. Let M be the least common multiple of the cycle lengths of π_w other than the p-cycle. p does not divide M, so
+     A = w^M is one p-cycle inside Δ and fixes every other chamber; |A| = ℓM.
+  2. A breadth-first search in the single-letter graph of Δ from the set supp(A) gives for each x ∈ Δ a word u_x
+     that carries some point of supp(A) to x, of at most d − p letters (a shortest path from the set visits at most
+     the d − p points outside it). The conjugates u_x⁻¹·A·u_x and their inverses are p-cycles inside Δ that fix every
+     other chamber, of at most J = ℓM + 2(d − p) letters. Their supports cover Δ and meet pairwise (2p > d), so they
+     generate a transitive group, primitive by the long-prime-cycle block argument of Theorem A, and containing
+     Alt(Δ) by Jordan's theorem; the generators are even, so the group is Alt(Δ) on Δ and fixes every other chamber.
+     At most d − p + 1 conjugates are needed.
+  3. Choose R′ with |R′| = r and R ∩ R′ = {z}, possible since 2r − 1 ≤ d. Alt(Δ) is transitive on the r-subsets of
+     Δ (extend a bijection between two subsets to a permutation and correct its parity inside the source subset), so a
+     breadth-first search over r-subsets with the generators of step 2 finds U with R·U = R′ in at most C(d, r) − 1
+     steps: |U| ≤ J·(C(d, r) − 1).
+  4. Put h′ = U⁻¹·h·U and C = h·h′·h⁻¹·h′⁻¹. On Δ the supports of h and h′ meet exactly in z, so by R22B-03 C acts
+     on Δ as the three-cycle (z, z·h′⁻¹, z·h⁻¹). U fixes every chamber outside Δ, and Δ is G-invariant, so h′ = h
+     outside Δ and C is the identity there. C is a seed for every order of the orbits.
+- Bound: s ≤ 4q + 4·[ℓM + 2(d − p)]·[C(d, r) − 1].
+- The construction does not need h to be a seed or to respect earlier orbits, and it cancels h's action outside Δ.
+  It relies on the Jordan theorem as used in Theorem A, not on a new formalization of it. No complete subset search
+  was run at a large instance.
+- Uses: Theorem A, Jordan's theorem, R22B-03.
+
+### R22B-09. b00: all hypotheses hold; a construction bound (computed hypotheses; proved consequence)
+
+- Statement. At the depth 40 stop (state `7e128820…`, target digest `391e9473…`, 111 chambers, all occupied, N1 and
+  N2 hold) each of b00's 19 target orbits has the Jordan certificate of R22B-04 (H1 of R22B-08, rechecked on all
+  177,120 chambers) and a single SAFE letter with support r on the orbit, 36 ≤ r ≤ 204 and 2r − 1 ≤ d (H2 of
+  R22B-08). For example orbit 67 (d = 3,600) has p = 2,287 and r = 72 for letter (0, 1), and orbit 105 (d = 2,400)
+  has p = 1,291 and r = 63 for letter (0, 2), so neither is an obstruction. With ℓ = 120, the computed M of each
+  certificate, J = 120M + 2(d − p), s = 4 + 4J·[C(d, r) − 1], e = (d − 2)(2d − 1) and f = (d − 3)(2d − 3)(2d − 1),
+  R22B-01, R22B-05 and R22B-08 give a certificate and a vacating word V with
+  |V| ≤ B = 2·Σ k(s + 2e + 2f), a 539-digit integer printed exactly (B < 10^539).
+- B is a construction bound, an existence bound in the sense of section 0: larger than the 7,200^111 − 1 of R22B-04,
+  but it comes from a construction of the seed-and-table certificate that terminates. No complete certificate and no
+  V for b00 was built.
+- Command: `scripts/round22/r22b09_bound.py`; output `runs/round22/r22b09_bound.txt`.
+- Uses: R22B-01, R22B-04, R22B-05, R22B-08.
+
+### R22B-10. A checker for certificates with word-valued tables (specification; not implemented)
+
+- Inputs: the state, the target and their digests; the SAFE alphabet and the chamber orbits; for every target orbit
+  of size at least 2 the Jordan word itself and its prime, not a trial number. Checks first: target chambers unique,
+  N1, N2, each Jordan certificate on all of Ω.
+- Order: decreasing orbit size, then least chamber. Per orbit a SAFE letter that meets H2 of R22B-08 and the seed of
+  R22B-08, or R22B-07 when no letter meets H2; the completed seed is checked on its orbit and on every earlier orbit.
+  Anchors a = the least chamber the seed moves, b = a·C, c = b·C; moving the anchors (R22B-06) is optional, since
+  R22B-05 works for every triple.
+- Tables: the Schreier transversals and word-valued trees of R22B-05. An edge names its chamber, its parent and its
+  complete word. A P edge is checked as a completed word: it fixes a and sends child to parent; a Q edge fixes a and
+  b and sends parent to child. Letters inside an edge word may move the anchors. Every required vertex has exactly one
+  parent, there are no parent cycles, and every path ends at its root. Path cost is the sum of the expanded edge
+  lengths, which gives e and f. A Q path is reversed by reversing the order of its edge words, not the letters inside
+  them.
+- Words may be stored as an acyclic straight-line program whose leaves are SAFE letters and whose nodes are
+  concatenation, inverse and nonnegative integer powers. References are checked and acyclic, expanded lengths are
+  computed with exact integers (never the node count), and u·v is evaluated as u then v.
+- Final check: V evaluated on all 177,120 chambers, T ⊆ holes after V, and |V| ≤ 2·Σ k_i(s_i + 2e_i + 2f_i). An
+  interrupted run reports an incomplete certificate, never nonexistence.
+- Controls the checker must reject: an anchor moved by a completed edge word, the wrong conjugation direction, a
+  reversed Q segment, a leaf that is not a SAFE letter, a cyclic reference, a false power length, a seed that moves an
+  earlier orbit. The existing `check_r22b01.py` assumes single-letter edges and must be extended this way.
 
 ## 4. The integrator's experiments in this round
 
@@ -410,7 +561,8 @@ The setting is that of [`METHOD.md`](../09-general-method/METHOD.md),
   "P: m" and "Q: m" count the chambers the tree of H3 or H4 does not reach: they lie in other components of the
   graph of the letters that fix a (P), or a and b (Q); "all" means that c is alone in its component, that is, every
   letter moving c moves a or b. Which orbits get a seed depends on the time share, so the two runs differ. The result rejects single-letter tables with these anchors,
-  not V: H3 and H4 allow words, and a conjugate g·C·g⁻¹ is again a seed with anchors g(a), g(b), g(c).
+  not V: H3 and H4 allow words (R22B-05), and a conjugate g⁻¹·C·g is again a seed, with anchors a·g, b·g, c·g
+  (R22B-06).
 - **E22-2, retained conjugation at the depth 100 stop (implemented; the full search is running).** The complete
   r = 1 search of R22D-01: 2,574 retained letters at the 234 clean grips, the E-B6 search at each prepared state with
   exact classification updates, and an exact replay of every kept word r·C·r⁻¹. An exact rule prunes a letter when no
@@ -584,6 +736,7 @@ Each script prints the output recorded under `runs/round22/` (the timing lines a
     python3 -I -B $S/round22/r22a08_vacancy.py          # R22A-08 and the instance of R22A-07; about 1.5 minutes
     python3 -I -B $S/round22/r22b03_clusters.py         # R22B-03; about 4 minutes
     python3 -I -B $S/round22/r22b04_jordan.py           # R22B-04: N1, N2 and the 19 Jordan certificates; about 1.5 minutes
+    python3 -I -B $S/round22/r22b09_bound.py            # R22B-09: the hypotheses of R22B-08 and the bound; about 1 minute
     python3 -I -B $S/round22/r22d02_masks.py            # R22D-02: the 64 masks of both forms; under a second
     python3 -I -B $S/round22/r22d04_free_grips.py       # R22D-04; about 1.5 minutes
     python3 -I -B $S/round22/r22d06_fixed_chambers.py   # R22D-06; about 3 minutes

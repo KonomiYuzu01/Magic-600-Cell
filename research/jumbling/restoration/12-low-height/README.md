@@ -503,7 +503,14 @@ rules out transport only. Its record goes into section 8 when the run ends.
 - (b) The vacating word V. Whenever V exists, one of at most C(177,120, n) − 1 letters exists (R22B-02); with a
   certificate of three-cycle seeds and conjugator tables, |V| ≤ 10·|T|·L (R22B-01). b00's transport target can be
   vacated: its 19 target orbits have Jordan certificates (R22B-04). A greedy V counts net gains only and must be
-  checked as a whole (R22B-03).
+  checked as a whole (R22B-03). Round 2 closed the certificate in theory: where an orbit carries Alt(Δ), tables of
+  Schreier words always exist, with e ≤ (d − 2)(2d − 1) and f ≤ (d − 3)(2d − 3)(2d − 1) (R22B-05); a seed that fixes
+  the earlier orbits exists exactly when their pointwise stabilizer acts on the orbit, with a procedure that always
+  finds one (R22B-07); and a Jordan word with any letter of small support gives a seed for every order of the orbits
+  (R22B-08). Moving the anchors cannot be relied on: a nine-point alphabet has a seed and a Jordan word but no letter
+  that fixes any point (R22B-06). At b00 every hypothesis holds, so the construction terminates with |V| < 10^539
+  (R22B-09, a construction bound); no V has been built yet, and the checker for word-valued tables is specified
+  (R22B-10).
 - (c) The T2 catalogue and T3 unlocking: a joint attack. After the two sealed analyses the solver stopped (owner, 18
   October 2026); the senior reviewer cross-examined the solver's analysis against its own, and the integrator runs
   the adjudicating experiments. Glue is a theorem: every landing word of the unit's class takes the lattice content
@@ -578,8 +585,9 @@ rules out transport only. Its record goes into section 8 when the run ends.
 
 - The census with whole cells as owners for all 22 units, with complete components and the entry transports of
   R22A-06 (R22A-09); then line (a), round 2.
-- Line (b), round 2: tables of words, or anchors moved by conjugating the seed, with explicit lengths, so that the
-  certificate of R22B-01 closes on all 19 of b00's target orbits; then E22-1 again.
+- Line (b): E22-1b, the builder and checker of R22B-10, to build b00's certificate with the seeds of R22B-08 and the
+  Schreier tables of R22B-05, kept as straight-line programs, and to check V on all chambers; then line (b), round 3
+  on what makes V short.
 - Units that no single class can land at this state (capacity, glued cells, no target): words of another class,
   T1′ and T2′ where no lock forbids them, landing other units first by strict steps computed at the successive
   states (experiment A), two-letter readiness (experiment C); then line (c), round 2.
@@ -662,7 +670,7 @@ the driver writes it. The unit files are those the driver writes for the start s
 found by the scratch census. `eb4_replay.py` replays each step from the start state on a fresh simulator;
 `replay-b00.json`, `replay-b01.json` and `replay-b02.json` are its records for one step each.
 
-Theory round 22 (section 11): the six exact computations of the senior review are listed in
+Theory round 22 (section 11): the seven exact computations of the senior review are listed in
 [`PROOFS-B.md`](PROOFS-B.md) section 6 (`scripts/round22/`, outputs in `runs/round22/`).
 
 Line (c), the integrator's re-check of the solver's four T1′ steps (section 11), with `k40.json` as for E-B5 and
@@ -711,7 +719,7 @@ fails.
 | `scripts/cellpure5.py` | LC-13: `cellpure4.py` with a transport branch for a content that is not in an edge cell (commutator powers into a home cell of its kind, exact-pose filter) |
 | `runs/lc13-k40/` | LC-13 at the depth 40 stop: the three unit files; the transport records and words with input and output digests (`transport-<u>.json`, `transport-<u>-word.json`); the closure records of b01 and b02 (`close-b01.json`, `close-b02.json`) and their step words (`steps/u1.json`, `steps/u2.json`); b00's step without endpoint collateral (`steps/u0.json`); the replay record of each step (`replay-b00.json`, `replay-b01.json`, `replay-b02.json`); and, for b00 and b02, the 300-second closures' Bad(W), vacancy, certificate and greedy fields (`close-no-v.json`, taken from their `pre.json` and `result.json`) |
 | `PROOFS-B.md` | Theory round 22: the lemmas of lines (a), (b) and (d) toward B′(h), each with its hypotheses as finite checks at the state, its proof, its bound and its instances |
-| `scripts/round22/`, `runs/round22/` | The senior reviewer's six exact computations of round 22, re-run by the integrator, and their outputs |
+| `scripts/round22/`, `runs/round22/` | The senior reviewer's seven exact computations of round 22, re-run by the integrator, and their outputs |
 | `runs/round22/t1prime-k40/` | Line (c): the solver's four T1′ steps at the depth 40 stop (`steps/u3.json`, `u4.json`, `u12.json`, `u18.json`, words with input and output digests) and the integrator's replay record (`replay.json`) |
 | `scripts/eb6r.py`, `scripts/test_eb6r.py`, `scripts/check_eb6r.py` | E22-2: the E-B6 search after one retained letter, with the exact classification update of R22D-01, exact pruning and the replay of every kept word r·C·r⁻¹; its unit test; its acceptance check at the depth 100 stop |
 | `scripts/round22/stepchk.py`, `scripts/round22/prep_t1prime.py`, `scripts/round22/exp_a.sh`, `scripts/round22/exp_b.py` | Line (c), the adjudicating experiments A and B: one step replayed from a pose table against the strict′ contract, the preparation of a T1′ closure (the solver's computation, given arguments), and the two experiments |

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: B′(h) line (b), round 2
+Where a target orbit carries Alt(Δ), the vacating certificate of R22B-01 now exists by construction: tables of Schreier words, an exact seed criterion with a fallback, and a seed from a Jordan word and a letter of small support; at b00 every hypothesis holds and the construction gives |V| < 10^539, a construction bound, with no V built yet (`research/jumbling/restoration/12-low-height/PROOFS-B.md`, R22B-05 to R22B-10).
+
 ## [2026-10-18] update | Jumbling: the repair list at all 63 repair steps
 The density run on the other 48 repair steps of the seed 7101 record finished: at the cap where the repair was found, the list held 1 to 61 pairs (median 5), and from step 44 on 1 to 59 (median 3, a single pair at 15 of 52 steps); the census README, the manual, the observation requirements and the [decision](decisions/owner-decisions-2026-10-17-repair-pairs.md) page record it.
 
