@@ -1,0 +1,69 @@
+{
+ "input_digest": "149440605407daca051247600bc656950c9dfe6e2187a88ccd2d230762bdee15",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 493,
+   "input_digest": "149440605407daca051247600bc656950c9dfe6e2187a88ccd2d230762bdee15",
+   "output_digest": "50cb3fe05ee9f235feb3d0c209ccb49f545c3aac5ccab02f0a726ae6ec4d016d",
+   "off_end": 440
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "50cb3fe05ee9f235feb3d0c209ccb49f545c3aac5ccab02f0a726ae6ec4d016d",
+   "output_digest": "50cb3fe05ee9f235feb3d0c209ccb49f545c3aac5ccab02f0a726ae6ec4d016d",
+   "off_end": 440
+  },
+  {
+   "part": "Q",
+   "twists": 60,
+   "input_digest": "50cb3fe05ee9f235feb3d0c209ccb49f545c3aac5ccab02f0a726ae6ec4d016d",
+   "output_digest": "496bead7e57af84fc06b4b91cb97f631dbdcdb43b76390679c83cc9dc888aa0c",
+   "off_end": 329
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "496bead7e57af84fc06b4b91cb97f631dbdcdb43b76390679c83cc9dc888aa0c",
+   "output_digest": "496bead7e57af84fc06b4b91cb97f631dbdcdb43b76390679c83cc9dc888aa0c",
+   "off_end": 329
+  },
+  {
+   "part": "Vinv",
+   "twists": 493,
+   "input_digest": "496bead7e57af84fc06b4b91cb97f631dbdcdb43b76390679c83cc9dc888aa0c",
+   "output_digest": "4ab9d78a38e422ee35aade069cfd7ef9dfe64ac48467e9534c83e05b6562ed69",
+   "off_end": 329
+  }
+ ],
+ "end": {
+  "digest": "4ab9d78a38e422ee35aade069cfd7ef9dfe64ac48467e9534c83e05b6562ed69",
+  "off": 329,
+  "T_restored": 111,
+  "collateral": 0,
+  "protected_still_off": 329,
+  "protected_exact_pose_changed": 0,
+  "free_on_K": 0,
+  "free_still_off": 0,
+  "free_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 176680,
+  "lattice_of_S": 176680,
+  "lattice_of_S_same_exact_pose": 176680
+ },
+ "length": 1046,
+ "times": {
+  "ghost_premises": 9.0,
+  "menu_and_condition": 14.9,
+  "certificate": 77.2,
+  "prepare": 13.3,
+  "replay": 51.7
+ },
+ "seconds": 166.0
+}

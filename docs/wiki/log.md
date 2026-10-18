@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: B′(2) experiment E2, the replay from 737 to the lattice
+The replay of line (a) continued from 737 off pieces with every step built at the state in front of it and applied exactly, certificates evaluated without expansion: b12 by its T1′ word, closures with certificate vacating words for four units, T1′ steps for seven more (three of them where closures had run out of holes), and b06 with b05 in one prepared T1′ step at a whole-cap middle, which removes b06's type deficit without a partner; with round 3 the depth 40 stop reaches the lattice, 1,193 to 0 off pieces in 21 strict′ steps, in under 10¹⁶⁴ letters ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) sections 2 and 8). It is one trajectory: coverage of every height-2 state stays open, and its second round starts from these results.
+
 ## [2026-10-18] update | Jumbling: the Lean handoff covers 81 results
 The handoff index now also lists line (b) round 5 and the coverage results COV-01 to COV-07, thirteen more, with the line numbers of the current `PROOFS-B.md`; formalization still waits for the owner's decision ([handoff](../../research/jumbling/restoration/12-low-height/ARCHON-HANDOFF.md)).
 

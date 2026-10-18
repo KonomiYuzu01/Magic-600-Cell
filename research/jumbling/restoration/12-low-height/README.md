@@ -485,9 +485,10 @@ an occupied one, and replays every word it keeps exactly:
 | Glued | b03, b18 (triangle, 63 and 5), b04, b05, b12, b15 (edge, 45, 61, 41, 25), b06 (vertex, 10) | the unit shares its cell with lattice pieces, which every class-P landing takes off (R22A-07), and the cell holds occupied chambers that no SAFE word moves (N1 fails), so no closure V·W·V⁻¹ exists for them at this state |
 | In place | b17 (edge, 86) | an edge content lands in its own cell (Theorem C), not by transport; no clean power moves it. At this state its pole 542 holds pieces of b08, b09 and b10; once they land, Theorem C applies and gives a step of 432 letters (line (a), round 3, below) |
 
-E-B5 run 2 (the driver from this state, still running) has made eleven steps so far, from 1,193 to 488 off pieces:
+E-B5 run 2 (the driver from this state, still running) has made twelve steps so far, from 1,193 to 377 off pieces:
 driver steps of 10, 10 and 848 letters for b07, b13 and b21, pure-twist closures of 576, 24, 762, 928, 1,130 and
-1,094 letters for b17, b20, b01, b09, b10 and b08, then driver steps of 904 and 1,128 letters for b00 and b14. Three
+1,094 letters for b17, b20, b01, b09, b10 and b08, then driver steps of 904, 1,128 and 1,288 letters for b00, b14 and
+b02. Three
 of the driver steps changed the poses of other units (b11; b18 and b19; b03), which the driver's free set allows, so
 they are clean steps but not strict′. b09 is in class 4, which has no transport target:
 the pure twist lands a content in its own cell and its closure vacates what the twist takes off, so "no target"
@@ -507,7 +508,9 @@ rules out transport only. Its record goes into section 8 when the run ends.
   with a fresh V for each step, fourteen units land in a checked order, from 1,193 to 336 off pieces (R22A2-04).
   The other eight are b17 and the seven glued units, which no SAFE word can free at this state (R22A2-06).
   Round 3 replayed that order at the actual states: eight units land, b17 among them, from 1,193 to 737 off pieces,
-  and four more have proved steps at 737.
+  and four more have proved steps at 737. E2 continued the replay with every step built at the state in front of it:
+  all 22 units land, 1,193 to 0 in 21 strict′ steps, b06 with b05 by a whole-cap T1′ after a three-letter SAFE-ALL
+  preparation.
 - (b) The vacating word V. Whenever V exists, one of at most C(177,120, n) − 1 letters exists (R22B-02); with a
   certificate of three-cycle seeds and conjugator tables, |V| ≤ 10·|T|·L (R22B-01). b00's transport target can be
   vacated: its 19 target orbits have Jordan certificates (R22B-04). A greedy V counts net gains only and must be
@@ -520,7 +523,9 @@ rules out transport only. Its record goes into section 8 when the run ends.
   (R22B-09, a construction bound); no V has been built yet, and the checker for word-valued tables is specified
   (R22B-10). Round 4: Alt does not hold on every large orbit at every state of 𝒞₂ (R22B-21), so vacancy needs N1
   and N2 together with independent alternating factors (R22B-19) and, on orbits of 2 to 7 chambers, a joint finite
-  test (R22B-22).
+  test (R22B-22). Round 5 settles vacancy at a given middle: V exists exactly when N1, N2 and a joint test of the
+  target's images pass, a finite test that needs no Alt (R22B-29); twenty twists from solved reach a state where an
+  orbit without Alt meets a real target with one hole, and one letter vacates it (R22B-24).
 - (c) The T2 catalogue and T3 unlocking: a joint attack. After the two sealed analyses the solver stopped (owner, 18
   October 2026); the senior reviewer cross-examined the solver's analysis against its own, and the integrator runs
   the adjudicating experiments. Glue is a theorem: every landing word of the unit's class takes the lattice content
@@ -536,7 +541,8 @@ rules out transport only. Its record goes into section 8 when the run ends.
   (R22D-01), and a lowering conjugate has an exact endpoint contract (R22D-03). At the depth 100 stop 93 of the 108
   direct free-class cases (R22D-04) and both whole-cap middles (R22D-06) are impossible; SAFE preparations cannot
   unlock a cut (R22D-07).
-- What all four leave open is coverage: that every state of 𝒞_2 (𝒞_4) has a step in a stated catalogue. The explicit
+- What all four leave open is coverage: that every state of 𝒞_2 (𝒞_4) has a step in a stated catalogue (first attempt:
+  `PROOFS-B.md` section 8, COV-01 to COV-07). The explicit
   bounds proved so far are either conditional (R22B-01) or existence bounds that show a finite search decides a
   question; the measured steps (10 to 1,158 letters at this state) are of human scale.
 
@@ -701,6 +707,28 @@ rules out transport only. Its record goes into section 8 when the run ends.
     certificates read at 737). Without a preparation b15 and b05 have landing words of 432 letters, but after them
     17 and 48 occupied chambers of Bad(W⁻¹) are fixed by every SAFE letter, so N1 fails; b06, a vertex content, has
     no landing word of that family. They need the orders that R22C3-05 proposes.
+- Line (a), E2: the replay continued from 737 (the integrator; measured, exact; `scripts/round22/replay_slp.py` and
+  the b06 scripts, `runs/round22/line-a/replay2/`, `PROOFS-B.md` section 2). Each step is built at the state in front
+  of it and applied exactly by `scripts/slp_apply.py`, which evaluates a certificate as its straight-line program
+  without expanding it and checks the strict′ contract:
+  - Run 1, 737 to 437: b12 by its T1′ word (1,158 letters), then b14, b16, b20 and b21 by closures whose V is a
+    checked R22B-10 certificate (steps of 151 to 161 digits). The closures of b07, b13 and b19 then fail N2: there
+    are only as many holes as off pieces, and the landings since 977 and 915, where round 3 proved these closures,
+    used up the holes of four SAFE orbits.
+  - Run 2, 437 to 71: T1′ steps instead. b04, b03 and b18 with literal V′ (1,254, 1,106 and 770 letters), then b07,
+    b13 and b19 with V′ a checked certificate at the middle (147 to 163 digits), and b15 once its COV-04 blockers
+    b07, b12, b13 and b14 had landed. A closure needs a hole outside Bad(W) for each lattice piece that W takes off, a
+    T1′ step one outside its target for each landing piece only (COV-06), so the T1′ steps passed where the closures
+    had run out of holes.
+  - b06 with b05: one grip-91 letter whose element is off K⁺ lands both; its Bad set is all of cap 91, so N2 at the
+    middle asks for holes outside the cap, orbit by orbit, as many as the 71 landing chambers. A SAFE-ALL
+    preparation of three letters moves the holes there; then N1, N2 and Jordan certificates hold, V′ is built and
+    checked, and the step lands b06 and b05 together: 324 to 253 on a branch, and at 71, where they are the last two
+    units off, 71 to 0 after the preparation (178, 7)(170, 1)(75, 1). So b06's type deficit (R22C2-05, COV-04) is a
+    matter of where the holes are, and b06 needs no partner.
+  - Totals: with round 3, all 22 units land, 1,193 to 0 in 21 strict′ steps. The literal steps have 8,804 letters;
+    the certificate steps have explicit lengths of 147 to 164 digits, under 10¹⁶⁴ letters in all. These are
+    existence bounds, not words to play, and this is one trajectory: it says nothing about other states (section 12).
 - Line (c), the integrator's re-check of the solver's computed steps (measured): the solver's four T1′ steps at the
   depth 40 stop, each its landing word W followed by V′·W⁻¹·V′⁻¹, replay strict with the units recomputed from the
   state: b03 160 letters, b04 942, b12 1,158 and b18 160; no lattice piece leaves the lattice and every other off
@@ -795,20 +823,23 @@ rules out transport only. Its record goes into section 8 when the run ends.
 ## 12. Next
 
 - Coverage of B′(2), the one step the proof still lacks: every reachable height-2 state has a step in the catalogue.
-  Three parts. (1) Vacancy at every middle the catalogue needs: N1 and N2 with independent alternating factors
-  (R22B-19) or the joint test on orbits of 2 to 7 chambers (R22B-22), and whether an orbit without Alt can meet a
-  target that has holes in it (R22B-21's has none). (2) Orders with resource contracts (R22C3-02) for the units that
-  block others. (3) The hard core: b05, b06 and b15 after the orders R22C3-05 proposes, and 130 at the depth 60 stop
-  after 131, 132, 133, 150 and 163.
-- Line (a): V for the seven units of the replay whose steps are proved but not built, only when a later state needs
-  them; b03, b04, b12 and b18 at the state of 737.
-- Line (b), round 5: orbits without Alt against targets with holes, and the joint test at the small orbits of the
-  depth 60 stop. The commutator-power search of R22B-18 stays deferred: short seeds shrink V's bound but do not decide
-  existence.
+  Vacancy at a given middle is settled (R22B-29: N1, N2 and the joint target-image test, finite and without Alt), so
+  coverage is what remains (`PROOFS-B.md` section 8). E2 took the depth 40 stop to the lattice in 21 strict′ steps,
+  each found at the state in front of it, so no state along that trajectory was a dead end; it is one trajectory.
+  Three parts remain. (1) Whether the isolated triangle of COV-01 is reachable, or a reachability invariant that
+  excludes it. (2) Resource contracts (R22C3-02): a closure spends one hole outside Bad(W) for each lattice piece that
+  W takes off, a T1′ step one outside its target for each landing piece, and a SAFE-ALL preparation moves holes (E2).
+  (3) Unit 130 at the depth 60 stop after 131, 132, 133, 150 and 163, and the other stops. The second coverage round
+  starts from the results of E2.
+- Line (a): the replay of the depth 40 stop is finished (E2, 1,193 to 0). Further replays only as the second
+  coverage round asks, for example at the census stops of stage 11.
+- Line (b): whether N1 and N2 alone suffice at every target of 𝒞₂ (no step needs it once it carries the joint test
+  of R22B-29), and the residual primitive case of R22B-25. The commutator-power search of R22B-18 stays deferred:
+  short seeds shrink V's bound but do not decide existence.
 - Existence before construction: a stuck step is settled by N1, N2 and the Jordan certificates of its target
   (`jordan_target.py`); V is built with the builder of E22-1b only when a later state is needed.
-- Height 4: E22-2's last two shards, then six-letter commutators (R22D-02) and protected two-level steps with a smaller
-  Bad set than a whole cap (R22D-05).
+- Height 4 (lowest priority): E22-2 is complete and gives no strict step; next, six-letter commutators (R22D-02) and
+  protected two-level steps with a smaller Bad set than a whole cap (R22D-05).
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
@@ -999,7 +1030,7 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/cellpure5.py` | LC-13: `cellpure4.py` with a transport branch for a content that is not in an edge cell (commutator powers into a home cell of its kind, exact-pose filter) |
 | `runs/lc13-k40/` | LC-13 at the depth 40 stop: the three unit files; the transport records and words with input and output digests (`transport-<u>.json`, `transport-<u>-word.json`); the closure records of b01 and b02 (`close-b01.json`, `close-b02.json`) and their step words (`steps/u1.json`, `steps/u2.json`); b00's step without endpoint collateral (`steps/u0.json`); the replay record of each step (`replay-b00.json`, `replay-b01.json`, `replay-b02.json`); and, for b00 and b02, the 300-second closures' Bad(W), vacancy, certificate and greedy fields (`close-no-v.json`, taken from their `pre.json` and `result.json`) |
 | `PROOFS-B.md` | Theory round 22: the lemmas of lines (a), (b) and (d) toward B′(h), each with its hypotheses as finite checks at the state, its proof, its bound and its instances |
-| `ARCHON-HANDOFF.md` | Draft handoff to the Lean formalization (not started; the owner decides when): the objects, the 57 results of round 22 in dependency order, the hypotheses that are computations with what decides them, and the results of earlier stages and of the literature that the proofs use |
+| `ARCHON-HANDOFF.md` | Draft handoff to the Lean formalization (not started; the owner decides when): the objects, the 81 results of round 22 in dependency order, the hypotheses that are computations with what decides them, and the results of earlier stages and of the literature that the proofs use |
 | `scripts/round22/`, `runs/round22/` | The senior reviewer's exact computations of round 22, re-run by the integrator, and their outputs |
 | `scripts/round22/transport_census.py`, `runs/round22/line-a/` | Line (a): the transport census with whole cells as owners (vacant targets, entry transports, exact replays); its records for class 3 and for classes 2 and 4 (`census-class3.json`, `census-class24.json`, words included); the 22 unit files of the depth 40 stop; and the closures of the four entry transports (`closures/<u>-core.json`, `-step.json`, `-result.json`, `-replay.json`, and `-log.txt`, the closure's log with the certificate bounds and, for b19, where the peeling and the greedy search stopped); b19's Bad(W) as a target file and its Jordan certificates (`closures/b19-target.json`, `b19-jordan.txt`, from `scripts/round22/jordan_target.py`) |
 | `scripts/round22/r22a2_04_sequence.py`, `runs/round22/r22a2_04_sequence.txt` | Line (a), round 2: the senior reviewer's computation (kept as written apart from a header) and its output: the fourteen middles with their Bad sets and ghost maps, the composition matrix of the thirteen supplied steps, the hole-count search for fresh closures with its order, the construction bounds, and N1 and N2 for the glued units' own cells |
@@ -1022,3 +1053,8 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/round22/thmc_premises.py` | Line (a), round 3: the premises of Theorem C for an edge unit at a pose table (whole cell content, vacant home chambers, free poles and a free common neighbour, one landing rotation) |
 | `scripts/round22/r22b20_separation.py`, `r22b21_regular12.py`, `r22b22_small_orbits.py`, `runs/round22/r22b20_separation.txt`, `r22b21_regular12.txt`, `r22b22_small_orbits.txt` | Line (b), round 4: the senior reviewer's computations (kept as written apart from a header) and their outputs: separating words at b00, the regular orbit of 12 chambers, the small orbits of the depth 60 stop |
 | `scripts/round22/r22c3_audit_d.py`, `r22c3_u151.py`, `r22c3_geometry.py`, `runs/round22/r22c3_audit_d.txt`, `r22c3_u151.txt`, `r22c3_geometry.txt` | Line (c), round 3: the senior reviewer's computations (kept as written apart from a header) and their outputs: the audit of experiment D, 151's pure endpoint and vacancy, the geometry of 142 and b17 |
+| `scripts/round22/r22b24_regular_hole.py`, `r22b26_small60.py`, `r22b27_small_t1prime.py`, `runs/round22/r22b24_regular_hole.txt`, `r22b26_small60.txt`, `r22b27_small_t1prime.txt` | Line (b), round 5: the senior reviewer's computations (kept as written apart from a header) and their outputs: an orbit without Alt that meets a target with one hole, the small orbits against the depth 60 home targets, and the same at the T1′ middles of 151 and 180 |
+| `scripts/round22/cov01_isolated_triangle.py`, `cov02_point_orbits.py`, `cov04_middles737.py`, `cov07_word_order.py`, `runs/round22/cov01_isolated_triangle.txt`, `cov02_point_orbits.txt`, `cov04_middles737.txt`, `cov07_word_order.txt` | Coverage, round 1: the senior reviewer's computations (kept as written apart from a header) and the integrator's run of its proposed experiment, with their outputs |
+| `scripts/slp_apply.py`, `scripts/test_slp_apply.py` | The exact applier of a program of literal words, `tclose2.py` cores and R22B-10 certificates (straight-line programs of SAFE-ALL letters, applied to the labelled poses without expanding powers): the end pose table and the strict′ contract against the start state; its unit test |
+| `scripts/round22/replay_slp.py`, `runs/round22/line-a/replay2/` | E2, the replay continued from 737: the driver (literal words, closures with certificate V, T1′ steps with a literal or certificate V′, each applied by `slp_apply.py`); the plans, the stored landing words and cores (`inputs/`), and runs 1 and 2 with every step's files and end tables |
+| `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`, `e2_b06_t1.py` | E2, b06 with b05: the first SAFE-ALL preparation, the second counted against the reference middle's orbits, and the prepared T1′ attempt applied by `slp_apply.py`; records in `runs/round22/line-a/replay2/b06-<n>/` |

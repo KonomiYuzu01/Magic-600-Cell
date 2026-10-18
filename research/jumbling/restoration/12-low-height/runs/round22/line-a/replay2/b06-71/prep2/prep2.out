@@ -1,0 +1,8 @@
+{"safe_all_grips": 562, "letters": 6182, "off_lattice": 3096, "sec": 29}
+{"orbits": 1816, "singletons": 1781, "sec": 29}
+{"reference_middle": "f79621c020dc4a9137670071f518bf567d23e600442534f679aee5bb3115ccb5", "T": 3097, "L": 71}
+{"safe_all_grips": 590, "letters": 6490, "off_lattice": 71, "sec": 45}
+{"start": "291ae718399791f6ee7c038c03cfd080e52aaa5a01d54cd5d01a7069b8338bdd", "after_X0": "9eade1b536b1dc7b793615ce59c3323aba7e99b0e97d89d30499ef2afd58a33b", "holes": 71, "holes_in_T": 1, "deficit": [6, {"6": 2, "8": 1, "9": 1, "10": 1, "15": 1}]}
+{"phase": 1, "letter": [170, 1], "deficit": [1, {"15": 1}]}
+{"phase": 2, "letter": [75, 1], "deficit": [0, {}]}
+{"X0": [[178, 7]], "new": [[170, 1], [75, 1]], "deficit_after": [0, {}], "holes_in_T_after": 0, "zx": "fa7238612d08f0eddd0c2bfd51a0d93d45bdfafd1f61a6410d4053d70fa7e718", "free_inside_cap_91": 61, "cut_91_unstraddled": true}

@@ -1,0 +1,8 @@
+{"segment": 0, "kind": "word_file", "length": 3, "digest": "9f97ded7cc98e33ecbb66ecebc46d210bc0917821bd97106aa3707138ec98e26", "off": 324}
+{"segment": 1, "kind": "word_file", "length": 1, "digest": "f9ccabda6c95d30ad5cf530f2f395255d082941fd419e2558bb881143b85585a", "off": 3343}
+{"safe_all_grips": 540, "letters": 5940, "off_lattice": 3343, "sec": 31}
+{"segment": 2, "kind": "slp", "length": "904011041788836704320679324141576054950474458786616542823999345995948413696208753388717067345221693759427181798334632530504832914774095522198842379852210404501877061892745803174926130", "digest": "d7ea36c27f4baa0640fa4329d9be882110c76cc2dbaef012250beac45812f508", "off": 3343}
+{"segment": 3, "kind": "core_file", "length": 1, "digest": "2a80e55d9e60fd1845acc09bc077cd4ae1c9eb868999ae6fde4aee2b4a6f2c34", "off": 253}
+{"safe_all_grips": 578, "letters": 6358, "off_lattice": 253, "sec": 98}
+{"segment": 4, "kind": "slp", "length": "904011041788836704320679324141576054950474458786616542823999345995948413696208753388717067345221693759427181798334632530504832914774095522198842379852210404501877061892745803174926130", "digest": "8e1a57dac0d6f7c9612351145ada8179f9336d8eea1bceef91a427e8f7c86bd1", "off": 253}
+{"start_digest": "35f97e904a0fda3dbea2065f40fdbb4f12db7feedac8f2862327148f45d72940", "end_digest": "8e1a57dac0d6f7c9612351145ada8179f9336d8eea1bceef91a427e8f7c86bd1", "unit_size": 10, "unit_on_lattice": 10, "collateral": 0, "others": 314, "others_exact": 253, "others_landed": 61, "off_before": 324, "off_after": 253, "strict_prime": true}

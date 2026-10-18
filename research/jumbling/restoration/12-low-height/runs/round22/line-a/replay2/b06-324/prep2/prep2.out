@@ -1,0 +1,5 @@
+{"reference_middle": "16ba1d5736b51e440446c1105755329da00aad7e915b94283e7cb5928708adfb", "T": 3097, "L": 71}
+{"start": "35f97e904a0fda3dbea2065f40fdbb4f12db7feedac8f2862327148f45d72940", "after_X0": "671f81452f3441d51ccccf70f5e0f5b361724bacd11c335f1c6d156b2c755461", "holes": 324, "holes_in_T": 8, "deficit": [6, {"6": 2, "8": 1, "9": 1, "10": 1, "15": 1}]}
+{"phase": 1, "letter": [256, 1], "deficit": [1, {"15": 1}]}
+{"phase": 2, "letter": [75, 1], "deficit": [0, {}]}
+{"X0": [[178, 7]], "new": [[256, 1], [75, 1]], "deficit_after": [0, {}], "holes_in_T_after": 7, "zx": "9f97ded7cc98e33ecbb66ecebc46d210bc0917821bd97106aa3707138ec98e26", "free_inside_cap_91": 61, "cut_91_unstraddled": true}

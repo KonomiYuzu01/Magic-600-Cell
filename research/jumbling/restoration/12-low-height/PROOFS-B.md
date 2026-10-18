@@ -471,10 +471,82 @@ census steps (b00, b01, b02, b07, b11, b13, b14, b16, b20, b21) and the entry tr
 - Command: section 6. Records: `runs/round22/line-a/replay/`.
 - Uses: R22A2-04, R22A2-05, R22A-06, Corollary A1, Theorem B, Theorem C, R22C3-01.
 
-Open after round 2 and the replay: V for the seven units whose steps are proved but not built, when a later state
-needs them; the units the order leaves at the state of 737 (b03, b04, b12 and b18, which have T1′ steps at the stop,
-and b05, b06 and b15, whose own cells hold occupied chambers that every SAFE letter fixes); coverage of B′(2) at every
-state of 𝒞_2. Nothing here is formalized.
+### The replay continued with certificate steps (E2; computed; the integrator's replay)
+
+- What was run (`scripts/round22/replay_slp.py` and, for b06, `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`
+  and `e2_b06_t1.py`; section 6). From the state of 737 a plan of steps, each built at the state that the previous
+  successful step reached:
+  - a literal word (b12's T1′ word of `runs/round22/t1prime-k40/`);
+  - a closure V·W·V⁻¹ with R22A2-04's middle W: N1 and N2 of its complete Bad(W) are read at the current state
+    (`jordan_target.py`) and, if both hold, V is built there as an R22B-10 certificate (`r22b10_cert.py`) and checked
+    (`check_r22b10.py`);
+  - a T1′ step W·V′·W⁻¹·V′⁻¹ (R22C-T1′): W lands the unit and takes the lattice pieces Q off; V′ vacates
+    T = Bad(W⁻¹) at Z1 = Z·W, a literal word from `tclose2.py` or else a certificate built and checked at Z1. W is
+    a stored word or the class-cell pure twist that `cellpure4.py --search` finds at the current state.
+  Every program is applied to the exact state by `slp_apply.py`, which evaluates a certificate as its straight-line
+  program without expanding it, and checks the strict′ contract against the state in front of the step: the unit
+  lands, no lattice piece goes off, and every other off piece keeps its exact pose or lands. Only such a step
+  advances the state; its exported end table starts the next.
+- Run 1, from 737 (digest `2e3b8f99…`). b12 by its T1′ word (1,158 letters; 737 → 696); b14, b16, b20 and b21 by
+  closures with certificate V (696 → 618 → 507 → 447 → 437; each certificate passes the checker; the step lengths
+  are integers of 151 to 161 digits). The closures of b07, b13 and b19 fail N2 at 437: their targets (198 chambers
+  each; b07 and b13 share one) lack holes on SAFE orbits of 7,200, 3,600, 2,400 and 120 chambers (30, 11, 4 and 0
+  holes where 33, 21, 17 and 1 are needed). At 737 the target of b07 and b13 already failed on the last three (15 of
+  21, 5 of 17 and 0 of 1); b19's was not tested there. Round 3 proved these closures at the states of 977 and 915,
+  and there are only as many holes as off pieces (O10), so the landings in between used them up: the resources of
+  R22C3-02 run out at actual states, not only in principle.
+- Run 2, from 437 (digest `a3fef11c…`): T1′ steps. b04 (W of 288 letters from `cellpure4.py`, Q = 86; V′ literal;
+  1,254 letters; 437 → 392), b03 (W 60, Q 111; V′ literal; 1,106 letters; → 329) and b18 (W 60, Q 111; 770 letters;
+  → 324); then b07 (W 48, Q 186), b13 (W 60, Q 197) and b19 (W 84, Q 198), whose closures had failed, each with V′ a
+  certificate at its middle (T of 198 chambers; N1, N2 and 20 Jordan certificates; 163, 155 and 147 digits;
+  → 213 → 112 → 96); then b15, whose blockers in COV-04 (b07, b12, b13 and b14) had all landed (W of 432 letters
+  from `cellpure4.py`, Q = 86, T of 86 chambers; N1, N2 and 19 Jordan certificates; V′ a certificate; 163 digits;
+  → 71). N2 asks, orbit by orbit, for a hole outside the target for each occupied chamber of the target. At a
+  closure's middle Z these are the chambers of the lattice pieces that W takes off; at a T1′ middle Z1 they are only
+  the landing chambers of the unit, since every other chamber of T is a hole there (COV-06). So a closure needs one
+  hole outside Bad(W) per lattice piece that W takes off, a T1′ step one outside T per landing piece: that is why
+  the T1′ steps passed where the closures had run out of holes.
+- b05 at 71. Its T1′ with the 432-letter word of `cellpure4.py` (Q = 86; T of 86 chambers, 61 occupied) fails N1:
+  31 occupied chambers of T are fixed by every SAFE letter at Z1, where the only off pieces besides Q are b06's 10.
+  COV-04 put 31 of b05's fixed chambers at 737 behind {b03, b04, b06}, and of these only b06 is still off.
+- b06 with b05, a branch at the state of 324 (`runs/round22/line-a/replay2/b06-324/`). The grip-91 letter W = (91, 14)
+  lands b06 (10 pieces) and b05 (61) together. Its element is off K⁺, so W takes all lattice pieces of cap 91 off and
+  T = Bad(W⁻¹) is the whole chamber set of cap 91 (3,097 chambers), of which 71, the landing chambers L, are
+  occupied at Z1. So N2 at Z1 reads, orbit by orbit, |H ∖ T| ≥ |L| for the holes H in front of W. A SAFE-ALL
+  preparation X keeps every off piece at its exact pose (so L is fixed) and moves H. `e2_b06_prep1.py` gives
+  X0 = (178, 7), counted for b06 against its cell; after it N2 still fails by 6 on five orbits (2, 1, 1, 1 and 1).
+  `e2_b06_prep2.py`, counting against the orbits of that middle, adds (256, 1), which keeps the holes inside T, and
+  (75, 1), which moves one hole out of T: the deficit is 0. With X = (178, 7)(256, 1)(75, 1), at Z1 = Z·X·W (3,343
+  off pieces, Q = 3,090) the ghost premises of W⁻¹ hold, N1 and N2 hold, and all 29 orbits of size at least 2 that
+  meet T have Jordan certificates, so V′ exists (Corollary A1). The builder of E22-1b builds V′ there (3,097 targets;
+  `b06-14-v-cert.json.gz`), the checker passes it, and `slp_apply.py` applies X·W·V′·W⁻¹·V′⁻¹ from 324: b06 lands,
+  b05 lands, no lattice piece goes off and the other 253 off pieces keep their exact poses, 324 → 253 (digest
+  `8e1a57da…`; a program of 1.8·10¹⁸³ letters). This is the first strict′ step for b06, and it needs no partner: the
+  type deficit of R22C2-05 and COV-04 is a matter of where the holes are, which a SAFE-ALL preparation changes, and
+  the Bad set of a letter off K⁺ is its whole cap, whose type vector has type 6, unlike the edge middles of M1-13
+  (R22C-V). The step is checked exactly; it has the form of R22C-T1′ with U = b06 ∪ b05, after a SAFE-ALL
+  preparation, which keeps every lattice piece on the lattice and so needs no undoing.
+- b06 with b05 at 71, the last two units (`runs/round22/line-a/replay2/b06-71/`). They are the only off pieces, so
+  there are 71 holes, as many as landing chambers, and N2 at the whole-cap middle needs every hole outside cap 91
+  (H ∩ Bad(W) = ∅, COV-03). `e2_b06_prep1.py` gives X0 = (178, 7) again; after it one hole is still in T and N2 fails
+  by 6 on five orbits (2, 1, 1, 1 and 1). `e2_b06_prep2.py` adds (170, 1) and (75, 1): no hole is left in T and the
+  deficit is 0. With X = (178, 7)(170, 1)(75, 1), at Z1 = Z·X·W the 3,097 off pieces are Q, the whole lattice
+  content of cap 91. N1 holds: the 715 chambers of T that every SAFE letter fixes are holes. N2 holds with equality
+  on each of the 29 orbits of size at least 2 that meet T (2,382 chambers of T), and each has a Jordan certificate.
+  `tclose2.py` finds no literal V′; the builder builds V′ (3,097 targets; about 3.5·10¹⁶³ letters) and the checker
+  passes it. `slp_apply.py` applies X·W·V′·W⁻¹·V′⁻¹ from 71: b06 (10 pieces) and b05 (61) land and no lattice piece
+  goes off, 71 → 0 (digest `3f84154f…`; a program of 7.0·10¹⁶³ letters). No piece is off: the state is on the
+  lattice.
+- Totals. With round 3, all 22 units land, 1,193 → 0 in 21 strict′ steps (eight in round 3, thirteen in E2). The
+  literal steps have 8,804 letters (4,516 in round 3, 4,288 in E2); the certificate steps have explicit lengths of
+  147 to 164 digits, and the whole route is under 10¹⁶⁴ letters (about 8.1·10¹⁶³). These are existence bounds, not
+  words to play.
+- Command: section 6. Records: `runs/round22/line-a/replay2/`.
+- Uses: R22C-T1′, R22C-V, R22B-10, Corollary A1, R22C3-02, COV-04, COV-06.
+
+Open after round 2 and the replay: E2 built every step it used at the state in front of it and landed every unit,
+so along this trajectory nothing is left (the seven steps proved but not built and the units left at 737 are settled
+there). Open: coverage of B′(2) at every state of 𝒞_2 (section 8). Nothing here is formalized.
 
 ## 3. Line (b): the vacating word V
 
@@ -1428,6 +1500,29 @@ step records), and stops if a built closure is not strict′, which did not happ
 the test's output `<u>-<n>-jordan.txt` (b21 at 823 uses b16's, the same T), `$R/closures/` the closures' results,
 `$R/b17/` the output of `thmc_premises.py` at 1,193 and 823, and `$R/t1prime-737.jsonl` the three `exp_b.py` results.
 
+Experiment E2 (section 2: the replay continued), with `E=$A/replay2` and `<n>.json` the pose table with n off pieces,
+gunzipped from `$R/tables/737.json.gz`, `$E/run1/z-b21.json.gz` (437) or `$E/run2/z-<kk>-<u>.json.gz`:
+
+    python3 -I -B $S/round22/replay_slp.py 737.json $E/plan-run1.json <new dir>   # about 40 minutes
+    python3 -I -B $S/round22/replay_slp.py 437.json $E/plan-run2.json <new dir>   # about 80 minutes
+    python3 -I -B $S/round22/e2_b06_prep1.py <n>.json <p1>                         # 1 to 2 minutes
+    python3 -I -B $S/round22/e2_b06_t1.py <n>.json <p1> <t0> 14                    # the reference middle; about 3 minutes
+    python3 -I -B $S/round22/e2_b06_prep2.py <n>.json <p1>/x-word.json <t0>/b06-14-z1-table.json \
+        <t0>/b06-14-v-target.json <p2>                                             # about 1 minute
+    python3 -I -B $S/round22/e2_b06_t1.py <n>.json <p2> <new dir> 14               # about 35 minutes
+
+`replay_slp.py` writes one line per step to `seq.jsonl` and, for step k of unit u, the files `<kk>-<u>-...` (run 1:
+`<u>-...`): the landing word's check, the middle's pose table and Q, the closure's log and result, the target with
+its Jordan test, the certificate with the builder's log and the checker's output, the program and its application
+log, and the end table `z-<kk>-<u>.json`. The b06 branches `$E/b06-324/` and `$E/b06-71/` keep the first preparation
+(`prep1/`), the X0 attempt's record with the reference middle and target of item 14 (`x0-attempt/`), the second
+preparation with the script's output (`prep2/`) and the prepared attempt (`t1/`). The branch at 324 used scratch
+copies of the three b06 scripts: `e2_b06_prep2.py` reproduces its preparation byte for byte, and `e2_b06_t1.py` adds
+the free-list filter of review finding B06R-01, a path that run did not reach (`tclose2.py` found no literal V′); its
+X0 attempt was stopped after items 14, 21, 23, 43 and 44. The branch at 71 ran the scripts as they are here.
+Programs name their files by repository paths; pose tables, middles and closure premises are kept gzipped
+(`gzip -n`).
+
 Round 3 of line (b) (R22B-13, R22B-14, R22B-16, R22B-17), the senior reviewer's computation kept as written apart
 from a header comment; it writes no file:
 
@@ -2073,8 +2168,9 @@ designed the deadlock experiments. Its computations are `scripts/round22/cov01_i
 `cov02_point_orbits.py` and `cov04_middles737.py`; the integrator re-ran them with the outputs
 `runs/round22/cov01_isolated_triangle.txt`, `cov02_point_orbits.txt` and `cov04_middles737.txt`, and ran its proposed
 experiment as `cov07_word_order.py` (output `cov07_word_order.txt`). Experiment E2 of this section is the replay of
-section 2 continued with the closures built as certificates. Coverage stays open: no reachable state without a step
-was found, and nothing here proves that every state has one.
+section 2 continued with every step built at the state in front of it; it reached the lattice (the last subsection
+below). Coverage stays open: no reachable state without a step was found, and nothing here proves that every state
+has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -2209,3 +2305,24 @@ was found, and nothing here proves that every state has one.
   b04 and b18 are not, either at 737 or after b12. All four branches end without an order. So this unchanged-word
   hypothesis is refuted: the words must be rebuilt at the current state. This is not a deadlock: E2 rebuilds them.
 - Command: `COV_FIRST=<3|4|12|18> scripts/round22/cov07_word_order.py`; output `runs/round22/cov07_word_order.txt`.
+
+### E2 and coverage (computed; the integrator's replay)
+
+- What E2 shows. With every step rebuilt at the state in front of it (COV-07), the replay of section 2 takes the
+  depth 40 stop to the lattice: 1,193 → 0 off pieces in 21 strict′ steps (eight in round 3, thirteen in E2), each
+  applied exactly. At every state it reached, a step of the catalogue {census word, closure V·W·V⁻¹, T1′ with a
+  literal or certificate V′, Theorem C, T1′ after a SAFE-ALL preparation} was found for some unit; no state of the
+  replay was a dead end.
+- COV-04's blockers, both ways. b15 passes once b07, b12, b13 and b14 have landed; b05 alone still fails N1 at 71,
+  where b06 is the only other off content of its middle. b06's type deficit goes once a SAFE-ALL preparation has moved
+  the holes, as COV-04's remark that the deficit depends on where the holes are allows.
+- COV-03's isolated contents. At 71 b05 and b06 are the only off contents, so H ∩ Bad(W) = ∅ is necessary for the
+  whole-cap T1′, and then the middle has exactly |T| = 3,097 holes and V′ must carry the whole hole set onto T. The
+  preparation moves all 71 holes out of cap 91, and N2 holds with equality on each of the 29 nontrivial target orbits.
+- Resources (R22C3-02). Closures that round 3 proved at 977 and 915 fail at 437 for lack of holes, while T1′ steps
+  for the same units pass: a closure needs a hole outside Bad(W) for each lattice piece that W takes off, a T1′ step
+  one outside its target for each landing piece.
+- What it does not show. E2 is one trajectory from one stop, along a fixed plan rather than a search; it says
+  nothing about other states of 𝒞₂, and COV-01's state is untouched. Coverage stays open; its second round starts
+  from these results.
+- Uses: COV-03, COV-04, COV-06, COV-07, R22C3-02, section 2 (E2).

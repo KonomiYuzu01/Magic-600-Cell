@@ -70,78 +70,78 @@ literature are in section 5. Statuses as in `PROOFS-B.md`. A formalization can f
 | 7 | R22A-07 | Glued contents | proved; instance computed | model | — | R22A-08, R22A2-06 | 2, 234 |
 | 8 | R22A-08 | Vacant home cells at the depth 40 stop | computed | computed | R22A-07 | — | 2, 250 |
 | 9 | R22A-09 | The five disputed units | computed | model + computed | R22A-02 | — | 2, 259 |
-| 10 | R22B-01 | Certified three-cycles give a polynomial bound | proved; conditional on the certificate | group | — | R22B-05, R22A2-01, R22B-02, R22A2-06, R22B-09, R22B-10, R22B-11, R22B-16, R22B-17 | 3, 481 |
-| 11 | R22B-05 | Tables of Schreier words always exist | proved | group | R22B-01 | R22A2-01, R22B-07, R22B-09, R22B-10, R22B-17 | 3, 570 |
-| 12 | R22B-03 | Cluster certificates and separated commutators | proved; instance computed | group | — | R22B-08, R22B-14, R22B-15, R22B-22 | 3, 534 |
-| 13 | R22B-08 | A seed from a Jordan word and a letter of small support | proved | group | R22B-03 | R22A2-01, R22B-09, R22B-10, R22B-14 | 3, 649 |
+| 10 | R22B-01 | Certified three-cycles give a polynomial bound | proved; conditional on the certificate | group | — | R22B-05, R22A2-01, R22B-02, R22A2-06, R22B-09, R22B-10, R22B-11, R22B-16, R22B-17 | 3, 553 |
+| 11 | R22B-05 | Tables of Schreier words always exist | proved | group | R22B-01 | R22A2-01, R22B-07, R22B-09, R22B-10, R22B-17 | 3, 642 |
+| 12 | R22B-03 | Cluster certificates and separated commutators | proved; instance computed | group | — | R22B-08, R22B-14, R22B-15, R22B-22 | 3, 606 |
+| 13 | R22B-08 | A seed from a Jordan word and a letter of small support | proved | group | R22B-03 | R22A2-01, R22B-09, R22B-10, R22B-14 | 3, 721 |
 | 14 | R22A2-01 | b19's vacating word by construction | computed hypotheses; proved consequence | model + computed | R22A-06, R22B-01, R22B-05, R22B-08 | R22A2-04 | 2, 282 |
 | 15 | R22A2-02 | When a second strict′ step survives the first | proved | model | R22A-05 | R22A2-03, R22A2-05 | 2, 307 |
 | 16 | R22A2-03 | The thirteen supplied steps compose at most six deep | computed | computed | R22A2-02 | — | 2, 329 |
 | 17 | R22A2-04 | Fresh closures land fourteen units in a checked order | proved; computed hypotheses | model + computed | R22A-06, R22A2-01 | R22A2-05, R22C3-02 | 2, 352 |
-| 18 | R22B-02 | A bound in n alone whenever V exists | proved | group | R22B-01 | R22A2-05, R22A2-06 | 3, 521 |
+| 18 | R22B-02 | A bound in n alone whenever V exists | proved | group | R22B-01 | R22A2-05, R22A2-06 | 3, 593 |
 | 19 | R22A2-05 | A shared target: a fresh closure, not the old preparation | proved; instance computed and built | model | R22A-06, R22A2-02, R22A2-04, R22B-02 | — | 2, 387 |
 | 20 | R22A2-06 | Closure bounds and the two failure modes at the stop | proved; instances computed | model | R22A-06, R22A-07, R22B-01, R22B-02 | — | 2, 412 |
-| 21 | R22B-04 | b00's original target can be vacated | computed hypotheses; proved consequence | model + computed | — | R22B-07, R22B-09, R22B-20, R22B-23 | 3, 554 |
-| 22 | R22B-06 | Moving the anchors: a decision procedure, and no guarantee | proved; counterexample checked | group | — | R22B-10 | 3, 603 |
-| 23 | R22B-07 | Seeds: an exact criterion and a fallback that always works | proved | group | R22B-05, R22B-04 | R22B-10 | 3, 623 |
-| 24 | R22B-09 | b00: all hypotheses hold; a construction bound | computed hypotheses; proved consequence | model + computed | R22B-01, R22B-04, R22B-05, R22B-08 | — | 3, 680 |
-| 25 | R22B-10 | A checker for certificates with word-valued tables | specification; implemented, E22-1b | specification | R22B-01, R22B-05, R22B-06, R22B-07, R22B-08 | R22B-16, R22B-18 | 3, 696 |
-| 26 | R22B-11 | E22-1's seeds protected fewer orbits | checked in the source | specification | R22B-01 | — | 3, 732 |
-| 27 | R22B-12 | When a power of a word is a seed | proved | group | — | R22B-13, R22B-17, R22B-18 | 3, 743 |
-| 28 | R22B-13 | Two short seeds for b00 | computed | computed | R22B-12 | R22B-18 | 3, 764 |
-| 29 | R22B-14 | Powers of one letter cannot shrink a support | proved; computed | model + computed | R22B-08, R22B-03 | — | 3, 778 |
-| 30 | R22B-15 | A local test for Alt, and what stays open | proved; the universal claim open | group | R22B-03 | R22B-19, R22B-21, R22B-22, R22B-25 | 3, 788 |
-| 31 | R22B-16 | The checker of E22-1b is sound, and the recorded numbers hold | checked in the source; computed | model + computed | R22B-01, R22B-10 | — | 3, 811 |
-| 32 | R22B-17 | The bound that short seeds would give | proved; conditional | group | R22B-01, R22B-05, R22B-12 | — | 3, 826 |
-| 33 | R22B-18 | An extended commutator-power search | specification; not implemented | specification | R22B-12, R22B-13, R22B-10 | — | 3, 847 |
-| 34 | R22B-19 | Local Alt and separating words give a product of alternating groups | proved | group | R22B-15 | R22B-20, R22B-22, R22B-23, R22B-25, R22B-28, R22B-29 | 3, 881 |
-| 35 | R22B-20 | At b00 no letter separates two pairs; one word separates all | computed | computed | R22B-19, R22B-04 | — | 3, 906 |
-| 36 | R22B-21 | An orbit of twelve chambers with a group of order twelve | computed; counterexample | computed | R22B-15 | R22B-24 | 3, 918 |
-| 37 | R22B-22 | Small orbits need a joint test; they occur at the depth 60 stop | proved; computed | model + computed | R22B-15, R22B-03, R22B-19 | R22B-23, R22B-24, R22B-25, R22B-26, R22B-27, R22B-28, R22B-29 | 3, 936 |
-| 38 | R22C-G | Lemma G: one rotation per cell | proved; R22CF-01, X22C-01 | model | — | R22C-V, R22C-T1′, R22C-T, R22C-M, R22C2-01, R22C2-05, COV-01 | 7, 1542 |
-| 39 | R22C-V | Type vectors and counts | proved; computed; R22C-04, R22CF-03, X22C-03, X22C-04 | model + computed | R22A-01, R22A-05, R22C-G | R22C-T1′, R22C2-05, COV-03, COV-04 | 7, 1644 |
-| 40 | R22C-T1′ | Theorem T1′: land, vacate the landing chambers, unwind | proved; computed; R22CF-04, X22C-05 | model | R22C-G, R22C-V | R22B-23, R22C-T2′, R22C2-01, R22C2-03, R22C2-05, R22C-K, R22C3-02, R22C3-03, R22C3-04, COV-06 | 7, 1678 |
-| 41 | R22B-23 | What the closure bounds give without Alt | proved; conditional | model | R22B-04, R22B-19, R22B-22, R22A-06, R22C-T1′ | R22B-29 | 3, 957 |
-| 42 | R22D-01 | Retained conjugation | proved | model | — | R22D-08, R22C-05, R22C-K, R22C3-02, R22C3-03 | 5, 1215 |
-| 43 | R22D-02 | Six-letter commutators: the mask lemma | proved; computed | model + computed | — | — | 5, 1243 |
-| 44 | R22D-03 | The endpoint contract of a lowering conjugate | proved | model | — | R22D-08 | 5, 1263 |
-| 45 | R22D-04 | Free grips after lowering at the depth 100 stop | computed | model + computed | — | — | 5, 1285 |
-| 46 | R22D-05 | Nested-set vacancy for a two-level step | proved | model | — | — | 5, 1299 |
-| 47 | R22D-06 | Fixed occupied chambers rule out both whole-cap middles | computed; proved | model + computed | — | — | 5, 1315 |
-| 48 | R22D-07 | Unlocking | proved; Lemmas B and C conditional | model | — | — | 5, 1329 |
-| 49 | R22D-08 | A finite bound for a stated family | proved | model | R22D-01, R22D-03 | — | 5, 1345 |
-| 50 | R22C-T | Locked chambers and Lemma T | proved as scoped; R22CF-02, R22C-01, X22C-02 | model | R22C-G | — | 7, 1565 |
-| 51 | R22C-S | The Shadow lemma | proved; R22CF-02, X22C-02 | model | — | — | 7, 1603 |
-| 52 | R22C-M | Partners do not repair N1 | proved; R22CF-03, X22C-03 | model | R22C-G | — | 7, 1631 |
-| 53 | R22C-T2′ | One partner and T1′ | proved; conditional on its certificates; R22CF-03, X22C-03 | model | R22C-T1′ | R22C-K, R22C3-02 | 7, 1714 |
-| 54 | R22C2-01 | The intrinsic Q-shadow | proved | model | R22C-G, R22C-T1′ | COV-01, COV-03, COV-04 | 7, 1730 |
-| 55 | R22C2-03 | One action for the edge-cycle family | proved for a stated family | model | R22C-T1′ | — | 7, 1750 |
-| 56 | R22C2-05 | b06: the twelve landing rotations | computed; proved parts | model + computed | R22C-V, R22C-G, R22C-T1′ | — | 7, 1766 |
-| 57 | R22C-FC | Theorem FC: no self-frozen set | proved; R22CF-05, X22C-07 | model | — | COV-03 | 7, 1782 |
-| 58 | R22C-R1 | Lemma R1: the one-letter readiness test | proved; R22CF-05, X22C-07 | model | — | — | 7, 1798 |
-| 59 | R22C-CH | Lemma CH: co-held cycles | conditional; R22CF-05, X22C-07 | model | — | — | 7, 1809 |
-| 60 | R22C-05 | One-letter unlocking with vacancy | proved | model | R22D-01 | COV-01 | 7, 1819 |
-| 61 | R22C-06 | A rigid two-domain cell cannot be unlocked by retained conjugation | proved | model | — | — | 7, 1832 |
-| 62 | R22C-K | The catalogue, backward certification and coverage | conditional; R22C-07, R22CF-06, X22C-08, R22C2-06 | model + computed | R22C-T1′, R22C-T2′, R22D-01 | R22C3-06 | 7, 1844 |
-| 63 | R22C3-01 | Strict′ steps keep SAFE-ALL, not the hole inventories | proved | model | R22A-06 | R22C3-02, R22C3-04, R22B-28 | 7, 1923 |
-| 64 | R22C3-02 | Mixed orders need resource contracts as well as a blocker order | proved | model | R22C-T1′, R22C-T2′, R22D-01, R22A2-04, R22C3-01 | — | 7, 1944 |
-| 65 | R22C3-03 | Experiment D passes an independent exact audit | computed | computed | R22C-T1′, R22D-01 | R22B-27 | 7, 1973 |
-| 66 | R22C3-04 | 142, then 151: a proved prefix of 130's predecessors | proved from computed hypotheses | model + computed | R22C-T1′, R22C3-01 | R22B-27, COV-05 | 7, 1990 |
-| 67 | R22C3-05 | The catalogue of unresolved units stays conditional | inventory | specification | — | — | 7, 2017 |
-| 68 | R22C3-06 | A uniform core bound; coverage stays open | proved; conditional | model | R22C-K | COV-03 | 7, 2037 |
-| 69 | R22B-24 | A non-Alt orbit meets a catalogue target that has a hole; vacancy still holds | computed | computed | R22B-21, R22B-22 | — | 3, 993 |
-| 70 | R22B-25 | A finite classifier of the induced action, with a residual case | proved | group | R22B-15, R22B-19, R22B-22 | — | 3, 1012 |
-| 71 | R22B-26 | The depth 60 home targets miss every small orbit | computed | computed | R22B-22 | — | 3, 1032 |
-| 72 | R22B-27 | The T1′ middles of 151 and 180 miss the small orbits too | computed | computed | R22B-22, R22C3-03, R22C3-04 | — | 3, 1043 |
-| 73 | R22B-28 | What a strict′ step keeps: subgroup certificates, not inventories | proved | model | R22C3-01, R22B-19, R22B-22 | — | 3, 1053 |
-| 74 | R22B-29 | The vacancy theorem: a finite equivalence without Alt | proved | model | R22B-19, R22B-22, R22B-23 | COV-03 | 3, 1071 |
-| 75 | COV-01 | An isolated triangle with an intrinsic Q-shadow | computed; proved; reachability open | model + computed | R22C2-01, R22C-G, R22C-05 | — | 8, 2079 |
-| 76 | COV-02 | Seven geometric off-point cases | computed | computed | — | — | 8, 2106 |
-| 77 | COV-03 | A local certificate, and what coverage still needs | proved; conditional | model | R22C2-01, R22C-V, R22C-FC, R22C3-06, R22B-29 | — | 8, 2121 |
-| 78 | COV-04 | At 737, b05 and b15 are blocked by other units, b06 by two types | computed | computed | R22C-V, R22C2-01 | — | 8, 2152 |
-| 79 | COV-05 | Unit 130 at depth 60 is blocked by seven units | from the record | computed | R22C3-04 | — | 8, 2174 |
-| 80 | COV-06 | Coverage needs the holes and the off poses, not the lattice orientations | proved | model | R22C-T1′ | — | 8, 2183 |
-| 81 | COV-07 | The stored T1′ words form no order at 737 | computed | computed | — | — | 8, 2202 |
+| 21 | R22B-04 | b00's original target can be vacated | computed hypotheses; proved consequence | model + computed | — | R22B-07, R22B-09, R22B-20, R22B-23 | 3, 626 |
+| 22 | R22B-06 | Moving the anchors: a decision procedure, and no guarantee | proved; counterexample checked | group | — | R22B-10 | 3, 675 |
+| 23 | R22B-07 | Seeds: an exact criterion and a fallback that always works | proved | group | R22B-05, R22B-04 | R22B-10 | 3, 695 |
+| 24 | R22B-09 | b00: all hypotheses hold; a construction bound | computed hypotheses; proved consequence | model + computed | R22B-01, R22B-04, R22B-05, R22B-08 | — | 3, 752 |
+| 25 | R22B-10 | A checker for certificates with word-valued tables | specification; implemented, E22-1b | specification | R22B-01, R22B-05, R22B-06, R22B-07, R22B-08 | R22B-16, R22B-18 | 3, 768 |
+| 26 | R22B-11 | E22-1's seeds protected fewer orbits | checked in the source | specification | R22B-01 | — | 3, 804 |
+| 27 | R22B-12 | When a power of a word is a seed | proved | group | — | R22B-13, R22B-17, R22B-18 | 3, 815 |
+| 28 | R22B-13 | Two short seeds for b00 | computed | computed | R22B-12 | R22B-18 | 3, 836 |
+| 29 | R22B-14 | Powers of one letter cannot shrink a support | proved; computed | model + computed | R22B-08, R22B-03 | — | 3, 850 |
+| 30 | R22B-15 | A local test for Alt, and what stays open | proved; the universal claim open | group | R22B-03 | R22B-19, R22B-21, R22B-22, R22B-25 | 3, 860 |
+| 31 | R22B-16 | The checker of E22-1b is sound, and the recorded numbers hold | checked in the source; computed | model + computed | R22B-01, R22B-10 | — | 3, 883 |
+| 32 | R22B-17 | The bound that short seeds would give | proved; conditional | group | R22B-01, R22B-05, R22B-12 | — | 3, 898 |
+| 33 | R22B-18 | An extended commutator-power search | specification; not implemented | specification | R22B-12, R22B-13, R22B-10 | — | 3, 919 |
+| 34 | R22B-19 | Local Alt and separating words give a product of alternating groups | proved | group | R22B-15 | R22B-20, R22B-22, R22B-23, R22B-25, R22B-28, R22B-29 | 3, 953 |
+| 35 | R22B-20 | At b00 no letter separates two pairs; one word separates all | computed | computed | R22B-19, R22B-04 | — | 3, 978 |
+| 36 | R22B-21 | An orbit of twelve chambers with a group of order twelve | computed; counterexample | computed | R22B-15 | R22B-24 | 3, 990 |
+| 37 | R22B-22 | Small orbits need a joint test; they occur at the depth 60 stop | proved; computed | model + computed | R22B-15, R22B-03, R22B-19 | R22B-23, R22B-24, R22B-25, R22B-26, R22B-27, R22B-28, R22B-29 | 3, 1008 |
+| 38 | R22C-G | Lemma G: one rotation per cell | proved; R22CF-01, X22C-01 | model | — | R22C-V, R22C-T1′, R22C-T, R22C-M, R22C2-01, R22C2-05, COV-01 | 7, 1637 |
+| 39 | R22C-V | Type vectors and counts | proved; computed; R22C-04, R22CF-03, X22C-03, X22C-04 | model + computed | R22A-01, R22A-05, R22C-G | R22C-T1′, R22C2-05, COV-03, COV-04 | 7, 1739 |
+| 40 | R22C-T1′ | Theorem T1′: land, vacate the landing chambers, unwind | proved; computed; R22CF-04, X22C-05 | model | R22C-G, R22C-V | R22B-23, R22C-T2′, R22C2-01, R22C2-03, R22C2-05, R22C-K, R22C3-02, R22C3-03, R22C3-04, COV-06 | 7, 1773 |
+| 41 | R22B-23 | What the closure bounds give without Alt | proved; conditional | model | R22B-04, R22B-19, R22B-22, R22A-06, R22C-T1′ | R22B-29 | 3, 1029 |
+| 42 | R22D-01 | Retained conjugation | proved | model | — | R22D-08, R22C-05, R22C-K, R22C3-02, R22C3-03 | 5, 1287 |
+| 43 | R22D-02 | Six-letter commutators: the mask lemma | proved; computed | model + computed | — | — | 5, 1315 |
+| 44 | R22D-03 | The endpoint contract of a lowering conjugate | proved | model | — | R22D-08 | 5, 1335 |
+| 45 | R22D-04 | Free grips after lowering at the depth 100 stop | computed | model + computed | — | — | 5, 1357 |
+| 46 | R22D-05 | Nested-set vacancy for a two-level step | proved | model | — | — | 5, 1371 |
+| 47 | R22D-06 | Fixed occupied chambers rule out both whole-cap middles | computed; proved | model + computed | — | — | 5, 1387 |
+| 48 | R22D-07 | Unlocking | proved; Lemmas B and C conditional | model | — | — | 5, 1401 |
+| 49 | R22D-08 | A finite bound for a stated family | proved | model | R22D-01, R22D-03 | — | 5, 1417 |
+| 50 | R22C-T | Locked chambers and Lemma T | proved as scoped; R22CF-02, R22C-01, X22C-02 | model | R22C-G | — | 7, 1660 |
+| 51 | R22C-S | The Shadow lemma | proved; R22CF-02, X22C-02 | model | — | — | 7, 1698 |
+| 52 | R22C-M | Partners do not repair N1 | proved; R22CF-03, X22C-03 | model | R22C-G | — | 7, 1726 |
+| 53 | R22C-T2′ | One partner and T1′ | proved; conditional on its certificates; R22CF-03, X22C-03 | model | R22C-T1′ | R22C-K, R22C3-02 | 7, 1809 |
+| 54 | R22C2-01 | The intrinsic Q-shadow | proved | model | R22C-G, R22C-T1′ | COV-01, COV-03, COV-04 | 7, 1825 |
+| 55 | R22C2-03 | One action for the edge-cycle family | proved for a stated family | model | R22C-T1′ | — | 7, 1845 |
+| 56 | R22C2-05 | b06: the twelve landing rotations | computed; proved parts | model + computed | R22C-V, R22C-G, R22C-T1′ | — | 7, 1861 |
+| 57 | R22C-FC | Theorem FC: no self-frozen set | proved; R22CF-05, X22C-07 | model | — | COV-03 | 7, 1877 |
+| 58 | R22C-R1 | Lemma R1: the one-letter readiness test | proved; R22CF-05, X22C-07 | model | — | — | 7, 1893 |
+| 59 | R22C-CH | Lemma CH: co-held cycles | conditional; R22CF-05, X22C-07 | model | — | — | 7, 1904 |
+| 60 | R22C-05 | One-letter unlocking with vacancy | proved | model | R22D-01 | COV-01 | 7, 1914 |
+| 61 | R22C-06 | A rigid two-domain cell cannot be unlocked by retained conjugation | proved | model | — | — | 7, 1927 |
+| 62 | R22C-K | The catalogue, backward certification and coverage | conditional; R22C-07, R22CF-06, X22C-08, R22C2-06 | model + computed | R22C-T1′, R22C-T2′, R22D-01 | R22C3-06 | 7, 1939 |
+| 63 | R22C3-01 | Strict′ steps keep SAFE-ALL, not the hole inventories | proved | model | R22A-06 | R22C3-02, R22C3-04, R22B-28 | 7, 2018 |
+| 64 | R22C3-02 | Mixed orders need resource contracts as well as a blocker order | proved | model | R22C-T1′, R22C-T2′, R22D-01, R22A2-04, R22C3-01 | — | 7, 2039 |
+| 65 | R22C3-03 | Experiment D passes an independent exact audit | computed | computed | R22C-T1′, R22D-01 | R22B-27 | 7, 2068 |
+| 66 | R22C3-04 | 142, then 151: a proved prefix of 130's predecessors | proved from computed hypotheses | model + computed | R22C-T1′, R22C3-01 | R22B-27, COV-05 | 7, 2085 |
+| 67 | R22C3-05 | The catalogue of unresolved units stays conditional | inventory | specification | — | — | 7, 2112 |
+| 68 | R22C3-06 | A uniform core bound; coverage stays open | proved; conditional | model | R22C-K | COV-03 | 7, 2132 |
+| 69 | R22B-24 | A non-Alt orbit meets a catalogue target that has a hole; vacancy still holds | computed | computed | R22B-21, R22B-22 | — | 3, 1065 |
+| 70 | R22B-25 | A finite classifier of the induced action, with a residual case | proved | group | R22B-15, R22B-19, R22B-22 | — | 3, 1084 |
+| 71 | R22B-26 | The depth 60 home targets miss every small orbit | computed | computed | R22B-22 | — | 3, 1104 |
+| 72 | R22B-27 | The T1′ middles of 151 and 180 miss the small orbits too | computed | computed | R22B-22, R22C3-03, R22C3-04 | — | 3, 1115 |
+| 73 | R22B-28 | What a strict′ step keeps: subgroup certificates, not inventories | proved | model | R22C3-01, R22B-19, R22B-22 | — | 3, 1125 |
+| 74 | R22B-29 | The vacancy theorem: a finite equivalence without Alt | proved | model | R22B-19, R22B-22, R22B-23 | COV-03 | 3, 1143 |
+| 75 | COV-01 | An isolated triangle with an intrinsic Q-shadow | computed; proved; reachability open | model + computed | R22C2-01, R22C-G, R22C-05 | — | 8, 2175 |
+| 76 | COV-02 | Seven geometric off-point cases | computed | computed | — | — | 8, 2202 |
+| 77 | COV-03 | A local certificate, and what coverage still needs | proved; conditional | model | R22C2-01, R22C-V, R22C-FC, R22C3-06, R22B-29 | — | 8, 2217 |
+| 78 | COV-04 | At 737, b05 and b15 are blocked by other units, b06 by two types | computed | computed | R22C-V, R22C2-01 | — | 8, 2248 |
+| 79 | COV-05 | Unit 130 at depth 60 is blocked by seven units | from the record | computed | R22C3-04 | — | 8, 2270 |
+| 80 | COV-06 | Coverage needs the holes and the off poses, not the lattice orientations | proved | model | R22C-T1′ | — | 8, 2279 |
+| 81 | COV-07 | The stored T1′ words form no order at 737 | computed | computed | — | — | 8, 2298 |
 
 ## 4. Hypotheses that are finite computations
 
@@ -248,9 +248,14 @@ either covers them or states them as assumptions, and says which.
 
 ## 6. Open, not for formalization yet
 
-- R22B-15 and R22B-21: the local test for Alt is proved, and the claim that every large orbit at every state of 𝒞₂
-  carries Alt is false (R22B-21, an orbit without holes); whether an orbit without Alt can meet a target that has holes
-  in it is open.
+- R22B-15, R22B-21, R22B-24, R22B-25 and R22B-29: the local test for Alt is proved; the claim that every large orbit
+  at every state of 𝒞₂ carries Alt is false (R22B-21, an orbit without holes); an orbit without Alt does meet a
+  catalogue target that has a hole (R22B-24); and vacancy at a stated middle is decided without Alt by the finite
+  test of R22B-29. Open: whether N1 and N2 alone suffice at every target of 𝒞₂, and the residual primitive case of
+  R22B-25.
 - R22C-K and R22C3-06: coverage of 𝒞₂ by the catalogue (backward certification) is conditional; R22C-CH needs a
-  persistent co-holding hypothesis; R22D-07's Lemmas B and C are conditional.
+  persistent co-holding hypothesis; R22D-07's Lemmas B and C are conditional. Experiment E2 (`PROOFS-B.md` sections 2
+  and 8; computed) is evidence along one trajectory only: 21 strict′ steps from the depth 40 stop to the lattice, each
+  an instance of R22A-03's transports, R22A-06's closures, Theorem C or R22C-T1′ (the last once after a SAFE-ALL
+  preparation), with every finite hypothesis checked at the state in front of the step.
 - Results recorded after this page's last update are not in the tables; they get rows when they are recorded.
