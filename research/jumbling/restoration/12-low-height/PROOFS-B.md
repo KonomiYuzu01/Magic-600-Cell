@@ -384,7 +384,7 @@ census steps (b00, b01, b02, b07, b11, b13, b14, b16, b20, b21) and the entry tr
 - Command: section 6 (CORE, RECLOSURE, RESOURCE_STEP, OFF_AFTER and ALL_RECLOSURES_BOUND rows).
 - Uses: R22A-06, R22A2-01, Corollary A1, Lemma M.
 
-### R22A2-05. A shared target: a fresh closure, not the old preparation (proved; instance computed)
+### R22A2-05. A shared target: a fresh closure, not the old preparation (proved; instance computed and built)
 
 - Statement. After a strict step, take a remaining unit's middle W. Its off-piece contract survives, because every
   remaining off piece keeps its pose. If N1, N2 and the needed Jordan certificates hold for the complete Bad(W) at the
@@ -399,6 +399,11 @@ census steps (b00, b01, b02, b07, b11, b13, b14, b16, b20, b21) and the entry tr
   − 1]; for b08 after b10, ≤ 96 + 2·[C(177,120, 1,159) − 1]. The old 63-letter preparation does not do it: b10's
   270-letter closure after b08 meets 33 occupied chambers. The same argument covers b01 and b11 and b16 and b21; the
   order of R22A2-04 gives capacity for all fourteen at once.
+- Built (line (a), round 3; measured, exact). At the state after b08's 222-letter step, N1 and N2 hold for b10's
+  Bad(W) (111 chambers, 26 occupied), the peeling certificate of Theorem B is complete with a V of 396 letters
+  (its bound 1,371), and V·W·V⁻¹ is a strict′ step of 936 = 144 + 2·396 letters. Its replay from the exported table
+  (`stepchk.py`) lands all 34 pieces, takes no lattice piece off and keeps every other off piece at its exact pose
+  (1,160 to 1,126 off; `runs/round22/line-a/b10-after-b08/`).
 - No contradiction with R22A-05: its capacity bound is for words inside one class, while V may use retained letters
   of other classes and move lattice contents before the class-P middle. With all extra work restricted to class P the
   capacity obstruction stands.
@@ -645,7 +650,7 @@ which no clean power moves); coverage of B′(2) at every state of 𝒞_2. Nothi
 - Command: `scripts/round22/r22b09_bound.py`; output `runs/round22/r22b09_bound.txt`.
 - Uses: R22B-01, R22B-04, R22B-05, R22B-08.
 
-### R22B-10. A checker for certificates with word-valued tables (specification; not implemented)
+### R22B-10. A checker for certificates with word-valued tables (specification; implemented, E22-1b)
 
 - Inputs: the state, the target and their digests; the SAFE alphabet and the chamber orbits; for every target orbit
   of size at least 2 the Jordan word itself and its prime, not a trial number. Checks first: target chambers unique,
@@ -668,6 +673,11 @@ which no clean power moves); coverage of B′(2) at every state of 𝒞_2. Nothi
 - Controls the checker must reject: an anchor moved by a completed edge word, the wrong conjugation direction, a
   reversed Q segment, a leaf that is not a SAFE letter, a cyclic reference, a false power length, a seed that moves an
   earlier orbit. The existing `check_r22b01.py` assumes single-letter edges and must be extended this way.
+- Implementation (E22-1b, section 4): `scripts/r22b10_cert.py` builds the certificate and `scripts/check_r22b10.py`
+  checks it without importing the builder; `scripts/test_r22b10.py` holds the controls above. One change from this
+  specification: the checker evaluates V on every target orbit, not on all 177,120 chambers. Every SAFE letter keeps
+  each orbit of the SAFE-ALL group, so every node of the program does too, and the occupancy of the targets after V
+  is the same as on all chambers, collateral of earlier steps included.
 
 ## 4. The integrator's experiments in this round
 
@@ -752,6 +762,25 @@ which no clean power moves); coverage of B′(2) at every state of 𝒞_2. Nothi
   piece of a high unit moves and no inside or straddler set changes at a cap the search reads (1,309 letters), so
   1,265 prepared states are searched. The 22 letters of grips 1 and 61 give no strict word (`eb6r.py`,
   `check_eb6r.py`).
+- **E22-1b, the certificate of R22B-10 (measured, exact; complete for b00 and b19).** `r22b10_cert.py` (written by
+  Codex, reviewed by the integrator) takes the target orbits largest first. For each it tries two- and three-letter
+  SAFE commutator seeds for min(8, 0.12·share) seconds (8 seconds here) and otherwise builds the seed by the Jordan
+  route of R22B-08; the tables are Schreier trees whose edges are words (R22B-05), and every word is a node of one
+  acyclic straight-line program with its exact integer length. `check_r22b10.py` recomputes the orbits, N1 and N2 from
+  the state, checks every Jordan certificate on it, then the program, the seeds, both tables, every step as its stated
+  three-cycle fixing the earlier orbits, the bound and the occupancy after V, and replays the steps in order; it
+  passes both certificates (`runs/round22/e22-1b/`).
+
+  | Unit | Targets | Orbits | Occupied (steps) | Seeds | s (digits) | e, f | Nodes | \|V\| | Bound | Build |
+  |:---|---:|---:|---:|:---|:---|:---|---:|:---|:---|---:|
+  | b00 | 111 | 19 | 111 | all Jordan | 122 to 165 | ≤ 22 | 14,018 | < 10^166 | < 10^166 | 254 s |
+  | b19 | 198 | 20 | 15 | all Jordan | 121 to 165 | ≤ 22 | 12,688 | < 10^141 | < 10^166 | 244 s |
+
+  So the construction of R22B-09 terminates in practice, far below its bound 10^539, and b19's V, until now an
+  existence statement (R22A2-01), is built. The seeds carry the length: the tables have e, f ≤ 22 while every seed has
+  more than 120 digits. No commutator seed turned up in the 8-second commutator phase, whereas E22-1, with longer
+  shares, found commutator seeds of 12 to 1,320 letters for at least 18 of b00's 19 orbits over its two runs. Shorter
+  seeds are the open question of line (b), round 3.
 
 ## 5. Line (d): height 4
 

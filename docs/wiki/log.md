@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: B′(h) line (b), the vacating certificates built
+The builder and independent checker of the word-valued certificate (R22B-10, written by Codex and reviewed by the integrator) built complete certificates for b00 and b19 at the depth 40 stop, with vacating words of fewer than 10^166 and 10^141 twists kept as straight-line programs, and the checker passes both; every seed came from the Jordan route, so shorter seeds are next. A fresh closure of b10 after b08 (936 twists) replays strict′, and the tutorial's tail chapter now says when V exists and how long it is in practice (`research/jumbling/restoration/12-low-height/README.md` section 11, `research/jumbling/manual/03-tail.md`).
+
 ## [2026-10-18] update | Jumbling: handoff and observation logs for five 1.0 lines
 One page per line that the jumbling work feeds (renderer, engineering, Look Lab, Taste Lab and design table) lists what the research hands over, each item with its status and the check that shows it done, and what the research has observed, each fact with its evidence ([handoff logs](../progress/1.0/jumbling-handoff/README.md)); writing them is one of the conditions under which draft pull request #112 merges. The logs decide nothing: their open items wait for the owner or for measurements on the owner's machine.
 

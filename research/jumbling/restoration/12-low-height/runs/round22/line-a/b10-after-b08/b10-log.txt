@@ -1,0 +1,16 @@
+{"off": 1160, "blocks": [33, 72, 111, 63, 45, 61, 10, 111, 58, 34, 29, 41, 101, 78, 25, 111, 86, 5, 16, 60, 10], "straddling": 22, "status_3": 0, "sec": 16}
+{"ghost": {"T_on_lattice_at_end": 34, "T_size": 34, "protected_exact_at_end": true, "free_alive": true, "free": 0, "badW_size": 111, "badW_occupied": 26, "T_landing_in_badW": 34, "badPinv_size": 0, "T_after_PQ_on_lattice": 34, "T_after_PQ_in_badPinv": 0, "badW_digest": "aeb4c54850c59990cf2bf91aab4815b1d05db51bfcdacfc089734e2716445a23"}, "sec": 16.8}
+{"safe_all_grips": 549, "letters": 6039, "off_lattice": 1160, "sec": 41}
+{"orbits": 1272, "singletons": 1237, "sec": 41}
+{"menu": {"safe_grip_count": 549, "letters": 6039, "orbits": 1272, "singleton_orbits": 1237, "holes": 1160}, "N1": true, "N2": true, "sec": 41.4}
+{"routing_edges": 18663804, "letters_avoiding_target": 5874, "sec": 51}
+{"peeling_candidates": 5559180, "sec": 167}
+{"certificate": {"peeled": 111, "of": 111, "fixed": [], "thresholds_equal_targets": true, "all_reached": true, "family_bound": 1371, "sufficient": true}, "sec": 237.6}
+{"routing_edges": 18663804, "letters_avoiding_target": 5874, "sec": 245}
+{"V": 396, "source": "certificate", "sec": 256.0}
+{"part": "V", "twists": 396, "off": 1160, "sec": 272.7}
+{"part": "P", "twists": 0, "off": 1160, "sec": 272.9}
+{"part": "Q", "twists": 144, "off": 1126, "sec": 297.0}
+{"part": "Pinv", "twists": 0, "off": 1126, "sec": 297.2}
+{"part": "Vinv", "twists": 396, "off": 1126, "sec": 316.4}
+{"end": {"digest": "411e0ce3029059b8370581741d94ee8e48673e54b89797677e6338a5283c6054", "off": 1126, "T_restored": 34, "collateral": 0, "protected_still_off": 1126, "protected_exact_pose_changed": 0, "free_on_K": 0, "free_still_off": 0, "free_pose_changed": 0, "lattice_of_S_on_K_at_end": 175960, "lattice_of_S": 175960, "lattice_of_S_same_exact_pose": 175960}, "length": 936, "times": {"ghost_premises": 16.8, "menu_and_condition": 24.7, "certificate": 196.2, "prepare": 18.4, "replay": 60.4}, "sec": 316.4}

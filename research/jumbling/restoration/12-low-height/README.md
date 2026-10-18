@@ -554,6 +554,20 @@ rules out transport only. Its record goes into section 8 when the run ends.
   reaches nothing, because every letter that moves the third anchor moves one of the first two. This rejects single-letter
   tables, not V (R22B-04): the tables may use words, and conjugating the seed moves its anchors. `PROOFS-B.md`
   section 4 gives the result per orbit.
+- E22-1b, the certificate of R22B-10 (`scripts/r22b10_cert.py` builds it and `scripts/check_r22b10.py` checks it, both
+  written by Codex and reviewed by the integrator; `scripts/test_r22b10.py` holds the controls R22B-10 lists;
+  measured, exact). For each target orbit, largest first, the builder tries short SAFE commutator seeds for a few
+  seconds (8 here) and otherwise takes the Jordan route of R22B-08; it grows both tables as Schreier trees whose edges
+  are words (R22B-05), and it keeps every word as an acyclic straight-line program with exact integer lengths, never
+  expanded. The checker, which imports nothing from the builder, recomputes the orbits, N1 and N2 from the state,
+  checks the Jordan certificates on it and every seed, table edge and three-cycle, evaluates V on every target orbit
+  (every SAFE letter keeps each orbit, so this decides the targets' occupancy exactly) and replays the steps in order.
+  b00 (111 targets in 19 orbits) completes in 254 seconds: V has fewer than 10^166 letters, within its bound (also 166
+  digits), stored as 14,018 program nodes. b19 (198 targets in 20 orbits, 15 occupied) completes in 244 seconds: V has
+  fewer than 10^141 letters (bound below 10^166), 12,688 nodes. The checker passes both. So b19's V, until now only
+  shown to exist (R22A2-01), is built, and the construction of R22B-09 ends far below its 10^539. Every seed came from
+  the Jordan route (121 to 165 digits), while the tables are short (e, f ≤ 22); E22-1, with longer search shares,
+  found commutator seeds of 12 to 1,320 letters, so the length of V sits in the seeds (`runs/round22/e22-1b/`).
 - The census with whole cells as owners (R22A-02), class 3 (13 units; measured, scratch census, each kept word
   replayed exactly): seven units have strict′ steps without endpoint collateral, b00 60, b01 84, b02 60, b07 48,
   b11 60, b13 60 and b14 60 letters (one to three clean powers), and the other six (b03, b04, b05, b06, b12, b15)
@@ -594,6 +608,13 @@ rules out transport only. Its record goes into section 8 when the run ends.
   - The eight units left are b17, which no clean power moves, and the seven glued units: their own cells hold occupied
     chambers that every SAFE letter fixes (N1 fails), and for b05, b06 and b15 orbits of size 7,125 and more with too
     few holes (N2 fails), so no SAFE word of any length frees them at this state (R22A2-06).
+- Line (a), round 3 (the integrator; measured, exact):
+  - A fresh closure of b10 after b08 (R22A2-05; `tclose2.py` at the state after b08's 222-letter step,
+    `runs/round22/line-a/b10-after-b08/`): N1 and N2 hold for b10's Bad(W) (111 chambers, 26 occupied), the peeling
+    certificate is complete (V of 396 letters, its bound 1,371), and V·W·V⁻¹ is a strict′ step of 936 letters. Both
+    steps replay strict′ from the exported tables (`stepchk.py`): b08 lands 33 pieces (1,193 to 1,160 off), b10 34
+    (1,160 to 1,126), no lattice piece goes off and every other off piece keeps its exact pose. The old 63-letter
+    preparation, used unchanged, had met 33 occupied chambers.
 - Line (c), the integrator's re-check of the solver's computed steps (measured): the solver's four T1′ steps at the
   depth 40 stop, each its landing word W followed by V′·W⁻¹·V′⁻¹, replay strict with the units recomputed from the
   state: b03 160 letters, b04 942, b12 1,158 and b18 160; no lattice piece leaves the lattice and every other off
@@ -655,12 +676,13 @@ rules out transport only. Its record goes into section 8 when the run ends.
 
 ## 12. Next
 
-- Line (a), round 3: practical vacating words for the order of R22A2-04, built with the E22-1b builder, and a replay
-  of the sequence; a fresh closure of b10 after b08 (R22A2-05; `tclose2.py`, 300-second greedy search); the eight
+- Line (a), round 3, continued: the replay of the order of R22A2-04 with each step built at the state in front of it
+  (the census word when it is strict′ there, otherwise a fresh closure with `tclose2.py`) is running; then the eight
   units the sequence leaves, which need a step that changes the off geometry first.
-- Line (b): E22-1b, the builder and checker of R22B-10, to build b00's certificate with the seeds of R22B-08 and the
-  Schreier tables of R22B-05, kept as straight-line programs, and to check V on all chambers; then line (b), round 3
-  on what makes V short.
+- Line (b), round 3 (senior reviewer), on what makes V short: E22-1b's V is long because its seeds are (Jordan-route
+  seeds of 121 to 165 digits); shorter seeds (commutator and single-overlap seeds, R22B-07, with a longer search
+  budget), whether every orbit of the SAFE-ALL group of size at least 5 carries Alt in general, and the length of V
+  in practice.
 - Line (c), round 3 (senior reviewer) after the running experiments: a construction of b14's V after b12 and then
   b15; 130 and 180 after experiment D (both preparations tried for each fail N1); unit 36's ready pair as a closure; a
   one-partner T2′ for b06 with a vertex middle; and the coverage of 𝒞_2 by backward certification.
@@ -786,6 +808,28 @@ E22-1 (section 11), with `T=research/jumbling/restoration/12-low-height/runs/lc1
 The builder writes `complete: false` with the reason for each missing orbit when it does not finish; the check then
 fails.
 
+E22-1b (section 11), with `T=research/jumbling/restoration/12-low-height/runs/lc13-k40/target-b00.json` for b00 and
+`T=research/jumbling/restoration/12-low-height/runs/round22/line-a/closures/b19-target.json` for b19:
+
+    python3 -I -B $S/test_r22b10.py                                                 # about a minute
+    python3 -I -B $S/r22b10_cert.py record $C/ia-k40-s7101.json $T <out>.json.gz --seconds 7200   # about 5 minutes
+    python3 -I -B $S/check_r22b10.py record $C/ia-k40-s7101.json $T <out>.json.gz   # 9 to 15 minutes
+
+`runs/round22/e22-1b/` keeps both certificates (`b00-cert.json.gz`, `b19-cert.json.gz`), the builder's logs
+(`-build-log.txt`: one line per orbit with its route, seed length s and table depths e and f) and the checker's
+outputs (`-check.txt`, ending in PASS). With the fixed seed 2210 a rerun gives the same certificate except the timing
+fields.
+
+Line (a), round 3, the closure of b10 after b08 (section 11), with `k40.json` as for E-B5,
+`A=research/jumbling/restoration/12-low-height/runs/round22/line-a` and `G` as for LC-13:
+
+    python3 -I -B $S/round22/stepchk.py k40.json $A/units/eb5-k40-k00-b08.json $A/closures/b08-step.json <out>/b08.json <out>/z-b08.json
+    python3 -I $G/gm/tclose2.py research/jumbling/theory $G/echain <out>/z-b08.json $A/units/eb5-k40-k00-b10.json $A/closures/b10-core.json <out>/c-b10 --greedy-seconds 300   # about 6 minutes
+    python3 -I -B $S/round22/stepchk.py <out>/z-b08.json $A/units/eb5-k40-k00-b10.json <out>/c-b10/word-full.json <out>/b10.json
+
+`runs/round22/line-a/b10-after-b08/` keeps the two replay records (`b08-replay.json`, `b10-replay.json`), b10's step
+(`b10-step.json`), the closure's result and log (`b10-result.json`, `b10-log.txt`).
+
 ## Files
 
 | File | What it is |
@@ -817,3 +861,6 @@ fails.
 | `scripts/round22/x22c09_r2_ready.py`, `runs/round22/line-c/r2-<unit>.txt` | Line (c), experiment C: two-letter readiness at the depth 60 stop for units 27, 36, 44 and 59 |
 | `runs/round22/line-c/b14-after-b12/` | Line (c), experiment A continued: b12's replay record, b14's core, the closure's log and result at the state after b12, and the target file and Jordan check of its Bad(W) (`jordan_target.py` with that state's pose table) |
 | `scripts/r22b01_cert.py`, `scripts/test_r22b01.py`, `scripts/check_r22b01.py`, `runs/lc13-k40/target-b00.json` | E22-1: the bounded builder of the R22B-01 certificate (seeds, letter tables and V; it records what it completed and why each other orbit is missing), its unit test on small exact alphabets, its acceptance check at the depth 40 stop, and b00's transport target T (111 chambers, with its digest) |
+| `scripts/r22b10_cert.py`, `scripts/check_r22b10.py`, `scripts/test_r22b10.py` | E22-1b: the builder of the R22B-10 certificate (seeds by the commutator or Jordan route, Schreier tables with word edges, every word an acyclic straight-line program with exact lengths), its independent checker, and its unit test with the controls of R22B-10 |
+| `runs/round22/e22-1b/` | E22-1b: the certificates of b00 and b19 at the depth 40 stop, the builder's logs and the checker's outputs |
+| `runs/round22/line-a/b10-after-b08/` | Line (a), round 3: the closure of b10 at the state after b08's step and the replay records of both steps |
