@@ -2,6 +2,15 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: the Lean handoff covers 81 results
+The handoff index now also lists line (b) round 5 and the coverage results COV-01 to COV-07, thirteen more, with the line numbers of the current `PROOFS-B.md`; formalization still waits for the owner's decision ([handoff](../../research/jumbling/restoration/12-low-height/ARCHON-HANDOFF.md)).
+
+## [2026-10-18] update | Jumbling: coverage of B′(2), a first attempt
+The senior reviewer found that what B′(2) still lacks is coverage, a step at which the vacancy test accepts at every reachable height-2 state, not closure: a constructed state with one off piece defeats every catalogue step, which refutes a geometry-only isolation lemma, though whether that state is reachable is open; at the replay state of 737, b05 and b15 are blocked by other units and b06 is short of three pieces of two types. The integrator's experiment showed that the four stored T1′ words form no order at 737, so they must be rebuilt at the current state ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-01 to COV-07; model review).
+
+## [2026-10-18] update | Jumbling: B′(h) line (b), round 5, the vacancy theorem
+At a given middle a vacating word exists exactly when N1, N2 and a joint test of the target's images on its orbits pass, a finite test that needs no Alt; twenty twists from solved reach a state where a 12-chamber orbit without Alt meets a real target with one hole, and a single twist vacates it. Whether N1 and N2 alone suffice, and whether every reachable state has such a step (coverage), stay open ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) R22B-24 to R22B-29; model review).
+
 ## [2026-10-18] update | Jumbling: the Lean handoff covers 68 results
 The handoff index now also lists line (b) round 4 and line (c) round 3, eleven more results, with line numbers of the current `PROOFS-B.md`; formalization still waits for the owner's decision ([handoff](../../research/jumbling/restoration/12-low-height/ARCHON-HANDOFF.md)).
 

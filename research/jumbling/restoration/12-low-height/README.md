@@ -485,10 +485,11 @@ an occupied one, and replays every word it keeps exactly:
 | Glued | b03, b18 (triangle, 63 and 5), b04, b05, b12, b15 (edge, 45, 61, 41, 25), b06 (vertex, 10) | the unit shares its cell with lattice pieces, which every class-P landing takes off (R22A-07), and the cell holds occupied chambers that no SAFE word moves (N1 fails), so no closure V·W·V⁻¹ exists for them at this state |
 | In place | b17 (edge, 86) | an edge content lands in its own cell (Theorem C), not by transport; no clean power moves it. At this state its pole 542 holds pieces of b08, b09 and b10; once they land, Theorem C applies and gives a step of 432 letters (line (a), round 3, below) |
 
-E-B5 run 2 (the driver from this state, still running) has made eight steps so far, from 1,193 to 632 off pieces:
-driver steps of 10, 10 and 848 letters for b07, b13 and b21, and pure-twist closures of 576, 24, 762, 928 and 1,130
-letters for b17, b20, b01, b09 and b10. Two of the driver steps changed the poses of other units (b11; b18 and b19), which the
-driver's free set allows, so they are clean steps but not strict′. b09 is in class 4, which has no transport target:
+E-B5 run 2 (the driver from this state, still running) has made eleven steps so far, from 1,193 to 488 off pieces:
+driver steps of 10, 10 and 848 letters for b07, b13 and b21, pure-twist closures of 576, 24, 762, 928, 1,130 and
+1,094 letters for b17, b20, b01, b09, b10 and b08, then driver steps of 904 and 1,128 letters for b00 and b14. Three
+of the driver steps changed the poses of other units (b11; b18 and b19; b03), which the driver's free set allows, so
+they are clean steps but not strict′. b09 is in class 4, which has no transport target:
 the pure twist lands a content in its own cell and its closure vacates what the twist takes off, so "no target"
 rules out transport only. Its record goes into section 8 when the run ends.
 
@@ -602,6 +603,41 @@ rules out transport only. Its record goes into section 8 when the run ends.
     chambers and 6 of 6 with groups of order 12, and one of 7 with Alt(7). Without Alt, a vacating word, when one
     exists, has at most ∏ C(d, k) − 1 ≤ 7,200^|T| − 1 letters; this bounds a word, it does not show one exists
     (R22B-23).
+- Line (b), round 5 (the senior reviewer; R22B-24 to R22B-29 in `PROOFS-B.md` section 3; its computations
+  `scripts/round22/r22b24_regular_hole.py`, `r22b26_small60.py` and `r22b27_small_t1prime.py`, re-run by the
+  integrator with the same outputs, `runs/round22/`, 2 to 4 minutes each):
+  - The vacancy theorem (R22B-29): at a given middle, a SAFE-ALL word that clears a complete target exists if and
+    only if N1 and N2 hold and the joint orbit of the target's traces on its nontrivial orbits, under the SAFE letters
+    acting on all of them at once, contains a tuple that lies in the holes. It is a finite test, uses no group
+    classification and no Alt, and bounds the shortest such word; with independent alternating factors on the large
+    orbits it reduces to the small ones. So the case of an orbit without Alt that meets a target with holes in it is
+    decided by a finite test at each middle.
+  - Such a case occurs: twenty letters from the solved state reach a height-2 state where a regular orbit of 12
+    chambers with one hole meets a real catalogue target (the 111 home chambers of a class-3 triangle transport), and
+    the single letter (6, 1) still clears it (R22B-24). So "every target orbit with enough holes carries Alt" is
+    false; N1 and N2 still sufficed there.
+  - A finite classifier of the induced action (exact order, block systems, the regular case) leaves a primitive
+    residual case that only the joint test decides (R22B-25). At the depth 60 stop no home-cell target meets an orbit
+    of 2 to 7 chambers, and neither do the T1′ middles of 151 and 180 (R22B-26, R22B-27). A strict′ step keeps the
+    old subgroup's certificates, but not the hole inventories, which must be read again (R22B-28).
+- Coverage of B′(2) (the senior reviewer; COV-01 to COV-07 in `PROOFS-B.md` section 8; its computations
+  `scripts/round22/cov01_isolated_triangle.py`, `cov02_point_orbits.py` and `cov04_middles737.py` re-run by the
+  integrator with the same outputs, and its proposed experiment run as `cov07_word_order.py`; `runs/round22/`):
+  - A state with one off piece, a type-18 triangle content of class 0 with one hole, has an intrinsic Q-shadow: two
+    occupied type-24 chambers block every retained letter that moves its landed chamber, which defeats T1, every T1′,
+    every retained preparation and T2′ (COV-01). So a lemma that covers isolated units by geometry alone is false;
+    whether this state is reachable is open.
+  - Up to K⁺ there are seven geometric off-point cases, 5,764 slots in a class (COV-02); a point enumeration, not a
+    classification of contents or states. What a local certificate contains, two deductions for isolated contents,
+    and a symbolic Q-test; the missing part is coverage at every state, not closure (COV-03). Coverage checks need the
+    holes and the off pieces' poses, not the lattice orientations, with explicit successor formulas for the holes
+    after T1 and T1′ (COV-06).
+  - At 737, b05 and b15 are blocked by other units, {b03, b04, b06} and {b07, b12, b13, b14}, not by Q alone, and
+    b06 is short of two type-6 and one type-9 pieces (COV-04); unit 130 at depth 60 is blocked by seven units
+    (COV-05).
+  - COV-07: the four stored T1′ words of b03, b04, b12 and b18 form no order at 737. b12's word is strict′ there; the
+    other three are not, at 737 or after b12. So the words must be rebuilt at the current state, which the replay of
+    line (a) continued (E2, below) does.
 - The census with whole cells as owners (R22A-02), class 3 (13 units; measured, scratch census, each kept word
   replayed exactly): seven units have strict′ steps without endpoint collateral, b00 60, b01 84, b02 60, b07 48,
   b11 60, b13 60 and b14 60 letters (one to three clean powers), and the other six (b03, b04, b05, b06, b12, b15)
@@ -751,9 +787,10 @@ rules out transport only. Its record goes into section 8 when the run ends.
   Of the 2,574 retained letters at the 234 clean grips, an exact rule prunes 1,309 (no piece of a high unit moves,
   and no inside or straddler set changes at a cap the search reads), so 1,265 prepared states are searched, at about
   a minute each; every kept word is replayed as r·C·r⁻¹. The 22 letters of grips 1 and 61 (the acceptance run) give
-  no strict word. The full search runs in eight shards on two cores. Shards 0 to 5 (322 letters each; 160, 163,
-  163, 165, 158 and 152 searched after pruning; 75 to 87 minutes each) give no strict word (`runs/round22/e22-2/`);
-  shards 6 and 7 are running.
+  no strict word. The full search ran in eight shards on two cores and is complete: shards 0 to 7 (322 letters each
+  for 0 to 5, 321 for 6 and 7; 160, 163, 163, 165, 158, 152, 149 and 155 searched after pruning; 71 to 87 minutes
+  each) give no strict word and no strict lowering word (`runs/round22/e22-2/`). So at the depth 100 stop one
+  retained letter before an E-B6 candidate never gives a strict step.
 
 ## 12. Next
 

@@ -1,0 +1,15 @@
+== COV_FIRST=3
+CHECK {"prefix": [3], "strict_prime": false}
+NO_ORDER_IN_BRANCH {"first": 3, "result": null}
+== COV_FIRST=4
+CHECK {"prefix": [4], "strict_prime": false}
+NO_ORDER_IN_BRANCH {"first": 4, "result": null}
+== COV_FIRST=12
+CHECK {"prefix": [12], "strict_prime": true}
+CHECK {"prefix": [12, 3], "strict_prime": false}
+CHECK {"prefix": [12, 4], "strict_prime": false}
+CHECK {"prefix": [12, 18], "strict_prime": false}
+NO_ORDER_IN_BRANCH {"first": 12, "result": null}
+== COV_FIRST=18
+CHECK {"prefix": [18], "strict_prime": false}
+NO_ORDER_IN_BRANCH {"first": 18, "result": null}

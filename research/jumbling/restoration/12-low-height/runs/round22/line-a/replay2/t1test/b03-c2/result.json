@@ -1,0 +1,69 @@
+{
+ "input_digest": "7c80296b7eea3a6973c50de532293e22515f291f311595c1e796b6d227afd20a",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 442,
+   "input_digest": "7c80296b7eea3a6973c50de532293e22515f291f311595c1e796b6d227afd20a",
+   "output_digest": "164048865265f5381d6d7437e7d62eb81658fd6d0b48f67d2f85df8d495d99dc",
+   "off_end": 744
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "164048865265f5381d6d7437e7d62eb81658fd6d0b48f67d2f85df8d495d99dc",
+   "output_digest": "164048865265f5381d6d7437e7d62eb81658fd6d0b48f67d2f85df8d495d99dc",
+   "off_end": 744
+  },
+  {
+   "part": "Q",
+   "twists": 60,
+   "input_digest": "164048865265f5381d6d7437e7d62eb81658fd6d0b48f67d2f85df8d495d99dc",
+   "output_digest": "04abad650ab12f4b9e9826556d4ca9ac90d753ee507e9290f68c2d77e9605425",
+   "off_end": 633
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "04abad650ab12f4b9e9826556d4ca9ac90d753ee507e9290f68c2d77e9605425",
+   "output_digest": "04abad650ab12f4b9e9826556d4ca9ac90d753ee507e9290f68c2d77e9605425",
+   "off_end": 633
+  },
+  {
+   "part": "Vinv",
+   "twists": 442,
+   "input_digest": "04abad650ab12f4b9e9826556d4ca9ac90d753ee507e9290f68c2d77e9605425",
+   "output_digest": "ac2d77ae181931e309e5bb18f18b82c2b9cde174763378a0625bcd05f94fece1",
+   "off_end": 633
+  }
+ ],
+ "end": {
+  "digest": "ac2d77ae181931e309e5bb18f18b82c2b9cde174763378a0625bcd05f94fece1",
+  "off": 633,
+  "T_restored": 111,
+  "collateral": 0,
+  "protected_still_off": 633,
+  "protected_exact_pose_changed": 0,
+  "free_on_K": 0,
+  "free_still_off": 0,
+  "free_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 176376,
+  "lattice_of_S": 176376,
+  "lattice_of_S_same_exact_pose": 176376
+ },
+ "length": 944,
+ "times": {
+  "ghost_premises": 9.9,
+  "menu_and_condition": 18.1,
+  "certificate": 75.0,
+  "prepare": 13.3,
+  "replay": 45.9
+ },
+ "seconds": 162.2
+}

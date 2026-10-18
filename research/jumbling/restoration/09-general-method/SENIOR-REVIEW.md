@@ -7313,6 +7313,17 @@ Round 4 of line (b) (one shard, fast tier; five results, all `minor`, all adopte
 | R22B-22 | proved; computed | Orbits of 2 to 7 chambers need a joint breadth-first test; the depth 60 stop has 19 of them (groups of order 12, and Alt(7)). |
 | R22B-23 | proved; conditional | Without Alt a vacating word, when one exists, has at most ∏ C(d, k) − 1 ≤ 7,200^\|T\| − 1 letters; there is no unconditional N1/N2 theorem. |
 
+Round 5 of line (b) (one shard, fast tier; six results, all `minor`, all adopted; the integrator re-ran its three computations with the same outputs). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 3:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| R22B-24 | computed | A reachable height-2 state has a regular 12-chamber orbit with one hole that meets a real catalogue target (a triangle cell, exactly Bad of its transport); N1 and N2 pass and the single letter (6, 1) vacates it. |
+| R22B-25 | proved | A finite classifier of the induced action (exact order, blocks, regular), exact vacancy tests per case, and a residual primitive case that group theory cannot exclude. |
+| R22B-26 | computed | At the depth 60 stop the 19 small orbits have no holes, and no unit or home-cell target meets them. |
+| R22B-27 | computed | The T1′ middles of 151 and 180 have the same small orbits, and their targets miss them; N1 and N2 pass at 180. |
+| R22B-28 | proved | A strict′ step keeps the old subgroup's certificates and joint-image graph, not the hole inventories; cached accepting images stay valid exactly when they lie in the new holes. |
+| R22B-29 | proved | The vacancy theorem: at a middle, V exists exactly when N1, N2 and the joint target-image test pass; no Alt needed; with independent factors on the large orbits the test reduces to the small ones. |
+
 ### Line (d): height 4 (R22D-01 to R22D-08)
 
 | Finding | Status | Result |
@@ -7374,6 +7385,20 @@ Round 3 of line (c) (the senior reviewer alone, fast tier; six results, all `min
 
 Open for line (c): orders with resource contracts for 131, 132, 133, 150 and 163, then 130; b05, b06 and b15 after certified orders (at the state of 737 after the line (a) replay, without a preparation, b05 and b15 fail N1 and b06 has no pure-cell landing word); unit 36's ready pair as a closure; whether one partner with a vertex middle suffices for b06; and coverage.
 
+### Coverage of B′(2) (COV-01 to COV-07)
+
+The coverage shard (the senior reviewer, fast tier: a proof attempt and the design of a deadlock experiment; seven results, all `minor`, all adopted; the integrator re-ran its three computations with the same outputs and ran its experiment COV-07). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| COV-01 | computed; proved; reachability open | A state with one off piece (a type-18 triangle content of class 0, one hole) has an intrinsic Q-shadow that defeats T1, T1′, retained preparation and T2′; it refutes a geometry-only isolation lemma, and whether it is reachable is open. |
+| COV-02 | computed | Up to K⁺ there are seven geometric off-point cases (5,764 slots in a class); a point enumeration, not a classification of contents or states. |
+| COV-03 | proved; conditional | What a local coverage certificate contains, two isolated-content deductions, a symbolic Q-test, and why the missing part is per-state coverage, not closure. |
+| COV-04 | computed | At 737 b05 and b15 are blocked by other units ({b03, b04, b06} and {b07, b12, b13, b14}), not by Q alone; b06 is short of two type-6 and one type-9 pieces. |
+| COV-05 | from the record | Unit 130's middle after (481, 5) is blocked by seven units; only 142 then 151 is proved, so no step for 130. |
+| COV-06 | proved | Coverage checks need the holes and the off pieces' identities and poses, not the lattice orientations; explicit successor formulas for the holes after T1 and T1′. |
+| COV-07 | computed | The four stored T1′ words of b03, b04, b12 and b18 form no order at 737: after b12 the other three fail; rebuilt words are needed (section 2 of `PROOFS-B.md`). |
+
 ### The integrator's experiments (round 22)
 
 - Zero endpoint collateral at the depth 40 stop, with points as owners: strict′ steps of 60, 84, 60, 72 and 36 letters for b00, b01, b11, b16 and b20, each replayed exactly (no lattice piece off, every other off piece exact). With whole cells as owners (R22A-02), class 3: seven of 13 units have strict′ steps (b00 60, b01 84, b02 60, b07 48, b11 60, b13 60, b14 60 letters, each replayed exactly), including the four whose replay had failed with points as owners; the other six are glued; the seven share four vacant targets (R22A-05). Classes 2 and 4 (9 units): b16 72, b20 36 and b21 84 letters (two vacant targets for the three), b17 moved by no clean power (Theorem C applies), b18 glued, and b19, b08, b09, b10 without a vacant target but with entry transports (84, 96, 168 and 144 letters) into occupied home cells of 15, 20, 24 and 20 lattice pieces (`scripts/round22/transport_census.py`, records in stage 12 `runs/round22/line-a/`).
@@ -7385,7 +7410,7 @@ Open for line (c): orders with resource contracts for 131, 132, 133, 150 and 163
 - E22-1b, the certificate of R22B-10 (`r22b10_cert.py` and its independent checker `check_r22b10.py`, written by Codex and reviewed by the integrator; complete): seeds by the Jordan route of R22B-08 wherever an 8-second commutator search finds none, Schreier tables with word edges, and every word an acyclic straight-line program with exact lengths. b00 (111 targets, 19 orbits): built in 254 seconds, \|V\| < 10^166 within its bound; b19 (198 targets, 15 occupied, 20 orbits): 244 seconds, \|V\| < 10^141. The checker passes both (stage 12 `runs/round22/e22-1b/`). Every seed has 121 to 165 digits while the tables have depth at most 22, so the seeds carry the length.
 - Line (a), round 3, the closure of b10 after b08 (R22A2-05): at the state after b08's 222-letter step the peeling certificate is complete (V of 396 letters) and V·W·V⁻¹ is a strict′ step of 936 letters; both steps replay strict′ from exported tables (stage 12 `runs/round22/line-a/b10-after-b08/`).
 - Line (a), round 3, the order of R22A2-04 at the actual states ([`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 2): eight units built and replayed strict′ in 4,516 letters, 1,193 to 737 off pieces, b17 among them (Theorem C once b08, b09 and b10 have landed; 432 letters); seven more proved by Jordan certificates where they were tried, four of them still at 737 (stage 12 `runs/round22/line-a/replay/`).
-- E22-2 (implemented; the full search is running): the complete r = 1 search of R22D-01 at the depth 100 stop. An exact pruning rule leaves 1,265 of the 2,574 retained letters to search; the 22 letters of grips 1 and 61 give no strict word, and neither do shards 0 to 5 of the eight (1,932 letters, 961 of them searched after pruning; stage 12 `runs/round22/e22-2/`).
+- E22-2 (complete): the complete r = 1 search of R22D-01 at the depth 100 stop. An exact pruning rule leaves 1,265 of the 2,574 retained letters to search; the 22 letters of grips 1 and 61 give no strict word, and neither do the eight shards of the full search (all 2,574 letters, 1,265 searched after pruning; no strict word and no strict lowering word; stage 12 `runs/round22/e22-2/`). One retained letter before an E-B6 candidate never gives a strict step there.
 
 ### What it gives
 
