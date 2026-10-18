@@ -52,9 +52,9 @@ code that computes the object at a state.
 | O6 | ghosts and Bad | 1, 68 | fastghost.Ghost, ghostlib.ghost |
 | O7 | the class-cell model (LC-01) | 1, 72 | e3_class.Model and classes.py (research/jumbling/theory/) |
 | O8 | LC-03 (used throughout) | 1, 81 | — |
-| O9 | blocks, locks and shadows | 7 (preamble), 1683 | blocks.Blocks |
-| O10 | types | 7 (preamble), 1690 | regions.orbit_of |
-| O11 | creators and partners | 7 (preamble), 1693 | — |
+| O9 | blocks, locks and shadows | 7 (preamble), 1698 | blocks.Blocks |
+| O10 | types | 7 (preamble), 1705 | regions.orbit_of |
+| O11 | creators and partners | 7 (preamble), 1708 | — |
 
 ## 3. Results in dependency order
 
