@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: B′(h) line (b), round 3, and b14's vacating word after b12
+The senior reviewer gave an exact test for when a power of a word is a seed and found two seeds of 32 and 40 twists that pass in the full order at b00; powers of single letters cannot help there (every SAFE letter has order 2 or 3), short seeds for every orbit would give a bound linear in n, and Alt at every state stays open. The certificate builder also built b14's vacating word after b12's step (fewer than 10^158 twists, checked), so that strict′ step is constructed ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) R22B-11 to R22B-18; [stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 11; model review).
+
 ## [2026-10-18] update | Jumbling: B′(h) line (b), the vacating certificates built
 The builder and independent checker of the word-valued certificate (R22B-10, written by Codex and reviewed by the integrator) built complete certificates for b00 and b19 at the depth 40 stop, with vacating words of fewer than 10^166 and 10^141 twists kept as straight-line programs, and the checker passes both; every seed came from the Jordan route, so shorter seeds are next. A fresh closure of b10 after b08 (936 twists) replays strict′, and the tutorial's tail chapter now says when V exists and how long it is in practice (`research/jumbling/restoration/12-low-height/README.md` section 11, `research/jumbling/manual/03-tail.md`).
 

@@ -1,0 +1,6 @@
+SEED 34 length 32 M 4 other_lengths [2, 4] anchors [12773, 72831, 72678]
+SEED 66 length 40 M 5 other_lengths [5] anchors [78293, 78304, 135764]
+LETTER_ORDERS {2: 1647, 3: 4392} MAX_TYPE_SIZE 7200
+CERT b00 T 111 orbits 19 steps 111 nodes 14018 seed_digits [122, 165] max_e 22 max_f 22 V_digits 166 bound_digits 166 table_constant 547390496139580
+CERT b19 T 198 orbits 20 steps 15 nodes 12688 seed_digits [121, 165] max_e 22 max_f 22 V_digits 141 bound_digits 166 table_constant 851701385498104
+SCHREIER 103644002 1491955394391 [(111, 222, 662474213046492), (198, 396, 1181710758407256)]

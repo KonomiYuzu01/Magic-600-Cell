@@ -679,6 +679,153 @@ which no clean power moves); coverage of B′(2) at every state of 𝒞_2. Nothi
   each orbit of the SAFE-ALL group, so every node of the program does too, and the occupancy of the targets after V
   is the same as on all chambers, collateral of earlier steps included.
 
+### Round 3 of line (b)
+
+After E22-1b (section 4) the senior reviewer took line (b) a third round (findings R22B-11 to R22B-18, 18 October
+2026): shorter seeds, Alt on every orbit, an audit of the two certificates and their checker, and the bound that short
+seeds would give. Its exact computation is `scripts/round22/r22b13_seeds.py` (section 6); the integrator re-ran it and
+got the output `runs/round22/r22b13_seeds.txt`. Z is the depth 40 stop (digest `7e128820…`), shared by b00 and b19.
+
+### R22B-11. E22-1's seeds protected fewer orbits (checked in the source)
+
+- Statement. `r22b01_cert.py` (E22-1) adds an orbit to the protected set only after its seed, both single-letter
+  tables and its vacating steps succeed; `r22b10_cert.py` (E22-1b) protects every earlier target orbit, failed ones
+  included. So the commutator seeds of 12 to 1,320 letters that E22-1 found were checked against fewer orbits than H2
+  of R22B-01 asks in the full order of 19 orbits: in its first run every seed search up to orbit 41, the first to
+  complete, protected no orbit, and later ones protected only 41, then 41 and 64. They do not form a compatible
+  family, and E22-1 and E22-1b differ in both the search time and the protected set, so the time alone does not
+  explain their different seed lengths. Section 4 is corrected accordingly.
+- The historical seed words were not replayed against the full protected set; some may still pass it.
+
+### R22B-12. When a power of a word is a seed (proved)
+
+- Objects: Δ, the current target orbit; E, the union of the earlier target orbits; q, a SAFE word.
+- Statement. Some positive power of q acts on Δ as a three-cycle and fixes E pointwise if and only if, on E ∪ Δ, q has
+  exactly one cycle whose length is divisible by 3, and that cycle has length 3 and lies in Δ. Then M, the least common
+  multiple of the lengths of the other cycles of q on E ∪ Δ (1 if there are none), is prime to 3, q^M is a seed of
+  |q|·M letters, and every admissible exponent is a multiple of M.
+- Proof. On a cycle of length λ, q^m fixes every point when λ divides m and moves every point otherwise. So q^m moves
+  exactly three points of E ∪ Δ, as a three-cycle, only when one original cycle of length 3 survives and every other
+  cycle dies; killing another cycle whose length is divisible by 3 needs 3 | m and kills the wanted one too.
+  Conversely, under the condition 3 does not divide M, q^M kills every other cycle and keeps the 3-cycle as a
+  three-cycle.
+- Bound. If q is [x, y], [x, yz] or [x, yzu] for SAFE letters x, y, z, u (4, 6 or 8 letters), the other cycle lengths
+  use at most c distinct primes, and every orbit in E ∪ Δ has at most D chambers, then every prime power dividing M is
+  at most D, so M ≤ D^c and s ≤ 8·D^c. Every hypothesis is a finite check of one word. No uniform c and no short q for
+  every target orbit is established.
+- Counterexample. If q has one 3-cycle on Δ and another on an earlier orbit, every power that kills the earlier cycle
+  kills the wanted one, so no exponent works; a larger exponent never repairs a failed criterion. A different order of
+  the orbits changes E and can change the outcome; no better order was found.
+- Instances: R22B-13.
+
+### R22B-13. Two short seeds for b00 (computed)
+
+- Statement. At Z, in the full decreasing-size order of b00's 19 target orbits, two eight-letter commutators [x, yzu]
+  have powers that are seeds, each checked by the criterion of R22B-12 on the protected union and then as a power:
+  - orbit 34: C = q⁴ with q = (118,11)(254,11)(106,7)(160,4)(118,11)(160,8)(106,6)(254,11), 32 letters, the
+    three-cycle (12773, 72831, 72678); the other cycle lengths on the orbit are 2 and 4;
+  - orbit 66: C = q⁵ with q = (254,4)(320,6)(340,9)(170,7)(254,8)(170,6)(340,3)(320,7), 40 letters, the three-cycle
+    (78293, 78304, 135764); it fixes all 7,200 chambers of orbit 34, and the other cycle lengths on the protected union
+    are 5.
+- They are witnesses, not shortest seeds. The reviewer's bounded searches (6,000 candidates per orbit, then up to
+  60,000 on five orbits, cut short on the sixth) found no short seed for the other 17 orbits; this shows nothing about
+  their absence.
+- Command: `scripts/round22/r22b13_seeds.py`; output `runs/round22/r22b13_seeds.txt`.
+
+### R22B-14. Powers of one letter cannot shrink a support (proved; computed)
+
+- Statement. At Z every one of the 6,039 SAFE letters has prime order: 1,647 have order 2 and 4,392 order 3. If x has
+  prime order p, x^m is the identity when p | m and has the same support as x otherwise. So no power of a single SAFE
+  letter isolates some of its cycles, and powers of letters supply no smaller support for H2 of R22B-08 or for a
+  single-overlap commutator (R22B-03).
+- Products and conjugates can have mixed cycle lengths, as the two seeds of R22B-13 show. Whether single-overlap pairs
+  of short conjugates exist was not searched exhaustively.
+- Command: `scripts/round22/r22b13_seeds.py` (the letter orders; the largest chamber type has 7,200 chambers).
+
+### R22B-15. A local test for Alt, and what stays open (proved; the universal claim open)
+
+- Statement. Let Δ be an orbit with d ≥ 8. If some SAFE word w acts on Δ with a p-cycle for a prime p with
+  d/2 < p ≤ d − 3, then the group G|Δ that G induces on Δ contains Alt(Δ). Nothing is asked of the other orbits.
+- Proof. The other cycles of w on Δ have at most d − p < p points, so none has length divisible by p, and the power of
+  w by the least common multiple of their lengths acts on Δ as one p-cycle. G|Δ is transitive because Δ is an orbit. A
+  block of a nontrivial block system that meets the p-cycle cannot have p distinct translates under it (their total
+  size would exceed d), so it is invariant under the cycle, contains its whole support and has more than d/2 points,
+  which no proper block has. So G|Δ is primitive, and Jordan's theorem, as used in Theorem A, gives Alt(Δ). For
+  5 ≤ d ≤ 7 an exact closure of the permutation group with a membership test for all three-cycles decides it.
+- Local and global. The global certificate of `buffer.check_jordan` asks more, because it supplies an alternating
+  factor that acts on Δ alone; local Alt gives no seed that fixes the earlier orbits (the diagonal actions of R22B-01
+  and R22B-07).
+- Open: that the SAFE geometry forces either condition at every state of 𝒞₂. No counterexample appeared at the named
+  states.
+- Without Alt a V can still exist. The exact condition is π_V⁻¹(T) ⊆ H (R22B-03), and breadth-first search over the
+  joint images of the target, with at most ∏_Δ C(|Δ|, |T ∩ Δ|) vertices, decides it: an image inside H gives V as the
+  inverse of its path word, of at most that number minus one letters, and an exhausted component shows that no V
+  exists. N1 and N2 alone do not decide it outside the hypotheses of Theorem A.
+- Counterexample (abstract, not a state of the puzzle): with r = (0 1 2 3 4 5) and letters r², r⁴, r³, the group is
+  the cyclic group of order 6, imprimitive and without A6. The holes {0, 3} cannot cover T = {0, 1} under any rotation,
+  although N2 holds, yet they cover {1, 4}; so the lack of Alt does not by itself forbid V.
+
+### R22B-16. The checker of E22-1b is sound, and the recorded numbers hold (checked in the source; computed)
+
+- Statement. `check_r22b10.py` checks every leaf of the program against the SAFE alphabet rebuilt from the state, and
+  every reference and expanded length. Every SAFE letter keeps each orbit, and so does every node, so evaluating V on
+  the target orbits gives the same occupancy of the targets as evaluating it on all chambers, collateral of earlier
+  steps included; targets in singleton orbits are holes by N1. The checker also evaluates every seed and step on all
+  earlier target orbits and replays every step on the current one. So a pass proves that the encoded SAFE word clears
+  T at the stated state, and its bound is R22B-01's 2·Σ k_i(s_i + 2e_i + 2f_i) with expanded word and path lengths.
+- Instances. The reviewer re-ran the complete check of b19's certificate (PASS: 198 targets, 15 steps) and recomputed
+  every node length and both bounds: |V| < 10^166 for b00 and < 10^141 for b19, both bounds below 10^166, seeds of
+  121 to 165 digits over the two certificates (b00 from 122), and 14,018 and 12,688 nodes. In the reviewer's sandbox
+  the command-line test of `test_r22b10.py` could not create its temporary directory; the integrator re-ran the whole
+  file in this session and all 19 tests pass.
+- Command: `scripts/round22/r22b13_seeds.py` (the audit of the node lengths and bounds).
+
+### R22B-17. The bound that short seeds would give (proved; conditional)
+
+- Statement. Assume the hypotheses of R22B-01 and Alt on each target orbit, so that R22B-05 gives the tables, and put
+  E(d) = (d − 2)(2d − 1) and F(d) = (d − 3)(2d − 3)(2d − 1). If every seed has s_i ≤ S(d_i), then
+  |V| ≤ 2·Σ_i k_i·[S(d_i) + 2E(d_i) + 2F(d_i)]. If every d_i ≤ D and S*(D) = max over 5 ≤ d ≤ D of S(d), then, since E
+  and F increase there, |V| ≤ 2t·[S*(D) + 2E(D) + 2F(D)] with t = Σ_i k_i.
+- Proof. Substitute the seed and table bounds into R22B-01; the number of targets occupied at the start is not used.
+- Instances (Z, D = 7,200, E(7,200) = 103,644,002, F(7,200) = 1,491,955,394,391; the exact orbit sizes improve the
+  constant):
+  - b00 (t = 111): |V| ≤ 222·S*(7,200) + 547,390,496,139,580;
+  - b19 (t = 198): |V| ≤ 396·S*(7,200) + 851,701,385,498,104.
+  With the fixed-c hypothesis of R22B-12 the first terms become 1,776·7,200^c and 3,168·7,200^c. These are
+  conditional bounds, not short words for either target. For b19, t is 198, not the 15 steps of its certificate: a
+  seed can permute later orbits and fill targets that were holes. New seeds also need their own tables; the e, f ≤ 22
+  of E22-1b belong to its anchors.
+- For this geometry every SAFE letter keeps the K⁺ chamber type, of at most 7,200 chambers, and t ≤ n by N1 and N2;
+  uniform seed bounds would give |V| ≤ 2n·[S*(7,200) + 2,984,118,076,786]. What is missing is the guarantee that the
+  targets and compatible bounded seeds exist throughout the state class, with the coverage obligations of the
+  catalogue (section 7).
+- Command: `scripts/round22/r22b13_seeds.py` (E(7,200), F(7,200) and the constants).
+
+### R22B-18. An extended commutator-power search (specification; not implemented)
+
+- Inputs: the SAFE alphabet, the current orbit Δ in the existing order, E as the union of every earlier target orbit
+  (failed ones included), the caller's deadline, a fixed random seed (suggested Random(221100 + least(Δ))), a limit on
+  candidates (60,000) and on the expanded seed length (20,000). The phase takes at most the least of 120 seconds, half
+  the orbit's remaining share and the deadline, and records interruptions and their reasons.
+- Search. First validate cached candidates, among them the two words of R22B-13, against the current alphabet and the
+  full E. Then sample: rank the grip pairs whose caps overlap on Δ by that overlap, then by their overlap on E, with
+  ties shuffled; trial j takes every fourth time the next of the first 256 ranked pairs (a new pair every 12 trials) and
+  otherwise a uniform overlapping pair; x is a SAFE letter at the first grip and y at the second; q = [x, yzu] when 3 |
+  j and [x, yz] otherwise, the extra letters drawn from a random chamber of the two caps' intersection on odd trials
+  and from a random SAFE grip on even ones. The search tests a bounded family; it never shows that no seed exists.
+- Acceptance. Compute q's exact cycles on Δ, then on E, and reject q unless the criterion of R22B-12 holds; compute M
+  by an exact least common multiple; reject when |q|·M exceeds the limit; keep the best by expanded length, then by the
+  word and exponent. Evaluate an improving q^M independently on Δ and all of E before accepting it, store it as
+  pow(word(q), M) with route `commutator`, take its anchors from its actual permutation, and run the existing tables and
+  vacating steps. Without a candidate the Jordan route stays the fallback, and an exhausted budget is an incomplete
+  result.
+- Checker. `check_r22b10.py` already checks the leaves, exact lengths, the seed's three-cycle, the fixing of earlier
+  orbits, the tables and V, so vacancy needs no new check. A claimed least exponent or spectrum bound would need q, M,
+  the protected union and the primes recorded and recomputed independently; otherwise they are diagnostics.
+- Controls: the two words of R22B-13 as positive controls, a duplicate 3-cycle on an earlier orbit as a negative
+  control, and a forced deadline as an incomplete control; then one complete certificate built and checked before any
+  conclusion about coverage.
+
 ## 4. The integrator's experiments in this round
 
 - **Zero endpoint collateral at the depth 40 stop (measured, exact replay).** With points as owners, clean-power paths
@@ -778,9 +925,11 @@ which no clean power moves); coverage of B′(2) at every state of 𝒞_2. Nothi
 
   So the construction of R22B-09 terminates in practice, far below its bound 10^539, and b19's V, until now an
   existence statement (R22A2-01), is built. The seeds carry the length: the tables have e, f ≤ 22 while every seed has
-  more than 120 digits. No commutator seed turned up in the 8-second commutator phase, whereas E22-1, with longer
-  shares, found commutator seeds of 12 to 1,320 letters for at least 18 of b00's 19 orbits over its two runs. Shorter
-  seeds are the open question of line (b), round 3.
+  more than 120 digits. No commutator seed turned up in the 8-second commutator phase. E22-1, with longer shares,
+  found commutator seeds of 12 to 1,320 letters for at least 18 of b00's 19 orbits over its two runs, but checked
+  each only against the orbits completed before it, not all earlier orbits (R22B-11), so they are not a certificate
+  in the full order. Round 3 of line (b) (R22B-11 to R22B-18) found two seeds of 32 and 40 letters that pass in the
+  full order (R22B-13).
 
 ## 5. Line (d): height 4
 
@@ -980,6 +1129,11 @@ comment; it replays the fourteen middles and writes no file:
 
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B $S/round22/r22a2_04_sequence.py   # about 75 CPU seconds
 
+Round 3 of line (b) (R22B-13, R22B-14, R22B-16, R22B-17), the senior reviewer's computation kept as written apart
+from a header comment; it writes no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B $S/round22/r22b13_seeds.py   # about 2 minutes
+
 Line (c) (section 7): the senior reviewer's computations and the solver's (`r22cf02_shadow.py`), each kept as written
 apart from a header comment and re-run by the integrator with the outputs the analyses report;
 `L=research/jumbling/restoration/12-low-height/runs/round22/line-c`:
@@ -1005,10 +1159,13 @@ Experiment A continued (R22C2-04), with `k40.json` as above, `G` as above and `z
     python3 -I -B $G/gm/tclose2.py research/jumbling/theory $G/echain za.json $L/units/eb5-k40-k00-b14.json \
         $L/b14-after-b12/b14-core.json <dir> --greedy-seconds 1800                  # about 35 minutes
     python3 -I -B $S/round22/jordan_target.py $L/b14-after-b12/b14-target.json za.json   # about 1 minute
+    python3 -I -B $S/r22b10_cert.py table za.json $L/b14-after-b12/b14-target.json <cert>.json.gz --seconds 3600   # about 2 minutes
+    python3 -I -B $S/check_r22b10.py table za.json $L/b14-after-b12/b14-target.json <cert>.json.gz                 # about 7 minutes
 
 `b14-core.json` is `{"P": [], "Q": W}` with W b14's census word (`$L/w14-census.json`); `b14-target.json` holds
 `ghost.badW` of the closure (`pre.json`) with its digest; `b14-log.txt` and `b14-result.json` are the closure's log and
-result, `b12-replay.json` the replay record of b12's step.
+result, `b12-replay.json` the replay record of b12's step; `b14-cert.json.gz`, `b14-build-log.txt` and `b14-check.txt`
+are the certificate of V, the builder's log and the checker's output.
 
 ## 7. Line (c): T2 and T3 (joint attack)
 
@@ -1373,7 +1530,10 @@ All exact, at exported pose tables, every step replayed (`stepchk.py`, `exp_a.sh
   are occupied; the peeling certificate stops at 36 of them and a 1,800-second greedy search leaves 5 occupied, so V
   is not built, but all 19 orbits of the SAFE-ALL group that meet Bad(W) have verified Jordan certificates
   (`jordan_target.py` on the state's pose table). By Corollary A1 a vacating word V exists, and V·W·V⁻¹ is a strict′
-  step for b14 after b12 (R22A-06). Whether b15 then lands is decided only at the state after a constructed b14 step.
+  step for b14 after b12 (R22A-06). The builder of R22B-10 then built V there (51 steps, a 420-letter commutator seed
+  on orbit 34 and Jordan-route seeds on the other 18 orbits, |V| < 10^158), and its checker passes it
+  (`b14-cert.json.gz`, `b14-check.txt`), so the step is constructed. Whether b15 then lands is decided only at the
+  state after that step, which needs V evaluated on all chambers.
 - B, the blocking cycle {130, 180} at the depth 60 stop (R22C-03, R22C2-02): after the readiness letters (481, 5) and
   (481, 1) the landing words (432 letters each) leave 48 of 61 and 32 of 56 landing chambers fixed, none by Q alone.
   For 130 every fixed chamber has the Q-free cap 429, blocked by 131, 132, 133, 142, 150, 151 and 163; for 180 the
