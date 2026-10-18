@@ -45,6 +45,13 @@ keys = ('letters', 'off_before', 'off_after', 'strict_prime', 'end_digest')
 print(json.dumps(dict(unit=sys.argv[2], how=sys.argv[3], **{k: r[k] for k in keys})))
 PY
 }
+# The last state by file name and digest only, so that no work-directory path enters the record.
+summary_done() { $P - "$@" <<'PY'
+import json, os, sys
+last = {'file': os.path.basename(sys.argv[2]), 'digest': json.load(open(sys.argv[2]))['digest']}
+print(json.dumps({'done': True, 'landed': int(sys.argv[1]), 'last': last}))
+PY
+}
 cur=$Z0; n=0
 for u in b00 b01 b02 b07 b08 b11 b13 b19 b09 b10 b14 b16 b21 b20; do
   how=none
@@ -69,4 +76,4 @@ for u in b00 b01 b02 b07 b08 b11 b13 b19 b09 b10 b14 b16 b21 b20; do
     summary_step $D/$u-$how.json $u $how >> $D/seq.out
   fi
 done
-echo "{\"done\": true, \"landed\": $n, \"last\": \"$cur\"}" >> $D/seq.out
+summary_done $n $cur >> $D/seq.out
