@@ -1661,6 +1661,15 @@ header comment; they write no file. Its experiment COV-35 runs once for each see
     for k in 0 1 2 3 4 5 6 7; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
         python3 -I -B -u $S/round22/cov35_deep_search.py $k; done                                                    # up to 29 minutes each
 
+Coverage round 6 (section 8: COV-36, COV-37 and COV-41), the senior reviewer's computations kept as written apart from a
+header comment; they write no file. Its experiment COV-43 runs once, its 118 cases two at a time:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov36_hole_orbits.py      # about 70 seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov37_vl_737.py           # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov41_excursions.py       # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov41_endpoint.py         # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov43_residual_search.py  # about 2 hours
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -2230,8 +2239,11 @@ reaching word, which decides nothing. Round 5 (COV-29 to COV-35) covers the 24 e
 antipodal to cap 0, so every valid singleton with a rim placement has a step, cuts the other singletons by validity to
 457,200 class–hole pairs in 67 deep and two outer classes, and gives an exact test for a whole-cap step with several off
 pieces and a lemma that lifts a certified step past separated contents; its experiment COV-35 found no reaching word for
-eight deep classes. Coverage stays open: no reachable state without a step was found, and nothing here proves that every
-state has one.
+eight deep classes. Round 6 (COV-36 to COV-43) reduces the singleton residual exactly to 118 cases, shows that the
+vacant-lock condition is no invariant of reachable states, proves that R2, restoration inside height 2, gives B′(2) with
+an explicit exhaustive catalogue, and classifies the two-letter excursions above height 2; its experiment COV-43 is
+running. Coverage stays open: no reachable state without a step was found, and nothing here proves that every state has
+one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -3147,3 +3159,210 @@ the deep and outer classes and coverage with several off pieces stay open.
   11,052 for the other five (343,764 in all, dropped trials included), and none found a word, so it decides nothing.
   Outputs `runs/round22/cov35/seed0.txt` to `seed7.txt`.
 - Uses: COV-28, COV-30.
+
+### Round 6 of coverage
+
+The senior reviewer took up the obligations of COV-34 (findings COV-36 to COV-43, all `minor`, all adopted, fast tier,
+18 October 2026): the singleton residual, several off pieces and existence within height 2. Its computations are
+`scripts/round22/cov36_hole_orbits.py`, `cov37_vl_737.py`, `cov41_excursions.py` and `cov41_endpoint.py`; the integrator
+re-ran them and got the same cases, lock violations, returning caps, witnesses, endpoint multipliers and counts, with
+the outputs `runs/round22/cov36_hole_orbits.txt`, `cov37_vl_737.txt`, `cov41_excursions.txt` and `cov41_endpoint.txt`.
+Its experiment, `scripts/round22/cov43_residual_search.py`, is running. The 457,200 pairs of COV-30 reduce exactly to
+118 coverage cases (COV-36); the vacant-lock condition of COV-31 fails at the reachable 737 state, so it is no invariant
+of reachable states (COV-37); separated contents restore one at a time while the hole resources of each step survive the
+earlier steps (COV-38); R2, restoration inside height 2, gives B′(2) with an explicit exhaustive catalogue (COV-39); HRH
+is R2 together with a lattice bridge (COV-40); the two-letter excursions above height 2 are classified, and those at one
+cap collapse to one letter (COV-41); the covered subclass and the obligations left (COV-42); and an experiment on all
+118 cases (COV-43). SingletonResidual, MultiCover, R2 and HRH stay open.
+
+### COV-36. The singleton residual is 118 coverage cases (computed; the reduction proved)
+
+- The reduction. Let y be one of the 69 valid classes of COV-30, with its off piece at R·λ_y, and h a hole of y's type.
+  A path in the orbit of h under G(Z), the group of the retained letters at the caps that leave y's placement wholly
+  outside, gives a SAFE word of at most 7,199 letters that fixes the off pose and moves the hole along the path. Its
+  endpoint has the new hole, though its labelled lattice assignment need not be a prescribed one: COV-06 carries every
+  admissibility and restoration certificate between tables with the same off data and holes, and the SAFE word fits the
+  first retained segment of the supercatalogue, whose shortening keeps its labelled endpoint. So coverage is constant on
+  each hole orbit, and on each orbit of the K⁺ stabilizer of the placement on the hole orbits. This does not make every
+  labelled table of a case reachable.
+- Not the labelled tables. Two valid tables that differ by exchanging two type-0 lattice pieces have the same off data
+  and holes, but retained letters fix every type-0 chamber, so no SAFE word exchanges them. The reduction identifies
+  coverage data, not labelled tables; the packet's wording, that two such singletons differ by a SAFE word, holds only
+  in that sense.
+- The cases. In every class the hole chambers of y's type form one large orbit and a set F_y of fixed chambers (49 in
+  all). The stabilizer is trivial except at 64 and 2249, where it has order 3, and it merges no orbit. That leaves 112
+  deep and six outer cases, 118 in all: one case for 42 classes, two for 12, three for eight and four for seven. Each
+  class gives one case for the complement of F_y in its type and one for each chamber of F_y. The nonempty F_y: 12:
+  3889; 13: 3739; 136: 676, 1343, 1437; 137: 683, 689, 1470; 140: 4321, 4342, 9341; 143: 4329; 144, 147 and 151: 4344;
+  446: 9347, 9349; 459: 4343, 4537, 9347; 2172: 691; 2244: 1471; 2149: 1474, 1479, 1481; 2249: 1483; 3889: 541, 1464;
+  3911: 555, 676, 1343; 3922: 683, 689, 1470; 3899: 676, 1343; 3900: 689, 1470; 2548: 2336, 2343; 3739: 3888; 3746:
+  3889, 3904; 3736: 3911; 1470: 1470; 1345 and 1437: 1437, 2900.
+- Status. All 118 cases are open: no restoring certificate and no proof of unreachability is given for any of them.
+- Command: `scripts/round22/cov36_hole_orbits.py` (it runs `cov30_validity.py`, and with it
+  `cov23_singleton_classes.py`, first); output `runs/round22/cov36_hole_orbits.txt` (about 70 seconds of CPU).
+- Uses: COV-06, COV-23, COV-30, R22C3-06.
+
+### COV-37. The vacant-lock condition fails at the reachable 737 state (computed)
+
+- The computation. At the 737 table of the line (a) replay (digest `2e3b8f99…`), six intrinsic rigid off blocks have
+  occupied locked chambers, 28 block–chamber violations in all (block, size and first piece: the chambers): 0, 63, 2364:
+  18578, 18637, 18639; 1, 45, 3265: 18441, 18442, 18461, 18467, 21590; 2, 61, 9013: 18576, 18577, 18633, 18635, 21776,
+  21781; 3, 10, 16314: 18563, 18564, 21667, 21750, 21754, 21764, 21765; 8, 25, 112734: 63072, 63077, 63109, 69356,
+  69361; 10, 5, 161408: 137560, 137562. For block 0, I_B = {12, 17, 26, 35, 56, 60, 67, 91} and S_B = {6, 74}, and
+  chamber 18578 satisfies both lock inclusions and is occupied. This agrees with the occupied locks already found in
+  R22C-T.
+- The consequence. VL holds at the solved state, which has no off pieces, and survives retained words (COV-31); the 737
+  table is reachable by its recorded trajectory, and every off pose of it has height 2. So along that trajectory some
+  jumble letter first breaks VL: VL is no invariant of reachable states, not even of those of height 2. A richer
+  invariant, one conditional on a singleton, or one that carries history is not excluded, and none of the 118 cases is
+  excluded. The reviewer did not replay the whole history of the 737 table; its sampled probe of short reaching prefixes
+  was interrupted and supports no claim.
+- Command: `scripts/round22/cov37_vl_737.py` (it runs the setup of `cov33_whole_cap_737.py`, which reads
+  `runs/round22/line-a/replay/tables/737.json.gz`); output `runs/round22/cov37_vl_737.txt` (about 15 seconds of CPU).
+- Uses: O9, COV-31, COV-33, R22C-T.
+
+### COV-38. Separated contents restore one at a time while their hole resources survive (proved)
+
+- The theorem. Partition the off contents of Z into U₁, …, U_r, and suppose the isolated valid state with off set U_i
+  and holes H_i has a certified restoring word w_i. If, when w_i is used, H_i lies in the actual holes and every other
+  off piece left lies wholly outside every cap that w_i uses, COV-32 lifts w_i to the actual state. Checking both
+  conditions again after each step gives a restoration in at most r steps and Σ|w_i| letters.
+- A static version. It suffices that the H_i are disjoint, that each U_j with j ≠ i lies outside every cap that w_i
+  uses, and that every chamber of H_j with j ≠ i lies outside those caps too, which keeps the later hole resources
+  vacant. Induction applies COV-32 at every stage; pieces already landed are ordinary lattice trajectories for the later
+  certificates. If every word fits the catalogue bound L, this gives at most rL ≤ nL letters, with b unchanged.
+- What separation alone gives. Separation of the off contents supplies the geometric half of the induction, but not that
+  H_j lies in the holes left by the earlier steps; the exact alternative is to carry the complete hole set by COV-06 and
+  check the next certificate again. The stronger claim, from pairwise separation of the contents alone, is not
+  established.
+- At the named states. The five passing caps at 737 certify first steps in the whole geometry, not an order of
+  independent contents. At COV-13's state the recorded 120-letter inverse history restores inside one class although no
+  cap lands all its contents. At E2's 71 state b05 and b06 both lie in cap 91 and the step that works lands them
+  together, so it does not separate them. The old resources that no longer sufficed by 437 in E2 (COV-09) are why
+  resource contracts must be refreshed. These use the recorded certificates; the reviewer did not replay the 21 steps of
+  E2.
+- A finite programme for MultiCover. Enumerate the valid height-2 coverage data, discard the data that fail FC for some
+  nonempty off subset, and check the full bounded catalogue on every remaining datum with n ≥ 2. Every check is finite
+  and a complete pass proves MultiCover; a failed datum still needs a reaching history or a proof of unreachability, so
+  the programme does not decide reachability. MultiCover stays open.
+- Uses: COV-06, COV-09, COV-13, COV-32, COV-33, R22C-FC.
+
+### COV-39. R2 gives B′(2) with an explicit exhaustive catalogue (proved)
+
+- The universe. U₂ is the set of labelled pose tables of the I_a pose group, with its fixed right-tree vertex, whose
+  poses all have left height at most 2; arbitrary rotations over Q(√5) bounded only in left height are not meant. There
+  are 1 + 5·4 = 21 left-tree vertices at even distance at most 2 and at most 7,200 poses over each, so with N = 177,120
+  pieces, |U₂| ≤ Q = 151,200^N.
+- R2: every state of 𝒞₂ has a restoring word, to some lattice table, whose states all lie in U₂.
+- The proof. Assume R2. For Z ∈ 𝒞₂ take a shortest admissible path inside U₂ from Z to a lattice table. It repeats no
+  labelled table, since cutting out a loop keeps the exact state at the splice and with it every later admissibility
+  test; so it has at most |U₂| − 1 ≤ D = Q − 1 letters. Its endpoint has every piece on the lattice, so it is a strict′
+  step for every nonempty unit.
+- The catalogue. All words over the m = 35,400 nonidentity letters of lengths 0 to D, each replayed exactly, with
+  blocked prefixes rejected and lattice endpoints accepted: a finite catalogue as section 1 of the README requires, with
+  L₂(n) = D and S₂(n) = (m^(D+1) − 1)/(m − 1), independent of n, that restores in one accepted step. So R2 implies B′(2)
+  as written.
+- What it does not give. That the four-core catalogue with b = 13,205! − 1 already contains these words. To keep that
+  envelope with this bound alone, b_new = max(b, D) = D suffices, with L_new = 4D + 5(R − 1) and S_new(n) ≤ n·C_D⁴·T_R⁵.
+  Nothing shows that b must grow: a better compression theorem might keep it.
+- Uses: COV-34, R22C3-06.
+
+### COV-40. HRH is R2 together with a lattice bridge (proved; the puzzle lemmas open)
+
+- The objects. Γ₂ is the admissible state graph induced on U₂, with the exact labelled pose tables as vertices. HRH:
+  every state of 𝒞₂ has a history from the solved state inside U₂. LRH: every reachable lattice table lies in the
+  component of the solved table in Γ₂.
+- The equivalence. HRH holds exactly when R2 and LRH hold. HRH gives R2 by reversing a history of height at most 2, and
+  LRH as a special case. Conversely, R2 takes a reachable Z to a reachable lattice table L inside Γ₂, LRH joins L to
+  solved inside Γ₂, and the reversed concatenation is a history inside U₂. So the bound of COV-39 needs R2 alone, not
+  the stronger HRH of COV-34's statement.
+- The lattice phase. Its present result does not give LRH as stated: `09-general-method/METHOD.md` promises solved
+  sticker labels, while LRH asks for the exact labelled pose table, and the jumble correction words would also need a
+  height audit. Whether every reachable lattice table joins solved inside U₂ is not decided.
+- B′(2) and the hypotheses. B′(2) has a strict′ endpoint contract and no height bound on the states between, so by its
+  definition it implies neither R2 nor HRH. Abstract reversible graphs show the gaps; they are not counterexamples in
+  this puzzle. R2 without HRH: s—x—t—z, with s and t lattice tables, z a low-height state with off pieces and x outside
+  U₂. A bounded restoration without R2: s—x—z, with s a lattice table, z low-height with off pieces and x outside U₂.
+  The corresponding implications for Magic 600 Cell stay unproved.
+- Excursions. Replacing every excursion between reachable endpoints in U₂ by a path inside U₂ is equivalent to HRH: in
+  any reaching history replace the finitely many maximal excursions; conversely HRH joins either endpoint to solved
+  inside U₂. Excursions of lengths two and three alone are not enough: a reversible graph can have its first nontrivial
+  excursion at length four while every shorter one only backtracks.
+- Uses: COV-34, COV-39, `09-general-method/METHOD.md`.
+
+### COV-41. Two-letter excursions above height 2: classified, and collapsed at one cap (proved; computed)
+
+- The classification. Let A ∈ U₂, and let legal letters g at c and h at d form an excursion A → A·g → A·g·h whose middle
+  leaves U₂; let P be the class of c. Then both letters are jumble letters of class P, h·g ∈ K⁺, and they move exactly
+  the same nonempty set of off pieces foreign to P; subject to legality these conditions are also sufficient. Lattice
+  pieces and P's own frames stay within height 2 throughout; the foreign off pieces that g moves reach height 4, h must
+  move every one of them, and h moves no foreign off piece that g left in place.
+- Proof. A class-P jumble fixes the adjacent tree vertex w_P and sends a height-2 vertex on another branch to height 4
+  on branch P. So the lowering letter is a jumble of class P: a retained letter keeps heights, and a jumble of another
+  class would raise them to 6. The product h·g fixes w_P. The original foreign vertex is at distance 3 from w_P; for its
+  image to be within distance 2 of the root, the first edge of that path must again point to the root, so h·g fixes the
+  root, and since its right factor already fixes the right root, h·g ∈ K⁺.
+- One cap. If c = d, neither twist changes the inside set, and the product is one retained menu item or the identity,
+  which replaces the excursion exactly on every labelled piece. A cap has 48·12 = 576 ordered two-letter excursions and
+  48·47·12 = 27,072 three-letter ones (after a jumble first letter, 47 nonidentity second letters leave the product a
+  jumble, and twelve final letters make it retained); every one collapses to at most one retained letter. A three-letter
+  excursion that comes back to U₂, at one cap or several, stays at height at most 4, since height 6 cannot fall to 2 in
+  one letter. Three-letter excursions at different caps are not decided.
+- At COV-17's singleton A (digest `16d61ac2…`). The caps of other classes that contain its off piece 58388 are 8 (class
+  3), 10 (class 2), 14 (class 4), 38 (class 1) and 39 (class 4). After the item 12 at each, the caps whose letters bring
+  the piece back are [8], [10], [14, 35], [38] and [29, 39], with twelve lowering items each: 14, 21, 23 and 43 to 51 at
+  the same cap, and 13, 17, 19 and 34 to 42 at 35 and at 29. The tree argument excludes every other grip class and every
+  retained second letter.
+- Different caps. [(14, 12), (35, 13)] and [(39, 12), (29, 13)] both go 2 → 4 → 2 in height and end with 5,405 off
+  pieces (digests `11f99379…` and `fb6f759e…`). At the first endpoint the left multipliers are the identity on 171,320
+  pieces, the K⁺ element 2054 on 396 and two different matrices outside K⁺ on 2,702 pieces each, so no word of zero or
+  one letter has that endpoint: not every excursion collapses to one letter. This is no obstruction to a longer path
+  inside U₂.
+- Three letters at one cap. [(8, 12), (8, 1), (8, 54)] has the largest heights 4, 4 and 2 and returns exactly to A.
+- Open. Elimination at different caps, even for the two examples. No counterexample to R2, HRH or the elimination of
+  excursions was found.
+- Command: `scripts/round22/cov41_excursions.py` and `cov41_endpoint.py` (both replay COV-17's word through
+  `cov17_single_off.py`); outputs `runs/round22/cov41_excursions.txt` and `cov41_endpoint.txt` (under 20 seconds of CPU
+  each).
+- Uses: COV-17, COV-40, the tree model (`research/jumbling/theory/trees.py`).
+
+### COV-42. The covered subclass and the obligations left (proved)
+
+- Covered. As in COV-34: every valid rim singleton, within 7,200^170,927 + 7,200^174,023 + 2 letters; every state that
+  passes the joint test of COV-32; the separated constructions of COV-38 whose resources survive; and the certified
+  backward closure of catalogue steps. The bounds stay b = 13,205! − 1, L = 4b + 5(R − 1) and S(n) ≤ n·C_b⁴·T_R⁵, with
+  at most nL letters for a certified chain of restorations. This round adds no residual singleton.
+- Height. Every prefix of a certificate built only from free-class cores and retained segments stays in U₂: own-class
+  poses stay in the five class domains, foreign pieces stay fixed during a free-class core, and retained letters keep
+  heights. So the recorded E2 certificates, under their recorded free-class and SAFE checks, support R2 along that
+  trajectory, and COV-13's one-class history supports HRH for its table. Neither covers other states, and the reviewer
+  did not replay E2's 21 steps.
+- The obligations. (1) SingletonResidual: the 118 cases of COV-36, each needing a passing certificate or a proof of
+  unreachability; all open. (2) MultiCover: the joint test and the separation theorem are sufficient routes, not
+  coverage. (3) MixedCoreBound: a uniform bound if further mixed-class cores are needed; the free-class factorial
+  argument does not give one. (4) R2, an alternative route: if proved, COV-39 gives B′(2) with D = 151,200^177,120 − 1
+  and makes settling (1) to (3) one by one unnecessary, without showing that the old catalogue covers them. (5) LRH,
+  needed only for the stronger HRH: eliminating every reachable excursion would prove HRH, while same-cap reductions and
+  short excursions alone do not.
+- The bounds. No growth of b is shown to be necessary. With R2 alone, b_new = D replaces the present envelope; otherwise
+  a largest certified mixed-core length M gives b_new = max(b, M), as in COV-34. No uniform M is known.
+- Uses: COV-13, COV-32, COV-34, COV-36, COV-38, COV-39, COV-40, COV-41.
+
+### COV-43. An experiment on all 118 cases (experiment design)
+
+- Design. For each case (y, h) of COV-36, one valid table whose only off piece is y at R = element(I_a, 0, 45), with the
+  hole h, and a search for a restoring word from that table, not for a reaching word to a prescribed labelled table:
+  random words of at most 48 letters, 80% of them at grips local to y and h, a restart when more than 12,000 pieces are
+  off, and at a lattice endpoint an exact replay with the largest height on the way and the inverse-replay check. Each
+  case runs in a fresh process with a 120-second CPU cutoff, two at a time: at most about 4.1 CPU hours, about two hours
+  on two cores.
+- What it decides. ALL_PASS, a FOUND for every case, settles SingletonResidual: each word has at most 48 letters, a SAFE
+  route to another hole of the orbit makes at most 7,247, inside the present supercatalogue, and COV-06 carries the
+  certificate to every valid labelled table of the case. Read backward from the solved table, a restoring word also
+  gives a reachable state of its case, without making every prescribed labelled table reachable. A FOUND settles its
+  case only; MISSING, NO_HIT, CUT_SHORT or an error decides neither unreachability nor a failure of the catalogue, even
+  at length 48, since the search samples a restricted family. ALL_PASS would settle neither MultiCover nor R2; the
+  recorded heights show which words stay inside U₂.
+- Command: `scripts/round22/cov43_residual_search.py` (COV-36's computation followed by the experiment's lines, as the
+  design says); output `runs/round22/cov43_residual_search.txt` (the integrator's run, under way).
+- Uses: COV-06, COV-30, COV-36.

@@ -7455,6 +7455,21 @@ The fifth coverage shard (the senior reviewer, fast tier: the deep and outer sin
 | COV-34 | proved | B′(2) still needs SingletonResidual (the 457,200 pairs), MultiCover and MixedCoreBound; b, L and S(n) are unchanged, and a height-restricted-history lemma would give a conditional bound. |
 | COV-35 | experiment design | Run COV-28's search on eight valid deep classes; only a hit decides; none in 343,764 trials (every seed cut short at its CPU cutoff). |
 
+### Coverage of B′(2), round 6 (COV-36 to COV-43)
+
+The sixth coverage shard (the senior reviewer, fast tier: the singleton residual, several off pieces and existence within height 2; eight results, all `minor`, all adopted; the integrator re-ran its four computations with the same cases, lock violations, returning caps, witnesses, endpoint multipliers and counts, and is running its experiment). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 8:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| COV-36 | computed; the reduction proved | The 457,200 class–hole pairs reduce exactly, by hole orbits of the SAFE group and the placement stabilizers, to 118 coverage cases (112 deep, six outer), each listed; all open. |
+| COV-37 | computed | The vacant-lock condition fails at the reachable 737 state (six blocks, 28 occupied locked chambers), so it is no invariant of reachable states. |
+| COV-38 | proved | Separated contents restore one at a time while each step's hole resources survive the earlier steps; content separation alone is not enough; a finite check would prove MultiCover by a complete pass. |
+| COV-39 | proved | R2, restoration inside height 2, gives B′(2) with an explicit exhaustive catalogue of all words up to 151,200^177,120 − 1 letters. |
+| COV-40 | proved | HRH is R2 together with a lattice bridge LRH; B′(2) implies neither by its definition; eliminating every reachable excursion is equivalent to HRH. |
+| COV-41 | proved; computed | Two-letter excursions above height 2 are exactly jumble pairs of one class with a retained product and the same foreign off pieces; at one cap they collapse to one letter, at two caps they need not. |
+| COV-42 | proved | B′(2) still needs SingletonResidual (118 cases), MultiCover and MixedCoreBound, or R2 in place of all three; no growth of b is shown to be necessary. |
+| COV-43 | experiment design | Search for a restoring word at each of the 118 cases (120 CPU seconds each); ALL_PASS settles SingletonResidual, a miss decides nothing (running). |
+
 ### The integrator's experiments (round 22)
 
 - Zero endpoint collateral at the depth 40 stop, with points as owners: strict′ steps of 60, 84, 60, 72 and 36 letters for b00, b01, b11, b16 and b20, each replayed exactly (no lattice piece off, every other off piece exact). With whole cells as owners (R22A-02), class 3: seven of 13 units have strict′ steps (b00 60, b01 84, b02 60, b07 48, b11 60, b13 60, b14 60 letters, each replayed exactly), including the four whose replay had failed with points as owners; the other six are glued; the seven share four vacant targets (R22A-05). Classes 2 and 4 (9 units): b16 72, b20 36 and b21 84 letters (two vacant targets for the three), b17 moved by no clean power (Theorem C applies), b18 glued, and b19, b08, b09, b10 without a vacant target but with entry transports (84, 96, 168 and 144 letters) into occupied home cells of 15, 20, 24 and 20 lattice pieces (`scripts/round22/transport_census.py`, records in stage 12 `runs/round22/line-a/`).

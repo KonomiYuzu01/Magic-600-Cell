@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 6
+The 457,200 single-off-piece pairs left by round 5 reduce exactly to 118 cases, since a safe word moves the hole within its orbit; the condition that every locked chamber is empty fails at the reachable 737 state, so it cannot exclude them; a restoration that never leaves height 2 would give B′(2) at once, with an explicit catalogue of all words up to 151,200^177,120 − 1 letters; and the two-twist detours above height 2 are classified, collapsing to one twist at one cap but not at two ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-36 to COV-43). A search for a restoring word at each of the 118 cases is running, and the handoff index now lists 117 results.
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 5 experiment
 The search COV-35, the mixed words of round 4 aimed at eight valid deep placements, found no word reaching any of them in 343,764 trials, every seed stopping at its time limit, which decides nothing ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8). Coverage round 6 starts from it.
 
