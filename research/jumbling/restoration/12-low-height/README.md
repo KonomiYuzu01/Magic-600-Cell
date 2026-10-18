@@ -822,9 +822,10 @@ chambers that every SAFE letter fixes. The landing words are `b15-W.json`, `u130
 `u130-496-1-W.json` and `u180-481-2-W.json`.
 
 Line (c), experiment D (section 11), with `k60.json` as for E-B4; the Jordan check, the certificate of V′ and its
-check are listed in [`PROOFS-B.md`](PROOFS-B.md) section 6:
+check, and the names under which `runs/round22/line-c/exp-d/` keeps the driver's outputs, are in
+[`PROOFS-B.md`](PROOFS-B.md) section 6:
 
-    sh $S/round22/exp_d.sh k60.json <work dir>                                     # about 2 hours
+    sh $S/round22/exp_d.sh k60.json <new work dir>                                 # about 2 hours
 
 E22-2 (section 11), shard i of 8 (i = 0 to 7; 75 to 85 minutes each on one core):
 

@@ -1170,16 +1170,22 @@ are the certificate of V, the builder's log and the checker's output.
 Experiment D (R22C2-02), with `k60.json` the depth 60 stop as a pose table (`$S/export_table.py`), `E=$L/exp-d` and
 `z1.json` the pose table at Z1 that `exp_b.py` writes as `u-z1-table.json` in the work directory `<dir>/e180-481-1`:
 
-    sh $S/round22/exp_d.sh k60.json <dir>                                          # about 2 hours
+    sh $S/round22/exp_d.sh k60.json <new dir>                                      # about 2 hours
     python3 -I -B $S/round22/jordan_target.py $E/e180-cert/e180-target.json z1.json     # about 1 minute
     python3 -I -B $S/r22b10_cert.py table z1.json $E/e180-cert/e180-target.json <cert>.json.gz --seconds 3600   # about 5 minutes
     python3 -I -B $S/check_r22b10.py table z1.json $E/e180-cert/e180-target.json <cert>.json.gz                 # about 20 minutes
 
-`exp_d.sh` writes the unit files (`units/`), the census picks (`picks.jsonl`), the step words and their replay
-records (`word-<u>.json`, `step-<u>.json`), and for 180 the outcome without a preparation and after (481, 1)
-(`e180-none/`, `e180-481-1/`: the landing word, the closure's log and result). `e180-cert/` keeps the target file
-(`ghost.badW` of the closure after (481, 1), with its digest), the Jordan check, V′ as a certificate of R22B-10, the
-builder's log and the checker's output.
+`exp_d.sh` needs a new or empty work directory and stops with a nonzero status when a producer or a check fails. It
+writes the unit files (`units/`, `units.out`), the census records and picks (`zp-<u>.json`, `picks.out`), the step
+words and their replay records (`w-<u>.json`, `s-<u>.json`), the pose tables after each step (`z1.json` to
+`z3.json`), and for 180 the outcome without a preparation and after (481, 1) (`e180-none.out`, `e180-481-1.out` and
+the work directories `e180-none/`, `e180-481-1/` of `exp_b.py`). The records in `$E` keep these files byte for byte
+under other names: `run.out` is the driver's output, `units.jsonl` and `picks.jsonl` are `units.out` and
+`picks.out`, `word-<u>.json` and `step-<u>.json` are `w-<u>.json` and `s-<u>.json`, `e180-<x>/result.jsonl` is
+`e180-<x>.out` and `e180-<x>/closure-result.json` is `e180-<x>/c2/result.json`; the pose tables, the census records
+and the closures' `pre.json` are not kept. `e180-cert/` keeps the target file (`ghost.badW` of the closure after
+(481, 1), with its digest), the Jordan check, V′ as a certificate of R22B-10, the builder's log and the checker's
+output.
 
 ## 7. Line (c): T2 and T3 (joint attack)
 

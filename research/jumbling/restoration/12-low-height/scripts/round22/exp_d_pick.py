@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+for out in sys.argv[3:5]:
+    Path(out).unlink(missing_ok=True)  # never leave the output of an earlier call
 rec = json.loads(Path(sys.argv[1]).read_text())
 res = rec['units'][sys.argv[2]]
 zb, sb = res.get('zero_bad'), res.get('small_bad')
