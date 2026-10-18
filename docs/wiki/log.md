@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: coverage of B′(2), round 8
+The two outer placement classes left after validity occur in no reachable state, since a piece at height 2 always lies inside a cap of its own class, which leaves 112 deep cases; every path from the lattice to a state with one off piece and exactly three jumble twists stays at height 2; and the existing descent is incomplete: it is stuck even at a reachable state with one off piece that a 24-twist word restores, so its stalls decide nothing ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-52 to COV-57). The round's experiment, an exact enumeration of one three-jumble family at two cases, is running, and the handoff index now lists 131 results.
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 7
 B′(2) with explicit bounds holds exactly when every state restores without leaving some stated height; the condition that every locked chamber is empty fails even at a reachable state with one off piece; every restoring word for the 118 cases needs at least three jumble twists; and the two-twist detours across different caps have no replacement of at most two twists ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8, COV-44 to COV-51). The round's experiment, forced jumble twists followed by the existing descent, was stopped after eight cases, since at eight sampled case tables the descent finds no move at all (stuck after 207 to 741 seconds), and the handoff index now lists 125 results.
 

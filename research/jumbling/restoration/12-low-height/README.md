@@ -791,6 +791,24 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
     nothing. The integrator stopped it after eight cases, each cut short inside its first descent: at eight sampled
     cases the existing descent is stuck at the table, with no step, after 207 to 741 seconds of CPU
     (`runs/round22/cov51_forced_descent.txt`, `descent_cost.txt`).
+- Coverage, round 8 (the senior reviewer; COV-52 to COV-57 in `PROOFS-B.md` section 8; its computations
+  `scripts/round22/cov52_outer_classes.py`, `cov53_cohort_images.py`, `cov54_rule_audit.py` and
+  `cov55_descent_cov17.py`, and `cov17_single_off.py`, re-run by the integrator with the same classes, cosets, blocks,
+  scores, openings, net changes, rule results and digests; `runs/round22/`):
+  - The outer classes 1345 and 1437 occur in no reachable table: by a peak reduction along one tracked piece, a piece at
+    height 2 always lies inside a cap of its own class, and theirs lie in none. That removes six cases, and the residual
+    is 112 deep cases in 67 classes, 442,800 class–hole pairs (COV-52).
+  - Every path from a lattice table to a singleton with exactly three jumble letters stays inside height 2, and the 29
+    blocks of the first jumble letter stay whole under the four nonlattice cosets; whether three jumble letters reach a
+    deep case turns on a joint check of block and hole transport, which is open (COV-53).
+  - At the case (12, 12) the existing descent has no closing move and no strictly improving shift (COV-54), and it is
+    stuck as well at COV-17's reachable singleton, which a 24-letter word restores: the descent is incomplete, so its
+    stalls decide nothing (COV-55).
+  - The bounds are unchanged; what B′(2) still needs is SingletonResidual for the 112 deep cases, MultiCover and
+    MixedCoreBound, or R_h for one explicit h (COV-56).
+  - The experiment COV-57 enumerates exactly the words (0, 12)·A·E·B·F at the cases (12, 12) and (2149, 41), with A and
+    B the retained elements of two fixed grips and E and F jumble letters, without the descent; a FOUND settles its
+    case, and exhausting the family excludes only that family. It was started on 18 October and is running.
 - The census with whole cells as owners (R22A-02), class 3 (13 units; measured, scratch census, each kept word
   replayed exactly): seven units have strict′ steps without endpoint collateral, b00 60, b01 84, b02 60, b07 48,
   b11 60, b13 60 and b14 60 letters (one to three clean powers), and the other six (b03, b04, b05, b06, b12, b15)
@@ -981,25 +999,28 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   singleton with a rim placement except at 24 exceptional holes (COV-23, COV-24); round 5 covered those 24 too (COV-29)
   and cut the other singletons by validity to 457,200 class–hole pairs (COV-30); round 6 reduced those pairs exactly to
   118 cases (COV-36); round 7 showed that B′(2) with explicit bounds holds exactly when restoration stays inside some
-  explicit height (COV-44). Three parts remain (COV-34, COV-42, COV-50), and restoration inside one explicit height
-  would replace all three. (1) SingletonResidual: for the 118 cases, in 67 deep classes, the isolated triangle of COV-01
-  among them, and the outer classes 1345 and 1437, exclude every reachable representative or give a step. No abelian
-  invariant excludes the triangle (COV-19); no one-letter SAFE sandwich reaches it, at any of its 36 landing letters
-  (COV-20 and the integrator's checks), and no retained middle through its landing branch (COV-25, COV-31), while the
-  vacant-lock condition is no invariant of reachable states (COV-37), not even of those with one off piece (COV-45), and
-  every restoring word for a case uses at least three jumble letters (COV-46); COV-22 found no hit in 160,000 sampled
-  words, COV-28 none in 80,581 trials and COV-35 none in 343,764 trials on eight deep classes, which decides nothing;
-  COV-43 found no restoring word at any of the 118 cases, and COV-51, the existing descent after forced jumble letters,
-  was stopped after eight cases because the descent is stuck at the residual tables; neither decides anything. If the
-  triangle is reachable, the geometric templates and the whole-cap route all fail there, and the inverse of its reaching
-  word is the one native core it needs (COV-01, COV-14, COV-21). (2) MultiCover: every state of 𝒞₂ with two or more off
-  pieces satisfies Cover(Z), with the resource contract of COV-08, the preparation test of COV-10, the joint test and
-  the separation lemma of COV-32 and the separation theorem of COV-38 as its tools. (3) MixedCoreBound: an explicit
-  bound for any further native cores the proof needs. (4) R_h for one explicit h, in place of (1) to (3): every state of
-  𝒞₂ restores inside height h, which gives B′(2) within (7,200·(4^(h+1) − 1)/3)^177,120 − 1 letters, 151,200^177,120 − 1
-  for h = 2 (COV-39, COV-44); two-letter excursions above height 2 collapse at one cap, the same classification holds at
-  every even height, and the two at different caps have no replacement of at most two letters (COV-41, COV-48, COV-49).
-  Also open: unit 130 at the depth 60 stop after 131, 132, 133, 150 and 163.
+  explicit height (COV-44); round 8 proved the two outer classes unreachable, which leaves 112 deep cases (COV-52).
+  Three parts remain (COV-34, COV-42, COV-50, COV-56), and restoration inside one explicit height would replace all
+  three. (1) SingletonResidual: for the 112 deep cases, in 67 classes, the isolated triangle of COV-01 among them,
+  exclude every reachable representative or give a step; the outer classes 1345 and 1437 occur in no reachable table
+  (COV-52). No abelian invariant excludes the triangle (COV-19); no one-letter SAFE sandwich reaches it, at any of its
+  36 landing letters (COV-20 and the integrator's checks), and no retained middle through its landing branch (COV-25,
+  COV-31), while the vacant-lock condition is no invariant of reachable states (COV-37), not even of those with one off
+  piece (COV-45), and every restoring word for a case uses at least three jumble letters (COV-46), a path with exactly
+  three staying inside height 2 (COV-53); COV-22 found no hit in 160,000 sampled words, COV-28 none in 80,581 trials and
+  COV-35 none in 343,764 trials on eight deep classes, which decides nothing; COV-43 found no restoring word at any of
+  the 118 cases, and COV-51, the existing descent after forced jumble letters, was stopped after eight cases because the
+  descent is stuck at the residual tables; neither decides anything, and the descent is stuck even at COV-17's reachable
+  singleton, so it is incomplete (COV-55). If the triangle is reachable, the geometric templates and the whole-cap route
+  all fail there, and the inverse of its reaching word is the one native core it needs (COV-01, COV-14, COV-21). (2)
+  MultiCover: every state of 𝒞₂ with two or more off pieces satisfies Cover(Z), with the resource contract of COV-08,
+  the preparation test of COV-10, the joint test and the separation lemma of COV-32 and the separation theorem of COV-38
+  as its tools. (3) MixedCoreBound: an explicit bound for any further native cores the proof needs. (4) R_h for one
+  explicit h, in place of (1) to (3): every state of 𝒞₂ restores inside height h, which gives B′(2) within
+  (7,200·(4^(h+1) − 1)/3)^177,120 − 1 letters, 151,200^177,120 − 1 for h = 2 (COV-39, COV-44); two-letter excursions
+  above height 2 collapse at one cap, the same classification holds at every even height, and the two at different caps
+  have no replacement of at most two letters (COV-41, COV-48, COV-49). Also open: unit 130 at the depth 60 stop after
+  131, 132, 133, 150 and 163.
 - Line (a): the replay of the depth 40 stop is finished (E2, 1,193 to 0). The other 𝒞₂ census stop on record is the
   depth 60 stop `ia-k60-s7104`; the census round 3 records are deeper and have height-4 pieces, so they are not 𝒞₂
   inputs (COV-16). A further replay adds a trajectory and decides nothing universal.
@@ -1245,6 +1266,7 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/round22/letter_heights.py`, `runs/round22/letter_heights.txt` | The integrator's check before coverage round 7: the left and right tree distances of every letter of the I_a menu at all 600 caps |
 | `scripts/round22/cov45_singleton_vl.py`, `cov46_first_jumble_blocks.py`, `cov47_branch_change.py`, `cov49_two_letter_audit.py`, `cov51_forced_descent.py`, `runs/round22/cov45_singleton_vl.txt`, `cov46_first_jumble_blocks.txt`, `cov47_branch_change.txt`, `cov49_two_letter_audit.txt`, `cov51_forced_descent.txt` | Coverage, round 7: the senior reviewer's computations and its experiment COV-51 (kept as written apart from a header; COV-51 runs COV-43's script with the worker replaced in memory), with the integrator's re-run outputs and the experiment's partial output (stopped after eight cases) |
 | `scripts/round22/descent_cost.py`, `runs/round22/descent_cost.txt` | The integrator's check after COV-51 started: one run of the existing descent at each of eight residual tables, each stuck before its first step |
+| `scripts/round22/cov52_outer_classes.py`, `cov53_cohort_images.py`, `cov54_rule_audit.py`, `cov55_descent_cov17.py`, `cov57_frontier_search.py`, `runs/round22/cov52_outer_classes.txt`, `cov53_cohort_images.txt`, `cov54_rule_audit.txt`, `cov55_descent_cov17.txt` | Coverage, round 8: the senior reviewer's computations and its experiment COV-57 (kept as written apart from a header; COV-57 runs the head of COV-43's worker with the search replaced), with the integrator's re-run outputs |
 | `scripts/slp_apply.py`, `scripts/test_slp_apply.py` | The exact applier of a program of literal words, `tclose2.py` cores and R22B-10 certificates (straight-line programs of SAFE-ALL letters, applied to the labelled poses without expanding powers): the end pose table and the strict′ contract against the start state; its unit test |
 | `scripts/round22/replay_slp.py`, `runs/round22/line-a/replay2/` | E2, the replay continued from 737: the driver (literal words, closures with certificate V, T1′ steps with a literal or certificate V′, each applied by `slp_apply.py`); the plans, the stored landing words and cores (`inputs/`), and runs 1 and 2 with every step's files and end tables |
 | `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`, `e2_b06_t1.py` | E2, b06 with b05: the first SAFE-ALL preparation, the second counted against the reference middle's orbits, and the prepared T1′ attempt applied by `slp_apply.py`; records in `runs/round22/line-a/replay2/b06-<n>/` |

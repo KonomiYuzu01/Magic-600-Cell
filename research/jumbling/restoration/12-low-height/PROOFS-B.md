@@ -1685,6 +1685,17 @@ cases two at a time; the integrator stopped it after eight cases (section 8):
         "1437 13 900"; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
         python3 -I -B -u $S/round22/descent_cost.py $c; done                                                             # 4 to 13 minutes each
 
+Coverage round 8 (section 8: COV-52 to COV-55), the senior reviewer's computations kept as written apart from a header
+comment, with COV-17's script run again; they write no file. Its experiment COV-57 runs once, its 24 jobs two at a time
+(section 8):
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov52_outer_classes.py    # about 70 seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov53_cohort_images.py    # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov54_rule_audit.py       # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov55_descent_cov17.py    # about 9 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov17_single_off.py       # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov57_frontier_search.py  # at most about 3 hours
+
 ## 7. Line (c): T2 and T3 (joint attack)
 
 Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
@@ -2261,8 +2272,11 @@ no restoring word at any of the 118 cases, which decides nothing. Round 7 (COV-4
 explicit bounds exactly when restoration stays inside an explicit height, that the vacant-lock condition fails even at a
 reachable singleton and that every restoring word for a residual case needs at least three jumble letters, and finds no
 replacement of at most two letters for the different-cap peaks of COV-41; its experiment COV-51 was stopped after eight
-cases, since the existing descent is stuck at the residual tables (the integrator's check after it). Coverage stays
-open: no reachable state without a step was found, and nothing here proves that every state has one.
+cases, since the existing descent is stuck at the residual tables (the integrator's check after it). Round 8 (COV-52 to
+COV-57) proves the outer classes 1345 and 1437 unreachable, which leaves 112 deep cases, keeps every three-jumble path
+from a lattice table to a singleton inside height 2, and shows that the existing descent is incomplete: it is stuck even
+at COV-17's reachable singleton; its experiment COV-57 enumerates one three-jumble family exactly at two cases. Coverage
+stays open: no reachable state without a step was found, and nothing here proves that every state has one.
 
 ### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
 
@@ -3635,3 +3649,192 @@ SingletonResidual, MultiCover, R2, R4, R6, general peak reduction and HRH stay o
 - Command: `scripts/round22/descent_cost.py <y> <h> <CPU seconds>`; output `runs/round22/descent_cost.txt` (the eight
   runs, each after a line with its case, cutoff and exit code).
 - Uses: COV-36, COV-43, COV-51, the descent of `research/jumbling/theory/restore.py`.
+
+### Round 8 of coverage
+
+The senior reviewer took up the three-jumble-letter frontier, the stall of the existing descent at the residual tables
+and constructive restorations (findings COV-52 to COV-57, all `minor`, all adopted, fast tier, 18 October 2026). Its
+computations are `scripts/round22/cov52_outer_classes.py`, `cov53_cohort_images.py`, `cov54_rule_audit.py` and
+`cov55_descent_cov17.py`, and it re-ran `cov17_single_off.py`; the integrator re-ran all five and got the same classes,
+totals, cosets, blocks, faces, scores, openings, net changes, rule results and digests, with the outputs
+`runs/round22/cov52_outer_classes.txt`, `cov53_cohort_images.txt`, `cov54_rule_audit.txt` and `cov55_descent_cov17.txt`.
+Its experiment, `scripts/round22/cov57_frontier_search.py`, was still running when the round was recorded. The outer
+classes 1345 and 1437 occur in no reachable table, which removes six of the 118 cases and leaves 112 deep cases in 67
+classes, 442,800 class–hole pairs (COV-52); every path from a lattice table to a singleton with exactly three jumble
+letters stays inside U₂, and the first jumble letter's 29 cohorts stay whole under the four nonlattice cosets, but the
+deep three-jumble frontier stays undecided (COV-53); at the case (12, 12) the descent has no closing move and no
+strictly improving shift (COV-54); the descent is stuck at COV-17's reachable singleton, so it is incomplete (COV-55);
+the bounds are unchanged and the obligations are restated for the 112 deep cases (COV-56); and an experiment enumerates
+one three-jumble family exactly at two cases (COV-57). SingletonResidual (the 112 deep cases), MultiCover, R_h, general
+peak reduction and HRH stay open.
+
+### COV-52. The outer classes 1345 and 1437 occur in no reachable table, which removes six cases (proved; computed)
+
+- The theorem. In every reachable table a piece of left height 2 lies inside at least one cap of its own class. The
+  outer placement classes have empty own-class cells, so the classes 1345 and 1437 occur in no reachable table, whatever
+  the hole, the lattice labels, the other pieces and the largest height of the history. Their six cases, (1345, 13),
+  (1345, 1437), (1345, 2900), (1437, 13), (1437, 1437) and (1437, 2900), have no reachable representative and need no
+  restoring word.
+- Proof. Follow one piece and drop the letters that do not move it; as an overapproximation, used only for an
+  obstruction, allow arbitrary global K⁺ rotations. Take a highest plateau, at height H ≥ 4, entered from and left to
+  height H − 2. Its entering jumble letter has a class P foreign to the entering vertex and raises the piece onto branch
+  P. Move the intervening K⁺ factors to one end, conjugating the other letters and their caps; then every nonretained
+  letter of the plateau, the exit letter included, has class P, since a letter of another class would raise the height
+  above H, and their product F lies in G_P and fixes the adjacent vertex w_P. The entering vertex is at distance H − 1
+  from w_P, and its geodesic from w_P begins through the root; the exiting vertex has the same distance from w_P and
+  root distance H − 2, so its geodesic begins through the root too. So F fixes the root and, fixing the right-tree
+  vertex as well, lies in K⁺; putting the moved factors back still gives a K⁺ multiplier. Replacing the plateau by that
+  multiplier keeps the tracked piece's endpoint and its remaining cap-membership tests and lowers the number of highest
+  vertices, so repetition removes every height above 2. In the resulting one-piece history each departure from the
+  lattice happens inside the cap of its jumble letter, so the new height-2 placement has a nonempty own-class cell;
+  while the piece stays at height 2, a jumble letter that moves it has its own class, whose rotations permute that
+  class's 120 caps and keep the cell nonempty, and K⁺ rotations keep the property while transporting the class. So an
+  outer height-2 endpoint is impossible.
+- Scope. The replacements act on the tracked piece alone and need not be admissible for the others, so this is an
+  obstruction to reachability, valid for histories with any number of jumble letters, and not a restoration; it does not
+  prove R₂.
+- The computation. Through `cov36_hole_orbits.py`: the 16 outer placement classes of COV-23 (433, 434, 439, 440, 544,
+  545, 1225, 1226, 1228, 1229, 1338, 1339, 1341, 1343, 1345 and 1437) all have empty own-class cells; COV-36's rows
+  total 457,200 class–hole pairs, 118 hole orbits and 118 cases; the classes 1345 and 1437, of type 7, have 7,200 pairs
+  and three cases each, with hole orbits of 7,198, 1 and 1 chambers (holes 13, 1437 and 2900); without them 112 cases
+  remain, in 67 deep classes with 442,800 class–hole pairs. COV-53's audit adds that at R = element(I_a, 0, 45) piece
+  1345 lies inside the caps 3 and 7 only and piece 1437 inside 3, 7 and 13 only, none of its own class, both with tree
+  data (2, 0, 0, −1).
+- Command: `scripts/round22/cov52_outer_classes.py` (it runs `cov36_hole_orbits.py` first); output
+  `runs/round22/cov52_outer_classes.txt` (about 70 seconds of CPU).
+- Uses: COV-23, COV-30, COV-36, the tree model (`research/jumbling/theory/trees.py`), the classes
+  (`research/jumbling/theory/classes.py`).
+
+### COV-53. Three-jumble paths to a singleton stay inside U₂; the deep frontier stays open (proved; computed)
+
+- Heights. Every admissible path from a lattice table to a height-2 singleton with exactly three jumble letters stays
+  inside U₂, however long its retained segments. Before the second jumble letter the 3,097 off pieces of the first still
+  form 29 transported intrinsic cohorts of at least 86 pieces each (COV-46). A second jumble letter that moves a cohort
+  of a foreign class raises all its pieces to height 4, and the one remaining jumble letter cannot land a height-4
+  piece, so at least 86 pieces would stay off; a singleton endpoint therefore forbids every such raising letter, and the
+  third letter cannot leave a piece at height 4 either.
+- Cohorts. For a cohort that a second jumble letter of its own class moves, undo its preceding K⁺ multiplier; its
+  accumulated rotation lies in G_P, which has five left cosets of K⁺ ∩ G_P, the lattice coset and four others,
+  represented at grip 0 by the items 12, 13, 14 and 15. Under each of the four, each of the 29 cohorts of solved·(0, 12)
+  stays one intrinsic rigid component of its own size. So a cohort still off after the second jumble letter stays
+  co-held and in one pose domain through the next retained segment, and the third jumble letter lands all of it or none:
+  no original cohort supplies the sole surviving off piece. A piece that lands at the second letter and leaves again at
+  the third belongs to the third letter's newly displaced branch, which this argument does not exclude.
+- The last-letter frontier. Let L = (c, g) be the last jumble letter, C its 3,097 home chambers, and let the singleton
+  just after L have region A and hole h. Applying L⁻¹ gives the off geometry {g⁻¹λ_x : x ∈ C ∖ {h}} ⊔ E, where E is
+  empty if L⁻¹ lands the singleton, {g⁻¹A} if it moves it from off to off, and {A} if the singleton lies outside C; so
+  the state before L has 3,096, 3,097 or 3,098 off pieces. A frontier restricted to a newly displaced singleton of the
+  last letter would miss the branch in which a survivor of the second letter remains.
+- After two jumble letters. Normalize the first to J = (0, 12). Just before the second letter E at cap C, record the 29
+  cohort multipliers k_B and the hole set H, within their joint retained orbit. E keeps the old off regions outside C,
+  transforms the old cohorts inside C and drops those that land, and adds Eλ_x for every x ∈ C ∖ H; with D the set of
+  landed chambers, the new holes are (H ∖ C) ∪ (C ∖ D). Taken modulo simultaneous K⁺, with intrinsic components and
+  their pose-domain multiplicities, this parametrizes the states after two jumble letters; retained suffixes keep those
+  multiplicities, but the multipliers and holes cannot be chosen independently, and their joint retained orbits were not
+  enumerated. For a third letter every component but at most one must land whole, so must be pure in pose domain, and
+  the exceptional one can leave one survivor only if it is a singleton or has exactly one piece outside the domain that
+  lands. This is a necessary block test, not a classification of the realizable joint arrangements; that joint problem
+  of cohort and hole transport is the named obstruction to deciding the deep three-jumble frontier.
+- Four jumble letters. The cohort argument no longer excludes the itinerary 2 → 4 → 2 → 0, but every path with four
+  jumble letters from a lattice table to height 2 stays inside U₄, since after j jumble letters each piece's height is
+  at most min(2j, 2 + 2(4 − j)); COV-52 still applies. No deep three- or four-jumble witness was built.
+- Bounds. The retained segments of a three-jumble restoration can be shortened to at most R − 1 letters each, R =
+  7,200^177,120, so it has at most 3 + 4(R − 1) letters, and one with four jumble letters at most 4 + 5(R − 1). Both fit
+  the present envelope without increasing b, so the unrestricted three-jumble question is a finite check, far too large
+  to run.
+- Command: `scripts/round22/cov53_cohort_images.py` (through the setup of `cov29_two_cap.py`); output
+  `runs/round22/cov53_cohort_images.txt` (about 12 seconds of CPU).
+- Uses: COV-23, COV-46, COV-52, the blocks (`research/jumbling/theory/blocks.py`).
+
+### COV-54. At the case (12, 12) the descent has no closing move and no strictly improving shift (computed)
+
+- What N counts. The misalignment N counts unmatched incidences between pose domains and cut cells, not off pieces. For
+  a singleton of chamber type t, with f_t the number of cut cells incident to one chamber of that type, the lattice
+  domain misses one chamber and contributes f_t and the singleton's own domain another f_t, so N = 2f_t; retained motion
+  of the singleton and of its hole, of the same type, keeps this value. At (12, 12), f_t = 4 and N = 8.
+- The survey. The hole chamber 12 has the cut faces 8, 13, 35 and 38; the off piece straddles the cuts 8 and 38, so
+  those grips are not admissible, and none of its four rotated cut normals is a grip pole. So the descent's survey has
+  only the grips 13 and 35, each with score 1 (grip misalignment 2 of N = 8). At both, all 12 retained items, the
+  identity included, leave the score 1 and all 48 jumble items give 1,565, so close and improve have no move.
+- Lock and shift. Copies of the two rules made in memory count every opening and every scored continuation. Lock tries
+  22 nonidentity retained openings with opening cost 0 and 96 jumble openings with cost 1,564, and none gives an
+  eligible closing neighbour under its rules, so it has no two- or three-letter candidate. Shift tries the same
+  openings; its 139 scored continuations have net change 0 in 43 cases and +1,564 in 96, and it accepts only a strict
+  decrease, so it accepts none. Both rules return None and leave the digest unchanged; the reviewer's first,
+  uninstrumented audit of the four rules took 209.31 seconds of CPU.
+- What it shows. A local-search obstruction at one table: it excludes neither longer words nor preparations at grips of
+  score zero, and it does not show that the descent stalls at all 118 cases; neither the locked-landing theorem nor the
+  SAFE reduction of coverage makes the descent's choices invariant, and the descent breaks ties by home counts, which
+  depend on the labels.
+- Command: `scripts/round22/cov54_rule_audit.py` (through the setup of `descent_cost.py`; `restore.py` is not changed);
+  output `runs/round22/cov54_rule_audit.txt` (about 3 minutes of CPU).
+- Uses: COV-36, COV-43, the descent and the rim model (`research/jumbling/theory/restore.py`,
+  `research/jumbling/theory/rim.py`).
+
+### COV-55. The existing descent is stuck at COV-17's reachable singleton, so it is incomplete (computed)
+
+- The state. COV-17's singleton: only piece 58388 off, hole 58388, digest `16d61ac2…`, reached from solved by the
+  24-letter word J·[[[A, B], B], D]·J⁻¹ (chronological commutators; J = (0, 12), A = (74, 8), B = (188, 4), D = (178,
+  1)), whose inverse returns it exactly to solved (`cov17_single_off.py`, run again by the reviewer and by the
+  integrator).
+- The descent. N = 8 and the grip misalignment is 5: the survey has the grips 0, 212, 228, 376 and 393, each with score
+  1. At grip 0 the score after one letter is 1 for 12 items, 1,565 for 12 and 1,567 for 36; at the other four it is 1
+  for 12 and 1,565 for 48. So close and improve have no move, and the complete lock and shift searches return None as
+  well; the table is unchanged, and `Restorer.run` returns `stuck` before its first step (516.53 seconds of CPU for the
+  four rules in the reviewer's run).
+- The consequence. A reachable singleton with a rim placement and a verified 24-letter restoration defeats every rule of
+  the existing descent (close, lock, improve, shift), so the descent is not complete. A stall of the descent at a table
+  is therefore no evidence against restorability, and the descent is no cheap oracle for coverage experiments.
+- Command: `scripts/round22/cov55_descent_cov17.py` (through `cov17_single_off.py`); output
+  `runs/round22/cov55_descent_cov17.txt` (about 9 minutes of CPU).
+- Uses: COV-17, the descent of `research/jumbling/theory/restore.py`.
+
+### COV-56. The bounds are unchanged; 112 deep cases and the global obligations remain (proved)
+
+- Covered. As in COV-50: every valid rim singleton, within 7,200^170,927 + 7,200^174,023 + 2 letters; every state that
+  passes the joint test of COV-32; the separated constructions of COV-38 whose hole resources survive; and the certified
+  backward closure of catalogue steps. With N = 177,120, R = 7,200^N, b = 13,205! − 1, m = 35,400, g = 6,600, C_b =
+  (m^(b+1) − 1)/(m − 1) and T_R = (g^R − 1)/(g − 1), the bounds stay L = 4b + 5(R − 1) and S(n) ≤ n·C_b⁴·T_R⁵, with at
+  most nL letters for a certified chain. COV-52 adds a proved necessary condition for reachability, not a restored
+  state, and no deep case has a restoring word.
+- The obligations, changed from COV-50. (1) SingletonResidual: the 112 deep cases, in 67 classes with 442,800 class–hole
+  pairs, each needing a bounded restoring certificate or a proof that excludes every reachable representative; the
+  three-jumble frontier lies inside U₂, and its joint check of cohort and hole transport is open. (2) MultiCover: open;
+  the finite universe may now leave out every datum with an outer height-2 piece; the joint vacancy tests and separation
+  stay sufficient conditions, and a failed bounded catalogue check still needs a reaching witness or an unreachability
+  lemma. (3) MixedCoreBound: needed only if the construction needs further unrestricted cores; a restoration with three
+  or four jumble letters fits the present envelope by COV-53. (4) The height route: R_h for one stated even h gives
+  B′(2) within D_h = (7,200·(4^(h+1) − 1)/3)^N − 1 letters (COV-44); exploring Γ_h is finite, but that it contains every
+  reachable low-height state is still an obligation, and COV-52's one-piece peak reduction gives no simultaneous
+  admissible replacement on the table, so it does not prove R_h. (5) LRH, or its U_h version, for the stronger history
+  statement: restoration to some lattice table gives no bridge to the exact solved table.
+- Transfer. COV-06 carries a future certificate between valid labelled tables with the same off data and holes, and
+  COV-36 carries it through its case's SAFE hole orbit with at most 7,199 retained letters, which do not raise heights;
+  one certificate does not cover the other cases of its placement class, whose hole orbits differ.
+- Which route is closer (an assessment, not a theorem). Singleton coverage stays closer to a decisive computation: it
+  has 112 concrete inputs and a restricted three-jumble frontier. The descent is no cheap oracle: it stalls at a
+  certified reachable rim singleton and takes minutes to show it. Neither coverage nor the height route is close to a
+  universal proof.
+- Uses: COV-06, COV-32, COV-36, COV-38, COV-44, COV-50, COV-52, COV-53, COV-55.
+
+### COV-57. One three-jumble family at two cases, by exact enumeration (experiment design)
+
+- Design. At the cases (12, 12) and (2149, 41), COV-43's table (through the head of its worker, with the CPU cutoff
+  raised to 900 seconds) and every word (0, 12)·A·E·B·F, without the descent: A one of the 12 retained elements of grip
+  2 (the identity included), E every jumble letter at a cap with no straddler, B one of the 12 retained elements of grip
+  32 for the first case and of grip 23 for the second, and F every final jumble letter at a cap whose inside pieces are
+  exactly the off pieces, that contains every hole and that lands every off pose. Before a jumble letter that restores
+  the whole table there must be exactly 3,097 off pieces, the holes must be exactly the home chambers of its cap, every
+  off piece must lie inside that cap and every off pose must land; otherwise a lattice piece is displaced or an off
+  piece survives. The search tests exactly this, keeping only the E after which 3,097 pieces are off. Retained words of
+  any length at one grip are represented by that grip's 12 elements, so this is a finite family, not arbitrary retained
+  middles. A FOUND word is replayed exactly from the table, with its largest left height, a lattice endpoint and the
+  inverse word back to the start digest. 24 jobs (two cases, twelve choices of A), each capped at 900 seconds of CPU,
+  two at a time: at most six CPU hours, about three hours on two cores.
+- What it decides. A FOUND settles its case and shows that three jumble letters suffice for at least one deep case.
+  EXHAUSTED_FAMILY from all 24 jobs excludes only this family; CUT_SHORT or an error decides nothing. No negative
+  outcome proves unreachability or excludes three jumble letters with general retained segments.
+- Command: `scripts/round22/cov57_frontier_search.py` (it runs the head of `cov43_residual_search.py`'s worker with the
+  search replaced, as the design says). The integrator started it on 18 October, two jobs at a time as designed; its
+  output and result are added when the run ends.
+- Uses: COV-36, COV-43, COV-46, COV-53.

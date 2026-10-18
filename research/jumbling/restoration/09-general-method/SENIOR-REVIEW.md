@@ -7485,6 +7485,23 @@ The seventh coverage shard (the senior reviewer, fast tier: the open cases, rest
 | COV-50 | proved | The covered subclass is unchanged; B′(2) needs SingletonResidual, MultiCover and MixedCoreBound, or R_h for one explicit h; coverage is closer to a decisive bounded experiment. |
 | COV-51 | experiment design | Forced jumble letters (one to four) then the existing descent at each of the 118 cases (120 CPU seconds each); ALL_PASS settles SingletonResidual within 7,253 letters per case, a miss decides nothing; the integrator stopped it after eight cases, each cut short in its first descent, which is stuck at the residual tables. |
 
+### Coverage of B′(2), round 8 (COV-52 to COV-57)
+
+The eighth coverage shard (the senior reviewer, fast tier: the three-jumble-letter frontier, the descent's stall and
+constructive restorations; six results, all `minor`, all adopted; the integrator re-ran its four computations and
+`cov17_single_off.py` with the same classes, cosets, blocks, scores, openings, net changes, rule results and digests,
+its experiment COV-57 running). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section
+8:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| COV-52 | proved; computed | A height-2 piece of a reachable table lies inside a cap of its own class, so the outer classes 1345 and 1437 are unreachable: six cases fall and 112 deep cases remain (67 classes, 442,800 pairs). |
+| COV-53 | proved; computed | Three-jumble paths from a lattice table to a singleton stay inside U₂, and the 29 cohorts of the first letter stay whole under the four nonlattice cosets (items 12 to 15); the joint check of cohort and hole transport is open. |
+| COV-54 | computed | At (12, 12), N = 2f_t = 8 and only the grips 13 and 35 are surveyed; lock has no candidate, and shift's 139 continuations change N by 0 or +1,564, so it accepts none. |
+| COV-55 | computed | The existing descent is stuck at COV-17's reachable singleton (N = 8; all four rules return None), which a 24-letter word restores: the descent is incomplete. |
+| COV-56 | proved | The bounds are unchanged; SingletonResidual (112 deep cases), MultiCover and MixedCoreBound, or R_h for one explicit h, remain. |
+| COV-57 | experiment design | Exact enumeration of (0, 12)·A·E·B·F at the cases (12, 12) and (2149, 41), A and B retained at fixed grips, 24 jobs of at most 900 CPU seconds; a FOUND settles its case and exhausting the family excludes only it; running. |
+
 ### The integrator's experiments (round 22)
 
 - Zero endpoint collateral at the depth 40 stop, with points as owners: strict′ steps of 60, 84, 60, 72 and 36 letters for b00, b01, b11, b16 and b20, each replayed exactly (no lattice piece off, every other off piece exact). With whole cells as owners (R22A-02), class 3: seven of 13 units have strict′ steps (b00 60, b01 84, b02 60, b07 48, b11 60, b13 60, b14 60 letters, each replayed exactly), including the four whose replay had failed with points as owners; the other six are glued; the seven share four vacant targets (R22A-05). Classes 2 and 4 (9 units): b16 72, b20 36 and b21 84 letters (two vacant targets for the three), b17 moved by no clean power (Theorem C applies), b18 glued, and b19, b08, b09, b10 without a vacant target but with entry transports (84, 96, 168 and 144 letters) into occupied home cells of 15, 20, 24 and 20 lattice pieces (`scripts/round22/transport_census.py`, records in stage 12 `runs/round22/line-a/`).
