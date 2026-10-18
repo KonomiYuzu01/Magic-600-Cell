@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: B′(h) line (c), round 2
+The senior reviewer, continuing alone after the solver stopped, separated T1′ failures that no landing word escapes (an intrinsic shadow of the displaced content, a finite test) from failures caused by other units; the three observed failures are of the second kind, so they depend on the order of steps, and after b12's step b14 has a strict′ step by Corollary A1 (N1, N2 and 19 Jordan certificates; V not built). For the blocking cycle {130, 180}, T1′ also fails N1 after the other preparation of each unit. Two-letter readiness holds for unit 36 only ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 7, [stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 11; model review).
+
 ## [2026-10-18] update | Jumbling: B′(h) line (a), the census and the closures
 With whole cells as owners, the transport census at the depth 40 stop finds strict′ steps without endpoint collateral for ten of the 22 units, and the entry transports of b08, b09 and b10 close by V·W·V⁻¹ (222, 270 and 704 letters, each replayed); b19's vacating word exists by Corollary A1 (N1, N2 and 20 Jordan certificates) but is not built ([stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 11, [PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 4; model review).
 

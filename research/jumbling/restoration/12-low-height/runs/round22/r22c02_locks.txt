@@ -1,0 +1,10 @@
+{"off": 1193, "blocks": [33, 72, 111, 63, 45, 61, 10, 111, 33, 58, 34, 29, 41, 101, 78, 25, 111, 86, 5, 16, 60, 10], "straddling": 22, "status_3": 0, "sec": 47}
+digest 7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818
+{"unit": 3, "first": 2364, "locked": 3, "vacant_locked": 0, "occupied_locked_in_own_home": [18578, 18637, 18639], "N1_fixed_occupied_recorded": 4}
+{"unit": 4, "first": 3265, "locked": 5, "vacant_locked": 0, "occupied_locked_in_own_home": [18441, 18442, 18461, 18467, 21590], "N1_fixed_occupied_recorded": 5}
+{"unit": 5, "first": 9013, "locked": 6, "vacant_locked": 0, "occupied_locked_in_own_home": [18576, 18577, 18633, 18635, 21776, 21781], "N1_fixed_occupied_recorded": 6}
+{"unit": 6, "first": 16314, "locked": 7, "vacant_locked": 0, "occupied_locked_in_own_home": [18563, 18564, 21667, 21750, 21754, 21764, 21765], "N1_fixed_occupied_recorded": 27}
+{"unit": 12, "first": 106716, "locked": 0, "vacant_locked": 0, "occupied_locked_in_own_home": [], "N1_fixed_occupied_recorded": 5}
+{"unit": 15, "first": 112734, "locked": 5, "vacant_locked": 0, "occupied_locked_in_own_home": [63072, 63077, 63109, 69356, 69361], "N1_fixed_occupied_recorded": 6}
+{"unit": 17, "first": 160130, "locked": 13, "vacant_locked": 13, "occupied_locked_in_own_home": [], "N1_fixed_occupied_recorded": 0}
+{"unit": 18, "first": 161408, "locked": 2, "vacant_locked": 0, "occupied_locked_in_own_home": [137560, 137562], "N1_fixed_occupied_recorded": 4}

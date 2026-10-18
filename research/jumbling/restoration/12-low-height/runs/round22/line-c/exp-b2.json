@@ -1,0 +1,721 @@
+{
+ "130": {
+  "unit": 130,
+  "letter": [
+   496,
+   1
+  ],
+  "size": 61,
+  "z_digest": "ef45a117ac97106ffb594ca0b05e065ad18fce23bc9f44b7a538d12484d7e989",
+  "cp4_rc": 0,
+  "W": 432,
+  "prep_rc": 0,
+  "tclose2_rc": 0,
+  "tclose2_result": "no V",
+  "result": "no closure of W^-1 at Z1",
+  "landing_word": {
+   "letters": 432,
+   "cycle": [
+    [
+     395,
+     487
+    ],
+    [
+     284,
+     395
+    ],
+    [
+     284,
+     487
+    ]
+   ],
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14635,
+    "digest_after": "b58535ceae98b6b0ca47e3b7c97588b6e62c1b81f8358459bb126adebb10bb1c",
+    "carrier_on_after": 61,
+    "carrier_size": 61,
+    "others_off": 14549,
+    "others_exact_pose_kept": 14549,
+    "lattice_pieces_in_X_before": 86,
+    "newly_off_eq_lattice_pieces_of_X": true,
+    "off_after_eq_others_plus_latX": true
+   }
+  },
+  "closure": {
+   "result": "no V",
+   "times": {
+    "ghost_premises": 320.3,
+    "menu_and_condition": 86.9
+   },
+   "premises": {
+    "state_digest": "b58535ceae98b6b0ca47e3b7c97588b6e62c1b81f8358459bb126adebb10bb1c",
+    "off": 14635,
+    "N1": false,
+    "N2": false,
+    "fixed_occupied": [
+     115192,
+     115196,
+     115204,
+     115205,
+     115206,
+     115210,
+     115211,
+     115212,
+     115213,
+     115214,
+     115215,
+     115216,
+     115220,
+     115221,
+     115222,
+     115232,
+     115238,
+     115239,
+     115240,
+     115241,
+     115242,
+     115243,
+     115244,
+     115245,
+     115246,
+     115247,
+     115248,
+     115256,
+     115257,
+     115258,
+     115259,
+     115260,
+     119667,
+     119709,
+     119710,
+     133545,
+     133546,
+     133547,
+     133548,
+     133558,
+     133559,
+     133560,
+     133561,
+     133562,
+     133568,
+     133569,
+     133570,
+     133572,
+     133574,
+     133577,
+     133578,
+     133582,
+     133583,
+     133584,
+     133588,
+     133589,
+     133598,
+     133600,
+     144706,
+     148938,
+     148941
+    ],
+    "deficits": [
+     {
+      "orbit": 18920,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18924,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18932,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18933,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18934,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18938,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18939,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18940,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18941,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18942,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18943,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18944,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18948,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18949,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18950,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18960,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18966,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18967,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18968,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18969,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18970,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18971,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18972,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18973,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18974,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18975,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18976,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18984,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18985,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18986,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18987,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 18988,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 19899,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 19941,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 19942,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22331,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22332,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22333,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22334,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22344,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22345,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22346,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22347,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22348,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22354,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22355,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22356,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22358,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22360,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22363,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22364,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22368,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22369,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22370,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22374,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22375,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22384,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 22386,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 23819,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 24564,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 24567,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     }
+    ]
+   },
+   "ghost": {
+    "T_size": 86,
+    "badW_size": 86,
+    "badW_occupied": 61,
+    "T_landing_in_badW": 86,
+    "badW_digest": "2f11c518c4df476ccde58df0a042e0831bdbfa7e38b49191079f0793307d102b"
+   }
+  }
+ },
+ "180": {
+  "unit": 180,
+  "letter": [
+   481,
+   2
+  ],
+  "size": 56,
+  "z_digest": "ef45a117ac97106ffb594ca0b05e065ad18fce23bc9f44b7a538d12484d7e989",
+  "cp4_rc": 0,
+  "W": 432,
+  "prep_rc": 0,
+  "tclose2_rc": 0,
+  "tclose2_result": "no V",
+  "result": "no closure of W^-1 at Z1",
+  "landing_word": {
+   "letters": 432,
+   "cycle": [
+    [
+     562,
+     579
+    ],
+    [
+     579,
+     598
+    ],
+    [
+     562,
+     598
+    ]
+   ],
+   "exact": {
+    "all_admissible": true,
+    "off_before": 14610,
+    "off_after": 14640,
+    "digest_after": "9326b875dec1bad978adfa35d9a6eeade7e253720392e72389d71b03962c32c5",
+    "carrier_on_after": 56,
+    "carrier_size": 56,
+    "others_off": 14554,
+    "others_exact_pose_kept": 14554,
+    "lattice_pieces_in_X_before": 86,
+    "newly_off_eq_lattice_pieces_of_X": true,
+    "off_after_eq_others_plus_latX": true
+   }
+  },
+  "closure": {
+   "result": "no V",
+   "times": {
+    "ghost_premises": 273.4,
+    "menu_and_condition": 55.8
+   },
+   "premises": {
+    "state_digest": "9326b875dec1bad978adfa35d9a6eeade7e253720392e72389d71b03962c32c5",
+    "off": 14640,
+    "N1": false,
+    "N2": false,
+    "fixed_occupied": [
+     172327,
+     172328,
+     172329,
+     172330,
+     172331,
+     172332,
+     173464,
+     173558,
+     173561,
+     173562,
+     173563,
+     175558,
+     175634,
+     175639,
+     175643,
+     175682,
+     175684,
+     175687,
+     175689,
+     175690,
+     175694,
+     175695
+    ],
+    "deficits": [
+     {
+      "orbit": 25237,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25238,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25239,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25240,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25241,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25242,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25335,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25361,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25364,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25365,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25366,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25412,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25444,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25447,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25450,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25451,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25453,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25456,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25457,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25458,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25460,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 25461,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     }
+    ]
+   },
+   "ghost": {
+    "T_size": 86,
+    "badW_size": 86,
+    "badW_occupied": 56,
+    "T_landing_in_badW": 86,
+    "badW_digest": "2fddc52a6a56a5e8e73c73ac87e0f2f9ca0022fa011efa710f9ab44909168f01"
+   }
+  }
+ }
+}

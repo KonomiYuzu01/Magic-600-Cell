@@ -1,0 +1,1 @@
+{"digest": "218f823f3b269c2c43146086601f9110274c2ccd98363276d0ea09466b30e669", "off": 61, "cell": [30, 145], "home_chambers": 86, "home_occupied": 68, "holes_inside": 18, "holes_outside": 43, "T1prime_type_deficit": 18, "holes_inside_by_type": {"7": 2, "8": 2, "9": 1, "10": 3, "11": 3, "12": 1, "14": 2, "15": 3, "17": 1}}

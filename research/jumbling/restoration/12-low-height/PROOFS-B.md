@@ -12,7 +12,8 @@ existence statement with explicit bounds that need not be small
 ([owner decision, 18 October 2026](../../../../docs/wiki/decisions/owner-decisions-2026-10-18-bprime-goal.md)). The
 review record of the round, with its finding ids, is
 [`SENIOR-REVIEW.md`](../09-general-method/SENIOR-REVIEW.md) section 27. Line (c) of the round (the T2 catalogue and T3
-unlocking) is a joint attack; its lemmas are added here after its cross-examination.
+unlocking) was a joint attack of the senior reviewer and the solver; its lemmas, after the cross-examination and a
+second round by the senior reviewer, are in section 7.
 
 Evidence kind: exact synthetic geometry over Q(√5) and source evidence; headless Linux. Nothing here is a Windows,
 DirectX, input or performance result.
@@ -785,3 +786,411 @@ the peeling and the greedy search stopped) and `$u-replay.json` the record of th
 b19's target file holds `ghost.badW` of its closure (`pre.json`), with its digest; then
 
     python3 -I -B $S/round22/jordan_target.py $A/closures/b19-target.json     # N1, N2 and 20 Jordan certificates; about 2 minutes
+
+Line (c) (section 7): the senior reviewer's computations and the solver's (`r22cf02_shadow.py`), each kept as written
+apart from a header comment and re-run by the integrator with the outputs the analyses report;
+`L=research/jumbling/restoration/12-low-height/runs/round22/line-c`:
+
+    python3 -I -B $S/round22/r22c02_locks.py            # R22C-02: locked occupied chambers at the depth 40 stop; about 1 minute
+    python3 -I -B $S/round22/r22c03_locks60.py          # R22C-03: the same at the depth 60 stop; about 8 minutes
+    python3 -I -B $S/round22/r22c04_vectors.py          # R22C-04: type vectors of the home cells; about 20 seconds
+    python3 -I -B $S/round22/r22c04_orbits.py           # R22C-04: K⁺ orbits of the home cells; about 15 seconds
+    python3 -I -B $S/round22/r22c04_b06.py              # R22C-04: b06's pieces and type vector; about 1 minute
+    python3 -I -B $S/round22/x22c04_s61c.py             # X22C-04: the s61c state; about 20 seconds
+    python3 -I -B $S/round22/x22c07_movers.py           # X22C-07: a mover for each blocking group, from the records
+    python3 -I -B $S/round22/r22cf02_shadow.py \
+        research/jumbling/restoration/11-scramble-census/runs/round2/ia-k40-s7101.json \
+        research/jumbling/restoration/12-low-height/runs/screen-k40.json $L/shadow/shadow.json   # R22CF-02; about 2 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B $S/round22/r22c2_02_blockers.py   # R22C2-02; about 20 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B $S/round22/r22c2_05_vertex.py     # R22C2-05; about 2 minutes
+    python3 -I -B $S/round22/x22c09_r2_ready.py <unit>  # X22C-09, experiment C, units 27, 36, 44 and 59; about 8 minutes each
+
+Experiment A continued (R22C2-04), with `k40.json` as above, `G` as above and `za.json` the state after b12's step:
+
+    python3 -I -B $S/round22/stepchk.py k40.json $L/units/eb5-k40-k00-b12.json \
+        research/jumbling/restoration/12-low-height/runs/round22/t1prime-k40/steps/u12.json <out> za.json
+    python3 -I -B $G/gm/tclose2.py research/jumbling/theory $G/echain za.json $L/units/eb5-k40-k00-b14.json \
+        $L/b14-after-b12/b14-core.json <dir> --greedy-seconds 1800                  # about 35 minutes
+    python3 -I -B $S/round22/jordan_target.py $L/b14-after-b12/b14-target.json za.json   # about 1 minute
+
+`b14-core.json` is `{"P": [], "Q": W}` with W b14's census word (`$L/w14-census.json`); `b14-target.json` holds
+`ghost.badW` of the closure (`pre.json`) with its digest; `b14-log.txt` and `b14-result.json` are the closure's log and
+result, `b12-replay.json` the replay record of b12's step.
+
+## 7. Line (c): T2 and T3 (joint attack)
+
+Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
+(R22C-01 to R22C-07 and R22CF-01 to R22CF-07), the senior reviewer then cross-examined the solver's findings against
+its own (X22C-01 to X22C-09), and after that the solver stopped (owner, 18 October 2026). A second round by the senior
+reviewer alone (R22C2-01 to R22C2-06) followed the integrator's experiments. Each heading below names the findings a
+lemma comes from and its status after the cross-examination; the integrator re-ran every computation cited here
+(section 6). Lemma letters (G, T, ...) are those of the analyses.
+
+Further objects for this section:
+- **O9, blocks, locks and shadows.** A *rigid block* B is a set of off pieces that every admissible letter moves
+  together (`blocks.Blocks`; Lemma 50 of `buffer-transport.md`). I_B is the set of grips whose cap holds every piece
+  of B and S_B the set of grips whose cut a piece of B straddles; caps(x) is the set of grips whose cap contains the
+  chamber x. A home chamber x is *locked* to B when I_B ⊆ caps(x) ⊆ I_B ∪ S_B (lock lemma,
+  `buffer-transport.md` section 5), and *shadowed* by B when every cap containing x holds a piece of B or is
+  straddled by a piece of B. Locked implies shadowed. Under an admissible retained word B moves by one multiplier k_B ∈ K⁺, and the lock lemma says the content
+  (lattice piece or hole) that was in a locked chamber x is afterwards in k_B(x).
+- **O10, types.** The 36 chamber types are the K⁺ orbits of chambers (`regions.orbit_of`). A lattice piece of home
+  chamber h occupies a chamber of h's type, and SAFE-ALL words keep the number of holes of each type. off_t(Z) is the
+  number of off pieces whose home chamber has type t; it equals the number of holes of type t.
+- **O11, creators and partners.** A *creator* D for a cell C″ at Z is an admissible word that ends with every off piece
+  of Z at its exact pose and with the lattice content of C″ off the lattice; that content is the *partner*.
+
+### R22C-G. Lemma G: one rotation per cell (proved; R22CF-01, X22C-01)
+
+- Objects: Z, a class P, a word W over the free class-P letters of Z (H1 of R22A-01).
+- Statement.
+  1. For every class-P cell C there is g_C ∈ G_P such that every piece at a point (C, m) of Z is at (g_C C, g_C m)
+     after W, with pose g_C·γ, where γ is its pose at Z.
+  2. If W lands a class-P off content U at (C, ℓ), ℓ ≠ 0, then g_C sends label 0 to a nonzero label, every lattice
+     piece of Z in Ω_C is off after W, and these pieces form one class-P content at (g_C C, g_C 0). In particular
+     Bad(W) contains every occupied chamber of Ω_C, whether W lands U in its own cell or in another one.
+  3. A content in a vertex cell {v} is in {v} after every prefix of W.
+- Proof.
+  1. Induction over the letters (O8): a letter (c, g) at a free grip rotates every piece inside its cap by g, the cap
+     of a grip of P contains exactly the cells that have c as a cap, and a class-P piece never straddles a cut of P.
+  2. A pose h·k with h ∈ G_P and k ∈ K⁺ lies in K⁺ exactly when h ∈ H_P, that is, when its label is 0. U lands, so
+     g_C·ℓ = 0; the label action of g_C is a permutation, so g_C·0 ≠ 0, and a lattice piece of C with pose k ends with
+     pose g_C·k of nonzero label.
+  3. A letter at a grip c ≠ v acts only on cells that have c as a cap, and v is the only cap of {v}; a letter at v
+     fixes the pole v, so it maps {v} to itself.
+- Consequences. R22A-07 is the case of one lattice content in the unit's own cell. The census rows "glued" (stage 12
+  section 11) are instances of item 2, not search limits. A vertex content lands in place only (LC-12), so every
+  landing word of b06 turns the cell {91}, and its 375 lattice pieces go off.
+- Uses: O7, O8, LC-12.
+
+### R22C-T. Locked chambers and Lemma T (proved as scoped; R22CF-02, R22C-01, X22C-02)
+
+- Objects: Z, a rigid block B, a class-P unit U ⊆ B in the cell C, a chamber x ∈ Ω_C.
+- Hypotheses: H1, x is occupied at Z; H2, x is locked to B (O9). Both are decided by `blocks.Blocks`.
+- Statement.
+  1. (Lemma T) Let w = A1·W·A2 with A1 and A2 admissible retained words and W a word over free letters of the class
+     P′ of U after A1 that lands the pieces of U. Then the lattice piece q that occupied x at Z is off the lattice
+     after w, so w is not a strict′ step for U.
+  2. (Creators, R22C-01) The same holds when finitely many creators are inserted before W, with admissible retained
+     words between them, each creator a word over free letters of a single class that ends with every off piece of Z
+     at its exact pose.
+  3. (Persistence) The content of x relative to B (the lattice piece or hole that the lock lemma carries to k_B(x)) is
+     unchanged by every admissible retained word, every SAFE-ALL word and every word over free letters of one class
+     that returns B to its exact pose.
+- Proof.
+  1. By the lock lemma, after A1 the piece q is in k(x) with k = k_B ∈ K⁺. The element k maps the class-P cell C to
+     a class-P′ cell kC, Ω_C onto Ω_{kC}, and the pieces of U into kC; so k(x) is an occupied chamber of the home cell
+     of the moved unit. By R22C-G item 2, W takes every lattice piece of Ω_{kC} off, q among them. A2 is retained and
+     keeps lattice membership (O2).
+  2. Induction over the inserted words. A creator of U's current class gives the pieces of U and the content of the
+     locked chamber one rotation (R22C-G item 1); it keeps a piece of U at its exact pose, so that rotation is the
+     identity and the content returns. A creator of another class uses free grips of that class, whose caps hold no
+     piece of U (a free cap holds off pieces of its own class only) and hence, B being rigid and the cap admissible,
+     no piece of B; an admissible cap containing the locked chamber k(x) is not in k(S_B), hence in k(I_B), and holds
+     B; so no letter of the creator moves that content. Retained phases are covered by the lock lemma.
+  3. Retained and SAFE-ALL words: lock lemma (a SAFE-ALL letter never moves B). A one-class word that returns B
+     exactly: as in item 2.
+- Not proved (X22C-02): that the content of a locked chamber persists along an arbitrary strict′ step of another unit.
+  Such a step may move off pieces in between; strict′ fixes lattice membership at its end, not chamber occupancy.
+- Instances (computed; `r22c02_locks.py`, `r22c03_locks60.py`). At the depth 40 stop the occupied chambers of the
+  unit's own home cell locked to its block number 3 for b03, 5 for b04, 6 for b05, 7 for b06, 5 for b15 and 2 for b18;
+  b12 has none, and b17's 13 locked chambers are all vacant. At the depth 60 stop 16 units have such chambers, among
+  them 130 (6) and 180 (5), which form one blocking group of the structural order (`order-k60.json`). So no retained
+  conjugation of any length followed by one own-class landing core lands b03, b04, b05, b06, b15 or b18 at the depth
+  40 stop, or 130 or 180 at the depth 60 stop (R22C-02, R22C-03), although 130 and 180 each have a one-letter
+  readiness witness; readiness and vacancy are different conditions.
+- Uses: lock lemma, R22C-G, O2.
+
+### R22C-S. The Shadow lemma (proved; R22CF-02, X22C-02)
+
+- Objects: Z, a rigid block B, a home chamber x.
+- Statement.
+  1. If x is shadowed by B, then x lies in no SAFE-ALL cap at any state where B has its pose of Z. So N1 fails for
+     every target that contains an occupied chamber shadowed by B, at every such state.
+  2. Let E be a retained element at an admissible grip g whose cap holds B, and Y = Z·(g, E). Then E(x) is shadowed
+     by E(B) at Y exactly when x is shadowed by B at Z; and E(x) is occupied at Y exactly when x is occupied at Z (x
+     in the cap of g) or E(x) is occupied at Z (x outside it).
+  3. A retained letter at an admissible grip whose cap does not hold B does not move any chamber shadowed by B.
+- Proof.
+  1. A SAFE-ALL cap holds no off piece and no piece straddles its cut; every cap of x holds or is straddled by a piece
+     of B.
+  2. E permutes the caps, cuts and chambers, so caps(E x) = E caps(x), and E(B) is inside or straddles E(c) at Y
+     exactly when B is inside or straddles c at Z. The letter moves the content of x to E(x) when x is in the cap of g
+     and leaves the content of E(x) in place otherwise.
+  3. If the cap contains a shadowed chamber x, it is a cap of x, so it holds B or B straddles its cut. An admissible
+     cap is straddled by nothing, and a cap that holds a piece of a rigid block holds the whole block.
+- Consequence. Item 2 reads the number of occupied shadowed chambers in the target after one retained letter (r = 1)
+  from Z; item 1 says that each of them violates N1 at the prepared state.
+- Instances (computed; `r22cf02_shadow.py`). At the depth 40 stop, for the seven units whose own cell fails N1 (fixed
+  occupied, shadowed occupied, locked occupied, and the least number of shadowed occupied chambers in the target after
+  one retained letter at an admissible cap holding the block): b03 4/4/3/4, b04 5/5/5/5, b05 6/6/6/6, b06 27/27/7/27,
+  b12 5/5/0/5, b15 6/6/5/6 and b18 4/4/2/4. Every one of the 57 fixed occupied chambers is shadowed by the unit's own
+  block, so no retained letter (and, for the units with locks, no retained word of any length) makes their own cells
+  vacatable. The 600 chambers of type 0 lie in one cap each and are fixed by its 11 retained letters.
+- Uses: O5, O9.
+
+### R22C-M. Partners do not repair N1 (proved; R22CF-03, X22C-03)
+
+- Objects: Z, a target T ⊆ Ω, a word D admissible at Z.
+- Hypotheses: H1, every off piece of Z is off at Z·D with its exact pose of Z; H2, a chamber x ∈ T is fixed by G(Z)
+  and occupied at Z·D.
+- Statement. x is fixed by G(Z·D), so N1 fails for T at Z·D and no SAFE-ALL word at Z·D vacates T (Proposition N).
+- Proof. By H1, Ξ(Z) ≤ Ξ(Z·D) in the order of Lemma M, so A(Z·D) ⊆ A(Z) by (M1) and Fix(G(Z)) ⊆ Fix(G(Z·D)).
+- H2 holds for every creator of U's class that keeps U at its exact pose (R22C-G item 1: the rotation of U's cell is
+  the identity, so the lattice pieces of Ω_C return to their chambers); for a creator of another class it is one exact
+  check at Z·D. So adding partners never repairs an N1 failure at an occupied fixed chamber; partners can repair the
+  counts (R22C-V).
+- Uses: Lemma M (M1), Proposition N, R22C-G.
+
+### R22C-V. Type vectors and counts (proved; computed; R22C-04, R22CF-03, X22C-03, X22C-04)
+
+- Statement.
+  1. (Computed; `r22c04_vectors.py`, `r22c04_orbits.py`.) All home cells of one kind have the same type vector, in
+     every class: 385 chambers for a vertex cell, 86 for an edge cell, 111 for a triangle cell and 87 for a
+     tetrahedron cell, with the vectors printed by the script (types 6 and 0 to 5 occur in vertex cells only). K⁺ acts
+     transitively on the home cells of each kind (600, 3,600, 2,400 and 600 cells over the five classes).
+  2. If some class-P word lands a class-P content U of cell C, then |U_t| ≤ |Ω_C|_t for every type t.
+  3. (Creators, R22C-04.) A creator whose ghosts send exactly the lattice contents of r fully occupied home cells of
+     kind κ off, and no other ghost, adds r·e_κ to the hole vector, e_κ the type vector of item 1. For a middle W with
+     Bad vector b that lands U and partners p, u + p ≤ b and b ≤ h + r·e_κ are necessary (u the type vector of U, h
+     the holes); they do not give simultaneous vacancy.
+  4. (T1′ counts, X22C-05.) Let W be a word over free class-P letters of Z that lands U. A SAFE-ALL word that vacates
+     Bad(W⁻¹) at Z·W exists only if |U_t| ≤ off_t(Z) − |holes(Z) ∩ Bad(W)|_t for every type t. When Bad(W) = Ω_C this
+     reads |U_t| ≤ off_t(Z) − h^in_t, h^in_t the holes of type t in Ω_C, and it holds automatically when Ω_C has no
+     hole.
+- Proof.
+  2. The landed pieces occupy distinct chambers of a home cell C′ of the kind of C (class-P words keep kinds, R22A-05),
+     each of the type of its home chamber (O10); C′ and C have the same type vector by item 1.
+  3. Count the pieces taken off type by type.
+  4. A SAFE-ALL word keeps the number of holes of each type (O10), so it vacates T = Bad(W⁻¹) only if the holes of
+     type t at Z·W number at least |T|_t. At Z·W the off pieces are those of Z without U, together with the displaced
+     lattice pieces Q = the lattice pieces of Z in Bad(W) (R22C-G), so holes_t(Z·W) = off_t(Z) − |U_t| + |Bad(W)|_t −
+     |holes(Z) ∩ Bad(W)|_t. Over free class-P letters Bad(W) and Bad(W⁻¹) have equal type counts: W permutes the
+     points kind by kind, and the label-0 home points that W sends to a nonzero label are as many, in each kind, as
+     those that W⁻¹ sends to a nonzero label (R22A-01 item 1).
+- Instances (computed). b06 at the depth 40 stop (`r22c04_b06.py`, `r22c2_05_vertex.py`): u = {6: 2, 8: 1, 9: 1, 10: 1,
+  11: 1, 12: 1, 16: 1, 18: 1, 20: 1}; its cell {91} has 385 chambers, 375 lattice pieces and 10 holes, with 1,183 holes
+  outside, and item 4 fails by 2, both in type 6. The edge vector has no type 6, so no middle with Bad vector 2e
+  (M1-13) can land b06, however many edge partners are created. The s61c state (`x22c04_s61c.py`, X22C-04): the
+  carrier's class-0 cell {30, 145} has 86 chambers, 68 occupied, 18 holes inside and 43 outside, so item 4 fails by 18
+  without a partner and the necessary count 43 + 86 ≥ 61 holds with one edge partner.
+- Uses: R22A-01, R22A-05, R22C-G, O10.
+
+### R22C-T1′. Theorem T1′: land, vacate the landing chambers, unwind (proved; computed; R22CF-04, X22C-05)
+
+- Objects: Z, a class P, a class-P unit U that is the whole content of its cell C at a label ℓ ≠ 0, a word W, Z1 = Z·W,
+  T = Bad(W⁻¹) computed at Z1 (the home chambers whose lattice ghost W⁻¹ takes off; `tclose2.py`).
+- Hypotheses: H1, every letter of W is at a grip of P that is free at Z; H2, every piece of U is on the lattice at
+  Z1; H3, every off piece of Z outside U is at its exact pose at Z1; H4, a SAFE-ALL word V′ of Z1 with T ⊆
+  holes(Z1·V′).
+- Statement. w = W·V′·W⁻¹·V′⁻¹ is admissible at Z and is a strict step for U (U on the lattice, every lattice piece of
+  Z on the lattice, every other off piece of Z at its exact pose); so is W·V′·W⁻¹. |w| = 2|W| + 2|V′|.
+- Proof.
+  1. After W: by H2 and H3, the off pieces of Z1 are those of Z without U, at their poses of Z, and the displaced
+     lattice pieces Q (possibly several contents; R22C-G).
+  2. V′ is SAFE-ALL at Z1, so it is admissible at every prefix, moves lattice pieces only, by elements of K⁺, and fixes
+     every off piece (Lemma M (M2)). At Z2 = Z1·V′ the off pieces are those of Z1 at the same poses and T is vacant.
+     The pieces of U occupy chambers of T at Z1 (W⁻¹ would take them off again), so after V′ they lie outside T.
+  3. W⁻¹ at Z2. Its caps are those of W. They hold no foreign piece (H1, H3 and O8), the class-P off pieces they hold
+     are those of Z1 at the same poses, and lattice pieces never straddle a cut; so every letter is admissible and
+     every off piece of Z2 retraces, in reverse, the path W gave it: Q returns to its chambers of Z on the lattice, and
+     every other off piece returns to its pose of Z (it had that pose at Z1 by H3). A lattice piece of Z2 outside T
+     ends on the lattice by the definition of T, and T is vacant at Z2; so U and every other lattice piece of Z2 end
+     on the lattice.
+  4. V′⁻¹. The off pieces of Z3 = Z2·W⁻¹ are those of Z without U, at their poses of Z, a subset of the off pieces of
+     Z1 at the same poses; by Lemma M (M1) every letter of V′ is SAFE-ALL at Z3, so V′⁻¹ is admissible, moves lattice
+     pieces only and keeps them on the lattice.
+- Why it escapes Lemma T. W turns the cell once; the occupants of locked chambers leave with Q and come back with the
+  second turn W⁻¹. What V′ must vacate is T at Z1, not Ω_C at Z.
+- Counts: R22C-V item 4 is the necessary per-type condition for H4.
+- Bound. |w| ≤ 2·b_κ + 2|V′| with b_κ = 720, 104, 240 or 192 (Theorem C, LC-12, LC-13) when their free-grip hypotheses
+  hold, and |V′| bounded by a peeling certificate at Z1 (Theorem B) or by M1-17.
+- Instances (computed; `runs/round22/t1prime-k40/`). At the depth 40 stop the integrator's replay finds strict steps of
+  160 letters for b03, 942 for b04, 1,158 for b12 and 160 for b18, the units recomputed from the state. b03, b04 and
+  b18 have occupied locked chambers, so for them no single-turn template exists (R22C-T); b12 has none. Negative
+  instances: for b05 and b15 at the depth 40 stop, and for 130 and 180 at the depth 60 stop after one readiness letter,
+  N1 fails for T at Z1 (48 of 61, 24 of 25, 48 of 61 and 32 of 56 landing chambers occupied and fixed).
+- Uses: R22C-G, R22C-V, Lemma M (M1), (M2), O6, O8.
+
+### R22C-T2′. One partner and T1′ (proved; conditional on its certificates; R22CF-03, X22C-03)
+
+- Objects: Z, U as in R22C-T1′, a lattice-only home cell C″ of U's kind with free grips, a creator D for C″ (O11) over
+  free class-P letters, a word W over the free class-P letters of Z·D.
+- Hypotheses: H1, D passes the exact filter at Z (every off piece of Z exact, the lattice content of C″ off); H2, W·V′
+  ·W⁻¹·V′⁻¹ satisfies the hypotheses of R22C-T1′ at Z·D; H3, a SAFE-ALL word V2 at S = Z·D·W·V′·W⁻¹·V′⁻¹ vacates
+  Bad(D⁻¹) at S.
+- Statement. D·W·V′·W⁻¹·V′⁻¹·V2·D⁻¹·V2⁻¹ is a strict step for U at Z, of 2|D| + 2|W| + 2|V′| + 2|V2| letters.
+- Proof. The T1′ segment is strict at Z·D: it lands U and keeps every off piece of Z·D, the partner included, at its
+  exact pose. V2 fixes the off pieces and vacates Bad(D⁻¹), so D⁻¹, applied as the inverse of D (its caps hold the same
+  off pieces at the same poses as at the end of D), returns the partner to the lattice and every other off piece of Z
+  to its exact pose, and takes no lattice piece off. V2⁻¹ is SAFE-ALL by Lemma M (M1).
+- The abbreviated form D·T1′·D⁻¹ lacks V2 and is not covered (X22C-08).
+- Open: whether one partner suffices at b06 (its middle needs type-6 Bad chambers, R22C-V) or at s61c.
+- Uses: R22C-T1′, Lemma M.
+
+### R22C2-01. The intrinsic Q-shadow (proved)
+
+- Objects: a state Y, a class-P off content U in the cell C, Q0 ⊆ the lattice content of C, a rotation g0 ∈ G_P that
+  lands U (it need not come from a word: when U is one frame domain, the inverse of the pose of one piece of U will do).
+- Hypothesis: H1, a chamber x occupied by a piece of g0·U such that every retained letter moving x is at a grip whose
+  cap contains, or whose cut is straddled by, a piece of g0·Q0 (U and Q0 rotated by g0, all else as at Y).
+- Statement. No word W that gives U and Q0 one common rotation (R22C-G) and lands U has a T1′ closure
+  W·V′·W⁻¹·V′⁻¹ with V′ SAFE-ALL at Y·W, whatever its length.
+- Proof. Let g be W's rotation and γ the pose of a piece of U. Both g·γ and g0·γ lie in K⁺, so k = g·g0⁻¹ =
+  (g·γ)(g0·γ)⁻¹ ∈ K⁺ and (g·U, g·Q0) = k·(g0·U, g0·Q0). K⁺ permutes chambers, caps and retained letters and keeps the
+  inside and straddle relations, so the chamber k(x) is occupied by a piece of U at Y·W and every retained letter that
+  moves it is at a grip blocked by a piece of g·Q0. These pieces are off at Y·W (R22C-G), so no SAFE-ALL letter moves
+  k(x). And k(x) ∈ Bad(W⁻¹), since W⁻¹ takes its occupant from U off again. N1 fails, so V′ does not exist.
+- Extending this across retained preparations needs a persistent part of Q0 (such as chambers locked to U's block);
+  across arbitrary strict′ predecessor steps it is not justified.
+- Instances (computed; `r22c2_02_blockers.py`, `r22c2_05_vertex.py`). In the three failed T1′ closures (b15 at the
+  depth 40 stop after b12's step and b14's census word; 130 and 180 at the depth 60 stop after one readiness letter)
+  no fixed landing chamber is fixed by Q alone, and for b06 none of its twelve landing rotations has a chamber fixed by
+  Q alone. These failures are therefore not intrinsic; they depend on other off pieces (R22C2-02, below).
+
+### R22C2-03. One action for the edge-cycle family (proved for a stated family)
+
+- Objects: a prepared state Y, an edge unit U in the cell X, the pair-tool catalogue of `cellpure4.py` at Y.
+- Statement. Every word of the catalogue that passes the exact endpoint filter acts on X by the same accumulated
+  rotation. So all of them have the same off geometry at their endpoint and the same landing chambers, and an occupied
+  landing chamber fixed by every SAFE-ALL letter for one of them is one for all.
+- Proof. Every retained pair tool fixes each edge cell setwise and acts on X by a power of one permutation ρ[X] (the
+  function `expo` enforces this); inverses, powers and concatenations keep this. The stabilizer of an edge cell is
+  dihedral of order 10, so a nonidentity cyclic subgroup has order 2 or 5, and within it at most one element sends
+  U's label to 0. So the label action on X is the same, and by O8 the rotation is the same. The filter keeps every
+  other off piece at its pose and takes exactly the lattice content of X off.
+- Consequence. No candidate of this family gives a T1′ closure for 130 after (481, 5) or for 180 after (481, 1).
+  `--max-exact` only bounds the number of rejected tries; the tools stop at the first exact success.
+- Not covered: other preparations, other cyclic actions from other core families, transports, partners and words of
+  several classes.
+
+### R22C2-05. b06: the twelve landing rotations (computed; proved parts)
+
+- Computed (`r22c2_05_vertex.py`), at the depth 40 stop. Exactly twelve menu elements at grip 91 land b06 as the
+  rotation of its cell (items 14, 21, 23 and 43 to 51). With Q displaced by that rotation and every other off piece at
+  its pose, eleven leave no landing chamber fixed by every SAFE-ALL letter; item 45 leaves all ten fixed, each blocked
+  by the units b00 to b05 together (for chamber 18427 the cap of grip 17 holds no piece of Q and holds piece 83 of
+  b00). Q alone fixes none in any of the twelve.
+- Proved.
+  1. Every T1′ for b06 without a partner fails R22C-V item 4: its landing word turns the cell {91} (R22C-G item 3), so
+     Bad(W) ⊇ Ω_{91} and the type-6 deficit of 2 stays.
+  2. A commutator of two letters at distinct grips acts trivially on a vertex content, since only letters at its own
+     grip move it and such a letter is followed by its inverse; so do products and powers of such commutators. The
+     transport family of `cellpure5.py` consists of such powers, so it cannot give b06's middle.
+- Open: a one-partner T2′ for b06. The eleven passing rotations are the targets for its middle; N2, the creator and
+  middle words and the cleanup V2 remain to be checked.
+
+### R22C-FC. Theorem FC: no self-frozen set (proved; R22CF-05, X22C-07)
+
+- Objects: a state Z reachable from the solved state, a nonempty set S of off pieces of Z.
+- Statement. Some grip g has a cap that holds a piece of S, and no piece of S straddles the cut of g at Z.
+- Proof. The inverse of a history from the solved state to Z is admissible from Z (Theorem D (F2)) and ends with
+  every piece on the lattice, so it moves every piece of S. Let τ, at grip g, be its first letter that moves a piece p
+  of S. A letter moves exactly the pieces inside its cap and is applied only when no piece straddles its cut, so p is
+  inside the cap of g when τ is applied and no piece of S straddles it. No earlier letter moved a piece of S, so each
+  piece of S has its region of Z then.
+- Corollaries. No nonempty set of blocks is closed under "is frozen by". For a blocking group left by the structural
+  order, some cap holds a piece of the group and is straddled only by units outside it. This gives a mover relative to
+  S, not readiness.
+- Instance (record check, X22C-07): each of the six blocking groups at the depth 60 stop has such a cap in
+  `screen-k60.json`: units and grips (130, 481), (62, 328), (56, 364), (2, 26), (21, 98) and (65, 1).
+- Uses: Theorem D.
+
+### R22C-R1. Lemma R1: the one-letter readiness test (proved; R22CF-05, X22C-07)
+
+- Statement. Let E be a retained element at an admissible grip g and Y = Z·(g, E). A rigid block inside the cap of g
+  moves whole by E and every other block is fixed; a moved piece is inside, outside or across the cut of c at Y exactly
+  as it was for the cut of E⁻¹(c) at Z; a moved frame domain R·K⁺ becomes E·R·K⁺, of class E(P). So whether A(U) is
+  ready at Y (every needed grip admissible and holding only lattice pieces and frames of its class, and no second
+  frame domain of that class in its cell) is a function of the classifications at Z and the permutations E induces on
+  caps and classes; this is what `eb4.py` computes. The closure A·C·A⁻¹ has at most 2 + 2L_V + b_κ letters (M1-18).
+- Proof. A K⁺ element permutes the 600 cuts and moves regions rigidly; the relations used are geometric relations
+  between a region and a cut.
+
+### R22C-CH. Lemma CH: co-held cycles (conditional; R22CF-05, X22C-07)
+
+- Statement (as corrected by X22C-07). Let S be a set of units such that, at Z, every cap not straddled by a piece of S
+  holds all of S or none of it (an intrinsic condition, K⁺-equivariant), and the needed grips of the units of S are
+  blocked by units of S only. Then every retained word conjugates the configuration of S by one element of K⁺, and no
+  retained word of any length makes a unit of S ready.
+- Proof. Each admissible letter moves all of S or none, by one E; the intrinsic condition is preserved by E. The
+  original form, which checked only the admissible caps at Z, fails when an outside straddler leaves and exposes a cap
+  that splits S; no reachable instance of that gap was computed.
+
+### R22C-05. One-letter unlocking with vacancy (proved)
+
+- Objects: a whole edge-cell content U at Z.
+- Hypotheses: H1, the identity or one of the 6,600 nonidentity retained letters A is admissible; at Y = Z·A, H2, A(U)
+  is the only off domain in its class cell X = {a, b}; H3, a, b and a common neighbour c of the two are free; H4, every
+  chamber of Ω_X is a hole.
+- Statement. A·W·A⁻¹ is a strict step for U with at most 722 letters, where W is the pure word of Theorem C at a, b, c
+  (|W| ≤ 720). A direct search examines at most (6,600 + 1)·5·4 = 132,020 instances per eligible unit, so on this
+  class S(n) = 132,020·n and L(n) = 722.
+- Proof. W lands A(U), fixes every piece outside X exactly and has Bad(W) = Ω_X (Theorem C); by H4 it takes no lattice
+  piece off. The retained inverse A⁻¹ is admissible (R22D-01) and returns every other off piece to its pose of Z.
+- With a vacating word V in place of H4, M1-17 gives 2|A| + 2|V| + 720 letters. N1 and N2 alone do not replace H4.
+
+### R22C-06. A rigid two-domain cell cannot be unlocked by retained conjugation (proved)
+
+- Hypotheses: two nonempty off contents U and V of different frame domains of one class lie in one class cell and in
+  one rigid block.
+- Statement. No retained setup followed by an own-class strict′ core lands either content.
+- Proof. A retained setup gives the block one multiplier k ∈ K⁺, which keeps the two contents in one transformed cell
+  with distinct domains. The core gives both one rotation g. If both landed, g·γ_U and g·γ_V would lie in K⁺, so
+  γ_U⁻¹·γ_V ∈ K⁺, contrary to distinct domains. If one lands and the other keeps its exact pose, g = 1, which lands
+  nothing.
+- Instance: the three M1-19 pairs at the depth 60 stop, (105, 112), (109, 114) and (110, 162), lie in separate blocks,
+  so the lemma does not apply to them; they are positive controls for separation.
+
+### R22C-K. The catalogue, backward certification and coverage (conditional; R22C-07, R22CF-06, X22C-08, R22C2-06)
+
+- Supercatalogue (R22C-07 as corrected by X22C-08 and R22C2-06). Put N = 177,120, R = 7,200^N, m = 35,400 (600 grips
+  times the 59 nonidentity items), g = 6,600 (600 grips times 11 retained items), a core cap b, C_b = (m^(b+1) − 1)/
+  (m − 1) and T = (g^R − 1)/(g − 1). Enumerate, for each starting unit, the chronological words A0·C1·A1·C2·A2·C3·A3·
+  C4·A4 with native cores C_j of at most b letters and retained segments A_j of at most R − 1 letters (empty words
+  allowed), and accept an instance only after exact replay proves every prefix admissible and the strict′ endpoint,
+  with the creator checks of T2′ where it is so designated. On the states where some instance passes, L = 4b + 5(R − 1)
+  and S(n) ≤ n·C_b^4·T^5.
+  - Retained segments can be shortened to R − 1 letters: under retained letters each labelled piece keeps a pose
+    k·γ with k ∈ K⁺, so at most 7,200^N labelled pose assignments occur, and a shortest retained path between two of
+    them repeats none.
+  - The family contains T1, retained conjugation, T1′ and the complete T2′ (its four cores D, W, W⁻¹, D⁻¹ and its
+    retained segments V′, V′⁻¹ V2, V2⁻¹), once b covers the core lengths actually used; the bound b = 720 is not
+    established for every cellpure4/5 cycle word (whose source bound is 3,200).
+- Backward certification (R22C2-06). Let E be the finite set of height-2 pose tables and A_0 its lattice tables. Put
+  A_(j+1) = A_j ∪ {Z ∈ E : an exactly replayed catalogue step from Z ends in A_j}. Every strict′ step lowers n by at
+  least one, so the sets stabilize after at most N stages, and a state in A_j has a catalogue restoration of at most j
+  steps, found by following its witnessed successors. On ∪ A_j the restoration length is at most n·max_(m≤n) L(m).
+  This is the closure property that a one-step class lacks: a state's membership in a one-step class does not carry
+  over to its successor (experiment A below shows a concrete failure of that inference).
+- Open (coverage, the core of B′(2)): that every reachable height-2 state lies in ∪ A_j for some explicit catalogue,
+  for example through a finite-checkable invariant that contains 𝒞_2 and guarantees a selected successor inside it.
+  Neither count sufficiency nor the existing examples supply it.
+
+### Experiments of line (c) (computed)
+
+All exact, at exported pose tables, every step replayed (`stepchk.py`, `exp_a.sh`, `exp_b.py`, `tclose2.py`,
+`jordan_target.py`, `x22c09_r2_ready.py`; stage 12 section 11; commands in section 6).
+- A, an order at the depth 40 stop (X22C-06, R22C2-04): b12's T1′ step, then b14, then b15. b14's census word,
+  computed at the stop, is admissible after b12's step but takes 17 lattice pieces off, so it is not strict′ there;
+  b15's landing word at that state leaves 25 of 25 landing chambers occupied and fixed, each with the Q-free cap 286
+  blocked by b07, b11 and b13; seven also have the Q-free cap 439, blocked by b08 and b09, and one the cap 378,
+  blocked only by the 17 collateral pieces of b14's word. Closing b14's census word at the state after b12's step
+  instead (R22C2-04; `runs/round22/line-c/b14-after-b12/`): N1 and N2 hold for its Bad(W), 222 chambers of which 17
+  are occupied; the peeling certificate stops at 36 of them and a 1,800-second greedy search leaves 5 occupied, so V
+  is not built, but all 19 orbits of the SAFE-ALL group that meet Bad(W) have verified Jordan certificates
+  (`jordan_target.py` on the state's pose table). By Corollary A1 a vacating word V exists, and V·W·V⁻¹ is a strict′
+  step for b14 after b12 (R22A-06). Whether b15 then lands is decided only at the state after a constructed b14 step.
+- B, the blocking cycle {130, 180} at the depth 60 stop (R22C-03, R22C2-02): after the readiness letters (481, 5) and
+  (481, 1) the landing words (432 letters each) leave 48 of 61 and 32 of 56 landing chambers fixed, none by Q alone.
+  For 130 every fixed chamber has the Q-free cap 429, blocked by 131, 132, 133, 142, 150, 151 and 163; for 180 the
+  Q-free cap 555, blocked by 174, 175 and 176. The other preparations, (496, 1) for 130 and (481, 2) for 180, which
+  R22C2-03 does not cover, fail the same way: their landing words (432 letters each) land all 61 and 56 pieces, and
+  after W the occupied chambers of Bad(W⁻¹) (86 chambers; 61 and 56 occupied) include 61 and 22 that every SAFE
+  letter fixes, so N1 fails (`runs/round22/line-c/exp-b2.json`).
+- C, two-letter readiness at the depth 60 stop (X22C-09; `x22c09_r2_ready.py`): the first letter at a cap that holds
+  a straddler of the unit's inside caps, the second any retained letter. Unit 36 becomes ready after (255, 1) then
+  (459, 1) (34 of its 66 first letters tried before the first success); units 44 and 59 have no ready pair (66 and 33
+  first letters, exhaustive for this shape), and unit 27 has no first letter of this shape. Readiness is not vacancy:
+  the pair gives a candidate for a closure, not a step.
+- D, an order at the depth 60 stop (R22C2-02): strict steps for 174, 175 and 176 in turn, then 180: queued.

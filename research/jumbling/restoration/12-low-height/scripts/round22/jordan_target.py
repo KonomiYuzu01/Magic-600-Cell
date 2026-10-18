@@ -3,6 +3,7 @@
 # certificates on every orbit of the SAFE-ALL group that meets T. With all of them, Corollary A1 of
 # research/jumbling/theory/buffer-transport.md says that a SAFE-ALL word clears T. Research only, headless; exact geometry.
 # Run from the repository root: python3 -I -B research/jumbling/restoration/12-low-height/scripts/round22/jordan_target.py <target json>
+# [<pose table>]. With a pose table (written by export_table.py or stepchk.py) the state is that table, not the stop.
 import sys, json, random, hashlib, resource, signal, time
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,7 +15,10 @@ signal.signal(signal.SIGXCPU, stop)
 sys.path[:0] = [str(Path('research/jumbling/restoration/12-low-height/scripts').resolve()), str(Path('research/jumbling/restoration/09-general-method/scripts/echain').resolve())]
 import screen, buffer as B, fastghost as FG
 import numpy as np
-st, M, src = screen.load('record', 'research/jumbling/restoration/11-scramble-census/runs/round2/ia-k40-s7101.json')
+if len(sys.argv) > 2:
+    st, M, src = screen.load('table', sys.argv[2])
+else:
+    st, M, src = screen.load('record', 'research/jumbling/restoration/11-scramble-census/runs/round2/ia-k40-s7101.json')
 print('STATE', st.digest(), int(st.off_lattice_count()), flush=True)
 G = B.Alphabet(SimpleNamespace(st=st), M)
 G.orbits()
