@@ -1,7 +1,7 @@
 # 12. Low heights: completeness of the off-lattice phase at left heights 2 and 4 (option B, 17 October 2026)
 
 Status: in progress. The statement and the plan passed a plan check and a scoped re-check; experiments E-B1 to E-B4
-and E-B6 are done, E-B5 has a first bounded run (no step) and a second under way, and the transport of LC-13 has its
+and E-B6 are done, E-B5 has two bounded runs (no step, then twelve steps, 1,193 to 377), and the transport of LC-13 has its
 first words and two closures (section 10). Theory round 22 (18 October 2026) proved the first lemmas of four research
 lines toward B′(h) (section 11; the proofs are in [`PROOFS-B.md`](PROOFS-B.md)).
 
@@ -73,7 +73,7 @@ re-check found the first check's five blocking findings resolved.
 4. **E-B4**, M1-18 with r = 1 at the units E-B1 finds blocked (done at the depth 60 stop, section 7).
 5. **E-B5**, a bounded driver run from the depth 40 stop (explicit `--heuristic-seconds`, `--max-steps`,
    `--fallback-max-length`; no lattice phase; every accepted word replayed against the strict′ contract). Run 1
-   made no step (section 8).
+   made no step; run 2 made twelve, from 1,193 to 377 off pieces (section 8).
 6. **E-B6**, height 4: the two blocks of the depth 100 residue that hold height-4 pieces, with X as the positive
    control and the fixture end as a negative control (done, section 9).
 
@@ -275,7 +275,7 @@ What E-B4 shows, at one state:
   they compose is not tested (landing a unit can only remove blockers, since landed pieces block no grip, but it can
   change N1). Z′ is structural only.
 
-## 8. E-B5: a bounded driver run from the depth 40 stop (run 1: no step; measured)
+## 8. E-B5: a bounded driver run from the depth 40 stop (run 1: no step; run 2: twelve steps; measured)
 
 The driver of stage 09 (`09-general-method/scripts/gm/gdrive.py`, the method M* with experiment bounds) ran once from
 the depth 40 stop (1,193 off pieces, 22 units; table digest `7e128820…`) with `--par 2 --heuristic-seconds 1800
@@ -300,10 +300,20 @@ minutes of search at this state. It says nothing about whether steps exist. The 
 ready ones fail N1, the fifth is not ready), and the 14 units that are ready and pass the T1 checks are triangle and
 tetrahedron contents, which need a transport.
 
-Run 2 started on 17 October with `cellpure5.py` (section 10) as the pure-twist script, through the driver's new
-option `--pure-script`, every unit tried (`--pure-max 22`), the searches of run 1 as seeds, and one hour for each
-heuristic subprocess (`--par 4 --heuristic-seconds 3600`, the other bounds as in run 1). Its record comes with the
-next update.
+Run 2 (17 to 18 October) used `cellpure5.py` (section 10) as the pure-twist script, through the driver's new option
+`--pure-script`, every unit tried (`--pure-max 22`), the searches of run 1 as seeds, and one hour for each heuristic
+subprocess (`--par 4 --heuristic-seconds 3600`, the other bounds as in run 1). It made twelve steps in about 14
+hours, from 1,193 to 377 off pieces in 8,702 twists (`runs/eb5-k40-run2.jsonl`): six driver steps and six
+pure-twist closures (units and lengths in section 11). The stage 09 verifier replayed all twelve from the start
+table: each lands its unit, with no collateral and no lattice piece taken off; three driver steps also moved other
+units inside the driver's free set (steps 0, 2 and 9), so they are clean steps but not strict′. At 377, with nine
+units left, no pure-twist step was found, and the fallback found no single letter for b16, the 111-piece triangle
+content (34,414 letters tried in 35 minutes); the length bound 1 ended the run, as in run 1.
+
+What run 2 shows: with `cellpure5.py` the driver takes the depth 40 stop to 377 on its own. Its nine remaining units
+(b03, b04, b05, b06, b12, b15, b16, b18 and b19) are among those that line (a) and E2 landed by closures and T1′
+steps on their own trajectory, which did not pass through 377 (section 11). It does not say whether the driver alone
+could finish.
 
 ## 9. E-B6: four-letter commutators that lower the high units (measured, exact replay)
 
@@ -485,14 +495,14 @@ an occupied one, and replays every word it keeps exactly:
 | Glued | b03, b18 (triangle, 63 and 5), b04, b05, b12, b15 (edge, 45, 61, 41, 25), b06 (vertex, 10) | the unit shares its cell with lattice pieces, which every class-P landing takes off (R22A-07), and the cell holds occupied chambers that no SAFE word moves (N1 fails), so no closure V·W·V⁻¹ exists for them at this state |
 | In place | b17 (edge, 86) | an edge content lands in its own cell (Theorem C), not by transport; no clean power moves it. At this state its pole 542 holds pieces of b08, b09 and b10; once they land, Theorem C applies and gives a step of 432 letters (line (a), round 3, below) |
 
-E-B5 run 2 (the driver from this state, still running) has made twelve steps so far, from 1,193 to 377 off pieces:
+E-B5 run 2 (the driver from this state) made twelve steps, from 1,193 to 377 off pieces:
 driver steps of 10, 10 and 848 letters for b07, b13 and b21, pure-twist closures of 576, 24, 762, 928, 1,130 and
 1,094 letters for b17, b20, b01, b09, b10 and b08, then driver steps of 904, 1,128 and 1,288 letters for b00, b14 and
 b02. Three
 of the driver steps changed the poses of other units (b11; b18 and b19; b03), which the driver's free set allows, so
 they are clean steps but not strict′. b09 is in class 4, which has no transport target:
 the pure twist lands a content in its own cell and its closure vacates what the twist takes off, so "no target"
-rules out transport only. Its record goes into section 8 when the run ends.
+rules out transport only. Then it stopped at the fallback's length bound (section 8).
 
 **The four lines after round 22.**
 - (a) Transport without endpoint collateral. A finite test at the state, with whole cells as owners, decides whether
@@ -828,7 +838,8 @@ rules out transport only. Its record goes into section 8 when the run ends.
     waits for 131, 132, 133, 150 and 163.
   - The unresolved units and the routes proposed for them: b05, b06 and b15 after certified orders, b17 after b08,
     b09 and b10 (since done, line (a) round 3), and the 32 E-B4 leftovers at the depth 60 stop; run 2 is not a
-    strict′ order, since two of its steps move other off blocks (R22C3-05). Every native free-class core has at
+    strict′ order, since steps of it move other off blocks (steps 0 and 2, R22C3-05; step 9 did so later). Every
+    native free-class core has at
     most 13,205! − 1 letters, which makes the bounds of the catalogue explicit; coverage of 𝒞₂ stays open
     (R22C3-06).
 - E22-2 (`scripts/eb6r.py`, written by Codex and reviewed by the integrator; its acceptance check
@@ -915,6 +926,15 @@ depth 40 stop as a pose table, digest `7e128820…`):
 
 The driver writes its record to `<work dir>/gdrive.jsonl`; `runs/eb5-k40-run1.jsonl` is that record with the private
 directory of the start table written as `<working tree>`, as in the stage 09 run records.
+
+E-B5 run 2, with the same `k40.json`, `cellpure5.py` as the pure-twist script and run 1's work directory as seeds:
+
+    python3 -I $G/gm/gdrive.py research/jumbling $G/echain k40.json eb5-k40 <work dir 2> \
+        --par 4 --heuristic-seconds 3600 --max-steps 30 --fallback-max-length 1 --pure-max 22 \
+        --pure-script research/jumbling/restoration/12-low-height/scripts/cellpure5.py \
+        --seed <work dir>/drv                                                        # about 16 hours
+
+`runs/eb5-k40-run2.jsonl` is its record, with the private directories written as `<working tree>`.
 
 E-B6, with `C` and `R` as above and `X=research/jumbling/restoration/10-x1-unbounded/witnesses/H6030.json`:
 
@@ -1049,6 +1069,7 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/eb4.py`, `scripts/eb4_close.py`, `scripts/cellpure4.py`, `scripts/eb4_replay.py`, `scripts/eb4_tries.py` | E-B4: the structural stage and N1 and N2 at Y; the closures and the steps at Z; the class-cell pure twist with the exact-pose filter; the independent replay; the filter's tries at each closure |
 | `runs/eb4-k60.json`, `runs/eb4-close-k60.json`, `runs/eb4-k60-steps/u<k>.json`, `runs/eb4-replay-k60.json`, `runs/eb4-exact-tries-k60.json` | E-B4 records: stages 1 and 2 (`eb4.py`), the closures and the checked steps (`close.json` of `eb4_close.py`), the 20 step words with input and output digests, the replay record, and the exact-pose filter's tries with the digest of each state Y |
 | `runs/eb5-k40-run1.jsonl` | E-B5 run 1: the driver's event record (no step) |
+| `runs/eb5-k40-run2.jsonl` | E-B5 run 2: the driver's event record (twelve steps, 1,193 to 377 off pieces) |
 | `scripts/eb6.py`, `scripts/eb6_replay.py`, `scripts/eb6_meet.py` | E-B6: the high units of a state, their caps and lens pairs, and the exhaustive search for strict four-letter commutators (Lemma E6); the independent replay of the words it keeps; the exact check of which caps can meet |
 | `runs/eb6-X.json`, `runs/eb6-k100.json`, `runs/eb6-fx841.json`, `runs/eb6-replay-X.json`, `runs/eb6-meet.json` | E-B6 records at X (the commutator search for K only), the depth 100 stop and the fixture end; the replay record at X; the angles at which caps can meet. A rerun reproduces them except the timing fields, as long as `--comm4-seconds` lets the search reach every unit |
 | `scripts/cellpure5.py` | LC-13: `cellpure4.py` with a transport branch for a content that is not in an edge cell (commutator powers into a home cell of its kind, exact-pose filter) |

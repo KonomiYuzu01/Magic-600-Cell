@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-18] update | Jumbling: E-B5 run 2, the driver from the depth 40 stop
+With the LC-13 pure-twist script the stage 09 driver took the depth 40 stop from 1,193 to 377 off pieces in twelve steps (8,702 twists in about 14 hours), each replayed by the verifier with no collateral; three of its steps also moved other units, so the run is not a strict′ order. It stopped at the fallback's length bound with nine units left, which line (a) and E2 land on their own trajectory ([stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 8).
+
 ## [2026-10-18] update | Jumbling: coverage of B′(2), round 2
 After E2 the senior reviewer reduced coverage to one finite test per state (some step of the catalogue passes there) and refuted two shortcuts: a step's hole resources do not survive other steps even when its old middle moves are kept, and a reachable 120-twist state has no cap whose whole off content lands, though it still has a step; the isolated triangle of the first round defeats the whole-cap route as well, and whether it is reachable stays open, as does the claim that every reachable state passes the test ([stage 12](../../research/jumbling/restoration/12-low-height/README.md), [proofs](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 8). The handoff index now lists 90 results.
 
