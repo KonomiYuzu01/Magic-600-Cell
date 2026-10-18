@@ -351,8 +351,8 @@ The setting is that of [`METHOD.md`](../09-general-method/METHOD.md),
 - Proof. Theorem A gives the independent alternating factors on the 19 orbits; Corollary A1 turns the counts into
   vacancy. A shortest path in the graph of target images is simple; its inverse vacates the target.
 - The earlier failures for b00 (peeling stopped after 35 chambers, greedy bounded at 300 seconds) were not
-  nonexistence. No V for b00 is constructed yet; the clean-power probe E22-1 (section 4) stops with 34 chambers
-  occupied.
+  nonexistence. No V for b00 is constructed yet: the clean-power probe stops with 34 chambers occupied, and the
+  bounded builder of the R22B-01 certificate completes two of the 19 orbits per run (E22-1, section 4).
 - Command: `scripts/round22/r22b04_jordan.py`; output `runs/round22/r22b04_jordan.txt`.
 - Uses: Theorem A, Corollary A1.
 
@@ -376,8 +376,41 @@ The setting is that of [`METHOD.md`](../09-general-method/METHOD.md),
   the Chinese remainder theorem so that σ^m fixes every cycle of σ through an already vacated target and carries a
   hole onto t; every word is checked on the full permutation. The greedy phase (16 letters) vacates 77 of the 111
   target chambers; for chamber 3392 no commutator around it has such a power, so the construction stops with 34
-  occupied. A first probe for three-cycle seeds of the form [[x, y], z] found none. Neither result bears on R22B-04;
-  the certificate of R22B-01 (seeds and conjugator tables) is still to be built.
+  occupied. A first probe for three-cycle seeds of the form [[x, y], z] found none. Neither result bears on R22B-04.
+- **E22-1, the certificate of R22B-01 with single-letter tables (measured, exact; incomplete).** `r22b01_cert.py`
+  (written by Codex, reviewed by the integrator) takes b00's 19 target orbits, largest first. For each it searches
+  two- and three-letter SAFE commutators, random with a fixed seed and bounded by the orbit's share of 900 seconds,
+  for a power that acts on the orbit as one three-cycle (a b c) and fixes every earlier orbit, of at most 20,000
+  letters; it builds the tables H3 and H4 as breadth-first trees over single SAFE letters (fixing a; fixing a and b),
+  and it clears the orbit's targets by the three-cycles of step 3 of the proof, each checked on the full chamber
+  permutation. One run completed orbits 41 (k = 3, s = 30, e = 5, f = 6) and 64 (k = 1, s = 12, e = f = 5): V has
+  318 letters against the bound 376. The acceptance run completed orbits 69 (k = 6, s = 30, e = f = 5) and 67
+  (k = 3, s = 120, e = f = 5): 1,008 letters against 1,440. The first run's other orbits:
+
+  | Least chamber | d | k | s | Missing |
+  |---:|---:|---:|---:|:---|
+  | 34 | 7,200 | 3 | 210 | Q: 1 chamber |
+  | 66 | 7,200 | 3 | 60 | Q: 3 |
+  | 69 | 7,200 | 6 | 30 | Q: 7 |
+  | 70 | 7,200 | 9 | 294 | Q: 19 |
+  | 74 | 7,200 | 12 | 210 | Q: 17 |
+  | 82 | 7,200 | 9 | 1,140 | Q: 1 |
+  | 83 | 7,200 | 12 | 840 | P: 11, Q: 22 |
+  | 90 | 7,200 | 15 | 294 | Q: 7,197 (all) |
+  | 106 | 7,200 | 9 | 210 | Q: 2 |
+  | 65 | 7,198 | 6 | 60 | Q: 7 |
+  | 33 | 7,197 | 3 | 150 | P: 4, Q: 7 |
+  | 67 | 3,600 | 3 | none | no seed |
+  | 81 | 3,600 | 6 | 60 | Q: 3,597 (all) |
+  | 108 | 3,600 | 3 | 1,320 | Q: 3,597 (all) |
+  | 105 | 2,400 | 4 | none | no seed |
+  | 115 | 2,400 | 1 | 120 | Q: 18 |
+  | 75 | 1,440 | 3 | 210 | Q: 1,437 (all) |
+
+  "P: m" and "Q: m" count the chambers the tree of H3 or H4 does not reach: they lie in other components of the
+  graph of the letters that fix a (P), or a and b (Q); "all" means that c is alone in its component, that is, every
+  letter moving c moves a or b. Which orbits get a seed depends on the time share, so the two runs differ. The result rejects single-letter tables with these anchors,
+  not V: H3 and H4 allow words, and a conjugate g·C·g⁻¹ is again a seed with anchors g(a), g(b), g(c).
 - **E22-2, retained conjugation at the depth 100 stop (implemented; the full search is running).** The complete
   r = 1 search of R22D-01: 2,574 retained letters at the 234 clean grips, the E-B6 search at each prepared state with
   exact classification updates, and an exact replay of every kept word r·C·r⁻¹. An exact rule prunes a letter when no

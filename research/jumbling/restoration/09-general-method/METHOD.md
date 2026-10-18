@@ -324,8 +324,12 @@ Two mathematical gaps; the owner closed M2 on 17 October 2026, so M1 is the one 
     - A retained letter before and its inverse after a word transfers the landing problem exactly, and a lowering
       conjugate has an exact endpoint contract. At the depth 100 stop 93 of the 108 direct free-class cases and both
       whole-cap middles are impossible.
-    - The common open part is coverage: that every state of 𝒞_h has a step in a stated catalogue. Line (c), a joint
-      attack on T2 and T3, is recorded after its cross-examination.
+    - Line (c), a joint attack on T2 and T3: every landing word of the unit's class takes the lattice content of its
+      cell off, and an occupied home chamber locked to the unit's own block rules out every step that turns the cell
+      once between retained words. The two-turn step W·V′·W⁻¹·V′⁻¹ gets past such a lock; it gave strict steps of
+      160 to 1,158 letters for four glued units at the depth 40 stop. The order of the glued units, the partners of
+      the vertex unit and the blocking cycle at the depth 60 stop stay open.
+    - The common open part is coverage: that every state of 𝒞_h has a step in a stated catalogue.
   - *The whole method (round 4 audit).* Heuristic steps, a fair exhaustive fallback and the lattice phase form a
     complete method that reads only the state (Theorem M\*). Where the toolkit applies, its clean steps have an
     explicit bound, and the lattice phase has one for every input. So M1 is a question of bounds and coverage, not
