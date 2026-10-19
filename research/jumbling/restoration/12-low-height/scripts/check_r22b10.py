@@ -14,6 +14,8 @@
 # Integer powers are evaluated by cycles, never by expanding their words.
 # Completed edges, not their interior letters, must fix their anchors.
 # Incomplete certificates always FAIL; they say nothing about nonexistence.
+# r22b10/2 independently reconstructs atlas seeds and checks all of them,
+# including their literal leaves and protected domains, before any word table.
 import argparse
 import gzip
 import hashlib
@@ -178,6 +180,88 @@ def node_id(value, nodes):
     return value
 
 
+def atlas_word(G, B, row, D):
+    """Reconstruct a placed AST prefix, independently of the builder."""
+    ctx, kp = B.CL.ctx, B.CL.ctx.kplus
+    atlas = json.loads((HERE.parents[4] / 'assets/seed_atlas.json').read_text())
+    kind = integer(row.get('atlas_type'), 'invalid atlas_type')
+    require(kind < len(atlas) and kind == int(ctx.data.orbit_id[D[0]]), 'atlas_type differs from orbit type')
+    depth = integer(row.get('atlas_depth'), 'invalid atlas_depth')
+    t = atlas[kind]['ast']
+    for _ in range(depth):
+        require(t[0] != 'g', 'atlas_depth exceeds left spine')
+        t = t[1]
+    sigma = integer(row.get('sigma'), 'invalid atlas sigma')
+    require(sigma < len(kp.perms), 'atlas sigma out of range')
+
+    def expand(t):
+        if t[0] == 'g':
+            return [t[1]]
+        left = expand(t[1])
+        if t[0] == 'pow':
+            return left * t[2]
+        require(t[0] == 'comm', 'unknown atlas AST operation')
+        right = expand(t[2])
+        return left + right + [-x for x in reversed(left)] + [-x for x in reversed(right)]
+
+    word = np.asarray(expand(t), np.int64)
+    rotations = kp.gen_idx[np.abs(word) - 1]
+    rotations = np.where(word > 0, rotations, kp.inv[rotations])
+    rotations = kp.compose_vec(np.full(len(word), sigma),
+                               kp.compose_vec(rotations, np.full(len(word), int(kp.inv[sigma]))))
+    grips = kp.perms[sigma, (np.abs(word) - 1) // 2]
+    lookup = {(int(g), int(k)): n for n, (g, _, k, _) in enumerate(G.letters)}
+    require(all(int(g) in G.by_grip for g in grips), 'atlas placement contains a non-SAFE-ALL grip')
+    require(all((int(g), int(k)) in lookup for g, k in zip(grips, rotations)),
+            'atlas placement contains a non-SAFE letter')
+    return [lookup[(int(g), int(k))] for g, k in zip(grips, rotations)]
+
+
+def atlas_preflight(G, domains, rows, words, nodes, lengths, leaves):
+    """Fail on false atlas evidence before entering expensive table checks."""
+    protected = np.zeros(G.NP, bool)
+    for D, row, nums in zip(domains, rows, words):
+        if row['route'] == 'atlas':
+            root = node_id(row.get('seed'), nodes)
+            require(lengths[root] == len(nums), 'atlas seed node length differs from seed_word')
+            # Expand just this bounded seed. Inverse reverses chronology and
+            # inverts every leaf; zero-length powers require no repetitions.
+            todo, emitted = [(root, False)], 0
+            while todo:
+                ident, inverse = todo.pop()
+                if lengths[ident] == 0:
+                    continue
+                node = nodes[ident]
+                if node['op'] == 'letter':
+                    n = int(G.inv[leaves[ident]]) if inverse else leaves[ident]
+                    require(emitted < len(nums) and n == nums[emitted],
+                            'atlas seed node expansion differs from seed_word')
+                    emitted += 1
+                elif node['op'] == 'cat':
+                    args = node['args'] if inverse else reversed(node['args'])
+                    todo.extend((child, inverse) for child in args)
+                elif node['op'] == 'inv':
+                    todo.append((node['arg'], not inverse))
+                else:
+                    todo.extend([(node['arg'], inverse)] * node['exp'])
+            require(emitted == len(nums), 'atlas seed node expansion differs from seed_word')
+            cycle = row.get('cycle')
+            require(isinstance(cycle, list) and len(cycle) == 3 and len(set(cycle)) == 3
+                    and all(type(x) is int and x in D for x in cycle), 'invalid atlas cycle')
+            require(cycle == row.get('anchors'), 'atlas cycle differs from seed anchors')
+            p = G.perm(nums)
+            want = D.copy()
+            for x, y in zip(cycle, cycle[1:] + cycle[:1]):
+                want[np.searchsorted(D, x)] = y
+            require(cycle[0] == int(D[np.flatnonzero(want != D)[0]]) and np.array_equal(p[D], want),
+                    'atlas seed is not the stated oriented cycle')
+            previous = np.flatnonzero(protected)
+            require(np.array_equal(p[previous], previous), 'atlas seed moves an earlier target orbit')
+            require(type(row.get('s')) is int and row['s'] == len(nums), 'atlas seed length s differs')
+        # Every independently recomputed earlier domain is protected in full.
+        protected[D] = True
+
+
 def tree(entries, D, fixed, root, forward, evaluator, lengths):
     require(isinstance(entries, list), 'malformed word table')
     members = set(D.tolist()) - set(fixed)
@@ -215,7 +299,8 @@ def tree(entries, D, fixed, root, forward, evaluator, lengths):
 
 def check(G, target, cert, state_digest=None):
     require(isinstance(target, dict) and isinstance(cert, dict), 'target and certificate must be objects')
-    require(cert.get('format') == 'r22b10/1', 'certificate format')
+    fmt = cert.get('format')
+    require(fmt in ('r22b10/1', 'r22b10/2'), 'certificate format')
     actual_digest = getattr(G, 'state_digest', state_digest)
     require(state_digest is None or state_digest == actual_digest, 'state digest differs from alphabet state')
     require(actual_digest is not None and actual_digest == target.get('state_digest') == cert.get('state_digest'), 'state digest mismatch')
@@ -238,16 +323,33 @@ def check(G, target, cert, state_digest=None):
     labels = sorted({int(orbit[x]) for x in T if sizes[orbit[x]] > 1},
                     key=lambda o: (-int(sizes[o]), int(np.flatnonzero(orbit == o)[0])))
     domains = [np.flatnonzero(orbit == o) for o in labels]
+    if fmt == 'r22b10/2':
+        require(cert.get('seeds') == 'atlas', 'r22b10/2 seeds must be atlas')
+        order = cert.get('orbit_order')
+        by_least = {int(D[0]): (lab, D) for lab, D in zip(labels, domains)}
+        require(isinstance(order, list) and all(type(x) is int for x in order)
+                and len(order) == len(by_least) and set(order) == set(by_least),
+                'orbit_order must contain every nontrivial target orbit exactly once')
+        labels = [by_least[x][0] for x in order]
+        domains = [by_least[x][1] for x in order]
     rows = cert.get('orbits')
     require(isinstance(rows, list) and len(rows) == len(labels), 'target orbit list differs')
-    # Validate global Jordan words before trusting any program nodes.
+    # Validate global Jordan words and reconstruct atlas words before trusting
+    # any program nodes. No failed row can shrink the protected domain union.
+    atlas_words = []
     for lab, D, row in zip(labels, domains, rows):
         require(isinstance(row, dict), 'malformed orbit row')
         require(all(type(row.get(k)) is int for k in ('least', 'size', 'k')), 'malformed orbit sizes')
         require((row['least'], row['size'], row['k']) == (int(D[0]), len(D), sum(orbit[x] == lab for x in T)),
                 'orbit order, least chamber, size or k differs')
         require(len(D) >= 5, 'target orbit degree below five')
-        require(row.get('route') in ('commutator', 'jordan'), 'unknown seed route')
+        routes = ('commutator', 'jordan', 'atlas') if fmt == 'r22b10/2' else ('commutator', 'jordan')
+        require(row.get('route') in routes, 'unknown seed route')
+        nums = None
+        if row['route'] == 'atlas':
+            declared = pair_numbers(G, row.get('seed_word'))
+            nums = atlas_word(G, B, row, D)
+            require(declared == nums, 'atlas seed_word differs from recomputed atlas placement')
         if row['route'] == 'jordan':
             nums = pair_numbers(G, row.get('jordan_word'))
             prime = integer(row.get('p'), 'Jordan prime must be an integer', 2)
@@ -258,10 +360,22 @@ def check(G, target, cert, state_digest=None):
                 if rep != witness['cycle_least_point']:
                     m = math.lcm(m, int(lengths[rep]))
             require(type(row.get('M')) is int and row['M'] == m, 'Jordan M differs from exact global lcm')
+        atlas_words.append(nums)
     nodes = cert.get('nodes')
     lengths, children, leaves = program(G, nodes)
     V = node_id(cert.get('V'), nodes)
     require(type(cert.get('V_length')) is int and cert['V_length'] == lengths[V], 'V_length differs from expanded length')
+    if fmt == 'r22b10/2':
+        atlas_preflight(G, domains, rows, atlas_words, nodes, lengths, leaves)
+        last = -1
+        order = {int(D[0]): j for j, D in enumerate(domains)}
+        require(isinstance(cert.get('steps'), list), 'malformed steps')
+        for step in cert['steps']:
+            require(isinstance(step, dict) and type(step.get('orbit')) is int and step['orbit'] in order,
+                    'step names an unknown target orbit')
+            j = order[step['orbit']]
+            require(j >= last, 'steps are not in orbit_order')
+            last = j
     bound = 0
     summaries = []
     for j, (D, row) in enumerate(zip(domains, rows)):
@@ -337,7 +451,7 @@ def check(G, target, cert, state_digest=None):
         for step in steps:
             replay = ev.evaluate(step['node'])[replay]
         require(np.array_equal(replay, pV), 'V action differs from chronological step replay')
-    return dict(format='r22b10/1', complete=True, T_size=len(T), orbits=summaries,
+    return dict(format=fmt, complete=True, T_size=len(T), orbits=summaries,
                 steps=len(steps), V_length=lengths[V], bound=bound)
 
 

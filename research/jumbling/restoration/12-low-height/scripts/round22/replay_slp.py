@@ -17,11 +17,16 @@
 # a child's error message that contains a slash or a backslash, so no work-directory or input path enters it.
 # Exact; headless; research only.
 # Usage (from the repository root): python3 -I -B replay_slp.py <start pose table> <plan json> <new work dir>
+#     [--seeds atlas] [--literal-limit N]
+# With a positive literal limit, preflight the whole step before expanding V;
+# play V and its inverse as literal SAFE-ALL words, recording integer lengths.
 # Plan: {"steps": [{"unit": "b12", "unit_file": <unit json>, "word": <word json>},
 #                  {"unit": "b14", "unit_file": <unit json>, "core": <core json>, "target": <target json>},
 #                  {"unit": "b03", "unit_file": <unit json>, "t1prime": <W json>, "greedy_seconds": 60},
 #                  {"unit": "b15", "unit_file": <unit json>, "t1prime": "search"}, ...]}
 # A target file holds the complete Bad(W) of the closure's W (keys T and T_digest, as jordan_target.py reads them).
+import argparse
+import gzip
 import hashlib
 import json
 import os
@@ -84,7 +89,7 @@ def emit(out, row):
     print(json.dumps(row), flush=True)
 
 
-def vacancy_slp(tag, wd, table, zt, t, row):
+def vacancy_slp(tag, wd, table, zt, t, row, seeds='default'):
     """N1 and N2 of the target t at the state of table (digest zt), then an R22B-10 certificate built and checked there.
     Returns the certificate file, or None with the reason in row."""
     assert hashlib.sha256(json.dumps(t['T']).encode()).hexdigest() == t['T_digest'], 'target digest'
@@ -102,7 +107,9 @@ def vacancy_slp(tag, wd, table, zt, t, row):
                    deficits=c['necessary_deficits'])
         return None
     cert = wd / f'{tag}-cert.json.gz'
-    run([S / 'r22b10_cert.py', 'table', table, tf, cert, '--seconds', '3600'], wd / f'{tag}-build.log')
+    seed_args = ['--seeds', 'atlas'] if seeds == 'atlas' else []
+    run([S / 'r22b10_cert.py', 'table', table, tf, cert, '--seconds', '3600'] + seed_args,
+        wd / f'{tag}-build.log')
     run([S / 'check_r22b10.py', 'table', table, tf, cert], wd / f'{tag}-check.txt')
     lines = Path(wd / f'{tag}-check.txt').read_text().split()
     if not lines or lines[-1] != 'PASS':
@@ -112,17 +119,66 @@ def vacancy_slp(tag, wd, table, zt, t, row):
     return cert
 
 
-def closure_program(step, tag, wd, cur, z, row):
+def read_json(path):
+    opener = gzip.open if str(path).endswith('.gz') else open
+    with opener(path, 'rt', encoding='utf-8') as stream:
+        return json.load(stream)
+
+
+def segment_length(segment):
+    """Exact literal length without expanding any word or inverse."""
+    if 'word' in segment:
+        return len(segment['word'])
+    if 'word_file' in segment:
+        return len(read_json(segment['word_file'])['word'])
+    if 'core_file' in segment:
+        core = read_json(segment['core_file'])
+        return 2 * len(core['P']) + len(core['Q'])
+    raise ValueError('unknown literal segment kind')
+
+
+def vacating_program(cert, z, middle, tag, wd, row, prefix=(), literal_limit=0):
+    """The shared closure/T1'/prepared-T1' certificate-to-literal boundary.
+
+    The caller has checked the certificate at z. Preflight the whole step with
+    Python integers before creating a word, then keep the expansion's count
+    and leaf hash in the path-free step record.
+    """
+    forward = {'slp': str(cert), 'node': 'V', 'state_digest': z}
+    backward = {'slp': str(cert), 'node': 'V', 'inverse': True}
+    if literal_limit > 0:
+        length = read_json(cert)['V_length']
+        total = 2 * length + sum(segment_length(s) for s in [*prefix, middle])
+        if total > literal_limit:
+            row.update(how='none', reason='V is over the literal limit', V_length=str(length))
+            return None
+        word = wd / f'{tag}-V-word.json.gz'
+        log = wd / f'{tag}-expand.log'
+        rc = run([S / 'expand_slp.py', cert, word, '--limit', literal_limit], log)
+        rows = json_lines(log)
+        result = rows[-1] if rows else {}
+        if rc == 3 and result.get('over_limit'):
+            row.update(how='none', reason='V is over the literal limit', V_length=result['length'])
+            return None
+        if rc != 0 or result.get('letters') != length or not result.get('word_sha256'):
+            row.update(how='none', reason='literal expansion failed')
+            return None
+        forward = {'safe_word_file': str(word)}
+        backward = {'safe_word_file': str(word), 'inverse': True}
+        row.update(V='literal', V_letters=length, V_sha256=result['word_sha256'], letters=total)
+    return {'segments': [*prefix, forward, middle, backward]}
+
+
+def closure_program(step, tag, wd, cur, z, row, seeds='default', literal_limit=0):
     """Check N1 and N2, build and check V; return the program, or None with the reason in row."""
     t = json.loads(Path(step['target']).read_text())
-    cert = vacancy_slp(tag, wd, cur, z, {'T': t['T'], 'T_digest': t['T_digest']}, row)
+    cert = vacancy_slp(tag, wd, cur, z, {'T': t['T'], 'T_digest': t['T_digest']}, row, seeds=seeds)
     if cert is None:
         return None
-    return {'segments': [{'slp': str(cert), 'node': 'V', 'state_digest': z}, {'core_file': step['core']},
-                         {'slp': str(cert), 'node': 'V', 'inverse': True}]}
+    return vacating_program(cert, z, {'core_file': step['core']}, tag, wd, row, literal_limit=literal_limit)
 
 
-def t1prime_program(step, tag, wd, cur, z, row):
+def t1prime_program(step, tag, wd, cur, z, row, seeds='default', literal_limit=0):
     """W lands the unit; V' vacates T = Bad(W^-1) at Z1 = Z.W, as a literal word or a certificate. Returns the
     program of W.V'.W^-1.V'^-1 (W alone when W is already strict'), or None with the reason in row."""
     if step['t1prime'] == 'search':
@@ -169,16 +225,29 @@ def t1prime_program(step, tag, wd, cur, z, row):
         return None
     t = {'T': g['badW'], 'T_digest': hashlib.sha256(json.dumps(g['badW']).encode()).hexdigest()}
     assert t['T_digest'] == g['badW_digest'], 'Bad(W^-1) digest'
-    cert = vacancy_slp(f'{tag}-v', wd, z1t, zt1, t, row)
+    cert = vacancy_slp(f'{tag}-v', wd, z1t, zt1, t, row, seeds=seeds)
     if cert is None:
         return None
     row.update(V='certificate')
-    return {'segments': [{'word_file': str(wf)}, {'slp': str(cert), 'node': 'V', 'state_digest': zt1},
-                         {'core_file': str(winv)}, {'slp': str(cert), 'node': 'V', 'inverse': True}]}
+    return vacating_program(cert, zt1, {'core_file': str(winv)}, tag, wd, row,
+                            prefix=[{'word_file': str(wf)}], literal_limit=literal_limit)
 
 
-def main():
-    start, plan_file, wd = sys.argv[1], sys.argv[2], Path(sys.argv[3])
+def literal_options(ap):
+    ap.add_argument('--seeds', choices=('default', 'atlas'), default='default')
+    ap.add_argument('--literal-limit', type=int, default=0)
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description='Replay literal words and checked vacating certificates.')
+    ap.add_argument('start')
+    ap.add_argument('plan')
+    ap.add_argument('work_dir', type=Path)
+    literal_options(ap)
+    args = ap.parse_args(argv)
+    if args.literal_limit < 0:
+        ap.error('--literal-limit must be nonnegative')
+    start, plan_file, wd = args.start, args.plan, args.work_dir
     if wd.exists() and any(wd.iterdir()):
         sys.exit(f'work directory {wd} is not empty')
     wd.mkdir(parents=True, exist_ok=True)
@@ -196,9 +265,11 @@ def main():
                 how, prog = 'word', {'segments': [{'word_file': step['word']}]}
             else:
                 if 't1prime' in step:
-                    how, prog = 't1prime', t1prime_program(step, tag, wd, cur, z, row)
+                    how, prog = 't1prime', t1prime_program(step, tag, wd, cur, z, row,
+                                                        seeds=args.seeds, literal_limit=args.literal_limit)
                 else:
-                    how, prog = 'close', closure_program(step, tag, wd, cur, z, row)
+                    how, prog = 'close', closure_program(step, tag, wd, cur, z, row,
+                                                       seeds=args.seeds, literal_limit=args.literal_limit)
                 if prog is None:
                     emit(out, row)
                     continue
@@ -210,7 +281,7 @@ def main():
             summary = rows[-1] if rows else {}
             if rc == 0 and summary.get('strict_prime'):
                 letters = sum(int(r['length']) for r in rows if 'segment' in r)
-                row.update(how=how, letters=str(letters), off_before=summary['off_before'],
+                row.update(how=how, letters=letters if args.literal_limit > 0 else str(letters), off_before=summary['off_before'],
                            off_after=summary['off_after'], strict_prime=True, end_digest=summary['end_digest'],
                            end_table=end.name)
                 cur, landed = end, landed + 1

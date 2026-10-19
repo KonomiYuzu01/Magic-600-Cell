@@ -3,6 +3,8 @@
 # start leaves the lattice; every other off piece of the start on the lattice or at its exact pose). Optionally
 # exports the end state as a pose table for the next step of a chain. Exact; headless; research only.
 # Usage (from the repository root): python3 -I -B stepchk.py <table> <unit json> <word json> <out json> [<end table>]
+#     [--require-strict]
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -19,9 +21,16 @@ def pose(s, p):
     return B.matrix_json(s._pose_matrix(int(s.pose_id[p])))
 
 
-def main():
-    table, ufile, wfile, outp = sys.argv[1:5]
-    endt = sys.argv[5] if len(sys.argv) > 5 else None
+def main(argv=None):
+    ap = argparse.ArgumentParser(description='Check a literal step and its strict-prime contract.')
+    ap.add_argument('table')
+    ap.add_argument('unit')
+    ap.add_argument('word')
+    ap.add_argument('report')
+    ap.add_argument('end_table', nargs='?')
+    ap.add_argument('--require-strict', action='store_true')
+    args = ap.parse_args(argv)
+    table, ufile, wfile, outp, endt = args.table, args.unit, args.word, args.report, args.end_table
     U = set(int(p) for p in json.loads(Path(ufile).read_text())['pieces'])
     W = json.loads(Path(wfile).read_text())
     word = W['word']
@@ -51,7 +60,8 @@ def main():
         row['end_table_digest'] = doc['digest']
     Path(outp).write_text(json.dumps(row, indent=1) + '\n')
     print(json.dumps(row), flush=True)
+    return int(args.require_strict and (not row['strict_prime'] or not row.get('output_digest_matches', True)))
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

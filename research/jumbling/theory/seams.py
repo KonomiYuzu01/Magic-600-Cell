@@ -63,7 +63,7 @@ I4 = restore.I4
 NEAR = restore.NEAR
 NF = restore._NF
 KAPPA = 121 / 125 * float(data.NN)           # cut depth 121/125, in the units of the cap normals
-CACHE = HERE.parents[2] / 'work' / 'jumbling-cache' / 'home_centroids.npy'
+CACHE = Path(os.environ['JUMBLING_HOME_CACHE']) if os.environ.get('JUMBLING_HOME_CACHE') else HERE.parents[2] / 'work' / 'jumbling-cache' / 'home_centroids.npy'
 _HOME = None
 
 

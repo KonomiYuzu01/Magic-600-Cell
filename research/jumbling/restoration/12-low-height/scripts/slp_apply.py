@@ -3,7 +3,7 @@
 # From the repository root:
 #   python3 -I -B research/jumbling/restoration/12-low-height/scripts/slp_apply.py \
 #       (record|table) <state> <program json> <out table json> [--unit <unit json>]
-# Program: {"segments": [word/word_file/core_file/slp segments, chronological]}.
+# Program: {"segments": [word/word_file/safe_word_file/core_file/slp segments, chronological]}.
 # Segment and letter indices in errors and JSON lines are zero-based.
 #
 # Soundness: every reachable leaf must belong to buffer.Alphabet rebuilt at the
@@ -18,10 +18,12 @@
 # Q(qL+s)=Q(s)*H^q; from x_j, r_{u^e}=Q(j+e)*Q(j)^-1. Holonomy powers reduce
 # modulo their finite group orders. Exponents and expanded lengths are Python
 # integers throughout; neither powers nor inverse SLPs are expanded to words.
-# Literal words/core P.Q.P^-1 instead use the simulator, checking every twist.
+# SAFE-ALL word files accumulate each literal letter's labelled cap action;
+# other literal words/core P.Q.P^-1 use the simulator, checking every twist.
 # The output is a current-only buffer.export_pose_table, not an expanded journal.
 import argparse
 import gzip
+import hashlib
 import json
 import math
 import os
@@ -96,9 +98,10 @@ class Rotations:
         return self.powers[residues[self.orders], np.arange(len(self.orders))]
 
 
-def program(G, cert, root):
-    """Check DAG/lengths globally, SAFE membership for every reachable leaf."""
-    require(isinstance(cert, dict) and cert.get('format') == 'r22b10/1', 'certificate format must be r22b10/1')
+def checked_dag(cert, root='V'):
+    """State-independent DAG and exact-length checks, shared with expansion."""
+    require(isinstance(cert, dict) and cert.get('format') in ('r22b10/1', 'r22b10/2'),
+            'certificate format must be r22b10/1 or r22b10/2')
     nodes = cert.get('nodes')
     require(isinstance(nodes, list) and nodes, 'program is empty or malformed')
     use_v = root == 'V'
@@ -134,8 +137,17 @@ def program(G, cert, root):
                     f'node {ident}: false expanded length')
         children.append(refs)
         lengths.append(length)
-    if use_v and 'V_length' in cert:
-        require(type(cert['V_length']) is int and cert['V_length'] == lengths[root], 'false V_length')
+    if 'V_length' in cert:
+        v = cert.get('V')
+        require(type(v) is int and 0 <= v < len(nodes), 'V node ID out of range')
+        require(type(cert['V_length']) is int and cert['V_length'] == lengths[v], 'false V_length')
+    return root, children, lengths
+
+
+def program(G, cert, root):
+    """Check DAG/lengths globally, SAFE membership for every reachable leaf."""
+    root, children, lengths = checked_dag(cert, root)
+    nodes = cert['nodes']
     needed, leaves, todo = set(), {}, [root]
     while todo:
         ident = todo.pop()
@@ -297,15 +309,89 @@ def inverse_word(M, word):
     return out
 
 
+def stream_word(pairs, output=None):
+    """Hash (and optionally write) json.dumps(word), with bounded buffering."""
+    digest, count, cache = hashlib.sha256(), 0, {}
+
+    def flush(data):
+        digest.update(data)
+        if output is not None:
+            output.write(data)
+
+    flush(b'[')
+    chunks = []
+    for c, i in pairs:
+        pair = (int(c), int(i))
+        if pair not in cache:
+            cache[pair] = json.dumps(pair).encode('ascii')
+        chunks.append((b', ' if count else b'') + cache[pair])
+        count += 1
+        if len(chunks) == 8192:
+            flush(b''.join(chunks))
+            chunks.clear()
+    if chunks:
+        flush(b''.join(chunks))
+    flush(b']')
+    return count, digest.hexdigest()
+
+
+def literal_action(G, rotations, numbers):
+    """Accumulate chronological letters, touching only each letter's cap.
+
+    Store the original source and its accumulated rotation at each current
+    destination. A letter sends the cap xs to ys and left-multiplies its
+    rotations by k, including at chamber-fixed points. Convert to the usual
+    source-indexed (pi, r) once, after every literal letter has been played.
+    """
+    sources = np.arange(G.NP, dtype=np.int32)
+    at_destination = np.zeros(G.NP, np.uint16)
+    mul = rotations.mul
+    for number in numbers:
+        c, _, k, ys = G.letters[int(number)]
+        xs = G.capx[c]
+        sources[ys] = sources[xs]
+        at_destination[ys] = mul[k, at_destination[xs]]
+    permutation = np.empty_like(sources)
+    rotation = np.empty_like(at_destination)
+    permutation[sources] = np.arange(G.NP, dtype=np.int32)
+    rotation[sources] = at_destination
+    return permutation, rotation
+
+
 def apply_segment(st, M, segment, index=0, rotations=None):
     """Return a segment's JSON row and the reusable state-independent K+ table."""
     B, _ = modules()
     try:
         require(isinstance(segment, dict), 'segment must be an object')
-        kinds = [key for key in ('word', 'word_file', 'core_file', 'slp') if key in segment]
+        kinds = [key for key in ('word', 'word_file', 'safe_word_file', 'core_file', 'slp') if key in segment]
         require(len(kinds) == 1, 'segment must have exactly one kind')
         kind = kinds[0]
-        if kind == 'slp':
+        extra = {}
+        if kind == 'safe_word_file':
+            inverse = segment.get('inverse', False)
+            require(type(inverse) is bool, 'inverse must be a boolean')
+            doc = read_json(segment[kind])
+            if not inverse and 'input_digest' in doc:
+                require(doc['input_digest'] == st.digest(), 'input_digest mismatch')
+            word = word_pairs(doc['word'], M)
+            G = B.Alphabet(SimpleNamespace(st=st), M)
+            # Validate the entire word before computing an action or changing
+            # poses. Keep only compact indices during play, also for inverses.
+            length = len(word)
+            numbers = np.empty(length, np.int32)
+            for j, pair in enumerate(word):
+                pair = tuple(pair)
+                require(pair in G.index, f'letter {j}: {pair} is not a SAFE-ALL letter at this state')
+                numbers[j] = G.index[pair]
+            del word, doc
+            if inverse:
+                numbers = G.inv[numbers[::-1]]
+            _, extra['word_sha256'] = stream_word((G.letters[int(n)][:2] for n in numbers))
+            if rotations is None:
+                rotations = Rotations(st.ctx.kplus)
+            value = literal_action(G, rotations, numbers)
+            apply_labelled(st, G, rotations, value)
+        elif kind == 'slp':
             if 'state_digest' in segment:
                 require(segment['state_digest'] == st.digest(), 'state_digest mismatch')
             inverse = segment.get('inverse', False)
@@ -340,7 +426,7 @@ def apply_segment(st, M, segment, index=0, rotations=None):
                         f'letter {j} ({c}, {i}): twist is not admissible ({outcome.status})')
             length = len(word)
         return {'segment': index, 'kind': kind, 'length': length,
-                'digest': st.digest(), 'off': int(st.off_lattice_count())}, rotations
+                'digest': st.digest(), 'off': int(st.off_lattice_count()), **extra}, rotations
     except (ValueError, AssertionError, KeyError, TypeError, IndexError, OSError, OverflowError) as error:
         raise ValueError(f'segment {index}: {error}') from error
 

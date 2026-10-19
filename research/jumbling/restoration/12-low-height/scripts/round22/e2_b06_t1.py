@@ -5,7 +5,8 @@
 # --unit b06, which checks the strict' contract; the items are tried in the given order up to the first strict' one.
 # One JSON line per item goes to <work dir>/seq.jsonl. Research only, headless; exact geometry.
 # Usage (from the repository root): python3 -I -B research/jumbling/restoration/12-low-height/scripts/round22/e2_b06_t1.py
-# <Z table> <prep dir> <new work dir> <item> [<item> ...]
+# <Z table> <prep dir> <new work dir> <item> [<item> ...] [--seeds atlas] [--literal-limit N]
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -27,9 +28,18 @@ def off_at(table):
     return {int(p) for p in B.off_pieces(R.st)}
 
 
-def main():
-    Z, P, wd = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
-    items = [int(x) for x in sys.argv[4:]]
+def main(argv=None):
+    ap = argparse.ArgumentParser(description='Replay the prepared b06 T1-prime step.')
+    ap.add_argument('start', type=Path)
+    ap.add_argument('prep_dir', type=Path)
+    ap.add_argument('work_dir', type=Path)
+    ap.add_argument('items', type=int, nargs='+')
+    RS.literal_options(ap)
+    args = ap.parse_args(argv)
+    if args.literal_limit < 0:
+        ap.error('--literal-limit must be nonnegative')
+    Z, P, wd = args.start, args.prep_dir, args.work_dir
+    items = args.items
     wd.mkdir(parents=True, exist_ok=False)
     X, ZX, free = P / 'x-word.json', P / 'zx.json', P / 'free.json'
     z, zx = RS.digest(Z), RS.digest(ZX)
@@ -77,14 +87,17 @@ def main():
                     continue
                 import hashlib
                 t = {'T': g['badW'], 'T_digest': hashlib.sha256(json.dumps(g['badW']).encode()).hexdigest()}
-                cert = RS.vacancy_slp(f'{tag}-v', wd, z1t, zt1, t, row)
+                cert = RS.vacancy_slp(f'{tag}-v', wd, z1t, zt1, t, row, seeds=args.seeds)
                 if cert is None:
                     RS.emit(out, row)
                     continue
                 row.update(V='certificate')
-                prog = {'segments': [{'word_file': str(X)}, {'word_file': str(wf)},
-                                     {'slp': str(cert), 'node': 'V', 'state_digest': zt1}, {'core_file': str(winv)},
-                                     {'slp': str(cert), 'node': 'V', 'inverse': True}]}
+                prog = RS.vacating_program(cert, zt1, {'core_file': str(winv)}, tag, wd, row,
+                                           prefix=[{'word_file': str(X)}, {'word_file': str(wf)}],
+                                           literal_limit=args.literal_limit)
+                if prog is None:
+                    RS.emit(out, row)
+                    continue
             pf = wd / f'{tag}-program.json'
             pf.write_text(json.dumps(prog) + '\n')
             end = wd / f'z-{tag}.json'
@@ -93,7 +106,8 @@ def main():
             summary = rows[-1] if rows else {}
             if rc == 0 and summary.get('strict_prime'):
                 letters = sum(int(r['length']) for r in rows if 'segment' in r)
-                RS.emit(out, dict(row, how='x-t1prime', letters=str(letters), off_before=summary['off_before'],
+                RS.emit(out, dict(row, how='x-t1prime', letters=letters if args.literal_limit > 0 else str(letters),
+                                  off_before=summary['off_before'],
                                   off_after=summary['off_after'], strict_prime=True, end_digest=summary['end_digest'],
                                   end_table=end.name))
                 break

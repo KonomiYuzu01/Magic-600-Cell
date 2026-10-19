@@ -3,7 +3,7 @@
 #   python3 -I -B research/jumbling/restoration/12-low-height/scripts/r22b10_cert.py \
 #       (record|table) <state file> <target json> <out json[.gz]> [--seconds 3600] [--seed 2210]
 # API: build(alphabet, target, seconds=3600, seed=2210, force_jordan=False,
-#            state_digest=None). Supply the actual state's digest explicitly
+#            state_digest=None, seeds='default'). Supply the actual state's digest explicitly
 # for a duck alphabet without buffer.Alphabet's state_digest attribute.
 # The alphabet is sampled, never changed. Only the current hole inventory is used.
 #
@@ -20,6 +20,8 @@
 # hence every node; occupancy on an orbit depends only on the restricted action
 # of V on that orbit. Collateral effects on later orbits are retained this way.
 # An incomplete record is a search outcome, never a nonexistence assertion.
+# --seeds atlas uses r22b10/2: explicit orbit_order, atlas placement and literal
+# seed_word/cycle evidence. The default r22b10/1 records are unchanged.
 import time
 
 T0 = time.monotonic()
@@ -40,6 +42,8 @@ if hasattr(sys, 'set_int_max_str_digits'):
     sys.set_int_max_str_digits(0)
 HERE = Path(__file__).resolve().parent
 np = None
+CASCADE = [6, 0, 17, 15, 2, 22, 21, 8, 23, 9, 29, 25, 13, 11, 10, 34, 28, 26,
+           24, 16, 14, 12, 3, 33, 32, 31, 30, 27, 20, 19, 18, 7, 5, 4, 1]
 
 
 def log(**kw):
@@ -333,6 +337,87 @@ class WordTree:
             else:
                 rows.append([int(self.A.D[child]), int(self.A.D[parent]), self.P.inv(edge)])
         return rows
+
+
+class AtlasSeeds:
+    """Finite left-spine search; screen placements before evaluating a seed.
+
+    All caches belong to this build's alphabet and model. Types are the retained
+    data.orbit_id labels, not Alphabet.type's K+ region labels.
+    """
+    def __init__(self, G, B, deadline):
+        self.G, self.deadline = G, deadline
+        self.ctx = B.CL.ctx
+        self.kp, self.reg = self.ctx.kplus, self.ctx.regions
+        self.types = self.ctx.data.orbit_id
+        self.rank = {o: j for j, o in enumerate(CASCADE)}
+        self.atlas = json.loads((HERE.parents[4] / 'assets/seed_atlas.json').read_text())
+        self.lookup = {(int(g), int(k)): n for n, (g, _, k, _) in enumerate(G.letters)}
+        solved = B.sim.State(self.ctx, menu=G.M)
+        self.solved = B.Alphabet(SimpleNamespace(st=solved), G.M)
+        self.solved_lookup = {(int(g), int(k)): n for n, (g, _, k, _) in enumerate(self.solved.letters)}
+
+    @staticmethod
+    def expand(t):
+        if t[0] == 'g':
+            return [t[1]]
+        if t[0] == 'pow':
+            return AtlasSeeds.expand(t[1]) * t[2]
+        x, y = AtlasSeeds.expand(t[1]), AtlasSeeds.expand(t[2])
+        return x + y + [-v for v in x[::-1]] + [-v for v in y[::-1]]
+
+    def get(self, A):
+        o = int(self.types[A.D[0]])
+        if o not in self.rank:
+            return None
+        prefix, t, depth = [], self.atlas[o]['ast'], 0
+        while True:
+            prefix.append((depth, t))
+            if t[0] == 'g':
+                break
+            t, depth = t[1], depth + 1
+        # Left-child prefixes grow in length, including unreduced powers.
+        safe = np.zeros(600, bool)
+        safe[list(self.G.by_grip)] = True
+        identity = np.arange(self.G.NP)
+        prior_types = CASCADE[:self.rank[o]]
+        for depth, t in reversed(prefix):
+            check_time(self.deadline)
+            word = np.asarray(self.expand(t), np.int64)
+            primitive, sequence = np.unique(word, return_inverse=True)
+            grips = (np.abs(primitive) - 1) // 2
+            ks = self.kp.gen_idx[np.abs(primitive) - 1]
+            ks = np.where(primitive > 0, ks, self.kp.inv[ks])
+            nums = [self.solved_lookup.get((int(g), int(k))) for g, k in zip(grips, ks)]
+            if any(n is None for n in nums):
+                continue
+            p = self.solved.perm([nums[n] for n in sequence])
+            moved = np.flatnonzero(p != identity)
+            own = moved[self.types[moved] == o]
+            if len(own) != 3 or np.isin(self.types[moved], prior_types).any():
+                continue
+            a = int(own[0])
+            if p[a] == a or p[p[a]] == a or p[p[p[a]]] != a:
+                continue
+            placements = np.flatnonzero(safe[self.kp.perms[:, np.unique(grips)]].all(axis=1))
+            # K+ transports the three moved chambers. This is a screen only;
+            # build() still verifies the full seed and every protected orbit.
+            for x in own:
+                products = self.kp.compose_vec(placements, np.full(len(placements), self.reg.transport[x]))
+                images = self.reg.piece_of[self.reg.orbit_of[x], products]
+                placements = placements[A.local[images] >= 0]
+            for sigma in placements.tolist():
+                check_time(self.deadline)
+                ss = np.full(len(ks), sigma)
+                rotated = self.kp.compose_vec(ss, self.kp.compose_vec(ks, np.full(len(ks), self.kp.inv[sigma])))
+                image_grips = self.kp.perms[sigma, grips]
+                nums = [self.lookup.get((int(g), int(k))) for g, k in zip(image_grips, rotated)]
+                if any(n is None for n in nums):
+                    continue
+                nums = [nums[n] for n in sequence]
+                return dict(route='atlas', seed=A.program.word(self.G, nums), atlas_type=o,
+                            atlas_depth=depth, sigma=sigma, seed_word=self.G.pairs(nums))
+        return None
 
 
 def commutator_seed(A, earlier, rng, deadline, trials=384):
@@ -638,9 +723,12 @@ def compact(result, P):
     result.update(replacement)
 
 
-def build(G, target, seconds=3600, seed=2210, force_jordan=False, deadline=None, result=None, state_digest=None):
+def build(G, target, seconds=3600, seed=2210, force_jordan=False, deadline=None, result=None, state_digest=None,
+          seeds='default'):
     start = time.monotonic()
     deadline = start + seconds if deadline is None else deadline
+    if seeds not in ('default', 'atlas'):
+        raise ValueError('seeds must be default or atlas')
     digest = getattr(G, 'state_digest', state_digest)
     if state_digest is not None and state_digest != digest:
         raise ValueError('state digest differs from alphabet state')
@@ -653,11 +741,19 @@ def build(G, target, seconds=3600, seed=2210, force_jordan=False, deadline=None,
                   missing=[dict(least=None, reason='orbit loading exceeded budget before orbits were known')],
                   seconds=0, nodes=P.nodes, orbits=[], steps=[],
                   V=P.empty, V_length=0, bound=0)
+    if seeds == 'atlas':
+        result.update(format='r22b10/2', seeds='atlas', orbit_order=[])
     orbit, sizes = G.orbits()
     T = np.array(target['T'], np.int64)
     mask = np.zeros(G.NP, bool)
     mask[T] = True
     labels = sorted(set(orbit[T].tolist()), key=lambda o: (-int(sizes[o]), int(np.flatnonzero(orbit == o)[0])))
+    if seeds == 'atlas':
+        rank = {o: j for j, o in enumerate(CASCADE)}
+        types = Bmodule.CL.ctx.data.orbit_id
+        leasts = {o: int(np.flatnonzero(orbit == o)[0]) for o in labels if sizes[o] > 1}
+        labels = sorted(leasts, key=lambda o: (rank.get(int(types[leasts[o]]), len(rank)), leasts[o]))
+        result['orbit_order'] = [leasts[o] for o in labels]
     pending = {int(np.flatnonzero(orbit == o)[0]): 'orbit not reached within time bound' for o in labels if sizes[o] > 1}
     for x in T[sizes[orbit[T]] == 1].tolist():
         if G.occupied[x]:
@@ -674,6 +770,7 @@ def build(G, target, seconds=3600, seed=2210, force_jordan=False, deadline=None,
                 if int((~G.occupied[D]).sum()) < int(mask[D].sum()):
                     pending[int(D[0])] = 'N1/N2 fails: fewer holes than target chambers'
             return result
+        atlas = AtlasSeeds(G, Bmodule, deadline) if seeds == 'atlas' else None
         for j, lab in enumerate(labels):
             D = np.flatnonzero(orbit == lab)
             if len(D) == 1:
@@ -687,8 +784,8 @@ def build(G, target, seconds=3600, seed=2210, force_jordan=False, deadline=None,
                 if len(D) < 5:
                     raise ValueError('degree below five is outside the seed-and-table construction')
                 A = Action(G, D, P, orbit_end)
-                row = None
-                if not force_jordan:
+                row = atlas.get(A) if atlas is not None else None
+                if row is None and not force_jordan:
                     try:
                         row = commutator_seed(A, earlier, rng, min(orbit_end, time.monotonic() + min(8, share * 0.12)))
                     except Deadline:
@@ -704,6 +801,8 @@ def build(G, target, seconds=3600, seed=2210, force_jordan=False, deadline=None,
                 b, c = int(p[a]), int(p[p[a]])
                 if p[c] != a:
                     raise AssertionError('seed is not a three-cycle')
+                if row['route'] == 'atlas':
+                    row['cycle'] = D[[a, b, c]].tolist()
                 if len(earlier):
                     previous = Action(G, earlier, P, orbit_end, cache_bytes=8 * 1024**2)
                     if not np.array_equal(previous.eval(row['seed']), previous.unit):
@@ -753,12 +852,15 @@ def main(argv=None):
     ap.add_argument('out')
     ap.add_argument('--seconds', type=float, default=3600)
     ap.add_argument('--seed', type=int, default=2210)
+    ap.add_argument('--seeds', choices=('default', 'atlas'), default='default')
     args = ap.parse_args(argv)
     if not math.isfinite(args.seconds) or args.seconds <= 0:
         ap.error('--seconds must be positive and finite')
     result = dict(format='r22b10/1', state_digest=None, T_digest=None, T_size=0, seed=args.seed,
                   complete=False, missing=[dict(least=None, reason='loading exceeded budget before orbits were known')],
                   nodes=[dict(op='cat', args=[], length=0)], orbits=[], steps=[], V=0, V_length=0, bound=0)
+    if args.seeds == 'atlas':
+        result.update(format='r22b10/2', seeds='atlas', orbit_order=[])
     # Arm before NumPy, geometry imports, state loading and alphabet construction.
     # Reserve a small part of the total budget for a recoverable output record.
     end = T0 + args.seconds - min(10, args.seconds / 10)
@@ -780,7 +882,7 @@ def main(argv=None):
         import buffer as B
         G = B.Alphabet(SimpleNamespace(st=st), M)
         phase = 'certificate construction'
-        build(G, target, seed=args.seed, deadline=end, result=result, state_digest=st.digest())
+        build(G, target, seed=args.seed, deadline=end, result=result, state_digest=st.digest(), seeds=args.seeds)
     except Deadline:
         if result.get('missing') and result['missing'][0]['least'] is None:
             result['missing'][0]['reason'] = f'{phase}: wall-clock budget exhausted before orbits were known'
