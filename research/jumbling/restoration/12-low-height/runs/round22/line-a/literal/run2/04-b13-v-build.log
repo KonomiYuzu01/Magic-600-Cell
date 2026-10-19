@@ -1,0 +1,24 @@
+{"safe_all_grips": 559, "letters": 6149, "off_lattice": 308, "sec": 14}
+{"orbits": 1032, "singletons": 997, "sec": 15}
+{"safe_all_grips": 600, "letters": 6600, "off_lattice": 0, "sec": 26}
+{"least": 64, "route": "atlas", "size": 2398, "s": 46, "e": 5, "f": 17, "steps": 1, "sec": 31.251}
+{"least": 67, "route": "atlas", "size": 3600, "s": 22, "e": 11, "f": 15, "steps": 3, "sec": 31.825}
+{"least": 69, "route": "atlas", "size": 7200, "s": 46, "e": 5, "f": 5, "steps": 5, "sec": 32.457}
+{"least": 70, "route": "atlas", "size": 7200, "s": 46, "e": 5, "f": 19, "steps": 7, "sec": 33.113}
+{"least": 105, "route": "atlas", "size": 2400, "s": 9214, "e": 5, "f": 15, "steps": 4, "sec": 34.178}
+{"least": 81, "route": "atlas", "size": 3600, "s": 46, "e": 5, "f": 5, "steps": 4, "sec": 34.712}
+{"least": 41, "route": "atlas", "size": 7194, "s": 142, "e": 5, "f": 5, "steps": 2, "sec": 35.485}
+{"least": 116, "route": "atlas", "size": 120, "s": 190, "e": 5, "f": 5, "steps": 0, "sec": 35.709}
+{"least": 75, "route": "atlas", "size": 1440, "s": 1534, "e": 5, "f": 5, "steps": 2, "sec": 36.259}
+{"least": 82, "route": "atlas", "size": 7200, "s": 46, "e": 5, "f": 5, "steps": 12, "sec": 37.148}
+{"least": 74, "route": "atlas", "size": 7200, "s": 46, "e": 9, "f": 21, "steps": 8, "sec": 38.285}
+{"least": 33, "route": "atlas", "size": 7200, "s": 70, "e": 11, "f": 19, "steps": 1, "sec": 39.303}
+{"least": 115, "route": "atlas", "size": 2400, "s": 46, "e": 5, "f": 5, "steps": 9, "sec": 39.748}
+{"least": 108, "route": "atlas", "size": 3600, "s": 94, "e": 5, "f": 5, "steps": 14, "sec": 40.329}
+{"least": 106, "route": "atlas", "size": 7200, "s": 142, "e": 5, "f": 18, "steps": 19, "sec": 41.375}
+{"least": 83, "route": "atlas", "size": 7200, "s": 94, "e": 5, "f": 19, "steps": 14, "sec": 42.364}
+{"least": 90, "route": "atlas", "size": 7200, "s": 94, "e": 5, "f": 5, "steps": 7, "sec": 43.267}
+{"least": 34, "route": "atlas", "size": 7200, "s": 142, "e": 10, "f": 18, "steps": 2, "sec": 44.356}
+{"least": 66, "route": "atlas", "size": 7200, "s": 142, "e": 5, "f": 5, "steps": 3, "sec": 45.289}
+{"least": 65, "route": "atlas", "size": 7200, "s": 1534, "e": 5, "f": 20, "steps": 5, "sec": 46.735}
+{"complete": true, "missing": [], "V_length": 116488, "bound": 219620, "seconds": 47.846434, "sec": 47.846}

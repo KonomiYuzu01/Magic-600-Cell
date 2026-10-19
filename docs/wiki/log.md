@@ -5,6 +5,9 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-10-19] update | Jumbling: the tutorial runner and its checker
 A program that applies the tutorial's rules to the current state, playing only literal words, and an independent checker that replays its record twist by twist: the runner solved the depth 10 scramble of seed 7001 in 9 twists and the depth 20 scramble of seed 7106 in 19 twists and a lattice phase of 8,701,310, and the checker passed both; E2's certificate steps and height 4 are not in its rules yet ([stage 13](../../research/jumbling/restoration/13-tutorial-runner/README.md)).
 
+## [2026-10-19] update | Jumbling: E2's certificate steps as literal words
+With certificates built from short seeds at the state reached and expanded into literal words, E2 is played from 737 to 71 off pieces in 12 strict′ steps of 692 to 301,384 twists, eight of its nine certificate steps among them, and one step of 40,500 twists was also replayed twist by twist on the simulator to the same end; b06 with b05 is next ([stage 12](../../research/jumbling/restoration/12-low-height/README.md), `PROOFS-B.md` R22B-34).
+
 ## [2026-10-19] update | Jumbling: line (d), round 2
 A 28-twist step at the depth 100 stop lands a height-4 unit and 41 other height-4 pieces and leaves everything else exactly in place, the first literal step at height 4, and a finite rule that reads only the state, with words of at most 244 twists, contains it; over the five census stops with height-4 pieces, 51 of the 93 high units lie whole in no clean cap ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 5).
 

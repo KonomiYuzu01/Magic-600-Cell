@@ -1,0 +1,3 @@
+{"segment": 0, "kind": "word_file", "length": 60, "digest": "0809e1c8fa25dc5f2f10d12ae1fc6971b9ba1c35b0ab26f722cf7b3e1d2c5d7b", "off": 435}
+{"segment": 1, "kind": "word_file", "length": 632, "digest": "b1a6b4ebbeddbd05b125f9973b3c77a111a65d89963ac3478b5965fb43f47baa", "off": 324}
+{"start_digest": "d484bc86f0df237d84226805e88d0bbf23ea36a3b53459f0b2f85cfd09e33c00", "end_digest": "b1a6b4ebbeddbd05b125f9973b3c77a111a65d89963ac3478b5965fb43f47baa", "unit_size": 5, "unit_on_lattice": 5, "collateral": 0, "others": 324, "others_exact": 324, "others_landed": 0, "off_before": 329, "off_after": 324, "strict_prime": true}

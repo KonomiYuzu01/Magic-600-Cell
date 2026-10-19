@@ -1,0 +1,2 @@
+{"segment": 0, "kind": "word_file", "length": 1158, "digest": "d3aeee9911f203cddc419838bb2033a4ebe3c67f3a6676792bc0dfc2a9cc3321", "off": 696}
+{"start_digest": "2e3b8f990229799fc88198b2fe4f2062ab4f9d73c78347ee67b252d412b0a086", "end_digest": "d3aeee9911f203cddc419838bb2033a4ebe3c67f3a6676792bc0dfc2a9cc3321", "unit_size": 41, "unit_on_lattice": 41, "collateral": 0, "others": 696, "others_exact": 696, "others_landed": 0, "off_before": 737, "off_after": 696, "strict_prime": true}
