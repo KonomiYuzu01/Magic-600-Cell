@@ -1,0 +1,17 @@
+{
+ "runs": [
+  {
+   "input": "table:<run>/tables/bulk-end.json",
+   "status_claimed": "restored",
+   "start_matches_restorer": true,
+   "w9": false,
+   "restored_to_identity": true,
+   "factors": 10731,
+   "retained_length": 8701310,
+   "length_matches_restorer": true
+  }
+ ],
+ "chain_end_digest": null,
+ "pass": true,
+ "seconds": 9.0
+}

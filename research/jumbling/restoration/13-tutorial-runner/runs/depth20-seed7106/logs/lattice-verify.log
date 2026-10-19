@@ -1,0 +1,3 @@
+SLP evaluated: 20347 nodes, 1.9s
+{"input": "table:<run>/tables/bulk-end.json", "status_claimed": "restored", "start_matches_restorer": true, "w9": false, "restored_to_identity": true, "factors": 10731, "retained_length": 8701310, "length_matches_restorer": true}
+PASS 9.0

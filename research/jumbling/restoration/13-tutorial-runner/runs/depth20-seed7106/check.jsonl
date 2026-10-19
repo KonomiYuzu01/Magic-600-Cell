@@ -1,0 +1,20 @@
+{"fails": [], "index": 0, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 1, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 2, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 3, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 4, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 5, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 6, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 7, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 8, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 9, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 10, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 11, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 12, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 13, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 14, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 15, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 16, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 17, "pass": true, "phase": "bulk", "rule": "seam"}
+{"fails": [], "index": 18, "pass": true, "phase": "bulk", "rule": "seam"}
+{"bulk_twists": 19, "end_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "fails": [], "fallback_twists": 0, "lattice_checked": true, "lattice_twists": 8701310, "pass": true, "result": "solved", "steps": 19, "tail_twists": 0}
