@@ -103,6 +103,25 @@ At no checkpoint is a piece above left height 6. From 250 twists on the off coun
 124,344. The pieces at height 6 are few and come and go; a checkpoint every 250 twists does not see the states between.
 Times are cloud timings of research code with other jobs on the machine, not performance evidence.
 
+### A descent from 3000 twists (19 October 2026)
+
+One census round of 75 minutes from the 3000-twist state of seed 7302, the scramble of the previous section with the
+most pieces at height 6 (`runs/heights/ia-k3000-s7302.json`). Its start agrees with that section's row for seed 7302
+at 3000 twists, which the other script computed.
+
+| Depth k | Seed | Off after the scramble | Left heights at the scramble | Descent time | Twists | Steps: seam / cover / conj | Off at the end | N: start → end | Left heights at the end |
+| ---: | ---: | ---: | --- | --- | ---: | --- | ---: | --- | --- |
+| 3000 | 7302 | 118,821 | 2: 116,665; 4: 1,971; 6: 185 | 75 minutes | 313 | 0 / 7 / 102 | 100,584 | 145,574 → 130,386 | 2: 99,314; 4: 1,085; 6: 185 |
+
+It ended at the time limit, having put back 15.3% of the off pieces, against 38.4% and 30.5% in the first 75 minutes
+at depths 400 and 1000. Its second step was already a conj step, and the median conj step lowered N by 67 after a
+search of 31 seconds. **The pieces at height 6 stayed there.** Replayed step by step, 185 pieces were at height 6 or
+more after every one of the 109 steps, and the 185 at height 6 at the end are those of the start
+(`runs/heights/ia-k3000-s7302-heights.txt`). In the depth 1000 descent of seed 7103 one conj step lowered all 135 of
+its height-6 pieces to height 4 by the descent's 190th twist (stage 12, R22D-30); this descent made 313 twists and
+lowered none of them. **Certificate**: the replay check passes on the record (`runs/heights/check.out`); the
+step-by-step replay also applies every twist on the exact simulator and checks the off count after every step.
+
 ### What the runs show (measured)
 
 1. **No run got stuck.** Every run that did not reach the lattice was stopped by the clock; every step it took
@@ -114,8 +133,8 @@ Times are cloud timings of research code with other jobs on the machine, not per
      1,566; at depth 100 by about 550 and 966 (the two seeds), at 200 by 455, at 400 and 1000 by about 55.
    - Broadly, the deeper the scramble, the sooner the single-twist steps run out: the first conj step came after 29
      steps (when 25,783 pieces were off) for depth 40, after 27 (53,647) for 60, after 9 (101,481) and 19 (89,121)
-     for the two seeds at 100, after 10 (106,075) for 200, after 11 (109,266) for 400 and after 3 (121,636) for
-     1000.
+     for the two seeds at 100, after 10 (106,075) for 200, after 11 (109,266) for 400, after 3 (121,636) for
+     1000 and after 1 (118,435) for 3000.
    - In the tail almost every step is a conj step. In round 1 the median conj step lowered N by 50 to 146 after a
      search of 20 to 52 seconds; in round 2 by 2 to 50 after 91 to 269 seconds. Round 3 fits this: 80 and 67 after 36
      and 29 seconds in the first rounds at depths 100 and 400, and 41 after 195 seconds in the second round at 200.
@@ -128,12 +147,15 @@ Times are cloud timings of research code with other jobs on the machine, not per
    seed 7107 is solved by face matches in under three minutes while seed 7101 runs into the tail. At depth 100 the
    second seed put back 76.9% in its first 75 minutes, the first seed 70.4%.
 5. **Heights stay low.** After 1000 random twists no piece is above left height 6, and in three scrambles of 3000
-   twists none is above height 6 at any checkpoint (the previous section). The descent cleared all pieces at
-   height 6, but heights do not only fall: in round 2 the pieces at height 4 rose from 81 to 124 (depth 100) and from
+   twists none is above height 6 at any checkpoint. The depth 1000 descent cleared its 135 pieces at height 6, but the
+   descent from 3000 twists lowered none of its 185 in 75 minutes (the two previous sections), and heights do not
+   only fall: in round 2 the pieces at height 4 rose from 81 to 124 (depth 100) and from
    264 to 390 (depth 1000), and in round 3 from 0 to 111 (depth 100, second seed) and from 410 to 607 (depth 400).
    N is the potential, not the height.
-6. **From about 200 twists on, depth matters little.** The scrambles of 200, 400 and 1000 twists left 118,493 to
-   125,304 pieces off, and the descent put back 30.5% to 38.4% of them in its first 75 to 104 minutes.
+6. **From about 200 twists on, the off count hardly grows; N does.** The scrambles of 200, 400, 1000 and 3000 twists
+   left 118,493 to 125,304 pieces off, but N at the start grew from 86,358 to 100,632, 123,654 and 145,574. The
+   descent put back 30.5% to 38.4% of the off pieces in its first 75 to 104 minutes at depths 200 to 1000, and 15.3%
+   in 75 minutes at 3000.
 
 ## The residue at the end of round 2
 
@@ -364,12 +386,22 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     for s in 7301 7302 7303; do python3 -I -B $S/heights_k.py 3000 $s 250 <out>/h-$s.jsonl; done
     python3 -I -B $S/heights_k.py 10 7001 10 <out>/chk-7001.jsonl
     python3 -I -B $S/heights_k.py 20 7106 10 <out>/chk-7106.jsonl
+    # one 75-minute descent round from the 3000-twist state of seed 7302 (about an hour to build the scramble
+    # first), its replay check (about 75 minutes), and its heights after every step: the senior reviewer's
+    # r22d30_height6.py (stage 12) with this record's path and a larger CPU limit (about 28 minutes)
+    python3 -I -B $S/census_seams.py 3000 7302 4500 <out>
+    python3 -I -B $S/check_records.py research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json
+    sed -e 's#runs/round2/ia-k1000-s7103.json#runs/heights/ia-k3000-s7302.json#' -e 's#(1190,1200)#(7190,7200)#' \
+        research/jumbling/restoration/12-low-height/scripts/round22/r22d30_height6.py > <tmp>/heights6.py
+    python3 -I -B -u <tmp>/heights6.py
 
 A rerun stops wherever its clock runs out, so its record can differ from the stored one; `check_records.py` checks
 the stored records exactly. Every script reads `research/jumbling` (the simulator `sim/`, the theory modules and the
 scripts and data of stages 05, 06 and 09) without writing to it. The runs used that code as it is on main at commit
-`5eed80e`, where it last changed on 15 October (the height runs of 18 to 19 October used commit `0347816`, where
-it is unchanged); this stage changes no file outside its own directory.
+`5eed80e`, where it last changed on 15 October (the height runs of 18 to 19 October used commit `0347816` and the
+descent from 3000 twists commit `8d0c338`; up to those commits that code changed only in an option of the stage 09
+driver `gm/gdrive.py`, which no script here imports, and in an optional cache location in `theory/seams.py`, not set
+in these runs); this stage changes no file outside its own directory.
 
 ## Files
 
@@ -391,7 +423,7 @@ it is unchanged); this stage changes no file outside its own directory.
 | `scripts/findability_table.py` | The numbers and the table of that section from the outputs |
 | `runs/findability/` | The outputs for seed 7101 at depth 40 (`ia-k40-s7101-*`) and, from `repair_items.py`, for the seven records with repairs (`repair-items.jsonl`) |
 | `scripts/heights_k.py` | The left heights of the off pieces of a census scramble every given number of twists, without descent |
-| `runs/heights/` | Its outputs: three scrambles of 3000 twists (`h-7301.jsonl`, `h-7302.jsonl`, `h-7303.jsonl`) and the checks against round 1 (`chk-7001.jsonl`, `chk-7106.jsonl`) |
+| `runs/heights/` | Its outputs: three scrambles of 3000 twists (`h-7301.jsonl`, `h-7302.jsonl`, `h-7303.jsonl`) and the checks against round 1 (`chk-7001.jsonl`, `chk-7106.jsonl`); the census record of the descent from 3000 twists (`ia-k3000-s7302.json`), its replay check (`check.out`) and its heights after every step (`ia-k3000-s7302-heights.txt`) |
 
 ## Limits
 
@@ -402,7 +434,7 @@ it is unchanged); this stage changes no file outside its own directory.
   face matches in one simple order (caps by decreasing N_c, twists in menu order). A person need not follow either
   order, reading the domains may narrow the twists, and no other order was measured.
 - The heights of deeper scrambles are measured on three seeds at checkpoints every 250 twists; between checkpoints
-  and on other seeds they are not measured.
+  and on other seeds they are not measured. Only one of them had a descent, one round of 75 minutes.
 - The scramble has no retained twists. A product scramble may mix them in; they move pieces but do not change the
   heights.
 - The block notions (rigid blocks, Mov groups) and the shape classes are those of stages 05, 06 and 09; the shares

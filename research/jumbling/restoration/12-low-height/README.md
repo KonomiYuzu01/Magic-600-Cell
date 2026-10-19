@@ -1070,7 +1070,9 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   - Above height 4 the mask, endpoint and source-cell lemmas still hold, but R22D-19 and the height-2 catalogue give no
     height-6 rule (R22D-27, R22D-28), and the one-class commutator of R22D-18 can land its target only when the
     target starts at height 6 or 8 (R22D-29). In the depth 1000 record one `conj` step lowered all 135 height-6 pieces to height 4,
-    where they stayed to the stop; one trajectory shows nothing for every bulk run (R22D-30).
+    where they stayed to the stop; one trajectory shows nothing for every bulk run (R22D-30). After round 3, a
+    75-minute census descent from the 3000-twist state of seed 7302 made 313 twists and lowered none of its 185
+    height-6 pieces (stage 11, "A descent from 3000 twists").
 
 ## 12. Next
 
@@ -1128,7 +1130,7 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   stated a rule for a whole stop with a stuck outcome (R22D-25). Next: steps outside R22D-19's family (mixed-class
   middles, the repair family of R22D-22, the partial targets of R22D-21); strict′ words that land the blockers of caps
   179 and 252 while keeping the high pieces exact (R22D-24); and for height 6 a rule or a proof that the bulk phase
-  clears it (R22D-27 to R22D-30).
+  clears it (R22D-27 to R22D-30; a 75-minute descent from 3000 twists did not, stage 11).
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
