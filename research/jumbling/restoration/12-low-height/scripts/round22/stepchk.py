@@ -4,6 +4,8 @@
 # exports the end state as a pose table for the next step of a chain. Exact; headless; research only.
 # Usage (from the repository root): python3 -I -B stepchk.py <table> <unit json> <word json> <out json> [<end table>]
 #     [--require-strict]
+# --require-strict exits 1 unless the strict' contract holds (the name is older than the contract); a strict step
+# also has others_landed = 0 in the report (R22D-60).
 import argparse
 import json
 import sys
