@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-19] update | Jumbling: line (d), round 3
+For the eight height-4 units left at the depth 100 stop after the first literal height-4 step, the state-only rule of round 2 has no step (every case is excluded by free grips or by occupied source cells), the second depth 100 stop reduces to one shared case whose search was cut short, and no single step lands a blocker of the cap that holds the depth 400 stop's units; a rule for a whole stop that ends on the lattice or stuck is stated, and above height 4 only the mask, endpoint and source-cell lemmas carry over ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 5).
+
 ## [2026-10-19] update | Pair implementation: the Git-state check includes `.git/info`
 Four Codex implementation calls were marked invalid because `.git/info/exclude` changed while they ran; the change was the block a Claude Code session writes there on its first local scheduled wakeup, not the calls' work, so local wakeups and scheduled tasks wait until no call runs ([development loop](workflows/development-loop.md)).
 

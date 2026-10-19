@@ -1,0 +1,7 @@
+stop dff31c35a7e16cc83c695c1b8423c64432ad1d017359babcd5275eb833f7a8a6
+high 111
+after (415, 59) f227781beed3a33e0663d494c92310aae1908f470b14b0913398de7f390a7ee6
+lowered pieces: height/branch [(2, 1)] distinct poses 1
+clean 272 SAFE 133 free class grips 58
+free grips holding all 111 [268]
+caps 268, 393, 436: clean [True, False, False] free [True, False, False]

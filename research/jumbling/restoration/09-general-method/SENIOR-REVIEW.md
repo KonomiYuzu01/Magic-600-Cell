@@ -7373,6 +7373,22 @@ Round 2 of line (d) (one shard, fast tier, concurrently with round 6 of line (b)
 | R22D-18 | proved | A commutator a·W·a⁻¹·W⁻¹ with W of the target's new class only never lands the lowered target. |
 | R22D-19 | rule | A finite rule that reads the state only, with words of at most 244 letters, contains R22D-16. |
 
+Round 3 of line (d) (one shard, fast tier; eleven results, all `minor`, all adopted; the integrator re-ran their computations with the same outputs). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 5:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| R22D-20 | computed; proved | After R22D-16, R22D-19 has no step for the eight high units left at the seed 7102 stop: 84 cases lie outside every free grip, 12 have occupied source cells. |
+| R22D-21 | computed | Twelve of those pieces lie in tetrahedral cells with no home chambers and escape the obstruction when targeted alone; no word was built. |
+| R22D-22 | proved | Final-letter repair: the endpoint test reads the tags of the start; with V empty and W of one class, a·W·a⁻¹ cannot repair an unlanded target. |
+| R22D-23 | computed | At the seed 7108 stop the six units share one lowering case, after (415, 59); its search was cut short. |
+| R22D-24 | computed; proved | Cap 252 at the depth 400 stop has 14 height-2 blockers, and no single strict′ letter lands any of them. |
+| R22D-25 | rule | A rule for a whole stop with fixed word limits ends on the lattice or stuck, after at most 964 letters for each off piece of the start; not run. |
+| R22D-26 | source | The runner's tail and fallback do not supply the protected unlocking steps. |
+| R22D-27 | proved | The mask and endpoint lemmas hold at every height; R22D-19 and the height-2 catalogue give no height-6 rule. |
+| R22D-28 | proved | The source-cell obstruction holds for a lowering at any height. |
+| R22D-29 | proved | The one-class commutator of R22D-18 can land its target only when the target starts at height 6 or 8. |
+| R22D-30 | inference; replayed | One `conj` step of the depth 1000 record lowered all 135 height-6 pieces to height 4; one trajectory does not show that the bulk phase clears height 6. |
+
 ### Line (c): T2 and T3 (joint attack; R22C-01 to R22C-07, R22CF-01 to R22CF-07, X22C-01 to X22C-09)
 
 The senior reviewer (R22C) and the solver (R22CF) each wrote a sealed analysis at the highest effort, standard tier. After that the solver stopped (owner, 18 October 2026; [decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-18-bprime-goal.md)). The senior reviewer then cross-examined the solver's seven findings against its own (X22C-01 to X22C-09, same tier), and the integrator re-checked the solver's computed steps and runs the adjudicating experiments. All findings are `minor`. The integrator adopted the nine cross-examination findings, which scope or correct the sealed results as the table says.

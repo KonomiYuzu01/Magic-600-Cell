@@ -1052,6 +1052,25 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
     a height-4 piece, so a blanket height-2-first order is not supported (R22D-17). A commutator a·W·a⁻¹·W⁻¹ whose W
     has the target's new class only never lands the lowered target (R22D-18).
   - A finite rule that reads the state only, with words of at most 244 letters, contains R22D-16 (R22D-19).
+- Line (d), round 3 (the senior reviewer, one shard; R22D-20 to R22D-30 in `PROOFS-B.md` section 5; its computations
+  `scripts/round22/r22d20_residual_cells.py`, `r22d24_cap252.py` and `r22d30_height6.py`, re-run by the integrator
+  with the same outputs, and the integrator's checks `r22d20_caps.py` and `r22d23_item59.py`, `runs/round22/`). No new
+  literal step:
+  - After R22D-16 the seed 7102 stop keeps 82 height-4 pieces in eight units, and R22D-19 has no step for any of them:
+    84 of the 96 unit–item cases lie outside every free grip, and the other 12 have occupied source cells that no SAFE
+    word vacates (R22D-20). Twelve of the pieces lie in tetrahedral cells with no home chambers and escape this when
+    targeted alone (R22D-21), and the endpoint contract, read with the tags of the start, allows a last letter that
+    repairs the middle (R22D-22).
+  - At the seed 7108 stop the six units share one lowering case, after (415, 59); its search was cut short (R22D-23).
+  - At the depth 400 stop of seed 7109, cap 252, which holds the three units in no clean cap, has 14 height-2
+    straddlers, and no single strict′ letter lands any of them (R22D-24).
+  - A rule for a whole stop with fixed word limits (244 letters for a high step, 720 for a height-2 step) ends on the
+    lattice or stuck, after at most 964 letters for each off piece of the start (R22D-25); the runner's tail and
+    fallback do not supply the protected unlocking steps it needs (R22D-26).
+  - Above height 4 the mask, endpoint and source-cell lemmas still hold, but R22D-19 and the height-2 catalogue give no
+    height-6 rule (R22D-27, R22D-28), and the one-class commutator of R22D-18 can land its target only when the
+    target starts at height 6 or 8 (R22D-29). In the depth 1000 record one `conj` step lowered all 135 height-6 pieces to height 4,
+    where they stayed to the stop; one trajectory shows nothing for every bulk run (R22D-30).
 
 ## 12. Next
 
@@ -1104,8 +1123,12 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
 - Existence before construction: a stuck step is settled by N1, N2 and the Jordan certificates of its target
   (`jordan_target.py`); V is built with the builder of E22-1b only when a later state is needed.
 - Height 4 (before coverage since 18 October): E22-2 is complete and gives no strict step. Round 2 of line (d) gave the
-  first literal height-4 step (R22D-16) and a state-only rule with words of at most 244 letters (R22D-19); next, that
-  rule at the five census stops, and steps for the 51 high units that lie whole in no clean cap.
+  first literal height-4 step (R22D-16) and a state-only rule with words of at most 244 letters (R22D-19). Round 3
+  found that rule exhausted for the rest of that stop (R22D-20), left the shared case of seed 7108 open (R22D-23) and
+  stated a rule for a whole stop with a stuck outcome (R22D-25). Next: steps outside R22D-19's family (mixed-class
+  middles, the repair family of R22D-22, the partial targets of R22D-21); strict′ words that land the blockers of caps
+  179 and 252 while keeping the high pieces exact (R22D-24); and for height 6 a rule or a proof that the bulk phase
+  clears it (R22D-27 to R22D-30).
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.

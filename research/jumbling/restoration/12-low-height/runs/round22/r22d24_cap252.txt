@@ -1,0 +1,4 @@
+digest 7f8203dd30c35fc7b3b12f0e334ad4dc5bd38886e0ce14f6c19faccc2454f5c8
+straddlers [920, 921, 922, 1039, 1040, 1041, 1043, 1068, 1069, 7691, 7692, 7693, 7694, 7695] heights [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+high_in_252 [3427, 3428, 3441, 3442, 11229, 11231, 11246, 12314, 12317, 12328]
+{'clean': 58, 'contain_all_straddlers': [158], 'also_keep_all_high': [], 'all_off_caps_touching_straddlers': []}

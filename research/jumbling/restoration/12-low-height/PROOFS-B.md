@@ -1901,6 +1901,207 @@ Open after round 2 of line (d): literal steps for the other 82 high pieces of th
 stops (whose high units mostly lie in no clean cap), the coverage of any catalogue at height 4, and the height-2
 landings that R22D-17's order rule would need.
 
+### Round 3 of line (d)
+
+The senior reviewer took line (d) a third round at the fast tier (findings R22D-20 to R22D-30, all `minor`): the rest
+of the seed 7102 stop after R22D-16, the seed 7108 stop, the three units in no clean cap at the depth 400 stop of seed
+7109, one rule for a whole stop, and heights above 4. It found no new literal step. Its results are obstructions for
+stated finite families, a rule with a proved stopping behaviour, and the scope of the earlier lemmas above height 4.
+Its computations are `scripts/round22/r22d20_residual_cells.py`, `r22d24_cap252.py` and `r22d30_height6.py`; the
+integrator re-ran them and got the outputs under `runs/round22/` with the same names, and checked the premises of
+R22D-20 and R22D-23 with `r22d20_caps.py` and `r22d23_item59.py` (section 6).
+
+### R22D-20. R22D-19 is exhausted for the eight high units left at the seed 7102 stop (computed; proved)
+
+- The state after R22D-16 (`dceb9359…`) has 82 height-4 pieces in eight of the original units: 270 (1 piece), 408
+  (25), 409 (12), 6780 (1), 32115 (31), 53620 (5), 53629 (3) and 61683 (4), all in branch 3. Of its 234 clean caps,
+  cap 61 is still the only one that holds any of these units whole; cap 150 is still blocked by the height-4 piece
+  6780 and cap 179 by its 20 height-2 straddlers, which R22D-16 left at their poses (the integrator's check). So
+  R22D-19's direct cases are the eight units at the twelve lowering items of cap 61: 96 cases.
+- Free grips (84 cases). After items 15, 18, 22, 33, 52, 53, 54, 56 and 58 every remaining high piece lies outside
+  every free grip of its new class, and after items 55, 57 and 59 so do all pieces of units 32115, 53620, 53629 and
+  61683. A word over a fixed alphabet never moves a piece that starts outside all its grips, and a SAFE preparation
+  fixes it too, so none of these cases lands.
+- Source cells (12 cases). Units 270, 408, 409 and 6780 at items 55, 57 and 59 fail the vacancy condition of
+  R22D-15. Their source cells (home chambers, occupied ones outside every SAFE cap) are the ones R22D-15 found at the
+  stop: after (61, 55) [84, 215] 86, 67; [65, 215] 86, 68; [65, 130, 215] 111, 17; after (61, 57) [18, 110] 86, 10;
+  [84, 110] 86, 24; [84, 110, 130] 111, 11; after (61, 59) [21, 81] 86, 18; [14, 21] 86, 68; [14, 21, 108] 111, 17.
+  At each item unit 270 has its piece in the first edge cell, unit 408 pieces in the second edge cell and the
+  triangle, units 409 and 6780 pieces in the triangle. A class word that lands a piece makes every home ghost of its
+  source cell bad, and these occupied chambers are fixed by every SAFE word of any length.
+- So every candidate of R22D-19 for these units is excluded. Not excluded: mixed-class middles, a last letter that
+  repairs a middle violation (R22D-22), landing part of a unit (R22D-21) and unlocking another cap.
+- R22D-16's word was replayed with `stepchk.py` again: strict′, end digest `dceb9359…`.
+- Commands: `scripts/round22/r22d20_residual_cells.py` (with the seed 7108 part of R22D-23) and `r22d20_caps.py`;
+  outputs `runs/round22/r22d20_residual_cells.txt` and `r22d20_caps.txt`.
+- Uses: R22D-15, R22D-16, R22D-19.
+
+### R22D-21. Twelve of the remaining pieces escape the source-cell obstruction when targeted alone (computed)
+
+- After each of the items 55, 57 and 59, six pieces of unit 408 and six of unit 409 lie in a tetrahedral class cell
+  with no home chambers: [65, 84, 130, 215], [18, 84, 110, 130] and [14, 21, 81, 108] (the tables of R22D-20).
+  R22D-20's obstruction for these two units comes from their other pieces, in occupied edge and triangle cells, so it
+  does not cover a step that lands only these twelve.
+- Strict′ allows such partial progress as long as every other off piece of the start returns exactly or lands. No
+  word was built, and no common content or label for the twelve was established: a route, not a step.
+
+### R22D-22. Final-letter repair: the endpoint test reads the tags of the start (proved)
+
+- Let a = (c, D), Y = Z·a, T = Y·C, and ε_p say whether piece p is inside c at T; the end pose is
+  E_p = D^(−ε_p)·T_p. The word a·C·a⁻¹ is admissible and strict′ exactly when c is clean at T, E_p is in K⁺ for the
+  target and for every piece on the lattice at Z, and E_p is the pose at Z or in K⁺ for every other off piece of Z
+  (R22D-03). The tags are those of Z, not of Y.
+- So a prune that rejects every piece on the lattice at Y lying inside c at T is stronger than strict′: an off piece
+  of Z at pose D⁻¹·k inside c, landed by a at k, fixed by the middle and returned by a⁻¹, is allowed. A piece on the
+  lattice at Z and at Y that C leaves on the lattice must not be inside c at T, and a lattice piece of Z that a takes
+  off is checked along its whole return.
+- With V empty and W of the lowered target's class Q only, W leaves the target on the lattice or at height 2 in Q,
+  and then a⁻¹ (class P ≠ Q) misses it or raises it to height 4. So a·W·a⁻¹ cannot repair a target that W did not
+  land. A nonempty V or a mixed-class middle is not covered.
+- A finite family that uses the repair: a·V·[x, y]^e·V⁻¹·a⁻¹ with e = 1 to 60 and V empty or one SAFE letter,
+  without asking the middle to land the target: 2 + 2|V| + 4e ≤ 244 letters, and only the replay with the contract
+  above decides. Not searched; R22D-15's vacancy test does not carry over to it.
+
+### R22D-23. At the seed 7108 stop the six units share one lowering case, searched only in part (computed)
+
+- The stop (`dff31c35…`) has six height-4 units, 79373 (9 pieces), 79408 (2), 79409 (44), 91640 (7), 91641 (11)
+  and 91669 (38): 111 pieces. After each of the eleven lowering items of cap 415 other than 59, all 111 lowered
+  pieces lie outside every free grip of their new class, which excludes 66 of the 72 unit–item cases as in R22D-20.
+- After (415, 59) (`f227781b…`) the 111 pieces share one pose at height 2 in branch 1 and lie in one source cell,
+  [268, 393, 436], which has no home chambers; the reviewer reads them as one class content at label 3. Grip 268 is
+  the one free grip that holds them all (58 free class grips, 133 SAFE grips).
+  Neither prune excludes this case, so it is one search of R22D-19 for all six units: a class word that lands the
+  content lands all 111, and all of them must stay landed after the final inverse (one taken off again ends at height
+  2, not at its height-4 pose), so "all 111 outside cap 415 after V·W·V⁻¹" is a sound prune.
+- The search was cut short: one ordered grip pair, (91, 268), with 3,481 item pairs, 4,976 landing powers and 104
+  candidates past the model and small-Bad tests, none accepted under an endpoint restriction stronger than strict′
+  (it protected every lattice piece of Y; R22D-22). This is not exhaustion, not even for that pair; the item-59 case
+  stays open.
+- Commands: the seed 7108 part of `scripts/round22/r22d20_residual_cells.py`, and `r22d23_item59.py`; outputs in
+  `runs/round22/` under the same names.
+
+### R22D-24. No single strict′ letter lands a blocker of cap 252 at the depth 400 stop (computed; proved)
+
+- At the depth 400 stop of seed 7109 (`7f8203dd…`) the three units in no clean cap are 3427 (6 pieces), 3428 (3) and
+  11229 (1). Cap 252 holds their ten high pieces and has 14 straddlers, all at height 2: 920, 921, 922, 1039, 1040,
+  1041, 1043, 1068, 1069, 7691, 7692, 7693, 7694 and 7695.
+- Of the 58 clean caps only cap 158 holds all fourteen, and it also holds high pieces; no clean cap that holds a
+  straddler holds only off pieces and no high piece.
+- So no single-letter strict′ step lands any of them: a retained letter lands nothing; a non-retained letter takes
+  every lattice piece it moves off the lattice, cannot return a moved off piece exactly and cannot land a height-4
+  piece (a letter changes a left height by at most 2), so its whole cap would consist of off pieces it lands, with no
+  high piece, and there is no such cap. No retained letter cleans cap 252 while keeping the high pieces exact either:
+  it would have to move all fourteen straddlers, so it would be at cap 158, which moves high pieces.
+- The route that remains (R22D-07 Lemma C): strict′ words that land these straddlers and keep the ten target pieces
+  exact clean cap 252 after at most fourteen words, at most 14·b letters if each has at most b; no new blocker
+  appears, since surviving off pieces keep their poses and landed pieces do not straddle. No such word was built;
+  preparations that move other high pieces and undo the move later are not excluded.
+- Command: `scripts/round22/r22d24_cap252.py`; output `runs/round22/r22d24_cap252.txt`.
+- Uses: R22D-07, R22D-09.
+
+### R22D-25. One rule for a whole stop, with its stuck outcome (rule; proved safe and finite)
+
+1. Fix the limits before the start: L4 = 244 letters for a high step and L2 = 720 for a height-2 step (limits of the
+   catalogue, not coverage bounds).
+2. At each exact state compute the off pieces and their poses, the heights, the high and height-2 units, the clean
+   containing caps, the complete straddler sets, the free and SAFE alphabets and the hole set. Break ties by fixed
+   piece, grip and item keys.
+3. Try R22D-19 for each high unit, accepting only a complete strict′ replay (2 + 4e + 2|V| ≤ 244 letters).
+4. Then try a protected lowering S of at most 244 letters followed by a height-2 step T of at most 720: S lowers the
+   whole named target to height 2, keeps every lattice piece of the start on the lattice and returns or lands every
+   other off piece; T is strict′ for the lowered target; the whole S·T, at most 964 letters, is replayed at the start
+   and must be strict′ there.
+5. If no high step exists, list the blocked own-branch lowering caps whose straddlers are all at height 2. Try the
+   height-2 units that meet those straddler sets first, then the other height-2 units, by strict′ words of at most
+   720 letters that keep every high piece at its exact pose.
+6. After every accepted word recompute everything in 2, holes and Bad sets included; never reuse a vacancy witness
+   because the off set shrank. Check the input digest before a word is played and the output digest after. A word's
+   length is the number of letters it plays; no certificate or unexpanded macro is a step.
+7. Stuck means every family in 3 to 5 is exhausted; a search cut off by time is a budget stop, not stuck. On the
+   lattice the literal lattice phase follows, and the run is solved only when its checker passes.
+- Proof. There are 35,400 non-identity menu letters and the limits are fixed, so every pass is finite. Every accepted
+  word is strict′ and lands a nonempty target, so the off count falls, every surviving off pose stays exact and the
+  largest height does not grow: at most n₀ accepted words and at most 964·n₀ letters before the lattice or stuck, n₀
+  the off count at the start.
+- It does not show that any stop is solved by it. What is missing is literal protected height-2 steps for the actual
+  blockers and high steps outside the excluded families. Not implemented and not run.
+- Uses: R22D-07, R22D-17, R22D-19.
+
+### R22D-26. The runner's tail and fallback do not supply the protected unlocking steps (source)
+
+- Rule 3 of the tutorial runner (`13-tutorial-runner/README.md` section 1) gives conditional literal strict′ steps from
+  `zero_bad`, `pure`, `close` and `t1prime`, the largest unit first. Such a step helps unlock a cap only if it happens
+  to land a straddler and keep the high target exact; nothing shows these steps exist for the 20 blockers of cap 179
+  or the 14 of cap 252, and the rule has neither the blocker-first order nor R22D-19.
+- Rule 4, `fallback.py`, is weaker than a protected step: it sets `protected_off` to empty and accepts a word when the
+  off set at the end lies inside the start's off set minus the unit, so another off piece, a high one included, may
+  move to a different off pose. Its first word cannot stand in for a strict′, high-exact unlocking word without a
+  further test, and rejecting that word does not exhaust the stricter family. It runs for the first unit only, within
+  its length limit.
+- This limits the rules as stated; it does not question any checked runner record (the README separates the fallback
+  contract from strict′ and says height 4 is not in the rules).
+
+### R22D-27. The mask and endpoint lemmas hold at every height; the height-2 catalogue does not (proved)
+
+- For a lowering from H = 2h to H − 2, R22D-02's mask calculation (each piece receives the chronological product of
+  the rotations its prefix memberships select; exact return exactly when F = I, landing exactly when F·Q is in K⁺)
+  does not use H = 4, and a straddle in a prefix still rejects the word. R22D-03's endpoint contract holds for a
+  landing word a·C·a⁻¹; for a protected lowering the target's landing is replaced by its required height, with every
+  inverse prefix replayed. R22D-01 holds for strict′ landing at every height. The geometric parts of R22D-07 hold, and
+  with them R22D-17's conditional blocker argument; its blocker lists belong to their instances.
+- At height 6 one lowering letter leaves the target at height 4, outside the five-label own-content model of heights
+  0 and 2 that the class-cell toolkit uses. So R22D-19, its middle construction and R22D-08's family bound are not a
+  height-6 rule; the length identity 2 + 2|V| + |W| still holds, but the toolkit's bounds need their height-2
+  hypotheses. The counts and words of R22D-04, R22D-06 and R22D-09 to R22D-17 are not height-6 results.
+
+### R22D-28. The source-cell obstruction holds for a lowering at any height (proved)
+
+- If the target's body lies in one class cell X and a class word acts on X by one rotation A_X that lowers the
+  target's left height, A_X is not in K⁺ (a retained rotation fixes the lattice vertex and every distance from it),
+  so A_X·k is off for every home pose k of X: Ω_X ⊆ Bad(W), as in R22D-15, and an occupied home chamber of X outside
+  every SAFE cap blocks literal vacancy. This covers 6 → 4 as well as 2 → 0.
+- It needs the whole target to follow one class-cell itinerary; a higher piece is not automatically a five-label own
+  content, and one that straddles a class-cell boundary is not covered. An empty source cell does not give a pure
+  lowering word.
+- R21-03 and R21-04 give a conditional ladder at higher heights (an edge cell, its home chambers vacant, every other
+  off piece isolated from the caps needed at each level; each level a pure word of at most 720 letters plus a literal
+  SAFE preparation), with the hypotheses rechecked at every level. No such ladder was established at these stops.
+- Uses: R22D-15.
+
+### R22D-29. R22D-18 above height 4: heights 6 and 8 stay open (proved)
+
+- Let H ≥ 4, a letter a of class P lower the target from H to H − 2 in branch Q ≠ P, and W be a word of class-Q letters
+  only. After a the target is at distance H − 3 from w_Q, and W keeps that distance. If a⁻¹ misses the target, W⁻¹
+  returns it to its off pose after a. If a⁻¹ moves it and W⁻¹ then lands it, the vertex before W⁻¹ is at distance 1
+  from w_Q, so it is v0 or a height-2 vertex of branch Q, and the vertex before a⁻¹ is its image under a: a height-2
+  vertex of branch P at distance 3 from w_Q, or a height-4 vertex of branch P at distance 5. So a·W·a⁻¹·W⁻¹ can land
+  the target only when H − 3 is 3 or 5, that is H = 6 or H = 8.
+- This gives R22D-18 again at H = 4 and excludes H ≥ 10 for this pattern. At heights 6 and 8 it decides nothing, and
+  no landing word was found at either.
+- Uses: R22D-18.
+
+### R22D-30. The census does not show that the bulk phase always clears height 6 (inference; replayed)
+
+- The facts. The depth 1000 record of seed 7103 starts its descent with 123,685 off pieces at height 2, 1,484 at
+  height 4 and 135 at height 6, and ends after 625 descent twists, at its stop (`acc4ee49…`), with 80,919 at height 2
+  and 390 at height 4. The integrator's replay of every accepted step: the 135 height-6 pieces keep height 6 through
+  the first 73 steps and all go to height 4 in step 74, a `conj` step that ends at the descent's 190th twist; after it
+  no piece is above height 4, and at the stop all 135 are still at height 4, none landed. The three 3000-twist
+  scrambles of stage 11 run no descent and keep 7, 185 and 89 pieces at height 6. The census loop lowers the
+  misalignment N, not the height, and its height-4 counts rise at times.
+- The inference. The depth 1000 run clears height 6 on one trajectory, by one step that lowers rather than lands;
+  this proves nothing for every bulk run, least of all for one cut off by a step or time budget. A machine that
+  promises further progress needs a height-6 rule or a theorem that the bulk phase clears height 6; one that may stop
+  reports that the height left is outside its catalogue. Heights above 6 cannot be excluded in general, since heights
+  are unbounded over reachable states (X1).
+- Command: `scripts/round22/r22d30_height6.py`; output `runs/round22/r22d30_height6.txt`.
+
+Open after round 3 of line (d): literal steps for the 82 remaining high pieces of the seed 7102 stop (mixed-class
+middles, the repair family of R22D-22, the twelve pieces of R22D-21, other caps); the shared item-59 case of seed 7108
+with the full contract (R22D-23); strict′ words that land the blockers of caps 179 and 252 while keeping the high
+pieces exact (R22D-24); an implementation of R22D-25; and for heights above 4 either a rule (a protected 6 → 4 step
+followed by a height-4 procedure) or a proof that the bulk phase clears them.
+
 ## 6. Commands
 
 From the repository root, with Python 3.13 and NumPy 2.5; `S=research/jumbling/restoration/12-low-height/scripts`.
@@ -2190,6 +2391,16 @@ header comment; they write no file:
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d15_source_cells.py  # about 2 minutes
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d16_step.py          # about 1 minute
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d17_straddlers.py    # about 1 minute
+
+Round 3 of line (d) (section 5: R22D-20 to R22D-30), the senior reviewer's computations kept as written apart from a
+header comment, and the integrator's checks of R22D-20 and R22D-23 (`r22d20_caps.py`, `r22d23_item59.py`); they
+write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d20_residual_cells.py  # about 8 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d20_caps.py            # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d23_item59.py          # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d24_cap252.py          # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d30_height6.py         # about 9 minutes
 
 ## 7. Line (c): T2 and T3 (joint attack)
 
