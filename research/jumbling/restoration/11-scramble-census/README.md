@@ -86,6 +86,23 @@ session, not by its own budget; a second round continued it from its record, whi
 **Certificate**: the same replay check passes on the three records (`runs/round3/check.out`); for the depth 200
 record it also checks the off count, N, the heights and the off poses at that boundary.
 
+### Deeper scrambles: left heights only (18 to 19 October 2026)
+
+Three scrambles of 3000 twists (seeds 7301 to 7303), drawn exactly as a census run draws its scramble
+(`scripts/heights_k.py`), so the state after j twists is the start state of a census run of depth j with that seed.
+Every 250 twists the script records the off count and the left heights of the off pieces; no descent runs. At depths
+10 and 20 it gives the round 1 rows of seeds 7001 and 7106 (26,519 and 51,828 off pieces, all at height 2).
+
+| Seed | Off at 3000 twists | Left heights at 3000 twists | Highest at any checkpoint | First checkpoint with height 6 | Pieces at height 6, checkpoint by checkpoint | Time |
+| ---: | ---: | --- | ---: | ---: | --- | ---: |
+| 7301 | 119,237 | 2: 115,487; 4: 3,743; 6: 7 | 6 | 1,000 | 0, 0, 0, 7, 7, 0, 7, 7, 7, 7, 7, 7 | 1.7 h |
+| 7302 | 118,821 | 2: 116,665; 4: 1,971; 6: 185 | 6 | 2,000 | 0, 0, 0, 0, 0, 0, 0, 13, 172, 172, 172, 185 | 1.8 h |
+| 7303 | 116,111 | 2: 114,470; 4: 1,552; 6: 89 | 6 | 500 | 0, 87, 285, 0, 285, 287, 200, 89, 200, 287, 200, 89 | 1.9 h |
+
+At no checkpoint is a piece above left height 6. From 250 twists on the off count stays between 115,610 and
+124,344. The pieces at height 6 are few and come and go; a checkpoint every 250 twists does not see the states between.
+Times are cloud timings of research code with other jobs on the machine, not performance evidence.
+
 ### What the runs show (measured)
 
 1. **No run got stuck.** Every run that did not reach the lattice was stopped by the clock; every step it took
@@ -110,7 +127,8 @@ record it also checks the off count, N, the heights and the off poses at that bo
 4. **One seed per depth is not enough.** The two 40-twist scrambles have about the same number of off pieces, but
    seed 7107 is solved by face matches in under three minutes while seed 7101 runs into the tail. At depth 100 the
    second seed put back 76.9% in its first 75 minutes, the first seed 70.4%.
-5. **Heights stay low.** After 1000 random twists no piece is above left height 6. The descent cleared all pieces at
+5. **Heights stay low.** After 1000 random twists no piece is above left height 6, and in three scrambles of 3000
+   twists none is above height 6 at any checkpoint (the previous section). The descent cleared all pieces at
    height 6, but heights do not only fall: in round 2 the pieces at height 4 rose from 81 to 124 (depth 100) and from
    264 to 390 (depth 1000), and in round 3 from 0 to 111 (depth 100, second seed) and from 410 to 607 (depth 400).
    N is the potential, not the height.
@@ -341,11 +359,17 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     python3 -I -B $S/single_twist.py $R/round2/ia-k40-s7101.json > $F/ia-k40-s7101-single.jsonl
     python3 -I -B $S/repair_items.py $R/round2/ia-k*.json $R/round3/ia-k*.json > $F/repair-items.jsonl
     python3 -I -B $S/findability_table.py $F ia-k40-s7101
+    # left heights every 250 twists without descent (about 1.7 to 1.9 hours each, three at a time on four shared
+    # cores), and the checks against round 1 (seeds 7001 and 7106 at depths 10 and 20; seconds)
+    for s in 7301 7302 7303; do python3 -I -B $S/heights_k.py 3000 $s 250 <out>/h-$s.jsonl; done
+    python3 -I -B $S/heights_k.py 10 7001 10 <out>/chk-7001.jsonl
+    python3 -I -B $S/heights_k.py 20 7106 10 <out>/chk-7106.jsonl
 
 A rerun stops wherever its clock runs out, so its record can differ from the stored one; `check_records.py` checks
 the stored records exactly. Every script reads `research/jumbling` (the simulator `sim/`, the theory modules and the
 scripts and data of stages 05, 06 and 09) without writing to it. The runs used that code as it is on main at commit
-`5eed80e`, where it last changed on 15 October; this stage changes no file outside its own directory.
+`5eed80e`, where it last changed on 15 October (the height runs of 18 to 19 October used commit `0347816`, where
+it is unchanged); this stage changes no file outside its own directory.
 
 ## Files
 
@@ -366,6 +390,8 @@ scripts and data of stages 05, 06 and 09) without writing to it. The runs used t
 | `scripts/findability.py`, `scripts/density.py`, `scripts/single_twist.py`, `scripts/repair_items.py` | What a person would have to try: the choices offered at every step of a record, the repair density at the cap the rule chose, single twists at the repair steps, and what the repairs are made of |
 | `scripts/findability_table.py` | The numbers and the table of that section from the outputs |
 | `runs/findability/` | The outputs for seed 7101 at depth 40 (`ia-k40-s7101-*`) and, from `repair_items.py`, for the seven records with repairs (`repair-items.jsonl`) |
+| `scripts/heights_k.py` | The left heights of the off pieces of a census scramble every given number of twists, without descent |
+| `runs/heights/` | Its outputs: three scrambles of 3000 twists (`h-7301.jsonl`, `h-7302.jsonl`, `h-7303.jsonl`) and the checks against round 1 (`chk-7001.jsonl`, `chk-7106.jsonl`) |
 
 ## Limits
 
@@ -375,6 +401,8 @@ scripts and data of stages 05, 06 and 09) without writing to it. The runs used t
 - What a person would have to try is measured on one record (seed 7101, depth 40): repairs in the rule's own order,
   face matches in one simple order (caps by decreasing N_c, twists in menu order). A person need not follow either
   order, reading the domains may narrow the twists, and no other order was measured.
+- The heights of deeper scrambles are measured on three seeds at checkpoints every 250 twists; between checkpoints
+  and on other seeds they are not measured.
 - The scramble has no retained twists. A product scramble may mix them in; they move pieces but do not change the
   heights.
 - The block notions (rigid blocks, Mov groups) and the shape classes are those of stages 05, 06 and 09; the shares
