@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-19] update | Jumbling: line (d), round 4
+Two literal steps at height 4 leave everything else exactly in place: 50 twists land all six high units of the seed 7108 stop, which is then at height 2, and 38 twists land twelve more pieces at the seed 7102 stop; at height 6 one twist lowers a piece without harm at a small test state, a height-6 tier added to the whole-stop rule is safe and finite, and its short families find no step at the 3000-twist stop, so it is not coverage; the blockers of two caps cannot be moved by the fixed alphabets of their states, and the whole-stop rule has an implementation contract, not yet code ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 5).
+
+## [2026-10-19] audit | Jumbling: the lattice phase is checked by composition, not played
+Correction to the entry "the depth 40 scramble restored by literal words": the scramble reaches the lattice by literal words played twist by twist (2,016,894 twists), but the checker of the lattice phase composes the sticker permutations of the lattice word's retained part (166,777,936 twists) and plays only the corrections, and the tutorial runner's depth 20 run is checked the same way, so neither lattice phase was played twist by twist as the owner's acceptance test asks; a literal lattice player is needed ([stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 11, R22D-57).
+
 ## [2026-10-19] update | Jumbling: a census descent from 3000 twists
 One 75-minute round of the census descent from the 3000-twist state of seed 7302 made 313 twists and put back 15.3% of its 118,821 off pieces, against 38.4% and 30.5% for the depth 400 and 1000 runs in the same time, and lowered none of its 185 pieces at height 6, which a step-by-step replay shows at height 6 after every step; the depth 1000 descent had lowered all 135 of its own in one step, so a bulk phase cut off by time can leave height 6 in place ([stage 11](../../research/jumbling/restoration/11-scramble-census/README.md)).
 

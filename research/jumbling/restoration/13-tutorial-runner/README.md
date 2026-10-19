@@ -9,7 +9,8 @@ machine and its checker:
 - `scripts/runner.py`: one state-only program that applies the rules the tutorial teaches, in a fixed order, and
   writes one record of every word it plays;
 - `scripts/check_run.py`: an independent checker that replays a record twist by twist on the exact simulator, without
-  the runner or its search code.
+  the runner or its search code; the lattice phase it checks through `verify_late.py`, which composes the
+  permutations of the lattice word's retained part instead of playing it (section 5).
 
 Both were written by Codex under two packets (RUN-1, the runner; RUN-2, the checker, written in parallel from the
 shared record format) and reviewed by the integrator. Research code, headless Linux; nothing here is Windows, DirectX
@@ -39,8 +40,11 @@ it breaks every tie by fixed keys, with no randomness.
    `--fallback-max-length` letters; otherwise the run ends **stuck**, with every unit's attempts in the record.
 5. **Lattice phase**: when every piece is on the lattice and the state is not solved, the lattice restorer
    `restore_lattice_late.py` and then its independent checker `verify_late.py`; the run is **solved** only when the
-   checker passes.
-6. The runner plays only literal words. It never calls the certificate builder of round 22 (`r22b10_cert.py`) or
+   checker passes. The lattice word is literal, but `verify_late.py` evaluates its retained part as an exact
+   permutation program on the sticker labels and plays only the corrections, so this phase is checked exactly but
+   not played twist by twist (stage 12, `PROOFS-B.md` R22D-57).
+6. The runner plays only literal words, except that the retained part of the lattice word is checked by composition
+   (rule 5). It never calls the certificate builder of round 22 (`r22b10_cert.py`) or
    the straight-line program applier (`slp_apply.py`); `tclose2.py` may build V from its peeling certificate
    (Theorem B), but it returns V as a literal word, and only the whole literal word, checked by `stepchk.py`, is
    played. A closure or T1′ attempt that fails records N1, N2 and the deficits it read, and its outcome.
@@ -67,7 +71,8 @@ published (review findings RV1-02 and RV2-02).
 plays every word twist by twist on the exact simulator, and checks for each step the digests before and after, the
 off counts, the heights, the length and the step's contract (strict′: the unit lands, no lattice piece goes off and
 every other off piece keeps its exact pose or lands; Lemma U for the fallback), that every word is literal, that the
-record has no absolute path, and the totals. For a solved run it runs `verify_late.py` on the lattice phase output.
+record has no absolute path, and the totals. For a solved run it runs `verify_late.py` on the lattice phase output,
+which checks the lattice word by composing permutations, not by playing it (rule 5).
 It checks the words played, not the runner's choice of rule or its budgets. A fallback step whose word is empty
 passes when its contract holds, as the record format allows (review finding RV2-05).
 
@@ -86,8 +91,8 @@ passes when its contract holds, as the record format allows (review finding RV2-
 - Two records made with these scripts on 19 October 2026 and passed by `check_run.py` (`runs/`, measured): the depth
   10 scramble of seed 7001, solved by the bulk phase in 9 twists (38 s); and the depth 20 scramble of seed 7106, which
   the bulk phase brings onto the lattice in 19 twists, all of rule `seam`, and the lattice phase restores in 8,701,310
-  twists, passed by `verify_late.py` in the runner and again in the checker (654 s in all). Neither needed a tail
-  step. The start and end tables, the copy of the lattice library (the same sha256 as
+  twists, passed by `verify_late.py` in the runner and again in the checker (654 s in all), which checks the
+  lattice word by composition and does not play it twist by twist (rule 5). Neither needed a tail step. The start and end tables, the copy of the lattice library (the same sha256 as
   `09-general-method/data/library-merged.json.gz`) and the restorer's working files are left out: `runner.py
   --scramble` makes them again, and `run.json` holds their digests. In the lattice outputs and logs the run directory
   is written `<run>`.
@@ -100,7 +105,16 @@ passes when its contract holds, as the record format allows (review finding RV2-
   step into one literal word (`round22/replay_slp.py --seeds atlas --literal-limit N`, R22B-34); a rule that does
   this at the current state is the next addition.
 - Height 4: the runner has only the rules above. Round 2 of line (d) gave a state-only rule with words of at most 244
-  letters (`PROOFS-B.md` R22D-19); it is not in the runner yet.
+  letters (`PROOFS-B.md` R22D-19), round 3 a rule for a whole stop at heights 2 and 4 (R22D-25), and round 4 a
+  height-6 tier for it (R22D-37) and an implementation contract (R22D-50 to R22D-56); none of them is in the runner
+  yet.
+- The lattice phase is not played twist by twist: `verify_late.py` evaluates the retained factors of the lattice word
+  through their net sticker permutations (lines 344 to 348) and plays only the corrections on the simulator (lines
+  351 to 374), and `runner.py` takes solved from its report (lines 645 to 650). The owner's acceptance test asks for
+  literal play, so a literal lattice player is needed: literal expansion and play of the retained factors and the
+  corrections, with played lengths, input and output digests and the final solved digest (`PROOFS-B.md` R22D-56,
+  R22D-57). In the sticker-permutation model one twist takes about 21 µs on the cloud machine, so the 166,777,936
+  retained twists of E2's lattice word would take about one CPU hour (an estimate, not run).
 - It decides nothing about coverage: a solved run shows that the rules reached the solved state from that start.
 - Review findings left for the next runner packet: a runner stopped by a signal can leave its children running
   (RV1-01); the lattice outputs name the run directory by its absolute path (RV1-02, RV2-02); `advance()` and the bulk

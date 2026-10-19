@@ -940,9 +940,13 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
     digest `7e128820…`) and round 3 of line (a) (4,516 twists to 737), the scramble reaches the lattice by literal
     words, 2,016,894 twists in all. The lattice phase from the literal end (digest `02a27279…`; 60,046 pieces
     moved) reaches the solved state in 166,788,405 twists (166,777,936 retained, 10,469 in 11 corrections),
-    and `verify_late.py` passes it (`literal/lattice/`). So the depth 40 scramble of seed 7101 is restored to the
-    solved state by literal words only, 168,805,299 twists after the scramble. It is one trajectory, put together from
-    the records of several scripts, not a run of the tutorial runner (stage 13).
+    and `verify_late.py` passes it (`literal/lattice/`). The lattice word is literal and exactly checked, but
+    `verify_late.py` evaluates its retained part (166,777,936 twists) as an exact permutation program on the sticker
+    labels and plays only the corrections on the simulator (R22D-57, round 4 of line (d)). So the depth 40 scramble
+    of seed 7101 reaches the lattice by literal words played twist by twist, and the solved state by a literal word
+    checked by composition, 168,805,299 twists after the scramble; playing the lattice word twist by twist needs a
+    literal lattice player (R22D-56, R22D-57). It is one trajectory, put together from the records of several
+    scripts, not a run of the tutorial runner (stage 13).
 - Line (c), the integrator's re-check of the solver's computed steps (measured): the solver's four T1′ steps at the
   depth 40 stop, each its landing word W followed by V′·W⁻¹·V′⁻¹, replay strict with the units recomputed from the
   state: b03 160 letters, b04 942, b12 1,158 and b18 160; no lattice piece leaves the lattice and every other off
@@ -1073,6 +1077,41 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
     where they stayed to the stop; one trajectory shows nothing for every bulk run (R22D-30). After round 3, a
     75-minute census descent from the 3000-twist state of seed 7302 made 313 twists and lowered none of its 185
     height-6 pieces (stage 11, "A descent from 3000 twists").
+- Line (d), round 4 (the senior reviewer, three shards at once; R22D-31 to R22D-38, R22D-40 to R22D-43 and R22D-50 to
+  R22D-57 in `PROOFS-B.md` section 5; its computations `scripts/round22/r22d31_height6.py`, `r22d40_blockers.py`,
+  `r22d42_step7108.py` and `r22d43_twelve.py`, re-run by the integrator with the same outputs, `runs/round22/`; the
+  two start states of the height-6 shard built by the integrator from the census records with every twist checked,
+  `r22d31_snapshots.py`):
+  - Two literal strict steps at height 4, both replayed by `stepchk.py`: no lattice piece leaves the lattice and every
+    other off piece keeps its exact pose. At the seed 7108 stop a·W·a⁻¹ of 50 letters, a = (415, 59) and
+    W = [(91, 22), (268, 9)]¹², lands all 111 height-4 pieces, so that stop is at height 2 and R22D-23's case is
+    closed (R22D-42). At the seed 7102 stop after R22D-16 a 38-letter word of the same shape, a = (61, 57) and
+    W = [(110, 3), (285, 58)]⁹, lands the twelve pieces of R22D-21, part of units 408 and 409; 70 height-4 pieces in
+    eight units remain (R22D-43).
+  - The blockers of caps 179 and 252 lie outside every grip of the fixed free alphabet of their class and of the
+    SAFE alphabet of the start, so no word over these alphabets moves them, at any length: two units at cap 179, one
+    of them also under the source-cell obstruction, and one unit at cap 252, at a state with no SAFE grip (R22D-40,
+    R22D-41). Words with grips that are not free, and alphabets after other progress, stay open.
+  - Height 6 at the census states. Step 74 of the depth 1000 record lowered its 135 height-6 pieces through its middle
+    letter (241, 47) alone, at a cap that was already clean, and the word took 550 lattice pieces off, so it was no
+    protected lowering (R22D-31). At the 3000-twist stop of seed 7302 the 185 height-6 pieces form eleven units, and
+    only two, with 13 pieces, lie in a clean cap; the 24 single letters that lower a whole unit all raise N and take
+    every lattice piece of their cap off; a three-letter conjugate lowers those 13 pieces and raises N; the
+    commutators of R22D-29 with a one-letter middle neither lower nor land a whole unit; and no word of at most three
+    letters lands a whole unit (R22D-32 to R22D-35, R22D-38). Cap 274 holds 159 of the 185 and is blocked only by
+    three height-2 pieces (R22D-32).
+  - A protected 6 → 4 step exists at a reachable test state of 26 twists: the letter (12, 45) lowers its one height-6
+    piece, lands the 2,702 other off pieces of the cap and keeps every other piece (R22D-36). A height-6 tier before
+    step 3 of R22D-25 (single letters, three-letter words of the census `conj` shape, and commutators with middles of
+    one or two letters, each accepted only by the protected-lowering or landing test) is safe and finite, at most
+    6·n₆ + 964·n₀ letters, and carries over to every height above 4 (R22D-37). It bounds a catalogue; it is not
+    coverage, and no candidate is known at either census state.
+  - An implementation contract for R22D-25: snapshots and acceptance gates, a point model complete before Bad, an
+    explicit S and T catalogue, run records with a coverage ledger, the family sizes at the known stops, and the
+    packets (R22D-50 to R22D-56). Exhausting R22D-25 as stated is impractical, so an unfinished search is a budget
+    stop, not stuck (R22D-55).
+  - The lattice phase's retained part is checked by composing permutations, not played twist by twist, in E2 (the
+    correction above) and in the tutorial runner (stage 13); a literal lattice player is needed (R22D-57).
 
 ## 12. Next
 
@@ -1127,10 +1166,14 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
 - Height 4 (before coverage since 18 October): E22-2 is complete and gives no strict step. Round 2 of line (d) gave the
   first literal height-4 step (R22D-16) and a state-only rule with words of at most 244 letters (R22D-19). Round 3
   found that rule exhausted for the rest of that stop (R22D-20), left the shared case of seed 7108 open (R22D-23) and
-  stated a rule for a whole stop with a stuck outcome (R22D-25). Next: steps outside R22D-19's family (mixed-class
-  middles, the repair family of R22D-22, the partial targets of R22D-21); strict′ words that land the blockers of caps
-  179 and 252 while keeping the high pieces exact (R22D-24); and for height 6 a rule or a proof that the bulk phase
-  clears it (R22D-27 to R22D-30; a 75-minute descent from 3000 twists did not, stage 11).
+  stated a rule for a whole stop with a stuck outcome (R22D-25). Round 4 closed the seed 7108 case with a 50-letter
+  strict step (R22D-42), landed the twelve pieces of R22D-21 (R22D-43), and gave a height-6 tier for R22D-25 that is
+  safe and finite (R22D-37) and an implementation contract for R22D-25 (R22D-50 to R22D-56). Next: an implementation
+  of R22D-25 with that tier and a practical S and T catalogue, tested at the known stops (R22D-56); the 70 height-4
+  pieces left at the seed 7102 stop, with partial targets like R22D-43's, which R22D-19 and R22D-25 as stated do not
+  contain; the blockers of caps 179 and 252 with grips that are not free or alphabets after other progress (R22D-40,
+  R22D-41); at the 3000-twist stop the rest of R22D-37's families and cap 274's three height-2 blockers (R22D-32);
+  whether the bulk phase clears height 6 without a budget; and a literal lattice player (R22D-57).
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
@@ -1331,7 +1374,7 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/cellpure5.py` | LC-13: `cellpure4.py` with a transport branch for a content that is not in an edge cell (commutator powers into a home cell of its kind, exact-pose filter) |
 | `runs/lc13-k40/` | LC-13 at the depth 40 stop: the three unit files; the transport records and words with input and output digests (`transport-<u>.json`, `transport-<u>-word.json`); the closure records of b01 and b02 (`close-b01.json`, `close-b02.json`) and their step words (`steps/u1.json`, `steps/u2.json`); b00's step without endpoint collateral (`steps/u0.json`); the replay record of each step (`replay-b00.json`, `replay-b01.json`, `replay-b02.json`); and, for b00 and b02, the 300-second closures' Bad(W), vacancy, certificate and greedy fields (`close-no-v.json`, taken from their `pre.json` and `result.json`) |
 | `PROOFS-B.md` | Theory round 22: the lemmas of lines (a), (b) and (d) toward B′(h), each with its hypotheses as finite checks at the state, its proof, its bound and its instances |
-| `ARCHON-HANDOFF.md` | Draft handoff to the Lean formalization (not started; the owner decides when): the objects, the 81 results of round 22 in dependency order, the hypotheses that are computations with what decides them, and the results of earlier stages and of the literature that the proofs use |
+| `ARCHON-HANDOFF.md` | Draft handoff to the Lean formalization (not started; the owner decides when): the objects, the 184 results of round 22 in dependency order, the hypotheses that are computations with what decides them, and the results of earlier stages and of the literature that the proofs use |
 | `scripts/round22/`, `runs/round22/` | The senior reviewer's exact computations of round 22, re-run by the integrator, and their outputs |
 | `scripts/round22/transport_census.py`, `runs/round22/line-a/` | Line (a): the transport census with whole cells as owners (vacant targets, entry transports, exact replays); its records for class 3 and for classes 2 and 4 (`census-class3.json`, `census-class24.json`, words included); the 22 unit files of the depth 40 stop; and the closures of the four entry transports (`closures/<u>-core.json`, `-step.json`, `-result.json`, `-replay.json`, and `-log.txt`, the closure's log with the certificate bounds and, for b19, where the peeling and the greedy search stopped); b19's Bad(W) as a target file and its Jordan certificates (`closures/b19-target.json`, `b19-jordan.txt`, from `scripts/round22/jordan_target.py`) |
 | `scripts/round22/r22a2_04_sequence.py`, `runs/round22/r22a2_04_sequence.txt` | Line (a), round 2: the senior reviewer's computation (kept as written apart from a header) and its output: the fourteen middles with their Bad sets and ghost maps, the composition matrix of the thirteen supplied steps, the hole-count search for fresh closures with its order, the construction bounds, and N1 and N2 for the glued units' own cells |
@@ -1375,4 +1418,5 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `runs/round22/line-a/replay2/lattice/` | E2, the lattice phase from the end table: the restorer's summary and solutions and the independent check's report (scratch paths replaced by `<scratch>`) |
 | `scripts/round22/r22b30_seeds.py`, `r22b32_pairs.py`, `r22b33_powers.py`, `r22b33_search.py`, `r22b40_prefixes.py`, `r22b48_b15.py`, `runs/round22/r22b30_seeds.txt`, `r22b32_pairs.txt`, `r22b33_powers.txt`, `r22b33_search.txt`, `r22b40_prefixes.txt`, `r22b48_b15.txt` | Line (b), round 6: the senior reviewer's computations (kept as written apart from a header) and their outputs: the 29 short seeds and the whole-step bounds, the four-letter commutator pairs, the two power seeds and the search at b14, the vacancy prefixes of the nine steps, and b15's dead end |
 | `scripts/round22/r22d09_census.py`, `r22d14_six.py`, `r22d15_source_cells.py`, `r22d16_step.py`, `r22d17_straddlers.py`, `runs/round22/r22d09_census.txt`, `r22d14_six.txt`, `r22d15_source_cells.txt`, `r22d16_step.txt`, `r22d17_straddlers.txt` | Line (d), round 2: the senior reviewer's computations (kept as written apart from a header) and their outputs: the high units of the five stops with height-4 pieces, the six-letter family, the source cells, the 28-letter step and the straddlers of caps 150 and 179 |
+| `scripts/round22/r22d31_snapshots.py`, `r22d31_height6.py`, `r22d40_blockers.py`, `r22d42_step7108.py`, `r22d43_twelve.py`, `runs/round22/r22d31_height6.txt`, `r22d40_blockers.txt`, `r22d42_step7108.txt`, `r22d43_twelve.txt` | Line (d), round 4: the integrator's snapshots of the two height-6 start states (the state before step 74 of the depth 1000 record of seed 7103 and the 3000-twist stop of seed 7302, rebuilt from the census records with every twist and both digests checked; pickles written to a given directory, never published), and the senior reviewer's computations (kept as written apart from a header and part headings) with the integrator's re-run outputs: height 6 at the two snapshots and the test state of R22D-36, the blockers of caps 179 and 252, the 50-letter step at the seed 7108 stop and the 38-letter step after R22D-16 |
 | `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`, `e2_b06_t1.py` | E2, b06 with b05: the first SAFE-ALL preparation, the second counted against the reference middle's orbits, and the prepared T1′ attempt applied by `slp_apply.py`; records in `runs/round22/line-a/replay2/b06-<n>/` |

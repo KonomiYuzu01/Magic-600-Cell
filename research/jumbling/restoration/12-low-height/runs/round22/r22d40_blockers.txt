@@ -1,0 +1,19 @@
+{
+ "start_digest": "4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db",
+ "end_digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b",
+ "letters": 28,
+ "unit_size": 1,
+ "unit_on_lattice": 1,
+ "collateral": 0,
+ "others": 31478,
+ "others_exact": 31437,
+ "others_landed": 41,
+ "off_before": 31479,
+ "off_after": 31437,
+ "strict_prime": true,
+ "output_digest_matches": true
+}
+
+{"start_digest": "4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db", "end_digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b", "letters": 28, "unit_size": 1, "unit_on_lattice": 1, "collateral": 0, "others": 31478, "others_exact": 31437, "others_landed": 41, "off_before": 31479, "off_after": 31437, "strict_prime": true, "output_digest_matches": true}
+BLOCKER_AUDIT {"seed": 7102, "cap": 179, "digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b", "off": 31437, "clean": 234, "safe": 92, "units": [{"unit": 15193, "size": 27, "block_first": 15193, "block_size": 27, "frames": 1, "blockers": [15193], "source": [{"blockers": [15193], "branch": 1, "cell": [65, 235], "free_containing": [], "free_count": 32, "home": 86, "occupied": 86, "fixed_occupied": 86, "fixed_witness": 17725}]}, {"unit": 54926, "size": 86, "block_first": 54926, "block_size": 86, "frames": 1, "blockers": [54926, 54928, 65131, 82294, 82297, 82304, 82312, 82313, 97168, 97169, 97223, 97224, 97225, 97226, 97241, 101126, 101131, 101174, 101176], "source": [{"blockers": [54926, 54928, 65131, 82294, 82297, 82304, 82312, 82313, 97168, 97169, 97223, 97224, 97225, 97226, 97241, 101126, 101131, 101174, 101176], "branch": 0, "cell": [75, 276], "free_containing": [], "free_count": 33, "home": 86, "occupied": 0, "fixed_occupied": 0, "fixed_witness": null}]}], "cpu": 118.7}
+BLOCKER_AUDIT {"seed": 7109, "cap": 252, "digest": "7f8203dd30c35fc7b3b12f0e334ad4dc5bd38886e0ce14f6c19faccc2454f5c8", "off": 73003, "clean": 58, "safe": 0, "units": [{"unit": 920, "size": 61, "block_first": 920, "block_size": 61, "frames": 1, "blockers": [920, 921, 922, 1039, 1040, 1041, 1043, 1068, 1069, 7691, 7692, 7693, 7694, 7695], "source": [{"blockers": [920, 921, 922, 1039, 1040, 1041, 1043, 1068, 1069, 7691, 7692, 7693, 7694, 7695], "branch": 2, "cell": [158, 203], "free_containing": [], "free_count": 11, "home": 86, "occupied": 0, "fixed_occupied": 0, "fixed_witness": null}]}], "cpu": 484.5}

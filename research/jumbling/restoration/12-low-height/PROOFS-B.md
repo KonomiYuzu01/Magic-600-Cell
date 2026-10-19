@@ -2102,6 +2102,381 @@ with the full contract (R22D-23); strict′ words that land the blockers of caps
 pieces exact (R22D-24); an implementation of R22D-25; and for heights above 4 either a rule (a protected 6 → 4 step
 followed by a height-4 procedure) or a proof that the bulk phase clears them.
 
+### Round 4 of line (d)
+
+The senior reviewer took line (d) a fourth round at the fast tier, as three shards run at the same time, all results
+`minor`: height 6 (R22D-31 to R22D-38), the blockers of caps 179 and 252 and the seed 7108 case (R22D-40 to R22D-43),
+and an implementation design for R22D-25 (R22D-50 to R22D-57). R22D-39 and R22D-44 to R22D-49 are not used. For the
+height-6 shard the integrator built its two start states as snapshots from the census records, every twist checked
+(`scripts/round22/r22d31_snapshots.py`). The round found two literal strict steps at height 4 (R22D-42 lands all six
+high units of the seed 7108 stop, R22D-43 the twelve pieces of R22D-21); a height-6 tier for R22D-25 that is safe and
+finite (R22D-37), with one protected 6 → 4 step at a test state (R22D-36); obstructions for its short families at the
+3000-twist stop of seed 7302 (R22D-32 to R22D-35, R22D-38); obstructions for the blockers of caps 179 and 252 over
+their fixed free alphabets (R22D-40, R22D-41); and an implementation contract for R22D-25 (R22D-50 to R22D-56). It also
+found that the tutorial runner's lattice phase checks the retained part of its word by composing permutations, not by
+playing it twist by twist (R22D-57). The computations are `scripts/round22/r22d31_height6.py`, `r22d40_blockers.py`,
+`r22d42_step7108.py` and `r22d43_twelve.py`; the integrator re-ran them and got the outputs under `runs/round22/` with
+the same names (section 6). The counts of R22D-54 are the reviewer's measurements and were not re-run.
+
+### R22D-31. Step 74 of the depth 1000 record lowers through its middle letter alone (computed; replayed)
+
+- The state before step 74 (`48ef2f68…`) has 94,981 off pieces: 94,224 at height 2, 622 at height 4 and 135 at
+  height 6. The 135 share one exact pose (tree data (6, 0, 4, −1)) and form two units, 143824 (16 pieces, inside caps
+  204, 218, 241, 278, 323 and 325) and 143825 (119 pieces, the same caps and 424). Caps 328 and 241 are both clean:
+  328 holds 405 lattice and 2,372 height-2 pieces, 241 holds 145 lattice, 1,827 height-2, 458 height-4 and all 135
+  height-6 pieces.
+- In the word (328, 1)·(241, 47)·(328, 58) only the middle letter moves the targets (membership mask 010), and it takes
+  all 135 to height 4 (tree data (4, 0, 3, −1)); both cuts stay clean throughout. The word is not a conjugate
+  x·y·x⁻¹: item 1 at grip 328 is its own inverse and the last item is 58. It does not make the middle cap clean
+  either, since 241 was clean already. The middle letter alone, (241, 47), is admissible and lowers all 135 as well.
+- Along the word, as (off pieces, N, height 2, height 4, height 6): start (94,981, 100,812, 94,224, 622, 135); after
+  (328, 1) (94,981, 100,864, 94,224, 622, 135); after (241, 47) (94,174, 100,588, 93,875, 299, 0); after (328, 58)
+  (93,527, 100,130, 93,228, 299, 0), digest `fb754d4d…`. Height transitions: 0 → 2 550, 2 → 0 2,004, 4 → 2 458,
+  6 → 4 135, and 81,589, 92,220 and 164 unchanged at 0, 2 and 4; 2,653 other off pieces change pose without landing.
+  So step 74 is not a protected lowering: it takes 550 lattice pieces off.
+- A pattern that reads the state only: a clean cap c that misses the target U, a retained non-identity item x at c, a
+  cap d of U's branch that holds U and is clean after x, one of d's lowering items y, and an item z at c, with c
+  clean after x·y and U outside c then; the three letters are replayed, and for use in the bulk phase N must fall.
+  U receives only y, so it falls by two. At most 600·599·11·12·59 cases per unit; step 74 is one of them. Protection
+  is a further test, not a consequence of the pattern.
+- Uses: R22D-30.
+
+### R22D-32. The 3000-twist stop of seed 7302 has eleven height-6 units; two lie in a clean cap (computed)
+
+- The stop (`015d839e…`) has 100,584 off pieces: 99,314 at height 2, 1,085 at height 4 and 185 at height 6. The 185
+  form eleven units (equal exact pose and equal inside vector over the 600 caps) in four pose groups: A (branch 3)
+  22706 (6 pieces), 22707 (58), 26358 (21) and 26372 (26); B (branch 3, another exact pose) 28969 (34), 45919 (10)
+  and 57975 (4); C (branch 1) 108996 (9) and 137233 (4); D (branch 0) 152672 (12) and 152673 (1). Every right height
+  is 0.
+- Of the 31 caps that contain one of them, only 64 and 70 are clean. Both are of branch 0 and hold the 13 pieces of
+  D: cap 64 with 970 lattice and 1,384 height-2 pieces, cap 70 with 969 and 1,855. Fifteen of the other 29 have a
+  height-4 or height-6 straddler (114, 118, 150, 160, 172, 183, 190, 206, 207, 221, 258, 281, 299, 326 and 338), so
+  height-2 landings alone cannot clean them while every high piece keeps its pose; the other fourteen have only
+  height-2 straddlers.
+- Cap 274, of branch 3, holds all 159 high pieces of A and B, and its only straddlers are three height-2 pieces,
+  44706, 44712 and 57467. Landing these three while every high piece keeps its exact pose would make it clean (R22D-07
+  Lemma C); a route, not a word.
+- Uses: R22D-07.
+
+### R22D-33. At the 3000-twist stop 24 single letters lower a height-6 unit, and none is protected (computed)
+
+- A letter that lowers a whole height-6 unit acts at a clean cap of the unit's branch that holds it, so by R22D-32
+  only caps 64 and 70 qualify, each acting on both units of D. Exact products of their common pose with the 59 items
+  give twelve lowering items at each: 15, 18, 22, 33 and 52 to 59 at cap 64; 12, 16, 20 and 24 to 32 at cap 70.
+- Each of the 24 letters lowers exactly those 13 pieces to height 4 and lands none; the other 172 height-6 pieces and
+  all 1,085 height-4 pieces keep their heights. Each takes every lattice piece of its cap off (970 at cap 64, 969 at
+  cap 70) and lands 349 or 604 height-2 pieces, so none is a protected lowering, even with both units of D as the
+  target.
+- N rises with every one of them, by 244 to 404: the least is (70, 24), from 130,386 to 130,630, digest
+  `d602cae0…`. The bulk phase, which needs N to fall, takes none of them as a single step at this state.
+- Uses: R22D-32.
+
+### R22D-34. A three-letter conjugate lowers the 13 pieces of D and raises N (computed; replayed)
+
+- (2, 1)·(64, 15)·(2, 1), item 1 at grip 2 being its own inverse, is admissible, has the census `conj` shape
+  (c, x)(d, y)(c, z) and lowers both units of D, 13 pieces, from 6 to 4; the other 172 height-6 pieces and the 1,085
+  height-4 pieces keep their heights. N goes 130,386 → 130,426 → 130,682 → 130,688. At the end there are 101,072 off
+  pieces (99,802 at height 2, 1,098 at height 4, 172 at height 6), digest `0edf66df…`; 864 lattice pieces have gone
+  off and 1,221 other off pieces have changed pose, so it is not protected.
+- Its middle raises N by 256 and the whole word by 302, so it fails both N tests of `seams.conj`. It shows that the
+  three-letter shape has lowering words at this stop; it does not exhaust that shape, and it does not explain by cap
+  order why the 75-minute descent took none.
+
+### R22D-35. The commutators of R22D-29 with a one-letter middle neither lower nor land a whole unit there (computed; proved)
+
+- The family: a·W·a⁻¹·W⁻¹ with a an admissible letter that lowers a whole height-6 unit and W empty or one
+  non-identity letter of the lowered target's branch Q. The nine units of A, B and C have no such a (R22D-32), and the
+  two of D share the 24 letters of R22D-33. After each of them exactly two caps of Q hold either unit whole, and both
+  are blocked: 96 unit–cap cases, none clean (the output lists a straddler of each).
+- The prune: if W = b misses a target piece after a, that piece is unchanged by b and returned by a⁻¹ to its height-6
+  pose of branch P ≠ Q; the last letter b⁻¹, of class Q, then misses it, keeps its height (when retained) or raises it
+  to 8, so it cannot end at 4 or 0. So b must hold every target piece when it is first applied, which the blocked caps
+  exclude. Empty W gives the identity. Of the 24·120·59 = 169,920 words with a one-letter middle, the 2,832 whose
+  middle holds a whole target are inadmissible there, and the others fail the motion condition.
+- Middles of two or more letters are not covered.
+- Uses: R22D-29, R22D-32, R22D-33.
+
+### R22D-36. A protected one-letter 6 → 4 step at a reachable test state (computed; proved)
+
+- Single letters, at any even height H ≥ 4: (c, g) is a protected H → H − 2 step for a unit U exactly when c is clean
+  and holds U, g takes every target pose to height H − 2, c holds no lattice piece of the start, and every other off
+  piece inside c lands under g; pieces outside c keep their poses. Necessity: a lowering rotation is not in K⁺, so it
+  takes every lattice piece it moves off, and g·Q = Q for a pose Q would force g = I, so every other off piece it moves
+  has to land. Sufficiency is the same piecewise action. These are finite exact tests of the state.
+- A test state: from the solved state play (0, 12), (74, 8), (188, 4), (74, 4), (188, 8), (188, 4), (188, 4),
+  (74, 8), (188, 8), (74, 4), (188, 8), (178, 1), (188, 4), (74, 8), (188, 4), (74, 4), (188, 8), (188, 8), (188, 4),
+  (74, 8), (188, 8), (74, 4), (178, 1), (0, 45), (14, 12), (12, 12); the first 24 are the singleton construction of
+  `scripts/round22/cov17_single_off.py` (COV-17). It has 5,800 off pieces, 5,799 at height 2 and one, piece 58388, at
+  height 6, a unit by itself; N = 2,934; digest `8733a0aa…`. Cap 12 is clean and holds 58388 and 2,702 height-2 pieces
+  and no lattice piece.
+- The letter (12, 45) takes 58388 to height 4, lands the 2,702 others in cap 12, keeps the other 3,097 off pieces at
+  their exact poses and takes no lattice piece off: 3,098 off pieces, 3,097 at height 2 and one at height 4, N = 1,574,
+  digest `d79c0367…`. A protected lowering, not a landing.
+
+### R22D-37. A height-6 tier for R22D-25, safe and finite (rule; proved safe and finite)
+
+1. For a state whose largest left height is at most 6, insert this tier before step 3 of R22D-25. Read the exact
+   poses, heights, units and cut classifications; take the height-6 units by least piece; for each, try in this order,
+   with (grip, item) tuples in lexicographic order inside each family:
+   (1) every non-identity single letter;
+   (2) every (c, x)·(d, y)·(c, z) with c ≠ d and non-identity items;
+   (3) every a·W·a⁻¹·W⁻¹ with a a whole-unit lowering letter at a clean cap and W of one or two letters of the branch
+   Q reached after a, by length and then lexicographically; inverses are expanded by reversing the word and inverting
+   each item.
+2. Replay each candidate on a fresh copy of the full state; an inadmissible or uncertain prefix rejects it. Accept it
+   only if at the end (i) every target piece is at height 4, or every target piece is on the lattice; (ii) every
+   lattice piece of the start is on the lattice; (iii) every other off piece of the start has its exact pose or is on
+   the lattice. Compare exact matrices or stable pose keys, never pose-table indices of different states. There is no
+   N test. Record the letters, the length and both digests; check the input digest before the word and the output
+   digest after it; recompute everything after an accepted word.
+3. If the tier finds nothing, run steps 3 to 5 of R22D-25 with its height-4 targets at height exactly 4 and every
+   height-6 piece kept at its exact pose, as strict′ words at the actual state; restart the tier after any accepted
+   step. Stuck means every family exhausted at the state; an interruption is a budget stop. A state above height 6 is
+   outside this version.
+
+- Finite: its words have at most six letters, at most m + 600·599·59³ + (120·12)·(q + q²) candidates per unit, with
+  m = 35,400 and q = 120·59 = 7,080 (a bound, not a claim that the search is practical).
+- Safe and terminating: the end tests are the protected-lowering and strict′ contracts. An accepted protected
+  lowering makes no new off piece, keeps every other surviving off pose exact and lowers the number n₆ of height-6
+  pieces by at least one; an accepted strict′ landing lowers the off count by at least one and makes no height-6
+  piece. So there are at most n₆ lowerings and n₀ landings, and at most 6·n₆ + 964·n₀ letters before the lattice or
+  stuck.
+- The same tests and families apply to 2h → 2h − 2 for h > 3. Enabled at every height above 4, the number of
+  protected lowerings is at most Σ_p max(0, H_p/2 − 2) over the heights at the start, and the length at most six
+  times that sum plus 964·n₀. This bounds the catalogue; it is not coverage, and no candidate is shown to exist at
+  either census state: R22D-36 is a positive instance, and R22D-33 excludes the single-letter family at the seed 7302
+  stop.
+- Uses: R22D-25, R22D-27.
+
+### R22D-38. No word of at most three letters lands a whole height-6 unit at the 3000-twist stop (proved)
+
+- A letter changes a left height by at most 2, so landing a height-6 piece in at most three letters needs exactly
+  three, each lowering it by 2. For a whole unit the first letter is one of its whole-unit lowering letters: only the
+  units of D have any, the 24 of R22D-33. The second must lower at a clean cap of the new branch that holds the whole
+  target, and R22D-35 found none of its 96 cases clean. So no word of at most three letters lands any whole height-6
+  unit at this stop, whatever its shape; three-letter lowerings exist (R22D-34).
+- In general, at height 2h, if no first lowering leaves an admissible second lowering of the whole target, no word of
+  h letters lands it. Words of four or more letters and partial landings stay open.
+- Uses: R22D-32, R22D-33, R22D-35.
+
+### R22D-40. Cap 179's blockers are two units that the fixed free alphabets cannot move (computed; proved)
+
+- At the state after R22D-16 (`dceb9359…`) the 20 height-2 straddlers of cap 179 lie in two single-frame units: unit
+  15193 (27 pieces; blocker 15193), source cell [65, 235] in branch 1, and unit 54926 (86 pieces; the other 19
+  blockers), source cell [75, 276] in branch 0. Neither cell meets a free grip of its class (there are 32 and 33 free
+  grips of those classes, and 92 SAFE grips).
+- Every word over the fixed free alphabet of the unit's class and the fixed SAFE-ALL alphabet of the start fixes
+  every blocker, at any length: each blocker starts outside every grip of these alphabets, so every letter fixes its
+  pose and it stays outside them. A free grip of another class does not hold it, since it holds no foreign off piece.
+  So no closure V·W·V⁻¹ with W over that free alphabet and V over the SAFE alphabet lands a blocker. Alphabets
+  recomputed after other progress and words with grips that are not free are not covered.
+- Unit 15193 also meets the source-cell obstruction (R22D-15, R22D-28): all 86 home chambers of [65, 235] are occupied
+  and outside every SAFE cap (one is chamber 17725). The 86 home chambers of [75, 276] are vacant; there the
+  obstruction is the missing free grip.
+- No blocker was landed, so cap 179 stays blocked and R22D-19 was not tried through it.
+- Uses: R22D-15, R22D-17, R22D-28.
+
+### R22D-41. Cap 252's fourteen blockers are one unit with no free grip and no SAFE grip (computed; proved)
+
+- At the depth 400 stop of seed 7109 (`7f8203dd…`) the 14 straddlers of cap 252 are all in unit 920 (61 pieces, one
+  frame), source cell [158, 203] in branch 2. Its 86 home chambers are vacant, but neither pole is a free grip; the
+  class has 11 free grips, and the state has no SAFE grip.
+- So every word over the fixed free alphabet of the class (11·59 = 649 non-identity letters) fixes every blocker, at
+  any length, by the argument of R22D-40, and a SAFE preparation is empty. This family gives no first unlocking step;
+  cap 252 stays blocked and R22D-19 was not tried through it. Words with grips that are not free, and alphabets after
+  other progress, stay open.
+- Uses: R22D-24, R22D-40.
+
+### R22D-42. A 50-letter strict step lands all 111 height-4 pieces of the seed 7108 stop (computed; replayed)
+
+- At the stop (`dff31c35…`) take a = (415, 59), V empty, W = [(91, 22), (268, 9)]¹², each commutator played as
+  (91, 22), (268, 9), (91, 46), (268, 3), and a⁻¹ = (415, 29): 50 letters.
+- The replay with `stepchk.py`: all 111 pieces of the six units land, the other 27,088 off pieces keep their exact
+  poses and no lattice piece leaves the lattice, so the step is strict, not only strict′; 27,199 → 27,088 off pieces,
+  end digest `79aaefe2…`. Since the 111 were the stop's only pieces above height 2 (R22D-10, R22D-23), every off piece
+  left is at height 2.
+- The search behind it is R22D-23's, with the endpoint test read from the tags of the start (R22D-22): it found the
+  word at the first ordered grip pair, (91, 268), after 1,248 item pairs and 74,832 powers, and its first full replay
+  passed. 611 pieces are on the lattice at Y and at T, inside cap 415 at T, and return under a⁻¹ to their exact off
+  poses of the start (the first is piece 30403); R22D-23's stronger prune rejected exactly such words. This closes
+  R22D-23's case.
+- Uses: R22D-03, R22D-19, R22D-22, R22D-23.
+
+### R22D-43. A 38-letter strict step lands the twelve pieces of R22D-21 (computed; replayed)
+
+- At the state after R22D-16 (`dceb9359…`), after a = (61, 57) the twelve pieces form one class content at label 1 in
+  the cell [18, 84, 110, 130]. With V empty, W = [(110, 3), (285, 58)]⁹, each commutator played as (110, 3), (285, 58),
+  (110, 9), (285, 26), and a⁻¹ = (61, 57): 38 letters.
+- The replay with `stepchk.py`: exactly the twelve land, six of unit 408 (789, 1504, 1513, 1514, 1516 and 1518) and six
+  of unit 409 (1223, 1520, 1523, 1524, 2944 and 2949); the other 31,425 off pieces keep their exact poses and no
+  lattice piece leaves the lattice, so the step is strict. 31,437 → 31,425 off pieces, end digest `f0290f93…`; 31,355
+  pieces are left at height 2 and 70 at height 4.
+- This is partial progress on units 408 and 409, which R22D-20's obstruction, stated for the whole units, does not
+  cover (R22D-21). Its target is part of two units, so R22D-19, whose cases are whole units, does not contain it.
+- Uses: R22D-16, R22D-20, R22D-21.
+
+### R22D-50. Snapshots and acceptance gates for R22D-25 (design)
+
+- Functions to write: `snapshot(state)`, `high_units`, `height2_units`, `protected_lowering(before, U, word)`,
+  `strict_step(before, U, word, high_exact)` and `refresh_after_accept(state)`. The menu, the model identity and the
+  limits are fixed before the search: direct words ≤ 244 letters, S ≤ 244, T ≤ 720, S·T ≤ 964.
+- A snapshot holds the digest, the lattice and off masks of the start, stable exact pose keys, the heights, the unit
+  memberships, the complete cap classifications and straddler sets (`State.classify` reports one straddler, which is
+  not enough for the blocker order), the branch-to-class map, the free and SAFE alphabets and the holes. Tree branches
+  map to model classes explicitly through `classes.hub`: at the seed 7108 stop after (415, 59) branch 1 is model
+  class 3. Reuse `eb6.stable_pose`, `eb6.straddler_set`, `trees.pose_tree`, `buffer.hole_set`, the high-unit census
+  of `r22d09_census.py`, and the units of `mkblocks2.py` without its optional relaxation of the free set.
+- The strict-step gate: a nonempty target inside the off set of the start; every twist admissible; every target piece
+  landed; every lattice piece of the start on the lattice; every other off piece of the start landed or at its exact
+  pose; in step 5 also every high piece of the start at its exact pose. The protected-lowering gate asks for every
+  target piece at height 2 instead of landed. Both check the input and output digests and the played length.
+  `eb6r.replay_word`'s `strict_prime` flag alone is not the gate: an empty word sets it without landing anything,
+  which would break the falling off count of R22D-25's proof.
+- After an accepted word everything that depends on the state is recomputed; pose-table indices never cross
+  snapshots. A search returns candidate, exhausted, budget, unsupported or error; only exhaustion of steps 3 to 5 is
+  stuck. The bound n₀ and 964·n₀ counts R22D-25's accepted words only, not the bulk or the lattice phase.
+- Uses: R22D-25.
+
+### R22D-51. Step 3 with a complete point model before Bad (design)
+
+- Order: high units by least piece; the clean caps of the unit's branch that hold the whole unit, ascending; their
+  twelve lowering items, ascending. After a, the target must be one class-Q content D (cell and domain) whose members
+  were all off at the start; failing either is an exclusion from this family, not an impossibility.
+- The point model: `cellpure5.Model2`'s pole permutations, coset labels and point actions (copied, not imported: the
+  module runs its command line at import), seeded with every home sign vector, vacant home cells included, and every
+  own content, then closed under every free letter. The present initialisation misses vacant home cells, which Bad
+  needs.
+- Prunes before W: a target outside every free grip (R22D-20); a source cell with an occupied chamber outside every
+  SAFE cap (R22D-15, R22D-28); another protected off content in the target's cell.
+- W: ordered distinct free-grip pairs that share a cell, one of them holding the target cell; then the items of x and
+  y and e = 1 to 60, ascending; W = (x, y, x⁻¹, y⁻¹)^e. Test the target's landing at a home label-0 point and the whole
+  five-point fibre of every other class-Q off content before Bad; foreign off pieces are fixed by freeness. Not taken
+  from `cellpure5.py`: protection of a single point, collateral counted on occupied contents only, truncation at a
+  number of exact pieces.
+- Bad from every home cell whose label-0 point ends nonzero (R22A-01), weighted by its home chambers; |Bad| < 3,097.
+  V empty, then each SAFE retained letter by grip and item; N1 and N2 may reject, but acceptance needs
+  π_V⁻¹(Bad) ⊆ holes(Y). The decision is the replay of a·V·W·V⁻¹·a⁻¹ at Z with the tags of Z (R22D-22).
+- Uses: R22A-01, R22D-15, R22D-19, R22D-20, R22D-22, R22D-50.
+
+### R22D-52. S and T need an explicit catalogue (design)
+
+- R22D-25 gives S and T as gates with length limits, not as generators. The conservative completion: every admissible
+  word of 1 to 244 letters (S) or 1 to 720 (T) that passes its gate, by length and then in (grip, item) order, with
+  identity letters and consecutive letters at one grip removed (the reduction `fallback.py` uses); a straddled prefix
+  excludes every item at its grip; an uncertain classification is an error. T is searched at Y = Z·S for the whole
+  piece set U; a failed T moves on to the next S; nothing is committed before the whole S·T passes at Z.
+- A fixed priority prefix from the tail rules (`zero_bad`, `pure`, `close` from pure, `close` from a transport,
+  `t1prime`) may come first, each word expanded, at most 720 letters and passing the gate; E-B6's words may propose S.
+  A rejection of such a proposal, a depth cutoff or a timeout does not exhaust T.
+- Step 5: the eligible blocked caps of the target's branch ascending (every straddler at height 2); the height-2 units
+  by their first eligible cap and least piece, then the other units by least piece; T with every high piece of the
+  start kept exact. The runner's largest-unit-first order and its fallback test do not do this (R22D-26).
+- This catalogue is finite and needs no new mathematics, but it cannot be exhausted naively (R22D-55). A smaller
+  practical catalogue is a separate choice, and its stuck outcome names that smaller scope.
+- Uses: R22D-25, R22D-26, R22D-50.
+
+### R22D-53. Run records with a checkable coverage ledger (design)
+
+- A record `runner-run/3` extends `runner-run/2` of the RUN-3 packet: source and model digests, catalogue version,
+  limits and enumeration parameters; for each accepted step the target, family, parameters (a, x, y, e and V for a
+  direct step; the split, both lengths, the middle digest and the lowering test for S·T; the blocker cap, target and
+  high-exact set for step 5), input and output digests, played length and recomputed counts. The checker rebuilds
+  every set from the input state instead of trusting recorded flags.
+- A stuck certificate needs the search universe and a disjoint coverage ledger (units and caps, lowering cases, pairs,
+  item pairs, powers and V choices, S and T prefix subtrees, completed and pruned ranges), first-failure counts, a
+  cursor for unfinished work, and checkable premises for every prune: two target pieces in different contents, an
+  original lattice member, complete grip sets, an occupied chamber outside every SAFE cap, fibre cycle data, Bad
+  chamber ids, the failing vacancy inclusion. A search restricted to one case keeps its restriction and certifies no
+  stuck state.
+- A checker can cheaply replay accepted words, check the S·T split and the protection, rebuild the structural prunes
+  and check the counting; it cannot confirm a large negative search from counts or hashes, and has to redo it unless a
+  compact exclusion proof exists. `check_run.py` checks stuck-state snapshots only today, and RUN-4 adds no
+  exhaustion check.
+- Uses: R22D-25, R22D-50.
+
+### R22D-54. Sizes of the direct family at the known stops (computed by the reviewer)
+
+- Seed 7102 stop: 108 lowering cases; first failures split cells 60, no free grip 42, fixed occupied chamber 3; three
+  survivors, unit 391 at items 55, 57 and 59 of cap 61, with (free grips, SAFE grips, pairs) = (34, 91, 10),
+  (33, 90, 14) and (24, 89, 10): 2,088,600, 2,924,040 and 2,088,600 W slots (pairs·3,481·60) and 1,002, 991 and 980
+  V choices, 7,101,240 W slots in all. After R22D-16 all 96 cases are excluded (R22D-20).
+- Seed 7108 stop: 72 cases, 66 excluded and six that share one search after (415, 59): 58 free grips, 14 pairs,
+  2,924,040 W slots and 1,464 V choices (133 SAFE grips). A sample of the first 200 commutators at (91, 268): 12,000
+  powers, 272 landings, 12 past the fibre and small-Bad tests, in 0.346 CPU seconds; the model took 42.67 CPU seconds.
+- Seed 7109, depth 400: 216 cases; 132 split cells, 78 no free grip, 4 fixed occupied chamber; two survivors, unit
+  97830 at items 45 and 47 of cap 406, with 417,720 and 1,253,160 W slots and V empty only (no SAFE grip). The other
+  five high units have no clean cap of their own branch.
+- The reviewer's measurements (exact headless research runs, Python 3.13 and NumPy 2.5, one thread); the integrator
+  did not re-run them.
+- Uses: R22D-15, R22D-20, R22D-23, R22D-51.
+
+### R22D-55. Exhausting R22D-25 as stated is impractical (estimate)
+
+- From the 0.346-second sample: about 205, 84 and 48 CPU seconds for the W slots of the three stops, without setup,
+  vacancy and replay (planning estimates). The W and V combinations before later filters number at most
+  7,037,328,840, 4,280,794,560 and 1,670,880, so a naive nested vacancy loop cannot finish the first two.
+- The all-words catalogue of R22D-52 has about 10¹¹¹⁰ S words, 10³²⁷⁵ T words and 10⁴³⁸⁵ pairs per target
+  (A(L) = Σ_{k ≤ L} 35,400^k; 35,341 continuations a letter after the consecutive-grip reduction): it cannot be
+  exhausted. So an unfinished step 4 is a budget stop and must not fall through to step 5 as if exhausted; a smaller
+  S and T catalogue, or an order that tries blockers first, is a recorded revision of the rule, not exhaustion of
+  R22D-25's families. The runner's tail today turns a missing candidate into stuck even after a timeout, which must
+  not be reused here.
+- Uses: R22D-52, R22D-54.
+
+### R22D-56. Packets: four standalone, three new and one integration (design)
+
+- D19, RUN-3, RUN-4 and SCH-L keep their standalone purposes and can run as written once their source identities are
+  pinned again. For integration D19 needs a callable candidate and exhaustion interface, an explicit scope for a
+  restricted search, coverage witnesses and the test after R22D-16; RUN-3's long-word fixtures stay as they are (the
+  720-letter limit belongs to the later R22D-25 adapter); RUN-4 stays the checker of `runner-run/1` and `/2`; SCH-L
+  stays a late-correction schedule, whose algebraic check is not literal play.
+- Then three independent packets: a kernel (`round22/r22d25_state.py`, `r22d25_search.py` and `test_r22d25.py`;
+  `search_step(snapshot, limits, budget)` returning candidate, exhausted, budget, unsupported or error); a checker
+  (`13-tutorial-runner/scripts/check_r22d25.py` and its test, reading only records and literal words); and a literal
+  lattice player (`13-tutorial-runner/scripts/literal_lattice.py` and its test). A last integration packet owns
+  `runner.py`, `check_run.py` and their tests, after RUN-3 and RUN-4.
+- Acceptance with outcomes known today: the R22D-16 case gives its 28 letters, passes `stepchk.py` and ends at
+  `dceb9359…`; an unrestricted seed 7102 search finds that word or an earlier passing one; after R22D-16 all 96 direct
+  cases are excluded; at seed 7108 the 66 exclusions and the shared case; at seed 7109 the two survivors of R22D-54
+  and R22D-24's single-letter result; mutations of a certificate that the checker must reject, cutoff tests, and a
+  small literal lattice run. Since R22D-42, the seed 7108 search must also find its word or an earlier passing word in
+  its order (the integrator's addition).
+- Uses: R22D-16, R22D-20, R22D-24, R22D-42, R22D-50 to R22D-55.
+
+### R22D-57. Phase handoffs, and the lattice phase is not played twist by twist (source; design)
+
+- Bulk to R22D-25: the bulk phase hands over its last committed, digest-checked state when no census rule fires or at
+  its budget, with the reason recorded (`bulk_no_rule` or `bulk_budget`), and the heights are then counted; a bulk
+  stop does not show that height 6 is gone. R22D-25 covers heights 2 and 4; a height-6 tier (R22D-37) plugs in at the
+  same dispatch point and receives the exact snapshot, a named target, the protection requirements and the limits.
+  It returns a literal candidate with digests and its own progress and length contract, or budget, exhausted or
+  unsupported; a lowering that does not land does not count as one of R22D-25's landings and does not inherit
+  964·n₀. A state outside every family reports unsupported, with its census and the catalogue's scope.
+- R22D-25 to the lattice phase: only when the off count is zero, with the exact final pose table and digest.
+- The lattice phase: `verify_late.py` evaluates the retained factors of the lattice word through their net sticker
+  permutations (lines 344 to 348) and plays only the corrections and the correction target on the simulator (lines
+  351 to 374), and `runner.py` takes solved from that report (lines 645 to 650). This checks a composed solution
+  exactly, not the literal play of the retained word from the handoff state, which the owner's acceptance test asks
+  for (`docs/wiki/decisions/owner-decisions-2026-10-18-machine-tutorial.md`). The same holds for the lattice phase
+  after E2 (stage 12 `README.md` section 11) and for the depth 20 run of the tutorial runner.
+- Needed: literal expansion and play of the retained factors and the corrections, recording played lengths, inverses
+  expanded in chronological order, input and output digests and the final solved digest; a budget stop reports its
+  state without solved; scheduled and played lengths are kept apart.
+- The integrator confirmed the reading in the source and timed the sticker-permutation model: one twist, one of the
+  1,200 primitives of `assets/primitives.npz` (4,596 to 4,600 stickers each) applied as a gather of the label array,
+  takes about 21 µs on the cloud machine, so the 166,777,936 retained twists of the depth 40 run would take about one
+  CPU hour. Not run; a research estimate, not performance evidence.
+- Uses: R22D-25, R22D-37.
+
+Open after round 4 of line (d): at the seed 7102 stop, after R22D-16 and R22D-43, 70 height-4 pieces in eight units
+(270: 1, 408: 19, 409: 6, 6780: 1, 32115: 31, 53620: 5, 53629: 3 and 61683: 4), with R22D-19 not tried again at that
+state, and steps like R22D-43, whose target is part of a unit, outside R22D-19 and R22D-25 as stated; the blockers of
+caps 179 and 252, now with grips that are not free or with alphabets after other progress (R22D-40, R22D-41); at the
+3000-twist stop the rest of R22D-37's families (three-letter words beyond R22D-34, middles of two letters) and cap
+274's three height-2 blockers (R22D-32); whether the bulk phase clears height 6 without a budget; an implementation of
+R22D-25 with R22D-37's tier and a practical S and T catalogue (R22D-50 to R22D-56); and a literal lattice player
+(R22D-57). The seed 7108 stop is at height 2 after R22D-42.
+
 ## 6. Commands
 
 From the repository root, with Python 3.13 and NumPy 2.5; `S=research/jumbling/restoration/12-low-height/scripts`.
@@ -2401,6 +2776,17 @@ write no file:
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d23_item59.py          # about 1 minute
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d24_cap252.py          # about 3 minutes
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d30_height6.py         # about 9 minutes
+
+Round 4 of line (d) (section 5: R22D-31 to R22D-43), the senior reviewer's computations kept as written apart from a
+header comment (for `r22d31_height6.py` also a heading line before each part and the loader of the snapshots), and the
+integrator's snapshot builder `r22d31_snapshots.py`, which writes the two start states of R22D-31 to R22D-35 into
+`<dir>`; the others write no file apart from the cache of `theory/seams.py` under `work/jumbling-cache/`:
+
+    python3 -I -B -u $S/round22/r22d31_snapshots.py <dir>                                                       # about 30 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d31_height6.py <dir>  # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d40_blockers.py        # about 8 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d42_step7108.py        # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d43_twelve.py          # about 1 minute
 
 ## 7. Line (c): T2 and T3 (joint attack)
 
