@@ -4,7 +4,8 @@
 # over the off pieces (exact tree distances, as census_seams.py computes them). No descent runs. Writes only the
 # output file (appending). Exact arithmetic slows as the scramble deepens: in the runs of 18 to 19 October, 3000
 # twists took 1.7 to 1.9 hours each, three at a time on four shared cores.
-# Run from the repository root:  python3 -I -B heights_k.py <k> <seed> <checkpoint step> <out jsonl>
+# Run from the repository root:
+#   python3 -I -B research/jumbling/restoration/11-scramble-census/scripts/heights_k.py <k> <seed> <checkpoint step> <out jsonl>
 import json, random, sys, time
 from pathlib import Path
 import numpy as np
