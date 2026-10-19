@@ -30,5 +30,9 @@
  "run2b/04-b15-v-cert.json.gz": {
   "sha256": "0f7bbaeb18ac988972de7217814ca845016fd6f01972bdc88e289346f8f09c25",
   "bytes": 1979904
+ },
+ "run3/t1/b06-14-v-cert.json.gz": {
+  "sha256": "b642c47181572c67a9687a2e9354896c625980e0213caf819a93bdd13147032f",
+  "bytes": 2712661
  }
 }

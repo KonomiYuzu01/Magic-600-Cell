@@ -1348,10 +1348,10 @@ them and got the outputs under `runs/round22/` with the same names.
 - It is implemented (written by Codex and reviewed by the integrator): atlas seeds in `r22b10_cert.py --seeds
   atlas` and `check_r22b10.py` (tests `test_atlas.py`), and literal expansion in `expand_slp.py`, `slp_apply.py` and
   `round22/replay_slp.py --seeds atlas --literal-limit N` (tests `test_literal.py`). With them the literal replay of
-  E2 went from 737 to 71 off pieces in 12 strict′ steps of 692 to 301,384 letters, among them the closures b14, b16,
-  b20 and b21 and the T1′ steps b07, b13, b19 and b15 with certificate V (stage 12 README,
-  `runs/round22/line-a/literal/`); at 71 the T1′ step the search finds for b05 fails N1 and N2, and b06 with b05 is
-  next.
+  E2 went from 737 to 0 off pieces in 13 strict′ steps of 692 to 672,417 letters, 2,012,155 in all, among them the
+  closures b14, b16, b20 and b21 and the T1′ steps b07, b13, b19, b15 and b06 with b05 with certificate V (stage 12
+  README, `runs/round22/line-a/literal/`); for b06 with b05 at 71, V′ has 336,206 letters and the step 672,417
+  (R22B-31: 6,979,493).
 
 ### R22B-40. The recorded failures do not show that long words are needed (read; computed)
 

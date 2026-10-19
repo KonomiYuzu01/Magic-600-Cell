@@ -57,6 +57,10 @@ section 10). The other one needed no V (section 3.5).
   V and a separate checker verifies it: for two units, words of fewer than 10^166 and 10^141 twists, kept as
   compressed programs (measured, [stage 12](../restoration/12-low-height/README.md), E22-1b). They settle existence
   and are far beyond what a person can carry out.
+- **V as a word to play.** Built from short seeds, every V that the depth 40 stop needed became a literal word: its
+  tail went from 737 off pieces to 0 in 13 steps of 692 to 672,417 twists, 2,012,155 in all, each played as one word
+  (measured, R22B-31 and R22B-34 in the [stage 12 proofs](../restoration/12-low-height/PROOFS-B.md)). A machine plays
+  these words; a person cannot.
 - **The V a person uses** comes from a peeling certificate or a short search. After one triangle unit had landed in
   a home cell, a second triangle unit whose transport enters the same cell got a V of 396 twists, in a step of 936
   twists (measured, R22A2-05 in the [stage 12 proofs](../restoration/12-low-height/PROOFS-B.md)).

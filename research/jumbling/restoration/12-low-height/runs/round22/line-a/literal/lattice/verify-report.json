@@ -1,0 +1,80 @@
+{
+ "runs": [
+  {
+   "input": "table:end-table.json",
+   "status_claimed": "restored",
+   "start_matches_restorer": true,
+   "T_digest_matches": true,
+   "retained_part_reaches_T": true,
+   "correction_twists": 10469,
+   "corrections_replayed": [
+    {
+     "macro": 7,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 11,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 12,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 15,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 22,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 1,
+     "inverse": true
+    },
+    {
+     "macro": 29,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 31,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "final_digest_is_solved": true,
+   "final_labels_identity": true,
+   "late_seconds": 451.8,
+   "w9": false,
+   "restored_to_identity": true,
+   "factors": 146226,
+   "retained_length": 166777936,
+   "length_matches_restorer": true
+  }
+ ],
+ "chain_end_digest": null,
+ "pass": true,
+ "seconds": 474.8
+}

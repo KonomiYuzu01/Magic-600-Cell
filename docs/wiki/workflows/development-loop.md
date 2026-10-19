@@ -16,7 +16,7 @@ claims:
 
 1. **Orient.** Read the session summary, [the index](../index.md) and the recent [log](../log.md). Restate the goal and the acceptance check.
 2. **Plan check.** For a non-trivial task, write a seven-part packet (`templates/problem-packet.md`) and run `python tools/agents/codex_review.py --kind plan --packet <file>`.
-3. **Implement** in small steps and run the checks that `AGENTS.md` lists for the changed area. A separable part can go to Codex as a packet with an `implement-contract` block: `python tools/agents/codex_review.py --kind implement --packet <file>` runs it in its own sandboxed worktree; Claude reviews and applies `changes.patch`, then removes the worktree with `--cleanup <call-id>`.
+3. **Implement** in small steps and run the checks that `AGENTS.md` lists for the changed area. A separable part can go to Codex as a packet with an `implement-contract` block: `python tools/agents/codex_review.py --kind implement --packet <file>` runs it in its own sandboxed worktree; Claude reviews and applies `changes.patch`, then removes the worktree with `--cleanup <call-id>`. While a call runs, nothing may change the repository's Git state, `.git/info` included: on 19 October 2026 the first local scheduled wakeup of a Claude Code session added its runtime block to `.git/info/exclude`, and the wrapper marked the four calls then running invalid. Arm local wakeups and scheduled tasks only when no call runs.
 4. **Review.** Run `python tools/agents/codex_review.py --kind review --packet <file>` on the current candidate. Answer every finding with `adopt`, `reject_with_evidence` or `needs_verification` in `work/reviews/<call-id>/dispositions.json`.
 5. **Record.** Update the affected wiki pages and append a log entry.
 

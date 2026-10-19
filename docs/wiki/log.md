@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-19] update | Pair implementation: the Git-state check includes `.git/info`
+Four Codex implementation calls were marked invalid because `.git/info/exclude` changed while they ran; the change was the block a Claude Code session writes there on its first local scheduled wakeup, not the calls' work, so local wakeups and scheduled tasks wait until no call runs ([development loop](workflows/development-loop.md)).
+
+## [2026-10-19] update | Jumbling: the depth 40 scramble restored by literal words
+With b06 and b05 landed together at 71 off pieces by one step of 672,417 twists, E2 is played from 737 to 0 in 13 strict′ steps of literal words, 2,012,155 twists; with the census descent and round 3 of line (a) before it and the lattice phase after it (166,788,405 twists, checked independently), the depth 40 scramble of seed 7101 is restored to the solved state by literal words only, one trajectory put together from several scripts ([stage 12](../../research/jumbling/restoration/12-low-height/README.md), `PROOFS-B.md` R22B-34).
+
 ## [2026-10-19] update | Jumbling: the tutorial runner and its checker
 A program that applies the tutorial's rules to the current state, playing only literal words, and an independent checker that replays its record twist by twist: the runner solved the depth 10 scramble of seed 7001 in 9 twists and the depth 20 scramble of seed 7106 in 19 twists and a lattice phase of 8,701,310, and the checker passed both; E2's certificate steps and height 4 are not in its rules yet ([stage 13](../../research/jumbling/restoration/13-tutorial-runner/README.md)).
 

@@ -1,0 +1,9 @@
+{"safe_all_grips": 562, "letters": 6182, "off_lattice": 3096, "sec": 28}
+{"orbits": 1816, "singletons": 1781, "sec": 28}
+{"reference_middle": "f9c9c8bfc0ac79ad56478318f4a7931e38c917eeea6536865b84daad80f2f3ea", "T": 3097, "L": 71}
+{"replayed": "research/jumbling/restoration/12-low-height/runs/round22/line-a/literal/run3/prep1/x-word.json", "twists": 1, "off": 71, "sec": 31}
+{"safe_all_grips": 590, "letters": 6490, "off_lattice": 71, "sec": 44}
+{"start": "31139216531467c7fb6b5398815d507a0f1e28acde9e67739b15da29a84ce5cf", "after_X0": "52bf6ba3c5dcac70bdc4194b06eaf9a2e98876dc02a6c73e8bb6d45b3bbba5ba", "holes": 71, "holes_in_T": 1, "deficit": [6, {"6": 2, "8": 1, "9": 1, "10": 1, "15": 1}]}
+{"phase": 1, "letter": [170, 1], "deficit": [1, {"15": 1}]}
+{"phase": 2, "letter": [75, 1], "deficit": [0, {}]}
+{"X0": [[178, 7]], "new": [[170, 1], [75, 1]], "deficit_after": [0, {}], "holes_in_T_after": 0, "zx": "d9054c13f1fa1a492693f2dc0a282ab7bbd53189d15a51d47c9481463aaac0cd", "free_inside_cap_91": 61, "cut_91_unstraddled": true}
