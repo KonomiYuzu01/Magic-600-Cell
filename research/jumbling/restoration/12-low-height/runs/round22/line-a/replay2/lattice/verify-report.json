@@ -1,0 +1,130 @@
+{
+ "runs": [
+  {
+   "input": "table:<scratch>/z-b06-14.json",
+   "status_claimed": "restored",
+   "start_matches_restorer": true,
+   "T_digest_matches": true,
+   "retained_part_reaches_T": true,
+   "correction_twists": 18055,
+   "corrections_replayed": [
+    {
+     "macro": 0,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 1,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 2,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 3,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 4,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 7,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 8,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 15,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 18,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 20,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 24,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 26,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": true
+    },
+    {
+     "macro": 28,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 30,
+     "times": 2,
+     "inverse": true
+    },
+    {
+     "macro": 33,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "final_digest_is_solved": true,
+   "final_labels_identity": true,
+   "late_seconds": 1804.5,
+   "w9": true,
+   "restored_to_identity": true,
+   "factors": 143641,
+   "retained_length": 162976586,
+   "length_matches_restorer": true
+  }
+ ],
+ "chain_end_digest": null,
+ "pass": true,
+ "seconds": 1847.2
+}

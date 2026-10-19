@@ -535,7 +535,12 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   and N2 together with independent alternating factors (R22B-19) and, on orbits of 2 to 7 chambers, a joint finite
   test (R22B-22). Round 5 settles vacancy at a given middle: V exists exactly when N1, N2 and a joint test of the
   target's images pass, a finite test that needs no Alt (R22B-29); twenty twists from solved reach a state where an
-  orbit without Alt meets a real target with one hole, and one letter vacates it (R22B-24).
+  orbit without Alt meets a real target with one hole, and one letter vacates it (R22B-24). Round 6, after the
+  owner's decision that the machine plays only literal words: 29 seeds of 10 to 9,214 letters, in a new orbit order,
+  cover the targets of E2's nine certificate steps, and with the checked tables each whole step has a literal word of
+  fewer than 10⁷ twists (R22B-30, R22B-31); in the old orders no power of a four-letter commutator is a seed
+  (R22B-32, R22B-33); a literal builder is specified (R22B-34), and the nine steps are read one by one for shorter
+  routes (R22B-40 to R22B-49).
 - (c) The T2 catalogue and T3 unlocking: a joint attack. After the two sealed analyses the solver stopped (owner, 18
   October 2026); the senior reviewer cross-examined the solver's analysis against its own, and the integrator runs
   the adjudicating experiments. Glue is a theorem: every landing word of the unit's class takes the lattice content
@@ -550,7 +555,10 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
 - (d) Height 4. A retained letter before a word and its inverse after transfers the landing problem exactly
   (R22D-01), and a lowering conjugate has an exact endpoint contract (R22D-03). At the depth 100 stop 93 of the 108
   direct free-class cases (R22D-04) and both whole-cap middles (R22D-06) are impossible; SAFE preparations cannot
-  unlock a cut (R22D-07).
+  unlock a cut (R22D-07). Round 2: over the five census stops with height-4 pieces, 51 of the 93 high units lie
+  whole in no clean cap (R22D-09 to R22D-13); a 28-letter strict′ step a·V·W·V⁻¹·a⁻¹ at the depth 100 stop lands
+  unit 391 and 41 other height-4 pieces, the first literal height-4 step (R22D-16); and a finite rule that reads the
+  state only, with words of at most 244 letters, contains it (R22D-19).
 - What all four leave open is coverage: that every state of 𝒞_2 (𝒞_4) has a step in a stated catalogue (first attempt:
   `PROOFS-B.md` section 8, COV-01 to COV-07). The explicit
   bounds proved so far are either conditional (R22B-01) or existence bounds that show a finite search decides a
@@ -636,6 +644,25 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
     residual case that only the joint test decides (R22B-25). At the depth 60 stop no home-cell target meets an orbit
     of 2 to 7 chambers, and neither do the T1′ middles of 151 and 180 (R22B-26, R22B-27). A strict′ step keeps the
     old subgroup's certificates, but not the hole inventories, which must be read again (R22B-28).
+- Line (b), round 6 (the senior reviewer, two concurrent shards, after the owner's decision of 18 October that the
+  machine plays only literal words; R22B-30 to R22B-34 and R22B-40 to R22B-49 in `PROOFS-B.md` section 3; its
+  computations `scripts/round22/r22b30_seeds.py`, `r22b32_pairs.py`, `r22b33_powers.py`, `r22b33_search.py`,
+  `r22b40_prefixes.py` and `r22b48_b15.py`, re-run by the integrator with the same outputs, `runs/round22/`):
+  - Short seeds. At the starts of E2's nine certificate steps, 29 seeds of 10 to 9,214 letters (left-spine prefixes
+    of the seed atlas, placed by the K⁺ element 2453) cover every target orbit in a new orbit order (R22B-30).
+    Moving a seed onto the anchors of the checked tables costs at most 6e + 2f + 2 letters, so each whole step has a
+    literal word of 170,176 to 6,979,493 twists (R22B-31). In the nine old orders no power of a four-letter
+    commutator of single SAFE letters is a seed (R22B-32); a search found two power seeds (orbit 33: 150 letters;
+    orbit 34: 40), and R22B-13's seed for orbit 66 is no seed at b14, so seeds cannot be cached by orbit (R22B-33).
+  - The literal builder (R22B-34, a specification): versioned certificates with an explicit orbit order, anchor
+    transfer, an exact-length preflight against 10⁷, iterative expansion with leaf checks, a step check that fails
+    with a nonzero exit, and each later step rebuilt at the state reached.
+  - The nine steps one by one (R22B-40 to R22B-49). The recorded failures were incomplete searches, not proofs that
+    long words are needed. Short prefixes clear part of the occupants: b14 4 letters, 28 of 60; b16 8 letters, 15 of
+    70; b20 6 letters, 3 of 10 while filling two target holes; b15 58 letters, all but 2. For b21, T1′ leaves 10
+    occupied targets instead of 111. Type counts rule out the direct closures: b07's with its recorded W after any
+    SAFE preparation, and every own-class one for b13 (15 type-30 holes needed, 13 exist), b19 (a type-35 hole
+    needed, none exists) and b06 with b05 (at least 471 holes needed, 71 exist).
 - Coverage of B′(2) (the senior reviewer; COV-01 to COV-07 in `PROOFS-B.md` section 8; its computations
   `scripts/round22/cov01_isolated_triangle.py`, `cov02_point_orbits.py` and `cov04_middles737.py` re-run by the
   integrator with the same outputs, and its proposed experiment run as `cov07_word_order.py`; `runs/round22/`):
@@ -896,6 +923,13 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   - Totals: with round 3, all 22 units land, 1,193 to 0 in 21 strict′ steps. The literal steps have 8,804 letters;
     the certificate steps have explicit lengths of 147 to 164 digits, under 10¹⁶⁴ letters in all. These are
     existence bounds, not words to play, and this is one trajectory: it says nothing about other states (section 12).
+  - The lattice phase from E2's end (measured, exact; `runs/round22/line-a/replay2/lattice/`): from the end table
+    (digest `3f84154f…`; every piece on the lattice, 60,029 of them moved) `restore_lattice_late.py` with the merged
+    library (36 macros) reaches the solved state in 162,976,586 retained twists (143,641 factors) and 21 corrections
+    of 18,055 twists, 162,994,641 twists in all, about 5.2 years at one twist per second (about 28 minutes to
+    compute); `verify_late.py` checks it independently, identity labels on all 259,800 stickers included (about 31
+    minutes). So the depth 40 stop is restored to the solved state end to end, but not by literal words only: the
+    nine certificate steps are programs, not words to play (round 6 of line (b), below).
 - Line (c), the integrator's re-check of the solver's computed steps (measured): the solver's four T1′ steps at the
   depth 40 stop, each its landing word W followed by V′·W⁻¹·V′⁻¹, replay strict with the units recomputed from the
   state: b03 160 letters, b04 942, b12 1,158 and b18 160; no lattice piece leaves the lattice and every other off
@@ -987,6 +1021,24 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   for 0 to 5, 321 for 6 and 7; 160, 163, 163, 165, 158, 152, 149 and 155 searched after pruning; 71 to 87 minutes
   each) give no strict word and no strict lowering word (`runs/round22/e22-2/`). So at the depth 100 stop one
   retained letter before an E-B6 candidate never gives a strict step.
+- Line (d), round 2 (the senior reviewer, one shard, concurrently with round 6 of line (b); R22D-09 to R22D-19 in
+  `PROOFS-B.md` section 5; its computations `scripts/round22/r22d09_census.py`, `r22d14_six.py`,
+  `r22d15_source_cells.py`, `r22d16_step.py` and `r22d17_straddlers.py`, re-run by the integrator with the same
+  outputs, `runs/round22/`):
+  - The high units of the five census stops with height-4 pieces, each stop rebuilt from its record: at depth 100
+    the nine high units of seed 7102 lie whole in one clean cap, 61, and the six of seed 7108 in cap 415; at depth
+    200 (seed 7105) none of the 25 does; over the five stops 51 of the 93 lie whole in no clean cap (R22D-09 to
+    R22D-13).
+  - At the depth 100 stop of seed 7102 a six-letter family of 2,450,624 words is exhausted by a footprint lemma
+    (six-letter strict′ steps outside it are not excluded; R22D-14), and occupied fixed chambers in the source cells
+    exclude 105 of the 108 direct cases; the three left are unit 391's (R22D-15).
+  - The first literal height-4 step: a·V·W·V⁻¹·a⁻¹ of 28 letters, with a = (61, 57), V = (287, 3) and
+    W = [(110, 54), (149, 3)]⁶, lands unit 391 and 41 other height-4 pieces, 31,479 to 31,437 off pieces, checked
+    strict′ by `stepchk.py` (R22D-16).
+  - Landing the 20 height-2 straddlers of cap 179 would make it a clean lowering cap, while cap 150 stays blocked by
+    a height-4 piece, so a blanket height-2-first order is not supported (R22D-17). A commutator a·W·a⁻¹·W⁻¹ whose W
+    has the target's new class only never lands the lowered target (R22D-18).
+  - A finite rule that reads the state only, with words of at most 244 letters, contains R22D-16 (R22D-19).
 
 ## 12. Next
 
@@ -1032,13 +1084,14 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   depth 60 stop `ia-k60-s7104`; the census round 3 records are deeper and have height-4 pieces, so they are not 𝒞₂
   inputs (COV-16). A further replay adds a trajectory and decides nothing universal.
 - Line (b): whether N1 and N2 alone suffice at every target of 𝒞₂ (no step needs it once it carries the joint test of
-  R22B-29), and the residual primitive case of R22B-25. The commutator-power search of R22B-18 was deferred because
-  short seeds shrink V's bound but do not decide existence; since the owner's decision of 18 October it comes first,
-  because the machine plays only literal words.
+  R22B-29), and the residual primitive case of R22B-25. Since the owner's decision of 18 October literal words come
+  first: round 6 bounded each of E2's nine certificate steps below 10⁷ twists (R22B-31) and said where the vacancy
+  work lies (R22B-40 to R22B-49); shorter words for these steps are open.
 - Existence before construction: a stuck step is settled by N1, N2 and the Jordan certificates of its target
   (`jordan_target.py`); V is built with the builder of E22-1b only when a later state is needed.
-- Height 4 (before coverage since 18 October): E22-2 is complete and gives no strict step; next, six-letter commutators
-  (R22D-02) and protected two-level steps with a smaller Bad set than a whole cap (R22D-05).
+- Height 4 (before coverage since 18 October): E22-2 is complete and gives no strict step. Round 2 of line (d) gave the
+  first literal height-4 step (R22D-16) and a state-only rule with words of at most 244 letters (R22D-19); next, that
+  rule at the five census stops, and steps for the 51 high units that lie whole in no clean cap.
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
@@ -1279,4 +1332,7 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/slp_apply.py`, `scripts/test_slp_apply.py` | The exact applier of a program of literal words, `tclose2.py` cores and R22B-10 certificates (straight-line programs of SAFE-ALL letters, applied to the labelled poses without expanding powers): the end pose table and the strict′ contract against the start state; its unit test |
 | `scripts/expand_slp.py`, `scripts/test_literal.py` | Round 6 of line (b) (R22B-34; written by Codex and reviewed by the integrator): the literal expansion of a certificate's V or V⁻¹ into a word file, after its exact length is checked against a limit (10⁷ by default); with it `round22/replay_slp.py --seeds atlas --literal-limit N` and `round22/e2_b06_t1.py` build each closure and T1′ step as one literal word (the SAFE-ALL part V is applied letter by letter through each letter's exact cap action, with every letter checked to be SAFE-ALL at the state; the other letters twist by twist in the simulator), and `round22/stepchk.py --require-strict` exits nonzero when the strict′ contract or the output digest fails; the test (`LITERAL_E2E=1` adds b15 end to end) |
 | `scripts/round22/replay_slp.py`, `runs/round22/line-a/replay2/` | E2, the replay continued from 737: the driver (literal words, closures with certificate V, T1′ steps with a literal or certificate V′, each applied by `slp_apply.py`); the plans, the stored landing words and cores (`inputs/`), and runs 1 and 2 with every step's files and end tables |
+| `runs/round22/line-a/replay2/lattice/` | E2, the lattice phase from the end table: the restorer's summary and solutions and the independent check's report (scratch paths replaced by `<scratch>`) |
+| `scripts/round22/r22b30_seeds.py`, `r22b32_pairs.py`, `r22b33_powers.py`, `r22b33_search.py`, `r22b40_prefixes.py`, `r22b48_b15.py`, `runs/round22/r22b30_seeds.txt`, `r22b32_pairs.txt`, `r22b33_powers.txt`, `r22b33_search.txt`, `r22b40_prefixes.txt`, `r22b48_b15.txt` | Line (b), round 6: the senior reviewer's computations (kept as written apart from a header) and their outputs: the 29 short seeds and the whole-step bounds, the four-letter commutator pairs, the two power seeds and the search at b14, the vacancy prefixes of the nine steps, and b15's dead end |
+| `scripts/round22/r22d09_census.py`, `r22d14_six.py`, `r22d15_source_cells.py`, `r22d16_step.py`, `r22d17_straddlers.py`, `runs/round22/r22d09_census.txt`, `r22d14_six.txt`, `r22d15_source_cells.txt`, `r22d16_step.txt`, `r22d17_straddlers.txt` | Line (d), round 2: the senior reviewer's computations (kept as written apart from a header) and their outputs: the high units of the five stops with height-4 pieces, the six-letter family, the source cells, the 28-letter step and the straddlers of caps 150 and 179 |
 | `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`, `e2_b06_t1.py` | E2, b06 with b05: the first SAFE-ALL preparation, the second counted against the reference middle's orbits, and the prepared T1′ attempt applied by `slp_apply.py`; records in `runs/round22/line-a/replay2/b06-<n>/` |

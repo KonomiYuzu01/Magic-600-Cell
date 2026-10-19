@@ -2,6 +2,15 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-19] update | Jumbling: line (d), round 2
+A 28-twist step at the depth 100 stop lands a height-4 unit and 41 other height-4 pieces and leaves everything else exactly in place, the first literal step at height 4, and a finite rule that reads only the state, with words of at most 244 twists, contains it; over the five census stops with height-4 pieces, 51 of the 93 high units lie whole in no clean cap ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 5).
+
+## [2026-10-19] update | Jumbling: line (b), round 6
+For the nine steps of experiment E2 that are known only by certificates, 29 short seeds in a new orbit order give each step a literal word of fewer than 10⁷ twists, a builder that plays such words is specified, and the nine steps are read one by one for shorter routes ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 3).
+
+## [2026-10-19] update | Jumbling: the lattice phase after E2
+From the end of experiment E2, where every piece of the depth 40 stop is back on the lattice, the lattice restorer reaches the solved state in 162,994,641 twists and an independent checker confirms it, so that scramble is restored end to end; nine of E2's steps are still programs, not words to play ([stage 12](../../research/jumbling/restoration/12-low-height/README.md) section 11).
+
 ## [2026-10-19] update | Jumbling: left heights of 3000-twist scrambles
 Three random scrambles of 3000 twists, checked every 250 twists without any descent, never had a piece above left height 6; at 3000 twists 7, 185 and 89 of their 116,111 to 119,237 off pieces were at height 6, the rest at heights 2 and 4 ([stage 11](../../research/jumbling/restoration/11-scramble-census/README.md)).
 
