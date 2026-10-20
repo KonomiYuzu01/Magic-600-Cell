@@ -1,6 +1,6 @@
 # Local jobs for the owner's laptop (WSL, Ubuntu)
 
-Written by the integrator session of draft PR #112. Revision 3, 2026-10-20 05:05 UTC (adds job A5). Re-read this file from
+Written by the integrator session of draft PR #112. Revision 4, 2026-10-20 08:50 UTC (adds Phase B on `a9df9c0`). Re-read this file from
 `origin/claude/local-handoff` every 30 minutes; a newer revision replaces this one, and a job it marks `cancelled`
 is not started (a running one finishes and is recorded).
 
@@ -68,10 +68,52 @@ Job A4 (the Codex SCH-L candidate, whose acceptance test timed out on the loaded
    copy the two schl files into the results branch. Then `git -C ~/m600-local worktree remove ~/m600-schl`.
 4. If `setUpClass` times out again on an idle machine, record that; do not raise the deadline or edit the test.
 
-## Phase B (after the integrator's next push; this file will name the commit)
+## Phase B (start now, on `a9df9c0`; Phase A jobs keep running unchanged)
 
-Not yet available: second-machine reruns of the five implement acceptance tests and of the slow tests that their
-acceptance skipped, and R22D-81 continuations from the end states of the cap 311 and cap 290 routes.
+`a9df9c0` on `claude/repair-pair-list` commits the round 6 scripts, including `r22d81_rule.py` and `r22d81_pairs.py`
+under `scripts/round22/` (the same code as the drafts of Phase A; only comments differ), D19 (`r22d19_rule.py`) and
+the five implement patches of 31b78a5. Do not restart or change a Phase A job.
+
+Setup (once): `git -C ~/m600-local fetch origin claude/repair-pair-list`, then two detached worktrees at that commit,
+`git -C ~/m600-local worktree add --detach ~/m600-b a9df9c0` for the tests and
+`git -C ~/m600-local worktree add --detach ~/m600-c a9df9c0` for the rule runs. Check `git -C ~/m600-b rev-parse HEAD`
+starts with `a9df9c0`. Use the run environment of the setup above (one thread, `nice -n 10`, a cache file per job
+under `~/m600-cache`, `out.txt`, `.start` and `.done` under `~/m600-runs/<job>/`), never writing into `~/m600-b` or
+`~/m600-c`: the tests check that their worktree gains no file.
+
+Rule runs (from `~/m600-c`, after A1; each writes no file; `<snap>` is `~/m600-runs/snap/s7302-stop.pkl`). R22D-81's
+rule continued from the end states of the routes of R22D-89; nobody has run these, so there is no expected end line.
+Script: `12-low-height/scripts/round22/r22d81_rule.py --snapshot <snap> --prefix '<letters>' --expect <digest> --cpu 7200`.
+
+| Job | Letters (prefix) | Expect after the prefix |
+| --- | --- | --- |
+| C1 cap 290 route | `[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[136,2],[136,6],[301,2],[136,7],[301,4],[136,1],[136,4],[136,19],[301,3],[136,1],[301,3],[136,5],[290,15]]` | `21db4f944c71f020f2380e434dc1b37618c9b1437960ef87365f3345aaa34928` |
+| C2 cap 311 from the stop | `[[185,1],[185,7],[185,16],[185,3],[263,1],[263,3],[263,8],[364,1],[263,2],[407,1],[407,3],[407,1],[407,2],[407,4],[364,1],[407,2],[407,4],[407,10],[407,15],[364,2],[263,2],[311,14]]` | `2f88c1e617cc22c7f09eef19d6e7c530fdcb7a49c577305f1ca79196533726b1` |
+| C3 cap 311 after run (i) | `[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[185,1],[263,1],[263,3],[364,3],[263,6],[263,40],[311,14]]` | `5296c847f5a19cb1bc6e4cc531786c833dc681adbdc367763378f9325e740138` (START: tau 274, u 3, as in `runs/round22/r22d81_rule_311_14.txt`) |
+
+A wrong digest after the prefix stops the run with an error: record it and do not retry with another prefix. Record
+the START line (target table, tau, u), every STEP line and the end line (HANDOFF, STUCK, BUDGET or NOT_APPLICABLE).
+
+Tests (from `~/m600-b`, one at a time: two suites at once in one worktree can see each other's temporary files). Each
+is a second-machine run of an acceptance test that passed here, with its slow switch on where it has one (the
+acceptance runs here skipped the slow part). Command: `$HOME/m600-venv/bin/python -I -B -u <test>` with the switch in the
+environment. Paths under `research/jumbling/restoration/`.
+
+| Job | Test | Switch | Here (headless Linux, 20 October) |
+| --- | --- | --- | --- |
+| B1 r22d25 | `12-low-height/scripts/round22/test_r22d25.py` | `R22D25_SLOW=1` (rebuilds the seed 7302 stop) | OK, 19 tests, 2 skipped, 561 s without the switch |
+| B2 llp | `13-tutorial-runner/scripts/test_literal_lattice.py` | `LATTICE_SLOW=1` (the committed depth-20 handoff) | OK, 18 tests, 1 skipped, 468 s without the switch |
+| B3 run4 | `13-tutorial-runner/scripts/test_check_run.py` | none | OK, 66 tests, 482 s |
+| B4 schl | `09-general-method/scripts/schedule11/test_sched11_late.py` | none | OK, 8 tests, 931 s (after the integrator's fixes; A4 runs the earlier candidate) |
+| B5 run3 | `13-tutorial-runner/scripts/test_runner.py` | `RUNNER_SLOW=1` (depth 20 through the lattice phase) | OK, 34 tests, 1 skipped, 1,222 s without the switch |
+| B6 d19 | `12-low-height/scripts/round22/test_r22d19_rule.py` | `R22D19_SLOW=1` (the full enumeration, about two hours) | OK, 10 tests, 1 skipped, 1,925 s without the switch |
+
+Record per test job: the test's last lines (`Ran ... tests`, `OK` or the failures with their tracebacks), every
+`skipped` line with its reason, the wall time and any JSON line the test prints (worktree checks, timings). A failure
+is a result: record it and go on; do not edit a test, raise a deadline or re-run a failed suite more than once.
+
+Order: C1 to C3 first (after A1), then B1 to B6; at most min(6, logical cores - 2) jobs at once with the Phase A jobs
+counted. When Phase B is done, `git -C ~/m600-local worktree remove ~/m600-b` and the same for `~/m600-c`.
 
 ## Results
 
