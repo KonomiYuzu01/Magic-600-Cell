@@ -1,0 +1,1020 @@
+{
+ "start": "after75",
+ "prefix": [
+  [
+   185,
+   1
+  ],
+  [
+   263,
+   1
+  ],
+  [
+   263,
+   3
+  ]
+ ],
+ "digest": "fe273a8c88d8a8fe7f030f95e6130fc76a57da6d708dea110a1cb31125276122",
+ "tau": 311,
+ "letters": [
+  {
+   "letter": [
+    364,
+    3
+   ],
+   "family": "prep",
+   "u": 8,
+   "n2_n4_n6": [
+    103103,
+    1019,
+    172
+   ],
+   "off": 104294,
+   "max_height": 6,
+   "N": 133098,
+   "digest": "f89e1df01b3752ed0c1cc535f6406df450ecf8690dbe89f9ef2f116b8bedcc50"
+  },
+  {
+   "letter": [
+    263,
+    6
+   ],
+   "family": "prep",
+   "u": 2,
+   "n2_n4_n6": [
+    103103,
+    1019,
+    172
+   ],
+   "off": 104294,
+   "max_height": 6,
+   "N": 133138,
+   "digest": "be3ce23095a9bf44b546572246b1a0ad54799e7e8c913e3ce4ed0f2f2c3b45c3"
+  },
+  {
+   "letter": [
+    263,
+    40
+   ],
+   "family": "U",
+   "u": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133040,
+   "digest": "b1cdbd09ab8aca71803793c92df0034386db7abc6a7ed8e1cc537246a7478487"
+  },
+  {
+   "letter": [
+    311,
+    14
+   ],
+   "family": "H6",
+   "u": 0,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "5296c847f5a19cb1bc6e4cc531786c833dc681adbdc367763378f9325e740138"
+  }
+ ],
+ "rounds": [
+  {
+   "u_before": 8,
+   "u_tried": 59,
+   "u_caps": [
+    364
+   ],
+   "class_i_caps": [
+    364
+   ],
+   "counts": {
+    "u": 59,
+    "a": 3,
+    "b": 124
+   },
+   "cls": "i",
+   "cpu": 223.8
+  },
+  {
+   "u_before": 2,
+   "u_tried": 40,
+   "cpu": 396.1
+  }
+ ],
+ "h6_items": [
+  {
+   "item": 1,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133426,
+   "digest": "ac711e838869a6c4a1d8acebcdb7c066448106b013ed17eedf66077b9da86b90"
+  },
+  {
+   "item": 2,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133366,
+   "digest": "b12eda211cc039afe720176d735ed2ef8650b98ebf261aabd90104e44fb7d7db"
+  },
+  {
+   "item": 3,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133458,
+   "digest": "08d69a8f30bfe41291c4996f7551704cec7ae0220a81e1a7b8029d09265febc2"
+  },
+  {
+   "item": 4,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133436,
+   "digest": "56196b92142d834e6e832ee723768c4e2ada09d1a2c577d81f5931ff7abfe611"
+  },
+  {
+   "item": 5,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133458,
+   "digest": "190db26e3e3234d5b4a41eda42032fe86bfede9df9f712d8b18d2ed3395cdc84"
+  },
+  {
+   "item": 6,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133426,
+   "digest": "17536a972396a3696f3248572da832aac2e4f9da28e42f56a8de63c9548146b4"
+  },
+  {
+   "item": 7,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133420,
+   "digest": "0afdc9c6ac500f222542ab6e49b27eea6f7172fa9209e301e49aaa96b799ecc5"
+  },
+  {
+   "item": 8,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133384,
+   "digest": "ccab8b4f858e051a408fa8fef7febdd237bcce82be38722224f97c898c4d2036"
+  },
+  {
+   "item": 9,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133456,
+   "digest": "e9b3b571b467bb0c46d60167410335259a65945cba8a5b65e48bf88af34cc255"
+  },
+  {
+   "item": 10,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133388,
+   "digest": "532a4679bc3051db12b543cfbbdc4970f4d01103d4316bca7613f796e07d3a88"
+  },
+  {
+   "item": 11,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133426,
+   "digest": "d127faaf8cd9e79741add76f290da04ee9474023b4b2143e2405c99d96c1a835"
+  },
+  {
+   "item": 12,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133670,
+   "digest": "bae0123bee01e20b0350884ae655800c9bde8f73469a5c3b3199709e3b03558e"
+  },
+  {
+   "item": 13,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133744,
+   "digest": "89ae0792a1b5618c08231d038585dd1711072f967474595573821f1a3ba4460c"
+  },
+  {
+   "item": 14,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "5296c847f5a19cb1bc6e4cc531786c833dc681adbdc367763378f9325e740138"
+  },
+  {
+   "item": 15,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133770,
+   "digest": "5549b4b8b5502c4da45a0a60ed75b10714f0cd95485000a8db57d9b484bbe062"
+  },
+  {
+   "item": 16,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133724,
+   "digest": "8297e4dae7093250f251e59be789705a80e4b12050419ce9d0eb19920c07f529"
+  },
+  {
+   "item": 17,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133698,
+   "digest": "f07a2f1b103ff19c723eaff12b295649f375fdcccc8d3d0a76937eca57b8b8e9"
+  },
+  {
+   "item": 18,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "89155aae3342e31bcff3ddcd0a576b27b706bbb49b47e8280e300c2cb8c330b9"
+  },
+  {
+   "item": 19,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133730,
+   "digest": "555768102f4b61d5793aba89cdf34de8feb234832d47c30d4c9175c59a5967a6"
+  },
+  {
+   "item": 20,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133668,
+   "digest": "fbae773388565623dfb8c872f7758d52bc1354812c0236b20c8a20f6492534bd"
+  },
+  {
+   "item": 21,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "2b901e182d19dd9e10205747d709b8edf244a4685c6e4f581684d176dce86b9c"
+  },
+  {
+   "item": 22,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133774,
+   "digest": "cd6c31155501f20b99dafcd32132e2b9ccafd95f6656eb8ab16a55a07765f021"
+  },
+  {
+   "item": 23,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133724,
+   "digest": "1949e2d847394210d25110437725f5b14db778f1f49be477281ca5966c832887"
+  },
+  {
+   "item": 24,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133682,
+   "digest": "d1eae9edc33e08354fb75707e3dc2818c16ee3d002e40ec7eb9b98d12b59195f"
+  },
+  {
+   "item": 25,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133722,
+   "digest": "5dd059b5fa20c459c6743a6b7ac0653685c4289cb0a8bd83a535b5902be51744"
+  },
+  {
+   "item": 26,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133774,
+   "digest": "c65c78ec7a877742d54ae6ca23c0b382533936036a160edc8186ca7daf8dff58"
+  },
+  {
+   "item": 27,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133712,
+   "digest": "d117aad61f7063dd2f6a6c8229b8d4959f715c72563bf9ebb3e592a5455fc7a9"
+  },
+  {
+   "item": 28,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133764,
+   "digest": "b58e0b438a9b94f5a4fc4830e3f788a97269b84e3fe3aedcb6afd9f1af094faa"
+  },
+  {
+   "item": 29,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133694,
+   "digest": "99158e0e00177d33b5333dc8859627821270232d1ea9d736fc1c31c06769573f"
+  },
+  {
+   "item": 30,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133676,
+   "digest": "a94cd70f200eccedd8bab594b53a572cf483f90819fee4e8aec4b9ef429c3665"
+  },
+  {
+   "item": 31,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133682,
+   "digest": "e279e2432f52f0ee316f7268fbb0a4b7f1e238bb6aa22e72027870643faac346"
+  },
+  {
+   "item": 32,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103601,
+    1457,
+    172
+   ],
+   "off": 105230,
+   "max_height": 6,
+   "N": 133722,
+   "digest": "915d7316daa3c9932e952fcbe8a0ed5ea89b3a153929f7bae7800a4fa560f501"
+  },
+  {
+   "item": 33,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133748,
+   "digest": "ae760eb477717584eb5d7d9baf56392c1fa51f7883871157de764b5a12460857"
+  },
+  {
+   "item": 34,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133728,
+   "digest": "28f2e5ca5264051a2cebdb8ebf1e3219f75ed4a4b1ca2a2e93c83faaadb3538c"
+  },
+  {
+   "item": 35,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133742,
+   "digest": "ac03e39ed047dfa7dcc50c06497b1ceaf39767897088a263382d6c6a7556c14e"
+  },
+  {
+   "item": 36,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133722,
+   "digest": "3b7b0136f266363dd962020334a4f208bc4cd8dd0bb5b274642e152a6e106a86"
+  },
+  {
+   "item": 37,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133646,
+   "digest": "7a554b39fb9520a47c3b8d7717e01f330676a029eb8fcc75238277dc81ea021a"
+  },
+  {
+   "item": 38,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133642,
+   "digest": "4464e40513fef9f56e4130accee76d349c5efb55bb224467df4d9f413205d8b1"
+  },
+  {
+   "item": 39,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133748,
+   "digest": "1095273285a504d48123d44657f187fea71d65ded7c1b4c2c3ecabd14ec4f1fa"
+  },
+  {
+   "item": 40,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133704,
+   "digest": "ad3d44f425be820ca2d0819fddf11fcec6dccba354eae25040e9bf28aee74882"
+  },
+  {
+   "item": 41,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133758,
+   "digest": "27a73b91ed493e4cc7ec5a8767eb37263e3721741f27fd18dea04647c7603c96"
+  },
+  {
+   "item": 42,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    103850,
+    1457,
+    172
+   ],
+   "off": 105479,
+   "max_height": 6,
+   "N": 133738,
+   "digest": "83e250c90ae93cd39a898fb3c5bb2957b1e6b4c91c408644d3585a5051642ce7"
+  },
+  {
+   "item": 43,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133670,
+   "digest": "8343e02db722eb3dbca4064aa75698f644702344b4a12d53ec2ae8f5493f1694"
+  },
+  {
+   "item": 44,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "d1254c3e8a0d80841dc822163ec2f7eec8b9137e2c79bc8c330f1a8819ea2ec2"
+  },
+  {
+   "item": 45,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "4d5753955f5714ba3a93350947b1720a665a8da36b929e5dcc7196bf1a9cd9f0"
+  },
+  {
+   "item": 46,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133774,
+   "digest": "02d28437a1e4adaaea395de1bd05fb4a7d45c806d162ada20aa36925a4022ce0"
+  },
+  {
+   "item": 47,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133744,
+   "digest": "737c0146e8455efce9d09a98e01922d15690f174932fdb0481f0dced2fb8bb96"
+  },
+  {
+   "item": 48,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133698,
+   "digest": "6d7506c7904d2bc39479389582804cb946d2ffe3a212f52f597c223342dfa5a2"
+  },
+  {
+   "item": 49,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "6cdb61cb7b231f162fd340af890d47e77bbe251dabaeef2a91051c0b2625ae0f"
+  },
+  {
+   "item": 50,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133740,
+   "digest": "8b0ba18c162b450dc2a3833d82c6608036127975bc300e7683f07d3dfecb742d"
+  },
+  {
+   "item": 51,
+   "applied": true,
+   "n6_drop": 13,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1470,
+    159
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133788,
+   "digest": "9427d85a54cdd6a2e84f1d07b111f16965e4200be6bee4556df286d0be3435d8"
+  },
+  {
+   "item": 52,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133708,
+   "digest": "eb6aa526fac4d12f9dbf981098499d13b67f748db93fb71d4705db59ad350c71"
+  },
+  {
+   "item": 53,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "37b1e7cd2413a0ceb8c7ad0ef282f042acc43ecfd6da1f85c3930e802aa3be9c"
+  },
+  {
+   "item": 54,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133774,
+   "digest": "a5e1800e2215559e8f310a2f6c1c0295cc1ca9aad15a376157a5ffbfaecb607c"
+  },
+  {
+   "item": 55,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "9c5b1661cfe0e1593c675a31319b6f7fb5a6bd00bf2f4c77958bb55c9a51c0e6"
+  },
+  {
+   "item": 56,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133728,
+   "digest": "f6cdfe4679d411e58f160555559172a6941851dd1b79336b600cb0017441acb9"
+  },
+  {
+   "item": 57,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133790,
+   "digest": "af8f3739aa8f0ccc0dbaaa0c887bbcb1321ea859b7891b2b815d6e5a65f98925"
+  },
+  {
+   "item": 58,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133774,
+   "digest": "43cd492a4e4c69807f28981151d2b83f648df42e198bc395b814b55c019c0630"
+  },
+  {
+   "item": 59,
+   "applied": true,
+   "n6_drop": 0,
+   "lattice_taken_off": 943,
+   "n2_n4_n6": [
+    104070,
+    1457,
+    172
+   ],
+   "off": 105699,
+   "max_height": 6,
+   "N": 133786,
+   "digest": "c00239226c84ce8750c3fd6ce981b8f60bd96436e11c6efc9338b915ce748a95"
+  }
+ ],
+ "start_height6_now": {
+  "4": 13,
+  "6": 159
+ },
+ "start_lattice_off_now": 1902,
+ "end": {
+  "n2_n4_n6": [
+   104070,
+   1470,
+   159
+  ],
+  "off": 105699,
+  "max_height": 6,
+  "N": 133790,
+  "digest": "5296c847f5a19cb1bc6e4cc531786c833dc681adbdc367763378f9325e740138"
+ },
+ "done": true,
+ "cpu": 569.8
+}
