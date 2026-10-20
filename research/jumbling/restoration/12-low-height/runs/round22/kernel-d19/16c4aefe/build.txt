@@ -1,0 +1,2 @@
+LOADED {"record": "research/jumbling/restoration/12-low-height/runs/round22/cloud/census-k3000-s7306/ia-k3000-s7306.json", "twists": 3270, "digest": "9ebdc4904438ffec5eb18ec35f71ee01d3e037cae70587a786335ce095b3c83e", "off": 108823, "cpu": 1438.3}
+TABLE {"digest": "16c4aefe2f15a043693937cae1d320b8a820e2151a744cf9ad8df9d11e36d96b", "off": 111232, "prefix": 9, "out": "16c4aefe-table.json", "sha256": "af49edf3f53d783d97d62d2f15d6cb8260310db6817c0da21e3dbdcae3dc60f8", "cpu": 1445.2}

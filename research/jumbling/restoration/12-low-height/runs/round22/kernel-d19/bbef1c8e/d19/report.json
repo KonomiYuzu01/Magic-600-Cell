@@ -1,0 +1,845 @@
+{
+  "format": "r22d19-run/1",
+  "rule": "R22D-19",
+  "input": {
+    "kind": "table",
+    "name": "bbef1c8e-table.json",
+    "digest": "bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299",
+    "off": 103896,
+    "heights": {
+      "2": 102960,
+      "4": 936
+    }
+  },
+  "result": "stuck",
+  "units": [
+    {
+      "unit": 6328,
+      "pieces": 9,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 9110,
+      "pieces": 15,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 9126,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 16930,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 19890,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 19891,
+      "pieces": 64,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 22706,
+      "pieces": 11,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 22707,
+      "pieces": 38,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 26358,
+      "pieces": 7,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 26372,
+      "pieces": 44,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 28969,
+      "pieces": 17,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 29451,
+      "pieces": 24,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 29838,
+      "pieces": 2,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 29844,
+      "pieces": 3,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 29849,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 29850,
+      "pieces": 3,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 34017,
+      "pieces": 13,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 34340,
+      "pieces": 27,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 34586,
+      "pieces": 4,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 35287,
+      "pieces": 9,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 35373,
+      "pieces": 2,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 35959,
+      "pieces": 118,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 37689,
+      "pieces": 43,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 40448,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 45919,
+      "pieces": 10,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 45955,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 45960,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 47497,
+      "pieces": 4,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 51018,
+      "pieces": 7,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 51036,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 51422,
+      "pieces": 39,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 54107,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 54118,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 54135,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 57975,
+      "pieces": 4,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 57984,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 59775,
+      "pieces": 2,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 59796,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 62091,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 63237,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 64911,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 70824,
+      "pieces": 5,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 83424,
+      "pieces": 6,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 84194,
+      "pieces": 3,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 84220,
+      "pieces": 7,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 84224,
+      "pieces": 32,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 90367,
+      "pieces": 75,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 90398,
+      "pieces": 70,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 97694,
+      "pieces": 5,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97696,
+      "pieces": 3,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97708,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97709,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97716,
+      "pieces": 10,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97722,
+      "pieces": 25,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 98772,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 98773,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 100980,
+      "pieces": 5,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 102543,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 103056,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 105543,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 108996,
+      "pieces": 10,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 130911,
+      "pieces": 2,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 135986,
+      "pieces": 9,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137233,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 137342,
+      "pieces": 6,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 138071,
+      "pieces": 3,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 138073,
+      "pieces": 6,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 138084,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 138085,
+      "pieces": 11,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 142725,
+      "pieces": 4,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 142727,
+      "pieces": 6,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 142802,
+      "pieces": 15,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 148055,
+      "pieces": 11,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 152049,
+      "pieces": 2,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 152672,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 152673,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 152682,
+      "pieces": 9,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 153723,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 156689,
+      "pieces": 9,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 156691,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 158934,
+      "pieces": 4,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 159009,
+      "pieces": 1,
+      "branch": 1,
+      "caps": [
+        104
+      ]
+    },
+    {
+      "unit": 167625,
+      "pieces": 12,
+      "branch": 1,
+      "caps": [
+        104
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 14,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 76.129079
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 21,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 70.957859
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 23,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 82.916192
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 43,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 81.224447
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 44,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 75.622544
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 45,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 68.776723
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 46,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 68.798188
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 47,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 73.636543
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 48,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 67.978847
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 49,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 68.680533
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 50,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 69.523646
+    },
+    {
+      "unit": 159009,
+      "cap": 104,
+      "item": 51,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 73.783821
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 14,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.251092
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 21,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.331011
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 23,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.068619
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 43,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.553631
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 44,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.134096
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 45,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.987902
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 46,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.148715
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 47,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.211282
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 48,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.973092
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 49,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.161297
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 50,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.093873
+    },
+    {
+      "unit": 167625,
+      "cap": 104,
+      "item": 51,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.002279
+    }
+  ],
+  "rejected": {
+    "split_cells": 0,
+    "not_original_off": 0,
+    "no_free_grip": 24,
+    "fixed_occupied": 0,
+    "no_landing_power": 0,
+    "no_vacator": 0,
+    "replay_failed": 0
+  },
+  "step": null,
+  "reached": null,
+  "seconds": 947.564045,
+  "scripts": {
+    "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da",
+    "research/jumbling/restoration/12-low-height/scripts/screen.py": "55acf5d2aba9f1ec57acfb7420e4e897548ed033b5a0c65cd7f32aee2332e48b",
+    "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+    "research/jumbling/restoration/12-low-height/scripts/cellpure5.py": "6eb1a497fa7fba9a3f7d4ccbc5e6581e9a1cf4d294fca855dd5863fe22017061",
+    "research/jumbling/restoration/12-low-height/scripts/round22/stepchk.py": "beb3f2dfa07868be973706bc2540de2f68d613ba6fb6e85cca0678d7477896a1",
+    "research/jumbling/theory/e3_class.py": "452d9a043ab01174bf62323e8f9a2b110d835dd87ac58922574b458fcfff9afd",
+    "research/jumbling/theory/buffer.py": "219509d954fe966f9ea9ad12b638736146672a030b13135e1e1cf2327c330076",
+    "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+    "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+    "research/jumbling/theory/classes.py": "88357545e2513f76b9809742b7d77e234167cb88dc8f433f9de85c95c42f77cd",
+    "research/jumbling/theory/rim.py": "a53626a88584dcea44646a4a4473a177a3697ed5ac26b061b639a4576debc750",
+    "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+    "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+    "research/jumbling/exact.py": "763dc7803c82971d76520c53cfb2a492e230e901dcf9cfa6a8fbdf34308bc7a6",
+    "research/jumbling/sim/__init__.py": "ee479dbd6ef7d7cbc9ecdf9f9b316584b7e8efa8e2ce711cb698324c6e6d10e9",
+    "research/jumbling/sim/accept.py": "5ffb4858d2b65eab012199e74837ece1343296df87d8467fe62bb0b08890c847",
+    "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+    "research/jumbling/sim/kplus.py": "122b4b65e6508fb02be195759635b2c94d4ca86a30b240c069c00e7eb60e8a5d",
+    "research/jumbling/sim/model.py": "635b32f724d0d0ff822fe8cd52b62a853f922f7b581aed931bf626513cf5b4df",
+    "research/jumbling/sim/regions.py": "54ffdfff32310b88a03dbc1dbe335c2780312aa83b2e20026a3935fbdf68b709",
+    "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+    "research/jumbling/sim/twists.py": "d55f00f366a26f05c584cbc7e5f9e4dac7bd6ae5ea6058d21b74f4e61b68e4cb"
+  }
+}

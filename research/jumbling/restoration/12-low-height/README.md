@@ -1359,7 +1359,8 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   R22D-56 that need the direct family were not run (an unrestricted seed 7102 search that finds R22D-16's word, the 96
   exclusions after R22D-16, the 66 exclusions and the shared case at seed 7108, R22D-42's word, the two direct-family
   survivors at seed 7109 of R22D-54): the D19 program was absent, and the tests drive the adapter with stub programs;
-  the kernel has not been run with D19's program at a stop. Codex confirmed the facts of the packet's section 4
+  the kernel was not run with D19's program at a stop then (its first such runs: the next bullet). Codex confirmed
+  the facts of the packet's section 4
   (measured, exact replay): at the seed 7102 stop its digest, 31,479 off, the height census, nine high units, cap 61 and
   all 600 straddler sets; R22D-16 (28 letters, no collateral, 31,437 others exact, 41 landed, the recorded end digest);
   at `f0290f93…` the letter (61, 15) lowers all 70 high pieces but takes 2,361 lattice pieces off and is rejected;
@@ -1384,6 +1385,118 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   fallback, discarded diagnostics and the d19 program missing from the record's provenance (R22D25-robust-03, -04, -06,
   -07, -08). The checker's findings are in stage 13, section 7. The runner does not call the kernel yet (stage 13,
   section 6).
+- The R22D-25 kernel with D19's program at six height-4 stops (the integrator's experiment, 20 October 2026;
+  `scripts/round22/r22d25_d19_stops.py`, which rebuilds the start tables, and the runs in `runs/round22/kernel-d19/`;
+  `PROOFS-B.md` section 5, after H4-unlock; measured, exact geometry, headless Linux). The first runs of the kernel with
+  the real D19 program at a stop. The four programs are the committed `r22d19_rule.py`, `r22d25_search.py`,
+  `r22d25_state.py` and `13-tutorial-runner/scripts/check_r22d25.py`. Every script digest in the records equals the
+  committed file: D19's report carries D19's scripts and the kernel's record its own; the kernel's record names no D19
+  program (the one it called is `r22d19_rule.py` by the command line), and the checker's digest is in no output. At each
+  state D19 ran alone first, so that its report is kept (the kernel calls D19 again through its adapter, in a temporary
+  folder that it deletes, and keeps only the result), then the kernel, then the checker:
+  - The runs, from the root of a copy of the repository tree that differs from commit `97815b1` only in files these
+    programs do not import, with one BLAS thread and the state's start table (commands under Replay): D19 with `--table`
+    and `--seconds 7200`; then the kernel, `r22d25_search.py run` with `--table`, `--seconds 14400`, `--d19` naming
+    `r22d19_rule.py` and `--max-steps 3` (the kernel gives D19 the time it has left); then the checker on the kernel's
+    output folder. Each ran under a shell time limit of 9,000, 16,200 and 3,600 seconds; no limit was reached, and every
+    exit code is 0. Two states ran at a time on a shared machine.
+  - The six states. `r22d25_d19_stops.py` rebuilds each start table from committed files only: it replays a census
+    record, every twist admissible and certain, checks the stop digest and the record's off count, plays a fixed
+    prefix of committed letters with the end digest checked (and, on seed 7302's line, the digests after letters 7 and
+    12), writes the pose table and reloads it as the kernel does. All six tables are byte-identical to those the runs
+    used (sha256 in `runs/round22/kernel-d19/index.txt`).
+    n₆ = 0 at all six.
+
+    | state | how it was reached | (n₂, n₄, n₆) | off | height-4 units | height-2 units | blocked caps |
+    |---|---|---|---|---|---|---|
+    | `bbef1c8e…` | the 3000-twist stop of seed 7302 (stage 11, `runs/heights/ia-k3000-s7302.json`: 3,313 twists to `015d839e…`), R22D-75's seven letters (`runs/round22/r22d75_height_first.txt`) and R22D-80's five, which the rule of R22D-81 chooses (`r22d81_rule.txt`) | (102,960, 936, 0) | 103,896 | 83 | 2,033 | 562 |
+    | `2430f4cc…` | the same twelve letters, then the 13 of the cloud height-4 line (`runs/round22/cloud/height4-descent-bbef1c8e/end_summary.txt`), where H4-unlock and its pairs stall | (102,750, 734, 0) | 103,484 | 66 | 2,039 | 563 |
+    | `ac127dc3…` | the census stop of seed 7304 (`runs/round22/cloud/census-k3000-s7304/ia-k3000-s7304.json`: 3,580 twists to `7e2304b2…`) and R22D-75's six letters (`r22d75_census_k3000.txt` there) | (95,674, 797, 0) | 96,471 | 46 | 1,776 | 559 |
+    | `cc5ef7ec…` | the census stop of seed 7305 (`census-k3000-s7305/ia-k3000-s7305.json`, the whole record: 3,103 twists to `273eab69…`) and R22D-75's 11 letters (`r22d75.txt` there) | (108,453, 1,419, 0) | 109,872 | 134 | 1,777 | 578 |
+    | `16c4aefe…` | the census stop of seed 7306 (`census-k3000-s7306/ia-k3000-s7306.json`: 3,270 twists to `9ebdc490…`) and R22D-75's nine letters | (108,641, 2,591, 0) | 111,232 | 193 | 2,313 | 574 |
+    | `895b45de…` | the census stop of seed 7307 (`census-k3000-s7307/ia-k3000-s7307.json`: 3,734 twists to `ba5371ae…`) and R22D-75's six letters | (98,984, 1,585, 0) | 100,569 | 107 | 1,731 | 562 |
+
+    From `bbef1c8e…` R22D-75's rule plays one letter, (23, 14), and is then stuck; at `2430f4cc…` H4-unlock and its
+    pairs stall; at the last four R22D-75's rule is stuck and the rule of R22D-81 hands over with no letter
+    (`PROOFS-B.md` section 5). The height-4 units are D19's and the kernel's (pose and inside vector). The height-2
+    units and the blocked caps (caps that hold a straddler) are read from the kernel's ledger, whose cap-level prunes
+    count 59 items for each pair of a unit and a cap: the height-2 units are T1's three prune counts summed and divided
+    by 59 × 600, and the blocked caps are the `blocked` count divided by 59 and by the number of units. At the last
+    four states the blocked counts equal those recorded for the ends of R22D-75 there.
+  - D19 (`d19/report.json`, format r22d19-run/1). Stuck at all six: every selected lowering case was enumerated, well
+    inside the 7,200 seconds. A lowering case is a high unit, a clean cap of the unit's own branch that holds it whole,
+    and one of that cap's twelve lowering items. The counts are the report's `rejected` field: `no_free_grip` and
+    `split_cells` count lowering cases, `no_landing_power` counts rejected powers e and `no_vacator` rejected words V;
+    `not_original_off`, `fixed_occupied` and `replay_failed` are 0 at all six. The seconds are D19's own clock,
+    elapsed from the process start with the imports and the table load; no CPU time was recorded.
+
+    | state | seconds | units with a case (their pieces) | cases | no_free_grip | split_cells | no_landing_power | no_vacator |
+    |---|---|---|---|---|---|---|---|
+    | `bbef1c8e…` | 947.6 | 2 of 83 (13) | 24 | 24 | 0 | 0 | 0 |
+    | `2430f4cc…` | 2,208.4 | 8 of 66 (95) | 96 | 90 | 0 | 9,979,192 | 8 |
+    | `ac127dc3…` | 677.5 | 5 of 46 (58) | 60 | 60 | 0 | 0 | 0 |
+    | `cc5ef7ec…` | 3,080.9 | 20 of 134 (230) | 240 | 228 | 12 | 0 | 0 |
+    | `16c4aefe…` | 1,414.2 | 5 of 193 (24) | 60 | 48 | 12 | 0 | 0 |
+    | `895b45de…` | 3,020.8 | 26 of 107 (603) | 312 | 224 | 84 | 4,988,816 | 784 |
+
+    Ten cases reached the commutator search, at two lowering letters: (482, 44) at `2430f4cc…` for six units (8 grip
+    pairs and 27,848 commutators each) and (474, 43) at `895b45de…` for four (6 pairs and 20,886 commutators each).
+    Four of them found no landing power. The other six found 8 and 784 landing powers in all, and at none did the empty
+    V vacate Bad(W). After both lowering letters the SAFE-ALL alphabet had no grip (the line its builder writes to
+    `d19.log`), so V could only be empty. No word reached the replay.
+  - The kernel (`kernel/run.json`, format r22d25-run/1, catalogue r22d25-cat/1, limits of 244, 244, 720 and 964
+    letters). Stuck at all six with no step and every family `exhausted`, in 902.6 to 3,251.5 seconds of its 14,400
+    (its own clock from the start of its run loop, which includes its own call of D19); `--max-steps 3` was never
+    reached. D19's row is `exhausted` because the adapter's D19 run ended stuck. F1, F2, F3 and ST tried nothing:
+    with n₆ = 0 the height-6 tier has no unit, and ST has no first letter without an S letter; the kernel records an
+    empty family as exhausted. S and T1 tried no letter either (`tried` 0); every pair of a unit and a cap was pruned
+    at the cap level:
+
+    | state | seconds | S pruned: blocked, target_not_whole, lattice_inside | T1 pruned: blocked, target_not_whole, lattice_inside |
+    |---|---|---|---|
+    | `bbef1c8e…` | 980.3 | 2,752,114, 184,729, 1,357 | 67,410,214, 4,454,087, 103,899 |
+    | `2430f4cc…` | 2,436.4 | 2,192,322, 142,367, 1,711 | 67,729,463, 4,350,424, 100,713 |
+    | `ac127dc3…` | 902.6 | 1,517,126, 110,979, 295 | 58,574,256, 4,202,511, 93,633 |
+    | `cc5ef7ec…` | 3,251.5 | 4,569,668, 172,752, 1,180 | 60,599,254, 2,259,582, 46,964 |
+    | `16c4aefe…` | 1,659.7 | 6,536,138, 295,708, 354 | 78,332,058, 3,459,229, 88,913 |
+    | `895b45de…` | 2,807.7 | 3,547,906, 238,124, 1,770 | 57,396,498, 3,804,674, 76,228 |
+
+    Each count is 59 times the number of pairs. So at the six states 23, 29, 5, 20, 6 and 30 pairs of a height-4 unit
+    and a clean cap that holds it whole exist, and in every one the cap also holds a lattice piece.
+  - The checker (`check.txt`; the same nine lines at all six, then PASS). It checks the record's format; that the
+    kernel scripts are unchanged (`kernel_differs` is empty) and `assets/manifest.json` has its recorded digest; and,
+    from the start table, the start and last states (digest, off count and height census). It re-derives three family
+    verdicts with its own units and single-letter tests: `stuck.F1` "re-derived exactly" (no height-6 unit);
+    `stuck.S` "re-derived exactly", with 0 protected single letters, "subsequent T exhaustion is claimed"; and
+    `stuck.T1` "re-derived exactly at the last state". F2, F3, ST and d19 are "claimed, not re-verified". The
+    integrator's reading, which the checker does not print: with n₆ = 0 F2 and F3 have no instance, and ST, whose S
+    part is one letter in this catalogue, has none when S has no letter; so of the seven families only d19's
+    exhaustion rests on a program's own report alone. The checker took 1,246 to 1,726 seconds a state.
+  - What this shows. At each of the six states neither D19 nor the kernel's catalogue has a step, and the stuck
+    outcomes are not budget stops. D19 stops early: most high units have no case at all, since no clean cap of their
+    own branch holds them whole, and of its 792 lowering cases 674 fail on no free grip, 108 on split cells, and the
+    ten that reach the commutators find no landing power or no vacating V, with no SAFE-ALL grip for V. S and T1 are
+    blocked at the cap level: 559 to 578 of the 600 caps hold a straddler, and every clean cap that holds a unit whole
+    also holds a lattice piece, which a jumble letter there takes off (a retained letter changes no height). The
+    kernel's adapter took D19's `stuck` path at six real stops; no test reaches that path (the kernel's minor
+    findings above), and a run is not a test, so that finding stays open.
+  - What it does not show. Not that no strict′ step exists at these states. Stuck here covers only D19's case set
+    (whole high units, clean caps of their own branch, one commutator power as the middle, V empty or one SAFE-ALL
+    letter, one off content after lowering) and the catalogue r22d25-cat/1 (S and T of one letter, without R22D-60's
+    content pass or an external T provider), a revision of R22D-25 whose full families cannot be exhausted (R22D-55).
+    It is six states on five scramble lines, two of them on seed 7302's line; not coverage. D19's stuck verdicts have
+    no independent check. The seconds are elapsed times on a loaded machine, not performance results.
+  - Open. Which family reaches a first step at these states: every single letter of S and T1 fails at the cap level,
+    mostly at a blocked cap, so a step probably needs words that first make caps clean, like the unlock families U and
+    U2 (R22D-81, R22D-88) or H4-unlock, which are not protected, while a protected unlocking word is unknown at any of
+    the six. Whether D19 gets further with grips that become free only after other progress (R22D-64 found that only
+    grips made clean by other progress can move cap 179's blockers, at seed 7102's stop `f0290f93…`), or with a V from a
+    larger alphabet than SAFE-ALL, which has no grip after both lowering letters. Which revision of r22d25-cat/1 comes
+    next (R22D-60's content pass, S or T of more than one letter, external T providers) and with what budget, since each
+    names its own stuck scope. An independent check of D19's stuck verdict, which `check_r22d25.py` lists as claimed.
+    The kernel's place in the runner (stage 13, packet P2), whose high phase starts only after the height sub-phases
+    r22d75, r22d81 and h4 find no step; which of these six states a runner run reaches depends on its path and has not
+    been run.
 
 ## 12. Next
 
@@ -1443,7 +1556,7 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   safe and finite (R22D-37) and an implementation contract for R22D-25 (R22D-50 to R22D-56). Round 5 found no step:
   R22D-19 and its extension to partial targets (R22D-60) are exhausted at the seed 7102 stop after R22D-43, and at the
   3000-twist stop no single letter is protected and the short families for D fail at any middle length (R22D-61 to
-  R22D-77). Next: R22D-60's pass for the R22D-25 kernel and a run of the kernel with D19's program (section 11); R22D-56's acceptance at the known stops; S and T words longer than the one letter of r22d25-cat/1; and the kernel's place in the runner (R22D-56); at the seed 7102 stop, mixed-class middles and grips that become
+  R22D-77). Next: R22D-60's pass for the R22D-25 kernel and a family that reaches a first step at the six height-4 stops where the kernel with D19's program is stuck in r22d25-cat/1 (section 11); R22D-56's acceptance at the known stops; S and T words longer than the one letter of r22d25-cat/1; and the kernel's place in the runner (R22D-56); at the seed 7102 stop, mixed-class middles and grips that become
   clean after other progress, the only way past the blockers of caps 150 and 179 (R22D-63, R22D-64); at the 3000-twist
   stop, protected words of several letters and cap 290 through its movable blockers (R22D-76); the blockers of cap 252
   (R22D-41); whether the bulk phase lowers height 6 with more time; and the literal lattice player of stage 13 (R22D-57) in the runner. After
@@ -1456,7 +1569,8 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   joint attack after shard U made cap 311 clean by literal words from the stop and from `1ff0061f…` (R22D-87) and added
   a two-letter unlock family that keeps the rule finite (R22D-88); with the target fixed by hand that family unlocks
   cap 311 after R22D-75's seven letters, and at cap 290 the order of the pairs decides (R22D-89). Next at the 3000-twist
-  stop: the 936 height-4 pieces at the end of the twelve letters, where R22D-25 has not been run; the switch from
+  stop: the 936 height-4 pieces at the end of the twelve letters, where the R22D-25 kernel with D19's program is stuck
+  in r22d25-cat/1 (section 11); the switch from
   R22D-75's rule to R22D-81's as a test of the state, which this stop does not need, since R22D-81's rule alone hands
   over from it in six letters, but which is open in general; which order of the pairs a rule should fix, and the pair
   family inside the full rule with its own target (R22D-89); and whether R22D-81's rule ends at a handoff at other
@@ -1668,6 +1782,31 @@ The R22D-25 kernel's tests (section 11; they also run the checker's tests in sta
 
     python3 -I -B $S/round22/test_r22d25.py                                        # times in section 11
 
+The integrator's runs of the R22D-25 kernel with D19 at six height-4 stops (section 11), with
+`K=research/jumbling/restoration/12-low-height/runs/round22/kernel-d19`, `st` one of `bbef1c8e`, `2430f4cc`,
+`ac127dc3`, `cc5ef7ec`, `16c4aefe` and `895b45de`, and
+`export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 JUMBLING_HOME_CACHE=<cache>/home_centroids.npy`
+with `<cache>` a new directory:
+
+    python3 -I -B -u $S/round22/r22d25_d19_stops.py table $st <dir>/$st-table.json                    # 22 to 31 minutes
+    python3 -I -B -u $S/round22/r22d19_rule.py --table <dir>/$st-table.json --out <dir>/$st/d19 --cache <cache> --seconds 7200
+    python3 -I -B -u $S/round22/r22d25_search.py run --table <dir>/$st-table.json --out <dir>/$st/kernel --cache <cache> \
+        --seconds 14400 --d19 $S/round22/r22d19_rule.py --max-steps 3
+    python3 -I -B -u research/jumbling/restoration/13-tutorial-runner/scripts/check_r22d25.py <dir>/$st/kernel --cache <cache>
+
+These are the arguments of the runs (each also ran under a shell time limit of 9,000, 16,200 and 3,600 seconds). D19
+took 11 to 51 minutes, the kernel 15 to 54 and the checker 21 to 29, two states at a time on a shared machine (the
+table rebuilds 22 to 31 minutes, three at a time). To check a committed record without running D19 and the kernel
+again:
+
+    cp -r $K/$st/kernel <dir>/$st-kernel
+    python3 -I -B -u $S/round22/r22d25_d19_stops.py table $st <dir>/$st-kernel/start-table.json
+    python3 -I -B -u research/jumbling/restoration/13-tutorial-runner/scripts/check_r22d25.py <dir>/$st-kernel --cache <cache>
+
+The builder must run from the repository root (its import paths are relative); it prints the table's sha256, which
+should equal the one in `$K/index.txt` and `$K/$st/build.txt`. D19, the kernel and the checker ran once at each
+state; that a second run gives the same records apart from the `seconds` fields is expected, not shown.
+
 ## Files
 
 | File | What it is |
@@ -1746,3 +1885,5 @@ The R22D-25 kernel's tests (section 11; they also run the checker's tests in sta
 | `scripts/round22/r22d19_rule.py`, `scripts/round22/test_r22d19_rule.py` | The rule of R22D-19 as a program (D19; written by Codex and reviewed by the integrator): from a pose table (`--table`) or a census record (`--record`), the high units, their lowering cases, the commutator powers and the one-letter vacators in a fixed order, each word replayed twist by twist against the strict′ contract; `report.json` (format r22d19-run/1, written before the search and after each lowering case, with the digests of the scripts it uses) and, after a step, `word.json`; `--case` restricts it to one case. Its test rebuilds the depth 100 stop of seed 7102 and checks the filter, the step of R22D-16, the stuck end without V, early rejections, a corrupted word, a solved record and the budget reports; `R22D19_SLOW=1` adds the full enumeration (not run) |
 | `scripts/round22/r22d25_state.py`, `r22d25_search.py` | The R22D-25 kernel (section 11): exact snapshots, units, gates and refresh; the ordered search of catalogue `r22d25-cat/1` with budgets, the D19 adapter and the whole-stop command line (`r22d25_search.py run` with `--record FILE` or `--table FILE`, `--out DIR` and the optional `--cache DIR`, `--seconds S`, `--d19 FILE` and `--max-steps N`), which writes `r22d25-run/1` records; its checker is `13-tutorial-runner/scripts/check_r22d25.py` |
 | `scripts/round22/test_r22d25.py` | Its acceptance tests, which also run the checker's tests (`13-tutorial-runner/scripts/test_check_r22d25.py`); the integrator narrowed the worktree check and stopped judging the elapsed time (R22D25-robust-01) |
+| `scripts/round22/r22d25_d19_stops.py` | The integrator's builder of the start tables for the R22D-25 kernel runs with D19 at six height-4 stops (section 11): `table <state> <out>` replays one committed census record, every twist admissible and certain, checks the stop digest and the record's off count, plays a fixed prefix of committed letters (R22D-75's, R22D-80's and the cloud height-4 line's) with the end digest checked (on seed 7302's line also after letters 7 and 12), writes the end state as a pose table and reloads it as the kernel's `--table` does. It reads only committed files and writes only `<out>`, apart from the cache of `theory/seams.py`; about 25 CPU minutes a table, nearly all of it the replay. Its six tables are byte-identical to those the runs used |
+| `runs/round22/kernel-d19/` | The integrator's runs of the R22D-25 kernel with D19's program at the six height-4 stops `bbef1c8e…`, `2430f4cc…`, `ac127dc3…`, `cc5ef7ec…`, `16c4aefe…` and `895b45de…` (section 11; `PROOFS-B.md` section 5). For each state, in `<state>/` (the first eight hex digits of the digest): `build.txt` (the output of `r22d25_d19_stops.py`, with the table's sha256), D19 alone (`d19/report.json`, `d19.log`), the kernel (`kernel/run.json`, `kernel.log`) and the checker's output (`check.txt`, PASS). `index.txt` gives each state's digest, the table's sha256 and size, the start, end and exit code of the three programs, and the seconds of D19 and the kernel. All six end stuck with no step. The start tables (1.3 to 1.6 MB each) are left out, since `r22d25_d19_stops.py` rebuilds them byte for byte; the checker needs one as `start-table.json` beside `run.json` (Replay). The kernel's `words/` folders are empty and are not kept |

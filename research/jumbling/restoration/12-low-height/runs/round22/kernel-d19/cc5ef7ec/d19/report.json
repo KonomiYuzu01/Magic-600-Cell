@@ -1,0 +1,3779 @@
+{
+  "format": "r22d19-run/1",
+  "rule": "R22D-19",
+  "input": {
+    "kind": "table",
+    "name": "cc5ef7ec-table.json",
+    "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+    "off": 109872,
+    "heights": {
+      "2": 108453,
+      "4": 1419
+    }
+  },
+  "result": "stuck",
+  "units": [
+    {
+      "unit": 2024,
+      "pieces": 7,
+      "branch": 2,
+      "caps": [
+        10
+      ]
+    },
+    {
+      "unit": 8636,
+      "pieces": 37,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 8648,
+      "pieces": 7,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 10305,
+      "pieces": 5,
+      "branch": 2,
+      "caps": [
+        10
+      ]
+    },
+    {
+      "unit": 11364,
+      "pieces": 7,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 11807,
+      "pieces": 8,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 11809,
+      "pieces": 42,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 12693,
+      "pieces": 2,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 12704,
+      "pieces": 7,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 16950,
+      "pieces": 13,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 18124,
+      "pieces": 8,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 18125,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 18128,
+      "pieces": 13,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 18138,
+      "pieces": 42,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 19038,
+      "pieces": 5,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 22447,
+      "pieces": 2,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 25692,
+      "pieces": 8,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 25694,
+      "pieces": 15,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 25697,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 25699,
+      "pieces": 5,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 25704,
+      "pieces": 5,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 25722,
+      "pieces": 10,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 27720,
+      "pieces": 5,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 28271,
+      "pieces": 12,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 28722,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 32699,
+      "pieces": 10,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 34370,
+      "pieces": 37,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 34383,
+      "pieces": 2,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 36816,
+      "pieces": 5,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 36822,
+      "pieces": 12,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 37280,
+      "pieces": 7,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 37726,
+      "pieces": 8,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 37727,
+      "pieces": 43,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 39987,
+      "pieces": 6,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 39990,
+      "pieces": 5,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 40025,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 46409,
+      "pieces": 5,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 46422,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 46423,
+      "pieces": 12,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 48315,
+      "pieces": 19,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 50399,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 50739,
+      "pieces": 7,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 52205,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 52207,
+      "pieces": 12,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 52898,
+      "pieces": 12,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 56872,
+      "pieces": 3,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 56890,
+      "pieces": 10,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 57169,
+      "pieces": 2,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 58291,
+      "pieces": 11,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 61848,
+      "pieces": 3,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 62924,
+      "pieces": 7,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 68179,
+      "pieces": 4,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 69078,
+      "pieces": 8,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 70829,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 70832,
+      "pieces": 6,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 74954,
+      "pieces": 14,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 75053,
+      "pieces": 32,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 75632,
+      "pieces": 6,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 82773,
+      "pieces": 6,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 86108,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 87579,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 91843,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 94247,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 94320,
+      "pieces": 10,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 94350,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 97694,
+      "pieces": 6,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97695,
+      "pieces": 144,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97703,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97711,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97763,
+      "pieces": 63,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97766,
+      "pieces": 26,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 97943,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 97944,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 98666,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 98667,
+      "pieces": 4,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 98668,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 98669,
+      "pieces": 36,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 98683,
+      "pieces": 6,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 103152,
+      "pieces": 4,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 105301,
+      "pieces": 80,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 108406,
+      "pieces": 8,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 108413,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 109419,
+      "pieces": 8,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 110011,
+      "pieces": 1,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 112639,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 118419,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 121888,
+      "pieces": 15,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 123266,
+      "pieces": 22,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 123312,
+      "pieces": 7,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 123344,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 125747,
+      "pieces": 31,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 128821,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 129119,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 129120,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 129902,
+      "pieces": 8,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 131433,
+      "pieces": 25,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 135500,
+      "pieces": 19,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 136554,
+      "pieces": 5,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 152283,
+      "pieces": 2,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 152284,
+      "pieces": 14,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 152287,
+      "pieces": 1,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 152289,
+      "pieces": 7,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 152295,
+      "pieces": 5,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 152296,
+      "pieces": 1,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 152316,
+      "pieces": 10,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 155983,
+      "pieces": 5,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 155987,
+      "pieces": 3,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 156604,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 160530,
+      "pieces": 33,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 162379,
+      "pieces": 3,
+      "branch": 3,
+      "caps": []
+    },
+    {
+      "unit": 163118,
+      "pieces": 64,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 164929,
+      "pieces": 10,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 164938,
+      "pieces": 23,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 167292,
+      "pieces": 33,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 167685,
+      "pieces": 5,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 167687,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 167694,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 167695,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 171384,
+      "pieces": 7,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 171997,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 172003,
+      "pieces": 2,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 172007,
+      "pieces": 3,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 172445,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 173401,
+      "pieces": 5,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 173403,
+      "pieces": 3,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 173406,
+      "pieces": 1,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 173407,
+      "pieces": 2,
+      "branch": 4,
+      "caps": [
+        421
+      ]
+    },
+    {
+      "unit": 175533,
+      "pieces": 2,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 175811,
+      "pieces": 3,
+      "branch": 3,
+      "caps": [
+        226
+      ]
+    },
+    {
+      "unit": 175860,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 175862,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 175899,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 175904,
+      "pieces": 2,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 177105,
+      "pieces": 5,
+      "branch": 1,
+      "caps": []
+    }
+  ],
+  "cases": [
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 14,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 41.947516
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 21,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 41.919335
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 23,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 41.887861
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 43,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 42.275843
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 44,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 43.457577
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 45,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 45.867568
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 46,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 44.200442
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 47,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 44.25889
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 48,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 45.466293
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 49,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 46.375892
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 50,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 44.216473
+    },
+    {
+      "unit": 2024,
+      "cap": 10,
+      "item": 51,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.431444
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 14,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.800228
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 21,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.786165
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 23,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.934
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 43,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.855038
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 44,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.816027
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 45,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.804694
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 46,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.781574
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 47,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.848243
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 48,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.87868
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 49,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.830939
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 50,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.894006
+    },
+    {
+      "unit": 10305,
+      "cap": 10,
+      "item": 51,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.8642
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 14,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 45.614961
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 21,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.049538
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 23,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.413229
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 43,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 46.537272
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 44,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.093197
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 45,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 45.957835
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 46,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.491665
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 47,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.156805
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 48,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.327017
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 49,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 46.343432
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 50,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 46.313742
+    },
+    {
+      "unit": 11807,
+      "cap": 421,
+      "item": 51,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.7256
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 14,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.96113
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 21,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.928555
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 23,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.040283
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 43,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.967305
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 44,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.926671
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 45,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.975909
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 46,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.23392
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 47,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.960278
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 48,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.936787
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 49,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.08682
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 50,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.058555
+    },
+    {
+      "unit": 11809,
+      "cap": 421,
+      "item": 51,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.978674
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 14,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.030045
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 21,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.946109
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 23,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.852684
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 43,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.947557
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 44,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.056617
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 45,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.018221
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 46,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.067595
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 47,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.00301
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 48,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.900724
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 49,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.077177
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 50,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.96437
+    },
+    {
+      "unit": 12693,
+      "cap": 421,
+      "item": 51,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.313717
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 14,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.011685
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 21,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.974874
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 23,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.278351
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 43,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.132535
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 44,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.005753
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 45,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.038877
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 46,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.10527
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 47,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.85293
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 48,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.998217
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 49,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.870862
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 50,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.02104
+    },
+    {
+      "unit": 12704,
+      "cap": 421,
+      "item": 51,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.101595
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 13,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.267489
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 17,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.010279
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 19,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.642124
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 34,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.316539
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 35,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 46.396981
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 36,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.999494
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 37,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.074961
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 38,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 46.560649
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 39,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.337305
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 40,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.98445
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 41,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.818724
+    },
+    {
+      "unit": 36816,
+      "cap": 421,
+      "item": 42,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 46.854202
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 13,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.118772
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 17,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.904158
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 19,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.994601
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 34,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.833043
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 35,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.896918
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 36,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.511867
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 37,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.939467
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 38,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.013695
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 39,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.892979
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 40,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.044389
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 41,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.963275
+    },
+    {
+      "unit": 36822,
+      "cap": 421,
+      "item": 42,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.985173
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 13,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.905781
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 17,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.976785
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 19,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.044583
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 34,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.921487
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 35,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.958577
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 36,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.888003
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 37,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.084386
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 38,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.993695
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 39,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.954301
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 40,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.968961
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 41,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.898574
+    },
+    {
+      "unit": 46423,
+      "cap": 421,
+      "item": 42,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.904383
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 13,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.987741
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 17,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.95269
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 19,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.018001
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 34,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.017459
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 35,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.035978
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 36,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.136966
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 37,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.978977
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 38,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.936927
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 39,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.05919
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 40,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.978361
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 41,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.098296
+    },
+    {
+      "unit": 50739,
+      "cap": 421,
+      "item": 42,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.034798
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 13,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.037167
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 17,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.186591
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 19,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.091246
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 34,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.986168
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 35,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.953126
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 36,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.979296
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 37,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.986143
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 38,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.077105
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 39,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.994127
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 40,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.937822
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 41,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.012685
+    },
+    {
+      "unit": 57169,
+      "cap": 421,
+      "item": 42,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.952283
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 13,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.907035
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 17,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.037823
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 19,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.870009
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 34,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.877125
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 35,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.938408
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 36,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.913047
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 37,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.012204
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 38,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.017995
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 39,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.919753
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 40,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.882107
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 41,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.930547
+    },
+    {
+      "unit": 62924,
+      "cap": 421,
+      "item": 42,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.914344
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 15,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 50.082754
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 18,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 49.055429
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 22,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.67764
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 33,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.431121
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 52,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 49.980268
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 53,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 50.798573
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 54,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.653016
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 55,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 49.637285
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 56,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.732236
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 57,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.738311
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 58,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.236624
+    },
+    {
+      "unit": 160530,
+      "cap": 421,
+      "item": 59,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.344262
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 15,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.091358
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 18,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.871066
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 22,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.885715
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 33,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.022534
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 52,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.969494
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 53,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.326079
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 54,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.933295
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 55,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.984662
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 56,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.9706
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 57,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.990081
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 58,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.854171
+    },
+    {
+      "unit": 163118,
+      "cap": 421,
+      "item": 59,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.019436
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 15,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.976174
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 18,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.917746
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 22,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.913248
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 33,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.109283
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 52,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.940483
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 53,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.091156
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 54,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.980739
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 55,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.122243
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 56,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.244817
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 57,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.994233
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 58,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.035652
+    },
+    {
+      "unit": 172007,
+      "cap": 421,
+      "item": 59,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.956107
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 15,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.964849
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 18,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.063172
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 22,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.043803
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 33,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.970371
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 52,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.066978
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 53,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.297674
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 54,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.158332
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 55,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.937555
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 56,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.121816
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 57,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.054998
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 58,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.985103
+    },
+    {
+      "unit": 173401,
+      "cap": 421,
+      "item": 59,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.139627
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 15,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.132543
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 18,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.079226
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 22,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.027605
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 33,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.176675
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 52,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.8514
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 53,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.000117
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 54,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.976597
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 55,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.867442
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 56,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.904449
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 57,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.927643
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 58,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.974815
+    },
+    {
+      "unit": 173403,
+      "cap": 421,
+      "item": 59,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.037421
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 15,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.031549
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 18,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.995873
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 22,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.911323
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 33,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.84899
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 52,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.870753
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 53,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.932259
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 54,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.876634
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 55,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.873506
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 56,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.895606
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 57,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.868328
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 58,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.914573
+    },
+    {
+      "unit": 173406,
+      "cap": 421,
+      "item": 59,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.943408
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 15,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.884602
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 18,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.875376
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 22,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.904681
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 33,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.044741
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 52,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.941304
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 53,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.952045
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 54,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.853825
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 55,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.02103
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 56,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.968174
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 57,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.937581
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 58,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.944541
+    },
+    {
+      "unit": 173407,
+      "cap": 421,
+      "item": 59,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 0.876591
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 12,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 49.379855
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 16,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.332829
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 20,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.715326
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 24,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.445236
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 25,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.963365
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 26,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.148444
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 27,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.993385
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 28,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 53.548844
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 29,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 67.518865
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 30,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 49.046315
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 31,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 47.602467
+    },
+    {
+      "unit": 175811,
+      "cap": 226,
+      "item": 32,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 48.172411
+    }
+  ],
+  "rejected": {
+    "split_cells": 12,
+    "not_original_off": 0,
+    "no_free_grip": 228,
+    "fixed_occupied": 0,
+    "no_landing_power": 0,
+    "no_vacator": 0,
+    "replay_failed": 0
+  },
+  "step": null,
+  "reached": null,
+  "seconds": 3080.902647,
+  "scripts": {
+    "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da",
+    "research/jumbling/restoration/12-low-height/scripts/screen.py": "55acf5d2aba9f1ec57acfb7420e4e897548ed033b5a0c65cd7f32aee2332e48b",
+    "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+    "research/jumbling/restoration/12-low-height/scripts/cellpure5.py": "6eb1a497fa7fba9a3f7d4ccbc5e6581e9a1cf4d294fca855dd5863fe22017061",
+    "research/jumbling/restoration/12-low-height/scripts/round22/stepchk.py": "beb3f2dfa07868be973706bc2540de2f68d613ba6fb6e85cca0678d7477896a1",
+    "research/jumbling/theory/e3_class.py": "452d9a043ab01174bf62323e8f9a2b110d835dd87ac58922574b458fcfff9afd",
+    "research/jumbling/theory/buffer.py": "219509d954fe966f9ea9ad12b638736146672a030b13135e1e1cf2327c330076",
+    "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+    "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+    "research/jumbling/theory/classes.py": "88357545e2513f76b9809742b7d77e234167cb88dc8f433f9de85c95c42f77cd",
+    "research/jumbling/theory/rim.py": "a53626a88584dcea44646a4a4473a177a3697ed5ac26b061b639a4576debc750",
+    "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+    "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+    "research/jumbling/exact.py": "763dc7803c82971d76520c53cfb2a492e230e901dcf9cfa6a8fbdf34308bc7a6",
+    "research/jumbling/sim/__init__.py": "ee479dbd6ef7d7cbc9ecdf9f9b316584b7e8efa8e2ce711cb698324c6e6d10e9",
+    "research/jumbling/sim/accept.py": "5ffb4858d2b65eab012199e74837ece1343296df87d8467fe62bb0b08890c847",
+    "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+    "research/jumbling/sim/kplus.py": "122b4b65e6508fb02be195759635b2c94d4ca86a30b240c069c00e7eb60e8a5d",
+    "research/jumbling/sim/model.py": "635b32f724d0d0ff822fe8cd52b62a853f922f7b581aed931bf626513cf5b4df",
+    "research/jumbling/sim/regions.py": "54ffdfff32310b88a03dbc1dbe335c2780312aa83b2e20026a3935fbdf68b709",
+    "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+    "research/jumbling/sim/twists.py": "d55f00f366a26f05c584cbc7e5f9e4dac7bd6ae5ea6058d21b74f4e61b68e4cb"
+  }
+}

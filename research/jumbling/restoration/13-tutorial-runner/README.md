@@ -837,9 +837,10 @@ every way they can end to the phase results of section 1. None of them has been 
   a revision of the rule, so its stuck outcome covers only that catalogue. `check_r22d25.py` checks its records. The
   runner's high phase is where the kernel will run, one step per call, but until packet P2 its plugin is a stub. The
   kernel's direct family R22D-19 is an external program (`round22/r22d19_rule.py`, D19 of stage 12), which was not in
-  the repository when the kernel was written and tested; the kernel calls it by default but has not been run with it
-  at a stop (its tests use stub programs), and without it, at a state with height-4 units where the height-6 tier has
-  no step, the kernel reports `unsupported` before it tries S·T.
+  the repository when the kernel was written and tested; the kernel calls it by default, and its tests use stub
+  programs. The integrator's runs with it at six height-4 stops (stage 12, section 11) end stuck in `r22d25-cat/1` with
+  no step, each record passing `check_r22d25.py`, which lists the d19 family as claimed. Without it, at a state with
+  height-4 units where the height-6 tier has no step, the kernel reports `unsupported` before it tries S·T.
 - The round 11 lattice schedule has a restorer for real lattice configurations (stage 09,
   `schedule11/restore_schedule11_late.py`, with its test outcome recorded there); the runner does not call it.
 - It decides nothing about coverage: a solved run shows that the rules reached the solved state from that start.
@@ -966,6 +967,36 @@ Deferred by decision:
 - the result of a played lattice phase, which the checker does not yet compare (the runner writes `solved`); with
   packets P3 and P5.
 
+## 8. Packets P1 to P5: implemented and reviewed, not integrated
+
+On 20 October 2026 Codex implemented the five packets through the wrapper, each in its own worktree from commit
+`97815b1`. All five runs were valid (the reported model, effort, sandbox and writable roots as requested, changes only
+in the allowed files) and their acceptance checks passed in Codex's sandbox: P1 `test_rules_height.py` 21 tests in
+116 s; P2 `test_rules_kernel.py` 26 tests, one skipped (`KERNEL_SLOW`), 102 s; P3 `test_lattice_phase.py` 23 tests, one
+skipped, 157 s; P4 `test_check_contracts.py` 11 tests in 127 s; P5 `test_check_lattice.py` 18 tests in 94 s (headless
+Linux). None touches a critical path. The patches are kept in `packets/` and are not applied to `scripts/`, so the
+height, high and lattice plugins and the checker's contracts are still the I0 stubs of section 6.
+
+- `packets/P<n>.md` is the packet as sent (seven parts); `P<n>-changes.md` its change log from the review rounds
+  before the call, ending with the integrator's decisions of 20 October 2026 that the packet carries; `P<n>.patch` the
+  change, which applies with `git apply` to this commit (stage 13's scripts have not changed since `97815b1`);
+  `P<n>-report.md` Codex's report.
+- The integrator's review of the five patches (three lenses for each patch, two refuters for each finding above `nit`,
+  and one check of all five applied together): `packets/REVIEW.md`. 22 findings confirmed, one of them `major`, 2
+  refuted, 23 nits. The `major` one, P3-falsepass-01, is open: `lattice_phase.py` maps a restorer run whose status is a
+  failure certificate to `End('stuck', 'restorer_no_solution')` before it checks that the run's input, input digest and
+  library digest are this phase's, so a certificate for another table or library reads as stuck, not as `error`. The
+  fix is to run those checks first and to add a test case for it. The 21 `minor` findings and the nits are deferred.
+- Why it is not integrated. With all five applied, the I0 tests that assert the stubs' behaviour fail, as the packets
+  predicted (integrator decision 2): in `test_check_run.py` five (the three that use `build_height3`,
+  `test_v3_played_lattice` and `test_v3_lattice_labels_not_digest`), and in `test_runner.py` at least
+  `PhaseTests.test_not_applicable_row`, `ExactTests.test_07` (two subtests), `test_08` and `test_09`, while
+  `RecordTests` and `ExactTests.test_02` take the real lattice path and were not run to their end. Updating them is
+  part of I1, with the recording of a lattice `End`, the zero-step result and the plugin's report, and the composition
+  path. The owner stopped the work on 20 October 2026 when the review was done; I1 was not started.
+- To integrate: apply the five patches, fix P3-falsepass-01, carry out I1, run the five new test files and both I0
+  suites, and give the integrator's changes a fast review.
+
 ## Replay
 
 From the repository root, with Python 3 and NumPy, `S=research/jumbling/restoration/13-tutorial-runner/scripts`:
@@ -994,6 +1025,7 @@ word (not run). The `--out` path of the runner must not contain `.json`.
 | `scripts/runner.py` | The tutorial runner (RUN-1; RUN-3 on 20 October: the certificate path of rule 3, record format 2, signals, run-relative lattice paths and the source identity), with the integrator's fixes after review: the lattice programs run without a time limit again (RUN3-contract-01, RUN3-robust-01), the bulk child watches the runner's process id (RUN3-robust-02), and the source identity is taken before the run writes, with git run without optional locks (RUN3-contract-04, RUN3-robust-03, RUN3-robust-06). I0 on 20 October: record format 3, the fixed phase order with its entry tests and phase results, the bulk without reopen, acceptance and development modes, the clocks and timed-out attempts, the probe, the verdict, step trees and the plugin calls; the fixes of the I0 review: `RunError` for crashes, malformed output and digest mismatches, and the runner's side of a played lattice phase (I0-01, I0-02); and of its scoped verification: the certificate gate checks its evidence before strict′ |
 | `scripts/runner_api.py` | The plugin interface (I0): `Proposal`, `End`, `LatticeStep`, `LatticeResult`, `Ctx`, the clock adapter, the step-tree helpers and the `ia16` writer and reader (section 4) |
 | `scripts/rules_height.py`, `scripts/rules_kernel.py`, `scripts/lattice_phase.py` | The plugins of the height, high and lattice phases: stubs (I0) until packets P1 to P3 |
+| `packets/` | Packets P1 to P5 as sent to Codex (`P<n>.md`), their change logs (`P<n>-changes.md`), Codex's changes (`P<n>.patch`, against `97815b1`, not applied) and reports (`P<n>-report.md`), and the integrator's review of the five patches (`REVIEW.md`; section 8) |
 | `scripts/test_runner.py` | Its acceptance tests (RUN-1, extended by RUN-3 and by I0); the integrator made the worktree check also skip the private work trees, tolerate files that vanish and run git without optional locks, and made a run over 60 minutes a note, not a failure (RUN3-robust-05) |
 | `scripts/check_run.py` | The independent record checker (RUN-2; RUN-4 on 20 October: both formats, the format 2 checks, a time limit and saved output for `verify_late.py`; I0 on 20 October: format 3, with the fixes of its review for phases left out and for the probe (I0-03, I0-04) and for a phase that an exception cut off after its steps (V1-B2), and of its scoped verification for that phase's start and entry test (I0-V1-01)), with two fixes by the integrator after RUN-2's review: every string in the record is scanned for an absolute, home-relative, Windows or parent path (RV2-01), and a corrupt gzip body fails as the file it is in (RV2-04) |
 | `scripts/check_contracts.py`, `scripts/check_lattice.py` | The checker's height and kernel contracts and its literal lattice steps: stubs (I0) until packets P4 and P5; `check_lattice.read_ia16` is complete |
@@ -1012,7 +1044,8 @@ word (not run). The `--out` path of the runner must not contain `.json`.
   (the player on the committed depth 20 record) and stage 12's `R22D25_SLOW=1`.
 - The player on any runner record, and RUN-4's `check_run.py` on the two committed records.
 - A runner run from a scramble that takes a certificate step.
-- A runner run with a real height, high or played lattice phase: packets P1 to P3 are not implemented.
+- A runner run with a real height, high or played lattice phase: packets P1 to P3 are implemented but not integrated
+  (section 8), and the I0 suites were not run with the five patches applied in this checkout.
 - The fast review of the fixes covered the fixes only, not the whole patches. The fixes for IF-01 to IF-03 (in
   `test_literal_lattice.py` and stage 09's `test_sched11_late.py`) and the fix to `test_check_run.py`
   (RUN4-robust-05) came after it and have had no review.

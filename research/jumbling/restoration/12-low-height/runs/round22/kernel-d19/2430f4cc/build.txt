@@ -1,0 +1,2 @@
+LOADED {"record": "research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json", "twists": 3313, "digest": "015d839ecbb37bbdde74ae9391d5d7f274dea7fee4b4fdf0092d224eef907a1f", "off": 100584, "cpu": 1392.2}
+TABLE {"digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472", "off": 103484, "prefix": 25, "out": "2430f4cc-table.json", "sha256": "919632272288dfb32288b02fc07b561799419c1574e5120a48e53b266d00e710", "cpu": 1405.2}

@@ -1,0 +1,10 @@
+{"check": "format", "ok": true}
+{"check": "scripts", "kernel_differs": [], "ok": true}
+{"check": "start.state", "ok": true}
+{"check": "last.state", "ok": true}
+{"check": "stuck.F1", "ok": true, "verification": "re-derived exactly"}
+{"check": "stuck.S", "ok": true, "protected_single_letters": 0, "verification": "re-derived exactly; subsequent T exhaustion is claimed"}
+{"check": "stuck.T1", "ok": true, "verification": "re-derived exactly at the last state"}
+{"check": "stuck.other_families", "families": ["F2", "F3", "ST", "d19"], "ok": true, "verification": "claimed, not re-verified"}
+{"check": "result.stuck", "ok": true}
+PASS
