@@ -1,6 +1,6 @@
 # Local jobs for the owner's laptop (WSL, Ubuntu)
 
-Written by the integrator session of draft PR #112. Revision 2, 2026-10-20 04:50 UTC (adds job A4). Re-read this file from
+Written by the integrator session of draft PR #112. Revision 3, 2026-10-20 05:05 UTC (adds job A5). Re-read this file from
 `origin/claude/local-handoff` every 30 minutes; a newer revision replaces this one, and a job it marks `cancelled`
 is not started (a running one finishes and is recorded).
 
@@ -37,6 +37,7 @@ times are laptop timings of research code.
 | A2-s7308 … A2-s7311 | census pipeline below, seeds 7308, 7309, 7310, 7311 | see below | up to about 11 h each |
 | A3 no-meet-prune | `12-low-height/scripts/round22/drafts/r22d81_pairs.py --snapshot ~/m600-runs/snap/s7302-stop.pkl --prefix '[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[185,1],[263,1],[263,3]]' --expect fe273a8c88d8a8fe7f030f95e6130fc76a57da6d708dea110a1cb31125276122 --target 311 --no-meet-prune --cpu 14400` (after A1) | the same STEP letters as `ref/u2-iii.out` of this branch ((364,3),(263,6) U2, then (263,40) U, UNLOCKED); a different first pair refutes the meet prune | pruned run: 586 s; unpruned: unknown, budget 14,400 s |
 | A4 schl | SCH-L acceptance in a separate worktree, see below (independent of A1) | the test prints `OK`: every test passes, including `setUpClass` | here it timed out after 2,703 s under heavy load (deadline 45 min); unknown unloaded |
+| A5 no-meet-prune at cap 290 | `12-low-height/scripts/round22/drafts/r22d81_pairs.py --snapshot ~/m600-runs/snap/s7302-stop.pkl --prefix '[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[136,2],[136,6],[136,1],[301,1],[136,1],[301,3],[136,1],[136,3],[136,11]]' --expect 8ac0a1ce8f3f5af20b376421431e6d1510e5e0ce3408a0fe7a4d40bdedf18116 --target 290 --no-meet-prune --cpu 14400` (after A1) | STUCK with u = 4, as the pruned run `ref/u2-ii.out` of this branch ends; any STEP line refutes the meet prune | pruned: about 1,100 s for this last search; unpruned: unknown, budget 14,400 s |
 
 Census pipeline for seed `<s>` (the one the cloud lines census-k3000-s7305 and s7307 use; see their `RESULT.md`):
 
