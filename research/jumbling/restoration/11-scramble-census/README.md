@@ -19,10 +19,16 @@ Labels: **certificate** (an exact computation with a replayable record), **measu
   (`theory/restore.py`, `scramble`, with no retained twists). One seed per depth at first, then two at depths 40 and 100.
   Nothing restricts the scramble.
 - **Descent.** Phase U of the earlier theory (`theory/seams.py`, `SeamRestorer`, default rule order seam, cover,
-  close, conj, lock, improve, shift, reopen; [restoration](../../theory/restoration.md) section 3). Its rules read only
-  the configuration; the run keeps the scramble's history only to label its record. Every kept step lowers the total
-  misalignment N, the number of cut cells covered on one side of a cut and not on the other by the same domain, and
-  N = 0 exactly on the lattice (M3). The three rules that did all the work here:
+  close, conj, lock, improve, shift, reopen; [restoration](../../theory/restoration.md) section 3). Its rules read the
+  configuration. Reopen (U7) also reads the solver's own earlier twists: it applies the inverse of one of them, most
+  recent first, and then looks for a lowering step (`theory/seams.py:285-308`; the twists are `Restorer.moves`,
+  `theory/restore.py:104`, :135). Reopen never found the next step first in any census run (item 2 of "What the runs
+  show" below), and the tutorial runner's bulk phase leaves it out from record format `runner-run/3` on (stage 13,
+  `scripts/runner.py:45-46`; the owner's
+  [decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), lines 82 to 85). The
+  run keeps the scramble's history only to label its record. Every kept step lowers the total misalignment N, the
+  number of cut cells covered on one side of a cut and not on the other by the same domain, and N = 0 exactly on the
+  lattice (M3). The three rules that did all the work here:
   - **seam** (face match): one twist of a cap that aligns it on every misaligned cut cell inside it;
   - **cover**: one twist of a cap that covers a misaligned cap and is covered by none;
   - **conj** (three-twist repair): open a cap c by any twist, make the best single twist of a misaligned cap d that

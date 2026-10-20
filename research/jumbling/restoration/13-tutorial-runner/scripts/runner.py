@@ -1,4 +1,4 @@
-"""State-only, literal-word tutorial runner (headless research, runner-run/2).
+"""State-only, literal-word tutorial runner (headless research, runner-run/3).
 
 Run from the repository root with Python -I -B. For example:
   python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/runner.py \
@@ -6,6 +6,8 @@ Run from the repository root with Python -I -B. For example:
 
 The output directory must be empty. Existing research programs own the searches;
 this module only orders them, checks their literal words and checkpoints progress.
+The phases run in a fixed order and never return: bulk, height (r22d75, r22d81,
+h4), high, tail, lattice (owner, 20 October 2026; stage 13 README, section 1).
 """
 import argparse
 from concurrent.futures import ThreadPoolExecutor
@@ -16,6 +18,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import runpy
 import shutil
 import signal
@@ -28,6 +31,8 @@ import traceback
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[5]
 SELF = Path(__file__).resolve()
+sys.path.insert(0, str(SELF.parent))
+import runner_api as api  # noqa: E402
 J = Path('research/jumbling')
 TH = J / 'theory'
 GM = J / 'restoration/09-general-method/scripts/gm'
@@ -37,9 +42,30 @@ LAT = GM.parent / 'lattice/scripts'
 CHECKER = GM.parent / 'lattice/checker/verify_late.py'
 LIBRARY = J / 'restoration/09-general-method/data/library-merged.json.gz'
 SOLVED = hashlib.sha256(b'').hexdigest()
-BULK_ORDER = ['seam', 'cover', 'close', 'conj', 'lock', 'improve', 'shift', 'reopen']
+# reopen reads the solver's earlier twists, so the v3 bulk leaves it out (owner, 20 October 2026).
+BULK_ORDER = ['seam', 'cover', 'close', 'conj', 'lock', 'improve', 'shift']
 TAIL_RULES = ['zero_bad', 'pure', 'close', 't1prime']
-SCRIPTS = [SELF.relative_to(ROOT), TH / 'seams.py', TH / 'restore.py',
+# Clocks that acceptance mode lifts: the runner's own are off, a child's gets api.CLOCK_SENTINEL.
+CLOCKS = ('bulk_step_seconds', 'bulk_seconds', 'rule_seconds', 'greedy_seconds', 'cert_seconds',
+          'height_seconds', 'height_cpu', 'kernel_seconds')
+PLUGINS = {'height': 'rules_height', 'high': 'rules_kernel', 'lattice': 'lattice_phase'}
+# r22b10_cert.py's own deadline reasons (:67, :72, :741, :860, :888, :909, :912). Its fixed
+# size caps (:123, :316) are not clocks and are not listed.
+CERT_DEADLINE_PHRASES = ('wall-clock budget exhausted', 'serialization budget exhausted', 'exceeded budget')
+# Applicability screens that cellpure5.py (:191, :207, :212) and transport_census.py (:110, :165)
+# write as asserts: the rule does not apply to the unit. config.scripts pins these lines; any other
+# failed assert of theirs is a crash.
+SCREENS = {('cellpure5.py', 191), ('cellpure5.py', 207), ('cellpure5.py', 212),
+           ('transport_census.py', 110), ('transport_census.py', 165)}
+# check_r22b10.py rejections (:305-318, :472-477) that contradict what the runner has established:
+# the state and target digests, N1 and N2, and a complete certificate. They are integrity failures.
+CHECK_INTEGRITY = ('digest', 'N1 fails', 'N2 fails', 'incomplete certificate')
+# jordan_target.py's fixed CPU cap (:10-14): SIGXCPU at 840 s exits 124; the hard limit SIGKILLs.
+JORDAN_CPU_SECONDS = 840
+# The keys the runner writes in a played step's row; a plugin's own fields may not use them.
+ROW_KEYS = frozenset({'index', 'phase', 'subphase', 'rule', 'word', 'letters', 'encoding', 'word_sha256', 'tree',
+                      'contract', 'gate', 'standing', 'before', 'after', 'table', 'seconds', 'attempts'})
+SCRIPTS = [SELF.relative_to(ROOT), SELF.with_name('runner_api.py').relative_to(ROOT), TH / 'seams.py', TH / 'restore.py',
            TH / 'orient.py', TH / 'buffer.py', TH / 'trees.py',
            J / 'sim/state.py', GM / 'mkblocks2.py', GM / 'tclose2.py',
            GM / 'fallback.py', LOW / 'cellpure5.py',
@@ -79,6 +105,22 @@ def json_rows(log):
     return [json.loads(line) for line in Path(log).read_text().splitlines() if line.startswith('{')]
 
 
+def failed_assert(log):
+    """(script name, line) of the assert whose traceback ended a child's log, else None."""
+    lines = Path(log).read_text(errors='replace').splitlines()
+    starts = [i for i, line in enumerate(lines) if line == 'Traceback (most recent call last):']
+    frame = None
+    for line in lines[starts[-1] + 1:] if starts else []:
+        if line.startswith('  File "'):
+            frame = re.match(r'  File "(.+)", line (\d+), in ', line)
+        elif not line.startswith(' '):
+            # The exception line; output the child had buffered may follow it.
+            if frame and (line == 'AssertionError' or line.startswith('AssertionError:')):
+                return Path(frame.group(1)).name, int(frame.group(2))
+            break
+    return None
+
+
 def source_identity():
     result = {'commit': None, 'status_sha256': None, 'dirty': None}
     for key, argv in [('commit', ['git', 'rev-parse', 'HEAD']),
@@ -95,8 +137,46 @@ def source_identity():
 
 
 def premise_details(details):
-    return {key: details[key] for key in ('N1', 'N2', 'deficits', 'T_size', 'T_digest', 'V_length')
+    return {key: details[key] for key in ('N1', 'N2', 'deficits', 'T_size', 'T_digest', 'V_length', 'timed_out')
             if key in details}
+
+
+def attempt_row(exc, **fields):
+    """A failed attempt; ``timed_out`` is true when any clock ended it (R22D-55)."""
+    row = dict(fields, outcome=exc.outcome, reason=exc.reason, **exc.details)
+    row['timed_out'] = bool(exc.details.get('timed_out')) or exc.outcome == 'timeout'
+    return row
+
+
+def cert_timed_out(rows, evidence, passed, measured):
+    """An incomplete r22b10_cert result ended on a clock (plan revision 3d, tests a, b and c)."""
+    if any(r.get('timeout') is True for r in rows):
+        return True
+    missing = evidence.get('missing')
+    if isinstance(missing, list) and any(
+            isinstance(m, dict) and isinstance(m.get('reason'), str) and
+            any(phrase in m['reason'] for phrase in CERT_DEADLINE_PHRASES) for m in missing):
+        return True
+    seconds = evidence.get('seconds')
+    if type(seconds) not in (int, float) or not math.isfinite(seconds):
+        seconds = measured
+    return seconds >= passed - min(10, passed / 10)
+
+
+def verdict(record, final_timed_out):
+    """The acceptance verdict, the first match in the plan's order (section 0)."""
+    acceptance, result = record['acceptance'], record['result']
+    if result == 'error':
+        return 'error'
+    if record['config']['component'] is not None:
+        return 'component'
+    if acceptance['certificate_steps']:
+        return 'stuck'
+    if acceptance['fallback_steps'] or acceptance['probe']:
+        return 'coverage_failure'
+    if result == 'budget' or (result == 'stuck' and final_timed_out):
+        return 'budget'
+    return result
 
 
 def literal(doc, before=None, after=None):
@@ -120,6 +200,13 @@ def literal(doc, before=None, after=None):
                 raise ValueError('invalid word digest')
             result[key] = value
     return result
+
+
+def lattice_snapshot(doc):
+    """A snapshot of a lattice configuration: no piece off, so no heights (Mechanics.heights)."""
+    return (isinstance(doc, dict) and set(doc) == {'digest', 'off', 'heights'} and type(doc['off']) is int
+            and doc['off'] == 0 and doc['heights'] == {} and isinstance(doc['digest'], str)
+            and len(doc['digest']) == 64 and all(c in '0123456789abcdef' for c in doc['digest']))
 
 
 class Mechanics:
@@ -202,6 +289,7 @@ class Candidate:
     parts: list | None = None
     gate: str = 'stepchk'
     metadata: dict = field(default_factory=dict)
+    certificate_sha256: str | None = None
 
 
 @dataclass
@@ -217,12 +305,18 @@ class Child:
     log: Path
     timeout: bool = False
     cancelled: bool = False
+    stopped: bool = False
 
 
 class RuleFailure(Exception):
     def __init__(self, outcome, reason, **details):
         super().__init__(reason)
         self.outcome, self.reason, self.details = outcome, safe_reason(reason), details
+
+
+class RunError(Exception):
+    """A crash, truncated or malformed child output, or a digest mismatch. No rule handler catches
+    it, so the run ends error and no later rule, unit or phase runs (plan, result table)."""
 
 
 class RunSignal(Exception):
@@ -256,13 +350,14 @@ def kill_child(proc):
 
 
 class Runner:
-    def __init__(self, args, mechanics=None):
+    def __init__(self, args, mechanics=None, plugins=None):
         self.args = args
+        self.plugins = plugins
         self.out = Path(args.out).resolve()
         if '.json' in str(self.out):
             raise ValueError('out path must not contain .json')
         self.cache = Path(args.cache).resolve() if args.cache else self.out / 'cache'
-        for name in ('words', 'units', 'tables', 'attempts', 'logs'):
+        for name in ('words', 'units', 'tables', 'attempts', 'logs', 'step-trees'):
             (self.out / name).mkdir(parents=True, exist_ok=True)
         self.m = mechanics
         self.cancel = threading.Event()
@@ -270,6 +365,28 @@ class Runner:
         self.started = time.monotonic()
         self.record = None
         self.state = self.table = None
+
+    @property
+    def mode(self):
+        return getattr(self.args, 'mode', 'development')
+
+    @property
+    def acceptance(self):
+        return self.mode == 'acceptance'
+
+    def needed(self, outcome):
+        """A closure with no literal word: certificate_needed in acceptance mode (D1)."""
+        return 'certificate_needed' if self.acceptance else outcome
+
+    def component(self, reason):
+        if self.record['config']['component'] is None:
+            self.record['config']['component'] = reason
+
+    def plugin_modules(self):
+        if self.plugins is None:
+            import importlib
+            self.plugins = {phase: importlib.import_module(name) for phase, name in PLUGINS.items()}
+        return self.plugins
 
     def on_signal(self, number, frame):
         if self.signal_number is None:
@@ -289,7 +406,7 @@ class Runner:
 
     def save(self):
         totals = self.record['totals']
-        for phase in ('bulk', 'tail', 'fallback'):
+        for phase in ('bulk', 'height', 'high', 'tail', 'fallback'):
             totals[phase + '_twists'] = sum(s['letters'] for s in self.record['steps'] if s['phase'] == phase)
         totals['seconds'] = round(time.monotonic() - self.started, 6)
         atomic_json(self.out / 'run.json', self.record)
@@ -308,33 +425,66 @@ class Runner:
         self.table = self.out / 'tables/bulk-end.json'
         self.m.export(self.state, self.table)
         budgets = {name: getattr(self.args, name) for name in
-                   ('bulk_steps', 'bulk_step_seconds', 'bulk_seconds', 'tail_steps',
-                    'rule_seconds', 'greedy_seconds', 'cert_seconds', 'fallback_max_length', 'par')}
+                   ('bulk_steps', 'bulk_step_seconds', 'bulk_seconds', 'tail_steps', 'high_steps',
+                    'rule_seconds', 'greedy_seconds', 'cert_seconds', 'height_seconds', 'height_cpu',
+                    'kernel_seconds', 'pair_shards', 'fallback_max_length', 'par')}
         for name in ('bulk_seconds', 'tail_steps'):
             budgets[name] = budgets[name] or None
-        self.record = {'format': 'runner-run/2', 'menu': 'I_a',
-            'start': dict(source, **self.m.snapshot(self.state)),
-            'config': {'literal_only': True, 'bulk_order': BULK_ORDER.copy(),
-                'tail_rules': self.args.tail_rules, 'budgets': budgets,
+        acceptance = self.args.mode == 'acceptance'
+        scripts = SCRIPTS + [p for plugin in self.plugin_modules().values()
+                             for p in getattr(plugin, 'SCRIPTS', [])]
+        start = dict(source, **self.m.snapshot(self.state))
+        self.record = {'format': api.FORMAT, 'menu': 'I_a', 'start': start,
+            'config': {'literal_only': True, 'mode': self.args.mode, 'component': None,
+                'bulk_order': BULK_ORDER.copy(), 'phase_order': list(api.PHASE_ORDER),
+                'subphase_order': {k: list(v) for k, v in api.SUBPHASES.items()},
+                'tail_rules': self.args.tail_rules,
+                'budgets': api.recorded_budgets(self.args.mode, budgets, CLOCKS),
+                'clock_sentinel': api.CLOCK_SENTINEL if acceptance else None,
+                'kernel': {'seconds': None if acceptance else self.args.kernel_seconds,
+                           'wall_margin': self.args.kernel_wall_margin, 'd19': None, 'max_steps': 1},
+                'lattice': {'restorer': self.args.lattice_restorer},
                 'literal_limit': self.args.literal_limit, 'seeds': self.args.seeds,
                 'source': source_id,
-                'scripts': {p.as_posix(): hashlib.sha256((ROOT / p).read_bytes()).hexdigest() for p in SCRIPTS}},
+                'scripts': {Path(p).as_posix(): hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
+                            for p in scripts}},
             'phases': {'bulk': {'result': 'budget', 'steps': 0, 'twists': 0,
                 'end': dict(self.m.snapshot(self.state), table=self.rel(self.table))},
-                'tail': {'result': 'budget', 'steps': 0}},
+                'height': {'result': None, 'steps': 0, 'twists': 0, 'start': None, 'end': None,
+                           'sub': {name: {'result': None, 'steps': 0, 'start': None, 'end': None}
+                                   for name in api.SUBPHASES['height']}},
+                'high': {'result': None, 'steps': 0, 'twists': 0, 'start': None, 'end': None},
+                'tail': {'result': None, 'steps': 0},
+                'lattice': {'result': None, 'steps': 0, 'twists': None}},
             'steps': [], 'stuck': None, 'lattice': None, 'result': 'budget', 'error': None,
-            'totals': {'bulk_twists': 0, 'tail_twists': 0, 'fallback_twists': 0,
-                       'lattice_twists': None, 'seconds': 0.0}}
+            'acceptance': {'verdict': None, 'certificate_steps': 0, 'fallback_steps': 0,
+                           'probe': None, 'timed_out_attempts': 0},
+            'totals': {'bulk_twists': 0, 'height_twists': 0, 'high_twists': 0, 'tail_twists': 0,
+                       'fallback_twists': 0, 'lattice_twists': None, 'seconds': 0.0}}
         self.save()
 
-    def execute(self, argv, tag, seconds, *, cwd=None):
-        """Each subprocess owns a process group; timeout also kills descendants."""
+    def execute(self, argv, tag, seconds, *, cwd=None, stop_when=None):
+        """Each subprocess owns a process group; timeout also kills descendants.
+
+        ``seconds=None`` means no clock. ``stop_when(line)`` true for a complete
+        log line kills the group at once and returns ``stopped``."""
         log = self.out / 'logs' / (tag.replace('/', '-') + '.log')
         start = time.monotonic()
         if self.cancel.is_set() or self.signal_number is not None:
             return Child(-1, 0.0, log, cancelled=True)
         env = self.child_env()
-        timed_out = cancelled = False
+        timed_out = cancelled = stopped = False
+        offset, pending = 0, b''
+
+        def watch():
+            nonlocal offset, pending
+            with log.open('rb') as f:
+                f.seek(offset)
+                data = f.read()
+            offset += len(data)
+            *lines, pending = (pending + data).split(b'\n')
+            return any(stop_when(line.decode('utf-8', 'replace')) for line in lines)
+
         with log.open('w') as output:
             proc = subprocess.Popen([str(x) for x in argv], cwd=cwd or ROOT, env=env,
                 stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
@@ -343,7 +493,8 @@ class Runner:
                     elapsed = time.monotonic() - start
                     cancelled = self.cancel.is_set() or self.signal_number is not None
                     timed_out = seconds is not None and elapsed >= seconds
-                    if cancelled or timed_out:
+                    stopped = stop_when is not None and watch()
+                    if cancelled or timed_out or stopped:
                         kill_child(proc)
                         break
                     try:
@@ -352,22 +503,29 @@ class Runner:
                         pass
             finally:
                 kill_child(proc)
-        return Child(proc.returncode, time.monotonic() - start, log, timed_out, cancelled)
+        return Child(proc.returncode, time.monotonic() - start, log, timed_out, cancelled, stopped)
 
     def script(self, script, argv, tag, *, unlimited=False, cwd=None):
         # The adapter redirects seams' cache before executing *any* existing rule.
         command = [sys.executable, '-I', '-B', SELF, '--_script', ROOT / script,
                    '--cache', self.cache, '--'] + list(argv)
-        return self.execute(command, tag, None if unlimited else self.args.rule_seconds, cwd=cwd)
+        seconds = None if unlimited or self.acceptance else self.args.rule_seconds
+        return self.execute(command, tag, seconds, cwd=cwd)
 
-    def require(self, child, *, returncodes=(0,)):
+    def require(self, child, *, returncodes=(0,), screens=()):
+        """A clock or a cancellation fails the attempt; any other undeclared exit is a crash.
+
+        ``screens`` holds the (script, line) asserts that are the script's applicability test."""
         self.check_signal()
         if child.timeout:
-            raise RuleFailure('timeout', 'rule subprocess exceeded rule_seconds')
+            raise RuleFailure('timeout', 'rule subprocess exceeded rule_seconds', timed_out=True)
         if child.cancelled:
             raise RuleFailure('cancelled', 'a preceding unit supplied the step')
+        screen = failed_assert(child.log) if child.rc == 1 and screens else None
+        if screen in screens:
+            raise RuleFailure('not applicable', 'applicability screen %s:%d' % screen)
         if child.rc not in returncodes:
-            raise RuleFailure('not applicable', f'child exit {child.rc}; see child log')
+            raise RunError(f'child exit {child.rc}; see child log {child.log.name}')
 
     def bulk(self):
         if self.state.off_lattice_count() == 0 or self.args.bulk_steps == 0:
@@ -389,8 +547,10 @@ class Runner:
                         now = time.monotonic()
                         heartbeat = read_json(progress) if progress.exists() else {}
                         step_start = heartbeat.get('step_started')
-                        if ((self.args.bulk_seconds and now - start >= self.args.bulk_seconds) or
-                                (step_start is not None and now - step_start >= self.args.bulk_step_seconds)):
+                        total, each = ((None, None) if self.acceptance else
+                                       (self.args.bulk_seconds, self.args.bulk_step_seconds))
+                        if ((total and now - start >= total) or
+                                (step_start is not None and each is not None and now - step_start >= each)):
                             result = 'timeout'
                             kill_child(proc)
                             break
@@ -411,7 +571,152 @@ class Runner:
         self.m.export(self.state, self.table)
         self.record['phases']['bulk']['result'] = result
         self.record['phases']['bulk']['end'] = dict(self.m.snapshot(self.state), table=self.rel(self.table))
+        if result in ('budget', 'timeout'):
+            # A step or clock budget ends the bulk early; later phases still run (plan, result table).
+            self.component('bulk_budget')
         self.check_signal()
+        self.save()
+
+    def heights(self):
+        hist = {int(h): n for h, n in self.m.heights(self.state).items()}
+        return max(hist, default=0), hist.get(4, 0), hist.get(6, 0)
+
+    def entry(self, name):
+        """The entry test of a phase or height sub-phase, from the current state only."""
+        top, n4, n6 = self.heights()
+        off = int(self.state.off_lattice_count())
+        return {'r22d75': top <= 6 and n4 + n6 > 0, 'r22d81': top <= 6 and n6 > 0,
+                'h4': top <= 4 and n4 > 0, 'high': top <= 6 and n4 + n6 > 0,
+                'tail': off > 0, 'lattice': off == 0}[name]
+
+    def context(self, phase, sub):
+        budgets = {name: getattr(self.args, name) for name in
+                   CLOCKS + ('pair_shards', 'kernel_wall_margin', 'lattice_restorer')}
+        work = self.out / 'attempts' / f'{len(self.record["steps"]):05d}-{sub or phase}'
+        work.mkdir(parents=True, exist_ok=True)
+        return api.Ctx(table=self.table, state=self.state, snapshot=lambda: self.m.snapshot(self.state),
+                       mechanics=self.m, work_dir=work, cache=self.cache, execute=self.execute,
+                       budgets=budgets, mode=self.args.mode, subphase=sub)
+
+    def plugin_phase(self, phase, sub=None):
+        """Run one phase (or height sub-phase) of the fixed order to its result."""
+        name = sub or phase
+        data = self.record['phases'][phase]
+        data = data['sub'][sub] if sub else data
+        data['start'] = self.m.snapshot(self.state)
+        result, end = None, None
+        if not self.entry(name):
+            result = 'not_applicable'
+        plugin = self.plugin_modules()[phase]
+        while result is None:
+            self.check_signal()
+            if data['steps'] and not self.entry(name):
+                result = 'handoff'
+                break
+            if phase == 'high' and self.args.high_steps is not None and data['steps'] >= self.args.high_steps:
+                end = api.End('budget', 'high_steps')
+            else:
+                end = plugin.next_step(self.context(phase, sub))
+            if isinstance(end, api.Proposal):
+                self.record_step(end, phase, sub)
+                data['steps'] += 1
+                end = None
+                if self.state.off_lattice_count() == 0:
+                    result = 'lattice'
+                continue
+            if not isinstance(end, api.End):
+                raise ValueError('a plugin returns a Proposal or an End')
+            if any(type(a.get('timed_out')) is not bool for a in end.attempts):
+                raise ValueError('every plugin attempt records timed_out')
+            result = end.result
+            # The runner decides handoff and lattice from the state; a plugin may not claim them falsely.
+            if ((result == 'handoff' and self.entry(name)) or
+                    (result == 'lattice' and self.state.off_lattice_count())):
+                raise ValueError(f'{name} claims {result} against the state')
+            if result == 'not_applicable':
+                if not getattr(plugin, 'STUB', False):
+                    raise ValueError(f'{name} claims not_applicable against its entry test')
+                # A stub before its packet is integrated: no step here, and the run is a component.
+                result = 'stuck'
+                self.component(f'{phase}_stub')
+        data['result'] = result
+        data['end'] = self.m.snapshot(self.state)
+        if end is not None:
+            data.update(reason=end.reason, details=end.details, attempts=end.attempts)
+        outer = self.record['phases'][phase]
+        outer['twists'] = sum(s['letters'] for s in self.record['steps'] if s['phase'] == phase)
+        if sub:
+            outer['steps'] = sum(d['steps'] for d in outer['sub'].values())
+            outer['start'] = outer['start'] or data['start']
+            outer['end'] = data['end']
+            if result == 'error':
+                outer['result'] = 'error'
+        self.save()
+        if result == 'error':
+            raise RuntimeError(f'{name} phase error: {safe_reason(end.reason if end else "")}')
+        return result
+
+    def phases_between(self):
+        """Height (r22d75, r22d81, h4), then high. Returns 'budget' when a phase ends the run (R22D-55)."""
+        results = []
+        for sub in api.SUBPHASES['height']:
+            results.append(self.plugin_phase('height', sub))
+            if results[-1] in ('budget', 'timeout'):
+                break
+        self.record['phases']['height']['result'] = self.outer_result(results)
+        self.save()
+        if results[-1] in ('budget', 'timeout') or self.plugin_phase('high') in ('budget', 'timeout'):
+            return 'budget'
+        return None
+
+    @staticmethod
+    def outer_result(results):
+        for result in ('error', 'budget', 'timeout', 'lattice'):
+            if result in results:
+                return result
+        applicable = [r for r in results if r != 'not_applicable']
+        return applicable[-1] if applicable else 'not_applicable'
+
+    def write_word(self, index, word):
+        suffix = '.json.gz' if len(word['word']) > 100000 else '.json'
+        path = self.out / 'words' / f'{index:05d}{suffix}'
+        atomic_json(path, word)
+        return path
+
+    def write_tree(self, index, tree, letters):
+        path = self.out / 'step-trees' / f'{index:05d}.json.gz'
+        written = api.write_tree(path, tree, letters)
+        return {'file': self.rel(path), **written}
+
+    def record_step(self, proposal, phase, sub):
+        """Play a plugin's word twist by twist, check its claimed end digest and record it."""
+        p = proposal
+        if (p.phase != phase or p.subphase != sub or p.standing not in api.STANDINGS
+                or ROW_KEYS.intersection(p.fields) or api.FORBIDDEN_KEYS.intersection(p.fields)
+                or any(type(a.get('timed_out')) is not bool for a in p.attempts)):
+            raise ValueError('proposal does not match its phase or record keys')
+        started = time.monotonic()
+        index = len(self.record['steps'])
+        before = self.m.snapshot(self.state)
+        word = literal(p.word, before['digest'])
+        if 'output_digest' not in word:
+            raise ValueError('a proposal claims its end digest')
+        letters = len(word['word'])
+        tree = p.tree or api.single(p.rule, letters)
+        api.check_tree(tree, letters)            # a malformed tree changes no state
+        self.m.apply_word(self.state, word)
+        after = self.m.snapshot(self.state)
+        word_file = self.write_word(index, word)
+        tree = self.write_tree(index, tree, letters)
+        self.table = self.out / 'tables' / f'{index:05d}.json'
+        self.m.export(self.state, self.table)
+        row = {'index': index, 'phase': phase, 'subphase': sub, 'rule': p.rule,
+               'word': self.rel(word_file), 'letters': letters, 'encoding': 'json',
+               'word_sha256': word_sha256(word['word']), 'tree': tree, 'contract': p.contract,
+               'gate': p.gate, 'standing': p.standing, 'before': before, 'after': after,
+               'table': self.rel(self.table), 'attempts': p.attempts,
+               'seconds': round(time.monotonic() - started, 6), **p.fields}
+        self.record['steps'].append(row)
         self.save()
 
     def units(self, table, work):
@@ -433,11 +738,11 @@ class Runner:
         child = self.script(LOW / 'round22/stepchk.py', [table, unit.target, wf, report, end], self.rel(work))
         self.require(child)
         if not report.exists() or not end.exists():
-            raise RuleFailure('no word', 'stepchk wrote no end table')
+            raise RunError('stepchk wrote no end table')
         check = read_json(report)
         if (check['start_digest'] != before or check.get('output_digest_matches') is False or
                 read_json(end)['digest'] != check['end_digest']):
-            raise RuleFailure('digest mismatch', 'stepchk digest mismatch')
+            raise RunError('stepchk digest mismatch')
         if strict and not check['strict_prime']:
             raise RuleFailure('not strict_prime', 'whole literal word fails strict_prime')
         return Candidate(rule, literal(word, before, check['end_digest']), check, end, parts)
@@ -448,20 +753,27 @@ class Runner:
         atomic_json(core_file, core)
         out = work / 'closure'
         argv = [TH, EC, table, unit.target, core_file, out,
-                '--greedy-seconds', self.args.greedy_seconds]
+                '--greedy-seconds', api.child_clock(self.mode, self.args.greedy_seconds)]
         child = self.script(GM / 'tclose2.py', argv, self.rel(work) + '-close')
         try:
-            pre = read_json(out / 'pre.json') if (out / 'pre.json').exists() else {}
+            pre = read_json(out / 'pre.json')
         except (OSError, ValueError):
             # A timeout may interrupt the existing script's non-atomic write.
             # Its process outcome remains the failed attempt's primary evidence.
-            pre = {}
-        pre = pre if isinstance(pre, dict) else {}
+            pre = None
+        readable = isinstance(pre, dict)       # tclose2 writes pre.json before every exit 0
+        pre = pre if readable else {}
         vacancy = pre.get('vacancy', {})
         vacancy = vacancy if isinstance(vacancy, dict) else {}
         details = {key: vacancy[key] for key in ('N1', 'N2', 'deficits') if key in vacancy}
+        greedy = pre.get('greedy', {})
+        if isinstance(greedy, dict) and greedy.get('timed_out') is True:
+            # tclose2 stopped its greedy vacancy search on its own clock (tclose2.py:171-186).
+            details['timed_out'] = True
         try:
             self.require(child)
+            if not readable:
+                raise RunError('tclose2 wrote no readable pre.json')
             result = read_json(out / 'result.json') if (out / 'result.json').exists() else {}
             result = result if isinstance(result, dict) else {}
             middle = literal({'word': core['P'] + core['Q'] + self.m.inverse_word(core['P'])})['word']
@@ -471,7 +783,7 @@ class Runner:
                 v = word['word'][:n]
                 if (n < 0 or remainder or word['word'][n:n + len(middle)] != middle or
                         word['word'][n + len(middle):] != self.m.inverse_word(v)):
-                    raise RuleFailure('contract failed', 'tclose2 word is not V middle V_inverse')
+                    raise RunError('tclose2 word is not V middle V_inverse')
                 details.update(V_source='tclose2', parts=[['V', n], ['middle', len(middle)], ['V_inverse', n]],
                                V_letters=n, V_sha256=word_sha256(v))
                 return word, details
@@ -484,19 +796,18 @@ class Runner:
                 raise RuleFailure('no literal closure', result.get('result', 'no literal V'))
             return self.certificate_word(table, middle, ghost, work, details, prefix_length), details
         except RuleFailure as exc:
-            if exc.outcome == 'not applicable':
-                exc.outcome = 'no literal closure'
             exc.details.update(premise_details(details))
             raise
         except (OSError, EOFError, ValueError, KeyError, TypeError) as exc:
-            raise RuleFailure('no literal closure', 'invalid closure evidence', **premise_details(details)) from exc
+            # Every child here exited cleanly, so unreadable or inconsistent evidence is malformed output.
+            raise RunError(f'invalid closure evidence: {exc}') from exc
 
     def certificate_word(self, table, middle, ghost, work, details, prefix_length):
         """Build V at this table; a certificate never crosses the literal boundary."""
         target = ghost['badW']
         if (not isinstance(target, list) or any(type(c) is not int for c in target) or
                 target != sorted(set(target)) or word_sha256(target) != ghost['badW_digest']):
-            raise RuleFailure('digest mismatch', 'Bad(W) digest mismatch')
+            raise RunError('Bad(W) digest mismatch')
         digest = read_json(table)['digest']
         details.update(T_size=len(target), T_digest=ghost['badW_digest'])
         tf = work / 'target.json'
@@ -504,36 +815,52 @@ class Runner:
         child = self.script(LOW / 'round22/jordan_target.py', [tf, table], self.rel(work) + '-jordan')
         # Its CPU cap can cut off the later Jordan search after CONDITION is
         # complete. The certificate builder/checker supplies the actual witness.
-        self.require(child, returncodes=(0, 124))
-        conditions = [json.loads(line[len('CONDITION '):]) for line in child.log.read_text().splitlines()
-                      if line.startswith('CONDITION ')]
+        # The hard limit SIGKILLs when the cap's handler cannot run; the child is
+        # single-threaded, so a SIGKILL before the cap's wall time is a crash.
+        capped = child.rc == 124 or (child.rc == -signal.SIGKILL and child.seconds >= JORDAN_CPU_SECONDS)
+        self.require(child, returncodes=(0, child.rc) if capped else (0,))
+        lines = child.log.read_text().splitlines()
+        conditions = [json.loads(line[len('CONDITION '):]) for line in lines if line.startswith('CONDITION ')]
         if not conditions:
-            raise RuleFailure('no literal closure', 'no target condition')
+            if capped or 'CUT_SHORT_CPU_840_SECONDS' in lines:
+                raise RuleFailure('timeout', 'jordan_target CPU cap before CONDITION', timed_out=True)
+            # jordan_target prints CONDITION before every exit 0 (jordan_target.py:31).
+            raise RunError('jordan_target wrote no target condition')
         condition = conditions[-1]
         details.update(N1=condition['fixed_vacant'], N2=condition['necessary'])
         if not (details['N1'] is True and details['N2'] is True):
             details['deficits'] = condition.get('necessary_deficits', {})
             raise RuleFailure('no literal closure', 'N1 or N2 fails')
         cert = work / 'certificate.json.gz'
+        cert_seconds = api.child_clock(self.mode, self.args.cert_seconds)
         child = self.script(LOW / 'r22b10_cert.py', ['table', table, tf, cert,
-            '--seconds', self.args.cert_seconds, '--seeds', self.args.seeds], self.rel(work) + '-cert')
+            '--seconds', cert_seconds, '--seeds', self.args.seeds], self.rel(work) + '-cert')
         self.require(child)
         evidence = read_json(cert)
         # Both r22b10/1 and r22b10/2 share these three fields.
         if evidence.get('complete') is not True:
-            raise RuleFailure('no literal closure', 'incomplete certificate within search budget')
+            if cert_timed_out(json_rows(child.log), evidence, cert_seconds, child.seconds):
+                raise RuleFailure('timeout', 'certificate builder ended on its clock', timed_out=True)
+            raise RuleFailure(self.needed('no literal closure'), 'incomplete certificate within search budget')
         if evidence.get('state_digest') != digest:
-            raise RuleFailure('digest mismatch', 'certificate state digest mismatch')
+            raise RunError('certificate state digest mismatch')
         n = evidence['V_length']
         if type(n) is not int or n < 0:
-            raise RuleFailure('no literal closure', 'invalid certificate length')
+            raise RunError('invalid certificate length')
         child = self.script(LOW / 'check_r22b10.py', ['table', table, tf, cert], self.rel(work) + '-cert-check')
-        self.require(child)
-        tokens = child.log.read_text().split()
+        # Exit 1 with a last line 'FAIL: <reason>' is the checker's rejection (check_r22b10.py:483-485).
+        self.require(child, returncodes=(0, 1))
+        lines = child.log.read_text().splitlines()
+        if child.rc == 1:
+            reason = lines[-1] if lines else ''
+            if not reason.startswith('FAIL: ') or any(phrase in reason for phrase in CHECK_INTEGRITY):
+                raise RunError('certificate check: ' + (reason or 'exit 1 without a FAIL line'))
+            raise RuleFailure(self.needed('no literal closure'), 'certificate check ' + reason)
+        tokens = ' '.join(lines).split()
         if not tokens or tokens[-1] != 'PASS':
-            raise RuleFailure('no literal closure', 'certificate check did not end in PASS')
+            raise RunError('certificate check exited 0 without PASS')
         if prefix_length + 2 * n + len(middle) > self.args.literal_limit:
-            raise RuleFailure('over literal limit', 'whole step exceeds literal_limit', V_length=str(n))
+            raise RuleFailure(self.needed('over literal limit'), 'whole step exceeds literal_limit', V_length=str(n))
         vf = work / 'V.json.gz'
         child = self.script(LOW / 'expand_slp.py', [cert, vf, '--limit', self.args.literal_limit],
                             self.rel(work) + '-expand')
@@ -541,15 +868,16 @@ class Runner:
             self.check_signal()
             rows = json_rows(child.log)
             if rows and rows[-1].get('over_limit') is True:
-                raise RuleFailure('over literal limit', 'expansion exceeds literal_limit', V_length=str(n))
+                raise RuleFailure(self.needed('over literal limit'), 'expansion exceeds literal_limit', V_length=str(n))
         self.require(child)
         rows = json_rows(child.log)
         expansion = rows[-1] if rows else {}
         v = literal(read_json(vf), digest)['word']
         if expansion.get('letters') != n or len(v) != n or expansion.get('word_sha256') != word_sha256(v):
-            raise RuleFailure('no literal closure', 'literal expansion length or hash mismatch')
+            raise RunError('literal expansion length or hash mismatch')
         details.update(V_source='certificate', parts=[['V', n], ['middle', len(middle)], ['V_inverse', n]],
-                       V_letters=n, V_sha256=word_sha256(v))
+                       V_letters=n, V_sha256=word_sha256(v),
+                       certificate_sha256=hashlib.sha256(cert.read_bytes()).hexdigest())
         return {'word': v + middle + self.m.inverse_word(v), 'input_digest': digest}
 
     def closure_checked(self, table, unit, word, details, work, rule):
@@ -561,6 +889,7 @@ class Runner:
                 candidate = self.checked(table, unit, word, work, rule, parts=details['parts'])
             candidate.metadata = {key: details[key] for key in
                 ('V_source', 'V_letters', 'V_sha256', 'T_size', 'T_digest', 'N1', 'N2') if key in details}
+            candidate.certificate_sha256 = details.get('certificate_sha256')
             # Vacancy information for literal tclose2 steps belongs only to attempts.
             if details['V_source'] == 'tclose2':
                 candidate.metadata = {k: v for k, v in candidate.metadata.items() if k.startswith('V_')}
@@ -588,39 +917,39 @@ class Runner:
             segments.append({kind: str(path)})
             expected.append((kind, n, word_sha256(part)))
         if offset != len(word['word']):
-            raise RuleFailure('contract failed', 'literal parts do not cover the word')
+            raise RunError('literal parts do not cover the word')
         program, end = work / 'program.json', work / 'end-table.json'
         atomic_json(program, {'segments': segments})
         child = self.script(LOW / 'slp_apply.py', ['table', table, program, end, '--unit', unit.target], self.rel(work))
-        try:
-            self.require(child)
-        except RuleFailure as exc:
-            if exc.outcome == 'not applicable':
-                exc.outcome = 'no literal closure'
-            raise
+        self.require(child)
         try:
             rows = json_rows(child.log)
             check = rows[-1] if rows else {}
-            if check.get('strict_prime') is not True:
-                raise RuleFailure('not strict_prime', 'literal program fails strict_prime')
+            if type(check.get('strict_prime')) is not bool:
+                raise RunError('slp_apply wrote no summary row')
             if check.get('start_digest') != before or read_json(end)['digest'] != check.get('end_digest'):
-                raise RuleFailure('digest mismatch', 'slp_apply digest mismatch')
+                raise RunError('slp_apply digest mismatch')
             part_rows = [r for r in rows if 'segment' in r]
             if len(part_rows) != len(expected):
-                raise RuleFailure('digest mismatch', 'slp_apply segment count mismatch')
+                raise RunError('slp_apply segment count mismatch')
             for index, (row, (kind, n, sha)) in enumerate(zip(part_rows, expected)):
                 if (row.get('segment') != index or row.get('kind') != kind or row.get('length') != n or
                         not isinstance(row.get('digest'), str) or len(row['digest']) != 64 or
                         any(c not in '0123456789abcdef' for c in row['digest']) or
                         (kind == 'safe_word_file' and row.get('word_sha256') != sha)):
-                    raise RuleFailure('digest mismatch', 'slp_apply literal segment mismatch')
+                    raise RunError('slp_apply literal segment mismatch')
             if prefix_digest is not None and part_rows[0]['digest'] != prefix_digest:
-                raise RuleFailure('digest mismatch', 'slp_apply W end digest mismatch')
+                raise RunError('slp_apply W end digest mismatch')
             if part_rows[-1]['digest'] != check['end_digest']:
-                raise RuleFailure('digest mismatch', 'slp_apply final segment digest mismatch')
+                raise RunError('slp_apply final segment digest mismatch')
+            # slp_apply writes every row and the end table whether or not the step is strict prime,
+            # so the evidence is checked first and only a well-formed failure is an attempt.
+            if not check['strict_prime']:
+                raise RuleFailure('not strict_prime', 'literal program fails strict_prime')
             return Candidate(rule, literal(word, before, check['end_digest']), check, end, parts, 'slp_apply')
         except (OSError, ValueError, KeyError, TypeError) as exc:
-            raise RuleFailure('no literal closure', 'invalid slp_apply evidence') from exc
+            # slp_apply exited cleanly, so unreadable or inconsistent evidence is malformed output.
+            raise RunError(f'invalid slp_apply evidence: {exc}') from exc
 
     def t1prime(self, table, unit, wfile, work):
         """The tail's literal T1' path, also callable with a supplied landing W.
@@ -643,12 +972,12 @@ class Runner:
         z1, target, inverse = [work / ('t1-' + suffix) for suffix in
                                ('z1-table.json', 'Q.json', 'winv.json')]
         if not all(p.exists() for p in (z1, target, inverse)):
-            raise RuleFailure('no literal closure', 'T1prime preparation produced no inputs')
+            raise RunError('T1prime preparation produced no inputs')
         q = Unit(unit.key, len(read_json(target)['pieces']), target)
         core = read_json(inverse)
         if (read_json(z1)['digest'] != landing.check['end_digest'] or
                 core != {'P': [], 'Q': self.m.inverse_word(landing.word['word'])}):
-            raise RuleFailure('contract failed', 'T1prime inverse or prepared state mismatch')
+            raise RunError('T1prime inverse or prepared state mismatch')
         closure, details = self.closure(z1, q, core, work / 'inverse',
                                         prefix_length=len(landing.word['word']))
         try:
@@ -675,7 +1004,7 @@ class Runner:
                     if name == 'pure':
                         child = self.script(LOW / 'cellpure5.py', [TH, table, unit.target, out, '--search'],
                                             self.rel(work) + '-pure')
-                        self.require(child)
+                        self.require(child, screens=SCREENS)
                         wf = out.with_name(out.stem + '-word.json')
                         if not wf.exists():
                             raise RuleFailure('no word', 'pure search found no word')
@@ -683,7 +1012,7 @@ class Runner:
                     else:
                         child = self.script(LOW / 'round22/transport_census.py', [table, out, unit.target],
                                             self.rel(work) + '-transport')
-                        self.require(child)
+                        self.require(child, screens=SCREENS)
                         rows = read_json(out)['units']
                         cached[name] = rows[unit.target.stem]
                 except RuleFailure as exc:
@@ -693,8 +1022,7 @@ class Runner:
             return cached[name]
 
         def failed(rule, start, exc, source=None):
-            attempt = {'unit_key': unit.key, 'rule': rule, 'outcome': exc.outcome,
-                       'reason': exc.reason, 'seconds': round(time.monotonic() - start, 6), **exc.details}
+            attempt = attempt_row(exc, unit_key=unit.key, rule=rule, seconds=round(time.monotonic() - start, 6))
             if source:
                 attempt['reason'] = source + ': ' + attempt['reason']
             attempts.append(attempt)
@@ -746,17 +1074,22 @@ class Runner:
         self.cancel.clear()
         pool = ThreadPoolExecutor(max_workers=self.args.par)
         futures = [pool.submit(self.try_unit, self.table, u, work / f'u{u.key}') for u in units]
-        chosen_unit = candidate = None
+        chosen_unit = candidate = error = None
         retry = []
         try:
             for unit, future in zip(units, futures):
-                trial = future.result()
+                try:
+                    trial = future.result()
+                except Exception as exc:
+                    # A serial run reaches this unit only when no earlier unit's retry below takes a step.
+                    error = exc
+                    break
                 attempts.extend(trial.attempts)
                 by_unit.append({'unit_key': unit.key, 'size': unit.size, 'attempts': trial.attempts.copy()})
                 if trial.candidate is not None:
                     chosen_unit, candidate = unit, trial.candidate
                     break
-                if self.args.par > 1 and any(a['outcome'] == 'timeout' for a in trial.attempts):
+                if self.args.par > 1 and any(a.get('timed_out') for a in trial.attempts):
                     retry.append((unit, by_unit[-1]))
         finally:
             self.cancel.set()
@@ -775,6 +1108,8 @@ class Runner:
             if trial.candidate is not None:
                 chosen_unit, candidate = unit, trial.candidate
                 break
+        if candidate is None and error is not None:
+            raise error
         return chosen_unit, candidate, attempts, by_unit
 
     def fallback(self, unit, work):
@@ -785,12 +1120,13 @@ class Runner:
             raise RuleFailure('bound exhausted', 'no word within fallback_max_length')
         self.require(child)
         if not (out / 'word-full.json').exists():
-            raise RuleFailure('no word', 'fallback wrote no literal word')
+            raise RunError('fallback wrote no literal word')
         candidate = self.checked(self.table, unit, read_json(out / 'word-full.json'),
                                  work / 'fallback-check', 'fallback', strict=False)
         if (candidate.check['collateral'] != 0 or
                 candidate.check['unit_on_lattice'] != candidate.check['unit_size']):
-            raise RuleFailure('contract failed', 'fallback does not land the unit without collateral')
+            # fallback.py requires both before it writes its word (:92, :102): the replays disagree.
+            raise RunError('fallback does not land the unit without collateral')
         return candidate
 
     def advance(self, unit, candidate, attempts, seconds):
@@ -803,11 +1139,13 @@ class Runner:
         if len(set(pieces)) != unit.size or not set(pieces) <= off:
             raise ValueError('unit is not a current off unit')
         word = literal(candidate.word, before['digest'], candidate.check['end_digest'])
-        if candidate.gate == 'slp_apply':
+        certificate = candidate.gate == 'slp_apply'
+        if certificate and not self.acceptance:
             self.state = self.m.load(candidate.end_table)
             if self.state.digest() != word['output_digest']:
                 raise ValueError('slp_apply end digest mismatch on load')
         else:
+            # Acceptance mode plays a certificate-built closure twist by twist too (A2).
             self.m.apply_word(self.state, word)
         after = self.m.snapshot(self.state)
         if (after['off'] != candidate.check['off_after'] or
@@ -820,24 +1158,62 @@ class Runner:
         atomic_json(word_file, word)
         shutil.copyfile(unit.target, unit_file)
         self.table = self.out / 'tables' / f'{index:05d}.json'
-        shutil.copyfile(candidate.end_table, self.table)
-        row = {'index': index, 'phase': phase, 'rule': candidate.rule,
+        if self.acceptance:
+            self.m.export(self.state, self.table)
+        else:
+            shutil.copyfile(candidate.end_table, self.table)
+        letters = len(word['word'])
+        tree = self.write_tree(index, self.step_tree(candidate.rule, candidate.parts, letters), letters)
+        standing = ('fallback' if phase == 'fallback' else
+                    'certificate' if certificate and not self.acceptance else 'rule')
+        row = {'index': index, 'phase': phase, 'subphase': None, 'rule': candidate.rule,
             'unit': self.rel(unit_file), 'unit_key': unit.key, 'unit_size': unit.size,
-            'word': self.rel(word_file), 'letters': len(word['word']),
+            'word': self.rel(word_file), 'letters': letters, 'encoding': 'json',
+            'word_sha256': word_sha256(word['word']), 'tree': tree,
             'contract': 'fallback' if phase == 'fallback' else 'strict_prime',
-            'gate': candidate.gate,
-            'before': before, 'after': after, 'landed': unit.size,
+            'gate': candidate.gate, 'standing': standing,
+            'before': before, 'after': after, 'table': self.rel(self.table), 'landed': unit.size,
             'others_landed': candidate.check['others_landed'], 'attempts': attempts,
             'seconds': round(seconds + time.monotonic() - replay_started, 6)}
         if candidate.parts is not None:
             row['parts'] = candidate.parts
         row.update(candidate.metadata)
+        if certificate:
+            row.update(construction='certificate', certificate_sha256=candidate.certificate_sha256)
         self.record['steps'].append(row)
         self.record['phases']['tail']['steps'] += 1
         self.save()
 
+    @staticmethod
+    def step_tree(rule, parts, letters):
+        """A tail step's tree from the parts its rule already splits; V⁻¹ names V."""
+        if not parts:
+            return api.single(rule, letters)
+        index = {name: i for i, (name, _) in enumerate(parts)}
+        inverse = {index['V_inverse']: index['V']} if {'V', 'V_inverse'} <= set(index) else {}
+        if rule == 't1prime' and {'W', 'middle'} <= set(index):
+            # T1''s core is P = [], Q = W⁻¹ (checked in t1prime), so its middle is W⁻¹.
+            inverse[index['middle']] = index['W']
+        names = {'V_inverse': 'V⁻¹'}
+        return api.flat(rule, [(names.get(name, name), n) for name, n in parts], inverse=inverse)
+
+    def write_probe(self, unit, candidate):
+        """Acceptance mode: a fallback word is evidence of a coverage gap, never played."""
+        root = self.out / 'probe'
+        root.mkdir(parents=True, exist_ok=True)
+        word_file, unit_file = root / 'word.json', root / 'unit.json'
+        atomic_json(word_file, candidate.word)
+        shutil.copyfile(unit.target, unit_file)
+        return {'unit': self.rel(unit_file), 'unit_key': unit.key, 'word': self.rel(word_file),
+                'letters': len(candidate.word['word']), 'input_digest': candidate.word['input_digest'],
+                'output_digest': candidate.check['end_digest']}
+
     def tail(self):
         phase = self.record['phases']['tail']
+        if not self.entry('tail'):
+            phase['result'] = 'not_applicable'
+            self.save()
+            return
         while self.state.off_lattice_count():
             if self.args.tail_steps and phase['steps'] >= self.args.tail_steps:
                 phase['result'] = self.record['result'] = 'budget'
@@ -847,18 +1223,29 @@ class Runner:
             work = self.out / 'attempts' / f'{len(self.record["steps"]):05d}'
             units = self.units(self.table, work / 'units')
             unit, candidate, attempts, by_unit = self.choose(units, work)
+            probe = None
             if candidate is None and units and self.args.fallback_max_length:
                 unit = units[0]
                 start = time.monotonic()
                 try:
                     candidate = self.fallback(unit, work)
                 except RuleFailure as exc:
-                    attempt = {'unit_key': unit.key, 'rule': 'fallback', 'outcome': exc.outcome,
-                        'reason': exc.reason, 'seconds': round(time.monotonic() - start, 6), **exc.details}
-                    by_unit[0]['attempts'].append(attempt)
+                    by_unit[0]['attempts'].append(attempt_row(exc, unit_key=unit.key, rule='fallback',
+                                                              seconds=round(time.monotonic() - start, 6)))
+                if self.acceptance:
+                    probe = self.write_probe(unit, candidate) if candidate is not None else False
+                    candidate = None
             if candidate is None:
-                self.record['stuck'] = dict(self.m.snapshot(self.state), units=by_unit)
-                phase['result'] = self.record['result'] = 'stuck'
+                # README section 1, rule 4: a stop with a timed-out attempt is a budget end, not stuck.
+                timed_out = any(a.get('timed_out') for u in by_unit for a in u['attempts'])
+                self.record['stuck'] = dict(self.m.snapshot(self.state), phase='tail',
+                                            reason='timeout' if timed_out else 'no_rule', units=by_unit)
+                if probe:
+                    self.record['stuck']['probe'] = probe
+                if probe is not None:
+                    self.record['acceptance']['probe'] = bool(probe)
+                phase['result'] = 'timeout' if timed_out else 'stuck'
+                self.record['result'] = 'budget' if timed_out else 'stuck'
                 self.save()
                 return
             self.advance(unit, candidate, attempts, time.monotonic() - started)
@@ -874,6 +1261,20 @@ class Runner:
             self.record['result'] = 'budget'
             self.save()
             return
+        plugin = self.plugin_modules()['lattice']
+        end = plugin.play(self.context('lattice', None))
+        if isinstance(end, api.LatticeResult):
+            self.played_lattice(end)
+            return
+        if not isinstance(end, api.End):
+            raise ValueError('the lattice plugin returns a LatticeResult or an End')
+        # Entered with every piece on the lattice, only the stub may answer not_applicable. Any other
+        # End ends the run error and leaves phases.lattice unchanged: recording a lattice End (stuck,
+        # budget, timeout) needs the checker's rules for it, which come with P3 (I1).
+        if end.result != 'not_applicable' or not getattr(plugin, 'STUB', False):
+            raise ValueError(f'lattice End {safe_reason(end.result)} is integrated after packet P3')
+        # The stub before P3 plays nothing: the retained part is checked by composing its program (R22D-57).
+        self.component('lattice_composition')
         started = time.monotonic()
         out = self.out / 'lattice'
         out.mkdir(parents=True, exist_ok=True)
@@ -912,6 +1313,62 @@ class Runner:
         self.record['totals']['lattice_twists'] = twists
         self.record['result'] = 'solved' if passed else 'error'
         self.record['error'] = None if passed else 'lattice verification failed'
+        self.record['phases']['lattice'].update(result=self.record['result'], twists=twists)
+        self.save()
+
+    def played_lattice(self, result):
+        """Record the lattice phase the plugin played twist by twist in its child (P3).
+
+        Every step's word file, tree and digest chain is checked before anything changes. The
+        runner does not replay the word: it loads the end table, which must reach the last
+        step's after digest (plan, section 2); the checker replays every lattice word."""
+        steps = result.steps
+        # A result with no step has no row to carry labels_identity (P3, section 4.7).
+        if not (isinstance(steps, list) and steps and all(isinstance(s, api.LatticeStep) for s in steps)):
+            raise ValueError('a played lattice phase has LatticeSteps')
+        expected = self.m.snapshot(self.state)
+        for s in steps:
+            if ((s.contract, s.gate, s.standing, s.encoding) != ('lattice_literal', 'player', 'rule', 'ia16')
+                    or not isinstance(s.rule, str) or not s.rule.startswith('lattice/')
+                    or s.before != expected or not lattice_snapshot(s.after) or not isinstance(s.fields, dict)
+                    or ROW_KEYS.intersection(s.fields) or api.FORBIDDEN_KEYS.intersection(s.fields)
+                    or type(s.seconds) not in (int, float) or not math.isfinite(s.seconds) or s.seconds < 0):
+                raise ValueError('lattice step does not match its phase, record keys or digest chain')
+            if api.ia16_digest(s.word_file) != {'sha256': s.word_sha256, 'letters': s.letters}:
+                raise ValueError('lattice word file does not match its sha256 or length')
+            root, sha = api.read_tree(s.tree_file)
+            if sha != s.tree_sha256 or api.check_tree(root, s.letters) != s.tree_size:
+                raise ValueError('lattice step tree does not match its sha256 or size')
+            expected = s.after
+        if steps[-1].fields.get('labels_identity') is not True:
+            raise ValueError('the lattice phase does not end with identity labels')
+        if read_json(result.end_table).get('digest') != expected['digest']:
+            raise ValueError('lattice end table digest differs from the last step')
+        state = self.m.load(result.end_table)
+        if self.m.snapshot(state) != expected:
+            raise ValueError('lattice end table does not load to the last step')
+        # Checked: the files move into the record unchanged, and the state follows the end table.
+        for s in steps:
+            index = len(self.record['steps'])
+            word = self.out / 'words' / f'{index:05d}.ia16.gz'
+            tree = self.out / 'step-trees' / f'{index:05d}.json.gz'
+            shutil.move(s.word_file, word)
+            shutil.move(s.tree_file, tree)
+            row = {'index': index, 'phase': 'lattice', 'subphase': None, 'rule': s.rule, 'word': self.rel(word),
+                   'letters': s.letters, 'encoding': s.encoding, 'word_sha256': s.word_sha256,
+                   'tree': {'file': self.rel(tree), 'sha256': s.tree_sha256, 'size': s.tree_size},
+                   'contract': s.contract, 'gate': s.gate, 'standing': s.standing, 'before': dict(s.before),
+                   'after': dict(s.after), 'attempts': [], 'seconds': s.seconds, **s.fields}
+            self.record['steps'].append(row)
+        self.table = self.out / 'tables' / f'{index:05d}.json'
+        shutil.move(result.end_table, self.table)
+        row['table'] = self.rel(self.table)      # only the end table exists (m4)
+        self.state = state
+        twists = sum(s.letters for s in steps)
+        self.record['phases']['lattice'].update(result='solved', steps=len(steps), twists=twists)
+        self.record['totals']['lattice_twists'] = twists
+        # Solved by identity labels; the digest may differ from SOLVED by rotations they do not see (R3-05).
+        self.record['result'] = 'solved'
         self.save()
 
     def run(self):
@@ -922,9 +1379,13 @@ class Runner:
             self.initialize()
             self.check_signal()
             self.bulk()
-            self.tail()
-            if self.state.off_lattice_count() == 0:
-                self.lattice()
+            if self.phases_between() == 'budget':
+                self.record['result'] = 'budget'
+                self.save()
+            else:
+                self.tail()
+                if self.state.off_lattice_count() == 0:
+                    self.lattice()
             self.check_signal()
         except Exception as exc:
             if self.record is None:
@@ -937,7 +1398,28 @@ class Runner:
         finally:
             for number, handler in previous.items():
                 signal.signal(number, handler)
+            if self.record is not None:
+                self.finish()
         return self.record
+
+    def finish(self):
+        """Counts and the acceptance verdict; the checker recomputes them (plan, section 0)."""
+        record = self.record
+        acceptance, steps = record['acceptance'], record['steps']
+        acceptance['certificate_steps'] = sum(1 for s in steps if s.get('standing') == 'certificate')
+        acceptance['fallback_steps'] = sum(1 for s in steps if s.get('standing') == 'fallback')
+        phases = [record['phases']['height']['sub'][k] for k in api.SUBPHASES['height']]
+        phases.append(record['phases']['high'])
+        stuck = record['stuck'] or {}
+        final = [a for unit in stuck.get('units', []) for a in unit['attempts']]
+        attempts = [a for s in steps for a in s.get('attempts', [])] + final
+        attempts += [a for data in phases for a in data.get('attempts', [])]
+        acceptance['timed_out_attempts'] = sum(1 for a in attempts if a.get('timed_out'))
+        digest = steps[-1]['after']['digest'] if steps else record['phases']['bulk']['end']['digest']
+        final += [a for data in phases if data.get('end') and data['end']['digest'] == digest
+                  for a in data.get('attempts', [])]
+        acceptance['verdict'] = verdict(record, any(a.get('timed_out') for a in final))
+        self.save()
 
 
 def bulk_child(out, cache):
@@ -958,11 +1440,11 @@ def bulk_child(out, cache):
     runner.started -= record['totals']['seconds']
     runner.state = state = runner.m.load(out / 'start-table.json')
     runner.table = out / 'tables/bulk-end.json'
-    restorer = runner.m.seams.SeamRestorer(state, runner.m.menu)
-    assert list(restorer.order) == BULK_ORDER
+    restorer = runner.m.seams.SeamRestorer(state, runner.m.menu, order=tuple(record['config']['bulk_order']))
+    assert list(restorer.order) == BULK_ORDER and 'reopen' not in restorer.order
     methods = {'seam': restorer.seam, 'cover': restorer.cover, 'close': restorer.level1,
                'lock': restorer.level2, 'improve': restorer.improve, 'shift': restorer.shift,
-               'conj': restorer.conj, 'reopen': restorer.reopen}
+               'conj': restorer.conj}
     phase = record['phases']['bulk']
     while True:
         n = int(restorer.misalignment())
@@ -993,9 +1475,12 @@ def bulk_child(out, cache):
         path = out / 'words' / f'{index:05d}{suffix}'
         atomic_json(path, literal({'word': word}, before['digest'], after['digest']))
         runner.m.export(state, runner.table)
-        record['steps'].append({'index': index, 'phase': 'bulk', 'rule': rule, 'word': runner.rel(path),
-            'letters': len(word), 'before': before, 'after': after,
-            'seconds': round(time.monotonic() - started, 6)})
+        # The bulk child reports only words: one part per step (README section 6).
+        tree = runner.write_tree(index, api.single(rule, len(word)), len(word))
+        record['steps'].append({'index': index, 'phase': 'bulk', 'subphase': None, 'rule': rule,
+            'word': runner.rel(path), 'letters': len(word), 'encoding': 'json',
+            'word_sha256': word_sha256(word), 'tree': tree, 'standing': 'rule',
+            'before': before, 'after': after, 'seconds': round(time.monotonic() - started, 6)})
         phase.update(steps=phase['steps'] + 1, twists=phase['twists'] + len(word),
                      end=dict(runner.m.snapshot(state), table=runner.rel(runner.table)))
         runner.save()
@@ -1024,17 +1509,28 @@ def parse_args(argv=None):
     parser.add_argument('--fallback-max-length', type=int, default=1)
     parser.add_argument('--par', type=int, default=1)
     parser.add_argument('--no-lattice', action='store_true')
+    parser.add_argument('--mode', choices=api.MODES, default='development',
+                        help='acceptance: no clocks, certificate closures played, fallback only as a probe')
+    parser.add_argument('--lattice-restorer', choices=('late', 'schedule11'), default='late')
+    parser.add_argument('--height-seconds', type=float, default=3600)
+    parser.add_argument('--height-cpu', type=float, default=3600)
+    parser.add_argument('--pair-shards', type=int, default=4)
+    parser.add_argument('--kernel-seconds', type=float, default=3600)
+    parser.add_argument('--kernel-wall-margin', type=float, default=600)
+    parser.add_argument('--high-steps', type=int, default=None, help='a step budget for the high phase')
     args = parser.parse_args(argv)
     if '.json' in str(args.out.resolve()):
         parser.error('out path must not contain .json')
     args.tail_rules = args.tail_rules.split(',') if args.tail_rules else []
     if len(set(args.tail_rules)) != len(args.tail_rules) or any(r not in TAIL_RULES for r in args.tail_rules):
         parser.error('tail-rules must be distinct names from ' + ','.join(TAIL_RULES))
-    for name in ('bulk_steps', 'bulk_seconds', 'tail_steps', 'greedy_seconds', 'fallback_max_length', 'literal_limit'):
+    for name in ('bulk_steps', 'bulk_seconds', 'tail_steps', 'greedy_seconds', 'fallback_max_length', 'literal_limit',
+                 'high_steps', 'kernel_wall_margin'):
         value = getattr(args, name)
         if value is not None and (value < 0 or (isinstance(value, float) and not math.isfinite(value))):
             parser.error(name.replace('_', '-') + ' must be finite and nonnegative')
-    for name in ('bulk_step_seconds', 'rule_seconds', 'cert_seconds', 'par'):
+    for name in ('bulk_step_seconds', 'rule_seconds', 'cert_seconds', 'par', 'height_seconds', 'height_cpu',
+                 'kernel_seconds', 'pair_shards'):
         value = getattr(args, name)
         if value <= 0 or (isinstance(value, float) and not math.isfinite(value)):
             parser.error(name.replace('_', '-') + ' must be finite and positive')

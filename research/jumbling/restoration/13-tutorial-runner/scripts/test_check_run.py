@@ -1,9 +1,12 @@
-"""Single-process, temporary-directory acceptance tests for both run formats.
+"""Single-process, temporary-directory acceptance tests for the run formats 1, 2 and 3.
 
 Run from the repository root with python3 -I -B. Fixtures are built independently
-of runner.py, which need not exist. No output, cache or table belongs in the repo.
+of runner.py, which need not exist; RunnerRecordTests also checks format 3 records
+that runner.py writes, and is skipped without it. No output, cache or table belongs
+in the repo.
 """
 
+import ast
 from collections import Counter
 import copy
 import gzip
@@ -17,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -99,6 +103,124 @@ def version2(rec):
 
 def word_sha(word):
     return hashlib.sha256(json.dumps(word).encode('ascii')).hexdigest()
+
+
+# Format 3 (plan runner-run/3, sections 0 and 1). The fixtures spell out the clocks,
+# the orders and the entry tests themselves, independently of the checker's constants.
+SUBPHASES = ('r22d75', 'r22d81', 'h4')
+CLOCKS = ('bulk_step_seconds', 'bulk_seconds', 'rule_seconds', 'greedy_seconds', 'cert_seconds',
+          'height_seconds', 'height_cpu', 'kernel_seconds')
+# From solved to Z36, heights {2: 5799, 6: 1} (12-low-height/scripts/round22/test_r22d25.py:39).
+WORD36 = [[0, 12], [74, 8], [188, 4], [74, 4], [188, 8], [188, 4], [188, 4],
+          [74, 8], [188, 8], [74, 4], [188, 8], [178, 1], [188, 4], [74, 8],
+          [188, 4], [74, 4], [188, 8], [188, 8], [188, 4], [74, 8], [188, 8],
+          [74, 4], [178, 1], [0, 45], [14, 12], [12, 12]]
+# The tail fixture's t1prime step: W, then the closure V·middle·V⁻¹, where middle is W
+# inverted and V⁻¹ is V inverted (test_v2_middle, test_v2_V_inverse).
+CLOSURE_TREE = {'name': 't1prime', 'letters': 1254, 'parts': [
+    {'name': 'W', 'letters': 288, 'span': [0, 288]},
+    {'name': 'closure', 'letters': 966, 'parts': [
+        {'name': 'V', 'letters': 339, 'span': [288, 627]},
+        {'name': 'middle', 'letters': 288, 'span': [627, 915], 'inverse_of': [0]},
+        {'name': 'V⁻¹', 'letters': 339, 'span': [915, 1254], 'inverse_of': [1, 0]}]}]}
+
+
+def snap(doc):
+    return {key: doc[key] for key in ('digest', 'off', 'heights')}
+
+
+def holds(name, doc):
+    """An entry test of section 0, from a fixture's own snapshot document."""
+    hist = {int(h): n for h, n in doc['heights'].items()}
+    top, n4, n6 = max(hist, default=0), hist.get(4, 0), hist.get(6, 0)
+    return {'r22d75': top <= 6 and n4 + n6 > 0, 'r22d81': top <= 6 and n6 > 0,
+            'h4': top <= 4 and n4 > 0, 'high': top <= 6 and n4 + n6 > 0}[name]
+
+
+def inverse_items(menu):
+    lookup = {restore.to_tuple(m): i for i, (_, m) in enumerate(menu.items)}
+    return [lookup[restore.to_tuple(restore.transpose(m))] for _, m in menu.items]
+
+
+def tree_parts(root):
+    return 1 + sum(tree_parts(p) for p in root.get('parts', ()))
+
+
+def write_tree(base, index, root, size=None):
+    data = (json.dumps(root, separators=(',', ':')) + '\n').encode('utf-8')
+    name = 'step-trees/%05d.json.gz' % index
+    (base / name).parent.mkdir(parents=True, exist_ok=True)
+    (base / name).write_bytes(gzip.compress(data, mtime=0))
+    return {'file': name, 'sha256': hashlib.sha256(data).hexdigest(),
+            'size': tree_parts(root) if size is None else size}
+
+
+def write_ia16(base, index, word):
+    data = np.array([60 * c + i for c, i in word], '<u2').tobytes()
+    name = 'words/%05d.ia16.gz' % index
+    (base / name).parent.mkdir(parents=True, exist_ok=True)
+    (base / name).write_bytes(gzip.compress(data, mtime=0))
+    return name, hashlib.sha256(data).hexdigest()
+
+
+def blank3(start, mode='development'):
+    acceptance = mode == 'acceptance'
+    budgets = {name: None if acceptance else 3600 for name in CLOCKS}
+    budgets.update(bulk_steps=None, tail_steps=None, high_steps=None, pair_shards=4,
+                   fallback_max_length=1, par=1)
+    return {'format': 'runner-run/3', 'menu': 'I_a', 'start': start,
+            'config': {'literal_only': True, 'mode': mode, 'component': None,
+                       'bulk_order': ['seam', 'cover', 'close', 'conj', 'lock', 'improve', 'shift'],
+                       'phase_order': ['bulk', 'height', 'high', 'tail', 'lattice'],
+                       'subphase_order': {'height': list(SUBPHASES)},
+                       'tail_rules': ['zero_bad', 'pure', 'close', 't1prime'], 'budgets': budgets,
+                       'clock_sentinel': 1e9 if acceptance else None,
+                       'kernel': {'seconds': None if acceptance else 3600, 'wall_margin': 600, 'max_steps': 1},
+                       'lattice': {'restorer': 'late'}, 'literal_limit': 10000000, 'seeds': 'atlas',
+                       'source': {'commit': None, 'status_sha256': None, 'dirty': None}, 'scripts': {}},
+            'steps': [], 'phases': {}, 'result': None, 'error': None, 'stuck': None, 'lattice': None,
+            'acceptance': {'verdict': None, 'certificate_steps': 0, 'fallback_steps': 0, 'probe': None,
+                           'timed_out_attempts': 0},
+            'totals': {'bulk_twists': 0, 'height_twists': 0, 'high_twists': 0, 'tail_twists': 0,
+                       'fallback_twists': 0, 'lattice_twists': None, 'seconds': 0}}
+
+
+def step3(base, step, word, **fields):
+    """A format 3 row: a format 1 row with the new labels and a one-span tree named by its rule."""
+    row = dict(step, subphase=None, encoding='json', word_sha256=word_sha(word), standing='rule', seconds=0.0)
+    if row['phase'] != 'bulk':
+        row.setdefault('gate', 'stepchk')
+        row.setdefault('attempts', [])
+    if 'tree' not in fields:
+        row['tree'] = write_tree(base, row['index'], {'name': row['rule'], 'letters': len(word),
+                                                      'span': [0, len(word)]})
+    row.update(fields)
+    return row
+
+
+def phases3(bulk, docs, results, counts=None):
+    """The phases block. docs[k] is the snapshot after position k (0 bulk, 1 to 3 the height
+    sub-phases, 4 high, 5 tail), results[k - 1] the result and counts[k] the (steps, twists)
+    of position k."""
+    counts = counts or {}
+
+    def block(k):
+        data = {'result': results[k - 1], 'steps': counts.get(k, (0, 0))[0]}
+        if results[k - 1] is not None:
+            data.update(start=snap(docs[k - 1]), end=snap(docs[k]))
+        return data
+
+    ran = [k for k in (1, 2, 3) if results[k - 1] is not None]
+    subs = [results[k - 1] for k in ran]
+    height = {'result': next((r for r in ('error', 'budget', 'timeout', 'lattice') if r in subs),
+                             subs[-1] if subs else None),
+              'steps': sum(counts.get(k, (0, 0))[0] for k in (1, 2, 3)),
+              'twists': sum(counts.get(k, (0, 0))[1] for k in (1, 2, 3)),
+              'start': snap(docs[0]) if ran else None, 'end': snap(docs[ran[-1]]) if ran else None,
+              'sub': {sub: block(k) for k, sub in enumerate(SUBPHASES, 1)}}
+    return {'bulk': bulk, 'height': height, 'high': {**block(4), 'twists': counts.get(4, (0, 0))[1]},
+            'tail': {'result': results[4], 'steps': counts.get(5, (0, 0))[0]},
+            'lattice': {'result': None, 'steps': 0, 'twists': None}}
 
 
 class CheckRunTests(unittest.TestCase):
@@ -320,6 +442,10 @@ class CheckRunTests(unittest.TestCase):
             started = time.monotonic()
             self.build_lattice()
             print('fixture lattice: %.2fs' % (time.monotonic() - started), flush=True)
+        elif fixture in ('height3', 'h46', 'played') and not hasattr(type(self), fixture):
+            started = time.monotonic()
+            getattr(type(self), 'build_' + fixture)()
+            print('fixture %s: %.2fs' % (fixture, time.monotonic() - started), flush=True)
         base = self.tmp / (self._testMethodName + ('-' + label if label else ''))
         shutil.copytree(getattr(self, fixture), base)
         return base, read(base / 'run.json')
@@ -901,6 +1027,871 @@ class CheckRunTests(unittest.TestCase):
                         os.kill(pid, 0)
                 self.assertEqual(pids.with_name('report.stdout.log').read_text(), 'verifier started\n')
                 self.assertEqual(pids.with_name('report.stderr.log').read_text(), 'verifier stderr\n')
+
+    # Format 3 (plan runner-run/3). Fixtures with height steps or a played lattice are
+    # built on first use, like the lattice fixture.
+
+    @classmethod
+    def build_height3(cls):
+        base = cls.tmp / 'height3'
+        st = sim.State(restore.ctx, menu=cls.menu)
+        apply(st, cls.menu, WORD36)
+        start = state_record(st)
+        assert start['digest'].startswith('8733a0aa') and start['heights'] == {'2': 5799, '6': 1}
+        base.mkdir()
+        cls.export(st, base / 'start-table.json')
+        (base / 'tables').mkdir()
+        shutil.copyfile(base / 'start-table.json', base / 'tables/bulk-end.json')
+        rec = blank3({'kind': 'table', 'file': 'start-table.json', **start})
+        # Two single letters at Z36 (integrator experiment): (n6, n4, n2) falls from
+        # (1, 0, 5799) to (0, 1, 3097) and then to (0, 0, 5405), which ends r22d75 (HEIGHT2).
+        docs = [start]
+        for index, letter in enumerate(([12, 14], [35, 13])):
+            apply(st, cls.menu, [letter])
+            docs.append(state_record(st))
+            name = 'words/%05d.json' % index
+            write(base / name, {'word': [letter], 'input_digest': docs[-2]['digest'],
+                                'output_digest': docs[-1]['digest']})
+            rec['steps'].append(step3(base, {'index': index, 'phase': 'height', 'rule': 'r22d75/T0', 'word': name,
+                                             'letters': 1, 'contract': 'height_order', 'gate': 'r22d75',
+                                             'before': docs[-2], 'after': docs[-1]}, [letter], subphase='r22d75'))
+        assert docs[1]['heights'] == {'2': 3097, '4': 1} and docs[2]['heights'] == {'2': 5405}
+        bulk = {'result': 'stuck', 'steps': 0, 'twists': 0, 'end': {**start, 'table': 'tables/bulk-end.json'}}
+        rec['phases'] = phases3(bulk, [start] + [docs[2]] * 5,
+                                ['handoff', 'not_applicable', 'not_applicable', 'not_applicable', 'stuck'], {1: (2, 2)})
+        rec['stuck'] = {**docs[2], 'phase': 'tail', 'reason': 'no_rule', 'units': []}
+        rec['result'] = rec['acceptance']['verdict'] = 'stuck'
+        rec['totals']['height_twists'] = 2
+        write(base / 'run.json', rec)
+        cls.height3 = base
+
+    @classmethod
+    def build_h46(cls):
+        # Not reachable, and the checker does not ask: Z36 with one more off piece, posed as the
+        # height-4 piece after WORD36's first 25 letters. Its maximum is 6 and n4 is 1.
+        st = sim.State(restore.ctx, menu=cls.menu)
+        apply(st, cls.menu, WORD36[:25])
+        matrix = next(st._pose_matrix(int(p)) for p in np.unique(st.pose_id) if st._poses[int(p)].kidx < 0
+                      and trees.dist(trees.factors(st._pose_matrix(int(p)))[0]) == 4)
+        st = sim.State(restore.ctx, menu=cls.menu)
+        apply(st, cls.menu, WORD36)
+        st.pose_id[int(np.flatnonzero(~off(st))[0])] = st._intern_matrix(matrix)
+        st._compact()
+        st._anchor_cache = {}
+        start = state_record(st)
+        assert start['heights'] == {'2': 5799, '4': 1, '6': 1}
+        base = cls.tmp / 'h46'
+        base.mkdir()
+        cls.export(st, base / 'start-table.json')
+        (base / 'tables').mkdir()
+        shutil.copyfile(base / 'start-table.json', base / 'tables/bulk-end.json')
+        rec = blank3({'kind': 'table', 'file': 'start-table.json', **start})
+        bulk = {'result': 'stuck', 'steps': 0, 'twists': 0, 'end': {**start, 'table': 'tables/bulk-end.json'}}
+        rec['phases'] = phases3(bulk, [start] * 6, ['stuck', 'stuck', 'not_applicable', 'stuck', 'stuck'])
+        rec['stuck'] = {**start, 'phase': 'tail', 'reason': 'no_rule', 'units': []}
+        rec['result'] = rec['acceptance']['verdict'] = 'stuck'
+        write(base / 'run.json', rec)
+        cls.h46 = base
+
+    @classmethod
+    def build_played(cls):
+        # A lattice configuration that is not solved: three retained letters, as in build_lattice.
+        retained = [i for i in range(len(cls.menu.items)) if i not in restore.jumble_items(cls.menu)
+                    and restore.element(cls.menu, 0, i) != restore.I4]
+        letters = [[0, retained[0]], [17, retained[1]], [379, retained[0]]]
+        st = sim.State(restore.ctx, menu=cls.menu)
+        apply(st, cls.menu, letters)
+        start = state_record(st)
+        assert start['off'] == 0 and start['digest'] != C.SOLVED
+        base = cls.tmp / 'played'
+        base.mkdir()
+        cls.export(st, base / 'start-table.json')
+        (base / 'tables').mkdir()
+        shutil.copyfile(base / 'start-table.json', base / 'tables/bulk-end.json')
+        rec = blank3({'kind': 'table', 'file': 'start-table.json', **start})
+        bulk = {'result': 'lattice', 'steps': 0, 'twists': 0, 'end': {**start, 'table': 'tables/bulk-end.json'}}
+        rec['phases'] = phases3(bulk, [start] * 6, ['not_applicable'] * 5)
+        write(base / 'run.json', rec)
+        inverse = inverse_items(cls.menu)
+        cls.played, cls.played_letters = base, letters
+        cls.played_word = [[c, inverse[i]] for c, i in reversed(letters)]
+
+    def v3_case(self, fixture='bulk', label=None, mode='development'):
+        """A format 3 record: the format 1 fixtures converted, the others built as format 3."""
+        base, old = self.case(fixture, label)
+        if old['format'] == 'runner-run/3':
+            if mode != old['config']['mode']:
+                old['config'] = blank3(old['start'], mode)['config']
+            return base, old
+        rec = blank3(old['start'], mode)
+        bulk = old['phases']['bulk']
+        tail = [s for s in old['steps'] if s['phase'] == 'tail']
+        for step in old['steps']:
+            word = read(base / step['word'])['word']
+            fields = {}
+            if step['rule'] == 't1prime':
+                fields = dict(V_source='tclose2', V_letters=339, V_sha256=word_sha(word[288:627]),
+                              parts=[['W', 288], ['V', 339], ['middle', 288], ['V_inverse', 339]],
+                              tree=write_tree(base, step['index'], CLOSURE_TREE))
+            rec['steps'].append(step3(base, step, word, **fields))
+        docs = [snap(bulk['end'])] * 5 + [snap(tail[-1]['after']) if tail else snap(bulk['end'])]
+        results = ['stuck' if holds(name, docs[0]) else 'not_applicable' for name in SUBPHASES + ('high',)]
+        results.append({'bulk': 'not_applicable', 'tail': 'budget', 'short': 'lattice'}[fixture])
+        rec['phases'] = phases3(bulk, docs, results, {5: (len(tail), sum(s['letters'] for s in tail))})
+        rec['result'] = rec['acceptance']['verdict'] = 'budget' if fixture == 'tail' else 'solved'
+        for phase in ('bulk', 'tail'):
+            rec['totals'][phase + '_twists'] = old['totals'][phase + '_twists']
+        return base, rec
+
+    def played_case(self, prefix=None, labels=True):
+        base, rec = self.case('played')
+        word = self.played_word[:prefix]
+        st = sim.State(restore.ctx, menu=self.menu)
+        apply(st, self.menu, self.played_letters)
+        before = state_record(st)
+        apply(st, self.menu, word)
+        after = state_record(st)
+        name, sha = write_ia16(base, 0, word)
+        rec['steps'] = [{'index': 0, 'phase': 'lattice', 'subphase': None, 'rule': 'lattice/orbit-0', 'word': name,
+                         'letters': len(word), 'encoding': 'ia16', 'word_sha256': sha,
+                         'tree': write_tree(base, 0, {'name': 'orbit 0', 'letters': len(word),
+                                                      'span': [0, len(word)]}),
+                         'contract': 'lattice_literal', 'gate': 'player', 'standing': 'rule', 'attempts': [],
+                         'before': before, 'after': after, 'seconds': 0.0, 'labels_identity': labels}]
+        rec['phases']['lattice'] = {'result': 'lattice', 'steps': 1, 'twists': len(word)}
+        rec['totals']['lattice_twists'] = len(word)
+        rec['result'] = rec['acceptance']['verdict'] = 'solved'
+        return base, rec, after
+
+    def probe_case(self):
+        """Acceptance mode at the short fixture's start: the tail is stuck and the fallback,
+        run only as a probe, finds the one-letter word that lands the unit."""
+        base, old = self.case('short')
+        start = snap(old['start'])
+        rec = blank3(old['start'], 'acceptance')
+        results = ['stuck' if holds(name, start) else 'not_applicable' for name in SUBPHASES + ('high',)]
+        rec['phases'] = phases3(old['phases']['bulk'], [start] * 6, results + ['stuck'])
+        word = read(base / old['steps'][0]['word'])
+        write(base / 'probe/word.json', word)
+        write(base / 'probe/unit.json', read(base / 'units/one.json'))
+        probe = {'unit': 'probe/unit.json', 'unit_key': 0, 'word': 'probe/word.json', 'letters': len(word['word']),
+                 'input_digest': word['input_digest'], 'output_digest': word['output_digest']}
+        rec['stuck'] = {**start, 'phase': 'tail', 'reason': 'no_rule',
+                        'units': [{'unit_key': 0, 'size': 1, 'attempts': []}], 'probe': probe}
+        rec['acceptance'].update(probe=True, verdict='coverage_failure')
+        rec['result'] = 'stuck'
+        return base, rec
+
+    def test_v3_bulk(self):
+        base, rec = self.v3_case()
+        final = self.check(base, rec)
+        self.assertEqual((final['verdict'], final['end_digest'], final['unchecked_contracts'], final['bulk_twists']),
+                         ('solved', C.SOLVED, 0, 9))
+
+    def test_v3_acceptance_config(self):
+        """Acceptance mode lifts every clock: null in config.budgets, the sentinel for the children."""
+        base, original = self.v3_case(mode='acceptance')
+        self.assertEqual(self.check(base, original)['verdict'], 'solved')
+        for label, edit in (('a clock kept', lambda c: c['budgets'].update(height_cpu=3600)),
+                            ('a clock missing', lambda c: c['budgets'].pop('kernel_seconds')),
+                            ('no sentinel', lambda c: c.update(clock_sentinel=None)),
+                            ('kernel clock', lambda c: c['kernel'].update(seconds=3600))):
+            with self.subTest(label=label):
+                rec = copy.deepcopy(original)
+                edit(rec['config'])
+                self.check(base, rec, 'config')
+
+    def test_v3_config(self):
+        base, original = self.v3_case()
+        for path, value, failure in ((('mode',), 'unknown', 'config'), (('component',), 'a/b', 'config'),
+                                     (('kernel', 'max_steps'), 2, 'config'), (('lattice', 'restorer'), 'x', 'config'),
+                                     (('budgets', 'cert_seconds'), 0, 'config'), (('clock_sentinel',), 1e9, 'config'),
+                                     (('phase_order',), ['bulk', 'tail', 'height', 'high', 'lattice'], 'phase_order'),
+                                     (('subphase_order',), {'height': ['r22d81', 'r22d75', 'h4']}, 'phase_order')):
+            with self.subTest(path=path, value=value):
+                rec = copy.deepcopy(original)
+                doc = rec['config']
+                for key in path[:-1]:
+                    doc = doc[key]
+                doc[path[-1]] = value
+                self.check(base, rec, failure)
+
+    def test_v3_bulk_order(self):
+        """No reopen in format 3: it reads the solver's earlier twists, not the state (plan D2)."""
+        base, original = self.v3_case()
+        for change in ('config', 'step', 'repeat'):
+            with self.subTest(change=change):
+                rec = copy.deepcopy(original)
+                if change == 'config':
+                    rec['config']['bulk_order'].append('reopen')
+                elif change == 'step':
+                    rec['steps'][3]['rule'] = 'reopen'
+                else:
+                    rec['config']['bulk_order'] = ['seam', 'seam']
+                self.check(base, rec, 'bulk_order')
+
+    def test_v3_step_labels(self):
+        base, original = self.v3_case()
+        for key, value, failure in (('encoding', 'gzip', 'encoding'), ('encoding', 'ia16', 'word_file'),
+                                    ('word_sha256', '0' * 64, 'word_sha256'), ('standing', 'fallback', 'standing'),
+                                    ('standing', 'certificate', 'standing'), ('subphase', 'r22d75', 'subphase'),
+                                    ('phase', 'kernel', 'phase'), ('seconds', -1, 'step_keys'),
+                                    ('seconds', float('nan'), 'step_keys'), ('standing', None, 'step_keys'),
+                                    ('labels_identity', True, 'labels_identity'), ('tree', None, 'tree_missing')):
+            with self.subTest(key=key, value=value):
+                rec = copy.deepcopy(original)
+                if value is None:
+                    del rec['steps'][0][key]
+                else:
+                    rec['steps'][0][key] = value
+                self.check(base, rec, failure)
+
+    def test_v3_closure_tree(self):
+        """A closure tree whose V⁻¹ names V and whose middle names W passes the full replay."""
+        base, rec = self.v3_case('tail')
+        final = self.check(base, rec)
+        self.assertEqual((final['verdict'], final['tail_twists']), ('budget', 1254))
+
+    def test_v3_tree_failures(self):
+        base, original = self.v3_case('tail')
+
+        def changed(edit):
+            root = copy.deepcopy(CLOSURE_TREE)
+            edit(root)
+            return root
+
+        def closure(root):
+            return root['parts'][1]['parts']
+
+        deep = {'name': 'leaf', 'letters': 1254, 'span': [0, 1254]}
+        for _ in range(64):
+            deep = {'name': 'level', 'letters': 1254, 'parts': [deep]}
+        trees_ = (
+            ('part sum', changed(lambda r: r['parts'][1].update(letters=965)), None, 'tree_length'),
+            ('gap', changed(lambda r: closure(r)[0].update(span=[289, 627], letters=338)), None, 'tree_expansion'),
+            ('overlap', changed(lambda r: closure(r)[0].update(span=[287, 627], letters=340)), None, 'tree_expansion'),
+            ('root shorter than the word', {'name': 't1prime', 'letters': 1253, 'span': [0, 1253]}, None,
+             'tree_length'),
+            ('wrong inverse range', changed(lambda r: closure(r).__setitem__(2, {
+                'name': 'V⁻¹', 'letters': 339, 'parts': [
+                    {'name': 'head', 'letters': 288, 'span': [915, 1203], 'inverse_of': [0]},
+                    {'name': 'rest', 'letters': 51, 'span': [1203, 1254]}]})), None, 'tree_expansion'),
+            ('inverse of a later part', changed(lambda r: closure(r)[1].update(inverse_of=[1, 2])), None,
+             'tree_malformed'),
+            ('inverse of a missing part', changed(lambda r: closure(r)[1].update(inverse_of=[5])), None,
+             'tree_malformed'),
+            ('same_as with another name', changed(lambda r: closure(r)[2].update(same_as=closure(r)[2].pop('inverse_of'))),
+             None, 'tree_malformed'),
+            ('span and parts', changed(lambda r: r['parts'][1].update(span=[288, 1254])), None, 'tree_malformed'),
+            ('empty name', changed(lambda r: r['parts'][0].update(name='')), None, 'tree_malformed'),
+            ('empty parts', {'name': 't1prime', 'letters': 1254, 'parts': []}, None, 'tree_malformed'),
+            ('depth 65', deep, None, 'tree_malformed'),
+            ('size', CLOSURE_TREE, 4, 'tree_malformed'),
+            ('forbidden key', changed(lambda r: r['parts'][0].update(slp=1)), None, 'forbidden_key'),
+        )
+        for label, root, size, failure in trees_:
+            with self.subTest(label=label):
+                rec = copy.deepcopy(original)
+                rec['steps'][0]['tree'] = write_tree(base, 0, root, size)
+                self.check(base, rec, failure)
+        path = base / original['steps'][0]['tree']['file']
+        data = gzip.decompress(path.read_bytes())
+        for label, raw, failure in (('wrong sha', None, 'tree_sha256'), ('missing file', b'', 'tree_missing'),
+                                    ('not gzip', data, 'tree_malformed'),
+                                    ('mtime', gzip.compress(data, mtime=1), 'tree_malformed')):
+            with self.subTest(label=label):
+                rec = copy.deepcopy(original)
+                write_tree(base, 0, CLOSURE_TREE)
+                if raw is None:
+                    rec['steps'][0]['tree']['sha256'] = '0' * 64
+                elif not raw:
+                    path.unlink()
+                else:
+                    path.write_bytes(raw)
+                self.check(base, rec, failure)
+
+    def test_v3_tree_same_as(self):
+        """same_as names an earlier part with the same name and the same letters (plan section 1)."""
+        base, rec = self.v3_case('tail')
+        step = rec['steps'][0]
+        word = read(base / step['word'])['word']
+        n = len(word)
+        i, j = next((i, j) for i in range(1, n) for j in range(i + 2, n - 1) if word[i] == word[j])
+        k = next(k for k in range(i + 2, n - 1) if word[k] != word[i])
+
+        def flat(name, at):
+            ends = [(None, 0), ('x', i), ('letter', i + 1), ('y', at), (name, at + 1), ('z', n)]
+            parts = [{'name': part, 'letters': end - ends[m][1], 'span': [ends[m][1], end]}
+                     for m, (part, end) in enumerate(ends[1:])]
+            parts[3]['same_as'] = [1]
+            return {'name': 't1prime', 'letters': n, 'parts': parts}
+
+        inverses = inverse_items(self.menu)
+        for label, root, expected in (('same letter', flat('letter', j), []),
+                                      ('other name', flat('other', j), ['tree_malformed']),
+                                      ('other letter', flat('letter', k), ['tree_expansion'])):
+            with self.subTest(label=label):
+                fails = []
+                C.check_tree(base, {**step, 'tree': write_tree(base, 0, root)}, word, inverses, fails)
+                self.assertEqual(fails, expected)
+
+    def test_v3_height_unchecked_contracts(self):
+        base, rec = self.v3_case('height3')
+        final = self.check(base, rec, 'unchecked_contract')
+        self.assertEqual(final['unchecked_contracts'], 2)
+        rows = []
+        final = C.check_run(base, rows.append, allow_unchecked=True)
+        self.assertTrue(final['pass'], rows)
+        self.assertEqual((final['verdict'], final['height_twists'], final['unchecked_contracts']), ('stuck', 2, 2))
+        self.assertTrue(all(row['pass'] and row['unchecked'] and row['subphase'] == 'r22d75' for row in rows[:-1]), rows)
+        for flags, code in (([], 1), (['--allow-unchecked-contracts'], 0)):
+            with self.subTest(flags=flags):
+                proc = subprocess.run([sys.executable, '-I', '-B', str(HERE / 'check_run.py'), str(base), *flags],
+                                      cwd=REPO, capture_output=True, text=True, timeout=600, check=False)
+                self.assertEqual(proc.returncode, code, proc.stdout + proc.stderr)
+                self.assertEqual(json.loads(proc.stdout.splitlines()[-1])['unchecked_contracts'], 2)
+
+    def test_v3_contract_hooks(self):
+        """prepare sees the state before a step, on_letter each letter, finish the state after (M6)."""
+        base, rec = self.v3_case('height3')
+        digests = [rec['steps'][0]['before']['digest']] + [s['after']['digest'] for s in rec['steps']]
+        seen = []
+
+        def prepare(row, st):
+            seen.append(('prepare', row['index'], st.digest()))
+            return row['index']
+
+        def on_letter(ctx, k, st):
+            seen.append(('letter', ctx, k, st.digest()))
+
+        def finish(ctx, row, st):
+            seen.append(('finish', ctx, st.digest()))
+            return []
+
+        hooks = C.check_contracts
+        with patch.object(hooks, 'prepare', prepare), patch.object(hooks, 'on_letter', on_letter), \
+                patch.object(hooks, 'finish', finish):
+            final = self.check(base, rec)
+        self.assertEqual(final['unchecked_contracts'], 0)
+        self.assertEqual(seen, [('prepare', 0, digests[0]), ('letter', 0, 0, digests[1]), ('finish', 0, digests[1]),
+                                ('prepare', 1, digests[1]), ('letter', 1, 0, digests[2]), ('finish', 1, digests[2])])
+
+        def crash(*args):
+            raise RuntimeError('hook crashed')
+
+        for name, hook, failure in (('prepare', crash, 'contract'), ('on_letter', crash, 'contract'),
+                                    ('finish', crash, 'contract'), ('finish', lambda *a: 'none', 'contract'),
+                                    ('finish', lambda *a: ['n6_rise'], 'n6_rise')):
+            with self.subTest(name=name, failure=failure), patch.object(hooks, name, hook):
+                self.check(base, rec, failure, allow_unchecked=True)
+
+    def test_v3_entry_tests(self):
+        """Every not_applicable, handoff and lattice claim is recomputed from the checker's snapshots."""
+        base, original = self.v3_case('height3')
+
+        def sub(name, result):
+            return lambda rec: rec['phases']['height']['sub'][name].update(result=result)
+
+        for label, edit in (('r22d75 stuck after HEIGHT2', sub('r22d75', 'stuck')),
+                            ('r22d75 lattice with pieces off', sub('r22d75', 'lattice')),
+                            ('r22d81 stuck without height 6', sub('r22d81', 'stuck')),
+                            ('high stuck without height 4 or 6', lambda rec: rec['phases']['high'].update(result='stuck')),
+                            ('tail not applicable with pieces off',
+                             lambda rec: rec['phases']['tail'].update(result='not_applicable'))):
+            with self.subTest(label=label):
+                rec = copy.deepcopy(original)
+                edit(rec)
+                self.check(base, rec, 'entry_test', allow_unchecked=True)
+
+    def test_v3_phase_order(self):
+        base, original = self.v3_case('height3')
+        rec = copy.deepcopy(original)
+        rec['steps'][0]['subphase'] = 'r22d81'          # r22d75 entered again after r22d81
+        self.check(base, rec, 'phase_order', allow_unchecked=True)
+        rec = copy.deepcopy(original)
+        h4 = rec['phases']['height']['sub']['h4']       # high ran although h4 never did
+        h4['result'] = None
+        del h4['start'], h4['end']
+        self.check(base, rec, 'phase_order', allow_unchecked=True)
+
+    def test_v3_omitted_phases(self):
+        """A phase or sub-phase is left out only after a result that ends the run, or in an
+        error record cut short by an exception (plan section 0, phase results)."""
+        base, original = self.v3_case('h46')
+        start = snap(original['start'])
+        results = ['stuck', 'stuck', 'not_applicable', 'stuck', 'stuck']
+
+        def cut(kept, result, **fields):
+            rec = copy.deepcopy(original)
+            rec['phases'] = phases3(rec['phases']['bulk'], [start] * 6, kept + [None] * (5 - len(kept)))
+            rec['result'] = rec['acceptance']['verdict'] = result
+            rec['stuck'] = rec['stuck'] if result == 'stuck' else None
+            rec.update(fields)
+            return rec
+
+        # A continuing result, then nothing, claimed as budget. With nothing kept this is the
+        # review's counterexample (I0-03): a stuck bulk and no later phase.
+        for n in range(5):
+            with self.subTest(kept=results[:n]):
+                self.check(base, cut(results[:n], 'budget'), 'phase_result')
+        for kept in (['budget'], ['stuck', 'timeout'], results[:4] + ['budget']):
+            with self.subTest(kept=kept):
+                self.assertEqual(self.check(base, cut(kept, 'budget'))['verdict'], 'budget')
+        # An exception in r22d81 ends the run as error; the runner leaves the height result null.
+        rec = cut(['stuck'], 'error', error='r22d81 crashed')
+        rec['phases']['height']['result'] = None
+        rec['phases']['height']['sub']['r22d81']['start'] = start
+        self.assertEqual(self.check(base, rec)['verdict'], 'error')
+        # An exception after a tail step ends the run as error; the step stands and the tail
+        # result stays null. The same record with any other run result fails.
+        base, rec = self.v3_case('tail', 'error-after-step')
+        self.assertTrue(rec['phases']['tail']['steps'])
+        rec['phases']['tail']['result'] = None
+        rec.update(result='error', error='stepchk digest mismatch', stuck=None)
+        rec['acceptance']['verdict'] = 'error'
+        self.assertEqual(self.check(base, rec)['verdict'], 'error')
+        rec.update(result='budget', error=None)
+        rec['acceptance']['verdict'] = 'budget'
+        self.check(base, rec, 'phase_result')
+        # With every piece on the lattice, --no-lattice ends the run budget with no lattice result.
+        base, rec = self.v3_case('short', 'no-lattice')
+        rec['result'] = rec['acceptance']['verdict'] = 'budget'
+        self.assertEqual(self.check(base, rec)['verdict'], 'budget')
+        rec['result'] = rec['acceptance']['verdict'] = 'stuck'
+        rec['stuck'] = {**snap(rec['steps'][-1]['after']), 'phase': 'tail', 'reason': 'no_rule', 'units': []}
+        self.check(base, rec, 'phase_result')
+
+    def test_v3_interrupted_phase_entry(self):
+        """A phase cut off by an exception after its steps keeps its start and its entry test
+        (scoped verification, I0-V1-01)."""
+        # r22d75 applies at Z36: its two steps stand when an exception follows them.
+        base, rec = self.v3_case('height3', 'interrupted')
+        rec = copy.deepcopy(rec)
+        sub = rec['phases']['height']['sub']
+        sub['r22d75']['result'] = None
+        del sub['r22d75']['end']
+        sub['r22d81'] = {'result': None, 'steps': 0}
+        sub['h4'] = {'result': None, 'steps': 0}
+        rec['phases']['height'].update(result=None, end=None)
+        rec['phases']['high'] = {'result': None, 'steps': 0, 'twists': 0}
+        rec['phases']['tail'] = {'result': None, 'steps': 0}
+        rec.update(result='error', error='r22d75 crashed', stuck=None)
+        rec['acceptance']['verdict'] = 'error'
+        self.assertEqual(self.check(base, rec, allow_unchecked=True)['verdict'], 'error')
+        # The same shape in the tail, a step recorded at a lattice configuration, already fails the
+        # tail's own step contract (its unit must be off and land) before the phase rule is reached.
+        base, rec, _ = self.played_case()
+        rec['steps'][0].update(phase='tail', rule='pure', contract='strict_prime', gate='stepchk')
+        rec['phases']['tail'] = {'result': None, 'steps': 1}
+        rec['phases']['lattice'] = {'result': None, 'steps': 0, 'twists': None}
+        rec['totals'].update(lattice_twists=None, tail_twists=rec['steps'][0]['letters'])
+        rec.update(result='error', error='stepchk crashed')
+        rec['acceptance']['verdict'] = 'error'
+        self.check(base, rec, 'landed', allow_unchecked=True)
+
+    def test_interrupted_plugin_phase_rules(self):
+        """check_plugin_phase on a phase that an exception cut off, with stand-in snapshots."""
+        class Snap:
+            def __init__(self, heights, digest):
+                self.hist, self.count, self.digest = heights, sum(heights.values()), digest
+
+            def heights(self):
+                return self.hist
+
+            def check(self, doc, prefix, fails, heights=False):
+                if not isinstance(doc, dict) or doc.get('digest') != self.digest:
+                    C.add(fails, prefix)
+
+        solved, z36 = Snap({}, 's' * 64), Snap({'2': 5799, '6': 1}, 'z' * 64)
+        for name, before, start, count, run, expected in (
+                ('high', solved, 's', 1, 'error', ['entry_test']),       # the review's counterexample
+                ('high', z36, 'z', 1, 'error', []),
+                ('h4', z36, 'z', 0, 'error', []),                        # cut off before its entry test mattered
+                ('h4', z36, 'z', 1, 'error', ['entry_test']),
+                ('r22d81', z36, 'x', 1, 'error', ['r22d81_start']),
+                ('high', z36, None, 1, 'error', ['phase_result']),       # steps without a start
+                ('high', z36, 'z', 1, 'budget', ['phase_result'])):
+            with self.subTest(name=name, start=start, count=count, run=run):
+                data = {'result': None, 'steps': count}
+                if start:
+                    data['start'] = {'digest': start * 64}
+                fails = []
+                self.assertIsNone(C.check_plugin_phase(name, data, count, before, before, run, fails))
+                self.assertEqual(fails, expected)
+
+    def test_v3_h4_entry_needs_max_4(self):
+        """h4's entry test is max <= 4 and n4 > 0: with height 6 present, h4 is not applicable."""
+        base, original = self.v3_case('h46')
+        self.assertEqual(self.check(base, original)['verdict'], 'stuck')
+        rec = copy.deepcopy(original)
+        rec['phases']['height']['sub']['h4']['result'] = 'stuck'
+        self.check(base, rec, 'entry_test')
+
+    def test_v3_verdict_timed_out_attempt(self):
+        """A stop with an attempt at the final state that timed out is budget, not stuck (R22D-55)."""
+        base, original = self.v3_case('h46')
+        rec = copy.deepcopy(original)
+        rec['phases']['height']['sub']['r22d75'].update(reason='stub', details={}, attempts=[{'timed_out': True}])
+        rec['acceptance']['timed_out_attempts'] = 1
+        self.check(base, rec, 'verdict')
+        rec['acceptance']['verdict'] = 'budget'
+        self.assertEqual(self.check(base, rec)['verdict'], 'budget')
+        rec['acceptance']['timed_out_attempts'] = 0
+        self.check(base, rec, 'acceptance')
+        rec = copy.deepcopy(original)
+        rec['config']['component'] = 'height_stub'
+        rec['acceptance']['verdict'] = 'component'
+        self.assertEqual(self.check(base, rec)['verdict'], 'component')
+        rec['acceptance']['verdict'] = 'stuck'
+        self.check(base, rec, 'verdict')
+
+    def test_v3_verdict_earlier_timeout(self):
+        """A timed-out attempt before a step is counted, but the final state's stop stays stuck."""
+        base, rec = self.v3_case('height3')
+        rec['steps'][0]['attempts'] = [{'timed_out': True}]
+        rec['acceptance']['timed_out_attempts'] = 1
+        self.assertEqual(self.check(base, rec, allow_unchecked=True)['verdict'], 'stuck')
+
+    def test_v3_verdict_order(self):
+        """The verdict is the first match in the order of plan section 0."""
+        final, earlier = SimpleNamespace(digest='f' * 64), SimpleNamespace(digest='e' * 64)
+
+        def case(result='stuck', component=None, standings=(), probe=False, unit=False, sub=None, step=False):
+            phases = {'height': {'sub': {s: {'result': None} for s in SUBPHASES}}, 'high': {'result': None}}
+            ends = [earlier] * 7
+            if sub is not None:                 # a timed-out r22d75 attempt, at the final state or not
+                phases['height']['sub']['r22d75'] = {'result': 'stuck', 'attempts': [{'timed_out': True}]}
+                ends[1] = final if sub else earlier
+            steps = [{'phase': 'tail', 'standing': s, 'attempts': [{'timed_out': step}]} for s in standings]
+            stuck = {'units': [{'attempts': [{'timed_out': unit}]}]}
+            if probe:
+                stuck['probe'] = {}
+            timed = sum(a['timed_out'] for s in steps for a in s['attempts']) + unit + (sub is not None)
+            record = {'result': result, 'config': {'component': component, 'mode': 'acceptance'}, 'phases': phases,
+                      'stuck': stuck, 'acceptance': {'certificate_steps': standings.count('certificate'),
+                                                     'fallback_steps': standings.count('fallback'),
+                                                     'probe': probe, 'timed_out_attempts': timed}}
+            return record, steps, ends
+
+        for kwargs, verdict in (
+                (dict(result='error', component='x', standings=('certificate',)), 'error'),
+                (dict(component='bulk_budget', standings=('certificate', 'fallback')), 'component'),
+                (dict(standings=('certificate', 'fallback'), probe=True), 'stuck'),
+                (dict(standings=('fallback',)), 'coverage_failure'),
+                (dict(probe=True, unit=True), 'coverage_failure'),
+                (dict(result='budget'), 'budget'),
+                (dict(unit=True), 'budget'),
+                (dict(sub=True), 'budget'),
+                (dict(sub=False), 'stuck'),
+                (dict(standings=('rule',), step=True), 'stuck'),
+                (dict(), 'stuck'),
+                (dict(result='solved', standings=('rule',)), 'solved')):
+            with self.subTest(**kwargs):
+                record, steps, ends = case(**kwargs)
+                record['acceptance']['verdict'] = verdict
+                fails = []
+                self.assertEqual(C.check_acceptance(record, steps, final, ends, fails), verdict)
+                self.assertEqual(fails, [])
+                record['acceptance']['verdict'] = 'other'
+                C.check_acceptance(record, steps, final, ends, fails)
+                self.assertEqual(fails, ['verdict'])
+
+    def test_v3_entry_function(self):
+        """The six entry tests of plan section 0, at their boundaries."""
+        def snapshot(off, **heights):
+            return SimpleNamespace(count=off, heights=lambda: {h[1:]: n for h, n in heights.items()})
+
+        for name, snap_, expected in (
+                ('r22d75', snapshot(2, h2=1, h4=1), True), ('r22d75', snapshot(2, h2=2), False),
+                ('r22d75', snapshot(2, h8=1, h6=1), False), ('r22d81', snapshot(2, h4=2), False),
+                ('r22d81', snapshot(2, h6=1), True), ('h4', snapshot(2, h4=1, h6=1), False),
+                ('h4', snapshot(2, h4=1, h2=1), True), ('h4', snapshot(1, h2=1), False),
+                ('high', snapshot(1, h6=1), True), ('high', snapshot(1, h8=1, h4=1), False),
+                ('tail', snapshot(1, h2=1), True), ('tail', snapshot(0), False),
+                ('lattice', snapshot(0), True), ('lattice', snapshot(1, h2=1), False)):
+            with self.subTest(name=name, heights=snap_.heights()):
+                self.assertIs(C.entry(name, snap_), expected)
+
+    def test_v3_fallback_step(self):
+        """Development mode plays a fallback step, and the verdict is coverage_failure."""
+        base, rec = self.v3_case('short')
+        rec['steps'][0].update(phase='fallback', rule='fallback', standing='fallback', contract='fallback')
+        rec['totals'].update(tail_twists=0, fallback_twists=1)
+        rec['acceptance'].update(fallback_steps=1, verdict='coverage_failure')
+        final = self.check(base, rec)
+        self.assertEqual((final['verdict'], final['fallback_twists']), ('coverage_failure', 1))
+        rec['config'] = blank3(rec['start'], 'acceptance')['config']
+        self.check(base, rec, 'standing')
+
+    def test_v3_probe(self):
+        """The probe word is replayed on a copy of the end state under the fallback contract:
+        a non-empty word lands a unit that is off at the end state."""
+        base, original = self.probe_case()
+        final = self.check(base, original)
+        self.assertEqual((final['verdict'], final['end_digest']), ('coverage_failure', original['start']['digest']))
+        word = read(base / 'probe/word.json')
+        write(base / 'probe/empty.json', {'word': [], 'input_digest': word['input_digest'],
+                                          'output_digest': word['input_digest']})
+        table = read(base / 'start-table.json')
+        write(base / 'probe/lattice-unit.json', {'pieces': [table['pose_id'].index(0)]})
+        for label, edit, failure in (
+                ('output digest', lambda p, rec: p.update(output_digest='0' * 64), 'probe'),
+                ('unit not landed', lambda p, rec: p.update(word='probe/empty.json', letters=0,
+                                                             output_digest=word['input_digest']), 'probe'),
+                ('unit on the lattice', lambda p, rec: p.update(unit='probe/lattice-unit.json'), 'probe'),
+                # The review's counterexample (I0-04): an on-lattice unit and the empty word.
+                ('empty word, unit on the lattice',
+                 lambda p, rec: p.update(unit='probe/lattice-unit.json', word='probe/empty.json', letters=0,
+                                         output_digest=word['input_digest']), 'probe'),
+                ('letters', lambda p, rec: p.update(letters=2), 'probe'),
+                ('missing unit', lambda p, rec: p.update(unit='probe/none.json'), 'probe'),
+                ('development mode', lambda p, rec: rec.update(config=blank3(rec['start'])['config']), 'probe'),
+                ('not counted', lambda p, rec: rec['acceptance'].update(probe=False), 'acceptance')):
+            with self.subTest(label=label):
+                rec = copy.deepcopy(original)
+                edit(rec['stuck']['probe'], rec)
+                self.check(base, rec, failure)
+
+    def test_v3_played_lattice(self):
+        base, rec, after = self.played_case()
+        self.assertEqual(after['digest'], C.SOLVED)
+        self.assertEqual(self.check(base, rec, 'unchecked_contract')['unchecked_contracts'], 1)
+        final = self.check(base, rec, allow_unchecked=True)
+        self.assertEqual((final['end_digest'], final['lattice_twists'], final['lattice_checked'], final['verdict']),
+                         (C.SOLVED, 3, False, 'solved'))
+        original = rec
+        for label, edit, failure in (
+                ('labels not identity', lambda s: s.update(labels_identity=False), 'labels_identity'),
+                ('labels missing', lambda s: s.pop('labels_identity'), 'labels_identity'),
+                ('json encoding', lambda s: s.update(encoding='json'), 'encoding'),
+                ('word sha256', lambda s: s.update(word_sha256='0' * 64), 'word_sha256'),
+                ('contract', lambda s: s.update(contract='strict_prime'), 'contract')):
+            with self.subTest(label=label):
+                rec = copy.deepcopy(original)
+                edit(rec['steps'][0])
+                self.check(base, rec, failure, allow_unchecked=True)
+        with patch.object(C.check_lattice, 'replay_lattice_step', lambda *a: 1 / 0):
+            self.check(base, original, 'lattice_step', allow_unchecked=True)
+
+    def test_v3_lattice_labels_not_digest(self):
+        """A played lattice is solved by identity labels, and its end digest is the replayed
+        one, which may differ from SOLVED by rotations the labels do not see (R3-05)."""
+        base, rec, after = self.played_case(prefix=2)
+        self.assertEqual(after['off'], 0)
+        self.assertNotEqual(after['digest'], C.SOLVED)
+        replay = C.check_lattice.replay_lattice_step
+
+        def confirmed(*args):                   # as if P5 had confirmed the contract and the labels
+            return [name for name in replay(*args) if name != 'unchecked_contract']
+
+        with patch.object(C.check_lattice, 'replay_lattice_step', confirmed):
+            final = self.check(base, rec)
+        self.assertEqual((final['end_digest'], final['unchecked_contracts']), (after['digest'], 0))
+
+    def test_v3_lattice_composition(self):
+        """Until I1 the lattice is checked by composition: verify_late, a component, no end digest."""
+        base, old = self.case('lattice_v2')
+        start = snap(old['start'])
+        rec = blank3(old['start'])
+        rec['phases'] = phases3(old['phases']['bulk'], [start] * 6, ['not_applicable'] * 5)
+        twists = old['lattice']['twists']
+        rec['phases']['lattice'] = {'result': 'solved', 'steps': 0, 'twists': twists}
+        rec['config']['component'] = 'lattice_composition'
+        rec['lattice'], rec['result'] = old['lattice'], 'solved'
+        rec['totals']['lattice_twists'] = twists
+        rec['acceptance']['verdict'] = 'component'
+        parent = self.tmp / 'v3-check-output'
+        parent.mkdir()
+        final = self.check(base, rec, report_parent=parent)
+        self.assertEqual((final['lattice_checked'], final['end_digest'], final['verdict'], final['lattice_twists']),
+                         (True, None, 'component', twists))
+        rec['config']['component'] = None
+        rec['acceptance']['verdict'] = 'solved'
+        self.check(base, rec, 'component')
+
+
+@unittest.skipUnless((HERE / 'runner.py').is_file(), 'runner.py is not present')
+class RunnerRecordTests(unittest.TestCase):
+    """Format 3 records written by the real runner.py with the stub plugins, checked as written."""
+    RUNS = {'acceptance': ['--scramble', '10', '7001', '--mode', 'acceptance'],
+            'development': ['--scramble', '10', '7001'],
+            # Z36 with no bulk step and no tail rule: every applicable plugin is a stub.
+            'stubs': ['--table', 'z36.json', '--mode', 'acceptance', '--bulk-steps', '0', '--tail-rules', '',
+                      '--fallback-max-length', '0']}
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = Path(tempfile.mkdtemp(prefix='tutorial-check-records-'))
+        cls.addClassCleanup(shutil.rmtree, cls.tmp)
+        cache_env = patch.dict(os.environ, {'JUMBLING_HOME_CACHE': str(cls.tmp / 'home-centroids.npy')})
+        cache_env.start()
+        cls.addClassCleanup(cache_env.stop)
+        cls.worktree_before = status()
+        menu = restore.menu('I_a')
+        st = sim.State(restore.ctx, menu=menu)
+        apply(st, menu, WORD36)
+        import buffer                           # fixture construction only, as in CheckRunTests
+        buffer.export_pose_table(st, cls.tmp / 'z36.json')
+        started, children = time.monotonic(), {}
+        for name, arguments in cls.RUNS.items():
+            cache = cls.tmp / ('cache-' + name)
+            arguments = [str(cls.tmp / a) if a == 'z36.json' else a for a in arguments]
+            log = (cls.tmp / (name + '.log')).open('w')
+            cls.addClassCleanup(log.close)
+            children[name] = subprocess.Popen(
+                [sys.executable, '-I', '-B', str(HERE / 'runner.py'), '--out', str(cls.tmp / name),
+                 '--cache', str(cache), *arguments], cwd=REPO, stdout=log, stderr=subprocess.STDOUT,
+                env={**os.environ, 'JUMBLING_HOME_CACHE': str(cache / 'home_centroids.npy')}, start_new_session=True)
+        try:
+            for child in children.values():
+                child.wait(timeout=max(1, 1800 - (time.monotonic() - started)))
+        finally:
+            # The runner cancels its own child groups on SIGTERM (test_runner.py does the same).
+            for child in children.values():
+                if child.poll() is None:
+                    child.terminate()
+                    try:
+                        child.wait(timeout=60)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        child.wait()
+        for name, child in children.items():
+            if child.returncode:
+                raise AssertionError('runner %s failed: %s' % (name, (cls.tmp / (name + '.log')).read_text()[-3000:]))
+        print('runner records: %.2fs' % (time.monotonic() - started), flush=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        if status() != cls.worktree_before:
+            raise AssertionError('test run changed the worktree, including ignored files')
+
+    def run_copy(self, name):
+        base = self.tmp / ('%s-%s' % (self._testMethodName, name))
+        shutil.copytree(self.tmp / name, base)
+        return base, read(base / 'run.json')
+
+    def check(self, base, rec, failure=None, **kwargs):
+        write(base / 'run.json', rec)
+        rows = []
+        final = C.check_run(base, rows.append, **kwargs)
+        self.assertEqual(len(rows), len(rec['steps']) + 1, rows)
+        self.assertIs(final['pass'], failure is None, rows)
+        if failure is not None:
+            self.assertIn(failure, final['fails'])
+        return final
+
+    def test_scramble_records(self):
+        for name in ('acceptance', 'development'):
+            with self.subTest(mode=name):
+                base, rec = self.run_copy(name)
+                self.assertEqual((rec['format'], rec['config']['mode'], rec['result']), ('runner-run/3', name, 'solved'))
+                self.assertTrue(rec['steps'] and all(s['phase'] == 'bulk' for s in rec['steps']))
+                final = self.check(base, rec)
+                self.assertEqual((final['verdict'], final['end_digest'], final['unchecked_contracts']),
+                                 ('solved', C.SOLVED, 0))
+                self.assertEqual(final['bulk_twists'], rec['totals']['bulk_twists'])
+
+    def test_scramble_record_cli(self):
+        base, _ = self.run_copy('acceptance')
+        output = self.tmp / 'acceptance-check.jsonl'
+        proc = subprocess.run([sys.executable, '-I', '-B', str(HERE / 'check_run.py'), str(base), '--out', str(output)],
+                              cwd=REPO, capture_output=True, text=True, timeout=600, check=False)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(proc.stdout, output.read_text())
+        self.assertEqual(json.loads(proc.stdout.splitlines()[-1])['verdict'], 'solved')
+
+    def test_stub_record(self):
+        """The stubs make the record a component; h4 is not applicable at Z36 (max 6)."""
+        base, original = self.run_copy('stubs')
+        sub = original['phases']['height']['sub']
+        self.assertEqual((sub['r22d75']['result'], sub['h4']['result'], original['phases']['tail']['result']),
+                         ('stuck', 'not_applicable', 'stuck'))
+        self.assertEqual(self.check(base, original)['verdict'], 'component')
+        for label, edit, failure in (
+                ('verdict', lambda rec: rec['acceptance'].update(verdict='stuck'), 'verdict'),
+                ('component', lambda rec: rec['config'].update(component=None), 'component'),
+                ('h4 entered at height 6', lambda rec: rec['phases']['height']['sub']['h4'].update(result='stuck'),
+                 'entry_test'),
+                ('phase order', lambda rec: rec['config'].update(phase_order=['bulk', 'high', 'height', 'tail',
+                                                                              'lattice']), 'phase_order')):
+            with self.subTest(label=label):
+                rec = copy.deepcopy(original)
+                edit(rec)
+                self.check(base, rec, failure)
+
+    def test_bulk_order_reopen(self):
+        base, original = self.run_copy('development')
+        for change in ('config', 'step'):
+            with self.subTest(change=change):
+                rec = copy.deepcopy(original)
+                if change == 'config':
+                    rec['config']['bulk_order'].insert(0, 'reopen')
+                else:
+                    rec['steps'][-1]['rule'] = 'reopen'
+                self.check(base, rec, 'bulk_order')
+
+
+class IndependenceTests(unittest.TestCase):
+    """Plan runner-run/3, section 0: the checker side shares only the definition of the puzzle."""
+    FILES = ('check_run.py', 'check_contracts.py', 'check_lattice.py')
+    # Imports outside the standard library: numpy, the simulator (sim/), the I_a menu (restore),
+    # the trees, N's cut geometry (rim) and the checker's own modules.
+    ALLOWED = {'numpy', 'sim', 'restore', 'trees', 'rim', 'check_contracts', 'check_lattice'}
+    # No runner, rule, gate, player or verifier code (verify_late.py runs only as a child process).
+    FORBIDDEN = ('runner', 'rules_', 'lattice_phase', 'literal_lattice', 'eb6', 'seams', 'orient', 'buffer',
+                 'r22d25_', 'verify_late')
+    # restore's menu, element and scramble (the owner's list), and three names restore re-exports
+    # from the simulator: ctx is rim.ctx = sim.get_context(), to_tuple is sim.kplus.to_tuple, and
+    # transpose is exact.transpose, the exact arithmetic that sim/ itself imports.
+    RESTORE = {'menu', 'element', 'scramble', 'ctx', 'to_tuple', 'transpose'}
+    RIM = {'Domains'}                           # N = rim.Domains(state).total_misalignment()
+
+    def scan(self, source):
+        problems, bases = [], set()
+        tree = ast.parse(source)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = [node.module or '']
+                if node.level:
+                    problems.append('relative import')
+                if names[0] in ('restore', 'rim'):
+                    allowed = self.RESTORE if names[0] == 'restore' else self.RIM
+                    problems += ['%s.%s' % (names[0], a.name) for a in node.names if a.name not in allowed]
+            else:
+                names = []
+            for name in names:
+                top = name.split('.')[0]
+                if top.startswith(self.FORBIDDEN):
+                    problems.append('import ' + name)
+                elif top not in sys.stdlib_module_names and top not in self.ALLOWED:
+                    problems.append('unlisted import ' + name)
+            if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+                bases.add(id(node.value))
+                allowed = {'restore': self.RESTORE, 'rim': self.RIM}.get(node.value.id)
+                if allowed is not None and node.attr not in allowed:
+                    problems.append('%s.%s' % (node.value.id, node.attr))
+            if isinstance(node, ast.Name) and node.id in ('__import__', 'importlib', 'runpy', 'exec', 'eval'):
+                problems.append('dynamic code: ' + node.id)
+        # The modules themselves are never passed on, so no other attribute can be reached.
+        problems += ['%s used as a value' % node.id for node in ast.walk(tree)
+                     if isinstance(node, ast.Name) and node.id in ('restore', 'rim') and id(node) not in bases]
+        return problems
+
+    def test_checker_side_independent(self):
+        for name in self.FILES:
+            with self.subTest(file=name):
+                self.assertEqual(self.scan((HERE / name).read_text()), [])
+
+    def test_scan_finds_dependencies(self):
+        for source in ('import runner_api', 'import runner', 'from seams import SeamRestorer', 'import buffer as b',
+                       'from rules_height import STUB', 'import r22d25_search', 'import literal_lattice',
+                       'import lattice_phase', 'import orient', 'import eb6r', 'import verify_late', 'import scipy',
+                       'from . import check_run', 'x = restore.jumble_items(m)', 'f(restore)', 'm = rim.ctx',
+                       'from restore import NEAR', 'importlib.import_module("runner")', '__import__("orient")'):
+            with self.subTest(source=source):
+                self.assertTrue(self.scan(source))
 
 
 class TimedResult(unittest.TextTestResult):
