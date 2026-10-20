@@ -39,7 +39,19 @@ This is the first run of the draft's `--record` path; it reproduces the snapshot
 
 ## Census, R22D-75, R22D-81
 
-Pending. Next step: when `census_seams.py 3000 7305 18900 <dir>/census` ends, copy its record and stdout here, then run
+Census part 1: `census_seams.py 3000 7305 18900 <dir>/census`. Scramble: 116,870 off, N = 141,328, left heights
+{2: 113,826, 4: 3,044} over 1,849 off poses. The session's container restarted about 46 minutes into the descent and
+killed the process. Its last saved record (`ia-k3000-s7305-part1.json`, result `running`) holds 17 steps, 49 twists,
+107,565 off, N = 133,140, last step at 2,852 s; stdout in `census_part1.txt`.
+
+Census part 2 (running): the script's own continuation option, unchanged script, with the remaining budget
+18,900 − 2,852 = 16,048 s: `census_seams.py 3000 7305 16048 <dir>/census2 --start <dir>/part1/ia-k3000-s7305.json`.
+It rebuilds the same scramble, replays the 49 twists and continues with the same rules. The descent rules do not read
+the clock, so the restart can change only where the time limit falls (by the work lost after 2,852 s), not the
+twists chosen. The part 2 record's `heights_start`, `N_start` and `off_start` describe the part 1 stop, not the
+scramble; the scramble values are the ones above.
+
+Next step: when `census_seams.py 3000 7305 18900 <dir>/census` ends, copy its record and stdout here, then run
 `r22d75_census_k3000.py` on the record, then the draft `r22d81_rule.py --record <record> --prefix <R22D-75 letters> --cpu 7200`.
 
 ## Not run
