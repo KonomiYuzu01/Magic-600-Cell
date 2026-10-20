@@ -243,11 +243,12 @@ library, and plays the run's word literally (R22D-57).
   three-letter SAFE-ALL preparation, (178, 7)(170, 1)(75, 1), before its T1′ step (stage 12, `round22/e2_b06_*.py`);
   the runner has no rule that makes such a preparation.
 - Height 4: the R22D-25 kernel of stage 12 plays R22D-25 with R22D-37's height-6 tier over a whole stop, under the
-  practical catalogue `r22d25-cat/1` (S and T of one letter; R22D-60's pass left out). By `PROOFS-B.md` R22D-55 this
-  is a revision of the rule, so its stuck outcome covers only that catalogue. `check_r22d25.py` checks its records,
-  but the runner does not call the kernel. The kernel's direct family R22D-19 is an external program
-  (`round22/r22d19_rule.py`) that is not in the repository, so at a state with height-4 units where the height-6 tier
-  has no step the kernel reports `unsupported` before it tries S·T.
+  practical catalogue `r22d25-cat/1` (S and T of one letter; R22D-60's pass left out). By `PROOFS-B.md` R22D-55 this is
+  a revision of the rule, so its stuck outcome covers only that catalogue. `check_r22d25.py` checks its records, but the
+  runner does not call the kernel. The kernel's direct family R22D-19 is an external program (`round22/r22d19_rule.py`,
+  D19 of stage 12), which was not in the repository when the kernel was written and tested; the kernel calls it by
+  default but has not been run with it at a stop (its tests use stub programs), and without it, at a state with height-4
+  units where the height-6 tier has no step, the kernel reports `unsupported` before it tries S·T.
 - The lattice phase is not played twist by twist in a run: `verify_late.py` evaluates the retained factors of the
   lattice word through their net sticker permutations (lines 344 to 348) and plays only the corrections on the
   simulator (lines 351 to 374), and `runner.py` takes solved from its report (lines 908 to 913 at commit `31b78a5`;
