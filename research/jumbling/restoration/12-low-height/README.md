@@ -1132,6 +1132,14 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   - Two rules that put height first: one that lets no height rise takes no step there (R22D-74); one that lowers
     (n₆, n₄, n₂) lexicographically and allows collateral plays seven letters, which lower D to height 4 and take 3,710
     more pieces off, and then has no letter left, with A, B and C at their exact poses (R22D-75).
+- The integrator's experiment after round 5 (`PROOFS-B.md` section 5, after R22D-77;
+  `scripts/round22/r22d75_seed7102.py`, `r22d75_cap61.py` and `r22d75_census.py`): the rule of R22D-75, unchanged, run
+  until no piece is above height 2 at the census stops with height-4 pieces. At the seed 7102 stop after R22D-43 one
+  letter, (61, 15), lowers all 70 and the stop is at height 2; it is not protected: it takes cap 61's 2,361 lattice
+  pieces off, lands 182 others and raises N by 1,056. At depths 200 and 400 the rule lowers 513 to 118 and 607 to 17
+  at height 4, in five and seven letters, and stops with 528 and 545 of the 600 caps blocked; at depth 1000 it lowers
+  390 to 352 in three letters and stops with 548 blocked. Every one of these census records ended at phase U's time
+  limit, so the runs say what the rule does there, not what follows phase U's end.
 
 ## 12. Next
 
@@ -1196,7 +1204,10 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   clean after other progress, the only way past the blockers of caps 150 and 179 (R22D-63, R22D-64); at the 3000-twist
   stop, protected words of several letters, cap 290 through its movable blockers (R22D-76) and cap 274 with grips
   that are not free (R22D-70); the blockers of cap 252 (R22D-41); whether the bulk phase lowers height 6 with more
-  time; and a literal lattice player (R22D-57).
+  time; and a literal lattice player (R22D-57). After round 5 the integrator ran R22D-75's rule at the census stops:
+  one unprotected letter takes the seed 7102 stop to height 2, and elsewhere the rule stops with most caps blocked.
+  Round 6 is running: unlocking the blocked caps at the 3000-twist stop (shard U) and one rule that combines phase U
+  with the height-first families (shard W).
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.

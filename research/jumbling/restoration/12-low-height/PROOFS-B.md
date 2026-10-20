@@ -2492,7 +2492,8 @@ premise of the cell lemma (R22D-77). Of two rules that put height first, one tak
 seven letters and then has none, with 172 pieces left at height 6 (R22D-74, R22D-75). The computations are
 `scripts/round22/r22d61_audit.py`, `r22d70_cap274.py`, `r22d72_one_repair.py`, `r22d73_pins.py`,
 `r22d75_height_first.py` and `r22d76_class1.py`; the integrator re-ran them and got the outputs under `runs/round22/`
-with the same names, and checked R22D-75 with its own replay, `r22d75_check.py` (section 6).
+with the same names, and checked R22D-75 with its own replay, `r22d75_check.py` (section 6). After the round the
+integrator ran the rule of R22D-75 at the census stops (the subsection after R22D-77).
 
 ### R22D-60. Partial targets: a content pass for R22D-25 with the same bounds (rule; proved safe and finite)
 
@@ -2745,6 +2746,33 @@ with the same names, and checked R22D-75 with its own replay, `r22d75_check.py` 
   cell-by-cell argument. Partial targets among the pieces that do not straddle need their own protection check.
 - Uses: R22D-28, R22D-32.
 
+### The height-first rule at the census stops (computed; the integrator's experiment)
+
+- The rule of R22D-75, with its three families, its tests and its exact prediction unchanged, run until no piece is
+  above height 2 (R22D-75 hands over at n₆ = 0), at the census stops that have height-4 pieces and none at height 6:
+  the seed 7102 stop after R22D-43 and the stops of the depth 200, 400 and 1000 records. Each state is rebuilt from
+  its record, every twist admissible and certain, and the prediction is checked against the simulator after every
+  letter (`scripts/round22/r22d75_seed7102.py` and `r22d75_census.py`, section 6).
+
+  | stop | (n₂, n₄): start → end | off: start → end | N: start → end | letters | end |
+  |---|---|---|---|---|---|
+  | seed 7102 after R22D-43 | (31,355, 70) → (33,604, 0) | 31,425 → 33,604 | 32,762 → 33,818 | (61, 15) | height 2, `c450bb2f…` |
+  | depth 200, seed 7105 | (74,541, 513) → (66,601, 118) | 75,054 → 66,719 | 65,888 → 63,466 | (237, 14), (56, 13), (311, 13), (363, 12), (486, 13) | stuck, 528 caps blocked, `44b2e7a0…` |
+  | depth 400, seed 7109 | (72,396, 607) → (76,826, 17) | 73,003 → 76,843 | 77,814 → 80,352 | (158, 13), (252, 13), (406, 14), (588, 13), (158, 14), (300, 12), (300, 13) | stuck, 545 caps blocked, `b334a2dc…` |
+  | depth 1000, seed 7103 | (80,919, 390) → (81,428, 352) | 81,309 → 81,780 | 87,820 → 88,600 | (298, 13), (345, 14), (263, 14) | stuck, 548 caps blocked, `5d99fad1…` |
+
+- At the seed 7102 stop one letter of the second family lowers all 70, the eight units that R22D-43 left, all in the
+  clean cap 61, and the stop is at height 2. The letter is not protected: cap 61 holds 2,361 lattice pieces, 533
+  own-branch pieces at height 2 and the 70; after the letter 2,782 of them are at height 2 and 182 on the lattice, so
+  2,361 lattice pieces go off, 182 pieces land and N rises by 1,056 (the integrator's count, `r22d75_cap61.py`).
+- Where the rule stops, almost every cap is blocked. Letters of the third family come between lowering letters: at
+  depth 200 the start had no letter of the first two families, and after the first letter, of the third family, the
+  second family had one.
+- Every census record here ended at phase U's time limit, not stuck (`11-scramble-census/README.md`). So the runs
+  show what the rule does at those states, not what follows phase U's end; with R22D-75 they show that blocked caps
+  are what stops the rule.
+- Uses: R22D-43, R22D-75.
+
 Open after round 5 of line (d): at the seed 7102 stop (`f0290f93…`) the 70 height-4 pieces, with R22D-19 and R22D-60
 exhausted there: mixed-class middles, preparations that move off pieces, last-letter repair without the vacancy
 requirement in the middle (R22D-22), and grips that become clean only after other progress, the only way past cap 179's
@@ -2752,7 +2780,9 @@ blockers (R22D-64) and cap 150's four straddlers (R22D-63). At the 3000-twist st
 (R22D-71), mixed-class middles for D (R22D-73), cap 274 with grips that are not free or alphabets after other progress
 (R22D-70), cap 290 through its 70 movable blockers (R22D-76), and whether the bulk phase lowers height 6 with more time.
 From round 4: the blockers of cap 252 (R22D-41), an implementation of R22D-25 with R22D-37's tier and R22D-60's pass
-(R22D-50 to R22D-56), and a literal lattice player (R22D-57).
+(R22D-50 to R22D-56), and a literal lattice player (R22D-57). After the integrator's experiment: the stops of the
+height-first rule at the census stops, where almost every cap is blocked, and how the rule combines with phase U,
+whose time-limit stops these are.
 
 ## 6. Commands
 
@@ -3077,6 +3107,17 @@ then the integrator's replay of R22D-75; the six computations at the 3000-twist 
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_height_first.py <dir>/s7302-stop.pkl  # about 5 minutes
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d76_class1.py <dir>/s7302-stop.pkl        # under a minute
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_check.py <dir>/s7302-stop.pkl         # under a minute
+
+The integrator's experiment after round 5 (section 5, after R22D-77): the rule of R22D-75 at the seed 7102 stop after
+R22D-43, what its letter does to cap 61, and the rule at the census stops of depths 200, 400 and 1000, with
+`C=research/jumbling/restoration/11-scramble-census/runs`; the last three print `runs/round22/r22d75_census_k200.txt`,
+`r22d75_census_k400.txt` and `r22d75_census_k1000.txt`. They write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_seed7102.py                          # about a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_cap61.py                             # about a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_census.py $C/round3/ia-k200-s7105.json   # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_census.py $C/round3/ia-k400-s7109.json   # about 5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_census.py $C/round2/ia-k1000-s7103.json  # about 10 minutes
 
 ## 7. Line (c): T2 and T3 (joint attack)
 

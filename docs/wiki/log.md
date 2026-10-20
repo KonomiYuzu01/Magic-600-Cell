@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-20] update | Jumbling: the height-first rule at the census stops
+Run unchanged at the census stops with height-4 pieces, the height-first rule of round 5 takes the seed 7102 stop after the first literal height-4 step to height 2 with one twist that is not protected (it takes 2,361 pieces that were in place off), and at the depth 200, 400 and 1000 stops it lowers 513 to 118, 607 to 17 and 390 to 352 pieces at height 4 and then stops with most caps blocked; every one of these stops is a time-limit stop of the bulk phase, so the runs say what the rule does there, not what follows the bulk phase's end ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 5).
+
 ## [2026-10-20] update | Jumbling: line (d), round 5
 At the depth 100 stop the rule behind the first literal height-4 step, and its extension to parts of units, have nothing left for the 70 remaining height-4 pieces, and no word over the caps that can turn there moves the pieces that block a cap holding the rest; at the 3000-twist stop every cap holds a piece that is in place, so no single twist lowers a height-6 piece without harm, the short families for the one lowerable group fail at any length of their middle, and a rule that puts height first plays seven twists and stops with 172 pieces still at height 6 ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 5).
 
