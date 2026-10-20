@@ -1,0 +1,1 @@
+{"retained_index_320_1": 6668, "cycle_products_identity": true, "pieces": 177120, "max_cell_graph_degree": 600}

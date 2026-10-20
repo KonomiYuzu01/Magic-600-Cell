@@ -1140,6 +1140,231 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   at height 4, in five and seven letters, and stops with 528 and 545 of the 600 caps blocked; at depth 1000 it lowers
   390 to 352 in three letters and stops with 548 blocked. Every one of these census records ended at phase U's time
   limit, so the runs say what the rule does there, not what follows phase U's end.
+- Line (d), round 6, shard U (the senior reviewer, one of two shards at once; R22D-80 to R22D-86 in `PROOFS-B.md`
+  section 5; its computations `scripts/round22/r22d80_check.py` and `r22d82_unlock_graph.py`, re-run by the integrator
+  with the same outputs, `runs/round22/`, plus the integrator's implementation of the rule of R22D-81, `r22d81_rule.py`
+  (run with R22D-75's seven letters as prefix, it chose R22D-80's five letters with every digest, the same target table
+  at `1ff0061f…` and the same 59 values of u at cap 124, and handed over), its replays of R22D-85 and R22D-86,
+  `r22d85_two_letters.py` and `r22d86_cap290.py`, which give every computed number of the review, and its count of the
+  rule's stuck ends, `r22d81_stuck_ends.py`). Height 6 at the 3000-twist stop of seed 7302, from the state where
+  R22D-75's rule is stuck after its seven letters (`1ff0061f…`, (n₂, n₄, n₆) = (103,103, 1,019, 172)): a second rule
+  plays five more literal letters and leaves no piece above height 4, not protected:
+  - An unlock family U (not phase U of the census) for the height-first rule (R22D-81). At a state with no piece above
+    height 6 (R22D-75's precondition) the target cap τ is read from the height-6 pieces alone: among the caps that hold
+    a height-6 piece whole and hold no height-6 piece of another branch than their own whole, the one whose best item
+    lowers the most of them to height 4, ties to the lower cap; with no such cap there is no target and u = 0, otherwise
+    u is τ's number of straddlers. Single letters in four families, each in (grip, item) order, each admissible and
+    certain and with no piece above height 6: H6 lowers n₆; U keeps n₆ and every height-6 pose and lowers u; H4 keeps n₆
+    and every height-6 pose, does not raise u and lowers n₄; H2 keeps n₄ as well and lowers n₂. H6 is R22D-75's first
+    family, but H4 and H2 are narrower than its second and third and U comes before them, so this is a rule of its own.
+    Φ = n₆·B³ + u·B² + n₄·B + n₂ with B = 177,121 falls on every letter, so the rule ends at a handoff (n₆ = 0, so no
+    piece above height 4), stuck or at its budget; that is not coverage. The proof needs the guards: keeping the
+    height-6 poses does not stop a height-4 piece from rising to height 6, and R22D-75's tests do not stop u from
+    rising.
+  - The rule has two stuck ends by design. A height-6 piece that straddles τ never moves, since U, H4 and H2 keep
+    every height-6 pose, so τ stays blocked; and at a clean τ an item lowers n₆ only when it lowers more of τ's
+    height-6 pieces than τ holds height-4 pieces of other branches, a number that U does not keep. In both cases τ
+    stays the same until an H6 letter, and the rule can stop stuck. At `1ff0061f…`: the integrator's count confirms that
+    cap 150, whose best item lowers 84 of its height-6 pieces, is of the first kind, with 27 of its 44 straddlers at
+    height 6, and that no cap is of the second (none of the five caps that can be the target holds a height-4 piece of
+    another branch whole), so cap 274 is of neither kind (R22D-81).
+  - From `1ff0061f…` the rule of R22D-81 plays five letters, each of length 1: (124, 2) of U frees cap 274 (u from 3
+    to 0), (274, 13) lowers the 159 of A and B to height 4, (46, 1) and (46, 3) of U free cap 104 (u from 30 to 3 to
+    0), and (104, 14) lowers C's 13: `bbef1c8e…`, (n₂, n₄, n₆) = (102,960, 936, 0), 103,896 off, N = 132,930
+    (R22D-80). With R22D-75's seven letters before them they make a twelve-letter literal word from the stop, from
+    185 pieces at height 6 to none, made by two rules in turn, not by one rule's run. Run from the stop itself, the
+    rule of R22D-81 plays (64, 15), as R22D-75's does, and then (124, 2), not R22D-75's (185, 14); after these two it
+    plays the other four letters of R22D-80 in the same families and hands the state on after six letters, without the
+    other six of R22D-75, at `e108778e…` with (n₂, n₄, n₆) = (99,701, 1,015, 0), 100,716 off and N = 130,892. Under the
+    owner's acceptance test, a machine that follows the rules from the current state, the switch from one rule to the
+    other must be a test of the state; at this stop R22D-81's rule alone needs no switch, and the switch in general is
+    open. With the target kept absent, so that only H6, H4 and H2 play, the script from `446f4e00…`, the stop after
+    (64, 15), replayed R22D-75's six letters (185, 14), (357, 12), (471, 12), (263, 14), (407, 13) and (523, 12) through
+    H4 and H2 to `1ff0061f…` and then reported stuck.
+  - Not protected. The three U letters are retained and change no height, but they move the off pieces in their caps
+    to new poses without landing them (N +174, +192 and −54). Over the five letters 1,052 pieces that were on the
+    lattice at `1ff0061f…` go off, 1,450 that were off come on, and N rises by 228 (R22D-80).
+  - Cap 124 is clean but not free, so R22D-70's fixed alphabets do not contain it; its retained item 2 moves cap 274's
+    three blockers aside without landing them. The word (124, 2), (274, 13) lowers A and B at the stop itself too, to
+    (98,713, 992, 26) with N down by 136 and 346 lattice pieces off; after the seven letters it ends at
+    (102,593, 926, 13) with N down by 130 and 479 off (R22D-83, R22D-85).
+  - The unlock graph. At both states every cap is in the closure L, the least set that contains the clean caps and
+    every cap each of whose straddlers lies whole in some cap of L, reached in seven layers after the clean caps; caps
+    274, 104, 290 and 311 are in the first: 274 through cap 124, 104 through 46, 290 through 136 and 301, 311 through
+    185, 263 and 364 (and 407 at the stop). No admissible word ever uses a cap outside L, so a cap outside L would be an
+    obstruction to every word; being in L is necessary, but no sufficiency is proved: no clean cap holds all 70 blockers
+    of cap 290, so no single letter unlocks it (R22D-82).
+  - The blockers of the four caps piece by piece, with every cap that holds each whole: those of caps 274, 104 and 290
+    are the same at both states (3, 30 and 70 pieces in one, three and six units); cap 311 has 107 at the stop and 182
+    after the seven letters, 8 of them in both lists, and at each state every one of them is held whole by a clean cap.
+    Shard U made no unlocking run for cap 311 (R22D-83, R22D-84); the joint attack below unlocks it. A unit's
+    representative cannot stand for the unit: blocker 31751 of cap 104 is not whole in cap 157, while three other
+    blockers of its unit are.
+  - Cap 290, with the target fixed to it by hand: (136, 2) and (136, 6) lower its blockers from 70 to 48 to 38 and keep
+    every height-6 pose (`9e6b991b…`); then no single letter lowers them: of the 17 caps that hold one of the 38 whole
+    only 301 is clean, and none of its 59 items leaves fewer than 38. That stalls the unlock family after this prefix,
+    not the rule; H4 and H2 letters there were not tried, nor, in shard U, preparations of two or three letters that
+    keep or raise u in between (R22D-86); the joint attack below takes pairs further.
+- Line (d), round 6, shard W (the senior reviewer, the other of the two shards; R22D-90 to R22D-97 in `PROOFS-B.md`
+  section 5; its computations `scripts/round22/r22d92_guarded_k200.py`, `r22d93_cycle.py`, `r22d94_height2_probe.py`,
+  `r22d95_unlock_graph_k400.py` and `r22d96_retained_check.py`, and `r22d92_guarded_k200_2k.py`, a copy of the first
+  with a CPU budget of 2,000 seconds instead of 1,000; outputs in `runs/round22/`; the integrator re-ran the five on
+  the same machine as the reviewer, and the last four gave the same outputs apart from CPU times; for the first see
+  below). Phase U of the census and the first two height-first families as one rule, at the census stops where the
+  rule of R22D-75 stopped:
+  - One rule that reads the state only, at a state with no piece above height 6: the first letter of R22D-75's first
+    two families (lower n₆; keep n₆ and lower n₄) in (grip, item) order that leaves no piece above height 6, with its
+    exact prediction checked; otherwise the first word that each rule of phase U offers, in phase U's order, played
+    and kept only when at its end no piece is above height 6, neither n₆ nor n₄ has risen and N has fallen, else taken
+    back twist by twist. At n₆ = n₄ = 0 it hands the state on to R22D-25, or to the lattice phase when no piece is
+    off, as R22D-57's bulk phase does. Words have one to three letters. (n₆, n₄, N) falls lexicographically on every
+    kept step, although a height-first letter may raise N and a phase U word may raise n₂, so the rule ends, at the
+    handover, stuck or at its budget; that is not coverage, and stuck means only that the first word of each rule of
+    phase U failed. Phase U's reopen reads the solver's own earlier twists, not the state, so the rule starts phase U
+    afresh at every step and reopen offers nothing. Cover tests the side of a cut with float centroids: for a piece
+    whose centroid lies exactly on the cut plane the BLAS kernel decides, and no kernel is pinned, so which word cover
+    offers can depend on the machine; every acceptance test is exact, so the rule ends whatever is offered (R22D-90).
+  - No rule of phase U guards heights or the lattice. A letter changes a left height by at most 2 (the integrator's
+    check before coverage round 7, `PROOFS-B.md` section 8), so a word of seam, cover, close or improve raises one by
+    at most 2, shift by 4, lock and conj by 6 and reopen by 14; a retained letter keeps every height and every lattice
+    piece, and a jumble letter takes every lattice piece of its cap off. The first words of cover, improve and conj
+    after (61, 15) at the seed 7102 stop raise 70 pieces from height 2 to 4 and take 182 lattice pieces off (below);
+    for the other rules this is not shown (R22D-91).
+  - At the depth 200 stop (`44b2e7a0…`, 118 pieces at height 4) the rule finds no height-first letter, at the start or
+    after any of its first eleven words, and keeps only phase U words, none rejected. The reviewer's run kept eleven
+    within its budget of 1,000 CPU seconds, five cover and six conj, 23 letters: N falls from 63,466 to 61,114, the
+    off count from 66,719 to 64,168 and the blocked caps from 528 to 514 (`45e82473…`). The integrator's copy with
+    2,000 CPU seconds kept the same eleven words with the same counts and digests and a twelfth, conj (554, 4),
+    (381, 5), (554, 8), at the script's cap of 12 steps (N = 61,094, `def0bdac…`; no scan after it); the re-run with
+    1,000 seconds kept the first eight, so how many steps fit in a CPU budget depends on the machine's load. n₄ = 118
+    and n₆ = 0 at every committed state (R22D-92).
+  - At the seed 7102 stop after R22D-43 (`f0290f93…`) the rule's first letter is (61, 15), which takes the stop to
+    height 2 (`c450bb2f…`). There phase U's first word is cover (61, 44), the inverse letter (R22D-94's computation):
+    it returns exactly to `f0290f93…`, the 70 at height 4 again, and lowers N by 1,056. So phase U after height 2, with
+    the height-first rule after each of its steps and no guard, cycles; R22D-90 hands over at `c450bb2f…`, and its
+    guard would reject (61, 44) (R22D-93). Whether phase U has a guarded word there is open: seam and close offer
+    none, the first words of cover and improve ((61, 44)) and of conj ((349, 1), (61, 44), (349, 1)) all return to
+    `f0290f93…`, the lock search was cut at its CPU budget, shift was not run, and a first word that fails does not
+    exhaust its rule (R22D-94).
+  - At the depth 400 stop (`b334a2dc…`) the 17 height-4 pieces are two units, of 16 pieces and one; eight caps hold
+    one unit or the other whole (the 16 lie whole in all eight, the single piece in seven, since it straddles cap
+    387); only caps 436 and 460 have items that lower them, and both are blocked, by 227 and 27 straddlers; cap 415
+    holds both units and is clean but lowers neither. The 759 distinct straddlers of the eight caps are recorded with
+    every cap that holds each whole; eleven of those caps are clean (R22D-95). The first letter tried, the retained
+    (320, 1), removes 23 of cap 436's 227 straddlers and adds none, takes no lattice piece off, leaves the 17 at their
+    poses and raises N by 428 (`ee8a15ec…`), so R22D-90 would not take it: a letter that frees blockers of a cap need
+    not lower the rule's potential (R22D-96).
+  - COV-55 concerns the existing four-rule descent of `restore.py` (close, lock, improve, shift). At that singleton
+    seam and cover have no step by its score table and reopen none without earlier twists, but conj was not run, so
+    COV-55 does not show that phase U is stuck there (R22D-97).
+- Line (d), round 6, the joint attack on caps 311 and 290 (after shard U; two sealed analyses of one packet by the
+  senior reviewer, analysis A and analysis B, and its cross-examination of both, at the highest effort, standard tier;
+  R22D-87 to R22D-89 in `PROOFS-B.md` section 5; the integrator's letter-by-letter replay of the literal words of both
+  analyses and of the cross-examination, `scripts/round22/r22d87_replay.py`; its implementation of a pair family,
+  `r22d81_pairs.py`, run three times with the target fixed by hand, and a check of the lowering letter with
+  `r22d81_rule.py`; and its replays, `r22d89_replay.py`, of two routes of the cloud line, a separate search run in a
+  cloud session at the same time; outputs in `runs/round22/`, the cloud line's scripts and record under
+  `scripts/round22/cloud/unlock-cap311-cap290/` and `runs/round22/cloud/unlock-cap311-cap290/`). C's 13 height-6 pieces,
+  which R22D-80 lowers through cap 104, lower through caps 311 and 290 as well, not protected:
+  - Literal words make cap 311 clean under the guards of R22D-81 (each letter admissible and certain, n₆ and every
+    height-6 pose kept, no piece above height 6), and (311, 14) then lowers C's 13 pieces to height 4 and keeps every
+    other height-6 pose: from the stop in five letters, u from 107 to 0, and from `1ff0061f…` in eleven, whose first six
+    undo R22D-75's letters 7 to 2 (A-R22J-01, A-R22J-02). All 5,040 orders of R22D-75's seven letters end at u = 182: of
+    their caps only 185 and 263 meet, so the rise from 107 is blockers that the letters bring in, whatever the order
+    (A-R22J-03).
+  - Guarded single letters stall where pairs do not. From `1ff0061f…` three U letters take u from 182 to 8
+    (`fe273a8c…`), and from the stop ten take it from 107 to 23 (`efab42da…`); at both, cap 364 is the only clean cap
+    that holds a blocker whole, and its 59 items leave u at least 8 and 23 (B-R22J-01). The pairs (364, 3), (263, 6) and
+    (185, 9), (364, 1) take u from 8 through 8 to 2 and from 23 through 24 to 19 (R22JX-02). At `9e6b991b…` no single
+    letter makes one of cap 290's 16 blocked holders clean (A-R22J-05, B-R22J-03).
+  - Proved: how u changes under a retained letter at a clean cap, read from the classification table (A-R22J-06);
+    sufficient conditions for a complete monotone unlock by helper letters, which hold at none of the three states
+    (A-R22J-07, B-R22J-06, R22JX-03); after the single letters fail, a pair whose caps do not meet cannot lower u
+    (A-R22J-08); and R22D-82's closure is all 600 caps at every reachable state, so it certifies nothing (B-R22J-05).
+    Analysis A's claim that such words cannot clean a target outside its closure L_H is refuted: cap 311 lies outside it
+    and is cleaned (R22JX-04). Moving to another target between H6 letters breaks the proof of R22D-81; a finite target
+    cursor would repair it and was not implemented (R22JX-06). The integrator re-ran every computation of analysis A;
+    the holder tables, closure sizes and certificate searches of R22D-87 are printed only by its scratch scripts or in
+    the review results, not by a script in the repository (R22D-87).
+  - A two-letter unlock family U2 for the rule of R22D-81, between U and H4: both letters admissible, certain and
+    guarded, u free after the first and strictly lower after the second, tried only when U has no letter and cut by
+    exact prunes; Φ falls at every completed step, so the rule stays finite; not coverage (R22D-88).
+  - The deciding experiment, with the target fixed by hand and U and U2 only. From `1ff0061f…` for cap 311, three U
+    letters, the pair (364, 3), (263, 6) and the U letter (263, 40) make the cap clean in six letters, and (311, 14)
+    then lowers C's 13 pieces (`5296c847…`, (n₂, n₄, n₆) = (104,070, 1,470, 159), N = 133,790). From `9e6b991b…` for
+    cap 290 the (grip, item) order of the pairs stalls at 4 blockers (`8ac0a1ce…`), while the cloud line's search, which
+    orders the first letters of its pairs by class, reaches u = 0 and lowers C with (290, 15) (`21db4f94…`): the order
+    of the pairs decides. The cloud line's route from the stop reaches analysis B's stall `efab42da…` by another word,
+    gets past it with pairs and ends with (311, 14) after 21 letters. The integrator replayed both cloud routes letter
+    by letter. N rises along every route and lattice pieces go off; each is one run from one state, and with its own
+    target the rule of R22D-81 chooses cap 274 at these states (R22D-89).
+- The rule of R22D-19 as a program (D19, 20 October 2026; `scripts/round22/r22d19_rule.py` and its test
+  `test_r22d19_rule.py`, written by Codex and reviewed by the integrator; measured, exact). It reads only the current
+  configuration, a pose table or a census record rebuilt to its end with every twist checked admissible, and uses no
+  certificate, no random order and no comparison of pose-table indices. In a fixed order it takes the high units (off
+  pieces at left height 4 or more, grouped by pose and exact inside vector), each clean cap of a unit's own branch that
+  holds it, and that cap's twelve lowering items; plays the lowering letter a on a scratch copy and keeps the case only
+  when the unit then lies in one off content of its class made of original off pieces, rejecting it when the target cell
+  lies in no free grip or a source cell has an occupied home chamber that SAFE letters fix; tries W = [x, y]^e for pairs
+  of free grips that share a class cell and e = 1 to 60, kept when the target reaches label 0 in a home cell, every
+  other off content of the class is fixed point by point and |Bad(W)| < 3,097; tries V empty and then each single
+  SAFE-ALL retained letter by the literal vacancy test; and replays a·V·W·V⁻¹·a⁻¹, at most 244 letters, twist by twist
+  from the full state against the strict′ contract. It ends with a step, whose word it writes in the tutorial runner's
+  word format, stuck (written only after every selected case is enumerated) or at its time budget. Its tests rebuild the
+  depth 100 stop of seed 7102: its filter, before any search, leaves 3 of the 108 cases of the nine units there,
+  unit 391's, as R22D-04 and R22D-15 found; restricted to the case of R22D-16, the rule plays its 28-letter word letter
+  for letter, strict′ by `stepchk.py`; without V that case is stuck; a corrupted word fails, a solved record gives
+  stuck, and a short budget gives a budget report that names the case reached. The integrator's review found no defect
+  in the rule's logic. It fixed the test harness, whose check that the worktree is unchanged failed while other sessions
+  were active, and the report, which said stuck while the run was going; an unmatched case is now an error, and the time
+  counts from the process start. One fast review of these fixes found two `major` points, both fixed: called from
+  Python, the rule started its clock only after the input was rebuilt, and it wrote no budget report before the search
+  began; a verification round passed. Acceptance in an isolated copy of the repository: 10 tests, one skipped, OK, in
+  1,925 seconds of research-code time on a shared machine. The skipped test, the full enumeration at that stop, has not
+  been run, the tutorial runner does not call the rule yet, and the rule keeps R22D-19's limits (V of at most one
+  letter, one commutator power as the middle, one off content after lowering); it is not coverage.
+- The R22D-25 kernel (packet R22D-25, written by Codex on 20 October 2026 and reviewed by the integrator;
+  `scripts/round22/r22d25_state.py`, `r22d25_search.py` and `test_r22d25.py`, with the independent checker
+  `13-tutorial-runner/scripts/check_r22d25.py`): the first program that plays R22D-25 over a whole stop. It follows
+  R22D-50 to R22D-52, with R22D-37's height-6 tier and the practical catalogue `r22d25-cat/1` (R22D-52, R22D-55), and
+  keeps a coverage ledger after R22D-53 in its own format `r22d25-run/1`, not `runner-run/3`. At each exact state it
+  takes a fresh snapshot (digest, masks, stable pose keys, heights, units). At height 6 it tries the tier: F1 (single
+  letters), F2 ((c, x)·(d, y)·(c, z)) and F3 (a·W·a⁻¹·W⁻¹ with W of one or two letters), each through the protected
+  lowering gate. Then step 3, the direct rule R22D-19, through an adapter to the program `round22/r22d19_rule.py` (D19,
+  the bullet above), which was not in the repository when the kernel was written and tested: without it, a state with
+  height-4 units where the tier has no step is `unsupported`. Then step 4, S·T with S the protected single letters for a
+  height-4 unit and T the single letters T1; then step 5, R22D-25's blocker order, with T at each height-2 unit and the
+  high pieces held exact. Limits: direct 244, S 244, T 720, S·T 964 letters. A step ends `candidate`, `exhausted`,
+  `budget`, `unsupported` or `error`; only `exhausted` is stuck, and an unfinished family is `budget`. A run ends
+  `lattice`, `stuck`, `budget`, `unsupported` or `error`; the checker replays every accepted word twist by twist and
+  lists the larger exhaustion claims as claimed, not re-verified. Left out: R22D-60's content pass, longer S and T
+  words, external T providers (none by default), states above height 6 and any coverage claim. The acceptance items of
+  R22D-56 that need the direct family were not run (an unrestricted seed 7102 search that finds R22D-16's word, the 96
+  exclusions after R22D-16, the 66 exclusions and the shared case at seed 7108, R22D-42's word): the D19 program was
+  absent, and the tests drive the adapter with stub programs; the kernel has not been run with D19's program at a stop.
+  Codex confirmed the facts of the packet's section 4 (measured, exact replay): at the seed 7102 stop its digest, 31,479
+  off, the height census, nine high units, cap 61 and all 600 straddler sets; R22D-16 (28 letters, no collateral, 31,437
+  others exact, 41 landed, the recorded end digest); at `f0290f93…` the letter (61, 15) lowers all 70 high pieces but
+  takes 2,361 lattice pieces off and is rejected; R22D-36 (5,800 → 3,098 off, protected 6 → 4, N 2,934 → 1,574); at the
+  seed 7109 stop three blocked units, 14 cap-252 straddlers in one 61-piece unit, the priority order, 58 clean caps and
+  T1 exhausted. It found no disagreement with section 4. Its acceptance (19 tests, two skipped: the above-height-6 test,
+  which found no one-letter raise and did not try two letters, and the seed 7302 test behind `R22D25_SLOW=1`) passed in
+  1,700 s in Codex's run and in 1,623 s in the acceptance run, before the integrator's fixes. The fixes: the test's
+  worktree check covers only the directories the tests can write, tolerates files that vanish, and reports the elapsed
+  time without judging it (R22D25-robust-01); the checker requires only `assets/manifest.json` to match its recorded
+  digest and lists kernel files that differ (R22D25-robust-02); an `unsupported` record must show a piece above height 6
+  or the D19 program missing (R22D25-false-pass-05). On 20 October 2026, with the fixes, in this checkout: OK, 19 tests,
+  2 skipped (a state above height 6 that the fixture does not reach, and the 3000-twist stop, which needs
+  `R22D25_SLOW=1`), 663 s, the written paths unchanged (headless Linux). Again with D19's program `r22d19_rule.py` in
+  the tree: OK, 19 tests, 2 skipped, 561 s, the written paths unchanged; the tests drive the adapter only with stub
+  programs, so this run shows that D19's presence changes none of them, not that the kernel runs with it. Minor findings
+  left for later: no test reaches a state above height 6, the d19 `stuck` path or a failing landing gate, and the
+  refresh assertion and the slow test's one-second budget cannot fail (R22D25-contract-01, -09, R22D25-false-pass-03,
+  -04, -06, -09); F3's order puts `a` before the length of W (R22D25-contract-05); a provider without a name raises
+  (R22D25-contract-07); precondition failures in the gate count as rejections, and a state with no off piece is
+  `exhausted` (R22D25-false-pass-07, -08); fixture cleanup, the cache under `--out`, the d19 cache fallback, discarded
+  diagnostics and the d19 program missing from the record's provenance (R22D25-robust-03, -04, -06, -07, -08). The
+  checker's findings are in stage 13, section 7. The runner does not call the kernel yet (stage 13, section 6).
 
 ## 12. Next
 
@@ -1199,15 +1424,32 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   safe and finite (R22D-37) and an implementation contract for R22D-25 (R22D-50 to R22D-56). Round 5 found no step:
   R22D-19 and its extension to partial targets (R22D-60) are exhausted at the seed 7102 stop after R22D-43, and at the
   3000-twist stop no single letter is protected and the short families for D fail at any middle length (R22D-61 to
-  R22D-77). Next: an implementation of R22D-25 with R22D-37's tier and R22D-60's pass and a practical S and T
-  catalogue, tested at the known stops (R22D-56); at the seed 7102 stop, mixed-class middles and grips that become
+  R22D-77). Next: R22D-60's pass for the R22D-25 kernel and a run of the kernel with D19's program (section 11); R22D-56's acceptance at the known stops; S and T words longer than the one letter of r22d25-cat/1; and the kernel's place in the runner (R22D-56); at the seed 7102 stop, mixed-class middles and grips that become
   clean after other progress, the only way past the blockers of caps 150 and 179 (R22D-63, R22D-64); at the 3000-twist
-  stop, protected words of several letters, cap 290 through its movable blockers (R22D-76) and cap 274 with grips
-  that are not free (R22D-70); the blockers of cap 252 (R22D-41); whether the bulk phase lowers height 6 with more
-  time; and a literal lattice player (R22D-57). After round 5 the integrator ran R22D-75's rule at the census stops:
-  one unprotected letter takes the seed 7102 stop to height 2, and elsewhere the rule stops with most caps blocked.
-  Round 6 is running: unlocking the blocked caps at the 3000-twist stop (shard U) and one rule that combines phase U
-  with the height-first families (shard W).
+  stop, protected words of several letters and cap 290 through its movable blockers (R22D-76); the blockers of cap 252
+  (R22D-41); whether the bulk phase lowers height 6 with more time; and the literal lattice player of stage 13 (R22D-57) in the runner. After
+  round 5 the integrator ran R22D-75's rule at the census stops: one unprotected letter takes the seed 7102 stop to
+  height 2, and elsewhere the rule stops with most caps blocked. Round 6, shard U: where R22D-75's rule is stuck at the
+  3000-twist stop, a second rule, with a family that unlocks a target cap (R22D-81), plays five more letters, not
+  protected, and leaves no piece above height 4 (`bbef1c8e…`, 936 at height 4; R22D-80); the twelve letters from the
+  stop come from the two rules in turn. Cap 274 opened through the clean cap 124, which is not free (R22D-85), every cap
+  there lies in the unlock closure (R22D-82), and towards cap 290 the unlock family stalls at 38 blockers (R22D-86). The
+  joint attack after shard U made cap 311 clean by literal words from the stop and from `1ff0061f…` (R22D-87) and added
+  a two-letter unlock family that keeps the rule finite (R22D-88); with the target fixed by hand that family unlocks
+  cap 311 after R22D-75's seven letters, and at cap 290 the order of the pairs decides (R22D-89). Next at the 3000-twist
+  stop: the 936 height-4 pieces at the end of the twelve letters, where R22D-25 has not been run; the switch from
+  R22D-75's rule to R22D-81's as a test of the state, which this stop does not need, since R22D-81's rule alone hands
+  over from it in six letters, but which is open in general; which order of the pairs a rule should fix, and the pair
+  family inside the full rule with its own target (R22D-89); and whether R22D-81's rule ends at a handoff at other
+  states. Shard W of round 6: phase U's first words, kept only when they raise neither n₆ nor n₄ and lower N, after
+  R22D-75's first two families, make one rule that ends (R22D-90); at the depth 200 stop it plays only phase U words,
+  which lower N but leave 118 pieces at height 4 up to the script's cap of 12 steps (R22D-92); without that guard phase
+  U undoes at once the letter that took the seed 7102 stop to height 2 (R22D-93); and at the depth 400 stop a retained
+  letter frees 23 of the 227 blockers of a cap that would lower the last 17, but raises N (R22D-96). Next there: the
+  rule past the script's 12-step cap at the depth 200 stop and at the other census stops; phase U's lock and shift at
+  `c450bb2f…` (R22D-94); unlocking cap 436 or 460 at the depth 400 stop with letters that may raise N, as two of
+  R22D-80's three unlock letters do at height 6; and conj at COV-17's singleton (R22D-97). R22D-19's rule now runs as a
+  program (section 11); its full enumeration at the depth 100 stop has not been run.
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
@@ -1300,7 +1542,8 @@ entry-transport closures (`runs/round22/line-a/`), the computation of line (a)'s
 (`scripts/round22/r22a2_04_sequence.py`), the computations of line (c) and the continuation of experiment A
 (`runs/round22/line-c/b14-after-b12/`), and those of the fourth round of line (b) (`r22b20_separation.py`,
 `r22b21_regular12.py`, `r22b22_small_orbits.py`) and the third of line (c) (`r22c3_audit_d.py`, `r22c3_u151.py`,
-`r22c3_geometry.py`), each kept as written apart from a header comment.
+`r22c3_geometry.py`), each kept as written apart from a header comment. Round 6 of line (d) is listed there as well; the
+cloud line of that round gives its own commands in `runs/round22/cloud/unlock-cap311-cap290/RESULT.md`.
 
 Line (c), the integrator's re-check of the solver's four T1′ steps (section 11), with `k40.json` as for E-B5 and
 `Q=research/jumbling/restoration/12-low-height/runs/round22/t1prime-k40`:
@@ -1388,6 +1631,24 @@ replay records and those of the census words that were not strict′ (`steps/`),
 the pose tables after b02, b11, b10 and b17 (`tables/977.json.gz`, `915`, `823` and `737`), the Jordan targets and
 checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tests at 737 (`t1prime-737.jsonl`).
 
+The rule of R22D-19 (D19, section 11), with `C` as above:
+
+    python3 -I -B $S/round22/test_r22d19_rule.py                                   # about 32 minutes here
+    python3 -I -B $S/round22/r22d19_rule.py --record $C/ia-k100-s7102.json --out <out dir> \
+        --case '{"unit":391,"cap":61,"item":57,"x":[110,54],"y":[149,3],"e":6,"V":[[287,3]]}'
+
+The test rebuilds the depth 100 stop once and writes only to temporary directories; `R22D19_SLOW=1` adds the full
+enumeration at that stop (up to two hours; not run). The rule takes `--table <pose table>` instead of `--record`,
+`--cache <dir>` for the home-centroid cache (by default `<out dir>/cache`), `--seconds` (3,600 by default, imports and
+input reconstruction included) and `--case` to restrict it to one lowering case, given with or without x, y, e and V. It
+writes `<out dir>/report.json` (format r22d19-run/1, with the digests of the scripts it uses) and, after a step,
+`<out dir>/word.json` with the word and its input and output digests. The tests ran this case through the command line
+with `--table` on the stop's exported pose table; the `--record` form above was not run as such.
+
+The R22D-25 kernel's tests (section 11; they also run the checker's tests in stage 13):
+
+    python3 -I -B $S/round22/test_r22d25.py                                        # times in section 11
+
 ## Files
 
 | File | What it is |
@@ -1408,7 +1669,7 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/cellpure5.py` | LC-13: `cellpure4.py` with a transport branch for a content that is not in an edge cell (commutator powers into a home cell of its kind, exact-pose filter) |
 | `runs/lc13-k40/` | LC-13 at the depth 40 stop: the three unit files; the transport records and words with input and output digests (`transport-<u>.json`, `transport-<u>-word.json`); the closure records of b01 and b02 (`close-b01.json`, `close-b02.json`) and their step words (`steps/u1.json`, `steps/u2.json`); b00's step without endpoint collateral (`steps/u0.json`); the replay record of each step (`replay-b00.json`, `replay-b01.json`, `replay-b02.json`); and, for b00 and b02, the 300-second closures' Bad(W), vacancy, certificate and greedy fields (`close-no-v.json`, taken from their `pre.json` and `result.json`) |
 | `PROOFS-B.md` | Theory round 22: the lemmas of lines (a), (b) and (d) toward B′(h), each with its hypotheses as finite checks at the state, its proof, its bound and its instances |
-| `ARCHON-HANDOFF.md` | Draft handoff to the Lean formalization (not started; the owner decides when): the objects, the 184 results of round 22 in dependency order, the hypotheses that are computations with what decides them, and the results of earlier stages and of the literature that the proofs use |
+| `ARCHON-HANDOFF.md` | Draft handoff to the Lean formalization (not started; the owner decides when): the objects, the 215 results of round 22 in dependency order, the hypotheses that are computations with what decides them, and the results of earlier stages and of the literature that the proofs use |
 | `scripts/round22/`, `runs/round22/` | The senior reviewer's exact computations of round 22, re-run by the integrator, and their outputs |
 | `scripts/round22/transport_census.py`, `runs/round22/line-a/` | Line (a): the transport census with whole cells as owners (vacant targets, entry transports, exact replays); its records for class 3 and for classes 2 and 4 (`census-class3.json`, `census-class24.json`, words included); the 22 unit files of the depth 40 stop; and the closures of the four entry transports (`closures/<u>-core.json`, `-step.json`, `-result.json`, `-replay.json`, and `-log.txt`, the closure's log with the certificate bounds and, for b19, where the peeling and the greedy search stopped); b19's Bad(W) as a target file and its Jordan certificates (`closures/b19-target.json`, `b19-jordan.txt`, from `scripts/round22/jordan_target.py`) |
 | `scripts/round22/r22a2_04_sequence.py`, `runs/round22/r22a2_04_sequence.txt` | Line (a), round 2: the senior reviewer's computation (kept as written apart from a header) and its output: the fourteen middles with their Bad sets and ghost maps, the composition matrix of the thirteen supplied steps, the hole-count search for fresh closures with its order, the construction bounds, and N1 and N2 for the glued units' own cells |
@@ -1454,3 +1715,10 @@ checks (`jordan/`), the premises of Theorem C for b17 (`b17/`) and the T1′ tes
 | `scripts/round22/r22d09_census.py`, `r22d14_six.py`, `r22d15_source_cells.py`, `r22d16_step.py`, `r22d17_straddlers.py`, `runs/round22/r22d09_census.txt`, `r22d14_six.txt`, `r22d15_source_cells.txt`, `r22d16_step.txt`, `r22d17_straddlers.txt` | Line (d), round 2: the senior reviewer's computations (kept as written apart from a header) and their outputs: the high units of the five stops with height-4 pieces, the six-letter family, the source cells, the 28-letter step and the straddlers of caps 150 and 179 |
 | `scripts/round22/r22d31_snapshots.py`, `r22d31_height6.py`, `r22d40_blockers.py`, `r22d42_step7108.py`, `r22d43_twelve.py`, `runs/round22/r22d31_height6.txt`, `r22d40_blockers.txt`, `r22d42_step7108.txt`, `r22d43_twelve.txt` | Line (d), round 4: the integrator's snapshots of the two height-6 start states (the state before step 74 of the depth 1000 record of seed 7103 and the 3000-twist stop of seed 7302, rebuilt from the census records with every twist and both digests checked; pickles written to a given directory, never published), and the senior reviewer's computations (kept as written apart from a header and part headings) with the integrator's re-run outputs: height 6 at the two snapshots and the test state of R22D-36, the blockers of caps 179 and 252, the 50-letter step at the seed 7108 stop and the 38-letter step after R22D-16 |
 | `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`, `e2_b06_t1.py` | E2, b06 with b05: the first SAFE-ALL preparation, the second counted against the reference middle's orbits, and the prepared T1′ attempt applied by `slp_apply.py`; records in `runs/round22/line-a/replay2/b06-<n>/` |
+| `scripts/round22/r22d80_check.py`, `r22d81_rule.py`, `r22d81_stuck_ends.py`, `r22d82_unlock_graph.py`, `r22d85_two_letters.py`, `r22d86_cap290.py`, `runs/round22/r22d80_check.txt`, `r22d81_rule.txt`, `r22d81_from_stop.txt`, `r22d81_no_target.txt`, `r22d81_stuck_ends.txt`, `r22d82_unlock_graph.txt`, `r22d85_two_letters.txt`, `r22d86_cap290.txt` | Line (d), round 6, shard U: the senior reviewer's replay of R22D-80 and its unlock-graph computation (kept as written apart from a header), with the integrator's re-run outputs; the integrator's implementation of the rule of R22D-81 (from a snapshot or a census record, with an optional prefix of letters; `--no-target` keeps the target absent, for a differential test only) and its three runs: from the state after R22D-75's seven letters (R22D-80), from the stop itself, and from the stop after (64, 15) with the target absent; its count of the rule's two stuck ends at the state after R22D-75; and its replays of R22D-85 and R22D-86. A run of `r22d81_rule.py` ends with one of HANDOFF, STUCK, BUDGET or NOT_APPLICABLE (a piece above height 6 at the start); a run that prints none of them has no outcome |
+| `scripts/round22/r22d92_guarded_k200.py`, `r22d92_guarded_k200_2k.py`, `r22d93_cycle.py`, `r22d94_height2_probe.py`, `r22d95_unlock_graph_k400.py`, `r22d96_retained_check.py`, `runs/round22/r22d92_guarded_k200.txt`, `r22d92_guarded_k200_2k.txt`, `r22d93_cycle.txt`, `r22d94_height2_probe.txt`, `r22d95_unlock_graph_k400.txt`, `r22d96_retained_check.txt` | Line (d), round 6, shard W: the senior reviewer's five computations, kept as written apart from a header comment, and a copy of `r22d92_guarded_k200.py` with a CPU budget of 2,000 seconds instead of 1,000, with the integrator's re-run outputs: the rule of R22D-90 at the depth 200 stop, 8 steps within 1,000 CPU seconds here and 12, up to the script's cap, within 2,000; the cycle at the seed 7102 stop; phase U's first words at height 2 there, with the lock search cut at its budget of 950 CPU seconds; the unlock graph of the depth 400 stop with the letter (320, 1), which the script finds only if it ends within its 600 CPU seconds (END `single-letter-found`); and the exact checks of (320, 1), the cycle's two products and the cell-graph degree |
+| `scripts/round22/r22d81_pairs.py`, `r22d87_replay.py`, `r22d89_replay.py`, `runs/round22/r22d81_pairs_cap311_tail.txt`, `r22d81_pairs_cap311.txt`, `r22d81_pairs_cap290.txt`, `r22d81_rule_311_14.txt`, `r22d87_replay.txt`, `r22d89_cap290_route.txt`, `r22d89_cap311_stop_route.txt` | Line (d), round 6, the joint attack on caps 311 and 290: the integrator's implementation of the pair family U2 of R22D-88 for a target fixed with `--target` (U and U2 only; `--selfcheck` compares its copy with a full apply for the first cap U tries; `--no-meet-prune`, not run, turns the meet test off) and its three runs, for cap 311 from the state after R22D-75's seven letters and (185, 1), (263, 1), (263, 3) with the self-check, for cap 311 from the state after the seven letters, and for cap 290 from the state after the seven letters and (136, 2), (136, 6); the check of (311, 14) with `r22d81_rule.py` and a 30-second budget, whose record is its START line; the letter-by-letter replay of the literal words of analysis A, analysis B and the cross-examination, with the geometry of the meeting caps, the products of letters at one grip and, at the ends of analysis B's words, the blockers, their holders and cap 364's 59-item vector; and the letter-by-letter replays of the cloud line's cap 290 route and of its cap 311 route from the stop. A run of `r22d81_pairs.py` ends with UNLOCKED, STUCK, BUDGET or NOT_APPLICABLE; the runs from `fe273a8c…` and for cap 290 were made before the fix of SU2-01, so the smallest end value printed with STUCK in the cap 290 output is not used |
+| `scripts/round22/cloud/unlock-cap311-cap290/`, `runs/round22/cloud/unlock-cap311-cap290/` | Line (d), round 6, the cloud line (a separate search for caps 311 and 290 run in a cloud session at the same time as the joint attack): its five scripts (the snapshot of the stop, shared helpers with a label table updated only for the pieces a letter moves, the single-letter unlock of cap 311, the two-letter preparations and the driver) and its record `RESULT.md`, with the runs' JSON and text outputs and copies of the outputs of `r22d80_check.py`, `r22d82_unlock_graph.py`, `r22d85_two_letters.py` and `r22d86_cap290.py`, which equal those in `runs/round22/`. Its runs fix the target cap by hand, add a family of two-letter preparations and choose the H6 letter at the target only, so they are not runs of R22D-81's rule; R22D-89 replays its two new routes. `RESULT.md` is kept as the cloud line wrote it. The four scripts it names under `drafts/`, with the sha256 values of the cloud session's task, are draft copies that are not in the repository: they are `scripts/round22/r22d80_check.py`, `r22d82_unlock_graph.py`, `r22d85_two_letters.py` and `r22d86_cap290.py`, the first two with another header comment and the same code, the other two byte for byte. Its 892 lattice pieces taken off by (185, 16) are the net change of the off count (1,227 go off, 335 come back), and its 2,086 pieces taken off on the route from the stop are counted from `efab42da…`; counted from the stop, `015d839e…`, they are 3,294. One Codex fast review of its five scripts found two minor gaps, both recorded here and not changed in the scripts: the field `min_u_after_b` of `prep_two_letters.py` is the least u over the second letters left by its cap prune, not over every admissible second letter (after (136, 3) it records 47, while (136, 9), the inverse letter, returns u to 38; R6S-01), and the header of `cap311_unlock.py` says that the label table is checked against `E.straddler_set`, while the script checks only the number of straddlers at τ (R6S-02). |
+| `scripts/round22/r22d19_rule.py`, `scripts/round22/test_r22d19_rule.py` | The rule of R22D-19 as a program (D19; written by Codex and reviewed by the integrator): from a pose table (`--table`) or a census record (`--record`), the high units, their lowering cases, the commutator powers and the one-letter vacators in a fixed order, each word replayed twist by twist against the strict′ contract; `report.json` (format r22d19-run/1, written before the search and after each lowering case, with the digests of the scripts it uses) and, after a step, `word.json`; `--case` restricts it to one case. Its test rebuilds the depth 100 stop of seed 7102 and checks the filter, the step of R22D-16, the stuck end without V, early rejections, a corrupted word, a solved record and the budget reports; `R22D19_SLOW=1` adds the full enumeration (not run) |
+| `scripts/round22/r22d25_state.py`, `r22d25_search.py` | The R22D-25 kernel (section 11): exact snapshots, units, gates and refresh; the ordered search of catalogue `r22d25-cat/1` with budgets, the D19 adapter and the whole-stop command line (`r22d25_search.py run` with `--record FILE` or `--table FILE`, `--out DIR` and the optional `--cache DIR`, `--seconds S`, `--d19 FILE` and `--max-steps N`), which writes `r22d25-run/1` records; its checker is `13-tutorial-runner/scripts/check_r22d25.py` |
+| `scripts/round22/test_r22d25.py` | Its acceptance tests, which also run the checker's tests (`13-tutorial-runner/scripts/test_check_r22d25.py`); the integrator narrowed the worktree check and stopped judging the elapsed time (R22D25-robust-01) |

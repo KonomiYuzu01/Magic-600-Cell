@@ -7,8 +7,9 @@
 # CPU seconds after the replay.
 # The integrator's script; outputs in runs/round22/r22d75_census_k200.txt, r22d75_census_k400.txt and
 # r22d75_census_k1000.txt for the records round3/ia-k200-s7105.json, round3/ia-k400-s7109.json and
-# round2/ia-k1000-s7103.json. A few CPU minutes each, most of it for the replay. It writes no file; theory/seams.py
-# keeps its cache in work/jumbling-cache/ unless JUMBLING_HOME_CACHE names a file.
+# round2/ia-k1000-s7103.json. A few CPU minutes each; the replay takes about a third of it at depth 200, two fifths at
+# depth 400 and three quarters at depth 1000 (recorded replay_cpu against the rule's cpu). It writes no file;
+# theory/seams.py keeps its cache in work/jumbling-cache/ unless JUMBLING_HOME_CACHE names a file.
 # Research only, headless Linux; exact geometry.
 # Run from the repository root: OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u research/jumbling/restoration/12-low-height/scripts/round22/r22d75_census.py research/jumbling/restoration/11-scramble-census/runs/round3/ia-k200-s7105.json
 import sys,json,resource,time

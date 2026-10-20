@@ -1,0 +1,6 @@
+START {"digest": "f0290f93bea0295ecc00c2a42f725abfd59d3c37732834bb82f5da41c38fa793", "n6_n4_n2": [0, 70, 31355], "off": 31425, "N": 32762, "cpu": 77.9}
+FIRST_HEIGHT_LETTER {"letter": [61, 15], "prediction_n6_n4_n2": [0, 0, 33604], "checks": {"classified_caps": 600, "blocked_caps": 366, "clean_caps": 234, "cap_bound_prunes": 233, "retained_prunes": 11, "item_height_tests": 48}}
+LETTER {"letter": [61, 15], "digest": "c450bb2f41b5fb4cde5beefe76c48926577f3fc2f216f28976fa8a11981fdf5f", "n6_n4_n2": [0, 0, 33604], "off": 33604, "N": 33818, "cpu": 97.2}
+IMPROVE_OFFER {"word": [[61, 44]], "digest": "f0290f93bea0295ecc00c2a42f725abfd59d3c37732834bb82f5da41c38fa793", "n6_n4_n2": [0, 70, 31355], "off": 31425, "N": 32762, "cpu": 148.5}
+LETTER {"letter": [61, 44], "digest": "f0290f93bea0295ecc00c2a42f725abfd59d3c37732834bb82f5da41c38fa793", "n6_n4_n2": [0, 70, 31355], "off": 31425, "N": 32762, "cpu": 149.2}
+CYCLE_VERIFIED

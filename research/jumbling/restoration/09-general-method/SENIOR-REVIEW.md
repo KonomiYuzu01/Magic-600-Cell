@@ -7437,6 +7437,47 @@ with the same outputs). One line each; the full text is in [`PROOFS-B.md`](../12
 | R22D-76 | computed; proved | C has no admissible class-1 letter; cap 290's 70 blockers can move under free branch-3 letters. |
 | R22D-77 | computed | A unit's representative does not certify the single-cell premise of R22D-28. |
 
+Round 6 of line (d) (two concurrent shards, fast tier: unlocking the blocked caps at the 3000-twist stop of seed 7302
+after R22D-75's seven letters, and phase U of the census with R22D-75's first two families as one rule at the census
+stops; fifteen results, all `minor`, all adopted; R22D-94 is a search the reviewer cut at its CPU budget; the integrator
+re-ran the reviewer's seven computations, with the same outputs for six; shard W's depth 200 run kept 8 steps within its
+1,000 CPU seconds, and a copy given 2,000 kept the reviewer's eleven words and a twelfth at the script's cap of 12
+steps; the integrator's own implementation of R22D-81 and its replays of R22D-85 and R22D-86 gave the same letters,
+digests and counts). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 5:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| R22D-80 | computed; replayed | From where R22D-75's rule is stuck, R22D-81's rule plays (124, 2), (274, 13), (46, 1), (46, 3), (104, 14) and lowers the last 172 height-6 pieces to height 4; after R22D-75's seven letters, a twelve-letter word from the stop made by two rules in turn; not protected: 1,052 lattice pieces go off and N rises by 228. |
+| R22D-81 | rule; computed | An unlock family between the height-6 and height-4 families of R22D-75, at states with no piece above height 6: a target cap read from the height-6 pieces, letters that keep every height-6 pose and lower its straddlers; with guards on n₆ and the straddler count the rule is finite; not coverage, and it has two stuck ends by design. |
+| R22D-82 | computed; proved | At both states every cap is in the unlock closure, caps 274, 104, 290 and 311 at depth one; no admissible word uses a cap outside it, and no sufficiency is proved. |
+| R22D-83 | computed | The blockers of caps 274, 104 and 290 piece by piece, with every cap that holds each whole; cap 124 is clean but not free. |
+| R22D-84 | computed | Cap 311 has 107 blockers at the stop and 182 after the seven letters, 8 in both lists; at each state every one is held whole by a clean cap; shard U made no unlocking run, and the joint attack unlocks cap 311 (R22D-87, R22D-89). |
+| R22D-85 | computed; replayed | (124, 2), (274, 13) lowers the 159 of A and B both at the stop and after the seven letters. |
+| R22D-86 | computed; proved; replayed | With cap 290 as the target, (136, 2), (136, 6) lower its blockers from 70 to 38; then no single letter of the unlock family lowers them. |
+| R22D-90 | rule | One rule that reads the state only: R22D-75's first two families, else the first word of a phase U rule that raises neither n₆ nor n₄ and lowers N; (n₆, n₄, N) falls on every kept step, so it ends; at n₆ = n₄ = 0 it hands over to R22D-25; reopen offers nothing without earlier twists; exact ties in cover's float side test are left to the BLAS kernel; not coverage. |
+| R22D-91 | source; proved; computed | No rule of phase U guards heights or the lattice; a word raises a left height by at most 2, 4, 6 or 14 by rule; the first words of cover, improve and conj after (61, 15) at the seed 7102 stop raise height 2 to 4 and take lattice pieces off. |
+| R22D-92 | computed | At the depth 200 stop the rule plays only phase U words, none rejected, and finds no height-first letter: eleven, 23 letters, lower N from 63,466 to 61,114 within the reviewer's budget, and a twelfth lowers it to 61,094 at the cap in the integrator's run with twice the budget; n₄ stays 118. |
+| R22D-93 | computed | At the seed 7102 stop phase U's first word after (61, 15) is its inverse, so alternating phase U and the height-first rule without a guard cycles. |
+| R22D-94 | computed in part | After (61, 15) there the first offers of cover, improve and conj all go back to the 70 at height 4; whether lock or shift, or a later word of any rule, gives a guarded step is open. |
+| R22D-95 | computed | At the depth 400 stop the 17 height-4 pieces are two units lowered only at the blocked caps 436 and 460; the 759 straddlers of the eight caps that hold a unit whole, each with every cap that holds it whole. |
+| R22D-96 | computed; proved | The retained letter (320, 1) removes 23 of cap 436's 227 blockers, adds none and takes no lattice piece off, but raises N by 428. |
+| R22D-97 | source | COV-55 runs the existing four-rule descent (close, lock, improve and shift of `restore.py`), not phase U, whose conj was not run there. |
+
+Round 6 of line (d), the joint attack on caps 311 and 290 after shard U (two sealed analyses of one packet by the senior
+reviewer, analysis A with ten results and analysis B with seven, at the highest effort, standard tier, then its
+cross-examination of both, six results, same tier; all `minor`; all adopted except the target clause of A-R22J-09, which
+the cross-examination refuted; the integrator re-ran analysis A's computations with the same outputs (the 5,040 orders
+through eight replays and the proof), replayed the literal words of both analyses and of the cross-examination letter by
+letter, added a two-letter unlock family and ran it, and replayed the routes of the cloud line, a separate search run in
+a cloud session at the same time). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md)
+section 5:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| R22D-87 | computed; proved; replayed | Joint attack (A-R22J-01 to A-R22J-10, B-R22J-01 to B-R22J-07, R22JX-01 to R22JX-06): literal words make cap 311 clean from the stop (five letters) and from `1ff0061f…` (eleven), and (311, 14) then lowers C; all 5,040 orders of R22D-75's seven letters give 182 blockers; guarded single letters stall at 8 and 23 blockers, and no single letter makes one of cap 290's 16 blocked holders clean; sufficient conditions for a monotone unlock; pair steps keep R22D-81 finite; A-R22J-09's target clause refuted. |
+| R22D-88 | rule; computed | A two-letter family U2 between U and H4 in R22D-81's rule: both letters guarded, the middle free, the end strictly below u; exact prunes (U first, the meet test, the blockers of the second cap, r > δ, no height-6 piece in a first cap); Φ falls at every completed step; finite, not coverage. |
+| R22D-89 | computed; replayed | With the target fixed by hand, U and U2 make cap 311 clean from `1ff0061f…` in six letters, and (311, 14) lowers C; the cloud line's route does the same from the stop in 21 letters, then (311, 14); at cap 290 from `9e6b991b…` the lexicographic order stalls at 4 blockers while the cloud line's class order reaches 0 and (290, 15) lowers C; not protected, not coverage. |
+
 ### Line (c): T2 and T3 (joint attack; R22C-01 to R22C-07, R22CF-01 to R22CF-07, X22C-01 to X22C-09)
 
 The senior reviewer (R22C) and the solver (R22CF) each wrote a sealed analysis at the highest effort, standard tier. After that the solver stopped (owner, 18 October 2026; [decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-18-bprime-goal.md)). The senior reviewer then cross-examined the solver's seven findings against its own (X22C-01 to X22C-09, same tier), and the integrator re-checked the solver's computed steps and runs the adjudicating experiments. All findings are `minor`. The integrator adopted the nine cross-examination findings, which scope or correct the sealed results as the table says.
