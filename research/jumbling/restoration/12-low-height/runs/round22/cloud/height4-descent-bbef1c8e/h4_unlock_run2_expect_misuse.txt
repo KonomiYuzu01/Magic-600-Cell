@@ -1,0 +1,6 @@
+LOADED {"digest": "6999b9214d6ea25486daf67e650773babff08f1a41742acfddd6eec2f88787ab", "off": 104507, "cpu": 5.8}
+Traceback (most recent call last):
+  File "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/h4_unlock.py", line 77, in <module>
+    assert s.digest() == A.expect, s.digest()
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 391490f78b2fe76ea07cede387bf335f76d34885c47a7aa0c09ebc8ad3d27da8
