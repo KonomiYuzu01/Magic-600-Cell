@@ -7,8 +7,9 @@ table importer is the only shared loading seam.
 Restored means identity sticker labels (owner decision, 15 October 2026).
 Labels do not determine exact poses: retained play also transports K+ poses so
 that final.digest, including at a budget stop, is a real simulator pose digest.
-At a retained-first junction, the packet permits switching to the independently
-built representative T only after comparing all 259,800 labels.
+At a retained-first junction, all 259,800 labels are compared with the
+independently built representative T; the corrections are then played on the
+literal state, not on T, so final.digest is the digest of the state played.
 """
 
 import argparse
