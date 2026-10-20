@@ -1,6 +1,6 @@
 # Local jobs for the owner's laptop (WSL, Ubuntu)
 
-Written by the integrator session of draft PR #112. Revision 1, 2026-10-20 04:45 UTC. Re-read this file from
+Written by the integrator session of draft PR #112. Revision 2, 2026-10-20 04:50 UTC (adds job A4). Re-read this file from
 `origin/claude/local-handoff` every 30 minutes; a newer revision replaces this one, and a job it marks `cancelled`
 is not started (a running one finishes and is recorded).
 
@@ -36,6 +36,7 @@ times are laptop timings of research code.
 | A1 snapshots | `12-low-height/scripts/round22/r22d31_snapshots.py ~/m600-runs/snap` | writes `s7103-before74.pkl` (`48ef2f68…`, 94,981 off) and `s7302-stop.pkl` (`015d839ecbb37bbdde74ae9391d5d7f274dea7fee4b4fdf0092d224eef907a1f`, 100,584 off) | about 2,200 s |
 | A2-s7308 … A2-s7311 | census pipeline below, seeds 7308, 7309, 7310, 7311 | see below | up to about 11 h each |
 | A3 no-meet-prune | `12-low-height/scripts/round22/drafts/r22d81_pairs.py --snapshot ~/m600-runs/snap/s7302-stop.pkl --prefix '[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[185,1],[263,1],[263,3]]' --expect fe273a8c88d8a8fe7f030f95e6130fc76a57da6d708dea110a1cb31125276122 --target 311 --no-meet-prune --cpu 14400` (after A1) | the same STEP letters as `ref/u2-iii.out` of this branch ((364,3),(263,6) U2, then (263,40) U, UNLOCKED); a different first pair refutes the meet prune | pruned run: 586 s; unpruned: unknown, budget 14,400 s |
+| A4 schl | SCH-L acceptance in a separate worktree, see below (independent of A1) | the test prints `OK`: every test passes, including `setUpClass` | here it timed out after 2,703 s under heavy load (deadline 45 min); unknown unloaded |
 
 Census pipeline for seed `<s>` (the one the cloud lines census-k3000-s7305 and s7307 use; see their `RESULT.md`):
 
@@ -50,6 +51,21 @@ Census pipeline for seed `<s>` (the one the cloud lines census-k3000-s7305 and s
    the record is replayed first, about 1,400 CPU s). If R22D-75 played no letter, use `--prefix '[]'`.
 4. Record for the seed: scramble off, N and left heights; the census stop's digest, off, N and heights; R22D-75's
    letters and end line; R22D-81's STEP lines and its HANDOFF, STUCK, BUDGET or NOT_APPLICABLE line.
+
+Job A4 (the Codex SCH-L candidate, whose acceptance test timed out on the loaded cloud machine):
+
+1. `git -C ~/m600-local worktree add --detach ~/m600-schl 5fad028`; copy `schl/restore_schedule11_late.py` and
+   `schl/test_sched11_late.py` of this branch into
+   `~/m600-schl/research/jumbling/restoration/09-general-method/scripts/schedule11/` and record their sha256
+   (Git blob ids `93445a62c432d5816e82f98c82bf683ef8dc195a` and `466ad7d9bedc7728e741595e69673f62934006d8`).
+2. From `~/m600-schl`, with the run environment above and `JUMBLING_HOME_CACHE=$HOME/m600-cache/A4.npy`:
+   `$HOME/m600-venv/bin/python -I -B -u research/jumbling/restoration/09-general-method/scripts/schedule11/test_sched11_late.py`.
+   The test checks that the worktree gains no files, so write `out.txt`, `.start` and `.done` under
+   `~/m600-runs/A4-schl/`, not in `~/m600-schl`. It has its own 45-minute deadline and a 7 GB address-space limit.
+3. Record under `local/A4-schl/` of the results branch (in `~/m600-local`, not in `~/m600-schl`): `out.txt`,
+   `RESULT.md` with the per-test outcomes, the wall time and the retained lengths and ratios the test prints. Do not
+   copy the two schl files into the results branch. Then `git -C ~/m600-local worktree remove ~/m600-schl`.
+4. If `setUpClass` times out again on an idle machine, record that; do not raise the deadline or edit the test.
 
 ## Phase B (after the integrator's next push; this file will name the commit)
 
