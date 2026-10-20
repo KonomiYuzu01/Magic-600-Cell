@@ -20,6 +20,12 @@ Every expected line matched: LOADED 015d839e… with 100,584 off; START τ = 274
 (102,960, 936, 0), 103,896 off, N = 132,930. The replay took 1,419 CPU s and the rule 376 CPU s (cloud timings of
 research code, not performance evidence).
 
+## Census progress (partial)
+
+Scramble of seed 7307 (3000 twists): 119,518 off, N = 136,918, left heights {2: 117,245, 4: 2,263, 6: 10}.
+Latest descent step seen while running: N = 118,730, 102,331 off, 5,709 s into the
+18,900 s wall-clock budget (cloud timings of research code, not performance evidence).
+
 ## Next step
 
 Wait for the gate (R22D-81's `--record` path at the 3000-twist stop of seed 7302) and the census of seed 7307; then
