@@ -1,0 +1,18 @@
+{"run": "ia-k3000-s7305", "menu": "I_a", "k": 3000, "seed": 7305, "off_scramble": 116870, "continued_from_moves": 0, "N_start": 141328, "off_start": 116870, "heights_start": {"2": 113826, "4": 3044}, "off_poses_start": 1849, "order": ["seam", "cover", "close", "conj", "lock", "improve", "shift", "reopen"], "budget_s": 18900.0}
+{"rule": "cover", "twists": 1, "N_before": 141328, "N_after": 140978, "off_after": 116307, "sec": 84}
+{"rule": "conj", "twists": 3, "N_before": 140978, "N_after": 139744, "off_after": 114823, "sec": 104}
+{"rule": "conj", "twists": 3, "N_before": 139744, "N_after": 139298, "off_after": 114089, "sec": 124}
+{"rule": "conj", "twists": 3, "N_before": 139298, "N_after": 138498, "off_after": 113242, "sec": 143}
+{"rule": "conj", "twists": 3, "N_before": 138498, "N_after": 137734, "off_after": 112218, "sec": 166}
+{"rule": "conj", "twists": 3, "N_before": 137734, "N_after": 137194, "off_after": 112182, "sec": 186}
+{"rule": "conj", "twists": 3, "N_before": 137194, "N_after": 136750, "off_after": 111516, "sec": 207}
+{"rule": "conj", "twists": 3, "N_before": 136750, "N_after": 136112, "off_after": 110636, "sec": 227}
+{"rule": "conj", "twists": 3, "N_before": 136112, "N_after": 135410, "off_after": 109376, "sec": 246}
+{"rule": "conj", "twists": 3, "N_before": 135410, "N_after": 135136, "off_after": 109376, "sec": 277}
+{"rule": "conj", "twists": 3, "N_before": 135136, "N_after": 134688, "off_after": 108997, "sec": 571}
+{"rule": "conj", "twists": 3, "N_before": 134688, "N_after": 134480, "off_after": 108751, "sec": 875}
+{"rule": "conj", "twists": 3, "N_before": 134480, "N_after": 134228, "off_after": 108649, "sec": 1384}
+{"rule": "conj", "twists": 3, "N_before": 134228, "N_after": 133974, "off_after": 108029, "sec": 1901}
+{"rule": "conj", "twists": 3, "N_before": 133974, "N_after": 133596, "off_after": 107565, "sec": 1933}
+{"rule": "conj", "twists": 3, "N_before": 133596, "N_after": 133226, "off_after": 107565, "sec": 2390}
+{"rule": "conj", "twists": 3, "N_before": 133226, "N_after": 133140, "off_after": 107565, "sec": 2852}

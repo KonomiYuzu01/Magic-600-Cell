@@ -3856,10 +3856,10 @@ a twelfth, and stopped at the script's cap of 12 steps. The outputs are under `r
 - A fast review of `r22d89_replay.py` passed with no findings; both replays reproduced all 35 output rows exactly.
 - Uses: R22D-75, R22D-80, R22D-81, R22D-84, R22D-86, R22D-87, R22D-88.
 
-### R22D-75 and R22D-81 at three more 3000-twist stops (computed; cloud lines; replayed)
+### R22D-75 and R22D-81 at four more 3000-twist stops (computed; cloud lines; replayed)
 
-- Three cloud lines, run at the same time as the joint attack, each drew a fresh 3000-twist scramble of the I_a menu
-  (seeds 7304, 7306 and 7307, drawn as a census run draws its scramble), ran the census descent of stage 11 with a
+- Four cloud lines, run at the same time as the joint attack, each drew a fresh 3000-twist scramble of the I_a menu
+  (seeds 7304, 7305, 7306 and 7307, drawn as a census run draws its scramble), ran the census descent of stage 11 with a
   budget of 18,900 seconds, then the rule of R22D-75 from the stop, with its three families, tests and prediction
   unchanged (`r22d75_census_k3000.py`, a copy of `r22d75_census.py` with a larger CPU limit for the longer replay),
   and then the rule of R22D-81 after R22D-75's letters (the draft of `r22d81_rule.py` with `--record` and
@@ -3870,27 +3870,35 @@ a twelfth, and stopped at the script's cap of 12 steps. The outputs are under `r
   | seed | at the scramble: off, N, left heights | census twists (steps) | at the stop: off, N, left heights | R22D-75 | end: (n₂, n₄, n₆), off, N |
   |---|---|---|---|---|---|
   | 7304 | 121,001, 139,584, {2: 118,951, 4: 2,050} | 580 (198) | 95,569, 115,200, {2: 94,384, 4: 1,185} | (170, 12), (395, 12), (500, 12), (540, 12), (217, 15), (148, 15); stuck | (95,674, 797, 0), 96,471, 117,736, `ac127dc3…` |
+  | 7305 | 116,870, 141,328, {2: 113,826, 4: 3,044} | 103 (35) | 105,437, 131,542, {2: 103,140, 4: 2,297} | (10, 12), (10, 15), (67, 14), (134, 13), (195, 14), (233, 15), (421, 12), (421, 12), (484, 15), (122, 12), (175, 14); stuck | (108,453, 1,419, 0), 109,872, 134,346, `cc5ef7ec…` |
   | 7306 | 123,181, 149,224, {2: 118,426, 4: 4,726, 6: 29} | 270 (92) | 108,823, 137,562, {2: 106,032, 4: 2,762, 6: 29} | (208, 12), (76, 13), (90, 12), (109, 12), (233, 15), (387, 15), (485, 13), (403, 13), (512, 15); stuck | (108,641, 2,591, 0), 111,232, 140,018, `16c4aefe…` |
   | 7307 | 119,518, 136,918, {2: 117,245, 4: 2,263, 6: 10} | 734 (252) | 96,236, 112,776, {2: 94,691, 4: 1,535, 6: 10} | (275, 14), (516, 13), (50, 15), (474, 13), (494, 15), (147, 14); stuck | (98,984, 1,585, 0), 100,569, 115,782, `895b45de…` |
 
-- Height 6 was small at these stops, 0, 29 and 10 pieces against 185 at seed 7302's, and where there was any,
-  R22D-75's rule lowered it by itself: at seed 7306 its first letter, (208, 12), takes all 29 to height 4, and at seed
-  7307 its first two take the 10 to 7 and then 0, the second raising n₄ from 1,538 to 1,940. So at all three the rule
-  of R22D-81 starts with no target and hands over with no letter; these runs say nothing about its reach. R22D-75's
-  rule then stops stuck on height 4 at all three, every single letter exhausted, with 797, 2,591 and 1,585 pieces
-  there and almost every cap blocked (559, 574 and 562 of 600). Off and N end higher than at the stop at all three,
-  though off, and at seed 7306 N, fall at some letters; at seed 7307 n₄ ends above the stop's 1,535, since the rule
-  lowers n₆ first.
+- Height 6 was small at the stops of seeds 7304, 7306 and 7307, 0, 29 and 10 pieces against 185 at seed 7302's, and
+  where there was any, R22D-75's rule lowered it by itself: at seed 7306 its first letter, (208, 12), takes all 29 to
+  height 4, and at seed 7307 its first two take the 10 to 7 and then 0, the second raising n₄ from 1,538 to 1,940. So at
+  all three the rule of R22D-81 starts with no target and hands over with no letter; these runs say nothing about its
+  reach. R22D-75's rule then stops stuck on height 4 at all three, every single letter exhausted, with 797, 2,591 and
+  1,585 pieces there and almost every cap blocked (559, 574 and 562 of 600). Off and N end higher than at the stop at
+  all three, though off, and at seed 7306 N, fall at some letters; at seed 7307 n₄ ends above the stop's 1,535, since
+  the rule lowers n₆ first.
+- Seed 7305's line finished later. Its census ran in two parts: the container restarted after 17 steps, and the script's
+  `--start` option rebuilt the scramble, replayed the 49 twists and went on with the rest of the budget; no rule reads
+  the clock, so the restart moves only where the time limit falls. No piece was at height 6 at the scramble, at the stop
+  or after any letter. R22D-75's rule plays 11 letters: the first nine lower n₄ from 2,297 to 1,419, the last two keep
+  it and lower n₂ only, and (421, 12) comes twice in a row, each time the first lowering letter in the rule's order. It
+  then stops stuck, every single letter exhausted, with 578 of 600 caps blocked; off and N end higher than at the stop.
+  R22D-81's rule starts with no target and hands over with no letter. The census's last step still lowered N, so this is
+  R22D-75 at the state where the clock fell, not where the descent stalled.
 - Every census stopped on its clock (checked between steps, so the last step ends past the budget), having put back
-  21.0%, 11.7% and 19.5% of the off pieces, almost all of it with conj steps (191 of 198, 89 of 92 and 241 of 252 steps;
-  the others cover). At seeds 7306 and 7307 as many pieces were at height 6 at the stop as at the scramble, 29 and 10;
-  whether they are the same pieces was not checked.
-- The integrator's checks (section 6): `check_records.py` of stage 11 passes on the three census records; the cloud
+  21.0%, 9.8%, 11.7% and 19.5% of the off pieces (seeds 7304 to 7307), almost all of it with conj steps (191 of 198, 34
+  of 35, 89 of 92 and 241 of 252 steps; the others cover). At seeds 7306 and 7307 as many pieces were at height 6 at the
+  stop as at the scramble, 29 and 10; whether they are the same pieces was not checked.
+- The integrator's checks (section 6): `check_records.py` of stage 11 passes on the four census records; the cloud
   lines' copies of `r22d75_census.py` print their outputs again, the `cpu` and `replay_cpu` fields aside; and the
   committed `r22d81_rule.py`, with `--record`, the line's prefix and `--expect` at its end digest, starts at the same
-  state with no target and hands over with no letter at all three.
-- Scope. One scramble per seed and a census stopped by its clock. A fourth line, seed 7305, was still running. Not
-  coverage and not protected.
+  state with no target and hands over with no letter at all four.
+- Scope. One scramble per seed and a census stopped by its clock. Not coverage and not protected.
 - Uses: R22D-75, R22D-80, R22D-81.
 
 ### H4-unlock: the rule of R22D-81 two heights lower, with pair steps, from `bbef1c8e…` (rule; proved finite; computed; replayed)
@@ -4456,21 +4464,22 @@ height, the height-6 guard, u, the straddlers removed and added and the branches
 count, N and the digest) and END; at the ends of analysis B's two words also BLOCKERS, HOLDERS and ITEMS (cap 364's
 59-item vector); it stops at the first letter that is not admissible and certain.
 
-Round 6 of line (d), the cloud lines on seeds 7304, 7306 and 7307 and on the height-4 layer at `bbef1c8e…` (section
-5): each cloud line gives its own commands in its `RESULT.md` under `runs/round22/cloud/`. The integrator's checks,
-with `C=research/jumbling/restoration/12-low-height/runs/round22/cloud` and `D=$S/round22/cloud`: the replay check of
-the three census records with stage 11's `check_records.py` (`runs/round22/cloud-k3000-check.out`); the three cloud
-copies of `r22d75_census.py`, which print the lines' `r22d75_census_k3000.txt` again, the `cpu` and `replay_cpu`
-fields aside; the committed `r22d81_rule.py` after R22D-75's letters, which prints START with no target and HANDOFF
-with no letter at each line's end digest, the lines' R22D-81 outputs again apart from the `cpu` fields and the
-`prefix` field the committed script adds; and for the height-4 line the replay of its 25 letters from the stop, which
-prints its `end_summary.txt` byte for byte, H4-unlock from the stop with those letters as the prefix, which is stuck
-at `2430f4cc…` with no letter as in its run 4 and saves its end snapshot, and the full pair search at that snapshot,
-whose three shards print its round 4 outputs again, the `cpu` fields aside:
+Round 6 of line (d), the cloud lines on seeds 7304 to 7307 and on the height-4 layer at `bbef1c8e…` (section 5): each
+cloud line gives its own commands in its `RESULT.md` under `runs/round22/cloud/`. The integrator's checks, with
+`C=research/jumbling/restoration/12-low-height/runs/round22/cloud` and `D=$S/round22/cloud`: the replay check of the
+four census records with stage 11's `check_records.py` (`runs/round22/cloud-k3000-check.out` for seeds 7304, 7306 and
+7307, `cloud-k3000-check-s7305.out` for seed 7305, which finished later); the four cloud copies of `r22d75_census.py`,
+which print the lines' `r22d75_census_k3000.txt` (seed 7305's `r22d75.txt`) again, the `cpu` and `replay_cpu` fields
+aside; the committed `r22d81_rule.py` after R22D-75's letters, which prints START with no target and HANDOFF with no
+letter at each line's end digest, the lines' R22D-81 outputs again apart from the `cpu` fields and the `prefix` field
+the committed script adds; and for the height-4 line the replay of its 25 letters from the stop, which prints its
+`end_summary.txt` byte for byte, H4-unlock from the stop with those letters as the prefix, which is stuck at `2430f4cc…`
+with no letter as in its run 4 and saves its end snapshot, and the full pair search at that snapshot, whose three shards
+print its round 4 outputs again, the `cpu` fields aside:
 
     python3 -I -B -u research/jumbling/restoration/11-scramble-census/scripts/check_records.py $C/census-k3000-s7304/ia-k3000-s7304.json \
         $C/census-k3000-s7306/ia-k3000-s7306.json $C/census-k3000-s7307/ia-k3000-s7307.json   # 87 to 101 minutes each (run as three processes at once)
-    for s in 7304 7306 7307; do
+    for s in 7304 7305 7306 7307; do
       OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $D/census-k3000-s$s/r22d75_census_k3000.py \
           $C/census-k3000-s$s/ia-k3000-s$s.json; done                                                                 # about 35 minutes each
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7304/ia-k3000-s7304.json \
@@ -4482,6 +4491,10 @@ whose three shards print its round 4 outputs again, the `cpu` fields aside:
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7307/ia-k3000-s7307.json \
         --prefix '[[275,14],[516,13],[50,15],[474,13],[494,15],[147,14]]' \
         --expect 895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507 --cpu 7200                         # about 30 minutes
+    python3 -I -B -u research/jumbling/restoration/11-scramble-census/scripts/check_records.py $C/census-k3000-s7305/ia-k3000-s7305.json   # about 80 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7305/ia-k3000-s7305.json \
+        --prefix '[[10,12],[10,15],[67,14],[134,13],[195,14],[233,15],[421,12],[421,12],[484,15],[122,12],[175,14]]' \
+        --expect cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062 --cpu 7200                         # about 25 minutes
     W='[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[124,2],[274,13],[46,1],[46,3],[104,14],[23,14],[357,1],[357,3],
         [593,3],[593,43],[541,2],[593,54],[482,15],[553,5],[535,3],[535,6],[363,10],[535,8]]'
     H='{"12":"bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299","13":"0ad859c24e540a55de416e8a901e4da7b3ddbccc3d6e19a50629ac7b35a87e05",

@@ -122,26 +122,30 @@ its height-6 pieces to height 4 by the descent's 190th twist (stage 12, R22D-30)
 lowered none of them. **Certificate**: the replay check passes on the record (`runs/heights/check.out`); the
 step-by-step replay also applies every twist on the exact simulator and checks the off count after every step.
 
-### Three longer descents from 3000 twists (20 October 2026)
+### Four longer descents from 3000 twists (20 October 2026)
 
-Three cloud sessions of round 6 of stage 12's line (d) drew fresh 3000-twist scrambles (seeds 7304, 7306 and 7307) and
-ran one census round from each with `census_seams.py` unchanged and a budget of 18,900 seconds (5.25 hours) instead of
-75 minutes. The records and the cloud sessions' accounts are in stage 12, under
-`runs/round22/cloud/census-k3000-s7304/` and the two like it.
+Four cloud sessions of round 6 of stage 12's line (d) drew fresh 3000-twist scrambles (seeds 7304, 7305, 7306 and 7307)
+and ran one census round from each with `census_seams.py` unchanged and a budget of 18,900 seconds (5.25 hours) instead
+of 75 minutes. Seed 7305's ran in two parts: its container restarted after 17 steps, and a second run of the script with
+`--start` rebuilt the scramble, replayed the first part's 49 twists and went on with the rest of the budget. The rules
+read no clock, so the restart moves only where the time limit falls. The records and the cloud sessions' accounts are in
+stage 12, under `runs/round22/cloud/census-k3000-s7304/` and the three like it.
 
 | Depth k | Seed | Off after the scramble | Left heights at the scramble | Descent time | Twists | Steps: seam / cover / conj | Off at the end | N: start → end | Left heights at the end |
 | ---: | ---: | ---: | --- | --- | ---: | --- | ---: | --- | --- |
 | 3000 | 7304 | 121,001 | 2: 118,951; 4: 2,050 | 5.25 hours | 580 | 0 / 7 / 191 | 95,569 | 139,584 → 115,200 | 2: 94,384; 4: 1,185 |
+| 3000 | 7305 | 116,870 | 2: 113,826; 4: 3,044 | 5.25 hours | 103 | 0 / 1 / 34 | 105,437 | 141,328 → 131,542 | 2: 103,140; 4: 2,297 |
 | 3000 | 7306 | 123,181 | 2: 118,426; 4: 4,726; 6: 29 | 5.25 hours | 270 | 0 / 3 / 89 | 108,823 | 149,224 → 137,562 | 2: 106,032; 4: 2,762; 6: 29 |
 | 3000 | 7307 | 119,518 | 2: 117,245; 4: 2,263; 6: 10 | 5.25 hours | 734 | 0 / 11 / 241 | 96,236 | 136,918 → 112,776 | 2: 94,691; 4: 1,535; 6: 10 |
 
-All three ended at the time limit, having put back 21.0%, 11.7% and 19.5% of the off pieces; the clock is checked
-between steps, so each last step ended past it (at 5.33, 5.29 and 5.55 hours). Seed 7304's scramble had no piece at
-height 6. At seeds 7306 and 7307 as many pieces were at height 6 at the end as after the scramble, 29 and 10; whether
-they are the same pieces was not checked. Stage 12 takes the three ends on with its height-first rule, which lowers
-those height-6 pieces and then stops on height 4 (`PROOFS-B.md`, round 6 of line (d)). A fourth session, seed 7305,
-was still running. **Certificate**: `check_records.py` passes on the three records (stage 12,
-`runs/round22/cloud-k3000-check.out`).
+All four ended at the time limit, having put back 21.0%, 9.8%, 11.7% and 19.5% of the off pieces (seeds 7304 to 7307 in
+order); the clock is checked between steps, so each last step ended past it (at 5.33, 5.32, 5.29 and 5.55 hours, seed
+7305's the sum of its two parts' descent). Seed 7305's last step still lowered N, so its stop is where the clock fell,
+not where the descent stalled. The scrambles of seeds 7304 and 7305 had no piece at height 6. At seeds 7306 and 7307 as
+many pieces were at height 6 at the end as after the scramble, 29 and 10; whether they are the same pieces was not
+checked. Stage 12 takes the four ends on with its height-first rule, which lowers those height-6 pieces and then stops
+on height 4 (`PROOFS-B.md`, round 6 of line (d)). **Certificate**: `check_records.py` passes on the four records (stage
+12, `runs/round22/cloud-k3000-check.out` and `cloud-k3000-check-s7305.out`).
 
 ### What the runs show (measured)
 

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-20] update | Jumbling: line (d), round 6, the fourth fresh 3000-twist scramble
+The fourth cloud line, seed 7305, finished: its scramble had no piece at height 6, its census descent stopped on its clock after 103 twists with 105,437 pieces off, and the height-first rule then played 11 twists, taking the height-4 pieces from 2,297 to 1,419, before it stopped stuck, so the rule that frees blocked caps again had nothing to do ([stage 12](../../research/jumbling/restoration/12-low-height/README.md), [stage 11](../../research/jumbling/restoration/11-scramble-census/README.md)). The integrator replayed the census record and both rules from it and had the record audited; the corrections, none of which changes a twist, a digest or a count, are recorded beside it.
+
 ## [2026-10-20] decision | Jumbling: the complete tutorial is illustrated and every macro expands
 The owner set the content of the complete tutorial: detailed illustrations, and every macro and formula given in full and expandable down to single twists ([owner-decisions-2026-10-20-tutorial-acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), section "Content of the complete tutorial"). Each step is shown as a tree of named parts with their lengths; the runner records the tree of every step, and the checker checks that it expands to exactly the word replayed.
 
