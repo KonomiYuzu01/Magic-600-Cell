@@ -21,7 +21,8 @@ to height 2, so that the height-2 phase can take over?
 | `scripts/round22/drafts/r22d81_rule.py` (source of the step 3 copy, not run) | `a63a177ba0c3ef652a2e6be3c55835c46c0eeb9dd0c1feb0a0e64ecaddcb8455` |
 | `cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py` | `15a6b764b12c493f5f90dd3fb643e79182ddf1775d50f76d53dfa75540584aac` |
 | `cloud/height4-descent-bbef1c8e/h4_unlock.py` | `12078831f1b41c46b9a9f50a1fa88ddabdcafdbb9b766c1a278a662c0ffc44a7` |
-| `cloud/height4-descent-bbef1c8e/two_letter_u.py` | `65f8a0e2ce659e3d7b1eae0674ceca9b2af595d0903f72dad5a7e58d14cbc6d8` |
+| `cloud/height4-descent-bbef1c8e/two_letter_u.py` (final version) | `ce5fb13584630e8c87d08273eaf41b74b68798a30ae606b1f55dd3da07fd93c9` |
+| `cloud/height4-descent-bbef1c8e/end_summary.py` | `5f0b5b9a752888434cad66105144cea14c5f00213665b5000dd35103a0baeb63` |
 
 Paths are relative to `research/jumbling/restoration/12-low-height/`; `cloud/…` is `scripts/round22/cloud/…`. Every
 run used `OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 JUMBLING_HOME_CACHE=<a file outside the
@@ -115,8 +116,9 @@ prunes).
 
 ## Step 4, round 1: two-letter U steps at 6999b921
 
-Script `two_letter_u.py` (sha256 at the end of this file is for the final version; the runs below used it with the
-changes stated). Commands: `two_letter_u.py --snapshot <dir>/h4-end-1.pkl --expect 6999b921… --shard i --nshards 3
+Script `two_letter_u.py` (the sha256 in the table is the final version; round 1 parts 1 and 2 ran an earlier
+version without `--from-index` and with the pose-id comparison described below, part 3 and rounds 2 to 4 ran the
+final version). Commands: `two_letter_u.py --snapshot <dir>/h4-end-1.pkl --expect 6999b921… --shard i --nshards 3
 --cpu 12000 [--from-index k]` for i = 0, 1, 2. Outputs `two_letter_u_shard{0,1,2}_part{1,2,3}.txt`.
 
 What a pair is: first letter (c, j) at a cap c that is clean at the state and holds no height-4 piece, admissible
@@ -235,8 +237,85 @@ Command: `h4_unlock.py --snapshot <dir>/h4-end-3.pkl --prefix '[[363,10],[535,8]
 
 ## Step 4, round 4: two-letter U steps at 2430f4cc
 
-In progress.
+Command: `two_letter_u.py --snapshot <dir>/h4-end-4.pkl --expect 2430f4cc… --shard i --nshards 3 --cpu 12000`
+(outputs `two_letter_u_round4_shard{0,1,2}.txt`). Context: τ = 597, u = 8 (pieces 47665, 47668, 73409, 73437, 73438,
+92600, 113901, 118808). Holders: 535 (clean) and 578, 583, 588, 595 (blocked, with 358, 376, 333, 229 straddlers of
+their own, 1,123 distinct). 37 clean caps; class A = 492, 523, 535, 590, 591; 1,947 first letters.
+
+Enumerated: **all 1,947 first letters** (indices 0 to 1,946, each once; DONE in every shard, 1,739 to 1,808 CPU s per
+shard). 1,707 valid (199 A, 1,508 B), 240 not valid. No first letter frees a blocked holder. Second caps kept by the
+prune: only cap 535, for 81 first letters (59 at cap 363, 11 at 492, 11 at 535), all 59 items each; the lowest u
+after any pair is 8. **No pair lowers u**: the two-letter U step is exhausted at 2430f4cc.
+
+## End state
+
+`2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472`: (n2, n4, n6) = (102,750, 734, 0), 103,484 off,
+N = 133,818; τ = 597 (k = 205), u = 8. H4-unlock is STUCK there and so are two-letter U steps under the stated
+conditions. The height-2 handoff (n4 = 0) is not reached.
+
+Replay (`end_summary.py <dir>/s7302-stop.pkl '<the 25 letters>' '<8 digests>'`, output `end_summary.txt`): all 25
+letters from 015d839e are admissible and certain and every checked digest matches (bbef1c8e after 12 letters, then
+0ad859c2, 6999b921, 391490f7, c312a2fc, 6c7a79d9, b2651c24, 2430f4cc).
+
+The 13 letters of this line, from bbef1c8e:
+
+| # | letter | phase / family | (n2, n4, n6) after | off | N | digest |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | (23, 14) | R22D-75 (lowers n2) | (102,901, 936, 0) | 103,837 | 133,134 | `0ad859c2…` |
+| 2 | (357, 1) | H4-unlock U | (102,901, 936, 0) | 103,837 | 133,084 | `52c9a715…` |
+| 3 | (357, 3) | H4-unlock U | (102,901, 936, 0) | 103,837 | 133,044 | `e13f5264…` |
+| 4 | (593, 3) | H4-unlock U | (102,901, 936, 0) | 103,837 | 133,238 | `c7d5be22…` |
+| 5 | (593, 43) | H4-unlock U | (103,571, 936, 0) | 104,507 | 133,668 | `6999b921…` |
+| 6 | (541, 2) | two-letter U, first | (103,571, 936, 0) | 104,507 | 134,004 | `fbd3f69d…` |
+| 7 | (593, 54) | two-letter U, second | (103,282, 936, 0) | 104,218 | 133,834 | `391490f7…` |
+| 8 | (482, 15) | H4-unlock L4 | (102,750, 734, 0) | 103,484 | 133,558 | `c312a2fc…` |
+| 9 | (553, 5) | two-letter U, first | (102,750, 734, 0) | 103,484 | 133,566 | `ffe4baf8…` |
+| 10 | (535, 3) | two-letter U, second | (102,750, 734, 0) | 103,484 | 133,678 | `6c7a79d9…` |
+| 11 | (535, 6) | H4-unlock U | (102,750, 734, 0) | 103,484 | 133,700 | `b2651c24…` |
+| 12 | (363, 10) | two-letter U, first | (102,750, 734, 0) | 103,484 | 133,828 | `f738bfbb…` |
+| 13 | (535, 8) | two-letter U, second | (102,750, 734, 0) | 103,484 | 133,818 | `2430f4cc…` |
+
+Letters per family: R22D-75 1 (n2); H4-unlock 6 (L4 1, U 5, L2 0); two-letter U 3 pairs (6 letters). Phases: step 2
+1 letter; H4-unlock runs 1 to 4: 4, 1, 1, 0 letters; two-letter rounds 1 to 3: one pair each; round 4: none.
+
+Lattice pieces taken off on the way: 2,289 pieces on the lattice at bbef1c8e are off at 2430f4cc, and 2,701 pieces off
+at bbef1c8e are on the lattice, so off falls by 412 (103,896 → 103,484). Of the 936 height-4 pieces of bbef1c8e, 284
+are at height 2 and 652 still at height 4; the other 82 height-4 pieces at the end were below height 4 at bbef1c8e.
+Against the stop 015d839e: 10,984 pieces on the lattice there are off now, and
+the 185 height-6 pieces of the stop are all at height 4. N rises from 132,930 to 133,818. Not protected.
+
+## CPU times (cloud timings of research code, not performance evidence)
+
+| run | CPU |
+| --- | --- |
+| snapshots (both) | about 2,211 s wall |
+| r22d80 check | a few minutes (not timed by the script) |
+| step 2 (R22D-75) | 16.3 s load + 113.0 s |
+| H4-unlock runs 1 / 2 / 3 / 4 | 607.5 / 99.2 / 167.4 / 102.0 s after the prefix |
+| two-letter round 1 | about 3 × (2,000 + 5,400 + 770) s (parts 1, 2, 3; part 1 lost to a container restart) |
+| two-letter round 2 (stopped after class A) | about 3 × 770 s |
+| two-letter round 3 (stopped after the chosen pair) | about 3 × 1,780 s |
+| two-letter round 4 (complete) | 1,739, 1,808, 1,778 s |
+
+## Not run, not finished
+
+- No Windows, DirectX, native, input, long-session or performance check (headless Linux only).
+- The height-2 phase was not reached, so nothing after H4-unlock was run.
+- Two-letter round 2 was not enumerated beyond index 588 and round 3 not beyond index 1,587 (plus a few in some
+  shards); by the stated order neither affects the chosen pair (argued in each section).
+- Pairs whose end changes a height-4 pose or raises a piece above height 4, three-letter U steps, and pairs aimed at a
+  target other than τ were not tried.
+- A different tie-break in the pair rule (for example the pair with the lowest u, which reached u = 0 in round 2 with
+  (553, 27), (535, 21)) was not tried; the stated rule takes the first success.
 
 ## Open questions
 
-To be filled in at the end.
+1. At 2430f4cc the blocked holders 578, 583, 588 and 595 of τ = 597's eight straddlers have 1,123 straddlers between
+   them and no clean cap frees any of them with one letter. Does a three-letter preparation, or a second blocker
+   layer (the unlock graph of R22D-82 at this state), open one of them?
+2. Would the lowest-u tie-break (u = 0 already in round 2) let L4 continue on τ = 597 (k = 205), and does it reach a
+   state where H4-unlock runs on to other targets?
+3. τ stays 597 because only L4 changes the target. Would a rule that moves to the next target when u at τ is stuck
+   (for example 517 with k = 178) make progress at 2430f4cc? The termination argument would need a new coordinate.
+4. Termination is not coverage: whether some literal word of single letters lowers n4 from 734 at all, under these
+   guards, is open.
