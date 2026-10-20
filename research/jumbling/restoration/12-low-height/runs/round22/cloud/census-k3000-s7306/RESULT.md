@@ -1,6 +1,6 @@
 # Cloud line census-k3000-s7306 (round 22, line (d), round 6)
 
-Status: in progress. The validation gate has passed; the census descent of seed 7306 is running.
+Status: in progress. The validation gate has passed; the census has stopped; R22D-75 is running on its record.
 
 ## Question
 
@@ -38,7 +38,10 @@ Output: `gate-s7302.txt`. This was the first run of the draft's `--record` path.
 ## Census of seed 7306
 
 Scramble (3000 twists): off 123,181, N 149,224, left heights {2: 118,426, 4: 4,726, 6: 29}, 2,735 off poses.
-The descent is running (wall-clock budget 18,900 s).
+Stop: `time-limit` after 270 descent twists in 92 steps (89 `conj`, 3 `cover`); 23,223.5 s wall clock in all
+(scramble build plus the 18,900 s budget). At the stop: off 108,823, N 137,562, grip N 20,501, 28 misaligned grips,
+left heights {2: 106,032, 4: 2,762, 6: 29}, 2,753 off poses. Record `ia-k3000-s7306.json` (45 KB, not compressed),
+stdout `census.txt`.
 
 ## Next steps
 
