@@ -1,0 +1,2870 @@
+{
+ "start": "after75",
+ "prefix": [
+  [
+   136,
+   2
+  ],
+  [
+   136,
+   6
+  ]
+ ],
+ "digest": "9e6b991bf057d3f2c28c3158aed3878b55720c970601019eb819e53bd0601e94",
+ "tau": 290,
+ "u0": 38,
+ "shard": "1/3",
+ "budget": 10800.0,
+ "three": false,
+ "class_i_caps": [
+  301
+ ],
+ "firsts": [
+  {
+   "a": [
+    136,
+    1
+   ],
+   "cls": "ii",
+   "u_after_a": 61,
+   "min_u_after_b": 37,
+   "new_pairs": 39,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 37,
+     "n2_n4_n6": [
+      103103,
+      1019,
+      172
+     ],
+     "off": 104294,
+     "max_height": 6,
+     "N": 132926,
+     "digest": "83e1296b37ece92f0e7e68d16fbaf5cb812c97955e9eb7bf923e970a0cbd53ef"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 37,
+     "n2_n4_n6": [
+      103103,
+      1019,
+      172
+     ],
+     "off": 104294,
+     "max_height": 6,
+     "N": 132850,
+     "digest": "1f9d983ade379bd9a3d67b1a13ce31ff3b25fe51e348fc8294b0b0f01e3ea029"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 37,
+     "n2_n4_n6": [
+      103103,
+      1019,
+      172
+     ],
+     "off": 104294,
+     "max_height": 6,
+     "N": 132860,
+     "digest": "326cf5506963e8e3faa161aefea9d52a785412c867ddaee135d58148611aaa17"
+    }
+   ],
+   "cpu": 224.5
+  },
+  {
+   "a": [
+    136,
+    2
+   ],
+   "cls": "ii",
+   "u_after_a": 46,
+   "min_u_after_b": 30,
+   "new_pairs": 16,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 30,
+     "n2_n4_n6": [
+      103103,
+      1019,
+      172
+     ],
+     "off": 104294,
+     "max_height": 6,
+     "N": 132822,
+     "digest": "78f0039f09e1b498f6c349ad73a3c6745765ed1cdd598185a0ddf701dec05111"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 30,
+     "n2_n4_n6": [
+      103103,
+      1019,
+      172
+     ],
+     "off": 104294,
+     "max_height": 6,
+     "N": 132758,
+     "digest": "7a64fe4da81c96d090c5daf1fbcc946d845f4d18c57f400320a8a080ca0fbdb6"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 30,
+     "n2_n4_n6": [
+      103103,
+      1019,
+      172
+     ],
+     "off": 104294,
+     "max_height": 6,
+     "N": 132770,
+     "digest": "4555b85d8c11c8b5638b5bf5ed0f0f02a73224e6497cce63706ced9747129e94"
+    }
+   ],
+   "cpu": 256.3
+  },
+  {
+   "a": [
+    136,
+    3
+   ],
+   "cls": "ii",
+   "u_after_a": 58,
+   "min_u_after_b": 47,
+   "new_pairs": 23,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 280.2
+  },
+  {
+   "a": [
+    136,
+    4
+   ],
+   "cls": "ii",
+   "u_after_a": 74,
+   "min_u_after_b": 39,
+   "new_pairs": 72,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 303.7
+  },
+  {
+   "a": [
+    136,
+    5
+   ],
+   "cls": "ii",
+   "u_after_a": 79,
+   "min_u_after_b": 38,
+   "new_pairs": 82,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 326.6
+  },
+  {
+   "a": [
+    136,
+    6
+   ],
+   "cls": "ii",
+   "u_after_a": 53,
+   "min_u_after_b": 46,
+   "new_pairs": 21,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 349.9
+  },
+  {
+   "a": [
+    136,
+    7
+   ],
+   "cls": "ii",
+   "u_after_a": 48,
+   "min_u_after_b": 48,
+   "new_pairs": 17,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 373.1
+  },
+  {
+   "a": [
+    136,
+    8
+   ],
+   "cls": "ii",
+   "u_after_a": 74,
+   "min_u_after_b": 70,
+   "new_pairs": 40,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 396.8
+  },
+  {
+   "a": [
+    136,
+    9
+   ],
+   "cls": "ii",
+   "u_after_a": 113,
+   "min_u_after_b": 75,
+   "new_pairs": 117,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 419.5
+  },
+  {
+   "a": [
+    136,
+    10
+   ],
+   "cls": "ii",
+   "u_after_a": 70,
+   "min_u_after_b": 62,
+   "new_pairs": 44,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 441.9
+  },
+  {
+   "a": [
+    136,
+    11
+   ],
+   "cls": "ii",
+   "u_after_a": 83,
+   "min_u_after_b": 56,
+   "new_pairs": 64,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 465.7
+  },
+  {
+   "a": [
+    136,
+    12
+   ],
+   "cls": "ii",
+   "u_after_a": 44,
+   "min_u_after_b": 38,
+   "new_pairs": 12,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 489.2
+  },
+  {
+   "a": [
+    136,
+    13
+   ],
+   "cls": "ii",
+   "u_after_a": 146,
+   "min_u_after_b": null,
+   "new_pairs": 177,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 490.3
+  },
+  {
+   "a": [
+    136,
+    14
+   ],
+   "cls": "ii",
+   "u_after_a": 82,
+   "min_u_after_b": 46,
+   "new_pairs": 72,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 513.7
+  },
+  {
+   "a": [
+    136,
+    15
+   ],
+   "cls": "ii",
+   "u_after_a": 97,
+   "min_u_after_b": 56,
+   "new_pairs": 118,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 536.8
+  },
+  {
+   "a": [
+    136,
+    16
+   ],
+   "cls": "ii",
+   "u_after_a": 42,
+   "min_u_after_b": 42,
+   "new_pairs": 7,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 559.8
+  },
+  {
+   "a": [
+    136,
+    17
+   ],
+   "cls": "ii",
+   "u_after_a": 46,
+   "min_u_after_b": 42,
+   "new_pairs": 16,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 583.1
+  },
+  {
+   "a": [
+    136,
+    18
+   ],
+   "cls": "ii",
+   "u_after_a": 60,
+   "min_u_after_b": 34,
+   "new_pairs": 40,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 34,
+     "n2_n4_n6": [
+      103786,
+      1019,
+      172
+     ],
+     "off": 104977,
+     "max_height": 6,
+     "N": 133200,
+     "digest": "09c488f3359232ab2920db0745d638e831285303ea0dd305634e80bda3b0b960"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 34,
+     "n2_n4_n6": [
+      103786,
+      1019,
+      172
+     ],
+     "off": 104977,
+     "max_height": 6,
+     "N": 132928,
+     "digest": "a21c92b50fc716b83fa139ec1810847e73660e68573621d088662f753e517d6f"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 34,
+     "n2_n4_n6": [
+      103786,
+      1019,
+      172
+     ],
+     "off": 104977,
+     "max_height": 6,
+     "N": 133032,
+     "digest": "f9b3930b3b37de8a24dac5160ceb03313c4e54f5069c30107df250cf3cee744a"
+    }
+   ],
+   "cpu": 613.8
+  },
+  {
+   "a": [
+    136,
+    19
+   ],
+   "cls": "ii",
+   "u_after_a": 38,
+   "min_u_after_b": 38,
+   "new_pairs": 0,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    301
+   ],
+   "accepted": [],
+   "cpu": 636.6
+  },
+  {
+   "a": [
+    136,
+    20
+   ],
+   "cls": "ii",
+   "u_after_a": 45,
+   "min_u_after_b": 38,
+   "new_pairs": 7,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 659.7
+  },
+  {
+   "a": [
+    136,
+    21
+   ],
+   "cls": "ii",
+   "u_after_a": 72,
+   "min_u_after_b": 72,
+   "new_pairs": 34,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 682.3
+  },
+  {
+   "a": [
+    136,
+    22
+   ],
+   "cls": "ii",
+   "u_after_a": 63,
+   "min_u_after_b": 40,
+   "new_pairs": 44,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 706.3
+  },
+  {
+   "a": [
+    136,
+    23
+   ],
+   "cls": "ii",
+   "u_after_a": 80,
+   "min_u_after_b": 35,
+   "new_pairs": 79,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 35,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 133290,
+     "digest": "5a8899587c89fbc420e8b781b01ee8487e95b7920dcedd89b34e7a2d8f40e3d2"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 35,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 133098,
+     "digest": "bb5ded16370be24b85c74f959ca2d85e505ec7bcbf09bec6d42abb7e8cd1be1e"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 35,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 133168,
+     "digest": "724d0af3c6199c7d2c7d2be5ebfbbc0573df6d640edd5a6aa0b65cc95565b020"
+    }
+   ],
+   "cpu": 738.7
+  },
+  {
+   "a": [
+    136,
+    24
+   ],
+   "cls": "ii",
+   "u_after_a": 38,
+   "min_u_after_b": 38,
+   "new_pairs": 0,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    301
+   ],
+   "accepted": [],
+   "cpu": 761.3
+  },
+  {
+   "a": [
+    136,
+    25
+   ],
+   "cls": "ii",
+   "u_after_a": 80,
+   "min_u_after_b": 53,
+   "new_pairs": 73,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 784.6
+  },
+  {
+   "a": [
+    136,
+    26
+   ],
+   "cls": "ii",
+   "u_after_a": 45,
+   "min_u_after_b": 42,
+   "new_pairs": 14,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 809.0
+  },
+  {
+   "a": [
+    136,
+    27
+   ],
+   "cls": "ii",
+   "u_after_a": 52,
+   "min_u_after_b": 52,
+   "new_pairs": 28,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 832.2
+  },
+  {
+   "a": [
+    136,
+    28
+   ],
+   "cls": "ii",
+   "u_after_a": 72,
+   "min_u_after_b": 72,
+   "new_pairs": 34,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 855.8
+  },
+  {
+   "a": [
+    136,
+    29
+   ],
+   "cls": "ii",
+   "u_after_a": 41,
+   "min_u_after_b": 41,
+   "new_pairs": 3,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 879.7
+  },
+  {
+   "a": [
+    136,
+    30
+   ],
+   "cls": "ii",
+   "u_after_a": 57,
+   "min_u_after_b": 36,
+   "new_pairs": 38,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 36,
+     "n2_n4_n6": [
+      103547,
+      1019,
+      172
+     ],
+     "off": 104738,
+     "max_height": 6,
+     "N": 133108,
+     "digest": "b2acceba12ec712ae3899f57a170bbdb2786b32424954d3dbdcebff1002ede91"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 36,
+     "n2_n4_n6": [
+      103547,
+      1019,
+      172
+     ],
+     "off": 104738,
+     "max_height": 6,
+     "N": 133004,
+     "digest": "f9f73884a252ccc153753b7888e78cc717c1f55b93bfdce19c54297407d7c8ea"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 36,
+     "n2_n4_n6": [
+      103547,
+      1019,
+      172
+     ],
+     "off": 104738,
+     "max_height": 6,
+     "N": 133030,
+     "digest": "e0007b9d05735b53eae4c84f2419845d42344a2dd2d5ee653f4e0ab64e84ea43"
+    }
+   ],
+   "cpu": 911.0
+  },
+  {
+   "a": [
+    136,
+    31
+   ],
+   "cls": "ii",
+   "u_after_a": 95,
+   "min_u_after_b": 75,
+   "new_pairs": 98,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 934.3
+  },
+  {
+   "a": [
+    136,
+    32
+   ],
+   "cls": "ii",
+   "u_after_a": 44,
+   "min_u_after_b": 44,
+   "new_pairs": 12,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 957.5
+  },
+  {
+   "a": [
+    136,
+    33
+   ],
+   "cls": "ii",
+   "u_after_a": 51,
+   "min_u_after_b": 41,
+   "new_pairs": 23,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 981.0
+  },
+  {
+   "a": [
+    136,
+    34
+   ],
+   "cls": "ii",
+   "u_after_a": 64,
+   "min_u_after_b": 64,
+   "new_pairs": 26,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1004.3
+  },
+  {
+   "a": [
+    136,
+    35
+   ],
+   "cls": "ii",
+   "u_after_a": 76,
+   "min_u_after_b": 48,
+   "new_pairs": 70,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1027.9
+  },
+  {
+   "a": [
+    136,
+    36
+   ],
+   "cls": "ii",
+   "u_after_a": 106,
+   "min_u_after_b": 77,
+   "new_pairs": 112,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1051.1
+  },
+  {
+   "a": [
+    136,
+    37
+   ],
+   "cls": "ii",
+   "u_after_a": 39,
+   "min_u_after_b": 39,
+   "new_pairs": 1,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1075.4
+  },
+  {
+   "a": [
+    136,
+    38
+   ],
+   "cls": "ii",
+   "u_after_a": 38,
+   "min_u_after_b": 36,
+   "new_pairs": 0,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 36,
+     "n2_n4_n6": [
+      103715,
+      1019,
+      172
+     ],
+     "off": 104906,
+     "max_height": 6,
+     "N": 133234,
+     "digest": "e42da0b2baa9a292bbf660c9b25efa9403018834cb960059924010144155a3cf"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 36,
+     "n2_n4_n6": [
+      103715,
+      1019,
+      172
+     ],
+     "off": 104906,
+     "max_height": 6,
+     "N": 133090,
+     "digest": "9e981847013de125efce271d565653a4093b323dad57877912093358ec7a8f2a"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 36,
+     "n2_n4_n6": [
+      103715,
+      1019,
+      172
+     ],
+     "off": 104906,
+     "max_height": 6,
+     "N": 133094,
+     "digest": "4fd137d3eabff066817c8eca07d83c564c43c61d1055ef37cbd7755c65da4fb7"
+    }
+   ],
+   "cpu": 1106.6
+  },
+  {
+   "a": [
+    136,
+    39
+   ],
+   "cls": "ii",
+   "u_after_a": 38,
+   "min_u_after_b": 38,
+   "new_pairs": 0,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    301
+   ],
+   "accepted": [],
+   "cpu": 1130.4
+  },
+  {
+   "a": [
+    136,
+    40
+   ],
+   "cls": "ii",
+   "u_after_a": 47,
+   "min_u_after_b": 45,
+   "new_pairs": 11,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1153.8
+  },
+  {
+   "a": [
+    136,
+    41
+   ],
+   "cls": "ii",
+   "u_after_a": 67,
+   "min_u_after_b": 46,
+   "new_pairs": 58,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1177.3
+  },
+  {
+   "a": [
+    136,
+    42
+   ],
+   "cls": "ii",
+   "u_after_a": 72,
+   "min_u_after_b": 72,
+   "new_pairs": 34,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1201.2
+  },
+  {
+   "a": [
+    136,
+    43
+   ],
+   "cls": "ii",
+   "u_after_a": 38,
+   "min_u_after_b": 38,
+   "new_pairs": 0,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    301
+   ],
+   "accepted": [],
+   "cpu": 1225.2
+  },
+  {
+   "a": [
+    136,
+    44
+   ],
+   "cls": "ii",
+   "u_after_a": 50,
+   "min_u_after_b": 31,
+   "new_pairs": 23,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 31,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 133104,
+     "digest": "e45766b167e053b5913df62f884b092f8cdd84215f31fd01cf23e9c5e264cc4c"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 31,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 132992,
+     "digest": "d2d41c9ab92aa3193954b71b1e550c42ca41a81d52fdcd6521635cb0a4cdaede"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 31,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 133004,
+     "digest": "5892541d396ee9a1d2e65f544a0815d37950b67f9c8acb9922874ff7d2e8e57b"
+    }
+   ],
+   "cpu": 1257.1
+  },
+  {
+   "a": [
+    136,
+    45
+   ],
+   "cls": "ii",
+   "u_after_a": 66,
+   "min_u_after_b": 61,
+   "new_pairs": 31,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1280.5
+  },
+  {
+   "a": [
+    136,
+    46
+   ],
+   "cls": "ii",
+   "u_after_a": 107,
+   "min_u_after_b": 59,
+   "new_pairs": 112,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1304.9
+  },
+  {
+   "a": [
+    136,
+    47
+   ],
+   "cls": "ii",
+   "u_after_a": 56,
+   "min_u_after_b": 33,
+   "new_pairs": 36,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 33,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 133142,
+     "digest": "a6d65ea93743a827da32fa2a9fc9483e3dcdcc750eccd23990ea08dc9c1c111a"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 33,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 133016,
+     "digest": "98c388110d68afa18fca347b46d09a1fcf4ef65e066567d007978f117e199a59"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 33,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 132956,
+     "digest": "1fb4efff7746732a160372c1d08b4f3b43e37a6ac42f238000570db129469966"
+    }
+   ],
+   "cpu": 1336.1
+  },
+  {
+   "a": [
+    136,
+    48
+   ],
+   "cls": "ii",
+   "u_after_a": 54,
+   "min_u_after_b": 42,
+   "new_pairs": 32,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1359.9
+  },
+  {
+   "a": [
+    136,
+    49
+   ],
+   "cls": "ii",
+   "u_after_a": 67,
+   "min_u_after_b": 33,
+   "new_pairs": 58,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 33,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 133046,
+     "digest": "716e4dc3fe3da3fe49072acff9478444f81854e8dd33dbd36991b05697e27dc7"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 33,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 132948,
+     "digest": "7d895f6ce1f4f20f27fa70379dc938cf417771bd2a0f7e2f0ac14a0483afe5e2"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 33,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 132954,
+     "digest": "dd96ae13747e050d9ff8d9c4f61c507a65743b1d8acca9ee6f6e88540c9791ee"
+    }
+   ],
+   "cpu": 1391.2
+  },
+  {
+   "a": [
+    136,
+    50
+   ],
+   "cls": "ii",
+   "u_after_a": 70,
+   "min_u_after_b": 30,
+   "new_pairs": 64,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [
+    {
+     "letter": [
+      301,
+      1
+     ],
+     "u": 30,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 133076,
+     "digest": "13de6b0f8e401ef56f8f536eccea6da2a9bc4365f0d1298dec0cb582c59a11b0"
+    },
+    {
+     "letter": [
+      301,
+      2
+     ],
+     "u": 30,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 132936,
+     "digest": "b56a240f8cdd04fb8a70af0b7bcdc04228f8ab9f9521d388b31618e4c299cff8"
+    },
+    {
+     "letter": [
+      301,
+      6
+     ],
+     "u": 30,
+     "n2_n4_n6": [
+      103501,
+      1019,
+      172
+     ],
+     "off": 104692,
+     "max_height": 6,
+     "N": 132952,
+     "digest": "b2c12c4bd54672efaaa9d9b3b95e54fb49876e4fe46f98336223877f900b15c3"
+    }
+   ],
+   "cpu": 1423.1
+  },
+  {
+   "a": [
+    136,
+    51
+   ],
+   "cls": "ii",
+   "u_after_a": 115,
+   "min_u_after_b": null,
+   "new_pairs": 115,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1424.2
+  },
+  {
+   "a": [
+    136,
+    52
+   ],
+   "cls": "ii",
+   "u_after_a": 55,
+   "min_u_after_b": 50,
+   "new_pairs": 34,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1448.1
+  },
+  {
+   "a": [
+    136,
+    53
+   ],
+   "cls": "ii",
+   "u_after_a": 136,
+   "min_u_after_b": 62,
+   "new_pairs": 164,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1471.8
+  },
+  {
+   "a": [
+    136,
+    54
+   ],
+   "cls": "ii",
+   "u_after_a": 112,
+   "min_u_after_b": 74,
+   "new_pairs": 116,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1496.3
+  },
+  {
+   "a": [
+    136,
+    55
+   ],
+   "cls": "ii",
+   "u_after_a": 52,
+   "min_u_after_b": 44,
+   "new_pairs": 14,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1520.3
+  },
+  {
+   "a": [
+    136,
+    56
+   ],
+   "cls": "ii",
+   "u_after_a": 125,
+   "min_u_after_b": 64,
+   "new_pairs": 140,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1543.8
+  },
+  {
+   "a": [
+    136,
+    57
+   ],
+   "cls": "ii",
+   "u_after_a": 38,
+   "min_u_after_b": 38,
+   "new_pairs": 0,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    301
+   ],
+   "accepted": [],
+   "cpu": 1566.9
+  },
+  {
+   "a": [
+    136,
+    58
+   ],
+   "cls": "ii",
+   "u_after_a": 46,
+   "min_u_after_b": 44,
+   "new_pairs": 16,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1590.6
+  },
+  {
+   "a": [
+    136,
+    59
+   ],
+   "cls": "ii",
+   "u_after_a": 103,
+   "min_u_after_b": 56,
+   "new_pairs": 104,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    136,
+    301
+   ],
+   "accepted": [],
+   "cpu": 1614.2
+  }
+ ],
+ "pairs": [
+  {
+   "a": [
+    136,
+    1
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 37,
+   "n2_n4_n6": [
+    103103,
+    1019,
+    172
+   ],
+   "off": 104294,
+   "max_height": 6,
+   "N": 132926,
+   "digest": "83e1296b37ece92f0e7e68d16fbaf5cb812c97955e9eb7bf923e970a0cbd53ef"
+  },
+  {
+   "a": [
+    136,
+    1
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 37,
+   "n2_n4_n6": [
+    103103,
+    1019,
+    172
+   ],
+   "off": 104294,
+   "max_height": 6,
+   "N": 132850,
+   "digest": "1f9d983ade379bd9a3d67b1a13ce31ff3b25fe51e348fc8294b0b0f01e3ea029"
+  },
+  {
+   "a": [
+    136,
+    1
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 37,
+   "n2_n4_n6": [
+    103103,
+    1019,
+    172
+   ],
+   "off": 104294,
+   "max_height": 6,
+   "N": 132860,
+   "digest": "326cf5506963e8e3faa161aefea9d52a785412c867ddaee135d58148611aaa17"
+  },
+  {
+   "a": [
+    136,
+    2
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 30,
+   "n2_n4_n6": [
+    103103,
+    1019,
+    172
+   ],
+   "off": 104294,
+   "max_height": 6,
+   "N": 132822,
+   "digest": "78f0039f09e1b498f6c349ad73a3c6745765ed1cdd598185a0ddf701dec05111"
+  },
+  {
+   "a": [
+    136,
+    2
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 30,
+   "n2_n4_n6": [
+    103103,
+    1019,
+    172
+   ],
+   "off": 104294,
+   "max_height": 6,
+   "N": 132758,
+   "digest": "7a64fe4da81c96d090c5daf1fbcc946d845f4d18c57f400320a8a080ca0fbdb6"
+  },
+  {
+   "a": [
+    136,
+    2
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 30,
+   "n2_n4_n6": [
+    103103,
+    1019,
+    172
+   ],
+   "off": 104294,
+   "max_height": 6,
+   "N": 132770,
+   "digest": "4555b85d8c11c8b5638b5bf5ed0f0f02a73224e6497cce63706ced9747129e94"
+  },
+  {
+   "a": [
+    136,
+    18
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 34,
+   "n2_n4_n6": [
+    103786,
+    1019,
+    172
+   ],
+   "off": 104977,
+   "max_height": 6,
+   "N": 133200,
+   "digest": "09c488f3359232ab2920db0745d638e831285303ea0dd305634e80bda3b0b960"
+  },
+  {
+   "a": [
+    136,
+    18
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 34,
+   "n2_n4_n6": [
+    103786,
+    1019,
+    172
+   ],
+   "off": 104977,
+   "max_height": 6,
+   "N": 132928,
+   "digest": "a21c92b50fc716b83fa139ec1810847e73660e68573621d088662f753e517d6f"
+  },
+  {
+   "a": [
+    136,
+    18
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 34,
+   "n2_n4_n6": [
+    103786,
+    1019,
+    172
+   ],
+   "off": 104977,
+   "max_height": 6,
+   "N": 133032,
+   "digest": "f9b3930b3b37de8a24dac5160ceb03313c4e54f5069c30107df250cf3cee744a"
+  },
+  {
+   "a": [
+    136,
+    23
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 35,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 133290,
+   "digest": "5a8899587c89fbc420e8b781b01ee8487e95b7920dcedd89b34e7a2d8f40e3d2"
+  },
+  {
+   "a": [
+    136,
+    23
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 35,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 133098,
+   "digest": "bb5ded16370be24b85c74f959ca2d85e505ec7bcbf09bec6d42abb7e8cd1be1e"
+  },
+  {
+   "a": [
+    136,
+    23
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 35,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 133168,
+   "digest": "724d0af3c6199c7d2c7d2be5ebfbbc0573df6d640edd5a6aa0b65cc95565b020"
+  },
+  {
+   "a": [
+    136,
+    30
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 36,
+   "n2_n4_n6": [
+    103547,
+    1019,
+    172
+   ],
+   "off": 104738,
+   "max_height": 6,
+   "N": 133108,
+   "digest": "b2acceba12ec712ae3899f57a170bbdb2786b32424954d3dbdcebff1002ede91"
+  },
+  {
+   "a": [
+    136,
+    30
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 36,
+   "n2_n4_n6": [
+    103547,
+    1019,
+    172
+   ],
+   "off": 104738,
+   "max_height": 6,
+   "N": 133004,
+   "digest": "f9f73884a252ccc153753b7888e78cc717c1f55b93bfdce19c54297407d7c8ea"
+  },
+  {
+   "a": [
+    136,
+    30
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 36,
+   "n2_n4_n6": [
+    103547,
+    1019,
+    172
+   ],
+   "off": 104738,
+   "max_height": 6,
+   "N": 133030,
+   "digest": "e0007b9d05735b53eae4c84f2419845d42344a2dd2d5ee653f4e0ab64e84ea43"
+  },
+  {
+   "a": [
+    136,
+    38
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 36,
+   "n2_n4_n6": [
+    103715,
+    1019,
+    172
+   ],
+   "off": 104906,
+   "max_height": 6,
+   "N": 133234,
+   "digest": "e42da0b2baa9a292bbf660c9b25efa9403018834cb960059924010144155a3cf"
+  },
+  {
+   "a": [
+    136,
+    38
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 36,
+   "n2_n4_n6": [
+    103715,
+    1019,
+    172
+   ],
+   "off": 104906,
+   "max_height": 6,
+   "N": 133090,
+   "digest": "9e981847013de125efce271d565653a4093b323dad57877912093358ec7a8f2a"
+  },
+  {
+   "a": [
+    136,
+    38
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 36,
+   "n2_n4_n6": [
+    103715,
+    1019,
+    172
+   ],
+   "off": 104906,
+   "max_height": 6,
+   "N": 133094,
+   "digest": "4fd137d3eabff066817c8eca07d83c564c43c61d1055ef37cbd7755c65da4fb7"
+  },
+  {
+   "a": [
+    136,
+    44
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 31,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 133104,
+   "digest": "e45766b167e053b5913df62f884b092f8cdd84215f31fd01cf23e9c5e264cc4c"
+  },
+  {
+   "a": [
+    136,
+    44
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 31,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 132992,
+   "digest": "d2d41c9ab92aa3193954b71b1e550c42ca41a81d52fdcd6521635cb0a4cdaede"
+  },
+  {
+   "a": [
+    136,
+    44
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 31,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 133004,
+   "digest": "5892541d396ee9a1d2e65f544a0815d37950b67f9c8acb9922874ff7d2e8e57b"
+  },
+  {
+   "a": [
+    136,
+    47
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 33,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 133142,
+   "digest": "a6d65ea93743a827da32fa2a9fc9483e3dcdcc750eccd23990ea08dc9c1c111a"
+  },
+  {
+   "a": [
+    136,
+    47
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 33,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 133016,
+   "digest": "98c388110d68afa18fca347b46d09a1fcf4ef65e066567d007978f117e199a59"
+  },
+  {
+   "a": [
+    136,
+    47
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 33,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 132956,
+   "digest": "1fb4efff7746732a160372c1d08b4f3b43e37a6ac42f238000570db129469966"
+  },
+  {
+   "a": [
+    136,
+    49
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 33,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 133046,
+   "digest": "716e4dc3fe3da3fe49072acff9478444f81854e8dd33dbd36991b05697e27dc7"
+  },
+  {
+   "a": [
+    136,
+    49
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 33,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 132948,
+   "digest": "7d895f6ce1f4f20f27fa70379dc938cf417771bd2a0f7e2f0ac14a0483afe5e2"
+  },
+  {
+   "a": [
+    136,
+    49
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 33,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 132954,
+   "digest": "dd96ae13747e050d9ff8d9c4f61c507a65743b1d8acca9ee6f6e88540c9791ee"
+  },
+  {
+   "a": [
+    136,
+    50
+   ],
+   "b": [
+    301,
+    1
+   ],
+   "u": 30,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 133076,
+   "digest": "13de6b0f8e401ef56f8f536eccea6da2a9bc4365f0d1298dec0cb582c59a11b0"
+  },
+  {
+   "a": [
+    136,
+    50
+   ],
+   "b": [
+    301,
+    2
+   ],
+   "u": 30,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 132936,
+   "digest": "b56a240f8cdd04fb8a70af0b7bcdc04228f8ab9f9521d388b31618e4c299cff8"
+  },
+  {
+   "a": [
+    136,
+    50
+   ],
+   "b": [
+    301,
+    6
+   ],
+   "u": 30,
+   "n2_n4_n6": [
+    103501,
+    1019,
+    172
+   ],
+   "off": 104692,
+   "max_height": 6,
+   "N": 132952,
+   "digest": "b2c12c4bd54672efaaa9d9b3b95e54fb49876e4fe46f98336223877f900b15c3"
+  }
+ ],
+ "triples": [],
+ "outcomes": {
+  "20:1": "ii pruned (bound 38)",
+  "20:2": "ii pruned (bound 38)",
+  "20:3": "ii pruned (bound 38)",
+  "20:4": "ii pruned (bound 38)",
+  "20:5": "ii pruned (bound 38)",
+  "20:6": "ii pruned (bound 38)",
+  "20:7": "ii pruned (bound 38)",
+  "20:8": "ii pruned (bound 38)",
+  "20:9": "ii pruned (bound 38)",
+  "20:10": "ii pruned (bound 38)",
+  "20:11": "ii pruned (bound 38)",
+  "20:12": "ii pruned (bound 38)",
+  "20:13": "ii pruned (bound 38)",
+  "20:14": "ii pruned (bound 38)",
+  "20:15": "ii pruned (bound 38)",
+  "20:16": "ii pruned (bound 38)",
+  "20:17": "ii pruned (bound 38)",
+  "20:18": "ii pruned (bound 38)",
+  "20:19": "ii pruned (bound 38)",
+  "20:20": "ii pruned (bound 38)",
+  "20:21": "ii pruned (bound 38)",
+  "20:22": "ii pruned (bound 38)",
+  "20:23": "ii pruned (bound 38)",
+  "20:24": "ii pruned (bound 38)",
+  "20:25": "ii pruned (bound 38)",
+  "20:26": "ii pruned (bound 38)",
+  "20:27": "ii pruned (bound 38)",
+  "20:28": "ii pruned (bound 38)",
+  "20:29": "ii pruned (bound 38)",
+  "20:30": "ii pruned (bound 38)",
+  "20:31": "ii pruned (bound 38)",
+  "20:32": "ii pruned (bound 38)",
+  "20:33": "ii pruned (bound 38)",
+  "20:34": "ii pruned (bound 38)",
+  "20:35": "ii pruned (bound 38)",
+  "20:36": "ii pruned (bound 38)",
+  "20:37": "ii pruned (bound 38)",
+  "20:38": "ii pruned (bound 38)",
+  "20:39": "ii pruned (bound 38)",
+  "20:40": "ii pruned (bound 38)",
+  "20:41": "ii pruned (bound 38)",
+  "20:42": "ii pruned (bound 38)",
+  "20:43": "ii pruned (bound 38)",
+  "20:44": "ii pruned (bound 38)",
+  "20:45": "ii pruned (bound 38)",
+  "20:46": "ii pruned (bound 38)",
+  "20:47": "ii pruned (bound 38)",
+  "20:48": "ii pruned (bound 38)",
+  "20:49": "ii pruned (bound 38)",
+  "20:50": "ii pruned (bound 38)",
+  "20:51": "ii pruned (bound 38)",
+  "20:52": "ii pruned (bound 38)",
+  "20:53": "ii pruned (bound 38)",
+  "20:54": "ii pruned (bound 38)",
+  "20:55": "ii pruned (bound 38)",
+  "20:56": "ii pruned (bound 38)",
+  "20:57": "ii pruned (bound 38)",
+  "20:58": "ii pruned (bound 38)",
+  "20:59": "ii pruned (bound 38)",
+  "46:1": "ii pruned (bound 38)",
+  "46:2": "ii pruned (bound 38)",
+  "46:3": "ii pruned (bound 38)",
+  "46:4": "ii pruned (bound 38)",
+  "46:5": "ii pruned (bound 38)",
+  "46:6": "ii pruned (bound 38)",
+  "46:7": "ii pruned (bound 38)",
+  "46:8": "ii pruned (bound 38)",
+  "46:9": "ii pruned (bound 38)",
+  "46:10": "ii pruned (bound 38)",
+  "46:11": "ii pruned (bound 38)",
+  "46:12": "ii pruned (bound 38)",
+  "46:13": "ii pruned (bound 38)",
+  "46:14": "ii pruned (bound 38)",
+  "46:15": "ii pruned (bound 38)",
+  "46:16": "ii pruned (bound 38)",
+  "46:17": "ii pruned (bound 38)",
+  "46:18": "ii pruned (bound 38)",
+  "46:19": "ii pruned (bound 38)",
+  "46:20": "ii pruned (bound 38)",
+  "46:21": "ii pruned (bound 38)",
+  "46:22": "ii pruned (bound 38)",
+  "46:23": "ii pruned (bound 38)",
+  "46:24": "ii pruned (bound 38)",
+  "46:25": "ii pruned (bound 38)",
+  "46:26": "ii pruned (bound 38)",
+  "46:27": "ii pruned (bound 38)",
+  "46:28": "ii pruned (bound 38)",
+  "46:29": "ii pruned (bound 38)",
+  "46:30": "ii pruned (bound 38)",
+  "46:31": "ii pruned (bound 38)",
+  "46:32": "ii pruned (bound 38)",
+  "46:33": "ii pruned (bound 38)",
+  "46:34": "ii pruned (bound 38)",
+  "46:35": "ii pruned (bound 38)",
+  "46:36": "ii pruned (bound 38)",
+  "46:37": "ii pruned (bound 38)",
+  "46:38": "ii pruned (bound 38)",
+  "46:39": "ii pruned (bound 38)",
+  "46:40": "ii pruned (bound 38)",
+  "46:41": "ii pruned (bound 38)",
+  "46:42": "ii pruned (bound 38)",
+  "46:43": "ii pruned (bound 38)",
+  "46:44": "ii pruned (bound 38)",
+  "46:45": "ii pruned (bound 38)",
+  "46:46": "ii pruned (bound 38)",
+  "46:47": "ii pruned (bound 38)",
+  "46:48": "ii pruned (bound 38)",
+  "46:49": "ii pruned (bound 38)",
+  "46:50": "ii pruned (bound 38)",
+  "46:51": "ii pruned (bound 38)",
+  "46:52": "ii pruned (bound 38)",
+  "46:53": "ii pruned (bound 38)",
+  "46:54": "ii pruned (bound 38)",
+  "46:55": "ii pruned (bound 38)",
+  "46:56": "ii pruned (bound 38)",
+  "46:57": "ii pruned (bound 38)",
+  "46:58": "ii pruned (bound 38)",
+  "46:59": "ii pruned (bound 38)",
+  "64:1": "ii pruned (bound 38)",
+  "64:2": "ii pruned (bound 38)",
+  "64:3": "ii pruned (bound 38)",
+  "64:4": "ii pruned (bound 38)",
+  "64:5": "ii pruned (bound 38)",
+  "64:6": "ii pruned (bound 38)",
+  "64:7": "ii pruned (bound 38)",
+  "64:8": "ii pruned (bound 38)",
+  "64:9": "ii pruned (bound 38)",
+  "64:10": "ii pruned (bound 38)",
+  "64:11": "ii pruned (bound 38)",
+  "64:12": "ii pruned (bound 38)",
+  "64:13": "ii pruned (bound 38)",
+  "64:14": "ii pruned (bound 38)",
+  "64:15": "ii pruned (bound 38)",
+  "64:16": "ii pruned (bound 38)",
+  "64:17": "ii pruned (bound 38)",
+  "64:18": "ii pruned (bound 38)",
+  "64:19": "ii pruned (bound 38)",
+  "64:20": "ii pruned (bound 38)",
+  "64:21": "ii pruned (bound 38)",
+  "64:22": "ii pruned (bound 38)",
+  "64:23": "ii pruned (bound 38)",
+  "64:24": "ii pruned (bound 38)",
+  "64:25": "ii pruned (bound 38)",
+  "64:26": "ii pruned (bound 38)",
+  "64:27": "ii pruned (bound 38)",
+  "64:28": "ii pruned (bound 38)",
+  "64:29": "ii pruned (bound 38)",
+  "64:30": "ii pruned (bound 38)",
+  "64:31": "ii pruned (bound 38)",
+  "64:32": "ii pruned (bound 38)",
+  "64:33": "ii pruned (bound 38)",
+  "64:34": "ii pruned (bound 38)",
+  "64:35": "ii pruned (bound 38)",
+  "64:36": "ii pruned (bound 38)",
+  "64:37": "ii pruned (bound 38)",
+  "64:38": "ii pruned (bound 38)",
+  "64:39": "ii pruned (bound 38)",
+  "64:40": "ii pruned (bound 38)",
+  "64:41": "ii pruned (bound 38)",
+  "64:42": "ii pruned (bound 38)",
+  "64:43": "ii pruned (bound 38)",
+  "64:44": "ii pruned (bound 38)",
+  "64:45": "ii pruned (bound 38)",
+  "64:46": "ii pruned (bound 38)",
+  "64:47": "ii pruned (bound 38)",
+  "64:48": "ii pruned (bound 38)",
+  "64:49": "ii pruned (bound 38)",
+  "64:50": "ii pruned (bound 38)",
+  "64:51": "ii pruned (bound 38)",
+  "64:52": "ii pruned (bound 38)",
+  "64:53": "ii pruned (bound 38)",
+  "64:54": "ii pruned (bound 38)",
+  "64:55": "ii pruned (bound 38)",
+  "64:56": "ii pruned (bound 38)",
+  "64:57": "ii pruned (bound 38)",
+  "64:58": "ii pruned (bound 38)",
+  "64:59": "ii pruned (bound 38)",
+  "93:1": "ii pruned (bound 38)",
+  "93:2": "ii pruned (bound 38)",
+  "93:3": "ii pruned (bound 38)",
+  "93:4": "ii pruned (bound 38)",
+  "93:5": "ii pruned (bound 38)",
+  "93:6": "ii pruned (bound 38)",
+  "93:7": "ii pruned (bound 38)",
+  "93:8": "ii pruned (bound 38)",
+  "93:9": "ii pruned (bound 38)",
+  "93:10": "ii pruned (bound 38)",
+  "93:11": "ii pruned (bound 38)",
+  "93:12": "ii pruned (bound 38)",
+  "93:13": "ii pruned (bound 38)",
+  "93:14": "ii pruned (bound 38)",
+  "93:15": "ii pruned (bound 38)",
+  "93:16": "ii pruned (bound 38)",
+  "93:17": "ii pruned (bound 38)",
+  "93:18": "ii pruned (bound 38)",
+  "93:19": "ii pruned (bound 38)",
+  "93:20": "ii pruned (bound 38)",
+  "93:21": "ii pruned (bound 38)",
+  "93:22": "ii pruned (bound 38)",
+  "93:23": "ii pruned (bound 38)",
+  "93:24": "ii pruned (bound 38)",
+  "93:25": "ii pruned (bound 38)",
+  "93:26": "ii pruned (bound 38)",
+  "93:27": "ii pruned (bound 38)",
+  "93:28": "ii pruned (bound 38)",
+  "93:29": "ii pruned (bound 38)",
+  "93:30": "ii pruned (bound 38)",
+  "93:31": "ii pruned (bound 38)",
+  "93:32": "ii pruned (bound 38)",
+  "93:33": "ii pruned (bound 38)",
+  "93:34": "ii pruned (bound 38)",
+  "93:35": "ii pruned (bound 38)",
+  "93:36": "ii pruned (bound 38)",
+  "93:37": "ii pruned (bound 38)",
+  "93:38": "ii pruned (bound 38)",
+  "93:39": "ii pruned (bound 38)",
+  "93:40": "ii pruned (bound 38)",
+  "93:41": "ii pruned (bound 38)",
+  "93:42": "ii pruned (bound 38)",
+  "93:43": "ii pruned (bound 38)",
+  "93:44": "ii pruned (bound 38)",
+  "93:45": "ii pruned (bound 38)",
+  "93:46": "ii pruned (bound 38)",
+  "93:47": "ii pruned (bound 38)",
+  "93:48": "ii pruned (bound 38)",
+  "93:49": "ii pruned (bound 38)",
+  "93:50": "ii pruned (bound 38)",
+  "93:51": "ii pruned (bound 38)",
+  "93:52": "ii pruned (bound 38)",
+  "93:53": "ii pruned (bound 38)",
+  "93:54": "ii pruned (bound 38)",
+  "93:55": "ii pruned (bound 38)",
+  "93:56": "ii pruned (bound 38)",
+  "93:57": "ii pruned (bound 38)",
+  "93:58": "ii pruned (bound 38)",
+  "93:59": "ii pruned (bound 38)",
+  "262:1": "ii pruned (bound 38)",
+  "262:2": "ii pruned (bound 38)",
+  "262:3": "ii pruned (bound 38)",
+  "262:4": "ii pruned (bound 38)",
+  "262:5": "ii pruned (bound 38)",
+  "262:6": "ii pruned (bound 38)",
+  "262:7": "ii pruned (bound 38)",
+  "262:8": "ii pruned (bound 38)",
+  "262:9": "ii pruned (bound 38)",
+  "262:10": "ii pruned (bound 38)",
+  "262:11": "ii pruned (bound 38)",
+  "262:12": "ii pruned (bound 38)",
+  "262:13": "ii pruned (bound 38)",
+  "262:14": "ii pruned (bound 38)",
+  "262:15": "ii pruned (bound 38)",
+  "262:16": "ii pruned (bound 38)",
+  "262:17": "ii pruned (bound 38)",
+  "262:18": "ii pruned (bound 38)",
+  "262:19": "ii pruned (bound 38)",
+  "262:20": "ii pruned (bound 38)",
+  "262:21": "ii pruned (bound 38)",
+  "262:22": "ii pruned (bound 38)",
+  "262:23": "ii pruned (bound 38)",
+  "262:24": "ii pruned (bound 38)",
+  "262:25": "ii pruned (bound 38)",
+  "262:26": "ii pruned (bound 38)",
+  "262:27": "ii pruned (bound 38)",
+  "262:28": "ii pruned (bound 38)",
+  "262:29": "ii pruned (bound 38)",
+  "262:30": "ii pruned (bound 38)",
+  "262:31": "ii pruned (bound 38)",
+  "262:32": "ii pruned (bound 38)",
+  "262:33": "ii pruned (bound 38)",
+  "262:34": "ii pruned (bound 38)",
+  "262:35": "ii pruned (bound 38)",
+  "262:36": "ii pruned (bound 38)",
+  "262:37": "ii pruned (bound 38)",
+  "262:38": "ii pruned (bound 38)",
+  "262:39": "ii pruned (bound 38)",
+  "262:40": "ii pruned (bound 38)",
+  "262:41": "ii pruned (bound 38)",
+  "262:42": "ii pruned (bound 38)",
+  "262:43": "ii pruned (bound 38)",
+  "262:44": "ii pruned (bound 38)",
+  "262:45": "ii pruned (bound 38)",
+  "262:46": "ii pruned (bound 38)",
+  "262:47": "ii pruned (bound 38)",
+  "262:48": "ii pruned (bound 38)",
+  "262:49": "ii pruned (bound 38)",
+  "262:50": "ii pruned (bound 38)",
+  "262:51": "ii pruned (bound 38)",
+  "262:52": "ii pruned (bound 38)",
+  "262:53": "ii pruned (bound 38)",
+  "262:54": "ii pruned (bound 38)",
+  "262:55": "ii pruned (bound 38)",
+  "262:56": "ii pruned (bound 38)",
+  "262:57": "ii pruned (bound 38)",
+  "262:58": "ii pruned (bound 38)",
+  "262:59": "ii pruned (bound 38)",
+  "357:1": "ii pruned (bound 38)",
+  "357:2": "ii pruned (bound 38)",
+  "357:3": "ii pruned (bound 38)",
+  "357:4": "ii pruned (bound 38)",
+  "357:5": "ii pruned (bound 38)",
+  "357:6": "ii pruned (bound 38)",
+  "357:7": "ii pruned (bound 38)",
+  "357:8": "ii pruned (bound 38)",
+  "357:9": "ii pruned (bound 38)",
+  "357:10": "ii pruned (bound 38)",
+  "357:11": "ii pruned (bound 38)",
+  "357:12": "ii pruned (bound 38)",
+  "357:13": "ii pruned (bound 38)",
+  "357:14": "ii pruned (bound 38)",
+  "357:15": "ii pruned (bound 38)",
+  "357:16": "ii pruned (bound 38)",
+  "357:17": "ii pruned (bound 38)",
+  "357:18": "ii pruned (bound 38)",
+  "357:19": "ii pruned (bound 38)",
+  "357:20": "ii pruned (bound 38)",
+  "357:21": "ii pruned (bound 38)",
+  "357:22": "ii pruned (bound 38)",
+  "357:23": "ii pruned (bound 38)",
+  "357:24": "ii pruned (bound 38)",
+  "357:25": "ii pruned (bound 38)",
+  "357:26": "ii pruned (bound 38)",
+  "357:27": "ii pruned (bound 38)",
+  "357:28": "ii pruned (bound 38)",
+  "357:29": "ii pruned (bound 38)",
+  "357:30": "ii pruned (bound 38)",
+  "357:31": "ii pruned (bound 38)",
+  "357:32": "ii pruned (bound 38)",
+  "357:33": "ii pruned (bound 38)",
+  "357:34": "ii pruned (bound 38)",
+  "357:35": "ii pruned (bound 38)",
+  "357:36": "ii pruned (bound 38)",
+  "357:37": "ii pruned (bound 38)",
+  "357:38": "ii pruned (bound 38)",
+  "357:39": "ii pruned (bound 38)",
+  "357:40": "ii pruned (bound 38)",
+  "357:41": "ii pruned (bound 38)",
+  "357:42": "ii pruned (bound 38)",
+  "357:43": "ii pruned (bound 38)",
+  "357:44": "ii pruned (bound 38)",
+  "357:45": "ii pruned (bound 38)",
+  "357:46": "ii pruned (bound 38)",
+  "357:47": "ii pruned (bound 38)",
+  "357:48": "ii pruned (bound 38)",
+  "357:49": "ii pruned (bound 38)",
+  "357:50": "ii pruned (bound 38)",
+  "357:51": "ii pruned (bound 38)",
+  "357:52": "ii pruned (bound 38)",
+  "357:53": "ii pruned (bound 38)",
+  "357:54": "ii pruned (bound 38)",
+  "357:55": "ii pruned (bound 38)",
+  "357:56": "ii pruned (bound 38)",
+  "357:57": "ii pruned (bound 38)",
+  "357:58": "ii pruned (bound 38)",
+  "357:59": "ii pruned (bound 38)",
+  "364:1": "ii pruned (bound 38)",
+  "364:2": "ii pruned (bound 38)",
+  "364:3": "ii pruned (bound 38)",
+  "364:4": "ii pruned (bound 38)",
+  "364:5": "ii pruned (bound 38)",
+  "364:6": "ii pruned (bound 38)",
+  "364:7": "ii pruned (bound 38)",
+  "364:8": "ii pruned (bound 38)",
+  "364:9": "ii pruned (bound 38)",
+  "364:10": "ii pruned (bound 38)",
+  "364:11": "ii pruned (bound 38)",
+  "364:12": "ii pruned (bound 38)",
+  "364:13": "ii pruned (bound 38)",
+  "364:14": "ii pruned (bound 38)",
+  "364:15": "ii pruned (bound 38)",
+  "364:16": "ii pruned (bound 38)",
+  "364:17": "ii pruned (bound 38)",
+  "364:18": "ii pruned (bound 38)",
+  "364:19": "ii pruned (bound 38)",
+  "364:20": "ii pruned (bound 38)",
+  "364:21": "ii pruned (bound 38)",
+  "364:22": "ii pruned (bound 38)",
+  "364:23": "ii pruned (bound 38)",
+  "364:24": "ii pruned (bound 38)",
+  "364:25": "ii pruned (bound 38)",
+  "364:26": "ii pruned (bound 38)",
+  "364:27": "ii pruned (bound 38)",
+  "364:28": "ii pruned (bound 38)",
+  "364:29": "ii pruned (bound 38)",
+  "364:30": "ii pruned (bound 38)",
+  "364:31": "ii pruned (bound 38)",
+  "364:32": "ii pruned (bound 38)",
+  "364:33": "ii pruned (bound 38)",
+  "364:34": "ii pruned (bound 38)",
+  "364:35": "ii pruned (bound 38)",
+  "364:36": "ii pruned (bound 38)",
+  "364:37": "ii pruned (bound 38)",
+  "364:38": "ii pruned (bound 38)",
+  "364:39": "ii pruned (bound 38)",
+  "364:40": "ii pruned (bound 38)",
+  "364:41": "ii pruned (bound 38)",
+  "364:42": "ii pruned (bound 38)",
+  "364:43": "ii pruned (bound 38)",
+  "364:44": "ii pruned (bound 38)",
+  "364:45": "ii pruned (bound 38)",
+  "364:46": "ii pruned (bound 38)",
+  "364:47": "ii pruned (bound 38)",
+  "364:48": "ii pruned (bound 38)",
+  "364:49": "ii pruned (bound 38)",
+  "364:50": "ii pruned (bound 38)",
+  "364:51": "ii pruned (bound 38)",
+  "364:52": "ii pruned (bound 38)",
+  "364:53": "ii pruned (bound 38)",
+  "364:54": "ii pruned (bound 38)",
+  "364:55": "ii pruned (bound 38)",
+  "364:56": "ii pruned (bound 38)",
+  "364:57": "ii pruned (bound 38)",
+  "364:58": "ii pruned (bound 38)",
+  "364:59": "ii pruned (bound 38)",
+  "407:1": "ii pruned (bound 38)",
+  "407:2": "ii pruned (bound 38)",
+  "407:3": "ii pruned (bound 38)",
+  "407:4": "ii pruned (bound 38)",
+  "407:5": "ii pruned (bound 38)",
+  "407:6": "ii pruned (bound 38)",
+  "407:7": "ii pruned (bound 38)",
+  "407:8": "ii pruned (bound 38)",
+  "407:9": "ii pruned (bound 38)",
+  "407:10": "ii pruned (bound 38)",
+  "407:11": "ii pruned (bound 38)",
+  "407:12": "ii pruned (bound 38)",
+  "407:13": "ii pruned (bound 38)",
+  "407:14": "ii pruned (bound 38)",
+  "407:15": "ii pruned (bound 38)",
+  "407:16": "ii pruned (bound 38)",
+  "407:17": "ii pruned (bound 38)",
+  "407:18": "ii pruned (bound 38)",
+  "407:19": "ii pruned (bound 38)",
+  "407:20": "ii pruned (bound 38)",
+  "407:21": "ii pruned (bound 38)",
+  "407:22": "ii pruned (bound 38)",
+  "407:23": "ii pruned (bound 38)",
+  "407:24": "ii pruned (bound 38)",
+  "407:25": "ii pruned (bound 38)",
+  "407:26": "ii pruned (bound 38)",
+  "407:27": "ii pruned (bound 38)",
+  "407:28": "ii pruned (bound 38)",
+  "407:29": "ii pruned (bound 38)",
+  "407:30": "ii pruned (bound 38)",
+  "407:31": "ii pruned (bound 38)",
+  "407:32": "ii pruned (bound 38)",
+  "407:33": "ii pruned (bound 38)",
+  "407:34": "ii pruned (bound 38)",
+  "407:35": "ii pruned (bound 38)",
+  "407:36": "ii pruned (bound 38)",
+  "407:37": "ii pruned (bound 38)",
+  "407:38": "ii pruned (bound 38)",
+  "407:39": "ii pruned (bound 38)",
+  "407:40": "ii pruned (bound 38)",
+  "407:41": "ii pruned (bound 38)",
+  "407:42": "ii pruned (bound 38)",
+  "407:43": "ii pruned (bound 38)",
+  "407:44": "ii pruned (bound 38)",
+  "407:45": "ii pruned (bound 38)",
+  "407:46": "ii pruned (bound 38)",
+  "407:47": "ii pruned (bound 38)",
+  "407:48": "ii pruned (bound 38)",
+  "407:49": "ii pruned (bound 38)",
+  "407:50": "ii pruned (bound 38)",
+  "407:51": "ii pruned (bound 38)",
+  "407:52": "ii pruned (bound 38)",
+  "407:53": "ii pruned (bound 38)",
+  "407:54": "ii pruned (bound 38)",
+  "407:55": "ii pruned (bound 38)",
+  "407:56": "ii pruned (bound 38)",
+  "407:57": "ii pruned (bound 38)",
+  "407:58": "ii pruned (bound 38)",
+  "407:59": "ii pruned (bound 38)",
+  "492:1": "ii pruned (bound 38)",
+  "492:2": "ii pruned (bound 38)",
+  "492:3": "ii pruned (bound 38)",
+  "492:4": "ii pruned (bound 38)",
+  "492:5": "ii pruned (bound 38)",
+  "492:6": "ii pruned (bound 38)",
+  "492:7": "ii pruned (bound 38)",
+  "492:8": "ii pruned (bound 38)",
+  "492:9": "ii pruned (bound 38)",
+  "492:10": "ii pruned (bound 38)",
+  "492:11": "ii pruned (bound 38)",
+  "492:12": "ii pruned (bound 38)",
+  "492:13": "ii pruned (bound 38)",
+  "492:14": "ii pruned (bound 38)",
+  "492:15": "ii pruned (bound 38)",
+  "492:16": "ii pruned (bound 38)",
+  "492:17": "ii pruned (bound 38)",
+  "492:18": "ii pruned (bound 38)",
+  "492:19": "ii pruned (bound 38)",
+  "492:20": "ii pruned (bound 38)",
+  "492:21": "ii pruned (bound 38)",
+  "492:22": "ii pruned (bound 38)",
+  "492:23": "ii pruned (bound 38)",
+  "492:24": "ii pruned (bound 38)",
+  "492:25": "ii pruned (bound 38)",
+  "492:26": "ii pruned (bound 38)",
+  "492:27": "ii pruned (bound 38)",
+  "492:28": "ii pruned (bound 38)",
+  "492:29": "ii pruned (bound 38)",
+  "492:30": "ii pruned (bound 38)",
+  "492:31": "ii pruned (bound 38)",
+  "492:32": "ii pruned (bound 38)",
+  "492:33": "ii pruned (bound 38)",
+  "492:34": "ii pruned (bound 38)",
+  "492:35": "ii pruned (bound 38)",
+  "492:36": "ii pruned (bound 38)",
+  "492:37": "ii pruned (bound 38)",
+  "492:38": "ii pruned (bound 38)",
+  "492:39": "ii pruned (bound 38)",
+  "492:40": "ii pruned (bound 38)",
+  "492:41": "ii pruned (bound 38)",
+  "492:42": "ii pruned (bound 38)",
+  "492:43": "ii pruned (bound 38)",
+  "492:44": "ii pruned (bound 38)",
+  "492:45": "ii pruned (bound 38)",
+  "492:46": "ii pruned (bound 38)",
+  "492:47": "ii pruned (bound 38)",
+  "492:48": "ii pruned (bound 38)",
+  "492:49": "ii pruned (bound 38)",
+  "492:50": "ii pruned (bound 38)",
+  "492:51": "ii pruned (bound 38)",
+  "492:52": "ii pruned (bound 38)",
+  "492:53": "ii pruned (bound 38)",
+  "492:54": "ii pruned (bound 38)",
+  "492:55": "ii pruned (bound 38)",
+  "492:56": "ii pruned (bound 38)",
+  "492:57": "ii pruned (bound 38)",
+  "492:58": "ii pruned (bound 38)",
+  "492:59": "ii pruned (bound 38)",
+  "541:1": "ii pruned (bound 38)",
+  "541:2": "ii pruned (bound 38)",
+  "541:3": "ii pruned (bound 38)",
+  "541:4": "ii pruned (bound 38)",
+  "541:5": "ii pruned (bound 38)",
+  "541:6": "ii pruned (bound 38)",
+  "541:7": "ii pruned (bound 38)",
+  "541:8": "ii pruned (bound 38)",
+  "541:9": "ii pruned (bound 38)",
+  "541:10": "ii pruned (bound 38)",
+  "541:11": "ii pruned (bound 38)",
+  "541:12": "ii pruned (bound 38)",
+  "541:13": "ii pruned (bound 38)",
+  "541:14": "ii pruned (bound 38)",
+  "541:15": "ii pruned (bound 38)",
+  "541:16": "ii pruned (bound 38)",
+  "541:17": "ii pruned (bound 38)",
+  "541:18": "ii pruned (bound 38)",
+  "541:19": "ii pruned (bound 38)",
+  "541:20": "ii pruned (bound 38)",
+  "541:21": "ii pruned (bound 38)",
+  "541:22": "ii pruned (bound 38)",
+  "541:23": "ii pruned (bound 38)",
+  "541:24": "ii pruned (bound 38)",
+  "541:25": "ii pruned (bound 38)",
+  "541:26": "ii pruned (bound 38)",
+  "541:27": "ii pruned (bound 38)",
+  "541:28": "ii pruned (bound 38)",
+  "541:29": "ii pruned (bound 38)",
+  "541:30": "ii pruned (bound 38)",
+  "541:31": "ii pruned (bound 38)",
+  "541:32": "ii pruned (bound 38)",
+  "541:33": "ii pruned (bound 38)",
+  "541:34": "ii pruned (bound 38)",
+  "541:35": "ii pruned (bound 38)",
+  "541:36": "ii pruned (bound 38)",
+  "541:37": "ii pruned (bound 38)",
+  "541:38": "ii pruned (bound 38)",
+  "541:39": "ii pruned (bound 38)",
+  "541:40": "ii pruned (bound 38)",
+  "541:41": "ii pruned (bound 38)",
+  "541:42": "ii pruned (bound 38)",
+  "541:43": "ii pruned (bound 38)",
+  "541:44": "ii pruned (bound 38)",
+  "541:45": "ii pruned (bound 38)",
+  "541:46": "ii pruned (bound 38)",
+  "541:47": "ii pruned (bound 38)",
+  "541:48": "ii pruned (bound 38)",
+  "541:49": "ii pruned (bound 38)",
+  "541:50": "ii pruned (bound 38)",
+  "541:51": "ii pruned (bound 38)",
+  "541:52": "ii pruned (bound 38)",
+  "541:53": "ii pruned (bound 38)",
+  "541:54": "ii pruned (bound 38)",
+  "541:55": "ii pruned (bound 38)",
+  "541:56": "ii pruned (bound 38)",
+  "541:57": "ii pruned (bound 38)",
+  "541:58": "ii pruned (bound 38)",
+  "541:59": "ii pruned (bound 38)",
+  "590:1": "ii pruned (bound 38)",
+  "590:2": "ii pruned (bound 38)",
+  "590:3": "ii pruned (bound 38)",
+  "590:4": "ii pruned (bound 38)",
+  "590:5": "ii pruned (bound 38)",
+  "590:6": "ii pruned (bound 38)",
+  "590:7": "ii pruned (bound 38)",
+  "590:8": "ii pruned (bound 38)",
+  "590:9": "ii pruned (bound 38)",
+  "590:10": "ii pruned (bound 38)",
+  "590:11": "ii pruned (bound 38)",
+  "590:12": "ii pruned (bound 38)",
+  "590:13": "ii pruned (bound 38)",
+  "590:14": "ii pruned (bound 38)",
+  "590:15": "ii pruned (bound 38)",
+  "590:16": "ii pruned (bound 38)",
+  "590:17": "ii pruned (bound 38)",
+  "590:18": "ii pruned (bound 38)",
+  "590:19": "ii pruned (bound 38)",
+  "590:20": "ii pruned (bound 38)",
+  "590:21": "ii pruned (bound 38)",
+  "590:22": "ii pruned (bound 38)",
+  "590:23": "ii pruned (bound 38)",
+  "590:24": "ii pruned (bound 38)",
+  "590:25": "ii pruned (bound 38)",
+  "590:26": "ii pruned (bound 38)",
+  "590:27": "ii pruned (bound 38)",
+  "590:28": "ii pruned (bound 38)",
+  "590:29": "ii pruned (bound 38)",
+  "590:30": "ii pruned (bound 38)",
+  "590:31": "ii pruned (bound 38)",
+  "590:32": "ii pruned (bound 38)",
+  "590:33": "ii pruned (bound 38)",
+  "590:34": "ii pruned (bound 38)",
+  "590:35": "ii pruned (bound 38)",
+  "590:36": "ii pruned (bound 38)",
+  "590:37": "ii pruned (bound 38)",
+  "590:38": "ii pruned (bound 38)",
+  "590:39": "ii pruned (bound 38)",
+  "590:40": "ii pruned (bound 38)",
+  "590:41": "ii pruned (bound 38)",
+  "590:42": "ii pruned (bound 38)",
+  "590:43": "ii pruned (bound 38)",
+  "590:44": "ii pruned (bound 38)",
+  "590:45": "ii pruned (bound 38)",
+  "590:46": "ii pruned (bound 38)",
+  "590:47": "ii pruned (bound 38)",
+  "590:48": "ii pruned (bound 38)",
+  "590:49": "ii pruned (bound 38)",
+  "590:50": "ii pruned (bound 38)",
+  "590:51": "ii pruned (bound 38)",
+  "590:52": "ii pruned (bound 38)",
+  "590:53": "ii pruned (bound 38)",
+  "590:54": "ii pruned (bound 38)",
+  "590:55": "ii pruned (bound 38)",
+  "590:56": "ii pruned (bound 38)",
+  "590:57": "ii pruned (bound 38)",
+  "590:58": "ii pruned (bound 38)",
+  "590:59": "ii pruned (bound 38)",
+  "136:1": "ii tested",
+  "136:2": "ii tested",
+  "136:3": "ii tested",
+  "136:4": "ii tested",
+  "136:5": "ii tested",
+  "136:6": "ii tested",
+  "136:7": "ii tested",
+  "136:8": "ii tested",
+  "136:9": "ii tested",
+  "136:10": "ii tested",
+  "136:11": "ii tested",
+  "136:12": "ii tested",
+  "136:13": "ii tested",
+  "136:14": "ii tested",
+  "136:15": "ii tested",
+  "136:16": "ii tested",
+  "136:17": "ii tested",
+  "136:18": "ii tested",
+  "136:19": "ii tested",
+  "136:20": "ii tested",
+  "136:21": "ii tested",
+  "136:22": "ii tested",
+  "136:23": "ii tested",
+  "136:24": "ii tested",
+  "136:25": "ii tested",
+  "136:26": "ii tested",
+  "136:27": "ii tested",
+  "136:28": "ii tested",
+  "136:29": "ii tested",
+  "136:30": "ii tested",
+  "136:31": "ii tested",
+  "136:32": "ii tested",
+  "136:33": "ii tested",
+  "136:34": "ii tested",
+  "136:35": "ii tested",
+  "136:36": "ii tested",
+  "136:37": "ii tested",
+  "136:38": "ii tested",
+  "136:39": "ii tested",
+  "136:40": "ii tested",
+  "136:41": "ii tested",
+  "136:42": "ii tested",
+  "136:43": "ii tested",
+  "136:44": "ii tested",
+  "136:45": "ii tested",
+  "136:46": "ii tested",
+  "136:47": "ii tested",
+  "136:48": "ii tested",
+  "136:49": "ii tested",
+  "136:50": "ii tested",
+  "136:51": "ii tested",
+  "136:52": "ii tested",
+  "136:53": "ii tested",
+  "136:54": "ii tested",
+  "136:55": "ii tested",
+  "136:56": "ii tested",
+  "136:57": "ii tested",
+  "136:58": "ii tested",
+  "136:59": "ii tested"
+ },
+ "class_i_cpu": 151.8,
+ "class_ii_bounds": {
+  "20": 38,
+  "46": 38,
+  "64": 38,
+  "93": 38,
+  "136": 30,
+  "262": 38,
+  "357": 38,
+  "364": 38,
+  "407": 38,
+  "492": 38,
+  "541": 38,
+  "590": 38
+ },
+ "class_ii_pruned_caps": [
+  20,
+  46,
+  64,
+  93,
+  262,
+  357,
+  364,
+  407,
+  492,
+  541,
+  590
+ ],
+ "class_ii": {
+  "listed": 59,
+  "done": 59,
+  "last": [
+   136,
+   59
+  ],
+  "complete": true
+ },
+ "stats": {
+  "first_letters_tried": 59,
+  "first_letters_tested": 59,
+  "pairs_tried": 3363,
+  "b_caps_skipped": 55,
+  "triples_first_two": 0,
+  "first_letters_pruned": 649
+ },
+ "cpu": 1614.2
+}

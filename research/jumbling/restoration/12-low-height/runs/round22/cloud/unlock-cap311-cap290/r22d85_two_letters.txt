@@ -1,0 +1,8 @@
+START {"start": "stop", "u274": 3, "n2_n4_n6": [99314, 1085, 185], "off": 100584, "N": 130386, "digest": "015d839ecbb37bbdde74ae9391d5d7f274dea7fee4b4fdf0092d224eef907a1f"}
+STEP {"start": "stop", "letter": [124, 2], "u274": 0, "height6_poses_kept": true, "n2_n4_n6": [99314, 1085, 185], "off": 100584, "N": 130560, "digest": "4bcc39f3dd426588726c9107a5287e4b2bfb21035fc97c6ab6b68134ba6722d1"}
+STEP {"start": "stop", "letter": [274, 13], "n2_n4_n6": [98713, 992, 26], "off": 99731, "N": 130250, "digest": "bd44f887fa60da8b2d22ef69a8ea65a24a3c081a88c31df8c173992ed683bee4"}
+END {"start": "stop", "start_height6": 185, "their_heights": {"4": 159, "6": 26}, "lattice_pieces_off": 346}
+START {"start": "after R22D-75", "u274": 3, "n2_n4_n6": [103103, 1019, 172], "off": 104294, "N": 132702, "digest": "1ff0061fc5863c8ccbc1d734b003ff49afa5b58969b0031e51fd1e5cf1a07d81"}
+STEP {"start": "after R22D-75", "letter": [124, 2], "u274": 0, "height6_poses_kept": true, "n2_n4_n6": [103103, 1019, 172], "off": 104294, "N": 132876, "digest": "9a22729150ec96498cc0b77cd672829610c595b65c78b49a8b2881365d74f964"}
+STEP {"start": "after R22D-75", "letter": [274, 13], "n2_n4_n6": [102593, 926, 13], "off": 103532, "N": 132572, "digest": "c9cefc314def428f866dce5adc58f91abfec9e72dd98c0fb5253911c884b2125"}
+END {"start": "after R22D-75", "start_height6": 172, "their_heights": {"4": 159, "6": 13}, "lattice_pieces_off": 479}

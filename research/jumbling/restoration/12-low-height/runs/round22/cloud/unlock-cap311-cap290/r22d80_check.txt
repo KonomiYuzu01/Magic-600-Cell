@@ -1,0 +1,6 @@
+{"step": 1, "letter": [124, 2], "family": "U", "tau": 274, "u": 0, "n2_n4_n6": [103103, 1019, 172], "off": 104294, "N": 132876, "digest": "9a22729150ec96498cc0b77cd672829610c595b65c78b49a8b2881365d74f964"}
+{"step": 2, "letter": [274, 13], "family": "H6", "tau": 274, "u": 0, "n2_n4_n6": [102593, 926, 13], "off": 103532, "N": 132572, "digest": "c9cefc314def428f866dce5adc58f91abfec9e72dd98c0fb5253911c884b2125"}
+{"step": 3, "letter": [46, 1], "family": "U", "tau": 104, "u": 3, "n2_n4_n6": [102593, 926, 13], "off": 103532, "N": 132764, "digest": "7465613dc264b22906db4a49db527ff796bf22e4fa7e388ffc5d029976262384"}
+{"step": 4, "letter": [46, 3], "family": "U", "tau": 104, "u": 0, "n2_n4_n6": [102593, 926, 13], "off": 103532, "N": 132710, "digest": "198e936fb8fbe695748a5cdf00466fb72fa6b97b3cee5bac49488c63f8f95414"}
+{"step": 5, "letter": [104, 14], "family": "H6", "tau": 104, "u": 0, "n2_n4_n6": [102960, 936, 0], "off": 103896, "N": 132930, "digest": "bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299"}
+TARGET_HEIGHTS {4: 172} LATTICE_COLLATERAL 1052
