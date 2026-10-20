@@ -6,3 +6,15 @@
 {"rule": "conj", "twists": 3, "N_before": 132864, "N_after": 132846, "off_after": 107565, "sec": 5065}
 {"rule": "conj", "twists": 3, "N_before": 132846, "N_after": 132812, "off_after": 107565, "sec": 6156}
 {"rule": "conj", "twists": 3, "N_before": 132812, "N_after": 132718, "off_after": 107565, "sec": 7330}
+{"rule": "conj", "twists": 3, "N_before": 132718, "N_after": 132592, "off_after": 107565, "sec": 8402}
+{"rule": "conj", "twists": 3, "N_before": 132592, "N_after": 132554, "off_after": 107565, "sec": 9459}
+{"rule": "conj", "twists": 3, "N_before": 132554, "N_after": 132476, "off_after": 107565, "sec": 10540}
+{"rule": "conj", "twists": 3, "N_before": 132476, "N_after": 132458, "off_after": 107243, "sec": 11764}
+{"rule": "conj", "twists": 3, "N_before": 132458, "N_after": 132426, "off_after": 107243, "sec": 12815}
+{"rule": "conj", "twists": 3, "N_before": 132426, "N_after": 131940, "off_after": 106266, "sec": 13412}
+{"rule": "conj", "twists": 3, "N_before": 131940, "N_after": 131870, "off_after": 106266, "sec": 14011}
+{"rule": "conj", "twists": 3, "N_before": 131870, "N_after": 131786, "off_after": 105759, "sec": 14586}
+{"rule": "conj", "twists": 3, "N_before": 131786, "N_after": 131702, "off_after": 105437, "sec": 15241}
+{"rule": "conj", "twists": 3, "N_before": 131702, "N_after": 131578, "off_after": 105437, "sec": 15773}
+{"rule": "conj", "twists": 3, "N_before": 131578, "N_after": 131542, "off_after": 105437, "sec": 16298}
+{"run": "ia-k3000-s7305", "result": "time-limit", "twists": 103, "N_start": 133140, "N_now": 131542, "off_start": 107565, "off_now": 105437, "heights_end": {"2": 103140, "4": 2297}, "seconds": 22722.2}
