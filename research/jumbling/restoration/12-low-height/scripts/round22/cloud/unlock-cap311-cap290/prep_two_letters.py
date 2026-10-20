@@ -78,37 +78,45 @@ class Ctx:
                        if (clean is not None and c in clean) or (clean is None and self.cnt(int(c)) == 0))
         return sorted(out)
 
-    def trial(self, c, j):
-        """Apply (c, j) to a copy: None if not admissible and certain, else (state, keeps H6, max height, moved, u)."""
+    def trial(self, c, j, below=None):
+        """Apply (c, j) to a copy: None if not admissible and certain, else (state, keeps H6, max height, moved, u).
+        With below given, keeps H6 and max height are computed only when u < below (else None, None)."""
         t = clone(self.s)
         if not put(t, c, j):
             return None
-        mv = self.moved(c); h = heights(t)
-        keep = int((h == 6).sum()) == len(self.six) and keys(t, self.six) == self.sixkeys
+        mv = self.moved(c)
         rest = len(set(self.B.tolist()) - set(mv.tolist()))
-        return t, keep, int(h.max()), mv, rest + len(strad_among(t, mv, self.tau))
+        u = rest + len(strad_among(t, mv, self.tau))
+        if below is not None and u >= below:
+            return t, None, None, mv, u
+        h = heights(t)
+        keep = int((h == 6).sum()) == len(self.six) and keys(t, self.six) == self.sixkeys
+        return t, keep, int(h.max()), mv, u
 
     def after(self, t, c, mv):
         return Ctx(t, self.L, np.union1d(self.D, mv), self.tau, self.six, self.sixkeys)
 
 
 def seconds(x, u0, stats):
-    """Every b at x (the state after the first letters) that keeps H6, max height <= 6 and u < u0."""
-    found = []
+    """Every b at x (the state after the first letters) that keeps H6, max height <= 6 and u < u0; also the lowest u
+    after any admissible b (whatever its H6 status), in stats['last_min_u']."""
+    found = []; low = None
     for c in x.clean_holders:
         whole = int((x.R[:, c] == 1).sum())
         if whole <= x.u - u0:
             stats['b_caps_skipped'] += 1; continue
         for j in range(1, 60):
             stats['pairs_tried'] += 1
-            r = x.trial(c, j)
+            r = x.trial(c, j, below=u0)
             if r is None:
                 continue
             t, keep, mh, mv, u = r
+            low = u if low is None else min(low, u)
             if keep and mh <= 6 and u < u0:
                 assert u == len(E.straddler_set(t, x.tau))
                 assert np.isin(np.flatnonzero(E.stable_pose(x.s) != E.stable_pose(t)), mv).all()
                 found.append(dict(letter=[c, j], u=u, **snapshot(t)))
+    stats['last_min_u'] = low
     return found
 
 
@@ -127,7 +135,7 @@ def first(x, c, j, u0, stats, record, cls, three):
         return 'defer'
     stats['first_letters_tested'] += 1
     got = seconds(y, u0, stats)
-    row = dict(a=[c, j], cls=cls, u_after_a=u, new_pairs=len(new_pairs), newly_clean=newly_clean,
+    row = dict(a=[c, j], cls=cls, u_after_a=u, min_u_after_b=stats.pop('last_min_u'), new_pairs=len(new_pairs), newly_clean=newly_clean,
                clean_holders_after_a=y.clean_holders, accepted=got, cpu=cpu())
     emit('FIRST', **row)
     record['firsts'].append(row)
@@ -176,7 +184,7 @@ def main():
     rest = [c for c in clean if c not in ci]
     emit('START', tau=tau, u=u0, shard=shard, clean_caps=len(clean), holders=x.holders, clean_holders=x.clean_holders,
          blocked_holders={c: x.cnt(c) for c in x.blocked_holders}, class_i_caps=ci, cpu=cpu(), **snapshot(s, h))
-    stats = dict(first_letters_tried=0, first_letters_tested=0, pairs_tried=0, b_caps_skipped=0, triples_first_two=0)
+    stats = dict(first_letters_tried=0, last_min_u=None, first_letters_tested=0, pairs_tried=0, b_caps_skipped=0, triples_first_two=0)
     record = dict(start=start, prefix=word, digest=expect, tau=tau, u0=u0, shard=shard, budget=budget, three=three,
                   class_i_caps=ci, firsts=[], pairs=[], triples=[], outcomes={})
     deferred = []
