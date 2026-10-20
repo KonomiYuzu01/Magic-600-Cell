@@ -1,0 +1,82 @@
+diff --git a/tests/test_codex_implement.py b/tests/test_codex_implement.py
+index 5aad49b..b25049e 100644
+--- a/tests/test_codex_implement.py
++++ b/tests/test_codex_implement.py
+@@ -304,6 +304,9 @@ class ImplementTests(WrapperFixture):
+             self.assertIn(flag, cmd)
+         if os.name == "nt":
+             self.assertIn('windows.sandbox="unelevated"', cmd)  # otherwise Codex falls back to read-only
++        after_exec = cmd[cmd.index("exec") + 1:]
++        for feature in ("plugins", "apps", "remote_plugin", "skill_mcp_dependency_install"):  # no plugin or connector MCP servers
++            self.assertIn(["--disable", feature], [after_exec[i:i + 2] for i in range(len(after_exec) - 1)])
+         for forbidden in ("--add-dir", "--dangerously-bypass-approvals-and-sandbox", "--worktree", "resume"):
+             self.assertNotIn(forbidden, cmd)
+         self.assertEqual(seen["env"]["PYTHONDONTWRITEBYTECODE"], "1")
+diff --git a/tests/test_codex_review.py b/tests/test_codex_review.py
+index d635724..905bf32 100644
+--- a/tests/test_codex_review.py
++++ b/tests/test_codex_review.py
+@@ -284,6 +284,22 @@ class CodexReviewTests(unittest.TestCase):
+         self.assertIn("Review only.", seen["prompt"])
+         self.assertIn("follow-up work", seen["prompt"])
+ 
++    def test_every_model_call_disables_plugins_connectors_and_skill_mcp(self):
++        seen = []
++        original = codex_review.run_codex
++        codex_review.run_codex = lambda cmd, prompt, timeout, env=None: (seen.append(cmd), (1, "", ""))[1]
++        try:
++            for kind in ("plan", "review"):
++                self.run_wrapper("pass", "--kind", kind)
++        finally:
++            codex_review.run_codex = original
++        self.assertEqual(len(seen), 2)
++        for cmd in seen:
++            after_exec = cmd[cmd.index("exec") + 1:]
++            pairs = [after_exec[i:i + 2] for i in range(len(after_exec) - 1)]
++            for feature in ("plugins", "apps", "remote_plugin", "skill_mcp_dependency_install"):
++                self.assertIn(["--disable", feature], pairs)  # account plugins and hosted connectors start MCP servers
++
+ 
+ class TimeoutTest(unittest.TestCase):
+     def test_windows_timeout_taskkill_uses_filtered_environment(self):
+diff --git a/tools/agents/codex_review.py b/tools/agents/codex_review.py
+index e39e3e7..b58d8f6 100644
+--- a/tools/agents/codex_review.py
++++ b/tools/agents/codex_review.py
+@@ -71,6 +71,14 @@ SUBSCRIPTION_OVERRIDES = ["-c", 'model_provider="openai"', "-c", 'forced_login_m
+ # sandbox backend must then be named, or Codex falls back to a mode that rejects every command, even file reads.
+ # The unelevated backend needs no administrator setup; it enforces filesystem boundaries but not a network firewall.
+ USER_CONFIG_ISOLATION = ["--ignore-user-config"] + (["-c", 'windows.sandbox="unelevated"'] if os.name == "nt" else [])
++# The user config is not the only source of MCP servers. Codex 0.159 turns these features on by default: with a ChatGPT
++# sign-in, `plugins` loads the plugins installed on the account (listed by the ChatGPT backend and cached under
++# CODEX_HOME/plugins) and starts their MCP servers outside the sandbox; `apps` connects the hosted ChatGPT connector
++# MCP endpoint; `skill_mcp_dependency_install` adds the MCP servers that a mentioned skill declares. Disabling
++# `remote_plugin` alone leaves installed plugins running. --disable rejects an unknown name, so a renamed feature fails
++# the call instead of being skipped silently.
++ISOLATED_FEATURES = ("plugins", "apps", "remote_plugin", "skill_mcp_dependency_install")
++MCP_ISOLATION = [arg for feature in ISOLATED_FEATURES for arg in ("--disable", feature)]
+ # Anchored to the CLI's own warning line: file contents Codex reads also appear in its log.
+ TIER_DROPPED_RE = re.compile(r"^warning: Configured service tier `[^`]+` is not advertised", re.M)
+ 
+@@ -385,8 +393,8 @@ def child_env() -> dict:
+ 
+ 
+ def implement_command(base_cmd: list[str], args, wt: Path, out_dir: Path) -> list[str]:
+-    cmd = [*base_cmd, "exec", *USER_CONFIG_ISOLATION, "-m", args.model, "-c", f'model_reasoning_effort="{args.effort}"',
+-           "-c", f'service_tier="{SPEEDS[args.speed]}"', *SUBSCRIPTION_OVERRIDES,
++    cmd = [*base_cmd, "exec", *USER_CONFIG_ISOLATION, *MCP_ISOLATION, "-m", args.model,
++           "-c", f'model_reasoning_effort="{args.effort}"', "-c", f'service_tier="{SPEEDS[args.speed]}"', *SUBSCRIPTION_OVERRIDES,
+            "-c", "sandbox_workspace_write.writable_roots=[]", "-c", "sandbox_workspace_write.network_access=false"]
+     for key, value in child_env().items():
+         if key == "PYTHONDONTWRITEBYTECODE" or key.startswith("GIT_CONFIG_"):
+@@ -647,8 +655,8 @@ def main(argv=None) -> int:
+             called = True
+             return run_implement(args, record, call_id, out_dir, base_cmd, packet_text, contract, wt, base, paths)
+         with tempfile.TemporaryDirectory() as td:
+-            cmd = [*base_cmd, "exec", *USER_CONFIG_ISOLATION, "-m", args.model, "-c", f'model_reasoning_effort="{args.effort}"',
+-                   "-c", f'service_tier="{SPEEDS[args.speed]}"', *SUBSCRIPTION_OVERRIDES]
++            cmd = [*base_cmd, "exec", *USER_CONFIG_ISOLATION, *MCP_ISOLATION, "-m", args.model,
++                   "-c", f'model_reasoning_effort="{args.effort}"', "-c", f'service_tier="{SPEEDS[args.speed]}"', *SUBSCRIPTION_OVERRIDES]
+             cmd += ["--sandbox", "read-only", "--output-schema", str(strict_schema_file(Path(td))),
+                     "-o", str(out_dir / "review.json"), "-"]
+             called = True

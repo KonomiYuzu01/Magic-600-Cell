@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-20] update | Codex wrapper calls start the account's plugin MCP servers
+Signed in with ChatGPT, codex-cli 0.159.0 loads the plugins installed on the account and connects the hosted connector endpoint in every wrapper call, so the 2026-09-30 entry overstated what `--ignore-user-config` isolates. The harness, the results and the proposed `--disable` flags are in [codex-mcp-isolation](evidence/codex-mcp-isolation.md); the wrapper change waits for the Codex plan check and review.
+
 ## [2026-10-17] decision | Jumbling: coverage census and low-height theorem (provisional)
 After the first scramble experiments ([scramble census](../../research/jumbling/restoration/11-scramble-census/README.md)) the owner chose, provisionally, option A (a measured coverage census of the method on random scrambles and a manual of its techniques) with option B (a completeness theorem for low heights, aimed at the residues the census leaves); further work on the strong form of gap M1 is not pursued for now ([decision](decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)).
 
