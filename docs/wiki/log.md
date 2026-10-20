@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-20] decision | Jumbling: the complete tutorial is illustrated and every macro expands
+The owner set the content of the complete tutorial: detailed illustrations, and every macro and formula given in full and expandable down to single twists ([owner-decisions-2026-10-20-tutorial-acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), section "Content of the complete tutorial"). Each step is shown as a tree of named parts with their lengths; the runner records the tree of every step, and the checker checks that it expands to exactly the word replayed.
+
 ## [2026-10-20] decision | Jumbling: two readings of the tutorial acceptance test
 The owner accepted two readings of the acceptance test ([owner-decisions-2026-10-20-tutorial-acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), section "Two readings"): the independent checker shares only the definition of the puzzle with the runner (model assets, simulator, I_a menu, scramble, trees, cut geometry), no runner, rule, gate, player or verifier code; and the tutorial goes through its chapters in a fixed order without returning, each chapter starting where the previous one finds no step, every rule within a chapter reading only the current state. The runner leaves out the bulk rule reopen, which reads the solver's own earlier twists and never fired first in the census.
 

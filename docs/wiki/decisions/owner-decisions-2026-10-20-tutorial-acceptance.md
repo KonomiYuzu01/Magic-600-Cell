@@ -12,6 +12,7 @@ claims:
   - {id: tutorial-acceptance-pass, evidence_kind: decision, checked_at: 2026-10-20}
   - {id: tutorial-acceptance-checker-sharing, evidence_kind: decision, checked_at: 2026-10-20}
   - {id: tutorial-acceptance-phases, evidence_kind: decision, checked_at: 2026-10-20}
+  - {id: tutorial-content-illustrated-expandable, evidence_kind: decision, checked_at: 2026-10-20}
 ---
 
 # Owner decision, 20 October 2026: the acceptance test of the machine-followable tutorial
@@ -82,6 +83,17 @@ Integrator default under item 3: the bulk rule reopen (U7 of the
 [restoration theory](../../../research/jumbling/theory/restoration.md), section 3) reads the solver's own earlier
 twists, not only the current state, so the runner leaves it out of its bulk phase. It never found the next step first
 in any census run ([stage 11](../../../research/jumbling/restoration/11-scramble-census/README.md)).
+
+## Content of the complete tutorial (owner, 20 October 2026)
+
+The complete tutorial has detailed illustrations, and every macro and formula it uses is given in full and can be
+expanded down to single twists. Integrator reading: each step of the tutorial is shown as a tree of named parts (for
+example V, W and V⁻¹ of a closure, a seed and its conjugators, an orbit of the lattice cascade, a correction macro),
+each part with its length, and every part expands to its parts and finally to the twists played. Long steps are shown
+this way, folded, not as flat lists: at the depth 40 stop of seed 7101, E2's 13 literal steps total 2,012,155 twists and
+the lattice phase after them 162,994,641 ([stage 12](../../../research/jumbling/restoration/12-low-height/README.md)).
+The runner records the tree of every step it takes, and the checker checks that the tree expands to exactly the word it
+replays.
 
 ## Effect
 

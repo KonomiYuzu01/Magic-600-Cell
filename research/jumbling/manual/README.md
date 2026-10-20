@@ -5,7 +5,9 @@ of the techniques the restoration method uses, written for a person
 ([decision](../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md)). Chapters 1 and 2 cover
 what the scramble census measured, chapter 3 is an outline of research still under way, and chapter 4 is a draft of
 the lattice phase. The pictures will be added when the program can draw them; until then each technique says what
-the solver looks at.
+the solver looks at. The complete tutorial will have detailed illustrations and every macro and formula in full,
+expandable down to single twists (owner, 20 October 2026,
+[decision](../../../docs/wiki/decisions/owner-decisions-2026-10-20-tutorial-acceptance.md)).
 
 The manual is for a person who solves the jumbled puzzle in the program. It assumes the retained puzzle (the
 ordinary 600-cell, whose twists keep every piece in a slot) and no mathematics beyond it. Where a claim rests on a
