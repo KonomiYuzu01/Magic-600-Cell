@@ -201,7 +201,7 @@ try:
             if set(ins.tolist()) & fourset:
                 continue
             was_clean, ins0 = S0[hcap]
-            if was_clean and np.array_equal(ins0, ins) and np.array_equal(s.pose_id[ins], t.pose_id[ins]):
+            if was_clean and np.array_equal(ins0, ins) and keys(s, ins.tolist()) == keys(t, ins.tolist()):
                 continue                                       # unchanged clean cap: exact prune
             vec = []
             for i in range(1, 60):
