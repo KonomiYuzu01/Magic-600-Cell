@@ -113,9 +113,79 @@ End: **STUCK** after 4 letters (all U), cpu 607.5 s: τ = 482, u = 1, (n2, n4, n
 N = 133,668, the same target table. No L4 or L2 letter exists at that state (562 of the 600 caps blocked, 11 cap bound
 prunes).
 
-## Step 4: two-letter U steps at 6999b921
+## Step 4, round 1: two-letter U steps at 6999b921
 
-In progress (see the next update).
+Script `two_letter_u.py` (sha256 at the end of this file is for the final version; the runs below used it with the
+changes stated). Commands: `two_letter_u.py --snapshot <dir>/h4-end-1.pkl --expect 6999b921… --shard i --nshards 3
+--cpu 12000 [--from-index k]` for i = 0, 1, 2. Outputs `two_letter_u_shard{0,1,2}_part{1,2,3}.txt`.
+
+What a pair is: first letter (c, j) at a cap c that is clean at the state and holds no height-4 piece, admissible
+and certain, no height above 4, n4 and every height-4 pose kept; second letter (h, i) at the intermediate state t
+under the same conditions; success when u after the pair is strictly below u before it. The pair's end therefore
+satisfies every condition of a U letter.
+
+Exact prune of second letters. Only the pieces inside a letter's cap move, so a second letter lowers u only if its
+cap h holds a straddler of τ whole at t. If h is clean at both the state and t and holds the same pieces in the same
+poses at both, the second letter moves the same pieces in the same way at both, so u(pair) = u(t) + u_s(h, i) − u,
+where u_s(h, i) is u after (h, i) alone at the state; and u_s(h, i) ≥ u because H4-unlock's single-letter U family
+is exhausted there (h was one of its candidates), while u(t) ≥ u for every valid first letter (a first letter that
+moves a straddler of τ was a U candidate itself; one that moves none cannot remove one). So only caps h that hold a
+straddler of τ whole at t, are clean at t, hold no height-4 piece at t, and were blocked at the state or changed
+content are tried, with all 59 items each, every one applied on a copy.
+
+Context at 6999b921: τ = 482, u = 1, the one straddler is piece 2492. It is held whole by caps 513, 529, 547, 555,
+562, 564, 580, 585 (all blocked, with 226, 185, 329, 345, 160, 80, 366, 291 straddlers of their own, 1,550 distinct)
+and 593 (clean). 38 caps are clean; 35 of them hold no height-4 piece and are the first-letter caps. Class A (caps
+that hold whole a straddler of a blocked holder) = 357, 370, 541, 552, 590, 591, 593; class B = the other 28.
+
+Enumerated: all 35 × 59 = 2,065 first letters, every one of them (indices 0 to 2,064, each exactly once across the
+three shards and three parts), and for each valid one every item of every second cap the prune keeps.
+
+- 1,825 first letters are valid (365 in class A, 1,460 in class B); 240 are not.
+- No first letter frees a blocked holder (for every class A letter, every blocked holder still has a straddler).
+- 250 pairs succeed, all with the second letter at cap 593 and all ending at u = 0; their first letters are 128
+  letters at caps 541 (31), 552 (26), 590 (23) and 591 (48). No class B first letter gives a success.
+- Chosen pair (no freeing letter exists, so the first success in (grip, item) order): **(541, 2), (593, 54)**, end
+  digest `391490f78b2fe76ea07cede387bf335f76d34885c47a7aa0c09ebc8ad3d27da8`, (n2, n4, n6) = (103,282, 936, 0),
+  104,218 off, N = 133,834, u = 0 at τ = 482.
+
+Run history (cloud timings of research code, not performance evidence): part 1 (indices 0 to 138) ended when the
+container restarted after about 33 CPU minutes per shard; part 2 resumed at 139 with `--from-index` and was stopped by
+PID at about 90 CPU minutes per shard (indices up to 510) after I found that the unchanged-content prune compared
+pose ids, which the simulator can renumber, so it never fired: every class B letter of part 2 tested cap 593 in full
+(97 letters; all their vectors equal the single-letter vector at the state, so no result changes). The prune was
+changed to compare pose keys and part 3 (indices 511 to 2,064) took about 770 CPU s per shard.
+
+## Step 3 again: H4-unlock run 2 from the pair's end
+
+Command: `h4_unlock.py --snapshot <dir>/h4-end-1.pkl --prefix '[[541,2],[593,54]]' --cpu 14400 --save-end
+<dir>/h4-end-2.pkl` (output `h4_unlock_run2.txt`; a first attempt passed the snapshot's digest to `--expect`, which
+the script checks after the prefix, and stopped at the assertion: `h4_unlock_run2_expect_misuse.txt`).
+
+Start at `391490f7…`: τ = 482 (k = 284), u = 0, the same target table as in run 1.
+
+| step | family | letter | τ | u | (n2, n4, n6) | off | N | end digest | cpu s |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | L4 | (482, 15) | 597 | 41 | (102,750, 734, 0) | 103,484 | 133,558 | `c312a2fcb7f2a502908f71b2d9acee8cb9868fb63930b4949483ee5061e830d1` | 56.7 |
+
+(482, 15) lowers n4 by 202 (936 → 734) and n2 by 532 (103,282 → 102,750); the number of pieces on the lattice rises by
+734 (off 104,218 → 103,484). New target table (cap, k): (12, 121), (34, 2), (65, 118), (71, 13), (94, 13), (140, 13),
+(142, 13), (171, 67), (180, 13), (181, 13), (206, 48), (299, 49), (388, 45), (482, 82), (517, 178), (554, 82),
+(597, 205); τ = 597, u = 41.
+
+End: **STUCK** after 1 letter, cpu 99.2 s: no clean cap holds a straddler of 597 whole (no U_ITEMS line), and no L4
+or L2 letter exists (563 caps blocked, 11 cap bound prunes).
+
+## Step 4, round 2: two-letter U steps at c312a2fc
+
+Command: `two_letter_u.py --snapshot <dir>/h4-end-2.pkl --expect c312a2fc… --shard i --nshards 3 --cpu 12000`.
+Context: τ = 597, u = 41 (41 straddlers). Holders: caps 535, 566, 567, 569, 576, 578, 583, 587, 588, 595, all
+blocked, with 2, 76, 321, 96, 462, 320, 416, 137, 369, 229 straddlers of their own (1,932 distinct). 37 caps are
+clean; 33 are first-letter caps; class A = 407, 471, 492, 523, 533, 553, 590, 591; 1,947 first letters. Since no
+clean cap holds a straddler of τ whole, no first letter moves one, and every holder of an original straddler is
+blocked at the state, a success needs a first letter that frees a blocked holder (only class A letters can).
+
+In progress.
 
 ## Open questions
 
