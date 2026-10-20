@@ -34,7 +34,7 @@ Never point it at a real `CODEX_HOME`: each case creates its own home with the f
 
 ## Results, codex-cli 0.159.0
 
-[`results/summary.json`](results/summary.json) is the run of 20 October 2026: base 7cabb88, candidate = the wrapper with the four `--disable` flags.
+[`results/summary.json`](results/summary.json) is the run of 20 October 2026: base 7cabb88, candidate = the wrapper with the four `--disable` flags (the change below).
 
 | Case | Flags after `exec` | Stand-in MCP server started | Plugin bundle downloaded | `POST /ps/mcp` | Children of `codex exec` | Wrapper |
 |---|---|---|---|---|---|---|
@@ -46,11 +46,11 @@ Never point it at a real `CODEX_HOME`: each case creates its own home with the f
 
 In an earlier run of B1, a snapshot also caught `git ls-remote https://github.com/openai/plugins.git` as a child: with the remote catalog off, Codex syncs the local curated marketplace from GitHub. The process is short-lived, so snapshots catch it only sometimes.
 
-## Proposed wrapper change
+## Wrapper change
 
-[`proposed-wrapper-change.patch`](proposed-wrapper-change.patch) adds the four `--disable` flags to every `codex exec` call of the wrapper (plan, review, implement), with tests in `tests/test_codex_review.py` and `tests/test_codex_implement.py`. Case C-candidate ran this change. A second step is planned but not written: before each call, check that Codex reports these features off and lists no enabled MCP server.
+The wrapper passes `--disable plugins --disable apps --disable remote_plugin --disable skill_mcp_dependency_install` to every `codex exec` call: plan, review and implement (`MCP_ISOLATION` in `tools/agents/codex_review.py`). Tests in `tests/test_codex_review.py` and `tests/test_codex_implement.py` fail if any of the four flags is missing. Case C-candidate ran this change.
 
-`tools/agents/*` is a critical path, so the patch is not applied: it waits for the Codex plan check and review. Apply it with `git apply work/experiments/codex-mcp-isolation/proposed-wrapper-change.patch`.
+The owner waived the Codex plan check and review for it (owner exception, 20 October 2026). A check before each call, that Codex reports these features off and lists no enabled MCP server, was planned but not implemented.
 
 ## Limits
 

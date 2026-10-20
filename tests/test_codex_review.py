@@ -284,6 +284,22 @@ class CodexReviewTests(unittest.TestCase):
         self.assertIn("Review only.", seen["prompt"])
         self.assertIn("follow-up work", seen["prompt"])
 
+    def test_every_model_call_disables_plugins_connectors_and_skill_mcp(self):
+        seen = []
+        original = codex_review.run_codex
+        codex_review.run_codex = lambda cmd, prompt, timeout, env=None: (seen.append(cmd), (1, "", ""))[1]
+        try:
+            for kind in ("plan", "review"):
+                self.run_wrapper("pass", "--kind", kind)
+        finally:
+            codex_review.run_codex = original
+        self.assertEqual(len(seen), 2)
+        for cmd in seen:
+            after_exec = cmd[cmd.index("exec") + 1:]
+            pairs = [after_exec[i:i + 2] for i in range(len(after_exec) - 1)]
+            for feature in ("plugins", "apps", "remote_plugin", "skill_mcp_dependency_install"):
+                self.assertIn(["--disable", feature], pairs)  # account plugins and hosted connectors start MCP servers
+
 
 class TimeoutTest(unittest.TestCase):
     def test_windows_timeout_taskkill_uses_filtered_environment(self):

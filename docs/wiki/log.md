@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-20] decision | Wrapper calls disable Codex plugins and connectors (owner exception)
+Every wrapper call now passes `--disable` for `plugins`, `apps`, `remote_plugin` and `skill_mcp_dependency_install`, so no plugin or connector MCP server starts in a wrapper call ([codex-mcp-isolation](evidence/codex-mcp-isolation.md)). The owner waived the Codex plan check and review for this change; the planned pre-call check was not implemented.
+
 ## [2026-10-20] update | Codex wrapper calls start the account's plugin MCP servers
 Signed in with ChatGPT, codex-cli 0.159.0 loads the plugins installed on the account and connects the hosted connector endpoint in every wrapper call, so the 2026-09-30 entry overstated what `--ignore-user-config` isolates. The harness, the results and the proposed `--disable` flags are in [codex-mcp-isolation](evidence/codex-mcp-isolation.md); the wrapper change waits for the Codex plan check and review.
 

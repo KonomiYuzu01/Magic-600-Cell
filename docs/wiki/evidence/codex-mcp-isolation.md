@@ -1,16 +1,16 @@
 ---
 id: codex-mcp-isolation
 type: evidence
-status: draft
+status: verified
 visibility: public
-summary: Signed in with ChatGPT, codex-cli 0.159.0 starts the MCP servers of the plugins installed on the account and connects the hosted ChatGPT connector endpoint in every wrapper call, despite --ignore-user-config. In a local harness, --disable plugins and --disable apps stop both and the review still succeeds. The wrapper change that passes them waits for the Codex plan check and review.
+summary: Signed in with ChatGPT, codex-cli 0.159.0 starts the MCP servers of the plugins installed on the account and connects the hosted ChatGPT connector endpoint in every wrapper call, despite --ignore-user-config. In a local harness, --disable plugins and --disable apps stop both and the review still succeeds. The wrapper now passes them, with remote_plugin and skill_mcp_dependency_install, under an owner exception to the Codex review.
 related: [development-loop, owner-decisions-2026-09-30]
 supersedes: []
 claims:
   - {id: harness-results, evidence_kind: fixture, path: work/experiments/codex-mcp-isolation/results/summary.json, sha256: 58057406e7649bc34a4ebd3897f0a32559e2d64e3ce535cd8ce6b30d2ce6e077, checked_at: 2026-10-20}
-  - {id: harness-method, evidence_kind: fixture, path: work/experiments/codex-mcp-isolation/README.md, sha256: 4b3a2203b43661300c62a80ced12cbfef5e0f73d76c4bb6551a289f0c9e2ad2f, checked_at: 2026-10-20}
-  - {id: proposed-change, evidence_kind: source, path: work/experiments/codex-mcp-isolation/proposed-wrapper-change.patch, sha256: aa71ebd47872d37a0e58efaa3cd1b6104eda4e21620c5b38da279924ed3834e5, checked_at: 2026-10-20}
-  - {id: wrapper-ignores-only-user-config, evidence_kind: source, path: tools/agents/codex_review.py, line: 73, sha256: 1ec3b8802fdfb8f4f16ab0bcd19409f9fed6f2eb3dea2e383f91ab7f96750af6, checked_at: 2026-10-20}
+  - {id: harness-method, evidence_kind: fixture, path: work/experiments/codex-mcp-isolation/README.md, sha256: f7dc1f476fdef6d73ca0cc82674b8d691cbed2c1af05d66059aec14bb8832a09, checked_at: 2026-10-20}
+  - {id: wrapper-disables-features, evidence_kind: source, path: tools/agents/codex_review.py, line: 80, sha256: f588f94cf0ab9e8450f593f02c6a612143aca83bc22c90253d240d37b8647abb, checked_at: 2026-10-20}
+  - {id: tests-require-the-flags, evidence_kind: fixture, path: tests/test_codex_review.py, sha256: 8adf3edc2c184d0c18fbc959ce36ae390ec24ebd606a63ad113f6d99032937d9, checked_at: 2026-10-20}
 ---
 
 # Codex MCP isolation
@@ -47,11 +47,13 @@ This comes from a static read of its public bundle (openai/plugins 0722921d, plu
 
 Other curated plugins, such as figma, github, gmail and linear, declare remote HTTP MCP servers. When enabled on the account, they would connect from the machine without any local process.
 
-## Proposed change
+## Wrapper change
 
-The [proposed patch](../../../work/experiments/codex-mcp-isolation/proposed-wrapper-change.patch) makes every `codex exec` call of the wrapper pass four flags: `--disable plugins`, `--disable apps`, `--disable remote_plugin` and `--disable skill_mcp_dependency_install`. `--disable` rejects an unknown feature name, so a renamed feature makes the call fail instead of being skipped silently. A check before each call is also planned: it confirms that Codex reports these features off and lists no enabled MCP server.
+Every `codex exec` call of the wrapper (plan, review, implement) passes four flags: `--disable plugins`, `--disable apps`, `--disable remote_plugin` and `--disable skill_mcp_dependency_install` (`MCP_ISOLATION` in `tools/agents/codex_review.py`). The tests in `tests/test_codex_review.py` and `tests/test_codex_implement.py` fail if any flag is missing. `--disable` rejects an unknown feature name, so a renamed feature makes the call fail instead of being skipped silently.
 
-The wrapper is a critical path, so the patch waits for the Codex plan check and review. Until it lands, every wrapper call on a machine signed in with ChatGPT starts the MCP servers of the plugins enabled on that account.
+The owner waived the Codex plan check and review for this change on 20 October 2026 (owner exception). A check before each call, that Codex reports these features off and lists no enabled MCP server, was planned but not implemented.
+
+The flags isolate wrapper calls only. Codex sessions started outside the wrapper, such as the Codex app or a plain `codex` command, still load the plugins enabled on the account.
 
 ## Rechecking
 

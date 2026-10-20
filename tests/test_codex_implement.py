@@ -304,6 +304,9 @@ class ImplementTests(WrapperFixture):
             self.assertIn(flag, cmd)
         if os.name == "nt":
             self.assertIn('windows.sandbox="unelevated"', cmd)  # otherwise Codex falls back to read-only
+        after_exec = cmd[cmd.index("exec") + 1:]
+        for feature in ("plugins", "apps", "remote_plugin", "skill_mcp_dependency_install"):  # no plugin or connector MCP servers
+            self.assertIn(["--disable", feature], [after_exec[i:i + 2] for i in range(len(after_exec) - 1)])
         for forbidden in ("--add-dir", "--dangerously-bypass-approvals-and-sandbox", "--worktree", "resume"):
             self.assertNotIn(forbidden, cmd)
         self.assertEqual(seen["env"]["PYTHONDONTWRITEBYTECODE"], "1")
