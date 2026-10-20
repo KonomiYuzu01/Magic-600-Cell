@@ -185,6 +185,56 @@ clean; 33 are first-letter caps; class A = 407, 471, 492, 523, 533, 553, 590, 59
 clean cap holds a straddler of τ whole, no first letter moves one, and every holder of an original straddler is
 blocked at the state, a success needs a first letter that frees a blocked holder (only class A letters can).
 
+Enumerated (outputs `two_letter_u_round2_shard{0,1,2}.txt`): all 472 class A first letters (indices 0 to 471) and
+the class B letters with indices 472 to 588 (contiguous; a few beyond), after which I stopped the shards by PID,
+because by the argument above no class B letter can succeed and the freeing letters come first in the stated order.
+
+- 10 first letters free a blocked holder, all at cap 553 and all freeing cap 535: items 5, 19, 27, 39, 43, 49, 53, 54,
+  56, 58. They give 187 successful pairs, every second letter at cap 535; some reach u = 0 (for example (553, 27),
+  (535, 21)).
+- Chosen pair (the first freeing letter, then its first success in (grip, item) order): **(553, 5), (535, 3)**, u 41
+  → 21, end digest `6c7a79d9aa68769261c3ba3d613bfaff5d2d539e57797664418f46e85f594744`, (n2, n4, n6) = (102,750, 734,
+  0), 103,484 off, N = 133,678. The rule takes the first success, not the lowest u.
+
+## Step 3 again: H4-unlock run 3 from 6c7a79d9
+
+Command: `h4_unlock.py --snapshot <dir>/h4-end-2.pkl --prefix '[[553,5],[535,3]]' --cpu 14400 --save-end
+<dir>/h4-end-3.pkl` (output `h4_unlock_run3.txt`). Start: τ = 597, u = 21.
+
+| step | family | letter | τ | u | (n2, n4, n6) | off | N | end digest | cpu s |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | U | (535, 6) | 597 | 10 | (102,750, 734, 0) | 103,484 | 133,700 | `b2651c24f07172eb2cf18fa2cf5b61eba12fa2fb2271711feb7c249fb0e27b51` | 99.2 |
+
+End: **STUCK** after 1 letter, cpu 167.4 s; cap 535 is the only clean holder tried (its U_ITEMS at u = 21 and 10 are
+in the output).
+
+## Step 4, round 3: two-letter U steps at b2651c24
+
+Command: `two_letter_u.py --snapshot <dir>/h4-end-3.pkl --expect b2651c24… --shard i --nshards 3 --cpu 12000`
+(outputs `two_letter_u_round3_shard{0,1,2}.txt`). Context: τ = 597, u = 10 (pieces 108404, 108405, 108407, 108420,
+114001, 114010, 125565, 125574, 143345, 143346). Holders: 535 (clean) and 566, 567, 569, 576, 578, 583, 587, 588
+(blocked, with 102, 393, 96, 389, 361, 396, 137, 340 straddlers of their own, 1,809 distinct). 37 clean caps; class
+A = 407, 471, 492, 523, 533, 535, 590, 591; 1,947 first letters.
+
+Enumerated: indices 0 to 1,587 contiguously (all of class A and the class B caps 2 to 358 and cap 363 items 1 to 54;
+a few beyond in some shards), then stopped by PID, since every first letter before the chosen one in the stated
+order had been tried. 1,383 valid first letters (328 A, 1,055 B), 240 not valid.
+
+- No first letter frees a blocked holder. Second caps tried: only 535 (77 first letters).
+- 14 first letters succeed, all at cap 363 (items 10, 21, 22, 32, 36, 37, 38, 41, 45, 46, 50, 51, 52, 57), each with
+  the one second letter (535, 8), ending at u = 8 (12 of them) or 9 (2).
+- Chosen pair: **(363, 10), (535, 8)**, u 10 → 8, end digest
+  `2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472`, (n2, n4, n6) = (102,750, 734, 0), 103,484 off,
+  N = 133,818.
+
+## Step 3 again: H4-unlock run 4 from 2430f4cc
+
+Command: `h4_unlock.py --snapshot <dir>/h4-end-3.pkl --prefix '[[363,10],[535,8]]' --cpu 14400 --save-end
+<dir>/h4-end-4.pkl` (output `h4_unlock_run4.txt`). Start: τ = 597, u = 8. End: **STUCK** with no letter, cpu
+102.0 s (cap 535's 59 items give u ≥ 10 or null).
+
+## Step 4, round 4: two-letter U steps at 2430f4cc
+
 In progress.
 
 ## Open questions
