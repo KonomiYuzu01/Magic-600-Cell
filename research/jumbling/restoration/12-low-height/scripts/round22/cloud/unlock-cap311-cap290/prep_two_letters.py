@@ -11,7 +11,12 @@
 #     when, after it, some (blocker, clean cap holding it whole) pair exists that did not exist before it, or a blocked
 #     holder has become clean; its seconds are tested at once. Its other items are deferred to class (ii).
 #   class (ii): every other clean cap's items and the deferred items, in (cap, item) order, until the CPU budget of the
-#     shard (argument, seconds) is spent.
+#     shard (argument, seconds) is spent. Exact cap-level bound used first: a piece that a does not move keeps its pose,
+#     so b treats it as b alone would at the start state; hence for b at a cap clean at the start,
+#     u(a, b) >= |Y_b| - |in(a) & Y_b|, Y_b being the straddlers of tau after b alone and in(a) the pieces cap a holds
+#     whole (the same for all 59 items of a). A class (ii) letter creates no new (blocker, clean holder) pair and makes
+#     no blocked holder clean, so its seconds lie at caps that are clean holders at the start; when the bound is >= u0
+#     for every such b, all 59 items of cap a are recorded as pruned with the bound, without trials.
 # For each first letter a that passes, the seconds b are every item of every clean cap after a that holds a blocker
 # after a whole; a cap is skipped (and counted) when it holds whole at most u' - u0 of the u' blockers after a, since
 # u after b is at least the number of blockers b does not move. u after a letter at a clean cap is counted as
@@ -197,7 +202,24 @@ def main():
                 deferred.append((c, j))
     emit('CLASS_I_DONE', stats=stats, cpu=cpu())
     record['class_i_cpu'] = cpu()
-    order = sorted(deferred + [(c, j) for c in rest[k::n] for j in range(1, 60)])
+    Y = {}
+    for cb in x.clean_holders:
+        for jb in range(1, 60):
+            t = clone(s)
+            if put(t, cb, jb):
+                Y[(cb, jb)] = set(E.straddler_set(t, tau).tolist())
+    bounds = {}
+    for c in rest[k::n]:
+        ina = set(np.flatnonzero(lab.L[:, c] == 1).tolist())
+        bounds[c] = min((len(v) - len(v & ina) for v in Y.values()), default=None)
+    pruned = [c for c in rest[k::n] if bounds[c] is None or bounds[c] >= u0]
+    for c in pruned:
+        for j in range(1, 60):
+            record['outcomes'][f'{c}:{j}'] = f'ii pruned (bound {bounds[c]})'
+    stats['first_letters_pruned'] = 59 * len(pruned)
+    emit('BOUND', b_letters=len(Y), bounds=bounds, pruned_caps=pruned, cpu=cpu())
+    record['class_ii_bounds'] = bounds; record['class_ii_pruned_caps'] = pruned
+    order = sorted(deferred + [(c, j) for c in rest[k::n] if c not in pruned for j in range(1, 60)])
     t0 = cpu(); done = 0
     for c, j in order:
         if cpu() - t0 > budget:
