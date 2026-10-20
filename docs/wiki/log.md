@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-20] update | Jumbling: line (d), round 5
+At the depth 100 stop the rule behind the first literal height-4 step, and its extension to parts of units, have nothing left for the 70 remaining height-4 pieces, and no word over the caps that can turn there moves the pieces that block a cap holding the rest; at the 3000-twist stop every cap holds a piece that is in place, so no single twist lowers a height-6 piece without harm, the short families for the one lowerable group fail at any length of their middle, and a rule that puts height first plays seven twists and stops with 172 pieces still at height 6 ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 5).
+
 ## [2026-10-19] update | Jumbling: line (d), round 4
 Two literal steps at height 4 leave everything else exactly in place: 50 twists land all six high units of the seed 7108 stop, which is then at height 2, and 38 twists land twelve more pieces at the seed 7102 stop; at height 6 one twist lowers a piece without harm at a small test state, a height-6 tier added to the whole-stop rule is safe and finite, and its short families find no step at the 3000-twist stop, so it is not coverage; the blockers of two caps cannot be moved by the fixed alphabets of their states, and the whole-stop rule has an implementation contract, not yet code ([PROOFS-B](../../research/jumbling/restoration/12-low-height/PROOFS-B.md) section 5).
 

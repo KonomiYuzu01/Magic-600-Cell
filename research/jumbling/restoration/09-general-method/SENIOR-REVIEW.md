@@ -7417,6 +7417,26 @@ with the same outputs, except R22D-54's measurements, which were not re-run). On
 | R22D-56 | design | The four pending packets stay standalone; three new packets and one integration packet. |
 | R22D-57 | source; design | Phase handoffs; the lattice phase checks the retained part of its word by composing permutations, not by playing it twist by twist. |
 
+Round 5 of line (d) (two concurrent shards, fast tier: height 4 at the seed 7102 stop after R22D-43, and height 6 at
+the 3000-twist stop of seed 7302; thirteen results, all `minor`, all adopted; the integrator re-ran their computations
+with the same outputs). One line each; the full text is in [`PROOFS-B.md`](../12-low-height/PROOFS-B.md) section 5:
+
+| Finding | Status | Index |
+| --- | --- | --- |
+| R22D-60 | rule | A pass for targets that are part of a unit, in step 3 of R22D-25, with R22D-25's bounds; `stepchk.py --require-strict` checks strict′. |
+| R22D-61 | computed | At the seed 7102 stop after R22D-43 all 96 whole-unit cases of R22D-19 fail a first test. |
+| R22D-62 | computed; proved | So do all 840 seed–item cases of R22D-60 there. |
+| R22D-63 | computed | Cap 150 is still blocked by four pieces. |
+| R22D-64 | computed; proved | No word over the 234 clean grips of that state moves cap 179's 20 blockers. |
+| R22D-70 | computed; proved | Cap 274's three blockers are one unit that the fixed free and SAFE alphabets cannot move. |
+| R22D-71 | computed | Every cap at the 3000-twist stop holds a lattice piece, so no single letter is protected there. |
+| R22D-72 | computed; proved | No second letter repairs any of D's 24 lowerings. |
+| R22D-73 | computed; proved | D's commutators fail for middles of the same branch at any length. |
+| R22D-74 | rule | A height-monotone single-letter rule is finite and takes no step at the stop. |
+| R22D-75 | rule; computed | A height-first single-letter rule plays seven letters, lowering only D, and then has none. |
+| R22D-76 | computed; proved | C has no admissible class-1 letter; cap 290's 70 blockers can move under free branch-3 letters. |
+| R22D-77 | computed | A unit's representative does not certify the single-cell premise of R22D-28. |
+
 ### Line (c): T2 and T3 (joint attack; R22C-01 to R22C-07, R22CF-01 to R22CF-07, X22C-01 to X22C-09)
 
 The senior reviewer (R22C) and the solver (R22CF) each wrote a sealed analysis at the highest effort, standard tier. After that the solver stopped (owner, 18 October 2026; [decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-18-bprime-goal.md)). The senior reviewer then cross-examined the solver's seven findings against its own (X22C-01 to X22C-09, same tier), and the integrator re-checked the solver's computed steps and runs the adjudicating experiments. All findings are `minor`. The integrator adopted the nine cross-examination findings, which scope or correct the sealed results as the table says.

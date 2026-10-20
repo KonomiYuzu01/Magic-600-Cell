@@ -1112,6 +1112,26 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
     stop, not stuck (R22D-55).
   - The lattice phase's retained part is checked by composing permutations, not played twist by twist, in E2 (the
     correction above) and in the tutorial runner (stage 13); a literal lattice player is needed (R22D-57).
+- Line (d), round 5 (the senior reviewer, two shards at once; R22D-60 to R22D-64 and R22D-70 to R22D-77 in
+  `PROOFS-B.md` section 5; its computations `scripts/round22/r22d61_audit.py`, `r22d70_cap274.py`,
+  `r22d72_one_repair.py`, `r22d73_pins.py`, `r22d75_height_first.py` and `r22d76_class1.py`, re-run by the integrator
+  with the same outputs, `runs/round22/`, plus the integrator's replay of R22D-75, `r22d75_check.py`). No step that
+  lowers or lands a high unit without harm:
+  - Height 4 at the seed 7102 stop after R22D-43 (70 pieces in eight units, all in cap 61). R22D-19 has no case left:
+    the 96 unit–item cases fail on split source cells, missing free grips or occupied source cells (R22D-61). Its
+    extension to targets that are part of a unit, like R22D-43's, keeps R22D-25's bounds (R22D-60) and has no case
+    there either (R22D-62). Cap 150 is still blocked by four pieces (R22D-63), and no word over the 234 clean grips of
+    that state moves any of cap 179's 20 blockers, at any length (R22D-64): only grips that become clean after other
+    progress can.
+  - Height 6 at the 3000-twist stop of seed 7302. Every cap holds a lattice piece, so no single letter is protected
+    (R22D-71); no second letter repairs a lowering of D (R22D-72); D's commutators fail for middles of the same branch
+    at any length (R22D-73). Cap 274's three blockers are one unit that the fixed free and SAFE alphabets cannot move,
+    and the twelve letters that would lower A and B wait for that cap (R22D-70). C has no admissible class-1 letter,
+    while all 70 blockers of its cap 290 can move under free branch-3 letters (R22D-76). A unit's representative does
+    not certify the premise of the cell lemma (R22D-77).
+  - Two rules that put height first: one that lets no height rise takes no step there (R22D-74); one that lowers
+    (n₆, n₄, n₂) lexicographically and allows collateral plays seven letters, which lower D to height 4 and take 3,710
+    more pieces off, and then has no letter left, with A, B and C at their exact poses (R22D-75).
 
 ## 12. Next
 
@@ -1168,12 +1188,15 @@ rules out transport only. Then it stopped at the fallback's length bound (sectio
   found that rule exhausted for the rest of that stop (R22D-20), left the shared case of seed 7108 open (R22D-23) and
   stated a rule for a whole stop with a stuck outcome (R22D-25). Round 4 closed the seed 7108 case with a 50-letter
   strict step (R22D-42), landed the twelve pieces of R22D-21 (R22D-43), and gave a height-6 tier for R22D-25 that is
-  safe and finite (R22D-37) and an implementation contract for R22D-25 (R22D-50 to R22D-56). Next: an implementation
-  of R22D-25 with that tier and a practical S and T catalogue, tested at the known stops (R22D-56); the 70 height-4
-  pieces left at the seed 7102 stop, with partial targets like R22D-43's, which R22D-19 and R22D-25 as stated do not
-  contain; the blockers of caps 179 and 252 with grips that are not free or alphabets after other progress (R22D-40,
-  R22D-41); at the 3000-twist stop the rest of R22D-37's families and cap 274's three height-2 blockers (R22D-32);
-  whether the bulk phase clears height 6 without a budget; and a literal lattice player (R22D-57).
+  safe and finite (R22D-37) and an implementation contract for R22D-25 (R22D-50 to R22D-56). Round 5 found no step:
+  R22D-19 and its extension to partial targets (R22D-60) are exhausted at the seed 7102 stop after R22D-43, and at the
+  3000-twist stop no single letter is protected and the short families for D fail at any middle length (R22D-61 to
+  R22D-77). Next: an implementation of R22D-25 with R22D-37's tier and R22D-60's pass and a practical S and T
+  catalogue, tested at the known stops (R22D-56); at the seed 7102 stop, mixed-class middles and grips that become
+  clean after other progress, the only way past the blockers of caps 150 and 179 (R22D-63, R22D-64); at the 3000-twist
+  stop, protected words of several letters, cap 290 through its movable blockers (R22D-76) and cap 274 with grips
+  that are not free (R22D-70); the blockers of cap 252 (R22D-41); whether the bulk phase lowers height 6 with more
+  time; and a literal lattice player (R22D-57).
 - For the other E-B4 leftovers: the other passing letters of the 11 units that fail N1; r = 2 or several edge cells
   (LC-06) for the 18 units without a single letter.
 - E-B2 at height-2 fixture prefixes is cheap but, where the off pieces stick out of the body, has no teeth.
