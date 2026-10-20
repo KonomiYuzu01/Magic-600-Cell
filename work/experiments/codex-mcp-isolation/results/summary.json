@@ -1,0 +1,165 @@
+{
+  "codex_version": "codex-cli 0.159.0",
+  "cases": [
+    {
+      "case": "A-base",
+      "flags_after_exec": [],
+      "wrapper": {
+        "exit": 0,
+        "result": "review 20261020T015452Z-e23f329c: pass; 0 finding(s), blocking: none"
+      },
+      "stand_in_mcp_server_started": true,
+      "stand_in_parent_is_codex_exec": true,
+      "stand_in_requests": [
+        "initialize",
+        "notifications/initialized",
+        "tools/list"
+      ],
+      "stand_in_received_codex_home": true,
+      "stand_in_could_read_auth_json": true,
+      "codex_exec_children": [
+        "python3 ./scripts/marker_mcp.py --stdio"
+      ],
+      "backend_requests": {
+        "GET /backend-api/codex/models 404": 2,
+        "GET /backend-api/codex/responses 404": 7,
+        "GET /backend-api/plugins/featured 404": 1,
+        "GET /backend-api/ps/plugins/installed 200": 2,
+        "GET /backend-api/ps/plugins/list 200": 1,
+        "GET /backend-api/ps/plugins/suggested/codex 200": 5,
+        "GET /backend-api/wham/accounts/check 200": 1,
+        "GET /backend-api/wham/settings/user 404": 1,
+        "GET /bundle/codex-security.tar.gz 200": 1,
+        "POST /backend-api/codex/analytics-events/events 404": 2,
+        "POST /backend-api/codex/responses 200": 1,
+        "POST /backend-api/ps/mcp 404": 2
+      },
+      "plugin_cache": [
+        "<CODEX_HOME>/plugins/cache/openai-curated-remote",
+        "<CODEX_HOME>/plugins/cache/openai-curated-remote/codex-security",
+        "<CODEX_HOME>/plugins/cache/openai-curated-remote/codex-security/.codex-remote-plugin-install.json",
+        "<CODEX_HOME>/plugins/cache/openai-curated-remote/codex-security/0.1.32"
+      ]
+    },
+    {
+      "case": "B1-base-remote_plugin-off",
+      "flags_after_exec": [
+        "--disable remote_plugin"
+      ],
+      "wrapper": {
+        "exit": 0,
+        "result": "review 20261020T015502Z-4b324b61: pass; 0 finding(s), blocking: none"
+      },
+      "stand_in_mcp_server_started": true,
+      "stand_in_parent_is_codex_exec": true,
+      "stand_in_requests": [
+        "initialize",
+        "notifications/initialized",
+        "tools/list"
+      ],
+      "stand_in_received_codex_home": true,
+      "stand_in_could_read_auth_json": true,
+      "codex_exec_children": [
+        "python3 ./scripts/marker_mcp.py --stdio"
+      ],
+      "backend_requests": {
+        "GET /backend-api/codex/models 404": 2,
+        "GET /backend-api/codex/responses 404": 7,
+        "GET /backend-api/plugins/featured 404": 1,
+        "GET /backend-api/ps/plugins/installed 200": 2,
+        "GET /backend-api/wham/accounts/check 200": 1,
+        "GET /backend-api/wham/settings/user 404": 1,
+        "GET /bundle/codex-security.tar.gz 200": 1,
+        "POST /backend-api/codex/analytics-events/events 404": 2,
+        "POST /backend-api/codex/responses 200": 1,
+        "POST /backend-api/ps/mcp 404": 2
+      },
+      "plugin_cache": [
+        "<CODEX_HOME>/plugins/cache/openai-curated-remote",
+        "<CODEX_HOME>/plugins/cache/openai-curated-remote/codex-security",
+        "<CODEX_HOME>/plugins/cache/openai-curated-remote/codex-security/.codex-remote-plugin-install.json",
+        "<CODEX_HOME>/plugins/cache/openai-curated-remote/codex-security/0.1.32"
+      ]
+    },
+    {
+      "case": "B2-base-plugins-off",
+      "flags_after_exec": [
+        "--disable plugins"
+      ],
+      "wrapper": {
+        "exit": 0,
+        "result": "review 20261020T015511Z-c23a3ee7: pass; 0 finding(s), blocking: none"
+      },
+      "stand_in_mcp_server_started": false,
+      "stand_in_parent_is_codex_exec": false,
+      "stand_in_requests": [],
+      "stand_in_received_codex_home": false,
+      "stand_in_could_read_auth_json": false,
+      "codex_exec_children": [],
+      "backend_requests": {
+        "GET /backend-api/codex/models 404": 2,
+        "GET /backend-api/codex/responses 404": 7,
+        "GET /backend-api/wham/accounts/check 200": 1,
+        "GET /backend-api/wham/settings/user 404": 1,
+        "POST /backend-api/codex/analytics-events/events 404": 2,
+        "POST /backend-api/codex/responses 200": 1,
+        "POST /backend-api/ps/mcp 404": 2
+      },
+      "plugin_cache": []
+    },
+    {
+      "case": "B3-base-plugins-apps-off",
+      "flags_after_exec": [
+        "--disable plugins",
+        "--disable apps"
+      ],
+      "wrapper": {
+        "exit": 0,
+        "result": "review 20261020T015521Z-5dc8ead5: pass; 0 finding(s), blocking: none"
+      },
+      "stand_in_mcp_server_started": false,
+      "stand_in_parent_is_codex_exec": false,
+      "stand_in_requests": [],
+      "stand_in_received_codex_home": false,
+      "stand_in_could_read_auth_json": false,
+      "codex_exec_children": [],
+      "backend_requests": {
+        "GET /backend-api/codex/models 404": 2,
+        "GET /backend-api/codex/responses 404": 7,
+        "GET /backend-api/wham/accounts/check 200": 1,
+        "GET /backend-api/wham/settings/user 404": 1,
+        "POST /backend-api/codex/analytics-events/events 404": 2,
+        "POST /backend-api/codex/responses 200": 1
+      },
+      "plugin_cache": []
+    },
+    {
+      "case": "C-candidate",
+      "flags_after_exec": [
+        "--disable plugins",
+        "--disable apps",
+        "--disable remote_plugin",
+        "--disable skill_mcp_dependency_install"
+      ],
+      "wrapper": {
+        "exit": 0,
+        "result": "review 20261020T015530Z-c6b78f44: pass; 0 finding(s), blocking: none"
+      },
+      "stand_in_mcp_server_started": false,
+      "stand_in_parent_is_codex_exec": false,
+      "stand_in_requests": [],
+      "stand_in_received_codex_home": false,
+      "stand_in_could_read_auth_json": false,
+      "codex_exec_children": [],
+      "backend_requests": {
+        "GET /backend-api/codex/models 404": 2,
+        "GET /backend-api/codex/responses 404": 7,
+        "GET /backend-api/wham/accounts/check 200": 1,
+        "GET /backend-api/wham/settings/user 404": 1,
+        "POST /backend-api/codex/analytics-events/events 404": 2,
+        "POST /backend-api/codex/responses 200": 1
+      },
+      "plugin_cache": []
+    }
+  ]
+}
