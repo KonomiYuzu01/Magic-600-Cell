@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-20] decision | Jumbling: two readings of the tutorial acceptance test
+The owner accepted two readings of the acceptance test ([owner-decisions-2026-10-20-tutorial-acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), section "Two readings"): the independent checker shares only the definition of the puzzle with the runner (model assets, simulator, I_a menu, scramble, trees, cut geometry), no runner, rule, gate, player or verifier code; and the tutorial goes through its chapters in a fixed order without returning, each chapter starting where the previous one finds no step, every rule within a chapter reading only the current state. The runner leaves out the bulk rule reopen, which reads the solver's own earlier twists and never fired first in the census.
+
 ## [2026-10-20] decision | Jumbling: the acceptance test of the machine-followable tutorial
 The owner accepted the integrator's proposal: the tutorial is tested on 21 scrambles that development never used, three fresh seeds at each of the depths 10, 20, 40, 100, 300, 1000 and 3000 twists (seeds 9011 to 9073, fixed in advance), in batches from shallow to deep; only the tutorial runner plays, every word twist by twist, a certificate step or a fallback step counts as a failure, and an independent checker replays every record ([owner-decisions-2026-10-20-tutorial-acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md)). None of the scrambles has been run; the work before the first batch connects the existing rules to the runner and takes on height 4 to height 2.
 

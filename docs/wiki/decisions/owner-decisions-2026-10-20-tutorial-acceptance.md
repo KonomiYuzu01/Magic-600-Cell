@@ -10,6 +10,8 @@ claims:
   - {id: tutorial-acceptance-test-set, evidence_kind: decision, checked_at: 2026-10-20}
   - {id: tutorial-acceptance-batches, evidence_kind: decision, checked_at: 2026-10-20}
   - {id: tutorial-acceptance-pass, evidence_kind: decision, checked_at: 2026-10-20}
+  - {id: tutorial-acceptance-checker-sharing, evidence_kind: decision, checked_at: 2026-10-20}
+  - {id: tutorial-acceptance-phases, evidence_kind: decision, checked_at: 2026-10-20}
 ---
 
 # Owner decision, 20 October 2026: the acceptance test of the machine-followable tutorial
@@ -63,6 +65,23 @@ Defaults the integrator applies, which the owner may change:
 - The tutorial is accepted only when every batch has passed with the same runner and rules; a batch passed with an
   earlier version is run again with the final one.
 - No time limit is set; every run's time is recorded.
+
+## Two readings (owner, 20 October 2026)
+
+Later the same day the owner accepted two readings of the test that the integrator proposed while planning how to
+connect the existing rules to the runner:
+1. **What the checker may share with the runner.** Only the definition of the puzzle: the model assets, the
+   simulator (`sim/`), the I_a menu, `element` and `scramble` of `theory/restore.py`, the trees and the cut geometry
+   used to count N. It shares no runner, rule, gate, player or verifier code.
+2. **Chapters in order.** The tutorial goes through its chapters in a fixed order and never returns to an earlier
+   one: a chapter starts at the first state where the previous chapter's rules find no step, and within a chapter
+   every rule reads only the current state. The runner records the chapter of every step. The bulk, tail and lattice
+   phases of the runner already work this way.
+
+Integrator default under item 3: the bulk rule reopen (U7 of the
+[restoration theory](../../../research/jumbling/theory/restoration.md), section 3) reads the solver's own earlier
+twists, not only the current state, so the runner leaves it out of its bulk phase. It never found the next step first
+in any census run ([stage 11](../../../research/jumbling/restoration/11-scramble-census/README.md)).
 
 ## Effect
 
