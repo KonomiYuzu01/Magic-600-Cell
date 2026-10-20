@@ -49,7 +49,8 @@ Census part 2 (running): the script's own continuation option, unchanged script,
 It rebuilds the same scramble, replays the 49 twists and continues with the same rules. The descent rules do not read
 the clock, so the restart can change only where the time limit falls (by the work lost after 2,852 s), not the
 twists chosen. The part 2 record's `heights_start`, `N_start` and `off_start` describe the part 1 stop, not the
-scramble; the scramble values are the ones above.
+scramble; the scramble values are the ones above. Partial (committed while running): `census_part2.txt` and
+`ia-k3000-s7305.json` (result `running`), 7 more conj steps by 7,330 s, N = 132,718, 107,565 off.
 
 Next step: when `census_seams.py 3000 7305 18900 <dir>/census` ends, copy its record and stdout here, then run
 `r22d75_census_k3000.py` on the record, then the draft `r22d81_rule.py --record <record> --prefix <R22D-75 letters> --cpu 7200`.

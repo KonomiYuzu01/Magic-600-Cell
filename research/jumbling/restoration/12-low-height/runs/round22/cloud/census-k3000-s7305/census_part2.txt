@@ -1,0 +1,8 @@
+{"run": "ia-k3000-s7305", "menu": "I_a", "k": 3000, "seed": 7305, "off_scramble": 116870, "continued_from_moves": 49, "N_start": 133140, "off_start": 107565, "heights_start": {"2": 105268, "4": 2297}, "off_poses_start": 1839, "order": ["seam", "cover", "close", "conj", "lock", "improve", "shift", "reopen"], "budget_s": 16048.0}
+{"rule": "conj", "twists": 3, "N_before": 133140, "N_after": 133110, "off_after": 107565, "sec": 1004}
+{"rule": "conj", "twists": 3, "N_before": 133110, "N_after": 133058, "off_after": 107565, "sec": 1942}
+{"rule": "conj", "twists": 3, "N_before": 133058, "N_after": 132898, "off_after": 107565, "sec": 2991}
+{"rule": "conj", "twists": 3, "N_before": 132898, "N_after": 132864, "off_after": 107565, "sec": 4032}
+{"rule": "conj", "twists": 3, "N_before": 132864, "N_after": 132846, "off_after": 107565, "sec": 5065}
+{"rule": "conj", "twists": 3, "N_before": 132846, "N_after": 132812, "off_after": 107565, "sec": 6156}
+{"rule": "conj", "twists": 3, "N_before": 132812, "N_after": 132718, "off_after": 107565, "sec": 7330}
