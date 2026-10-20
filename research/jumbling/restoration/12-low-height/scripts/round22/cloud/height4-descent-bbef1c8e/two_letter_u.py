@@ -19,7 +19,7 @@
 # index in the enumeration order (class A, then class B) is i mod n, so shards can run concurrently. The chosen pair
 # is read off all shards' FIRST lines: the first success whose first letter frees a blocked holder (class A, in
 # (grip, item) order), else the first success among the remaining first letters in (grip, item) order, the second
-# letter in (grip, item) order.
+# letter in (grip, item) order. --from-index k skips the first letters before index k (to resume an interrupted run).
 # Research only, headless Linux; exact geometry. It writes no file; theory/seams.py keeps its cache in
 # work/jumbling-cache/ unless JUMBLING_HOME_CACHE names a file.
 # Run from the repository root (one shard of three):
@@ -39,7 +39,7 @@ from sim.kernel import Evaluator, pullback_form
 ap = argparse.ArgumentParser()
 ap.add_argument('--snapshot', required=True); ap.add_argument('--expect')
 ap.add_argument('--shard', type=int, default=0); ap.add_argument('--nshards', type=int, default=1)
-ap.add_argument('--cpu', type=float, default=12000.0)
+ap.add_argument('--cpu', type=float, default=12000.0); ap.add_argument('--from-index', type=int, default=0)
 A = ap.parse_args()
 resource.setrlimit(resource.RLIMIT_CPU, (int(A.cpu) + 1190, int(A.cpu) + 1200))
 C = E.sim.get_context(); M = E.R.menu('I_a'); REG = C.regions
@@ -177,7 +177,7 @@ print('CONTEXT', json.dumps(dict(digest=s.digest(), tau=tau, u=u0, straddlers=st
 done = 0
 try:
     for k, (c, j) in enumerate(order):
-        if k % A.nshards != A.shard:
+        if k % A.nshards != A.shard or k < A.from_index:
             continue
         checktime()
         t = clone(s)
