@@ -122,6 +122,27 @@ its height-6 pieces to height 4 by the descent's 190th twist (stage 12, R22D-30)
 lowered none of them. **Certificate**: the replay check passes on the record (`runs/heights/check.out`); the
 step-by-step replay also applies every twist on the exact simulator and checks the off count after every step.
 
+### Three longer descents from 3000 twists (20 October 2026)
+
+Three cloud sessions of round 6 of stage 12's line (d) drew fresh 3000-twist scrambles (seeds 7304, 7306 and 7307) and
+ran one census round from each with `census_seams.py` unchanged and a budget of 18,900 seconds (5.25 hours) instead of
+75 minutes. The records and the cloud sessions' accounts are in stage 12, under
+`runs/round22/cloud/census-k3000-s7304/` and the two like it.
+
+| Depth k | Seed | Off after the scramble | Left heights at the scramble | Descent time | Twists | Steps: seam / cover / conj | Off at the end | N: start → end | Left heights at the end |
+| ---: | ---: | ---: | --- | --- | ---: | --- | ---: | --- | --- |
+| 3000 | 7304 | 121,001 | 2: 118,951; 4: 2,050 | 5.25 hours | 580 | 0 / 7 / 191 | 95,569 | 139,584 → 115,200 | 2: 94,384; 4: 1,185 |
+| 3000 | 7306 | 123,181 | 2: 118,426; 4: 4,726; 6: 29 | 5.25 hours | 270 | 0 / 3 / 89 | 108,823 | 149,224 → 137,562 | 2: 106,032; 4: 2,762; 6: 29 |
+| 3000 | 7307 | 119,518 | 2: 117,245; 4: 2,263; 6: 10 | 5.25 hours | 734 | 0 / 11 / 241 | 96,236 | 136,918 → 112,776 | 2: 94,691; 4: 1,535; 6: 10 |
+
+All three ended at the time limit, having put back 21.0%, 11.7% and 19.5% of the off pieces; the clock is checked
+between steps, so each last step ended past it (at 5.33, 5.29 and 5.55 hours). Seed 7304's scramble had no piece at
+height 6. At seeds 7306 and 7307 as many pieces were at height 6 at the end as after the scramble, 29 and 10; whether
+they are the same pieces was not checked. Stage 12 takes the three ends on with its height-first rule, which lowers
+those height-6 pieces and then stops on height 4 (`PROOFS-B.md`, round 6 of line (d)). A fourth session, seed 7305,
+was still running. **Certificate**: `check_records.py` passes on the three records (stage 12,
+`runs/round22/cloud-k3000-check.out`).
+
 ### What the runs show (measured)
 
 1. **No run got stuck.** Every run that did not reach the lattice was stopped by the clock; every step it took
@@ -148,14 +169,16 @@ step-by-step replay also applies every twist on the exact simulator and checks t
    second seed put back 76.9% in its first 75 minutes, the first seed 70.4%.
 5. **Heights stay low.** After 1000 random twists no piece is above left height 6, and in three scrambles of 3000
    twists none is above height 6 at any checkpoint. The depth 1000 descent cleared its 135 pieces at height 6, but the
-   descent from 3000 twists lowered none of its 185 in 75 minutes (the two previous sections), and heights do not
-   only fall: in round 2 the pieces at height 4 rose from 81 to 124 (depth 100) and from
-   264 to 390 (depth 1000), and in round 3 from 0 to 111 (depth 100, second seed) and from 410 to 607 (depth 400).
-   N is the potential, not the height.
+   descent from 3000 twists lowered none of its 185 in 75 minutes, three more descents from 3000 twists ended after
+   budgets of 5.25 hours with as many pieces at height 6 as they started with (0, 29 and 10; the sections above), and
+   heights do not only fall: in round 2 the pieces at height 4 rose from 81 to 124 (depth 100) and from 264 to 390
+   (depth 1000), and in round 3 from 0 to 111 (depth 100, second seed) and from 410 to 607 (depth 400). N is the
+   potential, not the height.
 6. **From about 200 twists on, the off count hardly grows; N does.** The scrambles of 200, 400, 1000 and 3000 twists
    left 118,493 to 125,304 pieces off, but N at the start grew from 86,358 to 100,632, 123,654 and 145,574. The
    descent put back 30.5% to 38.4% of the off pieces in its first 75 to 104 minutes at depths 200 to 1000, and 15.3%
-   in 75 minutes at 3000.
+   in 75 minutes at 3000; three more scrambles of 3000 twists left 119,518 to 123,181 pieces off with N from 136,918
+   to 149,224, and their descents put back 11.7% to 21.0% in 5.25 hours.
 
 ## The residue at the end of round 2
 
@@ -394,14 +417,22 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     sed -e 's#runs/round2/ia-k1000-s7103.json#runs/heights/ia-k3000-s7302.json#' -e 's#(1190,1200)#(7190,7200)#' \
         research/jumbling/restoration/12-low-height/scripts/round22/r22d30_height6.py > <tmp>/heights6.py
     python3 -I -B -u <tmp>/heights6.py
+    # three 5.25-hour descents from 3000 twists (run in cloud sessions; records in stage 12) and their replay check
+    # (87 to 101 minutes each, the three run at the same time as separate processes)
+    for s in 7304 7306 7307; do python3 -I -B $S/census_seams.py 3000 $s 18900 <out>; done
+    C=research/jumbling/restoration/12-low-height/runs/round22/cloud
+    python3 -I -B $S/check_records.py $C/census-k3000-s7304/ia-k3000-s7304.json $C/census-k3000-s7306/ia-k3000-s7306.json \
+        $C/census-k3000-s7307/ia-k3000-s7307.json
 
-A rerun stops wherever its clock runs out, so its record can differ from the stored one; `check_records.py` checks
-the stored records exactly. Every script reads `research/jumbling` (the simulator `sim/`, the theory modules and the
+A rerun stops wherever its clock runs out, so its record can differ from the stored one; `check_records.py` checks the
+stored records exactly. Every script reads `research/jumbling` (the simulator `sim/`, the theory modules and the
 scripts and data of stages 05, 06 and 09) without writing to it. The runs used that code as it is on main at commit
 `5eed80e`, where it last changed on 15 October (the height runs of 18 to 19 October used commit `0347816` and the
 descent from 3000 twists commit `8d0c338`; up to those commits that code changed only in an option of the stage 09
 driver `gm/gdrive.py`, which no script here imports, and in an optional cache location in `theory/seams.py`, not set
-in these runs); this stage changes no file outside its own directory.
+in these runs); the three longer descents of 20 October ran `census_seams.py` unchanged in cloud sessions (its sha256
+is in their accounts, `RESULT.md`; they set the optional cache location of `theory/seams.py` to a file outside the
+repository). This stage changes no file outside its own directory.
 
 ## Files
 

@@ -1,0 +1,8 @@
+LOADED {"digest": "015d839ecbb37bbdde74ae9391d5d7f274dea7fee4b4fdf0092d224eef907a1f", "off": 100584, "cpu": 8.3}
+START {"tau": 482, "u": 80, "targets": [[12, 121], [34, 2], [65, 118], [71, 13], [94, 13], [140, 13], [142, 13], [171, 67], [180, 13], [181, 13], [206, 48], [299, 49], [388, 45], [482, 284], [500, 77], [517, 178], [551, 52], [597, 205]], "digest": "bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299", "n2_n4_n6": [102960, 936, 0], "off": 103896, "N": 132930, "cpu": 22.7}
+U_ITEMS {"cap": 357, "tau": 482, "u": 80, "u_after_items_1_to_59": [11, 8, 41, 34, 8, 57, 45, 8, 8, 108, 13, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}
+Traceback (most recent call last):
+  File "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/h4_unlock.py", line 308, in <module>
+    assert counts(s) == pred, (counts(s), pred)
+           ^^^^^^^^^^^^^^^^^
+AssertionError: ([0, 936, 102960], [0, 1003, 103070])

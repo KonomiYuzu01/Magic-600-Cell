@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-20] decision | Jumbling: the acceptance test of the machine-followable tutorial
+The owner accepted the integrator's proposal: the tutorial is tested on 21 scrambles that development never used, three fresh seeds at each of the depths 10, 20, 40, 100, 300, 1000 and 3000 twists (seeds 9011 to 9073, fixed in advance), in batches from shallow to deep; only the tutorial runner plays, every word twist by twist, a certificate step or a fallback step counts as a failure, and an independent checker replays every record ([owner-decisions-2026-10-20-tutorial-acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md)). None of the scrambles has been run; the work before the first batch connects the existing rules to the runner and takes on height 4 to height 2.
+
+## [2026-10-20] update | Jumbling: line (d), round 6, the cloud lines on three fresh 3000-twist scrambles and on height 4
+Three fresh 3000-twist scrambles, each given 5.25 hours of the census descent, stopped with 0, 29 and 10 pieces at height 6, which the height-first rule lowered by itself where there were any before it stopped on height 4 with 797, 2,591 and 1,585 pieces there, so the rule that frees blocked caps had nothing to do; and from the end of the five twists that cleared height 6 at seed 7302, the same freeing rule one level lower, with pairs of twists where single twists stall, took the 936 height-4 pieces to 734 in 12 twists, after one twist of the height-first rule, and then stalled, none of it protected. The integrator replayed the end of every line and had the four records audited; the corrections, none of which changes a twist, a digest or a count of the runs' results, are recorded beside them.
+
 ## [2026-10-20] update | Jumbling: certificate steps in the tutorial runner, a literal lattice player and the R22D-25 kernel
 The tutorial runner can now turn a closure known only by a certificate into a literal step and records it in a second format that its checker reads, a new player plays a lattice word twist by twist, and a first program plays the whole-stop rule R22D-25 under a smaller catalogue with its own checker; each is tested at fixed states or fixtures, not on a run from a scramble, and the runner calls neither the player nor the kernel yet.
 

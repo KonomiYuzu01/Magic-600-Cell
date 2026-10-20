@@ -2809,7 +2809,9 @@ implemented the rule of R22D-81 in its own script, `r22d81_rule.py`, which chose
 digest; ran it from the stop with no prefix and, as a differential test, with the target kept absent; counted the two
 stuck ends at `1ff0061f…` with `r22d81_stuck_ends.py`; and replayed R22D-85 and R22D-86 with its own scripts,
 `r22d85_two_letters.py` and `r22d86_cap290.py`, which give every computed number and digest of the review. The outputs
-are under `runs/round22/` (section 6).
+are under `runs/round22/` (section 6). Cloud lines ran at the same time as the joint attack: one searched caps 311
+and 290 (R22D-89), three took fresh 3000-twist scrambles through the census and both rules (a fourth was still
+running), and one took the height-4 layer at `bbef1c8e…` further (the last two subsections before the open items).
 
 ### R22D-80. R22D-81 from where R22D-75 is stuck: five letters lower the last 172 height-6 pieces, not protected (computed; replayed)
 
@@ -3854,6 +3856,100 @@ a twelfth, and stopped at the script's cap of 12 steps. The outputs are under `r
 - A fast review of `r22d89_replay.py` passed with no findings; both replays reproduced all 35 output rows exactly.
 - Uses: R22D-75, R22D-80, R22D-81, R22D-84, R22D-86, R22D-87, R22D-88.
 
+### R22D-75 and R22D-81 at three more 3000-twist stops (computed; cloud lines; replayed)
+
+- Three cloud lines, run at the same time as the joint attack, each drew a fresh 3000-twist scramble of the I_a menu
+  (seeds 7304, 7306 and 7307, drawn as a census run draws its scramble), ran the census descent of stage 11 with a
+  budget of 18,900 seconds, then the rule of R22D-75 from the stop, with its three families, tests and prediction
+  unchanged (`r22d75_census_k3000.py`, a copy of `r22d75_census.py` with a larger CPU limit for the longer replay),
+  and then the rule of R22D-81 after R22D-75's letters (the draft of `r22d81_rule.py` with `--record` and
+  `--prefix`). Before that each line checked the draft's `--record` path at seed 7302: from the stop, with
+  R22D-75's seven letters as the prefix, it printed every digest, count, N, target table and U_ITEMS vector of the
+  integrator's run of R22D-81 from there (`runs/round22/r22d81_rule.txt`).
+
+  | seed | at the scramble: off, N, left heights | census twists (steps) | at the stop: off, N, left heights | R22D-75 | end: (n₂, n₄, n₆), off, N |
+  |---|---|---|---|---|---|
+  | 7304 | 121,001, 139,584, {2: 118,951, 4: 2,050} | 580 (198) | 95,569, 115,200, {2: 94,384, 4: 1,185} | (170, 12), (395, 12), (500, 12), (540, 12), (217, 15), (148, 15); stuck | (95,674, 797, 0), 96,471, 117,736, `ac127dc3…` |
+  | 7306 | 123,181, 149,224, {2: 118,426, 4: 4,726, 6: 29} | 270 (92) | 108,823, 137,562, {2: 106,032, 4: 2,762, 6: 29} | (208, 12), (76, 13), (90, 12), (109, 12), (233, 15), (387, 15), (485, 13), (403, 13), (512, 15); stuck | (108,641, 2,591, 0), 111,232, 140,018, `16c4aefe…` |
+  | 7307 | 119,518, 136,918, {2: 117,245, 4: 2,263, 6: 10} | 734 (252) | 96,236, 112,776, {2: 94,691, 4: 1,535, 6: 10} | (275, 14), (516, 13), (50, 15), (474, 13), (494, 15), (147, 14); stuck | (98,984, 1,585, 0), 100,569, 115,782, `895b45de…` |
+
+- Height 6 was small at these stops, 0, 29 and 10 pieces against 185 at seed 7302's, and where there was any,
+  R22D-75's rule lowered it by itself: at seed 7306 its first letter, (208, 12), takes all 29 to height 4, and at seed
+  7307 its first two take the 10 to 7 and then 0, the second raising n₄ from 1,538 to 1,940. So at all three the rule
+  of R22D-81 starts with no target and hands over with no letter; these runs say nothing about its reach. R22D-75's
+  rule then stops stuck on height 4 at all three, every single letter exhausted, with 797, 2,591 and 1,585 pieces
+  there and almost every cap blocked (559, 574 and 562 of 600). Off and N end higher than at the stop at all three,
+  though off, and at seed 7306 N, fall at some letters; at seed 7307 n₄ ends above the stop's 1,535, since the rule
+  lowers n₆ first.
+- Every census stopped on its clock (checked between steps, so the last step ends past the budget), having put back
+  21.0%, 11.7% and 19.5% of the off pieces, almost all of it with conj steps (191 of 198, 89 of 92 and 241 of 252 steps;
+  the others cover). At seeds 7306 and 7307 as many pieces were at height 6 at the stop as at the scramble, 29 and 10;
+  whether they are the same pieces was not checked.
+- The integrator's checks (section 6): `check_records.py` of stage 11 passes on the three census records; the cloud
+  lines' copies of `r22d75_census.py` print their outputs again, the `cpu` and `replay_cpu` fields aside; and the
+  committed `r22d81_rule.py`, with `--record`, the line's prefix and `--expect` at its end digest, starts at the same
+  state with no target and hands over with no letter at all three.
+- Scope. One scramble per seed and a census stopped by its clock. A fourth line, seed 7305, was still running. Not
+  coverage and not protected.
+- Uses: R22D-75, R22D-80, R22D-81.
+
+### H4-unlock: the rule of R22D-81 two heights lower, with pair steps, from `bbef1c8e…` (rule; proved finite; computed; replayed)
+
+- A cloud line asked whether literal letters lower the 936 height-4 pieces at `bbef1c8e…`, the end of R22D-80 from
+  the seed 7302 stop, with (n₂, n₄, n₆) = (102,960, 936, 0), 103,896 off and N = 132,930. R22D-75's rule from there
+  plays one letter, (23, 14), which lowers n₂ only, and is then stuck with every single letter exhausted
+  (`0ad859c2…`).
+- The rule H4-unlock (`h4_unlock.py`, a copy of the draft of `r22d81_rule.py`). Its target τ and u are read from the
+  height-4 pieces as R22D-81 reads them from the height-6 pieces; its families L4, U and L2 are R22D-81's H6, U and H4
+  with every height two lower, under the same guards (R22D-81's H2 family has no counterpart); it hands over at
+  n₄ = 0. R22D-75's count prediction is checked against the simulator after every letter. Φ = n₄·B² + u·B + n₂ with
+  B = 177,121 falls at every accepted letter by R22D-81's argument with one coordinate fewer, so the rule is finite;
+  that is not coverage.
+- The pair step (`two_letter_u.py`), tried where H4-unlock is stuck: a first letter at a clean cap that holds no
+  height-4 piece and a second letter, both admissible and certain, no piece above height 4, n₄ and every height-4 pose
+  kept, and u strictly lower after the pair. The pair's end meets every condition of a U letter, so Φ still falls. It is
+  a pair family like U2 of R22D-88, two heights lower. First letters are tried in shards, those of class A first, then
+  the others, each in (grip, item) order; rounds 1 and 4 tried every first letter, and rounds 2 and 3 were stopped once
+  that order had fixed the pair. The pair is read off the outputs: the first success, in (grip, item) order, whose first
+  letter frees a blocked holder of a straddler of τ (makes it clean; such letters are at caps of class A, which hold
+  whole a straddler of a blocked holder), and if there is none, the first success among the other first letters in
+  (grip, item) order, the second letter also in (grip, item) order; not the lowest u. Second letters are tried only at
+  caps that hold a straddler of τ whole after the first letter, are clean then and hold no height-4 piece, since a
+  letter moves only the pieces inside its cap; and they are pruned exactly: a second cap that was clean at the state and
+  holds the same pieces in the same poses after the first letter moves them the same way at both, and since U is
+  exhausted at the state such a letter cannot lower u.
+- The run, 13 letters from `bbef1c8e…` (25 from the stop):
+
+  | phase | letters | τ, u | (n₂, n₄, n₆) | N | digest after |
+  |---|---|---|---|---|---|
+  | R22D-75 | (23, 14) | | (102,901, 936, 0) | 133,134 | `0ad859c2…` |
+  | U, four letters | (357, 1), (357, 3), (593, 3), (593, 43) | 482, 80 → 1 | (103,571, 936, 0) | 133,668 | `6999b921…` |
+  | pair | (541, 2), (593, 54) | 482, 1 → 0 | (103,282, 936, 0) | 133,834 | `391490f7…` |
+  | L4 | (482, 15) | 597, 41 | (102,750, 734, 0) | 133,558 | `c312a2fc…` |
+  | pair | (553, 5), (535, 3) | 597, 41 → 21 | (102,750, 734, 0) | 133,678 | `6c7a79d9…` |
+  | U | (535, 6) | 597, 21 → 10 | (102,750, 734, 0) | 133,700 | `b2651c24…` |
+  | pair | (363, 10), (535, 8) | 597, 10 → 8 | (102,750, 734, 0) | 133,818 | `2430f4cc…` |
+
+- The one lowering letter, (482, 15), lowers n₄ by 202, and the target moves to cap 597, which holds 205 height-4
+  pieces. Of the 936 height-4 pieces of `bbef1c8e…`, 284 end at height 2 and 652 at height 4, and 82 pieces at height 4
+  at the end were lower at `bbef1c8e…`. At `2430f4cc…` H4-unlock is stuck and no pair lowers u: all 1,947 first letters
+  were tried (1,707 of them valid), no valid one makes one of τ's four blocked holders clean (caps 578, 583, 588 and
+  595, with 1,123 straddlers of their own), and the only second cap the prune keeps, 535, leaves u at 8 or more. In the
+  second round of pairs ten first letters at cap 553 freed cap 535 and some of their pairs reach u = 0, for example
+  (553, 27), (535, 21); the stated order took the first success, (553, 5), (535, 3), with u = 21.
+- Not protected: N rises from 132,930 to 133,818, and between `bbef1c8e…` and `2430f4cc…` 2,289 lattice pieces go
+  off and 2,701 off pieces come on.
+- The integrator's replays and audit (section 6): the replay of the 25 letters from the stop prints the cloud line's
+  `end_summary.txt` byte for byte; H4-unlock from the stop with the 25 letters as prefix is stuck at `2430f4cc…` with
+  no letter, as in its run 4; and the full pair search at `2430f4cc…`, from that run's end snapshot, prints the cloud
+  line's round 4 outputs again, the `cpu` fields aside. An audit of the record against its outputs and scripts
+  reproduced every count of the four rounds of pairs and found the termination and prune arguments sound; it also
+  found statements of the record that the outputs contradict or do not support, none of which changes a letter, a
+  digest or a count of the run. They are listed in `README.md` (Files), and the record is kept as written.
+- Scope. One run from one state with one order of the pairs. Neither the lowest-u order nor R22D-25 was run at these
+  states. Not coverage.
+- Uses: R22D-75, R22D-80, R22D-81, R22D-88, R22D-89.
+
 Open after round 6 of line (d), from shard U and the joint attack: at the end of R22D-80 (`bbef1c8e…`) its 936 height-4
 pieces, where R22D-25 has not been run; a switch from R22D-75's rule to R22D-81's that is a test of the state, which
 this stop does not need, since R22D-81's rule alone hands over from it, but which stays open in general (R22D-80);
@@ -3882,6 +3978,15 @@ R22D-96); whether R22D-91's bounds are attained, and protection for seam, close,
 phase U, conj included, is stuck at COV-17's singleton (R22D-97). Of round 5's items, how the rule combines with phase
 U is answered in part: R22D-90 is one such rule, run at the depth 200 stop only (R22D-92), and the item stays open at
 the other stops.
+
+From the cloud lines: the height-4 layer at the three new 3000-twist stops, where R22D-75's rule is stuck (797, 2,591
+and 1,585 pieces, n₆ = 0), and at `2430f4cc…` (734 pieces), where H4-unlock and its pairs stall; R22D-25 has been run
+at none of these states; at `2430f4cc…` the blocked holders 578, 583, 588 and 595 of τ = 597, which no valid first
+letter of a pair makes clean; whether the lowest-u order of the pairs, or a target cursor at height 4 like the one
+R22JX-06 proposes at height 6, gets further; and whether the rule of R22D-81 has to unlock anything at a fresh
+3000-twist stop, since at seeds 7306 and 7307 R22D-75's rule alone cleared height 6 and seed 7304's stop had none. Of
+the items above, the 936 height-4 pieces at `bbef1c8e…` are lowered in part: after R22D-75's one letter, H4-unlock
+with pairs takes n₄ from 936 to 734 and stalls.
 
 ## 6. Commands
 
@@ -4350,6 +4455,49 @@ meeting pairs of R22D-75's seven caps and those that meet cap 311), PRODUCTS (th
 height, the height-6 guard, u, the straddlers removed and added and the branches of the added ones, the counts, the off
 count, N and the digest) and END; at the ends of analysis B's two words also BLOCKERS, HOLDERS and ITEMS (cap 364's
 59-item vector); it stops at the first letter that is not admissible and certain.
+
+Round 6 of line (d), the cloud lines on seeds 7304, 7306 and 7307 and on the height-4 layer at `bbef1c8e…` (section
+5): each cloud line gives its own commands in its `RESULT.md` under `runs/round22/cloud/`. The integrator's checks,
+with `C=research/jumbling/restoration/12-low-height/runs/round22/cloud` and `D=$S/round22/cloud`: the replay check of
+the three census records with stage 11's `check_records.py` (`runs/round22/cloud-k3000-check.out`); the three cloud
+copies of `r22d75_census.py`, which print the lines' `r22d75_census_k3000.txt` again, the `cpu` and `replay_cpu`
+fields aside; the committed `r22d81_rule.py` after R22D-75's letters, which prints START with no target and HANDOFF
+with no letter at each line's end digest, the lines' R22D-81 outputs again apart from the `cpu` fields and the
+`prefix` field the committed script adds; and for the height-4 line the replay of its 25 letters from the stop, which
+prints its `end_summary.txt` byte for byte, H4-unlock from the stop with those letters as the prefix, which is stuck
+at `2430f4cc…` with no letter as in its run 4 and saves its end snapshot, and the full pair search at that snapshot,
+whose three shards print its round 4 outputs again, the `cpu` fields aside:
+
+    python3 -I -B -u research/jumbling/restoration/11-scramble-census/scripts/check_records.py $C/census-k3000-s7304/ia-k3000-s7304.json \
+        $C/census-k3000-s7306/ia-k3000-s7306.json $C/census-k3000-s7307/ia-k3000-s7307.json   # 87 to 101 minutes each (run as three processes at once)
+    for s in 7304 7306 7307; do
+      OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $D/census-k3000-s$s/r22d75_census_k3000.py \
+          $C/census-k3000-s$s/ia-k3000-s$s.json; done                                                                 # about 35 minutes each
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7304/ia-k3000-s7304.json \
+        --prefix '[[170,12],[395,12],[500,12],[540,12],[217,15],[148,15]]' \
+        --expect ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980 --cpu 7200                         # about 30 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7306/ia-k3000-s7306.json \
+        --prefix '[[208,12],[76,13],[90,12],[109,12],[233,15],[387,15],[485,13],[403,13],[512,15]]' \
+        --expect 16c4aefe2f15a043693937cae1d320b8a820e2151a744cf9ad8df9d11e36d96b --cpu 7200                         # about 30 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7307/ia-k3000-s7307.json \
+        --prefix '[[275,14],[516,13],[50,15],[474,13],[494,15],[147,14]]' \
+        --expect 895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507 --cpu 7200                         # about 30 minutes
+    W='[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[124,2],[274,13],[46,1],[46,3],[104,14],[23,14],[357,1],[357,3],
+        [593,3],[593,43],[541,2],[593,54],[482,15],[553,5],[535,3],[535,6],[363,10],[535,8]]'
+    H='{"12":"bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299","13":"0ad859c24e540a55de416e8a901e4da7b3ddbccc3d6e19a50629ac7b35a87e05",
+        "17":"6999b9214d6ea25486daf67e650773babff08f1a41742acfddd6eec2f88787ab","19":"391490f78b2fe76ea07cede387bf335f76d34885c47a7aa0c09ebc8ad3d27da8",
+        "20":"c312a2fcb7f2a502908f71b2d9acee8cb9868fb63930b4949483ee5061e830d1","22":"6c7a79d9aa68769261c3ba3d613bfaff5d2d539e57797664418f46e85f594744",
+        "23":"b2651c24f07172eb2cf18fa2cf5b61eba12fa2fb2271711feb7c249fb0e27b51","25":"2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472"}'
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $D/height4-descent-bbef1c8e/end_summary.py <dir>/s7302-stop.pkl "$W" "$H"   # a few minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $D/height4-descent-bbef1c8e/h4_unlock.py --snapshot <dir>/s7302-stop.pkl \
+        --prefix "$W" --expect 2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472 --cpu 3000 --save-end <dir>/h4-end-4.pkl   # a few minutes
+    for i in 0 1 2; do
+      OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $D/height4-descent-bbef1c8e/two_letter_u.py --snapshot <dir>/h4-end-4.pkl \
+          --expect 2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472 --shard $i --nshards 3 --cpu 12000 & done; wait   # about 50 minutes
+
+`<dir>/s7302-stop.pkl` is the snapshot of `r22d31_snapshots.py` above; `$H` gives the digests checked after letters
+12, 13, 17, 19, 20, 22, 23 and 25, the ends of the phases. The scripts write no file apart from the cache of
+`theory/seams.py` and the snapshot named by `--save-end`.
 
 ## 7. Line (c): T2 and T3 (joint attack)
 

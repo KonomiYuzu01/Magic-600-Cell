@@ -258,6 +258,11 @@ library, and plays the run's word literally (R22D-57).
 - The round 11 lattice schedule has a restorer for real lattice configurations (stage 09,
   `schedule11/restore_schedule11_late.py`, with its test outcome recorded there); the runner does not call it.
 - It decides nothing about coverage: a solved run shows that the rules reached the solved state from that start.
+- The acceptance test is fixed (owner, 20 October 2026,
+  [decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-20-tutorial-acceptance.md)): 21 scrambles that
+  development never used, three fresh seeds at each of the depths 10, 20, 40, 100, 300, 1000 and 3000 (seeds 9011 to
+  9073), run in batches from shallow to deep, every word played twist by twist, the lattice phase included, and every
+  record replayed by the checker twist by twist. None of them has been run.
 
 ## 7. Review findings
 
