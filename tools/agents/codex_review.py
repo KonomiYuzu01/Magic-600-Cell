@@ -71,6 +71,14 @@ SUBSCRIPTION_OVERRIDES = ["-c", 'model_provider="openai"', "-c", 'forced_login_m
 # sandbox backend must then be named, or Codex falls back to a mode that rejects every command, even file reads.
 # The unelevated backend needs no administrator setup; it enforces filesystem boundaries but not a network firewall.
 USER_CONFIG_ISOLATION = ["--ignore-user-config"] + (["-c", 'windows.sandbox="unelevated"'] if os.name == "nt" else [])
+# The user config is not the only source of MCP servers. Codex 0.159 turns these features on by default: with a ChatGPT
+# sign-in, `plugins` loads the plugins installed on the account (listed by the ChatGPT backend and cached under
+# CODEX_HOME/plugins) and starts their MCP servers outside the sandbox; `apps` connects the hosted ChatGPT connector
+# MCP endpoint; `skill_mcp_dependency_install` adds the MCP servers that a mentioned skill declares. Disabling
+# `remote_plugin` alone leaves installed plugins running. --disable rejects an unknown name, so a renamed feature fails
+# the call instead of being skipped silently.
+ISOLATED_FEATURES = ("plugins", "apps", "remote_plugin", "skill_mcp_dependency_install")
+MCP_ISOLATION = [arg for feature in ISOLATED_FEATURES for arg in ("--disable", feature)]
 # Anchored to the CLI's own warning line: file contents Codex reads also appear in its log.
 TIER_DROPPED_RE = re.compile(r"^warning: Configured service tier `[^`]+` is not advertised", re.M)
 
@@ -385,8 +393,8 @@ def child_env() -> dict:
 
 
 def implement_command(base_cmd: list[str], args, wt: Path, out_dir: Path) -> list[str]:
-    cmd = [*base_cmd, "exec", *USER_CONFIG_ISOLATION, "-m", args.model, "-c", f'model_reasoning_effort="{args.effort}"',
-           "-c", f'service_tier="{SPEEDS[args.speed]}"', *SUBSCRIPTION_OVERRIDES,
+    cmd = [*base_cmd, "exec", *USER_CONFIG_ISOLATION, *MCP_ISOLATION, "-m", args.model,
+           "-c", f'model_reasoning_effort="{args.effort}"', "-c", f'service_tier="{SPEEDS[args.speed]}"', *SUBSCRIPTION_OVERRIDES,
            "-c", "sandbox_workspace_write.writable_roots=[]", "-c", "sandbox_workspace_write.network_access=false"]
     for key, value in child_env().items():
         if key == "PYTHONDONTWRITEBYTECODE" or key.startswith("GIT_CONFIG_"):
@@ -647,8 +655,8 @@ def main(argv=None) -> int:
             called = True
             return run_implement(args, record, call_id, out_dir, base_cmd, packet_text, contract, wt, base, paths)
         with tempfile.TemporaryDirectory() as td:
-            cmd = [*base_cmd, "exec", *USER_CONFIG_ISOLATION, "-m", args.model, "-c", f'model_reasoning_effort="{args.effort}"',
-                   "-c", f'service_tier="{SPEEDS[args.speed]}"', *SUBSCRIPTION_OVERRIDES]
+            cmd = [*base_cmd, "exec", *USER_CONFIG_ISOLATION, *MCP_ISOLATION, "-m", args.model,
+                   "-c", f'model_reasoning_effort="{args.effort}"', "-c", f'service_tier="{SPEEDS[args.speed]}"', *SUBSCRIPTION_OVERRIDES]
             cmd += ["--sandbox", "read-only", "--output-schema", str(strict_schema_file(Path(td))),
                     "-o", str(out_dir / "review.json"), "-"]
             called = True
