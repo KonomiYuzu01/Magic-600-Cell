@@ -15,3 +15,7 @@ Census (steps 1 and 3): stop reason `time-limit` after 580 descent twists (198 r
 121,001 off, N = 139,584, heights {2: 118,951, 4: 2,050}. Stop: 95,569 off, N = 115,200, heights {2: 94,384,
 4: 1,185}; no piece at height 6 at the scramble or at the stop. Record `ia-k3000-s7304.json`, stdout `census.txt`.
 R22D-75 started on the record.
+
+R22D-75 (step 4): six letters (170,12), (395,12), (500,12), (540,12), (217,15), (148,15), then STUCK (all single
+letters exhausted) at `ac127dc3…` with (n6, n4, n2) = (0, 797, 95,674), 96,471 off, N = 117,736. Output
+`r22d75_census_k3000.txt`. R22D-81 started with these six letters as prefix.
