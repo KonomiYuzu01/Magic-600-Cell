@@ -48,8 +48,8 @@ outside the repository. Python 3.13.16 and NumPy 2.5.3 in this cloud session.
 1. `cloud/unlock-cap311-cap290/build_stop.py <dir>` builds `<dir>/s7302-stop.pkl`: `015d839e…`, 100,584 off, 3000
    history twists and 313 descent twists. It does what `r22d31_snapshots.py` does for this one snapshot, using that
    script's own `SNAPSHOTS` entry and `load()`. I wrote it because a container restart killed the first full
-   `r22d31_snapshots.py` run after it had written the 7103 snapshot. The snapshot was built twice in this session,
-   for the same reason.
+   `r22d31_snapshots.py` run after it had written the 7103 snapshot. It was built a second time after a later restart,
+   with the same digest and off count.
 2. `drafts/r22d80_check.py <dir>/s7302-stop.pkl` → `r22d80_check.txt`.
    `drafts/r22d85_two_letters.py <pkl>` → `r22d85_two_letters.txt`. `drafts/r22d86_cap290.py <pkl>` →
    `r22d86_cap290.txt`. `drafts/r22d82_unlock_graph.py <pkl>` → `r22d82_unlock_graph.txt`. None was edited.
@@ -150,24 +150,34 @@ and the only class (i) cap is 301 (the 16 blocked holders have 67 to 259 straddl
 
 - Class (i), complete: all 59 items of 301 are class (i). 3,717 pairs were tried; 4 first letters have accepted
   seconds, 68 pairs in all. The first accepted pair in order is (301, 2), (136, 7): u = 37, counts and off unchanged,
-  `fa6ad5b2…`. The lowest u is 3, from (301, 9), (136, 24), which takes 477 lattice pieces off (`e4a58…`).
-- Class (ii), 37 caps: the bound prunes 35 of them (bound 38 = u0): [2, 20, 23, 39, 46, 59, 62, 64, 66, 70, 93, 112,
-  124, 167, 185, 262, 263, 357, 358, 363, 364, 370, 394, 407, 422, 471, 492, 523, 533, 541, 552, 553, 590, 591, 593].
-  Two caps are left, 136 (bound 30) and 277 (bound 29).
-  - Cap 136 (shard 1), complete: all 59 items tested, 3,363 pairs tried, 30 accepted pairs from 10 first letters.
-    The first is (136, 1), (301, 1) with u = 37; the lowest is u = 30, from (136, 2), (301, 1).
-  - Cap 277 (shard 0): 53 of 59 items tested before the container restart, with 114 accepted pairs from 38 first
-    letters. The first is (277, 1), (301, 4) with u = 29, which is also the lowest. Items 54 to 59 are being re-run
-    (see "Open").
+  `fa6ad5b2…`. The lowest u is 3, from (301, 9), (136, 24), with off rising by 477 (`e4a589a7…`).
+- Class (ii), complete. There are 37 caps. The bound prunes 35 of them (bound 38 = u0), 2,065 first letters in all:
+  [2, 20, 23, 39, 46, 59, 62, 64, 66, 70, 93, 112, 124, 167, 185, 262, 263, 357, 358, 363, 364, 370, 394, 407, 422,
+  471, 492, 523, 533, 541, 552, 553, 590, 591, 593]. Two caps are left, 136 (bound 30) and 277 (bound 29), and all
+  118 of their first letters were tested.
+  - Cap 136: 3,363 pairs tried, 30 accepted pairs from 10 first letters. The first is (136, 1), (301, 1) with u = 37;
+    the lowest is u = 30, from (136, 2), (301, 1).
+  - Cap 277: 123 accepted pairs from 41 first letters. The first is (277, 1), (301, 4) with u = 29, which is also the
+    lowest.
+- In all, at `9e6b991b`: 118 + 59 = 177 first letters were tested, 2,065 were pruned and 10,561 pairs were tried.
+  There are 221 accepted pairs. Every first letter at 301, 136 and 277 keeps H6.
 
 **Cap 311 at `fe273a8c` (u0 = 8).** There are 38 clean caps. The only clean holder and class (i) cap is 364.
 
-- Class (i), shard 0: items 1 to 41 of 364 tested before the restart, 5 accepted pairs from 2 first letters. The
-  first is (364, 3), (263, 6): u = 2, counts unchanged. (364, 3), (263, 32) and (364, 3), (263, 42) give u = 0
-  directly.
-- Class (ii): the bound prunes 11 of shard 1's 12 caps (bound 8), and 407 (bound 6) is left. Items 1 to 7 of 407
-  were tested, 6 accepted pairs from 2 first letters. The first is (407, 3), (364, 4) with u = 6.
-- Shard 2 and the rest of shards 0 and 1 are being re-run (see "Open").
+- Class (i), complete: 58 items of 364 are class (i). Item 9 is not class (i) by its effect, so it was deferred to
+  class (ii). 2 first letters have accepted seconds, 5 pairs in all:
+  - (364, 3) with (263, 6) → u = 2 (counts unchanged), with (263, 32) → u = 0 and with (263, 42) → u = 0. The last
+    two take 462 and 841 more pieces off.
+  - (364, 10) with (263, 32) and (263, 42) → u = 6.
+- Class (ii), complete. There are 37 clean caps, and the bound prunes 36 of them (bound 8), 2,124 first letters. That
+  leaves 407 (bound 6) and the deferred (364, 9), 60 first letters, all tested. (364, 9) has no accepted second. 9
+  first letters at 407 have accepted seconds, 27 pairs in all, each with b at 364 (items 4, 5 and 10). The first is
+  (407, 3), (364, 4) with u = 6; the lowest is 6.
+- In all: 118 first letters tested, 2,124 pruned, 5,782 pairs tried, 32 accepted pairs.
+- Neither target needed class (ii) or three letters to make progress: at each stall a class (i) pair was accepted.
+
+The re-runs of `prep290_s0`, `prep311_s0` and `prep311_s1` after the container restart printed the interrupted runs'
+lines again exactly, apart from CPU fields. The interrupted outputs are therefore not kept.
 
 No triple (a, a′, b) was needed: two-letter preparations were found at every stall, so `--three` was not run.
 
@@ -235,7 +245,8 @@ The same twelve items (14, 21, 23, 43 to 51) lower n6 by 13, each taking 1,213 l
 | `build_stop.py` (each build) | about 1,800 |
 | `r22d80_check` / `r22d85` / `r22d86` / `r22d82` | 26 / 27 / 66 / 197 |
 | `cap311_unlock` from `1ff0061f` / from the stop | 271 / 710 |
-| `prep290` shard 1 / shard 2 (complete) | 1,615 / 192 |
+| `prep290` shards 0 / 1 / 2 | 6,503 / 1,615 / 192 |
+| `prep311` shards 0 / 1 / 2 | 3,024 / 2,098 / 307 |
 | `drive290` / `drive311` from `1ff0061f` / from the stop | 1,414 / 571 / 1,098 |
 
 Building the full label table takes about 140 CPU s per state. Each trial letter costs about 0.4 s.
@@ -244,10 +255,6 @@ Building the full label table takes about 140 CPU s per state. Each trial letter
 
 - **Not run:** Windows, DirectX and native checks (headless Linux only); `--three`; no Codex or other model call (by
   the line's rules).
-- **Being re-run at the time of writing:** the listings `prep290_s0` (class (ii) cap 277 items 54 to 59) and
-  `prep311_s0`/`s1`/`s2` (cap 364 items 42 to 59, cap 407 items 8 to 59, shard 2). A container restart killed these
-  jobs together with the snapshot. Their partial .txt outputs above are committed as `*.partial.txt`. These listings
-  only count the alternatives: the routes above do not depend on them.
 - **Not proved:** a stall proves only that the enumerated set fails, not that no unlocking word exists. The routes
   are the first ones found in the stated order, not shortest or best ones. N rises along every route; this line does
   not judge N.
