@@ -17,7 +17,7 @@
 # saves the end state as a snapshot (load() format, with the letters played) for a later run with --snapshot.
 # Changes against r22d81_rule.py: heights 6/4 -> 4/2 throughout (target, families, guards, handoff); the families
 # renamed L4, U, L2 (H6 dropped: no piece is above height 4); the count prediction kept per cap for every item and
-# checked after every letter, U included; the target table printed at STUCK; checktime() inside target(); --save-end;
+# checked after every letter, U included (a retained item, in K+, is predicted to keep every count); the target table printed at STUCK; checktime() inside target(); --save-end;
 # the letters played since 015d839e kept in the saved snapshot and printed at the end. Containment tests are the draft's (the simulator's own group
 # and anchor tests, restricted to the given pieces).
 # Research only, headless Linux; exact geometry. It writes no file unless --save or --save-end names one;
@@ -196,12 +196,13 @@ def rows(st, memo, ct):
         ans = []; pred = {}
         for j in range(1, 60):                                 # the prediction of every item, for the after-letter check
             g, l = item(c, j)
+            if l is None:                                      # a retained item (in K+) keeps every height
+                pred[j] = list(phi); continue
             r = {2: 0, 4: 0, 6: 0}
-            if l is not None:
-                for hh, q, n in ops:
-                    new = E.T.dist(E.T.qmul(l, q)); assert new in (hh, hh - 2)
-                    if new == hh - 2:
-                        r[hh] += n
+            for hh, q, n in ops:
+                new = E.T.dist(E.T.qmul(l, q)); assert new in (hh, hh - 2)
+                if new == hh - 2:
+                    r[hh] += n
             pred[j] = [v + d for v, d in zip(phi, [foreign[4] - r[6], foreign[2] + r[6] - foreign[4] - r[4], lat + r[4] - foreign[2] - r[2]])]
         if foreign[6] or foreign[4] > own[6] or (foreign[4] == own[6] and (foreign[2] > own[4] or (foreign[2] == own[4] and lat >= own[2]))):
             ct['cap_bound_prunes'] += 1                        # R22D-75's bound: no item of this cap lowers the counts
