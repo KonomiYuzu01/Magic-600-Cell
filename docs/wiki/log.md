@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-21] update | Jumbling: handoff entries of 21 October for the five 1.0 lines
+At the owner's request the renderer, engineering, Look Lab, Taste Lab and design-table pages of `docs/progress/1.0/jumbling-handoff/` gained a second entry, which records the work of 18 to 20 October and the state after the research stopped: what each line can use now, what will not arrive, what it must not assume and what waits for the owner. Their Summary, Open items and Checks not run sections now describe the current state; the logs stay append-only, and older items carry "Updated by" or "Superseded in part by" marks.
+
+## [2026-10-21] decision | Jumbling: the research stops
+On 20 October the owner stopped the jumbling research once the work in flight was done, because it was progressing too slowly ([owner-decisions-2026-10-20-research-stop](decisions/owner-decisions-2026-10-20-research-stop.md)). The tutorial is not accepted, none of the 21 acceptance scrambles has run, packets P1 to P5 are reviewed but not applied, and no research round, run or scheduled check-in remains.
+
 ## [2026-10-20] update | Jumbling: line (d), round 6, the fourth fresh 3000-twist scramble
 The fourth cloud line, seed 7305, finished: its scramble had no piece at height 6, its census descent stopped on its clock after 103 twists with 105,437 pieces off, and the height-first rule then played 11 twists, taking the height-4 pieces from 2,297 to 1,419, before it stopped stuck, so the rule that frees blocked caps again had nothing to do ([stage 12](../../research/jumbling/restoration/12-low-height/README.md), [stage 11](../../research/jumbling/restoration/11-scramble-census/README.md)). The integrator replayed the census record and both rules from it and had the record audited; the corrections, none of which changes a twist, a digest or a count, are recorded beside it.
 
