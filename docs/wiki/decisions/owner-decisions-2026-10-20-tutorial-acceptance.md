@@ -91,7 +91,8 @@ expanded down to single twists. Integrator reading: each step of the tutorial is
 example V, W and V⁻¹ of a closure, a seed and its conjugators, an orbit of the lattice cascade, a correction macro),
 each part with its length, and every part expands to its parts and finally to the twists played. Long steps are shown
 this way, folded, not as flat lists: at the depth 40 stop of seed 7101, E2's 13 literal steps total 2,012,155 twists and
-the lattice phase after them 162,994,641 ([stage 12](../../../research/jumbling/restoration/12-low-height/README.md)).
+the lattice phase after them 166,788,405 ([stage 12](../../../research/jumbling/restoration/12-low-height/README.md);
+corrected on 21 October 2026 from 162,994,641, the lattice phase after E2's run with nine certificate steps).
 The runner records the tree of every step it takes, and the checker checks that the tree expands to exactly the word it
 replays.
 
