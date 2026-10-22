@@ -39,6 +39,63 @@ class FigdataTests(unittest.TestCase):
                 computation.height_start
         self.assertNotIn("height_start", computation.__dict__)
 
+    def test_point_model_refuses_wrong_rebuilt_digest_before_loading_the_model(self):
+        computation = G.Computation()
+        state = types.SimpleNamespace(digest=lambda: "a" * 64)
+        record = {"seed": 7102, "history": [], "moves": []}
+        with patch.object(computation, "state", return_value=state), \
+             patch.object(computation, "play", return_value=None), \
+             patch.object(computation.inputs, "json", return_value=record), \
+             patch.object(computation.inputs, "text", return_value=json.dumps({"start_digest": "b" * 64})), \
+             patch.object(G, "functions", side_effect=AssertionError("loaded a model before checking the state")):
+            with self.assertRaisesRegex(ValueError, "state digest mismatch"):
+                computation.point_model()
+        self.assertNotIn("point_model_start", computation.__dict__)
+
+    def test_class_cells_refuse_wrong_rebuilt_digest_before_loading_the_model(self):
+        computation = G.Computation()
+        record = {"input": {"table": G.CLASS_TABLE, "sha256": "c" * 64, "digest": "b" * 64}}
+        state = types.SimpleNamespace(digest=lambda: "a" * 64)
+        computation.inputs.digests[G.CLASS_TABLE] = record["input"]["sha256"]
+        computation.__dict__["mechanics"] = types.SimpleNamespace(
+            orient=types.SimpleNamespace(set_pose_table=lambda *args: None))
+        with patch.object(computation, "state", return_value=state), \
+             patch.object(computation.inputs, "json", side_effect=[record, {"digest": "b" * 64}]), \
+             patch.object(G, "functions", side_effect=AssertionError("loaded a model before checking the state")):
+            with self.assertRaisesRegex(ValueError, "state digest mismatch"):
+                computation.class_cells()
+        self.assertNotIn("class_cells_start", computation.__dict__)
+
+    def test_class_cells_refuse_changed_input_bytes_before_importing_the_table(self):
+        computation = G.Computation()
+        record = {"input": {"table": G.CLASS_TABLE, "sha256": "c" * 64, "digest": "b" * 64}}
+        computation.inputs.digests[G.CLASS_TABLE] = "d" * 64
+        with patch.object(computation.inputs, "json", side_effect=[record, {"digest": "b" * 64}]), \
+             patch.object(computation, "state", side_effect=AssertionError("used an unverified table")):
+            with self.assertRaisesRegex(ValueError, "class-cell table digest mismatch"):
+                computation.class_cells()
+
+    def test_each_concept_check_detects_a_changed_observation_without_writing(self):
+        saved = json.loads((HERE / "figdata.json").read_bytes())
+        for name in G.CONCEPTS:
+            fresh = {"format": G.FORMAT, "figures": {name: saved["figures"][name]}}
+            changed = copy.deepcopy(fresh)
+            if name == "ch04-point-model":
+                changed["figures"][name]["trace"][0]["label"] += 1
+            else:
+                changed["figures"][name]["cells"][0]["points"][0]["owner"]["pieces"] += 1
+            with self.subTest(name=name), tempfile.TemporaryDirectory(prefix="magic600-concept-check-") as directory:
+                path = Path(directory) / "figdata.json"
+                path.write_text(json.dumps(fresh))
+                with patch.object(G, "HERE", Path(directory)), patch.object(G, "compute", return_value=fresh), \
+                     contextlib.redirect_stdout(io.StringIO()) as output:
+                    self.assertEqual(G.main(["--check", "--only", name]), 0)
+                    path.write_text(json.dumps(changed))
+                    before = path.read_bytes()
+                    self.assertEqual(G.main(["--check", "--only", name]), 1)
+                    self.assertEqual(path.read_bytes(), before)
+                self.assertIn(name, output.getvalue())
+
     def test_check_cli_detects_changed_value_without_writing(self):
         name = G.NAMES[0]
         fresh = {"format": G.FORMAT, "figures": {name: {"states": [{"state_digest": "a" * 64, "N_c": {"268": 42}}]}}}
@@ -89,6 +146,9 @@ class FigdataTests(unittest.TestCase):
         self.assertEqual(namespace["value"](2), 3)
         with self.assertRaisesRegex(ValueError, "source functions mismatch"):
             G.functions(inputs, "example.py", ["missing"], {})
+        inputs = types.SimpleNamespace(text=lambda _: "raise RuntimeError('CLI ran')\nclass Example:\n value = 7\n")
+        namespace = G.functions(inputs, "example.py", ["Example"], {})
+        self.assertEqual(namespace["Example"]().value, 7)
 
     def test_only_limits_computation_and_has_selection_independent_inputs(self):
         selected = G.NAMES[2]
@@ -123,7 +183,7 @@ class FigdataTests(unittest.TestCase):
                     self.assertRegex(value["state_digest"], r"^[0-9a-f]{64}$")
                     self.assertIn("source", value)
                 for key, item in value.items():
-                    if key in ("source", "N_source", "position_source") and item not in checked:
+                    if key in ("source", "N_source", "position_source", "bad_source") and item not in checked:
                         path, function = item.split(":")
                         body = ast.parse(G.input_path(path).read_text()).body
                         for part in function.split("."):

@@ -515,7 +515,7 @@ occupies, `research/jumbling/theory/buffer.py:72-85`); the point model of branch
 | SAFE grip | a cap clean at Y with only lattice pieces inside | :233-234; `buffer.py:139-148` |
 | SAFE letters, image of a chamber | the letters (c, i) with c a SAFE grip and i one of the retained items 1 to 11, ordered by grip, then by item. Under a SAFE letter a chamber inside its cap moves to its image under the letter's lattice element; any other chamber stays | `buffer.py:151-163`, `:221-227` |
 
-![Figure 4.3: The point model of branch Q at the R22D-16 case: a patch of Q's caps as the 600-cell complex, the cells of the target and of Bad(W), the five label points of a cell, and how the commutator's letters move the points](figures/png/ch04-point-model.png)
+![Figure 4.3: The point model of branch Q at the R22D-16 case: a patch of Q's caps as the 600-cell complex, the cells of the target and of Bad(W), the five label points of a cell, and how the commutator's letters move the points](figures/svg/ch04-point-model.svg)
 
 **Candidates and order.** D19 goes through these loops in this order and stops at the first word that passes its replay
 (`run_rule`, `r22d19_rule.py:602-670`):

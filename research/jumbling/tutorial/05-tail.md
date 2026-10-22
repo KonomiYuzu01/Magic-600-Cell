@@ -226,7 +226,7 @@ contents, and no vacant home point of any kind. Since 1,449 = 1,441 + 4 + 4, eac
 of each of their cells belongs to a lattice content. So both units are glued (inferred from the class line; the
 census's per-unit rows are not in the record, section 5.17.4).
 
-![Figure 5.3: The class cell model of class 3 at the state with 71 off pieces: the edge cell of caps 12 and 91 and the vertex cell of cap 91, each drawn as five label points, with the off content (b05 or b06) at label 3, the lattice content at label 0 that glues it, and the owners of the other points](figures/png/05-class-cells-71.png)
+![Figure 5.3: The class cell model of class 3 at the state with 71 off pieces: the edge cell of caps 12 and 91 and the vertex cell of cap 91, each drawn as five label points, with the off content (b05 or b06) at label 3, the lattice content at label 0 that glues it, and the owners of the other points](figures/svg/05-class-cells-71.svg)
 
 ### 5.4.2 Two shared searches, screens and crashes
 

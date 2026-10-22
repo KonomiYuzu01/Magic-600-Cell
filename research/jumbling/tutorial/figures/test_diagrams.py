@@ -29,6 +29,7 @@ EXPECTED = {
     "bulk-conj-7101-s30", "03-counts-7302", "03-r22d75-prediction-cap64",
     "03-call-flow", "ch04-family-order", "ch04-tier-shapes", "ch04-d19-tree",
     "ch04-six-stops-caps", "05-tail-loop", "05-tree-b07-certificate",
+    "ch04-point-model", "05-class-cells-71",
     "05-e2-trajectory", "ch06-phase-flow", "ch06-nu-grid", "ch06-twisted-cycle",
     "ch06-orbit6-tree", "ch06-late-three-cycle", "ch06-retained-first",
     "ch06-d20-steps", "07-t1prime-b04-tree", "07-seed7001-bulk-steps",
@@ -350,6 +351,78 @@ class DiagramsTests(unittest.TestCase):
         self.assertEqual(len(rows), 83)
         self.assertTrue(all(len(row) == 600 for row in rows))
 
+    def test_point_model_draws_the_exact_patch_five_labels_and_chronological_path(self):
+        data = load(D.F + "/figdata.json")["figures"]["ch04-point-model"]
+        root = self.svg("ch04-point-model")
+        nodes = root.findall("s:circle[@data-cap]", NS)
+        self.assertEqual([int(n.get("data-cap")) for n in nodes], data["patch_caps"])
+        edges = root.findall("s:line[@data-edge]", NS)
+        self.assertEqual([list(map(int, n.get("data-edge").split(","))) for n in edges], data["patch_edges"])
+        self.assertEqual({int(n.get("data-cap")) for n in nodes if n.get("data-target") == "true"},
+                         set(data["content"]["cell"]))
+        self.assertEqual({int(n.get("data-cap")) for n in nodes if n.get("data-bad") == "true"},
+                         {c for row in data["bad_cell_counts"] for c in row["cell"]})
+        self.assertEqual({int(n.get("data-cap")) for n in nodes if n.get("data-preimage") == "true"},
+                         {c for row in data["preimage_cell_counts"] for c in row["cell"]})
+        self.assertEqual([int(n.get("data-label")) for n in root.findall("s:circle[@data-label]", NS)], data["labels"])
+        groups = root.findall("s:g[@data-path-step]", NS)
+        self.assertEqual(len(groups), len(data["trace"]) + 1)
+        for group, point in zip(groups, [data["content"]] + data["trace"]):
+            text = " ".join(group.itertext())
+            self.assertIn(D.cell_text(point["cell"]), text)
+            self.assertIn("label " + str(point["label"]), text)
+        text = " ".join(root.itertext())
+        self.assertIn("W = C" + D.sup(data["exponent"]) + " · |Bad(W)| = " + D.count(data["bad_count"]), text)
+        self.assertIn(D.count(data["points"]) + " points", text)
+        self.assertIn("not the identity", text)
+        self.assertIn("V⁻¹(Bad(W)) has " + D.count(data["preimage_count"]) + " chambers", text)
+        for row in data["bad_cell_counts"] + data["preimage_cell_counts"]:
+            self.assertIn(D.cell_text(row["cell"]), text)
+        self.assertEqual(sum(r["chambers"] for r in data["bad_cell_counts"]), data["bad_count"])
+        self.assertEqual(sum(r["chambers"] for r in data["preimage_cell_counts"]), data["preimage_count"])
+
+    def test_class_cells_show_each_points_content_owner_and_piece_counts(self):
+        data = load(D.F + "/figdata.json")["figures"]["05-class-cells-71"]
+        root = self.svg("05-class-cells-71")
+        groups = root.findall("s:g[@data-cell]", NS)
+        self.assertEqual(len(groups), sum(len(c["points"]) for c in data["cells"]))
+        for cell in data["cells"]:
+            for point in cell["points"]:
+                group = next(g for g in groups if int(g.get("data-cell")) == cell["cell"]
+                             and int(g.get("data-label")) == point["label"])
+                text = " ".join(group.itertext())
+                for content in point["content"]:
+                    self.assertIn(content["name"], text)
+                    self.assertIn(str(content["pieces"]) + " pieces", text)
+                if not point["content"]:
+                    self.assertIn("empty", text)
+                self.assertIn(point["owner"]["name"], text)
+                self.assertIn(str(point["owner"]["pieces"]) + " pieces", text)
+        self.assertFalse(data["chapter_differences"])
+        self.assertEqual(data["shared_caps"], [91])
+
+    def test_both_concept_outputs_are_checked_without_writing(self):
+        out = self.base / "concept-check"
+        D.generate(out, D.CONCEPT_FIGURES)
+        self.assertEqual(D.check(out, D.CONCEPT_FIGURES), [])
+        for name in sorted(D.CONCEPT_FIGURES):
+            target = out / (name + ".svg")
+            original = target.read_bytes()
+            target.write_bytes(original.replace(b"<circle", b"<ellipse", 1))
+            before = target.read_bytes()
+            self.assertEqual(D.check(out, D.CONCEPT_FIGURES), [name])
+            self.assertEqual(target.read_bytes(), before)
+            target.write_bytes(original)
+
+    def test_stale_concept_inputs_are_refused_before_drawing(self):
+        data = load(D.F + "/figdata.json")["figures"]
+        for name in D.CONCEPT_FIGURES:
+            stale = copy.deepcopy(data[name])
+            stale["inputs"][D.F + "/figdata.py"] = "0" * 64
+            with self.subTest(name=name), patch.object(D.Evidence, "figdata", return_value=stale):
+                with self.assertRaisesRegex(ValueError, "stale concept figure data"):
+                    D.render(name, {})
+
     def test_twisted_cycle_shows_exact_support_and_collateral_counts(self):
         data = load(D.F + "/figdata.json")["figures"]["ch06-twisted-cycle"]
         self.assertEqual([len(p["word"]) for p in data["parts"]], [7, 3, 28, 3, 7])
@@ -449,11 +522,15 @@ class DiagramsTests(unittest.TestCase):
                  D.ROUND + "/line-a/literal/run1/03-b20-program.json",
                  D.ROUND + "/line-a/replay2/run2/00-b04-program.json",
                  D.DEV + "/d0-s7106/run/words/00019.ia16.gz",
-                 D.RUNNER + "/runs/depth20-seed7106/lattice/solutions.json.gz",
-                 D.F + "/figdata.json"]
+                 D.RUNNER + "/runs/depth20-seed7106/lattice/solutions.json.gz"]
         for path in paths:
             with self.subTest(path=path):
                 self.assertIn(digest((ROOT / path).read_bytes()), appendix)
+        # The 810-letter word is cited by the digest of its compact JSON, which
+        # other data sets added to the shared file do not change.
+        word = load(D.F + "/figdata.json")["word"]
+        self.assertEqual(len(word), 810)
+        self.assertIn(digest(json.dumps(word, separators=(",", ":")).encode()), appendix)
 
     def test_catalogue_lists_appendix_after_chapters_and_pending_recipes_without_reasons(self):
         spec = importlib.util.spec_from_file_location("appendix_catalogue", HERE / "catalogue.py")

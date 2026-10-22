@@ -57,6 +57,10 @@ UPDATED_FIGURES = {"bulk-n-7101", "bulk-conj-7101-s30", "03-counts-7302",
 CHAPTER_DATA_RENDERER = "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
 CHAPTER_DATA_SHA256 = "35ae0c746ed3182ca3a60625117fa5ac7067d50ce16228c647cbcba45b04258b"
 CHAPTER_TREES_SHA256 = "748e36ba7ad9b6fd703d5d6ec549ae627a891e0683589812e25e64da1b8fca51"
+CONCEPT_FIGURES = {"ch04-point-model", "05-class-cells-71"}
+APPENDIX_RENDERER = "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+APPENDIX_DATA_SHA256 = "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac"
+APPENDIX_DATA_SOURCE = "3f2eb8401954e130031f1b2d201b9b756762bd474d7b24ac71fecc9205a3919f"
 ET.register_namespace("", SVG_NS)
 
 
@@ -66,7 +70,15 @@ def sha256(raw):
 
 def production_inputs(name, inputs):
     result = dict(inputs)
-    if not name.startswith("appa-"):
+    if name in CONCEPT_FIGURES:
+        return result
+    if name.startswith("appa-"):
+        result[F + "/diagrams.py"] = APPENDIX_RENDERER
+        if F + "/figdata.json" in result:
+            result[F + "/figdata.json"] = APPENDIX_DATA_SHA256
+        if F + "/figdata.py" in result:
+            result[F + "/figdata.py"] = APPENDIX_DATA_SOURCE
+    else:
         result[F + "/diagrams.py"] = CHAPTER_DATA_RENDERER if name in UPDATED_FIGURES else ORIGINAL_RENDERER
         if F + "/figdata.json" in result:
             result[F + "/figdata.json"] = CHAPTER_DATA_SHA256
@@ -821,6 +833,180 @@ def literal_assignment(text, name):
         if isinstance(statement, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in statement.targets):
             return ast.literal_eval(statement.value)
     raise ValueError("missing literal assignment: " + name)
+
+
+def concept_data(e):
+    data = e.figdata()
+    for path, digest in data["inputs"].items():
+        if sha256(e.raw(path)) != digest:
+            raise ValueError("stale concept figure data: " + e.name + ": " + path)
+    return data
+
+
+def cell_text(caps):
+    return "[" + ", ".join(map(str, caps)) + "]"
+
+
+def sup(number):
+    return str(number).translate(str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹"))
+
+
+@figure("ch04-point-model", "04-high.md", "The point model at the R22D-16 lowering")
+def point_model(e, s):
+    data = concept_data(e)
+    target = set(data["content"]["cell"])
+    bad = [set(row["cell"]) for row in data["bad_cell_counts"]]
+    preimage = [set(row["cell"]) for row in data["preimage_cell_counts"]]
+    s.text(40, 96, f"Unit {', '.join(map(str, data['unit']))} · Z {data['state_digest'][:12]}…  →  "
+           f"a = {tuple(data['a'])}  →  Y {data['lowered_digest'][:12]}…")
+    s.text(40, 124, f"Q = branch {data['branch']} · {count(len(data['branch_caps']))} caps · "
+           f"{count(data['cells'])} cells × {len(data['labels'])} labels = {count(data['points'])} points")
+    y = s.legend([("target cell " + cell_text(sorted(target)), PALETTE["orange"]),
+                  ("caps of Bad(W) cells, W = C" + sup(data["exponent"]), PALETTE["purple"]),
+                  ("caps of V⁻¹(Bad(W)) cells", PALETTE["teal"]),
+                  ("adjacent caps in Q", PALETTE["line"])], 156)
+    # A schematic of the exact induced adjacency graph, not a 3-D projection.
+    # Keep marked caps central and place their neighbouring caps on an ellipse.
+    center = sorted(target | set().union(*bad, *preimage))
+    outer = sorted(set(data["patch_caps"]) - set(center))
+    positions = {}
+    for caps, rx, ry in ((center, 130, 90), (outer, 505, 240)):
+        samples = [(rx * math.cos(2 * math.pi * i / 360 - math.pi / 2),
+                    ry * math.sin(2 * math.pi * i / 360 - math.pi / 2)) for i in range(361)]
+        lengths = [0]
+        for a, b in zip(samples, samples[1:]):
+            lengths.append(lengths[-1] + math.dist(a, b))
+        at = 0
+        for i, cap in enumerate(caps):
+            while lengths[at] < lengths[-1] * i / len(caps):
+                at += 1
+            positions[cap] = (600 + samples[at][0], y + 280 + samples[at][1])
+    for a, b in data["patch_edges"]:
+        colour, width = PALETTE["line"], 1
+        if any({a, b} <= cell for cell in preimage):
+            colour, width = PALETTE["teal"], 4
+        if any({a, b} <= cell for cell in bad):
+            colour, width = PALETTE["purple"], 4
+        if {a, b} <= target:
+            colour, width = PALETTE["orange"], 4
+        s.line(*positions[a], *positions[b], colour=colour, width=width, data_edge=f"{a},{b}")
+    for cap in data["patch_caps"]:
+        x, yy = positions[cap]
+        is_bad = any(cap in cell for cell in bad)
+        is_preimage = any(cap in cell for cell in preimage)
+        # Outer rings mark a cap that also belongs to a second marked set.
+        rings = [colour for flag, colour in ((cap in target and is_bad, PALETTE["purple"]),
+                                             ((cap in target or is_bad) and is_preimage, PALETTE["teal"])) if flag]
+        for i, colour in enumerate(rings):
+            s.el("circle", cx=x, cy=yy, r=26 + 5 * i, fill="none", stroke=colour, stroke_width=3)
+        s.el("circle", cx=x, cy=yy, r=21, fill=PALETTE["white"],
+             stroke=PALETTE["orange"] if cap in target else PALETTE["purple"] if is_bad
+             else PALETTE["teal"] if is_preimage else PALETTE["muted"],
+             stroke_width=3 if cap in center else 1.5, data_cap=cap, data_target=str(cap in target).lower(),
+             data_bad=str(is_bad).lower(), data_preimage=str(is_preimage).lower())
+        s.text(x, yy + 5, cap, size=14, anchor="middle")
+    y += 570
+    s.text(40, y, f"Patch: {len(data['patch_caps'])} caps, {len(data['patch_edges'])} adjacency edges; "
+           "all neighbours of the marked cells, with every edge among them.", size=14)
+    y += 24
+    rows = ([["Bad(W)", cell_text(row["cell"]), row["chambers"]] for row in data["bad_cell_counts"]]
+            + [["V⁻¹(Bad(W))", cell_text(row["cell"]), row["chambers"]] for row in data["preimage_cell_counts"]])
+    y = draw_table(s, ["Set", "Home cell", "Chambers"], rows, y, [300, 520, 300])
+    y += 16
+    s.text(40, y, "One cell's five label points: " + cell_text(data["content"]["cell"])
+           + f" · content of {data['content']['pieces']} pieces", weight="600")
+    y += 55
+    for i, label in enumerate(data["labels"]):
+        x = 152 + i * 224
+        s.el("circle", cx=x, cy=y, r=23, fill=PALETTE["white"], stroke=PALETTE["orange"]
+             if label == data["content"]["label"] else PALETTE["blue"] if label == 0 else PALETTE["line"],
+             stroke_width=3, data_label=label)
+        s.text(x, y + 6, "r" + str(label), anchor="middle", size=18)
+        label_text = "lattice coset" if label == 0 else "target content" if label == data["content"]["label"] else "label " + str(label)
+        s.text(x, y + 48, label_text, anchor="middle", size=14)
+    y += 105
+    s.text(40, y, "The content's point, first letter first", weight="600")
+    y += 55
+    states = [data["content"]] + data["trace"]
+    for i, point in enumerate(states):
+        x = 40 + i * 235
+        first_element = len(s.root)
+        s.box(x, y, 180, 100, ("start" if i == 0 else "after " + ("x", "y", "x⁻¹", "y⁻¹")[i - 1])
+              + "\n" + cell_text(point["cell"]) + "\nlabel " + str(point["label"]), size=15)
+        elements = list(s.root)[first_element:]
+        group = s.el("g", data_path_step=i)
+        for element in elements:
+            s.root.remove(element)
+            group.append(element)
+        if i:
+            s.line(x - 53, y + 50, x - 4, y + 50, arrow=True)
+            s.text(x - 27, y - 14, str(tuple(data["trace"][i - 1]["letter"])), anchor="middle", size=14)
+    y += 138
+    end = data["after_power"]
+    power = "C" + sup(data["exponent"])
+    s.text(40, y, f"After {power}: {cell_text(end['cell'])}, label {end['label']}.")
+    y += 30
+    s.text(40, y, f"W = {power} · |Bad(W)| = {count(data['bad_count'])} home chambers · "
+           f"{power} is {'the identity' if data['power_is_identity'] else 'not the identity'} "
+           f"on all {count(data['points'])} points ({count(data['power_moved_points'])} moved).")
+    return s.paragraph(40, y + 30, f"V = {' · '.join(str(tuple(a)) for a in data['V'])} is a SAFE letter of branch "
+                       f"{data['setup_branch']}, outside Q. V⁻¹(Bad(W)) has "
+                       f"{count(data['preimage_count'])} chambers, "
+                       + ("all holes at Y" if data["preimage_is_holes"] else "some occupied at Y")
+                       + ": the exact replay of V·W·V⁻¹ from all home chambers takes off exactly these.")
+
+
+@figure("05-class-cells-71", "05-tail.md", "Two glued contents in the class cell model")
+def class_cells(e, s):
+    data = concept_data(e)
+    s.text(40, 96, f"Class {data['class_number']} · {data['off']} off pieces · state {data['state_digest'][:12]}…")
+    s.text(40, 126, f"{count(data['own_contents'])} contents ({count(data['lattice_contents'])} lattice) · "
+           f"{count(data['census']['cells'])} cells · {count(data['generators'])} generators")
+    shared = ", ".join(map(str, data["shared_caps"]))
+    s.el("circle", cx=600, cy=184, r=28, fill=PALETTE["white"], stroke=PALETTE["muted"], stroke_width=2)
+    s.text(600, 189, shared, anchor="middle", size=18)
+    s.text(600, 233, "shared cap", anchor="middle", size=14)
+    for i, cell in enumerate(data["cells"]):
+        x, y = 40 + i * 590, 260
+        s.line(600 + (-28 if i == 0 else 28), 184, x + 265, y - 12, colour=PALETTE["line"])
+        s.rect(x, y, 530, 605, fill=PALETTE["panel"], stroke=PALETTE["line"], rx=8)
+        s.text(x + 24, y + 36, cell["unit"] + " · cell " + cell_text(cell["caps"]), size=20, weight="600")
+        occupants = [c for p in cell["points"] for c in p["content"]]
+        equation = " + ".join(str(c["pieces"]) + " " + c["name"] for c in sorted(
+            occupants, key=lambda c: c["name"] == "lattice"))
+        s.text(x + 24, y + 68, f"{cell['own_pieces']} own pieces = {equation}", size=15)
+        s.text(x + 24, y + 112, "Label", size=14, weight="600")
+        s.text(x + 100, y + 112, "Content at the point", size=14, weight="600")
+        s.text(x + 315, y + 112, "Census owner", size=14, weight="600")
+        for j, point in enumerate(cell["points"]):
+            yy = y + 159 + j * 87
+            content = point["content"]
+            first_element = len(s.root)
+            colour = PALETTE["blue"] if content and content[0]["name"] == "lattice" else PALETTE["orange"] if content else PALETTE["muted"]
+            s.el("circle", cx=x + 45, cy=yy, r=21, fill=PALETTE["white"], stroke=colour,
+                 stroke_width=2, data_cell=cell["cell"], data_label=point["label"], data_point=point["point"])
+            s.text(x + 45, yy + 6, point["label"], anchor="middle", size=18)
+            s.text(x + 100, yy - 5, ", ".join(c["name"] for c in content) if content else "empty", colour=colour)
+            s.text(x + 100, yy + 20, " + ".join(str(c["pieces"]) for c in content) + " pieces" if content else "no content", size=14)
+            owner = point["owner"]
+            s.text(x + 315, yy - 5, owner["name"] if owner else "unowned")
+            if owner and "pieces" in owner:
+                s.text(x + 315, yy + 20, str(owner["pieces"]) + " pieces", size=14)
+            s.line(x + 24, yy + 40, x + 506, yy + 40, colour=PALETTE["line"], width=1)
+            elements = list(s.root)[first_element:]
+            group = s.el("g", data_cell=cell["cell"], data_label=point["label"])
+            for element in elements:
+                s.root.remove(element)
+                group.append(element)
+    y = s.paragraph(40, 905, "The lattice content owns label 0 and glues the off content. The off content owns the "
+                    "other labels of its cell, including points with no content. Content and owner are distinct.")
+    census = data["census"]
+    y = s.paragraph(40, y + 16, f"Census: {count(census['occupied_points'])} owned points · "
+                    f"{count(census['home_cells'])} home cells · {census['foreign_cells']} foreign cells · "
+                    f"{sum(census['vacant_home_points_by_kind'].values())} vacant home points.")
+    for difference in data["chapter_differences"]:
+        e.note(f"{difference['field']}: computed {difference['computed']}; chapter/record {difference['chapter']}.")
+    return y
 
 
 @figure("ch04-d19-tree", "04-high.md", "The recorded D19 word as named parts and repeated commutators")

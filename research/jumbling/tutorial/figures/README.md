@@ -1,6 +1,6 @@
 # Diagrams
 
-`diagrams.py` draws the chapters' 26 figures, Appendix A's abstract shapes and
+`diagrams.py` draws the chapters' 28 figures, Appendix A's abstract shapes and
 computed trees, and every step tree listed in `trees.json`, using Python's standard
 library and committed evidence only. It does
 not replay scrambles, search for steps or draw puzzle states. Colours are provisional.
@@ -49,6 +49,20 @@ prune computations within one invocation. No simulation cache is saved or read.
 recomputes the selection and compares every value and input digest without writing.
 Data generation does not redraw SVGs; run `diagrams.py` afterwards.
 
+The concept selections `ch04-point-model` and `05-class-cells-71` rebuild the
+committed R22D-16 stop and the 71-off pose table, respectively. Named research
+classes compute the cap patch, chronological point path, contents and owners;
+the census ownership block stops before its search. Input hashes and rebuilt
+state digests are checked before observations are saved. Both figures use SVG
+embeds. Figure 4.3 follows section 4.10: W = C⁶, and Bad(W) comes from
+`PointModel.bad`. It also shows V⁻¹(Bad(W)), the home chambers that the middle
+word V W V⁻¹ takes off, measured by exact admissible replay on all home chambers
+and checked against the SAFE preimage. Its table counts the chambers of each set
+by home cell, including partial home-cell fibres. V belongs to another branch and
+has no Q point action; the point path and identity test apply to C⁶.
+Chapter 5 reports any disagreement with its example's counts in the figure.
+Recompute these alone with `figdata.py --only ch04-point-model 05-class-cells-71`.
+
 The appendix selections are `appa-inventory`, `appa-u2-tree`, `appa-h4-pair-tree`,
 `appa-pure-tree`, `appa-correction-tree` and `appa-late-cycle-tree`. The first two
 height trees read committed experiments, without replaying the 3,313-letter
@@ -60,6 +74,8 @@ provided for the viewer's existing JSON-word reader; `--check` verifies it too.
 Partial updates preserve that tape. Existing chapter SVG bytes and their original
 production input hashes stay unchanged; the diagram manifest separately records
 the current shared JSON and renderer hashes used to verify them.
+Appendix A cites the word by the sha256 of its compact JSON, which other data
+sets in the shared file do not change; the diagram tests check that digest.
 
 `figures.json` adds `appa-` Before/After recipe sheets with full digests, identical
 exact-pose support on both sides, and the established shrink values. Other entries

@@ -431,8 +431,10 @@ at the two boundaries; the individual cycle is not a monotone count step. Its af
 The full before, middle and after digests and the exact support are recomputed in `appa-late-cycle-tree`.
 
 For direct single-twist expansion, [`figures/figdata.json`](figures/figdata.json) has a top-level **`word`** array
-containing exactly these 810 (cap, item) letters, expanded from the committed DAG without search. Its file sha256
-is `305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac`.
+containing exactly these 810 (cap, item) letters, expanded from the committed DAG without search. The sha256 of the
+array as compact JSON (`json.dumps(word, separators=(",", ":"))`, first letters `[[320,1],[227,5],…`) is
+`f16cb33dcb21cecad612a9a5b5447114d26a3e873b7194445af223f724619d69`; `figdata.py --check --only appa-late-cycle-tree`
+recomputes it from the source DAG.
 The selected factors in the source DAG are `[166,-1]` and `[168,1]`; `literal_lattice.Program.expand` defines their
 chronological expansion. The named spans are:
 
