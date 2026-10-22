@@ -1,6 +1,6 @@
 # D2, seed 7303 from its 3000-twist scramble (development line d2-s7303)
 
-Status: **in progress** (progress note, 22 October 2026, 07:10 UTC). The first run was killed by a container restart;
+Status: **in progress** (progress note, 22 October 2026, 09:10 UTC). The first run was killed by a container restart;
 a second run of the same command started at 07:08 UTC. No check has run yet.
 
 ## Question
@@ -50,8 +50,13 @@ This partial record was not checked. It is evidence of the interruption, not a r
 
 ## Run 2 (same command, fresh `--out` and `--cache`, started 07:08 UTC)
 
-Running. The bulk rules break ties by fixed keys, so run 2 should repeat run 1's first 82 steps; the comparison will
-be recorded here.
+Running. Same start as run 1 (`ee1a56a8…`, 116,111 off, {2: 114,470, 4: 1,552, 6: 89}).
+
+Progress at 09:10 UTC: 25 bulk steps (24 `conj`, 1 `cover`), 73 twists; after step 24 the state is `099feb02…`,
+104,139 off, N 120,434, heights {2: 102,630, 4: 1,420, 6: 89}. `bulk-progress.json`:
+`{"step_started": 7298.523741719}`; `logs/bulk.log` is empty. All 25 steps are identical to run 1's first 25 (rule,
+word sha256 and digest after each step). Run 2 reaches each step later than run 1 did, so its bulk clock will end
+after fewer steps.
 
 ## Next step
 
