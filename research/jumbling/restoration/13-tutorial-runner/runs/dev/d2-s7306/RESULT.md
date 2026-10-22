@@ -1,6 +1,6 @@
 # Development line d2-s7306: D2, the 3000-twist stop of seed 7306
 
-Status: in progress (progress note, 22 October 2026, 07:30 UTC). Step 1 is done; step 2 (component run) is running.
+Status: in progress (progress note, 22 October 2026, 09:00 UTC). Step 1 is done; step 2 (component run) was interrupted by a container restart and is running again.
 
 ## Question
 
@@ -34,6 +34,13 @@ since the bulk is off):
   each shard is its `CONTEXT` line at `ac4be82c…` (tau 240, u 1).
 
 Times are cloud timings of research code on a shared headless Linux machine, not performance evidence.
+
+**Interrupted by a container restart.** `h4` ended `stuck` after 9 steps at 08:47 UTC (18 steps in the run), and the
+high phase's first kernel call (`attempts/00018-high`) started at 08:47:50. At about 08:55 UTC the cloud container
+was restarted and every process was killed: the runner wrote no `runner-c.rc`, no final result and no error. That
+record (`<dir>/out-c`) is incomplete and is not checked. The component run was started again from the start, in a
+fresh output directory `<dir>/out-c2` with the same command and the same cache, at 08:56 UTC on commit `f080344`
+(this note only; no code changed since `35c3d4f`). The run reported below is that second run.
 
 ## Next step
 
