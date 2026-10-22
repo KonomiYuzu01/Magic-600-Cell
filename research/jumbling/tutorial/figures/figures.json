@@ -722,72 +722,66 @@
    "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run",
    "step": 19,
    "when": "before",
-   "view": "local",
-   "proj": "stereo",
+   "view": "global",
+   "proj": "persp",
    "emph": "moved",
    "w": 1200,
-   "h": 800,
-   "ghost": "none"
+   "h": 800
   },
   {
    "id": "s7106-step19-after",
    "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run",
    "step": 19,
    "when": "after",
-   "view": "local",
-   "proj": "stereo",
+   "view": "global",
+   "proj": "persp",
    "emph": "moved",
    "w": 1200,
-   "h": 800,
-   "ghost": "none"
+   "h": 800
   },
   {
    "id": "s7106-step36-before",
    "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run",
    "step": 36,
    "when": "before",
-   "view": "local",
-   "proj": "stereo",
+   "view": "global",
+   "proj": "persp",
    "emph": "moved",
    "w": 1200,
-   "h": 800,
-   "ghost": "none"
+   "h": 800
   },
   {
    "id": "s7106-step36-after",
    "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run",
    "step": 36,
    "when": "after",
-   "view": "local",
-   "proj": "stereo",
+   "view": "global",
+   "proj": "persp",
    "emph": "moved",
    "w": 1200,
-   "h": 800,
-   "ghost": "none"
+   "h": 800
   },
   {
    "id": "s7106-step53-before",
    "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run",
    "step": 53,
    "when": "before",
-   "view": "local",
-   "proj": "stereo",
+   "view": "global",
+   "proj": "persp",
    "emph": "moved",
    "w": 1200,
-   "h": 800,
-   "ghost": "none"
+   "h": 800
   },
   {
    "id": "s7106-step53-after",
    "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run",
    "step": 53,
    "when": "after",
-   "view": "local",
-   "proj": "stereo",
+   "view": "global",
+   "proj": "persp",
    "emph": "moved",
    "w": 1200,
-   "h": 800,
-   "ghost": "none"
+   "h": 800
   },
   {
    "id": "s7106-end",
