@@ -145,7 +145,12 @@ def main():
     for id, name, steps in flows:
         write(HERE / f"flows/{id}.json", {"format": "magic600-look-flow", "version": 1, "id": id, "name": name, "draft": True,
                                           "steps": [{"command": command, "context": context} for command, context in steps]})
-    print(f"Defaults: {len(parameters)} parameters, four greyboxes, six draft flows, all costs null")
+    write(HERE / "shots/g2.json", {"format": "magic600-look-shot", "version": 1, "id": "g2",
+                                 "name": "G2 shot: slow drift, one turn and its inverse", "size": [1600, 1000],
+                                 "seconds": 10, "heroFrame": 60, "ease": [1 / 3, 1 / 3],
+                                 "camera": [{"seconds": 10, "dragX": .5, "dragY": .15}],
+                                 "turns": [{"start": 2, "seconds": 1}, {"start": 6, "seconds": 1}]})
+    print(f"Defaults: {len(parameters)} parameters, four greyboxes, six draft flows, all costs null, one G2 shot")
 
 
 if __name__ == "__main__":

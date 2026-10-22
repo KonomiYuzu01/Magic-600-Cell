@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | G1 keeps every structure mode and layout
+The owner kept all seven G1 structure modes and all four greybox layouts in the Look Lab and chose no single layout, so the G1 exit's first layout specification (H-04) and visual feature list (H-01) stay open; Look Lab work continues ([decision](decisions/owner-decisions-2026-10-22-g1.md)).
+
 ## [2026-10-22] update | W-J: the height-4 state bbef1c8e in the render format
 The export tool now also replays a census record's descent and a committed list of letters, checked against known digests, and it exported the jumbling line's height-4 state `bbef1c8e…` (3000 twists of seed 7302, 313 descent moves, 12 letters): 2,798 pose-table entries, 936 pieces at height 4 ([w-j-probe-results](evidence/w-j-probe-results.md)). With the 3000-twist scramble this gives both states that re-plan item R3 asks for; no W-J run on either has been made.
 
