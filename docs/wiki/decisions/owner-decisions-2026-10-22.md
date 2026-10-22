@@ -3,7 +3,7 @@ id: owner-decisions-2026-10-22
 type: decision
 status: verified
 visibility: public
-summary: Owner answers of 22 October 2026, given for now - every recommended option of the re-plan and of design-table topic DT-J1; schedule option B with the 2.5 freeze at about stage day 34; the branch-only jumbling records come to main; ENG-0J starts; W-J runs in the renderer selection; design-table card limits; a one-off NumPy install in the cloud session for EN2's J1 tests.
+summary: Owner answers of 22 October 2026, given for now - every recommended option of the re-plan and of design-table topic DT-J1; schedule option B with the 2.5 freeze at about stage day 34; the branch-only jumbling records come to main; ENG-0J starts; W-J runs in the renderer selection; design-table card limits; a one-off NumPy install in the cloud session for EN2's J1 tests; and an owner exception to the review rule for finding EN2A-002-R2 of pull request #124.
 related: [owner-decisions-2026-10-02, owner-decisions-2026-10-03, owner-decisions-2026-10-09-jumbling, owner-decisions-2026-10-17-jumbling-pr, owner-decisions-2026-10-17-repair-pairs]
 supersedes: []
 claims:
@@ -14,6 +14,7 @@ claims:
   - {id: dt-j1-batch, evidence_kind: decision, checked_at: 2026-10-22}
   - {id: design-table-card-limits, evidence_kind: decision, checked_at: 2026-10-22}
   - {id: numpy-cloud-session, evidence_kind: decision, checked_at: 2026-10-22}
+  - {id: en2a-002-r2-exception, evidence_kind: decision, checked_at: 2026-10-22}
 ---
 
 # Owner decisions, 22 October 2026: re-plan answers and the DT-J1 batch
@@ -58,6 +59,15 @@ The questions are in section 5 of the [re-plan](../../progress/1.0/replan-2026-1
    - The owner allowed a one-off install of NumPy 2.3.5 in the cloud session, from the hash-pinned `tools/python/engine.txt`, into a virtual environment outside the repository.
    - The allowlist, the lockfile and the installer are unchanged. The permission covers that session only, not other sessions or machines.
    - Option (b), running J1's checks only on Windows CI or the owner's machine, was not taken. Windows CI still runs them.
+
+## Review
+
+9. **EN2A-002-R2 in pull request #124 (EN2 slice 3): option (a), merge under an owner exception.**
+   - EN2A-002-R2 was the new major finding of #124's second scoped verification round: the research centroid cache took the resolved target of a linked cache file. When that target has no `.npy` suffix, `np.save` appends one, so it would have opened a path other than the one checked.
+   - Commit `13bec8a` keeps the checked `home_centroids.npy` name. Its regression test, `test_centroid_cache_inside_repository_is_refused` in `tests/test_jumbling_leads_repair.py`, models the link and records the path that `np.save` opens.
+   - The review rules allow at most two scoped verification rounds, so no Codex review verified that fix. The owner accepted it under an exception to the review rule, with that regression test as the adjudicating experiment.
+   - Options (b), an Astra re-check, and (c), no cache file, were not taken.
+   - The exception covers this finding in #124 only. The review rules are unchanged.
 
 ## Effect
 

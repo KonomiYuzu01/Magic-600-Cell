@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | EN2A-002-R2 merges under an owner exception
+The owner chose option (a) for finding EN2A-002-R2 of pull request #124 (EN2 slice 3): its fix, which keeps the centroid cache's checked `.npy` name, merges without a third Codex verification round, with its regression test as the adjudicating experiment ([decision](decisions/owner-decisions-2026-10-22.md)). The exception covers that finding only; the review rules are unchanged.
+
 ## [2026-10-22] update | EN2 reference values in J1: ν, corrections, observations, height-4 states and word checks
 The reference runs of ENG-0J revision 2 (acceptance items 3 and 8, with amendment A5) ran headless in the cloud session ([results](../../research/jumbling/differential/references/results/summary.md)): ν on E3, I1 and I2, the 40 CERT-LB-V2 words, the 36 corrections, 20 observed states, stage 12's six height-4 states and five recorded words (b06-14 has 672,417 letters) all give the recorded or expected values, while one prose count, "the 20 caps that hold off-grip seams" at the I_a@40 stop, matches no count of the reference reading (39 caps hold an off-grip cell, 25 a whole group). They are runs of research code against research records; the candidate engine's comparisons wait for EN3 and EN4.
 
