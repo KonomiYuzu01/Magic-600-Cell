@@ -64,6 +64,67 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node research/jumbling/viewer/check_fu
 
 The browser check is supplied for the integrator; its presence is not a passing browser result. Result in the integrator's Linux cloud session (10 October 2026, after the all-menu export): 142/142. The first run gave 140/142 because the shader took the sweep angle's sine and cosine in single precision on the GPU (I_a samples up to 1.2e-4 off at the end of the twist); the page now passes (cos φ − 1, sin φ) computed in double precision on the CPU. The page decides **no legality**, carries **no performance claim**, and shows “uncertified float drawing of an exact J1 state”. Colour, shrink, tint, projection and motion values are provisional and belong to the design track. Nothing here establishes actual Windows/DirectX rendering or performance. The existing witness and short S4 scene pages and their exporter/check remain separate and unchanged.
 
+## Tutorial screenshots
+
+Export a step from a `runner-run/3` record into a fresh directory outside the record.
+The exporter reads the start table and replays the literal words, checking every
+visited before/after digest. It checks the target's after state for both pictures,
+so `moved.i32` always names the same pieces whose exact poses changed across the step.
+Seeds 9011 to 9073, non-empty output directories and output inside the record are refused.
+
+```text
+python3 -I -B research/jumbling/viewer/export_tutorial.py research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run --step 0 --when before --out /tmp/tutorial-data/step0-before
+python3 -I -B research/jumbling/viewer/export_tutorial.py research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run --step 0 --when after --out /tmp/tutorial-data/step0-after
+```
+
+Each directory has the render-contract header and three arrays, sorted `moved.i32`
+and `tutorial.json` (`magic600-tutorial-shot/1`). The latter records the run's
+repository-relative `run.json` path, its SHA-256, the raw SHA-256 of every word file
+used (including the target word for a before picture), step labels, digest and off
+count. It records up to 64 letters literally; longer words use `letters_sha256`,
+the SHA-256 of UTF-8 `json.dumps(letters)` with Python's default separators. `caps`
+keeps first-use order. A named later table may skip earlier replay only after its
+digest agrees with the record; its file hash and boundary appear as `checkpoint`.
+Lattice words use the existing checker's literal player, rebuilding the exact
+simulator state at each step boundary.
+
+Create a JSON list, for example `/tmp/tutorial-shots.json`:
+
+```json
+[
+ {"name":"step0-before-global","state":"step0-before","view":"global","proj":"persp","emph":"moved","w":1600,"h":1000},
+ {"name":"step0-after-local","state":"step0-after","view":"local","proj":"stereo","emph":"none","w":1600,"h":1000}
+]
+```
+
+```text
+PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node research/jumbling/viewer/capture_tutorial.mjs --data /tmp/tutorial-data --list /tmp/tutorial-shots.json --out /tmp/tutorial-pictures --vendor /path/to/pinned-three
+PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node research/jumbling/viewer/capture_tutorial.mjs --data /tmp/tutorial-data --list /tmp/tutorial-shots.json --out /tmp/tutorial-pictures --vendor /path/to/pinned-three --check
+python3 -I -B research/jumbling/viewer/test_export_tutorial.py
+```
+
+`--vendor` contains only `three.module.js` and `OrbitControls.js` with the 0.160.0
+hashes pinned in `check_full.mjs`; an installed matching `three` package can supply
+them when the option is omitted. No download occurs. The capture script serves
+only the page, checked retained geometry, these modules and the listed tutorial
+states on 127.0.0.1. It uses Playwright Chromium, SwiftShader and device scale 1.
+The output manifest records Node, Playwright and Chromium versions, page and module
+hashes, each shot's parameters, state digest, tutorial hash and PNG hash. `--check`
+renders to a temporary directory, compares the manifest and names changed shots;
+it leaves the original pictures and manifest alone.
+
+On an existing static export of the full-state page, place states under
+`tutorial/<state>/` and open `full.html?shot=step0-before`. Shot names use 1 to 64
+letters, digits, underscores or hyphens. `w` and `h` default to 1600 and 1000 CSS
+pixels (each accepts 1 to 8192). Defaults are `view=global`, `proj=persp` and
+`emph=moved`; `emph=none` keeps every sticker's normal brightness. Local view rotates
+Q toward the first named cap and fits its posed facet and immediate neighbours;
+stereo uses the antipodal pole there. The canvas has no panels or overlays. After
+the first complete frame, `document.documentElement.dataset.shotReady` is `"1"`;
+failure sets it to `"error"` with `dataset.shotError`. Without `shot`, fixture menus
+and controls work as before. These are headless research pictures, not Windows,
+DirectX or performance evidence. Colours remain provisional.
+
 ## What it shows
 
 The scene selector offers **Witness E2–E4** and **J1: S4 sequence**. Both have five exact states and four applied twists, plus a certified rejected attempt.

@@ -9,7 +9,10 @@ const $ = (id) => document.getElementById(id);
 const COUNTS = { pieces: 177120, slots: 259800, cells: 600, base_stickers: 433, base_vertices: 30480 };
 const MENUS = ['S4', 'I_a', 'I_b'];
 const DTYPES = { '<f4': Float32Array, '<i4': Int32Array, '<u4': Uint32Array };
-const B64 = new URLSearchParams(location.search).has('b64');
+const PARAMETERS = new URLSearchParams(location.search);
+const B64 = PARAMETERS.has('b64');
+const SHOT = PARAMETERS.has('shot');
+let shot = null, shotQ = null;
 const app = { ready: false, errors: [], model: null, playing: false, view: { menu: 'S4', state: 'end', t: 0 } };
 window.fullViewer = app;
 let catalog, geometry, overlay, state, renderer, scene, camera, controls, mesh, material, width = 1024;
@@ -178,17 +181,27 @@ async function loadState(menu, stage, o) {
   requireValue(entry, `${menu}/${stage}: state was not exported`);
   const path = stage === 'solved' ? 'full/solved/' : `full/${menu}/${stage}/`;
   const h = await jsonFile(`${path}header.json`);
-  checkDimension(h, 'header.json');
-  requireValue(h.format === 'magic600-jumbling-render/1' && h.pieces === 177120
-    && Number.isInteger(h.poses) && h.poses >= 1 && h.poses <= 177121
-    && Number.isInteger(h.revision) && h.revision >= 0 && hexDigest(h.digest), 'header.json: invalid state counts or digest');
-  requireValue(sameIdentity(h.model_identity, geometry.header.model_identity) && h.contract_revision === o.header.contract_revision
+  requireValue(h.contract_revision === o.header.contract_revision
     && (stage === 'solved' || h.menu_identity === o.header.menu_identity), 'header.json: state identity or contract mismatch');
   requireValue(h.digest === entry.digest && h.revision === entry.revision && h.fixture.stage === (stage === 'solved' ? 'start' : stage),
     'header.json: catalog revision mismatch');
   if (stage === 'end') requireValue(h.digest === o.header.end.digest && h.revision === o.header.end.records, 'header.json: end survey mismatch');
   if (stage === 'sweep-before') requireValue(h.digest === o.header.sweep.before.digest && h.revision === o.header.sweep.from_revision
     && sameArrayFiles(h.files, o.header.sweep.before.arrays), 'header.json: sweep revision mismatch');
+  const s = await loadStateArrays(path, h);
+  requireValue(s.off === entry.off_lattice && (stage !== 'end' || s.off === o.header.end.off_lattice),
+    'header.json: lattice count differs from fixture');
+  return s;
+}
+
+// Fixture and tutorial states share every array, model and dimension check, before upload.
+async function loadStateArrays(path, h) {
+  checkDimension(h, 'header.json');
+  requireValue(h.format === 'magic600-jumbling-render/1' && h.pieces === 177120
+    && Number.isInteger(h.poses) && h.poses >= 1 && h.poses <= 177121
+    && Number.isInteger(h.revision) && h.revision >= 0 && hexDigest(h.digest), 'header.json: invalid state counts or digest');
+  requireValue(sameIdentity(h.model_identity, geometry.header.model_identity)
+    && hexDigest(h.menu_identity) && typeof h.contract_revision === 'string', 'header.json: state identity or contract mismatch');
   exactFiles(h.files, ['pose_index.i32', 'poses.f32', 'pose_lattice.i32'], 'header.json');
   const [index, poses, lattice] = await Promise.all([
     arrayFile(`${path}pose_index.i32`, h.files['pose_index.i32'], '<i4', [177120]),
@@ -200,8 +213,42 @@ async function loadState(menu, stage, o) {
     'header.json: pose zero must be the identity');
   let off = 0;
   for (const p of index) if (lattice[p] < 0) off++;
-  requireValue(off === entry.off_lattice && (stage !== 'end' || off === o.header.end.off_lattice), 'header.json: lattice count differs from fixture');
   return { header: h, index, poses, lattice, off };
+}
+
+function shotParameters() {
+  const name = PARAMETERS.get('shot');
+  requireValue(/^[A-Za-z0-9_-]{1,64}$/.test(name), 'Invalid tutorial shot name');
+  const choice = (key, fallback, values) => {
+    const value = PARAMETERS.get(key) ?? fallback;
+    requireValue(values.includes(value), `Invalid shot ${key}`);
+    return value;
+  };
+  const size = (key, fallback) => {
+    const value = PARAMETERS.get(key) ?? String(fallback);
+    requireValue(/^[1-9][0-9]*$/.test(value) && Number(value) <= 8192, `Invalid shot ${key} (1..8192)`);
+    return Number(value);
+  };
+  return { name, view: choice('view', 'global', ['global', 'local']), proj: choice('proj', 'persp', ['persp', 'stereo']),
+    emph: choice('emph', 'moved', ['moved', 'none']), w: size('w', 1600), h: size('h', 1000) };
+}
+
+async function loadTutorial() {
+  const path = `tutorial/${shot.name}/`;
+  const [h, t] = await Promise.all([jsonFile(`${path}header.json`), jsonFile(`${path}tutorial.json`)]);
+  requireValue(t.format === 'magic600-tutorial-shot/1' && t.digest === h.digest && hexDigest(t.run_sha256)
+    && Number.isInteger(t.step) && t.step >= 0 && ['before', 'after'].includes(t.when)
+    && Number.isInteger(t.letter_count) && t.letter_count >= 0
+    && Array.isArray(t.caps) && new Set(t.caps).size === t.caps.length
+    && t.caps.every((c) => Number.isInteger(c) && c >= 0 && c < 600), 'tutorial.json: invalid provenance or state digest');
+  requireValue(t.moved?.file === 'moved.i32' && Number.isInteger(t.moved.count)
+    && t.moved.count >= 0 && t.moved.count <= COUNTS.pieces, 'tutorial.json: invalid moved set');
+  const [s, movingBytes] = await Promise.all([loadStateArrays(path, h), checkedBytes(`${path}moved.i32`, t.moved)]);
+  requireValue(movingBytes.byteLength === t.moved.count * 4, 'moved.i32: byte count mismatch');
+  const moving = new Int32Array(movingBytes);
+  requireValue(moving.every((p, i) => validId(p) && (i === 0 || moving[i - 1] < p)), 'moved.i32: invalid or unsorted ids');
+  requireValue(s.off === t.off_lattice, 'tutorial.json: off-lattice count mismatch');
+  return { s, t, moving };
 }
 
 // Texture rows all have the same width. Scalar integer arrays use R32I/R32UI; 4-vectors
@@ -243,7 +290,7 @@ uniform mat4 uQ, viewMatrix, projectionMatrix;
 uniform bool uProbe;
 out vec3 vProjected;
 out vec4 vWorld, vClip;
-flat out int vClass, vOff, vFocus;
+flat out int vClass, vOff, vFocus, vMoved;
 ivec2 address(int i) { return ivec2(i % uWidth, i / uWidth); }
 vec4 vectorAt(sampler2D t, int i) { return texelFetch(t, address(i), 0); }
 int intAt(isampler2D t, int i) { return texelFetch(t, address(i), 0).r; }
@@ -284,6 +331,7 @@ void main() {
   int pose = intAt(uIndex, piece);
   vOff = intAt(uLattice, pose) < 0 ? 1 : 0;
   vFocus = piece == uFocus ? 1 : 0;
+  vMoved = intAt(uMoving, piece);
   bool hidden = (uFilter == 1 && vOff == 0) || (uFilter == 2 && vOff == 1)
              || (uFilter == 3 && piece != uIsolate);
   vec4 world = posePoint(pose, home);
@@ -300,11 +348,11 @@ precision highp float;
 precision highp int;
 in vec3 vProjected;
 in vec4 vWorld, vClip;
-flat in int vClass, vOff, vFocus;
-uniform bool uTint, uProbe;
+flat in int vClass, vOff, vFocus, vMoved;
+uniform bool uTint, uProbe, uEmphasizeMoved;
 uniform int uFocus, uProbeOutput;
 uniform float uRadius;
-uniform vec3 uTintColor, uHighlight;
+uniform vec3 uTintColor, uHighlight, uBackground;
 out vec4 outColor;
 vec3 hsv(float h, float s, float v) {
   vec3 p = abs(fract(vec3(h)+vec3(0.0,2.0/3.0,1.0/3.0))*6.0-3.0);
@@ -322,6 +370,7 @@ void main() {
   color *= 0.5 + 0.5*abs(dot(n,normalize(vec3(0.3,0.5,1.0))));
   if (uTint && vOff != 0) color = mix(color,uTintColor,0.4);
   if (uFocus >= 0) color = vFocus != 0 ? mix(color,uHighlight,0.8) : color*0.22;
+  if (uEmphasizeMoved && vMoved == 0) color = mix(uBackground,color,0.12);
   outColor = vec4(color,1.0);
 }`;
 
@@ -343,6 +392,7 @@ function makeRenderer() {
   camera.position.set(0, 0, 5);
   controls = new OrbitControls(camera, canvas);
   controls.enableDamping = false;
+  if (SHOT) controls.enabled = false;
   controls.minDistance = 0.05;
   controls.maxDistance = 50;
   controls.addEventListener('change', () => { dirty = true; });
@@ -365,6 +415,7 @@ function makeRenderer() {
     uBasis2: { value: new THREE.Vector4(0, 0, 1, 0) }, uProjection: { value: 0 },
     uFilter: { value: 0 }, uIsolate: { value: 0 }, uFocus: { value: -1 },
     uTint: { value: false }, uTintColor: { value: cssColor('--tint') }, uHighlight: { value: cssColor('--highlight') },
+    uEmphasizeMoved: { value: SHOT && shot.emph === 'moved' }, uBackground: { value: cssColor('--view-bg') },
     uProbe: { value: false }, uProbeOutput: { value: 0 },
     uIndex: { value: null }, uPoses: { value: null }, uLattice: { value: null }, uMoving: { value: null },
     uProbeHome: { value: null }, uProbePieces: { value: null },
@@ -390,6 +441,7 @@ function theme() {
   renderer.setClearColor(cssColor('--view-bg'), 1);
   material.uniforms.uTintColor.value.copy(cssColor('--tint'));
   material.uniforms.uHighlight.value.copy(cssColor('--highlight'));
+  material.uniforms.uBackground.value.copy(cssColor('--view-bg'));
   markerMeshes.forEach((point, i) => point.material.color.copy(cssColor(i === 0 ? '--below' : '--above')));
 }
 function resize() {
@@ -405,7 +457,7 @@ function bindState(s, o) {
   const moving = new Int32Array(COUNTS.pieces);
   o.moving.forEach((p) => { moving[p] = 1; });
   const arrays = { uIndex: [s.index, 1], uPoses: [s.poses, 4], uLattice: [s.lattice, 1],
-    uMoving: [moving, 1], uProbeHome: [o.home, 4], uProbePieces: [o.pieces, 1] };
+    uMoving: [moving, 1], uProbeHome: [o.home ?? new Float32Array(64), 4], uProbePieces: [o.pieces ?? new Int32Array(16), 1] };
   const next = [];
   try {
     for (const [key, [a, channels]] of Object.entries(arrays)) next.push([key, dataTexture(a, channels)]);
@@ -414,11 +466,12 @@ function bindState(s, o) {
   next.forEach(([key, texture]) => { material.uniforms[key].value = texture; });
   stateTextures.forEach((t) => t.dispose());
   stateTextures = next.map(([, t]) => t);
-  material.uniforms.uPlaneU.value.set(...o.header.sweep.plane_u);
-  material.uniforms.uPlaneV.value.set(...o.header.sweep.plane_v);
+  material.uniforms.uPlaneU.value.set(...(o.header?.sweep.plane_u ?? [0, 0, 0, 0]));
+  material.uniforms.uPlaneV.value.set(...(o.header?.sweep.plane_v ?? [0, 0, 0, 0]));
 }
 
 function cameraQ() {
+  if (shotQ) return shotQ.slice();
   const q = Array.from({ length: 16 }, (_, i) => i % 5 === 0 ? 1 : 0);
   // This is SPEC's column-major rotate(a,b,t), including its multiplication order.
   for (const [a, b, degrees] of [[0, 3, Number($('rotateX').value)], [1, 3, Number($('rotateY').value)]]) {
@@ -589,6 +642,10 @@ function setTime(t) {
 function fail(error) {
   const message = error instanceof Error ? error.message : String(error);
   app.errors.push(message);
+  if (SHOT) {
+    document.documentElement.dataset.shotError = message;
+    document.documentElement.dataset.shotReady = 'error';
+  }
   app.ready = false;
   app.model = null;
   app.drawn = null;
@@ -657,6 +714,12 @@ function draw() {
   if (!renderer || !app.ready) return;
   syncView();
   renderer.render(scene, camera);
+  if (SHOT && document.documentElement.dataset.shotReady !== '1') {
+    const gl = renderer.getContext();
+    gl.finish();
+    requireValue(gl.getError() === gl.NO_ERROR, 'Tutorial frame: WebGL error');
+    document.documentElement.dataset.shotReady = '1';
+  }
   // Only this mesh draws triangles. Points do not inflate the instance count.
   app.drawn = { triangles: renderer.info.render.triangles, calls: renderer.info.render.calls,
     instances: renderer.info.render.triangles / (mesh.geometry.attributes.position.count / 3),
@@ -787,6 +850,7 @@ function hashSelection() {
   return m ? { menu: m[1], stage: m[2] } : null;
 }
 window.addEventListener('hashchange', () => {
+  if (SHOT) return;
   const h = hashSelection();
   if (h && catalog?.menus[h.menu]) loadSelection(h.menu, h.stage, false).catch(fail);
 });
@@ -806,6 +870,7 @@ function animate(now) {
 }
 async function start() {
   requireValue(new Uint8Array(new Uint32Array([1]).buffer)[0] === 1, 'Little-endian typed arrays are required');
+  if (SHOT) { await startShot(); return; }
   [catalog, geometry] = await Promise.all([jsonFile('full/catalog.json'), loadGeometry()]);
   checkDimension(catalog, 'catalog.json');
   requireValue(catalog.format === 'magic600-full-viewer/1' && catalog.menus && Object.keys(catalog.menus).length
@@ -821,6 +886,79 @@ async function start() {
   const h = hashSelection();
   const menu = h && catalog.menus[h.menu] ? h.menu : Object.keys(catalog.menus)[0];
   await loadSelection(menu, h?.stage || 'end');
+}
+
+function capCenter(cap) {
+  const frames = geometry.A['cell_frames.f32'];
+  const matrix = Array.from(frames.subarray(cap * 16, cap * 16 + 16));
+  return matColumn(matrix, geometry.mesh.normal).map((x) => x / geometry.mesh.normal_length);
+}
+function frameLocal(cap) {
+  const center = capCenter(cap), length = Math.sqrt(dot(center, center));
+  const axis = center.map((x) => x / length), rows = [];
+  // Orthonormal rows put this cap on +w, with a deterministic in-plane orientation.
+  for (let i = 0; i < 4 && rows.length < 3; i++) {
+    let v = [0, 0, 0, 0]; v[i] = 1;
+    let d = dot(v, axis); v = v.map((x, k) => x - d * axis[k]);
+    for (const row of rows) { d = dot(v, row); v = v.map((x, k) => x - d * row[k]); }
+    const norm = Math.sqrt(dot(v, v));
+    if (norm > 1e-8) rows.push(v.map((x) => x / norm));
+  }
+  const q = new THREE.Matrix4().set(...rows.flat(), ...axis);
+  if (q.determinant() < 0) { rows[0] = rows[0].map((x) => -x); q.set(...rows.flat(), ...axis); }
+  shotQ = q.elements.slice();
+  // Stereo projects from the antipode, so the selected cap is away from its singularity.
+  $('pole').value = 'negative-w';
+  const centers = Array.from({ length: 600 }, (_, i) => capCenter(i));
+  const distances = centers.map((v) => dot(v, center) / length ** 2);
+  const nearest = Math.max(...distances.filter((d) => d < 1 - 1e-6));
+  const neighbours = distances.flatMap((d, i) => d >= nearest - 1e-6 ? [i] : []);
+  // Fit the actual posed stickers of this facet and its immediate neighbours. This
+  // changes only the camera; all 600 facets remain in the draw and in the state.
+  const box = new THREE.Box3(), A = geometry.A, normal = geometry.mesh.normal;
+  for (const facet of neighbours) {
+    const frame = Array.from(A['cell_frames.f32'].subarray(facet * 16, facet * 16 + 16));
+    for (let vi = 0; vi < COUNTS.base_vertices; vi++) {
+      const local = A['mesh_sticker.u32'][vi], piece = A['slot_piece.u32'][facet * 433 + local];
+      const anchor = geometry.anchors.subarray(local * 4, local * 4 + 4);
+      const home = normal.map((n, k) => n + 0.76 * (anchor[k] - n)
+        + 0.76 * 0.82 * (A['mesh_vertices.f32'][vi * 4 + k] - anchor[k]));
+      const x = matColumn(frame, home), pose = state.index[piece] * 16;
+      const posed = [0, 1, 2, 3].map((r) => x.reduce((s, v, k) => s + state.poses[pose + r * 4 + k] * v, 0));
+      const projected = projectPoint(posed);
+      requireValue(projected.every(Number.isFinite), 'Local view has a non-finite projection');
+      box.expandByPoint(new THREE.Vector3(...projected));
+    }
+  }
+  const target = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+  const tan = Math.tan(camera.fov * Math.PI / 360);
+  const distance = 1.1 * Math.max(size.y / (2 * tan), size.x / (2 * tan * camera.aspect)) + size.z / 2;
+  controls.target.copy(target);
+  camera.position.copy(target).add(new THREE.Vector3(0, 0, Math.max(0.4, distance)));
+  controls.update();
+}
+async function startShot() {
+  document.documentElement.classList.add('shot');
+  shot = shotParameters();
+  document.documentElement.style.setProperty('--shot-width', `${shot.w}px`);
+  document.documentElement.style.setProperty('--shot-height', `${shot.h}px`);
+  $('canvas').setAttribute('aria-label', 'Full puzzle at the recorded tutorial step');
+  $('projection').value = shot.proj === 'persp' ? 'perspective' : 'stereographic';
+  geometry = await loadGeometry();
+  const { s, t, moving } = await loadTutorial();
+  state = s;
+  if (shot.view === 'local') requireValue(t.caps.length > 0, 'Local view needs a cap named by the step');
+  makeRenderer();
+  bindState(s, { moving });
+  app.view = { state: 'tutorial', t: 0, ...shot };
+  app.model = { ...COUNTS, poses: s.header.poses };
+  app.header = s.header;
+  app.tutorial = t;
+  app.offLattice = s.off;
+  if (shot.view === 'local') frameLocal(t.caps[0]);
+  app.ready = true;
+  mesh.visible = true;
+  draw();
 }
 requestAnimationFrame(animate);
 start().catch(fail);
