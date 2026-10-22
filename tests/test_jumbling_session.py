@@ -537,6 +537,41 @@ class RecoveryTests(_SessionCase):
                      lambda: session.load(bad_path))
         self.assertEqual(store.read_session(bad_path), bad, "refused load rewrote its input")
 
+    def test_malformed_recovery_checkpoints_are_refused_at_load_and_restore(self):
+        session = self.session()
+        session.retained_moves(session.revision, [1, -700])
+        session.reset(session.revision)
+        good = session.document
+        self.assertEqual(len(good["retained"]["checkpoints"]), 1)
+        snapshot = good["retained"]["checkpoints"][0]
+        plants = {
+            "generator outside the model": (S.InvalidInput, "signed generator ids",
+                                            dict(snapshot, journal=[1201])),
+            "journal that misses its labels": (S.WitnessMismatch, "retained labels_digest",
+                                               dict(snapshot, journal=[1])),
+            "extra key": (S.InvalidInput, "recovery checkpoint needs exactly",
+                          dict(snapshot, checkpoints=[])),
+            "other model": (S.IdentityMismatch, "model_identity",
+                            dict(snapshot, model_identity={"planted": True})),
+        }
+        for index, (name, (error, message, planted)) in enumerate(plants.items()):
+            with self.subTest(snapshot=name):
+                bad = copy.deepcopy(good)
+                bad["retained"]["checkpoints"][0] = planted
+                bad_path = self.directory / f"planted-{index}.json"
+                store.write_session(bad_path, bad)
+                stored = bad_path.read_bytes()
+                self.refused(session, error, error.kind, message, lambda: session.load(bad_path))
+                self.assertEqual(bad_path.read_bytes(), stored, "refused load rewrote its input")
+                # A snapshot changed after load is checked again by restore.
+                session._doc = copy.deepcopy(bad)
+                self.refused(session, error, error.kind, message,
+                             lambda: session.restore(session.revision, 0))
+                session._doc = copy.deepcopy(good)
+        session.restore(session.revision, 0)
+        self.labels_equal(session._retained_labels(),
+                          _ENGINE.apply_generators(_ENGINE.solved_labels(), [1, -700]))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=0)

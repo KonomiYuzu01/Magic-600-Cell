@@ -2,7 +2,8 @@
 
 No candidate module is imported. Store records are plain data; their identities
 are read using the store's recorded_at/menu/menu_order spelling. Missing
-identities are mismatches, never inferred from the current revision.
+identities are mismatches, never inferred from the current revision, and a
+record whose spellings of one identity disagree is a mismatch too.
 """
 
 import sys
@@ -37,6 +38,33 @@ def _get(value, key, default=None):
     return value.get(key, default) if isinstance(value, Mapping) else getattr(value, key, default)
 
 
+# Every spelling of each identity in the record formats read here: slice 3's
+# typed job results, the store prototype's stored words and the library.
+SPELLINGS = {
+    'input_digest': (('input_digest',), ('recorded_at',)),
+    'menu_identity': (('menu_identity',), ('parameters', 'menu_identity'), ('identities', 'menu')),
+    'order_digest': (('order_digest',), ('parameters', 'order_digest'), ('parameters', 'menu_order_digest'),
+                     ('identities', 'menu_order')),
+    'contract_revision': (('contract_revision',), ('parameters', 'contract_revision'),
+                          ('identities', 'contract_revision')),
+    'library_digest': (('library_digest',), ('identities', 'library_digest')),
+}
+
+
+def _recorded(record, field):
+    """The one value a record gives for an identity; spellings that disagree are a mismatch."""
+    values = []
+    for path in SPELLINGS[field]:
+        value = record
+        for key in path:
+            value = _get(value, key)
+        if value is not None and value not in values:
+            values.append(value)
+    if len(values) > 1:
+        raise RecordMismatch(field, 'one recorded value', tuple(values))
+    return values[0] if values else None
+
+
 def read_against(record, *, input_digest=None, menu_identity=None, order_digest=None,
                  contract_revision=None, library_digest=None):
     """Return the validated record, raising at the first mismatching expectation.
@@ -57,18 +85,7 @@ def read_against(record, *, input_digest=None, menu_identity=None, order_digest=
     status = _get(record, 'status')
     if status is not None and status != 'completed':
         raise IncompleteRecordError('status', 'completed', status)
-    parameters = _get(record, 'parameters', {})
-    identities = _get(record, 'identities', {})
-    actual = {
-        'input_digest': _get(record, 'input_digest', _get(record, 'recorded_at')),
-        'menu_identity': _get(record, 'menu_identity',
-                              _get(parameters, 'menu_identity', _get(identities, 'menu'))),
-        'order_digest': _get(record, 'order_digest', _get(parameters, 'order_digest',
-                             _get(parameters, 'menu_order_digest', _get(identities, 'menu_order')))),
-        'contract_revision': _get(record, 'contract_revision',
-                                  _get(parameters, 'contract_revision', _get(identities, 'contract_revision'))),
-        'library_digest': _get(record, 'library_digest', _get(identities, 'library_digest')),
-    }
+    actual = {field: _recorded(record, field) for field in SPELLINGS}
     expectations = dict(input_digest=input_digest, menu_identity=menu_identity, order_digest=order_digest,
                         contract_revision=contract_revision, library_digest=library_digest)
     for field, expected in expectations.items():

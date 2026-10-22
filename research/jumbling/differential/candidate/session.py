@@ -169,8 +169,10 @@ class RetainedOnlySession:
         self.path, self._doc = path, doc
         return self
 
-    def _check_document(self, doc):
-        retained = doc["retained"]
+    _SNAPSHOT_KEYS = frozenset(("model_identity", "checkpoint", "journal", "labels_digest", "origin"))
+
+    def _check_retained(self, retained):
+        """One retained part or recovery snapshot: identity, digest, journal, checkpoint, labels."""
         if not isinstance(retained, dict):
             raise InvalidInput("retained session needs a checkpoint and generator journal")
         if retained.get("model_identity") != self.engine.identities["model"]:
@@ -178,13 +180,28 @@ class RetainedOnlySession:
                                    "use a session for the matching full model")
         _digest(retained.get("labels_digest"))
         _word(retained.get("journal"))
+        if not isinstance(retained.get("origin"), str):
+            raise InvalidInput("retained session needs an origin")
+        checkpoint = retained.get("checkpoint")
+        if not isinstance(checkpoint, dict) or checkpoint.get("kind") not in ("word", "labels"):
+            raise InvalidInput("retained session needs a word or labels checkpoint")
+        # Opaque digest-only imports have no labels to replay yet.
+        if "labels" in checkpoint or checkpoint["kind"] == "word":
+            self._retained_labels(retained)
+
+    def _check_snapshot(self, snapshot):
+        if not isinstance(snapshot, dict) or set(snapshot) != self._SNAPSHOT_KEYS:
+            raise InvalidInput("a recovery checkpoint needs exactly a model identity, checkpoint, "
+                               "journal, labels digest and origin")
+        self._check_retained(snapshot)
+
+    def _check_document(self, doc):
+        retained = doc["retained"]
+        self._check_retained(retained)
         if not isinstance(retained.get("checkpoints"), list):
             raise InvalidInput("retained session needs recovery checkpoints")
-        if not isinstance(retained.get("checkpoint"), dict):
-            raise InvalidInput("retained session needs a checkpoint")
-        # Opaque digest-only imports have no labels to replay yet.
-        if "labels" in retained["checkpoint"] or retained["checkpoint"].get("kind") == "word":
-            self._retained_labels(retained)
+        for snapshot in retained["checkpoints"]:
+            self._check_snapshot(snapshot)
 
     def _retained_labels(self, retained=None):
         retained = self._doc["retained"] if retained is None else retained
@@ -246,6 +263,7 @@ class RetainedOnlySession:
         if type(index) is not int or not 0 <= index < len(retained["checkpoints"]):
             raise InvalidInput("checkpoint restore needs an existing checkpoint index")
         snapshot = copy.deepcopy(retained["checkpoints"][index])
+        self._check_snapshot(snapshot)
         retained["checkpoints"].append(self._snapshot(retained))
         retained.update(snapshot, origin="restore")
         self._update(retained, command="restore")

@@ -99,8 +99,11 @@ The rim summary comes by two routes, `rim.py` and `seams.balance`, which must
 agree. `cut_cells(state, c)` lists the occupied cells of a named admissible
 cut. `off_grip_seams(state)` lists the cells occupied on one side only whose
 plane is no grip's, each with the caps that contain the whole closed cell and
-their status. `compare` names the first difference and needs a complete
-reference.
+their status. `compare` names the first difference. Its reference must be
+complete and consistent: a domain key for every piece, the heights and piece
+count of every occupied pose class, the counts by left height that follow from
+them, every cap with the values its status requires, and grip N as the sum of
+the admissible caps' N_c.
 
 `obs_refs.py` rebuilds the reference states and checks their recorded values:
 
@@ -140,17 +143,20 @@ exception.
   a named cap. It agrees with the word check of that one letter in every shared
   field.
 - `preview` replays the word. `commit` returns the previewed end state, journal
-  included, when the start digest and the word digest are unchanged
-  (`StalePreviewError` otherwise; `BlockedWordError` names the letter of a
-  blocked or uncertain prefix). A word that lifts lattice pieces or fails the
-  step flag is shown, not refused (DT-J1 A7).
+  included, when the start's poses and journal, the menu's identity and order
+  and the word are those of the preview, and its end state is unchanged
+  (`StalePreviewError` names the field otherwise; `BlockedWordError` names the
+  letter of a blocked or uncertain prefix). J1's digest leaves out the journal,
+  so both journals are checked on their own. A word that lifts lattice pieces
+  or fails the step flag is shown, not refused (DT-J1 A7).
 - `compare_step` compares the shared fields with a row of `eb4_replay.py`
   (`EB4_MAPPING`, `STEP_MAPPING`) or of `replay_check.py` (`REPLAY_MAPPING`).
 - `records.read_against` reads a repair-list result, a covers result, a stored
   word or the correction library against the input digest, menu identity,
   order digest, contract revision and library digest the caller expects.
-  `RecordMismatch` names the field, and a missing identity is a mismatch. A job
-  result that did not complete is never read as a list (`IncompleteRecordError`).
+  `RecordMismatch` names the field. A missing identity is a mismatch, and so is
+  a record that spells one identity twice with different values. A job result
+  that did not complete is never read as a list (`IncompleteRecordError`).
 - `records.check_menu_closure` checks a menu record for inverses, for
   conjugation by A4₀ and for A4₀ itself, then hands it to J1.
 - `records.request_twist` refuses a rotation that is not an exact menu element
@@ -173,6 +179,9 @@ independently of J1's poses.
 - Every command takes the revision it was issued at and either writes one whole
   revision through `store.write_session` or changes nothing (`StaleRevision`
   for another revision).
+- Load checks every recovery checkpoint as it checks the current retained part
+  (model identity, labels digest, journal, checkpoint and, where labels can be
+  replayed, their digest), and restore checks the one it restores again.
 - A session in which Jumble is never on writes exactly the bytes of
   `RetainedOnlySession`, which has no jumbling code path.
 - `jumble_on` enters from a retained word from solved, or resumes from the last

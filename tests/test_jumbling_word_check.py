@@ -152,7 +152,7 @@ class ResearchWordTests(TimedCase):
         self.assertEqual(check.word_digest, hashlib.sha256(json.dumps(
             self.doc['word'], separators=(',', ':')).encode('ascii')).hexdigest())
         self.assertEqual(check.letters, 624)
-        self.assertEqual(sum(check.heights_before.values()), len(_END.pose_id))
+        self.assertEqual(sum(check.heights_before[key] for key in W.COUNT_KEYS), len(_END.pose_id))
         self.assertEqual(sum(check.delta_n_h.values()), 0)
         self.assertIsNone(check.delta_u)
         self.assertEqual(_END.snapshot(), self.before)
@@ -189,9 +189,15 @@ class ReleaseAgreementTests(TimedCase):
             with self.subTest(step=number), patch.object(S, 'scores', side_effect=AssertionError('scored alternatives')):
                 released = W.release_fields(S, c, x, cap=6)
                 checked = W.word_check(state, [[c, x]], (), cap=6)
-                for field in ('input_digest', 'start_digest', 'end_digest', 'word_digest', 'delta_N', 'delta_n_h',
-                              'u_before', 'u_after', 'delta_u'):
-                    self.assertEqual(getattr(checked, field), released[field], f'step {number}: {field}')
+                shared = ('input_digest', 'start_digest', 'end_digest', 'word_digest', 'delta_N', 'delta_n_h',
+                          'heights_before', 'heights_after', 'u_before', 'u_after', 'delta_u')
+
+                def first_difference(row):
+                    return next((field for field in shared if getattr(checked, field) != row[field]), None)
+
+                self.assertIsNone(first_difference(released), f'step {number}')
+                heights = dict(released['heights_before'], n_0=released['heights_before']['n_0'] + 1)
+                self.assertEqual(first_difference(dict(released, heights_before=heights)), 'heights_before')
                 self.assertEqual(checked.delta_N, released['N_c_after'] - released['N_c_now'])
                 self.assertEqual(checked.delta_u, checked.u_after - checked.u_before)
                 self.assertEqual(set(checked.delta_n_h), set(W.COUNT_KEYS))
@@ -268,6 +274,42 @@ class PreviewCommitTests(TimedCase):
             W.commit(_END, shown, letters)
         self.assertEqual(refused.exception.field, 'end_digest')
         self.assertEqual(_END.snapshot(), before)
+        # J1's digest excludes the journal, so the journal of the end state is checked on its own.
+        shown = W.preview(_END, letters)
+        shown.end_state.journal.clear()
+        with self.assertRaises(W.StalePreviewError) as refused:
+            W.commit(_END, shown, letters)
+        self.assertEqual(refused.exception.field, 'end_journal')
+        self.assertEqual(_END.snapshot(), before)
+
+    def test_moves_that_keep_the_poses_and_a_reordered_menu_are_stale(self):
+        letters = [[0, 1]]
+        solved = sim.State(_END.ctx, menu=census.menu())
+        shown = W.preview(solved, letters)
+        for generator in (1, -1):
+            self.assertTrue(solved.apply(sim.primitive(solved.ctx, generator)).applied)
+        # The poses are back where the preview started; only the journal shows the two moves.
+        self.assertEqual(solved.digest(), shown.check.start_digest)
+        before = solved.snapshot()
+        with self.assertRaises(W.StalePreviewError) as refused:
+            W.commit(solved, shown, letters)
+        self.assertEqual(refused.exception.field, 'start_journal')
+        self.assertEqual(solved.snapshot(), before)
+        # A valid menu with items 1 and 2 swapped keeps its identity but turns
+        # letter [0, 1] into another twist.
+        record = copy.deepcopy(census.menu().record())
+        record['base'][1], record['base'][2] = record['base'][2], record['base'][1]
+        reordered = sim.State(_END.ctx, menu=sim.TwistMenu.from_record(_END.ctx, record))
+        shown = W.preview(sim.State(_END.ctx, menu=census.menu()), letters)
+        self.assertEqual(reordered.digest(), shown.check.start_digest)
+        self.assertEqual(reordered.menu.identity, shown.menu_identity)
+        replayed = W.preview(reordered, letters)
+        self.assertNotEqual(replayed.end_digest, shown.end_digest)
+        before = reordered.snapshot()
+        with self.assertRaises(W.StalePreviewError) as refused:
+            W.commit(reordered, shown, letters)
+        self.assertEqual(refused.exception.field, 'order_digest')
+        self.assertEqual(reordered.snapshot(), before)
 
     def test_complete_input_validation_precedes_replay(self):
         before = _END.snapshot()
@@ -333,6 +375,24 @@ class RecordTests(TimedCase):
         with self.assertRaises(R.RecordMismatch) as error:
             R.read_against(stored, order_digest=self.available['order_digest'])
         self.assertEqual((error.exception.field, error.exception.actual), ('order_digest', 'planted'))
+
+    def test_conflicting_spellings_of_an_identity_are_a_mismatch(self):
+        # The stored word keeps a stale recorded_at or identity; a second
+        # spelling that agrees with the caller cannot override it.
+        stale = {'input_digest': ('recorded_at',), 'menu_identity': ('identities', 'menu'),
+                 'order_digest': ('identities', 'menu_order'),
+                 'contract_revision': ('identities', 'contract_revision')}
+        for field, path in stale.items():
+            stored = copy.deepcopy(self.stored)
+            target = stored if len(path) == 1 else stored[path[0]]
+            target[path[-1]] = 'stale'
+            stored[field] = self.available[field]
+            with self.subTest(field=field), self.assertRaises(R.RecordMismatch) as error:
+                R.read_against(stored, **{field: self.available[field]})
+            self.assertEqual(error.exception.field, field)
+            self.assertEqual(set(error.exception.actual), {'stale', self.available[field]})
+        agreeing = dict(copy.deepcopy(self.stored), input_digest=self.available['input_digest'])
+        self.assertIs(R.read_against(agreeing, input_digest=self.available['input_digest']), agreeing)
 
     def test_cancelled_cut_off_and_error_jobs_are_never_empty_lists(self):
         for status in ('cancelled', 'cut_off', 'error'):

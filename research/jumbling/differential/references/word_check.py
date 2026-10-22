@@ -70,17 +70,34 @@ def word_digest(letters):
 
 
 def _heights(state):
+    """Counts by left height in X5's bins, with X5's maximum above 6."""
     import numpy as np
     import trees
 
     result = dict.fromkeys(COUNT_KEYS, 0)
+    result['max_above_6'] = None
     for pid, count in zip(*np.unique(state.pose_id, return_counts=True)):
         pose = state._poses[int(pid)]
         height = 0 if pose.kidx >= 0 else trees.dist(trees.factors(state._pose_matrix(int(pid)))[0])
         if height not in (0, 2, 4, 6) and height <= 6:
             raise ValueError(f'pose has unexpected I_a left height {height}')
         result[f'n_{height}' if height <= 6 else 'n_above_6'] += int(count)
+        if height > 6:
+            result['max_above_6'] = max(result['max_above_6'] or 0, height)
     return result
+
+
+def journal_digest(state):
+    """SHA-256 of the journal records as J1's snapshot writes them; J1's digest excludes the journal."""
+    state = getattr(state, 'st', state)
+    return hashlib.sha256(json.dumps(state.journal, sort_keys=True).encode()).hexdigest()
+
+
+def _menu_binding(menu):
+    """The identity and order digest of the menu that turns letters into twists."""
+    from differential.menu_order import order_digest
+
+    return menu.identity, order_digest(menu.record())
 
 
 def _u(state, cap):
@@ -256,25 +273,44 @@ class Preview:
     end_state: object
     end_digest: str
     word_digest: str
+    menu_identity: str
+    order_digest: str
+    start_journal: str
+    end_journal: str
 
 
 def preview(state, letters, unit=(), *, cap=None) -> Preview:
-    """The word check plus the end state, whose journal records the word as a direct application would."""
+    """The word check plus the end state, whose journal records the word as a direct application would.
+
+    The preview is bound to the start's poses and journal, the menu order that
+    turns the letters into twists, the word, and the end state's poses and journal.
+    """
     check, end = _check(state, letters, unit, cap, journal=True)
-    return Preview(check, end, check.end_digest, check.word_digest)
+    identity, order = _menu_binding(_menu(getattr(state, 'st', state)))
+    return Preview(check, end, check.end_digest, check.word_digest, identity, order,
+                   journal_digest(state), journal_digest(end))
 
 
 def commit(state, preview, letters):
     """Return a copy of the previewed end; never replay or mutate the input.
 
     Failure of step_flag is an observation, not a refusal. The caller has
-    supplied no protection set. Prefix refusal and stale input are refusals.
+    supplied no protection set. Prefix refusal and stale input are refusals:
+    the start's poses or journal, the menu order or the word changed since the
+    preview, or the preview's end state changed after it was recorded.
     """
     state = getattr(state, 'st', state)
     actual = state.digest()
     if actual != preview.check.start_digest:
         raise StalePreviewError('start_digest', preview.check.start_digest, actual)
-    actual = word_digest(_letters(letters, _menu(state)))
+    actual = journal_digest(state)
+    if actual != preview.start_journal:
+        raise StalePreviewError('start_journal', preview.start_journal, actual)
+    menu = _menu(state)
+    for field, actual in zip(('menu_identity', 'order_digest'), _menu_binding(menu)):
+        if actual != getattr(preview, field):
+            raise StalePreviewError(field, getattr(preview, field), actual)
+    actual = word_digest(_letters(letters, menu))
     if actual != preview.word_digest:
         raise StalePreviewError('word_digest', preview.word_digest, actual)
     if not preview.check.admissible:
@@ -282,6 +318,9 @@ def commit(state, preview, letters):
     actual = preview.end_state.digest()
     if actual != preview.end_digest or actual != preview.check.end_digest:
         raise StalePreviewError('end_digest', preview.check.end_digest, actual)
+    actual = journal_digest(preview.end_state)
+    if actual != preview.end_journal:
+        raise StalePreviewError('end_journal', preview.end_journal, actual)
     return copy_state(preview.end_state)
 
 

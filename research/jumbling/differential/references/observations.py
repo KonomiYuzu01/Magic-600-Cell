@@ -78,6 +78,7 @@ class Observation:
     rim: dict[int, RimSummary]
     n_total: int
     grip_n: int
+    pose_counts: dict[str, int]
 
     def domain_partition(self):
         groups = {}
@@ -151,6 +152,7 @@ def observe(state, *, caps=None, rim_route='rim'):
     keys = {}
     heights = {}
     counts = Counter()
+    pose_counts = Counter()
     for pid, count in zip(*np.unique(state.pose_id, return_counts=True)):
         pid = int(pid)
         pose = state._poses[pid]
@@ -159,6 +161,7 @@ def observe(state, *, caps=None, rim_route='rim'):
         dl, dr = ((0, 0) if pose.kidx >= 0 else
                   tuple(trees.dist(factor) for factor in trees.factors(matrix)))
         heights[pose_key(matrix)] = (dl, dr)
+        pose_counts[pose_key(matrix)] += int(count)
         counts[dl] += int(count)
     domains = rim.Domains(state)
     route = seams.SeamRestorer(state, state.menu or census.menu()) if rim_route == 'seams' else None
@@ -175,7 +178,8 @@ def observe(state, *, caps=None, rim_route='rim'):
         if row.N_c is not None:
             grip_n += row.N_c
     return Observation(state.digest(), tuple(keys[int(pid)] for pid in state.pose_id),
-                       heights, left_counts(counts), rows, domains.total_misalignment(), grip_n)
+                       heights, left_counts(counts), rows, domains.total_misalignment(), grip_n,
+                       dict(pose_counts))
 
 
 def height_histograms(state, observation):
@@ -292,17 +296,57 @@ def off_grip_seams(state):
             for key, cells in sorted(grouped.items())}
 
 
-def compare(candidate: Observation, reference: Observation) -> Difference | None:
-    """First difference: digest, piece partition, heights, counts, cap, N.
+RIM_VALUES = ('N_c', 'In_c', 'Out_c', 'A_c', 'F_c', 'at_floor')
 
-    A full reference is required. Missing candidate entries are differences;
-    comparing two truncated inputs must never be reported as a pass.
+
+def _gap(reference):
+    """The first gap of a reference, or None when it is complete and self-consistent.
+
+    Every piece has a domain key; the pose classes of `pose_counts` hold every
+    piece and are exactly those of `heights`; the counts by left height follow
+    from them; all 600 caps have a row whose values its status requires; and
+    grip N is the sum of N_c over the admissible caps.
     """
-    if (len(reference.domain_keys) != rim.NP or set(reference.rim) != set(range(600))
-            or not reference.heights
-            or not set((*COUNT_KEYS, 'max_above_6')).issubset(reference.height_counts)
-            or sum(n for key, n in reference.height_counts.items() if key.startswith('n_')) != rim.NP):
-        raise ValueError('comparison requires complete pieces, heights, counts and a 600-cap reference')
+    if len(reference.domain_keys) != rim.NP:
+        return 'pieces'
+    counts = reference.pose_counts
+    if (set(counts) != set(reference.heights) or sum(counts.values()) != rim.NP
+            or any(type(n) is not int or n <= 0 for n in counts.values())):
+        return 'pose classes'
+    left = Counter()
+    try:
+        for pose, n in counts.items():
+            left[reference.heights[pose][0]] += n
+        if left_counts(left) != reference.height_counts:
+            return 'height counts'
+    except (TypeError, IndexError, ValueError):
+        return 'heights'
+    if set(reference.rim) != set(range(600)):
+        return 'caps'
+    for c in range(600):
+        row = reference.rim[c]
+        values = [getattr(row, name) for name in RIM_VALUES]
+        if row.status != 'admissible':
+            if any(value is not None for value in values):
+                return f'cap {c}'
+        elif (any(value is None for value in values) or row.F_c != abs(row.In_c - row.Out_c)
+              or row.at_floor != (row.N_c == row.F_c)):
+            return f'cap {c}'
+    if reference.n_total is None or reference.grip_n != sum(
+            row.N_c for row in reference.rim.values() if row.status == 'admissible'):
+        return 'N'
+    return None
+
+
+def compare(candidate: Observation, reference: Observation) -> Difference | None:
+    """First difference: digest, piece partition, heights, pose counts, counts, cap, N.
+
+    A full reference is required (`_gap`). Missing candidate entries are
+    differences; comparing two truncated inputs must never be reported as a pass.
+    """
+    gap = _gap(reference)
+    if gap is not None:
+        raise ValueError(f'comparison requires a complete reference: {gap}')
     if candidate.digest != reference.digest:
         return Difference('digest', reference.digest, candidate.digest)
     for piece in range(max(len(candidate.domain_keys), len(reference.domain_keys))):
@@ -314,6 +358,10 @@ def compare(candidate: Observation, reference: Observation) -> Difference | None
         actual, expected = candidate.heights.get(pose), reference.heights.get(pose)
         if actual != expected:
             return Difference('heights', expected, actual, pose=pose)
+    for pose in sorted(set(candidate.pose_counts) | set(reference.pose_counts)):
+        actual, expected = candidate.pose_counts.get(pose), reference.pose_counts.get(pose)
+        if actual != expected:
+            return Difference('pose_counts', expected, actual, pose=pose)
     order = (*COUNT_KEYS, 'max_above_6', *sorted(
         (set(candidate.height_counts) | set(reference.height_counts)) - set(COUNT_KEYS) - {'max_above_6'}))
     for key in order:

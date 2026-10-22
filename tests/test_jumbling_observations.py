@@ -259,11 +259,37 @@ class RimSummaryTests(TimedCase):
         self.difference(replace(reference, n_total=1193), reference, 'n_total')
         self.difference(replace(reference, grip_n=1058), reference, 'grip_n')
         self.difference(replace(reference, rim={}), reference, 'rim', cap=0)
+        counts = dict(reference.pose_counts)
+        counts[pose] += 1
+        difference = self.difference(replace(reference, pose_counts=counts), reference, 'pose_counts', pose=pose)
+        self.assertEqual((difference.reference, difference.candidate),
+                         (reference.pose_counts[pose], counts[pose]))
         with self.assertRaisesRegex(ValueError, 'complete'):
             O.compare(replace(reference, rim={}), replace(reference, rim={}))
-        for changes in ({'heights': {}}, {'height_counts': {}},
-                        {'height_counts': dict(reference.height_counts, n_2=0)}):
-            with self.subTest(partial=next(iter(changes))), self.assertRaisesRegex(ValueError, 'complete'):
+        admissible = next(c for c, row in reference.rim.items() if row.status == 'admissible')
+        blocked = next(c for c, row in reference.rim.items() if row.status != 'admissible')
+
+        def without(mapping, key):
+            return {k: v for k, v in mapping.items() if k != key}
+
+        def rows(cap, row):
+            return {**reference.rim, cap: row}
+
+        partials = {
+            'no heights': {'heights': {}},
+            'no counts': {'height_counts': {}},
+            'counts off by one bin': {'height_counts': dict(reference.height_counts, n_2=0)},
+            'one pose class without heights': {'heights': without(reference.heights, pose)},
+            'one pose class dropped': {'heights': without(reference.heights, pose),
+                                       'pose_counts': without(reference.pose_counts, pose)},
+            'admissible cap without values': {'rim': rows(admissible, O.RimSummary('admissible'))},
+            'blocked cap with a value': {'rim': rows(blocked, O.RimSummary(reference.rim[blocked].status, N_c=0))},
+            'floor flag inconsistent': {'rim': rows(admissible, replace(
+                reference.rim[admissible], at_floor=not reference.rim[admissible].at_floor))},
+            'grip N not the sum': {'grip_n': reference.grip_n + 1},
+        }
+        for name, changes in partials.items():
+            with self.subTest(partial=name), self.assertRaisesRegex(ValueError, 'complete'):
                 partial = replace(reference, **changes)
                 O.compare(partial, partial)
         self.difference(replace(reference, domain_keys=reference.domain_keys[:-1]), reference,
