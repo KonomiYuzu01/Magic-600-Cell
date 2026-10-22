@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] update | W-J: a deep I_a state in the render format
+The renderer line rebuilt the I_a census scramble of seed 7302 at 3000 twists, matched it against its census record and exported it in the render format: 2,684 pose-table entries, against at most 1,591 in the W-J fixtures ([w-j-probe-results](evidence/w-j-probe-results.md)). No W-J run on a deep state has been made; the probe's README and protocol now also record that the GPU lattice check passed (handoff RO-15).
+
 ## [2026-10-20] decision | Wrapper calls disable Codex plugins and connectors (owner exception)
 Every wrapper call now passes `--disable` for `plugins`, `apps`, `remote_plugin` and `skill_mcp_dependency_install`, so no plugin or connector MCP server starts in a wrapper call ([codex-mcp-isolation](evidence/codex-mcp-isolation.md)). The owner waived the Codex plan check and review for this change; the planned pre-call check was not implemented.
 

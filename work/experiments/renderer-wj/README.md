@@ -128,3 +128,29 @@ foreach ($overlay in 'grips','certificates','straddles','angle') {
 ```
 
 Repeat with I_a/I_b as time permits. Write unmeasured for every missing cost; estimate none. Fill [RESULT.md](RESULT.md) only with the exact matching build's verified GPU/capture evidence. Preserve Andrey Astrelin's primary MPUlt credit and upstream notices in the repository; this probe bundles no Managed DirectX DLLs.
+
+## Deep-state export (handoff RH-23)
+
+`deep_export.py` rebuilds one I_a scramble exactly as the scramble census drew it (`research/jumbling/theory/restore.py scramble`, with the seed and twist count given). It writes the three render-contract arrays and a `header.json` in the format `magic600-jumbling-render/1`, like `wj.py export` does for a fixture stage; the header's `source` names the census draw instead of a fixture stage. With `--record` it first compares the fresh scramble with the census record of a run that did not continue an earlier one: the twist history and, at the start of the run, the off-lattice count, N, the heights of the off-lattice pieces and the number of off-lattice poses. It writes no array if any field differs, reads every written array back against its SHA-256, and prints one JSON line without paths. Exit 0 is a match, 1 a mismatch, 2 a refused request; a non-empty `--out` is refused before the draw. `test_deep_export.py` checks it on the committed 10-twist record `ia-k10-s7001` without writing a file.
+
+```powershell
+python -I -B work/experiments/renderer-wj/deep_export.py --seed 7302 --twists 3000 --record <census record> --out <new private directory> --summary work/experiments/renderer-wj/deep/ia-k3000-s7302-summary.json
+python -I -B work/experiments/renderer-wj/test_deep_export.py
+```
+
+The census record for seed 7302 is `research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json` on the branch of draft pull request #112 (commit `ec0f0ac`), not on `main`. The export of 22 October 2026 matched it in every compared field. Its [summary](deep/ia-k3000-s7302-summary.json):
+
+| Field | Seed 7302, 3000 twists | W-J fixture end stages: S4, I_a, I_b |
+|---|---|---|
+| Pieces | 177,120 | 177,120 each |
+| Pose-table entries | 2,684 (488 in K+, 2,196 off the lattice; all in use) | 1,591, 1,333, 1,248 |
+| Off-lattice pieces | 118,821 (heights 2: 116,665; 4: 1,971; 6: 185) | 117,498, 121,184, 128,013 |
+| Largest entry numerator or denominator | 32 | 32, 16, 16 |
+| State digest | `1335f47e0c5647a948dd11f87ba4bad27c787d00992be1f783d970c88a542ace` | |
+| `pose_index.i32`, `<i4` [177120] | `4dcd6c01da27b0050185e16da45c3052b5193b80ca404aaf7513c16adf663663` | |
+| `poses.f32`, `<f4` [2684, 4, 4] | `53594f844fa4fbf7ba3bde1f71c459619d86b0ffa8a63d957cf468a6894f62d9` | |
+| `pose_lattice.i32`, `<i4` [2684] | `792560baee664ca70c398cb6222f9747e4cf13a7156562b08ea1fb38f24be9d4` | |
+
+A separate read-back of the written files gave the same hashes, shapes and counts, the identity as pose 0, and orthogonal matrices within 1e-5. The pose table is 171,776 bytes of float32 matrices. The draw took 2,477 s of research code on the owner's machine; that is not a performance result.
+
+This is source/fixture evidence from the CPU. No W-J run on a deep state has been made. The probe loads five fixture stages, a motion document and lattice controls per menu (`prepare_wj.py`) and sizes its pose table from those stages, so a run on this state needs a deep fixture built around it first. The arrays stay in private storage; the command above rebuilds them, and the digests in the summary check the rebuild. The Look Lab needs the same export (LH-26).

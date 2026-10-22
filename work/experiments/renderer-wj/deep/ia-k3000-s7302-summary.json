@@ -1,0 +1,49 @@
+{
+ "N": 145574,
+ "digest": "1335f47e0c5647a948dd11f87ba4bad27c787d00992be1f783d970c88a542ace",
+ "files": {
+  "pose_index.i32": {
+   "dtype": "<i4",
+   "sha256": "4dcd6c01da27b0050185e16da45c3052b5193b80ca404aaf7513c16adf663663",
+   "shape": [
+    177120
+   ]
+  },
+  "pose_lattice.i32": {
+   "dtype": "<i4",
+   "sha256": "792560baee664ca70c398cb6222f9747e4cf13a7156562b08ea1fb38f24be9d4",
+   "shape": [
+    2684
+   ]
+  },
+  "poses.f32": {
+   "dtype": "<f4",
+   "sha256": "53594f844fa4fbf7ba3bde1f71c459619d86b0ffa8a63d957cf468a6894f62d9",
+   "shape": [
+    2684,
+    4,
+    4
+   ]
+  }
+ },
+ "format": "magic600-wj-deep-export/1",
+ "history_sha256": "fa66c27665b1f92394c7986a784e4608af4e5d0933fc88e262e78dc9f00a3959",
+ "kplus_poses": 488,
+ "left_heights": {
+  "2": 116665,
+  "4": 1971,
+  "6": 185
+ },
+ "max_denominator": 32,
+ "max_entry_height": 32,
+ "menu": "I_a",
+ "mismatches": [],
+ "off_lattice": 118821,
+ "off_poses": 2196,
+ "pieces": 177120,
+ "poses": 2684,
+ "record_check": "pass",
+ "seconds": 2477.356,
+ "seed": 7302,
+ "twists": 3000
+}

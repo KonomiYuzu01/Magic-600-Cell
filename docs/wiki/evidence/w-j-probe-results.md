@@ -12,6 +12,7 @@ claims:
   - {id: wj-i-b-gate-met, evidence_kind: performance, path: work/experiments/renderer-wj/results/wj-I_b-20261010T193029102Z-summary.json, sha256: 3ce21f3f2b5d70644bc5c013f5517e9c20fd904b3cce5f85ba6d4b34c6857330, checked_at: 2026-10-10}
   - {id: wj-w3-reaccepted, evidence_kind: performance, path: work/experiments/renderer-wj/results/w3-20261010T194430557Z-summary.json, sha256: 3cc627af916c9e564851d57b2c853ef389e24ddf5b634629908ce6e0cfa7c868, checked_at: 2026-10-10}
   - {id: wj-result-card, evidence_kind: actual_windows_directx, path: work/experiments/renderer-wj/RESULT.md, sha256: 56a0fd7db1279acf9882b2b42c1b15c7bf521c3f3537ba620faf1aae30191f13, checked_at: 2026-10-10}
+  - {id: wj-deep-export-7302, evidence_kind: fixture, path: work/experiments/renderer-wj/deep/ia-k3000-s7302-summary.json, sha256: a86477321d0e15c234c5dabc01d9d520b72da534d6a083c265582c27b93e556b, checked_at: 2026-10-22}
 ---
 
 # W-J probe results
@@ -54,8 +55,18 @@ The results hold only on the owner's machine, under the recorded conditions, for
 - **A runner defect voided the first attempt.** The runner assigned its confirmation text to `$overlay`. PowerShell names ignore case, so that is the parameter `-Overlay`, whose value set rejects the text, and every series stopped after run 1. The four runs of that attempt count for nothing. The fix renames the variable (review `20261010T200533Z-4f7766fb`, pass).
 - **Stray console input can reach the confirmation prompt.** In one I_a series, text that was pasted or typed while the probe was on screen appeared at the prompt. The runner refused that run, as it should, and the series ran again from run 1. All three capture runners now flush the console input buffer before the prompt. That flush has not been tested in an attended run yet.
 
+## A deep state in the render format (CPU)
+
+Before any W-J run on a deep state, the jumbling handoff asks for a render-format export of one, with its array digests and pose-table size (item RH-23). On 22 October 2026 `deep_export.py` rebuilt the I_a census scramble of seed 7302 at 3000 twists, matched it against its census record in every compared field and exported it ([README](../../../work/experiments/renderer-wj/README.md), [summary](../../../work/experiments/renderer-wj/deep/ia-k3000-s7302-summary.json)):
+- 2,684 pose-table entries, 488 in K+ and 2,196 off the lattice, all in use; the end stages of the three W-J fixtures have 1,248 to 1,591;
+- 118,821 pieces off the lattice, at heights 2, 4 and 6;
+- largest entry numerator or denominator 32, as at the S4 fixture's end.
+
+This is CPU evidence about the data. It is not a W-J run and not a performance result.
+
 ## What it does not show
 
 - It does not show that W-J is accepted. The overlay costs (acceptance item 7) are unmeasured.
+- It gives no W-J run on a deep state. The probe needs a deep fixture built around the exported state first.
 - It does not show that any renderer is selected. Selection needs the day-7 go/no-go ruling ([renderer-candidates](../decisions/renderer-candidates.md)).
 - It gives no results for the overlays, other hardware, other resolutions or refresh rates, frame generation, or long sessions.
