@@ -89,8 +89,11 @@ def isolate_cache(path=None):
             _CACHE_DIR = tempfile.mkdtemp(prefix='jumbling-census-')
             atexit.register(shutil.rmtree, _CACHE_DIR, True)
         path = _CACHE_DIR
-    directory = _outside(path, 'the centroid cache directory')
-    seams.CACHE = _outside(directory / 'home_centroids.npy', 'the centroid cache')
+    cache = _outside(path, 'the centroid cache directory') / 'home_centroids.npy'
+    _outside(cache, 'the centroid cache')  # the file itself, links included
+    # Keep the .npy name, not the resolved target: np.save appends .npy to a name without it,
+    # which would open a path other than the one checked.
+    seams.CACHE = cache
     return seams.CACHE
 
 

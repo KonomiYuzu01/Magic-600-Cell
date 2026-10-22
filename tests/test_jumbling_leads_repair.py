@@ -429,7 +429,29 @@ class CensusTests(TimedCase):
                         self.assertRaisesRegex(census.CensusError, 'outside the repository'):
                     census.isolate_cache(temporary)
                 self.assertEqual(census.seams.CACHE, before)
-                self.assertEqual(census.isolate_cache(temporary), Path(temporary).resolve() / 'home_centroids.npy')
+                expected = Path(temporary).resolve() / 'home_centroids.npy'
+                self.assertEqual(census.isolate_cache(temporary), expected)
+
+                # The cache file links to an outside target without .npy. np.save appends
+                # .npy to such a name, so the cache must keep its own .npy name, and
+                # np.save then opens exactly that name.
+                payload = Path(temporary).resolve() / 'payload'
+
+                def resolve_to_payload(path, strict=False):
+                    return payload if path.name == 'home_centroids.npy' else real(path, strict)
+
+                opened = []
+
+                def intercept(file, *args, **kwargs):
+                    opened.append(os.fspath(file))
+                    raise OSError('intercepted before writing')
+
+                with patch.object(Path, 'resolve', resolve_to_payload):
+                    cache = census.isolate_cache(temporary)
+                self.assertEqual(cache, expected)
+                with patch('builtins.open', intercept), self.assertRaisesRegex(OSError, 'intercepted'):
+                    np.save(cache, np.zeros(1))
+                self.assertEqual(opened, [os.fspath(expected)])
         finally:
             census.seams.CACHE = before
 
