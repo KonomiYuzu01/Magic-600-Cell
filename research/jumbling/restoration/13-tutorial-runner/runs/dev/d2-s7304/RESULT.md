@@ -155,6 +155,9 @@ is known from this line.
 
 ## Next step
 
+Dropped by the integrator (22 October 2026): `--rule-seconds` stays 3,600 s and there is no further run for 7304; the
+component record, with the tail's `units` time-out, is the D2 result for this stop. The items below are kept for the record only.
+
 1. Run step 3 on a machine that stays up for at least eight hours: rebuild the start table with the step 1 command
    (about 3,600 s here), then run the step 3 command into fresh `--out` and `--cache` directories, copy the output to
    `full/`, and run `check_run.py <dir>/full --out <dir>/check-f/check.jsonl`.
