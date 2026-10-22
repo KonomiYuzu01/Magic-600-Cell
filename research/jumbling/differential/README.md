@@ -1,10 +1,10 @@
 # Jumbling differential harness
 
-Status: this is the NumPy-free first part of EN2. The J1 adapter, fixture
-replays, reference values and cost leads follow in later packets. The store
-prototype is a separate packet under `candidate/`. Current evidence is source,
-fixture parsing and synthetic engines; it establishes no engine replay or
-Windows/DirectX or performance result.
+Status: EN2 slice 1 supplies the NumPy-free harness core; slice 2 adds the J1
+adapter and replays. Reference values and cost leads follow in later packets.
+The store prototype is a separate packet under `candidate/`. Evidence here is
+source, synthetic engines and fixture replays with the J1 reference engine;
+it establishes no candidate-engine, Windows/DirectX or performance result.
 
 The harness runs the same records through a reference engine and a candidate
 engine. It compares the solved start (step 0), then each result in chronological
@@ -80,6 +80,111 @@ with positive denominators. `inverse_index` finds each matrix's transpose and
 raises `MenuRecordError` when an inverse is absent. These structural checks do
 not prove that the matrices are rotations or A4-invariant; engine adapters
 remain responsible for mechanical menu validity.
+
+## J1 adapter and replays
+
+`j1_adapter.J1Engine(ctx=None, name='J1')` wraps `sim.State`, using one shared
+J1 context when supplied. `start(None)` selects free mode; a menu record is
+rebuilt with `TwistMenu.from_record`. The adapter refuses dropped duplicates
+or a changed round-trip order digest, so letters retain their recorded item
+indices. J1's menu identity alone does not pin that order. A letter is item
+`i` of `TwistMenu.for_cap(c)`, cached per cap: the exact transport is
+F_c · item_i · F_cᵀ, with J1's retained frame F_c.
+
+The adapter reports J1's outcome status and moved count, `State.digest()`, and
+SHA-256 of `State.lattice_flags().astype(numpy.uint8).tobytes()` (one byte per
+piece, in piece-id order). A small `State` subclass captures the certified
+`inside` array after a successful `_commit(twist, inside, journal)`; this
+private J1 signature is an explicit dependency. Its moved-set hash uses the
+same inside set that J1 committed, without a second classification. Invalid
+record reconstruction and J1 refusals return zero moved pieces, the empty
+moved-set hash and the preceding digest/lattice hashes. `survey(grips)` keeps
+only the status letters for exactly those grips. The getter-only `state`
+property permits test inspection; callers must not mutate J1 through it.
+
+`tests/test_jumbling_j1_replay.py` checks:
+
+- J1 against J1 on 60 records of each W-J fixture, plus 30 I_a records with
+  all 600 grips surveyed at steps 0 and 30.
+- One complete I_a replay and S4/I_b replays through their middle stages,
+  checking each recorded moved count and the recorded stage digests. I_a also
+  checks the swept twist's before/after digests, moved count and moved-set
+  hash, and the end survey's 600 letters. These references are in
+  [`wj-I_a.json`](../fixtures/wj-I_a.json),
+  [`wj-S4.json`](../fixtures/wj-S4.json) and
+  [`wj-I_b.json`](../fixtures/wj-I_b.json).
+- The E2, E3, random_0 and random_1 journals in free mode and the negative
+  control with its own menu, all paired and checked for recorded moved
+  counts. The negative control also reproduces its 25 distinct digests and
+  12 cap-0 pose-entry heights in [`acceptance.json`](../sim/acceptance.json).
+- Planted digest and moved-set changes, a skipped apply, and a refusal that
+  changes the digest: each stops at the first bad step, with the expected
+  field and no later apply calls. A reference refusal violation raises
+  `ReferenceContractError`. Adapter checks cover an outside-menu record,
+  failed record reconstruction, a swapped menu order and duplicate items.
+
+`tests/test_jumbling_x1_witness.py` pins the I_a order digest before loading
+[`H6030.json`](../restoration/10-x1-unbounded/witnesses/H6030.json), replays all
+3,156 letters once and compares J1 against J1 over the first 600 letters.
+After each of those 600 letters and at the end, `trees.pose_tree` checks every
+non-identity pose: right height 0 and left height at most twice the letters
+played. Results are cached by each pose's exact key. During this module only,
+a bounded LRU cache wraps the original pure integer `trees._v2int` helper to
+reuse valuations of large power-of-two denominators; `pose_tree` itself runs
+unchanged. The final digest, height histogram and seven pieces at left height
+6030 reproduce
+[`programs/H6030.out`](../restoration/10-x1-unbounded/programs/H6030.out).
+The piece-height convention agrees with `programs/replay.py`: the left
+distance of the pose's quaternion factor, including height 0 for identity
+and K⁺ poses. The test checks this formula on the final pose table.
+
+`j1_state.py` exports plain data from J1 without the candidate store:
+`state_record` (the pose table with exact matrices or K⁺ indices, the pose ids
+as `u32le-base64` and the digest), `letters_from_records` (each record matched
+to its menu item by the exact transported matrix) and `twists_from_letters`.
+`tests/test_jumbling_store_j1.py` writes these through `candidate/store.py` and
+checks that each document reads back unchanged, byte for byte:
+
+- The start, middle and end stages of I_a and the start and middle stages of
+  S4 and I_b, each with its canonical digest recomputed from the stored pose
+  table. The fixture journals are stored first, and the read-back records are
+  the ones replayed to the recorded stage digests.
+- Crash recovery at each of the three simulated crash points returns a whole
+  revision. A scramble journal stays apart from the solver journal. A label
+  exit keeps its exact exit poses; its certificate content is synthetic, so
+  only the certificate's shape and digest binding are tested.
+- Pose components above 2⁶⁴ after the first 204 H6030 letters. The 5,629
+  letters of correction 35 (`card5:MB2-5` in `library-merged.json.gz`) are
+  matched from its records, stored, decoded and replayed to a measured J1
+  digest on the lattice. A parts tree with an inverse and a same-as part
+  expands to its literal letters.
+
+Run with Python 3.11 or later and NumPy (the pinned version is 2.3.5):
+
+```sh
+python tests/test_jumbling_j1_replay.py
+python tests/test_jumbling_x1_witness.py
+python tests/test_jumbling_store_j1.py
+python -m unittest -q tests/test_jumbling_j1_replay.py tests/test_jumbling_x1_witness.py tests/test_jumbling_store_j1.py tests/test_jumbling_store.py tests/test_jumbling_differential.py
+```
+
+Without NumPy each new test module is skipped with a NumPy message. Under a
+shared unittest command each of these modules runs its tests in one isolated
+worker (`tests/isolated_numpy.py`), so `tests/test_jumbling_differential.py`
+keeps its proof that NumPy and J1 never load in its process. Each module shares
+one context and disables bytecode writes before local imports. The replay
+tests write no output; the store tests write only in `tempfile` directories
+outside the repository, and an audit hook fails any other write.
+Set `JUMBLING_FULL_REPLAY=1` to compare both engines on all three complete
+fixtures (including end surveys against their recorded letters), all five
+journals and all H6030 letters, to check the H6030 bound after every letter,
+to extend the S4/I_b single replays through their end-stage and sweep
+references, and to store the S4/I_b end stages and replay correction 35's
+original records. CI uses the default bounded run.
+
+J1 against J1 exercises the harness, adapter and recorded references. It
+does not establish agreement with a candidate engine. Headless timings of
+these research replays are not product performance evidence.
 
 ## Import independence
 
