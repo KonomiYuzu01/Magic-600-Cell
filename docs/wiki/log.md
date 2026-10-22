@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | Jumbling: figure coverage and the merge of pull request 112
+The owner set the coverage of the tutorial's illustrations: a before-and-after pair for every rule of every phase, a step-tree figure and a region figure for every macro, one complete worked example per phase drawn step by step or in segments from the development seeds, and reading and concept figures, several dozen to more than a hundred figures in all; and the integrator merges pull request 112 itself once the tutorial and its acceptance are written ([owner-decisions-2026-10-22-figures-and-merge](decisions/owner-decisions-2026-10-22-figures-and-merge.md)).
+
 ## [2026-10-22] decision | Jumbling: the tutorial and its acceptance first
 The owner asked for the tutorial to be written and its acceptance test carried out first, to the standard of a finished product, which restarts for that scope the work the research stop of 20 October halted ([owner-decisions-2026-10-22-tutorial-first](decisions/owner-decisions-2026-10-22-tutorial-first.md)). The context section of the 18 October decision is corrected: its lattice bound of 20,866,844 twists belongs to the round 11 construction, not to the late restorer the runner plays.
 
