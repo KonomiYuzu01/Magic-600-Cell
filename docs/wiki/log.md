@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | G1 keeps every structure mode and layout
+The owner kept all seven G1 structure modes and all four greybox layouts in the Look Lab and chose no single layout, so the G1 exit's first layout specification (H-04) and visual feature list (H-01) stay open; Look Lab work continues ([decision](decisions/owner-decisions-2026-10-22-g1.md)).
+
 ## [2026-10-22] decision | Jumbling records from draft #112 on main
 Under Q1 of the 22 October answers, six decision records came to `main` from #112's branch ([#112 merge rule](decisions/owner-decisions-2026-10-17-jumbling-pr.md), [repair list](decisions/owner-decisions-2026-10-17-repair-pairs.md), [B′(h) goal](decisions/owner-decisions-2026-10-18-bprime-goal.md), [machine tutorial](decisions/owner-decisions-2026-10-18-machine-tutorial.md), [tutorial acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), [research stop](decisions/owner-decisions-2026-10-20-research-stop.md)), with the handoff pages, the requirements draft's repair-list exception and the briefing's jumbling line; #112 stays a draft. The pages are unchanged except two links to a branch-only research page and a dated note on the #112 merge rule.
 
