@@ -349,10 +349,10 @@ def stills_report(output):
         if (preset, pose) not in expected or (preset, pose) in seen or relative in paths or not inside(path, ROOT) or not path.is_file():
             raise CheckFailure("stills: repeated, unexpected or missing capture: " + line)
         seen.add((preset, pose)); paths.add(relative)
-    if len(presets) != 6 or seen != expected:
+    if len(presets) != 7 or seen != expected:
         raise CheckFailure("stills: expected every G1 preset at rest and mid-turn exactly once")
     passes = [line for line in lines if line.startswith("LOOKLAB_STILLS_PASS")]
-    if passes != ["LOOKLAB_STILLS_PASS presets=6 stills=12 size=1600x1000"]:
+    if passes != ["LOOKLAB_STILLS_PASS presets=7 stills=14 size=1600x1000"]:
         raise CheckFailure("stills: missing, repeated or malformed PASS result")
 
 

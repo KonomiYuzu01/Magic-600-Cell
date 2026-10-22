@@ -3,7 +3,7 @@ import re
 
 
 CHECKS = (
-    ("ll7-presets", r"LOOKLAB_LL7_PRESETS_PASS presets=6 kinds=6 uniforms=bound checks=1"),
+    ("ll7-presets", r"LOOKLAB_LL7_PRESETS_PASS presets=7 kinds=6 uniforms=bound checks=1"),
     ("ll7-spin", r"LOOKLAB_LL7_SPIN_PASS global=passed inertia=passed local=passed compare=2 checks=1"),
     ("ll7-layout", r"LOOKLAB_LL7_LAYOUT_PASS kinds=4 classes=5 texture=exact palette=passed checks=1"),
     ("ll7-framing", r"LOOKLAB_LL7_FRAMING_PASS kinds=3 settled=1e-6 global=neutral checks=1"),

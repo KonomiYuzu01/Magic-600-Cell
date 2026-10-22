@@ -115,6 +115,7 @@ internal static partial class Program
             ("LL7DragSignsCameraOrderAndOrthonormalSpin", LL7Drag),
             ("LL7SharedColouringEquitableClassesAndReports", LL7Colouring),
             ("LL7G1PresetsCanonicalAndOnlyStatedChanges", LL7G1Presets),
+            ("LL7StereographicCapHidesPoleAndFitsFrame", LL7StereographicCap),
             ("DraftCoreFlowsAndLayoutReports", FlowDefaults),
             ("FlowFormatUnknownCommandAndUnreachableRefusals", FlowRefusals),
             ("FlowHandComputedTravelAndShannonTime", FlowTiny),

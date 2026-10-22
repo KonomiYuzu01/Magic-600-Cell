@@ -13,7 +13,7 @@ import ll6_harness_test as previous
 check = previous.previous.check
 lane = previous.module("looklab_ll7", "lane_ll7.py")
 RESULTS = {
-    "ll7-presets": "LOOKLAB_LL7_PRESETS_PASS presets=6 kinds=6 uniforms=bound checks=1\n",
+    "ll7-presets": "LOOKLAB_LL7_PRESETS_PASS presets=7 kinds=6 uniforms=bound checks=1\n",
     "ll7-spin": "LOOKLAB_LL7_SPIN_PASS global=passed inertia=passed local=passed compare=2 checks=1\n",
     "ll7-layout": "LOOKLAB_LL7_LAYOUT_PASS kinds=4 classes=5 texture=exact palette=passed checks=1\n",
     "ll7-framing": "LOOKLAB_LL7_FRAMING_PASS kinds=3 settled=1e-6 global=neutral checks=1\n",
@@ -150,7 +150,7 @@ class CurrentHarnessTests(previous.CurrentHarnessTests):
         presets = root / check.LAB / "presets"; presets.mkdir(parents=True)
         captures = root / "work/loop-memory/looklab/captures"; captures.mkdir(parents=True)
         lines = []
-        names = ("hemispheres", "hopf-rings", "orthographic", "perspective", "ring-sheet", "stereographic")
+        names = ("hemispheres", "hopf-rings", "orthographic", "perspective", "ring-sheet", "stereographic", "stereographic-cap")
         for name in names:
             preset = "g1-" + name
             (presets / (preset + ".json")).write_text("{}", encoding="utf-8")
@@ -158,7 +158,7 @@ class CurrentHarnessTests(previous.CurrentHarnessTests):
                 path = captures / ("capture-" + preset + "-" + pose + ".png")
                 path.write_bytes(b"synthetic capture fixture")
                 lines.append(f"LOOKLAB_STILL preset={preset} pose={pose} path={path.relative_to(root).as_posix()}")
-        lines.append("LOOKLAB_STILLS_PASS presets=6 stills=12 size=1600x1000")
+        lines.append("LOOKLAB_STILLS_PASS presets=7 stills=14 size=1600x1000")
         return root, "\n".join(lines) + "\n"
 
     def test_stills_schedule_uses_real_root_and_graphics(self):

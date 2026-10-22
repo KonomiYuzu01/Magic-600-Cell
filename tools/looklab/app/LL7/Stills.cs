@@ -15,7 +15,7 @@ internal static class Stills
         var schema = ParameterSchema.Load(Path.Combine(root, "tools/looklab/data/parameters.json"));
         var capture = new CaptureService(host, root);
         string[] files = Directory.GetFiles(Path.Combine(root, "tools/looklab/presets"), "g1-*.json").OrderBy(p => p, StringComparer.Ordinal).ToArray();
-        if (files.Length != 6) throw new Exception("stills: expected six G1 presets");
+        if (files.Length != 7) throw new Exception("stills: expected seven G1 presets");
         foreach (string file in files)
         {
             Preset preset = Presets.Load(file, schema);
@@ -34,7 +34,7 @@ internal static class Stills
             }
             host.RemoveChild(viewport); viewport.QueueFree();
         }
-        GD.Print("LOOKLAB_STILLS_PASS presets=6 stills=12 size=1600x1000");
+        GD.Print("LOOKLAB_STILLS_PASS presets=7 stills=14 size=1600x1000");
         host.GetTree().Quit();
     }
 }

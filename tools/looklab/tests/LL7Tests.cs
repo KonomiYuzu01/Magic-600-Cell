@@ -556,22 +556,74 @@ internal static partial class Program
         Preset defaults = Presets.Load(FileAt("presets/default.json"), Schema);
         var presets = new[] { ("perspective", "G1 perspective", "perspective"), ("stereographic", "G1 stereographic", "stereographic"),
             ("orthographic", "G1 orthographic", "orthographic"), ("hemispheres", "G1 two hemispheres", "hemispheres"),
-            ("hopf-rings", "G1 Hopf rings", "hopfRings"), ("ring-sheet", "G1 ring sheet", "ringSheet") };
+            ("hopf-rings", "G1 Hopf rings", "hopfRings"), ("ring-sheet", "G1 ring sheet", "ringSheet"),
+            ("stereographic-cap", "G1 stereographic, polar cap hidden", "stereographic") };
+        var cap = new Dictionary<string, ParameterValue> { ["sliceVisible"] = new BooleanValue(true), ["sliceMax"] = new NumberValue(.5) };
         Equal(Schema.Parameters.Count, 42);
-        Sequence(Schema["projection"].Options!, presets.Select(p => p.Item3));
-        for (int i = 0; i < presets.Length; i++)
+        Sequence(Schema["projection"].Options!, presets.Take(6).Select(p => p.Item3));
+        Sequence(Directory.GetFiles(FileAt("presets"), "g1-*.json").Select(Path.GetFileName).OrderBy(p => p, StringComparer.Ordinal),
+            presets.Select(p => "g1-" + p.Item1 + ".json").OrderBy(p => p, StringComparer.Ordinal));
+        foreach (var (file, name, kind) in presets)
         {
-            var (file, name, kind) = presets[i]; string path = FileAt("presets/g1-" + file + ".json");
+            string path = FileAt("presets/g1-" + file + ".json");
             Preset preset = Presets.Load(path, Schema); Equal(preset.Name, name); Equal(preset.Family, null); Equal(preset.Scene, null);
             Sequence(Presets.CanonicalBytes(preset, Schema), File.ReadAllBytes(path), "noncanonical G1 preset: " + file);
-            Equal(preset.Params.Choice("projection"), kind); Equal((int)preset.Params.Structure(1.6).Projection, i);
+            Equal(preset.Params.Choice("projection"), kind);
+            Equal((int)preset.Params.Structure(1.6).Projection, Schema["projection"].Options!.ToList().IndexOf(kind));
             foreach (var parameter in defaults.Params.Values)
             {
                 if (parameter.Key == "projection") continue;
                 if (kind == "orthographic" && parameter.Key == "fieldOfView") Near(preset.Params.Number(parameter.Key), 2 * Math.Atan(1 / 3.27), 1e-12);
+                else if (file == "stereographic-cap" && cap.TryGetValue(parameter.Key, out ParameterValue? value))
+                    Equal(preset.Params.Values[parameter.Key], value, file + ": " + parameter.Key);
                 else Equal(preset.Params.Values[parameter.Key], parameter.Value, file + ": changed " + parameter.Key);
             }
         }
+    }
+
+    // At rest with identity Q the cap preset hides every cell around the projection pole, whose stickers reach w > 1, and its
+    // lower bound -1 trims the cells around the opposite pole, whose stickers reach just below w = -1. Every corner of a
+    // triangle it draws is in frame and at least 2 in front of the fixed camera. visible_w is interpolated perspective-correct,
+    // so it is linear along each clip-space edge, and the drawn part of a triangle is the convex polygon of its corners inside
+    // the band and the points where its edges cross a bound; all of those stay in the middle half of the frame.
+    private static void LL7StereographicCap()
+    {
+        Preset cap = Presets.Load(FileAt("presets/g1-stereographic-cap.json"), Schema);
+        StructureValues p = cap.Params.Structure(1.6); double low = cap.Params.Number("sliceMin"), high = cap.Params.Number("sliceMax");
+        Equal(p.Projection, ProjectionKind.Stereographic); Equal(cap.Params.Boolean("sliceVisible"), true); Equal(low, -1.0);
+        int pole = Enumerable.Range(0, Mesh.CellStructure.Vertices4.Length).Single(v => LL7Unit(Mesh.CellStructure.Vertices4[v])[3] > 1 - 1e-9);
+        double[] q = Geometry.Identity(); double front = double.MaxValue, outer = 0, inner = 0; int hidden = 0, cutHigh = 0, cutLow = 0, poleCells = 0;
+        static double Extent(double x, double y) => Math.Max(Math.Abs(x), Math.Abs(y));
+        for (int cell = 0; cell < Geometry.Cells; cell++)
+        {
+            int first = cell * Geometry.BaseVertices;
+            double[] w = Enumerable.Range(first, Geometry.BaseVertices).Select(v => LL7Posed(v, p, 0)[3]).ToArray();
+            if (Mesh.CellStructure.CellVertices[cell].Contains(pole))
+            {
+                poleCells++; Check(w.Max() > 1 && w.Min() > high, "pole cell not past the pole or not hidden: " + cell);
+            }
+            if (w.Min() > high || w.Max() < low) { hidden++; continue; }
+            if (w.Max() > high) cutHigh++;
+            if (w.Min() < low) cutLow++;
+            Projection[] x = Enumerable.Range(first, Geometry.BaseVertices).Select(v => Mesh.Project(v, p, q, Turn, 0)).ToArray();
+            for (int v = 0; v < Geometry.BaseVertices; v++)
+            {
+                // The base mesh is a plain triangle list: edge v -> u runs to the next corner of the same triangle.
+                int u = v - v % 3 + (v + 1) % 3; Projection a = x[v], b = x[u];
+                front = Math.Min(front, a.W); outer = Math.Max(outer, Extent(a.NdcX, a.NdcY));
+                if (w[v] >= low && w[v] <= high) inner = Math.Max(inner, Extent(a.NdcX, a.NdcY));
+                foreach (double bound in new[] { low, high })
+                {
+                    if ((w[v] - bound) * (w[u] - bound) >= 0) continue;
+                    double s = (bound - w[v]) / (w[u] - w[v]), cw = a.W + s * (b.W - a.W);
+                    inner = Math.Max(inner, Extent((a.NdcX * a.W + s * (b.NdcX * b.W - a.NdcX * a.W)) / cw,
+                        (a.NdcY * a.W + s * (b.NdcY * b.W - a.NdcY * a.W)) / cw));
+                }
+            }
+        }
+        Equal(poleCells, 20); Equal(hidden, 70); Equal(cutHigh, 60); Equal(cutLow, 20);
+        Check(front >= 2 && outer < 1 && inner <= .5, $"cap framing: front {front}, outer {outer}, inner {inner}");
+        Console.WriteLine($"LL7_STEREOGRAPHIC_CAP hidden={hidden} cutHigh={cutHigh} cutLow={cutLow} front={front:F3} outer={outer:F3} inner={inner:F3}");
     }
 
     private static void LL7HopfFixture()

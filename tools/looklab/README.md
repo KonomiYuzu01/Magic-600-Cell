@@ -22,7 +22,7 @@ The recipe needs a .NET SDK with the net8.0 targeting pack and runtime already
 installed. Node is optional: tests that call the original Taste Lab JavaScript
 report a skip when it is absent. All other tests always run.
 
-The test runner has 87 named tests, including 49 Python harness cases. It
+The test runner has 88 named tests, including 49 Python harness cases. It
 prints a line for each named test and a summary, and exits nonzero on failure.
 It reads the repository and committed fixtures only, and creates its own
 temporary folders with mkdir under the system temporary directory. It opens
@@ -699,7 +699,7 @@ modes, plus five background checks), cost (ten null entries and one synthetic
 measured entry with its source and a live setting/status update), and palette
 (caller thresholds and live structured gamut failures). Disabling the CVD
 transform or the meter's null-text branch must fail its own check. The managed
-runner has 87 named tests. The consolidated LL7 harness retains the LL2, LL5 and LL6
+runner has 88 named tests. The consolidated LL7 harness retains the LL2, LL5 and LL6
 isolation and fault cases and checks the updated combined schedules; it has 49 tests.
 
 The graphics lane adds a readback of the same 52 known linear colours through
@@ -766,7 +766,8 @@ no rendered, window-input or performance evidence.
 ## Global layouts and the G1 catalogue (LL7)
 
 The editor's `projection` parameter switches among six structure modes. The
-catalogue in `presets/g1-*.json` supplies one preset for each:
+catalogue in `presets/g1-*.json` supplies one preset for each, plus a
+stereographic variant with the polar cap hidden:
 
 | Mode | Preset | Name |
 | --- | --- | --- |
@@ -776,11 +777,26 @@ catalogue in `presets/g1-*.json` supplies one preset for each:
 | hemispheres | `g1-hemispheres.json` | G1 two hemispheres |
 | hopfRings | `g1-hopf-rings.json` | G1 Hopf rings |
 | ringSheet | `g1-ring-sheet.json` | G1 ring sheet |
+| stereographic | `g1-stereographic-cap.json` | G1 stereographic, polar cap hidden |
 
 These use the default look; the orthographic preset sets `fieldOfView` to
-0.5935577461607933 radians to fit the view. The other five keep the default
+0.5935577461607933 radians to fit the view. The other six keep the default
 1.4314871793377604 radians. Compare mode lists these presets, so up to four
 modes can be placed side by side.
+
+At the starting orientation the plain stereographic preset puts the fixed
+camera inside the 20 cells around the projection pole: their stickers reach
+w > 1, past the projection's singularity at w = 1, so the view shows one cell
+from inside. The cap variant turns on the w band and hides w above 0.5, the
+60-degree cap around the pole: 70 cells whole and 60 in part. The band's lower
+bound stays at -1, the lowest value the schema allows, so it also trims the 20
+cells around the opposite pole, whose stickers reach just below w = -1. At rest
+with identity Q, every corner of a drawn triangle is inside the frame and at
+least 2 units in front of the camera, and the drawn part, including the points
+where the band cuts a triangle, stays in the middle half of the frame. The band
+is fixed in the model frame, so a drag turns the hidden cap away from the
+projection pole and the camera can end up inside drawn cells again. The variant
+is meant for the starting orientation only.
 
 The three Global layouts place cells using charts of their 4D points. Hopf
 rings uses the chosen right Hopf cover: each ring is a circle of 30 cells on
@@ -817,18 +833,19 @@ that right cover with ten from a left cover and has a 7-regular graph. See
 python tools/looklab/check.py --stills
 ```
 
-This opens a real graphics window, stages the app and captures all six G1
+This opens a real graphics window, stages the app and captures all seven G1
 presets with identity Q and Spin, at rest and at mid-turn, at 1600 x 1000.
-The twelve PNGs go to `work/loop-memory/looklab/captures/`, with a mirror in
+The fourteen PNGs go to `work/loop-memory/looklab/captures/`, with a mirror in
 `work/gallery/looklab/`. The tool prints each preset, pose and relative path,
 then quits. It is a tool for tuning and for the owner's G1 pick, not a
 measurement. Only the app's output folders may change during this run.
 
 Core LL7 tests recompute the Hopf facts and fixture, chart orientation and bead
 identity, separation and fit, target tables and retained-input handoffs,
-equator margin, drag signs, equitable colouring, palette reports, framing and
-the six presets. `check.py --godot` appends four headless results, each with
-one injected fault that must fail its own check:
+equator margin, drag signs, equitable colouring, palette reports, framing, the
+seven presets, and the cap variant's hidden cells and frame fit.
+`check.py --godot` appends four headless results, each with one injected fault
+that must fail its own check:
 
 | Result | Injected fault |
 | --- | --- |
@@ -837,11 +854,12 @@ one injected fault that must fail its own check:
 | `LOOKLAB_LL7_LAYOUT_PASS` | `ll7-palette-old-colouring` |
 | `LOOKLAB_LL7_FRAMING_PASS` | `ll7-framing-ignores-spin` |
 
-These check all uniforms and six kinds, exact drag/inertia and shared rotations,
-exact layout/class texture data with the displayed palette report, and settled
-Local framing for all three layouts. Texture checks read back the bound image
-and require it to equal the exact uploaded bytes; if a renderer returns no
-image, they compare private copies of those bytes instead. The line
+These check all uniforms, the slice band and six kinds across seven presets,
+exact drag/inertia and shared rotations, exact layout/class texture data with
+the displayed palette report, and settled Local framing for all three layouts.
+Texture checks read back the bound image and require it to equal the exact
+uploaded bytes; if a renderer returns no image, they compare private copies of
+those bytes instead. The line
 `LOOKLAB_LL7_TEXTURE readbacks=... uploads=...` says which path was used.
 
 The GPU lane retains its ten geometry cases and adds six layout cases: each

@@ -42,6 +42,9 @@ internal static class LL7Checks
             int kind = (int)preset.Params.Structure(1).Projection; kinds.Add(kind);
             Require(material.GetShaderParameter("projection_kind").AsInt32() == kind, check, "preset projection was not bound: " + preset.Name);
             Require(material.GetShaderParameter("spin").AsProjection() == LookViewport.Matrix(app.View.Spin), check, "Spin was not bound");
+            Require(material.GetShaderParameter("sliceVisible").AsBool() == preset.Params.Boolean("sliceVisible") &&
+                material.GetShaderParameter("sliceMin").AsDouble() == (float)preset.Params.Number("sliceMin") &&
+                material.GetShaderParameter("sliceMax").AsDouble() == (float)preset.Params.Number("sliceMax"), check, "slice band was not bound: " + preset.Name);
             foreach (var (name, value) in new[] { ("turn_angle", app.View.Turn.Angle), ("hemisphere_offset", GlobalLayout.HemisphereOffset),
                 ("hemisphere_scale", GlobalLayout.HemisphereScale), ("hemisphere_clamp", GlobalLayout.HemisphereClamp) })
                 Require(material.GetShaderParameter(name).AsDouble() == (float)value, check, name + " differs from core");
@@ -50,8 +53,8 @@ internal static class LL7Checks
             foreach (ShaderUniform uniform in source.Uniforms.Where(u => u.Type != "sampler2D"))
                 Require(material.GetShaderParameter(uniform.Name).VariantType != Variant.Type.Nil, check, "unbound drawing uniform: " + uniform.Name);
         }
-        Require(files.Length == 6 && kinds.OrderBy(k => k).SequenceEqual(Enumerable.Range(0, 6)), check, "G1 presets must cover every kind once");
-        GD.Print("LOOKLAB_LL7_PRESETS_PASS presets=6 kinds=6 uniforms=bound checks=1");
+        Require(files.Length == 7 && kinds.OrderBy(k => k).SequenceEqual(Enumerable.Range(0, 6)), check, "G1 presets must be seven and cover every kind");
+        GD.Print("LOOKLAB_LL7_PRESETS_PASS presets=7 kinds=6 uniforms=bound checks=1");
     }
 
     private static void Spin(LabApp app, string root, string fault)
