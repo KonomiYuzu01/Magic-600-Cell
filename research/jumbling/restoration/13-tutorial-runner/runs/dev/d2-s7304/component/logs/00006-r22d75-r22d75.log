@@ -1,0 +1,3 @@
+SNAPSHOT {"snapshot_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980", "snapshot_off": 96471, "prefix": 0, "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980", "load_cpu": 7.0}
+START {"digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980", "n6_n4_n2": [0, 797, 95674], "off": 96471, "N": 117736, "cpu": 11.0}
+STUCK {"steps": 0, "exhausted": "all single letters", "checks": {"classified_caps": 600, "blocked_caps": 559, "clean_caps": 41, "cap_bound_prunes": 22, "retained_prunes": 209, "item_height_tests": 912}, "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980", "n6_n4_n2": [0, 797, 95674], "off": 96471, "N": 117736, "cpu": 50.2}

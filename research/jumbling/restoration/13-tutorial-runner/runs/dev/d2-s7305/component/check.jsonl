@@ -1,0 +1,12 @@
+{"fails": [], "index": 0, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 1, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 2, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 3, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 4, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 5, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 6, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 7, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 8, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 9, "pass": true, "phase": "height", "rule": "r22d75/T2", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 10, "pass": true, "phase": "height", "rule": "r22d75/T2", "subphase": "r22d75", "unchecked": false}
+{"bulk_twists": 0, "end_digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062", "fails": [], "fallback_twists": 0, "height_twists": 11, "high_twists": 0, "lattice_checked": false, "lattice_twists": null, "pass": true, "result": "error", "steps": 11, "tail_twists": 0, "unchecked_contracts": 0, "verdict": "error"}
