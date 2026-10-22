@@ -45,13 +45,15 @@ function shotsList(path) {
   const names = new Set();
   return shots.map((s) => {
     insist(s && typeof s === 'object' && !Array.isArray(s)
-      && Object.keys(s).every((k) => ['name', 'state', 'view', 'proj', 'emph', 'w', 'h'].includes(k)), 'Invalid shot entry');
+      && Object.keys(s).every((k) => ['name', 'state', 'view', 'proj', 'emph', 'cap', 'w', 'h'].includes(k)), 'Invalid shot entry');
     insist(typeof s.name === 'string' && NAME.test(s.name) && !names.has(s.name), 'Invalid or duplicate shot name');
     insist(typeof s.state === 'string' && NAME.test(s.state), `Invalid state for ${s.name}`);
     names.add(s.name);
     const shot = { view: 'global', proj: 'persp', emph: 'moved', w: 1600, h: 1000, ...s };
     insist(['global', 'local'].includes(shot.view) && ['persp', 'stereo'].includes(shot.proj)
-      && ['moved', 'none'].includes(shot.emph), `Invalid view, proj or emph for ${shot.name}`);
+      && ['moved', 'off', 'none'].includes(shot.emph), `Invalid view, proj or emph for ${shot.name}`);
+    insist(!('cap' in shot) || (Number.isInteger(shot.cap) && shot.cap >= 0 && shot.cap < 600),
+      `Invalid cap for ${shot.name} (0..599)`);
     insist(['w', 'h'].every((k) => Number.isInteger(shot[k]) && shot[k] > 0 && shot[k] <= 8192),
       `Invalid dimensions for ${shot.name} (1..8192)`);
     return shot;
@@ -131,6 +133,11 @@ function dataFiles(files, base, shots) {
     }
     states.set(state, { header_digest: header.digest, tutorial_sha256: sha(tutorialRaw) });
   }
+  for (const shot of shots) {
+    const tutorial = json(files.get(`/tutorial/${shot.state}/tutorial.json`).body);
+    shot.cap ??= tutorial.caps[0] ?? null;
+    insist(shot.view !== 'local' || shot.cap !== null, `${shot.name}: local view needs a cap`);
+  }
   return states;
 }
 
@@ -184,6 +191,7 @@ async function render(browser, base, files, forbidden, shots, states, directory)
       });
       const query = new URLSearchParams({ shot: shot.state, view: shot.view, proj: shot.proj,
         emph: shot.emph, w: String(shot.w), h: String(shot.h) });
+      if (shot.cap !== null) query.set('cap', String(shot.cap));
       await page.goto(`${base}full.html?${query}`, { waitUntil: 'load' });
       await page.waitForFunction(() => ['1', 'error'].includes(document.documentElement.dataset.shotReady));
       const ready = await page.evaluate(() => ({ ...document.documentElement.dataset }));

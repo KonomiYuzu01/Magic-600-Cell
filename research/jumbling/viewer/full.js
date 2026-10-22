@@ -12,7 +12,7 @@ const DTYPES = { '<f4': Float32Array, '<i4': Int32Array, '<u4': Uint32Array };
 const PARAMETERS = new URLSearchParams(location.search);
 const B64 = PARAMETERS.has('b64');
 const SHOT = PARAMETERS.has('shot');
-let shot = null, shotQ = null;
+let shot = null, shotQ = null, ghostMesh = null;
 const app = { ready: false, errors: [], model: null, playing: false, view: { menu: 'S4', state: 'end', t: 0 } };
 window.fullViewer = app;
 let catalog, geometry, overlay, state, renderer, scene, camera, controls, mesh, material, width = 1024;
@@ -229,8 +229,11 @@ function shotParameters() {
     requireValue(/^[1-9][0-9]*$/.test(value) && Number(value) <= 8192, `Invalid shot ${key} (1..8192)`);
     return Number(value);
   };
+  const cap = PARAMETERS.get('cap');
+  requireValue(cap === null || (/^(0|[1-9][0-9]*)$/.test(cap) && Number(cap) < 600), 'Invalid shot cap (0..599)');
   return { name, view: choice('view', 'global', ['global', 'local']), proj: choice('proj', 'persp', ['persp', 'stereo']),
-    emph: choice('emph', 'moved', ['moved', 'none']), w: size('w', 1600), h: size('h', 1000) };
+    emph: choice('emph', 'moved', ['moved', 'off', 'none']), cap: cap === null ? null : Number(cap),
+    w: size('w', 1600), h: size('h', 1000) };
 }
 
 async function loadTutorial() {
@@ -349,10 +352,10 @@ precision highp int;
 in vec3 vProjected;
 in vec4 vWorld, vClip;
 flat in int vClass, vOff, vFocus, vMoved;
-uniform bool uTint, uProbe, uEmphasizeMoved;
-uniform int uFocus, uProbeOutput;
+uniform bool uTint, uProbe;
+uniform int uFocus, uProbeOutput, uEmphasis, uShotPass;
 uniform float uRadius;
-uniform vec3 uTintColor, uHighlight, uBackground;
+uniform vec3 uTintColor, uHighlight;
 out vec4 outColor;
 vec3 hsv(float h, float s, float v) {
   vec3 p = abs(fract(vec3(h)+vec3(0.0,2.0/3.0,1.0/3.0))*6.0-3.0);
@@ -365,20 +368,24 @@ void main() {
     else outColor = vClip / vClip.w;
     return;
   }
+  bool emphasized = uEmphasis == 1 ? vMoved != 0 : vOff != 0;
+  if ((uShotPass == 1 && !emphasized) || (uShotPass == 2 && emphasized)) discard;
   vec3 color = hsv(fract(float(vClass)*0.61803398875),0.61,0.90);
   vec3 n = normalize(cross(dFdx(vProjected), dFdy(vProjected)));
   color *= 0.5 + 0.5*abs(dot(n,normalize(vec3(0.3,0.5,1.0))));
   if (uTint && vOff != 0) color = mix(color,uTintColor,0.4);
   if (uFocus >= 0) color = vFocus != 0 ? mix(color,uHighlight,0.8) : color*0.22;
-  if (uEmphasizeMoved && vMoved == 0) color = mix(uBackground,color,0.12);
-  outColor = vec4(color,1.0);
+  outColor = vec4(color,uShotPass == 2 ? 0.12 : 1.0);
 }`;
 
 function cssColor(name) { return new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue(name).trim()); }
 function makeRenderer() {
   const canvas = $('canvas');
-  const context = canvas.getContext('webgl2', { antialias: true, preserveDrawingBuffer: true });
+  const emphasize = SHOT && shot.emph !== 'none';
+  const context = canvas.getContext('webgl2', { antialias: true, preserveDrawingBuffer: true,
+    ...(emphasize ? { stencil: true } : {}) });
   requireValue(context, 'WebGL2 is required for the full-state drawing');
+  requireValue(!emphasize || context.getContextAttributes().stencil, 'Tutorial emphasis needs a stencil buffer');
   renderer = new THREE.WebGLRenderer({ canvas, context, antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(1);
   renderer.debug.onShaderError = (gl, program, vs, fs) => {
@@ -415,7 +422,8 @@ function makeRenderer() {
     uBasis2: { value: new THREE.Vector4(0, 0, 1, 0) }, uProjection: { value: 0 },
     uFilter: { value: 0 }, uIsolate: { value: 0 }, uFocus: { value: -1 },
     uTint: { value: false }, uTintColor: { value: cssColor('--tint') }, uHighlight: { value: cssColor('--highlight') },
-    uEmphasizeMoved: { value: SHOT && shot.emph === 'moved' }, uBackground: { value: cssColor('--view-bg') },
+    uEmphasis: { value: SHOT ? ['none', 'moved', 'off'].indexOf(shot.emph) : 0 },
+    uShotPass: { value: emphasize ? 1 : 0 },
     uProbe: { value: false }, uProbeOutput: { value: 0 },
     uIndex: { value: null }, uPoses: { value: null }, uLattice: { value: null }, uMoving: { value: null },
     uProbeHome: { value: null }, uProbePieces: { value: null },
@@ -431,6 +439,23 @@ function makeRenderer() {
   mesh.frustumCulled = false;
   mesh.visible = false;
   scene.add(mesh);
+  if (emphasize) {
+    // Mark opaque emphasis pixels, then keep ghosts off those pixels entirely.
+    // Depth writes alone would not stop many front ghost layers hiding the emphasis.
+    material.stencilWrite = true;
+    material.stencilRef = 1;
+    material.stencilZPass = THREE.ReplaceStencilOp;
+    const ghostMaterial = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3,
+      vertexShader: VERTEX, fragmentShader: FRAGMENT,
+      uniforms: { ...uniforms, uShotPass: { value: 2 } }, side: THREE.DoubleSide, forceSinglePass: true,
+      transparent: true, blending: THREE.NormalBlending, depthTest: true, depthWrite: false,
+      stencilWrite: true, stencilWriteMask: 0, stencilRef: 1, stencilFunc: THREE.NotEqualStencilFunc });
+    ghostMesh = new THREE.Mesh(g, ghostMaterial);
+    ghostMesh.frustumCulled = false;
+    ghostMesh.visible = false;
+    ghostMesh.renderOrder = 1;
+    scene.add(ghostMesh);
+  }
   new ResizeObserver(resize).observe($('stage'));
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { theme(); dirty = true; });
   theme();
@@ -441,7 +466,6 @@ function theme() {
   renderer.setClearColor(cssColor('--view-bg'), 1);
   material.uniforms.uTintColor.value.copy(cssColor('--tint'));
   material.uniforms.uHighlight.value.copy(cssColor('--highlight'));
-  material.uniforms.uBackground.value.copy(cssColor('--view-bg'));
   markerMeshes.forEach((point, i) => point.material.color.copy(cssColor(i === 0 ? '--below' : '--above')));
 }
 function resize() {
@@ -651,6 +675,7 @@ function fail(error) {
   app.drawn = null;
   pause();
   if (mesh) mesh.visible = false;
+  if (ghostMesh) ghostMesh.visible = false;
   clearMarkers();
   selectedCertificate = null;
   $('error').hidden = false;
@@ -893,48 +918,88 @@ function capCenter(cap) {
   const matrix = Array.from(frames.subarray(cap * 16, cap * 16 + 16));
   return matColumn(matrix, geometry.mesh.normal).map((x) => x / geometry.mesh.normal_length);
 }
-function frameLocal(cap) {
-  const center = capCenter(cap), length = Math.sqrt(dot(center, center));
-  const axis = center.map((x) => x / length), rows = [];
-  // Orthonormal rows put this cap on +w, with a deterministic in-plane orientation.
-  for (let i = 0; i < 4 && rows.length < 3; i++) {
-    let v = [0, 0, 0, 0]; v[i] = 1;
-    let d = dot(v, axis); v = v.map((x, k) => x - d * axis[k]);
-    for (const row of rows) { d = dot(v, row); v = v.map((x, k) => x - d * row[k]); }
-    const norm = Math.sqrt(dot(v, v));
-    if (norm > 1e-8) rows.push(v.map((x) => x / norm));
+// Pure column-major SO(4) rotation, also exercised by the headless Node math check.
+function capOrientation(center) {
+  if (center.length !== 4 || !center.every(Number.isFinite) || Math.hypot(...center) === 0) {
+    throw new Error('Invalid cap centre');
   }
-  const q = new THREE.Matrix4().set(...rows.flat(), ...axis);
-  if (q.determinant() < 0) { rows[0] = rows[0].map((x) => -x); q.set(...rows.flat(), ...axis); }
-  shotQ = q.elements.slice();
-  // Stereo projects from the antipode, so the selected cap is away from its singularity.
-  $('pole').value = 'negative-w';
-  const centers = Array.from({ length: 600 }, (_, i) => capCenter(i));
-  const distances = centers.map((v) => dot(v, center) / length ** 2);
-  const nearest = Math.max(...distances.filter((d) => d < 1 - 1e-6));
-  const neighbours = distances.flatMap((d, i) => d >= nearest - 1e-6 ? [i] : []);
-  // Fit the actual posed stickers of this facet and its immediate neighbours. This
-  // changes only the camera; all 600 facets remain in the draw and in the state.
-  const box = new THREE.Box3(), A = geometry.A, normal = geometry.mesh.normal;
-  for (const facet of neighbours) {
-    const frame = Array.from(A['cell_frames.f32'].subarray(facet * 16, facet * 16 + 16));
-    for (let vi = 0; vi < COUNTS.base_vertices; vi++) {
-      const local = A['mesh_sticker.u32'][vi], piece = A['slot_piece.u32'][facet * 433 + local];
-      const anchor = geometry.anchors.subarray(local * 4, local * 4 + 4);
-      const home = normal.map((n, k) => n + 0.76 * (anchor[k] - n)
-        + 0.76 * 0.82 * (A['mesh_vertices.f32'][vi * 4 + k] - anchor[k]));
-      const x = matColumn(frame, home), pose = state.index[piece] * 16;
-      const posed = [0, 1, 2, 3].map((r) => x.reduce((s, v, k) => s + state.poses[pose + r * 4 + k] * v, 0));
-      const projected = projectPoint(posed);
-      requireValue(projected.every(Number.isFinite), 'Local view has a non-finite projection');
-      box.expandByPoint(new THREE.Vector3(...projected));
+  const q = Array.from({ length: 16 }, (_, i) => i % 5 === 0 ? 1 : 0);
+  const v = center.slice();
+  // Each proper plane rotation clears one coordinate and makes w positive.
+  // +w is near the perspective eye: project4 divides by (1.18 - w).
+  for (let i = 0; i < 3; i++) {
+    const length = Math.hypot(v[i], v[3]);
+    if (length === 0) continue;
+    const c = v[3] / length, s = v[i] / length;
+    for (let col = 0; col < 4; col++) {
+      const x = q[col * 4 + i], w = q[col * 4 + 3];
+      q[col * 4 + i] = c * x - s * w;
+      q[col * 4 + 3] = s * x + c * w;
+    }
+    v[i] = 0;
+    v[3] = length;
+  }
+  return q;
+}
+function frameTutorial(cap) {
+  const centers = Array.from({ length: COUNTS.cells }, (_, i) => capCenter(i));
+  let facets = centers.map((_, i) => i);
+  if (cap !== null) {
+    shotQ = capOrientation(centers[cap]);
+    // The selected cap projects to the origin; stereo uses the opposite (-w) pole.
+    $('pole').value = 'negative-w';
+    if (shot.view === 'local') {
+      const distance = (v) => v.reduce((s, x, k) => s + (x - centers[cap][k]) ** 2, 0);
+      facets = [cap, ...facets.filter((i) => i !== cap)
+        .sort((a, b) => distance(centers[a]) - distance(centers[b]) || a - b).slice(0, 4)];
     }
   }
-  const target = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
-  const tan = Math.tan(camera.fov * Math.PI / 360);
-  const distance = 1.1 * Math.max(size.y / (2 * tan), size.x / (2 * tan * camera.aspect)) + size.z / 2;
-  controls.target.copy(target);
-  camera.position.copy(target).add(new THREE.Vector3(0, 0, Math.max(0.4, distance)));
+  const A = geometry.A, normal = geometry.mesh.normal, radius = geometry.mesh.normal_length;
+  const home = new Float64Array(COUNTS.base_vertices * 4);
+  for (let vi = 0; vi < COUNTS.base_vertices; vi++) {
+    const local = A['mesh_sticker.u32'][vi];
+    for (let k = 0; k < 4; k++) {
+      const anchor = geometry.anchors[local * 4 + k];
+      home[vi * 4 + k] = (normal[k] + 0.76 * (anchor - normal[k])
+        + 0.76 * 0.82 * (A['mesh_vertices.f32'][vi * 4 + k] - anchor)) / radius;
+    }
+  }
+  const q = new THREE.Matrix4().fromArray(cameraQ()), frame = new THREE.Matrix4();
+  const pose = new THREE.Matrix4(), transform = new THREE.Matrix4(), point = new THREE.Vector4();
+  const { pole, basis } = poleParameters();
+  const pole4 = new THREE.Vector4(...pole), basis4 = basis.map((b) => new THREE.Vector4(...b));
+  const perspective = shot.proj === 'persp', local = shot.view === 'local';
+  // The same pixel scale on both axes: fit 85% (global) or 80% (local) of
+  // the SHORTER image side, keeping the cap's projected centre at image centre.
+  const limit = (local ? 0.80 : 0.85) * Math.tan(camera.fov * Math.PI / 360) * Math.min(1, camera.aspect);
+  let distance = camera.near, minZ = Infinity;
+  for (const facet of facets) {
+    frame.fromArray(A['cell_frames.f32'], facet * 16);
+    if (local) transform.multiplyMatrices(q, frame); // Fixed cells, never their home pieces' current poses.
+    for (let sticker = 0; sticker < COUNTS.base_stickers; sticker++) {
+      if (!local) {
+        const piece = A['slot_piece.u32'][facet * 433 + sticker];
+        pose.fromArray(state.poses, state.index[piece] * 16).transpose();
+        transform.multiplyMatrices(q, pose).multiply(frame);
+      }
+      for (let vi = geometry.mesh.offsets[sticker]; vi < geometry.mesh.offsets[sticker + 1]; vi++) {
+        point.fromArray(home, vi * 4).applyMatrix4(transform);
+        const scale = perspective ? 1.18 / (1.18 - point.w) : 1 / (1 - point.dot(pole4));
+        const x = scale * (perspective ? point.x : point.dot(basis4[0]));
+        const y = scale * (perspective ? point.y : point.dot(basis4[1]));
+        const z = scale * (perspective ? point.z : point.dot(basis4[2]));
+        requireValue(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z),
+          'Tutorial view has a non-finite projection');
+        distance = Math.max(distance, z + Math.max(Math.abs(x), Math.abs(y)) / limit, z + camera.near * 1.1);
+        minZ = Math.min(minZ, z);
+      }
+    }
+  }
+  controls.target.set(0, 0, 0);
+  camera.position.set(0, 0, distance);
+  controls.maxDistance = Math.max(50, distance * 2);
+  camera.far = Math.max(100, distance - minZ + 1);
+  camera.updateProjectionMatrix();
   controls.update();
 }
 async function startShot() {
@@ -947,7 +1012,8 @@ async function startShot() {
   geometry = await loadGeometry();
   const { s, t, moving } = await loadTutorial();
   state = s;
-  if (shot.view === 'local') requireValue(t.caps.length > 0, 'Local view needs a cap named by the step');
+  shot.cap ??= t.caps[0] ?? null;
+  requireValue(shot.view !== 'local' || shot.cap !== null, 'Local view needs a cap (cap=0..599 or tutorial caps)');
   makeRenderer();
   bindState(s, { moving });
   app.view = { state: 'tutorial', t: 0, ...shot };
@@ -955,9 +1021,10 @@ async function startShot() {
   app.header = s.header;
   app.tutorial = t;
   app.offLattice = s.off;
-  if (shot.view === 'local') frameLocal(t.caps[0]);
+  frameTutorial(shot.cap);
   app.ready = true;
   mesh.visible = true;
+  if (ghostMesh) ghostMesh.visible = true;
   draw();
 }
 requestAnimationFrame(animate);

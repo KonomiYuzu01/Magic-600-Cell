@@ -23,6 +23,29 @@ np, wj = exporter.np, exporter.wj
 RUN = HERE.parent / 'restoration/13-tutorial-runner/runs/dev/d0-s7001/run'
 DIGESTS = {'before': '1438ebed339490d2875e343063e7e79fd51b6a7621f2bf1a054beb5ef7c6d6b1',
            'after': 'ab254e2af1775b8161092aed06d35252e81e63fa427fd75dc2d7f9aeb5b1c7f9'}
+NODE_HELPERS = r"""
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync, mkdirSync, realpathSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { join, relative, isAbsolute, sep } from 'node:path';
+import { runInNewContext } from 'node:vm';
+const here = process.argv[1], input = JSON.parse(readFileSync(0, 'utf8'));
+const json = (raw) => JSON.parse(raw.toString('utf8'));
+const sha = (raw) => createHash('sha256').update(raw).digest('hex');
+function sourceFunction(file, name, globals = {}) {
+  const source = readFileSync(join(here, file), 'utf8');
+  const match = source.match(new RegExp(`(?:async )?function ${name}\\([^]*?\\n\\}`));
+  assert.ok(match, `${name}: source function not found`);
+  return runInNewContext(`(${match[0]})`, globals);
+}
+"""
+
+
+def run_node(test, code, value):
+    result = subprocess.run(['node', '--input-type=module', '-e', NODE_HELPERS + code, str(HERE)],
+                            input=json.dumps(value), capture_output=True, text=True, timeout=30)
+    test.assertEqual(result.returncode, 0, result.stderr)
+    return json.loads(result.stdout)
 
 
 def sha(raw):
@@ -112,6 +135,48 @@ class TutorialExport(unittest.TestCase):
             self.assertEqual(tutorial['letter_count'], 1)
             self.assertEqual(tutorial['letters'], [[72, 18]])
             self.assertEqual(tutorial['caps'], [72])
+
+    @unittest.skipUnless(shutil.which('node'), 'node is missing; capture parameter check skipped')
+    def test_capture_cap_defaults_overrides_and_manifest(self):
+        empty = self.root / 'empty-caps'
+        shutil.copytree(self.outputs['before'], empty)
+        tutorial = json.loads((empty / 'tutorial.json').read_text())
+        tutorial['caps'] = []
+        (empty / 'tutorial.json').write_text(json.dumps(tutorial))
+        result = run_node(self, r"""
+const globals = { json, sha, insist: assert.ok, readFileSync, realpathSync, join, relative, isAbsolute, sep };
+globals.insideFile = sourceFunction('capture_tutorial.mjs', 'insideFile', globals);
+const dataFiles = sourceFunction('capture_tutorial.mjs', 'dataFiles', globals);
+const shots = [
+  { name: 'default', state: 'before', view: 'global', proj: 'persp', emph: 'moved', w: 1600, h: 1000 },
+  { name: 'override', state: 'before', view: 'local', proj: 'stereo', emph: 'off', cap: 0, w: 1000, h: 1600 },
+  { name: 'no-cap', state: 'empty-caps', view: 'global', proj: 'persp', emph: 'none', w: 800, h: 800 }
+];
+const files = new Map(), states = dataFiles(files, input.root, shots);
+assert.deepEqual(shots.map((s) => s.cap), [72, 0, null]);
+assert.throws(() => dataFiles(new Map(), input.root,
+  [{ name: 'invalid-local', state: 'empty-caps', view: 'local' }]), /local view needs a cap/);
+const urls = [];
+// Exercise capture plumbing without a browser; these bytes are only a hash sentinel.
+const png = Buffer.from('synthetic PNG hash sentinel');
+const browser = { newContext: async () => ({
+  newPage: async () => ({ setDefaultTimeout() {}, on() {}, route: async () => {},
+    goto: async (url) => { urls.push(url); }, waitForFunction: async () => {},
+    evaluate: async () => ({ shotReady: '1' }), locator: () => ({ screenshot: async () => png }) }),
+  close: async () => {}
+}) };
+const render = sourceFunction('capture_tutorial.mjs', 'render', {
+  mkdirSync, writeFileSync, join, sha, insist: assert.ok, URLSearchParams, console: { log() {} }
+});
+const manifest = await render(browser, 'http://127.0.0.1:1/', files, [], shots, states, input.out);
+assert.equal(new URL(urls[0]).searchParams.get('cap'), '72');
+assert.equal(new URL(urls[1]).searchParams.get('cap'), '0');
+assert.equal(new URL(urls[2]).searchParams.has('cap'), false);
+assert.deepEqual(Array.from(manifest, (s) => s.cap), [72, 0, null]);
+assert.ok(manifest.every((s) => s.png_sha256 === sha(png)));
+process.stdout.write(JSON.stringify(manifest));
+""", {'root': str(self.root), 'out': str(self.root / 'synthetic-capture')})
+        self.assertEqual([s['cap'] for s in result], [72, 0, None])
 
     def copy_record(self, directory):
         base = Path(directory) / 'run'
@@ -227,6 +292,61 @@ class JavaScriptSyntax(unittest.TestCase):
             with self.subTest(file=name):
                 result = subprocess.run(['node', '--check', str(HERE / name)], capture_output=True, text=True, timeout=30)
                 self.assertEqual(result.returncode, 0, result.stderr)
+
+
+@unittest.skipUnless(shutil.which('node'), 'node is missing; tutorial view math checks skipped')
+class TutorialViewMath(unittest.TestCase):
+    def test_cap_orientation_is_proper_and_faces_positive_w(self):
+        # Independent retained centres; include exact coordinate-axis edge cases.
+        mesh = json.loads((exporter.ROOT / 'assets/mesh.json').read_text())
+        frames = np.fromfile(exporter.ROOT / 'assets/cell_frames.f32', '<f4').reshape(600, 4, 4).transpose(0, 2, 1)
+        centers = frames @ np.array(mesh['normal']) / mesh['normal_length']
+        points = np.concatenate((centers, np.eye(4), -np.eye(4), [[0.1, -0.2, 0.3, -0.4]]))
+        matrices = run_node(self, r"""
+const orient = sourceFunction('full.js', 'capOrientation');
+for (const invalid of [[0, 0, 0, 0], [1, 2, 3], [NaN, 0, 0, 1]]) {
+  assert.throws(() => orient(invalid), /Invalid cap centre/);
+}
+process.stdout.write(JSON.stringify(input.map((p) => orient(p))));
+""", points.tolist())
+        for i, (center, values) in enumerate(zip(points, matrices)):
+            with self.subTest(cap=i):
+                q = np.array(values).reshape(4, 4).T  # Renderer consumes column-major matrices.
+                np.testing.assert_allclose(q.T @ q, np.eye(4), atol=1e-12)
+                self.assertAlmostEqual(np.linalg.det(q), 1, places=12)
+                rotated = q @ center
+                np.testing.assert_allclose(rotated, [0, 0, 0, np.linalg.norm(center)], atol=1e-12)
+                # Positive w is nearest d4=+1.18; opposite stereo pole is -w.
+                np.testing.assert_allclose(1.18 * rotated[:3] / (1.18 - rotated[3]), 0, atol=1e-12)
+                np.testing.assert_allclose(rotated[:3] / (1 + rotated[3]), 0, atol=1e-12)
+                if i < len(centers):
+                    self.assertEqual(int(np.argmax(centers @ q[3])), i)
+
+    def test_page_and_capture_parameters(self):
+        result = run_node(self, r"""
+const parse = (query) => sourceFunction('full.js', 'shotParameters', {
+  PARAMETERS: new URLSearchParams(query), requireValue: assert.ok
+})();
+assert.equal(parse('shot=step').cap, null);
+assert.equal(parse('shot=step').emph, 'moved');
+assert.equal(parse('shot=step&cap=0&emph=off').cap, 0);
+assert.equal(parse('shot=step&cap=599&emph=off').emph, 'off');
+for (const value of ['', '-1', '600', '1.5', 'NaN', '1x']) {
+  assert.throws(() => parse(`shot=step&cap=${value}`), /Invalid shot cap/);
+}
+const list = (entry) => sourceFunction('capture_tutorial.mjs', 'shotsList', {
+  readFileSync: () => Buffer.from(JSON.stringify([entry])), json, insist: assert.ok,
+  NAME: /^[A-Za-z0-9_-]{1,64}$/
+})('unused');
+assert.equal(list({ name: 'a', state: 's', cap: 0, emph: 'off' })[0].cap, 0);
+assert.equal(list({ name: 'a', state: 's', cap: 599 })[0].cap, 599);
+assert.equal(list({ name: 'a', state: 's' })[0].cap, undefined);
+for (const cap of [-1, 600, 1.5, '72', null]) {
+  assert.throws(() => list({ name: 'a', state: 's', cap }), /Invalid cap/);
+}
+process.stdout.write(JSON.stringify({ ok: true }));
+""", None)
+        self.assertTrue(result['ok'])
 
 
 if __name__ == '__main__':
