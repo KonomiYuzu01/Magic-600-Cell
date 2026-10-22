@@ -1,6 +1,6 @@
 # D1, seed 7101 at depth 40, acceptance mode (development line d1-acc-s7101)
 
-Status: **in progress** (progress note, 22 October 2026, 06:50 UTC). The run has not ended; the check has not run.
+Status: **in progress** (progress note, 22 October 2026, 08:15 UTC; run 1 was interrupted at 97 steps, run 2 restarted at 08:12 UTC). The run has not ended; the check has not run.
 
 ## Question
 
@@ -49,6 +49,18 @@ Full step-by-step table: `bulk-vs-census.md`.
   `step_started` (a monotonic time); `logs/bulk.log` and `runner.out` are still empty.
 - The census run stopped here (killed 49 minutes into a search, `11-scramble-census/README.md:61`). From this point
   on the runner is beyond every earlier record of this seed.
+
+## Interruption and restart (08:12 UTC)
+
+- The session's container restarted between 06:50 and 08:11 UTC and killed the first run (run 1) without an exit
+  code. Its record stops after 97 bulk steps and 223 twists, at digest `7e128820…`, with the 98th bulk step (index
+  97) unfinished. Its `run.json` shows the bulk `result` as `budget`, because the bulk child had not finished
+  writing the phase. That is an artefact of the kill, not a result. `totals.seconds` is 9,225 s at the last save.
+  The runner has no resume option.
+- Run 1's output directory, as the kill left it, is in `interrupted-run1/` (2.2 MB, no cache). The bulk comparison
+  above is from run 1.
+- Run 2 started at 08:12 UTC: the same command, on the same commit, in fresh `--out` and `--cache` directories. The
+  rest of this report is about run 2. A later container restart would cost the same again.
 
 ## Not run
 
