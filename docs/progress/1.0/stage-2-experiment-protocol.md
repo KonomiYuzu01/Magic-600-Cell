@@ -165,6 +165,8 @@ The design track and the engineering track run in parallel and meet through numb
 
 ## 5. Schedule: about 20 working days (owner decisions, 1 and 2 October 2026)
 
+**Re-plan (owner, 22 October 2026).** The 20-day target is missed. The owner chose option B of the [re-plan](replan-2026-10-22.md): 600-cell-Full in full, and Jumble with its rules, data, interfaces, command rows and renderer feature list, its look and motion values as provisional defaults. The 2.5 freeze target moves to about stage day 34; the day count stood at 16 or more on that date ([decision](../../wiki/decisions/owner-decisions-2026-10-22.md)). The table below is the original plan.
+
 Preparation and all of stage 2 are planned as about 20 working days. Day numbers count the owner's working days, not calendar days: a day counts when the owner works on the project, and the owner can correct the count ([owner-decisions-2026-10-02](../../wiki/decisions/owner-decisions-2026-10-02.md)). Day 1 was 1 October 2026; 2 October was not a working day. Tracks run in parallel; the owner's time goes to the design track and to the gate decisions. The experiment dates are also the compatibility test of the two tracks: each candidate renderer is tried with the design track's features, layout and presets as they are handed over (section 4.6).
 
 | Days | Engineering track | Design track (owner) | Exit |
