@@ -3,7 +3,7 @@
     "01-cover-graph-7101": {
       "inputs": {
         "research/jumbling/tutorial/01-state.md": "47738dc2587228fa0d327ad6a2f52cfd6687db29c13791d96fbdcc4b51cb4029",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch01-examples.json": "a9e4159c25391e1cea1a4bdc231f20d719717d9a5fefa8f01264d860678204ab"
       },
       "notes": [],
@@ -17,7 +17,7 @@
       "inputs": {
         "research/jumbling/restoration/11-scramble-census/README.md": "2d5454a0860df8ee5a302b012256d8ea9fb751a8add0b2193231b52654abce30",
         "research/jumbling/tutorial/01-state.md": "47738dc2587228fa0d327ad6a2f52cfd6687db29c13791d96fbdcc4b51cb4029",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch01-examples.json": "a9e4159c25391e1cea1a4bdc231f20d719717d9a5fefa8f01264d860678204ab"
       },
       "notes": [],
@@ -30,7 +30,7 @@
     "01-menu-items": {
       "inputs": {
         "research/jumbling/tutorial/01-state.md": "47738dc2587228fa0d327ad6a2f52cfd6687db29c13791d96fbdcc4b51cb4029",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch01-examples.json": "a9e4159c25391e1cea1a4bdc231f20d719717d9a5fefa8f01264d860678204ab"
       },
       "notes": [],
@@ -44,7 +44,7 @@
       "inputs": {
         "research/jumbling/tutorial/01-state.md": "47738dc2587228fa0d327ad6a2f52cfd6687db29c13791d96fbdcc4b51cb4029",
         "research/jumbling/tutorial/02-bulk.md": "0b3d52c4f36e01644000555b2e1530e32a9ce23af0599afd44f102b8a836a2f2",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch07-examples.json": "441976af152ecd4f647d60c6f39d5daf69405dd6f39c0aa5b2871bc3a8d51c92"
       },
       "notes": [],
@@ -57,7 +57,7 @@
     "01-step-tree-closure": {
       "inputs": {
         "research/jumbling/tutorial/01-state.md": "47738dc2587228fa0d327ad6a2f52cfd6687db29c13791d96fbdcc4b51cb4029",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch07-examples.json": "441976af152ecd4f647d60c6f39d5daf69405dd6f39c0aa5b2871bc3a8d51c92"
       },
       "notes": [],
@@ -70,7 +70,7 @@
     "03-call-flow": {
       "inputs": {
         "research/jumbling/tutorial/03-height.md": "3777b47906850cdfe5f0973168bab41e3a39c803814be089ce7397304f6295c9",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch03-examples.json": "e116e60087b2271f925656d0625d2c9c1873b5d89e2881a03ac7eaa3bdd512f1"
       },
       "notes": [],
@@ -93,8 +93,8 @@
         "research/jumbling/restoration/12-low-height/runs/round22/r22d75_height_first.txt": "e546df6ff33ec1b12028f4e897695f20dd4bbeb19c5a6b49f8bf3dc6344a7219",
         "research/jumbling/restoration/12-low-height/runs/round22/r22d81_rule.txt": "60050aa4dd4eff5646d4a06e546538fb2afac381791695f219c6d8966e246d59",
         "research/jumbling/tutorial/03-height.md": "3777b47906850cdfe5f0973168bab41e3a39c803814be089ce7397304f6295c9",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
-        "research/jumbling/tutorial/figures/figdata.json": "35ae0c746ed3182ca3a60625117fa5ac7067d50ce16228c647cbcba45b04258b"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac"
       },
       "notes": [],
       "output": {
@@ -107,8 +107,8 @@
       "inputs": {
         "research/jumbling/restoration/12-low-height/runs/round22/r22d75_height_first.txt": "e546df6ff33ec1b12028f4e897695f20dd4bbeb19c5a6b49f8bf3dc6344a7219",
         "research/jumbling/tutorial/03-height.md": "3777b47906850cdfe5f0973168bab41e3a39c803814be089ce7397304f6295c9",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
-        "research/jumbling/tutorial/figures/figdata.json": "35ae0c746ed3182ca3a60625117fa5ac7067d50ce16228c647cbcba45b04258b"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac"
       },
       "notes": [],
       "output": {
@@ -124,7 +124,7 @@
         "research/jumbling/restoration/12-low-height/runs/round22/line-a/literal/run2b/seq.jsonl": "d7a00b472e02e2390cfd26ee3f7693f0d8a94308c3a839b0e9d333759b115721",
         "research/jumbling/restoration/12-low-height/runs/round22/line-a/literal/run3/t1/seq.jsonl": "7c52425324695d8042948aeb116d38a1019805ab569be70a4d517c6cca4e847a",
         "research/jumbling/tutorial/05-tail.md": "23722ba0589e46a972805262247c1d72488681eb6dd3c705ed5adb2193313244",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
       },
       "notes": [],
       "output": {
@@ -136,7 +136,7 @@
     "05-tail-loop": {
       "inputs": {
         "research/jumbling/tutorial/05-tail.md": "23722ba0589e46a972805262247c1d72488681eb6dd3c705ed5adb2193313244",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch05-examples.json": "a21d9dbdb6f0c7fa7f08d2de86a9a507683a94535866a7b599f52c20def7866b"
       },
       "notes": [],
@@ -151,7 +151,7 @@
         "research/jumbling/restoration/12-low-height/runs/round22/line-a/literal/certificates.json": "ca8460a8da613c4bb1697a89be0845b7a0a74bd78e58be4b2a4a4c3e1adb8006",
         "research/jumbling/restoration/12-low-height/runs/round22/line-a/literal/run2/03-b07-V-word.json.gz": "f7f0554941b8dfe0d5954da6e8a3034eb909623260c035814145b82cc9be8d84",
         "research/jumbling/tutorial/05-tail.md": "23722ba0589e46a972805262247c1d72488681eb6dd3c705ed5adb2193313244",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch07-examples.json": "441976af152ecd4f647d60c6f39d5daf69405dd6f39c0aa5b2871bc3a8d51c92"
       },
       "notes": [
@@ -167,7 +167,7 @@
       "inputs": {
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/run.json": "c3baf34c43a7207ac4c94b15d9d851a367d586a965e30f1f69975a4465e19452",
         "research/jumbling/tutorial/07-records.md": "e27ca7107c8e07ca49f8c67736660717e09881878dbb2834b107f406f3da2f69",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
       },
       "notes": [],
       "output": {
@@ -179,7 +179,7 @@
     "07-t1prime-b04-tree": {
       "inputs": {
         "research/jumbling/tutorial/07-records.md": "e27ca7107c8e07ca49f8c67736660717e09881878dbb2834b107f406f3da2f69",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch07-examples.json": "441976af152ecd4f647d60c6f39d5daf69405dd6f39c0aa5b2871bc3a8d51c92"
       },
       "notes": [],
@@ -189,12 +189,248 @@
       },
       "production_renderer_sha256": "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008"
     },
+    "appa-correction-tree": {
+      "inputs": {
+        "assets/manifest.json": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
+        "assets/model.npz": "680de6710e8a05b12dd4ba2ea22c866e645af032a31faf985d869798521f8b13",
+        "assets/primitives.npz": "1fac185bef9fc6d26afd821238a56b8856024a4c3e5a9ae5c03f77bb1407d5a5",
+        "research/jumbling/restoration/09-general-method/data/library-merged.json.gz": "cfe46e135875b672975001e2e179970299ed538ef9442895580c951bede3db7e",
+        "research/jumbling/restoration/12-low-height/runs/round22/line-a/literal/lattice/restore-summary.json": "f89064b0de6084ee2d1631491a46b47d30a588b196a7ff38dbe6a5dec8b61df0",
+        "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+        "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py": "4f342f7b098d27083251ba5944c606a589883c8f2728add9c0ea13ea710c46e0",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+        "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+        "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+        "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+        "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+        "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+        "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac",
+        "research/jumbling/tutorial/figures/figdata.py": "3f2eb8401954e130031f1b2d201b9b756762bd474d7b24ac71fecc9205a3919f",
+        "research/jumbling/tutorial/records/ch06-examples.json": "795340cd03a95ec1133df289672d973bbf22deb038fa3c86eb9a91ac283105e8",
+        "research/jumbling/viewer/export_tutorial.py": "ca2116a6f93a68c3efa13b8ca1227c0d2b44146d74f0b7cd22f97b6d89bf21b9"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-correction-tree.svg",
+        "sha256": "6f1bb4e8abdcda9666e39c98033cb033401f4e0815b8326fe4c0a952c3c5d72b"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-f2-shape": {
+      "inputs": {
+        "research/jumbling/tutorial/04-high.md": "cf6542ebb850fd15a06bce7da7b61ec3e79001866f03d78b3485c2d68f7ee750",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-f2-shape.svg",
+        "sha256": "1dae376b73a4335be8ef7e13d3b12fb141b986008c2df2b16690497ebb779a5a"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-f3-shape": {
+      "inputs": {
+        "research/jumbling/tutorial/04-high.md": "cf6542ebb850fd15a06bce7da7b61ec3e79001866f03d78b3485c2d68f7ee750",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-f3-shape.svg",
+        "sha256": "959ee5a6ec1f56ee4fe7a1e89792247fc6fba2f31d2baa58767e7abff1bd4b57"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-h4-pair-tree": {
+      "inputs": {
+        "assets/manifest.json": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
+        "assets/model.npz": "680de6710e8a05b12dd4ba2ea22c866e645af032a31faf985d869798521f8b13",
+        "assets/primitives.npz": "1fac185bef9fc6d26afd821238a56b8856024a4c3e5a9ae5c03f77bb1407d5a5",
+        "research/jumbling/restoration/12-low-height/runs/round22/cloud/height4-descent-bbef1c8e/end_summary.txt": "08b9e2d3e0674f626eb96f772417d212993d26886526e874bbfe54392b01490b",
+        "research/jumbling/restoration/12-low-height/runs/round22/cloud/height4-descent-bbef1c8e/two_letter_u_round2_shard0.txt": "66061ff525037d11f85961e1f15241cef1e6b31cd3be129c574d0b13745b79f5",
+        "research/jumbling/restoration/12-low-height/runs/round22/cloud/height4-descent-bbef1c8e/two_letter_u_round2_shard1.txt": "e801720222a9e00fd540a1d2c8dbd3c83df69d77c9c6bbba7585ab583e4977c1",
+        "research/jumbling/restoration/12-low-height/runs/round22/cloud/height4-descent-bbef1c8e/two_letter_u_round2_shard2.txt": "ac752d20f90e323a0ac0046e4a8ea0e079d2b7d4afa328531d67f9a2876f2c50",
+        "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+        "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/rules_height.py": "711c94495e589a7839c0169aa2bf2025c672132319f9a8d3d16f5a523def913a",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+        "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+        "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+        "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+        "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+        "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+        "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac",
+        "research/jumbling/tutorial/figures/figdata.py": "3f2eb8401954e130031f1b2d201b9b756762bd474d7b24ac71fecc9205a3919f"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-h4-pair-tree.svg",
+        "sha256": "0c016e72d3d376662b38356245cd433ebe9c3b104fd0cfbfd3eb0566c63124fe"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-late-cycle-tree": {
+      "inputs": {
+        "assets/execution_trees.json.gz": "a820837c948eeff41df6f064d817312dcb9206ba4e2a73d0ced5ccf136ea3d20",
+        "assets/manifest.json": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
+        "assets/model.npz": "680de6710e8a05b12dd4ba2ea22c866e645af032a31faf985d869798521f8b13",
+        "assets/primitives.npz": "1fac185bef9fc6d26afd821238a56b8856024a4c3e5a9ae5c03f77bb1407d5a5",
+        "assets/seed_atlas.json": "de41b58067ac8c0bf5339c11e43b828aa4944b6b40e8b2e7e1287e625e898891",
+        "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+        "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+        "research/jumbling/restoration/13-tutorial-runner/runs/depth20-seed7106/lattice/solutions.json.gz": "7b64a499970183eb65ed567f3534e3fe428dfeba66333585fa1294e9508a6465",
+        "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run/tables/bulk-end.json": "ae0c8b19c7d08c87bd8e05c42cda51c9fed56535c0362e35765766ed35a9b690",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py": "4f342f7b098d27083251ba5944c606a589883c8f2728add9c0ea13ea710c46e0",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py": "164904b0e2881322454a32adf63ec8293f285531c0405249d43ee85d514937f0",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+        "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+        "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+        "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+        "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+        "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+        "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac",
+        "research/jumbling/tutorial/figures/figdata.py": "3f2eb8401954e130031f1b2d201b9b756762bd474d7b24ac71fecc9205a3919f",
+        "research/jumbling/tutorial/records/ch06-examples.json": "795340cd03a95ec1133df289672d973bbf22deb038fa3c86eb9a91ac283105e8"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-late-cycle-tree.svg",
+        "sha256": "696491e1bc6aeb186ca4974b6099358be805064054f928bdcada6d955fd2ded7"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-lock-shape": {
+      "inputs": {
+        "research/jumbling/tutorial/02-bulk.md": "0b3d52c4f36e01644000555b2e1530e32a9ce23af0599afd44f102b8a836a2f2",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-lock-shape.svg",
+        "sha256": "9215eb71af79bf16b9f487bfbc2dfc5fa53f5e200a87a4a16ff2f5d237217024"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-pure-tree": {
+      "inputs": {
+        "assets/manifest.json": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
+        "assets/model.npz": "680de6710e8a05b12dd4ba2ea22c866e645af032a31faf985d869798521f8b13",
+        "assets/primitives.npz": "1fac185bef9fc6d26afd821238a56b8856024a4c3e5a9ae5c03f77bb1407d5a5",
+        "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/steps/b17-pure.json": "057318315d05883db154d4c4f612490cef934b71549de9cf37f31d95da8a66ab",
+        "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/tables/737.json.gz": "8e67b4429df2c3dcc462db2a003b4330167703c94d33d7cc7d7a2f952ca0f8c2",
+        "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/tables/823.json.gz": "daba1cf6b3a7c83a15bb4cbce820cdbe5f549c224555eaa9fe1c73a5bdcd4734",
+        "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/words/b17.json": "c50dea8e51de97ad3efb77ec1e17986cf75498884dd25e2f45a0ad483406a9c2",
+        "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+        "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/runner.py": "b4dcaef80c0987ddd754d95fe4a5d91b8552a0ba5c6f45d1cfcfc44470cd2037",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+        "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+        "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+        "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+        "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+        "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+        "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac",
+        "research/jumbling/tutorial/figures/figdata.py": "3f2eb8401954e130031f1b2d201b9b756762bd474d7b24ac71fecc9205a3919f"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-pure-tree.svg",
+        "sha256": "c27886f9de1cfe9c06725b484ca705154853a59f127ca80585643c94bf805e35"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-shift-shape": {
+      "inputs": {
+        "research/jumbling/tutorial/02-bulk.md": "0b3d52c4f36e01644000555b2e1530e32a9ce23af0599afd44f102b8a836a2f2",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-shift-shape.svg",
+        "sha256": "3d0961c9e2a2c492de92e638e7ca6ba34aaac62ac42dd3e431bddf21ce6ff24b"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-st-shape": {
+      "inputs": {
+        "research/jumbling/tutorial/04-high.md": "cf6542ebb850fd15a06bce7da7b61ec3e79001866f03d78b3485c2d68f7ee750",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-st-shape.svg",
+        "sha256": "aabad3f626231488bd60413e1d53771f2aae2a539a67253de9783044809f20a1"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-u2-tree": {
+      "inputs": {
+        "assets/manifest.json": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
+        "assets/model.npz": "680de6710e8a05b12dd4ba2ea22c866e645af032a31faf985d869798521f8b13",
+        "assets/primitives.npz": "1fac185bef9fc6d26afd821238a56b8856024a4c3e5a9ae5c03f77bb1407d5a5",
+        "research/jumbling/restoration/12-low-height/runs/round22/cloud/unlock-cap311-cap290/drive311_after75.json": "061158a7e18c2e8bf7246e0a7be0741d4ee4b63d55202e1101ad86ee2cf23843",
+        "research/jumbling/restoration/12-low-height/runs/round22/r22d81_pairs_cap311_tail.txt": "213b543f884bd133fe18be5d8dd19df112072c21375aa4ba89a2d13b48b3f58c",
+        "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+        "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/rules_height.py": "711c94495e589a7839c0169aa2bf2025c672132319f9a8d3d16f5a523def913a",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+        "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+        "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+        "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+        "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+        "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+        "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac",
+        "research/jumbling/tutorial/figures/figdata.py": "3f2eb8401954e130031f1b2d201b9b756762bd474d7b24ac71fecc9205a3919f"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-u2-tree.svg",
+        "sha256": "46fd637c549f383bd84dd5981aad3297f9fe6e9713af493f9d67767df42faf48"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
+    "appa-zero-bad-tree": {
+      "inputs": {
+        "research/jumbling/restoration/13-tutorial-runner/runs/dev/d1-dev-s7101/run1-interrupted/run.json": "e80ed1c59cacf1d7f5eb1a0b7156cf81ae3a451662f190b88fb22b328812bba1",
+        "research/jumbling/restoration/13-tutorial-runner/runs/dev/d1-dev-s7101/run1-interrupted/step-trees/00097.json.gz": "4ef84355b042bb4bf54932241acff19c3cf519560aa957034f24a65f5feb7b24",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+        "research/jumbling/tutorial/A-macros.md": "7a6e2778cfcc3c06acfd043c2a6421b3a4785d0085e89ff83b882479c3805f81",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/trees.json": "95f69d76a01ffe327d6815fa356fa9393b6e967df0877627f34183ba36bb853b"
+      },
+      "notes": [],
+      "output": {
+        "path": "appa-zero-bad-tree.svg",
+        "sha256": "bbade18a088795d6284434c26422aeddbc8d9278131efb36b7bee04ab532367e"
+      },
+      "production_renderer_sha256": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+    },
     "bulk-conj-7101-s30": {
       "inputs": {
         "research/jumbling/manual/scripts/examples.out": "3ef38be0a843125ea0fac359721b7a078bf66e3229cdd8907649f9d96b0ce589",
         "research/jumbling/tutorial/02-bulk.md": "0b3d52c4f36e01644000555b2e1530e32a9ce23af0599afd44f102b8a836a2f2",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
-        "research/jumbling/tutorial/figures/figdata.json": "35ae0c746ed3182ca3a60625117fa5ac7067d50ce16228c647cbcba45b04258b"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac"
       },
       "notes": [],
       "output": {
@@ -208,7 +444,7 @@
         "research/jumbling/restoration/11-scramble-census/runs/round1/ia-k40-s7101.json": "b1fc59740c017ac1ed7124a7827244769727ee69dd161cefd7be5ef23cc77eab",
         "research/jumbling/restoration/11-scramble-census/runs/round2/ia-k40-s7101.json": "e46e044ad60621e41c88e1be6e9bfc8e5781c6d8219d5fe390052431d4b341cb",
         "research/jumbling/tutorial/02-bulk.md": "0b3d52c4f36e01644000555b2e1530e32a9ce23af0599afd44f102b8a836a2f2",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
       },
       "notes": [],
       "output": {
@@ -221,7 +457,7 @@
       "inputs": {
         "research/jumbling/restoration/12-low-height/scripts/round22/r22d16_step.py": "e7328b804d7e7aff9c8d642cefaf4afbb3258bb651443af60846cf00f8234331",
         "research/jumbling/tutorial/04-high.md": "cf6542ebb850fd15a06bce7da7b61ec3e79001866f03d78b3485c2d68f7ee750",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
       },
       "notes": [],
       "output": {
@@ -233,7 +469,7 @@
     "ch04-family-order": {
       "inputs": {
         "research/jumbling/tutorial/04-high.md": "cf6542ebb850fd15a06bce7da7b61ec3e79001866f03d78b3485c2d68f7ee750",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
       },
       "notes": [],
       "output": {
@@ -246,8 +482,8 @@
       "inputs": {
         "research/jumbling/restoration/12-low-height/runs/round22/kernel-d19/bbef1c8e/kernel/run.json": "80459dc3ee1cc37cac938d9008127e999c1b62c85f6483bfc11aa316a8affecf",
         "research/jumbling/tutorial/04-high.md": "cf6542ebb850fd15a06bce7da7b61ec3e79001866f03d78b3485c2d68f7ee750",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
-        "research/jumbling/tutorial/figures/figdata.json": "35ae0c746ed3182ca3a60625117fa5ac7067d50ce16228c647cbcba45b04258b",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac",
         "research/jumbling/tutorial/records/ch01-examples.json": "a9e4159c25391e1cea1a4bdc231f20d719717d9a5fefa8f01264d860678204ab",
         "research/jumbling/tutorial/records/ch04-examples.json": "276f73e3eadafdc2907f29fd8f47db6425396bf9efa08aac892aa3f70af80906"
       },
@@ -261,7 +497,7 @@
     "ch04-tier-shapes": {
       "inputs": {
         "research/jumbling/tutorial/04-high.md": "cf6542ebb850fd15a06bce7da7b61ec3e79001866f03d78b3485c2d68f7ee750",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
       },
       "notes": [],
       "output": {
@@ -274,7 +510,7 @@
       "inputs": {
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run/run.json": "f3a0a3a4a5b6afe316e66fca4ffab26f1a244695d27b16bff350d571884ae2f3",
         "research/jumbling/tutorial/06-lattice.md": "60926dc4b5da84e4e314786e6996239de792d6d8db3566102268e3a1ed20eca7",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch06-examples.json": "795340cd03a95ec1133df289672d973bbf22deb038fa3c86eb9a91ac283105e8"
       },
       "notes": [],
@@ -287,7 +523,7 @@
     "ch06-late-three-cycle": {
       "inputs": {
         "research/jumbling/tutorial/06-lattice.md": "60926dc4b5da84e4e314786e6996239de792d6d8db3566102268e3a1ed20eca7",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch06-examples.json": "795340cd03a95ec1133df289672d973bbf22deb038fa3c86eb9a91ac283105e8"
       },
       "notes": [],
@@ -302,7 +538,7 @@
         "research/jumbling/restoration/09-general-method/data/library-merged.json.gz": "cfe46e135875b672975001e2e179970299ed538ef9442895580c951bede3db7e",
         "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/nucoords.py": "43d2e0fd6c76f553a8cf7da3f02edde8c76c79a6f7a62eed96ec28a4308ebbc6",
         "research/jumbling/tutorial/06-lattice.md": "60926dc4b5da84e4e314786e6996239de792d6d8db3566102268e3a1ed20eca7",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch06-examples.json": "795340cd03a95ec1133df289672d973bbf22deb038fa3c86eb9a91ac283105e8"
       },
       "notes": [],
@@ -318,7 +554,7 @@
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run/step-trees/00019.json.gz": "cc48a9792d19ea19e1f0db9c9e0de8b04104526e5b8cfa0dbcf25084155249de",
         "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
         "research/jumbling/tutorial/06-lattice.md": "60926dc4b5da84e4e314786e6996239de792d6d8db3566102268e3a1ed20eca7",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
       },
       "notes": [],
       "output": {
@@ -330,7 +566,7 @@
     "ch06-phase-flow": {
       "inputs": {
         "research/jumbling/tutorial/06-lattice.md": "60926dc4b5da84e4e314786e6996239de792d6d8db3566102268e3a1ed20eca7",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
       },
       "notes": [],
       "output": {
@@ -342,7 +578,7 @@
     "ch06-retained-first": {
       "inputs": {
         "research/jumbling/tutorial/06-lattice.md": "60926dc4b5da84e4e314786e6996239de792d6d8db3566102268e3a1ed20eca7",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
         "research/jumbling/tutorial/records/ch06-examples.json": "795340cd03a95ec1133df289672d973bbf22deb038fa3c86eb9a91ac283105e8"
       },
       "notes": [],
@@ -355,8 +591,8 @@
     "ch06-twisted-cycle": {
       "inputs": {
         "research/jumbling/tutorial/06-lattice.md": "60926dc4b5da84e4e314786e6996239de792d6d8db3566102268e3a1ed20eca7",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
-        "research/jumbling/tutorial/figures/figdata.json": "35ae0c746ed3182ca3a60625117fa5ac7067d50ce16228c647cbcba45b04258b",
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/figdata.json": "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac",
         "research/jumbling/tutorial/records/ch06-examples.json": "795340cd03a95ec1133df289672d973bbf22deb038fa3c86eb9a91ac283105e8"
       },
       "notes": [],
@@ -371,8 +607,8 @@
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run/run.json": "f3a0a3a4a5b6afe316e66fca4ffab26f1a244695d27b16bff350d571884ae2f3",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run/step-trees/00019.json.gz": "cc48a9792d19ea19e1f0db9c9e0de8b04104526e5b8cfa0dbcf25084155249de",
         "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
-        "research/jumbling/tutorial/figures/diagrams.py": "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26",
-        "research/jumbling/tutorial/figures/trees.json": "748e36ba7ad9b6fd703d5d6ec549ae627a891e0683589812e25e64da1b8fca51"
+        "research/jumbling/tutorial/figures/diagrams.py": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        "research/jumbling/tutorial/figures/trees.json": "95f69d76a01ffe327d6815fa356fa9393b6e967df0877627f34183ba36bb853b"
       },
       "notes": [],
       "output": {

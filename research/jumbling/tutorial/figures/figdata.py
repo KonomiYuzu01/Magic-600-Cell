@@ -34,7 +34,27 @@ CS = S12 + "/cloud/height4-descent-bbef1c8e"
 CENSUS = R + "/11-scramble-census/runs/"
 FORMAT = "magic600-tutorial-figdata/1"
 NAMES = ("bulk-conj-7101-s30", "03-counts-7302", "03-r22d75-prediction-cap64",
-         "ch04-six-stops-caps", "ch06-twisted-cycle")
+         "ch04-six-stops-caps", "ch06-twisted-cycle", "appa-inventory", "appa-u2-tree",
+         "appa-h4-pair-tree", "appa-pure-tree", "appa-correction-tree", "appa-late-cycle-tree")
+G9 = R + "/09-general-method"
+LIBRARY = G9 + "/data/library-merged.json.gz"
+LATE = R + "/13-tutorial-runner/runs/depth20-seed7106/lattice/solutions.json.gz"
+D0 = R + "/13-tutorial-runner/runs/dev/d0-s7106/run"
+PURE = ROUND + "/line-a/replay"
+U2 = ROUND + "/cloud/unlock-cap311-cap290/drive311_after75.json"
+
+
+def inventory_paths():
+    """Discover public development evidence without opening reserved-seed files."""
+    paths = []
+    for directory, pattern in ((R + "/13-tutorial-runner/runs", "run.json"),
+                               (CENSUS.rstrip("/"), "*.json")):
+        for path in sorted(input_path(directory).rglob(pattern)):
+            relative = path.relative_to(ROOT).as_posix()
+            if any(9011 <= int(s) <= 9073 for s in re.findall(r"(?:s|seed-?)(\d+)", relative)):
+                continue
+            paths.append(relative)
+    return paths
 
 
 def evidence_paths(name):
@@ -57,8 +77,21 @@ def evidence_paths(name):
                            S12 + "/r22d25_search.py"],
         NAMES[4]: [run + "/run.json", run + "/tables/bulk-end.json", run + "/words/00019.ia16.gz",
                    run + "/step-trees/00019.json.gz", T + "/records/ch06-examples.json", S13 + "/runner_api.py"],
+        "appa-inventory": inventory_paths(),
+        "appa-u2-tree": [ROUND + "/r22d81_pairs_cap311_tail.txt", U2, S13 + "/rules_height.py"],
+        "appa-h4-pair-tree": [CLOUD + f"/two_letter_u_round2_shard{i}.txt" for i in range(3)]
+                             + [CLOUD + "/end_summary.txt", S13 + "/rules_height.py"],
+        "appa-pure-tree": [PURE + "/steps/b17-pure.json", PURE + "/words/b17.json",
+                           PURE + "/tables/823.json.gz", PURE + "/tables/737.json.gz", S13 + "/runner.py"],
+        "appa-correction-tree": [T + "/records/ch06-examples.json", LIBRARY,
+                                 ROUND + "/line-a/literal/lattice/restore-summary.json",
+                                 S13 + "/lattice_phase.py", J + "/viewer/export_tutorial.py"],
+        "appa-late-cycle-tree": [T + "/records/ch06-examples.json", LATE, "assets/execution_trees.json.gz",
+                                 S13 + "/literal_lattice.py", S13 + "/lattice_phase.py",
+                                 D0 + "/tables/bulk-end.json", "assets/seed_atlas.json"],
     }
-    return sorted(set(common + by_name[name]))
+    extra = [F + "/figdata.py", S13 + "/runner_api.py"] if name.startswith("appa-") else []
+    return sorted(set(common + by_name[name] + extra))
 
 
 def sha256(raw):
@@ -488,13 +521,218 @@ class Computation:
         result["checked_row_after_digest"] = row["after"]["digest"]
         return result
 
+    @cached_property
+    def appendix_api(self):
+        self.inputs.raw(S13 + "/runner_api.py")
+        return load_diagrams().tree_api()
+
+    def appendix_inventory(self):
+        rows = []
+        for path in inventory_paths():
+            doc = self.inputs.json(path)
+            if not isinstance(doc, dict) or not isinstance(doc.get("steps"), list):
+                continue
+            # File names are screened before opening; reject an unexpected seed
+            # field too, before interpreting any moves or step observations.
+            seed = doc.get("seed", doc.get("start", {}).get("seed"))
+            if type(seed) is int and 9011 <= seed <= 9073:
+                raise ValueError("reserved seed record refused")
+            counts = Counter(s.get("rule", s.get("family")) for s in doc["steps"])
+            rows.append({"record": path, "steps": len(doc["steps"]), "rules": dict(counts)})
+        absent = ("lock", "shift", "r22d25/F2", "r22d25/F3", "r22d25/ST")
+        for row in rows:
+            if set(absent).intersection(row["rules"]):
+                raise ValueError("appendix missing-example claim no longer holds: " + row["record"])
+        return {"records": rows, "absent_rules": list(absent),
+                "scope": "All committed non-reserved runner run.json and stage-11 census step records; no search or acceptance-seed reads."}
+
+    def height_tree(self, rule, word, before, after, fields, subphase):
+        namespace = dict(api=self.appendix_api, RULE_SOURCES={subphase: Path(subphase + ".py")})
+        functions(self.inputs, S13 + "/rules_height.py", ("_proposal",), namespace)
+        proposal = namespace["_proposal"](types.SimpleNamespace(subphase=subphase), {"digest": before},
+            dict(letters=word, rule=rule, output_digest=after, fields=fields), subphase, [])
+        self.appendix_api.check_tree(proposal.tree, len(word))
+        return proposal.tree
+
+    def appendix_u2(self):
+        rows = self.inputs.lines(ROUND + "/r22d81_pairs_cap311_tail.txt")
+        start = next(row for tag, row in rows if tag == "START")
+        step = next(row for tag, row in rows if tag == "STEP")
+        tape = self.inputs.json(U2)
+        word = [row["letter"] for row in tape["letters"][:step["length"]]]
+        require_equal(word, step["letters"], "U2 committed letters")
+        require_equal(tape["digest"], start["digest"], "U2 input digest")
+        require_equal(tape["letters"][len(word) - 1]["digest"], step["digest"], "U2 output digest")
+        require_equal(tape["letters"][0]["u"], step["u_mid"], "U2 intermediate u")
+        fields = dict(tau_before=start["tau"], tau_after=step["tau"], u_before=start["u"],
+                      u_mid=step["u_mid"], u_after=step["u"])
+        return dict(tree=self.height_tree("r22d88/U2", word, start["digest"], step["digest"], fields, "r22d81_pairs"),
+                    word=word, before_digest=start["digest"], after_digest=step["digest"], measures=fields,
+                    heights_before=start["n2_n4_n6"], heights_after=step["n2_n4_n6"],
+                    source=S13 + "/rules_height.py:_proposal", note="Fixed tau=311 experiment, not a runner step.")
+
+    def appendix_h4_pair(self):
+        parsed = []
+        for shard in range(3):
+            rows = self.inputs.lines(CLOUD + f"/two_letter_u_round2_shard{shard}.txt")
+            context = next(row for tag, row in rows if tag == "CONTEXT")
+            tag, end = rows[-1]
+            parsed.append(dict(context=context, firsts=[row for tag, row in rows if tag == "FIRST"],
+                               status=tag.lower() if tag in ("DONE", "BUDGET") else "truncated",
+                               end=dict(tag=tag, payload=end) if tag in ("DONE", "BUDGET") else None))
+        namespace = dict(re=re, OutputError=ValueError, RULE_SOURCES={"two_letter_u": Path("two_letter_u.py")})
+        functions(self.inputs, S13 + "/rules_height.py",
+                  ("_need", "_integer", "_letter", "_pair_choice"), namespace)
+        choice = namespace["_pair_choice"](parsed)
+        require_equal(choice["result"], "step", "h4 pair choice")
+        step = choice["step"]
+        tape = [row for tag, row in self.inputs.lines(CLOUD + "/end_summary.txt") if tag == "LETTER"]
+        require_equal(step["input_digest"], tape[19]["digest"], "h4 pair input digest")
+        require_equal(step["letters"], [row["letter"] for row in tape[20:22]], "h4 pair letters")
+        after = tape[21]["digest"]
+        return dict(tree=self.height_tree(step["rule"], step["letters"], step["input_digest"], after,
+                                         step["fields"], "two_letter_u"), word=step["letters"],
+                    before_digest=step["input_digest"], after_digest=after, measures=step["fields"],
+                    heights_before=tape[19]["n2_n4_n6"], heights_after=tape[21]["n2_n4_n6"],
+                    source=S13 + "/rules_height.py:_proposal", note="Committed cloud-line pair; no runner record holds it.")
+
+    def tail_tree(self, rule, word):
+        # Extract only the original method. Importing runner.py would load its
+        # process controller and CLI, neither of which is needed for a tree.
+        path = S13 + "/runner.py"
+        source = ast.parse(self.inputs.text(path), filename=path)
+        cls = next(n for n in source.body if isinstance(n, ast.ClassDef) and n.name == "Runner")
+        method = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "step_tree")
+        method.decorator_list = []
+        namespace = dict(api=self.appendix_api)
+        exec(compile(ast.Module(body=[method], type_ignores=[]), path, "exec"), namespace)
+        tree = namespace["step_tree"](rule, None, len(word))
+        self.appendix_api.check_tree(tree, len(word))
+        return tree
+
+    def appendix_pure(self):
+        row = self.inputs.json(PURE + "/steps/b17-pure.json")
+        word = self.inputs.json(PURE + "/words/b17.json")
+        require_equal(word["input_digest"], row["start_digest"], "pure input digest")
+        require_equal(word["output_digest"], row["end_digest"], "pure output digest")
+        require_equal(len(word["word"]), row["letters"], "pure length")
+        state = self.state()
+        self.mechanics.orient.set_pose_table(state, self.inputs.json(PURE + "/tables/823.json.gz"))
+        before = check_digest(state, row["start_digest"])
+        pose, lattice = self.mechanics.E.stable_pose(state).copy(), state.lattice_flags().copy()
+        require_equal(int(state.off_lattice_count()), row["off_before"], "pure off before")
+        self.play(state, word["word"])
+        after = check_digest(state, row["end_digest"])
+        require_equal(after, self.inputs.json(PURE + "/tables/737.json.gz")["digest"], "pure end table digest")
+        require_equal(int(state.off_lattice_count()), row["off_after"], "pure off after")
+        np = self.mechanics.np
+        now, exact = state.lattice_flags(), pose == self.mechanics.E.stable_pose(state)
+        require_equal(int((lattice & ~now).sum()), row["collateral"], "pure collateral")
+        require_equal(int((~lattice & ~now & exact).sum()), row["others_exact"], "pure others exact")
+        require_equal(int((~lattice & now).sum()), row["unit_on_lattice"], "pure landed")
+        require_equal(row["strict_prime"], True, "pure accepted gate")
+        return dict(tree=self.tail_tree("pure", word["word"]), letters=len(word["word"]),
+                    word_file=PURE + "/words/b17.json", before_digest=before, after_digest=after,
+                    off_before=row["off_before"], off_after=row["off_after"],
+                    moved=np.flatnonzero(~exact).tolist(), source=S13 + "/runner.py:Runner.step_tree")
+
+    def lattice_tree_functions(self):
+        return functions(self.inputs, S13 + "/lattice_phase.py", ("orbit_tree", "correction_tree"),
+                         dict(api=self.appendix_api, TREE_PART_LIMIT=10**6))
+
+    @cached_property
+    def recipe_exporter(self):
+        # Import definitions only; its main() is guarded. No export or capture.
+        self.inputs.raw(J + "/viewer/export_tutorial.py")
+        spec = importlib.util.spec_from_file_location("figdata_recipe_exporter", input_path(J + "/viewer/export_tutorial.py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def appendix_correction(self):
+        summary = self.inputs.json(ROUND + "/line-a/literal/lattice/restore-summary.json")
+        chapter = self.inputs.json(T + "/records/ch06-examples.json")["F_depth40"]
+        require_equal(summary["runs"][0]["T_digest"], chapter["T_digest"], "correction target digest")
+        raw = self.inputs.raw(LIBRARY)
+        if summary["library"]["sha256"] not in (sha256(raw), sha256(gzip.decompress(raw))):
+            raise ValueError("correction library digest mismatch")
+        library = json.loads(gzip.decompress(raw))
+        correction = summary["runs"][0]["corrections"][0]
+        macro = library["macros"][correction["macro"]]
+        word = self.recipe_exporter.correction_words(dict(macros=[macro]))[0]
+        require_equal(len(word), chapter["corrections"][0]["letters"], "correction length")
+        tree = self.lattice_tree_functions()["correction_tree"](0, correction, macro)
+        self.appendix_api.check_tree(tree, len(word))
+        before = {str(o): list(chapter["nu_input"].get(str(o), [0, 0])) for o in range(35)}
+        after = {}
+        for o, value in before.items():
+            delta = macro["nu"].get(o, [0, 0])
+            modulus = 5 if int(o) in (17, 28) else 2
+            after[o] = [(value[0] + delta[0]) % 2, (value[1] + delta[1]) % modulus]
+        return dict(tree=tree, word=word, macro=correction["macro"], nu_before=before, nu_after=after,
+                    representative_digest=chapter["T_digest"], source=S13 + "/lattice_phase.py:correction_tree",
+                    note="The recorded program's first correction; pictures use the label-equivalent representative T, not the uncommitted Y.R pose state.")
+
+    def appendix_late_cycle(self):
+        m = self.mechanics
+        import literal_lattice as LL
+        self.inputs.raw(S13 + "/literal_lattice.py")
+        chapter = self.inputs.json(T + "/records/ch06-examples.json")
+        doc = self.inputs.json(LATE)
+        program = LL.Program(doc["nodes"], self.inputs.json("assets/execution_trees.json.gz"))
+        all_factors = list(doc["solutions"].values())[0]
+        first_step = chapter["E_late"]["steps"][0]
+        require_equal(first_step["orbit"], 6, "late first orbit")
+        factors = all_factors[:first_step["factors"]]
+        observer = LL.ObserverLetters(m.E.sim, m.C, m.M)
+        codes = [observer.primitives[move] for j, sg in factors for move in program.expand(j, sg)]
+        raw = array.array("H", codes)
+        if sys.byteorder != "little":
+            raw.byteswap()
+        require_equal(sha256(raw.tobytes()), chapter["E_late"]["orbit6"]["word_sha256"], "late orbit word digest")
+        build = self.lattice_tree_functions()["orbit_tree"]
+        full_tree, _, _ = build(program, factors, 6)
+        tree_bytes = (json.dumps(full_tree, separators=(",", ":"), allow_nan=False) + "\n").encode()
+        require_equal(sha256(tree_bytes), chapter["E_late"]["orbit6"]["tree_sha256"], "late orbit tree digest")
+        tree, _, _ = build(program, factors[:2], 6)
+        word = [list(divmod(code, 60)) for code in codes[:tree["letters"]]]
+        state = self.state()
+        m.orient.set_pose_table(state, self.inputs.json(D0 + "/tables/bulk-end.json"))
+        before = check_digest(state, chapter["C_s11"]["start"]["digest"])
+        pose = m.E.stable_pose(state).copy()
+        with m.np.load(input_path("assets/model.npz"), allow_pickle=False) as model:
+            sp, orbit = model["slot_piece"], model["orbit_id"]
+        _, first_slots = m.np.unique(sp, return_index=True)
+        pieces = m.np.flatnonzero(orbit == 6)
+
+        def misplaced():
+            positions = sp[LL.state_labels(state)[first_slots]]
+            return int((positions[pieces] != pieces).sum())
+
+        counts, digests = [misplaced()], [before]
+        at = 0
+        for part in tree["parts"]:
+            self.play(state, word[at:at + part["letters"]])
+            at += part["letters"]
+            counts.append(misplaced())
+            digests.append(state.digest())
+        self.appendix_api.check_tree(tree, len(word))
+        return dict(tree=tree, word=word, factors=factors[:2], before_digest=before, after_digest=state.digest(),
+                    boundary_digests=digests, orbit=6, misplaced_positions=counts,
+                    off_before=0, off_after=int(state.off_lattice_count()),
+                    moved=m.np.flatnonzero(pose != m.E.stable_pose(state)).tolist(),
+                    source=S13 + "/lattice_phase.py:orbit_tree",
+                    note="First two factors of the committed late program; no committed runner record holds this step.")
+
 
 def compute(only=None):
     selected = set(only) if only is not None else set(NAMES)
     if not selected or not selected <= set(NAMES):
         raise ValueError("unknown figure selection: " + ", ".join(sorted(selected - set(NAMES))))
     computation = Computation()
-    methods = dict(zip(NAMES, ("bulk", "height_counts", "prediction", "cap_prunes", "twisted_cycle")))
+    methods = dict(zip(NAMES, ("bulk", "height_counts", "prediction", "cap_prunes", "twisted_cycle",
+                              "appendix_inventory", "appendix_u2", "appendix_h4_pair", "appendix_pure",
+                              "appendix_correction", "appendix_late_cycle")))
     figures = {}
     for name in NAMES:
         if name in selected:
@@ -504,13 +742,20 @@ def compute(only=None):
             figures[name] = dict(value, inputs=inputs)
     # JSON object keys (the height indexes in F_h/O_h/r_h) are strings on disk.
     # Normalize before comparing, so --check compares the same representation.
-    return json.loads(json.dumps({"format": FORMAT, "figures": figures}))
+    document = {"format": FORMAT, "figures": figures}
+    if "appa-late-cycle-tree" in figures:
+        # A literal expansion of committed factors, for recipe_word's existing
+        # JSON-word seam. It is not a searched or constructed solving word.
+        document["word"] = figures["appa-late-cycle-tree"]["word"]
+    return json.loads(json.dumps(document))
 
 
 def check(saved, fresh, only=None):
     if saved.get("format") != FORMAT or not isinstance(saved.get("figures"), dict):
         return sorted(fresh["figures"])
     different = {name for name, value in fresh["figures"].items() if saved["figures"].get(name) != value}
+    if "word" in fresh and saved.get("word") != fresh["word"]:
+        different.add("appa-late-cycle-tree")
     if only is None:
         different.update(set(saved["figures"]) - set(fresh["figures"]))
     return sorted(different)
@@ -535,6 +780,8 @@ def main(argv=None):
             if args.only and saved:
                 require_equal(saved.get("format"), FORMAT, "saved format")
                 fresh["figures"] = dict(saved["figures"], **fresh["figures"])
+                if "word" in saved and "word" not in fresh:
+                    fresh["word"] = saved["word"]
             path.write_text(json.dumps(fresh, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
             print("Wrote " + str(len(fresh["figures"])) + " figure data sets.")
         return 0

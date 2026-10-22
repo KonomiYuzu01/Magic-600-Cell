@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 
@@ -32,6 +33,10 @@ EXPECTED = {
     "ch06-orbit6-tree", "ch06-late-three-cycle", "ch06-retained-first",
     "ch06-d20-steps", "07-t1prime-b04-tree", "07-seed7001-bulk-steps",
 }
+CHAPTER_EXPECTED = set(EXPECTED)
+APPENDIX_EXPECTED = {"appa-lock-shape", "appa-shift-shape", "appa-f2-shape", "appa-f3-shape", "appa-st-shape",
+                     "appa-u2-tree", "appa-h4-pair-tree", "appa-pure-tree", "appa-correction-tree", "appa-late-cycle-tree"}
+EXPECTED |= APPENDIX_EXPECTED
 
 
 def digest(raw):
@@ -70,7 +75,10 @@ class DiagramsTests(unittest.TestCase):
         embedded = set()
         for chapter in sorted((ROOT / D.T).glob("0*.md")):
             embedded.update(re.findall(r"\(figures/svg/([a-z0-9-]+)\.svg\)", chapter.read_text(encoding="utf-8")))
-        self.assertEqual(embedded, EXPECTED)
+        self.assertEqual(embedded, CHAPTER_EXPECTED)
+        appendix = (ROOT / D.T / "A-macros.md").read_text()
+        appendix_embedded = set(re.findall(r"\(figures/svg/([a-z0-9-]+)\.svg\)", appendix))
+        self.assertEqual(appendix_embedded, APPENDIX_EXPECTED | {"appa-zero-bad-tree"})
         self.assertEqual(set(self.manifest["figures"]), self.names)
         self.assertEqual({p.stem for p in self.first.glob("*.svg")}, self.names)
         self.assertEqual(self.entries["tree-7106-19"], {
@@ -101,9 +109,9 @@ class DiagramsTests(unittest.TestCase):
                             self.assertTrue(value.startswith("#"))
                 metadata = json.loads(root.find("s:metadata", NS).text)
                 self.assertEqual(metadata["figure"], name)
-                production = dict(self.manifest["figures"][name]["inputs"])
-                production[D.F + "/diagrams.py"] = self.manifest["figures"][name]["production_renderer_sha256"]
+                production = D.production_inputs(name, self.manifest["figures"][name]["inputs"])
                 self.assertEqual(metadata["inputs"], production)
+                self.assertEqual(production[D.F + "/diagrams.py"], self.manifest["figures"][name]["production_renderer_sha256"])
                 self.assertIn("diagrams.py --only " + name, metadata["command"])
 
     def test_two_full_runs_are_byte_identical(self):
@@ -112,7 +120,7 @@ class DiagramsTests(unittest.TestCase):
         self.assertEqual(first, second)
 
     def test_every_unaffected_svg_stays_byte_identical(self):
-        for name in self.names - D.UPDATED_FIGURES:
+        for name in (n for n in self.names if not n.startswith("appa-")):
             with self.subTest(figure=name):
                 self.assertEqual((self.first / (name + ".svg")).read_bytes(),
                                  (HERE / "svg" / (name + ".svg")).read_bytes())
@@ -298,7 +306,7 @@ class DiagramsTests(unittest.TestCase):
 
     def test_computed_figures_replace_the_old_missing_observations(self):
         computed = load(D.F + "/figdata.json")["figures"]
-        for name in computed:
+        for name in (n for n in computed if not n.startswith("appa-")):
             with self.subTest(figure=name):
                 self.assertIn(D.F + "/figdata.json", self.manifest["figures"][name]["inputs"])
                 self.assertNotIn("not recorded", " ".join(self.svg(name).itertext()))
@@ -368,6 +376,127 @@ class DiagramsTests(unittest.TestCase):
             for note in notes:
                 for line in D.Svg.wrapped("Data note: " + note, 1080, 15):
                     self.assertIn(line, visible)
+
+    def test_appendix_shapes_are_explicitly_abstract_and_have_no_invented_word(self):
+        for name in ("appa-lock-shape", "appa-shift-shape", "appa-f2-shape", "appa-f3-shape", "appa-st-shape"):
+            visible = " ".join(self.svg(name).itertext())
+            with self.subTest(figure=name):
+                self.assertIn("Abstract", visible)
+                self.assertIn("No", visible)
+                self.assertNotRegex(visible, r"\(\d+,\s*\d+\)")
+        f3 = " ".join(self.svg("appa-f3-shape").itertext())
+        self.assertIn("|W| = 1", f3)
+        self.assertIn("|W| = 2", f3)
+        self.assertIn("inverse_of [1]", f3)
+
+    def test_appendix_trees_keep_every_part_span_and_reference(self):
+        data = load(D.F + "/figdata.json")["figures"]
+        for name in sorted(APPENDIX_EXPECTED - {n for n in APPENDIX_EXPECTED if n.endswith("-shape")}):
+            tree = data[name]["tree"]
+            D.tree_api().check_tree(tree, tree["letters"])
+            visible = " ".join(self.svg(name).itertext())
+            nodes = list(D.tree_api().walk(tree))
+            with self.subTest(figure=name):
+                for node, _, _ in nodes:
+                    self.assertIn(node["name"], visible)
+                    self.assertIn("[" + D.count(node["letters"]) + "]", visible)
+                    if "span" in node:
+                        lo, hi = node["span"]
+                        self.assertIn(f"[{lo}, {hi})", visible)
+                    for key in ("inverse_of", "same_as"):
+                        if key in node:
+                            self.assertIn(key + " " + str(node[key]), visible)
+        entry = self.entries["appa-zero-bad-tree"]
+        self.assertEqual(entry["step"], 97)
+        visible = " ".join(self.svg("appa-zero-bad-tree").itertext())
+        self.assertIn("[0, 60)", visible)
+
+    def test_stale_appendix_data_is_refused_before_drawing_a_tree(self):
+        data = copy.deepcopy(load(D.F + "/figdata.json")["figures"]["appa-u2-tree"])
+        data["inputs"][D.API_PATH] = "0" * 64
+        evidence = D.Evidence("appa-u2-tree", "A-macros.md")
+        with patch.object(evidence, "figdata", return_value=data):
+            with self.assertRaisesRegex(ValueError, "stale appendix figure data"):
+                D.appendix_tree(evidence, D.Svg(evidence, "test"))
+
+    def test_appendix_svg_numbers_match_the_reading_order(self):
+        text = (ROOT / D.T / "A-macros.md").read_text()
+        figures = re.findall(r"!\[(Figure A\.(\d+)):[^\]]*\]\(figures/(svg|png)/([a-z0-9-]+)\.(?:svg|png)\)", text)
+        self.assertEqual([int(n) for _, n, _, _ in figures], list(range(1, len(figures) + 1)))
+        for label, _, kind, name in figures:
+            if kind == "svg":
+                self.assertTrue(self.svg(name).find("s:title", NS).text.startswith(label + ":"))
+
+    def test_appendix_short_words_are_the_committed_single_twists(self):
+        appendix = (ROOT / D.T / "A-macros.md").read_text()
+        sections = dict(re.findall(r"^### A\.(\d+) [^\n]*\n(.*?)(?=^### A\.|\Z)", appendix, re.M | re.S))
+        computed = load(D.F + "/figdata.json")["figures"]
+        d19 = D.literal_assignment((ROOT / D.LOW / "scripts/round22/r22d16_step.py").read_text(), "word")
+        for number, word in (("8", d19), ("14", computed["appa-correction-tree"]["word"])):
+            block = re.search(r"```text\n(.*?)\n```", sections[number], re.S)[1]
+            pairs = [[int(c), int(j)] for c, j in re.findall(r"\((\d+),\s*(\d+)\)", block)]
+            self.assertEqual(pairs, word)
+        for number, word in (("1", [[91, 1], [268, 50], [91, 15]]),
+                             ("4", computed["appa-u2-tree"]["word"]),
+                             ("5", computed["appa-h4-pair-tree"]["word"])):
+            for c, j in word:
+                self.assertIn(f"({c}, {j})", sections[number])
+
+    def test_appendix_long_word_file_hashes_match_the_evidence(self):
+        appendix = (ROOT / D.T / "A-macros.md").read_text()
+        paths = [D.DEV + "/d1-dev-s7101/run1-interrupted/words/00097.json",
+                 D.ROUND + "/line-a/replay/words/b17.json",
+                 D.ROUND + "/line-a/literal/run1/03-b20-program.json",
+                 D.ROUND + "/line-a/replay2/run2/00-b04-program.json",
+                 D.DEV + "/d0-s7106/run/words/00019.ia16.gz",
+                 D.RUNNER + "/runs/depth20-seed7106/lattice/solutions.json.gz",
+                 D.F + "/figdata.json"]
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertIn(digest((ROOT / path).read_bytes()), appendix)
+
+    def test_catalogue_lists_appendix_after_chapters_and_pending_recipes_without_reasons(self):
+        spec = importlib.util.spec_from_file_location("appendix_catalogue", HERE / "catalogue.py")
+        catalogue = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(catalogue)
+        rows, _ = catalogue.entries()
+        chapter_indexes = [i for i, row in enumerate(rows) if row[0].startswith("0")]
+        appendix_indexes = [i for i, row in enumerate(rows) if row[0] == "A-macros.md"]
+        self.assertGreater(min(appendix_indexes), max(chapter_indexes))
+        rendered, unexplained = catalogue.render()
+        self.assertFalse(any(name.startswith("appa-") for name in unexplained))
+        pending = [line for line in rendered.splitlines() if "`png/appa-" in line]
+        self.assertTrue(pending)
+        for line in pending:
+            name = re.search(r"`png/([a-z0-9-]+)\.png`", line)[1]
+            status = "drawn" if (HERE / "png" / (name + ".png")).exists() else "missing"
+            self.assertTrue(line.endswith("| " + status + " |"), line)
+
+    def test_appendix_region_pairs_share_exact_support_and_established_capture_settings(self):
+        document = load(D.F + "/figures.json")
+        pictures = {f["id"]: f for f in document["figures"]}
+        computed = load(D.F + "/figdata.json")["figures"]
+        sheets = [s for s in document["sheets"] if s["id"].startswith("appa-")]
+        self.assertEqual(len(sheets), 4)
+        for sheet in sheets:
+            before, after = [pictures[name] for name in sheet["panels"]]
+            with self.subTest(sheet=sheet["id"]):
+                self.assertEqual(sheet["labels"], ["Before", "After"])
+                self.assertEqual(sheet["columns"], 2)
+                support = before["state"]["emph"]["pieces"]
+                self.assertTrue(support)
+                self.assertEqual(support, after["state"]["emph"]["pieces"])
+                for picture in (before, after):
+                    self.assertEqual((picture["cs"], picture["ss"]), (.5, .62))
+                    self.assertEqual(picture["emph"], "moved")
+                    self.assertRegex(picture["state"]["digest"], r"^[0-9a-f]{64}$")
+                data_name = {"appa-pure-region": "appa-pure-tree",
+                             "appa-late-cycle-region": "appa-late-cycle-tree"}.get(sheet["id"])
+                if data_name:
+                    data = computed[data_name]
+                    self.assertEqual(support, data["moved"])
+                    self.assertEqual(before["state"]["digest"], data["before_digest"])
+                    self.assertEqual(after["state"]["digest"], data["after_digest"])
 
 
 if __name__ == "__main__":

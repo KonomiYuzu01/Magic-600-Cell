@@ -140,6 +140,116 @@ class FigdataTests(unittest.TestCase):
         visit(document["figures"])
         self.assertGreaterEqual(len(checked), 7)
 
+    def test_each_appendix_data_set_check_detects_a_changed_value_without_writes(self):
+        for name in (n for n in G.NAMES if n.startswith("appa-")):
+            fresh = {"format": G.FORMAT, "figures": {name: {"letters": 2, "before_digest": "a" * 64}}}
+            if name == "appa-late-cycle-tree":
+                fresh["word"] = [[12, 1], [12, 2]]
+            with self.subTest(name=name), tempfile.TemporaryDirectory(prefix="magic600-appa-check-") as directory:
+                path = Path(directory) / "figdata.json"
+                changed = copy.deepcopy(fresh)
+                changed["figures"][name]["letters"] = 3
+                path.write_text(json.dumps(changed))
+                before = path.read_bytes()
+                with patch.object(G, "HERE", Path(directory)), patch.object(G, "compute", return_value=fresh), \
+                     contextlib.redirect_stdout(io.StringIO()) as output:
+                    self.assertEqual(G.main(["--check", "--only", name]), 1)
+                self.assertIn(name, output.getvalue())
+                self.assertEqual(path.read_bytes(), before)
+                if "word" in fresh:
+                    changed = copy.deepcopy(fresh)
+                    changed["word"][0][1] = 3
+                    self.assertEqual(G.check(changed, fresh, [name]), [name])
+
+    def test_u2_disagreeing_committed_digest_is_refused(self):
+        computation = G.Computation()
+        original = computation.inputs.json
+        tape = original(G.U2)
+        tape["digest"] = "0" * 64
+        with patch.object(computation.inputs, "json", return_value=tape):
+            with self.assertRaisesRegex(ValueError, "U2 input digest mismatch"):
+                computation.appendix_u2()
+
+    def test_h4_pair_disagreeing_cloud_boundary_is_refused(self):
+        computation = G.Computation()
+        original = computation.inputs.lines
+
+        def changed(path):
+            rows = original(path)
+            if path.endswith("end_summary.txt"):
+                row = next(row for tag, row in rows if tag == "LETTER" and row["n"] == 20)
+                row["digest"] = "0" * 64
+            return rows
+
+        with patch.object(computation.inputs, "lines", side_effect=changed):
+            with self.assertRaisesRegex(ValueError, "h4 pair input digest mismatch"):
+                computation.appendix_h4_pair()
+
+    def test_pure_wrong_pose_state_is_refused_before_playing(self):
+        computation = G.Computation()
+        state = types.SimpleNamespace(digest=lambda: "0" * 64)
+        computation.__dict__["mechanics"] = types.SimpleNamespace(
+            orient=types.SimpleNamespace(set_pose_table=lambda *args: None))
+        with patch.object(computation, "state", return_value=state), \
+             patch.object(computation, "play", side_effect=AssertionError("played before checking the input")):
+            with self.assertRaisesRegex(ValueError, "state digest mismatch"):
+                computation.appendix_pure()
+
+    def test_correction_target_and_library_digest_mismatches_are_refused(self):
+        for field in ("target", "library"):
+            computation = G.Computation()
+            original = computation.inputs.json
+
+            def changed(path):
+                value = original(path)
+                if path.endswith("restore-summary.json"):
+                    if field == "target":
+                        value["runs"][0]["T_digest"] = "0" * 64
+                    else:
+                        value["library"]["sha256"] = "0" * 64
+                return value
+
+            with self.subTest(field=field), patch.object(computation.inputs, "json", side_effect=changed):
+                with self.assertRaisesRegex(ValueError, "digest mismatch"):
+                    computation.appendix_correction()
+
+    def test_late_program_word_digest_is_checked_before_replay(self):
+        computation = G.Computation()
+        computation.__dict__["mechanics"] = types.SimpleNamespace(E=types.SimpleNamespace(sim=None), C=None, M=None)
+        chapter = {"E_late": {"steps": [{"orbit": 6, "factors": 2}], "orbit6": {"word_sha256": "0" * 64}}}
+        doc = {"nodes": [], "solutions": {"recorded": [[0, 1], [1, 1]]}}
+        module = types.SimpleNamespace(Program=lambda *args: types.SimpleNamespace(expand=lambda *args: [1]),
+                                       ObserverLetters=lambda *args: types.SimpleNamespace(primitives={1: 1}))
+        values = {G.T + "/records/ch06-examples.json": chapter, G.LATE: doc, "assets/execution_trees.json.gz": []}
+        with patch.dict("sys.modules", {"literal_lattice": module}), \
+             patch.object(computation.inputs, "json", side_effect=lambda path: values[path]), \
+             patch.object(computation, "state", side_effect=AssertionError("replayed before validating the word")):
+            with self.assertRaisesRegex(ValueError, "late orbit word digest mismatch"):
+                computation.appendix_late_cycle()
+
+    def test_saved_appendix_words_and_runner_trees_have_matching_lengths(self):
+        document = json.loads((HERE / "figdata.json").read_bytes())
+        api = G.load_diagrams().tree_api()
+        for name in (n for n in G.NAMES if n.startswith("appa-") and n != "appa-inventory"):
+            data = document["figures"][name]
+            with self.subTest(name=name):
+                word = data.get("word")
+                if word is None:
+                    word = G.Inputs().json(data["word_file"])["word"]
+                api.check_tree(data["tree"], len(word))
+        self.assertEqual(document["word"], document["figures"]["appa-late-cycle-tree"]["word"])
+        self.assertEqual(len(document["word"]), 810)
+        late = document["figures"]["appa-late-cycle-tree"]
+        self.assertEqual(late["misplaced_positions"], [6, 8, 6])
+        self.assertEqual(late["off_before"], late["off_after"])
+
+    def test_inventory_refuses_an_obsolete_missing_example_claim(self):
+        computation = G.Computation()
+        with patch.object(G, "inventory_paths", return_value=["new-development-record.json"]), \
+             patch.object(computation.inputs, "json", return_value={"steps": [{"rule": "lock"}]}):
+            with self.assertRaisesRegex(ValueError, "missing-example claim no longer holds"):
+                computation.appendix_inventory()
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

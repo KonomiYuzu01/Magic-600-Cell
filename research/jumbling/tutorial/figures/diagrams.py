@@ -51,11 +51,28 @@ BACKTICK = chr(96)
 ORIGINAL_RENDERER = "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008"
 UPDATED_FIGURES = {"bulk-n-7101", "bulk-conj-7101-s30", "03-counts-7302",
                    "03-r22d75-prediction-cap64", "ch04-six-stops-caps", "ch06-twisted-cycle"}
+# Preserve the production provenance of the already committed chapter SVGs.
+# The manifest still hashes every *current* verification input. Adding appendix
+# observations to a shared JSON file must not rewrite an unrelated chapter SVG.
+CHAPTER_DATA_RENDERER = "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+CHAPTER_DATA_SHA256 = "35ae0c746ed3182ca3a60625117fa5ac7067d50ce16228c647cbcba45b04258b"
+CHAPTER_TREES_SHA256 = "748e36ba7ad9b6fd703d5d6ec549ae627a891e0683589812e25e64da1b8fca51"
 ET.register_namespace("", SVG_NS)
 
 
 def sha256(raw):
     return hashlib.sha256(raw).hexdigest()
+
+
+def production_inputs(name, inputs):
+    result = dict(inputs)
+    if not name.startswith("appa-"):
+        result[F + "/diagrams.py"] = CHAPTER_DATA_RENDERER if name in UPDATED_FIGURES else ORIGINAL_RENDERER
+        if F + "/figdata.json" in result:
+            result[F + "/figdata.json"] = CHAPTER_DATA_SHA256
+        if TREES_PATH in result:
+            result[TREES_PATH] = CHAPTER_TREES_SHA256
+    return result
 
 
 def repository_path(value):
@@ -263,11 +280,8 @@ class Svg:
         self.root.set("height", str(height))
         self.root.set("viewBox", f"0 0 1200 {height}")
         self.background.set("height", str(height))
-        production_inputs = dict(self.evidence.inputs)
-        if self.evidence.name not in UPDATED_FIGURES:
-            production_inputs[F + "/diagrams.py"] = ORIGINAL_RENDERER
         self.el("metadata", text=json.dumps({
-            "figure": self.evidence.name, "inputs": production_inputs,
+            "figure": self.evidence.name, "inputs": production_inputs(self.evidence.name, self.evidence.inputs),
             "notes": self.evidence.notes,
             "tool": "Python " + ".".join(map(str, sys.version_info[:3])) + "; standard library SVG writer",
             "command": "python3 -I -B " + F + "/diagrams.py --only " + self.evidence.name,
@@ -384,7 +398,7 @@ def tree_api():
     return module
 
 
-def folded_tree(svg, root, y, label=None):
+def folded_tree(svg, root, y, label=None, show_spans=False):
     """One row per recorded part, retaining zero spans and all reference arrows."""
     if label:
         svg.text(40, y + 18, label, size=18, weight="600")
@@ -396,7 +410,10 @@ def folded_tree(svg, root, y, label=None):
         # Keep even depth-64 trees inside the page. Full index paths retain
         # their depth when the indentation reaches the available margin.
         x = 60 + min(depth, 10) * 28
-        lines = svg.wrapped(f"{node.get('name', node.get('kind', 'part'))} [{count(node['letters'])}]", 640 - x, 15)
+        text = f"{node.get('name', node.get('kind', 'part'))} [{count(node['letters'])}]"
+        if show_spans and "span" in node:
+            text += f" · [{node['span'][0]}, {node['span'][1]})"
+        lines = svg.wrapped(text, 640 - x, 15)
         path_lines = svg.wrapped(str(list(path)), 118, 13)
         ref_text = next((key + " " + str(node[key]) for key in ("inverse_of", "same_as") if key in node), "")
         ref_lines = svg.wrapped(ref_text, 224, 13)
@@ -1219,6 +1236,82 @@ def seed7001_steps(e, s):
                        "Every step is a one-letter seam step. The run ends with the solved digest.")
 
 
+@figure("appa-lock-shape", "A-macros.md", "lock: abstract opening and closing parts")
+def appendix_lock(e, s):
+    e.text(T + "/02-bulk.md")
+    y = 90
+    for n in (2, 3):
+        names = ("x: open cap c", "y: close cap d", "z: close cap e")[:n]
+        y = folded_tree(s, named_tree("lock (abstract)", [leaf(part, 1) for part in names]), y)
+    return s.paragraph(40, y, "Abstract shapes, not played words. The runner would store one span of length 2 or 3. "
+                       "No committed step supplies an example or an action region (chapter 2, section 2.8).")
+
+
+@figure("appa-shift-shape", "A-macros.md", "shift: abstract opening and improving parts")
+def appendix_shift(e, s):
+    e.text(T + "/02-bulk.md")
+    y = folded_tree(s, named_tree("shift (abstract)", [leaf("x: open cap c", 1), leaf("y: improve near c", 1)]), 90)
+    return s.paragraph(40, y, "Abstract shape, not a played word. The runner would store one span of length 2. "
+                       "No committed step supplies an example or an action region (chapter 2, section 2.10).")
+
+
+@figure("appa-f2-shape", "A-macros.md", "F2: abstract three-letter lowering")
+def appendix_f2(e, s):
+    e.text(T + "/04-high.md")
+    y = folded_tree(s, named_tree("r22d25/F2 (abstract)", [leaf(part, 1) for part in
+                    ("x = (c, x)", "y = (d, y)", "z = (c, z)")]), 90)
+    return s.paragraph(40, y, "Abstract shape only. No F2 step is committed; no before/after puzzle state is claimed "
+                       "(chapter 4, section 4.8). The plugin would record one span of 3 letters.")
+
+
+@figure("appa-f3-shape", "A-macros.md", "F3: abstract commutator, with both allowed lengths")
+def appendix_f3(e, s):
+    chapter = e.text(T + "/04-high.md")
+    y = 90
+    for k in map(int, re.search(r"k = (\d+) or (\d+)", chapter).groups()):
+        w = named_tree("W", [leaf("w" + str(i + 1), 1) for i in range(k)])
+        wi = named_tree("W⁻¹", [leaf("w" + str(i + 1) + "⁻¹", 1, inverse_of=[1, i])
+                                for i in reversed(range(k))])
+        wi["inverse_of"] = [1]
+        root = named_tree("r22d25/F3 (abstract)", [leaf("a", 1), w, leaf("a⁻¹", 1, inverse_of=[0]), wi])
+        y = folded_tree(s, root, y, "|W| = " + str(k))
+    return s.paragraph(40, y, "Abstract shapes only. No F3 step is committed; the plugin would store one span of 4 or 6 letters "
+                       "(chapter 4, section 4.9). Inverses reverse the order as well as invert each letter.")
+
+
+@figure("appa-st-shape", "A-macros.md", "S·T: abstract protected lowering, then landing")
+def appendix_st(e, s):
+    e.text(T + "/04-high.md")
+    y = folded_tree(s, named_tree("r22d25/ST (abstract)", [leaf("S: protected height 4 → 2", 1),
+                                                        leaf("T: strict landing at Z·S", 1)]), 90)
+    return s.paragraph(40, y, "Abstract shape only. In the committed catalogue S and T are single letters; no T provider "
+                       "is registered. No S·T step is committed (chapter 4, section 4.11).")
+
+
+def appendix_tree(e, s):
+    data = e.figdata()
+    for path, digest in data["inputs"].items():
+        if sha256(e.raw(path)) != digest:
+            raise ValueError("stale appendix figure data: " + e.name + ": " + path)
+    tree_api().check_tree(data["tree"], data["tree"]["letters"])
+    y = folded_tree(s, data["tree"], 90, show_spans=True)
+    if "word" in data and len(data["word"]) <= 40:
+        y = s.paragraph(40, y, "Word: " + " · ".join(str(tuple(letter)) for letter in data["word"])) + 16
+    if "note" in data:
+        y = s.paragraph(40, y, data["note"]) + 16
+    return s.paragraph(40, y, "Lengths and zero-based, end-exclusive spans come from figdata.json. "
+                       "The original runner tree helper is applied to the committed word or factors; no search is run.")
+
+
+for _name, _title in (
+        ("appa-u2-tree", "The fixed-target U2 experiment: two single twists"),
+        ("appa-h4-pair-tree", "The recorded h4 freeing pair: two single twists"),
+        ("appa-pure-tree", "The accepted b17 pure-cell replay"),
+        ("appa-correction-tree", "Correction 0: macro 7, mirror2"),
+        ("appa-late-cycle-tree", "The late program's first three-cycle: factors 0 and 1")):
+    figure(_name, "A-macros.md", _title)(appendix_tree)
+
+
 def validate_trees(document):
     if not isinstance(document, dict) or set(document) != {"format", "entries"} or document["format"] != "magic600-tutorial-trees/1":
         raise ValueError("unsupported trees.json format; expected format and entries")
@@ -1250,18 +1343,19 @@ def render(name, entries):
         end = function(evidence, svg)
     else:
         entry = entries[name]
-        evidence = Evidence(name)
+        evidence = Evidence(name, "A-macros.md" if name.startswith("appa-") else None)
         evidence.raw(TREES_PATH)
         row, root = record_tree(evidence, entry["record"], entry["step"])
-        evidence.number = "Figure A." + str(list(entries).index(name) + 1)
+        if not name.startswith("appa-"):
+            evidence.number = "Figure A." + str(list(entries).index(name) + 1)
         title = row["rule"] + " · phase " + row["phase"] + " · step " + str(row["index"]) + " · " + count(row["letters"]) + " letters"
         evidence.alt = "Folded step tree of " + entry["record"] + ", " + title
         svg = Svg(evidence, title)
-        end = folded_tree(svg, root, 90)
+        end = folded_tree(svg, root, 90, show_spans=name.startswith("appa-"))
     data = svg.finish(end + 10)
     manifest = {"inputs": dict(sorted(evidence.inputs.items())),
                 "output": {"path": name + ".svg", "sha256": sha256(data)}, "notes": evidence.notes,
-                "production_renderer_sha256": evidence.inputs[F + "/diagrams.py"] if name in UPDATED_FIGURES else ORIGINAL_RENDERER}
+                "production_renderer_sha256": production_inputs(name, evidence.inputs)[F + "/diagrams.py"]}
     return data, manifest
 
 
