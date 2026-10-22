@@ -158,25 +158,25 @@
     "07-seed7001-bulk-steps": {
       "inputs": {
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/run.json": "c3baf34c43a7207ac4c94b15d9d851a367d586a965e30f1f69975a4465e19452",
-        "research/jumbling/tutorial/07-records.md": "9b067d697fcc2e0f121deff38dc4b5ab4451b3cfb470d8ff81cc74abc3764b18",
+        "research/jumbling/tutorial/07-records.md": "e27ca7107c8e07ca49f8c67736660717e09881878dbb2834b107f406f3da2f69",
         "research/jumbling/tutorial/figures/diagrams.py": "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008"
       },
       "notes": [],
       "output": {
         "path": "07-seed7001-bulk-steps.svg",
-        "sha256": "ed67ef2f900a3b278e0ac1223aba3f04448a10a31f097771df098080fac8623e"
+        "sha256": "ea37117085a5f889860f45bb0be29b48da1eae22ae457e90f60c6e49fe39465d"
       }
     },
     "07-t1prime-b04-tree": {
       "inputs": {
-        "research/jumbling/tutorial/07-records.md": "9b067d697fcc2e0f121deff38dc4b5ab4451b3cfb470d8ff81cc74abc3764b18",
+        "research/jumbling/tutorial/07-records.md": "e27ca7107c8e07ca49f8c67736660717e09881878dbb2834b107f406f3da2f69",
         "research/jumbling/tutorial/figures/diagrams.py": "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008",
         "research/jumbling/tutorial/records/ch07-examples.json": "441976af152ecd4f647d60c6f39d5daf69405dd6f39c0aa5b2871bc3a8d51c92"
       },
       "notes": [],
       "output": {
         "path": "07-t1prime-b04-tree.svg",
-        "sha256": "4f861b38dd28434596c2c2c44a92e9b4875f2a765420241273083a84f8fe604d"
+        "sha256": "4a98009d1e6d884b5649d3444e6141006c6e8669a700c4db36dc1d750c880ac4"
       }
     },
     "bulk-conj-7101-s30": {
