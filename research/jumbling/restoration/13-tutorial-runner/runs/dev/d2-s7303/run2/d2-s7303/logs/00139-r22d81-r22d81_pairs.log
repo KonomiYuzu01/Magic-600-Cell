@@ -1,0 +1,2 @@
+START {"prefix": [], "u": 89, "meet_prune": true, "tau": 214, "digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889", "n2_n4_n6": [99634, 929, 87], "off": 100650, "N": 115698, "cpu": 12.5}
+STUCK {"steps": 0, "u": 89, "checks": {"first_letters": 1390, "bound_prunes": 5442, "first_height_guard": 144}, "best_pair": null, "tau": 214, "digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889", "n2_n4_n6": [99634, 929, 87], "off": 100650, "N": 115698, "cpu": 163.8}
