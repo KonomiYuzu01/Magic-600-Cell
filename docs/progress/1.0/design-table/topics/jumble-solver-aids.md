@@ -1,6 +1,6 @@
 # DT-J1: Jumble solver aids and the human-solve boundary
 
-Status: **settled; waiting for the owner's batch** (see the outcome at the end). Opened on 22 October 2026 by the main session under the [round protocol](../README.md), as the first design-table topic on Jumble ([re-plan](../../replan-2026-10-22.md), section 4). Two rounds were run as a trial at the owner's request, then the outcome and one owner batch.
+Status: **closed.** The owner answered the batch on 22 October 2026, for now ("Owner answers" at the end). Opened on 22 October 2026 by the main session under the [round protocol](../README.md), as the first design-table topic on Jumble ([re-plan](../../replan-2026-10-22.md), section 4). Two rounds were run as a trial at the owner's request, then the outcome and one owner batch.
 
 ## Question
 
@@ -1006,6 +1006,22 @@ Each question offers two or three options. "Recommended" marks the option the ro
 - **O9. Row focus in the repair list (G1).** (a) The list opens with focus on the named cap and on no row; arrow keys move a row focus that draws only that row's twists, and a number key copies a row into the draft (D13, A14). (b) The cursor starts on row 1. (c) No row focus; the solver types x and d. Note: the neutral order is also the census rule's search order, so row 1 was the rule's own pair at 63 of the 63 recorded steps, while it held the largest drop at only 26 (A14, D13). Recommended: (a).
 - **O10. Making a repair (G2).** (a) One action and one commit per twist, inside one open repair. (b) One commit of the whole repair, after a preview that the solver can step through twist by twist ("repair, k of m") (D14, A15, E22). Recommended: (b).
 - **O11. Repair-row content (DH-01).** (a) x, d, y and z only, as the 17 October text names them. (b) Also ΔN as a numeral in a fixed column, in the neutral order, never as a bar, colour or weight; the job already computes it (A4, D22, A22, E22). Recommended: (b).
+
+### Owner answers (22 October 2026)
+
+The owner accepted every recommended option, for now ([decision](../../../../wiki/decisions/owner-decisions-2026-10-22.md)). No third round runs on this topic.
+
+- O1 (b): a threshold that the solver sets on N_c or the floor, with no default and no sort.
+- O2 (a): the height counts and u are both shown.
+- O3 (b): one cap that the solver names, answered in both directions.
+- O4 (b): the solver's own checks at the named cap are kept for the revision, in the order tried.
+- O5 (a): no unlock lists, existence tests or V search in 1.0.
+- O6 (b): the ν marks and the static table, plus a check of a set of corrections that the solver drafts.
+- O7 (a): the 36 corrections ship as constructions that the solver selects by id, as the one named exception to E4.
+- O8 (1): the sticker end, with Jumble off at N = 0 and ν = 0 through a label checkpoint, and no separate pose fact.
+- O9 (a): the repair list opens with no row focused.
+- O10 (b): one commit of the whole repair, after a preview that the solver can step through.
+- O11 (b): each repair row also shows ΔN as a numeral.
 
 ### After the owner's answers
 
