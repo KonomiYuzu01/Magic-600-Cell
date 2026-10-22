@@ -245,8 +245,8 @@
     },
     "h4": {
      "result": null,
-     "steps": 7,
-     "twists": 7,
+     "steps": 8,
+     "twists": 8,
      "start": {
       "digest": "16c4aefe2f15a043693937cae1d320b8a820e2151a744cf9ad8df9d11e36d96b",
       "off": 111232,
@@ -1196,6 +1196,102 @@
    "u_before": 2,
    "u_after": 2,
    "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/h4_unlock.py"
+  },
+  {
+   "index": 17,
+   "phase": "height",
+   "subphase": "h4",
+   "rule": "h4/pair",
+   "word": "words/00017.json",
+   "letters": 2,
+   "encoding": "json",
+   "word_sha256": "0230c544ae66f35a88ddc17cb8b9725bb628ccca87b83873a1414641753423fc",
+   "tree": {
+    "file": "step-trees/00017.json.gz",
+    "sha256": "2603c37e9ab8e75285a927ea00c8545d022d954f57796e4dfd55233662c295de",
+    "size": 3
+   },
+   "contract": "h4/pair",
+   "gate": "two_letter_u",
+   "standing": "rule",
+   "before": {
+    "digest": "a2a4356247c1f83482b7fcd7427e70802ad1477cc2e223cc8701b39267fa7f4c",
+    "off": 110315,
+    "heights": {
+     "2": 108360,
+     "4": 1955
+    }
+   },
+   "after": {
+    "digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2",
+    "off": 110315,
+    "heights": {
+     "2": 108360,
+     "4": 1955
+    }
+   },
+   "table": "tables/00017.json",
+   "attempts": [
+    {
+     "script": "h4",
+     "tag": "00017-h4-h4",
+     "shard": null,
+     "outcome": "stuck",
+     "reason": "no_step",
+     "rc": 0,
+     "seconds": 140.50911042500002,
+     "stopped": false,
+     "timed_out": false
+    },
+    {
+     "script": "two_letter_u",
+     "tag": "00017-h4-two_letter_u-shard0",
+     "shard": 0,
+     "outcome": "done",
+     "reason": "done",
+     "rc": 0,
+     "seconds": 4113.401374862,
+     "stopped": false,
+     "timed_out": false
+    },
+    {
+     "script": "two_letter_u",
+     "tag": "00017-h4-two_letter_u-shard1",
+     "shard": 1,
+     "outcome": "done",
+     "reason": "done",
+     "rc": 0,
+     "seconds": 4008.039603995,
+     "stopped": false,
+     "timed_out": false
+    },
+    {
+     "script": "two_letter_u",
+     "tag": "00017-h4-two_letter_u-shard2",
+     "shard": 2,
+     "outcome": "done",
+     "reason": "done",
+     "rc": 0,
+     "seconds": 4033.3007836680003,
+     "stopped": false,
+     "timed_out": false
+    }
+   ],
+   "seconds": 2.82558,
+   "tau_before": 240,
+   "tau_after": 240,
+   "u_before": 2,
+   "u_after": 1,
+   "u_mid": 2,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/two_letter_u.py",
+   "pair_choice": {
+    "order_index": 177,
+    "class": "A",
+    "freed": [],
+    "by": "first_success",
+    "shards": 3,
+    "first_letters": 1416
+   }
   }
  ],
  "stuck": null,
@@ -1211,11 +1307,11 @@
  },
  "totals": {
   "bulk_twists": 0,
-  "height_twists": 17,
+  "height_twists": 19,
   "high_twists": 0,
   "tail_twists": 0,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 1934.755207
+  "seconds": 6195.14392
  }
 }
