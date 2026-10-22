@@ -247,14 +247,24 @@ function shotParameters() {
     w: size('w', 1600), h: size('h', 1000), cs: shrink('cs', 0.76), ss: shrink('ss', 0.82) };
 }
 
+// A shot comes either from a record step (run_sha256, step, when) or from a figures.json
+// state recipe (the recipe with its digest, and every input file it read with its hash).
+function tutorialProvenance(t, h) {
+  const record = hexDigest(t.run_sha256) && Number.isInteger(t.step) && t.step >= 0
+    && ['before', 'after'].includes(t.when);
+  const recipe = t.state !== null && typeof t.state === 'object' && !Array.isArray(t.state)
+    && t.state.digest === t.digest && Array.isArray(t.inputs)
+    && t.inputs.every((i) => i !== null && typeof i === 'object' && typeof i.file === 'string' && hexDigest(i.sha256));
+  return t.format === 'magic600-tutorial-shot/1' && hexDigest(t.digest) && t.digest === h.digest
+    && (record || recipe) && Number.isInteger(t.letter_count) && t.letter_count >= 0
+    && Array.isArray(t.caps) && new Set(t.caps).size === t.caps.length
+    && t.caps.every((c) => Number.isInteger(c) && c >= 0 && c < 600);
+}
+
 async function loadTutorial() {
   const path = `tutorial/${shot.name}/`;
   const [h, t] = await Promise.all([jsonFile(`${path}header.json`), jsonFile(`${path}tutorial.json`)]);
-  requireValue(t.format === 'magic600-tutorial-shot/1' && t.digest === h.digest && hexDigest(t.run_sha256)
-    && Number.isInteger(t.step) && t.step >= 0 && ['before', 'after'].includes(t.when)
-    && Number.isInteger(t.letter_count) && t.letter_count >= 0
-    && Array.isArray(t.caps) && new Set(t.caps).size === t.caps.length
-    && t.caps.every((c) => Number.isInteger(c) && c >= 0 && c < 600), 'tutorial.json: invalid provenance or state digest');
+  requireValue(tutorialProvenance(t, h), 'tutorial.json: invalid provenance or state digest');
   requireValue(t.moved?.file === 'moved.i32' && Number.isInteger(t.moved.count)
     && t.moved.count >= 0 && t.moved.count <= COUNTS.pieces, 'tutorial.json: invalid moved set');
   const [s, movingBytes] = await Promise.all([loadStateArrays(path, h), checkedBytes(`${path}moved.i32`, t.moved)]);

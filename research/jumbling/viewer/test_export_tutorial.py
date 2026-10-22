@@ -497,6 +497,34 @@ process.stdout.write(JSON.stringify(manifest));
             self.assertEqual(tutorial['letters_sha256'], sha(json.dumps(letters).encode('utf-8')))
             self.assertEqual(tutorial['caps'], list(dict.fromkeys(c for c, _ in letters)))
 
+    @unittest.skipUnless(shutil.which('node'), 'node is missing; viewer provenance check skipped')
+    def test_viewer_accepts_record_and_recipe_shots_only_with_their_provenance(self):
+        recipe = self.root / 'provenance-recipe'
+        exporter.export_recipe(self.recipe(True), recipe)
+        shots = {name: {part: json.loads((directory / f'{part}.json').read_text()) for part in ('header', 'tutorial')}
+                 for name, directory in (('record', self.outputs['after']), ('recipe', recipe))}
+        self.assertNotIn('run_sha256', shots['recipe']['tutorial'])
+        self.assertTrue(run_node(self, r"""
+const valid = sourceFunction('full.js', 'tutorialProvenance', {
+  hexDigest: (s) => typeof s === 'string' && /^[a-f0-9]{64}$/.test(s) });
+const { record, recipe } = input;
+const changed = (shot, change) => { const t = structuredClone(shot.tutorial); change(t); return valid(t, shot.header); };
+assert.ok(valid(record.tutorial, record.header));
+assert.ok(valid(recipe.tutorial, recipe.header));
+for (const shot of [record, recipe]) {
+  assert.ok(!changed(shot, (t) => { t.digest = '0'.repeat(64); }));
+  assert.ok(!changed(shot, (t) => { t.caps = [72, 72]; }));
+}
+assert.ok(!changed(record, (t) => { delete t.step; }));
+assert.ok(!changed(record, (t) => { t.when = 'during'; }));
+assert.ok(!changed(record, (t) => { t.run_sha256 = 'x'; }));
+assert.ok(!changed(recipe, (t) => { t.state.digest = '0'.repeat(64); }));
+assert.ok(!changed(recipe, (t) => { t.inputs[0].sha256 = 'x'; }));
+assert.ok(!changed(recipe, (t) => { delete t.inputs; }));
+assert.ok(!changed(recipe, (t) => { t.state = null; }));
+process.stdout.write('true');
+""", shots))
+
 
 class JavaScriptSyntax(unittest.TestCase):
     @unittest.skipUnless(shutil.which('node'), 'node is missing; JavaScript syntax checks skipped')
