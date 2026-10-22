@@ -107,6 +107,11 @@ The step times are the recorded play times; each `r22d75` attempt took about one
 Started 07:30:49 UTC, after the component runner had finished. It shares the cache directory with the component run.
 At 07:33 UTC it is in its first bulk step (no step recorded yet).
 
+Progress note at 09:32 UTC: 22 bulk steps recorded (21 `conj`, 1 `cover`), 64 twists, 7,202 s of step time. N went
+from 131,542 at the start to 130,232; off from 105,437 to 105,144. The last five steps: `conj` 3 letters each, 438,
+331, 313, 500 and 325 s, N 130,444 → 130,232. `bulk-progress.json`: `{"step_started": 19721.4}` (a step is running).
+`logs/bulk.log` is empty so far.
+
 ## Not run
 
 No Windows, DirectX, native or performance check was run; none is claimed. The component run's tail and lattice phases
