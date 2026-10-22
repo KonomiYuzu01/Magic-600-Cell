@@ -64,6 +64,174 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node research/jumbling/viewer/check_fu
 
 The browser check is supplied for the integrator; its presence is not a passing browser result. Result in the integrator's Linux cloud session (10 October 2026, after the all-menu export): 142/142. The first run gave 140/142 because the shader took the sweep angle's sine and cosine in single precision on the GPU (I_a samples up to 1.2e-4 off at the end of the twist); the page now passes (cos φ − 1, sin φ) computed in double precision on the CPU. The page decides **no legality**, carries **no performance claim**, and shows “uncertified float drawing of an exact J1 state”. Colour, shrink, tint, projection and motion values are provisional and belong to the design track. Nothing here establishes actual Windows/DirectX rendering or performance. The existing witness and short S4 scene pages and their exporter/check remain separate and unchanged.
 
+## Tutorial screenshots
+
+Export a step from a `runner-run/3` record into a fresh directory outside the record.
+The exporter reads the start table and replays the literal words, checking every
+visited before/after digest. It checks the target's after state for both pictures,
+so `moved.i32` always names the same pieces whose exact poses changed across the step.
+Seeds 9011 to 9073, non-empty output directories and output inside the record are refused.
+
+```text
+python3 -I -B research/jumbling/viewer/export_tutorial.py research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run --step 0 --when before --out /tmp/tutorial-data/step0-before
+python3 -I -B research/jumbling/viewer/export_tutorial.py research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run --step 0 --when after --out /tmp/tutorial-data/step0-after
+```
+
+Each directory has the render-contract header and three arrays, sorted `moved.i32`
+and `tutorial.json` (`magic600-tutorial-shot/1`). The latter records the run's
+repository-relative `run.json` path, its SHA-256, the raw SHA-256 of every word file
+used (including the target word for a before picture), step labels, digest and off
+count. It records up to 64 letters literally; longer words use `letters_sha256`,
+the SHA-256 of UTF-8 `json.dumps(letters)` with Python's default separators. `caps`
+keeps first-use order. A named later table may skip earlier replay only after its
+digest agrees with the record; its file hash and boundary appear as `checkpoint`.
+Lattice words use the existing checker's literal player, rebuilding the exact
+simulator state at each step boundary.
+
+Create a JSON list, for example `/tmp/tutorial-shots.json`:
+
+```json
+[
+ {"name":"step0-before-global","state":"step0-before","view":"global","proj":"persp","emph":"moved","w":1600,"h":1000},
+ {"name":"step0-after-local","state":"step0-after","view":"local","proj":"stereo","emph":"off","ghost":"near","cap":72,"w":1600,"h":1000}
+]
+```
+
+```text
+PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node research/jumbling/viewer/capture_tutorial.mjs --data /tmp/tutorial-data --list /tmp/tutorial-shots.json --out /tmp/tutorial-pictures --vendor /path/to/pinned-three
+PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node research/jumbling/viewer/capture_tutorial.mjs --data /tmp/tutorial-data --list /tmp/tutorial-shots.json --out /tmp/tutorial-pictures --vendor /path/to/pinned-three --check
+python3 -I -B research/jumbling/viewer/test_export_tutorial.py
+```
+
+`--vendor` contains only `three.module.js` and `OrbitControls.js` with the 0.160.0
+hashes pinned in `check_full.mjs`; an installed matching `three` package can supply
+them when the option is omitted. No download occurs. The capture script serves
+only the page, checked retained geometry, these modules and the listed tutorial
+states on 127.0.0.1. It uses Playwright Chromium, SwiftShader and device scale 1.
+The output manifest records Node, Playwright and Chromium versions, page and module
+hashes, each shot's parameters (including the resolved cap, or null, and ghost mode),
+state digest, tutorial hash and PNG hash. `--check`
+renders to a temporary directory, compares the manifest and names changed shots;
+it leaves the original pictures and manifest alone.
+
+On an existing static export of the full-state page, place states under
+`tutorial/<state>/` and open `full.html?shot=step0-before`. Shot names use 1 to 64
+letters, digits, underscores or hyphens. `w` and `h` default to 1600 and 1000 CSS
+pixels (each accepts 1 to 8192). Defaults are `view=global`, `proj=persp` and
+`emph=moved` highlights the step's moved pieces; `emph=off` highlights pieces whose
+state `pose_lattice` entry is negative; `emph=none` draws everything opaque.
+With emphasis, the selected stickers are always opaque wherever they are. The rest
+are 0.08-alpha ghosts drawn afterwards without depth writes or painting over the
+opaque selection. Optional `ghost=near|all|none` (also a capture-list field) defaults
+to `near` in Local and `all` in Global; `none` removes ghosts. `near` keeps only
+stickers whose posed, shrunk centroid is within θ = 45° of the cap centre. From
+the retained cell centres, the 56 cells sharing a vertex with a cap reach at most
+44.4775° and the nearest other cell starts at 49.1176°; 45° separates these shells
+for every cap. With no cap, `near` uses the current projection's facing direction.
+Optional `cap=0..599` (a number in capture-list entries) defaults to the first
+`tutorial.json` cap, or none for an empty list. In both views it rotates Q to put
+that cap at +w, nearest the perspective eye, and centres its projection; stereo
+uses the opposite, −w pole. Global perspective fits the whole posed puzzle to about
+85% of the shorter image side. Global stereo frames only stickers whose posed
+centroids are within 90° of the cap centre (opposite the projection pole with no
+cap), while still drawing all stickers. Local view requires a cap and fits its
+fixed, unposed facet and four nearest face neighbours to about 80%. With no cap, Global retains
+the page's default rotation. With `ghost=none`, both Local and Global instead fit
+all emphasised stickers in their current poses, centre on their projected extent
+and fill about 80% of the shorter image side. This includes selected stickers
+outside the cap's neighbours or the cap-facing stereo hemisphere; `emph=none`
+fits every sticker. An empty emphasis set leaves an empty canvas. The canvas has
+no panels or overlays. After
+the first complete frame, `document.documentElement.dataset.shotReady` is `"1"`;
+failure sets it to `"error"` with `dataset.shotError`. Without `shot`, fixture menus
+and controls work as before. These are headless research pictures, not Windows,
+DirectX or performance evidence. Colours remain provisional.
+
+## Tutorial figures
+
+`make_figures.py` batches the export and capture steps. The list document has
+format `magic600-tutorial-figures/1` and a non-empty `figures` array:
+
+```json
+{
+ "format": "magic600-tutorial-figures/1",
+ "figures": [
+  {"id":"step0-before","record":"research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run","step":0,"when":"before","view":"local","proj":"stereo","emph":"moved","ghost":"none"}
+ ]
+}
+```
+
+Run from the repository root (the integrator supplies `figures.json`):
+
+```text
+python3 -I -B research/jumbling/viewer/make_figures.py --list research/jumbling/tutorial/figures/figures.json --out research/jumbling/tutorial/figures --vendor /path/to/pinned-three
+python3 -I -B research/jumbling/viewer/make_figures.py --list research/jumbling/tutorial/figures/figures.json --out research/jumbling/tutorial/figures --vendor /path/to/pinned-three --check
+python3 -I -B research/jumbling/viewer/test_make_figures.py
+```
+
+IDs are unique, 1 to 64 lowercase letters, digits or hyphens, starting with a letter
+or digit. `record` is a repository-relative run directory; outside records and
+start seeds 9011 to 9073 are refused. `cap`, `ghost`, `w` and `h` are optional,
+with the screenshot defaults above. `--vendor` is optional with a matching
+installed three.js package. Each distinct record/step/before-or-after state is
+exported once into temporary data, then one capture run produces all pictures.
+Output is `png/<id>.png` and `manifest.json` (`magic600-tutorial-figures-manifest/1`),
+with each original entry, the export's tutorial provenance and state counts,
+resolved capture parameters, PNG SHA-256, tool versions and page/module digests.
+The manifest has no absolute paths. Temporary export and capture data is removed.
+`--check` exports and captures again in temporary data, compares every PNG hash
+and state digest, and names differences with exit status 1; it preserves existing
+output. Unlisted files in `png/` are reported and kept; only `--prune` removes
+them after a successful generation. `--check` and `--prune` cannot be combined.
+The unit tests use synthetic capture bytes and committed development records;
+they start no browser and establish no capture or native-rendering result.
+
+A figure can replace `record`/`step`/`when` with a `state` recipe:
+
+```json
+{"start":{"table":"research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/start-table.json"},
+ "play":[{"word":"research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/words/00000.json","letters":[0,1]}],
+ "emph":{"moved":"last"},
+ "digest":"ab254e2af1775b8161092aed06d35252e81e63fa427fd75dc2d7f9aeb5b1c7f9"}
+```
+
+`start` also accepts `{"record": ".../run", "step": 0, "when": "before"}` or
+`{"scramble": [10, 7001]}`. Reserved seeds are refused. `play` runs in order;
+`letters` selects a zero-based, end-exclusive range (omitting it plays the whole
+word). Inputs are confined to the repository, including nested program files.
+Literal inputs include JSON words (also gzip), ia16, census `history + moves`,
+chronological `LETTER` logs, records with `letters[].letter`, the short `word`
+arrays of chapter records in document order, and a script's single literal
+`word`/`WORD`/`WORD36` assignment. Scripts are parsed, never executed. Stored
+segment programs expand their word files, inverses and cores (`P Q P^-1`).
+The correction library concatenates its macro words in library order. A single-run
+retained-first lattice summary supplies its target-construction word `C^-1`, as
+the literal player's `target=True` branch does; its library hash is checked.
+The correction-before recipe plays macro 7 twice (an exact identity) to restore T
+with the same last-word emphasis as its after picture.
+
+Emphasis is `{"moved":"last"}` by default (empty without a `play` item),
+`{"pieces":[2,17]}`, `{"off":true}` or `{"pose_differs_from_solved":true}`.
+Set the figure's outer `emph` to `moved` to draw this exported set. A full state
+digest is required; mismatch produces no output. `tutorial.json` records the
+recipe and SHA-256 of every input in place of step provenance. Identical recipes
+are exported once, and verified word prefixes are shared within an invocation.
+For a standalone export, save the recipe as JSON and use
+`export_tutorial.py --state RECIPE.json --out DIRECTORY`.
+
+The list may also contain `"sheets": [{"id":"pair", "panels":["step0-before",
+"step0-after"], "labels":["Before","After"], "columns":2}]`. Sheets use the
+captured panel pixels, a white background and Pillow's fixed default font, with
+labels beneath each panel. The manifest records their panel hashes, composition
+settings and Pillow version. `--check` covers sheet pixels and provenance too.
+Every tutorial entry uses `cs: 0.5` and `ss: 0.62`.
+
+Run `python3 -I -B research/jumbling/viewer/check_recipes.py` for browser-free
+exports of every recipe into temporary directories. It prints each figure's full
+digest and emphasis count and exits 1 on any failure. It writes no tutorial PNGs
+or manifest; the integrator runs captures separately. Independent recipe families
+use at most four local worker processes; panels with a shared prefix stay together.
+
 ## What it shows
 
 The scene selector offers **Witness E2–E4** and **J1: S4 sequence**. Both have five exact states and four applied twists, plus a certified rejected attempt.
