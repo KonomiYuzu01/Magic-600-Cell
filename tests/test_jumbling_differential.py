@@ -555,6 +555,195 @@ class ComparisonTests(unittest.TestCase):
         self.assertEqual(result.lattice, hashlib.sha256(bytes([1, 0, 1, 0, 1, 1])).hexdigest())
 
 
+class StraddlerEngine(ToyEngine):
+    """Synthetic set observations; no NumPy, J1 or geometric certificates."""
+
+    def __init__(self, name='sets', *, fault=None, at=2):
+        super().__init__(name)
+        self.set_fault = fault
+        self.at = at
+        self.straddler_calls = []
+
+    def straddlers(self, caps):
+        self.straddler_calls.append((self.index, tuple(caps)))
+        result = {}
+        for cap in caps:
+            pieces = [10 * cap, 10 * cap + 3] if self.index and cap else []
+            result[cap] = {'blocked': bool(pieces), 'pieces': pieces,
+                           'certificates': {p: {'cap': cap, 'piece': p, 'valid': True,
+                                                'private_witness': self.name} for p in pieces}}
+        return self.set_fault(result) if self.index == self.at and self.set_fault else result
+
+
+class StraddlerComparisonTests(unittest.TestCase):
+    def setUp(self):
+        self.steps = toy_steps()
+
+    @staticmethod
+    def certify(cap, piece, certificate):
+        return (certificate.get('valid') is True and certificate.get('cap') == cap
+                and certificate.get('piece') == piece)
+
+    def test_optional_method_and_default_report_field(self):
+        report = H.compare(ToyEngine(), ToyEngine(), self.steps)
+        self.assertTrue(report.passed)
+        self.assertEqual(report.straddlers_compared, 0)
+        self.assertEqual(report.as_dict()['straddlers_compared'], 0)
+        self.assertEqual(list(report.as_dict()), ['passed', 'engines', 'steps_compared',
+                                                  'surveys_compared', 'first_mismatch',
+                                                  'straddlers_compared'])
+        # Existing positional Report construction retains its meaning.
+        self.assertEqual(H.Report(True, ('r', 'c'), 1, 0, None).straddlers_compared, 0)
+
+    def test_selected_steps_caps_and_independent_certificates(self):
+        reference, candidate = StraddlerEngine('r'), StraddlerEngine('c')
+        report = H.compare(reference, candidate, self.steps, survey={0, 3}, grips=[7],
+                           straddlers=frozenset({0, 3, 8}), caps=[599, 7, 0, 7], certify=self.certify)
+        self.assertTrue(report.passed, report.as_dict())
+        self.assertEqual(report.straddlers_compared, 3)
+        self.assertEqual(report.surveys_compared, 2)
+        self.assertEqual(reference.straddler_calls, [(i, (0, 7, 599)) for i in (0, 3, 8)])
+        self.assertEqual(candidate.straddler_calls, reference.straddler_calls)
+        self.assertEqual(json.loads(json.dumps(report.as_dict())), report.as_dict())
+
+    def test_all_empty_and_no_selection(self):
+        for selection, count in (('all', 9), (set(), 0), (None, 0)):
+            with self.subTest(selection=selection):
+                reference, candidate = StraddlerEngine(), StraddlerEngine()
+                report = H.compare(reference, candidate, self.steps, straddlers=selection, caps=[])
+                self.assertTrue(report.passed)
+                self.assertEqual(report.straddlers_compared, count)
+                self.assertEqual(len(reference.straddler_calls), count)
+
+    def test_first_set_difference_and_no_later_step(self):
+        def drop(result):
+            for cap in (599, 7):
+                result[cap]['pieces'].pop()
+                result[cap]['certificates'].pop(10 * cap + 3)
+            return result
+        reference, candidate = StraddlerEngine(), StraddlerEngine(fault=drop)
+        report = H.compare(reference, candidate, self.steps, straddlers='all', caps=[599, 7],
+                           certify=self.certify)
+        self.assertEqual(report.first_mismatch.field, 'straddlers')
+        self.assertEqual(report.first_mismatch.step, 2)
+        self.assertEqual(report.first_mismatch.step_index_in_input, 1)
+        self.assertIn('cap 7', report.first_mismatch.detail)
+        self.assertEqual(report.straddlers_compared, 3)
+        self.assertEqual(report.steps_compared, 3)
+        self.assertEqual(reference.apply_calls, [1, 2])
+        self.assertEqual(candidate.apply_calls, [1, 2])
+
+    def test_consistent_blocked_flip_is_a_set_difference(self):
+        def clear(result):
+            result[7] = {'blocked': False, 'pieces': [], 'certificates': {}}
+            return result
+        report = H.compare(StraddlerEngine(), StraddlerEngine(fault=clear), self.steps,
+                           straddlers={2}, caps=[7])
+        self.assertEqual(report.first_mismatch.field, 'straddlers')
+
+    def test_exact_checker_is_optional_and_never_compares_reference_certificates(self):
+        def corrupt(result):
+            result[7]['certificates'][70]['valid'] = False
+            return result
+        without = H.compare(StraddlerEngine('r'), StraddlerEngine('c', fault=corrupt), self.steps,
+                            straddlers={2}, caps=[7])
+        self.assertTrue(without.passed)
+        reference, candidate = StraddlerEngine('r'), StraddlerEngine('c', fault=corrupt)
+        with_check = H.compare(reference, candidate, self.steps, straddlers={2}, caps=[7],
+                               certify=self.certify)
+        self.assertEqual(with_check.first_mismatch.field, 'certificate')
+        self.assertEqual(with_check.first_mismatch.step, 2)
+        self.assertEqual(with_check.straddlers_compared, 1)
+        self.assertIn('piece 70', with_check.first_mismatch.detail)
+
+    def test_contract_errors_on_both_sides(self):
+        def row(**changes):
+            return lambda result: {**result, 7: {**result[7], **changes}}
+        faults = (
+            lambda result: None,
+            lambda result: list(result.items()),
+            lambda result: {},
+            lambda result: {**result, 599: result[7]},
+            lambda result: {True: result[7]},
+            lambda result: {7: None},
+            row(blocked=1), row(blocked=False), row(pieces=[73, 70]),
+            row(pieces=[70, 70]), row(pieces=(70, 73)), row(pieces=[True]),
+            row(pieces=[-1]), row(pieces=['70']), row(certificates=None),
+            row(certificates={}), row(certificates={70: {}, 73: None}),
+            row(certificates={True: {}, 73: {}}),
+            row(status='uncertain'), row(uncertain_pieces=1),
+        )
+        for i, fault in enumerate(faults):
+            with self.subTest(fault=i):
+                reference, candidate = StraddlerEngine(), StraddlerEngine(fault=fault)
+                report = H.compare(reference, candidate, self.steps, straddlers={2}, caps=[7])
+                self.assertEqual(report.first_mismatch.field, 'contract')
+                self.assertEqual(report.first_mismatch.step, 2)
+                self.assertEqual(report.straddlers_compared, 1)
+                self.assertEqual(candidate.apply_calls, [1, 2])
+                json.dumps(report.as_dict())
+                with self.assertRaises(H.ReferenceContractError):
+                    H.compare(StraddlerEngine(fault=fault), StraddlerEngine(), self.steps,
+                              straddlers={2}, caps=[7])
+
+    def test_missing_optional_method_is_a_contract_error_when_selected(self):
+        report = H.compare(StraddlerEngine(), ToyEngine(), self.steps, straddlers={0}, caps=[7])
+        self.assertEqual(report.first_mismatch.field, 'contract')
+        self.assertEqual(report.straddlers_compared, 1)
+        with self.assertRaises(H.ReferenceContractError):
+            H.compare(ToyEngine(), StraddlerEngine(), self.steps, straddlers={0}, caps=[7])
+
+    def test_reference_contract_precedes_candidate_contract(self):
+        with self.assertRaises(H.ReferenceContractError):
+            H.compare(StraddlerEngine(fault=lambda result: None),
+                      StraddlerEngine(fault=lambda result: None), self.steps,
+                      straddlers={2}, caps=[7])
+
+    def test_field_and_cap_priority(self):
+        reference, candidate = StraddlerEngine(), StraddlerEngine()
+        report = H.compare(reference, FaultyEngine(candidate, 0,
+                           result=lambda result: replace(result, digest=changed_hash(result.digest))),
+                           self.steps, survey='all', straddlers='all', caps=[7])
+        self.assertEqual(report.first_mismatch.field, 'digest')
+        self.assertEqual(report.surveys_compared, 0)
+        self.assertEqual(report.straddlers_compared, 0)
+        report = H.compare(StraddlerEngine(), FaultyEngine(StraddlerEngine(), 0,
+                           survey=lambda result: {7: 'a'}), self.steps, survey='all', grips=[7],
+                           straddlers='all', caps=[7])
+        self.assertEqual(report.first_mismatch.field, 'grips')
+        self.assertEqual(report.straddlers_compared, 0)
+
+        def both(result):
+            result[7]['certificates'][70]['valid'] = False
+            result[599] = {'blocked': False, 'pieces': [], 'certificates': {}}
+            return result
+        report = H.compare(StraddlerEngine(), StraddlerEngine(fault=both), self.steps,
+                           straddlers={2}, caps=[599, 7], certify=self.certify)
+        self.assertEqual(report.first_mismatch.field, 'certificate')
+        self.assertIn('cap 7', report.first_mismatch.detail)
+
+        def same_cap(result):
+            result[7]['pieces'].pop()
+            result[7]['certificates'].pop(73)
+            result[7]['certificates'][70]['valid'] = False
+            return result
+        report = H.compare(StraddlerEngine(), StraddlerEngine(fault=same_cap), self.steps,
+                           straddlers={2}, caps=[7], certify=self.certify)
+        self.assertEqual(report.first_mismatch.field, 'straddlers')
+
+    def test_bad_selection_caps_and_checker(self):
+        for selection in ('bad', [], {True}, {-1}, {9}, {1.0}):
+            with self.subTest(selection=selection), self.assertRaises(H.HarnessInputError):
+                H.compare(StraddlerEngine(), StraddlerEngine(), self.steps, straddlers=selection, caps=[7])
+        for caps in (None, 1, [True], [-1], [600], [1.0], ['7']):
+            with self.subTest(caps=caps), self.assertRaises(H.HarnessInputError):
+                H.compare(StraddlerEngine(), StraddlerEngine(), self.steps, straddlers='all', caps=caps)
+        with self.assertRaises(H.HarnessInputError):
+            H.compare(StraddlerEngine(), StraddlerEngine(), self.steps, straddlers=set())
+        with self.assertRaises(H.HarnessInputError):
+            H.compare(StraddlerEngine(), StraddlerEngine(), self.steps, certify=True)
+
+
 class IndependenceTests(unittest.TestCase):
     def test_harness_files_pass(self):
         files = I.harness_files()
