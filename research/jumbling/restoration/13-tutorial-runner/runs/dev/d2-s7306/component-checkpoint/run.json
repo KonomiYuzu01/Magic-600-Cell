@@ -156,9 +156,9 @@
    }
   },
   "height": {
-   "result": null,
-   "steps": 9,
-   "twists": 9,
+   "result": "stuck",
+   "steps": 18,
+   "twists": 19,
    "start": {
     "digest": "9ebdc4904438ffec5eb18ec35f71ee01d3e037cae70587a786335ce095b3c83e",
     "off": 108823,
@@ -169,11 +169,11 @@
     }
    },
    "end": {
-    "digest": "16c4aefe2f15a043693937cae1d320b8a820e2151a744cf9ad8df9d11e36d96b",
-    "off": 111232,
+    "digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2",
+    "off": 110315,
     "heights": {
-     "2": 108641,
-     "4": 2591
+     "2": 108360,
+     "4": 1955
     }
    },
    "sub": {
@@ -244,9 +244,9 @@
      }
     },
     "h4": {
-     "result": null,
-     "steps": 8,
-     "twists": 8,
+     "result": "stuck",
+     "steps": 9,
+     "twists": 10,
      "start": {
       "digest": "16c4aefe2f15a043693937cae1d320b8a820e2151a744cf9ad8df9d11e36d96b",
       "off": 111232,
@@ -255,7 +255,62 @@
        "4": 2591
       }
      },
-     "end": null
+     "end": {
+      "digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2",
+      "off": 110315,
+      "heights": {
+       "2": 108360,
+       "4": 1955
+      }
+     },
+     "reason": "pair_exhausted",
+     "details": {},
+     "attempts": [
+      {
+       "script": "h4",
+       "tag": "00018-h4-h4",
+       "shard": null,
+       "outcome": "stuck",
+       "reason": "no_step",
+       "rc": 0,
+       "seconds": 140.8268513139992,
+       "stopped": false,
+       "timed_out": false
+      },
+      {
+       "script": "two_letter_u",
+       "tag": "00018-h4-two_letter_u-shard0",
+       "shard": 0,
+       "outcome": "done",
+       "reason": "done",
+       "rc": 0,
+       "seconds": 3993.587976105,
+       "stopped": false,
+       "timed_out": false
+      },
+      {
+       "script": "two_letter_u",
+       "tag": "00018-h4-two_letter_u-shard1",
+       "shard": 1,
+       "outcome": "done",
+       "reason": "done",
+       "rc": 0,
+       "seconds": 4005.3945535699995,
+       "stopped": false,
+       "timed_out": false
+      },
+      {
+       "script": "two_letter_u",
+       "tag": "00018-h4-two_letter_u-shard2",
+       "shard": 2,
+       "outcome": "done",
+       "reason": "done",
+       "rc": 0,
+       "seconds": 4005.3977084259996,
+       "stopped": false,
+       "timed_out": false
+      }
+     ]
     }
    }
   },
@@ -1312,6 +1367,6 @@
   "tail_twists": 0,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 6195.14392
+  "seconds": 10344.187347
  }
 }
