@@ -1029,7 +1029,7 @@ b07 (key 7); W of 48 letters (`replay2/inputs/b07-W.json`); at Z1 a target of 19
 and N2 true; V′ of 139,774 letters (sha256 `384e924e…`); the word 48 + 139,774 + 48 + 139,774 = 279,644 letters; gate
 `slp_apply`; after: 213 off, digest `cc03b2f9…`.
 
-![Figure 5.6: The tree of the b07 T1′ step drawn folded, with V′ expanded one level further than the runner records it: V′ by orbit in the cascade order, each orbit's three-cycle steps, each step as conjugator, seed and inverse conjugator](figures/svg/05-tree-b07-certificate.svg)
+![Figure 5.6: The tree of the b07 T1′ step as the runner records it, drawn folded: the parts `W` (48 letters), `V` (V′, 139,774), `middle` (W⁻¹, `inverse_of` W) and `V⁻¹`. The certificate that would split V′ by orbit is not committed; the figure gives its name and sha256](figures/svg/05-tree-b07-certificate.svg)
 
 In all three tests the core or W is E2's, given to the rule directly. Whether the runner's own rules, in unit order,
 find these steps at these states is not tested (stage 13 `README.md:1202-1205`).

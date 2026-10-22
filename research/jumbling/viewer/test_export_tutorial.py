@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
@@ -135,6 +136,211 @@ class TutorialExport(unittest.TestCase):
             self.assertEqual(tutorial['letter_count'], 1)
             self.assertEqual(tutorial['letters'], [[72, 18]])
             self.assertEqual(tutorial['caps'], [72])
+
+    def recipe(self, after=False, **fields):
+        base = RUN.relative_to(exporter.ROOT).as_posix()
+        return {'start': {'table': base + '/start-table.json'},
+                'play': [{'word': base + '/words/00000.json'}] if after else [],
+                'digest': DIGESTS['after' if after else 'before'], **fields}
+
+    def test_recipe_each_emphasis_and_input_provenance(self):
+        after = self.states['after']
+        expected = {
+            'last': np.fromfile(self.outputs['after'] / 'moved.i32', '<i4'),
+            'pieces': np.array([2, 17], '<i4'),
+            'off': np.flatnonzero(np.array([p.kidx < 0 for p in after._poses])[after.pose_id]),
+            'pose': np.array([i for i, p in enumerate(after.pose_id) if after._poses[p].key != ('K', 0)]),
+        }
+        for kind, emph in (('last', {'moved': 'last'}), ('pieces', {'pieces': [17, 2, 17]}),
+                           ('off', {'off': True}), ('pose', {'pose_differs_from_solved': True})):
+            with self.subTest(emphasis=kind), tempfile.TemporaryDirectory() as temporary:
+                recipe = self.recipe(True, emph=emph)
+                header, tutorial = exporter.export_recipe(recipe, Path(temporary) / 'out')
+                self.assertEqual(header['digest'], after.digest())
+                self.assertEqual(tutorial['state'], recipe)
+                self.assertNotIn('step', tutorial)
+                self.assertNotIn('record', tutorial)
+                np.testing.assert_array_equal(np.fromfile(Path(temporary) / 'out/moved.i32', '<i4'), expected[kind])
+                self.assertEqual({row['file'] for row in tutorial['inputs']},
+                    {recipe['start']['table'], recipe['play'][0]['word']})
+                for row in tutorial['inputs']:
+                    self.assertEqual(row['sha256'], sha((exporter.ROOT / row['file']).read_bytes()))
+
+    def test_recipe_digest_mismatch_is_transactional(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            out = Path(temporary) / 'out'
+            with self.assertRaisesRegex(ValueError, 'state digest mismatch'):
+                exporter.export_recipe(self.recipe(True, digest='0' * 64), out)
+            self.assertFalse(out.exists())
+
+    def test_recipe_ranges_chronology_and_last_item_only(self):
+        recipe = self.recipe(True)
+        item = recipe['play'][0]
+        recipe['play'] = [{**item, 'letters': [0, 0]}, {**item, 'letters': [0, 1]}]
+        _, moving, _, _ = exporter.recipe_state(recipe)
+        self.assertEqual(len(moving), 3097)
+        recipe['play'].append({**item, 'letters': [1, 1]})
+        _, moving, _, _ = exporter.recipe_state(recipe)
+        self.assertEqual(len(moving), 0)
+        recipe['play'][0]['letters'] = [0, 2]
+        with self.assertRaisesRegex(ValueError, 'outside the word'):
+            exporter.prepare_recipe(recipe)
+
+    def test_recipe_validation_unknown_keys_types_paths_and_reserved_seeds(self):
+        valid = self.recipe()
+        for recipe in (
+            {**valid, 'unknown': 0}, {**valid, 'digest': 'abc'},
+            {**valid, 'start': {**valid['start'], 'unknown': 0}},
+            {**valid, 'play': [{'word': 'word.json', 'unknown': 0}]},
+            {**valid, 'play': [{'word': 'word.json', 'letters': [True, 2]}]},
+            {**valid, 'play': [{'word': 'word.json', 'letters': [2, 1]}]},
+            {**valid, 'emph': {'off': 1}}, {**valid, 'emph': {'pieces': [True]}},
+            {**valid, 'emph': {'moved': 'first'}}, {**valid, 'emph': {'off': True, 'pieces': []}},
+            {**valid, 'start': {'scramble': [True, 7001]}},
+            {**valid, 'start': {'record': 'a', 'step': True, 'when': 'before'}},
+        ):
+            with self.subTest(recipe=recipe), self.assertRaises(ValueError):
+                exporter.validate_recipe(recipe)
+        for name in ('/tmp/outside', '../outside', 'C:/outside', 'C:outside', 'a\\b', 'a/../../b', 'a\x00b'):
+            for recipe in ({**valid, 'start': {'table': name}},
+                           {**valid, 'play': [{'word': name}]}):
+                with self.subTest(path=name), self.assertRaisesRegex(ValueError, 'repository-relative'):
+                    exporter.validate_recipe(recipe)
+        for seed in (9011, 9050, 9073):
+            with mock.patch.object(exporter.check_run.restore, 'scramble') as scramble:
+                with self.assertRaisesRegex(ValueError, 'reserved and refused'):
+                    exporter.recipe_state({**valid, 'start': {'scramble': [0, seed]}})
+                scramble.assert_not_called()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'word.json').write_text(json.dumps({'word': [], 'seed': 9050}))
+            with self.assertRaisesRegex(ValueError, 'reserved and refused'):
+                exporter.prepare_recipe({**valid, 'play': [{'word': 'word.json'}]}, root=root)
+
+    def test_recipe_runner_start_and_piece_bounds(self):
+        recipe = {'start': {'record': RUN.relative_to(exporter.ROOT).as_posix(), 'step': 0, 'when': 'after'},
+                  'digest': DIGESTS['after'], 'emph': {'off': True}}
+        state, moving, revision, tutorial = exporter.recipe_state(recipe)
+        self.assertEqual((state.digest(), len(moving), revision), (DIGESTS['after'], 23422, 1))
+        self.assertIn(recipe['start']['record'] + '/run.json', {r['file'] for r in tutorial['inputs']})
+        with self.assertRaisesRegex(ValueError, 'outside the model'):
+            exporter.recipe_state(self.recipe(emph={'pieces': [177120]}))
+
+    def test_recipe_cli_and_empty_solved_emphasis(self):
+        solved = sha(b'')
+        recipe = {'start': {'scramble': [0, 7001]}, 'digest': solved,
+                  'emph': {'pose_differs_from_solved': True}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'recipe.json').write_text(json.dumps(recipe))
+            with contextlib.redirect_stdout(io.StringIO()):
+                result = exporter.main(['--state', str(root / 'recipe.json'), '--out', str(root / 'out')])
+            self.assertEqual(result, 0)
+            self.assertEqual((root / 'out/moved.i32').read_bytes(), b'')
+
+    def test_recipe_committed_word_formats_and_part_ranges(self):
+        base = 'research/jumbling/'
+        inputs = {}
+        fixture = exporter.recipe_word(base + 'tutorial/scripts/ch04_examples.py', inputs)
+        self.assertEqual((len(fixture), fixture[-1]), (26, [12, 12]))
+        chapter = exporter.recipe_word(base + 'tutorial/records/ch07-examples.json', inputs)
+        self.assertEqual(chapter[9:11], [[12, 14], [35, 13]])
+        line = base + 'restoration/12-low-height/runs/round22/line-a/'
+        program = exporter.recipe_word(line + 'replay2/run2/00-b04-program.json', inputs)
+        self.assertEqual(len(program), 1254)
+        # The middle range is exactly W's inverse, as the committed step tree says.
+        self.assertEqual(program[627:915], exporter.inverse_word(program[:288]))
+        self.assertEqual(program[915:], exporter.inverse_word(program[288:627]))
+        closure = exporter.recipe_word(line + 'literal/run1/03-b20-program.json', inputs)
+        self.assertEqual(len(closure), 40500)
+        self.assertEqual(closure[20268:], exporter.inverse_word(closure[:20232]))
+        self.assertIn(exporter.ROOT / (line + 'replay2/run2/00-b04-c2/word-full.json'), inputs)
+        census = exporter.recipe_word(base + 'restoration/11-scramble-census/runs/round2/ia-k40-s7101.json', inputs)
+        self.assertEqual(census[69:72], [[91, 1], [268, 50], [91, 15]])
+        cloud = base + 'restoration/12-low-height/runs/round22/cloud/'
+        self.assertEqual(exporter.recipe_word(cloud + 'height4-descent-bbef1c8e/end_summary.txt', inputs)[12], [23, 14])
+        self.assertEqual(exporter.recipe_word(cloud + 'unlock-cap311-cap290/drive311_after75.json', inputs)[:2],
+                         [[364, 3], [263, 6]])
+
+    def test_recipe_correction_target_word_and_library_hash(self):
+        summary = exporter.ROOT / 'research/jumbling/restoration/12-low-height/runs/round22/line-a/literal/lattice/restore-summary.json'
+        inputs = {}
+        target = exporter.recipe_word(summary.relative_to(exporter.ROOT).as_posix(), inputs)
+        self.assertEqual(len(target), 10469)
+        self.assertIn(exporter.ROOT / exporter.CORRECTION_LIBRARY, inputs)
+        lib = exporter.check_run.read_json(exporter.ROOT / exporter.CORRECTION_LIBRARY)
+        macro7 = exporter.correction_words({'macros': [lib['macros'][7]]})[0]
+        self.assertEqual(len(macro7), 9)
+        self.assertEqual(macro7[0][0], 374)
+        menu = exporter.check_run.restore.menu('I_a')
+        oracle = exporter.check_run.sim.State(exporter.check_run.restore.ctx, menu=menu)
+        for record in lib['macros'][7]['records']:
+            outcome = oracle.apply(exporter.check_run.sim.Twist.from_record(oracle.ctx, record), journal=False)
+            self.assertTrue(outcome.applied and not outcome.uncertain)
+        played = exporter.check_run.sim.State(oracle.ctx, menu=menu)
+        exporter.play(played, {'phase': 'recipe', 'encoding': 'json', 'index': 'macro7'}, macro7, exporter.ROOT)
+        self.assertEqual(played.digest(), oracle.digest())
+        moving = exporter.moved_ids(exporter.check_run.sim.State(oracle.ctx, menu=menu), played)
+        before = exporter.copy_state(played)
+        exporter.play(played, {'phase': 'recipe', 'encoding': 'json', 'index': 'macro7'}, macro7, exporter.ROOT)
+        self.assertEqual(played.digest(), exporter.check_run.SOLVED)
+        np.testing.assert_array_equal(moving, exporter.moved_ids(before, played))
+        # target=True reverses the corrections: the inverse of its last nine
+        # letters must be the first played correction, macro 7.
+        self.assertEqual(exporter.inverse_word(target[-9:]), macro7)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'summary.json').write_bytes(summary.read_bytes())
+            library = root / exporter.CORRECTION_LIBRARY
+            library.parent.mkdir(parents=True)
+            library.write_bytes((exporter.ROOT / exporter.CORRECTION_LIBRARY).read_bytes())
+            doc = json.loads((root / 'summary.json').read_text())
+            doc['library']['sha256'] = '0' * 64
+            (root / 'summary.json').write_text(json.dumps(doc))
+            with self.assertRaisesRegex(ValueError, 'library sha256 mismatch'):
+                exporter.recipe_word('summary.json', {}, root=root)
+
+    def test_recipe_literal_sources_never_execute_and_nested_paths_are_confined(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'word.py'
+            source.write_text('raise RuntimeError("must not execute")\nword = [[72, 18]]\n')
+            self.assertEqual(exporter.recipe_word('word.py', {}, root=root), [[72, 18]])
+            source.write_text('word = __import__("os").getcwd()\n')
+            with self.assertRaisesRegex(ValueError, 'literal'):
+                exporter.recipe_word('word.py', {}, root=root)
+            for name in ('../outside.json', '/outside.json', 'C:/outside.json'):
+                (root / 'program.json').write_text(json.dumps({'segments': [{'word_file': name}]}))
+                with self.assertRaisesRegex(ValueError, 'repository-relative'):
+                    exporter.recipe_word('program.json', {}, root=root)
+            (root / 'program.json').write_text(json.dumps({'segments': [{'word_file': 'program.json'}]}))
+            with self.assertRaisesRegex(ValueError, 'cyclic'):
+                exporter.recipe_word('program.json', {}, root=root)
+
+    def test_recipe_cache_keeps_last_emphasis_and_rereads_input_hashes(self):
+        recipe = self.recipe(True)
+        session = exporter.ReplaySession()
+        first = exporter.recipe_state(recipe, session)
+        second = exporter.recipe_state(recipe, session)
+        np.testing.assert_array_equal(first[1], second[1])
+        self.assertEqual(first[3], second[3])
+        # A different range cannot inherit the cached moved set.
+        recipe['play'][0]['letters'] = [0, 0]
+        recipe['digest'] = DIGESTS['before']
+        self.assertEqual(len(exporter.recipe_state(recipe, session)[1]), 0)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            shutil.copyfile(RUN / 'start-table.json', root / 'start.json')
+            shutil.copyfile(RUN / 'words/00000.json', root / 'word.json')
+            local = {'start': {'table': 'start.json'}, 'play': [{'word': 'word.json'}],
+                     'digest': DIGESTS['after']}
+            with mock.patch.object(exporter, 'ROOT', root):
+                before = exporter.recipe_state(local, session)[3]
+                with (root / 'word.json').open('ab') as stream:
+                    stream.write(b'\n')  # Same letters, different source bytes.
+                after = exporter.recipe_state(local, session)[3]
+            self.assertEqual(before['digest'], after['digest'])
+            self.assertNotEqual(before['inputs'], after['inputs'])
 
     @unittest.skipUnless(shutil.which('node'), 'node is missing; capture parameter check skipped')
     def test_capture_cap_and_ghost_defaults_overrides_and_manifest(self):

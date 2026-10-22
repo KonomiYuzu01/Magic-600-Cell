@@ -4,7 +4,8 @@ Run from the repository root with Python -I -B. For example:
   python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/runner.py \
       --scramble 10 7001 --out /tmp/tutorial-run --cache /tmp/tutorial-cache
 
-The output directory must be empty. Existing research programs own the searches;
+The output directory must be empty unless --resume continues its recorded steps.
+Existing research programs own the searches;
 this module only orders them, checks their literal words and checkpoints progress.
 The phases run in a fixed order and never return: bulk, height (r22d75, r22d81,
 h4), high, tail, lattice (owner, 20 October 2026; stage 13 README, section 1).
@@ -28,6 +29,7 @@ import sys
 import threading
 import time
 import traceback
+import zlib
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[5]
@@ -127,10 +129,15 @@ def failed_assert(log):
     return None
 
 
-def source_identity():
+def source_identity(exclude=()):
     result = {'commit': None, 'status_sha256': None, 'dirty': None}
+    paths = ['research/jumbling']
+    for path in exclude:
+        path = Path(path).resolve()
+        if path.is_relative_to(ROOT):
+            paths.append(':(exclude,literal)' + path.relative_to(ROOT).as_posix())
     for key, argv in [('commit', ['git', 'rev-parse', 'HEAD']),
-                      ('status', ['git', '--no-optional-locks', 'status', '--porcelain=v1', '--untracked-files=all', '--', 'research/jumbling'])]:
+                      ('status', ['git', '--no-optional-locks', 'status', '--porcelain=v1', '--untracked-files=all', '--', *paths])]:
         try:
             output = subprocess.check_output(argv, cwd=ROOT, stderr=subprocess.DEVNULL)
         except (OSError, subprocess.CalledProcessError):
@@ -140,6 +147,120 @@ def source_identity():
         else:
             result.update(status_sha256=hashlib.sha256(output).hexdigest(), dirty=bool(output))
     return result
+
+
+def code_identity(out):
+    """Pin all jumbling inputs and the interpreter, excluding generated run/cache trees."""
+    import numpy as np
+    out = Path(out).resolve()
+    excluded = (out, out.with_name(out.name + '-checkpoint'))
+    rows = []
+    for directory, dirs, files in os.walk(ROOT / J):
+        base = Path(directory)
+        dirs[:] = sorted(name for name in dirs if name not in ('runs', 'cache', '__pycache__')
+                         and not any((base / name).resolve().is_relative_to(p) for p in excluded))
+        for name in sorted(files):
+            path = base / name
+            if name in ('runs', 'cache', '__pycache__') or any(path.resolve().is_relative_to(p) for p in excluded):
+                continue
+            rows.append((path.relative_to(ROOT).as_posix(), hashlib.sha256(path.read_bytes()).hexdigest()))
+    rows += [('Python', sys.version), ('NumPy', np.__version__)]
+    raw = json.dumps(sorted(rows), ensure_ascii=True, separators=(',', ':')).encode('ascii')
+    return {'sha256': hashlib.sha256(raw).hexdigest(), 'files': len(rows)}
+
+
+def phase_entry(name, snapshot):
+    hist = {int(h): n for h, n in snapshot['heights'].items()}
+    top, n4, n6 = max(hist, default=0), hist.get(4, 0), hist.get(6, 0)
+    off = snapshot['off']
+    return {'r22d75': top <= 6 and n4 + n6 > 0, 'r22d81': top <= 6 and n6 > 0,
+            'h4': top <= 4 and n4 > 0, 'high': top <= 6 and n4 + n6 > 0,
+            'tail': off > 0, 'lattice': off == 0}[name]
+
+
+def resume_point(record, state):
+    """Pure pipeline classification; state is the rebuilt mechanics snapshot.
+
+    A saved row precedes its phase's next entry test. Account for that pending
+    lattice/handoff transition without treating a stuck plugin as a stuck run.
+    """
+    result, error = record['result'], record.get('error')
+    if (result in ('solved', 'stuck') or record.get('stuck') is not None
+            or result not in ('budget', 'error')
+            or (result == 'error' and not (isinstance(error, str) and error.startswith('signal ')))):
+        return 'terminal'
+    phases, steps = record['phases'], record['steps']
+    pipeline = [(name, phases['height']['sub'][name]) for name in api.SUBPHASES['height']]
+    pipeline += [('high', phases['high'])]
+    later = [data for _, data in pipeline] + [phases['tail'], phases['lattice']]
+    if (any(data.get('result') in ('budget', 'timeout', 'error') for _, data in pipeline)
+            or phases['tail'].get('result') in ('budget', 'timeout', 'stuck', 'error')
+            or phases['lattice'].get('result') is not None):
+        return 'terminal'
+    if not any(d.get('start') is not None or d.get('result') is not None for d in later):
+        return 'bulk'
+    for name, data in pipeline:
+        if data.get('result') in ('budget', 'timeout', 'error'):
+            return 'terminal'
+        if data.get('result') is not None:
+            continue
+        own = [s for s in steps if (s['subphase'] or s['phase']) == name]
+        if own and (state['off'] == 0 or not phase_entry(name, state)):
+            continue
+        return name
+    tail = phases['tail']
+    if tail.get('result') in ('budget', 'timeout', 'stuck', 'error'):
+        return 'terminal'
+    if tail.get('result') is None:
+        if state['off'] or not any(s['phase'] in ('tail', 'fallback') for s in steps):
+            return 'tail'
+    return 'lattice' if state['off'] == 0 and phases['lattice'].get('result') is None else 'terminal'
+
+
+def recount(record):
+    """Only committed rows count; tail includes fallback and height includes its sub-phases."""
+    for phase, data in record['phases'].items():
+        rows = [s for s in record['steps'] if s['phase'] == phase or
+                (phase == 'tail' and s['phase'] == 'fallback')]
+        data['steps'] = len(rows)
+        if 'twists' in data:
+            data['twists'] = sum(s['letters'] for s in rows) if rows or phase != 'lattice' else data['twists']
+        if phase == 'height':
+            for name, sub in data['sub'].items():
+                own = [s for s in rows if s['subphase'] == name]
+                sub['steps'] = len(own)
+                # Older format 3 records did not store sub-phase twist counts.
+                if 'twists' in sub:
+                    sub['twists'] = sum(s['letters'] for s in own)
+
+
+def committed_references(record):
+    """Every string of the rows and of each phase or sub-phase that has a result: the files those parts
+    name (a kernel record's `dir`, attempts) stay on resume. An unfinished part's files are discarded."""
+    keep = set()
+
+    def walk(value):
+        if isinstance(value, dict):
+            for item in value.values():
+                walk(item)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+        elif isinstance(value, str):
+            keep.add(value)
+
+    walk(record['steps'])
+    for data in record['phases'].values():
+        for sub in data.get('sub', {}).values():
+            if sub.get('result') is not None:
+                walk(sub)
+        if data.get('result') is not None:
+            walk({key: value for key, value in data.items() if key != 'sub'})
+    return keep
+
+
+class ResumeError(ValueError):
+    """Resume refusal: no record, output directory or checkpoint is changed."""
 
 
 def acceptance_config(args):
@@ -388,14 +509,18 @@ class Runner:
         if '.json' in str(self.out):
             raise ValueError('out path must not contain .json')
         self.cache = Path(args.cache).resolve() if args.cache else self.out / 'cache'
-        for name in ('words', 'units', 'tables', 'attempts', 'logs', 'step-trees'):
-            (self.out / name).mkdir(parents=True, exist_ok=True)
+        if not getattr(args, 'resume', False):
+            self.directories()
         self.m = mechanics
         self.cancel = threading.Event()
         self.signal_number = None
         self.started = time.monotonic()
         self.record = None
         self.state = self.table = None
+
+    def directories(self):
+        for name in ('words', 'units', 'tables', 'attempts', 'logs', 'step-trees'):
+            (self.out / name).mkdir(parents=True, exist_ok=True)
 
     @property
     def mode(self):
@@ -442,10 +567,44 @@ class Runner:
         totals['seconds'] = round(time.monotonic() - self.started, 6)
         atomic_json(self.out / 'run.json', self.record)
 
-    def initialize(self):
+    def configuration(self):
+        """The same argument-derived configuration is used at start and before any resume write."""
         acceptance = self.args.mode == 'acceptance'
         frozen = acceptance_config(self.args) if acceptance else None
-        source_id = source_identity()           # before the run writes anything under research/jumbling
+        budgets = {name: getattr(self.args, name) for name in
+                   ('bulk_steps', 'bulk_step_seconds', 'bulk_seconds', 'tail_steps', 'high_steps',
+                    'rule_seconds', 'greedy_seconds', 'cert_seconds', 'height_seconds', 'height_cpu',
+                    'kernel_seconds', 'pair_shards', 'fallback_max_length', 'par')}
+        for name in ('bulk_seconds', 'tail_steps'):
+            budgets[name] = budgets[name] or None
+        scripts = SCRIPTS + [p for plugin in self.plugin_modules().values()
+                             for p in getattr(plugin, 'SCRIPTS', [])]
+        d19 = getattr(self.plugin_modules()['high'], 'D19', None)
+        if d19 is not None:
+            # A rule outside the repository is recorded without its path; a missing one without a digest.
+            path = ROOT / d19
+            try:
+                sha = hashlib.sha256(path.read_bytes()).hexdigest()
+            except OSError:
+                sha = None
+            d19 = {'file': path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else None, 'sha256': sha}
+        return {'literal_only': True, 'mode': self.args.mode, 'component': None,
+                'bulk_order': BULK_ORDER.copy(), 'phase_order': list(api.PHASE_ORDER),
+                'subphase_order': {k: list(v) for k, v in api.SUBPHASES.items()},
+                'tail_rules': self.args.tail_rules,
+                'budgets': api.recorded_budgets(self.args.mode, budgets, CLOCKS),
+                'clock_sentinel': api.CLOCK_SENTINEL if acceptance else None,
+                'kernel': {'seconds': None if acceptance else self.args.kernel_seconds,
+                           'wall_margin': self.args.kernel_wall_margin, 'd19': d19, 'max_steps': 1},
+                'lattice': {'restorer': self.args.lattice_restorer}, 'no_lattice': self.args.no_lattice,
+                'literal_limit': self.args.literal_limit, 'seeds': self.args.seeds, 'acceptance_config': frozen,
+                'source': source_identity((self.out, self.out.with_name(self.out.name + '-checkpoint'))),
+                'code': code_identity(self.out),
+                'scripts': {Path(p).as_posix(): hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
+                            for p in scripts}}
+
+    def initialize(self):
+        config = self.configuration()
         self.m = self.m or Mechanics(self.cache)
         if self.args.table:
             self.state = self.m.load(self.args.table)
@@ -457,45 +616,15 @@ class Runner:
         self.m.export(self.state, self.out / 'start-table.json')
         self.table = self.out / 'tables/bulk-end.json'
         self.m.export(self.state, self.table)
-        budgets = {name: getattr(self.args, name) for name in
-                   ('bulk_steps', 'bulk_step_seconds', 'bulk_seconds', 'tail_steps', 'high_steps',
-                    'rule_seconds', 'greedy_seconds', 'cert_seconds', 'height_seconds', 'height_cpu',
-                    'kernel_seconds', 'pair_shards', 'fallback_max_length', 'par')}
-        for name in ('bulk_seconds', 'tail_steps'):
-            budgets[name] = budgets[name] or None
-        scripts = SCRIPTS + [p for plugin in self.plugin_modules().values()
-                             for p in getattr(plugin, 'SCRIPTS', [])]
         start = dict(source, **self.m.snapshot(self.state))
-        d19 = getattr(self.plugin_modules()['high'], 'D19', None)
-        if d19 is not None:
-            # A rule outside the repository is recorded without its path; a missing one without a digest.
-            path = ROOT / d19
-            try:
-                sha = hashlib.sha256(path.read_bytes()).hexdigest()
-            except OSError:
-                sha = None
-            d19 = {'file': path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else None, 'sha256': sha}
-        self.record = {'format': api.FORMAT, 'menu': 'I_a', 'start': start,
-            'config': {'literal_only': True, 'mode': self.args.mode, 'component': None,
-                'bulk_order': BULK_ORDER.copy(), 'phase_order': list(api.PHASE_ORDER),
-                'subphase_order': {k: list(v) for k, v in api.SUBPHASES.items()},
-                'tail_rules': self.args.tail_rules,
-                'budgets': api.recorded_budgets(self.args.mode, budgets, CLOCKS),
-                'clock_sentinel': api.CLOCK_SENTINEL if acceptance else None,
-                'kernel': {'seconds': None if acceptance else self.args.kernel_seconds,
-                           'wall_margin': self.args.kernel_wall_margin, 'd19': d19, 'max_steps': 1},
-                'lattice': {'restorer': self.args.lattice_restorer},
-                'literal_limit': self.args.literal_limit, 'seeds': self.args.seeds, 'acceptance_config': frozen,
-                'source': source_id,
-                'scripts': {Path(p).as_posix(): hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
-                            for p in scripts}},
+        self.record = {'format': api.FORMAT, 'menu': 'I_a', 'start': start, 'config': config,
             'phases': {'bulk': {'result': 'budget', 'steps': 0, 'twists': 0,
                 'end': dict(self.m.snapshot(self.state), table=self.rel(self.table))},
                 'height': {'result': None, 'steps': 0, 'twists': 0, 'start': None, 'end': None,
-                           'sub': {name: {'result': None, 'steps': 0, 'start': None, 'end': None}
+                           'sub': {name: {'result': None, 'steps': 0, 'twists': 0, 'start': None, 'end': None}
                                    for name in api.SUBPHASES['height']}},
                 'high': {'result': None, 'steps': 0, 'twists': 0, 'start': None, 'end': None},
-                'tail': {'result': None, 'steps': 0},
+                'tail': {'result': None, 'steps': 0, 'twists': 0},
                 'lattice': {'result': None, 'steps': 0, 'twists': None}},
             'steps': [], 'stuck': None, 'lattice': None, 'result': 'budget', 'error': None,
             'acceptance': {'verdict': None, 'certificate_steps': 0, 'fallback_steps': 0,
@@ -503,6 +632,78 @@ class Runner:
             'totals': {'bulk_twists': 0, 'height_twists': 0, 'high_twists': 0, 'tail_twists': 0,
                        'fallback_twists': 0, 'lattice_twists': None, 'seconds': 0.0}}
         self.save()
+
+    def resume(self):
+        """Validate and replay completely before changing even an interrupted temporary file."""
+        try:
+            record = read_json(self.out / 'run.json')
+            if record['format'] != api.FORMAT:
+                raise ValueError('resume requires format 3')
+            config = self.configuration()
+            old = record['config']
+            if old.get('code') is None or old['code'] != config['code']:
+                raise ValueError('resume code fingerprint differs or is missing')
+            if {k: v for k, v in old.items() if k not in ('component', 'source')} != {
+                    k: v for k, v in config.items() if k not in ('component', 'source')}:
+                raise ValueError('resume configuration or scripts differ')
+            self.m = self.m or Mechanics(self.cache)
+            state = self.m.load(self.out / 'start-table.json')
+            if state.digest() != record['start']['digest']:
+                raise ValueError('resume start table digest differs')
+            start = record['start']
+            if self.args.table:
+                if start['kind'] != 'table' or self.m.load(self.args.table).digest() != start['digest']:
+                    raise ValueError('resume table source differs')
+            elif start['kind'] != 'scramble' or list(self.args.scramble) != [start['k'], start['seed']]:
+                raise ValueError('resume scramble source differs')
+            for index, step in enumerate(record['steps']):
+                if step['index'] != index or step.get('encoding') != 'json' or step['phase'] == 'lattice':
+                    raise ValueError('resume requires non-lattice literal steps in order')
+                path = (self.out / step['word']).resolve()
+                if not path.is_relative_to(self.out):
+                    raise ValueError('resume word path escapes run')
+                word = literal(read_json(path), step['before']['digest'], step['after']['digest'])
+                if state.digest() != step['before']['digest'] or word_sha256(word['word']) != step['word_sha256']:
+                    raise ValueError('resume step before digest or word hash differs')
+                self.m.apply_word(state, word)
+                if state.digest() != step['after']['digest']:
+                    raise ValueError('resume step after digest differs')
+            point = resume_point(record, self.m.snapshot(state))
+            if point == 'terminal':
+                raise ValueError('run is not in flight')
+            seconds = record['totals']['seconds']
+            if type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds < 0:
+                raise ValueError('invalid recorded running time')
+        except (OSError, ValueError, KeyError, TypeError, RuntimeError, EOFError, AttributeError,
+                IndexError, zlib.error) as exc:
+            reason = safe_reason(exc)
+            raise ResumeError('invalid or unreadable resume record' if reason == 'see child log' else reason) from exc
+        # Validation ends here. A row is the commit point; discard only uncommitted artifacts.
+        # A phase that ended at this step count (high stuck with its kernel record) keeps its files.
+        count, keep = len(record['steps']), committed_references(record)
+        for name in ('words', 'step-trees', 'tables', 'attempts', 'units'):
+            directory = self.out / name
+            for path in directory.iterdir() if directory.exists() else ():
+                match = re.match(r'^(\d+)(?:[.\-]|$)', path.name)
+                relative = path.relative_to(self.out).as_posix()
+                if (match and int(match[1]) >= count
+                        and not any(ref == relative or ref.startswith(relative + '/') for ref in keep)):
+                    shutil.rmtree(path) if path.is_dir() else path.unlink()
+        for path in self.out.rglob('*.tmp'):
+            if path.is_file():
+                path.unlink()
+        (self.out / 'bulk-progress.json').unlink(missing_ok=True)
+        self.directories()
+        self.record, self.state = record, state
+        recount(record)
+        self.started = time.monotonic() - seconds
+        self.table = self.out / ('tables/bulk-end.json' if point == 'bulk' or not count else
+                                 f'tables/{count - 1:05d}.json')
+        self.m.export(state, self.table)
+        record.setdefault('resumes', []).append({'at_step': count, 'seconds': seconds, 'source': config['source']})
+        record['result'], record['error'] = 'budget', None
+        self.save()
+        return point
 
     def execute(self, argv, tag, seconds, *, cwd=None, stop_when=None):
         """Each subprocess owns a process group; timeout also kills descendants.
@@ -612,10 +813,12 @@ class Runner:
         self.m.export(self.state, self.table)
         self.record['phases']['bulk']['result'] = result
         self.record['phases']['bulk']['end'] = dict(self.m.snapshot(self.state), table=self.rel(self.table))
+        # The child's initial budget result is only an in-flight marker. An
+        # operator signal must not turn it into a lasting bulk_budget component.
+        self.check_signal()
         if result in ('budget', 'timeout'):
             # A step or clock budget ends the bulk early; later phases still run (plan, result table).
             self.component('bulk_budget')
-        self.check_signal()
         self.save()
 
     def heights(self):
@@ -624,11 +827,7 @@ class Runner:
 
     def entry(self, name):
         """The entry test of a phase or height sub-phase, from the current state only."""
-        top, n4, n6 = self.heights()
-        off = int(self.state.off_lattice_count())
-        return {'r22d75': top <= 6 and n4 + n6 > 0, 'r22d81': top <= 6 and n6 > 0,
-                'h4': top <= 4 and n4 > 0, 'high': top <= 6 and n4 + n6 > 0,
-                'tail': off > 0, 'lattice': off == 0}[name]
+        return phase_entry(name, self.m.snapshot(self.state))
 
     def context(self, phase, sub):
         budgets = {name: getattr(self.args, name) for name in
@@ -644,9 +843,18 @@ class Runner:
         name = sub or phase
         data = self.record['phases'][phase]
         data = data['sub'][sub] if sub else data
-        data['start'] = self.m.snapshot(self.state)
+        if data['result'] is not None:
+            return data['result']
+        # A signal can save an unfinished call's attempts without a phase End.
+        # Its retry starts from the committed rows, like a discarded word file.
+        data.pop('attempts', None)
+        data['start'] = data['start'] or self.m.snapshot(self.state)
         result, end = None, None
-        if not self.entry(name):
+        if data['steps'] and not self.state.off_lattice_count():
+            result = 'lattice'
+        elif data['steps'] and not self.entry(name):
+            result = 'handoff'
+        elif not self.entry(name):
             result = 'not_applicable'
         plugin = self.plugin_modules()[phase]
         while result is None:
@@ -666,6 +874,7 @@ class Runner:
             if isinstance(end, api.Proposal):
                 self.record_step(end, phase, sub)
                 data['steps'] += 1
+                data['twists'] = data.get('twists', 0) + len(end.word['word'])
                 end = None
                 if self.state.off_lattice_count() == 0:
                     result = 'lattice'
@@ -687,6 +896,8 @@ class Runner:
                 self.component(f'{phase}_stub')
         data['result'] = result
         data['end'] = self.m.snapshot(self.state)
+        data['twists'] = sum(s['letters'] for s in self.record['steps']
+                             if s['phase'] == phase and s['subphase'] == sub)
         if end is not None:
             data.update(reason=end.reason, details=end.details, attempts=end.attempts)
         outer = self.record['phases'][phase]
@@ -1228,6 +1439,7 @@ class Runner:
             row.update(construction='certificate', certificate_sha256=candidate.certificate_sha256)
         self.record['steps'].append(row)
         self.record['phases']['tail']['steps'] += 1
+        self.record['phases']['tail']['twists'] += letters
         self.save()
 
     @staticmethod
@@ -1256,7 +1468,9 @@ class Runner:
 
     def tail(self):
         phase = self.record['phases']['tail']
-        if not self.entry('tail'):
+        if phase['result'] is not None:
+            return
+        if not phase['steps'] and not self.entry('tail'):
             phase['result'] = 'not_applicable'
             self.save()
             return
@@ -1309,6 +1523,7 @@ class Runner:
             return
         plugin = self.plugin_modules()['lattice']
         data = self.record['phases']['lattice']
+        data.pop('attempts', None)              # discard a cancelled, uncommitted play
         end = plugin.play(self.context('lattice', None))
         if self.signal_number is not None:
             # A signal during the phase is the operator's (P3-robust-01).
@@ -1465,9 +1680,14 @@ class Runner:
         for number in (signal.SIGTERM, signal.SIGHUP):
             previous[number] = signal.signal(number, self.on_signal)
         try:
-            self.initialize()
+            if getattr(self.args, 'resume', False):
+                point = self.resume()
+            else:
+                self.initialize()
+                point = 'bulk'
             self.check_signal()
-            self.bulk()
+            if point == 'bulk':
+                self.bulk()
             if self.phases_between() == 'budget':
                 self.record['result'] = 'budget'
                 self.save()
@@ -1531,6 +1751,11 @@ def bulk_child(out, cache):
     runner.started -= record['totals']['seconds']
     runner.state = state = runner.m.load(out / 'start-table.json')
     runner.table = out / 'tables/bulk-end.json'
+    for step in record['steps']:
+        runner.m.apply_word(state, read_json(out / step['word']))
+    recount(record)
+    # With reopen excluded, the rules use state-derived caches only; moves is
+    # the output of this child's future words, never an input to their choices.
     restorer = runner.m.seams.SeamRestorer(state, runner.m.menu, order=tuple(record['config']['bulk_order']))
     assert list(restorer.order) == BULK_ORDER and 'reopen' not in restorer.order
     methods = {'seam': restorer.seam, 'cover': restorer.cover, 'close': restorer.level1,
@@ -1589,6 +1814,7 @@ def parse_args(argv=None):
     source.add_argument('--scramble', nargs=2, type=int, metavar=('K', 'SEED'))
     source.add_argument('--table', type=Path)
     parser.add_argument('--out', required=True, type=Path)
+    parser.add_argument('--resume', action='store_true', help='continue a matching in-flight runner-run/3 record')
     parser.add_argument('--cache', type=Path)
     parser.add_argument('--bulk-steps', type=int, default=None, help='0 skips bulk; default unlimited')
     parser.add_argument('--bulk-step-seconds', type=float, default=3600)
@@ -1652,9 +1878,16 @@ def main(argv=None):
     args = parse_args(argv)
     # Children inherit this limit, so none of them writes a core file into the repository (P1-robust-02).
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-    if args.out.exists() and any(args.out.iterdir()):
+    if args.resume and not (args.out / 'run.json').is_file():
+        print('resume requires run.json in the output directory', file=sys.stderr)
+        return 2
+    if not args.resume and args.out.exists() and any(args.out.iterdir()):
         raise SystemExit('output directory must be empty')
-    record = Runner(args).run()
+    try:
+        record = Runner(args).run()
+    except ResumeError as exc:
+        print('resume refused: ' + str(exc), file=sys.stderr)
+        return 2
     print(json.dumps({'result': record['result'], 'steps': len(record['steps']), 'totals': record['totals']}))
     return 2 if record['result'] == 'error' else 0
 

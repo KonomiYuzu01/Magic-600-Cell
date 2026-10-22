@@ -46,6 +46,11 @@ SVG_NS = "http://www.w3.org/2000/svg"
 NAME_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,63}\Z")
 FIGURES = {}
 BACKTICK = chr(96)
+# Unchanged SVGs retain their original production metadata byte for byte.
+# The manifest separately inventories the current inputs used to verify a redraw.
+ORIGINAL_RENDERER = "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008"
+UPDATED_FIGURES = {"bulk-n-7101", "bulk-conj-7101-s30", "03-counts-7302",
+                   "03-r22d75-prediction-cap64", "ch04-six-stops-caps", "ch06-twisted-cycle"}
 ET.register_namespace("", SVG_NS)
 
 
@@ -101,6 +106,12 @@ class Evidence:
 
     def record(self, chapter):
         return self.json(T + f"/records/ch{chapter:02}-examples.json")
+
+    def figdata(self):
+        document = self.json(F + "/figdata.json")
+        if document.get("format") != "magic600-tutorial-figdata/1":
+            raise ValueError("unsupported computed figure data")
+        return document["figures"][self.name]
 
     def note(self, value):
         self.notes.append(value)
@@ -252,8 +263,11 @@ class Svg:
         self.root.set("height", str(height))
         self.root.set("viewBox", f"0 0 1200 {height}")
         self.background.set("height", str(height))
+        production_inputs = dict(self.evidence.inputs)
+        if self.evidence.name not in UPDATED_FIGURES:
+            production_inputs[F + "/diagrams.py"] = ORIGINAL_RENDERER
         self.el("metadata", text=json.dumps({
-            "figure": self.evidence.name, "inputs": self.evidence.inputs,
+            "figure": self.evidence.name, "inputs": production_inputs,
             "notes": self.evidence.notes,
             "tool": "Python " + ".".join(map(str, sys.version_info[:3])) + "; standard library SVG writer",
             "command": "python3 -I -B " + F + "/diagrams.py --only " + self.evidence.name,
@@ -301,7 +315,7 @@ def phase_strip(svg, names, y):
     return y + 86
 
 
-def plot(svg, series, labels, y, title, log=False, bars=False, point_colours=None, height=240):
+def plot(svg, series, labels, y, title, log=False, bars=False, point_colours=None, height=240, label_stride=None):
     """Exact observations with linear or base-10 logarithmic axes; None is a gap."""
     svg.text(40, y + 18, title, size=18, weight="600")
     top, bottom, left, right = y + 46, y + 46 + height, 110, 1150
@@ -352,7 +366,7 @@ def plot(svg, series, labels, y, title, log=False, bars=False, point_colours=Non
             for i in dict.fromkeys([indexes[0], indexes[-1]] if indexes else []):
                 svg.text(x_of(i), y_of(s["values"][i]) - 11, count(s["values"][i]),
                          size=13, anchor="middle", colour=colour)
-    stride = max(1, math.ceil(n / 38))
+    stride = label_stride or max(1, math.ceil(n / 38))
     for i, label in enumerate(labels):
         if i % stride == 0 or i == n - 1:
             svg.text(x_of(i), bottom + 24, label, size=13, anchor="middle")
@@ -609,7 +623,7 @@ def bulk_n(e, s):
     values = [steps[0]["N_before"]] + [row["N_after"] for row in steps]
     point_colours = [PALETTE["muted"]] + [colours[row["rule"]] for row in steps]
     y = plot(s, [{"label": "N", "values": values}], list(map(str, range(len(values)))), y,
-             "N · step 0 is the start", point_colours=point_colours, height=370)
+             "N · step 0 is the start", point_colours=point_colours, height=370, label_stride=10)
     return s.paragraph(40, y, f"Round 1 ends after step {len(first['steps'])}; round 2's cumulative record ends after step {len(steps)}. "
                        "Every point is a census step, not a runner step. The two rounds are not concatenated twice.")
 
@@ -623,17 +637,11 @@ def bulk_conj(e, s):
                                     for label, letter in zip(("x", "y", "z"), word)])
     y = folded_tree(s, root, 90)
     c, d = word[0][0], word[1][0]
-    n = row["N_before"]
-    counts = [["before", count(n), count(row["counts_before"][str(c)]["N_c"]), count(row["counts_before"][str(d)]["N_c"])]]
-    for i, tr in enumerate(trace):
-        n += tr["N_c_after"] - tr["N_c"]
-        nc = tr["N_c_after"] if i != 1 else trace[2]["N_c"]
-        nd = trace[1]["N_c"] if i == 0 else trace[1]["N_c_after"] if i == 1 else "not recorded"
-        counts.append(["after " + ("x", "y", "z")[i], count(n), count(nc), count(nd)])
-    if n != row["N_after"]:
-        raise ValueError("trace deltas do not match final N")
-    e.note(f"N_{d} after z is not recorded; it is not inferred from the other cap's change. "
-           "The x and y intermediate values are also read at the next letter's entry.")
+    data = e.figdata()
+    if data["word"] != word:
+        raise ValueError("computed repair word differs from the manual")
+    counts = [[label, count(point["N"]), count(point["N_c"][str(c)]), count(point["N_c"][str(d)])]
+              for label, point in zip(("before", "after x", "after y", "after z"), data["states"])]
     return draw_table(s, ["State", "N", f"N_{c}", f"N_{d}"], counts, y)
 
 
@@ -685,6 +693,12 @@ def height_examples(e):
 @figure("03-counts-7302", "03-height.md", "Height counts and target straddlers along the recorded steps")
 def height_counts(e, s):
     points, boundary = height_examples(e)
+    computed = e.figdata()["points"]
+    if len(computed) != len(points) or any(not c["state_digest"].startswith(p["digest"])
+                                          for c, p in zip(computed, points)):
+        raise ValueError("computed target states differ from the chart")
+    for point, value in zip(points, computed):
+        point["u"] = value["u"]
     rules = list(dict.fromkeys(p["rule"] for p in points))
     colours = {rule: (PALETTE["muted"] if rule == "start" else ACCENTS[(i - 1) % len(ACCENTS)])
                for i, rule in enumerate(rules)}
@@ -694,8 +708,13 @@ def height_counts(e, s):
         values = [p["counts"][i] if i < 3 else p["u"] for p in points]
         y = plot(s, [{"label": label, "values": values}], labels, y, label + " after each step",
                  point_colours=[colours[p["rule"]] for p in points], height=185)
-    e.note("u is a gap where no target/straddler count was recorded; no missing value is drawn as zero. "
-           "The path after bbef1c8e restarts the height phase (example (c)); it is not an unbroken runner run.")
+    y = draw_table(s, ["Point", "H", "Target τ", "Straddlers u"],
+                   [[str(p["index"]), str(p["H"]) if p["H"] is not None else "—",
+                     str(p["tau"]) if p["tau"] is not None else "no target",
+                     count(p["u"]) if p["u"] is not None else "—"] for p in computed], y)
+    y = s.paragraph(40, y, "H = 6 while n6 > 0, then H = 4 while n4 > 0. "
+                    "At the H6 handoff the target is recomputed for H4; the old H6 u = 0 belongs to the absent H6 target. "
+                    "A gap means no target. Example (c) restarts the height phase.") + 20
     return s.paragraph(40, y, f"Example (b): step 0 to {boundary}, ending at {points[boundary]['digest'][:8]}… . "
                        f"Example (c): the remaining {len(points) - boundary - 1} steps, ending at {points[-1]['digest'][:8]}… . "
                        "Markers show the rule; each panel has its own vertical scale.")
@@ -710,17 +729,19 @@ def count_prediction(e, s):
     values = [[name, count(a), f"{b-a:+,}", count(b)] for name, a, b in
               zip(("n6", "n4", "n2"), before["n6_n4_n2"], after["n6_n4_n2"])]
     y = draw_table(s, ["Count", "Before", "Δ", "After"], values, y)
-    proof = e.text(LOW + "/PROOFS-B.md").split("### R22D-74.", 1)[1].split("### R22D-75.", 1)[0]
-    lattice = integer(re.search(r"takes ([\d,]+) lattice pieces off", proof)[1])
+    data = e.figdata()
+    if data["state_digest"] != before["digest"] or data["after_digest"] != after["digest"]:
+        raise ValueError("computed prediction states differ from the record")
     y = draw_table(s, ["Inside the cap", "h = 6", "h = 4", "h = 2"], [
-        ["F_h · other branch", "not recorded", "not recorded", "not recorded"],
-        ["O_h · own branch", "not recorded", "not recorded", "not recorded"],
-        ["r_h · lowered own branch", "not recorded", "not recorded", "not recorded"],
+        [label] + [count(data[key][str(h)]) for h in (6, 4, 2)]
+        for key, label in (("F_h", "F_h · other branch"), ("O_h", "O_h · own branch"),
+                           ("r_h", "r_h · lowered own branch"))
     ], y, [340, 260, 260, 260])
-    y = s.paragraph(40, y, "L₀ · lattice pieces inside the cap: " + count(lattice) + " (R22D-74).") + 16
+    y = s.paragraph(40, y, "L₀ · lattice pieces inside cap 64: " + count(data["L0"]) + ".") + 16
+    if data["proof_lattice_off"] != data["L0"]:
+        y = s.paragraph(40, y, "R22D-74's “takes lattice pieces off” count is " + count(data["proof_lattice_off"]) +
+                        "; L₀ counts lattice pieces inside the cap before the letter.") + 16
     y = s.paragraph(40, y + 10, "Δ(n6, n4, n2) = (F₄ − r₆, F₂ + r₆ − F₄ − r₄, L₀ + r₄ − F₂ − r₂).", size=18)
-    e.note("The committed step records give the exact before/after counts, and R22D-74 records L₀. "
-           "They do not give F_h, O_h or r_h for this cap. The net changes do not identify those internal counts.")
     return y + 20
 
 
@@ -819,7 +840,7 @@ def d19_tree(e, s):
                        "The runner itself records D19 as a single span; this finer structure follows the rule's definition.")
 
 
-@figure("ch04-six-stops-caps", "04-high.md", "Cap-level prunes: supported totals and the unrecorded matrix")
+@figure("ch04-six-stops-caps", "04-high.md", "Cap-level prunes in kernel order")
 def six_stops_caps(e, s):
     document = e.json(ROUND + "/kernel-d19/bbef1c8e/kernel/run.json")
     pruned = document["ledger"]["S"]["pruned"]
@@ -829,10 +850,15 @@ def six_stops_caps(e, s):
     if any(letters % items for letters in pruned.values()) or sum(pairs.values()) % caps:
         raise ValueError("prune counts are not whole cap/unit pairs")
     units = sum(pairs.values()) // caps
+    data = e.figdata()
+    if data["state_digest"] != document["start"]["digest"] or data["totals"] != pairs or len(data["units"]) != units:
+        raise ValueError("computed prune matrix differs from the ledger")
     y = s.paragraph(40, 96, f"State {document['start']['digest'][:8]}… · {units} height-4 units × {caps} caps = "
-                    f"{count(units * caps)} pairs. These totals are exact; their cell assignments are not recorded.") + 20
+                    f"{count(units * caps)} pairs. Each cell is the first cap-level prune in the kernel's order.") + 20
     reasons = ("blocked", "target_not_whole", "lattice_inside")
-    y = s.legend([(r, ACCENTS[i]) for i, r in enumerate(reasons)] + [("unknown assignment", PALETTE["grey"])], y)
+    colours = dict(zip(reasons, ACCENTS))
+    colours[None] = PALETTE["white"]
+    y = s.legend([(r, colours[r]) for r in reasons] + [("no cap-level prune", colours[None])], y)
     x = 80
     for i, reason in enumerate(reasons):
         width = 1060 * pairs[reason] / sum(pairs.values())
@@ -841,10 +867,21 @@ def six_stops_caps(e, s):
         x += width
     y = draw_table(s, ["Prune", "Cap/unit pairs", "Letters pruned"],
                    [[r, count(pairs[r]), count(pruned[r])] for r in reasons], y + 52, [500, 310, 310])
-    s.text(80, y + 18, "Caps (source order, assignment unavailable)", size=15)
+    s.text(80, y + 18, "Caps (kernel order); rows are height-4 units in kernel order", size=15)
     y += 45
     width, height = 1060, units * 6
-    s.rect(80, y, width, height, fill=PALETTE["grey"], stroke=PALETTE["line"])
+    for i, unit in enumerate(data["units"]):
+        # Adjacent equal cells share one SVG rectangle, preserving every pair.
+        start = 0
+        for end in range(1, caps + 1):
+            reason = unit["reasons"][start]
+            if end == caps or unit["reasons"][end] != reason:
+                element = s.rect(80 + start * width / caps, y + i * 6, (end - start) * width / caps, 6,
+                                 fill=colours[reason], data_unit=i, data_cap_start=start, data_cap_end=end,
+                                 data_reason=reason or "none")
+                ET.SubElement(element, "{" + SVG_NS + "}title").text = (
+                    f"Unit {i + 1} (first piece {unit['first']}), caps {start}–{end - 1}: {reason or 'none'}")
+                start = end
     for i in range(caps + 1):
         xx = 80 + i * width / caps
         s.line(xx, y, xx, y + height, colour=PALETTE["white"], width=.25)
@@ -856,8 +893,6 @@ def six_stops_caps(e, s):
     for i in range(0, caps, 100):
         s.text(80 + i * width / caps, y + height + 23, i, size=13)
     s.text(1140, y + height + 23, caps - 1, size=13, anchor="end")
-    e.note("The committed kernel ledger stores aggregate prune counts only, not unit identities or the prune for "
-           "each unit/cap pair. All matrix cells are therefore grey (unknown); colours appear only in the supported aggregate strip.")
     return y + height + 45
 
 
@@ -998,6 +1033,7 @@ def nu_grid(e, s):
 @figure("ch06-twisted-cycle", "06-lattice.md", "One twisted cycle as a strip of played parts")
 def twisted_cycle(e, s):
     data = e.record(6)
+    computed = e.figdata()
     factor = data["D_factors"]["log"]["6"][0]
     orbit = next(row for row in data["B_orbits"]["orbits"] if row["orbit"] == 6)
     names = ("g", "r⁻¹", "c", "r", "g⁻¹")
@@ -1013,9 +1049,8 @@ def twisted_cycle(e, s):
     y = s.paragraph(40, 218, f"A = {a}; X = {x_pos}; Y = {y_pos}; B = {b}; C = {c}. "
                     f"Total {factor['length']} letters. Strip widths are proportional to their recorded lengths.")
     stage_names = ("before",) + tuple("after " + name for name in names)
-    # Track the three pieces initially at A, X, Y through the construction's
-    # defined setup and seed cycle. These are positions, not home-piece labels.
-    positions = ((a, x_pos, y_pos), (a, b, c), (a, b, c), (b, c, a), (b, c, a), (x_pos, y_pos, a))
+    # Follow the actual pieces initially at A, X, Y, including frame changes.
+    positions = list(zip(*(track["positions"] for track in computed["tracked"])))
     lane_orders = ((a, x_pos, y_pos), (a, b, c), (a, b, c), (a, b, c), (a, b, c), (a, x_pos, y_pos))
     top = y + 100
     centers = [120 + i * 192 for i in range(len(stage_names))]
@@ -1035,9 +1070,12 @@ def twisted_cycle(e, s):
             s.text(centers[i], yy + 5, stage[piece], size=15, anchor="middle", colour=PALETTE["white"])
     y = top + 280
     y = s.legend([("piece initially at " + label, ACCENTS[i]) for i, label in enumerate(("A", "X", "Y"))], y)
-    e.note("The three marked position tracks follow the construction's setup and seed action. The committed factor "
-           "record does not list the complete support of each part or its collateral on later orbits; those pieces are not drawn.")
-    return y
+    y = draw_table(s, ["Played part", "Letters", "Pieces whose exact pose changes"],
+                   [[name, str(length), count(part["count"])]
+                    for name, length, part in zip(names, lengths, computed["parts"])], y, [300, 220, 600])
+    return s.paragraph(40, y, "Whole factor: " + count(computed["whole_count"]) + " pieces change exact pose; "
+                       + count(computed["collateral_count"]) + " collateral pieces besides the three tracked pieces. "
+                       "Counts include frame changes at a fixed position. Piece IDs and positions before and after each part are in figdata.json.")
 
 
 @figure("ch06-orbit6-tree", "06-lattice.md", "The orbit step, preserving all folded references")
@@ -1222,7 +1260,8 @@ def render(name, entries):
         end = folded_tree(svg, root, 90)
     data = svg.finish(end + 10)
     manifest = {"inputs": dict(sorted(evidence.inputs.items())),
-                "output": {"path": name + ".svg", "sha256": sha256(data)}, "notes": evidence.notes}
+                "output": {"path": name + ".svg", "sha256": sha256(data)}, "notes": evidence.notes,
+                "production_renderer_sha256": evidence.inputs[F + "/diagrams.py"] if name in UPDATED_FIGURES else ORIGINAL_RENDERER}
     return data, manifest
 
 

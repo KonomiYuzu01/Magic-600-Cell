@@ -287,6 +287,29 @@ def check_source(source, fails):
             add(fails, 'config')
 
 
+def check_resumes(record, fails):
+    if 'resumes' not in record:
+        return
+    rows, steps = record['resumes'], record.get('steps')
+    if record.get('format') != 'runner-run/3' or not isinstance(rows, list) or not isinstance(steps, list):
+        add(fails, 'resumes')
+        return
+    last_step, last_seconds = 0, 0
+    for row in rows:
+        if (not isinstance(row, dict) or set(row) != {'at_step', 'seconds', 'source'}
+                or not integer(row['at_step']) or row['at_step'] > len(steps)
+                or type(row['seconds']) not in (int, float) or not math.isfinite(row['seconds'])
+                or row['at_step'] < last_step or row['seconds'] < last_seconds
+                or not isinstance(row['source'], dict)):
+            add(fails, 'resumes')
+            continue
+        source_fails = []
+        check_source(row['source'], source_fails)
+        if source_fails:
+            add(fails, 'resumes')
+        last_step, last_seconds = row['at_step'], row['seconds']
+
+
 def check_error(record, fails):
     error = record.get('error')
     if ('error' not in record or (error is not None and (not isinstance(error, str)
@@ -363,6 +386,11 @@ def check_v3_config(record, fails):
     order = config.get('bulk_order')
     if not isinstance(order, list) or any(rule not in BULK_RULES for rule in order) or len(set(order)) != len(order):
         add(fails, 'bulk_order')
+    if 'code' in config:
+        code = config['code']
+        if (not isinstance(code, dict) or set(code) != {'sha256', 'files'}
+                or not digest(code['sha256']) or not integer(code['files'], 1)):
+            add(fails, 'config_code')
     check_acceptance_config(config, fails)
     check_kernel_d19(config, fails)
     check_source(source, fails)
@@ -1197,6 +1225,7 @@ def check_run(run_dir, emit, report_parent=None, verify_seconds=7200, allow_unch
             add(fails, 'menu')
         if record.get('result') not in ('solved', 'stuck', 'budget', 'error'):
             add(fails, 'result')
+        check_resumes(record, fails)
         if forbidden(record):
             add(fails, 'forbidden_key')
         record_paths(base, record, fails)

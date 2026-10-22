@@ -782,9 +782,9 @@ at A and the six unsolved positions, each copy of the seed moves pieces of later
 (`sched11.py:410-411`). Under the late restorer, the same orbit at the same state takes 13 factors and 11,306 letters,
 with a tree of 92 parts (record section E; section 6.17.2).
 
-![Figure 6.6: Before lattice/orbit-6 of the seed 7106 handoff (row 19, digest 1b263d3e…): the stereographic local view centred on the first cap of the step's letters, with the pieces whose exact pose the step changes drawn opaque (among them the six orbit-6 pieces out of place and collateral pieces of later orbits) and the stickers near the cap as ghosts; beside it, the whole puzzle in perspective with the same pieces opaque](figures/png/s7106-step19-before.png)
+![Figure 6.6: Before lattice/orbit-6 of the seed 7106 handoff (row 19, digest 1b263d3e…): the whole puzzle in perspective, with the pieces whose exact pose the step changes drawn opaque (among them the six orbit-6 pieces out of place and collateral pieces of later orbits)](figures/png/s7106-step19-before.png)
 
-![Figure 6.7: After lattice/orbit-6 (digest 949da503…): the same two views and the same pieces; every orbit-6 piece is at home with the identity frame, and the collateral pieces have moved](figures/png/s7106-step19-after.png)
+![Figure 6.7: After lattice/orbit-6 (digest 949da503…): the same view and the same pieces; every orbit-6 piece is at home with the identity frame, and the collateral pieces have moved](figures/png/s7106-step19-after.png)
 
 ![Figure 6.8: The step tree of lattice/orbit-6 at the seed 7106 handoff: 24 parts and 194 letters, four twisted cycles that share one seed, with arrows for the inverse_of and same_as references](figures/svg/ch06-orbit6-tree.svg)
 

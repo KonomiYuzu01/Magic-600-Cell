@@ -1577,6 +1577,40 @@ not in the repository. They ran on uncommitted I1 candidates over `8ae8c4a`, so 
 the FIX patch of section 8, and a `runner.py` that has changed since. The runs on the committed head give the same
 `seam` steps, lattice lengths and end digests. D1 and D2 are running; the acceptance batches have not been run.
 
+## Resuming long runs and keeping checkpoints
+
+Start `scripts/checkpoint.py` beside a long runner process on its working branch. It captures a consistent copy
+in `<run directory>-checkpoint`, commits only that copy when `run.json` changes, and pushes the branch. It checks
+once more after the runner exits. The default interval is 900 seconds; `--every` changes it, `--trailer TEXT` adds
+a commit trailer (repeatable), and `--no-push` keeps checkpoints local.
+
+```bash
+python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/runner.py \
+  --scramble 40 7101 --out research/jumbling/restoration/13-tutorial-runner/runs/long-s7101 &
+runner_pid=$!
+python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/checkpoint.py \
+  --run research/jumbling/restoration/13-tutorial-runner/runs/long-s7101 --pid "$runner_pid"
+wait "$runner_pid"
+```
+
+After a container restart, fetch and check out the checkpoint's branch with the same research sources, Python and
+NumPy versions. Restore the checkpoint into an empty run directory, then repeat the original runner command with
+`--resume` and start the checkpoint helper beside it again:
+
+```bash
+python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/checkpoint.py \
+  --run research/jumbling/restoration/13-tutorial-runner/runs/long-s7101 --restore
+python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/runner.py \
+  --scramble 40 7101 --out research/jumbling/restoration/13-tutorial-runner/runs/long-s7101 --resume
+```
+
+Resume replays the saved words and refuses a different configuration, source table or scramble, changed research
+code or versions, or a terminal record. It records each continuation in `resumes`; the checker replays its steps
+as for an uninterrupted run. Running time excludes the gap between sessions. Checkpoints include the run's referenced
+words, trees, tables, units, probe and lattice files, and omit repository provenance files and temporary files.
+The helper refuses protected branches, detached HEAD and staged changes outside its checkpoint directory. At the end,
+commit the completed run directory and remove its checkpoint directory in the same commit.
+
 ## Replay
 
 From the repository root, with Python 3 and NumPy, `S=research/jumbling/restoration/13-tutorial-runner/scripts`:

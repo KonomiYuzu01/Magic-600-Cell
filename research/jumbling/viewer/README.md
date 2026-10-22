@@ -186,6 +186,52 @@ them after a successful generation. `--check` and `--prune` cannot be combined.
 The unit tests use synthetic capture bytes and committed development records;
 they start no browser and establish no capture or native-rendering result.
 
+A figure can replace `record`/`step`/`when` with a `state` recipe:
+
+```json
+{"start":{"table":"research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/start-table.json"},
+ "play":[{"word":"research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/words/00000.json","letters":[0,1]}],
+ "emph":{"moved":"last"},
+ "digest":"ab254e2af1775b8161092aed06d35252e81e63fa427fd75dc2d7f9aeb5b1c7f9"}
+```
+
+`start` also accepts `{"record": ".../run", "step": 0, "when": "before"}` or
+`{"scramble": [10, 7001]}`. Reserved seeds are refused. `play` runs in order;
+`letters` selects a zero-based, end-exclusive range (omitting it plays the whole
+word). Inputs are confined to the repository, including nested program files.
+Literal inputs include JSON words (also gzip), ia16, census `history + moves`,
+chronological `LETTER` logs, records with `letters[].letter`, the short `word`
+arrays of chapter records in document order, and a script's single literal
+`word`/`WORD`/`WORD36` assignment. Scripts are parsed, never executed. Stored
+segment programs expand their word files, inverses and cores (`P Q P^-1`).
+The correction library concatenates its macro words in library order. A single-run
+retained-first lattice summary supplies its target-construction word `C^-1`, as
+the literal player's `target=True` branch does; its library hash is checked.
+The correction-before recipe plays macro 7 twice (an exact identity) to restore T
+with the same last-word emphasis as its after picture.
+
+Emphasis is `{"moved":"last"}` by default (empty without a `play` item),
+`{"pieces":[2,17]}`, `{"off":true}` or `{"pose_differs_from_solved":true}`.
+Set the figure's outer `emph` to `moved` to draw this exported set. A full state
+digest is required; mismatch produces no output. `tutorial.json` records the
+recipe and SHA-256 of every input in place of step provenance. Identical recipes
+are exported once, and verified word prefixes are shared within an invocation.
+For a standalone export, save the recipe as JSON and use
+`export_tutorial.py --state RECIPE.json --out DIRECTORY`.
+
+The list may also contain `"sheets": [{"id":"pair", "panels":["step0-before",
+"step0-after"], "labels":["Before","After"], "columns":2}]`. Sheets use the
+captured panel pixels, a white background and Pillow's fixed default font, with
+labels beneath each panel. The manifest records their panel hashes, composition
+settings and Pillow version. `--check` covers sheet pixels and provenance too.
+Every tutorial entry uses `cs: 0.5` and `ss: 0.62`.
+
+Run `python3 -I -B research/jumbling/viewer/check_recipes.py` for browser-free
+exports of every recipe into temporary directories. It prints each figure's full
+digest and emphasis count and exits 1 on any failure. It writes no tutorial PNGs
+or manifest; the integrator runs captures separately. Independent recipe families
+use at most four local worker processes; panels with a shared prefix stay together.
+
 ## What it shows
 
 The scene selector offers **Witness E2–E4** and **J1: S4 sequence**. Both have five exact states and four applied twists, plus a certified rejected attempt.

@@ -1,6 +1,7 @@
-"""Replay a runner-run/3 step and export a full-state tutorial picture.
+"""Replay a runner-run/3 step or a checked state recipe for a tutorial picture.
 
     python3 -I -B export_tutorial.py RUN --step 0 --when before --out DIRECTORY
+    python3 -I -B export_tutorial.py --state RECIPE.json --out DIRECTORY
 
 Inputs are read-only. All replay and integrity checks finish before output starts.
 Evidence: exact simulator replay and float drawing data, not native rendering.
@@ -8,10 +9,13 @@ Evidence: exact simulator replay and float drawing data, not native rendering.
 from __future__ import annotations
 
 import argparse
+import ast
+import gzip
 import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import sys
 
 sys.dont_write_bytecode = True
@@ -25,6 +29,246 @@ import check_run  # noqa: E402
 import wj  # noqa: E402
 
 FORMAT = 'magic600-tutorial-shot/1'
+CORRECTION_LIBRARY = 'research/jumbling/restoration/09-general-method/data/library-merged.json.gz'
+
+
+class ReplaySession:
+    """An invocation-local cache of verified boundaries, never an input artifact."""
+    def __init__(self):
+        self.records = {}
+        self.words = {}
+        self.starts = {}
+
+
+def repository_path(name, root=None):
+    root = ROOT if root is None else Path(root).resolve()
+    try:
+        return check_run.inside(root, name)
+    except ValueError as exc:
+        raise ValueError('expected a repository-relative path inside the repository') from exc
+
+
+def refuse_seed(seed):
+    if type(seed) is int and 9011 <= seed <= 9073:
+        raise ValueError('start seeds 9011..9073 are reserved and refused')
+
+
+def validate_recipe(recipe, root=None):
+    """Validate the complete recipe and its paths before any mechanics or writes."""
+    if (not isinstance(recipe, dict) or not {'start', 'digest'} <= set(recipe)
+            or not set(recipe) <= {'start', 'play', 'emph', 'digest'}):
+        raise ValueError('invalid state recipe fields')
+    if not isinstance(recipe['digest'], str) or not re.fullmatch('[0-9a-f]{64}', recipe['digest']):
+        raise ValueError('state digest must be a full lowercase sha256')
+    start = recipe['start']
+    if not isinstance(start, dict):
+        raise ValueError('invalid state start')
+    if set(start) == {'table'}:
+        repository_path(start['table'], root)
+    elif set(start) == {'record', 'step', 'when'}:
+        base = repository_path(start['record'], root)
+        repository_path(start['record'] + '/run.json', root)
+        if type(start['step']) is not int or start['step'] < 0 or start['when'] not in ('before', 'after'):
+            raise ValueError('invalid state start step or when')
+        run = check_run.read_json(base / 'run.json')
+        refuse_seed(run['start'].get('seed'))
+        repository_path(start['record'] + '/start-table.json', root)
+        for row in run.get('steps', [])[:start['step'] + 1]:
+            for name in (row.get('word'), row.get('table'), (row.get('tree') or {}).get('file')):
+                if name is not None:
+                    repository_path(start['record'] + '/' + name, root)
+        table = (run.get('phases', {}).get('bulk', {}).get('end') or {}).get('table')
+        if table is not None:
+            repository_path(start['record'] + '/' + table, root)
+    elif set(start) == {'scramble'}:
+        pair = start['scramble']
+        if (not isinstance(pair, list) or len(pair) != 2 or any(type(n) is not int for n in pair)
+                or pair[0] < 0):
+            raise ValueError('invalid state scramble [k, seed]')
+        refuse_seed(pair[1])
+    else:
+        raise ValueError('invalid state start fields')
+    if not isinstance(recipe.get('play', []), list):
+        raise ValueError('invalid state play list')
+    for item in recipe.get('play', []):
+        if (not isinstance(item, dict) or 'word' not in item
+                or not set(item) <= {'word', 'letters'}):
+            raise ValueError('invalid state play fields')
+        repository_path(item['word'], root)
+        if 'letters' in item:
+            span = item['letters']
+            if (not isinstance(span, list) or len(span) != 2 or any(type(n) is not int for n in span)
+                    or not 0 <= span[0] <= span[1]):
+                raise ValueError('invalid state letter range [from, to)')
+    emph = recipe.get('emph', {'moved': 'last'})
+    if not isinstance(emph, dict) or len(emph) != 1:
+        raise ValueError('invalid state emphasis')
+    if set(emph) == {'pieces'}:
+        if (not isinstance(emph['pieces'], list)
+                or any(type(p) is not int or p < 0 for p in emph['pieces'])):
+            raise ValueError('invalid state emphasis pieces')
+    elif not (emph == {'moved': 'last'} or
+              (set(emph) <= {'off', 'pose_differs_from_solved'} and next(iter(emph.values())) is True)):
+        raise ValueError('invalid state emphasis')
+
+
+def inverse_word(word):
+    menu = check_run.restore.menu('I_a')
+    R = check_run.restore
+    lookup = {R.to_tuple(m): i for i, (_, m) in enumerate(menu.items)}
+    inverses = [lookup[R.to_tuple(R.transpose(m))] for _, m in menu.items]
+    return [[c, inverses[j]] for c, j in reversed(word)]
+
+
+def correction_words(library):
+    """Translate the library's exact matrix records to the same I_a letters."""
+    R = check_run.restore
+    menu = R.menu('I_a')
+    lookup = {R.to_tuple(m): i for i, (_, m) in enumerate(menu.items)}
+    memo, words = {}, []
+    for macro in library['macros']:
+        word = []
+        for record in macro['records']:
+            twist = check_run.sim.Twist.from_record(R.ctx, record)
+            cap, matrix = twist.grip, R.to_tuple(twist.matrix)
+            if type(cap) is not int or not 0 <= cap < 600:
+                raise ValueError('invalid correction cap')
+            if (cap, matrix) not in memo:
+                frame = menu.frame(cap)
+                base = R.to_tuple(R.matmul(R.matmul(R.transpose(frame), twist.matrix), frame))
+                if base not in lookup:
+                    raise ValueError('correction matrix is outside I_a')
+                memo[cap, matrix] = lookup[base]
+            word.append([cap, memo[cap, matrix]])
+        if len(word) != macro['length']:
+            raise ValueError('correction macro length mismatch')
+        words.append(word)
+    return words
+
+
+def recipe_word(name, inputs, root=None, active=()):
+    """Read literal research words, including gzip and the stored segment programs.
+
+    A census tape is history followed by moves. A replay log's LETTER rows are
+    already chronological. Neither format invokes a search or executes source code.
+    """
+    path = repository_path(name, root)
+    if path in active:
+        raise ValueError('cyclic word program')
+    raw = path.read_bytes()
+    inputs[path] = sha(raw)
+    if path.name.endswith(('.ia16', '.ia16.gz')):
+        info = check_run.check_lattice.ia16_info(path)
+        word = check_run.check_lattice.read_ia16(path, info['sha256'])
+    elif path.suffix == '.py':
+        # These fixtures commit their literal word in a script rather than a JSON
+        # file. Read a single named constant; never import or execute that script.
+        try:
+            assignments = [node.value for node in ast.parse(raw).body if isinstance(node, ast.Assign)
+                           and any(isinstance(t, ast.Name) and t.id in ('word', 'WORD', 'WORD36')
+                                   for t in node.targets)]
+            if len(assignments) != 1:
+                raise ValueError('expected one literal word/WORD/WORD36 assignment')
+            word = ast.literal_eval(assignments[0])
+        except (SyntaxError, TypeError, ValueError, RecursionError) as exc:
+            raise ValueError('expected one literal word/WORD/WORD36 assignment') from exc
+    elif path.suffix == '.txt':
+        rows = [json.loads(line[7:], object_pairs_hook=check_run.no_duplicates)
+                for line in raw.decode('utf-8').splitlines() if line.startswith('LETTER ')]
+        if not rows or [r['n'] for r in rows] != list(range(1, len(rows) + 1)):
+            raise ValueError('expected a chronological LETTER replay tape')
+        word = [r['letter'] for r in rows]
+    else:
+        doc = check_run.read_json(path)
+        if isinstance(doc, dict):
+            refuse_seed(doc.get('seed'))
+        if isinstance(doc, list):
+            word = doc
+        elif 'word' in doc:
+            word = doc['word']
+        elif {'history', 'moves'} <= set(doc):
+            if doc.get('menu') != 'I_a':
+                raise ValueError('census word must use menu I_a')
+            word = doc['history'] + doc['moves']
+        elif 'letters' in doc and isinstance(doc['letters'], list):
+            word = [row['letter'] for row in doc['letters']]
+        elif doc.get('format') == 'I_a-lattice-correction-library-v1' and doc.get('menu') == 'I_a':
+            word = [letter for macro in correction_words(doc) for letter in macro]
+        elif {'runs', 'library', 'cascade_order'} <= set(doc):
+            # The committed lattice summary specifies T = solved . C^-1. Its
+            # literal target-construction word is exactly the player's target=True
+            # branch, without importing or executing the restoration program.
+            if len(doc['runs']) != 1 or doc['runs'][0].get('order') != 'retained-first':
+                raise ValueError('expected one retained-first correction target')
+            path = repository_path(CORRECTION_LIBRARY, root)
+            raw_library = path.read_bytes()
+            inputs[path] = sha(raw_library)
+            decoded = gzip.decompress(raw_library)
+            if doc['library']['sha256'] not in (sha(raw_library), sha(decoded)):
+                raise ValueError('correction library sha256 mismatch')
+            library = json.loads(decoded, object_pairs_hook=check_run.no_duplicates)
+            macros, correction = correction_words(library), []
+            for row in doc['runs'][0]['corrections']:
+                if (type(row['macro']) is not int or not 0 <= row['macro'] < len(macros)
+                        or type(row['times']) is not int or row['times'] < 1
+                        or type(row['inverse']) is not bool):
+                    raise ValueError('invalid correction target sequence')
+                part = macros[row['macro']]
+                correction.extend((inverse_word(part) if row['inverse'] else part) * row['times'])
+            if len(correction) != doc['runs'][0]['correction_twists']:
+                raise ValueError('correction target length mismatch')
+            word = inverse_word(correction)
+        elif str(doc.get('format', '')).startswith('tutorial-ch'):
+            # Chapter records preserve short literal words alongside their evidence.
+            # Concatenate only explicit word arrays, in document order; ranges pick
+            # a particular recorded word without inventing or running a search.
+            word = []
+
+            def collect(value):
+                if isinstance(value, dict):
+                    for key, child in value.items():
+                        if key == 'word' and isinstance(child, list):
+                            word.extend(child)
+                        else:
+                            collect(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        collect(child)
+
+            collect(doc)
+            if not word:
+                raise ValueError(f'{name}: no literal word')
+        elif set(doc) == {'P', 'Q'}:
+            # slp_apply.apply_segment's core is the conjugate P Q P^-1.
+            word = doc['P'] + doc['Q'] + inverse_word(doc['P'])
+        elif set(doc) == {'segments'} and isinstance(doc['segments'], list):
+            word = []
+            for segment in doc['segments']:
+                keys = set(segment) - {'inverse'}
+                if (len(keys) != 1 or not keys <= {'word_file', 'safe_word_file', 'core_file'}
+                        or ('inverse' in segment and type(segment['inverse']) is not bool)):
+                    raise ValueError('invalid literal word segment')
+                part = recipe_word(segment[next(iter(keys))], inputs, root, (*active, path))
+                word.extend(inverse_word(part) if segment.get('inverse') else part)
+        else:
+            raise ValueError(f'{name}: no literal word')
+    if (not isinstance(word, list) or any(not isinstance(letter, (list, tuple)) or len(letter) != 2
+            or any(type(n) is not int for n in letter) or not 0 <= letter[0] < 600
+            or not 0 <= letter[1] < 60 for letter in word)):
+        raise ValueError(f'{name}: invalid I_a word')
+    return word
+
+
+def prepare_recipe(recipe, root=None):
+    validate_recipe(recipe, root)
+    inputs, words = {}, []
+    for item in recipe.get('play', []):
+        word = recipe_word(item['word'], inputs, root)
+        first, end = item.get('letters', [0, len(word)])
+        if end > len(word):
+            raise ValueError('state letter range is outside the word')
+        words.append((word, first, end))
+    return inputs, words
 
 
 def sha(raw):
@@ -104,12 +348,8 @@ def checkpoint(base, record, target, menu):
     return None, 0, None
 
 
-def export(run, step, when, out):
-    base, out = Path(run).resolve(), Path(out).resolve()
-    if out.is_relative_to(base):
-        raise ValueError('--out must not be inside the record directory')
-    if out.exists() and (not out.is_dir() or any(out.iterdir())):
-        raise ValueError('--out exists and is not empty')
+def replay_record(run, step, when, session=None):
+    base = Path(run).resolve()
     if type(step) is not int or step < 0 or when not in ('before', 'after'):
         raise ValueError('invalid step or when')
     raw = (base / 'run.json').read_bytes()
@@ -142,6 +382,18 @@ def export(run, step, when, out):
     if later is not None:
         state = later
     used = []
+    inputs = {base / 'run.json': sha(raw), base / 'start-table.json': start_hash}
+    if source is not None:
+        inputs[check_run.inside(base, source['file'])] = source['sha256']
+    if session is not None:
+        # A cached boundary is usable only while every file that established it
+        # still has the same bytes. Never skip replay of the requested step itself.
+        for n in range(step, first - 1, -1):
+            cached = session.records.get((base, n))
+            if cached and all(p.is_file() and sha(p.read_bytes()) == h for p, h in cached[3].items()):
+                state, used, source, inputs = copy_state(cached[0]), list(cached[1]), cached[2], dict(cached[3])
+                first = n
+                break
     before = after = letters = None
     for i in range(first, step + 1):
         row = steps[i]
@@ -149,30 +401,26 @@ def export(run, step, when, out):
         word = read_word(base, row)
         word_path = check_run.inside(base, row['word'])
         used.append({'file': row['word'], 'sha256': sha(word_path.read_bytes())})
+        inputs[word_path] = used[-1]['sha256']
+        if row['encoding'] == 'ia16':
+            path = check_run.inside(base, row['tree']['file'])
+            inputs[path] = sha(path.read_bytes())
         if i == step:
             before, letters = copy_state(state), word
         play(state, row, word, base)
         check_boundary(state, row['after'], f'step {i} after')
+        if session is not None:
+            session.records[base, i + 1] = (copy_state(state), list(used), source, dict(inputs))
     after = state
     moving = moved_ids(before, after)
     state = before if when == 'before' else after
     row = steps[step]
-    arrays = wj.arrays(state)
-    header = {
-        'format': wj.RENDER_FORMAT, 'dimension': wj.DIMENSION, 'pieces': len(state.pose_id),
-        'poses': len(state._poses), 'revision': sum(s['letters'] for s in steps[:step + (when == 'after')]),
-        'digest': state.digest(), 'model_identity': state.ctx.data.identity, 'menu_identity': menu.identity,
-        'contract_revision': check_run.sim.model.CONTRACT_REVISION,
-        'convention': "x' = M x; M row-major float32; pose 0 is the identity",
-        'files': {name: {'sha256': wj.sha(a), 'shape': list(a.shape), 'dtype': a.dtype.str}
-                  for name, a in arrays.items()},
-    }
     tutorial = {
         'format': FORMAT, 'record': Path(os.path.relpath(base / 'run.json', ROOT)).as_posix(),
         'run_sha256': sha(raw), 'start_table_sha256': start_hash, 'words': used,
         'step': step, 'when': when, 'phase': row['phase'], 'subphase': row['subphase'], 'rule': row['rule'],
         'letter_count': len(letters), 'caps': list(dict.fromkeys(c for c, _ in letters)),
-        'off_lattice': state.off_lattice_count(), 'digest': header['digest'],
+        'off_lattice': state.off_lattice_count(), 'digest': state.digest(),
         'moved': {'file': 'moved.i32', 'count': len(moving), 'sha256': wj.sha(moving)},
     }
     if len(letters) <= 64:
@@ -181,6 +429,24 @@ def export(run, step, when, out):
         tutorial['letters_sha256'] = sha(json.dumps(letters).encode('utf-8'))
     if source is not None:
         tutorial['checkpoint'] = source
+    revision = sum(s['letters'] for s in steps[:step + (when == 'after')])
+    return state, moving, revision, tutorial
+
+
+def write_render(state, moving, revision, tutorial, out):
+    out = Path(out).resolve()
+    if out.exists() and (not out.is_dir() or any(out.iterdir())):
+        raise ValueError('--out exists and is not empty')
+    arrays = wj.arrays(state)
+    header = {
+        'format': wj.RENDER_FORMAT, 'dimension': wj.DIMENSION, 'pieces': len(state.pose_id),
+        'poses': len(state._poses), 'revision': revision,
+        'digest': state.digest(), 'model_identity': state.ctx.data.identity, 'menu_identity': state.menu.identity,
+        'contract_revision': check_run.sim.model.CONTRACT_REVISION,
+        'convention': "x' = M x; M row-major float32; pose 0 is the identity",
+        'files': {name: {'sha256': wj.sha(a), 'shape': list(a.shape), 'dtype': a.dtype.str}
+                  for name, a in arrays.items()},
+    }
     payloads = {name: np.ascontiguousarray(array).tobytes() for name, array in arrays.items()}
     payloads['moved.i32'] = moving.tobytes()
     for name, doc in (('header.json', header), ('tutorial.json', tutorial)):
@@ -193,19 +459,112 @@ def export(run, step, when, out):
     return header, tutorial
 
 
+def export(run, step, when, out):
+    base, out = Path(run).resolve(), Path(out).resolve()
+    if out.is_relative_to(base):
+        raise ValueError('--out must not be inside the record directory')
+    if out.exists() and (not out.is_dir() or any(out.iterdir())):
+        raise ValueError('--out exists and is not empty')
+    state, moving, revision, tutorial = replay_record(base, step, when)
+    return write_render(state, moving, revision, tutorial, out)
+
+
+def recipe_state(recipe, session=None):
+    inputs, words = prepare_recipe(recipe)
+    session = ReplaySession() if session is None else session
+    menu = check_run.restore.menu('I_a')
+    start, revision, caps = recipe['start'], 0, []
+    if 'table' in start:
+        path = repository_path(start['table'])
+        inputs[path] = sha(path.read_bytes())
+        key = ('table', inputs[path])
+        if key not in session.starts:
+            session.starts[key] = check_run.load_table(path, menu)
+        state = copy_state(session.starts[key])
+    elif 'scramble' in start:
+        key = ('scramble', *start['scramble'])
+        if key not in session.starts:
+            session.starts[key], _ = check_run.restore.scramble(menu, *start['scramble'])
+        state = copy_state(session.starts[key])
+        revision = start['scramble'][0]
+    else:
+        base = repository_path(start['record'])
+        state, _, revision, original = replay_record(base, start['step'], start['when'], session)
+        caps = original['caps']
+        # replay_record retains exactly the inputs used to establish this boundary,
+        # including the after boundary required for a before picture.
+        inputs.update(session.records[base, start['step'] + 1][3])
+        if any(not p.is_relative_to(ROOT) for p in inputs):
+            raise ValueError('record input is outside the repository')
+    moving = np.empty(0, dtype='<i4')
+    played = 0
+    for word, first, end in words:
+        before = copy_state(state)
+        # Each input was re-read above. Identical incoming exact state and literal
+        # letters establish the same boundary, including when metadata changed.
+        key = (state.digest(), sha(json.dumps(word, separators=(',', ':')).encode()), first)
+        boundaries = session.words.setdefault(key, {})
+        skip = max((n for n in boundaries if first <= n <= end), default=first)
+        if skip in boundaries:
+            state = copy_state(boundaries[skip])
+        play(state, {'phase': 'recipe', 'encoding': 'json', 'index': 'recipe'}, word[skip:end], ROOT)
+        boundaries[end] = copy_state(state)
+        moving = moved_ids(before, state)
+        caps = list(dict.fromkeys(c for c, _ in word[first:end]))
+        played += end - first
+    if state.digest() != recipe['digest']:
+        raise ValueError(f'state digest mismatch: expected {recipe["digest"]}, got {state.digest()}')
+    emph = recipe.get('emph', {'moved': 'last'})
+    if 'pieces' in emph:
+        if any(p >= len(state.pose_id) for p in emph['pieces']):
+            raise ValueError('state emphasis piece is outside the model')
+        moving = np.array(sorted(set(emph['pieces'])), dtype='<i4')
+    elif 'off' in emph:
+        moving = np.flatnonzero(np.array([p.kidx < 0 for p in state._poses])[state.pose_id]).astype('<i4')
+    elif 'pose_differs_from_solved' in emph:
+        moving = np.flatnonzero(np.array([p.key != ('K', 0) for p in state._poses])[state.pose_id]).astype('<i4')
+    tutorial = {
+        'format': FORMAT, 'state': recipe,
+        'inputs': [{'file': p.relative_to(ROOT).as_posix(), 'sha256': h} for p, h in sorted(inputs.items())],
+        'letter_count': played, 'caps': caps, 'off_lattice': state.off_lattice_count(), 'digest': state.digest(),
+        'moved': {'file': 'moved.i32', 'count': len(moving), 'sha256': wj.sha(moving)},
+    }
+    return state, moving, revision + played, tutorial
+
+
+def export_recipe(recipe, out, session=None):
+    out = Path(out).resolve()
+    validate_recipe(recipe)
+    start = recipe['start']
+    if 'record' in start and out.is_relative_to(repository_path(start['record'])):
+        raise ValueError('--out must not be inside the record directory')
+    if out.exists() and (not out.is_dir() or any(out.iterdir())):
+        raise ValueError('--out exists and is not empty')
+    state, moving, revision, tutorial = recipe_state(recipe, session)
+    return write_render(state, moving, revision, tutorial, out)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('run', type=Path)
-    parser.add_argument('--step', type=int, required=True)
-    parser.add_argument('--when', choices=('before', 'after'), required=True)
+    parser.add_argument('run', type=Path, nargs='?')
+    parser.add_argument('--state', type=Path, help='JSON state recipe, instead of RUN/--step/--when')
+    parser.add_argument('--step', type=int)
+    parser.add_argument('--when', choices=('before', 'after'))
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        header, tutorial = export(args.run, args.step, args.when, args.out)
+        if args.state is not None:
+            if args.run is not None or args.step is not None or args.when is not None:
+                raise ValueError('--state cannot be combined with RUN/--step/--when')
+            header, tutorial = export_recipe(check_run.read_json(args.state), args.out)
+        else:
+            if args.run is None or args.step is None or args.when is None:
+                raise ValueError('give --state or RUN/--step/--when')
+            header, tutorial = export(args.run, args.step, args.when, args.out)
     except (OSError, ValueError, KeyError, TypeError, AssertionError, EOFError) as exc:
         print(f'tutorial export: FAIL ({exc})', file=sys.stderr)
         return 1
-    print(f'step {args.step} {args.when}: {header["digest"]}, '
+    print(f'{"state" if args.state else f"step {args.step} {args.when}"}: {header["digest"]}, '
           f'{tutorial["off_lattice"]} off lattice, {tutorial["moved"]["count"]} moved')
     return 0
 

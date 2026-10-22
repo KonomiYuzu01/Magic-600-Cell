@@ -101,13 +101,21 @@ class DiagramsTests(unittest.TestCase):
                             self.assertTrue(value.startswith("#"))
                 metadata = json.loads(root.find("s:metadata", NS).text)
                 self.assertEqual(metadata["figure"], name)
-                self.assertEqual(metadata["inputs"], self.manifest["figures"][name]["inputs"])
+                production = dict(self.manifest["figures"][name]["inputs"])
+                production[D.F + "/diagrams.py"] = self.manifest["figures"][name]["production_renderer_sha256"]
+                self.assertEqual(metadata["inputs"], production)
                 self.assertIn("diagrams.py --only " + name, metadata["command"])
 
     def test_two_full_runs_are_byte_identical(self):
         first = {p.name: p.read_bytes() for p in self.first.iterdir()}
         second = {p.name: p.read_bytes() for p in self.second.iterdir()}
         self.assertEqual(first, second)
+
+    def test_every_unaffected_svg_stays_byte_identical(self):
+        for name in self.names - D.UPDATED_FIGURES:
+            with self.subTest(figure=name):
+                self.assertEqual((self.first / (name + ".svg")).read_bytes(),
+                                 (HERE / "svg" / (name + ".svg")).read_bytes())
 
     def test_manifest_hashes_and_relative_paths(self):
         self.assertEqual(self.manifest["format"], "magic600-tutorial-diagrams/1")
@@ -260,6 +268,12 @@ class DiagramsTests(unittest.TestCase):
         self.assertIn("0 · N: " + D.count(census["steps"][0]["N_before"]), observations)
         for i, row in enumerate(census["steps"], 1):
             self.assertIn(str(i) + " · N: " + D.count(row["N_after"]), observations)
+        ticks = [n for n in root.findall("s:text", NS)
+                 if n.get("text-anchor") == "middle" and re.fullmatch(r"\d+", n.text or "")]
+        # Point-value annotations sit above the plot; axis ticks share its last y.
+        axis_y = max(float(n.get("y")) for n in ticks)
+        labels = [int(n.text) for n in ticks if float(n.get("y")) == axis_y]
+        self.assertEqual(labels, list(range(0, len(census["steps"]) + 1, 10)) + [len(census["steps"])])
 
     def test_e2_chart_follows_all_successful_committed_steps(self):
         rows = []
@@ -282,15 +296,70 @@ class DiagramsTests(unittest.TestCase):
             self.assertAlmostEqual(float(rectangle.get("width")), node["letters"] / tree["letters"] * 1120, delta=.001)
             self.assertAlmostEqual(float(rectangle.get("x")), 40 + node["span"][0] / tree["letters"] * 1120, delta=.001)
 
-    def test_evidence_gaps_are_visible_and_in_the_manifest(self):
-        gaps = {
-            "03-counts-7302": "u is a gap",
-            "03-r22d75-prediction-cap64": "do not give F_h",
-            "ch04-six-stops-caps": "aggregate prune counts only",
-            "05-tree-b07-certificate": "certificate's contents are not committed",
-            "bulk-conj-7101-s30": "after z is not recorded",
-            "ch06-twisted-cycle": "complete support of each part",
-        }
+    def test_computed_figures_replace_the_old_missing_observations(self):
+        computed = load(D.F + "/figdata.json")["figures"]
+        for name in computed:
+            with self.subTest(figure=name):
+                self.assertIn(D.F + "/figdata.json", self.manifest["figures"][name]["inputs"])
+                self.assertNotIn("not recorded", " ".join(self.svg(name).itertext()))
+                self.assertFalse(self.manifest["figures"][name]["notes"])
+        bulk = computed["bulk-conj-7101-s30"]["states"]
+        self.assertEqual([p["N_c"]["91"] for p in bulk], [1360, 1154, 1154, 412])
+        self.assertEqual([p["N_c"]["268"] for p in bulk[:3]], [1062, 1268, 412])
+        visible = " ".join(self.svg("bulk-conj-7101-s30").itertext())
+        self.assertIn(D.count(bulk[-1]["N_c"]["268"]), visible)
+        prediction = computed["03-r22d75-prediction-cap64"]
+        f, r = prediction["F_h"], prediction["r_h"]
+        self.assertEqual([f["4"] - r["6"], f["2"] + r["6"] - f["4"] - r["4"],
+                          prediction["L0"] + r["4"] - f["2"] - r["2"]], [-13, 13, 621])
+        self.assertIn(D.count(prediction["L0"]), " ".join(self.svg("03-r22d75-prediction-cap64").itertext()))
+
+    def test_height_plot_draws_the_computed_u_at_every_defined_target(self):
+        points = load(D.F + "/figdata.json")["figures"]["03-counts-7302"]["points"]
+        e = D.Evidence("03-counts-7302")
+        recorded, _ = D.height_examples(e)
+        titles = [n.text for n in self.svg("03-counts-7302").findall(".//s:title", NS)]
+        for point, before in zip(points, recorded):
+            self.assertEqual(point["H"], 6 if before["counts"][0] else 4 if before["counts"][1] else None)
+            if point["u"] is None:
+                self.assertIsNone(point["tau"])
+                self.assertEqual(point["reason"], "no target")
+            else:
+                self.assertIn(str(point["index"]) + " · u: " + D.count(point["u"]), titles)
+
+    def test_prune_matrix_preserves_every_unit_cap_assignment(self):
+        data = load(D.F + "/figdata.json")["figures"]["ch04-six-stops-caps"]
+        cells = self.svg("ch04-six-stops-caps").findall("s:rect[@data-unit]", NS)
+        rows = [[] for _ in data["units"]]
+        for cell in cells:
+            row = rows[int(cell.get("data-unit"))]
+            start, end = int(cell.get("data-cap-start")), int(cell.get("data-cap-end"))
+            self.assertEqual(start, len(row))
+            reason = cell.get("data-reason")
+            row.extend([None if reason == "none" else reason] * (end - start))
+            self.assertNotEqual(cell.get("fill"), D.PALETTE["grey"])
+        self.assertEqual(rows, [u["reasons"] for u in data["units"]])
+        self.assertEqual(len(rows), 83)
+        self.assertTrue(all(len(row) == 600 for row in rows))
+
+    def test_twisted_cycle_shows_exact_support_and_collateral_counts(self):
+        data = load(D.F + "/figdata.json")["figures"]["ch06-twisted-cycle"]
+        self.assertEqual([len(p["word"]) for p in data["parts"]], [7, 3, 28, 3, 7])
+        self.assertEqual([t["positions"][0] for t in data["tracked"]], [4944, 97924, 98021])
+        self.assertEqual([t["positions"][-1] for t in data["tracked"]], [97924, 98021, 4944])
+        visible = " ".join(self.svg("ch06-twisted-cycle").itertext())
+        for part in data["parts"]:
+            self.assertEqual(part["count"], len(part["pieces"]))
+            self.assertTrue(any(before == after for _, before, after in part["pieces"]),
+                            "exact support must include frame changes at fixed positions")
+            self.assertIn(D.count(part["count"]), visible)
+        self.assertEqual(data["whole_count"], len(data["whole"]))
+        self.assertEqual(data["collateral_count"], len(data["collateral"]))
+        self.assertEqual(data["whole_count"], data["collateral_count"] + 3)
+        self.assertIn(D.count(data["collateral_count"]), visible)
+
+    def test_out_of_scope_certificate_gap_is_preserved(self):
+        gaps = {"05-tree-b07-certificate": "certificate's contents are not committed"}
         for name, phrase in gaps.items():
             notes = self.manifest["figures"][name]["notes"]
             self.assertIn(phrase, " ".join(notes))

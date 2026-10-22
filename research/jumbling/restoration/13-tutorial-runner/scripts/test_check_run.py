@@ -1281,6 +1281,51 @@ class CheckRunTests(unittest.TestCase):
                 doc[path[-1]] = value
                 self.check(base, rec, failure)
 
+    def test_v3_code_fingerprint(self):
+        base, original = self.v3_case()
+        rec = copy.deepcopy(original)
+        rec['config']['code'] = {'sha256': 'a' * 64, 'files': 2}
+        self.check(base, rec)
+        for code in (None, {}, {'sha256': 'x' * 64, 'files': 2}, {'sha256': 'a' * 64, 'files': 0},
+                     {'sha256': 'a' * 64, 'files': True}, {'sha256': 'a' * 64, 'files': 2, 'extra': 1}):
+            with self.subTest(code=code):
+                rec['config']['code'] = code
+                self.check(base, rec, 'config_code')
+
+    def test_v3_resumes(self):
+        base, original = self.v3_case()
+        source = {'commit': None, 'status_sha256': None, 'dirty': None}
+        original['resumes'] = [{'at_step': 0, 'seconds': 0.0, 'source': source},
+                               {'at_step': len(original['steps']), 'seconds': 1.0, 'source': source}]
+        self.check(base, original)
+        for rows in (None, {}, [None], [{'at_step': True, 'seconds': 0, 'source': source}],
+                     [{'at_step': -1, 'seconds': 0, 'source': source}],
+                     [{'at_step': len(original['steps']) + 1, 'seconds': 0, 'source': source}]):
+            # Non-finite numbers are written by the mutation helper deliberately.
+            with self.subTest(rows=rows):
+                rec = copy.deepcopy(original)
+                rec['resumes'] = rows
+                self.check(base, rec, 'resumes')
+        mutations = [dict(at_step=0, seconds=s, source=source) for s in (-1, True, float('nan'), float('inf'))]
+        mutations += [dict(at_step=0, seconds=0, source=s) for s in (None, {}, {'dirty': 'yes'})]
+        mutations += [dict(at_step=0, seconds=0, source=source, extra=1), dict(at_step=0, seconds=0)]
+        for row in mutations:
+            with self.subTest(row=row):
+                rec = copy.deepcopy(original)
+                rec['resumes'] = [row]
+                self.check(base, rec, 'resumes')
+        for rows in ([{'at_step': 1, 'seconds': 0, 'source': source},
+                      {'at_step': 0, 'seconds': 1, 'source': source}],
+                     [{'at_step': 0, 'seconds': 2, 'source': source},
+                      {'at_step': 0, 'seconds': 1, 'source': source}]):
+            rec = copy.deepcopy(original)
+            rec['resumes'] = rows
+            self.check(base, rec, 'resumes')
+        for version in ('runner-run/1', 'runner-run/2'):
+            fails = []
+            C.check_resumes({'format': version, 'steps': [], 'resumes': []}, fails)
+            self.assertEqual(fails, ['resumes'])
+
     def test_v3_bulk_order(self):
         """No reopen in format 3: it reads the solver's earlier twists, not the state (plan D2)."""
         base, original = self.v3_case()

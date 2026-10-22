@@ -39,6 +39,8 @@ class MakeFigures(unittest.TestCase):
         self.entries = [{'id': 'step0-before', 'record': 'records/example/run', 'step': 0,
                          'when': 'before', 'view': 'local', 'proj': 'stereo', 'emph': 'moved'}]
         self.changed_png = set()
+        self.sheets = []
+        self.real_png = False
         patcher = mock.patch.object(batch, 'ROOT', self.repository)
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -48,7 +50,7 @@ class MakeFigures(unittest.TestCase):
             self.addCleanup(patcher.stop)
 
     def write_list(self):
-        batch.write_json(self.list, {'format': batch.LIST_FORMAT, 'figures': self.entries})
+        batch.write_json(self.list, {'format': batch.LIST_FORMAT, 'figures': self.entries, 'sheets': self.sheets})
 
     def export_stub(self, record, step, when, out):
         self.assertFalse(out.exists(), 'each export needs a fresh directory')
@@ -74,6 +76,12 @@ class MakeFigures(unittest.TestCase):
             parameters = {key: resolved[key] for key in batch.PARAMETERS}
             # Deliberately synthetic bytes, sufficient for hashing and file handling.
             picture = json.dumps([parameters, tutorial['digest'], shot['name'] in self.changed_png]).encode()
+            if self.real_png:
+                from PIL import Image
+                buffer = io.BytesIO()
+                color = 'blue' if shot['name'] in self.changed_png else 'red'
+                Image.new('RGB', (48, 32), color).save(buffer, format='PNG')
+                picture = buffer.getvalue()
             (out / f'{shot["name"]}.png').write_bytes(picture)
             results.append({**resolved, 'header_digest': tutorial['digest'],
                             'tutorial_sha256': sha(raw), 'png_sha256': sha(picture)})
@@ -163,6 +171,132 @@ class MakeFigures(unittest.TestCase):
         # Both exports and capture outputs are removed after they have been copied.
         self.assertFalse(self.export_state.call_args.args[3].exists())
         self.assertFalse(self.capture.call_args.args[2].exists())
+
+    def test_recipe_passthrough_deduplication_and_manifest(self):
+        recipe = {'start': {'scramble': [0, 7001]}, 'digest': 'a' * 64, 'emph': {'off': True}}
+        self.entries = [{key: value for key, value in self.entries[0].items()
+                         if key not in ('record', 'step', 'when')} | {'state': recipe}]
+        self.entries.append(dict(self.entries[0], id='second-view', view='global',
+                                 state=dict(reversed(list(recipe.items())))))
+        module = batch.recipe_exporter()
+
+        def export(recipe, out, session):
+            out.mkdir(parents=True)
+            batch.write_json(out / 'tutorial.json', {'format': 'magic600-tutorial-shot/1', 'state': recipe,
+                'inputs': [], 'digest': recipe['digest'], 'caps': [0], 'moved': {'count': 0}})
+
+        with mock.patch.object(module, 'export_recipe', side_effect=export) as exporter:
+            result, output = self.invoke()
+            self.assertEqual(result, 0, output)
+            exporter.assert_called_once()
+            self.assertEqual(exporter.call_args.args[0], recipe)
+        self.export_state.assert_not_called()
+        rows = batch.read_json(self.out / 'manifest.json')['figures']
+        self.assertEqual([row['tutorial']['state'] for row in rows], [recipe, recipe])
+
+    def sheet_setup(self):
+        self.real_png = True
+        self.entries.append(dict(self.entries[0], id='step0-after', when='after'))
+        self.sheets = [{'id': 'pair', 'panels': ['step0-before', 'step0-after'],
+                        'labels': ['Before', 'After'], 'columns': 2}]
+
+    def test_sheet_composition_is_deterministic_and_hashes_panels(self):
+        from PIL import Image
+        self.sheet_setup()
+        self.assertEqual(self.invoke()[0], 0)
+        manifest = batch.read_json(self.out / 'manifest.json')
+        row = manifest['sheets'][0]
+        self.assertEqual(row['entry'], self.sheets[0])
+        for panel in row['panels']:
+            self.assertEqual(panel['png_sha256'], sha((self.out / f'png/{panel["id"]}.png').read_bytes()))
+        path = self.out / row['png']
+        original = path.read_bytes()
+        with Image.open(path) as im:
+            self.assertEqual(im.mode, 'RGB')
+            self.assertEqual(im.getpixel((0, 0)), (255, 255, 255))
+            self.assertEqual(im.getpixel((12, 12)), (255, 0, 0))
+            self.assertGreater(im.height, 32 + 24)
+        self.assertEqual(self.invoke()[0], 0)
+        self.assertEqual(path.read_bytes(), original)
+        self.assertEqual(self.invoke('--check')[0], 0)
+
+    def test_check_sheets_detects_bytes_labels_layout_panels_and_missing_sheet(self):
+        self.sheet_setup()
+        self.assertEqual(self.invoke()[0], 0)
+        path = self.out / 'png/pair.png'
+        original = path.read_bytes()
+        self.changed_png.add('step0-after')
+        result, output = self.invoke('--check')
+        self.assertEqual(result, 1, output)
+        self.assertIn('pair', output)
+        self.assertEqual(path.read_bytes(), original)
+        self.changed_png.clear()
+        baseline = batch.read_json(self.out / 'manifest.json')
+        baseline['sheets'][0]['panels'][0]['png_sha256'] = '0' * 64
+        batch.write_json(self.out / 'manifest.json', baseline)
+        self.assertEqual(self.invoke('--check')[0], 1)
+        self.assertEqual(self.invoke()[0], 0)
+        self.sheets[0]['labels'][0] = 'Changed'
+        self.assertEqual(self.invoke('--check')[0], 1)
+        self.sheets[0]['labels'][0] = 'Before'
+        self.sheets[0]['columns'] = 1
+        self.assertEqual(self.invoke('--check')[0], 1)
+        self.sheets[0]['columns'] = 2
+        path.write_bytes(b'damaged sheet')
+        self.assertEqual(self.invoke('--check')[0], 1)
+        self.assertEqual(path.read_bytes(), b'damaged sheet')
+        path.unlink()
+        self.assertEqual(self.invoke('--check')[0], 1)
+        self.assertFalse(path.exists())
+        self.sheets = []
+        self.assertEqual(self.invoke('--check')[0], 1)
+
+    def test_sheet_validation_precedes_exports(self):
+        good = {'id': 'pair', 'panels': ['step0-before'], 'labels': ['Before'], 'columns': 1}
+        for bad in ({**good, 'unknown': 1}, {**good, 'id': 'step0-before'},
+                    {**good, 'panels': ['missing']}, {**good, 'panels': []},
+                    {**good, 'labels': []}, {**good, 'labels': [1]},
+                    {**good, 'columns': True}, {**good, 'columns': 0}, {**good, 'columns': 2}):
+            with self.subTest(sheet=bad):
+                self.sheets = [bad]
+                self.assert_refused('sheet')
+
+    def test_bad_panel_png_does_not_publish_or_prune(self):
+        self.sheet_setup()
+        self.assertEqual(self.invoke()[0], 0)
+        extra = self.out / 'png/unlisted.png'
+        extra.write_bytes(b'keep')
+        original = {p.relative_to(self.out): p.read_bytes() for p in self.out.rglob('*') if p.is_file()}
+        self.real_png = False
+        result, output = self.invoke('--prune')
+        self.assertEqual(result, 1, output)
+        self.assertEqual(original,
+                         {p.relative_to(self.out): p.read_bytes() for p in self.out.rglob('*') if p.is_file()})
+
+    def test_recipe_reserved_seed_is_refused_before_other_exports(self):
+        self.entries.append({'id': 'reserved', 'state': {'start': {'scramble': [0, 9050]}, 'digest': 'a' * 64},
+                             'view': 'global', 'proj': 'persp', 'emph': 'moved'})
+        self.assert_refused('reserved and refused')
+
+    def test_recipe_checker_uses_temporary_exports_and_reports_each_failure(self):
+        recipe = {'start': {'table': RUN + '/start-table.json'},
+                  'play': [{'word': RUN + '/words/00000.json'}],
+                  'digest': 'ab254e2af1775b8161092aed06d35252e81e63fa427fd75dc2d7f9aeb5b1c7f9'}
+        entry = {'id': 'good', 'state': recipe, 'view': 'local', 'proj': 'stereo', 'emph': 'moved', 'cap': 72}
+        command = [sys.executable, '-I', '-B', str(HERE / 'check_recipes.py'), '--list', str(self.list)]
+        solved = dict(entry, id='solved', state={'start': {'scramble': [0, 7001]}, 'digest': sha(b'')})
+        batch.write_json(self.list, {'format': batch.LIST_FORMAT,
+                                    'figures': [entry, dict(entry, id='same'), solved]})
+        result = subprocess.run(command, capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(result.stdout.splitlines()), 3)
+        self.assertIn('good: ' + recipe['digest'] + ' emphasis=3097', result.stdout)
+        bad = dict(entry, id='bad', state={**recipe, 'digest': '0' * 64})
+        batch.write_json(self.list, {'format': batch.LIST_FORMAT, 'figures': [entry, bad]})
+        result = subprocess.run(command, capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('bad: FAIL (state digest mismatch', result.stdout)
+        self.assertFalse(self.out.exists())
 
     def test_distinct_records_and_steps_are_not_deduplicated(self):
         other = self.repository / 'records/other/run'
