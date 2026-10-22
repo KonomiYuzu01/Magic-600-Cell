@@ -22,7 +22,7 @@ The recipe needs a .NET SDK with the net8.0 targeting pack and runtime already
 installed. Node is optional: tests that call the original Taste Lab JavaScript
 report a skip when it is absent. All other tests always run.
 
-The test runner has 66 named tests, including 28 Python harness cases. It
+The test runner has 88 named tests, including 49 Python harness cases. It
 prints a line for each named test and a summary, and exits nonzero on failure.
 It reads the repository and committed fixtures only, and creates its own
 temporary folders with mkdir under the system temporary directory. It opens
@@ -229,7 +229,7 @@ The colour-vision preview and grid overlay belong to app state.
 | `turnMs` | Motion / number | 150..900; step 1 | Duration in milliseconds of each generator or inverse turn. |
 | `easeA` | Motion / number | 0..1; step 0.01 | First easing control x at (a,0). |
 | `easeB` | Motion / number | 0..1; step 0.01 | Second easing control x at (1-b,1). |
-| `projection` | Structure / enum | perspective, stereographic, orthographic | 4D projection kind; stereographic fixes d4 to one. |
+| `projection` | Structure / enum | perspective, stereographic, orthographic, hemispheres, hopfRings, ringSheet | 4D projection or Global layout; stereographic fixes d4 to one, and the three layouts place each cell in a chart. |
 | `d4` | Structure / number | 1.01..4; step 0.01 | 4D perspective eye parameter used before the 3D camera. |
 | `stickerShrink` | Structure / number | 0..1; step 0.01 | S-B ss: sticker shrink around each sticker centre. |
 | `highlight` | Structure / enum | none, fibration, orbit | Structure highlighting mode. |
@@ -699,8 +699,8 @@ modes, plus five background checks), cost (ten null entries and one synthetic
 measured entry with its source and a live setting/status update), and palette
 (caller thresholds and live structured gamut failures). Disabling the CVD
 transform or the meter's null-text branch must fail its own check. The managed
-runner has 73 named tests. The consolidated LL6 harness retains the LL2 and LL5
-isolation and fault cases and checks the updated combined schedules; it has 39 tests.
+runner has 88 named tests. The consolidated LL7 harness retains the LL2, LL5 and LL6
+isolation and fault cases and checks the updated combined schedules; it has 49 tests.
 
 The graphics lane adds a readback of the same 52 known linear colours through
 the actual drawing fragment body into RGBA32F; a wrong uploaded matrix must
@@ -762,3 +762,110 @@ non-neutral frame (300 samples), checked at the existing `1e-4 + 1e-4*abs(expect
 tolerance. Removing the production framing statement at shader load must make
 the non-neutral case fail. The integrator runs this lane; headless checks provide
 no rendered, window-input or performance evidence.
+
+## Global layouts and the G1 catalogue (LL7)
+
+The editor's `projection` parameter switches among six structure modes. The
+catalogue in `presets/g1-*.json` supplies one preset for each, plus a
+stereographic variant with the polar cap hidden:
+
+| Mode | Preset | Name |
+| --- | --- | --- |
+| perspective | `g1-perspective.json` | G1 perspective |
+| stereographic | `g1-stereographic.json` | G1 stereographic |
+| orthographic | `g1-orthographic.json` | G1 orthographic |
+| hemispheres | `g1-hemispheres.json` | G1 two hemispheres |
+| hopfRings | `g1-hopf-rings.json` | G1 Hopf rings |
+| ringSheet | `g1-ring-sheet.json` | G1 ring sheet |
+| stereographic | `g1-stereographic-cap.json` | G1 stereographic, polar cap hidden |
+
+These use the default look; the orthographic preset sets `fieldOfView` to
+0.5935577461607933 radians to fit the view. The other six keep the default
+1.4314871793377604 radians. Compare mode lists these presets, so up to four
+modes can be placed side by side.
+
+At the starting orientation the plain stereographic preset puts the fixed
+camera inside the 20 cells around the projection pole: their stickers reach
+w > 1, past the projection's singularity at w = 1, so the view shows one cell
+from inside. The cap variant turns on the w band and hides w above 0.5, the
+60-degree cap around the pole: 70 cells whole and 60 in part. The band's lower
+bound stays at -1, the lowest value the schema allows, so it also trims the 20
+cells around the opposite pole, whose stickers reach just below w = -1. At rest
+with identity Q, every corner of a drawn triangle is inside the frame and at
+least 2 units in front of the camera, and the drawn part, including the points
+where the band cuts a triangle, stays in the middle half of the frame. The band
+is fixed in the model frame, so a drag turns the hidden cap away from the
+projection pole and the camera can end up inside drawn cells again. The variant
+is meant for the starting orientation only.
+
+The three Global layouts place cells using charts of their 4D points. Hopf
+rings uses the chosen right Hopf cover: each ring is a circle of 30 cells on
+the tangent circle of its base point, with ring 0 facing the viewer. Hopf rings
+and the ring sheet use affine charts. In the ring sheet, rows are the Hopf rings
+in path order, cut open at half-step 0; each cell's face neighbours in the rows
+above and below sit one half-step to its left or right, a few of them across
+the cut. Two hemispheres puts each cell in the ball of its centre's side under
+Q, mirrors the north ball and clamps the projection denominator at 0.25.
+This hemisphere chart applies its clamped division after the 4D rotation.
+
+A moving sticker is drawn between its own chart and its target cell's chart,
+with blend weight `clamp(abs(theta / Angle), 0, 1)`. At `|theta| = Angle` it
+reaches its destination slot's rest placement up to the retained-input residual;
+the core test maximum is 9.3e-8 at gap 0.24 before the chart scale. This is an
+approximate handoff, with the chart's scale or denominator affecting the error.
+
+Every drag turns both Q and Spin, including inertia. The projections and
+hemispheres show Q, Hopf rings shows Spin, and the ring sheet shows neither
+and stays facing the viewer. Compare panes and linked Global/Local views copy
+both rotations. Local framing uses the same placement and Spin as the drawing;
+Global keeps its neutral frame.
+
+For Hopf rings and the ring sheet, each Hopf ring has one colour: an equitable
+proper colouring of the Hopf ring graph with `classes` colours (4 to 8). The
+other modes keep the Look Lab ring colouring. The palette panel reports the
+colouring that is drawn, including after projection edits, class edits and
+preset loads. The deterministic `fixtures/hopf-rings.json` records the chosen
+cover and its 3-regular graph. The retained `rings.json` mixes ten rings from
+that right cover with ten from a left cover and has a 7-regular graph. See
+`fixtures/PROVENANCE.md` for the inputs, generator and comparison.
+
+```text
+python tools/looklab/check.py --stills
+```
+
+This opens a real graphics window, stages the app and captures all seven G1
+presets with identity Q and Spin, at rest and at mid-turn, at 1600 x 1000.
+The fourteen PNGs go to `work/loop-memory/looklab/captures/`, with a mirror in
+`work/gallery/looklab/`. The tool prints each preset, pose and relative path,
+then quits. It is a tool for tuning and for the owner's G1 pick, not a
+measurement. Only the app's output folders may change during this run.
+
+Core LL7 tests recompute the Hopf facts and fixture, chart orientation and bead
+identity, separation and fit, target tables and retained-input handoffs,
+equator margin, drag signs, equitable colouring, palette reports, framing, the
+seven presets, and the cap variant's hidden cells and frame fit.
+`check.py --godot` appends four headless results, each with one injected fault
+that must fail its own check:
+
+| Result | Injected fault |
+| --- | --- |
+| `LOOKLAB_LL7_PRESETS_PASS` | `ll7-projection-clamped` |
+| `LOOKLAB_LL7_SPIN_PASS` | `ll7-compare-spin-not-copied` |
+| `LOOKLAB_LL7_LAYOUT_PASS` | `ll7-palette-old-colouring` |
+| `LOOKLAB_LL7_FRAMING_PASS` | `ll7-framing-ignores-spin` |
+
+These check all uniforms, the slice band and six kinds across seven presets,
+exact drag/inertia and shared rotations, exact layout/class texture data with
+the displayed palette report, and settled Local framing for all three layouts.
+Texture checks read back the bound image and require it to equal the exact
+uploaded bytes; if a renderer returns no image, they compare private copies of
+those bytes instead. The line
+`LOOKLAB_LL7_TEXTURE readbacks=... uploads=...` says which path was used.
+
+The GPU lane retains its ten geometry cases and adds six layout cases: each
+layout at rest and mid-turn, with non-identity Q and Spin and 150 moving plus
+150 stationary vertices per case. Both turn target tables are exercised. The
+new result is `LOOKLAB_LAYOUT_GEOMETRY_PASS cases=6 samples=1800 target=RGBA32F`;
+removing the production blend statement must fail as `layout-no-blend`.
+The integrator runs `--godot-gpu` and `--stills` after integration. Headless
+checks provide no rendered, window-input or performance evidence.

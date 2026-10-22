@@ -86,7 +86,7 @@ internal static partial class Program
         Check(text.Contains(source.VertexBody, StringComparison.Ordinal) && text.Contains(source.FragmentBody, StringComparison.Ordinal), "adapter does not use the drawing shader itself");
         Equal(source.Uniforms.Select(u => u.Name).Distinct().Count(), source.Uniforms.Count);
         Equal(source.Varyings.Count, 6);
-        Sequence(source.Uniforms.Where(u => u.Type == "sampler2D").Select(u => u.Binding), Enumerable.Range(2, 7));
+        Sequence(source.Uniforms.Where(u => u.Type == "sampler2D").Select(u => u.Binding), Enumerable.Range(2, 8));
         var values = new Dictionary<string, float[]>();
         foreach (ShaderUniform u in source.Uniforms.Where(u => u.Type != "sampler2D"))
             values[u.Name] = Enumerable.Range(1, u.Type == "mat4" ? 16 : u.Type == "vec4" ? 4 : 1).Select(i => (float)i).ToArray();

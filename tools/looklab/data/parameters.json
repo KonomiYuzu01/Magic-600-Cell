@@ -207,11 +207,14 @@
       "values": [
         "perspective",
         "stereographic",
-        "orthographic"
+        "orthographic",
+        "hemispheres",
+        "hopfRings",
+        "ringSheet"
       ],
       "default": "perspective",
       "costFeature": null,
-      "description": "4D projection kind; stereographic fixes d4 to one."
+      "description": "4D projection or Global layout: perspective, stereographic (d4 fixed to one) and orthographic project the cells; hemispheres, hopfRings and ringSheet place each cell in a chart."
     },
     {
       "id": "d4",

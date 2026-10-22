@@ -6,7 +6,7 @@ using System.Text;
 
 namespace LookLab.Core;
 
-public enum ProjectionKind { Perspective, Stereographic, Orthographic }
+public enum ProjectionKind { Perspective, Stereographic, Orthographic, Hemispheres, HopfRings, RingSheet }
 public readonly record struct Projection(double NdcX, double NdcY, double W);
 public sealed record StructureValues(double Cs, double Ss, double D4, double Zoom, double Aspect, ProjectionKind Projection = ProjectionKind.Perspective);
 
@@ -138,12 +138,52 @@ public sealed class Geometry
 
     public Projection Project(int globalVertex, StructureValues values, double[] q, TurnData turn, double theta)
     {
+        ValidateProjection(globalVertex, values, q, turn, theta);
+        if (GlobalLayout.IsLayout(values.Projection)) throw Json.Error("projection", "layout kind needs a GlobalLayout");
+        double[] world = Multiply(q, Posed(globalVertex, values, turn, theta));
+        double factor = values.Projection switch
+        {
+            ProjectionKind.Perspective => values.D4 / (values.D4 - world[3]),
+            ProjectionKind.Stereographic => 1 / (1 - world[3]),
+            ProjectionKind.Orthographic => 1,
+            _ => throw Json.Error("projection", "unknown kind")
+        };
+        double px = factor * world[0], py = factor * world[1], pz = factor * world[2];
+        double w = 5 - pz;
+        var projection = new Projection(px * values.Zoom / values.Aspect / w, py * values.Zoom / w, w);
+        return Finite(projection);
+    }
+
+    public Projection Project(int globalVertex, StructureValues values, double[] q, TurnData turn, double theta, GlobalLayout layout, double[] spin)
+    {
+        ValidateProjection(globalVertex, values, q, turn, theta);
+        if (spin.Length != 16 || spin.Any(x => !double.IsFinite(x))) throw Json.Error("spin", "expected 16 finite column-major values");
+        if (!GlobalLayout.IsLayout(values.Projection)) return Project(globalVertex, values, q, turn, theta);
+        int slot = globalVertex / BaseVertices * StickersPerCell + stickers[globalVertex % BaseVertices];
+        double[] placed = layout.PlaceMoving(values.Projection, slot / StickersPerCell, Posed(globalVertex, values, turn, theta),
+            q, spin, turn, theta, turn.IsMoving(slot));
+        return Finite(ViewFraming.Camera(placed, values));
+    }
+
+    private static Projection Finite(Projection projection)
+    {
+        if (!double.IsFinite(projection.NdcX) || !double.IsFinite(projection.NdcY) || !double.IsFinite(projection.W))
+            throw Json.Error("projection", "singular projection");
+        return projection;
+    }
+
+    private void ValidateProjection(int globalVertex, StructureValues values, double[] q, TurnData turn, double theta)
+    {
         if (globalVertex < 0 || globalVertex >= Cells * BaseVertices) throw new ArgumentOutOfRangeException(nameof(globalVertex));
         if (turn.ModelId != ModelId) throw Json.Error("turn/model_id", "does not match assets");
         if (q.Length != 16 || q.Any(x => !double.IsFinite(x))) throw Json.Error("Q", "expected 16 finite column-major values");
         if (!double.IsFinite(theta) || !double.IsFinite(values.Cs) || !double.IsFinite(values.Ss) ||
             !double.IsFinite(values.D4) || values.D4 <= 0 || !double.IsFinite(values.Zoom) || values.Zoom <= 0 ||
             !double.IsFinite(values.Aspect) || values.Aspect <= 0) throw Json.Error("structure", "invalid projection values");
+    }
+
+    private double[] Posed(int globalVertex, StructureValues values, TurnData turn, double theta)
+    {
         int cell = globalVertex / BaseVertices, vi = globalVertex % BaseVertices, local = stickers[vi];
         var vertex = new double[4];
         for (int i = 0; i < 4; i++) vertex[i] = (normal[i] + values.Cs * (anchors[local * 4 + i] - normal[i])
@@ -156,20 +196,7 @@ public sealed class Geometry
             double du = (c - 1) * x - s * y, dv = s * x + (c - 1) * y;
             for (int i = 0; i < 4; i++) world[i] += du * turn.PlaneU.Span[i] + dv * turn.PlaneV.Span[i];
         }
-        world = Multiply(q, world);
-        double factor = values.Projection switch
-        {
-            ProjectionKind.Perspective => values.D4 / (values.D4 - world[3]),
-            ProjectionKind.Stereographic => 1 / (1 - world[3]),
-            ProjectionKind.Orthographic => 1,
-            _ => throw Json.Error("projection", "unknown kind")
-        };
-        double px = factor * world[0], py = factor * world[1], pz = factor * world[2];
-        double w = 5 - pz;
-        var projection = new Projection(px * values.Zoom / values.Aspect / w, py * values.Zoom / w, w);
-        if (!double.IsFinite(projection.NdcX) || !double.IsFinite(projection.NdcY) || !double.IsFinite(w))
-            throw Json.Error("projection", "singular projection");
-        return projection;
+        return world;
     }
 
     public static double[] Identity() => Enumerable.Range(0, 16).Select(i => i % 5 == 0 ? 1.0 : 0.0).ToArray();
