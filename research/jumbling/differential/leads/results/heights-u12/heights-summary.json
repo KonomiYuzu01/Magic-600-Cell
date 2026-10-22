@@ -1,0 +1,89 @@
+{
+  "cpu_count": 4,
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "commit": "52e2dd84bd524d3866c221e3d85d48bc41a16cc3",
+  "evidence_kind": "source and fixture replay with the J1 reference engine; cloud research timings, not product performance evidence",
+  "production_command": [
+    "python",
+    "-B",
+    "research/jumbling/differential/leads/heights.py",
+    "--out",
+    "OUT/heights-u12",
+    "--word",
+    "INPUTS/u12.json",
+    "census",
+    "7101"
+  ],
+  "inputs": [
+    {
+      "label": "u12",
+      "steps": 1158,
+      "attempted_steps": 1158,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "end_digest": "4a0f42717312551e7f531ad3f57de63f0da61236e0b8d54050681d08a2ac0093",
+      "maxima": {
+        "height": {
+          "value": 8,
+          "step": 0,
+          "bits": 4
+        },
+        "denominator": {
+          "value": 8,
+          "step": 0,
+          "bits": 4
+        }
+      },
+      "crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [
+        {
+          "stage": "end",
+          "step": 1158,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "4a0f42717312551e7f531ad3f57de63f0da61236e0b8d54050681d08a2ac0093",
+              "actual": "4a0f42717312551e7f531ad3f57de63f0da61236e0b8d54050681d08a2ac0093",
+              "passed": true
+            }
+          }
+        }
+      ],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 37.232654495987845,
+        "bookkeeping": 1.5486776289990303,
+        "total": 39.37309713000013
+      },
+      "sources": [
+        {
+          "file": "u12.json",
+          "sha256": "66f735c65e1c6756b7b74ce666a74b3c9e7eb70c662843e44cb38b4c16909cc4"
+        },
+        {
+          "file": "research/jumbling/restoration/11-scramble-census/runs/round2/ia-k40-s7101.json",
+          "sha256": "e46e044ad60621e41c88e1be6e9bfc8e5781c6d8219d5fe390052431d4b341cb"
+        }
+      ]
+    }
+  ],
+  "every": 1,
+  "widths": false
+}

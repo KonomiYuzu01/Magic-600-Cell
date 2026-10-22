@@ -1,0 +1,33 @@
+{
+  "checks": 90,
+  "oracle_checks_passed": true,
+  "seconds": {
+    "classification_and_domains": {
+      "median": 0.04697778699983246,
+      "largest": 1.1907941220001703
+    },
+    "cut_sets": {
+      "median": 0.02666855999996187,
+      "largest": 0.03305326300005618
+    },
+    "one_item": {
+      "median": 0.002092514499963727,
+      "largest": 0.00703424699986499
+    },
+    "heights": {
+      "median": 0.011886526499665706,
+      "largest": 0.2585236649997569
+    },
+    "total": {
+      "median": 0.09237245849976716,
+      "largest": 1.5841602649998094
+    }
+  },
+  "evidence_kind": "source and fixture replay; cloud timings of research code",
+  "cpu_count": 4,
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "commit": "e95d00c9ef3acc42da88b9fb19dc5732dbef2571",
+  "census_checks": 63,
+  "fixture_end_checks": 27
+}

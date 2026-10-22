@@ -1,0 +1,76 @@
+{
+  "cpu_count": 4,
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "commit": "13bec8a714285a615a00fbfe4eb587c75e9ee86b",
+  "evidence_kind": "source and fixture replay with the J1 reference engine; cloud research timings, not product performance evidence",
+  "production_command": [
+    "python",
+    "-B",
+    "b20_runs.py",
+    "heights",
+    "<out>"
+  ],
+  "inputs": [
+    {
+      "label": "b20-closure",
+      "steps": 40500,
+      "attempted_steps": 40500,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "fde9e0fde60bf0eb9ea3ac8e2a34a9d420601bb02d5d2fbbb86bf096fd1b0403",
+      "end_digest": "aab10f250f0aedbbcc0fbf0eb655cb0e4434a839c22fc7957559a27437f46e7c",
+      "maxima": {
+        "height": {
+          "value": 8,
+          "step": 0,
+          "bits": 4
+        },
+        "denominator": {
+          "value": 8,
+          "step": 0,
+          "bits": 4
+        }
+      },
+      "crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 300.3800406050141,
+        "bookkeeping": 2.0592846288718647,
+        "total": 302.5552507100001
+      },
+      "sources": [
+        {
+          "file": "z-02-b16.json.gz",
+          "sha256": "b659492c5495131cb7eff0073097677d3bf5763d3e66dc2f7fe58a9ac08941e5"
+        },
+        {
+          "file": "03-b20-V-word.json.gz",
+          "sha256": "1ae91e59bc4be23a02fa58fa4b4f24d165b47f188c8f63785d331775c9c8bb9a"
+        },
+        {
+          "file": "b20-core.json",
+          "sha256": "b5abdc4c23cef1969cd149a70bf284107ce570406b7604c8f1856b1282b5dcef"
+        }
+      ]
+    }
+  ],
+  "every": 100,
+  "widths": false
+}

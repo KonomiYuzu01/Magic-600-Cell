@@ -1,4 +1,13 @@
-"""J1 observations for the differential harness; no candidate implementation."""
+"""J1 observations for the differential harness; no candidate implementation.
+
+Explicit private dependency: State._commit(twist, inside, journal). Named-cap
+straddlers and exact certificate checks use differential.straddlers, whose
+module documents its additional private J1 dependencies.
+"""
+
+import sys
+
+sys.dont_write_bytecode = True
 
 from dataclasses import replace
 import hashlib
@@ -9,6 +18,7 @@ from sim.twists import Twist, TwistError, TwistMenu
 
 from .harness import EMPTY_MOVED_SET, HarnessInputError, StepResult, moved_set_hash
 from .menu_order import order_digest
+from .straddlers import check_certificate, straddler_set
 
 
 class _ObservedState(sim.State):
@@ -94,3 +104,9 @@ class J1Engine:
     def survey(self, grips):
         letters = {'admissible': 'a', 'blocked': 'b', 'uncertain': 'u'}
         return {grip: letters[row['status']] for grip, row in self.state.survey(grips).items()}
+
+    def straddlers(self, caps):
+        return {cap: straddler_set(self.state, cap) for cap in caps}
+
+    def certify(self, cap, piece, certificate):
+        return check_certificate(self.state, cap, piece, certificate)

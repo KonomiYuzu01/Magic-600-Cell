@@ -1,0 +1,741 @@
+{
+  "cpu_count": 4,
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "commit": "13bec8a714285a615a00fbfe4eb587c75e9ee86b",
+  "evidence_kind": "source and fixture replay with the J1 reference engine; cloud research timings, not product performance evidence",
+  "production_command": [
+    "python",
+    "-B",
+    "research/jumbling/differential/leads/x3_previews.py",
+    "--out",
+    "OUT/x3-main"
+  ],
+  "inputs": [
+    {
+      "label": "u1",
+      "status": "complete",
+      "refused": null,
+      "expanded_length": 624,
+      "steps": 624,
+      "attempted_steps": 624,
+      "start_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "end_digest": "ce7ddaaf5c29489d1fd604e1becbc80e0368f9fccb4925355ea26c5b8c16355c",
+      "off_before": 1193,
+      "off_after": 1121,
+      "lattice_pieces_lifted_off": 0,
+      "off_pieces_landed": 72,
+      "other_off_exact_pose_unchanged": 1121,
+      "other_off_exact_pose_changed": 0,
+      "samples": [
+        {
+          "step": 0,
+          "off_lattice": 1193,
+          "poses": 317,
+          "height_bits": 4
+        },
+        {
+          "step": 100,
+          "off_lattice": 1193,
+          "poses": 1343,
+          "height_bits": 4
+        },
+        {
+          "step": 200,
+          "off_lattice": 1193,
+          "poses": 2527,
+          "height_bits": 4
+        },
+        {
+          "step": 300,
+          "off_lattice": 1193,
+          "poses": 3376,
+          "height_bits": 4
+        },
+        {
+          "step": 400,
+          "off_lattice": 1121,
+          "poses": 2786,
+          "height_bits": 4
+        },
+        {
+          "step": 500,
+          "off_lattice": 1121,
+          "poses": 1740,
+          "height_bits": 4
+        },
+        {
+          "step": 600,
+          "off_lattice": 1121,
+          "poses": 483,
+          "height_bits": 4
+        },
+        {
+          "step": 624,
+          "off_lattice": 1121,
+          "poses": 367,
+          "height_bits": 4
+        }
+      ],
+      "seconds": {
+        "total": 11.971552495013384,
+        "median": 0.015110044000721246,
+        "p95": 0.02237545504999617,
+        "largest": 0.23484056800043618,
+        "twist_construction": 0.6256825059999755,
+        "preview_wall": 12.623115430000325
+      },
+      "checks": [
+        {
+          "field": "input_digest",
+          "expected": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+          "actual": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+          "passed": true
+        },
+        {
+          "field": "output_digest",
+          "expected": "ce7ddaaf5c29489d1fd604e1becbc80e0368f9fccb4925355ea26c5b8c16355c",
+          "actual": "ce7ddaaf5c29489d1fd604e1becbc80e0368f9fccb4925355ea26c5b8c16355c",
+          "passed": true
+        }
+      ],
+      "sources": [
+        {
+          "file": "research/jumbling/restoration/12-low-height/runs/lc13-k40/steps/u1.json",
+          "sha256": "cf124dae839ac6eb2c2018f56f1220cbe43797225a25b80e7507a68c4db8de37"
+        },
+        {
+          "file": "research/jumbling/restoration/11-scramble-census/runs/round2/ia-k40-s7101.json",
+          "sha256": "e46e044ad60621e41c88e1be6e9bfc8e5781c6d8219d5fe390052431d4b341cb"
+        }
+      ]
+    },
+    {
+      "label": "correction35",
+      "status": "complete",
+      "refused": null,
+      "expanded_length": 5629,
+      "steps": 5629,
+      "attempted_steps": 5629,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "80642dd327e7c86b085019db9fda41c87a2f540386d2bfeb90397bf1abf325d1",
+      "off_before": 0,
+      "off_after": 0,
+      "lattice_pieces_lifted_off": 0,
+      "off_pieces_landed": 0,
+      "other_off_exact_pose_unchanged": 0,
+      "other_off_exact_pose_changed": 0,
+      "samples": [
+        {
+          "step": 0,
+          "off_lattice": 0,
+          "poses": 1,
+          "height_bits": 0
+        },
+        {
+          "step": 100,
+          "off_lattice": 198,
+          "poses": 49,
+          "height_bits": 3
+        },
+        {
+          "step": 200,
+          "off_lattice": 64,
+          "poses": 73,
+          "height_bits": 4
+        },
+        {
+          "step": 300,
+          "off_lattice": 3100,
+          "poses": 94,
+          "height_bits": 4
+        },
+        {
+          "step": 400,
+          "off_lattice": 3099,
+          "poses": 150,
+          "height_bits": 4
+        },
+        {
+          "step": 500,
+          "off_lattice": 824,
+          "poses": 148,
+          "height_bits": 4
+        },
+        {
+          "step": 600,
+          "off_lattice": 841,
+          "poses": 148,
+          "height_bits": 4
+        },
+        {
+          "step": 700,
+          "off_lattice": 3099,
+          "poses": 119,
+          "height_bits": 4
+        },
+        {
+          "step": 800,
+          "off_lattice": 3103,
+          "poses": 192,
+          "height_bits": 4
+        },
+        {
+          "step": 900,
+          "off_lattice": 64,
+          "poses": 182,
+          "height_bits": 4
+        },
+        {
+          "step": 1000,
+          "off_lattice": 182,
+          "poses": 186,
+          "height_bits": 4
+        },
+        {
+          "step": 1100,
+          "off_lattice": 27,
+          "poses": 180,
+          "height_bits": 4
+        },
+        {
+          "step": 1200,
+          "off_lattice": 181,
+          "poses": 251,
+          "height_bits": 4
+        },
+        {
+          "step": 1300,
+          "off_lattice": 62,
+          "poses": 240,
+          "height_bits": 4
+        },
+        {
+          "step": 1400,
+          "off_lattice": 3098,
+          "poses": 181,
+          "height_bits": 4
+        },
+        {
+          "step": 1500,
+          "off_lattice": 797,
+          "poses": 188,
+          "height_bits": 4
+        },
+        {
+          "step": 1600,
+          "off_lattice": 3121,
+          "poses": 222,
+          "height_bits": 4
+        },
+        {
+          "step": 1700,
+          "off_lattice": 3103,
+          "poses": 234,
+          "height_bits": 4
+        },
+        {
+          "step": 1800,
+          "off_lattice": 28,
+          "poses": 229,
+          "height_bits": 4
+        },
+        {
+          "step": 1900,
+          "off_lattice": 182,
+          "poses": 241,
+          "height_bits": 4
+        },
+        {
+          "step": 2000,
+          "off_lattice": 63,
+          "poses": 262,
+          "height_bits": 4
+        },
+        {
+          "step": 2100,
+          "off_lattice": 199,
+          "poses": 248,
+          "height_bits": 4
+        },
+        {
+          "step": 2200,
+          "off_lattice": 9,
+          "poses": 287,
+          "height_bits": 4
+        },
+        {
+          "step": 2300,
+          "off_lattice": 3121,
+          "poses": 354,
+          "height_bits": 4
+        },
+        {
+          "step": 2400,
+          "off_lattice": 3104,
+          "poses": 372,
+          "height_bits": 4
+        },
+        {
+          "step": 2500,
+          "off_lattice": 800,
+          "poses": 350,
+          "height_bits": 4
+        },
+        {
+          "step": 2600,
+          "off_lattice": 802,
+          "poses": 371,
+          "height_bits": 4
+        },
+        {
+          "step": 2700,
+          "off_lattice": 3108,
+          "poses": 407,
+          "height_bits": 4
+        },
+        {
+          "step": 2800,
+          "off_lattice": 3116,
+          "poses": 324,
+          "height_bits": 4
+        },
+        {
+          "step": 2900,
+          "off_lattice": 9,
+          "poses": 346,
+          "height_bits": 4
+        },
+        {
+          "step": 3000,
+          "off_lattice": 199,
+          "poses": 380,
+          "height_bits": 4
+        },
+        {
+          "step": 3100,
+          "off_lattice": 63,
+          "poses": 358,
+          "height_bits": 4
+        },
+        {
+          "step": 3200,
+          "off_lattice": 181,
+          "poses": 342,
+          "height_bits": 4
+        },
+        {
+          "step": 3300,
+          "off_lattice": 29,
+          "poses": 332,
+          "height_bits": 4
+        },
+        {
+          "step": 3400,
+          "off_lattice": 3108,
+          "poses": 398,
+          "height_bits": 4
+        },
+        {
+          "step": 3500,
+          "off_lattice": 3118,
+          "poses": 335,
+          "height_bits": 4
+        },
+        {
+          "step": 3600,
+          "off_lattice": 795,
+          "poses": 339,
+          "height_bits": 4
+        },
+        {
+          "step": 3700,
+          "off_lattice": 797,
+          "poses": 300,
+          "height_bits": 4
+        },
+        {
+          "step": 3800,
+          "off_lattice": 3117,
+          "poses": 358,
+          "height_bits": 4
+        },
+        {
+          "step": 3900,
+          "off_lattice": 3105,
+          "poses": 301,
+          "height_bits": 4
+        },
+        {
+          "step": 4000,
+          "off_lattice": 29,
+          "poses": 231,
+          "height_bits": 4
+        },
+        {
+          "step": 4100,
+          "off_lattice": 184,
+          "poses": 217,
+          "height_bits": 4
+        },
+        {
+          "step": 4200,
+          "off_lattice": 65,
+          "poses": 162,
+          "height_bits": 4
+        },
+        {
+          "step": 4300,
+          "off_lattice": 197,
+          "poses": 216,
+          "height_bits": 4
+        },
+        {
+          "step": 4400,
+          "off_lattice": 6,
+          "poses": 232,
+          "height_bits": 4
+        },
+        {
+          "step": 4500,
+          "off_lattice": 3116,
+          "poses": 271,
+          "height_bits": 4
+        },
+        {
+          "step": 4600,
+          "off_lattice": 3104,
+          "poses": 257,
+          "height_bits": 4
+        },
+        {
+          "step": 4700,
+          "off_lattice": 800,
+          "poses": 236,
+          "height_bits": 4
+        },
+        {
+          "step": 4800,
+          "off_lattice": 800,
+          "poses": 224,
+          "height_bits": 4
+        },
+        {
+          "step": 4900,
+          "off_lattice": 3104,
+          "poses": 197,
+          "height_bits": 4
+        },
+        {
+          "step": 5000,
+          "off_lattice": 3117,
+          "poses": 201,
+          "height_bits": 4
+        },
+        {
+          "step": 5100,
+          "off_lattice": 6,
+          "poses": 141,
+          "height_bits": 4
+        },
+        {
+          "step": 5200,
+          "off_lattice": 197,
+          "poses": 161,
+          "height_bits": 4
+        },
+        {
+          "step": 5300,
+          "off_lattice": 64,
+          "poses": 105,
+          "height_bits": 4
+        },
+        {
+          "step": 5400,
+          "off_lattice": 183,
+          "poses": 82,
+          "height_bits": 4
+        },
+        {
+          "step": 5500,
+          "off_lattice": 28,
+          "poses": 67,
+          "height_bits": 4
+        },
+        {
+          "step": 5600,
+          "off_lattice": 3102,
+          "poses": 31,
+          "height_bits": 4
+        },
+        {
+          "step": 5629,
+          "off_lattice": 0,
+          "poses": 2,
+          "height_bits": 0
+        }
+      ],
+      "seconds": {
+        "total": 85.77288475294881,
+        "median": 0.012853002000156266,
+        "p95": 0.03023485400044592,
+        "largest": 0.12292653399981646,
+        "twist_construction": 0.27235954400021,
+        "preview_wall": 86.13397158599946
+      },
+      "checks": [
+        {
+          "field": "output_digest",
+          "expected": "80642dd327e7c86b085019db9fda41c87a2f540386d2bfeb90397bf1abf325d1",
+          "actual": "80642dd327e7c86b085019db9fda41c87a2f540386d2bfeb90397bf1abf325d1",
+          "passed": true
+        }
+      ],
+      "sources": [
+        {
+          "file": "research/jumbling/restoration/09-general-method/data/library-merged.json.gz",
+          "sha256": "cfe46e135875b672975001e2e179970299ed538ef9442895580c951bede3db7e"
+        }
+      ]
+    },
+    {
+      "label": "H6030",
+      "status": "complete",
+      "refused": null,
+      "expanded_length": 3156,
+      "steps": 3156,
+      "attempted_steps": 3156,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "cb1e89ed6b0b1581f8acea27e22b443df5784d928d4284579d69c444f60b37ad",
+      "off_before": 0,
+      "off_after": 52883,
+      "lattice_pieces_lifted_off": 52883,
+      "off_pieces_landed": 0,
+      "other_off_exact_pose_unchanged": 0,
+      "other_off_exact_pose_changed": 0,
+      "samples": [
+        {
+          "step": 0,
+          "off_lattice": 0,
+          "poses": 1,
+          "height_bits": 0
+        },
+        {
+          "step": 100,
+          "off_lattice": 29334,
+          "poses": 103,
+          "height_bits": 5
+        },
+        {
+          "step": 200,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 62
+        },
+        {
+          "step": 300,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 162
+        },
+        {
+          "step": 400,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 262
+        },
+        {
+          "step": 500,
+          "off_lattice": 47676,
+          "poses": 176,
+          "height_bits": 362
+        },
+        {
+          "step": 600,
+          "off_lattice": 50378,
+          "poses": 176,
+          "height_bits": 462
+        },
+        {
+          "step": 700,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 562
+        },
+        {
+          "step": 800,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 662
+        },
+        {
+          "step": 900,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 762
+        },
+        {
+          "step": 1000,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 862
+        },
+        {
+          "step": 1100,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 962
+        },
+        {
+          "step": 1200,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1062
+        },
+        {
+          "step": 1300,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1162
+        },
+        {
+          "step": 1400,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1262
+        },
+        {
+          "step": 1500,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1362
+        },
+        {
+          "step": 1600,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1462
+        },
+        {
+          "step": 1700,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1562
+        },
+        {
+          "step": 1800,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1662
+        },
+        {
+          "step": 1900,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1762
+        },
+        {
+          "step": 2000,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1862
+        },
+        {
+          "step": 2100,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 1962
+        },
+        {
+          "step": 2200,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 2062
+        },
+        {
+          "step": 2300,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 2162
+        },
+        {
+          "step": 2400,
+          "off_lattice": 50378,
+          "poses": 177,
+          "height_bits": 2262
+        },
+        {
+          "step": 2500,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 2362
+        },
+        {
+          "step": 2600,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 2462
+        },
+        {
+          "step": 2700,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 2562
+        },
+        {
+          "step": 2800,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 2662
+        },
+        {
+          "step": 2900,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 2762
+        },
+        {
+          "step": 3000,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 2862
+        },
+        {
+          "step": 3100,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 2962
+        },
+        {
+          "step": 3156,
+          "off_lattice": 52883,
+          "poses": 177,
+          "height_bits": 3018
+        }
+      ],
+      "seconds": {
+        "total": 129.975124243977,
+        "median": 0.0406851124998866,
+        "p95": 0.047066470999652665,
+        "largest": 0.0910508380002284,
+        "twist_construction": 0.5107583729995895,
+        "preview_wall": 130.547972759
+      },
+      "checks": [
+        {
+          "field": "output_digest",
+          "expected": "cb1e89ed6b0b1581f8acea27e22b443df5784d928d4284579d69c444f60b37ad",
+          "actual": "cb1e89ed6b0b1581f8acea27e22b443df5784d928d4284579d69c444f60b37ad",
+          "passed": true
+        }
+      ],
+      "sources": [
+        {
+          "file": "research/jumbling/restoration/10-x1-unbounded/witnesses/H6030.json",
+          "sha256": "87e72c1fc264f3b33450ee638c4a9a12cdc81a55bb535033fba62d08097240f2"
+        }
+      ]
+    }
+  ],
+  "sample_every": 100
+}

@@ -1,0 +1,71 @@
+{
+  "environment": {
+    "commit": "13bec8a714285a615a00fbfe4eb587c75e9ee86b",
+    "cpu_count": 4,
+    "load_average": [
+      3.3994140625,
+      3.85009765625,
+      3.90576171875
+    ],
+    "numpy": "2.3.5",
+    "python": "3.11.15"
+  },
+  "evidence": "J1 source/fixture replay; cloud research timings, not product performance",
+  "failures": [],
+  "passed": true,
+  "states": [
+    {
+      "cache_entries_added_while_timed": {
+        "exact": {
+          "anchors": 0,
+          "cap_float_rows": 0,
+          "cap_forms": 0,
+          "float_rows": 0,
+          "vertices": 0,
+          "vforms": 0
+        },
+        "filtered": {
+          "anchors": 0,
+          "cap_float_rows": 0,
+          "cap_forms": 0,
+          "float_rows": 0,
+          "vertices": 0,
+          "vforms": 0
+        }
+      },
+      "caps": 600,
+      "evaluation_counts": {
+        "exact": {
+          "exact_evaluations": 13242640,
+          "filtered_evaluations": 0
+        },
+        "filtered": {
+          "exact_evaluations": 351198,
+          "filtered_evaluations": 13402843
+        }
+      },
+      "exact_seconds": {
+        "largest": {
+          "cap": 23,
+          "seconds": 0.24318059100005485
+        },
+        "median": 0.023070137000104296,
+        "total": 26.334204264028813
+      },
+      "failures": [],
+      "filtered_seconds": {
+        "largest": {
+          "cap": 20,
+          "seconds": 0.44623401900025783
+        },
+        "median": 0.02998642199963797,
+        "total": 40.551616334991195
+      },
+      "off_lattice": 118821,
+      "passed": true,
+      "state": "scramble:3000:7302",
+      "state_digest": "1335f47e0c5647a948dd11f87ba4bad27c787d00992be1f783d970c88a542ace"
+    }
+  ],
+  "timing": "both modes warmed untimed at each cap, then exact first, filtered second; includes J1 certificate construction"
+}
