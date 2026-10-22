@@ -111,7 +111,16 @@ Progress note, 09:23 UTC (2 hours in): the runner is in the bulk phase. The reco
 interim `result` `budget`) has 14 bulk steps, all rule `conj` of 3 letters each, taking 746.1, 306.7, 689.3, 343.6,
 457.0, 35.2, 365.1, 580.5, 638.6, 298.4, 638.1, 611.3, 608.2 and 585.3 s. These are the first bulk `conj` steps in a
 runner run (README section 6 says none had been written before). `bulk-progress.json` is
-`{"step_started": 6962.024108378}`; `logs/bulk.log` and the runner's stdout are still empty. Like the component run it uses the default
+`{"step_started": 6962.024108378}`; `logs/bulk.log` and the runner's stdout are still empty.
+
+This second start was killed by another container restart at about 09:43 UTC, about 2 h 20 min in, during its 17th
+bulk step. It had 16 bulk steps, all `conj` of 3 letters (steps 14 and 15: 604.3 and 492.2 s);
+`bulk-progress.json` `{"step_started": 8059.793012521}`. Its partial output directory, as the runner left it, is kept
+in `full-killed-2/` (2.9 MB; `run.json` with interim `result` `budget` and the 16 steps; `runner.out` empty). It is
+an interrupted record, not a finished run, and was not checked. The runner has no resume option, so the full run was
+started a third time at 09:44 UTC in fresh `--out` and `--cache` directories, same command. Container restarts came at
+about 04:25, 07:20 and 09:43 UTC; a run of the bulk's 21,600 s clock plus the later phases needs more than six hours
+without one. Like the component run it uses the default
 `rule_seconds` of 3,600 s, so its tail may meet the same `units` time-out.
 
 ## Next step
