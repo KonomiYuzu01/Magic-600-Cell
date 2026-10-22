@@ -120,7 +120,12 @@ in `full-killed-2/` (2.9 MB; `run.json` with interim `result` `budget` and the 1
 an interrupted record, not a finished run, and was not checked. The runner has no resume option, so the full run was
 started a third time at 09:44 UTC in fresh `--out` and `--cache` directories, same command. Container restarts came at
 about 04:25, 07:20 and 09:43 UTC; a run of the bulk's 21,600 s clock plus the later phases needs more than six hours
-without one. Like the component run it uses the default
+without one.
+
+Progress note, 11:44 UTC (third start, 2 hours in): bulk phase, 11 steps, all `conj` of 3 letters (33 letters),
+taking 1087, 425, 998, 458, 628, 48, 493, 814, 806, 406 and 858 s (rounded). The first ten have the same rule and
+length as the second start's; their times are about 1.4 times longer on this machine. `bulk-progress.json`
+`{"step_started": 7098.542108416}`; the runner's stdout is still empty. Like the component run it uses the default
 `rule_seconds` of 3,600 s, so its tail may meet the same `units` time-out.
 
 ## Next step
